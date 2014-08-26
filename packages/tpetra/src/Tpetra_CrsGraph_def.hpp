@@ -2960,8 +2960,6 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef LocalOrdinal LO;
     const char tfecfFuncName[] = "reindexColumns: ";
-    // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    //   true, std::logic_error, "Not implemented");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isFillComplete (), std::runtime_error, "The graph is fill complete "

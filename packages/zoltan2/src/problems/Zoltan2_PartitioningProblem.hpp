@@ -391,10 +391,6 @@ private:
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
 
-#ifdef HAVE_ZOLTAN2_MPI
-  MPI_Comm mpiComm_;
-#endif
-
   BaseAdapterType inputType_;
 
   //ModelType modelType_;
@@ -466,13 +462,6 @@ template <typename Adapter>
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
   machine_ = RCP <Zoltan2::MachineRepresentation<typename Adapter::scalar_t> >(new Zoltan2::MachineRepresentation<typename Adapter::scalar_t>(problemComm_));
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // TPLs may want an MPI communicator
-
-  mpiComm_ = Teuchos2MPI(problemComm_);
-
-#endif
 
   // Number of criteria is number of user supplied weights if non-zero.
   // Otherwise it is 1 and uniform weight is implied.
@@ -596,9 +585,14 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
       this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
                                             problemComm_,
-#ifdef HAVE_ZOLTAN2_MPI
-                                            mpiComm_,
-#endif
+                                            this->graphModel_));
+      this->algorithm_->partition(solution_);
+    }
+
+    else if (algName_ == std::string("parmetis")) {
+
+      this->algorithm_ = rcp(new AlgParMETIS<Adapter>(this->envConst_,
+                                            problemComm_,
                                             this->graphModel_));
       this->algorithm_->partition(solution_);
     }
@@ -668,20 +662,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   else if (mapping_type == 1){
     //if mapping is 1 -- graph mapping
   }
-
-#ifdef KDDKDD_SHOULD_NEVER_CHANGE_PROBLEMCOMM
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // The algorithm may have changed the communicator.  Change it back.
-  // KDD:  Why would the algorithm change the communicator? TODO
-  // KDD:  Should we allow such a side effect? TODO
-
-  RCP<const mpiWrapper_t > wrappedComm = rcp(new mpiWrapper_t(mpiComm_));
-  problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
-  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
-
-#endif
-#endif
 
   if (metricsRequested_){
     typedef PartitioningSolution<Adapter> ps_t;

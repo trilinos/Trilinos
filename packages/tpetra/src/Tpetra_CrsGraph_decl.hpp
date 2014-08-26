@@ -2182,6 +2182,7 @@ public:
         os << prefix << "Process " << myRank << ": Caught the following "
           "exception while calling fillComplete() on clone of type"
            << endl << Teuchos::typeName (*clonedGraph) << endl;
+        cerr << os.str ();
       }
     }
 

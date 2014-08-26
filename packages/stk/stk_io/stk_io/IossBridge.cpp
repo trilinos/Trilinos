@@ -492,9 +492,6 @@ void get_io_field_type(const stk::mesh::FieldBase *field,
   else if ( field->type_is<int>() ) {
 	result->second = Ioss::Field::INTEGER;
   }
-  else if ( field->type_is<int64_t>() ) {
-    result->second = Ioss::Field::INT64;
-  }
 
   if ( 0 == rank ) {
 	result->first = scalar ;
@@ -960,31 +957,23 @@ void field_data_from_ioss(const stk::mesh::BulkData& mesh,
   /// Ioss field and stk::mesh::Field; better error messages...
 
   if (field != NULL && io_entity->field_exists(io_fld_name)) {
-    const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
-    if (field->type_is<double>()) {
-      internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
+	const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
+	if (field->type_is<double>()) {
+	  internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
                                     static_cast<double>(1.0));
-    } else if (field->type_is<int>()) {
-      // Make sure the IO field type matches the STK field type.
-      // By default, all IO fields are created of type 'double'
-      if (db_api_int_size(io_entity) == 4) {
-        io_field.check_type(Ioss::Field::INTEGER);
-        internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
+	} else if (field->type_is<int>()) {
+	  // Make sure the IO field type matches the STK field type.
+	  // By default, all IO fields are created of type 'double'
+	  if (db_api_int_size(io_entity) == 4) {
+	    io_field.check_type(Ioss::Field::INTEGER);
+	    internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
                                       static_cast<int>(1));
-      } else {
-        io_field.check_type(Ioss::Field::INT64);
-        internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
+	  } else {
+	    io_field.check_type(Ioss::Field::INT64);
+	    internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
                                       static_cast<int64_t>(1));
-      }
-    } else if (field->type_is<int64_t>()) {
-      if (db_api_int_size(io_entity) == 8) {
-        io_field.check_type(Ioss::Field::INT64);
-        internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
-                                      static_cast<int64_t>(1));
-      } else {
-        throw std::runtime_error("bad int size");
-      }
-    }
+	  }
+	}
   }
 }
 
@@ -1320,6 +1309,14 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
 
     mesh::Selector *select = new mesh::Selector(selector);
     io_cs->property_add(Ioss::Property(internal_selector_name, select, false));
+
+    // Update global node and element count...
+    stk::mesh::Selector allEntities = meta.universal_part();
+    std::vector<unsigned> entityCounts;
+    stk::mesh::count_entities(allEntities, bulk, entityCounts);
+    
+    io_region.property_add(Ioss::Property("global_node_count",    (int64_t)entityCounts[stk::topology::NODE_RANK]));
+    io_region.property_add(Ioss::Property("global_element_count", (int64_t)entityCounts[stk::topology::ELEMENT_RANK]));
   }
 }
 

@@ -470,61 +470,195 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     node_cmap_ids = NULL;
     int *sendCount = new int [nprocs];
     int *recvCount = new int [nprocs];
-    int rank = comm.getRank();
-    recvCount[rank] = sendCount[rank] = 0;
 
     // Post receives
-    RCP<CommRequest<int> > *requests = new RCP<CommRequest<int> > [nprocs];
-    for (int cnt = 0, i = 0; i < nprocs; i++) {
-      if (i != rank) {
-	try {
-	  requests[cnt++] = Teuchos::ireceive<int,int>(comm,
-						       rcp(&(recvCount[i]),
-							   false),
-						       i);
-	}
-	Z2_FORWARD_EXCEPTIONS;
+    RCP<CommRequest<int> >*requests=new RCP<CommRequest<int> >[num_node_cmaps];
+    for (int cnt = 0, i = 0; i < num_node_cmaps; i++) {
+      try {
+	requests[cnt++] =
+	  Teuchos::ireceive<int,int>(comm,
+				     rcp(&(recvCount[node_proc_ids[i][0]]),
+					 false),
+				     node_proc_ids[i][0]);
       }
+      Z2_FORWARD_EXCEPTIONS;
     }
 
     Teuchos::barrier<int>(comm);
+    size_t totalsend = 0;
 
     for(int j = 0; j < num_node_cmaps; j++) {
       sendCount[node_proc_ids[j][0]] = 1;
       for(int i = 0; i < node_cmap_node_cnts[j]; i++) {
 	sendCount[node_proc_ids[j][i]] += sur_elem[node_ids[j][i]-1].size()+2;
       }
+      totalsend += sendCount[node_proc_ids[j][0]];
     }
 
     // Send data; can use readySend since receives are posted.
-    for (int i = 0; i < nprocs; i++) {
-      if (i != rank) {
-	try {
-	  Teuchos::readySend<int,int>(comm, sendCount[i], i);
-	}
-	Z2_FORWARD_EXCEPTIONS;
+    for (int i = 0; i < num_node_cmaps; i++) {
+      try {
+	Teuchos::readySend<int,int>(comm, sendCount[node_proc_ids[i][0]],
+				    node_proc_ids[i][0]);
       }
+      Z2_FORWARD_EXCEPTIONS;
     }
 
     // Wait for messages to return.
     try {
-      Teuchos::waitAll<int>(comm, arrayView(requests, nprocs-1));
+      Teuchos::waitAll<int>(comm, arrayView(requests, num_node_cmaps));
     }
     Z2_FORWARD_EXCEPTIONS;
 
     delete [] requests;
+
+    // Allocate the receive buffer.
+    size_t totalrecv = 0;
+    int maxMsg = 0;
+    int nrecvranks = 0;
+    for(int i = 0; i < num_node_cmaps; i++) {
+      if (recvCount[node_proc_ids[i][0]] > 0) {
+	totalrecv += recvCount[node_proc_ids[i][0]];
+	nrecvranks++;
+	if (recvCount[node_proc_ids[i][0]] > maxMsg)
+	  maxMsg = recvCount[node_proc_ids[i][0]];
+      }
+    }
+
+    int *rbuf = NULL;
+    if (totalrecv) rbuf = new int[totalrecv];
+
+    requests = new RCP<CommRequest<int> > [nrecvranks];
+
+    // Error checking for memory and message size.
+    int OK[2] = {1,1};
+    // OK[0] -- true/false indicating whether each message size fits in an int
+    //          (for MPI).
+    // OK[1] -- true/false indicating whether memory allocs are OK
+    int gOK[2]; // For global reduce of OK.
+
+    if (size_t(maxMsg) * sizeof(int) > INT_MAX) OK[0] = false;
+    if (totalrecv && !rbuf) OK[1] = 0;
+    if (!requests) OK[1] = 0;
+
+    // Post receives
+
+    size_t offset = 0;
+
+    if (OK[0] && OK[1]) {
+      int rcnt = 0;
+      for (int i = 0; i < num_node_cmaps; i++) {
+	if (recvCount[node_proc_ids[i][0]]) {
+	  try {
+	    requests[rcnt++] =
+	      Teuchos::
+	      ireceive<int,int>(comm,
+				Teuchos::arcp(&rbuf[offset], 0,
+					      recvCount[node_proc_ids[i][0]],
+					      false),
+				node_proc_ids[i][0]);
+	  }
+	  Z2_FORWARD_EXCEPTIONS;
+	}
+	offset += recvCount[node_proc_ids[i][0]];
+      }
+    }
+
+    delete[] recvCount;
+
+    // Use barrier for error checking
+    Teuchos::reduceAll<int>(comm, Teuchos::REDUCE_MIN, 2, OK, gOK);
+    if (!gOK[0] || !gOK[1]) {
+      delete [] rbuf;
+      delete [] requests;
+      if (!gOK[0])
+	throw std::runtime_error("Max single message length exceeded");
+      else
+	throw std::bad_alloc();
+    }
+
+    int *sbuf = NULL;
+    if (totalsend) sbuf = new int[totalsend];
+    a = 0;
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      sbuf[a++] = node_cmap_node_cnts[j];
+      for(int i = 0; i < node_cmap_node_cnts[j]; i++) {
+	sbuf[a++] = node_num_map_[node_ids[j][i]-1];
+	sbuf[a++] = sur_elem[node_ids[j][i]-1].size();
+	for(size_t ecnt=0; ecnt < sur_elem[node_ids[j][i]-1].size(); ecnt++) {
+	  sbuf[a++] = sur_elem[node_ids[j][i]-1][ecnt];
+	}
+      }
+    }
+
     delete[] node_cmap_node_cnts;
     node_cmap_node_cnts = NULL;
 
     for(int j = 0; j < num_node_cmaps; j++) {
       delete[] node_ids[j];
-      delete[] node_proc_ids[j];
     }
 
     delete[] node_ids;
     node_ids = NULL;
+    ArrayRCP<int> sendBuf;
+
+    if (totalsend)
+      sendBuf = ArrayRCP<int>(sbuf, 0, totalsend, true);
+    else
+      sendBuf = Teuchos::null;
+
+    // Send data; can use readySend since receives are posted.
+    offset = 0;
+    for (int i = 0; i < num_node_cmaps; i++) {
+      if (sendCount[node_proc_ids[i][0]]) {
+	try{
+	  Teuchos::readySend<int,
+	    int>(comm,
+		 Teuchos::arrayView(&sendBuf[offset],
+				    sendCount[node_proc_ids[i][0]]),
+		 node_proc_ids[i][0]);
+	}
+	Z2_FORWARD_EXCEPTIONS;
+      }
+      offset += sendCount[node_proc_ids[i][0]];
+    }
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      delete[] node_proc_ids[j];
+    }
+
     delete[] node_proc_ids;
     node_proc_ids = NULL;
+    delete[] sendCount;
+
+    // Wait for messages to return.
+    try{
+      Teuchos::waitAll<int>(comm, Teuchos::arrayView(requests, nrecvranks));
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    delete[] requests;
+    a = 0;
+
+    for (int i = 0; i < num_node_cmaps; i++) {
+      int num_nodes_this_processor = rbuf[a++];
+
+      for (int j = 0; j < num_nodes_this_processor; j++) {
+	int this_node = rbuf[a++];
+	int num_elem_this_node = rbuf[a++];
+
+	for (int ncnt = 0; ncnt < num_nodes_; ncnt++) {
+	  if (node_num_map_[ncnt] == this_node) {
+	    for (int ecnt = 0; ecnt < num_elem_this_node; ecnt++) {
+	      sur_elem[ncnt].push_back(rbuf[a++]);
+	    }
+	  }
+	}
+      }
+    }
+
+    delete[] rbuf;
   }
 
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {

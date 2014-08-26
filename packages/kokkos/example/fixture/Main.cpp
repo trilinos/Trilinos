@@ -17,14 +17,15 @@ template< class > void test_fixture();
 }
 }
 
-void test_box()
+int test_box( const size_t global_size
+            , const size_t global_box[][2]
+            , const bool print_verbose )
 {
-  const size_t global_size = 2500 ;
-  const size_t global_box[3][2] = { { 0 , 1000 } , { 0 , 1100 } , { 0 , 1200 } };
-
   size_t global_count = 0 ;
   size_t global_max = 0 ;
   size_t global_min = Kokkos::Example::box_count( global_box );
+  size_t global_box_max[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
+  size_t global_box_min[3][2] = { { 0 , global_box[0][1] } , { 0 , global_box[1][1] } , { 0 , global_box[2][1] } };
   size_t intersect_error = 0 ;
   size_t neighbor_max = 0 ;
 
@@ -39,6 +40,17 @@ void test_box()
 
     {
       const size_t n = Kokkos::Example::box_count( box );
+
+      for ( int i = 0 ; i < 3 ; ++i ) {
+        if ( ( box[i][1] - box[i][0] ) < ( global_box_min[i][1] - global_box_min[i][0] ) ) {
+          global_box_min[i][0] = box[i][0] ;
+          global_box_min[i][1] = box[i][1] ;
+        }
+        if ( ( box[i][1] - box[i][0] ) > ( global_box_max[i][1] - global_box_max[i][0] ) ) {
+          global_box_max[i][0] = box[i][0] ;
+          global_box_max[i][1] = box[i][1] ;
+        }
+      }
 
       global_max = std::max( global_max , n );
       global_min = std::min( global_min , n );
@@ -65,6 +77,7 @@ void test_box()
       neighbor_count += Kokkos::Example::box_count( intersect_box ) ? 1 : 0 ;
 
       if ( n ) {
+        std::cout << "box partition intersection error" << std::endl ;
         std::cout << "box = {"
                   << " [ " << box[0][0] << " , " << box[0][1] << " )"
                   << " [ " << box[1][0] << " , " << box[1][1] << " )"
@@ -75,20 +88,37 @@ void test_box()
                   << " [ " << other_box[1][0] << " , " << other_box[1][1] << " )"
                   << " [ " << other_box[2][0] << " , " << other_box[2][1] << " )"
                   << " }" << std::endl ;
-        return ;
+        return 0 ;
       }
     }
 
     neighbor_max = std::max( neighbor_max , neighbor_count );
   }
 
-  std::cout << "count( global_box ) = " << Kokkos::Example::box_count( global_box ) << std::endl ;
-  std::cout << "sum partition( global_box ) = " << global_count << std::endl ;
-  std::cout << "avg partition( global_box ) = " << size_t( double(global_count) / double(global_size)) << std::endl ;
-  std::cout << "min partition( global_box ) = " << global_min << std::endl ;
-  std::cout << "max partition( global_box ) = " << global_max << std::endl ;
-  std::cout << "sum intersect( global_box ) = " << intersect_error << std::endl ;
-  std::cout << "max neighbor = " << neighbor_max << std::endl ;
+  if ( print_verbose ) {
+
+    std::cout << "global_part = " << global_size << std::endl ;
+    std::cout << "global_box  = { "
+              << " [ " << global_box[0][0] << " .. " << global_box[0][1] << " ) X"
+              << " [ " << global_box[1][0] << " .. " << global_box[1][1] << " ) X"
+              << " [ " << global_box[2][0] << " .. " << global_box[2][1] << " )"
+              << " }" << std::endl ;
+    std::cout << "count( global_box ) = " << Kokkos::Example::box_count( global_box ) << std::endl ;
+    std::cout << "sum partition( global_box ) = " << global_count << std::endl ;
+    std::cout << "avg partition( global_box ) = " << size_t( double(global_count) / double(global_size)) << std::endl ;
+    std::cout << "min partition( global_box ) = " << global_min << std::endl ;
+    std::cout << "min part X   ( global_box ) = [ " << global_box_min[0][0] << " .. " << global_box_min[0][1] << " )" << std::endl ;
+    std::cout << "min part Y   ( global_box ) = [ " << global_box_min[1][0] << " .. " << global_box_min[1][1] << " )" << std::endl ;
+    std::cout << "min part Z   ( global_box ) = [ " << global_box_min[2][0] << " .. " << global_box_min[2][1] << " )" << std::endl ;
+    std::cout << "max partition( global_box ) = " << global_max << std::endl ;
+    std::cout << "max part X   ( global_box ) = [ " << global_box_max[0][0] << " .. " << global_box_max[0][1] << " )" << std::endl ;
+    std::cout << "max part Y   ( global_box ) = [ " << global_box_max[1][0] << " .. " << global_box_max[1][1] << " )" << std::endl ;
+    std::cout << "max part Z   ( global_box ) = [ " << global_box_max[2][0] << " .. " << global_box_max[2][1] << " )" << std::endl ;
+    std::cout << "sum intersect( global_box ) = " << intersect_error << std::endl ;
+    std::cout << "max neighbor = " << neighbor_max << std::endl ;
+  }
+
+  return neighbor_max ;
 }
 
 void test_elem()
@@ -208,8 +238,16 @@ void test_elem()
 
 int main()
 {
-//  test_box();
+  for ( int i = 1 ; i <= 32 ; ++i ) {
+    const size_t global_size = 16 * i ;
+    const size_t global_box[3][2] = { { 0 , 65 } , { 0 , 65 } , { 0 , 65 } };
+    if ( 30 < test_box( global_size , global_box , false ) ) {
+      test_box( global_size , global_box , true );
+    }
+  }
+
 //  test_elem();
+
   {
     std::cout << "test_fixture< HostExecSpace >" << std::endl ;
     HostExecSpace::initialize( 1 );

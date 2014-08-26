@@ -67,10 +67,6 @@ namespace Impl {
 //   cudaFuncSetCacheConfig(MyKernel, cudaFuncCachePreferShared );
 // For 2.0 capability: 48 KB shared and 16 KB L1
 //----------------------------------------------------------------------------
-// Must have consistent '__shared__' statement across all device kernels.
-// Since there may be more than one kernel in a file then have to make this
-// a simple array of words.
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 /*
  *  Algorithmic constraints:
@@ -94,14 +90,10 @@ void cuda_intra_block_reduce_scan( const FunctorType & functor ,
   if ( BlockSizeMask & blockDim.x ) { cuda_abort("Cuda::cuda_intra_block_scan requires power-of-two blockDim"); }
 
 #define BLOCK_REDUCE_STEP( R , TD , S )  \
-  if ( ! ( R & ((1<<(S+1))-1) ) ) \
-    { Reduce::join( functor , TD , (TD - (value_count<<S)) ); }
-    // { functor.join( Reduce::reference(TD) , Reduce::reference(TD - (value_count<<S))); }
+  if ( ! ( R & ((1<<(S+1))-1) ) ) { Reduce::join( functor , TD , (TD - (value_count<<S)) ); }
 
 #define BLOCK_SCAN_STEP( TD , N , S )  \
-  if ( N == (1<<S) ) \
-    { Reduce::join( functor , TD , (TD - (value_count<<S))); }
-    // { functor.join( Reduce::reference(TD) , Reduce::reference(TD - (value_count<<S))); }
+  if ( N == (1<<S) ) { Reduce::join( functor , TD , (TD - (value_count<<S))); }
 
   const unsigned     rtid_intra = threadIdx.x ^ BlockSizeMask ;
   const pointer_type tdata_intra = base_data + value_count * threadIdx.x ;
@@ -226,7 +218,6 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
 
       for ( size_type i = b ; i < e ; ++i ) {
         Reduce::join( functor , shared_ptr , global_data + word_count.value * i );
-        // functor.join( shared_value , Reduce::reference( global_data + word_count.value * i ) );
       }
     }
 
@@ -242,7 +233,6 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
       for ( size_type i = b ; i < e ; ++i ) {
         size_type * const global_value = global_data + word_count.value * i ;
         Reduce::join( functor , shared_value , global_value );
-        // functor.join( Reduce::reference( shared_value ) , Reduce::reference( global_value ) );
         Reduce::copy( functor , global_value , shared_value );
       }
     }
@@ -251,6 +241,7 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
   return is_last_block ;
 }
 
+// Size in bytes required for inter block reduce or scan
 template< bool DoScan , class FunctorType >
 inline
 unsigned cuda_single_inter_block_reduce_scan_shmem( const FunctorType & functor , const unsigned BlockSize )

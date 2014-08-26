@@ -1173,7 +1173,7 @@ namespace Experimental {
     const size_t numEntriesInRow = absEndOffset - absStartOffset;
 
     // If the hint was correct, then the hint is the offset to return.
-    if (hint < numEntriesInRow && ind_[absStartOffset] == colIndexToFind) {
+    if (hint < numEntriesInRow && ind_[absStartOffset+hint] == colIndexToFind) {
       // Always return the offset relative to the current row.
       return hint;
     }

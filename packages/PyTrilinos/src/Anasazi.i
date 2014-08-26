@@ -106,6 +106,10 @@ package:
 #ifdef HAVE_STDINT_H
 #undef HAVE_STDINT_H
 #endif
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
 #include "Teuchos_ScalarTraits.hpp"
 #include "PyTrilinos_Teuchos_Util.h"
 #endif

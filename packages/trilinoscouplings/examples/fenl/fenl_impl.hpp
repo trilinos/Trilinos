@@ -272,6 +272,10 @@ public:
     , response()
     , perf()
     {
+      if ( maximum(comm, ( fixture.ok() ? 0 : 1 ) ) ) {
+        throw std::runtime_error(std::string("Problem fixture setup failed"));
+      }
+
       perf.global_elem_count  = fixture.elem_count_global();
       perf.global_node_count  = fixture.node_count_global();
 

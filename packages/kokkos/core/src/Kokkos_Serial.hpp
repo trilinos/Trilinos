@@ -283,6 +283,10 @@ public:
     : m_league_size( league_size_request )
     { }
 
+  template< class FunctorType >
+  inline static
+  int team_size_max( const FunctorType & ) { return 1 ; }
+
   typedef Impl::SerialTeamMember  member_type ;
 };
 
@@ -391,7 +395,7 @@ public:
   ParallelFor( const FunctorType & functor
              , const Policy      & policy )
     {
-      const int shared_size = FunctorShmemSize< FunctorType >::value( functor );
+      const int shared_size = FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() );
 
       Kokkos::Serial::scratch_memory_resize( 0 , shared_size );
 
@@ -416,7 +420,7 @@ public:
                 )
     {
       const int reduce_size = Reduce::value_size( functor );
-      const int shared_size = FunctorShmemSize< FunctorType >::value( functor );
+      const int shared_size = FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() );
       void * const scratch_reduce = Kokkos::Serial::scratch_memory_resize( reduce_size , shared_size );
 
       const pointer_type result_ptr =

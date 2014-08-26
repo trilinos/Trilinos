@@ -288,7 +288,7 @@ struct SharedTeamFunctor {
 
   // Tell how much shared memory will be required by this functor:
   inline
-  unsigned shmem_size() const
+  unsigned team_shmem_size( int /* team_size */ ) const
   {
     return shared_int_array_type::shmem_size( SHARED_COUNT ) +
            shared_int_array_type::shmem_size( SHARED_COUNT );

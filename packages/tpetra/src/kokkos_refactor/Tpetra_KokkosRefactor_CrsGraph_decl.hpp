@@ -162,9 +162,9 @@ namespace Tpetra {
     typedef Kokkos::StaticCrsGraph<LocalOrdinal,
                                    Kokkos::LayoutLeft,
                                    device_type, size_t> LocalStaticCrsGraphType;
-    typedef Kokkos::View<const size_t*, typename Node::device_type> t_RowPtrs;
-    typedef Kokkos::View<      size_t*, typename Node::device_type> t_RowPtrsNC;
-    typedef Kokkos::View<LocalOrdinal*, typename Node::device_type> t_LocalOrdinal_1D;
+    typedef Kokkos::View<const size_t*, device_type> t_RowPtrs;
+    typedef Kokkos::View<      size_t*, device_type> t_RowPtrsNC;
+    typedef Kokkos::View<LocalOrdinal*, device_type> t_LocalOrdinal_1D;
 
     //! The Map specialization used by this class.
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;

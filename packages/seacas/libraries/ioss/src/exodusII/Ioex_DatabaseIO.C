@@ -1208,6 +1208,19 @@ namespace Ioex {
       }
       if (error < 0)
         exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+      // Check for corrupt incomplete nemesis information.  Some old files are being
+      // used which do not have the correct nemesis sharing data. They can be identified
+      // by an incorrect global node count (typically equal to 1).
+      if (!isSerialParallel && global_nodes < nodeCount) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Invalid nemesis information found in file '"
+	       << util().decode_filename(get_filename(), isParallel) << "\n"
+	       << "       Global node count is  " << global_nodes
+	       << " which is less than the node count on processor " << util().parallel_rank()
+	       << " which is " << nodeCount;
+	IOSS_ERROR(errmsg);
+      }
     }
 
     commsetNodeCount = num_node_cmaps;

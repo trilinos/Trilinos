@@ -113,6 +113,8 @@ public:
   enum Decompose { DecomposeNode , DecomposeElem };
   enum ElemOrder { ElemLinear , ElemQuadratic };
 
+  bool ok() const { return m_ok ; }
+
   BoxElemPart( const ElemOrder elem_order ,
                const Decompose decompose ,
                const size_t global_size ,
@@ -279,7 +281,7 @@ public:
 private:
 
   // Maximum number of processes in a neighborhood, including this process
-  enum { PROC_NEIGH_MAX = 32 };
+  enum { PROC_NEIGH_MAX = 64 };
 
   void local( const size_t  rank ,
                     size_t  uses_elem[][2] ,
@@ -288,6 +290,7 @@ private:
 
   size_t  m_global_size ;
   size_t  m_global_rank ;
+
   Decompose m_decompose ;
   ElemOrder m_elem_order ;
 
@@ -304,6 +307,8 @@ private:
   size_t m_send_node_box[ PROC_NEIGH_MAX ][3][2] ;
   size_t m_send_node[     PROC_NEIGH_MAX ][2] ;
   size_t m_send_node_count ;
+
+  bool   m_ok ;
 };
 
 } // namespace Example

@@ -127,7 +127,7 @@ public:
               , const Policy      & policy )
     : m_func( functor )
     , m_policy( policy )
-    , m_shared( FunctorShmemSize< FunctorType >::value( functor ) )
+    , m_shared( FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() ) )
     {
       ThreadsExec::resize_scratch( 0 , Policy::member_type::team_reduce_size() + m_shared );
 
@@ -232,7 +232,7 @@ public:
                 , const Policy      & policy )
     : m_func( functor )
     , m_policy( policy )
-    , m_shared( FunctorShmemSize< FunctorType >::value( functor ) )
+    , m_shared( FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() ) )
     {
       ThreadsExec::resize_scratch( Reduce::value_size( m_func ) , Policy::member_type::team_reduce_size() + m_shared );
 
@@ -247,7 +247,7 @@ public:
                 , const ViewType    & result )
     : m_func( functor )
     , m_policy( policy )
-    , m_shared( FunctorShmemSize< FunctorType >::value( functor ) )
+    , m_shared( FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() ) )
     {
       ThreadsExec::resize_scratch( Reduce::value_size( m_func ) , Policy::member_type::team_reduce_size() + m_shared );
 
