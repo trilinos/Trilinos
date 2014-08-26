@@ -98,7 +98,7 @@ namespace {
     out << "Creating mesh row Map" << endl;
 
     const size_t numLocalMeshPoints = 12;
-    const GO indexBase = 0;
+    const GO indexBase = 1;
     // mfh 16 May 2014: Tpetra::CrsGraph still needs the row Map as an
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
@@ -193,7 +193,7 @@ namespace {
     out << "Creating mesh row Map" << endl;
 
     const size_t numLocalMeshPoints = 12;
-    const GO indexBase = 0;
+    const GO indexBase = 1;
     // Use a block size that is not a power of 2, to test correctness
     // in case the matrix pads blocks for SIMD-ization.
     const LO blockSize = 3;
@@ -222,8 +222,10 @@ namespace {
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
       for (size_t k = 0; k < maxNumEntPerRow; ++k) {
-        gblColInds[k] = (gblRowInd + static_cast<GO> (k + 1)) %
+        const GO gblColInd = indexBase +
+          ((gblRowInd - indexBase) + static_cast<GO> (k + 1)) %
           static_cast<GO> (globalNumRows);
+        gblColInds[k] = gblColInd;
       }
       graph.insertGlobalIndices (gblRowInd, gblColInds ());
     }
@@ -290,7 +292,8 @@ namespace {
       // Compute what the local column indices in this row _should_ be.
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
       for (LO k = 0; k < numEnt; ++k) {
-        const GO gblColInd = (gblRowInd + static_cast<GO> (k + 1)) %
+        const GO gblColInd = indexBase +
+          ((gblRowInd - indexBase) + static_cast<GO> (k + 1)) %
           static_cast<GO> (globalNumRows);
         lclColInds[k] = meshColMap.getLocalElement (gblColInd);
       }
@@ -822,7 +825,7 @@ namespace {
     out << "Creating mesh row Map" << endl;
 
     const size_t numLocalMeshPoints = 12;
-    const GO indexBase = 0;
+    const GO indexBase = 1;
     // mfh 16 May 2014: Tpetra::CrsGraph still needs the row Map as an
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
@@ -841,8 +844,8 @@ namespace {
       for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
         // Insert two entries, neither of which are on the diagonal.
         Teuchos::Array<GO> gblCols (2);
-        gblCols[0] = (gblRow + 1) % numGlobalMeshPoints;
-        gblCols[1] = (gblRow + 2) % numGlobalMeshPoints;
+        gblCols[0] = indexBase + ((gblRow - indexBase) + 1) % numGlobalMeshPoints;
+        gblCols[1] = indexBase + ((gblRow - indexBase) + 2) % numGlobalMeshPoints;
         graph.insertGlobalIndices (gblRow, gblCols ());
       }
     }
@@ -939,7 +942,7 @@ namespace {
     out << "Creating mesh row Map" << endl;
 
     const size_t numLocalMeshPoints = 12;
-    const GO indexBase = 0;
+    const GO indexBase = 1;
     // mfh 16 May 2014: Tpetra::CrsGraph still needs the row Map as an
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
@@ -958,8 +961,8 @@ namespace {
       for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
         // Insert two entries, neither of which are on the diagonal.
         Teuchos::Array<GO> gblCols (2);
-        gblCols[0] = (gblRow + 1) % numGlobalMeshPoints;
-        gblCols[1] = (gblRow + 2) % numGlobalMeshPoints;
+        gblCols[0] = indexBase + ((gblRow - indexBase) + 1) % numGlobalMeshPoints;
+        gblCols[1] = indexBase + ((gblRow - indexBase) + 2) % numGlobalMeshPoints;
         graph.insertGlobalIndices (gblRow, gblCols ());
       }
     }
@@ -1111,7 +1114,7 @@ namespace {
 
     out << "Create nonoverlapping mesh row Map" << endl;
     const size_t numLocalMeshPoints = 12;
-    const GO indexBase = 0;
+    const GO indexBase = 1;
     // mfh 16 May 2014: Tpetra::CrsGraph still needs the row Map as an
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
@@ -1149,8 +1152,8 @@ namespace {
       for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
         // Insert two entries, neither of which are on the diagonal.
         Teuchos::Array<GO> gblCols (2);
-        gblCols[0] = (gblRow + 1) % numGlobalMeshPoints;
-        gblCols[1] = (gblRow + 2) % numGlobalMeshPoints;
+        gblCols[0] = indexBase + ((gblRow - indexBase) + 1) % numGlobalMeshPoints;
+        gblCols[1] = indexBase + ((gblRow - indexBase) + 2) % numGlobalMeshPoints;
         overlapGraph.insertGlobalIndices (gblRow, gblCols ());
       }
     }
@@ -1283,20 +1286,19 @@ namespace {
   // Test BlockCrsMatrix's localGS
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, localGSDiagonalMatrix, Scalar, LO, GO, Node )
   {
-
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    // typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef Tpetra::Experimental::BlockVector<Scalar, LO, GO, Node> BV;
     typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
-    typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
+    // typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
+    // typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
-    typedef typename BCM::little_block_type little_block_type;
-    typedef typename BV::little_vec_type little_vec_type;
+    // typedef typename BCM::little_block_type little_block_type;
+    // typedef typename BV::little_vec_type little_vec_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
-    typedef typename STS::magnitudeType MT;
+    // typedef typename STS::magnitudeType MT;
 
     const Scalar two = STS::one () + STS::one ();
     const Scalar three = STS::one () + STS::one () + STS::one ();
@@ -1312,7 +1314,7 @@ namespace {
     out << "Creating mesh row Map" << endl;
 
     const size_t numLocalMeshPoints = 12;
-    const GO indexBase = 0;
+    const GO indexBase = 1;
     // Use a block size that is not a power of 2, to test correctness
     // in case the matrix pads blocks for SIMD-ization.
     const LO blockSize = 3;
@@ -1453,20 +1455,19 @@ namespace {
   // Test BlockCrsMatrix's localGS
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, localGSTriangularMatrices, Scalar, LO, GO, Node )
   {
-
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    // typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef Tpetra::Experimental::BlockVector<Scalar, LO, GO, Node> BV;
     typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
-    typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
+    // typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
+    // typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
-    typedef typename BCM::little_block_type little_block_type;
-    typedef typename BV::little_vec_type little_vec_type;
+    // typedef typename BCM::little_block_type little_block_type;
+    // typedef typename BV::little_vec_type little_vec_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
-    typedef typename STS::magnitudeType MT;
+    // typedef typename STS::magnitudeType MT;
 
     const Scalar two = STS::one () + STS::one ();
     const Scalar three = STS::one () + STS::one () + STS::one ();
@@ -1482,7 +1483,7 @@ namespace {
     out << "Creating mesh row Map" << endl;
 
     const size_t numLocalMeshPoints = 3;
-    const GO indexBase = 0;
+    const GO indexBase = 1;
     // Use a block size that is not a power of 2, to test correctness
     // in case the matrix pads blocks for SIMD-ization.
     const LO blockSize = 2;
