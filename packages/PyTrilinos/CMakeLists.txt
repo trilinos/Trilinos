@@ -45,7 +45,7 @@ SET(PyTrilinos_VERSION 4.10d)
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
 # of modules is similar to the packages, except it contains the names
 # of python modules that correspond to nested namespaces, such as
-# NOX.__init__ or NOX.NestedEpetra.Interface.
+# NOX.__init__ or NOX.Epetra.Interface.
 SET(PyTrilinos_PACKAGES "")
 SET(PyTrilinos_MODULES  "")
 
@@ -72,7 +72,7 @@ ENDIF(PyTrilinos_ENABLE_EpetraExt)
 IF(PyTrilinos_ENABLE_Isorropia)
   APPEND_SET(PyTrilinos_PACKAGES Isorropia)
   APPEND_SET(PyTrilinos_MODULES  Isorropia.__init__    )
-  Append_SET(PyTrilinos_MODULES  Isorropia.NestedEpetra)
+  Append_SET(PyTrilinos_MODULES  Isorropia.Epetra)
 ENDIF(PyTrilinos_ENABLE_Isorropia)
 
 IF(PyTrilinos_ENABLE_Pliris)
@@ -122,8 +122,8 @@ IF(PyTrilinos_ENABLE_NOX)
   APPEND_SET(PyTrilinos_MODULES  NOX.StatusTest)
   APPEND_SET(PyTrilinos_MODULES  NOX.Solver    )
   IF(NOX_ENABLE_Epetra)
-    APPEND_SET(PyTrilinos_MODULES NOX.NestedEpetra.__init__ )
-    APPEND_SET(PyTrilinos_MODULES NOX.NestedEpetra.Interface)
+    APPEND_SET(PyTrilinos_MODULES NOX.Epetra.__init__ )
+    APPEND_SET(PyTrilinos_MODULES NOX.Epetra.Interface)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_NOX)
 
@@ -157,8 +157,8 @@ IF(NOX_ENABLE_LOCA)
   APPEND_SET(PyTrilinos_MODULES  LOCA.TurningPoint.MinimallyAugmented)
   APPEND_SET(PyTrilinos_MODULES  LOCA.TurningPoint.MooreSpence       )
   IF(NOX_ENABLE_Epetra)
-    APPEND_SET(PyTrilinos_MODULES  LOCA.NestedEpetra.__init__ )
-    APPEND_SET(PyTrilinos_MODULES  LOCA.NestedEpetra.Interface)
+    APPEND_SET(PyTrilinos_MODULES  LOCA.Epetra.__init__ )
+    APPEND_SET(PyTrilinos_MODULES  LOCA.Epetra.Interface)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(NOX_ENABLE_LOCA)
 

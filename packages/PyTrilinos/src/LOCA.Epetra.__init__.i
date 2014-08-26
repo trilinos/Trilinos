@@ -43,7 +43,7 @@ the following classes:
 "
 %enddef
 
-%module(package      = "PyTrilinos.LOCA.NestedEpetra",
+%module(package      = "PyTrilinos.LOCA.Epetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
@@ -173,8 +173,8 @@ using Teuchos::rcp;
 
 // NOX interface support
 %import "NOX.Abstract.i"
-%import "NOX.NestedEpetra.__init__.i"
-%import "NOX.NestedEpetra.Interface.i"
+%import "NOX.Epetra.__init__.i"
+%import "NOX.Epetra.Interface.i"
 
 // Allow import from the parent directory
 %pythoncode
@@ -187,14 +187,6 @@ from .. import Abstract
 %}
 
 // LOCA base classes
-//%import "LOCA.__init__.i"
-//%import "LOCA.MultiContinuation.i"
-//%import "LOCA.Homotopy.i"
-//%import "LOCA.Pitchfork.MinimallyAugmented.i"
-//%import "LOCA.TurningPoint.MinimallyAugmented.i"
-//%import "LOCA.Abstract.i"
-//%import "LOCA.NestedEpetra.Interface.i"
-//%import "LOCA.Hopf.MinimallyAugmented.i"
 %import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"
 %import(module="Extended") "LOCA_Extended_MultiVector.H"
 %import(module="Extended") "LOCA_Extended_Vector.H"

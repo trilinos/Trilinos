@@ -42,7 +42,7 @@ The purpose of Isorropia.Epetra is to ....
 %module(package      = "PyTrilinos.Isorropia",
 	autodoc      = "1",
 	implicitconv = "1",
-	docstring    = %isorropia_epetra_docstring) NestedEpetra
+	docstring    = %isorropia_epetra_docstring) IsorropiaEpetra
 
 %{
 // Configuration

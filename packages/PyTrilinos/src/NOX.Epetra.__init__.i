@@ -51,7 +51,7 @@ NOX.Epetra provides the following user-level classes:
 "
 %enddef
 
-%module(package      = "PyTrilinos.NOX.NestedEpetra",
+%module(package      = "PyTrilinos.NOX.Epetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
