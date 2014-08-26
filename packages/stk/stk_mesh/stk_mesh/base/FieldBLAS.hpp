@@ -521,7 +521,7 @@ void field_axpy(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
-        ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
+        //ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
         const int kmax = length * fieldSize;
         const Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
         Scalar * y = (Scalar*) field_data(yFieldBase, b);
@@ -562,7 +562,7 @@ void field_axpy(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
-        ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
+        //ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
         const int kmax = length * fieldSize;
         const Scalar * x = static_cast<Scalar*>(field_data(xField, b));
         Scalar * y = (Scalar*) field_data(yField, b);
@@ -603,7 +603,7 @@ void INTERNAL_field_product(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
-        ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
+        //ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
         const int kmax = length * fieldSize;
         const Scalar * x = (Scalar*)field_data(xFieldBase, b);
         const Scalar * y = (Scalar*)field_data(yFieldBase, b);
@@ -673,8 +673,8 @@ void field_product(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
-        ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
-        ThrowAssert(fieldSize == field_bytes_per_entity(zField, b) / sizeof(Scalar));
+        //ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
+        //ThrowAssert(fieldSize == field_bytes_per_entity(zField, b) / sizeof(Scalar));
         const int kmax = length * fieldSize;
         const Scalar * x = (Scalar*)field_data(xField, b);
         const Scalar * y = (Scalar*)field_data(yField, b);
@@ -715,7 +715,7 @@ void INTERNAL_field_copy(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
-        ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
+        //ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
         const int kmax = length * fieldSize;
         const Scalar * x = (Scalar*)field_data(xFieldBase, b);
         Scalar * y = (Scalar*)field_data(yFieldBase, b);
@@ -780,7 +780,7 @@ void field_copy(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
-        ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
+        //ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
         const int kmax = length * fieldSize;
         const Scalar * x = (Scalar*)field_data(xField, b);
         Scalar * y = (Scalar*)field_data(yField, b);
@@ -821,7 +821,7 @@ Scalar field_dot(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
-        ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
+        //ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
         const int kmax = length * fieldSize;
         const Scalar * x = (Scalar*)field_data(xField, b);
         const Scalar * y = (Scalar*)field_data(yField, b);
@@ -858,7 +858,7 @@ std::complex<Scalar>  field_dot(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(std::complex<Scalar>);
-        ThrowAssert(fieldSize==field_bytes_per_entity(yField,b)/sizeof(std::complex<Scalar>));
+        //ThrowAssert(fieldSize==field_bytes_per_entity(yField,b)/sizeof(std::complex<Scalar>));
         const int kmax = length * fieldSize;
         const std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xField, b);
         const std::complex<Scalar>* y = (std::complex<Scalar>*)field_data(yField, b);
@@ -922,7 +922,7 @@ void field_dot(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(std::complex<Scalar>);
-        ThrowAssert(fieldSize==field_bytes_per_entity(yFieldBase,b)/sizeof(std::complex<Scalar>));
+        //ThrowAssert(fieldSize==field_bytes_per_entity(yFieldBase,b)/sizeof(std::complex<Scalar>));
         const int kmax = length * fieldSize;
         const std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xFieldBase, b);
         const std::complex<Scalar>* y = (std::complex<Scalar>*)field_data(yFieldBase, b);
@@ -964,7 +964,7 @@ void field_dot(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
-        ThrowAssert(fieldSize==field_bytes_per_entity(yFieldBase,b)/sizeof(std::complex<Scalar>));
+        //ThrowAssert(fieldSize==field_bytes_per_entity(yFieldBase,b)/sizeof(std::complex<Scalar>));
         const int kmax = length * fieldSize;
         const Scalar* x = (Scalar*)field_data(xFieldBase, b);
         const Scalar* y = (Scalar*)field_data(yFieldBase, b);
@@ -1218,7 +1218,7 @@ void field_swap(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
-        ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
+        //ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
         const int kmax = length * fieldSize;
         Scalar * x = (Scalar*)field_data(xField, b);
         Scalar * y = (Scalar*)field_data(yField, b);
@@ -1253,7 +1253,7 @@ void INTERNAL_field_swap(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
-        ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
+        //ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
         const int kmax = length * fieldSize;
         Scalar * x = (Scalar*)field_data(xFieldBase, b);
         Scalar * y = (Scalar*)field_data(yFieldBase, b);
