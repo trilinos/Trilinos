@@ -64,7 +64,13 @@
 #else
 #include "ptscotch.h"
 #endif
+#endif
 
+#ifdef HAVE_ZOLTAN2_PARMETIS
+#include "parmetis.h"
+#if (PARMETIS_MAJOR_VERSION < 4)
+#error "Specified version of ParMETIS is not compatible with Zoltan2; upgrade to ParMETIS v4 or later, or build Zoltan2 without ParMETIS."
+#endif
 #endif
 
 #define PRINTMSG(s) \

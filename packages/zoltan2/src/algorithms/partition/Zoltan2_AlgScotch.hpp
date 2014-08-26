@@ -52,13 +52,39 @@
 #include <Zoltan2_TPLTraits.hpp>
 
 ////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_Scotch.hpp
-//! \brief Parallel graph partitioning using Scotch.
+//! \file Zoltan2_AlgScotch.hpp
+//! \brief interface to the Scotch third-party library
+
+////////////////////////////////////////////////////////////////////////
+#ifndef HAVE_ZOLTAN2_SCOTCH
 
 namespace Zoltan2 {
+// Error handling for when Scotch is requested
+// but Zoltan2 not built with Scotch.
 
+template <typename Adapter>
+class AlgPTScotch : public Algorithm<Adapter>
+{
+public:
+  AlgPTScotch(const RCP<const Environment> &env,
+              const RCP<const Comm<int> > &problemComm,
+              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
+  )
+  {
+    throw std::runtime_error(
+          "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
+          "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
+  }
+};
+}
+#endif
+
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_ZOLTAN2_SCOTCH
+
+namespace Zoltan2 {
 
 // stdint.h for int64_t in scotch header
 #include <stdint.h>
@@ -90,17 +116,6 @@ namespace Zoltan2 {
 #endif  // HAVE_SCOTCH_GETMEMORYMAX
 #endif  // SHOW_ZOLTAN2_SCOTCH_MEMORY
 
-
-/*! Scotch partitioning method.
- *
- *  \param env  parameters for the problem and library configuration
- *  \param problemComm  the communicator for the problem
- *  \param model a graph
- *
- *  Preconditions: The parameters in the environment have been
- *    processed (committed).
- */
-
 template <typename Adapter>
 class AlgPTScotch : public Algorithm<Adapter>
 {
@@ -124,13 +139,10 @@ public:
    */
   AlgPTScotch(const RCP<const Environment> &env__,
               const RCP<const Comm<int> > &problemComm__,
-#ifdef HAVE_ZOLTAN2_MPI
-              MPI_Comm mpicomm__,
-#endif
               const RCP<graphModel_t> &model__) :
     env(env__), problemComm(problemComm__), 
 #ifdef HAVE_ZOLTAN2_MPI
-    mpicomm(mpicomm__),
+    mpicomm(TeuchosConst2MPI(problemComm__)),
 #endif
     model(model__)
   { }
@@ -142,7 +154,7 @@ private:
   const RCP<const Environment> env;
   const RCP<const Comm<int> > problemComm;
 #ifdef HAVE_ZOLTAN2_MPI
-  MPI_Comm mpicomm;
+  const MPI_Comm mpicomm;
 #endif
   const RCP<GraphModel<typename Adapter::base_adapter_t> > model;
 
@@ -425,34 +437,11 @@ void AlgPTScotch<Adapter>::scale_weights(
 
 }
 
-////////////////////////////////////////////////////////////////////////
-#else // DO NOT HAVE_ZOLTAN2_SCOTCH
-
-// Error handling for when Scotch is requested
-// but Zoltan2 not built with Scotch.
-
-template <typename Adapter>
-class AlgPTScotch : public Algorithm<Adapter>
-{
-public:
-  AlgPTScotch(const RCP<const Environment> &env,
-              const RCP<const Comm<int> > &problemComm,
-#ifdef HAVE_ZOLTAN2_MPI
-              MPI_Comm mpicomm,
-#endif
-              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
-  )
-  {
-    throw std::runtime_error(
-          "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
-          "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
-  }
-};
+} // namespace Zoltan2
 
 #endif // HAVE_ZOLTAN2_SCOTCH
 
 ////////////////////////////////////////////////////////////////////////
 
-} // namespace Zoltan2
 
 #endif

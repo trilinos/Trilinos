@@ -102,6 +102,7 @@ int main(int narg, char** arg)
   std::string inputFile = "";        // Matrix Market or Zoltan file to read
   std::string outputFile = "";       // Matrix Market or Zoltan file to write
   std::string inputPath = testDataFilePath;  // Directory with input file
+  std::string method = "scotch";
   bool verbose = false;              // Verbosity of output
   bool distributeInput = true;
   bool haveFailure = false;
@@ -126,6 +127,8 @@ int main(int narg, char** arg)
   cmdp.setOption("outputFile", &outputFile,
                  "Name of the Matrix Market sparse matrix file to write, "
                  "echoing the input/generated matrix.");
+  cmdp.setOption("method", &method,
+                 "Partitioning method to use:  scotch or parmetis.");
   cmdp.setOption("vertexWeights", &nVwgts,
                  "Number of weights to generate for each vertex");
   cmdp.setOption("edgeWeights", &nEwgts,
@@ -203,7 +206,7 @@ int main(int narg, char** arg)
   Teuchos::ParameterList params;
   
   params.set("partitioning_approach", "partition");
-  params.set("algorithm", "scotch");
+  params.set("algorithm", method);
 
   ////// Create an input adapter for the graph of the Tpetra matrix.
   SparseGraphAdapter adapter(origMatrix->getCrsGraph(), nVwgts, nEwgts);

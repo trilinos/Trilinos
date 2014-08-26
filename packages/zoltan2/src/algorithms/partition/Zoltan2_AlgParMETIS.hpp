@@ -50,37 +50,51 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_Util.hpp>
 
+/////////////////////////////////////////////////////////////////////////////
+//! \file Zoltan2_AlgParMETIS.hpp
+//! \brief Interface to the third-party library ParMETIS
+/////////////////////////////////////////////////////////////////////////////
+
+#ifndef HAVE_ZOLTAN2_PARMETIS
+
+// Error handling for when ParMETIS is requested
+// but Zoltan2 not built with ParMETIS.
+
+namespace Zoltan2 {
+template <typename Adapter>
+class AlgParMETIS : public Algorithm<Adapter>
+{
+public:
+  AlgParMETIS(const RCP<const Environment> &env,
+              const RCP<const Comm<int> > &problemComm,
+              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
+  )
+  {
+    throw std::runtime_error(
+          "BUILD ERROR:  ParMETIS requested but not compiled into Zoltan2.\n"
+          "Please set CMake flag Zoltan2_ENABLE_ParMETIS:BOOL=ON.");
+  }
+};
+}
+
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
 #ifdef HAVE_ZOLTAN2_PARMETIS
 
 #ifndef HAVE_ZOLTAN2_MPI
-#error "ParMETIS requires compilation with MPI.  Configure with -DTPL_ENABLE_MPI:BOOL=ON or -DZoltan2_ENABLE_Parmetis:BOOL=OFF"
-#else
+#error "TPL ParMETIS requires compilation with MPI.  Configure with -DTPL_ENABLE_MPI:BOOL=ON or -DZoltan2_ENABLE_ParMETIS:BOOL=OFF"
+#endif 
 
 #include "parmetis.h"
+
 #if (PARMETIS_MAJOR_VERSION < 4)
 #error "Specified version of ParMETIS is not compatible with Zoltan2; upgrade to ParMETIS v4 or later, or build Zoltan2 without ParMETIS."
 #endif
 
-
-////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_Scotch.hpp
-//! \brief Parallel graph partitioning using Scotch.
-
 namespace Zoltan2 {
-
-/*! ParMETIS interface
- *
- *  \param env  parameters for the problem and library configuration
- *  \param problemComm  the communicator for the problem
- *  \param model a graph
- *
- *  Preconditions: The parameters in the environment have been
- *    processed (committed).
- */
-
-
-
-///////////////////////////////////////////////////////////////////////
 
 template <typename Adapter>
 class AlgParMETIS : public Algorithm<Adapter>
@@ -110,7 +124,7 @@ public:
               const RCP<const Comm<int> > &problemComm__,
               const RCP<graphModel_t> &model__) :
     env(env__), problemComm(problemComm__), 
-    mpicomm(problemComm__->getMPIComm()),
+    mpicomm(TeuchosConst2MPI(problemComm__)),
     model(model__)
   { }
 
@@ -123,7 +137,7 @@ private:
   MPI_Comm mpicomm;
   const RCP<GraphModel<typename Adapter::base_adapter_t> > model;
 
-  void scale_weights(size_t n, StridedData<lno_t, scalar_t> &fwgts,
+  void scale_weights(size_t n, ArrayView<StridedData<lno_t, scalar_t> > &fwgts,
                      pm_idx_t *iwgts);
 };
 
@@ -138,8 +152,7 @@ void AlgParMETIS<Adapter>::partition(
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
-  int ierr = 0;
-  int me = problemComm->getRank();
+  int np = problemComm->getSize();
 
   // Get vertex info
   ArrayView<const gno_t> vtxgnos;
@@ -147,6 +160,8 @@ void AlgParMETIS<Adapter>::partition(
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
   int nVwgt = model->getNumWeightsPerVertex();
   size_t nVtx = model->getVertexList(vtxgnos, xyz, vwgts);
+  pm_idx_t pm_nVtx;
+  TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nVtx, nVtx, env);
 
   pm_idx_t *pm_vwgts;
   if (nVwgt) {
@@ -175,7 +190,11 @@ void AlgParMETIS<Adapter>::partition(
   TPL_Traits<pm_idx_t,gno_t>::ASSIGN_TPL_T_ARRAY(&pm_adjs, adjgnos, env);
 
   // Build vtxdist
-  // TODO
+  pm_idx_t *pm_vtxdist = new pm_idx_t[np+1];
+  pm_vtxdist[0] = 0;
+  Teuchos::gatherAll(*problemComm, 1, &pm_nVtx, 1, &(pm_vtxdist[1]));
+  for (int i = 2; i <= np; i++)
+    pm_vtxdist[i] += pm_vtxdist[i-1];
 
   // Create array for ParMETIS to return results in.
   // Note:  ParMETIS does not like NULL arrays,
@@ -185,65 +204,70 @@ void AlgParMETIS<Adapter>::partition(
 
   // Get target part sizes and imbalance tolerances
 
-  pm_idx_t nCon = (nVwgt > 0 ? 1 : pm_idx_t(nVwgt));
-  pm_real_t *partsizes = new pm_real_t[numGlobalParts*nCon];
-  for (pm_idx_t dim = 0; dim < nCon; dim++) {
+  pm_idx_t pm_nCon = (nVwgt > 0 ? 1 : pm_idx_t(nVwgt));
+  pm_real_t *pm_partsizes = new pm_real_t[numGlobalParts*pm_nCon];
+  for (pm_idx_t dim = 0; dim < pm_nCon; dim++) {
     if (!solution->criteriaHasUniformPartSizes(dim))
       for (size_t i=0; i<numGlobalParts; i++)
-        TPL_Traits<pm_real_t,float>::ASSIGN_TPL_T(partsizes[i*nCon+dim],
-                                          solution->getCriteriaPartSize(dim,i));
+        pm_partsizes[i*pm_nCon+dim] = 
+                     pm_real_t(solution->getCriteriaPartSize(dim,i));
     else
       for (size_t i=0; i<numGlobalParts; i++)
-        partsizes[i*nCon+dim] = pm_real_t(1.0) / pm_real_t(numGlobalParts);
+        pm_partsizes[i*pm_nCon+dim] = pm_real_t(1.) / pm_real_t(numGlobalParts);
   }
-  pm_real_t *imbTols = new pm_real_t[nCon];
-  for (pm_idx_t dim = 0; dim < nCon; dim++)
-    imbTols[dim] = 1.05;  // TODO:  GET THE PARAMETER
+  pm_real_t *pm_imbTols = new pm_real_t[pm_nCon];
+  for (pm_idx_t dim = 0; dim < pm_nCon; dim++)
+    pm_imbTols[dim] = 1.05;  // TODO:  GET THE PARAMETER
 
-  string parmetis_method("PARTKWAY");
-  pm_idx_t wgtflag = 2*(nVwgts > 0) + (nEwgts > 0);
-  pm_idx_t numflag = 0;
+  std::string parmetis_method("PARTKWAY");
+  pm_idx_t pm_wgtflag = 2*(nVwgt > 0) + (nEwgt > 0);
+  pm_idx_t pm_numflag = 0;
 
-  pm_idx_t nPart;
-  TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(nPart, numGlobalParts, env);
+  pm_idx_t pm_nPart;
+  TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nPart, numGlobalParts, env);
 
   if (parmetis_method == "PARTKWAY") {
 
-    pm_idx_t edgecut = -1;
-    pm_idx_t options[3];
-    options[0] = 0;   // Use default options
-    options[1] = 0;   // Debug level (ignored if options[0] == 0)
-    options[2] = 0;   // Seed (ignored if options[0] == 0)
+    pm_idx_t pm_edgecut = -1;
+    pm_idx_t pm_options[3];
+    pm_options[0] = 0;   // Use default options
+    pm_options[1] = 0;   // Debug level (ignored if pm_options[0] == 0)
+    pm_options[2] = 0;   // Seed (ignored if pm_options[0] == 0)
 
-    ParMETIS_V3_PartKway(vtxdist, xadj, adjncy, vwgt, ewgts,
-                         &wgtflag, &numflag, &nCon, &nPart, partsizes,
-                         imbTols, options, &edgecut, pm_partList, &mpicomm);
+    ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts, pm_ewgts,
+                         &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
+                         pm_partsizes, pm_imbTols, pm_options,
+                         &pm_edgecut, pm_partList, &mpicomm);
   }
   else if (parmetis_method == "ADAPTIVE_REPART") {
+    // Get object sizes
     std::cout << "NOT READY FOR ADAPTIVE_REPART YET" << std::endl;
+    exit(-1);
   }
   else if (parmetis_method == "PART_GEOM") {
     // Get coordinate info, too.
     std::cout << "NOT READY FOR PART_GEOM YET" << std::endl;
+    exit(-1);
   }
 
   // Clean up 
-  delete [] partsizes;
-  delete [] imbTols;
+  delete [] pm_vtxdist;
+  delete [] pm_partsizes;
+  delete [] pm_imbTols;
 
   // Load answer into the solution.
 
   ArrayRCP<part_t> partList;
   if (TPL_Traits<pm_idx_t, part_t>::MATCH_TPL_T())
-    partList = ArrayRCP(pm_partList, 0, nVtx, true);
+    partList = ArrayRCP<part_t>(pm_partList, 0, nVtx, true);
   else {
     // TODO Probably should have a TPL_Traits function to do the following
-    partList = ArrayRCP(new part_t[nVtx], 0, nVtx, true);
-    for (pm_idx_t i; i < nVtx; i++) partList[i] = part_t(pm_partList[i]);
+    partList = ArrayRCP<part_t>(new part_t[nVtx], 0, nVtx, true);
+    for (size_t i; i < nVtx; i++) partList[i] = part_t(pm_partList[i]);
     delete [] pm_partList;
   }
 
-  ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
+  ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxgnos);
 
   solution->setParts(gnos, partList, true);
 
@@ -253,95 +277,89 @@ void AlgParMETIS<Adapter>::partition(
   TPL_Traits<pm_idx_t,lno_t>::DELETE_TPL_T_ARRAY(&pm_offsets);
   TPL_Traits<pm_idx_t,gno_t>::DELETE_TPL_T_ARRAY(&pm_adjs);
 
-  if (nVwgts) delete [] pm_vwgts;
-  if (nEwgts) delete [] pm_ewgts;
+  if (nVwgt) delete [] pm_vwgts;
+  if (nEwgt) delete [] pm_ewgts;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // Scale and round scalar_t weights (typically float or double) to 
-// SCOTCH_Num (typically int or long).
+// ParMETIS' idx_t (typically int or long).
 // subject to sum(weights) <= max_wgt_sum.
-// Only scale if deemed necessary.
+// Scale only if deemed necessary.
 //
 // Note that we use ceil() instead of round() to avoid
 // rounding to zero weights.
-// Based on Zoltan's scale_round_weights, mode 1.
+// Based on Zoltan's scale_round_weights, mode 1
 
 template <typename Adapter>
 void AlgParMETIS<Adapter>::scale_weights(
-  size_t n,
-  StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> &fwgts,
-  SCOTCH_Num *iwgts
+  size_t n, 
+  ArrayView<StridedData<typename Adapter::lno_t,
+                        typename Adapter::scalar_t> > &fwgts,
+  pm_idx_t *iwgts
 )
 {
   const double INT_EPSILON = 1e-5;
+  const int nWgt = fwgts.size();
 
-  SCOTCH_Num nonint, nonint_local = 0;
-  double sum_wgt, sum_wgt_local = 0.;
-  double max_wgt, max_wgt_local = 0.;
+  pm_idx_t *nonint_local = new pm_idx_t[nWgt+nWgt]; 
+  pm_idx_t *nonint = nonint_local + nWgt;
+
+  double *sum_wgt_local = new double[nWgt*4];
+  double *max_wgt_local = sum_wgt_local + nWgt;
+  double *sum_wgt = max_wgt_local + nWgt;
+  double *max_wgt = sum_wgt + nWgt;
+
+  for (int i = 0; i < nWgt; i++) {
+    nonint_local[i] = 0;
+    sum_wgt_local[i] = 0.;
+    max_wgt_local[i] = 0; 
+  }
 
   // Compute local sums of the weights 
   // Check whether all weights are integers
-  for (size_t i = 0; i < n; i++) {
-    double fw = double(fwgts[i]);
-    if (!nonint_local){
-      SCOTCH_Num tmp = (SCOTCH_Num) floor(fw + .5); /* Nearest int */
-      if (fabs((double)tmp-fw) > INT_EPSILON) {
-        nonint_local = 1;
+  for (int j = 0; j < nWgt; j++) {
+    for (size_t i = 0; i < n; i++) {
+      double fw = double(fwgts[j][i]);
+      if (!nonint_local[j]) {
+        pm_idx_t tmp = (pm_idx_t) floor(fw + .5); /* Nearest int */
+        if (fabs((double)tmp-fw) > INT_EPSILON) {
+          nonint_local[j] = 1;
+        }
       }
+      sum_wgt_local[j] += fw;
+      if (fw > max_wgt_local[j]) max_wgt_local[j] = fw;
     }
-    sum_wgt_local += fw;
-    if (fw > max_wgt_local) max_wgt_local = fw;
   }
 
-  Teuchos::reduceAll<int,int>(*problemComm, Teuchos::REDUCE_MAX, 1,
-                              &nonint_local,  &nonint);
-  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, 1,
-                                 &sum_wgt_local, &sum_wgt);
-  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_MAX, 1,
-                                 &max_wgt_local, &max_wgt);
+  Teuchos::reduceAll<int,int>(*problemComm, Teuchos::REDUCE_MAX, nWgt,
+                              nonint_local,  nonint);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, nWgt,
+                                 sum_wgt_local, sum_wgt);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_MAX, nWgt,
+                                 max_wgt_local, max_wgt);
 
-  double scale = 1.;
-  const double max_wgt_sum = double(SCOTCH_NUMMAX/8);
+  const double max_wgt_sum = double(std::numeric_limits<pm_idx_t>::max()/8);
+  for (int j = 0; j < nWgt; j++) {
+    double scale = 1.;
 
-  // Scaling needed if weights are not integers or weights' 
-  // range is not sufficient
-  if (nonint || (max_wgt <= INT_EPSILON) || (sum_wgt > max_wgt_sum)) {
-    /* Calculate scale factor */
-    if (sum_wgt != 0.) scale = max_wgt_sum/sum_wgt;
+    // Scaling needed if weights are not integers or weights' 
+    // range is not sufficient
+    if (nonint[j] || (max_wgt[j]<=INT_EPSILON) || (sum_wgt[j]>max_wgt_sum)) {
+      /* Calculate scale factor */
+      if (sum_wgt[j] != 0.) scale = max_wgt_sum/sum_wgt[j];
+    }
+
+    /* Convert weights to positive integers using the computed scale factor */
+    for (size_t i = 0; i < n; i++)
+      iwgts[i*nWgt+j] = (pm_idx_t) ceil(double(fwgts[j][i])*scale);
   }
-
-  /* Convert weights to positive integers using the computed scale factor */
-  for (size_t i = 0; i < n; i++)
-    iwgts[i] = (SCOTCH_Num) ceil(double(fwgts[i])*scale);
+  delete [] nonint_local;
+  delete [] sum_wgt_local;
 }
 
-////////////////////////////////////////////////////////////////////////
-#else // DO NOT HAVE_ZOLTAN2_PARMETIS
-
-// Error handling for when ParMETIS is requested
-// but Zoltan2 not built with ParMETIS.
-
-template <typename Adapter>
-class AlgParMETIS : public Algorithm<Adapter>
-{
-public:
-  AlgParMETIS(const RCP<const Environment> &env,
-              const RCP<const Comm<int> > &problemComm,
-              MPI_Comm mpicomm,
-              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
-  )
-  {
-    throw std::runtime_error(
-          "BUILD ERROR:  ParMETIS requested but not compiled into Zoltan2.\n"
-          "Please set CMake flag Zoltan2_ENABLE_Parmetis:BOOL=ON.");
-  }
-};
+} // namespace Zoltan2
 
 #endif // HAVE_ZOLTAN2_PARMETIS
-
-////////////////////////////////////////////////////////////////////////
-
-} // namespace Zoltan2
 
 #endif
