@@ -66,6 +66,14 @@ namespace Zoltan2 {
 template <typename tpl_t, typename zno_t>
 struct TPL_Traits {
 
+  static inline bool MATCH_TPL_T() 
+  {
+    // Return true is pointer to tpl_t can be safely used as pointer to zno_t
+    return ((sizeof(tpl_t) == sizeof(zno_t)) && 
+            (std::numeric_limits<tpl_t>::is_signed() == 
+             std::numeric_limits<zno_t>::is_signed()));
+  }
+
   static inline void ASSIGN_TPL_T(tpl_t &a, zno_t b,
                                   const RCP<const Environment> &env)
   {
@@ -114,6 +122,9 @@ struct TPL_Traits {
 
 template <typename tpl_t>
 struct TPL_Traits<tpl_t, tpl_t> {
+
+  static inline bool MATCH_TPL_T() {return true;}
+
   static inline void ASSIGN_TPL_T(tpl_t &a, tpl_t b,
                                   const RCP<const Environment> &env)
   { a = b; }
