@@ -1213,13 +1213,18 @@ namespace Ioex {
       // used which do not have the correct nemesis sharing data. They can be identified
       // by an incorrect global node count (typically equal to 1).
       if (!isSerialParallel && global_nodes < nodeCount) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: Invalid nemesis information found in file '"
+//        std::ostringstream errmsg;
+//        errmsg << "ERROR: Invalid nemesis information found in file '"
+//               << util().decode_filename(get_filename(), isParallel) << "\n"
+//               << "       Global node count is  " << global_nodes
+//               << " which is less than the node count on processor " << util().parallel_rank()
+//               << " which is " << nodeCount;
+//        IOSS_ERROR(errmsg);
+        std::cerr << "ERROR: Invalid nemesis information found in file '"
                << util().decode_filename(get_filename(), isParallel) << "\n"
                << "       Global node count is  " << global_nodes
                << " which is less than the node count on processor " << util().parallel_rank()
                << " which is " << nodeCount;
-        IOSS_ERROR(errmsg);
       }
     }
 
