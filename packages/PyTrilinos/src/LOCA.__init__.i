@@ -245,6 +245,6 @@ import MultiPredictor
 
 # Epetra namespace
 __all__.append("Epetra")
-import NestedEpetra as Epetra
+from . import Epetra
 %}
 #endif

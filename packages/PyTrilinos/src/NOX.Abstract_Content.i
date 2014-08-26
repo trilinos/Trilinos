@@ -36,7 +36,7 @@
 // interface file that generates a wrapper file that gets compiled.
 // Its %module directive includes the full package name.  The second
 // is a special interface file that gets %import-ed from the
-// NOX.NestedEpetra.__init__.i file.  It does not include any package
+// NOX.Epetra.__init__.i file.  It does not include any package
 // information.
 
 %{

@@ -21,53 +21,42 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 
-%define %loca_epetra_interface_docstring
+%define %nox_epetra_interface_docstring
 "
-PyTrilinos.LOCA.Epetra.Interface is the python interface to namespace
-Epetra::Interface of the Trilinos continuation algorithm package LOCA:
+PyTrilinos.NOX.Epetra.Interface is the python interface to the
+Epetra::Interface namespace of the Trilinos package NOX:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Epetra.Interface is to provide a concrete Epetra
-implementation of LOCA interfaces.  The python version of
-LOCA.Epetra.Interface supports the following classes:
+The purpose of NOX.Epetra.Interface is to provide base classes the
+user should derive from in order to define the nonlinear function to
+be solved, and if needed, its Jacobian and the desired preconditioner.
 
-    * Required                 - Provides a set of interfaces for users to
-                                 provide information about the nonlinear
-                                 problem to LOCA
-    * MassMatrix               - Used by LOCA.Epetra.Group to provide a link
-                                 to the external code for the coefficients of
-                                 time dependent terms
-    * TimeDependent            - Used by LOCA.Epetra.Group to provide a link
-                                 to the external code for computing the shifted
-                                 matrix
-    * TimeDependentMatrixFree  - Used by LOCA.Epetra.Group to provide a link
-                                 to the external code for applying the shifted
-                                 matrix in a matrix-free setting
+NOX.Epetra.Interface provides the following user-level classes:
+
+    * Required        - Required class for computing the nonlinear function
+    * Jacobian        - Class for computing the Jacobian (if needed)
+    * Preconditioner  - Class for computing the preconditioner (if needed)
 "
 %enddef
 
-%module(package      = "PyTrilinos.LOCA.Epetra",
+%module(package      = "PyTrilinos.NOX.Epetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-	docstring    = %loca_epetra_interface_docstring) Interface
+	docstring    = %nox_epetra_interface_docstring) Interface
 
 %{
 // NumPy includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
-
-// PyTrilinos includes
-#include "PyTrilinos_Teuchos_Util.h"
-#include "PyTrilinos_Epetra_Util.h"
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
@@ -75,17 +64,7 @@ LOCA.Epetra.Interface supports the following classes:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-
-// Local Epetra includes
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPyVector.h"
-#include "Epetra_NumPyIntVector.h"
-#include "Epetra_NumPyFEVector.h"
-#include "Epetra_NumPySerialDenseVector.h"
-#include "Epetra_NumPySerialDenseMatrix.h"
-#include "Epetra_NumPyIntSerialDenseVector.h"
-#include "Epetra_NumPyIntSerialDenseMatrix.h"
-#include "Epetra_NumPySerialSymDenseMatrix.h"
+#include "PyTrilinos_Teuchos_Util.h"
 
 // Epetra includes
 #include "Epetra_LocalMap.h"
@@ -113,18 +92,29 @@ LOCA.Epetra.Interface supports the following classes:
 #include "Epetra_MpiComm.h"
 #endif
 
-// NOX include
-#include "NOX_Epetra_Interface_Required.H"
+// Local Epetra includes
+#include "PyTrilinos_Epetra_Util.h"
+#include "Epetra_NumPyIntVector.h"
+#include "Epetra_NumPyMultiVector.h"
+#include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
+#include "Epetra_NumPySerialDenseVector.h"
 
-// LOCA::Epetra::Interface includes
-#include "LOCA_Epetra_Interface_Required.H"
-#include "LOCA_Epetra_Interface_MassMatrix.H"
-#include "LOCA_Epetra_Interface_TimeDependent.H"
-#include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
+// NOX::Epetra::Interface includes
+#include "NOX_Epetra_Interface_Required.H"
+#include "NOX_Epetra_Interface_Jacobian.H"
+#include "NOX_Epetra_Interface_Preconditioner.H"
 %}
 
 // General ignore directives
-%ignore *::operator=;
+// %ignore *::operator=;   // temp removal
+
+// Include NOX documentation
+%include "NOX_dox.i"
 
 // STL support
 %include "stl.i"
@@ -132,12 +122,11 @@ LOCA.Epetra.Interface supports the following classes:
 // Trilinos module imports
 %import "Teuchos.i"
 
+// Epetra module imports
+%import "Epetra.i"
+
 // Exception handling
 %include "exception.i"
-
-// Include LOCA documentation
-%feature("autodoc", "1");
-%include "LOCA_dox.i"
 
 // Director exception handling
 %feature("director:except")
@@ -160,11 +149,6 @@ LOCA.Epetra.Interface supports the following classes:
     e.restore();
     SWIG_fail;
   }
-  catch(int errCode)
-  {
-    PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
-    SWIG_fail;
-  }
   SWIG_CATCH_STDEXCEPT
   catch (Swig::DirectorException & e)
   {
@@ -177,17 +161,18 @@ LOCA.Epetra.Interface supports the following classes:
 }
 
 // Teuchos::RCPs typemaps
-%teuchos_rcp(LOCA::Epetra::Interface::Required)
-%teuchos_rcp(LOCA::Epetra::Interface::MassMatrix)
-%teuchos_rcp(LOCA::Epetra::Interface::TimeDependent)
-%teuchos_rcp(LOCA::Epetra::Interface::TimeDependentMatrixFree)
+%teuchos_rcp(NOX::Epetra::Interface::Required)
+%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
+%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
 
 ///////////////////////
 // NOX_Utils support //
 ///////////////////////
 %import "NOX_Utils.i"
 
-
+///////////////////////////////////////////
+// NOX_Epetra_Interface_Required support //
+///////////////////////////////////////////
 %feature("autodoc",
 "computeF(self, Epetra.Vector x, Epetra.Vector F, FillType flag) -> bool
 
@@ -209,22 +194,18 @@ LOCA.Epetra.Interface supports the following classes:
 
   By returning False, you tell NOX that computeF() was unsuccessful.
 ")
-LOCA::Epetra::Interface::Required::computeF;
+NOX::Epetra::Interface::Required::computeF;
+%feature("director") NOX::Epetra::Interface::Required;
+%include "NOX_Epetra_Interface_Required.H"
 
-%import "NOX.Epetra.Interface.i"
+///////////////////////////////////////////
+// NOX_Epetra_Interface_Jacobian support //
+///////////////////////////////////////////
+%feature("director") NOX::Epetra::Interface::Jacobian;
+%include "NOX_Epetra_Interface_Jacobian.H"
 
-%feature("director") LOCA::Epetra::Interface::Required;
-%include "LOCA_Epetra_Interface_Required.H"
-
-%feature("director") LOCA::Epetra::Interface::MassMatrix;
-%include "LOCA_Epetra_Interface_MassMatrix.H"
-
-%feature("director") LOCA::Epetra::Interface::TimeDependent;
-%include "LOCA_Epetra_Interface_TimeDependent.H"
-
-%feature("director") LOCA::Epetra::Interface::TimeDependentMatrixFree;
-// The following #define is to change the name of LOCA method
-// arguments that conflict with a SWIG director method argument
-#define result loca_result
-%include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
-#undef result
+/////////////////////////////////////////////////
+// NOX_Epetra_Interface_Preconditioner support //
+/////////////////////////////////////////////////
+%feature("director") NOX::Epetra::Interface::Preconditioner;
+%include "NOX_Epetra_Interface_Preconditioner.H"
