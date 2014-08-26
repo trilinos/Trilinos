@@ -317,7 +317,7 @@ public:
   void operator()(void) const
   {
     // Iterate this block through the league
-    for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += blockDim.x ) {
+    for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += gridDim.x ) {
 
       const team_member member( kokkos_impl_cuda_shared_memory<void>()
                               , m_shmem_begin
