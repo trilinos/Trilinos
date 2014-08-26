@@ -900,8 +900,8 @@ static int scale_round_weights(float *fwgts, weighttype *iwgts, int n, int dim,
       for (i=0; i<n; i++){
         for (j=0; j<dim; j++){
           if (!nonint_local[j]){
-            /* tmp = (int) roundf(fwgts[i]);  EB: Valid C99, but not C89 */
-            tmp = (int) floor((double) fwgts[i] + .5); /* Nearest int */
+            /* tmp = (int) roundf(fwgts[i*dim+j]);  EB: Valid C99, but not C89 */
+            tmp = (int) floor((double) fwgts[i*dim+j] + .5); /* Nearest int */
             if (fabs((double)tmp-fwgts[i*dim+j]) > INT_EPSILON){
               nonint_local[j] = 1;
             }
