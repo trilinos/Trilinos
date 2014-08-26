@@ -1309,6 +1309,14 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
 
     mesh::Selector *select = new mesh::Selector(selector);
     io_cs->property_add(Ioss::Property(internal_selector_name, select, false));
+
+    // Update global node and element count...
+    stk::mesh::Selector allEntities = meta.universal_part();
+    std::vector<unsigned> entityCounts;
+    stk::mesh::count_entities(allEntities, bulk, entityCounts);
+    
+    io_region.property_add(Ioss::Property("global_node_count",    (int64_t)entityCounts[stk::topology::NODE_RANK]));
+    io_region.property_add(Ioss::Property("global_element_count", (int64_t)entityCounts[stk::topology::ELEMENT_RANK]));
   }
 }
 
