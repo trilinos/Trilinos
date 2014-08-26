@@ -294,9 +294,9 @@ struct FortranBLAS<std::complex<Scalar> >
         Scalar amax = Scalar(0.0);
         int result = 0;
         for(int k = 0 ; k < kmax ; ++k) {
-            if (amax<std::abs(x[k])) {
+            if (amax < std::norm(x[k])) {
                 result = k;
-                amax = std::abs(x[k]);
+                amax = std::norm(x[k]);
             }
         }
         return result;
@@ -307,11 +307,11 @@ struct FortranBLAS<std::complex<Scalar> >
         //        const int one = 1;
         //        return (SIERRA_FORTRAN(izamin)(&kmax, x, &one) - 1); //dne
         int result = 0;
-        Scalar amin=std::abs(x[0]);
+        Scalar amin=std::norm(x[0]);
         for(int k = 0 ; k < kmax ; ++k) {
-            if (std::abs(x[k])<amin) {
+            if (std::norm(x[k])<amin) {
                 result = k;
-                amin = std::abs(x[k]);
+                amin = std::norm(x[k]);
             }
         }
         return result;
@@ -1908,10 +1908,10 @@ Entity INTERNAL_field_eamax_complex(
             std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xFieldBase, b);
 
             priv_iamax = FortranBLAS<std::complex<Scalar> >::iamax(kmax,x);
-            if (priv_amax<std::abs(x[priv_iamax]))
+            if (priv_amax<std::norm(x[priv_iamax]))
             {
                 priv_result = b[priv_iamax];
-                priv_amax = std::abs(x[priv_iamax]);
+                priv_amax = std::norm(x[priv_iamax]);
                 shar_amax = priv_amax;
             }
         }
@@ -2400,10 +2400,10 @@ Entity INTERNAL_field_eamin_complex(
             std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xFieldBase, b);
 
             priv_iamin = FortranBLAS<std::complex<Scalar> >::iamin(kmax,x);
-            if (std::abs(x[priv_iamin])<priv_amin)
+            if (std::norm(x[priv_iamin])<priv_amin)
             {
                 priv_result = b[priv_iamin];
-                priv_amin = std::abs(x[priv_iamin]);
+                priv_amin = std::norm(x[priv_iamin]);
                 shar_amin = priv_amin;
             }
         }
