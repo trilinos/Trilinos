@@ -72,7 +72,7 @@ struct BLASFixture {
 };
 
 template<class A>
-BLASFixture<A>::BLASFixture(const A init1,const A init2 = A(), int MeshSize = 0)
+BLASFixture<A>::BLASFixture(const A init1,const A init2 = A(), int MeshSize_x = 0)
 {
     initial_value1 = init1;
     initial_value2 = init2;
@@ -83,6 +83,7 @@ BLASFixture<A>::BLASFixture(const A init1,const A init2 = A(), int MeshSize = 0)
     const double bucket_fraction_to_part_A  = 1.1;
     const double bucket_fraction_to_part_B  = 0.2;
 
+    int MeshSize = MeshSize_x;
     if (MeshSize==0) {
         int MPI_size = 1;
 #ifdef STK_HAS_MPI
