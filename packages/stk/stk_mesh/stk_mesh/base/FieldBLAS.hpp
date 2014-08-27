@@ -367,7 +367,7 @@ struct FortranBLAS<double>
     }
 
     inline
-    static void fill(const int & kmax, const double alpha, double x[],const int inc=1)
+    static void fill(const int & kmax, const double alpha, double x[],const int inc=1) //CR consider std::fill
     {
         for(int k = 0 ; k < kmax*inc ; k+=inc) {
             x[k] = alpha;
@@ -507,21 +507,23 @@ void field_axpy(
         const FieldBase & yFieldBase,
         const Selector selector)
 {
+    ThrowAssert(&xFieldBase.get_mesh()==&yFieldBase.get_mesh());
+    ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
+    ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
+    ThrowAssert(yFieldBase.data_traits().type_info == typeid(Scalar));
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
-    ThrowAssert(xFieldBase.entity_rank()==yFieldBase.entity_rank());
-    ThrowAssert(xFieldBase.data_traits().type_info==typeid(Scalar));
-    ThrowAssert(yFieldBase.data_traits().type_info==typeid(Scalar));
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
-        //ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yFieldBase, b));
         const int kmax = length * fieldSize;
         const Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
         Scalar * y = (Scalar*) field_data(yFieldBase, b);
@@ -537,8 +539,7 @@ void field_axpy(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() &
-            selectField(xFieldBase) & selectField(yFieldBase);
+    const Selector selector = selectField(xFieldBase) & selectField(yFieldBase);
     field_axpy(alpha,xFieldBase,yFieldBase,selector);
 }
 
@@ -550,19 +551,21 @@ void field_axpy(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
         const Selector selector)
 {
+    ThrowAssert(&xField.get_mesh()==&yField.get_mesh());
+    ThrowAssert(xField.entity_rank() == yField.entity_rank());
+
     BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
-    ThrowAssert(xField.entity_rank()==yField.entity_rank());
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);} //CR mention in manual?
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
-        //ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yField, b));
         const int kmax = length * fieldSize;
         const Scalar * x = static_cast<Scalar*>(field_data(xField, b));
         Scalar * y = (Scalar*) field_data(yField, b);
@@ -578,8 +581,7 @@ void field_axpy(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() &
-            selectField(xField) & selectField(yField);
+    const Selector selector = selectField(xField) & selectField(yField);
     field_axpy(alpha,xField,yField,selector);
 }
 
@@ -591,23 +593,22 @@ void INTERNAL_field_product(
         const FieldBase & zFieldBase,
         const Selector selector)
 {
-
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
-        //ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yFieldBase, b));
         const int kmax = length * fieldSize;
-        const Scalar * x = (Scalar*)field_data(xFieldBase, b);
-        const Scalar * y = (Scalar*)field_data(yFieldBase, b);
-        Scalar * z = (Scalar*)field_data(zFieldBase, b);
+        const Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
+        const Scalar * y = static_cast<Scalar*>(field_data(yFieldBase, b));
+        Scalar * z = static_cast<Scalar*>(field_data(zFieldBase, b));
 
         FortranBLAS<Scalar>::product(kmax,x,y,z);
     }
@@ -620,25 +621,27 @@ void field_product(
         const FieldBase & zFieldBase,
         const Selector selector)
 {
-    ThrowAssert(xFieldBase.entity_rank()==yFieldBase.entity_rank());
-    ThrowAssert(xFieldBase.data_traits().type_info==yFieldBase.data_traits().type_info);
+    ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
+    ThrowAssert(yFieldBase.entity_rank() == zFieldBase.entity_rank());
+    ThrowAssert(&xFieldBase.get_mesh() == &yFieldBase.get_mesh());
+    ThrowAssert(&yFieldBase.get_mesh() == &zFieldBase.get_mesh());
+    ThrowAssert(xFieldBase.data_traits().type_info == yFieldBase.data_traits().type_info);
+    ThrowAssert(yFieldBase.data_traits().type_info == zFieldBase.data_traits().type_info);
 
-    if (xFieldBase.data_traits().type_info==typeid(double)) {
+    if (xFieldBase.data_traits().type_info == typeid(double)) {
         INTERNAL_field_product<double>(xFieldBase,yFieldBase,zFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(float)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(float)) {
         INTERNAL_field_product<float>(xFieldBase,yFieldBase,zFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<double>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<double>)) {
         INTERNAL_field_product<std::complex<double> >(xFieldBase,yFieldBase,zFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<float>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<float>)) {
         INTERNAL_field_product<std::complex<float> >(xFieldBase,yFieldBase,zFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(int)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         INTERNAL_field_product<int>(xFieldBase,yFieldBase,zFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<int>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
         INTERNAL_field_product<std::complex<int> >(xFieldBase,yFieldBase,zFieldBase,selector);
     } else {
-        char cerrBuffer [100];
-        sprintf(cerrBuffer,"Error in field_product; field is of type %s which is not supported",xFieldBase.data_traits().type_info.name());
-        ThrowAssertMsg(false,cerrBuffer);
+        ThrowAssertMsg(false,"Error in field_product; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
 }
 
@@ -648,8 +651,7 @@ void field_product(
         const FieldBase & yFieldBase,
         const FieldBase & zFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() &
-            selectField(xFieldBase) & selectField(yFieldBase);
+    const Selector selector = selectField(xFieldBase) & selectField(yFieldBase);
     field_product(xFieldBase,yFieldBase,zFieldBase,selector);
 }
 
@@ -661,24 +663,28 @@ void field_product(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & zField,
         const Selector selector)
 {
+    ThrowAssert(xField.entity_rank() == yField.entity_rank());
+    ThrowAssert(yField.entity_rank() == zField.entity_rank());
+    ThrowAssert(&xField.get_mesh() == &yField.get_mesh());
+    ThrowAssert(&yField.get_mesh() == &zField.get_mesh());
+
     BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
-    ThrowAssert(xField.entity_rank()==yField.entity_rank());
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
-        //ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
-        //ThrowAssert(fieldSize == field_bytes_per_entity(zField, b) / sizeof(Scalar));
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yField, b));
+        ThrowAssert(fieldSize == field_scalars_per_entity(zField, b));
         const int kmax = length * fieldSize;
-        const Scalar * x = (Scalar*)field_data(xField, b);
-        const Scalar * y = (Scalar*)field_data(yField, b);
-        Scalar * z = (Scalar*)field_data(zField, b);
+        const Scalar * x = static_cast<Scalar*>(field_data(xField, b));
+        const Scalar * y = static_cast<Scalar*>(field_data(yField, b));
+        Scalar * z = static_cast<Scalar*>(field_data(zField, b));
 
         FortranBLAS<Scalar>::product(kmax,x,y,z);
     }
@@ -691,8 +697,7 @@ void field_product(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & zField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() &
-            selectField(xField) & selectField(yField);
+    const Selector selector = selectField(xField) & selectField(yField);
     field_product(xField,yField,zField,selector);
 }
 
@@ -707,18 +712,18 @@ void INTERNAL_field_copy(
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
-        //ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yFieldBase, b));
         const int kmax = length * fieldSize;
-        const Scalar * x = (Scalar*)field_data(xFieldBase, b);
-        Scalar * y = (Scalar*)field_data(yFieldBase, b);
+        const Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
+        Scalar * y = static_cast<Scalar*>(field_data(yFieldBase, b));
 
         FortranBLAS<Scalar>::copy(kmax,x,y);
     }
@@ -730,25 +735,24 @@ void field_copy(
         const FieldBase & yFieldBase,
         const Selector selector)
 {
-    ThrowAssert(xFieldBase.entity_rank()==yFieldBase.entity_rank());
-    ThrowAssert(xFieldBase.data_traits().type_info==yFieldBase.data_traits().type_info);
+    ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
+    ThrowAssert(&xFieldBase.get_mesh() == &yFieldBase.get_mesh());
+    ThrowAssert(xFieldBase.data_traits().type_info == yFieldBase.data_traits().type_info);
 
-    if (xFieldBase.data_traits().type_info==typeid(double)) {
+    if (xFieldBase.data_traits().type_info == typeid(double)) {
         INTERNAL_field_copy<double>(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(float)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(float)) {
         INTERNAL_field_copy<float>(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<double>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<double>)) {
         INTERNAL_field_copy<std::complex<double> >(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<float>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<float>)) {
         INTERNAL_field_copy<std::complex<float> >(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(int)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         INTERNAL_field_copy<int>(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<int>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
         INTERNAL_field_copy<std::complex<int> >(xFieldBase,yFieldBase,selector);
     } else {
-        char cerrBuffer [100];
-        sprintf(cerrBuffer,"Error in field_copy; field is of type %s which is not supported",xFieldBase.data_traits().type_info.name());
-        ThrowAssertMsg(false,cerrBuffer);
+        ThrowAssertMsg(false,"Error in field_copy; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
 }
 
@@ -757,8 +761,7 @@ void field_copy(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() &
-            selectField(xFieldBase) & selectField(yFieldBase);
+    const Selector selector = selectField(xFieldBase) & selectField(yFieldBase);
     field_copy(xFieldBase,yFieldBase,selector);
 }
 
@@ -769,21 +772,24 @@ void field_copy(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
         const Selector selector)
 {
+
+    ThrowAssert(xField.entity_rank() == yField.entity_rank());
+    ThrowAssert(&xField.get_mesh() == &yField.get_mesh());
+
     BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
-    ThrowAssert(xField.entity_rank()==yField.entity_rank());
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
-        //ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yField, b));
         const int kmax = length * fieldSize;
-        const Scalar * x = (Scalar*)field_data(xField, b);
-        Scalar * y = (Scalar*)field_data(yField, b);
+        const Scalar * x = static_cast<Scalar*>(field_data(xField, b));
+        Scalar * y = static_cast<Scalar*>(field_data(yField, b));
 
         FortranBLAS<Scalar>::copy(kmax,x,y);
     }
@@ -795,8 +801,7 @@ void field_copy(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() &
-            selectField(xField) & selectField(yField);
+    const Selector selector = selectField(xField) & selectField(yField);
     field_copy(xField,yField,selector);
 }
 
@@ -806,33 +811,37 @@ Scalar field_dot(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
         const Selector selector,
-        const MPI_Comm comm) {
-    ThrowAssert(xField.entity_rank()==yField.entity_rank());
+        const MPI_Comm comm)
+{
+
+    ThrowAssert(xField.entity_rank() == yField.entity_rank());
+    ThrowAssert(&xField.get_mesh() == &yField.get_mesh());
+
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
-    Scalar glob_result = Scalar(0.0);
+    Scalar local_result = Scalar(0.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for schedule(static) reduction(+:glob_result)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for schedule(static) reduction(+:local_result)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
-        //ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yField, b));
         const int kmax = length * fieldSize;
-        const Scalar * x = (Scalar*)field_data(xField, b);
-        const Scalar * y = (Scalar*)field_data(yField, b);
-        glob_result+=FortranBLAS<Scalar>::dot(kmax,x,y);
+        const Scalar * x = static_cast<Scalar*>(field_data(xField, b));
+        const Scalar * y = static_cast<Scalar*>(field_data(yField, b));
+        local_result+=FortranBLAS<Scalar>::dot(kmax,x,y);
     }
 
-    Scalar MPI_glob_result = glob_result;
+    Scalar glob_result = local_result;
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result,&MPI_glob_result,1u);
+    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
 #endif
-    return MPI_glob_result;
+    return glob_result;
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -842,38 +851,38 @@ std::complex<Scalar>  field_dot(
         const Field<std::complex<Scalar> ,T1,T2,T3,T4,T5,T6,T7>& yField,
         const Selector selector,
         const MPI_Comm comm) {
-    ThrowAssert(xField.entity_rank()==yField.entity_rank());
+
+    ThrowAssert(xField.entity_rank() == yField.entity_rank());
+    ThrowAssert(&xField.get_mesh() == &yField.get_mesh());
+
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
-    Scalar glob_result_r = Scalar(0.0);
-    Scalar glob_result_i = Scalar(0.0);
+    Scalar local_result_ri [2] = {Scalar(0.0),Scalar(0.0)};
     std::complex<Scalar> priv_tmp;
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:glob_result_r,glob_result_i) schedule(static) private(priv_tmp)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for reduction(+:local_result_ri[0],local_result_ri[1]) schedule(static) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(std::complex<Scalar>);
-        //ThrowAssert(fieldSize==field_bytes_per_entity(yField,b)/sizeof(std::complex<Scalar>));
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yField,b));
         const int kmax = length * fieldSize;
-        const std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xField, b);
-        const std::complex<Scalar>* y = (std::complex<Scalar>*)field_data(yField, b);
+        const std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
+        const std::complex<Scalar>* y = static_cast<std::complex<Scalar>*>(field_data(yField, b));
         priv_tmp=FortranBLAS<std::complex<Scalar> >::dot(kmax,x,y);
-        glob_result_r+=priv_tmp.real();
-        glob_result_i+=priv_tmp.imag();
+        local_result_ri[0]+=priv_tmp.real();
+        local_result_ri[1]+=priv_tmp.imag();
     }
 
-    Scalar MPI_glob_result_r = glob_result_r;
-    Scalar MPI_glob_result_i = glob_result_i;
+    Scalar glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result_r,&MPI_glob_result_r,1u);
-    all_reduce_sum(comm,&glob_result_i,&MPI_glob_result_i,1u);
+    stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
 #endif
-    return std::complex<Scalar> (MPI_glob_result_r,MPI_glob_result_i);
+    return std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -893,87 +902,92 @@ Scalar field_dot(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() & selectField(xField) & selectField(yField);
+    const Selector selector = selectField(xField) & selectField(yField);
     return field_dot(xField,yField,selector);
 }
 
 template<class Scalar>
 inline
 void field_dot(
-        std::complex<Scalar> & MPI_result,
-        const FieldBase & xFieldBase,
+        std::complex<Scalar> & global_result, //CR call it global, not MPI (prop)
+        const FieldBase & xFieldBase, //CR LAST COMMENT LOCATION
         const FieldBase & yFieldBase,
         const Selector selector,
-        const MPI_Comm comm) {
-    ThrowAssert(xFieldBase.entity_rank()==yFieldBase.entity_rank());
-    ThrowAssert(typeid(std::complex<Scalar>)==xFieldBase.data_traits().type_info);
+        const MPI_Comm comm)
+{
+    ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
+    ThrowAssert(&xFieldBase.get_mesh() == &yFieldBase.get_mesh());
+    ThrowAssert(xFieldBase.data_traits().type_info == yFieldBase.data_traits().type_info);
+    ThrowAssert(typeid(std::complex<Scalar>) == xFieldBase.data_traits().type_info);
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
-    Scalar glob_result_r = Scalar(0.0);
-    Scalar glob_result_i = Scalar(0.0);
+    Scalar local_result_ri [2] = {Scalar(0.0),Scalar(0.0)};
     std::complex<Scalar> priv_tmp;
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:glob_result_r,glob_result_i) schedule(static) private(priv_tmp)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for reduction(+:local_result_ri[0],local_result_ri[1]) schedule(static) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(std::complex<Scalar>);
-        //ThrowAssert(fieldSize==field_bytes_per_entity(yFieldBase,b)/sizeof(std::complex<Scalar>));
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yFieldBase,b));
         const int kmax = length * fieldSize;
-        const std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xFieldBase, b);
-        const std::complex<Scalar>* y = (std::complex<Scalar>*)field_data(yFieldBase, b);
-
+        const std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xFieldBase, b));
+        const std::complex<Scalar>* y = static_cast<std::complex<Scalar>*>(field_data(yFieldBase, b));
         priv_tmp=FortranBLAS<std::complex<Scalar> >::dot(kmax,x,y);
-        glob_result_r+=priv_tmp.real();
-        glob_result_i+=priv_tmp.imag();
+        local_result_ri[0]+=priv_tmp.real();
+        local_result_ri[1]+=priv_tmp.imag();
     }
 
-    Scalar MPI_glob_result_r = glob_result_r;
-    Scalar MPI_glob_result_i = glob_result_i;
+    Scalar global_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result_r,&MPI_glob_result_r,1u);
-    all_reduce_sum(comm,&glob_result_i,&MPI_glob_result_i,1u);
+    stk::all_reduce_sum(comm,local_result_ri,global_result_ri,2u);
 #endif
-    MPI_result = std::complex<Scalar> (MPI_glob_result_r,MPI_glob_result_i);
+    global_result = std::complex<Scalar> (global_result_ri[0],global_result_ri[1]);
 }
 
 template<class Scalar>
 inline
 void field_dot(
-        Scalar & MPI_glob_result,
+        Scalar & glob_result,
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
         const Selector selector,
-        const MPI_Comm comm) {
+        const MPI_Comm comm)
+{
+    ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
+    ThrowAssert(&xFieldBase.get_mesh() == &yFieldBase.get_mesh());
+    ThrowAssert(xFieldBase.data_traits().type_info == yFieldBase.data_traits().type_info);
+    ThrowAssert(typeid(Scalar) == xFieldBase.data_traits().type_info);
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
-    ThrowAssert(xFieldBase.entity_rank()==yFieldBase.entity_rank());
-    ThrowAssert(typeid(Scalar)==xFieldBase.data_traits().type_info);
 
-    Scalar glob_result = Scalar(0.0);
+    Scalar local_result = Scalar(0.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:glob_result) schedule(static)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
-        //ThrowAssert(fieldSize==field_bytes_per_entity(yFieldBase,b)/sizeof(std::complex<Scalar>));
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yFieldBase,b));
         const int kmax = length * fieldSize;
-        const Scalar* x = (Scalar*)field_data(xFieldBase, b);
-        const Scalar* y = (Scalar*)field_data(yFieldBase, b);
+        const Scalar* x = static_cast<Scalar*>(field_data(xFieldBase, b));
+        const Scalar* y = static_cast<Scalar*>(field_data(yFieldBase, b));
 
-        glob_result+=FortranBLAS<Scalar>::dot(kmax,x,y);
+        local_result+=FortranBLAS<Scalar>::dot(kmax,x,y);
     }
-    MPI_glob_result = glob_result;
+
+    glob_result = local_result;
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result,&MPI_glob_result,1u);
+    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
 #endif
 }
 
@@ -996,7 +1010,7 @@ void field_dot(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() & selectField(xFieldBase) & selectField(yFieldBase);
+    const Selector selector = selectField(xFieldBase) & selectField(yFieldBase);
     field_dot(result,xFieldBase,yFieldBase,selector);
 }
 
@@ -1005,19 +1019,20 @@ inline
 void field_scale(
         const Scalar alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector) {
+        const Selector selector)
+{
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xField, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
         FortranBLAS<Scalar>::scal(kmax,alpha,x);
     }
@@ -1029,7 +1044,7 @@ void field_scale(
         const Scalar alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() & selectField(xField);
+    const Selector selector = selectField(xField);
     field_scale(alpha,xField,selector);
 }
 
@@ -1038,19 +1053,22 @@ inline
 void field_scale(
         const Scalar alpha,
         const FieldBase & xFieldBase,
-        const Selector selector) {
+        const Selector selector)
+{
+    ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),selector);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xFieldBase, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
         FortranBLAS<Scalar>::scal(kmax,alpha,x);
     }
@@ -1062,7 +1080,7 @@ void field_scale(
         const Scalar alpha,
         const FieldBase & xFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() & selectField(xFieldBase);
+    const Selector selector = selectField(xFieldBase);
     field_scale(alpha,xFieldBase,selector);
 }
 
@@ -1071,19 +1089,20 @@ inline
 void field_fill(
         const Scalar alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector) {
+        const Selector selector)
+{
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xField, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
         FortranBLAS<Scalar>::fill(kmax,alpha,x);
     }
@@ -1095,7 +1114,7 @@ void field_fill(
         const Scalar alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() & selectField(xField);
+    const Selector selector = selectField(xField);
     field_fill(alpha,xField,selector);
 }
 
@@ -1104,20 +1123,21 @@ inline
 void field_fill_component(
         const Scalar* alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector) {
+        const Selector selector)
+{
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         const Bucket & b = *buckets[i];
         const int length = b.size();
-        const int fieldSize = field_scalars_per_entity(xField, b);
-        Scalar * x = (Scalar*)field_data(xField, b);
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
-        for(int j=0;j<fieldSize;j++) {
+        for (unsigned int j = 0; j < fieldSize; j++) {
             FortranBLAS<Scalar>::fill(length,alpha[j],x+j,fieldSize);
         }
     }
@@ -1129,7 +1149,7 @@ void field_fill_component(
         const Scalar* alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() & selectField(xField);
+    const Selector selector = selectField(xField);
     field_fill_component(alpha,xField,selector);
 }
 
@@ -1138,20 +1158,23 @@ inline
 void field_fill_component(
         const Scalar* alpha,
         const FieldBase & xFieldBase,
-        const Selector selector) {
+        const Selector selector)
+{
+    ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),selector);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
-    for(size_t i=0; i < buckets.size(); i++) {
+    for(size_t i = 0; i < buckets.size(); i++) {
         const Bucket & b = *buckets[i];
         const int length = b.size();
-        const int fieldSize = field_scalars_per_entity(xFieldBase, b);
-        Scalar * x = (Scalar*)field_data(xFieldBase, b);
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
-        for(int j=0;j<fieldSize;j++) {
+        for (unsigned int j = 0; j < fieldSize; j++) {
             FortranBLAS<Scalar>::fill(length,alpha[j],x+j,fieldSize);
         }
     }
@@ -1163,7 +1186,7 @@ void field_fill_component(
         const Scalar* alpha,
         const FieldBase & xFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() & selectField(xFieldBase);
+    const Selector selector = selectField(xFieldBase);
     field_fill_component(alpha,xFieldBase,selector);
 }
 
@@ -1172,20 +1195,22 @@ inline
 void field_fill(
         const Scalar alpha,
         const FieldBase & xFieldBase,
-        const Selector selector) {
-    ThrowAssert(xFieldBase.data_traits().type_info==typeid(Scalar));
+        const Selector selector)
+{
+    ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),selector);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
-    for(size_t i=0; i < buckets.size(); i++) {
+    for(size_t i = 0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xFieldBase, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
         FortranBLAS<Scalar>::fill(kmax,alpha,x);
     }
@@ -1197,7 +1222,7 @@ void field_fill(
         const Scalar alpha,
         const FieldBase & xFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() & selectField(xFieldBase);
+    const Selector selector = selectField(xFieldBase);
     field_fill(alpha,xFieldBase,selector);
 }
 
@@ -1206,22 +1231,25 @@ inline
 void field_swap(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
-        const Selector selector) {
+        const Selector selector)
+{
+    ThrowAssert(xField.entity_rank() == yField.entity_rank());
+    ThrowAssert(&xField.get_mesh() == &yField.get_mesh());
+
     BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
-    ThrowAssert(xField.entity_rank()==yField.entity_rank());
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
-        //ThrowAssert(fieldSize == field_bytes_per_entity(yField, b) / sizeof(Scalar));
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yField, b));
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xField, b);
-        Scalar * y = (Scalar*)field_data(yField, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xField, b));
+        Scalar * y = static_cast<Scalar*>(field_data(yField, b));
 
         FortranBLAS<Scalar>::swap(kmax,x,y);
     }
@@ -1233,7 +1261,7 @@ void field_swap(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() & selectField(xField) & selectField(yField);
+    const Selector selector = selectField(xField) & selectField(yField);
     field_swap(xField,yField,selector);
 }
 
@@ -1242,21 +1270,22 @@ inline
 void INTERNAL_field_swap(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector) {
+        const Selector selector)
+{
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
-        //ThrowAssert(fieldSize == field_bytes_per_entity(yFieldBase, b) / sizeof(Scalar));
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
+        ThrowAssert(fieldSize == field_scalars_per_entity(yFieldBase, b));
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xFieldBase, b);
-        Scalar * y = (Scalar*)field_data(yFieldBase, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
+        Scalar * y = static_cast<Scalar*>(field_data(yFieldBase, b));
 
         FortranBLAS<Scalar>::swap(kmax,x,y);
     }
@@ -1268,25 +1297,24 @@ void field_swap(
         const FieldBase & yFieldBase,
         const Selector selector)
 {
-    ThrowAssert(xFieldBase.entity_rank()==yFieldBase.entity_rank());
-    ThrowAssert(xFieldBase.data_traits().type_info==yFieldBase.data_traits().type_info);
+    ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
+    ThrowAssert(&xFieldBase.get_mesh() == &yFieldBase.get_mesh());
+    ThrowAssert(xFieldBase.data_traits().type_info == yFieldBase.data_traits().type_info);
 
-    if (xFieldBase.data_traits().type_info==typeid(double)) {
+    if (xFieldBase.data_traits().type_info == typeid(double)) {
         INTERNAL_field_swap<double>(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(float)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(float)) {
         INTERNAL_field_swap<float>(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<double>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<double>)) {
         INTERNAL_field_swap<std::complex<double> >(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<float>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<float>)) {
         INTERNAL_field_swap<std::complex<float> >(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(int)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         INTERNAL_field_swap<int>(xFieldBase,yFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<int>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
         INTERNAL_field_swap<std::complex<int> >(xFieldBase,yFieldBase,selector);
     } else {
-        char cerrBuffer [100];
-        sprintf(cerrBuffer,"Error in field_swap; field is of type %s which is not supported",xFieldBase.data_traits().type_info.name());
-        ThrowAssertMsg(false,cerrBuffer);
+        ThrowAssertMsg(false,"Error in field_swap; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
 }
 
@@ -1295,7 +1323,7 @@ void field_swap(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() & selectField(xFieldBase) & selectField(yFieldBase);
+    const Selector selector = selectField(xFieldBase) & selectField(yFieldBase);
     field_swap(xFieldBase,yFieldBase,selector);
 }
 
@@ -1304,63 +1332,65 @@ inline
 Scalar field_nrm2(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Selector selector,
-        const MPI_Comm comm) {
+        const MPI_Comm comm)
+{
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
-    Scalar glob_result = Scalar(0.0);
+    Scalar local_result = Scalar(0.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:glob_result) schedule(static)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xField, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
-        glob_result+=FortranBLAS<Scalar>::dot(kmax,x,x);
+        local_result+=FortranBLAS<Scalar>::dot(kmax,x,x);
     }
 
-    Scalar MPI_glob_result=glob_result;
+    Scalar glob_result=local_result;
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result,&MPI_glob_result,1u);
+    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
 #endif
-    return sqrt(MPI_glob_result);
+    return sqrt(glob_result);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
 inline
 std::complex<Scalar> field_nrm2(
-        const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField,
+        const Field< std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Selector selector,
         const MPI_Comm comm) {
+
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
-    Scalar glob_result_r = Scalar(0.0);
+    Scalar local_result_r = Scalar(0.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:glob_result_r) schedule(static)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for reduction(+:local_result_r) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(std::complex<Scalar>);
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
         const int kmax = length * fieldSize;
-        std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xField, b);
+        std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
 
-        glob_result_r+=pow(FortranBLAS<std::complex<Scalar> >::nrm2(kmax,x).real(),2.0);
+        local_result_r+=pow(FortranBLAS<std::complex<Scalar> >::nrm2(kmax,x).real(),2.0);
     }
 
-    Scalar MPI_glob_result=glob_result_r;
+    Scalar glob_result=local_result_r;
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result_r,&MPI_glob_result,1u);
+    stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
 #endif
-    return std::complex<Scalar>(sqrt(MPI_glob_result),0.0);
+    return std::complex<Scalar>(sqrt(glob_result),0.0);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -1378,7 +1408,7 @@ inline
 Scalar field_nrm2(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() & selectField(xField);
+    const Selector selector = selectField(xField);
     return field_nrm2(xField,selector);
 }
 
@@ -1386,34 +1416,37 @@ Scalar field_nrm2(
 template<class Scalar>
 inline
 void field_nrm2(
-        Scalar & result,
+        Scalar & glob_result,
         const FieldBase & xFieldBase,
         const Selector selector,
-        const MPI_Comm comm) {
+        const MPI_Comm comm)
+{
+    ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
-    Scalar glob_result = Scalar(0.0);
+    Scalar local_result = Scalar(0.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:glob_result) schedule(static)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xFieldBase, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
-        glob_result+=FortranBLAS<Scalar>::dot(kmax,x,x);
+        local_result+=FortranBLAS<Scalar>::dot(kmax,x,x);
     }
 
-    Scalar MPI_glob_result=glob_result;
+    glob_result=local_result;
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result,&MPI_glob_result,1u);
+    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
 #endif
-    result=sqrt(MPI_glob_result);
+    glob_result=sqrt(glob_result);
 }
 
 template<class Scalar>
@@ -1422,31 +1455,34 @@ void field_nrm2(
         std::complex<Scalar> & result,
         const FieldBase & xFieldBase,
         const Selector selector,
-        const MPI_Comm comm) {
+        const MPI_Comm comm)
+{
+    ThrowAssert(xFieldBase.data_traits().type_info == typeid(std::complex<Scalar>));
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
-    Scalar glob_result_r = Scalar(0.0);
+    Scalar local_result_r = Scalar(0.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:glob_result_r) schedule(static)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for reduction(+:local_result_r) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(std::complex<Scalar>);
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
         const int kmax = length * fieldSize;
-        std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xFieldBase, b);
+        std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xFieldBase, b));
 
-        glob_result_r+=pow(FortranBLAS<std::complex<Scalar> >::nrm2(kmax,x).real(),2.0);
+        local_result_r+=pow(FortranBLAS<std::complex<Scalar> >::nrm2(kmax,x).real(),2.0);
     }
 
-    Scalar MPI_glob_result=glob_result_r;
+    Scalar glob_result=local_result_r;
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result_r,&MPI_glob_result,1u);
+    stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
 #endif
-    result=sqrt(MPI_glob_result);
+    result=std::complex<Scalar>(sqrt(glob_result),0.0);
 }
 
 template<class Scalar>
@@ -1466,7 +1502,7 @@ void field_nrm2(
         Scalar & result,
         const FieldBase & xFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() & selectField(xFieldBase);
+    const Selector selector = selectField(xFieldBase);
     field_nrm2(result,xFieldBase,selector);
 }
 
@@ -1475,31 +1511,32 @@ inline
 Scalar field_asum(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Selector selector,
-        const MPI_Comm comm) {
+        const MPI_Comm comm)
+{
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
-    Scalar glob_result = Scalar(0.0);
+    Scalar local_result = Scalar(0.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:glob_result) schedule(static)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
         const int kmax = length * fieldSize;
-        const Scalar * x = (Scalar*)field_data(xField, b);
+        const Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
-        glob_result+=FortranBLAS<Scalar>::asum(kmax,x);
+        local_result+=FortranBLAS<Scalar>::asum(kmax,x);
     }
 
-    Scalar MPI_glob_result=glob_result;
+    Scalar glob_result=local_result;
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result,&MPI_glob_result,1u);
+    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
 #endif
-    return MPI_glob_result;
+    return glob_result;
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -1508,30 +1545,31 @@ std::complex<Scalar> field_asum(
         const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Selector selector,
         const MPI_Comm comm) {
+
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
-    Scalar glob_result = Scalar(0.0);
+    Scalar local_result = Scalar(0.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:glob_result) schedule(static)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(std::complex<Scalar>);
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
         const int kmax = length * fieldSize;
-        const std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xField, b);
+        const std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
 
-        glob_result+=FortranBLAS<std::complex<Scalar> >::asum(kmax,x).real();
+        local_result += FortranBLAS<std::complex<Scalar> >::asum(kmax,x).real();
     }
 
-    Scalar MPI_glob_result=glob_result;
+    Scalar glob_result = local_result;
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result,&MPI_glob_result,1u);
+    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
 #endif
-    return std::complex<Scalar> (MPI_glob_result,0.0);
+    return std::complex<Scalar>(glob_result,0.0);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -1549,42 +1587,43 @@ inline
 Scalar field_asum(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() & selectField(xField);
+    const Selector selector = selectField(xField);
     return field_asum(xField,selector);
 }
 
 template<class Scalar>
 inline
 void field_asum(
-        Scalar & result,
+        Scalar & glob_result,
         const FieldBase & xFieldBase,
         const Selector selector,
-        const MPI_Comm comm) {
-    ThrowAssert(typeid(Scalar)==xFieldBase.data_traits().type_info);
+        const MPI_Comm comm)
+{
+    ThrowAssert(typeid(Scalar) == xFieldBase.data_traits().type_info);
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
-    Scalar glob_result = Scalar(0.0);
+    Scalar local_result = Scalar(0.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:glob_result) schedule(static)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
         const int kmax = length * fieldSize;
-        const Scalar * x = (Scalar*)field_data(xFieldBase, b);
+        const Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
-        glob_result+=FortranBLAS<Scalar>::asum(kmax,x);
+        local_result+=FortranBLAS<Scalar>::asum(kmax,x);
     }
 
-    Scalar MPI_glob_result=glob_result;
+    glob_result=local_result;
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result,&MPI_glob_result,1u);
+    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
 #endif
-    result=MPI_glob_result;
 }
 
 template<class Scalar>
@@ -1593,32 +1632,34 @@ void field_asum(
         std::complex<Scalar> & result,
         const FieldBase & xFieldBase,
         const Selector selector,
-        const MPI_Comm comm) {
-    ThrowAssert(typeid(Scalar)==xFieldBase.data_traits().type_info);
+        const MPI_Comm comm)
+{
+    ThrowAssert(typeid(std::complex<Scalar>) == xFieldBase.data_traits().type_info);
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
-    Scalar glob_result = Scalar(0.0);
+    Scalar local_result = Scalar(0.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:glob_result) schedule(static)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(std::complex<Scalar>);
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
         const int kmax = length * fieldSize;
-        const std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xFieldBase, b);
+        const std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xFieldBase, b));
 
-        glob_result+=FortranBLAS<std::complex<Scalar> >::asum(kmax,x).real();
+        local_result+=FortranBLAS<std::complex<Scalar> >::asum(kmax,x).real();
     }
 
-    Scalar MPI_glob_result=glob_result;
+    Scalar glob_result=local_result;
 #ifdef STK_HAS_MPI
-    all_reduce_sum(comm,&glob_result,&MPI_glob_result,1u);
+    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
 #endif
-    result=std::complex<Scalar> (MPI_glob_result,0.0);
+    result=std::complex<Scalar>(glob_result,0.0);
 }
 
 template<class Scalar>
@@ -1638,7 +1679,7 @@ void field_asum(
         Scalar & result,
         const FieldBase & xFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() & selectField(xFieldBase);
+    const Selector selector = selectField(xFieldBase);
     field_asum(result,xFieldBase,selector);
 }
 
@@ -1654,57 +1695,57 @@ Entity field_eamax(
     int priv_iamax;
     Scalar priv_amax;
     Entity priv_result;
-    Scalar shar_amax=Scalar(-2.0);
-    Entity shar_result=Entity();
+    Scalar local_amax=Scalar(-2.0);
+    Entity local_result=Entity();
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
         priv_amax=Scalar(-1.0);
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(max:shar_amax)
+#pragma omp for schedule(static) reduction(max:local_amax)
 #endif
         for(size_t i=0; i < buckets.size(); i++)
         {
             Bucket & b = *buckets[i];
             const Bucket::size_type length = b.size();
-            const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
+            const unsigned int fieldSize = field_scalars_per_entity(xField, b);
             const int kmax = length * fieldSize;
-            Scalar * x = (Scalar*)field_data(xField, b);
+            Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
             priv_iamax = FortranBLAS<Scalar>::iamax(kmax,x);
             if (priv_amax<std::abs(x[priv_iamax]))
             {
                 priv_result = b[priv_iamax];
                 priv_amax = std::abs(x[priv_iamax]);
-                shar_amax = priv_amax;
+                local_amax = priv_amax;
             }
         }
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (shar_amax==priv_amax)
+        if (local_amax==priv_amax)
         {
 #endif
-            shar_result=priv_result;
+            local_result=priv_result;
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
         }
     }
 #endif
 
-    EntityId     glob_EntityId = xField.get_mesh().identifier(shar_result);
-    EntityId MPI_glob_EntityId = glob_EntityId;
-    Scalar MPI_shar_amax = shar_amax;
+    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
+    EntityId  glob_EntityId = local_EntityId;
+    Scalar glob_amax = local_amax;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_maxloc(xField.get_mesh().parallel(),&shar_amax,&glob_EntityId,&MPI_shar_amax,&MPI_glob_EntityId,1u);
+    stk::all_reduce_maxloc(xField.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
 #endif
-    if (MPI_glob_EntityId==glob_EntityId)
+    if (glob_EntityId==local_EntityId)
     {
-        shar_result = xField.get_mesh().get_entity(xField.entity_rank(),MPI_glob_EntityId);
+        local_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
     } else {
-        shar_result = Entity();
+        local_result = Entity();
     }
-    return shar_result;
+    return local_result;
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -1719,57 +1760,57 @@ Entity field_eamax(
     int priv_iamax;
     Scalar priv_amax;
     Entity priv_result;
-    Scalar shar_amax=Scalar(-2.0);
-    Entity shar_result=Entity();
+    Scalar local_amax=Scalar(-2.0);
+    Entity local_result=Entity();
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
         priv_amax=Scalar(-1.0);
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(max:shar_amax)
+#pragma omp for schedule(static) reduction(max:local_amax)
 #endif
         for(size_t i=0; i < buckets.size(); i++)
         {
             Bucket & b = *buckets[i];
             const Bucket::size_type length = b.size();
-            const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(std::complex<Scalar>);
+            const unsigned int fieldSize = field_scalars_per_entity(xField, b);
             const int kmax = length * fieldSize;
-            std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xField, b);
+            std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
 
             priv_iamax = FortranBLAS<std::complex<Scalar> >::iamax(kmax,x);
             if (priv_amax<std::abs(x[priv_iamax]))
             {
                 priv_result = b[priv_iamax];
                 priv_amax = std::abs(x[priv_iamax]);
-                shar_amax = priv_amax;
+                local_amax = priv_amax;
             }
         }
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (shar_amax==priv_amax)
+        if (local_amax==priv_amax)
         {
 #endif
-            shar_result=priv_result;
+            local_result=priv_result;
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
         }
     }
 #endif
 
-    EntityId     glob_EntityId = xField.get_mesh().identifier(shar_result);
-    EntityId MPI_glob_EntityId = glob_EntityId;
-    Scalar MPI_shar_amax = shar_amax;
+    EntityId     local_EntityId = xField.get_mesh().identifier(local_result);
+    EntityId glob_EntityId = local_EntityId;
+    Scalar global_amax = local_amax;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_maxloc(xField.get_mesh().parallel(),&shar_amax,&glob_EntityId,&MPI_shar_amax,&MPI_glob_EntityId,1u);
+    stk::all_reduce_maxloc(xField.get_mesh().parallel(),&local_amax,&local_EntityId,&global_amax,&glob_EntityId,1u);
 #endif
-    if (MPI_glob_EntityId==glob_EntityId)
+    if (glob_EntityId==local_EntityId)
     {
-        shar_result = xField.get_mesh().get_entity(xField.entity_rank(),MPI_glob_EntityId);
+        local_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
     } else {
-        shar_result = Entity();
+        local_result = Entity();
     }
-    return shar_result;
+    return local_result;
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -1777,7 +1818,7 @@ inline
 Entity field_eamax(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() & selectField(xField);
+    const Selector selector = selectField(xField);
     return field_eamax(xField,selector);
 }
 
@@ -1786,37 +1827,37 @@ inline
 Scalar field_amax(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Selector selector,
-        const MPI_Comm comm) {
+        const MPI_Comm comm)
+{
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
-    int priv_iamax;
-    Scalar shar_amax=Scalar(-1.0);
+    Scalar priv_tmp;
+    Scalar local_amax=Scalar(-1.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for schedule(static) reduction(max:shar_amax) private(priv_iamax)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xField, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
-        priv_iamax = FortranBLAS<Scalar>::iamax(kmax,x);
-        if (shar_amax<std::abs(x[priv_iamax]))
-        {
-            shar_amax = std::abs(x[priv_iamax]);
+        priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamax(kmax,x)]);
+        if (local_amax < priv_tmp) {
+            local_amax = priv_tmp;
         }
     }
 
-    Scalar MPI_amax = shar_amax;
+    Scalar global_amax = local_amax;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_max(comm,&shar_amax,&MPI_amax,1u);
+    stk::all_reduce_max(comm,&local_amax,&global_amax,1u);
 #endif
-    return MPI_amax;
+    return global_amax;
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -1825,36 +1866,36 @@ std::complex<Scalar> field_amax(
         const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Selector selector,
         const MPI_Comm comm) {
+
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
-    int priv_iamax;
-    Scalar shar_amax=Scalar(0.0);
+    Scalar priv_tmp;
+    Scalar local_amax=Scalar(0.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for schedule(static) reduction(max:shar_amax) private(priv_iamax)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b)/sizeof(std::complex<Scalar>);
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
         const int kmax = length * fieldSize;
-        std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xField, b);
+        std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
 
-        priv_iamax = FortranBLAS<std::complex<Scalar> >::iamax(kmax,x);
-        if (shar_amax<std::abs(x[priv_iamax]))
-        {
-            shar_amax = std::abs(x[priv_iamax]);
+        priv_tmp = std::abs(x[FortranBLAS<std::complex<Scalar> >::iamax(kmax,x)]);
+        if (local_amax < priv_tmp) {
+            local_amax = priv_tmp;
         }
     }
 
-    Scalar MPI_amax = shar_amax;
+    Scalar glob_amax = local_amax;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_max(comm,&shar_amax,&MPI_amax,1u);
+    stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
 #endif
-    return std::complex<Scalar>(MPI_amax,0.0);
+    return std::complex<Scalar>(glob_amax,0.0);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -1872,7 +1913,7 @@ inline
 Scalar field_amax(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() & selectField(xField);
+    const Selector selector = selectField(xField);
     return field_amax(xField,selector);
 }
 
@@ -1880,128 +1921,128 @@ template<class Scalar>
 inline
 Entity INTERNAL_field_eamax_complex(
         const FieldBase & xFieldBase,
-        const Selector selector) {
+        const Selector selector)
+{
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
     int priv_iamax;
     Scalar priv_amax;
     Entity priv_result;
-    Scalar shar_amax=Scalar(-2.0);
-    Entity shar_result=Entity();
+    Scalar local_amax=Scalar(-2.0);
+    Entity local_result=Entity();
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
         priv_amax=Scalar(-1.0);
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(max:shar_amax)
+#pragma omp for schedule(static) reduction(max:local_amax)
 #endif
         for(size_t i=0; i < buckets.size(); i++)
         {
             Bucket & b = *buckets[i];
             const Bucket::size_type length = b.size();
-            const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(std::complex<Scalar>);
+            const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
             const int kmax = length * fieldSize;
-            std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xFieldBase, b);
+            std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xFieldBase, b));
 
             priv_iamax = FortranBLAS<std::complex<Scalar> >::iamax(kmax,x);
-            if (priv_amax<std::norm(x[priv_iamax]))
-            {
+            if (priv_amax < std::norm(x[priv_iamax])) {
                 priv_result = b[priv_iamax];
                 priv_amax = std::norm(x[priv_iamax]);
-                shar_amax = priv_amax;
+                local_amax = priv_amax;
             }
         }
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (shar_amax==priv_amax)
+        if (local_amax == priv_amax)
         {
 #endif
-            shar_result=priv_result;
+            local_result = priv_result;
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
         }
     }
 #endif
 
-    EntityId     glob_EntityId = xFieldBase.get_mesh().identifier(shar_result);
-    EntityId MPI_glob_EntityId = glob_EntityId;
-    Scalar MPI_shar_amax = shar_amax;
+    EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
+    EntityId  glob_EntityId = local_EntityId;
+    Scalar glob_amax = local_amax;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_maxloc(xFieldBase.get_mesh().parallel(),&shar_amax,&glob_EntityId,&MPI_shar_amax,&MPI_glob_EntityId,1u);
+    stk::all_reduce_maxloc(xFieldBase.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
 #endif
-    if (MPI_glob_EntityId==glob_EntityId)
-    {
-        shar_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),MPI_glob_EntityId);
+    if (glob_EntityId == local_EntityId) {
+        local_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
     } else {
-        shar_result = Entity();
+        local_result = Entity();
     }
-    return shar_result;
+    return local_result;
 }
 
 template<class Scalar>
 inline
 Entity INTERNAL_field_eamax(
         const FieldBase & xFieldBase,
-        const Selector selector) {
+        const Selector selector)
+{
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
     int priv_iamax;
     Scalar priv_amax;
     Entity priv_result;
-    Scalar shar_amax=Scalar(-2.0);
-    Entity shar_result=Entity();
+    Scalar local_amax = Scalar(-2.0);
+    Entity local_result = Entity();
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
         priv_amax=Scalar(-1.0);
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(max:shar_amax)
+#pragma omp for schedule(static) reduction(max:local_amax)
 #endif
         for(size_t i=0; i < buckets.size(); i++)
         {
             Bucket & b = *buckets[i];
             const Bucket::size_type length = b.size();
-            const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
+            const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
             const int kmax = length * fieldSize;
-            Scalar* x = (Scalar*)field_data(xFieldBase, b);
+            Scalar* x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
             priv_iamax = FortranBLAS<Scalar>::iamax(kmax,x);
             if (priv_amax<std::abs(x[priv_iamax]))
             {
                 priv_result = b[priv_iamax];
                 priv_amax = std::abs(x[priv_iamax]);
-                shar_amax = priv_amax;
+                local_amax = priv_amax;
             }
         }
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (shar_amax==priv_amax)
+        if (local_amax==priv_amax)
         {
 #endif
-            shar_result=priv_result;
+            local_result=priv_result;
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
         }
     }
 #endif
 
-    EntityId     glob_EntityId = xFieldBase.get_mesh().identifier(shar_result);
-    EntityId MPI_glob_EntityId = glob_EntityId;
-    Scalar MPI_shar_amax = shar_amax;
+    EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
+    EntityId glob_EntityId = local_EntityId;
+    Scalar glob_amax = local_amax;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_maxloc(xFieldBase.get_mesh().parallel(),&shar_amax,&glob_EntityId,&MPI_shar_amax,&MPI_glob_EntityId,1u);
+    stk::all_reduce_maxloc(xFieldBase.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
 #endif
-    if (MPI_glob_EntityId==glob_EntityId)
+    if (glob_EntityId==local_EntityId)
     {
-        shar_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),MPI_glob_EntityId);
+        local_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
     } else {
-        shar_result = Entity();
+        local_result = Entity();
     }
-    return shar_result;
+    return local_result;
 }
 
 inline
@@ -2009,22 +2050,20 @@ Entity field_eamax(
         const FieldBase & xFieldBase,
         const Selector selector)
 {
-    if (xFieldBase.data_traits().type_info==typeid(double)) {
+    if (xFieldBase.data_traits().type_info == typeid(double)) {
         return INTERNAL_field_eamax<double>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(float)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(float)) {
         return INTERNAL_field_eamax<float>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<double>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<double>)) {
         return INTERNAL_field_eamax_complex<double>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<float>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<float>)) {
         return INTERNAL_field_eamax_complex<float>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(int)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         return INTERNAL_field_eamax<int>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<int>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
         return INTERNAL_field_eamax_complex<int>(xFieldBase,selector);
     } else {
-        char cerrBuffer [100];
-        sprintf(cerrBuffer,"Error in field_swap; field is of type %s which is not supported",xFieldBase.data_traits().type_info.name());
-        ThrowAssertMsg(false,cerrBuffer);
+        ThrowAssertMsg(false,"Error in field_eamax; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
     return stk::mesh::Entity();
 }
@@ -2033,7 +2072,7 @@ inline
 Entity field_eamax(
         const FieldBase & xFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() & selectField(xFieldBase);
+    const Selector selector = selectField(xFieldBase);
     return field_eamax(xFieldBase,selector);
 }
 
@@ -2043,37 +2082,39 @@ void field_amax(
         std::complex<Scalar> & result,
         const FieldBase & xFieldBase,
         const Selector selector,
-        const MPI_Comm comm) {
+        const MPI_Comm comm)
+{
+    ThrowAssert(xFieldBase.data_traits().type_info == typeid(std::complex<Scalar>));
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
     Scalar priv_tmp;
-    Scalar shar_amax=Scalar(-1.0);
+    Scalar local_amax=Scalar(-1.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for schedule(static) reduction(max:shar_amax) private(priv_tmp)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b)/sizeof(std::complex<Scalar>);
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
         const int kmax = length * fieldSize;
-        std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xFieldBase, b);
+        std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xFieldBase, b));
 
         priv_tmp = std::abs(x[FortranBLAS<std::complex<Scalar> >::iamax(kmax,x)]);
-        if (shar_amax<priv_tmp)
-        {
-            shar_amax=priv_tmp;
+        if (local_amax < priv_tmp) {
+            local_amax = priv_tmp;
         }
     }
 
-    Scalar MPI_amax = shar_amax;
+    Scalar glob_amax = local_amax;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_max(comm,&shar_amax,&MPI_amax,1u);
+    stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
 #endif
-    result=std::complex<Scalar>(MPI_amax,0.0);
+    result = std::complex<Scalar>(glob_amax,0.0);
 }
 
 template<class Scalar>
@@ -2082,37 +2123,39 @@ void field_amax(
         Scalar & result,
         const FieldBase & xFieldBase,
         const Selector selector,
-        const MPI_Comm comm) {
+        const MPI_Comm comm)
+{
+    ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
     Scalar priv_tmp;
-    Scalar shar_amax=Scalar(-1.0);
+    Scalar local_amax=Scalar(-1.0);
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for schedule(static) reduction(max:shar_amax) private(priv_tmp)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xFieldBase, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
         priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamax(kmax,x)]);
-        if (shar_amax<priv_tmp)
-        {
-            shar_amax = priv_tmp;
+        if (local_amax < priv_tmp) {
+            local_amax = priv_tmp;
         }
     }
 
-    Scalar MPI_amax = shar_amax;
+    Scalar glob_amax = local_amax;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_max(comm,&shar_amax,&MPI_amax,1u);
+    stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
 #endif
-    result=MPI_amax;
+    result = glob_amax;
 }
 
 template<class Scalar>
@@ -2132,7 +2175,7 @@ void field_amax(
         Scalar & result,
         const FieldBase & xFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() & selectField(xFieldBase);
+    const Selector selector = selectField(xFieldBase);
     field_amax(result,xFieldBase,selector);
 }
 
@@ -2140,128 +2183,128 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 Entity field_eamin(
         const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector) {
+        const Selector selector)
+{
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
     int priv_iamin;
     Scalar priv_amin;
     Entity priv_result;
-    Scalar shar_amin=std::numeric_limits<Scalar>::max();
-    Entity shar_result;
+    Scalar local_amin=std::numeric_limits<Scalar>::max();
+    Entity local_result;
+    Entity glob_result;
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamin,priv_amin,priv_result)
     {
 #endif
         priv_amin=std::numeric_limits<Scalar>::max();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:shar_amin)
+#pragma omp for schedule(static) reduction(min:local_amin)
 #endif
         for(size_t i=0; i < buckets.size(); i++)
         {
             Bucket & b = *buckets[i];
             const Bucket::size_type length = b.size();
-            const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(std::complex<Scalar>);
+            const unsigned int fieldSize = field_scalars_per_entity(xField, b);
             const int kmax = length * fieldSize;
-            std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xField, b);
+            std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
 
             priv_iamin = FortranBLAS<std::complex<Scalar> >::iamin(kmax,x);
-            if (std::abs(x[priv_iamin])<priv_amin)
-            {
+            if (std::abs(x[priv_iamin])<priv_amin) {
                 priv_result = b[priv_iamin];
                 priv_amin = std::abs(x[priv_iamin]);
-                shar_amin = priv_amin;
+                local_amin = priv_amin;
             }
         }
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin==shar_amin)
+        if (priv_amin==local_amin)
         {
 #endif
-            shar_result = priv_result;
+            local_result = priv_result;
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
         }
     }
 #endif
 
-    EntityId     glob_EntityId = xField.get_mesh().identifier(shar_result);
-    EntityId MPI_glob_EntityId = glob_EntityId;
-    Scalar MPI_shar_amin = shar_amin;
+    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
+    EntityId glob_EntityId = local_EntityId;
+    Scalar glob_amin = local_amin;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&shar_amin,&glob_EntityId,&MPI_shar_amin,&MPI_glob_EntityId,1u);
+    stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
 #endif
-    if (MPI_glob_EntityId==glob_EntityId)
-    {
-        shar_result = xField.get_mesh().get_entity(xField.entity_rank(),MPI_glob_EntityId);
+    if (glob_EntityId == local_EntityId) {
+        glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
     } else {
-        shar_result = Entity();
+        glob_result = Entity();
     }
-    return shar_result;
+    return glob_result;
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
 inline
 Entity field_eamin(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector) {
+        const Selector selector)
+{
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
     int priv_iamin;
     Scalar priv_amin;
     Entity priv_result;
-    Scalar shar_amin=std::numeric_limits<Scalar>::max();
-    Entity shar_result;
+    Scalar local_amin=std::numeric_limits<Scalar>::max();
+    Entity local_result;
+    Entity glob_result;
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamin,priv_amin,priv_result)
     {
 #endif
         priv_amin=std::numeric_limits<Scalar>::max();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:shar_amin)
+#pragma omp for schedule(static) reduction(min:local_amin)
 #endif
         for(size_t i=0; i < buckets.size(); i++)
         {
             Bucket & b = *buckets[i];
             const Bucket::size_type length = b.size();
-            const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
+            const unsigned int fieldSize = field_scalars_per_entity(xField, b);
             const int kmax = length * fieldSize;
-            Scalar * x = (Scalar*)field_data(xField, b);
+            Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
             priv_iamin = FortranBLAS<Scalar>::iamin(kmax,x);
             if (std::abs(x[priv_iamin])<priv_amin)
             {
                 priv_result = b[priv_iamin];
                 priv_amin = std::abs(x[priv_iamin]);
-                shar_amin = priv_amin;
+                local_amin = priv_amin;
             }
         }
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin==shar_amin)
-        {
+        if (priv_amin == local_amin) {
 #endif
-            shar_result = priv_result;
+            local_result = priv_result;
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
         }
     }
 #endif
 
-    EntityId     glob_EntityId = xField.get_mesh().identifier(shar_result);
-    EntityId MPI_glob_EntityId = glob_EntityId;
-    Scalar MPI_shar_amin = shar_amin;
+    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
+    EntityId glob_EntityId = local_EntityId;
+    Scalar glob_amin = local_amin;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&shar_amin,&glob_EntityId,&MPI_shar_amin,&MPI_glob_EntityId,1u);
+    stk::all_reduce_minloc(xField.get_mesh().parallel(),&glob_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
 #endif
-    if (MPI_glob_EntityId==glob_EntityId)
-    {
-        shar_result = xField.get_mesh().get_entity(xField.entity_rank(),MPI_glob_EntityId);
+    if (glob_EntityId == local_EntityId) {
+        glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
     } else {
-        shar_result = Entity();
+        glob_result = Entity();
     }
-    return shar_result;
+    return glob_result;
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -2269,7 +2312,7 @@ inline
 Entity field_eamin(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() & selectField(xField);
+    const Selector selector = selectField(xField);
     return field_eamin(xField,selector);
 }
 
@@ -2282,33 +2325,33 @@ std::complex<Scalar> field_amin(
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
-    int priv_iamin;
-    Scalar shar_amin= std::numeric_limits<Scalar>::max();
+    Scalar priv_tmp;
+    Scalar local_amin= std::numeric_limits<Scalar>::max();
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for schedule(static) reduction(min:shar_amin) private(priv_iamin)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(std::complex<Scalar>);
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
         const int kmax = length * fieldSize;
-        std::complex<Scalar> * x = (std::complex<Scalar>*)field_data(xField, b);
+        std::complex<Scalar> * x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
 
-        priv_iamin = FortranBLAS<std::complex<Scalar> >::iamin(kmax,x);
-        if (std::abs(x[priv_iamin])<shar_amin)
+        priv_tmp = std::norm(x[FortranBLAS<std::complex<Scalar> >::iamin(kmax,x)]);
+        if (priv_tmp < local_amin)
         {
-            shar_amin = std::abs(x[priv_iamin]);
+            local_amin = priv_tmp;
         }
     }
 
-    Scalar MPI_amin = shar_amin;
+    Scalar glob_amin = local_amin;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_min(comm,&shar_amin,&MPI_amin,1u);
+    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
 #endif
-    return MPI_amin;
+    return sqrt(glob_amin);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -2316,37 +2359,37 @@ inline
 Scalar field_amin(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Selector selector,
-        const MPI_Comm comm) {
+        const MPI_Comm comm)
+{
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
-    int priv_iamin;
-    Scalar shar_amin= std::numeric_limits<Scalar>::max();
+    Scalar priv_tmp;
+    Scalar local_amin= std::numeric_limits<Scalar>::max();
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for schedule(static) reduction(min:shar_amin) private(priv_iamin)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xField, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xField, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xField, b));
 
-        priv_iamin = FortranBLAS<Scalar>::iamin(kmax,x);
-        if (std::abs(x[priv_iamin])<shar_amin)
-        {
-            shar_amin = std::abs(x[priv_iamin]);
+        priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamin(kmax,x)]);
+        if (priv_tmp < local_amin) {
+            local_amin = priv_tmp;
         }
     }
 
-    Scalar MPI_amin = shar_amin;
+    Scalar glob_amin = local_amin;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_min(comm,&shar_amin,&MPI_amin,1u);
+    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
 #endif
-    return MPI_amin;
+    return glob_amin;
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -2364,7 +2407,7 @@ inline
 Scalar field_amin(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
 {
-    const Selector selector = xField.mesh_meta_data().universal_part() & selectField(xField);
+    const Selector selector = selectField(xField);
     return field_amin(xField,selector);
 }
 
@@ -2379,57 +2422,56 @@ Entity INTERNAL_field_eamin_complex(
     int priv_iamin;
     double priv_amin;
     Entity priv_result;
-    double shar_amin= std::numeric_limits<double>::max();
-    Entity shar_result;
+    double local_amin= std::numeric_limits<double>::max();
+    Entity local_result;
+    Entity glob_result;
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamin,priv_amin,priv_result)
     {
 #endif
         priv_amin=std::numeric_limits<double>::max();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:shar_amin)
+#pragma omp for schedule(static) reduction(min:local_amin)
 #endif
         for(size_t i=0; i < buckets.size(); i++)
         {
             Bucket & b = *buckets[i];
             const Bucket::size_type length = b.size();
-            const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(std::complex<Scalar>);
+            const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
             const int kmax = length * fieldSize;
-            std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xFieldBase, b);
+            std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xFieldBase, b));
 
             priv_iamin = FortranBLAS<std::complex<Scalar> >::iamin(kmax,x);
             if (std::norm(x[priv_iamin])<priv_amin)
             {
                 priv_result = b[priv_iamin];
                 priv_amin = std::norm(x[priv_iamin]);
-                shar_amin = priv_amin;
+                local_amin = priv_amin;
             }
         }
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin==shar_amin)
-        {
+        if (priv_amin == local_amin) {
 #endif
-            shar_result=priv_result;
+            local_result=priv_result;
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
         }
     }
 #endif
 
-    EntityId     glob_EntityId = xFieldBase.get_mesh().identifier(shar_result);
-    EntityId MPI_glob_EntityId = glob_EntityId;
-    double MPI_shar_amin = shar_amin;
+    EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
+    EntityId glob_EntityId = local_EntityId;
+    double glob_amin = local_amin;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_minloc(xFieldBase.get_mesh().parallel(),&shar_amin,&glob_EntityId,&MPI_shar_amin,&MPI_glob_EntityId,1u);
+    stk::all_reduce_minloc(xFieldBase.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
 #endif
-    if (MPI_glob_EntityId==glob_EntityId)
-    {
-        shar_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),MPI_glob_EntityId);
+    if (glob_EntityId == local_EntityId) {
+        glob_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
     } else {
-        shar_result = Entity();
+        glob_result = Entity();
     }
-    return shar_result;
+    return glob_result;
 }
 
 template<class Scalar>
@@ -2443,57 +2485,57 @@ Entity INTERNAL_field_eamin(
     int priv_iamin;
     double priv_amin;
     Entity priv_result;
-    double shar_amin= std::numeric_limits<double>::max();
-    Entity shar_result;
+    double local_amin= std::numeric_limits<double>::max();
+    Entity local_result;
+    Entity glob_result;
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamin,priv_amin,priv_result)
     {
 #endif
         priv_amin=std::numeric_limits<double>::max();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:shar_amin)
+#pragma omp for schedule(static) reduction(min:local_amin)
 #endif
         for(size_t i=0; i < buckets.size(); i++)
         {
             Bucket & b = *buckets[i];
             const Bucket::size_type length = b.size();
-            const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
+            const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
             const int kmax = length * fieldSize;
-            Scalar * x = (Scalar*)field_data(xFieldBase, b);
+            Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
             priv_iamin = FortranBLAS<Scalar>::iamin(kmax,x);
             if (std::abs(x[priv_iamin])<priv_amin)
             {
                 priv_result = b[priv_iamin];
                 priv_amin = std::abs(x[priv_iamin]);
-                shar_amin = priv_amin;
+                local_amin = priv_amin;
             }
         }
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin==shar_amin)
+        if (priv_amin==local_amin)
         {
 #endif
-            shar_result=priv_result;
+            local_result=priv_result;
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
         }
     }
 #endif
 
-    EntityId     glob_EntityId = xFieldBase.get_mesh().identifier(shar_result);
-    EntityId MPI_glob_EntityId = glob_EntityId;
-    double MPI_shar_amin = shar_amin;
+    EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
+    EntityId glob_EntityId = local_EntityId;
+    double glob_amin = local_amin;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_minloc(xFieldBase.get_mesh().parallel(),&shar_amin,&glob_EntityId,&MPI_shar_amin,&MPI_glob_EntityId,1u);
+    stk::all_reduce_minloc(xFieldBase.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
 #endif
-    if (MPI_glob_EntityId==glob_EntityId)
-    {
-        shar_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),MPI_glob_EntityId);
+    if (glob_EntityId == local_EntityId) {
+        glob_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
     } else {
-        shar_result = Entity();
+        glob_result = Entity();
     }
-    return shar_result;
+    return glob_result;
 }
 
 inline
@@ -2501,22 +2543,20 @@ Entity field_eamin(
         const FieldBase & xFieldBase,
         const Selector selector)
 {
-    if (xFieldBase.data_traits().type_info==typeid(double)) {
+    if (xFieldBase.data_traits().type_info == typeid(double)) {
         return INTERNAL_field_eamin<double>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(float)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(float)) {
         return INTERNAL_field_eamin<float>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<double>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<double>)) {
         return INTERNAL_field_eamin_complex<double>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<float>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<float>)) {
         return INTERNAL_field_eamin_complex<float>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(int)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(int)) {
         return INTERNAL_field_eamin<int>(xFieldBase,selector);
-    } else if (xFieldBase.data_traits().type_info==typeid(std::complex<int>)) {
+    } else if (xFieldBase.data_traits().type_info == typeid(std::complex<int>)) {
         return INTERNAL_field_eamin_complex<int>(xFieldBase,selector);
     } else {
-        char cerrBuffer [100];
-        sprintf(cerrBuffer,"Error in field_swap; field is of type %s which is not supported",xFieldBase.data_traits().type_info.name());
-        ThrowAssertMsg(false,cerrBuffer);
+        ThrowAssertMsg(false,"Error in field_eamin; field is of type "<<xFieldBase.data_traits().type_info.name()<<" which is not supported");
     }
     return stk::mesh::Entity();
 }
@@ -2525,7 +2565,7 @@ inline
 Entity field_eamin(
         const FieldBase & xFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() & selectField(xFieldBase);
+    const Selector selector = selectField(xFieldBase);
     return field_eamin(xFieldBase,selector);
 }
 
@@ -2535,37 +2575,40 @@ void field_amin(
         std::complex<Scalar> & result,
         const FieldBase & xFieldBase,
         const Selector selector,
-        const MPI_Comm comm) {
+        const MPI_Comm comm)
+{
+    ThrowAssert(xFieldBase.data_traits().type_info == typeid(std::complex<Scalar>));
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
     Scalar priv_tmp;
-    Scalar shar_amin= std::numeric_limits<Scalar>::max();
+    Scalar local_amin= std::numeric_limits<Scalar>::max();
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for schedule(static) reduction(min:shar_amin) private(priv_tmp)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(std::complex<Scalar>);
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
         const int kmax = length * fieldSize;
-        std::complex<Scalar>* x = (std::complex<Scalar>*)field_data(xFieldBase, b);
+        std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xFieldBase, b));
 
         priv_tmp = std::abs(x[FortranBLAS<std::complex<Scalar> >::iamin(kmax,x)]);
-        if (priv_tmp<shar_amin)
+        if (priv_tmp<local_amin)
         {
-            shar_amin=priv_tmp;
+            local_amin=priv_tmp;
         }
     }
 
-    Scalar MPI_amin = shar_amin;
+    Scalar glob_amin = local_amin;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_min(comm,&shar_amin,&MPI_amin,1u);
+    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
 #endif
-    result=std::complex<Scalar>(MPI_amin,0.0);
+    result=std::complex<Scalar>(glob_amin,0.0);
 }
 
 template<class Scalar>
@@ -2574,36 +2617,39 @@ void field_amin(
         Scalar & result,
         const FieldBase & xFieldBase,
         const Selector selector,
-        const MPI_Comm comm) {
+        const MPI_Comm comm)
+{
+    ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
+
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
     Scalar priv_tmp;
-    Scalar shar_amin= std::numeric_limits<Scalar>::max();
+    Scalar local_amin= std::numeric_limits<Scalar>::max();
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads()>=omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for schedule(static) reduction(min:shar_amin) private(priv_tmp)
+    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
+#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
     {
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
-        const int fieldSize = field_bytes_per_entity(xFieldBase, b) / sizeof(Scalar);
+        const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
         const int kmax = length * fieldSize;
-        Scalar * x = (Scalar*)field_data(xFieldBase, b);
+        Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
 
         priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamin(kmax,x)]);
-        if (priv_tmp<shar_amin)
+        if (priv_tmp<local_amin)
         {
-            shar_amin=priv_tmp;
+            local_amin=priv_tmp;
         }
     }
-    Scalar MPI_amin = shar_amin;
+    Scalar glob_amin = local_amin;
 #ifdef STK_HAS_MPI
-    stk::all_reduce_min(comm,&shar_amin,&MPI_amin,1u);
+    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
 #endif
-    result=MPI_amin;
+    result=glob_amin;
 }
 
 template<class Scalar>
@@ -2623,7 +2669,7 @@ void field_amin(
         Scalar & result,
         const FieldBase & xFieldBase)
 {
-    const Selector selector = xFieldBase.mesh_meta_data().universal_part() & selectField(xFieldBase);
+    const Selector selector = selectField(xFieldBase);
     field_amin(result,xFieldBase,selector);
 }
 
