@@ -123,7 +123,7 @@ struct TPL_Traits {
 template <typename tpl_t>
 struct TPL_Traits<tpl_t, tpl_t> {
 
-  static inline bool MATCH_TPL_T() {return true;}
+  static inline bool OK_TO_CAST_TPL_T() {return true;}
 
   static inline void ASSIGN_TPL_T(tpl_t &a, tpl_t b,
                                   const RCP<const Environment> &env)
