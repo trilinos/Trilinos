@@ -303,6 +303,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
       "If on, then the properter LINK_SEARCH_START_STATIC will be added to all executables." )
   ENDIF()
 
+  ADVANCED_SET(${PROJECT_NAME}_LIBRARY_NAME_PREFIX ""
+    CACHE STRING
+    "Prefix for all ${PROJECT_NAME} library names. If set to, for example, 'prefix_',
+    libraries will be named and installed as 'prefix_<libname>.*'.  Default is '' (no prefix)."
+    )
+
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
     CACHE PATH
     "Location where the headers will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'include'"
