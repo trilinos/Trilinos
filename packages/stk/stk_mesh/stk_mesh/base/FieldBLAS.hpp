@@ -140,11 +140,11 @@ struct FortranBLAS
         }
     }
 
-//    inline
-//    static void fill(const int & kmax, const Scalar alpha, Scalar x[])
-//    {
-//        std::fill(x,x+kmax,alpha);
-//    }
+    //    inline
+    //    static void fill(const int & kmax, const Scalar alpha, Scalar x[])
+    //    {
+    //        std::fill(x,x+kmax,alpha);
+    //    }
 
     inline
     static void swap(const int & kmax, Scalar x[], Scalar y[])
@@ -882,12 +882,13 @@ std::complex<Scalar>  field_dot(
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
                                                                 selector & xField.mesh_meta_data().locally_owned_part());
 
-    Scalar local_result_ri [2] = {Scalar(0.0),Scalar(0.0)};
+    Scalar local_result_r = Scalar(0.0);
+    Scalar local_result_i = Scalar(0.0);
     std::complex<Scalar> priv_tmp;
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
     if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:local_result_ri[0],local_result_ri[1]) schedule(static) private(priv_tmp)
+#pragma omp parallel for reduction(+:local_result_r,local_result_i) schedule(static) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
@@ -898,11 +899,12 @@ std::complex<Scalar>  field_dot(
         const std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xField, b));
         const std::complex<Scalar>* y = static_cast<std::complex<Scalar>*>(field_data(yField, b));
         priv_tmp=FortranBLAS<std::complex<Scalar> >::dot(kmax,x,y);
-        local_result_ri[0]+=priv_tmp.real();
-        local_result_ri[1]+=priv_tmp.imag();
+        local_result_r+=priv_tmp.real();
+        local_result_i+=priv_tmp.imag();
     }
 
-    Scalar glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
+    Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
+    Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
 #ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
 #endif
@@ -947,12 +949,13 @@ void field_dot(
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),
                                                                     selector & xFieldBase.mesh_meta_data().locally_owned_part());
 
-    Scalar local_result_ri [2] = {Scalar(0.0),Scalar(0.0)};
+    Scalar local_result_r = Scalar(0.0);
+    Scalar local_result_i = Scalar(0.0);
     std::complex<Scalar> priv_tmp;
 
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
     if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
-#pragma omp parallel for reduction(+:local_result_ri[0],local_result_ri[1]) schedule(static) private(priv_tmp)
+#pragma omp parallel for reduction(+:local_result_r,local_result_i) schedule(static) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
@@ -963,15 +966,16 @@ void field_dot(
         const std::complex<Scalar>* x = static_cast<std::complex<Scalar>*>(field_data(xFieldBase, b));
         const std::complex<Scalar>* y = static_cast<std::complex<Scalar>*>(field_data(yFieldBase, b));
         priv_tmp=FortranBLAS<std::complex<Scalar> >::dot(kmax,x,y);
-        local_result_ri[0]+=priv_tmp.real();
-        local_result_ri[1]+=priv_tmp.imag();
+        local_result_r+=priv_tmp.real();
+        local_result_i+=priv_tmp.imag();
     }
 
-    Scalar global_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
+    Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
+    Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
 #ifdef STK_HAS_MPI
-    stk::all_reduce_sum(comm,local_result_ri,global_result_ri,2u);
+    stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
 #endif
-    global_result = std::complex<Scalar> (global_result_ri[0],global_result_ri[1]);
+    global_result = std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
 }
 
 template<class Scalar>
