@@ -326,7 +326,7 @@ int main(int narg, char** arg)
 
   for (size_t i = 0; i < checkLength; i++) {
     if (size_t(checkParts[i]) >= checkNparts) 
-      cout << "Invalid Part:  FAIL" << endl;
+      cout << "Invalid Part " << checkParts[i] << ": FAIL" << endl;
     countPerPart[checkParts[i]]++;
     for (int j = 0; j < nVwgts; j++) {
       if (j != NNZ_IDX)
