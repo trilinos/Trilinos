@@ -140,6 +140,12 @@ struct FortranBLAS
         }
     }
 
+//    inline
+//    static void fill(const int & kmax, const Scalar alpha, Scalar x[])
+//    {
+//        std::fill(x,x+kmax,alpha);
+//    }
+
     inline
     static void swap(const int & kmax, Scalar x[], Scalar y[])
     {
@@ -262,6 +268,12 @@ struct FortranBLAS<std::complex<Scalar> >
         }
     }
 
+    //    inline
+    //    static void fill(const int & kmax, const std::complex<Scalar> alpha, std::complex<Scalar> x[])
+    //    {
+    //        std::fill(x,x+kmax,alpha);
+    //    }
+
     inline
     static void swap(const int & kmax, std::complex<Scalar>  x[], std::complex<Scalar>  y[])
     {
@@ -374,6 +386,12 @@ struct FortranBLAS<double>
         }
     }
 
+    //    inline
+    //    static void fill(const int & kmax, const double alpha, double x[])
+    //    {
+    //        std::fill(x,x+kmax,alpha);
+    //    }
+
     inline
     static void swap(const int & kmax, double x[], double y[])
     {
@@ -463,6 +481,12 @@ struct FortranBLAS<float>
             x[k] = alpha;
         }
     }
+
+    //    inline
+    //    static void fill(const int & kmax, const float alpha, float x[])
+    //    {
+    //        std::fill(x,x+kmax,alpha);
+    //    }
 
     inline
     static void swap(const int & kmax, float x[], float y[])
@@ -909,7 +933,7 @@ Scalar field_dot(
 template<class Scalar>
 inline
 void field_dot(
-        std::complex<Scalar> & global_result, //CR call it global, not MPI (prop)
+        std::complex<Scalar> & global_result,
         const FieldBase & xFieldBase, //CR LAST COMMENT LOCATION
         const FieldBase & yFieldBase,
         const Selector selector,

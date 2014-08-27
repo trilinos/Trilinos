@@ -55,13 +55,13 @@ struct BLASFixture {
     unsigned int numPartAEntitiesGlobal;
     unsigned int numPartBEntitiesGlobal;
 
-    BLASFixture(const A init1, const A init2, const A init3, const int MeshSize);
+    BLASFixture(const A init1, const A init2 = A(), const A init3 = A(), const int MeshSize_x = 0);
     ~BLASFixture();
 
 };
 
 template<class A>
-BLASFixture<A>::BLASFixture(const A init1, const A init2 = A(), const A init3 = A(), int MeshSize_x = 0)
+BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3, const int MeshSize_x)
 {
     initial_value1 = init1;
     initial_value2 = init2;

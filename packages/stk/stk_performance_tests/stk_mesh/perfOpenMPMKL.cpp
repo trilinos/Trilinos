@@ -56,13 +56,13 @@
 //    stk::mesh::Field<A> * field2;
 //    stk::mesh::FieldBase * fieldBase2;
 //
-//    BLASFixture(const A init1 ,const A init2, const int MeshSize);
+//    BLASFixture(const A init1 ,const A init2 = A(), const int MeshSize = 64);
 //    ~BLASFixture();
 //
 //};
 //
 //template<class A>
-//BLASFixture<A>::BLASFixture(const A init1,const A init2 = A(), const int MeshSize = 64)
+//BLASFixture<A>::BLASFixture(const A init1,const A init2, const int MeshSize)
 //{
 //    MPI_Comm communicator = MPI_COMM_WORLD;
 //
