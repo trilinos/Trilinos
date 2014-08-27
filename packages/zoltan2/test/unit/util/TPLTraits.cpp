@@ -67,11 +67,30 @@
 #endif
 
 #ifdef HAVE_ZOLTAN2_PARMETIS
+
+#ifndef HAVE_ZOLTAN2_MPI
+// ParMETIS requires compilation with MPI.  
+// If MPI is not available, make compilation fail.
+#error "TPL ParMETIS requires compilation with MPI.  Configure with -DTPL_ENABLE_MPI:BOOL=ON or -DZoltan2_ENABLE_ParMETIS:BOOL=OFF"
+  
+#else
+
 #include "parmetis.h"
 #if (PARMETIS_MAJOR_VERSION < 4)
+// Zoltan2 requires ParMETIS v4.x.  
+// Make compilation fail for earlier versions of ParMETIS.
 #error "Specified version of ParMETIS is not compatible with Zoltan2; upgrade to ParMETIS v4 or later, or build Zoltan2 without ParMETIS."
-#endif
-#endif
+  
+#else
+
+// MPI and ParMETIS version requirements are met.  Proceed.
+#define PARMETIS_IS_OK 1
+
+#endif  // ParMETIS version check
+#endif  // HAVE_ZOLTAN2_MPI
+#endif  // HAVE_ZOLTAN2_PARMETIS
+
+
 
 #define PRINTMSG(s) \
   std::cout << (s) << " " << __FILE__ << ":" << __LINE__ << std::endl
@@ -293,7 +312,7 @@ int main(int argc, char *argv[])
 
 #endif  // HAVE_ZOLTAN2_SCOTCH
 
-#ifdef HAVE_ZOLTAN2_PARMETIS
+#ifdef PARMETIS_IS_OK
   ///////////////////////////////////////////////////////////
   // Test conversions into ParMETIS' idx_t
 
