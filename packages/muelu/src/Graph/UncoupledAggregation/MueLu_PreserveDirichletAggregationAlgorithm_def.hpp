@@ -64,6 +64,8 @@ namespace MueLu {
   void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
+    bool preserve = params.get<bool>("aggregation: preserve Dirichlet points");
+
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
@@ -74,13 +76,15 @@ namespace MueLu {
 
     for (LO i = 0; i < numRows; i++)
       if (aggStat[i] == BOUNDARY) {
-        aggregates.SetIsRoot(i);
-
-        aggStat     [i] = IGNORED;
-        vertex2AggId[i] = numLocalAggregates++;
-        procWinner  [i] = myRank;
-
+        aggStat[i] = IGNORED;
         numNonAggregatedNodes--;
+
+        if (preserve) {
+          aggregates.SetIsRoot(i);
+
+          vertex2AggId[i] = numLocalAggregates++;
+          procWinner  [i] = myRank;
+        }
       }
 
     // update aggregate object

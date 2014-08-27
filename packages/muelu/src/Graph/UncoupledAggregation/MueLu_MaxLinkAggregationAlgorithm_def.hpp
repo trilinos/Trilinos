@@ -90,7 +90,7 @@ namespace MueLu {
     //bool recomputeAggregateSizes=false; // variable not used TODO remove it
 
     for (LO iNode = 0; iNode < nRows; iNode++) {
-      if (aggStat[iNode] == AGGREGATED)
+      if (aggStat[iNode] == AGGREGATED || aggStat[iNode] == IGNORED)
         continue;
 
       ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
