@@ -625,6 +625,19 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*d
   //
   if (bulk.parallel_size() > 1)
   {
+    // Check for corrupt incomplete nemesis information.  Some old
+    // files are being used which do not have the correct nemesis
+    // sharing data. They can be identified by an incorrect global
+    // node count (typically equal to 1).
+    size_t global_node_count = region.get_property("global_node_count").get_int();
+    ThrowErrorMsgIf (global_node_count < ids.size(),
+		    "ERROR: Invalid communication/node sharing information found in file '"
+		     << region.get_database()->get_filename() << "'\n"
+		     << "       Global node count is  " << global_node_count
+		     << " which is less than the node count on processor "
+		     << stk::parallel_machine_rank(bulk.parallel())
+		     << " which is " << ids.size());
+
     Ioss::CommSet* io_cs = region.get_commset("commset_node");
     int num_sharings = io_cs->get_field("entity_processor").raw_count();
 
