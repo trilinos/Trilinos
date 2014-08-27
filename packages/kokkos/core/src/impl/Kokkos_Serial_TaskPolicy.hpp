@@ -508,8 +508,8 @@ private:
     static
     void apply( task_root_type * t )
       {
-        range_policy const & r  = ( * static_cast< member_type * >( static_cast< task_base_type * >( t ) ) ).m_policy ;
-        FunctorType        & f  = ( * static_cast< FunctorType * >( static_cast< task_base_type * >( t ) ) );
+        range_policy const & r  = static_cast< member_type * >( static_cast< task_base_type * >( t ) )->m_policy ;
+        FunctorType        & f  = * static_cast< FunctorType * >( static_cast< task_base_type * >( t ) );
         FunctorType  const & cf = f ;
 
         const IntType e = r.end();

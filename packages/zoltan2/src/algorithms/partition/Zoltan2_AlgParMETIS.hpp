@@ -258,12 +258,15 @@ void AlgParMETIS<Adapter>::partition(
   // Load answer into the solution.
 
   ArrayRCP<part_t> partList;
-  if (TPL_Traits<pm_idx_t, part_t>::MATCH_TPL_T())
-    partList = ArrayRCP<part_t>(pm_partList, 0, nVtx, true);
+  if (TPL_Traits<pm_idx_t, part_t>::OK_TO_CAST_TPL_T()) {
+    partList = ArrayRCP<part_t>((part_t *)pm_partList, 0, nVtx, true);
+  }
   else {
     // TODO Probably should have a TPL_Traits function to do the following
     partList = ArrayRCP<part_t>(new part_t[nVtx], 0, nVtx, true);
-    for (size_t i; i < nVtx; i++) partList[i] = part_t(pm_partList[i]);
+    for (size_t i = 0; i < nVtx; i++) {
+      partList[i] = part_t(pm_partList[i]);
+    }
     delete [] pm_partList;
   }
 
@@ -302,8 +305,8 @@ void AlgParMETIS<Adapter>::scale_weights(
   const double INT_EPSILON = 1e-5;
   const int nWgt = fwgts.size();
 
-  pm_idx_t *nonint_local = new pm_idx_t[nWgt+nWgt]; 
-  pm_idx_t *nonint = nonint_local + nWgt;
+  int *nonint_local = new int[nWgt+nWgt]; 
+  int *nonint = nonint_local + nWgt;
 
   double *sum_wgt_local = new double[nWgt*4];
   double *max_wgt_local = sum_wgt_local + nWgt;
