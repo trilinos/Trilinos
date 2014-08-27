@@ -115,11 +115,13 @@ namespace Amesos2 {
       const Teuchos::RCP<const Vector>& B_) :
       A(A_), X(X_), B(B_) {
       cijk = get_pce_cijk(A, X, B);
-      flat_graph = Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
-                                                  cijk,
-                                                  flat_X_map,
-                                                  flat_B_map,
-                                                  cijk_graph);
+      flat_graph =
+        Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
+                                       cijk,
+                                       flat_X_map,
+                                       flat_B_map,
+                                       cijk_graph,
+                                       A->getLocalMatrix().values.sacado_size());
       if (A != Teuchos::null)
         flat_A = Stokhos::create_flat_matrix(*A, flat_graph, cijk_graph, cijk);
       if (X != Teuchos::null)
@@ -305,11 +307,13 @@ namespace Amesos2 {
         flat_X_map = Teuchos::null;
         flat_B_map = Teuchos::null;
         flat_graph = Teuchos::null;
-        flat_graph = Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
-                                                    cijk,
-                                                    flat_X_map,
-                                                    flat_B_map,
-                                                    cijk_graph);
+        flat_graph =
+          Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
+                                         cijk,
+                                         flat_X_map,
+                                         flat_B_map,
+                                         cijk_graph,
+                                         A->getLocalMatrix().values.sacado_size());
       }
       if (keep_phase <= SYMBFACT) // should this by NUMFACT???
         flat_A = Stokhos::create_flat_matrix(*a, flat_graph, cijk_graph, cijk);
