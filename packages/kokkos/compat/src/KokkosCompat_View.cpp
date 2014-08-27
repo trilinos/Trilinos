@@ -87,6 +87,7 @@ namespace Kokkos {
     COMPAT_INSTANT_ALL(unsigned)
     COMPAT_INSTANT_ALL(unsigned long)
     COMPAT_INSTANT_ALL(char)
+    COMPAT_INSTANT_ALL(short)
 
   } // namespace Compat
 } // namespace Kokkos
