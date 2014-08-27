@@ -113,6 +113,7 @@ supports the following classes:
 #define result loca_result
 
 // Teuchos::RCP handling
+%teuchos_rcp(LOCA::BorderedSystem::AbstractGroup)
 %teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
 %teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
 %teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
@@ -136,7 +137,8 @@ parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
-%import "LOCA.BorderedSystem_RelPath.i"
+%import "NOX.Abstract.i"
+%import(module="BorderedSystem") "LOCA_BorderedSystem_AbstractGroup.H"
 %warnfilter(473) LOCA::MultiContinuation::AbstractGroup;
 %warnfilter(473) LOCA::MultiContinuation::ConstraintInterfaceMVDX;
 %import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"
