@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#ifdef KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
+#ifndef KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
 #define KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
 
 /// \file Kokkos_Sequential_SparseKernels.hpp
@@ -121,13 +121,15 @@ gaussSeidel (const LocalOrdinal numRows,
   }
   else if (numRows > 0 && ptr[numRows] == 0) {
     // All the off-diagonal entries of A are zero, and all the
-    // diagonal entries are (implicitly) 1.  Therefore compute:
-    // X := (1 - omega) X + omega B.
+    // diagonal entries are (implicitly) 1.  Therefore compute: X :=
+    // (1 - omega) X + omega B.  There's no need to care about the
+    // direction, since there are no cross-row data dependencies in
+    // this case.
     const MatrixScalar oneMinusOmega =
       ArithTraits<MatrixScalar>::one () - omega;
     for (OffsetType j = 0; j < numCols; ++j) {
       RangeScalar* const x_j = X + j*x_stride;
-      DomainScalar* const b_j = B + j*b_stride;
+      const DomainScalar* const b_j = B + j*b_stride;
       for (OffsetType i = 0; i < numRows; ++i) {
         x_j[i] = oneMinusOmega * x_j[i] + omega * b_j[i];
       }
@@ -285,7 +287,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
                       const OffsetType b_stride,
                       RangeScalar* const X,
                       const OffsetType x_stride,
-                      const MatrixScalar* const d,
+                      const MatrixScalar* const D,
                       const LocalOrdinal* const rowInd,
                       const LocalOrdinal numRowInds, // length of rowInd
                       const MatrixScalar omega,
@@ -297,10 +299,25 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
   if (numRows == 0 || numCols == 0) {
     return; // Nothing to do.
   }
+  else if (numRows > 0 && ptr[numRows] == 0) {
+    // All the off-diagonal entries of A are zero, and all the
+    // diagonal entries are (implicitly) 1.  Therefore compute: X :=
+    // (1 - omega) X + omega B.  There's no need to care about the
+    // direction or row ordering, since there are no cross-row data
+    // dependencies in this case.
+    const MatrixScalar oneMinusOmega =
+      ArithTraits<MatrixScalar>::one () - omega;
+    for (OffsetType j = 0; j < numCols; ++j) {
+      RangeScalar* const x_j = X + j*x_stride;
+      const DomainScalar* const b_j = B + j*b_stride;
+      for (OffsetType i = 0; i < numRows; ++i) {
+        x_j[i] = oneMinusOmega * x_j[i] + omega * b_j[i];
+      }
+    }
+    return;
+  }
 
   if (numCols == 1) {
-    RangeScalar x_temp;
-
     if (direction == Kokkos::Forward) {
       for (LO ii = 0; ii < numRowInds; ++ii) {
         LO i = rowInd[ii];
@@ -514,7 +531,7 @@ upperTriSolveCsrColMajorUnitDiag (
 }
 
 
-template<class LocalLocalOrdinal,
+template<class LocalOrdinal,
          class OffsetType,
          class MatrixScalar,
          class DomainScalar,
