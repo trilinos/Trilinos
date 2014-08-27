@@ -5214,20 +5214,23 @@ namespace Tpetra {
               MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
               Teuchos::ETransp mode) const
   {
+    using Kokkos::Sequential::triSolveKokkos;
+    using Teuchos::CONJ_TRANS;
     using Teuchos::NO_TRANS;
-    const char tfecfFuncName[] = "localSolve: ";
+    using Teuchos::TRANS;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Tpetra::MultiVector<DomainScalar, LO, GO, node_type> DMV;
+    typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
+    typedef typename device_type::host_mirror_device_type HMDT;
 
-    KokkosClassic::MultiVector<RangeScalar,node_type> lclY = Y.getLocalMV ();
-    KokkosClassic::MultiVector<DomainScalar,node_type> lclX = X.getLocalMV ();
+    const char tfecfFuncName[] = "localSolve: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! isFillComplete (), std::runtime_error,
       "The matrix is not fill complete.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
-      "X and Y must have the same number of vectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! X.isConstantStride () || ! Y.isConstantStride (), std::runtime_error,
+      ! X.isConstantStride () || ! Y.isConstantStride (), std::invalid_argument,
       "X and Y must be constant stride.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! isUpperTriangular () && ! isLowerTriangular (), std::runtime_error,
@@ -5236,19 +5239,35 @@ namespace Tpetra {
       "Remember that this is a local (per MPI process) property, and that "
       "Tpetra only knows how to do a local (per process) triangular solve.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      STS::isComplex && mode == Teuchos::TRANS, std::logic_error, "This method "
-      "does not currently support non-conjugated transposed solve (mode == "
+      STS::isComplex && mode == TRANS, std::logic_error, "This method does "
+      "not currently support non-conjugated transposed solve (mode == "
       "Teuchos::TRANS) for complex scalar types.");
-    //
-    // Call the solve
-    //
-    // FIXME (mfh 27 Aug 2014) Why can't I pass the 'mode' argument directly in?
-    if (mode == Teuchos::NO_TRANS) {
-      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, lclY, lclX);
+
+    // FIXME (mfh 27 Aug 2014) Tpetra has always made the odd decision
+    // that if _some_ diagonal entries are missing locally, then it
+    // assumes that the matrix has an implicitly stored unit diagonal.
+    // Whether the matrix has an implicit unit diagonal or not should
+    // be up to the user to decide.  What if the graph has no diagonal
+    // entries, and the user wants it that way?  The only reason this
+    // matters, though, is for the triangular solve, and in that case,
+    // missing diagonal entries will cause trouble anyway.  However,
+    // it would make sense to warn the user if they ask for a
+    // triangular solve with an incomplete diagonal.  Furthermore,
+    // this code should only assume an implicitly stored unit diagonal
+    // if the matrix has _no_ explicitly stored diagonal entries.
+    const Teuchos::EDiag diag = getNodeNumDiags () < getNodeNumRows () ?
+      Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
+    Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
+    if (isUpperTriangular ()) {
+      uplo = Teuchos::UPPER_TRI;
+    } else if (isLowerTriangular ()) {
+      uplo = Teuchos::LOWER_TRI;
     }
-    else {
-      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, lclY, lclX);
-    }
+
+    k_local_matrix_type A_lcl = this->getLocalMatrix ();
+    typename DMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
+    typename RMV::dual_view_type::t_host Y_lcl = Y.template getLocalView<HMDT> ();
+    triSolveKokkos (X_lcl, A_lcl, Y_lcl, uplo, diag, mode);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>

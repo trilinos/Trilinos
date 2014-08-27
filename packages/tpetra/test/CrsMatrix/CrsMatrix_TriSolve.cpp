@@ -103,8 +103,9 @@ namespace {
   using Teuchos::UNIT_DIAG;
   using Teuchos::NON_UNIT_DIAG;
   using Teuchos::EUplo;
-  using Teuchos::UPPER_TRI;
   using Teuchos::LOWER_TRI;
+  using Teuchos::UNDEF_TRI;
+  using Teuchos::UPPER_TRI;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
 
@@ -214,6 +215,10 @@ namespace {
   {
     using std::endl;
 
+    out << "Testing Tpetra::CrsMatrix triangular solve with nonempty matrices"
+        << endl;
+    Teuchos::OSTab tab0 (out);
+
     // mfh 26 Feb 2014: Organizing the if-else in this way avoids a
     // build warning for "dynamic initialization in unreachable code."
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
@@ -295,6 +300,47 @@ namespace {
         const ETransp trans = ((tnum & 8) == 8 ? CONJ_TRANS : NO_TRANS);
         const bool optimizeStorage = (tnum & 4) == 4;
 
+        std::string diagStr;
+        if (diag == UNIT_DIAG) {
+          diagStr = "UNIT_DIAG";
+        } else if (diag == NON_UNIT_DIAG) {
+          diagStr = "NON_UNIT_DIAG";
+        } else {
+          diagStr = "UNDEFINED";
+        }
+        std::string uploStr;
+        if (uplo == LOWER_TRI) {
+          uploStr = "LOWER_TRI";
+        } else if (uplo == UPPER_TRI) {
+          uploStr = "UPPER_TRI";
+        } else if (uplo == UNDEF_TRI) {
+          uploStr = "UNDEF_TRI";
+        } else {
+          uploStr = "UNDEFINED";
+        }
+        std::string transStr;
+        if (trans == CONJ_TRANS) {
+          transStr = "CONJ_TRANS";
+        } else if (trans == TRANS) {
+          transStr = "TRANS";
+        } else if (trans == NO_TRANS) {
+          transStr = "NO_TRANS";
+        } else {
+          transStr = "UNDEFINED";
+        }
+
+        out << "Test " << (tnum+1) << " of " << 16 << ":" << endl;
+        Teuchos::OSTab tab1 (out);
+        {
+          out << "Parameters:" << endl;
+          Teuchos::OSTab tab2 (out);
+          out << "uplo: " << uploStr << endl
+              << "diag: " << diagStr << endl
+              << "trans: " << transStr << endl
+              << "optimizeStorage: " << (optimizeStorage ? "true" : "false") << endl
+              << endl;
+        }
+
         params->set ("Optimize Storage", optimizeStorage);
         RCP<ParameterList> fillparams = sublist (params, "Local Sparse Ops");
         fillparams->set ("Prepare Solve", true);
@@ -368,49 +414,11 @@ namespace {
           AIOp = createCrsMatrixSolveOp<Scalar> (AMat.getConst ());
         }
         B.randomize ();
-        if (diag != UNIT_DIAG && uplo == LOWER_TRI &&
-            trans == CONJ_TRANS && ! optimizeStorage) {
-          const std::string diagStr = (diag == UNIT_DIAG) ?
-            "UNIT_DIAG" : "NON_UNIT_DIAG";
-          std::string uploStr;
-          if (uplo == LOWER_TRI) {
-            uploStr = "LOWER_TRI";
-          } else if (uplo == UPPER_TRI) {
-            uploStr = "UPPER_TRI";
-          } else {
-            uploStr = "NEITHER";
-          }
-          std::string transStr;
-          if (trans == CONJ_TRANS) {
-            transStr = "CONJ_TRANS";
-          } else if (trans == TRANS) {
-            transStr = "TRANS";
-          } else {
-            transStr = "NO_TRANS";
-          }
-          out << endl
-              << "================================" << endl
-              << "HERE IS THE INTERESTING USE CASE" << endl
-              << "================================" << endl
-              << "  uplo: " << uploStr << endl
-              << "  diag: " << diagStr << endl
-              << "  trans: " << transStr << endl
-              << "  optimizeStorage: " << optimizeStorage << endl
-              << endl;
-          out << "Before the solve:" << endl
-              << "  Input MV X:" << endl;
-          X.describe (out, Teuchos::VERB_EXTREME);
-          out << "  Output MV B:" << endl;
-          B.describe (out, Teuchos::VERB_EXTREME);
-          out << "  Sparse matrix A:" << endl;
-          AMat->describe (out, Teuchos::VERB_EXTREME);
-          out << "Time for the solve!" << endl;
-        }
-        AIOp->apply(X,B,trans);
+        AIOp->apply (X, B, trans);
         if (diag == UNIT_DIAG) {
           // we want (I+A)*X -> B
           // A*X -> B needs to be augmented with X
-          B.update(ST::one(),X,ST::one());
+          B.update (ST::one (), X, ST::one());
         }
         Array<Mag> normsB (numVecs);
         B.norm1 (normsB ());
@@ -422,41 +430,33 @@ namespace {
             }
           }
           if (badColumns.size () > 0) {
-            out << endl << "*** TRIANGULAR SOLVE FAILED ***" << endl << endl;
+            out << "Result of triangular solve contains Inf or NaN:" << endl;
+            Teuchos::OSTab tab2 (out);
             B.normInf (normsB ());
-            out << "Here are the inf-norms of each column of B = A \\ X: "
+            out << "Inf-norms of each column of B = A \\ X: "
                 << Teuchos::toString (normsB) << endl;
             B.norm2 (normsB ());
-            out << "Here are the 2-norms of each column of B = A \\ X: "
+            out << "2-norms of each column of B = A \\ X: "
                 << Teuchos::toString (normsB) << endl;
             B.norm1 (normsB ());
-            out << "Here are the 1-norms of each column of B = A \\ X: "
+            out << "1-norms of each column of B = A \\ X: "
                 << Teuchos::toString (normsB) << endl;
-            out << "Here is the input MV X:" << endl;
+            out << "Input MV X:" << endl;
             X.describe (out, Teuchos::VERB_EXTREME);
-            out << "Here is the output MV B, on output:" << endl;
+            out << "Output MV B, on output:" << endl;
             B.describe (out, Teuchos::VERB_EXTREME);
           }
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            badColumns.size () > 0,
-            std::runtime_error,
-            "Columns " << Teuchos::toString (badColumns) << " of B = A \\ X "
-            "have a 1-norm either Inf or NaN." << std::endl
-            << "That suggests the triangular solve is broken." << endl
-            << "Here are the 1-norms of each column: "
-            << Teuchos::toString (normsB));
         }
 
-        Xhat.randomize();
-        AIOp->apply(B,Xhat,trans);
-        //
-        Xhat.update(-ST::one(),X,ST::one());
-        Array<Mag> errnrms(numVecs), zeros(numVecs, MT::zero());
-        Xhat.norm1(errnrms());
-        B.norm1(normsB());
-        Mag maxBnrm = *std::max_element( normsB.begin(), normsB.end() );
+        Xhat.randomize ();
+        AIOp->apply (B, Xhat, trans);
+        Xhat.update (-ST::one (), X, ST::one ());
+        Array<Mag> errnrms (numVecs), zeros (numVecs, MT::zero ());
+        Xhat.norm1 (errnrms ());
+        B.norm1 (normsB ());
+        Mag maxBnrm = *std::max_element (normsB.begin (), normsB.end ());
         if (ST::isOrdinal) {
-          TEST_COMPARE_ARRAYS(errnrms, zeros);
+          TEST_COMPARE_ARRAYS( errnrms, zeros );
         } else {
           TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
         }
