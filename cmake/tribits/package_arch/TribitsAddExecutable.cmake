@@ -382,7 +382,12 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
 
   # First, add in the passed in dependent libraries
   IF (PARSE_DEPLIBS)
-    APPEND_SET(LINK_LIBS ${PARSE_DEPLIBS})
+    SET(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
+    SET(PREFIXED_DEPLIBS)
+    FOREACH(LIB ${PARSE_DEPLIBS})
+      LIST(APPEND PREFIXED_DEPLIBS "${LIBRARY_NAME_PREFIX}${LIB}")
+    ENDFOREACH()
+    APPEND_SET(LINK_LIBS ${PREFIXED_DEPLIBS})
   ENDIF()
   # 2009/01/09: rabartl: Above, I moved the list of dependent
   # libraries first to get around a problem with test-only libraries
