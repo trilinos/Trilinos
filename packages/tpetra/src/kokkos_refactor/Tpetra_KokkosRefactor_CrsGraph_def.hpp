@@ -641,6 +641,15 @@ namespace Tpetra {
     computeGlobalConstants ();
 
     // finalize local graph
+    //
+    // FIXME (mfh 27 Aug 2014) This makes no sense.  Whether the graph
+    // has an implicit unit diagonal or not should be up to the user
+    // to decide.  What if the graph has no diagonal entries, and the
+    // user wants it that way?  The only reason this matters, though,
+    // is for the triangular solve, and in that case, missing diagonal
+    // entries will cause trouble anyway.  However, it would make
+    // sense to warn the user if they ask for a triangular solve with
+    // an incomplete diagonal.
     const Teuchos::EDiag diag = getNodeNumDiags () < getNodeNumRows () ?
       Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
     Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
@@ -3900,6 +3909,15 @@ namespace Tpetra {
     // have to use global indices to determine which entries are
     // diagonal, or above or below the diagonal.  However, lower or
     // upper triangularness is a local property.
+    //
+    // FIXME (mfh 27 Aug 2014) This makes no sense.  Whether the graph
+    // has an implicit unit diagonal or not should be up to the user
+    // to decide.  What if the graph has no diagonal entries, and the
+    // user wants it that way?  The only reason this matters, though,
+    // is for the triangular solve, and in that case, missing diagonal
+    // entries will cause trouble anyway.  However, it would make
+    // sense to warn the user if they ask for a triangular solve with
+    // an incomplete diagonal.
     const Teuchos::EDiag diag = getNodeNumDiags () < getNodeNumRows () ?
       Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
     Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;

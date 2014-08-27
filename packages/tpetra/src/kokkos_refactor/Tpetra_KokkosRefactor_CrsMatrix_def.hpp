@@ -45,6 +45,7 @@
 #ifdef DOXYGEN_USE_ONLY
 #  include "Tpetra_KokkosRefactor_CrsMatrix_decl.hpp"
 #endif
+#include <Kokkos_Sequential_SparseKernels.hpp>
 
 namespace Tpetra {
 
@@ -5077,11 +5078,54 @@ namespace Tpetra {
                     const RangeScalar& dampingFactor,
                     const KokkosClassic::ESweepDirection direction) const
   {
-    KokkosClassic::MultiVector<DomainScalar,node_type> x = X.getLocalMV ();
-    KokkosClassic::MultiVector<RangeScalar,node_type> b = B.getLocalMV ();
-    KokkosClassic::MultiVector<RangeScalar,node_type> d = D.getLocalMV ();
+    using Kokkos::Sequential::gaussSeidel;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Tpetra::MultiVector<DomainScalar, LO, GO, node_type> DMV;
+    typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
+    typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> MMV;
+    typedef typename device_type::host_mirror_device_type HMDT;
+    typedef typename Graph::LocalStaticCrsGraphType k_local_graph_type;
+    typedef typename k_local_graph_type::size_type offset_type;
+    const char prefix[] = "Tpetra::CrsMatrix::localGaussSeidel: ";
 
-    lclMatOps_->template gaussSeidel<DomainScalar, RangeScalar> (b, x, d, dampingFactor, direction);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! this->isFillComplete (), std::runtime_error,
+      prefix << "The matrix is not fill complete.");
+    const size_t lclNumRows = this->getNodeNumRows ();
+    const size_t numVecs = B.getNumVectors ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      X.getNumVectors () != numVecs, std::invalid_argument,
+      prefix << "B.getNumVectors() = " << numVecs << " != "
+      "X.getNumVectors() = " << X.getNumVectors () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      B.getLocalLength () != lclNumRows, std::invalid_argument,
+      prefix << "B.getLocalLength() = " << B.getLocalLength ()
+      << " != this->getNodeNumRows() = " << lclNumRows << ".");
+
+    typename DMV::dual_view_type::t_host B_lcl = B.template getLocalView<HMDT> ();
+    typename RMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
+    typename MMV::dual_view_type::t_host D_lcl = D.template getLocalView<HMDT> ();
+
+    offset_type B_stride[8], X_stride[8], D_stride[8];
+    B_lcl.stride (B_stride);
+    X_lcl.stride (X_stride);
+    D_lcl.stride (D_stride);
+
+    k_local_matrix_type lclMatrix = this->getLocalMatrix ();
+    k_local_graph_type lclGraph = lclMatrix.graph;
+    typename k_local_matrix_type::row_map_type ptr = lclGraph.row_map;
+    typename k_local_matrix_type::index_type ind = lclGraph.entries;
+    typename k_local_matrix_type::values_type val = lclMatrix.values;
+    const offset_type* const ptrRaw = ptr.ptr_on_device ();
+    const LO* const indRaw = ind.ptr_on_device ();
+    const Scalar* const valRaw = val.ptr_on_device ();
+
+    gaussSeidel (static_cast<LO> (lclNumRows), static_cast<LO> (numVecs),
+                 ptrRaw, indRaw, valRaw,
+                 B_lcl.ptr_on_device (), B_stride[1],
+                 X_lcl.ptr_on_device (), X_stride[1],
+                 D_lcl.ptr_on_device (), dampingFactor, direction);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -5100,11 +5144,61 @@ namespace Tpetra {
                              const RangeScalar& dampingFactor,
                              const KokkosClassic::ESweepDirection direction) const
   {
-    KokkosClassic::MultiVector<DomainScalar,node_type> x = X.getLocalMV ();
-    KokkosClassic::MultiVector<RangeScalar,node_type> b = B.getLocalMV ();
-    KokkosClassic::MultiVector<RangeScalar,node_type> d = D.getLocalMV ();
+    using Kokkos::Sequential::reorderedGaussSeidel;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Tpetra::MultiVector<DomainScalar, LO, GO, node_type> DMV;
+    typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
+    typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> MMV;
+    typedef typename device_type::host_mirror_device_type HMDT;
+    typedef typename Graph::LocalStaticCrsGraphType k_local_graph_type;
+    typedef typename k_local_graph_type::size_type offset_type;
+    const char prefix[] = "Tpetra::CrsMatrix::reorderedLocalGaussSeidel: ";
 
-    lclMatOps_->template reorderedGaussSeidel<DomainScalar, RangeScalar> (b, x, d, rowIndices, dampingFactor, direction);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! this->isFillComplete (), std::runtime_error,
+      prefix << "The matrix is not fill complete.");
+    const size_t lclNumRows = this->getNodeNumRows ();
+    const size_t numVecs = B.getNumVectors ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      X.getNumVectors () != numVecs, std::invalid_argument,
+      prefix << "B.getNumVectors() = " << numVecs << " != "
+      "X.getNumVectors() = " << X.getNumVectors () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      B.getLocalLength () != lclNumRows, std::invalid_argument,
+      prefix << "B.getLocalLength() = " << B.getLocalLength ()
+      << " != this->getNodeNumRows() = " << lclNumRows << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (rowIndices.size ()) < lclNumRows,
+      std::invalid_argument, prefix << "rowIndices.size() = "
+      << rowIndices.size () << " < this->getNodeNumRows() = "
+      << lclNumRows << ".");
+
+    typename DMV::dual_view_type::t_host B_lcl = B.template getLocalView<HMDT> ();
+    typename RMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
+    typename MMV::dual_view_type::t_host D_lcl = D.template getLocalView<HMDT> ();
+
+    offset_type B_stride[8], X_stride[8], D_stride[8];
+    B_lcl.stride (B_stride);
+    X_lcl.stride (X_stride);
+    D_lcl.stride (D_stride);
+
+    k_local_matrix_type lclMatrix = this->getLocalMatrix ();
+    typename Graph::LocalStaticCrsGraphType lclGraph = lclMatrix.graph;
+    typename k_local_matrix_type::index_type ind = lclGraph.entries;
+    typename k_local_matrix_type::row_map_type ptr = lclGraph.row_map;
+    typename k_local_matrix_type::values_type val = lclMatrix.values;
+    const offset_type* const ptrRaw = ptr.ptr_on_device ();
+    const LO* const indRaw = ind.ptr_on_device ();
+    const Scalar* const valRaw = val.ptr_on_device ();
+
+    reorderedGaussSeidel (static_cast<LO> (lclNumRows),
+                          static_cast<LO> (numVecs), ptrRaw, indRaw, valRaw,
+                          B_lcl.ptr_on_device (), B_stride[1],
+                          X_lcl.ptr_on_device (), X_stride[1],
+                          D_lcl.ptr_on_device (), rowIndices.getRawPtr (),
+                          static_cast<LO> (lclNumRows),
+                          dampingFactor, direction);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -5121,21 +5215,34 @@ namespace Tpetra {
               Teuchos::ETransp mode) const
   {
     using Teuchos::NO_TRANS;
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "localSolve()";
-#endif // HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "localSolve: ";
 
     KokkosClassic::MultiVector<RangeScalar,node_type> lclY = Y.getLocalMV ();
     KokkosClassic::MultiVector<DomainScalar,node_type> lclX = X.getLocalMV ();
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(),                                              std::runtime_error, " until fillComplete() has been called.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(X.getNumVectors() != Y.getNumVectors(),                         std::runtime_error, ": X and Y must have the same number of vectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(X.isConstantStride() == false || Y.isConstantStride() == false, std::runtime_error, ": X and Y must be constant stride.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isUpperTriangular() == false && isLowerTriangular() == false,   std::runtime_error, ": can only solve() triangular matrices.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(STS::isComplex && mode == Teuchos::TRANS,      std::logic_error, " does not currently support transposed solve for complex scalar types.");
-#endif
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! isFillComplete (), std::runtime_error,
+      "The matrix is not fill complete.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
+      "X and Y must have the same number of vectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! X.isConstantStride () || ! Y.isConstantStride (), std::runtime_error,
+      "X and Y must be constant stride.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! isUpperTriangular () && ! isLowerTriangular (), std::runtime_error,
+      "The matrix is neither upper triangular or lower triangular.  "
+      "You may only call this method if the matrix is triangular.  "
+      "Remember that this is a local (per MPI process) property, and that "
+      "Tpetra only knows how to do a local (per process) triangular solve.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      STS::isComplex && mode == Teuchos::TRANS, std::logic_error, "This method "
+      "does not currently support non-conjugated transposed solve (mode == "
+      "Teuchos::TRANS) for complex scalar types.");
     //
     // Call the solve
+    //
+    // FIXME (mfh 27 Aug 2014) Why can't I pass the 'mode' argument directly in?
     if (mode == Teuchos::NO_TRANS) {
       lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, lclY, lclX);
     }
@@ -5301,15 +5408,6 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       staticGraph_.is_null (),
       std::logic_error, err);
-    // if active, i have no local sparse ops
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isFillActive () && ! lclMatOps_.is_null (),
-      std::logic_error, err << "  Specifically, the matrix is fill active "
-      "(isFillActive() returns true) but its lclMatOps_ object is NOT null.");
-    // if filled, i have a local sparse ops
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isFillComplete() && lclMatOps_.is_null (),
-      std::logic_error, err );
     // myGraph == null means that the matrix has a static graph.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! myGraph_.is_null () && myGraph_ != staticGraph_,
