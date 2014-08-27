@@ -48,7 +48,7 @@
 
 // I/O for Harwell-Boeing files
 #ifdef HAVE_ANASAZI_TRIUTILS
-#include "Galeri_iohb.h"
+#include "Trilinos_Util_iohb.h"
 #endif
 
 // templated multivector and sparse matrix classes
