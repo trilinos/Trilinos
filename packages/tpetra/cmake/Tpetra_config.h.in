@@ -81,6 +81,7 @@
 
 /* Define if user requested explicit instantiation over ordinal pair <int,long> into libtpetra */
 #cmakedefine HAVE_TPETRA_INST_INT_LONG
+#cmakedefine HAVE_TPETRA_INST_INT_LONG_LONG
 
 #cmakedefine HAVE_TPETRA_INST_FLOAT
 #cmakedefine HAVE_TPETRA_INST_DOUBLE
