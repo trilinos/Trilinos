@@ -1,0 +1,67 @@
+#! /bin/env bash
+
+cpp_files=""
+xcompiler_args=""
+cuda_arg=""
+xlinker_args=""
+first_host_option=1
+nvcc_error_code=0
+dry_run=0
+
+while [[ $@ > 1 ]]
+do
+
+  case $1 in
+  --show)
+    dry_run=1
+    ;;
+  #handle source files to be compiled as cuda files
+  *.cpp|*.cxx|*.C|*.c++|*.cc|*.cu)
+    cpp_files="$cpp_files $1"
+    ;;
+  #Handle known nvcc args
+  -O*|-D*|-arch*|-gencode*|-c|-I*|-L*|-l*|-g|--help|--version|--dryrun|--verbose|*.o|*.a|*.so)
+    cuda_args="$cuda_args $1"
+    ;;
+  #Handle known nvcc args that have an argument
+  -o|-rdc,-ccbin)
+    cuda_args="$cuda_args $1 $2"
+    shift
+    ;;
+  #strip of pedantic because it produces endless warnings about #LINE added by the preprocessor
+  -pedantic)
+    ;;
+  #Handle args that should be sent to the linker
+  -Wl*)
+    xlinker_args="$xlinker_args -Xlinker ${1:4:${#1}}"
+    ;;
+  #All other args are sent to the host compiler
+  *)
+    if [[ $first_host_option == 0 ]]; then 
+      xcompiler_args="$xcompiler_args,$1"
+    else
+      xcompiler_args="-Xcompiler $1"
+      first_host_option=0
+    fi
+    ;;
+  esac
+
+  shift
+
+done
+
+command="nvcc $cuda_args $xlinker_args $xcompiler_args"
+
+if [[ "$cpp_files" ]]; then
+  command="$command -x cu $cpp_files"
+fi
+
+if [[ $dry_run == 1 ]]; then
+  echo $command
+  exit 0
+fi
+
+$command
+nvcc_error_code=$?
+
+exit $nvcc_error_code
