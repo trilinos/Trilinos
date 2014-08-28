@@ -1920,12 +1920,12 @@ struct BLASFixture3d {
     unsigned int numEntitiesUniversal;
     unsigned int numEntitiesGlobal;
 
-    BLASFixture3d(A*,A*,A*,const int);
+    BLASFixture3d(A* init1_input, A* init2_input, A* init3_input, const int MeshSize = 11);
     ~BLASFixture3d();
 };
 
 template<class A>
-BLASFixture3d<A>::BLASFixture3d(A* init1_input,A* init2_input,A* init3_input,const int MeshSize = 11)
+BLASFixture3d<A>::BLASFixture3d(A* init1_input,A* init2_input,A* init3_input,const int MeshSize)
 {
     init1=init1_input;
     init2=init2_input;
