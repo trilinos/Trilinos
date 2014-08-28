@@ -49,7 +49,9 @@
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
 template class MueLu::Utils<double, int, int>;
+#ifndef _MSC_VER // error C2950: 'MueLu::Utils2<double,int,int>' : cannot explicitly instantiate an explicit specialization
 template class MueLu::Utils2<double, int, int>;
+#endif
 #else
 #error
 #endif
