@@ -625,27 +625,29 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*d
   //
   if (bulk.parallel_size() > 1)
   {
+    Ioss::CommSet* io_cs = region.get_commset("commset_node");
+    int num_sharings = io_cs->get_field("entity_processor").raw_count();
+
     // Check for corrupt incomplete nemesis information.  Some old
     // files are being used which do not have the correct nemesis
     // sharing data. They can be identified by an incorrect global
-    // node count (typically equal to 1).
+    // node count (typically equal to 1) in addition to an empty node sharing list.
+    // Assume that if the node sharing list is non-empty, then no matter  what the 
+    // global node count is, the data is most likely ok.
     size_t global_node_count = region.get_property("global_node_count").get_int();
-    ThrowErrorMsgIf (global_node_count < ids.size(),
+    ThrowErrorMsgIf (num_sharings == 0 && global_node_count < ids.size(),
 		    "ERROR: Invalid communication/node sharing information found in file '"
 		     << region.get_database()->get_filename() << "'\n"
-		     << "       Global node count is  " << global_node_count
+		     << "       There is no node sharing information and the "
+		     << "lobal node count is  " << global_node_count
 		     << " which is less than the node count on processor "
 		     << stk::parallel_machine_rank(bulk.parallel())
 		     << " which is " << ids.size());
 
-    Ioss::CommSet* io_cs = region.get_commset("commset_node");
-    int num_sharings = io_cs->get_field("entity_processor").raw_count();
-
     std::vector<INT> entity_proc;
     io_cs->get_field_data("entity_processor", entity_proc);
 
-    for (int i = 0; i < num_sharings; ++i)
-    {
+    for (int i = 0; i < num_sharings; ++i) {
       stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, entity_proc[i*2]);
       bulk.add_node_sharing(node, entity_proc[i*2+1]);
     }
