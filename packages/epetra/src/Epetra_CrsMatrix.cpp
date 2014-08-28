@@ -4904,7 +4904,7 @@ template<class TransferType>
     Epetra_IntVector TargetRow_pids(*DomainMap,true);
     Epetra_IntVector SourceRow_pids(SourceMatrix.RowMap());
     SourcePids.resize(SourceMatrix.ColMap().NumMyElements(),0);
-    Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(),&SourcePids[0]);
+    Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(),SourcePids.size() ? &SourcePids[0] : 0);
 
     TargetRow_pids.PutValue(MyPID);
     if(typeid(TransferType)==typeid(Epetra_Import))
