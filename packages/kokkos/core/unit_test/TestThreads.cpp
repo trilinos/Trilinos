@@ -47,7 +47,7 @@
 
 #if defined( KOKKOS_HAVE_PTHREAD )
 
-#include <Kokkos_Threads.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_hwloc.hpp>
 
 #include <Kokkos_View.hpp>
