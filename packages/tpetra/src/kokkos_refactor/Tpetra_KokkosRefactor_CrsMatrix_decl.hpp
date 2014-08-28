@@ -2179,9 +2179,8 @@ namespace Tpetra {
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> MV;
     typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>      V;
     typedef crs_graph_type Graph;
-    typedef typename LocalMatOps::template bind_scalar<Scalar>::other_type                    sparse_ops_type;
-    typedef typename sparse_ops_type::template graph<LocalOrdinal,node_type>::graph_type          local_graph_type;
-    typedef typename sparse_ops_type::template matrix<Scalar,LocalOrdinal,node_type>::matrix_type local_matrix_type;
+    typedef typename LocalMatOps::template bind_scalar<Scalar>::other_type sparse_ops_type;
+    typedef typename sparse_ops_type::template graph<LocalOrdinal,node_type>::graph_type local_graph_type;
 
     // Enums
     enum GraphAllocationStatus {
@@ -2373,12 +2372,6 @@ namespace Tpetra {
     RCP<const Graph> staticGraph_;
     RCP<      Graph>     myGraph_;
     //@}
-
-    /// The local sparse matrix kernels, after kernel optimizations.
-    ///
-    /// resumeFill() sets this to null.  fillComplete() initializes
-    /// this object using the local graph and matrix.
-    RCP<sparse_ops_type> lclMatOps_;
 
     //! The local sparse matrix.
     k_local_matrix_type k_lclMatrix_;

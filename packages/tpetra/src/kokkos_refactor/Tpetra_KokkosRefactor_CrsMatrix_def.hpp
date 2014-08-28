@@ -308,25 +308,12 @@ namespace Tpetra {
 
     k_values1D_ = k_lclMatrix_.values;
 
-    //
-    // Set up the local sparse kernels.
-    //
-    lclMatOps_ = rcp (new sparse_ops_type (getNode ()));
     {
       // For backwards compatibility, set the Kokkos classic pointer
       // to the values, values1D_.
       ArrayRCP<scalar_type> classicValues =
         Kokkos::Compat::persistingView (k_lclMatrix_.values);
       values1D_ = classicValues;
-
-      // For backwards compatibility, create a temporary Kokkos
-      // classic "local matrix" and pass it in to the "local mat ops"
-      // object.
-      RCP<local_matrix_type> classicLocalMatrix =
-        rcp (new local_matrix_type (staticGraph_->getLocalGraph (), params));
-      classicLocalMatrix->setValues (classicValues);
-      lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (),
-                                     classicLocalMatrix);
     }
 
     // Once we've initialized the sparse kernels, we're done with the
@@ -1201,39 +1188,7 @@ namespace Tpetra {
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
                                         getNodeNumCols (), k_vals,
                                         myGraph_->k_lclGraph_);
-
-    // Finalize the local graph and matrix together.
-    if (params.is_null ()) {
-      lclparams = Teuchos::parameterList ();
-    } else {
-      lclparams = Teuchos::sublist (params, "Local Sparse Ops");
-    }
-    // Figure out if the matrix has a unit diagonal, and whether it is
-    // upper or lower triangular (or neither).
-    const Teuchos::EDiag diag = getNodeNumDiags() < lclNumRows ?
-      Teuchos::UNIT_DIAG :
-      Teuchos::NON_UNIT_DIAG;
-    Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
-    if (isUpperTriangular ()) {
-      uplo = Teuchos::UPPER_TRI;
-    } else if (isLowerTriangular ()) {
-      uplo = Teuchos::LOWER_TRI;
-    }
-
-    // Set Kokkos classic values array for backwards compatibility.
-    ArrayRCP<scalar_type> classicValues =
-      Kokkos::Compat::persistingView (k_vals);
-
-    // Set up Kokkos classic "local mat ops" object.
-    // RCP<local_matrix_type> classicLocalMatrix =
-    //   rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
-    RCP<local_matrix_type> classicLocalMatrix =
-      rcp (new local_matrix_type (myGraph_->getLocalGraph (), lclparams));
-    classicLocalMatrix->setValues (classicValues);
-    sparse_ops_type::finalizeGraphAndMatrix (uplo, diag,
-                                             *myGraph_->getLocalGraphNonConst (),
-                                             *classicLocalMatrix,
-                                             lclparams);
+    // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" parameter is now ignored.
   }
 
 
@@ -1498,14 +1453,7 @@ namespace Tpetra {
       Kokkos::Compat::persistingView (k_lclMatrix_.values);
     values1D_ = classicValues;
 
-    // Finalize the local matrix.
-    lclparams = params.is_null () ? parameterList () :
-      sublist (params, "Local Sparse Ops");
-    RCP<local_matrix_type> classicLocalMatrix =
-      rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
-    classicLocalMatrix->setValues (classicValues);
-    sparse_ops_type::finalizeMatrix (* (staticGraph_->getLocalGraph ()),
-                                     *classicLocalMatrix, lclparams);
+    // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" parameter is now ignored.
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal,
@@ -3654,7 +3602,6 @@ namespace Tpetra {
       myGraph_->resumeFill (params);
     }
     clearGlobalConstants ();
-    lclMatOps_ = null;
     fillComplete_ = false;
   }
 
@@ -3871,21 +3818,6 @@ namespace Tpetra {
       // the same time as the local matrix.
       fillLocalGraphAndMatrix (params);
     }
-    //
-    // Set up the local sparse kernels.
-    //
-    lclMatOps_ = rcp (new sparse_ops_type (getNode ()));
-    // This is where we take the local graph and matrix, and turn them
-    // into (possibly optimized) sparse kernels.
-    {
-      RCP<local_matrix_type> classicLocalMatrix =
-        rcp (new local_matrix_type (staticGraph_->getLocalGraph (), params));
-      ArrayRCP<scalar_type> classicValues =
-        Kokkos::Compat::persistingView (k_lclMatrix_.values);
-      classicLocalMatrix->setValues (classicValues);
-      lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (),
-                                     classicLocalMatrix);
-    }
 
     // Once we've initialized the sparse kernels, we're done with the
     // local objects.  We may now release them and their memory, since
@@ -3930,21 +3862,8 @@ namespace Tpetra {
 
     computeGlobalConstants();
 
-    // Fill the local matrix & MatOps
-    fillLocalGraphAndMatrix(params);
-    lclMatOps_ = rcp (new sparse_ops_type (getNode ()));
-
-    // This is where we take the local graph and matrix, and turn them
-    // into (possibly optimized) sparse kernels.
-    {
-      RCP<local_matrix_type> classicLocalMatrix =
-        rcp (new local_matrix_type (staticGraph_->getLocalGraph (), params));
-      ArrayRCP<scalar_type> classicValues =
-        Kokkos::Compat::persistingView (k_lclMatrix_.values);
-      classicLocalMatrix->setValues (classicValues);
-      lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (),
-                                     classicLocalMatrix);
-    }
+    // Fill the local graph and matrix
+    fillLocalGraphAndMatrix (params);
 
     // Once we've initialized the sparse kernels, we're done with the
     // local objects.  We may now release them and their memory, since
@@ -5723,12 +5642,6 @@ namespace Tpetra {
           } // vl == VERB_EXTREME
           out << endl;
         } // for each row r on this process
-
-        // Print the optimized sparse kernels object, if applicable.
-        // That has O(NNZ) data.
-        if (vl == VERB_EXTREME && ! lclMatOps_.is_null ()) {
-          lclMatOps_->describe (out, vl);
-        }
       } // if (myRank == curRank)
 
       // Give output time to complete
