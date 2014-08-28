@@ -132,8 +132,11 @@ namespace MueLu {
     See also Ifpack2::Relaxation, Ifpack2::Chebyshev, Ifpack2::ILUT, Ifpack2::Krylov.
     */
 
+#ifndef _MSC_VER
+    // Avoid error C3772: invalid friend template declaration
     template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2>
     friend class Ifpack2Smoother;
+#endif
 
     Ifpack2Smoother(const std::string& type, const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), const LO& overlap = 0); //TODO: empty paramList valid for Ifpack??
 
