@@ -5503,11 +5503,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
 )
 {
 
-#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
-    Z2_THROW_EXPERIMENTAL("Zoltan2 MultiJagged is experimental software "
-                          "while it is being developed and tested.")
-#else
-
 #ifdef print_debug
     if(comm->getRank() == 0){
     	std::cout << "size of gno:" << sizeof(mj_gno_t) << std::endl;
@@ -5993,7 +5988,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
     this->free_work_memory();
     this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Total");
     this->mj_env->debug(3, "Out of MultiJagged");
-#endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 
 }
 
