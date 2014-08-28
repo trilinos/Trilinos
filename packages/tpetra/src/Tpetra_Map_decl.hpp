@@ -95,6 +95,16 @@ namespace Tpetra {
     };
   } // namespace Details
 
+    template<class Node>
+    Teuchos::RCP<Node> defaultArgNode() {
+        // Workaround function for a deferred visual studio bug
+        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
+        // Use this function for default arguments rather than calling
+        // what is the return value below.  Also helps in reducing
+        // duplication in various constructors.
+        return KokkosClassic::Details::getNode<Node>();
+    }
+
   /// \class Map
   /// \brief Describes a parallel distribution of objects over processes.
   ///
@@ -308,7 +318,7 @@ namespace Tpetra {
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          LocalGlobal lg=GloballyDistributed,
-         const Teuchos::RCP<Node> &node = defaultArgNode());
+         const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
 
     /** \brief Constructor with a user-defined contiguous distribution.
      *
@@ -353,7 +363,7 @@ namespace Tpetra {
          size_t numLocalElements,
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = defaultArgNode());
+         const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
 
     /** \brief Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
      *
@@ -393,7 +403,7 @@ namespace Tpetra {
          const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = defaultArgNode());
+         const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
 
 
     /// \brief Default constructor (that does nothing).
@@ -683,15 +693,6 @@ namespace Tpetra {
     //@}
     //! Advanced methods
     //@{
-
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
 
     //! Create a shallow copy of this Map, with a different Node type.
     template <class NodeOut>
@@ -994,7 +995,7 @@ namespace Tpetra {
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createLocalMapWithNode (size_t numElements,
                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                          const Teuchos::RCP<Node>& node = KokkosClassic::Details::getNode<Node> ());
+                          const Teuchos::RCP<Node>& node = defaultArgNode<Node> ());
 
   /// \brief Non-member constructor for a uniformly distributed,
   ///   contiguous Map with the default Kokkos Node.
@@ -1019,7 +1020,7 @@ namespace Tpetra {
   createUniformContigMapWithNode (global_size_t numElements,
                                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                   const Teuchos::RCP<Node>& node =
-                                  KokkosClassic::Details::getNode<Node> ());
+                                  defaultArgNode<Node> ());
 
   /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with the default Kokkos Node.
 
