@@ -267,7 +267,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   HELLO;
   using Teuchos::ParameterList;
 
-//  cout << __func__ << " input adapter type " 
+//  cout << __func__zoltan2__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 
 //       << this->inputAdapter_->inputAdapterName() << endl;
 
@@ -341,12 +341,12 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   case HypergraphModelType:
   case CoordinateModelType:
-    cout << __func__ << " Model type " << modelType << " not yet supported." 
+    cout << __func__zoltan2__ << " Model type " << modelType << " not yet supported." 
          << endl;
     break;
 
   default:
-    cout << __func__ << " Invalid model" << modelType << endl;
+    cout << __func__zoltan2__ << " Invalid model" << modelType << endl;
     break;
   }
 }

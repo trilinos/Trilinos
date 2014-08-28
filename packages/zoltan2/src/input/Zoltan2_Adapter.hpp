@@ -60,7 +60,7 @@
   { \
     std::ostringstream emsg; \
     emsg << __FILE__ << "," << __LINE__ \
-         << " error:  " << __func__ << " not implemented in adapter "  \
+         << " error:  " << __func__zoltan2__ << " not implemented in adapter "  \
          << std::endl; \
     throw std::runtime_error(emsg.str()); \
   }
