@@ -78,7 +78,7 @@ namespace Galeri {
     {
     public:
       static Teuchos::RCP<Matrix> Build(const Teuchos::RCP<const Map> &rowMap, size_t maxNumEntriesPerRow) // TODO: pftype
-      { return rcp( new Matrix(rowMap, maxNumEntriesPerRow) );
+      { return Teuchos::rcp( new Matrix(rowMap, maxNumEntriesPerRow) );
       };
     };
 

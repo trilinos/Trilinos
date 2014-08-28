@@ -77,8 +77,11 @@ int main(int argc, char* argv[])
   try
   {
     // Creation of the map
+#ifndef GALERI_TEST_USE_LONGLONG_GO
     Map = CreateMap("Cartesian2D", Comm, GaleriList);
-
+#else
+    Map = CreateMap64("Cartesian2D", Comm, GaleriList);
+#endif
     // print out the map
     cout << *Map;
 

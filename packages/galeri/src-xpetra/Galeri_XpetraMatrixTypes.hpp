@@ -143,7 +143,7 @@ namespace Galeri {
 
       comm->barrier();
 
-      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
+      Teuchos::RCP<Teuchos::Time> timer = Teuchos::rcp(new Teuchos::Time("TriDiag global insert"));
       timer->start(true);
 
       // c a b
@@ -183,7 +183,7 @@ namespace Galeri {
 
       timer->stop();
 
-      timer = rcp(new Teuchos::Time("TriDiag fillComplete"));
+      timer = Teuchos::rcp(new Teuchos::Time("TriDiag fillComplete"));
       timer->start(true);
 
       mtx->fillComplete();
