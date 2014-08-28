@@ -446,9 +446,10 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields() 
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildSubUGIs) 
 {
-   fieldBlockManagers_.clear();
+   if(buildSubUGIs)
+     fieldBlockManagers_.clear();
    fieldStrToNum_.clear();
    fieldNumToStr_.clear();
    fieldNumToFieldBlk_.clear();
@@ -507,13 +508,15 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
    }
 
    // build sub DOFManagers for each field block
-   for(std::size_t fldBlk=0;fldBlk<fieldOrder_.size();fldBlk++) {
-      Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > dofManager = buildNewIndexer(getConnManager(),mpiComm_);
+   if(buildSubUGIs) {
+     for(std::size_t fldBlk=0;fldBlk<fieldOrder_.size();fldBlk++) {
+       Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > dofManager = buildNewIndexer(getConnManager(),mpiComm_);
 
-      // add in these fields to the new manager
-      this->addFieldsToFieldBlockManager(fieldOrder_[fldBlk],*dofManager);
+       // add in these fields to the new manager
+       this->addFieldsToFieldBlockManager(fieldOrder_[fldBlk],*dofManager);
 
-      fieldBlockManagers_.push_back(dofManager); 
+       fieldBlockManagers_.push_back(dofManager); 
+     }
    }
     
    ////////////////////////////////
@@ -527,7 +530,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
    maxSubFieldNum_ = -1;
    std::map<std::string,int> tempStrToNum;
    for(std::size_t fldBlk=0;fldBlk<fieldBlockManagers_.size();fldBlk++) {
-      Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > dofManager =
+      Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > dofManager =
          fieldBlockManagers_[fldBlk];
       const std::vector<std::string> & activeFields = fieldOrder_[fldBlk];
 
@@ -545,6 +548,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
    int numOffset = 0;
    for(std::size_t fldBlk=0;fldBlk<fieldBlockManagers_.size();fldBlk++) {
       const std::vector<std::string> & activeFields = fieldOrder_[fldBlk];
+ 
       for(std::size_t f=0;f<activeFields.size();f++) {
          // compute offset field number
          int fieldNum = tempStrToNum[activeFields[f]]+numOffset;
@@ -699,6 +703,8 @@ getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,Glo
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
+
+  TEUCHOS_ASSERT(indexer!=Teuchos::null);
 
   // standard version
   {
@@ -863,11 +869,118 @@ int BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getNumFields() const
 //   2. initializes the connectivity
 //   3. calls initComplete
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(
+   const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & fieldBlockManagers)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  RCP<const FieldPattern> refGeomPattern;
+  RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > refConnManager = getConnManager();
+
+  // verify the pre-conditions:
+  //   1. all the UGIs are of type DOFManager
+  //   2. the geometric patterns are all the same
+  //   3. the connection managers are all the same
+  //////////////////////////////////////////////////////////////////////////
+  {
+    TEUCHOS_ASSERT(fieldBlockManagers.size()>0); // the minimum requirement!
+
+    // get reference values from the initial DOFManager
+    RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > refDofManager 
+        = rcp_dynamic_cast<const DOFManager<LocalOrdinalT,GlobalOrdinalT> >(fieldBlockManagers[0]);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(refDofManager==Teuchos::null,std::runtime_error,
+                               "panzer::BlockedDOFManager::buildGlobalUnknowns: UGI at index " << 0 <<
+                               " is not of DOFManager type!");
+
+    RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > connManager = refDofManager->getConnManager();
+    TEUCHOS_TEST_FOR_EXCEPTION(refConnManager!=connManager,std::runtime_error,
+                               "panzer::BlockedDOFManager::buildGlobalUnknowns: connection manager for UGI " << 0 <<
+                               " does not match the reference connection manager");
+
+    refGeomPattern = refDofManager->getGeometricFieldPattern();
+
+    for(std::size_t i=1;i<fieldBlockManagers.size();i++) {
+      RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager 
+          = rcp_dynamic_cast<const DOFManager<LocalOrdinalT,GlobalOrdinalT> >(fieldBlockManagers[i]);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(refDofManager==Teuchos::null,std::runtime_error,
+                                 "panzer::BlockedDOFManager::buildGlobalUnknowns: UGI at index " << i <<
+                                 " is not of DOFManager type!");
+
+      RCP<const FieldPattern> geomPattern = dofManager->getGeometricFieldPattern();
+      RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > connManager = dofManager->getConnManager();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(!refGeomPattern->equals(*geomPattern),std::runtime_error,
+                                 "panzer::BlockedDOFManager::buildGlobalUnknowns: geometric pattern for UGI " << i <<
+                                 " does not match the reference pattern (from UGI 0)");
+      TEUCHOS_TEST_FOR_EXCEPTION(refConnManager!=connManager,std::runtime_error,
+                                 "panzer::BlockedDOFManager::buildGlobalUnknowns: connection manager for UGI " << i <<
+                                 " does not match the reference connection manager (from UGI 0)");
+    }
+  }
+
+  // add all the fields to the blocked dof manager
+  //////////////////////////////////////////////////////////////////////////
+  {
+    std::vector<std::string> eblocks;
+    this->getElementBlockIds(eblocks);
+  
+    for(std::size_t i=0;i<fieldBlockManagers.size();i++) {
+      RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager 
+          = rcp_dynamic_cast<const DOFManager<LocalOrdinalT,GlobalOrdinalT> >(fieldBlockManagers[i]);
+  
+      for(std::size_t e=0;e<eblocks.size();e++) {
+        const std::vector<int> & fieldIds = dofManager->getBlockFieldNumbers(eblocks[e]);
+   
+        // insert the fields into the block dof manager
+        for(std::size_t f=0;f<fieldIds.size();f++) {
+          // get the field name and pattern 
+          std::string fieldName = dofManager->getFieldString(fieldIds[f]);
+          Teuchos::RCP<const panzer::FieldPattern> fieldPattern
+              = dofManager->getFieldPattern(eblocks[e],fieldName);
+   
+          // add in the field
+          this->addField(eblocks[e],fieldName,fieldPattern);
+        }
+      }
+    }
+  }
+
+  // save and set some of the data
+  fieldBlockManagers_ = fieldBlockManagers;
+
+  registerFields(false);
+
+  geomPattern_ = refGeomPattern;
+
+  // build field block offsets: this helps fast construction
+  // of GID offset vectors. GIDs are ordering by field block.
+  //////////////////////////////////////////////////////////////////////////
+  {
+    std::vector<std::string> elementBlocks;
+    getElementBlockIds(elementBlocks);
+    for(std::size_t eb=0;eb<elementBlocks.size();eb++) {
+      int offset = 0;
+      for(std::size_t fb=0;fb<fieldBlockManagers_.size();fb++) {
+        int cnt = getElementBlockGIDCount(fieldBlockManagers_[fb],elementBlocks[eb]);
+        blockGIDOffset_[std::make_pair(elementBlocks[eb],fb)] = offset;
+        offset += cnt;
+      }
+    }
+  }
+}
+
+// build the global unknown numberings
+//   1. this builds the pattens
+//   2. initializes the connectivity
+//   3. calls initComplete
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern)
 {
    if(!fieldsRegistered()) {
-      // std::cout << "register fields in" << std::endl;
-      registerFields();
+      registerFields(true);
    }
 
    // save the geometry pattern
@@ -902,7 +1015,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
 {
    if(!fieldsRegistered())
-      registerFields();
+      registerFields(true);
 
    // build the pattern for the ID layout on the mesh
    std::vector<RCP<const FieldPattern> > patVector;
