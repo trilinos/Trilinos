@@ -326,20 +326,38 @@ setParameters (Teuchos::ParameterList& plist)
       }
     }
     if (userInvDiag.is_null ()) {
+#ifndef _MSC_VER
       try { // Could the type be const V?
         // The line below does a deep copy (V::operator=).
         userInvDiag =
           rcp (new V (plist.get<const V> ("chebyshev: operator inv diagonal")));
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error,
+      "Ifpack2::Chebyshev::setParameters: \"chebyshev: operator inv diagonal\" "
+      "plist.get<const V> does not compile around return held == other_held "
+      "in Teuchos::any in Visual Studio.  Can't fix it now, so throwing "
+      "in case someone builds there.");
+#endif
     }
     if (userInvDiag.is_null ()) {
+#ifndef _MSC_VER
       try { // Could the type be V?
         // The line below does a deep copy (V::operator=).
         userInvDiag =
           rcp (new V (plist.get<V> ("chebyshev: operator inv diagonal")));
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error,
+      "Ifpack2::Chebyshev::setParameters: \"chebyshev: operator inv diagonal\" "
+      "plist.get<V> does not compile around return held == other_held "
+      "in Teuchos::any in Visual Studio.  Can't fix it now, so throwing "
+      "in case someone builds there.");
+#endif
     }
     // We don't necessarily have a range Map yet.  compute() is the
     // proper place to compute the range Map version of userInvDiag.
