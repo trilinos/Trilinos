@@ -1183,6 +1183,7 @@ namespace MueLu {
 
   } //Write
 
+#ifndef _WIN32
 #include <unistd.h>
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1209,6 +1210,13 @@ namespace MueLu {
     }
     comm->barrier();
   } //PauseForDebugger
+#else
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PauseForDebugger() {
+      throw(Exceptions::RuntimeError("MueLu Utils: PauseForDebugger not implemented on Windows."));
+  }
+
+#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Scalar Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PowerMethod(const Matrix& A, bool scaleByDiag,
