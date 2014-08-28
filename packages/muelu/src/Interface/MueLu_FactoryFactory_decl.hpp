@@ -301,7 +301,7 @@ namespace MueLu {
           //     subList = sublist(rcpFromRef(paramList), pName)
           // here as that would result in sublist also being a reference to a temporary object.
           // The resulting dereferencing in the corresponding factory would then segfault
-          RCP<const ParameterList> subList = sublist(rcp(new ParameterList(paramList)), pName);
+          RCP<const ParameterList> subList = Teuchos::sublist(rcp(new ParameterList(paramList)), pName);
           paramListWithFactories.set(pName, subList);
         }
       }
@@ -380,7 +380,7 @@ namespace MueLu {
           //     subList = sublist(rcpFromRef(paramList), pName)
           // here as that would result in sublist also being a reference to a temporary object.
           // The resulting dereferencing in the corresponding factory would then segfault
-          RCP<const ParameterList> subList = sublist(rcp(new ParameterList(paramList)), pName);
+          RCP<const ParameterList> subList = Teuchos::sublist(rcp(new ParameterList(paramList)), pName);
           paramListWithFactories.set(pName, subList);
         }
       }
