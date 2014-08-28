@@ -46,6 +46,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 #ifdef PIRO_HAS_TPETRA
 #include "Tpetra_MultiVector.hpp"
