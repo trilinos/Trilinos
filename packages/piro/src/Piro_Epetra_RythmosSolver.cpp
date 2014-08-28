@@ -326,7 +326,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
   num_p(model->createInArgs().Np()),
   num_g(model->createOutArgs().Ng())
 {
-  thyraImplementation_ = rcp(new ThyraRythmosSolver(
+  thyraImplementation_ = Teuchos::rcp(new ThyraRythmosSolver(
         stateIntegrator,
         stateStepper,
         timeStepSolver,
@@ -349,7 +349,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
   num_p(model->createInArgs().Np()),
   num_g(model->createOutArgs().Ng())
 {
-  thyraImplementation_ = rcp(new ThyraRythmosSolver(
+  thyraImplementation_ = Teuchos::rcp(new ThyraRythmosSolver(
         stateIntegrator,
         stateStepper,
         timeStepSolver,
