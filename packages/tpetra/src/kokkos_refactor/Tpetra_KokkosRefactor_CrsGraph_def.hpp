@@ -567,25 +567,7 @@ namespace Tpetra {
     } else {
       lclparams = sublist (params, "Local Graph");
     }
-    lclGraph_ = rcp (new local_graph_type (getRowMap ()->getNodeNumElements (),
-                                           getColMap ()->getNodeNumElements (),
-                                           getRowMap ()->getNode (), lclparams));
-    {
-      ArrayRCP<const size_t> ptrs =
-        Kokkos::Compat::persistingView (k_lclGraph_.row_map);
-      // arcp (k_lclGraph_.row_map.ptr_on_device (), 0,
-      //       k_lclGraph_.row_map.dimension_0(),
-      //       Kokkos::Compat::deallocator (k_lclGraph_.row_map), false);
-      ArrayRCP<const LO> inds =
-        Kokkos::Compat::persistingView (k_lclGraph_.entries);
-      // arcp (k_lclGraph_.entries.ptr_on_device (), 0,
-      //       k_lclGraph_.entries.dimension_0 (),
-      //       Kokkos::Compat::deallocator (k_lclGraph_.entries), false);
-
-      lclGraph_->setStructure (ptrs, inds);
-      ptrs = null;
-      inds = null;
-    }
+    // FIXME (mfh 28 Aug 2014) "Local Graph" sublist not used.
 
     k_lclInds1D_ = k_lclGraph_.entries;
     k_rowPtrs_ = k_lclGraph_.row_map;
@@ -640,27 +622,7 @@ namespace Tpetra {
     haveLocalConstants_ = true;
     computeGlobalConstants ();
 
-    // finalize local graph
-    //
-    // FIXME (mfh 27 Aug 2014) This makes no sense.  Whether the graph
-    // has an implicit unit diagonal or not should be up to the user
-    // to decide.  What if the graph has no diagonal entries, and the
-    // user wants it that way?  The only reason this matters, though,
-    // is for the triangular solve, and in that case, missing diagonal
-    // entries will cause trouble anyway.  However, it would make
-    // sense to warn the user if they ask for a triangular solve with
-    // an incomplete diagonal.
-    const Teuchos::EDiag diag = getNodeNumDiags () < getNodeNumRows () ?
-      Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
-    Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
-    if (isUpperTriangular ()) {
-      uplo = Teuchos::UPPER_TRI;
-    } else if (isLowerTriangular()) {
-      uplo = Teuchos::LOWER_TRI;
-    }
-    LocalMatOps::finalizeGraph (uplo, diag, *lclGraph_, params);
     fillComplete_ = true;
-
     checkInternalState ();
   }
 
@@ -2012,8 +1974,6 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION( rowMap_ == null,                     std::logic_error, err );
     // am either complete or active
     TEUCHOS_TEST_FOR_EXCEPTION( isFillActive() == isFillComplete(),  std::logic_error, err );
-    // if active, i have no local graph
-    TEUCHOS_TEST_FOR_EXCEPTION( isFillActive() && lclGraph_ != null, std::logic_error, err );
     // if the graph has been fill completed, then all maps should be present
     TEUCHOS_TEST_FOR_EXCEPTION( isFillComplete() == true && (colMap_ == null || rangeMap_ == null || domainMap_ == null), std::logic_error, err );
     // if storage has been optimized, then indices should have been allocated (even if trivially so)
@@ -3306,7 +3266,6 @@ namespace Tpetra {
     Teuchos::barrier( *rowMap_->getComm() );
 #endif // HAVE_TPETRA_DEBUG
     clearGlobalConstants();
-    lclGraph_ = null;
     if (params != null) this->setParameterList (params);
     lowerTriangular_  = false;
     upperTriangular_  = false;
@@ -3703,7 +3662,7 @@ namespace Tpetra {
 
       // StaticProfile also means that the graph's array of row
       // offsets must already be allocated.
-        TEUCHOS_TEST_FOR_EXCEPTION(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         k_rowPtrs_.dimension_0 () == 0, std::logic_error,
         "k_rowPtrs_ has size zero, but shouldn't");
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -3883,50 +3842,17 @@ namespace Tpetra {
       pftype_ = StaticProfile;
     }
 
-    // build the local graph, hand over the indices
-    RCP<ParameterList> lclparams;
-    if (params.is_null ()) {
-      lclparams = parameterList ();
-    } else {
-      lclparams = sublist (params, "Local Graph");
-    }
+    // FIXME (mfh 28 Aug 2014) "Local Graph" sublist no longer used.
 
+    // Build the local graph.
     k_lclGraph_ = LocalStaticCrsGraphType (k_inds, k_ptrs_const);
 
-    // Allocate legacy Kokkos classic "graph."
-
-    lclGraph_ = rcp (new local_graph_type (getRowMap ()->getNodeNumElements (),
-                                           getColMap ()->getNodeNumElements (),
-                                           getRowMap ()->getNode (), lclparams));
-    lclGraph_->setStructure (Kokkos::Compat::persistingView (k_ptrs_const),
-                             Kokkos::Compat::persistingView (k_inds));
-
-    // finalize local graph
-    //
     // TODO (mfh 13 Mar 2014) getNodeNumDiags(), isUpperTriangular(),
     // and isLowerTriangular() depend on computeGlobalConstants(), in
     // particular the part where it looks at the local matrix.  You
     // have to use global indices to determine which entries are
     // diagonal, or above or below the diagonal.  However, lower or
     // upper triangularness is a local property.
-    //
-    // FIXME (mfh 27 Aug 2014) This makes no sense.  Whether the graph
-    // has an implicit unit diagonal or not should be up to the user
-    // to decide.  What if the graph has no diagonal entries, and the
-    // user wants it that way?  The only reason this matters, though,
-    // is for the triangular solve, and in that case, missing diagonal
-    // entries will cause trouble anyway.  However, it would make
-    // sense to warn the user if they ask for a triangular solve with
-    // an incomplete diagonal.
-    const Teuchos::EDiag diag = getNodeNumDiags () < getNodeNumRows () ?
-      Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
-    Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
-    if (isUpperTriangular ()) {
-      uplo = Teuchos::UPPER_TRI;
-    } else if (isLowerTriangular()) {
-      uplo = Teuchos::LOWER_TRI;
-    }
-    LocalMatOps::finalizeGraph (uplo, diag, *lclGraph_, params);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -4263,34 +4189,25 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  const RCP<const typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps::template graph<LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::graph_type>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getLocalGraph() const
-  {
-    return lclGraph_;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, typename Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>::device_type,size_t>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getLocalGraph_Kokkos() const
+  typename CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::LocalStaticCrsGraphType
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      void, LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  getLocalGraph_Kokkos () const
   {
     return k_lclGraph_;
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  const RCP<typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps::template graph<LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::graph_type>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getLocalGraphNonConst()
-  {
-    return lclGraph_;
-  }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   CrsGraph<

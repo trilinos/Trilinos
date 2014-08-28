@@ -1008,7 +1008,6 @@ namespace Tpetra {
     };
 
   protected:
-    typedef typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type local_graph_type;
     // these structs are conveniences, to cut down on the number of
     // arguments to some of the methods below.
     struct SLocalGlobalViews {
@@ -1603,12 +1602,13 @@ namespace Tpetra {
     /// 2-D storage).
     size_t findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint = 0) const;
 
+    /// \brief Get the local graph.
+    ///
+    /// This is only a valid representation of the local graph if the
+    /// (global) graph is fill complete.
     LocalStaticCrsGraphType getLocalGraph_Kokkos () const;
 
-    void fillLocalGraph(const Teuchos::RCP<Teuchos::ParameterList> &params);
-    const Teuchos::RCP<const local_graph_type> getLocalGraph () const;
-    const Teuchos::RCP<local_graph_type> getLocalGraphNonConst();
-
+    void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Whether it is correct to call getRowInfo().
     bool hasRowInfo () const;
@@ -1640,8 +1640,7 @@ namespace Tpetra {
     /// is necessary in that case for sparse matrix-vector multiply.
     Teuchos::RCP<const export_type> exporter_;
 
-    // local data, stored in a KokkosClassic::CrsGraph. only initialized after fillComplete()
-    Teuchos::RCP<local_graph_type> lclGraph_;
+    //! Local graph; only initialized after first fillComplete() call.
     LocalStaticCrsGraphType k_lclGraph_;
 
     // Local and Global Counts

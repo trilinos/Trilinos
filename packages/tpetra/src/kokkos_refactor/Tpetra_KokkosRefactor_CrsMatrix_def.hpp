@@ -301,11 +301,6 @@ namespace Tpetra {
     staticGraph_ = myGraph_;
     computeGlobalConstants();
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      staticGraph_->getLocalGraph ().is_null (), std::logic_error,
-      ": The local graph ({my,static}Graph_->getLocalGraph()) is null.  "
-      "Please report this bug to the Tpetra developers.");
-
     k_values1D_ = k_lclMatrix_.values;
 
     {
@@ -316,20 +311,8 @@ namespace Tpetra {
       values1D_ = classicValues;
     }
 
-    // Once we've initialized the sparse kernels, we're done with the
-    // local objects.  We may now release them and their memory, since
-    // they will persist in the local sparse ops if necessary.  We
-    // keep the local graph if the parameters tell us to do so.
-    if (myGraph_ != null) {
-      bool preserveLocalGraph = true;
-      if (params != null) {
-        preserveLocalGraph =
-          params->get ("Preserve Local Graph", preserveLocalGraph);
-      }
-      if (! preserveLocalGraph) {
-        myGraph_->lclGraph_ = null;
-      }
-    }
+    // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
+
     // Now we're fill complete!
     fillComplete_ = true;
 
@@ -1150,37 +1133,16 @@ namespace Tpetra {
     // column indices that we built above.  The local graph should be
     // null, but we delete it first so that any memory can be freed
     // before we allocate the new one.
+    //
+    // FIXME (mfh 06,28 Aug 2014) It would make more sense for
+    // Tpetra::CrsGraph to have a protected method that accepts k_inds
+    // and k_ptrs, and creates the local graph k_lclGraph_.
     myGraph_->k_lclGraph_ =
       typename Graph::LocalStaticCrsGraphType (k_inds, k_ptrs_const);
 
-    // Set up Kokkos classic "local graph" object.
-    //
-    // FIXME (mfh 06 Aug 2014) It would make more sense for
-    // Tpetra::CrsGraph to have a protected method that accepts k_inds
-    // and k_ptrs, and creates both k_lclGraph_ (new Kokkos) and
-    // lclGraph_ (classic Kokkos).
-    myGraph_->lclGraph_ = null;
-    {
-      const map_type& rowMap = * (getRowMap ());
-      myGraph_->lclGraph_ =
-        rcp (new local_graph_type (rowMap.getNodeNumElements (),
-                                   getColMap ()->getNodeNumElements (),
-                                   rowMap.getNode (), lclparams));
-    }
-    myGraph_->lclGraph_->setStructure (Kokkos::Compat::persistingView (k_ptrs_const),
-                                       Kokkos::Compat::persistingView (k_inds));
-
     // Make the local matrix, using the local graph and vals array.
-    if (params.is_null ()) {
-      lclparams = Teuchos::parameterList ();
-    } else {
-      lclparams = Teuchos::sublist (params, "Local Matrix");
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      staticGraph_->getLocalGraph ().is_null (), std::logic_error,
-      "Tpetra::CrsMatrix::fillLocalGraphAndMatrix: The local graph "
-      "(staticGraph_->getLocalGraph()) is null.  Please report this bug to the "
-      "Tpetra developers.");
+
+    // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" sublist is now ignored.
 
     // k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
     //                                     getNodeNumCols (), k_vals,
@@ -1188,7 +1150,7 @@ namespace Tpetra {
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
                                         getNodeNumCols (), k_vals,
                                         myGraph_->k_lclGraph_);
-    // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" parameter is now ignored.
+    // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" sublist is now ignored.
   }
 
 
@@ -1425,24 +1387,9 @@ namespace Tpetra {
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
 
-    // build the matrix, hand over the values
-    RCP<ParameterList> lclparams;
-    if (params.is_null ()) {
-      lclparams = parameterList ();
-    }
-    else {
-      lclparams = sublist (params, "Local Matrix");
-    }
+    // FIXME (mfh 28 Aug 2014) "Local Matrix" sublist is now ignored.
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      staticGraph_->getLocalGraph ().is_null (), std::runtime_error,
-      "Tpetra::CrsMatrix::fillLocalMatrix (called by fillComplete with a const "
-      "graph): the local graph is null.  This can happen if you constructed "
-      "this CrsMatrix B using a const CrsGraph that belongs to another "
-      "CrsMatrix A, and A is fill complete.  You can prevent this error by "
-      "setting the bool parameter \"Preserve Local Graph\" to true when "
-      "calling fillComplete on the original CrsMatrix A.");
-
+    // Build the local sparse matrix object.
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
                                         getDomainMap ()->getNodeNumElements (),
                                         k_vals,
@@ -1453,7 +1400,7 @@ namespace Tpetra {
       Kokkos::Compat::persistingView (k_lclMatrix_.values);
     values1D_ = classicValues;
 
-    // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" parameter is now ignored.
+    // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" sublist is now ignored.
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal,
@@ -3823,15 +3770,9 @@ namespace Tpetra {
     // local objects.  We may now release them and their memory, since
     // they will persist in the local sparse ops if necessary.  We
     // keep the local graph if the parameters tell us to do so.
-    if (myGraph_ != null) {
-      bool preserveLocalGraph = true;
-      if (params != null) {
-        preserveLocalGraph = params->get ("Preserve Local Graph", preserveLocalGraph);
-      }
-      if (! preserveLocalGraph) {
-        myGraph_->lclGraph_ = null;
-      }
-    }
+
+    // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
+
     fillComplete_ = true; // Now we're fill complete!
     checkInternalState ();
   }
@@ -3865,17 +3806,7 @@ namespace Tpetra {
     // Fill the local graph and matrix
     fillLocalGraphAndMatrix (params);
 
-    // Once we've initialized the sparse kernels, we're done with the
-    // local objects.  We may now release them and their memory, since
-    // they will persist in the local sparse ops if necessary.  We
-    // keep the local graph if the parameters tell us to do so.
-    bool preserveLocalGraph = true;
-    if (params != null) {
-      preserveLocalGraph = params->get ("Preserve Local Graph", true);
-    }
-    if (! preserveLocalGraph) {
-      myGraph_->lclGraph_ = null;
-    }
+    // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
 
     // Now we're fill complete!
     fillComplete_ = true;

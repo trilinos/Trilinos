@@ -258,8 +258,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       MAT matrix(map,1,StaticProfile);
       matrix.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
-      TEST_EQUALITY_CONST(defparams->isSublist("Local Matrix"), true);
-      TEST_EQUALITY_CONST(defparams->isSublist("Local Sparse Ops"), true);
     }
     {
       // send in a parameterlist, check the defaults
@@ -268,8 +266,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       MAT matrix(map,1,DynamicProfile);
       matrix.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
-      TEST_EQUALITY_CONST(defparams->isSublist("Local Matrix"), true);
-      TEST_EQUALITY_CONST(defparams->isSublist("Local Sparse Ops"), true);
     }
     {
       // send in a parameterlist, check the defaults
@@ -278,7 +274,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       GRPH graph(map,1,StaticProfile);
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
-      TEST_EQUALITY_CONST(defparams->isSublist("Local Graph"), true);
     }
     {
       // send in a parameterlist, check the defaults
@@ -287,7 +282,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       GRPH graph(map,1,DynamicProfile);
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
-      TEST_EQUALITY_CONST(defparams->isSublist("Local Graph"), true);
     }
   }
 
