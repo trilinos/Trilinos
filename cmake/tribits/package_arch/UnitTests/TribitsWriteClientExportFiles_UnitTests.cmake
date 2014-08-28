@@ -65,6 +65,10 @@ MACRO(SETUP_WRITE_SPECIALIZED_PACKAGE_EXPORT_MAKEFILE_TEST_STUFF)
   # Make sure this is defined!
   ASSERT_DEFINED(${PROJECT_NAME}_TRIBITS_DIR)
 
+  # Need to define these:
+  SET(${PROJECT_NAME}_INSTALL_LIB_DIR "dummy_install_lib_dir")
+  SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "dummy_install_include_dir")
+
 ENDMACRO()
 
 

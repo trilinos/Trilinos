@@ -60,7 +60,8 @@ namespace Stokhos {
                                  Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
   create_cijk_crs_graph(const CrsProductTensor<CijkValue,Device>& cijk,
                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                        const Teuchos::RCP<Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& node) {
+                        const Teuchos::RCP<Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& node,
+                        const size_t matrix_pce_size) {
     using Teuchos::RCP;
     using Teuchos::arrayView;
 
@@ -68,20 +69,30 @@ namespace Stokhos {
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
 
-    size_t pce_sz = cijk.dimension();
+    const size_t pce_sz = cijk.dimension();
     RCP<const Map> map =
       Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(pce_sz, comm, node);
     RCP<Graph> graph = Tpetra::createCrsGraph(map);
-    for (size_t i=0; i<pce_sz; ++i) {
-      const GlobalOrdinal row = i;
-      const size_t num_entry = cijk.num_entry(i);
-      const size_t entry_beg = cijk.entry_begin(i);
-      const size_t entry_end = entry_beg + num_entry;
-      for (size_t entry = entry_beg; entry < entry_end; ++entry) {
-        const GlobalOrdinal j = cijk.coord(entry,0);
-        const GlobalOrdinal k = cijk.coord(entry,1);
-        graph->insertGlobalIndices(row, arrayView(&j, 1));
-        graph->insertGlobalIndices(row, arrayView(&k, 1));
+    if (matrix_pce_size == 1) {
+      // Mean-based case -- graph is diagonal
+      for (size_t i=0; i<pce_sz; ++i) {
+        const GlobalOrdinal row = i;
+        graph->insertGlobalIndices(row, arrayView(&row, 1));
+      }
+    }
+    else {
+      // General case
+      for (size_t i=0; i<pce_sz; ++i) {
+        const GlobalOrdinal row = i;
+        const size_t num_entry = cijk.num_entry(i);
+        const size_t entry_beg = cijk.entry_begin(i);
+        const size_t entry_end = entry_beg + num_entry;
+        for (size_t entry = entry_beg; entry < entry_end; ++entry) {
+          const GlobalOrdinal j = cijk.coord(entry,0);
+          const GlobalOrdinal k = cijk.coord(entry,1);
+          graph->insertGlobalIndices(row, arrayView(&j, 1));
+          graph->insertGlobalIndices(row, arrayView(&k, 1));
+        }
       }
     }
     graph->fillComplete();
@@ -89,7 +100,7 @@ namespace Stokhos {
   }
 
   // Create a flattened graph for a graph from a matrix with the
-  // UQ::PCE scalar type (each block is an identity matrix)
+  // UQ::PCE scalar type
   // If flat_domain_map and/or flat_range_map are null, they will be computed,
   // otherwise they will be used as-is.
   template <typename LocalOrdinal, typename GlobalOrdinal, typename Device,
@@ -101,7 +112,8 @@ namespace Stokhos {
     const CrsProductTensor<CijkValue,Device>& cijk,
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_domain_map,
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_range_map,
-    Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& cijk_graph) {
+    Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& cijk_graph,
+    const size_t matrix_pce_size) {
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
     using Teuchos::Array;
@@ -140,7 +152,8 @@ namespace Stokhos {
       cijk_graph = create_cijk_crs_graph<LocalOrdinal,GlobalOrdinal>(
         cijk,
         flat_domain_map->getComm(),
-        flat_domain_map->getNode());
+        flat_domain_map->getNode(),
+        matrix_pce_size);
 
     // Build flattened graph that is the Kronecker product of the given
     // graph and cijk_graph
@@ -417,6 +430,8 @@ namespace Stokhos {
     typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatMatrix;
 
     const LocalOrdinal block_size = cijk.dimension();
+    const LocalOrdinal matrix_pce_size =
+      mat.getLocalMatrix().values.sacado_size();
 
     // Create flat matrix
     RCP<FlatMatrix> flat_mat = rcp(new FlatMatrix(flat_graph));
@@ -450,33 +465,50 @@ namespace Stokhos {
         //flat_values.resize(num_flat_indices);
         flat_values.assign(num_flat_indices, BaseScalar(0));
 
-        // Loop over cijk non-zeros for this inner row
-        const size_t num_entry = cijk.num_entry(inner_row);
-        const size_t entry_beg = cijk.entry_begin(inner_row);
-        const size_t entry_end = entry_beg + num_entry;
-        for (size_t entry = entry_beg; entry < entry_end; ++entry) {
-          const LocalOrdinal j = cijk.coord(entry,0);
-          const LocalOrdinal k = cijk.coord(entry,1);
-          const BaseScalar   c = cijk.value(entry);
-
-          // Find column offset for j
-          typedef typename ArrayView<const LocalOrdinal>::iterator iterator;
-          iterator ptr_j =
-            std::find(inner_cols.begin(), inner_cols.end(), j);
-          iterator ptr_k =
-            std::find(inner_cols.begin(), inner_cols.end(), k);
-          const LocalOrdinal j_offset = ptr_j - inner_cols.begin();
-          const LocalOrdinal k_offset = ptr_k - inner_cols.begin();
+        if (matrix_pce_size == 1) {
+          // Mean-based case
 
           // Loop over outer cols
           for (LocalOrdinal outer_entry=0; outer_entry<num_outer_cols;
                ++outer_entry) {
 
-            // Add contributions for each outer column
-            flat_values[outer_entry*num_inner_cols + j_offset] +=
-              c*outer_values[outer_entry].coeff(k);
-            flat_values[outer_entry*num_inner_cols + k_offset] +=
-              c*outer_values[outer_entry].coeff(j);
+            // Extract mean PCE entry for each outer column
+            flat_values[outer_entry] = outer_values[outer_entry].coeff(0);
+
+          }
+
+        }
+        else {
+
+          // Loop over cijk non-zeros for this inner row
+          const size_t num_entry = cijk.num_entry(inner_row);
+          const size_t entry_beg = cijk.entry_begin(inner_row);
+          const size_t entry_end = entry_beg + num_entry;
+          for (size_t entry = entry_beg; entry < entry_end; ++entry) {
+            const LocalOrdinal j = cijk.coord(entry,0);
+            const LocalOrdinal k = cijk.coord(entry,1);
+            const BaseScalar   c = cijk.value(entry);
+
+            // Find column offset for j
+            typedef typename ArrayView<const LocalOrdinal>::iterator iterator;
+            iterator ptr_j =
+              std::find(inner_cols.begin(), inner_cols.end(), j);
+            iterator ptr_k =
+              std::find(inner_cols.begin(), inner_cols.end(), k);
+            const LocalOrdinal j_offset = ptr_j - inner_cols.begin();
+            const LocalOrdinal k_offset = ptr_k - inner_cols.begin();
+
+            // Loop over outer cols
+            for (LocalOrdinal outer_entry=0; outer_entry<num_outer_cols;
+                 ++outer_entry) {
+
+              // Add contributions for each outer column
+              flat_values[outer_entry*num_inner_cols + j_offset] +=
+                c*outer_values[outer_entry].coeff(k);
+              flat_values[outer_entry*num_inner_cols + k_offset] +=
+                c*outer_values[outer_entry].coeff(j);
+
+            }
 
           }
 

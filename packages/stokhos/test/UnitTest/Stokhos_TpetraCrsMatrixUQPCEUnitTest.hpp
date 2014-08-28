@@ -1112,7 +1112,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_y_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
 
@@ -1293,7 +1293,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
@@ -1471,7 +1471,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
@@ -1644,7 +1644,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
@@ -1833,7 +1833,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
@@ -2051,7 +2051,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
@@ -2253,7 +2253,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);

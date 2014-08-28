@@ -149,16 +149,15 @@ namespace MueLu {
 
     // TODO Can we keep different aggregation algorithms over more Build calls?
     algos_.clear();
+    algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm(graphFact)));
     if (pL.get<std::string>("aggregation: mode") == "old") {
       if (pL.get<bool>("UseOnePtAggregationAlgorithm")             == true)   algos_.push_back(rcp(new OnePtAggregationAlgorithm             (graphFact)));
-      if (pL.get<bool>("UsePreserveDirichletAggregationAlgorithm") == true)   algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
       if (pL.get<bool>("UseUncoupledAggregationAlgorithm")         == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
       if (pL.get<bool>("UseMaxLinkAggregationAlgorithm")           == true)   algos_.push_back(rcp(new MaxLinkAggregationAlgorithm           (graphFact)));
       if (pL.get<bool>("UseEmergencyAggregationAlgorithm")         == true)   algos_.push_back(rcp(new EmergencyAggregationAlgorithm         (graphFact)));
                                                                               algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
 
     } else {
-      if (pL.get<bool>("aggregation: preserve Dirichlet points")   == true)   algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 1" )             == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 2a")             == true)   algos_.push_back(rcp(new AggregationPhase2aAlgorithm           (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 2b")             == true)   algos_.push_back(rcp(new AggregationPhase2bAlgorithm           (graphFact)));

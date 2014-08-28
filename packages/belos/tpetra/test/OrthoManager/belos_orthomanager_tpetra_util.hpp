@@ -50,7 +50,7 @@
 #include <Kokkos_DefaultNode.hpp>
 
 // I/O for Harwell-Boeing files
-#include <Galeri_iohb.h>
+#include <Trilinos_Util_iohb.h>
 
 namespace Belos {
   namespace Test {

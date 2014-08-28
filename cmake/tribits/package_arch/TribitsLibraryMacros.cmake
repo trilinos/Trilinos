@@ -38,6 +38,7 @@
 # @HEADER
 
 INCLUDE(TribitsCreateClientTemplateHeaders)
+INCLUDE(TribitsCommonArgsHelpers)
 INCLUDE(ParseVariableArguments)
 INCLUDE(GlobalSet)
 INCLUDE(AppendSet)
@@ -199,6 +200,7 @@ ENDFUNCTION()
 #     [SOURCES <src0> <src1> ...]
 #     [DEPLIBS <deplib0> <deplib1> ...]
 #     [IMPORTEDLIBS <ideplib0> <ideplib1> ...]
+#     [LINKER_LANGUAGE (C|CXX|Fortran)]
 #     [TESTONLY]
 #     [NO_INSTALL_LIB_OR_HEADERS]
 #     [CUDALIBRARY]
@@ -275,6 +277,12 @@ ENDFUNCTION()
 #     not that external libraries are often better handled as `TriBITS TPLs`_.
 #     A well constructed TriBITS package and library should never have to use
 #     this option.
+#
+#   ``LINKER_LANGUAGE (C|CXX|Fortran)``
+#
+#     If specified, overrides the linker language used by setting the built-in  
+#     CMake target property ``LINKER_LANGUAGE``.  By default, CMake chooses the 
+#     compiler to be used as the linker based on file extensions.
 #
 #   ``TESTONLY``
 #
@@ -359,7 +367,11 @@ ENDFUNCTION()
 # affect header files, please use a configured header file (see
 # `TRIBITS_CONFIGURE_FILE()`_).
 #
-FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
+FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
+
+  SET(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
+
+  SET(LIBRARY_NAME ${LIBRARY_NAME_PREFIX}${LIBRARY_NAME_IN})
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nTRIBITS_ADD_LIBRARY: ${LIBRARY_NAME}")
@@ -377,7 +389,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
 
   PARSE_ARGUMENTS(
     PARSE #prefix
-    "HEADERS;NOINSTALLHEADERS;SOURCES;DEPLIBS;IMPORTEDLIBS;DEFINES" # Lists
+    "HEADERS;NOINSTALLHEADERS;SOURCES;DEPLIBS;IMPORTEDLIBS;LINKER_LANGUAGE;DEFINES" # Lists
     "TESTONLY;NO_INSTALL_LIB_OR_HEADERS;CUDALIBRARY" #Options
     ${ARGN} # Remaining arguments passed in
     )
@@ -427,8 +439,13 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
       MESSAGE("-- " "IMPORTEDLIBS = ${PARSE_IMPORTEDLIBS}")
     ENDIF()
 
+    # Prepend DEPLIBS with LIBRARY_NAME_PREFIX.
     IF (PARSE_DEPLIBS)
-      APPEND_SET(LINK_LIBS ${PARSE_DEPLIBS})
+      SET(PREFIXED_DEPLIBS)
+      FOREACH(LIB ${PARSE_DEPLIBS})
+        LIST(APPEND PREFIXED_DEPLIBS "${LIBRARY_NAME_PREFIX}${LIB}")
+      ENDFOREACH()
+      APPEND_SET(LINK_LIBS ${PREFIXED_DEPLIBS})
     ENDIF()
     IF (PARSE_IMPORTEDLIBS)
       APPEND_SET(LINK_LIBS ${PARSE_IMPORTEDLIBS})
@@ -515,6 +532,9 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
       CUDA_ADD_LIBRARY(${LIBRARY_NAME} ${PARSE_HEADERS} ${PARSE_NOINSTALLHEADERS}
         ${PARSE_SOURCES})
     ENDIF()
+
+    TRIBITS_SET_LINKER_LANGUAGE_FROM_ARG( ${LIBRARY_NAME}
+      "${PARSE_LINKER_LANGUAGE}" )
 
     SET_PROPERTY(TARGET ${LIBRARY_NAME} APPEND PROPERTY
       LABELS ${PACKAGE_NAME}Libs ${PARENT_PACKAGE_NAME}Libs)
