@@ -485,9 +485,11 @@ lowerTriSolveCsr (RangeMultiVectorType X,
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
       X(r, j) = Y(r, j);
     }
+
     matrix_scalar_type A_rr = STS::zero ();
     const offset_type beg = ptr(r);
     const offset_type end = ptr(r+1);
+
     for (offset_type k = beg; k < end; ++k) {
       const matrix_scalar_type A_rc = val(k);
       const local_ordinal_type c = ind(k);
@@ -609,7 +611,7 @@ upperTriSolveCsr (RangeMultiVectorType X,
     const offset_type beg = ptr(r);
     const offset_type end = ptr(r+1);
     // We assume the diagonal entry is first in the row.
-    const matrix_scalar_type A_rr = val[beg];
+    const matrix_scalar_type A_rr = val(beg);
     for (offset_type k = beg + static_cast<offset_type> (1); k < end; ++k) {
       const matrix_scalar_type A_rc = val(k);
       const local_ordinal_type c = ind(k);
@@ -631,11 +633,14 @@ upperTriSolveCsr (RangeMultiVectorType X,
     const offset_type beg = ptr(r);
     const offset_type end = ptr(r+1);
     // We assume the diagonal entry is first in the row.
-    const matrix_scalar_type A_rr = val[beg];
-    // We don't actually need the loop over nondiagonal entries in the
-    // row, because this is an upper triangular solve and we are at
-    // the first row.  This means that there should be no entries in
-    // this row, other than the diagonal entry.
+    const matrix_scalar_type A_rr = val(beg);
+    for (size_t k = beg + 1; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    } // for each entry A_rc in the current row r
     for (local_ordinal_type j = 0; j < numVecs; ++j) {
       X(r, j) /= A_rr;
     }
