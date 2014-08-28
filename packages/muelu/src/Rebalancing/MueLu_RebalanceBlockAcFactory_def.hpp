@@ -338,7 +338,7 @@ namespace MueLu {
     rangeIndexBase = bA->getRangeMap()->getIndexBase();
     domainIndexBase= bA->getDomainMap()->getIndexBase();
 
-    Teuchos::ArrayView<GO> fullRangeMapGIDs(&fullRangeMapVector[0],fullRangeMapVector.size());
+    Teuchos::ArrayView<GO> fullRangeMapGIDs(fullRangeMapVector.size() ? &fullRangeMapVector[0] : 0,fullRangeMapVector.size());
     Teuchos::RCP<const StridedMap> stridedRgFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rangeMapExtractor->getFullMap());
     Teuchos::RCP<const Map > fullRangeMap = Teuchos::null;
     if(stridedRgFullMap != Teuchos::null) {
@@ -363,7 +363,7 @@ namespace MueLu {
               bA->getRangeMap()->getComm());
     }
 
-    Teuchos::ArrayView<GO> fullDomainMapGIDs(&fullDomainMapVector[0],fullDomainMapVector.size());
+    Teuchos::ArrayView<GO> fullDomainMapGIDs(fullDomainMapVector.size() ? &fullDomainMapVector[0] : 0,fullDomainMapVector.size());
 
     Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainMapExtractor->getFullMap());
     Teuchos::RCP<const Map > fullDomainMap = Teuchos::null;

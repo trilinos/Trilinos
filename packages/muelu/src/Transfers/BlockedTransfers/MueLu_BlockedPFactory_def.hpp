@@ -194,7 +194,7 @@ namespace MueLu {
     RCP<const StridedMap>   stridedRgFullMap = rcp_dynamic_cast<const StridedMap>(rangeAMapExtractor->getFullMap());
     RCP<const Map >         fullRangeMap = Teuchos::null;
 
-    ArrayView<GO> fullRangeMapGIDs(&fullRangeMapVector[0], fullRangeMapVector.size());
+    ArrayView<GO> fullRangeMapGIDs(fullRangeMapVector.size() ? &fullRangeMapVector[0] : 0, fullRangeMapVector.size());
     if (stridedRgFullMap != Teuchos::null) {
       std::vector<size_t> stridedData = stridedRgFullMap->getStridingData();
       fullRangeMap = StridedMapFactory::Build(
@@ -217,7 +217,7 @@ namespace MueLu {
     }
 
     RCP<const MapExtractor> domainAMapExtractor = A->getDomainMapExtractor();
-    Teuchos::ArrayView<GO> fullDomainMapGIDs(&fullDomainMapVector[0],fullDomainMapVector.size());
+    Teuchos::ArrayView<GO> fullDomainMapGIDs(fullDomainMapVector.size() ? &fullDomainMapVector[0] : 0,fullDomainMapVector.size());
     Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainAMapExtractor->getFullMap());
     Teuchos::RCP<const Map > fullDomainMap = Teuchos::null;
     if (stridedDoFullMap != Teuchos::null) {

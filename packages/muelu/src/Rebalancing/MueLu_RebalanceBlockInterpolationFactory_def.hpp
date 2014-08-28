@@ -257,7 +257,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   GO domainIndexBase= originalTransferOp->getDomainMap()->getIndexBase();
 
   RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rangePMapExtractor = bOriginalTransferOp->getRangeMapExtractor(); // original map extractor
-  Teuchos::ArrayView<GO> fullRangeMapGIDs(&fullRangeMapVector[0],fullRangeMapVector.size());
+  Teuchos::ArrayView<GO> fullRangeMapGIDs(fullRangeMapVector.size() ? &fullRangeMapVector[0] : 0,fullRangeMapVector.size());
   Teuchos::RCP<const StridedMap> stridedRgFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rangePMapExtractor->getFullMap());
   Teuchos::RCP<const Map > fullRangeMap = Teuchos::null;
   if(stridedRgFullMap != Teuchos::null) {
@@ -283,7 +283,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   }
 
   RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domainAMapExtractor = bOriginalTransferOp->getDomainMapExtractor();
-  Teuchos::ArrayView<GO> fullDomainMapGIDs(&fullDomainMapVector[0],fullDomainMapVector.size());
+  Teuchos::ArrayView<GO> fullDomainMapGIDs(fullDomainMapVector.size() ? &fullDomainMapVector[0] : 0,fullDomainMapVector.size());
   Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainAMapExtractor->getFullMap());
   Teuchos::RCP<const Map > fullDomainMap = Teuchos::null;
   if(stridedDoFullMap != Teuchos::null) {
