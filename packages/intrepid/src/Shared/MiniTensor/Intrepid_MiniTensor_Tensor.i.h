@@ -699,7 +699,6 @@ col(Tensor<T, N> const & A, Index const j)
   return v;
 }
 
-
 //
 // R^N tensor vector product v = A u
 // \param A tensor
