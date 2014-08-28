@@ -61,14 +61,18 @@ class SerializationTraits<Ordinal,unsigned long>
   : public DirectSerializationTraits<Ordinal,unsigned long>
 {};
 #endif
+#if defined(TEUCHOS_SERIALIZATIONTRAITS_LONG_LONG) || !defined(HAVE_TEUCHOS_LONG_LONG_INT)
 template<typename Ordinal>
 class SerializationTraits<Ordinal,long long>
   : public DirectSerializationTraits<Ordinal,long long>
 {};
+#endif
+#if defined(TEUCHOS_SERIALIZATIONTRAITS_UNSIGNED_LONG_LONG) || !defined(HAVE_TEUCHOS_LONG_LONG_INT)
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned long long>
   : public DirectSerializationTraits<Ordinal,unsigned long long>
 {};
+#endif
 }
 %}
 
@@ -199,6 +203,7 @@ struct ScalarTraits<unsigned long>
 };
 #endif
 
+#if defined(TEUCHOS_SCALARTRAITS_LONG_LONG) || !defined(HAVE_TEUCHOS_LONG_LONG_INT)
 // Type long long
 template<>
 struct ScalarTraits<long long>
@@ -226,7 +231,9 @@ struct ScalarTraits<long long>
   static inline long long pow(long long x, long long y)
   { return (long long) std::pow((double)x,(double)y); }
 };
+#endif
 
+#if defined(TEUCHOS_SCALARTRAITS_UNSIGNED_LONG_LONG) || !defined(HAVE_TEUCHOS_LONG_LONG_INT)
 // Type unsigned long long
 template<>
 struct ScalarTraits<unsigned long long>
@@ -254,6 +261,7 @@ struct ScalarTraits<unsigned long long>
   static inline unsigned long long pow(unsigned long long x, unsigned long long y)
   { return (unsigned long long) std::pow((double)x,(double)y); }
 };
+#endif
 
 }
 %}
@@ -355,7 +363,33 @@ struct ScalarTraits<unsigned long long>
 %ignore Teuchos::ScalarTraits< unsigned long >::isnaninf;
 %template(ScalarTraitsUlong) Teuchos::ScalarTraits< unsigned long >;
 
+%ignore Teuchos::ScalarTraits< long long >::eps     ;
+%ignore Teuchos::ScalarTraits< long long >::sfmin   ;
+%ignore Teuchos::ScalarTraits< long long >::base    ;
+%ignore Teuchos::ScalarTraits< long long >::prec    ;
+%ignore Teuchos::ScalarTraits< long long >::t       ;
+%ignore Teuchos::ScalarTraits< long long >::rnd     ;
+%ignore Teuchos::ScalarTraits< long long >::emin    ;
+%ignore Teuchos::ScalarTraits< long long >::rmin    ;
+%ignore Teuchos::ScalarTraits< long long >::emax    ;
+%ignore Teuchos::ScalarTraits< long long >::rmax    ;
+%ignore Teuchos::ScalarTraits< long long >::nan     ;
+%ignore Teuchos::ScalarTraits< long long >::isnaninf;
+
 %template(ScalarTraitsLongLong) Teuchos::ScalarTraits< long long >;
+
+%ignore Teuchos::ScalarTraits< unsigned long long >::eps     ;
+%ignore Teuchos::ScalarTraits< unsigned long long >::sfmin   ;
+%ignore Teuchos::ScalarTraits< unsigned long long >::base    ;
+%ignore Teuchos::ScalarTraits< unsigned long long >::prec    ;
+%ignore Teuchos::ScalarTraits< unsigned long long >::t       ;
+%ignore Teuchos::ScalarTraits< unsigned long long >::rnd     ;
+%ignore Teuchos::ScalarTraits< unsigned long long >::emin    ;
+%ignore Teuchos::ScalarTraits< unsigned long long >::rmin    ;
+%ignore Teuchos::ScalarTraits< unsigned long long >::emax    ;
+%ignore Teuchos::ScalarTraits< unsigned long long >::rmax    ;
+%ignore Teuchos::ScalarTraits< unsigned long long >::nan     ;
+%ignore Teuchos::ScalarTraits< unsigned long long >::isnaninf;
 
 %template(ScalarTraitsUlongLong) Teuchos::ScalarTraits< unsigned long long >;
 
