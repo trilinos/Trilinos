@@ -290,7 +290,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
 
     case SEQUENCE:
       for (Index i = 0; i < number_components; ++i) {
-        (*this)[i] = i;
+        (*this)[i] = static_cast<T>(i);
       }
       break;
 

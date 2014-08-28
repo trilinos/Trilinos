@@ -16,16 +16,14 @@ unique design feature of Trilinos is its focus on packages.
 
 ### Installation
 
-- See `<trilinos_base_directory>/TrilinosBuildQuickRef.*` for
+- See [TrilinosBuildQuickRef.rst](https://github.com/trilinos/trilinos/blob/master/TrilinosBuildQuickRef.rst) for
   information about installing Trilinos with the CMake build system.
 
-- See `<trilinos_base_directory>/cmake/README.windows` for information on
+- See [README.windows](https://github.com/trilinos/trilinos/blob/master/cmake/tribits/doc/README.windows) for information on
   building Trilinos in MS Windows with MS Visual C++ against CLAPACK.
 
-- Sample build scripts for various platforms can be found in:
-
-      `<trilinos_base_directory>/sampleScripts`
-
+- [Sample build scripts for various platforms](https://github.com/trilinos/trilinos/blob/master/sampleScripts/)
+  can be found in the source tree.
   Please note that these sample scripts are only a starting point for you
   to develop a script that works for your own platform.
 
@@ -35,20 +33,18 @@ unique design feature of Trilinos is its focus on packages.
 - See one or more of the following publications for assistance with
   installing and using Trilinos:
 
-      Trilinos Overview       a broad overview
-      Trilinos Tutorial       in-depth tutorial for new users
+  * Trilinos Overview (a broad overview)
+  * Trilinos Tutorial (in-depth tutorial for new users)
 
 - For help with a particular package, see the website and accompanying
   documentation for that package. Links to these can be found down the
-  right side of any page on the website and at:
-
-      http://trilinos.org/packages/
+  right side of any page on the website and at [the package website](http://trilinos.org/packages/).
 
 - Information on how to extend Trilinos with your own add-on packages in your
-  own external repository see:
-
-      `<trilinos_base_directory>/TrilinosBuildQuickRef.*`
-      `<trilinos_base_directory>/cmake/HOWTO.ADD_EXTRA_REPO`
+  own external repository see
+  [TrilinosBuildQuickRef.rst](https://github.com/trilinos/trilinos/blob/master/TrilinosBuildQuickRef.rst)
+  and
+  [HOWTO.ADD_EXTRA_REPO](https://github.com/trilinos/trilinos/blob/master/cmake/tribits/doc/HOWTO.ADD_EXTRA_REPO)
 
 
 ### Contributing

@@ -57,8 +57,7 @@ int main(int argc, char* argv[])
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }
 
-namespace Intrepid
-{
+namespace Intrepid {
 
 namespace {
 
@@ -429,8 +428,6 @@ TEUCHOS_UNIT_TEST(MiniTensor, Arithmetic)
 
 TEUCHOS_UNIT_TEST(MiniTensor, Inverse2x2)
 {
-  std::srand(std::time(NULL));
-
   Tensor<Real, 2> const
   A = 2.0 * eye<Real, 2>() + Tensor<Real, 2>(RANDOM_UNIFORM);
 
@@ -448,8 +445,6 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse2x2)
 
 TEUCHOS_UNIT_TEST(MiniTensor, Inverse3x3)
 {
-  std::srand(std::time(NULL));
-
   Tensor<Real, 3> const
   A = 2.0 * eye<Real, 3>() + Tensor<Real, 3>(RANDOM_UNIFORM);
 
@@ -467,10 +462,8 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse3x3)
 
 TEUCHOS_UNIT_TEST(MiniTensor, InverseNxN)
 {
-  std::srand(std::time(NULL));
-
   Index const
-  N = static_cast<Index>((7.0 * std::rand()) / RAND_MAX + 4.0);
+  N = 11;
 
   Tensor<Real> const
   A = 2.0 * eye<Real>(N) + Tensor<Real>(N, RANDOM_UNIFORM);
@@ -489,10 +482,8 @@ TEUCHOS_UNIT_TEST(MiniTensor, InverseNxN)
 
 TEUCHOS_UNIT_TEST(MiniTensor, Inverse_4th_NxN)
 {
-  std::srand(std::time(NULL));
-
   Index const
-  N = static_cast<Index>((2.0 * std::rand()) / RAND_MAX + 2.0);
+  N = 4;
 
   Tensor4<Real> const
   A = 2.0 * identity_1<Real>(N) + Tensor4<Real>(N, RANDOM_UNIFORM);

@@ -104,7 +104,6 @@ namespace Piro {
       if ( (numNodes == 0)) xyz.resize(1);
       else xyz.resize((numSpaceDim+1)*numNodes);
 
-      std::cout << "numNodes: " << numNodes << std::endl; 
       //std<vector> rr is used for both MueLu and ML 
       if(nullSpaceDim > 0) rr.resize((nullSpaceDim + numScalar) * numPDEs * numNodes + 1);
 
@@ -185,7 +184,6 @@ namespace Piro {
         double x[], double y[], double z[], double rbm[], int Ndof, int NscalarDof, int NSdim)
     {
 
-      std::cout << "In Piro_ML_Coord2RBM!" << std::endl; 
 
       int vec_leng, ii, jj, offset, node, dof;
 
