@@ -115,7 +115,7 @@ namespace MueLu {
       //       it = paramList.erase(it);
       //     else
       //       it++;
-      ParameterList::ConstIterator it;
+      ParameterList::ConstIterator it = paramList->begin();
       while (it != paramList->end()) {
         it = paramList->begin();
 
