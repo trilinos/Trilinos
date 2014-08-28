@@ -60,7 +60,12 @@
 #include <Zoltan2_MachineRepresentation.hpp>
 #include <Zoltan2_TaskMapping.hpp>
 
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include <process.h>
+#include <windows.h>
+#endif
 
 #ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
@@ -448,8 +453,13 @@ template <typename Adapter>
   this->env_->debug(DETAILED_STATUS, "PartitioningProblem::initializeProblem");
 
   if (getenv("DEBUGME")){
+#ifndef _WIN32
     std::cout << getpid() << std::endl;
     sleep(15);
+#else
+    std::cout << _getpid() << std::endl;
+    Sleep(15000);
+#endif
   }
 
 #ifdef HAVE_ZOLTAN2_OVIS
@@ -1092,7 +1102,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     if(modelAvail_[GraphModelType]==false && modelAvail_[HypergraphModelType]==false &&
        modelAvail_[CoordinateModelType]==false && modelAvail_[IdentifierModelType]==false)
     {
-      cout << __func__ << " Invalid model"  << endl;
+      cout << __func__zoltan2__ << " Invalid model"  << endl;
     }
     else
     {
