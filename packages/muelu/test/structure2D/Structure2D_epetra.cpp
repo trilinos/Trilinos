@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
 
   // Epetra_Map -> Xpetra::Map
-  const RCP< const Map> map = Xpetra::toXpetra(emap);
+  const RCP< const Map> map = Xpetra::toXpetra<GO>(emap);
 
   RCP<Hierarchy> H = rcp ( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);

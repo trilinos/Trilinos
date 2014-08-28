@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using namespace MueLuExamples;
 
   Teuchos::oblackholestream blackhole;
@@ -152,7 +153,7 @@ int main(int argc, char *argv[]) {
   RCP<Xpetra::Vector<double,int,int> > xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
 
   // Epetra_Map -> Xpetra::Map
-  const RCP< const Xpetra::Map<int, int> > map = Xpetra::toXpetra(emap);
+  const RCP< const Xpetra::Map<int, int> > map = Xpetra::toXpetra<int>(emap);
 
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);

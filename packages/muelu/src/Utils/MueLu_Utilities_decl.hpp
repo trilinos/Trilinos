@@ -68,9 +68,7 @@
 #include <Xpetra_ExportFactory.hpp>
 
 #ifdef HAVE_MUELU_EPETRA
-namespace Xpetra {
-  class EpetraCrsMatrix; // TODO: replace by include of _fwd.hpp
-}
+#include <Xpetra_EpetraCrsMatrix_fwd.hpp>
 
 // needed because of inlined function
 //TODO: remove inline function?

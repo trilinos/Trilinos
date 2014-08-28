@@ -186,7 +186,7 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
 
   // Epetra_Map -> Xpetra::Map
-  const RCP< const Map> map = Xpetra::toXpetra(emap);
+  const RCP< const Map> map = Xpetra::toXpetra<GO>(emap);
 
   ////////////////////////////////////////////
   // create new MueLu hierarchy
