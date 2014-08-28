@@ -161,8 +161,10 @@ struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaSpac
 };
 
 /** Running in CudaSpace attempting to access HostSpace */
-template<>
-struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::HostSpace >
+template<class OtherSpace>
+struct VerifyExecutionCanAccessMemorySpace< typename enable_if<
+  !is_same<Kokkos::CudaSpace,OtherSpace>::value,Kokkos::CudaSpace>::type ,
+  OtherSpace >
 {
   KOKKOS_INLINE_FUNCTION static void verify( void )
     { Kokkos::cuda_abort("Cuda code attempted to access HostSpace memory"); }

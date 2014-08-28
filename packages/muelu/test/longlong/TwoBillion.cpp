@@ -140,6 +140,11 @@ int main(int argc, char *argv[]) {
   for(int i=0; i<num_per_proc; i++)
     mygids[i] = FIRST_GID + MyPID*num_per_proc + i;
 
+  for (int i=0; i<NumProcs; ++i) {
+    if (i==MyPID)
+      std::cout << "pid " <<  i << " : 1st GID = " << mygids[0] << std::endl;
+  }
+
   //for(int i=0;i<num_per_proc;i++)
   //  printf("[%d] mygids[%d] = %lld\n",MyPID,i,mygids[i]);
 

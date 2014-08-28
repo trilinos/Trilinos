@@ -48,7 +48,7 @@
 //#define KOKKOS_ATOMICS_USE_OMP31
 #include <Kokkos_Atomic.hpp>
 
-#include <Kokkos_OpenMP.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_hwloc.hpp>
 
 #include <Kokkos_View.hpp>
