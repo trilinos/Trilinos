@@ -108,12 +108,13 @@ namespace Xpetra {
 
   };
 
-  template <>
-  class MultiVectorFactory<double, int, int> {
+  template <class GlobalOrdinalArg>
+  class MultiVectorFactory<double, int, GlobalOrdinalArg> {
+
     typedef double Scalar;
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef MultiVector<double, int, int>::node_type Node;
+    typedef GlobalOrdinalArg GlobalOrdinal;
+    typedef MultiVector<double, int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -131,7 +132,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVector(map, NumVectors, zeroOut) );
+        return rcp( new EpetraMultiVectorT<GlobalOrdinalArg>(map, NumVectors, zeroOut) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -148,7 +149,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVector(map, ArrayOfPtrs, NumVectors) );
+        return rcp( new EpetraMultiVectorT<GlobalOrdinalArg>(map, ArrayOfPtrs, NumVectors) );
 #endif
 
       XPETRA_FACTORY_END;

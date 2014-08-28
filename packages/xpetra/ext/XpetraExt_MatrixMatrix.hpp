@@ -61,10 +61,7 @@
 #include "Xpetra_Matrix.hpp"
 
 #ifdef HAVE_XPETRA_EPETRA
-namespace Xpetra {
-  class EpetraCrsMatrix; // TODO: replace by include of _fwd.hpp
-  //  class
-}
+#include <Xpetra_EpetraCrsMatrix_fwd.hpp>
 #endif
 
 #ifdef HAVE_XPETRA_EPETRAEXT
@@ -150,7 +147,7 @@ Epetra_CrsMatrix & Op2NonConstEpetraCrs(const Xpetra::Matrix<Scalar, LocalOrdina
   try {
     const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> & crsOp = dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> & >(Op);
     RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp.getCrsMatrix();
-    const RCP<const Xpetra::EpetraCrsMatrix> &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(tmp_CrsMtx);
+    const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal> > &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal> >(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null)
       throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed"));
     A = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(tmp_ECrsMtx->getEpetra_CrsMatrix());
@@ -518,21 +515,19 @@ void Jacobi(
 } // end Jacobi
 
 
-template <>
-inline void
-Jacobi<double, int, int> (
+template <class GlobalOrdinal>
+inline void JacobiT(
   double omega,
-  const Xpetra::Vector<double,int,int> & Dinv,
-  const Xpetra::Matrix<double,int,int> & A,
-  const Xpetra::Matrix<double,int,int> & B,
-  Xpetra::Matrix<double,int,int>& C,
+  const Xpetra::Vector<double,int,GlobalOrdinal> & Dinv,
+  const Xpetra::Matrix<double,int,GlobalOrdinal> & A,
+  const Xpetra::Matrix<double,int,GlobalOrdinal> & B,
+  Xpetra::Matrix<double,int,GlobalOrdinal> &C,
   bool call_FillComplete_on_result,
   bool doOptimizeStorage) {
 
   typedef double Scalar;
   typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
-  typedef Xpetra::Vector<double, int, int>::node_type Node;
+  typedef typename Xpetra::Vector<double, int, GlobalOrdinal>::node_type Node;
 
   if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
@@ -558,8 +553,7 @@ Jacobi<double, int, int> (
     Epetra_CrsMatrix & epB = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(B);
     Epetra_CrsMatrix & epC = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(C);
     //    const Epetra_Vector & epD = toEpetra(Dinv);
-    XPETRA_DYNAMIC_CAST(const EpetraVector, Dinv, epD, "Xpetra::MatrixMatrix::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
-
+    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GlobalOrdinal>, Dinv, epD, "Xpetra::MatrixMatrix::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
     int i = EpetraExt::MatrixMatrix::Jacobi(omega,*epD.getEpetra_Vector(),epA,epB,epC,haveMultiplyDoFillComplete);
     if (i != 0) {
@@ -594,11 +588,31 @@ Jacobi<double, int, int> (
     C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
 } // end Jacobi
 
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+inline void Jacobi(
+  double omega,
+  const Xpetra::Vector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & Dinv,
+  const Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & A,
+  const Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & B,
+  Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> &C,
+  bool call_FillComplete_on_result,
+  bool doOptimizeStorage) {
+  JacobiT<int>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage);
+}
+#endif
 
-
-
-
-
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+inline void Jacobi(
+  double omega,
+  const Xpetra::Vector<double,int,long long,KokkosClassic::DefaultNode::DefaultNodeType> & Dinv,
+  const Xpetra::Matrix<double,int,long long,KokkosClassic::DefaultNode::DefaultNodeType> & A,
+  const Xpetra::Matrix<double,int,long long,KokkosClassic::DefaultNode::DefaultNodeType> & B,
+  Xpetra::Matrix<double,int,long long,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> &C,
+  bool call_FillComplete_on_result,
+  bool doOptimizeStorage) {
+  JacobiT<long long>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage);
+}
+#endif
 
 } // end namespace MatrixMatrix
 

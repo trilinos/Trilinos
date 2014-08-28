@@ -64,7 +64,11 @@
 
 typedef double Scalar;
 typedef int    LocalOrdinal;
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
 typedef int    GlobalOrdinal;
+#else
+typedef long long GlobalOrdinal;
+#endif
 
 int main(int argc, char *argv[]) {
   GlobalOrdinal numGlobalElements = 10; // problem size

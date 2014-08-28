@@ -181,12 +181,12 @@ namespace Xpetra {
 
   };
 
-  template <>
-  class CrsMatrixFactory<double, int, int> {
+  template <class GlobalOrdinalArg>
+  class CrsMatrixFactory<double, int, GlobalOrdinalArg> {
     typedef double Scalar;
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef CrsMatrix<double, int, int>::node_type Node;
+    typedef GlobalOrdinalArg GlobalOrdinal;
+    typedef CrsMatrix<double, int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -204,7 +204,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (rowMap->lib() == UseEpetra)
-        return rcp( new EpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype, plist) );
+        return rcp( new EpetraCrsMatrixT<GlobalOrdinal>(rowMap, maxNumEntriesPerRow, pftype, plist) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -220,7 +220,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (rowMap->lib() == UseEpetra)
-        return rcp( new EpetraCrsMatrix(rowMap, NumEntriesPerRowToAlloc, pftype, plist) );
+        return rcp( new EpetraCrsMatrixT<GlobalOrdinal>(rowMap, NumEntriesPerRowToAlloc, pftype, plist) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -237,7 +237,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (rowMap->lib() == UseEpetra)
-        return rcp( new EpetraCrsMatrix(rowMap, colMap, maxNumEntriesPerRow, pftype, plist) );
+        return rcp( new EpetraCrsMatrixT<GlobalOrdinal>(rowMap, colMap, maxNumEntriesPerRow, pftype, plist) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -254,7 +254,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (rowMap->lib() == UseEpetra)
-        return rcp( new EpetraCrsMatrix(rowMap, colMap, NumEntriesPerRowToAlloc, pftype, plist) );
+        return rcp( new EpetraCrsMatrixT<GlobalOrdinal>(rowMap, colMap, NumEntriesPerRowToAlloc, pftype, plist) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -271,7 +271,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (graph->getRowMap()->lib() == UseEpetra)
-        return rcp( new EpetraCrsMatrix(graph, plist) );
+        return rcp( new EpetraCrsMatrixT<GlobalOrdinal>(graph, plist) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -290,7 +290,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (sourceMatrix->getRowMap()->lib() == UseEpetra)
-        return rcp( new EpetraCrsMatrix(sourceMatrix,importer,domainMap,rangeMap,params) );
+        return rcp( new EpetraCrsMatrixT<GlobalOrdinal>(sourceMatrix,importer,domainMap,rangeMap,params) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -308,7 +308,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (sourceMatrix->getRowMap()->lib() == UseEpetra)
-        return rcp( new EpetraCrsMatrix(sourceMatrix,exporter,domainMap,rangeMap,params) );
+        return rcp( new EpetraCrsMatrixT<GlobalOrdinal>(sourceMatrix,exporter,domainMap,rangeMap,params) );
 #endif
 
       XPETRA_FACTORY_END;

@@ -98,7 +98,9 @@ typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetr
 #endif
 
 #ifdef XPETRA_EPETRACRSMATRIX_SHORT
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 typedef Xpetra::EpetraCrsMatrix EpetraCrsMatrix;
+#endif
 #endif
 
 #ifdef XPETRA_TPETRAMULTIVECTOR_SHORT

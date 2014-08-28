@@ -63,22 +63,26 @@
 namespace Xpetra {
 
   // TODO: move that elsewhere
-  const Epetra_MultiVector &          toEpetra(const MultiVector<double,int,int> &);
-  Epetra_MultiVector &                toEpetra(MultiVector<double, int,int> &);
-  RCP<MultiVector<double, int, int> > toXpetra(RCP<Epetra_MultiVector> vec);
+  template<class GlobalOrdinal>
+  const Epetra_MultiVector &          toEpetra(const MultiVector<double,int,GlobalOrdinal> &);
+  template<class GlobalOrdinal>
+  Epetra_MultiVector &                toEpetra(MultiVector<double, int,GlobalOrdinal> &);
+  template<class GlobalOrdinal>
+  RCP<MultiVector<double, int, GlobalOrdinal> > toXpetra(RCP<Epetra_MultiVector> vec);
 
   // #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  //   // forward declaration of EpetraVector, needed to prevent circular inclusions
-  //   template<class S, class LO, class GO, class N> class EpetraVector;
+  //   // forward declaration of EpetraVectorT, needed to prevent circular inclusions
+  //   template<class S, class LO, class GO, class N> class EpetraVectorT;
   // #endif
 
-  class EpetraMultiVector
-    : public virtual MultiVector<double, int, int>
+  template<class EpetraGlobalOrdinal>
+  class EpetraMultiVectorT
+    : public virtual MultiVector<double, int, EpetraGlobalOrdinal>
   {
     typedef double Scalar;
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef MultiVector<double, int, int>::node_type Node;
+    typedef EpetraGlobalOrdinal GlobalOrdinal;
+    typedef MultiVector<double, int, GlobalOrdinal>::node_type Node;
 
   public:
 
@@ -86,18 +90,18 @@ namespace Xpetra {
     //@{
 
     //! Basic MultiVector constuctor.
-    EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true)
+    EpetraMultiVectorT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true)
       : vec_(Teuchos::rcp(new Epetra_MultiVector(toEpetra(map), Teuchos::as<int>(NumVectors), zeroOut))) { }
 
     //! MultiVector copy constructor.
-    EpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source)
+    EpetraMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source)
       : vec_(Teuchos::rcp(new Epetra_MultiVector(toEpetra(source)))) { }
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
-    EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors);
+    EpetraMultiVectorT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors);
 
     //! MultiVector destructor.
-    virtual ~EpetraMultiVector() { }
+    virtual ~EpetraMultiVectorT() { }
 
     //@}
 
@@ -105,19 +109,19 @@ namespace Xpetra {
     //@{
 
     //! Replace value, using global (row) index.
-    void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::replaceGlobalValue"); vec_->ReplaceGlobalValue(globalRow, Teuchos::as<int>(vectorIndex), value); }
+    void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVectorT::replaceGlobalValue"); vec_->ReplaceGlobalValue(globalRow, Teuchos::as<int>(vectorIndex), value); }
 
     //! Add value to existing value, using global (row) index.
-    void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::sumIntoGlobalValue"); vec_->SumIntoGlobalValue(globalRow, Teuchos::as<int>(vectorIndex), value); }
+    void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVectorT::sumIntoGlobalValue"); vec_->SumIntoGlobalValue(globalRow, Teuchos::as<int>(vectorIndex), value); }
 
     //! Replace value, using local (row) index.
-    void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::replaceLocalValue"); vec_->ReplaceMyValue(myRow, Teuchos::as<int>(vectorIndex), value); }
+    void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVectorT::replaceLocalValue"); vec_->ReplaceMyValue(myRow, Teuchos::as<int>(vectorIndex), value); }
 
     //! Add value to existing value, using local (row) index.
-    void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::sumIntoLocalValue"); vec_->SumIntoMyValue(myRow, Teuchos::as<int>(vectorIndex), value); }
+    void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraMultiVectorT::sumIntoLocalValue"); vec_->SumIntoMyValue(myRow, Teuchos::as<int>(vectorIndex), value); }
 
     //! Set all values in the multivector with the given value.
-    void putScalar(const Scalar &value) { XPETRA_MONITOR("EpetraMultiVector::putScalar"); vec_->PutScalar(value); }
+    void putScalar(const Scalar &value) { XPETRA_MONITOR("EpetraMultiVectorT::putScalar"); vec_->PutScalar(value); }
 
     //@}
 
@@ -145,17 +149,17 @@ namespace Xpetra {
     void dot(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Teuchos::ArrayView< Scalar > &dots) const;
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this).
-    void abs(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) { XPETRA_MONITOR("EpetraMultiVector::abs"); vec_->Abs(toEpetra(A)); }
+    void abs(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) { XPETRA_MONITOR("EpetraMultiVectorT::abs"); vec_->Abs(toEpetra(A)); }
 
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    void reciprocal(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) { XPETRA_MONITOR("EpetraMultiVector::reciprocal"); vec_->Reciprocal(toEpetra(A)); }
+    void reciprocal(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) { XPETRA_MONITOR("EpetraMultiVectorT::reciprocal"); vec_->Reciprocal(toEpetra(A)); }
 
     //! Scale in place: this = alpha*this.
-    void scale(const Scalar &alpha) { XPETRA_MONITOR("EpetraMultiVector::scale"); vec_->Scale(alpha); }
+    void scale(const Scalar &alpha) { XPETRA_MONITOR("EpetraMultiVectorT::scale"); vec_->Scale(alpha); }
 
     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
     void scale (Teuchos::ArrayView< const Scalar > alpha) {
-      XPETRA_MONITOR("EpetraMultiVector::scale");
+      XPETRA_MONITOR("EpetraMultiVectorT::scale");
       // Epetra, unlike Tpetra, doesn't implement this version of
       // scale().  Deal with this by scaling one column at a time.
       const size_t numVecs = this->getNumVectors ();
@@ -165,10 +169,10 @@ namespace Xpetra {
     }
 
     //! Update: this = beta*this + alpha*A.
-    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta) { XPETRA_MONITOR("EpetraMultiVector::update"); vec_->Update(alpha, toEpetra(A), beta); }
+    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta) { XPETRA_MONITOR("EpetraMultiVectorT::update"); vec_->Update(alpha, toEpetra(A), beta); }
 
     //! Update: this = gamma*this + alpha*A + beta*B.
-    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &gamma) { XPETRA_MONITOR("EpetraMultiVector::update"); vec_->Update(alpha, toEpetra(A), beta, toEpetra(B), gamma); }
+    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &gamma) { XPETRA_MONITOR("EpetraMultiVectorT::update"); vec_->Update(alpha, toEpetra(A), beta, toEpetra(B), gamma); }
 
     //! Compute 1-norm of each vector in multi-vector.
     void norm1(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const;
@@ -186,10 +190,10 @@ namespace Xpetra {
     void meanValue(const Teuchos::ArrayView< Scalar > &means) const;
 
     //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
-    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta) { XPETRA_MONITOR("EpetraMultiVector::multiply"); vec_->Multiply(toEpetra(transA), toEpetra(transB), alpha, toEpetra(A), toEpetra(B), beta); }
+    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta) { XPETRA_MONITOR("EpetraMultiVectorT::multiply"); vec_->Multiply(toEpetra(transA), toEpetra(transB), alpha, toEpetra(A), toEpetra(B), beta); }
 
     //! Multiply a Vector A elementwise by a MultiVector B.
-    void elementWiseMultiply(Scalar scalarAB, const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, Scalar scalarThis) { XPETRA_MONITOR("EpetraMultiVector::elementWiseMultiply"); vec_->Multiply(scalarAB, toEpetra(A), toEpetra(B), scalarThis); }
+    void elementWiseMultiply(Scalar scalarAB, const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, Scalar scalarThis) { XPETRA_MONITOR("EpetraMultiVectorT::elementWiseMultiply"); vec_->Multiply(scalarAB, toEpetra(A), toEpetra(B), scalarThis); }
 
     //@}
 
@@ -197,13 +201,13 @@ namespace Xpetra {
     //@{
 
     //! Number of columns in the multivector.
-    size_t getNumVectors() const { XPETRA_MONITOR("EpetraMultiVector::getNumVectors"); return vec_->NumVectors(); }
+    size_t getNumVectors() const { XPETRA_MONITOR("EpetraMultiVectorT::getNumVectors"); return vec_->NumVectors(); }
 
     //! Local number of rows on the calling process.
-    size_t getLocalLength() const { XPETRA_MONITOR("EpetraMultiVector::getLocalLength"); return vec_->MyLength(); }
+    size_t getLocalLength() const { XPETRA_MONITOR("EpetraMultiVectorT::getLocalLength"); return vec_->MyLength(); }
 
     //! Global number of rows in the multivector.
-    global_size_t getGlobalLength() const { XPETRA_MONITOR("EpetraMultiVector::getGlobalLength"); return vec_->GlobalLength(); }
+    global_size_t getGlobalLength() const { XPETRA_MONITOR("EpetraMultiVectorT::getGlobalLength"); return vec_->GlobalLength64(); }
 
     //@}
 
@@ -220,7 +224,7 @@ namespace Xpetra {
 
     //! Set multi-vector values to random numbers.
     void randomize(bool bUseXpetraImplementation = false) {
-      XPETRA_MONITOR("EpetraMultiVector::randomize");
+      XPETRA_MONITOR("EpetraMultiVectorT::randomize");
 
       if (bUseXpetraImplementation)
         Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
@@ -232,7 +236,7 @@ namespace Xpetra {
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraMultiVector::getMap"); return toXpetra(vec_->Map()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraMultiVectorT::getMap"); return toXpetra<GlobalOrdinal>(vec_->Map()); }
 
     //! Import.
     void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
@@ -254,15 +258,15 @@ namespace Xpetra {
     //! @name Xpetra specific
     //@{
 
-    //! EpetraMultiVector constructor to wrap a Epetra_MultiVector object
-    EpetraMultiVector(const RCP<Epetra_MultiVector> &vec) : vec_(vec) { } //TODO removed const
+    //! EpetraMultiVectorT constructor to wrap a Epetra_MultiVector object
+    EpetraMultiVectorT(const RCP<Epetra_MultiVector> &vec) : vec_(vec) { } //TODO removed const
 
     //! Get the underlying Epetra multivector
     RCP<Epetra_MultiVector> getEpetra_MultiVector() const { return vec_; }
 
     //! Set seed for Random function.
     void setSeed(unsigned int seed) {
-      XPETRA_MONITOR("EpetraMultiVector::seedrandom");
+      XPETRA_MONITOR("EpetraMultiVectorT::seedrandom");
 
       Teuchos::ScalarTraits< Scalar >::seedrandom(seed);
       vec_->SetSeed(seed);
@@ -280,7 +284,15 @@ namespace Xpetra {
     //! The Epetra_MultiVector which this class wraps.
     RCP< Epetra_MultiVector > vec_;
 
-  }; // EpetraMultiVector class
+  }; // EpetraMultiVectorT class
+
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+  typedef EpetraMultiVectorT<int> EpetraMultiVector;
+#endif
+
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+  typedef EpetraMultiVectorT<long long> EpetraMultiVector64;
+#endif
 
 } // Xpetra namespace
 

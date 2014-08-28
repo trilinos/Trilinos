@@ -48,46 +48,66 @@
 
 namespace Xpetra {
 
-  RCP<const Export<int, int> > toXpetra(const Epetra_Export *exp) {
+  template<class GlobalOrdinal>
+  RCP<const Export<int, GlobalOrdinal> > toXpetra(const Epetra_Export *exp) {
     if (exp != NULL) {
       RCP<const Epetra_Export> eexp = rcp(new Epetra_Export(*exp)); //NOTE: non consitent: return pointer, take ref
-      return rcp(new Xpetra::EpetraExport(eexp));
+      return rcp(new Xpetra::EpetraExportT<GlobalOrdinal>(eexp));
     }
 
     return Teuchos::null;
   }
 
-  EpetraExport::EpetraExport(const Teuchos::RCP<const Map<int,int> > & source, const Teuchos::RCP<const Map<int,int> > & target)
+  template<class EpetraGlobalOrdinal>
+  EpetraExportT<EpetraGlobalOrdinal>::EpetraExportT(const Teuchos::RCP<const Map<int,GlobalOrdinal> > & source, const Teuchos::RCP<const Map<int,GlobalOrdinal> > & target)
     : export_(rcp(new Epetra_Export(toEpetra(source), toEpetra(target)))) { } // Warning: Epetra(Target, Source) vs. Tpetra(Source, Target)
 
   //
-  ArrayView< const int > EpetraExport::getExportPIDs() const { XPETRA_MONITOR("EpetraExport::getExportImageIDs"); return ArrayView<const int> (export_->ExportPIDs(),export_->NumExportIDs()); }
+  template<class EpetraGlobalOrdinal>
+  ArrayView< const int > EpetraExportT<EpetraGlobalOrdinal>::getExportPIDs() const { XPETRA_MONITOR("EpetraExportT::getExportImageIDs"); return ArrayView<const int> (export_->ExportPIDs(),export_->NumExportIDs()); }
 
-  ArrayView< const int > EpetraExport::getPermuteFromLIDs() const {
-    XPETRA_MONITOR("EpetraExport::getPermuteFromLIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExport::getExportImageIDs not implemented"); }
+  template<class EpetraGlobalOrdinal>
+  ArrayView< const int > EpetraExportT<EpetraGlobalOrdinal>::getPermuteFromLIDs() const {
+    XPETRA_MONITOR("EpetraExportT::getPermuteFromLIDs");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getExportImageIDs not implemented"); }
 
-  ArrayView< const int > EpetraExport::getPermuteToLIDs() const {
-    XPETRA_MONITOR("EpetraExport::getPermuteToLIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExport::getPermuteToLIDs not implemented"); }
+  template<class EpetraGlobalOrdinal>
+  ArrayView< const int > EpetraExportT<EpetraGlobalOrdinal>::getPermuteToLIDs() const {
+    XPETRA_MONITOR("EpetraExportT::getPermuteToLIDs");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getPermuteToLIDs not implemented"); }
 
-  size_t EpetraExport::getNumRemoteIDs() const {
-    XPETRA_MONITOR("EpetraExport::getNumRemoteIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExport::getNumRemoteIDs not implemented"); }
+  template<class EpetraGlobalOrdinal>
+  size_t EpetraExportT<EpetraGlobalOrdinal>::getNumRemoteIDs() const {
+    XPETRA_MONITOR("EpetraExportT::getNumRemoteIDs");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getNumRemoteIDs not implemented"); }
 
-  ArrayView< const int > EpetraExport::getRemoteLIDs() const {
-    XPETRA_MONITOR("EpetraExport::getRemoteLIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExport::getRemoteLIDs not implemented"); }
+  template<class EpetraGlobalOrdinal>
+  ArrayView< const int > EpetraExportT<EpetraGlobalOrdinal>::getRemoteLIDs() const {
+    XPETRA_MONITOR("EpetraExportT::getRemoteLIDs");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getRemoteLIDs not implemented"); }
 
-  size_t EpetraExport::getNumExportIDs() const {
-    XPETRA_MONITOR("EpetraExport::getNumExportIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExport::getNumExportIDs not implemented"); }
+  template<class EpetraGlobalOrdinal>
+  size_t EpetraExportT<EpetraGlobalOrdinal>::getNumExportIDs() const {
+    XPETRA_MONITOR("EpetraExportT::getNumExportIDs");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getNumExportIDs not implemented"); }
 
-  ArrayView< const int > EpetraExport::getExportLIDs() const {
-    XPETRA_MONITOR("EpetraExport::getExportLIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExport::getExportLIDs not implemented"); }
+  template<class EpetraGlobalOrdinal>
+  ArrayView< const int > EpetraExportT<EpetraGlobalOrdinal>::getExportLIDs() const {
+    XPETRA_MONITOR("EpetraExportT::getExportLIDs");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getExportLIDs not implemented"); }
 
-  void EpetraExport::print(std::ostream &os) const { XPETRA_MONITOR("EpetraExport::");  export_->Print(os); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraExportT<EpetraGlobalOrdinal>::print(std::ostream &os) const { XPETRA_MONITOR("EpetraExportT::");  export_->Print(os); }
+
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+template class EpetraExportT<int>;
+template RCP<const Export<int, int> > toXpetra<int>(const Epetra_Export *);
+#endif
+
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+template class EpetraExportT<long long>;
+template RCP<const Export<int, long long> > toXpetra<long long>(const Epetra_Export *);
+#endif
 
 } // Xpetra namespace
 

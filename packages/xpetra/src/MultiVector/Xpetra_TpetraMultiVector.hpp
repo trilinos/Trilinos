@@ -260,7 +260,7 @@ namespace Xpetra {
         XPETRA_MONITOR("TpetraMultiVector::randomize");
 
         if(bUseXpetraImplementation)
-            Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
+            MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
         else
             vec_->randomize();
     }
