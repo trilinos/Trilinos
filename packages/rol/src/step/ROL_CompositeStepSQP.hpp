@@ -89,6 +89,7 @@ private:
   bool infoQN_;
   bool infoLM_;
   bool infoTS_;
+  bool infoAC_;
   bool infoALL_;
 
   // Performance summary.
@@ -125,10 +126,12 @@ public:
     infoQN_  = false;
     infoLM_  = false;
     infoTS_  = false;
+    infoAC_  = false;
     infoALL_ = true;
     infoQN_  = infoQN_ || infoALL_;
     infoLM_  = infoLM_ || infoALL_;
     infoTS_  = infoTS_ || infoALL_;
+    infoAC_  = infoAC_ || infoALL_;
 
     totaliterCG_ = 0;
   }
@@ -802,6 +805,23 @@ public:
               const Vector<Real> &g, const Vector<Real> &tCP, const Vector<Real> &Wg,
               Real Delta, Real zeta, Real penalty) {
 
+    Real eta          = 1e-8;              // actual/predicted-reduction parameter
+    Real beta         = 1e-8;              // predicted reduction parameter
+    Real tol_red_tang = 1e-3;              // internal reduction factor for tangtol
+    Real tol_red_all  = 1e-1;              // internal reduction factor for qntol, lmhtol, pgtol, projtol, tangtol
+    bool glob_ref     = true;              // true  - if subsolver tolerances are adjusted in this routine, keep adjusted values globally
+                                           // false - if subsolver tolerances are adjusted in this routine, discard adjusted values
+
+    // Determines max value of |rpred|/pred. 
+    Real rpred_over_pred = 0.5*(1-eta);
+eta = beta*tol_red_tang*tol_red_all*glob_ref*rpred_over_pred;
+
+    if (infoAC_) {
+      std::stringstream hist;
+      hist << "\n  SQP_accept\n";
+      std::cout << hist.str();
+    }
+    
   } // accept
 
 }; // class CompositeStepSQP
