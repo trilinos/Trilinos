@@ -193,7 +193,7 @@ MACRO(TRIBITS_PROJECT_IMPL)
   # F2) The compilers are set, the environment is known to CMake.
   #     Set installation options.
   #
-  TRIBITS_SETUP_INSTALLATION_OPTIONS()
+  TRIBITS_SETUP_INSTALLATION_PATHS()
 
   #
   # G) Go get the information for all enabled TPLS
