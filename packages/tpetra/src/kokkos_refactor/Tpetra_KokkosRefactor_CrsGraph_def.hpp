@@ -3982,7 +3982,7 @@ namespace Tpetra {
           const map_type& oldColMap = * (getColMap ());
           if (pftype_ == StaticProfile) {
             // Allocate storage for the new local indices.
-            RCP<Node> node = getRowMap ()->getNode ();
+            RCP<node_type> node = getRowMap ()->getNode ();
             newLclInds1D = t_LocalOrdinal_1D ("Tpetra::CrsGraph::ind",
                                               nodeNumAllocated_);
             // Attempt to convert the new indices locally.
@@ -4258,8 +4258,8 @@ namespace Tpetra {
       nodeNumDiags_         = 0;
 
       // At this point, we know that we have both a row Map and a column Map.
-      const Map<LO,GO,Node>& rowMap = *rowMap_;
-      const Map<LO,GO,Node>& colMap = *colMap_;
+      const map_type& rowMap = *rowMap_;
+      const map_type& colMap = *colMap_;
 
       // Go through all the entries of the graph.  Count the number of
       // diagonal elements we encounter, and figure out whether the
@@ -5017,8 +5017,8 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "copyAndPermute";
-    typedef CrsGraph<LO, GO, Node> this_type;
-    typedef RowGraph<LO, GO, Node> row_graph_type;
+    typedef CrsGraph<LO, GO, node_type> this_type;
+    typedef RowGraph<LO, GO, node_type> row_graph_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
@@ -5121,7 +5121,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       exportLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
       ": exportLIDs and numPacketsPerLID must have the same size.");
-    typedef RowGraph<LocalOrdinal, GlobalOrdinal, Node> row_graph_type;
+    typedef RowGraph<LocalOrdinal, GlobalOrdinal, node_type> row_graph_type;
     const row_graph_type& srcGraph = dynamic_cast<const row_graph_type&> (source);
 
     // We don't check whether src_graph has had fillComplete called,

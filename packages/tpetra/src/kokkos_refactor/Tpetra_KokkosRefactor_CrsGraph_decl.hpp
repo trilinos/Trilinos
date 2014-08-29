@@ -146,12 +146,14 @@ namespace Tpetra {
     typedef LocalOrdinal local_ordinal_type;
     //! This class' second template parameter; the type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
-    //! The Kokkos Node type used by this class.
+    //! This class' third template parameter; the Kokkos device type.
+    typedef DeviceType device_type;
+    /// \brief The Kokkos Node type used by this class.
+    ///
+    /// This type depends on the DeviceType template parameter.  In
+    /// this, the Kokkos refactor version of Tpetra, it exists only
+    /// for backwards compatibility.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
-    //! The Kokkos Device type used by this class.
-    typedef typename node_type::device_type device_type;
-    //! Typedef for backwards compatibility.
-    typedef node_type Node;
 
     typedef Kokkos::StaticCrsGraph<LocalOrdinal,
                                    Kokkos::LayoutLeft,
@@ -420,7 +422,7 @@ namespace Tpetra {
            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
     {
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node2> output_crs_graph_type;
-      typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> input_crs_graph_type;
+      typedef CrsGraph<LocalOrdinal, GlobalOrdinal, node_type> input_crs_graph_type;
       typedef Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
       return copier_type::clone (*this, node2, params);
     }
@@ -578,7 +580,7 @@ namespace Tpetra {
     Teuchos::RCP<const Comm<int> > getComm() const;
 
     //! Returns the underlying node.
-    Teuchos::RCP<Node> getNode() const;
+    Teuchos::RCP<node_type> getNode() const;
 
     //! Returns the Map that describes the row distribution in this graph.
     Teuchos::RCP<const map_type> getRowMap () const;
@@ -1710,7 +1712,7 @@ namespace Tpetra {
     t_LocalOrdinal_1D k_lclInds1D_;
 
     //! Type of the k_gblInds1D_ array of global column indices.
-    typedef Kokkos::View<GlobalOrdinal*, typename Node::device_type> t_GlobalOrdinal_1D;
+    typedef Kokkos::View<GlobalOrdinal*, device_type> t_GlobalOrdinal_1D;
 
     /// \brief Global column indices for all rows.
     ///
@@ -1797,8 +1799,7 @@ namespace Tpetra {
     /// for that row.
     Teuchos::ArrayRCP<Teuchos::Array<GlobalOrdinal> > gblInds2D_;
 
-    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft,
-                             typename Node::device_type> t_numRowEntries_;
+    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, device_type> t_numRowEntries_;
 
     /// \brief The number of local entries in each locally owned row.
     ///

@@ -85,8 +85,11 @@ namespace Tpetra {
     typedef GlobalOrdinal global_ordinal_type;
     //! This class' fourth template parameter; the Kokkos device type.
     typedef DeviceType device_type;
-
-    //! The Kokkos Node type; derived from this class' fourth template parameter.
+    /// \brief The Kokkos Node type used by this class.
+    ///
+    /// This type depends on the DeviceType template parameter.  In
+    /// this, the Kokkos refactor version of Tpetra, it exists only
+    /// for backwards compatibility.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
     //! Backwards compatibility typedef.
