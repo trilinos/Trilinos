@@ -1316,9 +1316,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (BST::abs(v.coeff(j)) < btol)
+      if (j < v.size() && BST::abs(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (BST::abs(v2.coeff(j)) < btol)
+      if (j < v2.size() && BST::abs(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -1499,9 +1499,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (BST::abs(v.coeff(j)) < btol)
+      if (j < v.size() && BST::abs(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (BST::abs(v2.coeff(j)) < btol)
+      if (j < v2.size() && BST::abs(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -1675,9 +1675,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (ST::magnitude(v.coeff(j)) < btol)
+      if (j < v.size() && ST::magnitude(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (ST::magnitude(v2.coeff(j)) < btol)
+      if (j < v2.size() && ST::magnitude(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -1866,9 +1866,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (ST::magnitude(v.coeff(j)) < btol)
+      if (j < v.size() && ST::magnitude(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (ST::magnitude(v2.coeff(j)) < btol)
+      if (j < v2.size() && ST::magnitude(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -2082,9 +2082,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (ST::magnitude(v.coeff(j)) < btol)
+      if (j < v.size() && ST::magnitude(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (ST::magnitude(v2.coeff(j)) < btol)
+      if (j < v2.size() && ST::magnitude(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -2279,9 +2279,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (ST::magnitude(v.coeff(j)) < btol)
+      if (j < v.size() && ST::magnitude(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (ST::magnitude(v2.coeff(j)) < btol)
+      if (j < v2.size() && ST::magnitude(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
