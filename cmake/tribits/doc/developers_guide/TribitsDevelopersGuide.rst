@@ -6393,6 +6393,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_ENABLE_CXX`_
 * `${PROJECT_NAME}_ENABLE_CXX11`_
 * `${PROJECT_NAME}_ENABLE_Fortran`_
+* `${PROJECT_NAME}_USE_GNUINSTALLDIRS`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
 * `${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`_
 * `${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`_
@@ -6485,6 +6486,23 @@ These options are described below.
   that might require the compiler and we don't want to unnecessarily limit the
   generality of a given TriBITS build.  Setting the default for all platforms
   should be sufficient.
+
+.. _${PROJECT_NAME}_USE_GNUINSTALLDIRS:
+
+**${PROJECT_NAME}_USE_GNUINSTALLDIRS**
+
+  If ``${PROJECT_NAME}_USE_GNUINSTALLDIRS`` is set to ``TRUE``, then the
+  default install paths will be determined by the standard CMake module
+  ``GNUInstallDirs``.  Otherwise, platform independent install paths are used
+  by default.
+
+  A project can use the paths given the cmake module ``GNUInstallDirs`` by
+  default by setting::
+  
+    SET(${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT FALSE)
+
+  in the project's top-level `<projectDir>/CMakeLists.txt`_ file or its
+  `<projectDir>/ProjectName.cmake`_ file.  The default is ``FALSE``.
   
 .. _${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS:
 
