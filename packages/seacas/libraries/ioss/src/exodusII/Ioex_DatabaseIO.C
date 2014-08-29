@@ -1391,7 +1391,10 @@ namespace Ioex {
     add_attribute_fields(EX_NODE_BLOCK, block, num_attr, "");
     add_results_fields(EX_NODE_BLOCK, block);
 
-    get_region()->add(block);
+    bool added = get_region()->add(block);
+    if(!added) {
+      delete block;
+    }
   }
 
   void DatabaseIO::get_elemblocks()
