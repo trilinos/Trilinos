@@ -63,13 +63,16 @@ template <class Real>
 class CompositeStepSQP : public Step<Real> {
 private:
 
+  // Diagnostic return flags for subalgorithms. 
   int flagTR_;
   int flagCG_;
   int iterCG_;
 
+  // Stopping conditions.
   int maxiterCG_;
   Real tolCG_;
 
+  // Tolerances and stopping conditions for subalgorithms.
   Real lmhtol_;
   Real qntol_;
   Real pgtol_;
@@ -77,13 +80,19 @@ private:
   Real tangtol_;
   Real tntmax_;
 
+  // Trust-region parameters.
   Real zeta_;
   Real Delta_;
+  Real penalty_;
 
+  // Output flags.
   bool infoQN_;
   bool infoLM_;
   bool infoTS_;
   bool infoALL_;
+
+  // Performance summary.
+  int totaliterCG_;
 
   template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
@@ -109,8 +118,9 @@ public:
     projtol_ = nominal_tol;     
     tangtol_ = nominal_tol;     
     
-    zeta_  = 0.9;
-    Delta_ = 1e2;
+    zeta_    = 0.9;
+    Delta_   = 1e2;
+    penalty_ = 1.0;
 
     infoQN_  = false;
     infoLM_  = false;
@@ -119,6 +129,8 @@ public:
     infoQN_  = infoQN_ || infoALL_;
     infoLM_  = infoLM_ || infoALL_;
     infoTS_  = infoTS_ || infoALL_;
+
+    totaliterCG_ = 0;
   }
 
   /** \brief Initialize step.
@@ -163,20 +175,47 @@ public:
                 AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     Real zerotol = 0.0;
+    Real f = 0.0;
     Teuchos::RCP<Vector<Real> > n   = s.clone();
     Teuchos::RCP<Vector<Real> > c   = l.clone();
     Teuchos::RCP<Vector<Real> > t   = s.clone();
     Teuchos::RCP<Vector<Real> > tCP = s.clone();
     Teuchos::RCP<Vector<Real> > g   = x.clone();
+    Teuchos::RCP<Vector<Real> > gf  = x.clone();
     Teuchos::RCP<Vector<Real> > Wg  = x.clone();
     Teuchos::RCP<Vector<Real> > ajl = x.clone();
+
+    Real f_new = 0.0;
+    Teuchos::RCP<Vector<Real> > l_new  = l.clone();
+    Teuchos::RCP<Vector<Real> > c_new  = l.clone();
+    Teuchos::RCP<Vector<Real> > g_new  = x.clone();
+    Teuchos::RCP<Vector<Real> > gf_new = x.clone();
+
+
+    // Evaluate objective ... should have been stored.
+    f = obj.value(x, zerotol);
+    algo_state.nfval++;
+    // Compute gradient of objective ... should have been stored.
+    obj.gradient(*gf, x, zerotol);
+    // Evaluate constraint ... should have been stored.
     con.value(*c, x, zerotol);
+
+    // Compute quasi-normal step.
     computeQuasinormalStep(*n, *c, x, zeta_*Delta_, con);
-    obj.gradient(*g, x, zerotol);
+
+    // Compute gradient of Lagrangian ... should have been stored.
     con.applyAdjointJacobian(*ajl, l, x, zerotol);
+    g->set(*gf);
     g->plus(*ajl);
     algo_state.ngrad++;
+
+    // Solve tangential subproblem.
     solveTangentialSubproblem(*t, *tCP, *Wg, x, *g, *n, l, Delta_, obj, con);
+    totaliterCG_ += iterCG_;
+
+    // Check acceptance of subproblem solutions, adjust trust-region radius and parameter, ensure global convergence.
+    accept(*n, *t, f_new, *c_new, *gf_new, *l_new, *g_new, x, l, f, *gf, *c, *g, *tCP, *Wg, Delta_, zeta_, penalty_);
+
     s.set(*n);
     s.plus(*t);
   }
@@ -621,7 +660,7 @@ public:
             }
           }
         }
-        if (Tm1.normOne() >= 0.5) {
+        if (Tm1.normOne() >= tol_ortho) {
           Teuchos::LAPACK<int,Real> lapack;
           std::vector<int>          ipiv(iterCG_);
           int                       info;
@@ -754,6 +793,16 @@ public:
 
   } // solveTangentialSubproblem
 
+  
+  /** \brief Check acceptance of subproblem solutions, adjust trust-region radius and parameter, ensure global convergence.
+  */
+  void accept(Vector<Real> &n, Vector<Real> &t, Real f_new, Vector<Real> &c_new,
+              Vector<Real> &gf_new, Vector<Real> &l_new, Vector<Real> &g_new,
+              const Vector<Real> &x, const Vector<Real> &l, Real f, const Vector<Real> &gf, const Vector<Real> &c,
+              const Vector<Real> &g, const Vector<Real> &tCP, const Vector<Real> &Wg,
+              Real Delta, Real zeta, Real penalty) {
+
+  } // accept
 
 }; // class CompositeStepSQP
 
