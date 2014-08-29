@@ -84,5 +84,7 @@ TRIBITS_ADD_LIBRARY(
   tpetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  LINKER_LANGUAGE CXX
   )
+
+# We need to set the linker language explicitly here for CUDA builds.
+SET_PROPERTY(TARGET tpetra APPEND PROPERTY LINKER_LANGUAGE CXX)
