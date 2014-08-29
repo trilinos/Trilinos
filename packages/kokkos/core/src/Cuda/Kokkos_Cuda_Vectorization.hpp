@@ -51,7 +51,7 @@ namespace Kokkos {
 // and doesn't do what it claims to do) because we don't actually use
 // this function unless we are on a suitable GPU, with a suitable
 // Scalar type.  (For example, in the mat-vec, the "ThreadsPerRow"
-// internal parameter depends both on the Device and the Scalar type,
+// internal parameter depends both on the ExecutionSpace and the Scalar type,
 // and it controls whether shfl_down() gets called.)
 template<typename Scalar>
 KOKKOS_INLINE_FUNCTION

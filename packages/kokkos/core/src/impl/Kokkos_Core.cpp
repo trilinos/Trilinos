@@ -52,9 +52,9 @@
 
 namespace Kokkos {
 
-  typedef Kokkos::DefaultExecutionSpace::host_mirror_device_type  DefaultHostMirrorDeviceType ;
+  typedef Kokkos::DefaultExecutionSpace::host_mirror_device_type  DefaultHostMirrorSpaceType ;
 
-  enum { DefaultIsNotHostSpace = ! Impl::is_same< Kokkos::DefaultExecutionSpace , DefaultHostMirrorDeviceType >::value };
+  enum { DefaultIsNotHostSpace = ! Impl::is_same< Kokkos::DefaultExecutionSpace , DefaultHostMirrorSpaceType >::value };
 
   void initialize() {
     if ( DefaultIsNotHostSpace ) {
@@ -147,11 +147,11 @@ namespace Kokkos {
     if(DefaultIsNotHostSpace) {
       if(nthreads>0) {
         if(numa>0)
-          DefaultHostMirrorDeviceType::initialize(nthreads,numa);
+          DefaultHostMirrorSpaceType::initialize(nthreads,numa);
         else
-          DefaultHostMirrorDeviceType::initialize(nthreads);
+          DefaultHostMirrorSpaceType::initialize(nthreads);
       } else
-        DefaultHostMirrorDeviceType::initialize();
+        DefaultHostMirrorSpaceType::initialize();
     }
 
     #ifdef KOKKOS_HAVE_CUDA
@@ -175,14 +175,14 @@ namespace Kokkos {
 
   void finalize() {
     if(DefaultIsNotHostSpace) {
-      DefaultHostMirrorDeviceType::finalize();
+      DefaultHostMirrorSpaceType::finalize();
     }
     Kokkos::DefaultExecutionSpace::finalize();
   }
 
   void fence() {
     if(DefaultIsNotHostSpace) {
-      DefaultHostMirrorDeviceType::fence();
+      DefaultHostMirrorSpaceType::fence();
     }
     Kokkos::DefaultExecutionSpace::fence();
   }

@@ -84,18 +84,18 @@ class CudaExec ;
 namespace Kokkos {
 
 /// \class Cuda
-/// \brief Kokkos device that uses CUDA to run on GPUs.
+/// \brief Kokkos Execution Space that uses CUDA to run on GPUs.
 ///
-/// A "device" represents a parallel execution model.  It tells Kokkos
+/// An "execution space" represents a parallel execution model.  It tells Kokkos
 /// how to parallelize the execution of kernels in a parallel_for or
-/// parallel_reduce.  For example, the Threads device uses Pthreads or
-/// C++11 threads on a CPU, the OpenMP device uses the OpenMP language
-/// extensions, and the Serial device executes "parallel" kernels
-/// sequentially.  The Cuda device uses NVIDIA's CUDA programming
+/// parallel_reduce.  For example, the Threads execution space uses Pthreads or
+/// C++11 threads on a CPU, the OpenMP execution space uses the OpenMP language
+/// extensions, and the Serial execution space executes "parallel" kernels
+/// sequentially.  The Cuda execution space uses NVIDIA's CUDA programming
 /// model to execute kernels in parallel on GPUs.
 class Cuda {
 public:
-  //! \name Type declarations that all Kokkos devices must provide.
+  //! \name Type declarations that all Kokkos execution spaces must provide.
   //@{
 
   //! The tag (what type of kokkos_object is this).

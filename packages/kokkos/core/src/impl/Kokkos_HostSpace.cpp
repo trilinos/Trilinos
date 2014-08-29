@@ -154,11 +154,11 @@ DeepCopy<HostSpace,HostSpace>::DeepCopy( void * dst , const void * src , size_t 
 namespace Kokkos {
 namespace {
 
-static const int QUERY_DEVICE_IN_PARALLEL_MAX = 16 ;
+static const int QUERY_SPACE_IN_PARALLEL_MAX = 16 ;
 
-typedef int (* QueryDeviceInParallelPtr )();
+typedef int (* QuerySpaceInParallelPtr )();
 
-QueryDeviceInParallelPtr s_in_parallel_query[ QUERY_DEVICE_IN_PARALLEL_MAX ] ;
+QuerySpaceInParallelPtr s_in_parallel_query[ QUERY_SPACE_IN_PARALLEL_MAX ] ;
 int s_in_parallel_query_count = 0 ;
 
 } // namespace <empty>
@@ -180,7 +180,7 @@ void HostSpace::register_in_parallel( int (*device_in_parallel)() )
 
   }
 
-  if ( QUERY_DEVICE_IN_PARALLEL_MAX <= i ) {
+  if ( QUERY_SPACE_IN_PARALLEL_MAX <= i ) {
     Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::HostSpace::register_in_parallel_query ERROR : exceeded maximum" ) );
 
   }

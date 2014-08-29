@@ -239,7 +239,7 @@ struct AssertShapeBoundsAbort< Kokkos::HostSpace >
                      const size_t i6 , const size_t i7 );
 };
 
-template< class ExecutionDevice >
+template< class ExecutionSpace >
 struct AssertShapeBoundsAbort
 {
   KOKKOS_INLINE_FUNCTION

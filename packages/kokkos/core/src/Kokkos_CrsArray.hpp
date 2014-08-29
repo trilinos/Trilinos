@@ -62,12 +62,12 @@ namespace Kokkos {
 ///   matrix.
 ///
 /// \tparam Arg1Type The second template parameter, corresponding
-///   either to the Device type (if there are no more template
+///   either to the Space type (if there are no more template
 ///   parameters) or to the Layout type (if there is at least one more
 ///   template parameter).
 ///
 /// \tparam Arg2Type The third template parameter, which if provided
-///   corresponds to the Device type.
+///   corresponds to the Space type.
 ///
 /// \tparam SizeType The type of row offsets.  Usually the default
 ///   parameter suffices.  However, setting a nondefault value is
