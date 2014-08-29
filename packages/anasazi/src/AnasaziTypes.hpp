@@ -132,6 +132,15 @@ typedef Teuchos_Ordinal Array_size_type;
     Undefined = 0x4     /*!< The test has not been evaluated on the solver */ 
   };
 
+  /*! \enum ResType 
+      \brief Enumerated type used to specify which residual norm used by residual norm status tests.
+  */
+  enum ResType {
+    RES_ORTH,
+    RES_2NORM,
+    RITZRES_2NORM
+  };
+
 
   /*! \enum MsgType
       \brief Enumerated list of available message types recognized by the eigensolvers.

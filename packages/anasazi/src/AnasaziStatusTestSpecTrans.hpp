@@ -29,6 +29,7 @@
 #ifndef ANASAZI_STATUS_TEST_SPECTRANS_HPP
 #define ANASAZI_STATUS_TEST_SPECTRANS_HPP
 
+#include "AnasaziTypes.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
 #include "AnasaziTraceMinBase.hpp"
 
@@ -43,12 +44,11 @@ namespace Experimental {
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
   typedef MultiVecTraits<ScalarType,MV>                             MVT;
   typedef OperatorTraits<ScalarType,MV,OP>                          OPT;
-  typedef enum StatusTestResNorm<ScalarType,MV,OP>::ResType         ResType;
 
   public:
 
     // Constructor
-    StatusTestSpecTrans(MagnitudeType tol, int quorum = -1, ResType whichNorm = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM, bool scaled = true, bool throwExceptionOnNan = true, const RCP<const OP> Mop = Teuchos::null);
+    StatusTestSpecTrans(MagnitudeType tol, int quorum = -1, ResType whichNorm = RES_2NORM, bool scaled = true, bool throwExceptionOnNan = true, const RCP<const OP> Mop = Teuchos::null);
     
     // Destructor
     virtual ~StatusTestSpecTrans() {};
@@ -115,7 +115,7 @@ namespace Experimental {
     std::vector<int> ind_;
     int quorum_;
     bool scaled_;
-    ResType whichNorm_;
+    enum ResType whichNorm_;
     bool throwExceptionOnNaN_;
     RCP<const OP> M_;
 
@@ -180,12 +180,12 @@ namespace Experimental {
     // Compute the norms
     std::vector<MagnitudeType> res(nvecs);
     switch (whichNorm_) {
-      case StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM:
+      case RES_2NORM:
       {
         MVT::MvNorm(*R,res);
         break;
       }
-      case StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH:
+      case RES_ORTH:
       {
         RCP<MV> MR = MVT::Clone(*R,nvecs);
         OPT::Apply(*M_,*R,*MR);
@@ -194,7 +194,7 @@ namespace Experimental {
           res[i] = MT::squareroot(res[i]);
         break;
       }
-      case StatusTestResNorm<ScalarType,MV,OP>::RITZRES_2NORM:
+      case RITZRES_2NORM:
       {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "The trace minimization solvers do not define a Ritz residual.  Please choose a different residual type");
         break;
@@ -244,13 +244,13 @@ namespace Experimental {
     os << ind << "  (Tolerance, WhichNorm,Scaled,Quorum): "
        << "(" << tol_;
     switch (whichNorm_) {
-      case StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH:
+      case RES_ORTH:
         os << ",RES_ORTH";
         break;
-      case StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM:
+      case RES_2NORM:
         os << ",RES_2NORM";
         break;
-      case StatusTestResNorm<ScalarType,MV,OP>::RITZRES_2NORM:
+      case RITZRES_2NORM:
         os << ",RITZRES_2NORM";
         break;
     }

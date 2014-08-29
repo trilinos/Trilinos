@@ -250,13 +250,13 @@ class TraceMinBaseSolMgr : public SolverManager<ScalarType,MV,OP> {
   // Convergence variables
   MagnitudeType convTol_;
   bool relConvTol_;
-  enum StatusTestResNorm<ScalarType,MV,OP>::ResType convNorm_;
+  enum ResType convNorm_;
 
   // Locking variables
   MagnitudeType lockTol_;
   int maxLocked_, lockQuorum_;
   bool useLocking_, relLockTol_;
-  enum StatusTestResNorm<ScalarType,MV,OP>::ResType lockNorm_;
+  enum ResType lockNorm_;
 
   // Shifting variables
   enum WhenToShiftType whenToShift_;
@@ -407,10 +407,10 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
   relConvTol_ = pl.get("Relative Convergence Tolerance",true);
   strtmp = pl.get("Convergence Norm",std::string("2"));
   if (strtmp == "2") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+    convNorm_ = RES_2NORM;
   }
   else if (strtmp == "M") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+    convNorm_ = RES_ORTH;
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
@@ -431,10 +431,10 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
 
   strtmp = pl.get("Locking Norm",std::string("2"));
   if (strtmp == "2") {
-    lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+    lockNorm_ = RES_2NORM;
   }
   else if (strtmp == "M") {
-    lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+    lockNorm_ = RES_ORTH;
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 

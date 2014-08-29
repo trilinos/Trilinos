@@ -411,7 +411,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   // convergence
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convtest;
   if (globalTest_ == Teuchos::null) {
-    convtest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_convtol,nev,StatusTestResNorm<ScalarType,MV,OP>::RITZRES_2NORM,_relconvtol) );
+    convtest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_convtol,nev,RITZRES_2NORM,_relconvtol) );
   }
   else {
     convtest = globalTest_;

@@ -72,6 +72,7 @@ template <class Scalar, class MV, class OP>
 class TraceMinOp
 {
 public:
+  virtual ~TraceMinOp() { };
   virtual void Apply(const MV& X, MV& Y) const =0;
   virtual void removeIndices(const std::vector<int>& indicesToRemove) =0;
 };
