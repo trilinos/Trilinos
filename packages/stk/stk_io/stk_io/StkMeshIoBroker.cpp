@@ -592,7 +592,11 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 }
 
 template <typename INT>
+#ifdef STK_BUILT_IN_SIERRA
 void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+#else
+void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::ParallelMachine comm, INT /*dummy*/)
+#endif
 {
   // This must be called after the "process_element_blocks" call
   // since there may be nodes that exist in the database that are
@@ -623,7 +627,11 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*d
   // Register node sharing information for all nodes on processor
   // boundaries.
   //
+#ifdef STK_BUILT_IN_SIERRA
   if (bulk.parallel_size() > 1)
+#else
+  if (stk::parallel_machine_size(comm) > 1)
+#endif
   {
     Ioss::CommSet* io_cs = region.get_commset("commset_node");
     int num_sharings = io_cs->get_field("entity_processor").raw_count();
@@ -1153,7 +1161,9 @@ namespace stk {
         m_meta_data = Teuchos::rcpFromRef(bulk_data().mesh_meta_data());
       }
 
+#ifdef STK_BUILT_IN_SIERRA
       m_communicator = m_bulk_data->parallel();
+#endif
     }
 
     size_t StkMeshIoBroker::add_mesh_database(std::string filename, DatabasePurpose purpose)
@@ -1348,13 +1358,21 @@ namespace stk {
 	bool ints64bit = db_api_int_size(region) == 8;
 	if (ints64bit) {
 	  int64_t zero = 0;
+#ifdef STK_BUILT_IN_SIERRA
 	  process_nodeblocks(*region,    bulk_data(), zero);
+#else
+          process_nodeblocks(*region,    bulk_data(), m_communicator, zero);
+#endif
 	  process_elementblocks(*region, bulk_data(), zero);
 	  process_nodesets(*region,      bulk_data(), zero);
 	  process_sidesets(*region,      bulk_data());
 	} else {
 	  int zero = 0;
+#ifdef STK_BUILT_IN_SIERRA
 	  process_nodeblocks(*region,    bulk_data(), zero);
+#else
+          process_nodeblocks(*region,    bulk_data(), m_communicator, zero);
+#endif
 	  process_elementblocks(*region, bulk_data(), zero);
 	  process_nodesets(*region,      bulk_data(), zero);
 	  process_sidesets(*region,      bulk_data());
