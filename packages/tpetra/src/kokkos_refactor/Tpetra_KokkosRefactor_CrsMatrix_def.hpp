@@ -291,15 +291,14 @@ namespace Tpetra {
     using Teuchos::arcp;
     using Teuchos::rcp;
     using Teuchos::RCP;
-    const char tfecfFuncName[] = "CrsMatrix(rowMap,colMap,lclMatrix,params)";
+    const char tfecfFuncName[] = "CrsMatrix(rowMap,colMap,lclMatrix,params): ";
 
     try {
       myGraph_ = rcp (new Graph (rowMap, colMap, lclMatrix.graph, params));
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-        typeName(*this) << "::CrsMatrix(): caught exception while allocating "
-        "CrsGraph object: " << std::endl << e.what ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error,
+        "Caught exception while allocating CrsGraph object: " << e.what ());
     }
     staticGraph_ = myGraph_;
     computeGlobalConstants();
@@ -322,10 +321,10 @@ namespace Tpetra {
     // Sanity checks at the end.
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillActive(), std::logic_error,
-      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "We're at the end of fillComplete(), but isFillActive() is true.  "
       "Please report this bug to the Tpetra developers.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillComplete(), std::logic_error,
-      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "We're at the end of fillComplete(), but isFillActive() is true.  "
       "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
     checkInternalState ();
