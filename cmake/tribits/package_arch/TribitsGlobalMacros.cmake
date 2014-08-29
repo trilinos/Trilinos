@@ -303,6 +303,20 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
       "If on, then the property LINK_SEARCH_START_STATIC will be added to all executables." )
   ENDIF()
 
+  IF ("${${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT FALSE)  # Maintain backward compatibility
+  ENDIF()
+  ADVANCED_SET( ${PROJECT_NAME}_USE_GNUINSTALLDIRS
+    ${${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT}
+    CACHE BOOL
+    "If set to TRUE, then CMake GNUInstallDris modules is used to pick standard install paths by default."
+    )
+
+  IF ("${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}" STREQUAL "")
+    # Assume the TriBITS project wants to install headers and libraries by default
+    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT ON)
+  ENDIF()
+
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS
     ${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}
     CACHE BOOL
@@ -583,35 +597,67 @@ ENDMACRO()
 
 MACRO(TRIBITS_SETUP_INSTALLATION_PATHS)
 
-  INCLUDE(GNUInstallDirs)
+  #
+  # A) Determine if we are going to be using default paths from GNUInstallDirs module
+  #
 
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_INCLUDEDIR}
+  SET(TRIBITS_USE_GNUINSTALLDIRS TRUE)
+
+  IF (CMAKE_VERSION VERSION_LESS "2.8.5")
+    SET(TRIBITS_USE_GNUINSTALLDIRS FALSE)
+  ENDIF()
+
+  IF (NOT ${PROJECT_NAME}_USE_GNUINSTALLDIRS)
+    # For backward compatibility and unit testing
+    SET(TRIBITS_USE_GNUINSTALLDIRS FALSE)
+  ENDIF()
+
+  #
+  # B) Pick the defaults for the install dirs
+  #
+
+  IF (TRIBITS_USE_GNUINSTALLDIRS)
+    INCLUDE(GNUInstallDirs)
+    SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR_DEFAULT ${CMAKE_INSTALL_INCLUDEDIR})
+    SET(${PROJECT_NAME}_INSTALL_LIB_DIR_DEFAULT ${CMAKE_INSTALL_LIBDIR})
+    SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR_DEFAULT ${CMAKE_INSTALL_BINDIR})
+    SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR_DEFAULT "example")
+  ELSE()
+    SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR_DEFAULT "include")
+    SET(${PROJECT_NAME}_INSTALL_LIB_DIR_DEFAULT "lib")
+    SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR_DEFAULT "bin")
+    SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR_DEFAULT "example")
+  ENDIF()
+
+  #
+  # C) Set the cache varibles for the install dirs
+  #
+
+  ADVANCED_SET( ${PROJECT_NAME}_INSTALL_INCLUDE_DIR
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR_DEFAULT}
     CACHE PATH
     "Location where the headers will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'include'"
     )
 
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIB_DIR ${CMAKE_INSTALL_LIBDIR}
+  ADVANCED_SET( ${PROJECT_NAME}_INSTALL_LIB_DIR
+    ${${PROJECT_NAME}_INSTALL_LIB_DIR_DEFAULT}
     CACHE PATH
     "Location where the libraries will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'lib'"
     )
 
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR ${CMAKE_INSTALL_BINDIR}
+  ADVANCED_SET( ${PROJECT_NAME}_INSTALL_RUNTIME_DIR
+    ${${PROJECT_NAME}_INSTALL_RUNTIME_DIR_DEFAULT}
     CACHE PATH
     "Location where the runtime DLLs and designated programs will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
     )
 
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR "example"
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR
+    ${${PROJECT_NAME}_INSTALL_EXAMPLE_DIR_DEFAULT}
     CACHE PATH
     "Location where assorted examples will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'example'"
     )
 
-  IF ("${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}" STREQUAL "")
-    # Assume the TriBITS project wants to install headers and libraries by default
-    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT ON)
-  ENDIF()
-
 ENDMACRO()
-
 
 
 #

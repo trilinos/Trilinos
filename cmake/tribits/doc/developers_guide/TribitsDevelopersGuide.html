@@ -1036,9 +1036,9 @@ declarations specified in a <a class="reference internal" href="#repodir-tplslis
 </ul>
 <ul class="simple" id="tribits-projects">
 <li><a class="reference internal" href="#tribits-project">TriBITS Project</a>: A collection of <a class="reference internal" href="#tribits-repositories">TriBITS Repositories</a> and <a class="reference internal" href="#tribits-packages">TriBITS
-Packages</a> that defines a CMake <tt class="docutils literal">PROJECT</tt> defining software which can be
+Packages</a> that defines a complete CMake <tt class="docutils literal">PROJECT</tt> defining software which can be
 directly configured with <tt class="docutils literal">cmake</tt> and then be built, tested, installed,
-etc..</li>
+etc.</li>
 </ul>
 <ul class="simple" id="tribits-meta-projects">
 <span id="tribits-meta-project"></span><li><strong>TriBITS Meta-Project</strong>: A <a class="reference internal" href="#tribits-project">TriBITS Project</a> that contains no native
@@ -7063,6 +7063,7 @@ a given TriBITS project are:</p>
 <li><a class="reference internal" href="#project-name-enable-cxx">${PROJECT_NAME}_ENABLE_CXX</a></li>
 <li><a class="reference internal" href="#project-name-enable-cxx11">${PROJECT_NAME}_ENABLE_CXX11</a></li>
 <li><a class="reference internal" href="#project-name-enable-fortran">${PROJECT_NAME}_ENABLE_Fortran</a></li>
+<li><a class="reference internal" href="#project-name-use-gnuinstalldirs">${PROJECT_NAME}_USE_GNUINSTALLDIRS</a></li>
 <li><a class="reference internal" href="#project-name-install-libraries-and-headers">${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS</a></li>
 <li><a class="reference internal" href="#project-name-enable-export-makefiles">${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES</a></li>
 <li><a class="reference internal" href="#project-name-enable-install-cmake-config-files">${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES</a></li>
@@ -7144,6 +7145,20 @@ compiler, because extra repositories and packages might be added by someone
 that might require the compiler and we don't want to unnecessarily limit the
 generality of a given TriBITS build.  Setting the default for all platforms
 should be sufficient.</p>
+</blockquote>
+<p id="project-name-use-gnuinstalldirs"><strong>${PROJECT_NAME}_USE_GNUINSTALLDIRS</strong></p>
+<blockquote>
+<p>If <tt class="docutils literal">${PROJECT_NAME}_USE_GNUINSTALLDIRS</tt> is set to <tt class="docutils literal">TRUE</tt>, then the
+default install paths will be determined by the standard CMake module
+<tt class="docutils literal">GNUInstallDirs</tt>.  Otherwise, platform independent install paths are used
+by default.</p>
+<p>A project can use the paths given the cmake module <tt class="docutils literal">GNUInstallDirs</tt> by
+default by setting:</p>
+<pre class="literal-block">
+SET(${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT FALSE)
+</pre>
+<p>in the project's top-level <a class="reference internal" href="#projectdir-cmakelists-txt">&lt;projectDir&gt;/CMakeLists.txt</a> file or its
+<a class="reference internal" href="#projectdir-projectname-cmake">&lt;projectDir&gt;/ProjectName.cmake</a> file.  The default is <tt class="docutils literal">FALSE</tt>.</p>
 </blockquote>
 <p id="project-name-install-libraries-and-headers"><strong>${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS</strong></p>
 <blockquote>

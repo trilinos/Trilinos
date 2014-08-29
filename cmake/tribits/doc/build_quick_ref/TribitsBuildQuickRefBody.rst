@@ -1567,13 +1567,31 @@ configure time by setting, for example::
 The default location for the installation of libraries, headers, and
 executables is given by the variables (with defaults)::
 
-  -D <Project>_INSTALL_INCLUDE_DIR:PATH="include" \
-  -D <Project>_INSTALL_LIB_DIR:PATH="lib" \
-  -D <Project>_INSTALL_RUNTIME_DIR:PATH="bin"
+  -D <Project>_INSTALL_INCLUDE_DIR:STRING="include" \
+  -D <Project>_INSTALL_LIB_DIR:STRING="lib" \
+  -D <Project>_INSTALL_RUNTIME_DIR:STRING="bin" \
+  -D <Project>_INSTALL_EXAMPLE_DIR:STRING="example"
 
-If these paths are relative (i.e. don't start with "/") then they are relative
-to ``${CMAKE_INSTALL_PREFIX}``.  Otherwise the paths can be absolute and don't
-have to be under ``${CMAKE_INSTALL_PREFIX}``.
+If these paths are relative (i.e. don't start with "/" and use type
+``STRING``) then they are relative to ``${CMAKE_INSTALL_PREFIX}``.  Otherwise
+the paths can be absolute (use type ``PATH``) and don't have to be under
+``${CMAKE_INSTALL_PREFIX}``.  For example, to install each part in any
+abritrary location use::
+
+  -D <Project>_INSTALL_INCLUDE_DIR:PATH="/usr/trilinos_include" \
+  -D <Project>_INSTALL_LIB_DIR:PATH="/usr/trilinos_lib" \
+  -D <Project>_INSTALL_RUNTIME_DIR:PATH="/usr/trilinos_bin" \
+  -D <Project>_INSTALL_EXAMPLE_DIR:PATH="/usr/share/trilinos/examples"
+
+NOTE: The defaults for the above include paths will be set by the standard
+CMake module ``GNUInstallDirs`` if ``<Project>_USE_GNUINSTALLDIRS=TRUE`` is
+set.  Some projects have this set by default (see the ``CMakeCache.txt`` after
+configuring to see default being used by this project).
+
+WARNING: To overwrite default relative paths, you must use the data type
+``STRING`` for the cache variables.  If you don't, then CMake will use the
+current binary directory for the base path.  Otherwise, if you want to specify
+absolute paths, use the data type ``PATH`` as shown above.
 
 
 Avoiding installing libraries and headers
