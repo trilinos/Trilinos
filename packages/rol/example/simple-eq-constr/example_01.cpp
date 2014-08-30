@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
 
     // Run Algorithm
     vc.zero();
-//(*x_rcp)[0] = 2; (*x_rcp)[1] = 2; (*x_rcp)[2] = 2; (*x_rcp)[3] = 1; (*x_rcp)[4] = 1;
+//(*x_rcp)[0] = 3; (*x_rcp)[1] = 2; (*x_rcp)[2] = 2; (*x_rcp)[3] = 1; (*x_rcp)[4] = 1;
     std::vector<std::string> output = algo.run(x, vc, *obj, *constr, false);
     for ( unsigned i = 0; i < output.size(); i++ ) {
       std::cout << output[i];

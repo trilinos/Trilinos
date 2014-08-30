@@ -84,6 +84,13 @@ private:
   Real zeta_;
   Real Delta_;
   Real penalty_;
+  Real eta_;
+
+  Real ared_;
+  Real pred_;
+  Real snorm_;
+  Real nnorm_;
+  Real tnorm_;
 
   // Output flags.
   bool infoQN_;
@@ -93,7 +100,10 @@ private:
   bool infoALL_;
 
   // Performance summary.
-  int totaliterCG_;
+  int totalIterCG_;
+  int totalProj_;
+  int totalNegCurv_;
+  int totalRef_;
 
   template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
@@ -117,11 +127,17 @@ public:
     qntol_   = nominal_tol;
     pgtol_   = nominal_tol;       
     projtol_ = nominal_tol;     
-    tangtol_ = nominal_tol;     
+    tangtol_ = nominal_tol;
+    tntmax_  = 2.0;
     
     zeta_    = 0.9;
     Delta_   = 1e2;
     penalty_ = 1.0;
+    eta_     = 1e-8;
+
+    snorm_   = 0.0;
+    nnorm_   = 0.0;
+    tnorm_   = 0.0;
 
     infoQN_  = false;
     infoLM_  = false;
@@ -133,7 +149,10 @@ public:
     infoTS_  = infoTS_ || infoALL_;
     infoAC_  = infoAC_ || infoALL_;
 
-    totaliterCG_ = 0;
+    totalIterCG_  = 0;
+    totalProj_    = 0;
+    totalNegCurv_ = 0;
+    totalRef_ = 0;
   }
 
   /** \brief Initialize step.
@@ -194,7 +213,6 @@ public:
     Teuchos::RCP<Vector<Real> > g_new  = x.clone();
     Teuchos::RCP<Vector<Real> > gf_new = x.clone();
 
-
     // Evaluate objective ... should have been stored.
     f = obj.value(x, zerotol);
     algo_state.nfval++;
@@ -214,13 +232,13 @@ public:
 
     // Solve tangential subproblem.
     solveTangentialSubproblem(*t, *tCP, *Wg, x, *g, *n, l, Delta_, obj, con);
-    totaliterCG_ += iterCG_;
+    totalIterCG_ += iterCG_;
 
-    // Check acceptance of subproblem solutions, adjust trust-region radius and parameter, ensure global convergence.
-    accept(*n, *t, f_new, *c_new, *gf_new, *l_new, *g_new, x, l, f, *gf, *c, *g, *tCP, *Wg, Delta_, zeta_, penalty_);
+    // Check acceptance of subproblem solutions, adjust merit function penalty parameter, ensure global convergence.
+    accept(s, *n, *t, f_new, *c_new, *gf_new, *l_new, *g_new, x, l, f, *gf, *c, *g, *tCP, *Wg, obj, con, algo_state);
 
-    s.set(*n);
-    s.plus(*t);
+    //s.set(*n);
+    //s.plus(*t);
   }
 
   /** \brief Update step, if successful.
@@ -230,14 +248,35 @@ public:
                AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
 
-    Real zerotol = 0.0;
+    Real zero = 0.0;
+    Real half = 0.5;
+    Real zerotol = zero;
+    Real ratio = zero;
 
     Teuchos::RCP<Vector<Real> > g   = x.clone();
     Teuchos::RCP<Vector<Real> > ajl = x.clone();
     Teuchos::RCP<Vector<Real> > gl = x.clone();
     Teuchos::RCP<Vector<Real> > c = l.clone();
 
-    x.plus(s);
+    // Determine if the step gives sufficient reduction in the merit function,
+    // update the trust-region radius.
+    ratio = ared_/pred_;
+    if (ratio >= eta_) {
+      x.plus(s);
+      if (ratio >= 0.9) {
+          Delta_ = std::max(7.0*snorm_, Delta_);
+      }
+      else if (ratio >= 0.8) {
+          Delta_ = std::max(2.0*snorm_, Delta_);
+      }
+      obj.update(x,true,algo_state.iter);
+      con.update(x,true,algo_state.iter);
+    }
+    else {
+      Delta_ = half*std::max(nnorm_, tnorm_);
+      obj.update(x,false,algo_state.iter);
+      con.update(x,false,algo_state.iter);
+    } // if (ratio >= eta) 
 
     Real val = obj.value(x, zerotol);
     algo_state.nfval++;
@@ -252,7 +291,7 @@ public:
     algo_state.gnorm = gl->norm();
     algo_state.cnorm = c->norm();
     algo_state.iter++;
-    algo_state.snorm = s.norm();
+    algo_state.snorm = snorm_;
 
     //Real tol = std::sqrt(ROL_EPSILON);
 
@@ -423,9 +462,9 @@ public:
       std::cout << hist.str();
     }
 
-    Real zero      = 0.0;
-    Real zerotol   = 0.0;
-    Real negative1 = -1.0;
+    Real zero    = 0.0;
+    Real one     = 1.0;
+    Real zerotol = zero;
 
     /* Compute Cauchy step nCP. */
     Teuchos::RCP<Vector<Real> > nCP     = n.clone();
@@ -459,9 +498,9 @@ public:
     ctemp->plus(c);
     Real tol = qntol_*ctemp->norm();
     // Form right-hand side.
-    ctemp->scale(negative1);
+    ctemp->scale(-one);
     nCPtemp->set(*nCP);
-    nCPtemp->scale(negative1);
+    nCPtemp->scale(-one);
     // Declare left-hand side of augmented system.
     Teuchos::RCP<Vector<Real> > dn = n.clone();
     Teuchos::RCP<Vector<Real> > y  = c.clone();
@@ -523,9 +562,9 @@ public:
     Real S_max      = 1.0;   // another orthogonality measure; norm(S) needs to be bounded by
                              // a modest constant; norm(S) is small if the approximation of
                              // the null space projector is good
-    Real zero      =  0.0;
-    Real zerotol   =  0.0;
-    Real negative1 = -1.0;
+    Real zero    =  0.0;
+    Real one     =  1.0;
+    Real zerotol =  zero;
     iterCG_ = 1;
     flagCG_ = 0;
     t.zero();
@@ -687,7 +726,7 @@ public:
       // Full orthogonalization.
       p.push_back(Wr->clone());
       (p[iterCG_-1])->set(*Wr);
-      (p[iterCG_-1])->scale(negative1);
+      (p[iterCG_-1])->scale(-one);
       for (int j=1; j<iterCG_; j++) {
         Real scal = (p[iterCG_-1])->dot(*(Hp[j-1])) / (p[j-1])->dot(*(Hp[j-1]));
         Teuchos::RCP<Vector<Real> > pj = (p[j-1])->clone();
@@ -710,7 +749,7 @@ public:
       if (pHp <= 0) {
         pdesc->set(*(p[iterCG_-1])); // p is the descent direction
         if ((std::abs(rp) >= rptol*normp*normr) && (sgn(rp) == 1)) {
-          pdesc->scale(negative1); // -p is the descent direction
+          pdesc->scale(-one); // -p is the descent direction
         }
 	flagCG_ = 1;
         Real a = pdesc->dot(*pdesc);
@@ -753,7 +792,7 @@ public:
       if (normt >= delta) {
         pdesc->set(*(p[iterCG_-1])); // p is the descent direction
         if (sgn(rp) == 1) {
-          pdesc->scale(negative1); // -p is the descent direction
+          pdesc->scale(-one); // -p is the descent direction
         }
 	flagCG_ = 1;
         Real a = pdesc->dot(*pdesc);
@@ -799,29 +838,272 @@ public:
   
   /** \brief Check acceptance of subproblem solutions, adjust trust-region radius and parameter, ensure global convergence.
   */
-  void accept(Vector<Real> &n, Vector<Real> &t, Real f_new, Vector<Real> &c_new,
+  void accept(Vector<Real> &s, Vector<Real> &n, Vector<Real> &t, Real f_new, Vector<Real> &c_new,
               Vector<Real> &gf_new, Vector<Real> &l_new, Vector<Real> &g_new,
               const Vector<Real> &x, const Vector<Real> &l, Real f, const Vector<Real> &gf, const Vector<Real> &c,
-              const Vector<Real> &g, const Vector<Real> &tCP, const Vector<Real> &Wg,
-              Real Delta, Real zeta, Real penalty) {
+              const Vector<Real> &g, Vector<Real> &tCP, Vector<Real> &Wg,
+              Objective<Real> &obj, EqualityConstraint<Real> &con, AlgorithmState<Real> &algo_state) {
 
-    Real eta          = 1e-8;              // actual/predicted-reduction parameter
     Real beta         = 1e-8;              // predicted reduction parameter
     Real tol_red_tang = 1e-3;              // internal reduction factor for tangtol
     Real tol_red_all  = 1e-1;              // internal reduction factor for qntol, lmhtol, pgtol, projtol, tangtol
-    bool glob_ref     = true;              // true  - if subsolver tolerances are adjusted in this routine, keep adjusted values globally
+    //bool glob_refine  = true;              // true  - if subsolver tolerances are adjusted in this routine, keep adjusted values globally
                                            // false - if subsolver tolerances are adjusted in this routine, discard adjusted values
+    int ct_max        = 10;                // maximum number of globalization tries
+    int mintol        = 1e-16;             // smallest tolerance value
 
     // Determines max value of |rpred|/pred. 
-    Real rpred_over_pred = 0.5*(1-eta);
-eta = beta*tol_red_tang*tol_red_all*glob_ref*rpred_over_pred;
+    Real rpred_over_pred = 0.5*(1-eta_);
 
     if (infoAC_) {
       std::stringstream hist;
       hist << "\n  SQP_accept\n";
       std::cout << hist.str();
     }
-    
+
+    Real zero      =  0.0;
+    Real one       =  1.0;
+    Real two       =  2.0;
+    Real half      =  one/two;
+    Real zerotol   =  zero;
+
+    Real pred          = zero;
+    Real ared          = zero;
+    Real rpred         = zero;
+    Real part_pred     = zero;
+    Real linc_preproj  = zero;
+    Real linc_postproj = zero;
+    Real tangtol_start = zero;
+    Real tangtol = tangtol_;
+    //Real projtol = projtol_;
+    bool flag = false;
+    int num_proj = 0;
+    bool try_tCP = false;
+
+    Teuchos::RCP<Vector<Real> > xtrial = x.clone();
+    Teuchos::RCP<Vector<Real> > Jl = x.clone();
+    Teuchos::RCP<Vector<Real> > gfJl = x.clone();
+    Teuchos::RCP<Vector<Real> > Jnc = c.clone();
+    Teuchos::RCP<Vector<Real> > t_orig = t.clone();
+    Teuchos::RCP<Vector<Real> > Jt_orig = c.clone();
+    Teuchos::RCP<Vector<Real> > t_m_tCP = t.clone();
+    Teuchos::RCP<Vector<Real> > ltemp = l.clone();
+    Teuchos::RCP<Vector<Real> > xtemp = x.clone();
+    Teuchos::RCP<Vector<Real> > rt = c.clone();
+    Teuchos::RCP<Vector<Real> > Hn = x.clone();
+    Teuchos::RCP<Vector<Real> > Hto = x.clone();
+    Teuchos::RCP<Vector<Real> > cxxvec = x.clone();
+    Teuchos::RCP<Vector<Real> > czero = c.clone();
+    czero->zero();
+    Real Jnc_normsquared = zero;
+    Real c_normsquared = zero;
+
+    // Compute and store some quantities for later use. Necessary
+    // because of the function and constraint updates below.
+    con.applyAdjointJacobian(*Jl, l, x, zerotol);
+    con.applyJacobian(*Jnc, n, x, zerotol);
+    Jnc->plus(c);
+    Jnc_normsquared = Jnc->dot(*Jnc);
+    c_normsquared = c.dot(c);
+
+    for (int ct=0; ct<ct_max; ct++) {
+
+      try_tCP = true;
+      t_m_tCP->set(t);
+      t_m_tCP->scale(-one);
+      t_m_tCP->plus(tCP);
+      if (t_m_tCP->norm() == zero) {
+        try_tCP = false;
+      }
+
+      t_orig->set(t);
+      con.applyJacobian(*Jt_orig, *t_orig, x, zerotol);
+      linc_preproj = Jt_orig->norm();
+      pred  = one;
+      rpred = two*rpred_over_pred*pred;
+      flag = false;
+      num_proj = 1;
+      tangtol_start = tangtol;
+
+      while (std::abs(rpred)/pred > rpred_over_pred) {
+        // Compute projected tangential step.
+        if (flag) {
+          tangtol  = tol_red_tang*tangtol;
+          num_proj++;
+          if (tangtol < mintol) {
+            if (infoAC_) {
+              std::stringstream hist;
+              hist << "\n The projection of the tangential step cannot be done with sufficient precision.\n";
+              hist << " Is the quasi-normal step very small? Continuing with no global convergence guarantees.\n";
+              std::cout << hist.str();
+            }
+            break;
+          }
+        }
+        // Solve augmented system.
+        Real tol = tangtol;
+        con.solveAugmentedSystem(t, *ltemp, *t_orig, *czero, x, tol);         
+        totalProj_++;
+	con.applyJacobian(*rt, t, x, zerotol);
+        linc_postproj = rt->norm();
+
+        // Compute composite step.
+        s.set(t);
+        s.plus(n);
+
+        // Compute some quantities before updating the objective and the constraint.
+        obj.hessVec(*Hn, n, x, zerotol);
+        con.applyAdjointHessian(*cxxvec, l, n, x, zerotol);
+        Hn->plus(*cxxvec);
+        obj.hessVec(*Hto, *t_orig, x, zerotol);
+        con.applyAdjointHessian(*cxxvec, l, *t_orig, x, zerotol);
+        Hto->plus(*cxxvec);
+
+        // Compute objective, constraint, etc. values at the trial point.
+        xtrial->set(x);
+        xtrial->plus(s);
+        obj.update(*xtrial,false,algo_state.iter);
+        con.update(*xtrial,false,algo_state.iter);
+        f_new = obj.value(*xtrial, zerotol);
+std::cout << xtrial->dot(*(xtrial->basis(0))) << "\n";
+std::cout << xtrial->dot(*(xtrial->basis(1))) << "\n";
+std::cout << xtrial->dot(*(xtrial->basis(2))) << "\n";
+std::cout << xtrial->dot(*(xtrial->basis(3))) << "\n";
+std::cout << xtrial->dot(*(xtrial->basis(4))) << "\n";
+std::cout << xtrial->norm() << "  " << f_new << "\n";
+std::cout << t.dot(*(t.basis(0))) << "\n";
+std::cout << t.dot(*(t.basis(1))) << "\n";
+std::cout << t.dot(*(t.basis(2))) << "\n";
+std::cout << t.dot(*(t.basis(3))) << "\n";
+std::cout << t.dot(*(t.basis(4))) << "\n";
+        obj.gradient(gf_new, *xtrial, zerotol);
+        con.value(c_new, *xtrial, zerotol);
+        l_new.set(l);
+        computeLagrangeMultiplier(l_new, *xtrial, gf_new, con);
+
+        // Penalty parameter update.
+        part_pred = - Wg.dot(*t_orig);
+        gfJl->set(gf);
+        gfJl->plus(*Jl);
+        part_pred -= gfJl->dot(n);
+        part_pred -= half*Hn->dot(n);
+        part_pred -= half*Hto->dot(*t_orig);
+        ltemp->set(l);
+        ltemp->axpy(-one, l_new);
+        part_pred -= Jnc->dot(*ltemp);
+
+        if ( part_pred < -half*penalty_*(c_normsquared-Jnc_normsquared) ) {
+          penalty_ = ( -two * part_pred / (c_normsquared-Jnc_normsquared) ) + beta;
+        }
+
+        pred = part_pred + penalty_*(c_normsquared-Jnc_normsquared);
+
+        // Computation of rpred.
+        rpred = - ltemp->dot(*rt) - penalty_ * rt->dot(*rt) - two * penalty_ * rt->dot(*Jnc);
+        flag = 1;
+
+      } // while (std::abs(rpred)/pred > rpred_over_pred)
+
+      tangtol = tangtol_start;
+
+      // Check if the solution of the tangential subproblem is
+      // disproportionally large compared to total trial step.
+      xtemp->set(n);
+      xtemp->plus(t);
+      if ( t_orig->norm()/xtemp->norm() < tntmax_ ) {
+        break;
+      }
+      else {
+        t_m_tCP->set(*t_orig);
+        t_m_tCP->scale(-one);
+        t_m_tCP->plus(tCP);
+        if ((t_m_tCP->norm() > 0) && try_tCP) {
+          if (infoAC_) {
+            std::stringstream hist;
+            hist << "       ---> now trying tangential Cauchy point\n";
+            std::cout << hist.str();
+          }
+          t.set(tCP);
+        }
+        else {
+          if (infoAC_) {
+            std::stringstream hist;
+            hist << "       ---> recomputing quasi-normal step and re-solving tangential subproblem\n";
+            std::cout << hist.str();
+          }
+          totalRef_++;
+          // Reset global quantities.
+          obj.update(x);
+          con.update(x);
+          /*lmhtol  = tol_red_all*lmhtol;
+          qntol   = tol_red_all*qntol;
+          pgtol   = tol_red_all*pgtol;
+          projtol = tol_red_all*projtol;
+          tangtol = tol_red_all*tangtol;
+          if (glob_refine) {
+            lmhtol_  = lmhtol;
+            qntol_   = qntol;
+            pgtol_   = pgtol;
+            projtol_ = projtol;
+            tangtol_ = tangtol;
+          }*/
+          lmhtol_  *= tol_red_all;
+          qntol_   *= tol_red_all;
+          pgtol_   *= tol_red_all;
+          projtol_ *= tol_red_all;
+          tangtol_ *= tol_red_all;
+          // Recompute the quasi-normal step.
+          computeQuasinormalStep(n, c, x, zeta_*Delta_, con);
+          // Solve tangential subproblem.
+          solveTangentialSubproblem(t, tCP, Wg, x, g, n, l, Delta_, obj, con);
+          totalIterCG_ += iterCG_;
+          if (flagCG_ == 1) {
+            totalNegCurv_++;
+          }
+        }
+      } // else w.r.t. ( t_orig->norm()/xtemp->norm() < tntmax )
+
+    } // for (int ct=0; ct<ct_max; ct++)
+
+    // Compute actual reduction.
+    ared = (f - f_new)  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(c.dot(c) - c_new.dot(c_new));
+
+    // Store actual and predicted reduction.
+    ared_ = ared;
+    pred_ = pred;
+
+    // Store step and vector norms.
+    snorm_ = s.norm();
+    nnorm_ = n.norm();
+    tnorm_ = t.norm();
+
+    // Print diagnostics.
+
+    if (infoAC_) {
+        std::stringstream hist;
+        hist << "\n         Trial step info ...\n";
+        hist <<   "         n_norm              = " << nnorm_ << "\n";
+        hist <<   "         t_norm              = " << tnorm_ << "\n";
+        hist <<   "         s_norm              = " << snorm_ << "\n";
+        hist <<   "         xtrial_norm         = " << xtrial->norm() << "\n";
+        hist <<   "         f_old               = " << f << "\n";
+        hist <<   "         f_trial             = " << f_new << "\n";
+        hist <<   "         f_old-f_trial       = " << f-f_new << "\n";
+        hist <<   "         ||c_old||           = " << c.norm() << "\n";
+        hist <<   "         ||c_trial||         = " << c_new.norm() << "\n";
+        //hist <<   "         ||grad(L)_trial||   = %12.5e\n', normgl);
+        hist <<   "         ||Jac*t_preproj||   = " << linc_preproj << "\n";
+        hist <<   "         ||Jac*t_postproj||  = " << linc_postproj << "\n";
+        hist <<   "         ||t_tilde||/||t||   = " << t_orig->norm() / t.norm() << "\n";
+        hist <<   "         ||t_tilde||/||n+t|| = " << t_orig->norm() / snorm_ << "\n";
+        hist <<   "         # projections       = " << num_proj << "\n";
+        hist <<   "         penalty param       = " << penalty_ << "\n";
+       	hist <<   "         ared                = " << ared_ << "\n";
+        hist <<   "         pred                = " << pred_ << "\n";
+        hist <<   "         ared/pred           = " << ared_/pred_ << "\n";
+        std::cout << hist.str();
+    }
+
   } // accept
 
 }; // class CompositeStepSQP
