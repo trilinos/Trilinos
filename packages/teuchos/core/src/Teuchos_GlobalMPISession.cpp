@@ -67,45 +67,63 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
   // jumbled parallel output between processors
 
 #ifdef HAVE_MPI
-  // initialize MPI
-  int mpiHasBeenStarted = 0, mpierr = 0;
+
+  int mpierr = 0;
+
+  // Assert that MPI is not already initialized
+  int mpiHasBeenStarted = 0;
   MPI_Initialized(&mpiHasBeenStarted);
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpiHasBeenStarted, std::runtime_error
-    ,"Error, you can only call this constructor once!"
-    ,out
-    );
+  if (mpiHasBeenStarted) {
+    if (out) {
+      *out << "GlobalMPISession(): Error, MPI_Intialized() return true,"
+           << " calling std::terminate()!\n"
+           << std::flush;
+    }
+    std::terminate();
+  }
 
-  mpierr = ::MPI_Init (argc, (char ***) argv);
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, std::runtime_error
-    ,"Error code=" << mpierr << " detected in GlobalMPISession::GlobalMPISession(argc,argv)"
-    ,out
-    );
-
+  // Initialize MPI
+  mpierr = ::MPI_Init(argc, (char ***) argv);
+  if (mpierr != 0) {
+    if (out) {
+      *out << "GlobalMPISession(): Error, MPI_Init() returned error code="
+           << mpierr << "!=0, calling std::terminate()!\n"
+           << std::flush;
+    }
+    std::terminate();
+  }
+  
   initialize(out); // Get NProc_ and rank_
 
   int nameLen;
   char procName[MPI_MAX_PROCESSOR_NAME];
-  mpierr = ::MPI_Get_processor_name(procName,&nameLen);
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, std::runtime_error
-    ,"Error code=" << mpierr << " detected in MPI_Get_processor_name()"
-    ,out
-    );
-
+  mpierr = ::MPI_Get_processor_name(procName, &nameLen);
+  if (mpierr != 0) {
+    if (out) {
+      *out << "GlobalMPISession():  Error, MPI_Get_processor_name() error code="
+           << mpierr << "!=0, calling std::terminate()!\n"
+           << std::flush;
+    }
+    std::terminate();
+  }
+  
   oss << "Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name "
       << procName << " and rank " << rank_ << "!" << std::endl;
 
 #else
-  oss << "Teuchos::GlobalMPISession::GlobalMPISession(): started serial run" << std::endl;
+  
+  oss << "Teuchos::GlobalMPISession::GlobalMPISession(): started serial run"
+      << std::endl;
+
 #endif
+
 #ifndef TEUCHOS_SUPPRESS_PROC_STARTUP_BANNER
+
   // See if we should suppress the startup banner
   bool printStartupBanner = true;
   const std::string suppress_option("--teuchos-suppress-startup-banner");
-  for( int opt_i = 0; opt_i < *argc; ++opt_i ) {
-    if( suppress_option == (*argv)[opt_i] ) {
+  for ( int opt_i = 0; opt_i < *argc; ++opt_i ) {
+    if ( suppress_option == (*argv)[opt_i] ) {
       // We are suppressing the output!
       printStartupBanner = false;
       // Remove this option!
@@ -115,9 +133,12 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
       --*argc;
     }
   }
-  if( out && printStartupBanner )
+  if (out && printStartupBanner) {
     *out << oss.str() << std::flush;
+  }
+
 #endif
+
 }
 
 
