@@ -58,11 +58,14 @@
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration
+  //
+  // Dear users: These are just forward declarations.  Please skip
+  // over them and go down to the CrsMatrix class declaration.  Thank
+  // you.
+  //
   template <class LO, class GO, class N, class SpMatOps>
   class CrsGraph;
 
-  // forward declaration
   template <class S, class LO, class GO, class N, class SpMatOps>
   class CrsMatrix;
 
@@ -72,6 +75,7 @@ namespace Tpetra {
   }
 
   namespace Details {
+    // Forward declaration of an implementation detail of CrsGraph::clone.
     template<class OutputCrsGraphType, class InputCrsGraphType>
     class CrsGraphCopier {
     public:
@@ -81,7 +85,58 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     };
   } // namespace Details
-#endif
+
+  //
+  // Dear users: The stuff in the "anonymous" namespace below is just
+  // an implementation detail.  Please skip over it and go down to the
+  // CrsMatrix class declaration.  Thank you.
+  //
+  namespace { // anonymous
+    // mfh 30 Aug 2014: This class exists so that if one builds Tpetra
+    // with Kokkos refactor _dis_abled, but uses one of the new Kokkos
+    // wrapper Node types, you won't get build errors.  The build
+    // errors come about because, as of 29 Aug 2014, the default value
+    // of the SparseOps typedef in KokkosClassic::DefaultKernels is
+    // void.  Setting this to void enables the upcoming deprecation of
+    // the KokkosClassic subpackage, but it breaks the build if Kokkos
+    // refactor is disabled.  This class selects a reasonable value of
+    // SparseOps in case Kokkos refactor is disabled.  This addresses
+    // Bug 6210.
+    template<class LO, class NT>
+    class CrsGraphSparseOpsSelector {
+    public:
+      typedef NT node_type;
+      typedef typename KokkosClassic::DefaultKernels<void, LO, NT>::SparseOps
+        sparse_ops_type;
+      typedef typename sparse_ops_type::template graph<LO, NT>::graph_type
+        local_graph_type;
+    };
+
+#ifdef HAVE_TPETRA_KOKKOSCOMPAT
+    // mfh 30 Aug 2014: Partial specialization for the new Kokkos
+    // wrapper nodes.  If Kokkos refactor is enabled, the typedef
+    // inside is just void, since the Kokkos refactor version of
+    // Tpetra doesn't use that typedef.  If Kokkos refactor is
+    // disabled, the typedef has its original default value for the
+    // "classic" version of Tpetra.
+    template<class LO, class DT>
+    class CrsGraphSparseOpsSelector<LO, Kokkos::Compat::KokkosDeviceWrapperNode<DT> > {
+    public:
+      typedef Kokkos::Compat::KokkosDeviceWrapperNode<DT> node_type;
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+      typedef void sparse_ops_type;
+      typedef void local_graph_type;
+#else
+      typedef typename KokkosClassic::DefaultKernels<
+        void, LO, node_type>::SparseOps sparse_ops_type;
+      typedef typename sparse_ops_type::template graph<
+        LO, node_type>::graph_type local_graph_type;
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+    };
+#endif // HAVE_TPETRA_KOKKOSCOMPAT
+  } // namespace (anonymous)
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \struct RowInfo
   /// \brief Allocation information for a locally owned row in a
@@ -170,7 +225,7 @@ namespace Tpetra {
   template <class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
+            class LocalMatOps = typename CrsGraphSparseOpsSelector<LocalOrdinal, Node>::sparse_ops_type>
   class CrsGraph :
     public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
     public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>,
@@ -1055,7 +1110,8 @@ namespace Tpetra {
     //@}
 
   protected:
-    typedef typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type local_graph_type;
+    typedef typename CrsGraphSparseOpsSelector<
+      local_ordinal_type, node_type>::local_graph_type local_graph_type;
 
     // these structs are conveniences, to cut down on the number of
     // arguments to some of the methods below.

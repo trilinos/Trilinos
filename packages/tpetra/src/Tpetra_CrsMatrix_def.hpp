@@ -197,7 +197,7 @@ namespace Tpetra {
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap)
   {
     try {
-      myGraph_ = rcp (new Graph (rowMap, NumEntriesPerRowToAlloc, pftype, params));
+      myGraph_ = rcp (new crs_graph_type (rowMap, NumEntriesPerRowToAlloc, pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -223,7 +223,7 @@ namespace Tpetra {
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap)
   {
     try {
-      myGraph_ = rcp (new Graph (rowMap, colMap, maxNumEntriesPerRow, pftype, params));
+      myGraph_ = rcp (new crs_graph_type (rowMap, colMap, maxNumEntriesPerRow, pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -249,8 +249,8 @@ namespace Tpetra {
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap)
   {
     try {
-      myGraph_ = rcp (new Graph (rowMap, colMap, NumEntriesPerRowToAlloc,
-                                 pftype, params));
+      myGraph_ = rcp (new crs_graph_type (rowMap, colMap, NumEntriesPerRowToAlloc,
+                                          pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -307,7 +307,7 @@ namespace Tpetra {
     DistObject<char, LocalOrdinal, GlobalOrdinal, node_type> (rowMap)
   {
     try {
-      myGraph_ = rcp (new Graph (rowMap, colMap, rowPointers, columnIndices, params));
+      myGraph_ = rcp (new crs_graph_type (rowMap, colMap, rowPointers, columnIndices, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -5410,7 +5410,7 @@ namespace Tpetra {
     // In the nonconst graph case, staticGraph_ is just a const
     // pointer to myGraph_.  This assignment is probably redundant,
     // but it doesn't hurt.
-    staticGraph_ = Teuchos::rcp_const_cast<const Graph> (myGraph_);
+    staticGraph_ = Teuchos::rcp_const_cast<const crs_graph_type> (myGraph_);
   }
 
   template <class Scalar,

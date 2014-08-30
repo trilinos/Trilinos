@@ -3243,8 +3243,11 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalGraph() const
+  const Teuchos::RCP<
+    const typename CrsGraph<
+      LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::local_graph_type>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  getLocalGraph () const
   {
     return lclGraph_;
   }
@@ -3253,8 +3256,11 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalGraphNonConst()
+  const Teuchos::RCP<
+    typename CrsGraph<
+      LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::local_graph_type>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  getLocalGraphNonConst ()
   {
     return lclGraph_;
   }

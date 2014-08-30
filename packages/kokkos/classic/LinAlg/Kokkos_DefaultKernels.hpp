@@ -106,7 +106,7 @@ namespace KokkosClassic {
   /// particularly important for the GPU case (Node = ThrustGPUNode).
   template <class Scalar, class Ordinal, class Node>
   struct DefaultKernels {
-    typedef void SparseOps;
+    typedef DefaultHostSparseOps<void, Ordinal, Node> SparseOps;
     typedef DefaultBlockSparseOps<Scalar, Ordinal, Node> BlockSparseOps;
     typedef DefaultRelaxation<Scalar, Ordinal, Node> Relaxations;
   };
