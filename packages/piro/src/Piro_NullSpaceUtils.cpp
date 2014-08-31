@@ -75,6 +75,12 @@ namespace Piro {
             sublist(sublist(stratList, "Preconditioner Types"), "MueLu");
           mueLuUsed = true;
         }
+        else if ("MueLu-Tpetra" == stratList->get<std::string>("Preconditioner Type")) {
+          // MueLu preconditioner is used, get nodal coordinates from application
+          mueLuList =
+            sublist(sublist(stratList, "Preconditioner Types"), "MueLu-Tpetra");
+          mueLuUsed = true;
+        }
       }
 
     }
