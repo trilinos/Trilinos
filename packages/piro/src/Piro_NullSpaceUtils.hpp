@@ -51,6 +51,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
 #include "Kokkos_SerialNode.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #else
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h" 
