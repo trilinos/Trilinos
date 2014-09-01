@@ -3574,9 +3574,7 @@ namespace Tpetra {
             else {
               const bool notAlreadyFound = RemoteGIDSet.insert (gid).second;
               if (notAlreadyFound) { // gid did not exist in the set before
-                if (sortGhostsAssociatedWithEachProcessor_) {
-                  RemoteGIDUnorderedVector.push_back (gid);
-                }
+                RemoteGIDUnorderedVector.push_back (gid);
                 ++numRemoteColGIDs;
               }
             }
