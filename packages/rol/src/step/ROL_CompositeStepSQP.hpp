@@ -64,8 +64,8 @@ class CompositeStepSQP : public Step<Real> {
 private:
 
   // Diagnostic return flags for subalgorithms. 
-  int flagTR_;
   int flagCG_;
+  int flagAC_;
   int iterCG_;
 
   // Stopping conditions.
@@ -115,8 +115,8 @@ public:
 
   CompositeStepSQP( Teuchos::ParameterList & parlist ) : Step<Real>() {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-    flagTR_ = 0;
     flagCG_ = 0;
+    flagAC_ = 0;
     iterCG_ = 0;
 
     maxiterCG_ = 20;
@@ -130,7 +130,7 @@ public:
     tangtol_ = nominal_tol;
     tntmax_  = 2.0;
     
-    zeta_    = 0.9;
+    zeta_    = 0.8;
     Delta_   = 1e2;
     penalty_ = 1.0;
     eta_     = 1e-8;
@@ -143,7 +143,7 @@ public:
     infoLM_  = false;
     infoTS_  = false;
     infoAC_  = false;
-    infoALL_ = true;
+    infoALL_ = false;
     infoQN_  = infoQN_ || infoALL_;
     infoLM_  = infoLM_ || infoALL_;
     infoTS_  = infoTS_ || infoALL_;
@@ -236,9 +236,6 @@ public:
 
     // Check acceptance of subproblem solutions, adjust merit function penalty parameter, ensure global convergence.
     accept(s, *n, *t, f_new, *c_new, *gf_new, *l_new, *g_new, x, l, f, *gf, *c, *g, *tCP, *Wg, obj, con, algo_state);
-
-    //s.set(*n);
-    //s.plus(*t);
   }
 
   /** \brief Update step, if successful.
@@ -271,11 +268,13 @@ public:
       }
       obj.update(x,true,algo_state.iter);
       con.update(x,true,algo_state.iter);
+      flagAC_ = 1;
     }
     else {
       Delta_ = half*std::max(nnorm_, tnorm_);
       obj.update(x,false,algo_state.iter);
       con.update(x,false,algo_state.iter);
+      flagAC_ = 0;
     } // if (ratio >= eta) 
 
     Real val = obj.value(x, zerotol);
@@ -293,10 +292,6 @@ public:
     algo_state.iter++;
     algo_state.snorm = snorm_;
 
-    //Real tol = std::sqrt(ROL_EPSILON);
-
-    //Real eps = 0.0;
-  
     // Update algorithm state
     //(algo_state.iterateVec)->set(x);
   }
@@ -325,12 +320,14 @@ public:
     hist << std::setw(15) << std::left << "cnorm";
     hist << std::setw(15) << std::left << "gLnorm";
     hist << std::setw(15) << std::left << "snorm";
-    hist << std::setw(15) << std::left << "delta";
-    hist << std::setw(10) << std::left << "#fval";
-    hist << std::setw(10) << std::left << "#grad";
-    hist << std::setw(10) << std::left << "flagTR";
-    hist << std::setw(10) << std::left << "iterCG";
-    hist << std::setw(10) << std::left << "flagCG";
+    hist << std::setw(10) << std::left << "delta";
+    hist << std::setw(10) << std::left << "nnorm";
+    hist << std::setw(10) << std::left << "tnorm";
+    hist << std::setw(8) << std::left << "#fval";
+    hist << std::setw(8) << std::left << "#grad";
+    hist << std::setw(8) << std::left << "itrCG";
+    hist << std::setw(8) << std::left << "flgCG";
+    hist << std::setw(8) << std::left << "accept";
     hist << "\n";
     return hist.str();
   }
@@ -370,12 +367,16 @@ public:
       hist << std::setw(15) << std::left << algo_state.cnorm; 
       hist << std::setw(15) << std::left << algo_state.gnorm; 
       hist << std::setw(15) << std::left << algo_state.snorm; 
-      hist << std::setw(15) << std::left << Delta_; 
-      hist << std::setw(10) << std::left << algo_state.nfval;              
-      hist << std::setw(10) << std::left << algo_state.ngrad;              
-      hist << std::setw(10) << std::left << flagTR_;              
-      hist << std::setw(10) << std::left << iterCG_;
-      hist << std::setw(10) << std::left << flagCG_;
+      hist << std::scientific << std::setprecision(2);
+      hist << std::setw(10) << std::left << Delta_; 
+      hist << std::setw(10) << std::left << nnorm_; 
+      hist << std::setw(10) << std::left << tnorm_; 
+      hist << std::scientific << std::setprecision(6);
+      hist << std::setw(8) << std::left << algo_state.nfval;              
+      hist << std::setw(8) << std::left << algo_state.ngrad;              
+      hist << std::setw(8) << std::left << iterCG_;
+      hist << std::setw(8) << std::left << flagCG_;
+      hist << std::setw(6) << std::left << flagAC_;
       hist << "\n";
     }
     return hist.str();
@@ -486,7 +487,9 @@ public:
       n.set(*nCP);
       n.scale( delta/norm_nCP );
       if (infoQN_) {
-        std::cout << "  taking partial Cauchy step\n";
+        std::stringstream hist;
+        hist << "  taking partial Cauchy step\n";
+        std::cout << hist.str();
       }
       return;
     }
@@ -516,7 +519,9 @@ public:
       // Take full feasibility step.
       n.set(*nN);
       if (infoQN_) {
-        std::cout << "  taking full Newton step\n";
+        std::stringstream hist;
+        hist << "  taking full Newton step\n";
+        std::cout << hist.str();
       }
     }
     else {
@@ -527,10 +532,12 @@ public:
       Real bb  = dn->dot(*nCP);
       Real cc  = norm_nCP*norm_nCP - delta*delta;
       Real tau = (-bb+sqrt(bb*bb-aa*cc))/aa;
-      n.set(*dn);
-      n.axpy(tau, *nCP);
+      n.set(*nCP);
+      n.axpy(tau, *dn);
       if (infoQN_) {
-        std::cout << "  taking dogleg step\n";
+        std::stringstream hist;
+        hist << "  taking dogleg step\n";
+        std::cout << hist.str();
       }
     }
 
@@ -611,7 +618,7 @@ public:
       if (infoTS_) {
         std::stringstream hist;
         hist << "    >>> Tangential subproblem: Initial gradient is zero! \n";
-        std::cout << hist;
+        std::cout << hist.str();
       }
       iterCG_ = 0; Wg.zero(); flagCG_ = 0;
       return;
@@ -637,13 +644,13 @@ public:
           (Wrs[iterCG_-1])->set(*Wr);
         }
         // Check if done (small initial projected residual).
-        if (normWg < 1e-14) {
+        if (normWg == zero) {
           flagCG_ = 0;
-          iterCG_ = iterCG_-1;
+          iterCG_--;
           if (infoTS_) {
             std::stringstream hist;
             hist << "  Initial projected residual is close to zero! \n";
-            std::cout << hist;
+            std::cout << hist.str();
           }
           return;
         }
@@ -682,7 +689,9 @@ public:
         flagCG_ = 0;
         iterCG_ = iterCG_-1;
         if (infoTS_) {
-          std::cout << "  || W(g + H*(n+s)) || <= cgtol*|| W(g + H*n)|| \n";
+          std::stringstream hist;
+          hist << "  || W(g + H*(n+s)) || <= cgtol*|| W(g + H*n)|| \n";
+          std::cout << hist.str();
         }
         return;
       }
@@ -716,7 +725,9 @@ public:
           }
           if (Tm1.normOne() > S_max) {
             if (infoTS_) {
-              std::cout << "  large nonorthogonality in W(R)'*R detected \n";
+              std::stringstream hist;
+              hist << "  large nonorthogonality in W(R)'*R detected \n";
+              std::cout << hist.str();
             }
             return;
           }
@@ -765,7 +776,9 @@ public:
           tCP.set(t);
         }
 	if (infoTS_) {
-           std::cout << "  negative curvature detected \n";
+          std::stringstream hist;
+          hist << "  negative curvature detected \n";
+          std::cout << hist.str();
         }
 	return;
       }
@@ -774,7 +787,9 @@ public:
       if (std::abs(rp) < rptol*normp*normr) {
         flagCG_ = 4;
         if (infoTS_) {
-          std::cout << "  Zero alpha due to inexactness. \n";
+          std::stringstream hist;
+          hist << "  Zero alpha due to inexactness. \n";
+          std::cout << hist.str();
         }
 	return;
       }
@@ -796,8 +811,8 @@ public:
         }
 	flagCG_ = 1;
         Real a = pdesc->dot(*pdesc);
-        Real b = pdesc->dot(t);
-        Real c = t.dot(t) - delta*delta;
+        Real b = pdesc->dot(*tprev);
+        Real c = tprev->dot(*tprev) - delta*delta;
         // Positive root of a*theta^2 + 2*b*theta + c = 0.
         Real theta = (-b + std::sqrt(b*b - a*c)) / a;
         vtemp->set(*(p[iterCG_-1]));
@@ -810,7 +825,9 @@ public:
           tCP.set(t);
         }
 	if (infoTS_) {
-           std::cout << "  trust-region condition active \n";
+           std::stringstream hist;
+           hist << "  trust-region condition active \n";
+           std::cout << hist.str();
         }
 	return;
       }
@@ -830,13 +847,15 @@ public:
 
     flagCG_ = 3;
     if (infoTS_) {
-      std::cout << "  maximum number of iterations reached \n";
+      std::stringstream hist;
+      hist << "  maximum number of iterations reached \n";
+      std::cout << hist.str();
     }
 
   } // solveTangentialSubproblem
 
   
-  /** \brief Check acceptance of subproblem solutions, adjust trust-region radius and parameter, ensure global convergence.
+  /** \brief Check acceptance of subproblem solutions, adjust merit function penalty parameter, ensure global convergence.
   */
   void accept(Vector<Real> &s, Vector<Real> &n, Vector<Real> &t, Real f_new, Vector<Real> &c_new,
               Vector<Real> &gf_new, Vector<Real> &l_new, Vector<Real> &g_new,
@@ -849,8 +868,9 @@ public:
     Real tol_red_all  = 1e-1;              // internal reduction factor for qntol, lmhtol, pgtol, projtol, tangtol
     //bool glob_refine  = true;              // true  - if subsolver tolerances are adjusted in this routine, keep adjusted values globally
                                            // false - if subsolver tolerances are adjusted in this routine, discard adjusted values
+    Real tol_fdiff    = 1e-12;             // relative objective function difference for ared computation
     int ct_max        = 10;                // maximum number of globalization tries
-    int mintol        = 1e-16;             // smallest tolerance value
+    int mintol        = 1e-16;             // smallest projection tolerance value
 
     // Determines max value of |rpred|/pred. 
     Real rpred_over_pred = 0.5*(1-eta_);
@@ -879,6 +899,7 @@ public:
     bool flag = false;
     int num_proj = 0;
     bool try_tCP = false;
+    Real fdiff = zero;
 
     Teuchos::RCP<Vector<Real> > xtrial = x.clone();
     Teuchos::RCP<Vector<Real> > Jl = x.clone();
@@ -965,17 +986,6 @@ public:
         obj.update(*xtrial,false,algo_state.iter);
         con.update(*xtrial,false,algo_state.iter);
         f_new = obj.value(*xtrial, zerotol);
-std::cout << xtrial->dot(*(xtrial->basis(0))) << "\n";
-std::cout << xtrial->dot(*(xtrial->basis(1))) << "\n";
-std::cout << xtrial->dot(*(xtrial->basis(2))) << "\n";
-std::cout << xtrial->dot(*(xtrial->basis(3))) << "\n";
-std::cout << xtrial->dot(*(xtrial->basis(4))) << "\n";
-std::cout << xtrial->norm() << "  " << f_new << "\n";
-std::cout << t.dot(*(t.basis(0))) << "\n";
-std::cout << t.dot(*(t.basis(1))) << "\n";
-std::cout << t.dot(*(t.basis(2))) << "\n";
-std::cout << t.dot(*(t.basis(3))) << "\n";
-std::cout << t.dot(*(t.basis(4))) << "\n";
         obj.gradient(gf_new, *xtrial, zerotol);
         con.value(c_new, *xtrial, zerotol);
         l_new.set(l);
@@ -988,8 +998,8 @@ std::cout << t.dot(*(t.basis(4))) << "\n";
         part_pred -= gfJl->dot(n);
         part_pred -= half*Hn->dot(n);
         part_pred -= half*Hto->dot(*t_orig);
-        ltemp->set(l);
-        ltemp->axpy(-one, l_new);
+        ltemp->set(l_new);
+        ltemp->axpy(-one, l);
         part_pred -= Jnc->dot(*ltemp);
 
         if ( part_pred < -half*penalty_*(c_normsquared-Jnc_normsquared) ) {
@@ -1065,8 +1075,14 @@ std::cout << t.dot(*(t.basis(4))) << "\n";
 
     } // for (int ct=0; ct<ct_max; ct++)
 
-    // Compute actual reduction.
-    ared = (f - f_new)  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(c.dot(c) - c_new.dot(c_new));
+    // Compute actual reduction;
+    fdiff = f - f_new;
+    // Heuristic 1: If fdiff is very small compared to f, set it to 0,
+    // in order to prevent machine precision issues.
+    if (std::abs(fdiff / f) < tol_fdiff) {
+      fdiff = zero;
+    }
+    ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(c.dot(c) - c_new.dot(c_new));
 
     // Store actual and predicted reduction.
     ared_ = ared;
@@ -1078,7 +1094,6 @@ std::cout << t.dot(*(t.basis(4))) << "\n";
     tnorm_ = t.norm();
 
     // Print diagnostics.
-
     if (infoAC_) {
         std::stringstream hist;
         hist << "\n         Trial step info ...\n";
@@ -1091,7 +1106,6 @@ std::cout << t.dot(*(t.basis(4))) << "\n";
         hist <<   "         f_old-f_trial       = " << f-f_new << "\n";
         hist <<   "         ||c_old||           = " << c.norm() << "\n";
         hist <<   "         ||c_trial||         = " << c_new.norm() << "\n";
-        //hist <<   "         ||grad(L)_trial||   = %12.5e\n', normgl);
         hist <<   "         ||Jac*t_preproj||   = " << linc_preproj << "\n";
         hist <<   "         ||Jac*t_postproj||  = " << linc_postproj << "\n";
         hist <<   "         ||t_tilde||/||t||   = " << t_orig->norm() / t.norm() << "\n";

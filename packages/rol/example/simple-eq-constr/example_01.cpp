@@ -144,8 +144,8 @@ int main(int argc, char *argv[]) {
     // Define Status Test
     RealT gtol  = 1e-12;  // norm of gradient tolerance
     RealT ctol  = 1e-12;  // norm of constraint tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
+    RealT stol  = 1e-18;  // norm of step tolerance
+    int   maxit = 1000;    // maximum number of iterations
     ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
 
     // Define Algorithm
@@ -153,13 +153,26 @@ int main(int argc, char *argv[]) {
 
     // Run Algorithm
     vc.zero();
-//(*x_rcp)[0] = 3; (*x_rcp)[1] = 2; (*x_rcp)[2] = 2; (*x_rcp)[3] = 1; (*x_rcp)[4] = 1;
+    //(*x_rcp)[0] = 2.0; (*x_rcp)[1] = 2.0; (*x_rcp)[2] = 2.0; (*x_rcp)[3] = 1.0; (*x_rcp)[4] = 1.0;
+
     std::vector<std::string> output = algo.run(x, vc, *obj, *constr, false);
     for ( unsigned i = 0; i < output.size(); i++ ) {
       std::cout << output[i];
     }
 
     // Compute Error
+    *outStream << "\nReference solution x_r =\n";
+    *outStream << std::scientific << "  " << (*sol_rcp)[0] << "\n";
+    *outStream << std::scientific << "  " << (*sol_rcp)[1] << "\n";
+    *outStream << std::scientific << "  " << (*sol_rcp)[2] << "\n";
+    *outStream << std::scientific << "  " << (*sol_rcp)[3] << "\n";
+    *outStream << std::scientific << "  " << (*sol_rcp)[4] << "\n";
+    *outStream << "\nOptimal solution x =\n";
+    *outStream << std::scientific << "  " << (*x_rcp)[0] << "\n";
+    *outStream << std::scientific << "  " << (*x_rcp)[1] << "\n";
+    *outStream << std::scientific << "  " << (*x_rcp)[2] << "\n";
+    *outStream << std::scientific << "  " << (*x_rcp)[3] << "\n";
+    *outStream << std::scientific << "  " << (*x_rcp)[4] << "\n";
     x.axpy(-1.0, sol);
     RealT abserr = x.norm();
     RealT relerr = abserr/sol.norm();

@@ -218,7 +218,7 @@ namespace ROL {
 
       (*cp)[0] = x1*x1+x2*x2+x3*x3+x4*x4+x5*x5 - 10.0;
       (*cp)[1] = x2*x3 - 5.0*x4*x5;
-      (*cp)[2] = pow(x1,3) + pow(x2,3) + 1.0;
+      (*cp)[2] = x1*x1*x1 + x2*x2*x2 + 1.0;
     }
   
     void applyJacobian( Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
