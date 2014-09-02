@@ -6,22 +6,30 @@ SET(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH} "${Trilinos_SOURCE_DIR}/cmake")
 
 MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
 
+
+  #
+  # Change compiler warning flags for just Trilinos-based projects!
+  #
+
   MULTILINE_SET(Trilinos_COMMON_STRONG_COMPILE_WARNING_FLAGS
     " -pedantic" # Adds more static checking to remove non-ANSI GNU extensions
     " -Wall" # Enable a bunch of default warnings
     " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG, etc.
   )
 
-  MULTILINE_SET(${PROJECT_NAME}_C_STRONG_COMPILE_WARNING_FLAGS
+  MULTILINE_SET(Trilinos_C_STRONG_COMPILE_WARNING_FLAGS
     "${Trilinos_COMMON_STRONG_COMPILE_WARNING_FLAGS}"
     " -std=c99" # Check for C99
   )
 
-  MULTILINE_SET(${PROJECT_NAME}_CXX_STRONG_COMPILE_WARNING_FLAGS
+  MULTILINE_SET(Trilinos_CXX_STRONG_COMPILE_WARNING_FLAGS
     "${Trilinos_COMMON_STRONG_COMPILE_WARNING_FLAGS}"
     " -std=c++03" # C++98 standard code
     " -Wwrite-strings" # Checks for non-const char * copy of string constants
   )
+
+  # NOTE: By using "Trilinos_" and *NOT* "${PROJECT_NAME}_", we ensure that we
+  # only change the flags for Trilinos-based builds.
 
   #MESSAGE("TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS got called!")
 
