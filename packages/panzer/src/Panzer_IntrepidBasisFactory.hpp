@@ -133,8 +133,7 @@ namespace panzer {
       basis = Teuchos::rcp( new Intrepid::Basis_HCURL_TET_I1_FEM<ScalarT,ArrayT> );
 
     else if ( (basis_type == "HDiv") && (cell_type == "Tetrahedron") && (basis_order == 1) )
-    { TEUCHOS_ASSERT(false); }
-      // basis = Teuchos::rcp( new Intrepid::Basis_HDIV_TET_I1_FEM<ScalarT,ArrayT> );
+    { basis = Teuchos::rcp( new Intrepid::Basis_HDIV_TET_I1_FEM<ScalarT,ArrayT> ); }
 
     else if ( (basis_type == "HGrad") && (cell_type == "Quadrilateral") && (basis_order == 1) )
 	basis = Teuchos::rcp( new Intrepid::Basis_HGRAD_QUAD_C1_FEM<ScalarT,ArrayT> );
