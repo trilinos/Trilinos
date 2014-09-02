@@ -4548,9 +4548,11 @@ namespace Tpetra {
       for (size_t r = 0; r < myNumRows; ++r) {
         RowInfo rowinfo = getRowInfo (r);
         if (rowinfo.numEntries > 0) {
-          // FIXME (mfh 03 Mar 2013) It's a bit puzzling to me why the
-          // ArrayView that getGlobalView() returns doesn't return
-          // rowinfo.numEntries entries.
+          // NOTE (mfh 02 Sep 2014) getGlobalView() returns a view of
+          // all the space in the row, not just the occupied entries.
+          // (This matters for the case of unpacked 1-D storage.  We
+          // might not have packed it yet.)  That's why we need to
+          // take a subview.
           ArrayView<const GO> rowGids = getGlobalView (rowinfo);
           rowGids = rowGids (0, rowinfo.numEntries);
 
@@ -4560,14 +4562,20 @@ namespace Tpetra {
             if (lid != LINV) {
               const char alreadyFound = GIDisLocal[lid];
               if (alreadyFound == 0) {
-                GIDisLocal[lid] = 1;
+                GIDisLocal[lid] = static_cast<char> (1);
                 ++numLocalColGIDs;
               }
             }
             else {
               const bool notAlreadyFound = RemoteGIDSet.insert (gid).second;
               if (notAlreadyFound) { // gid did not exist in the set before
-                if (sortGhostsAssociatedWithEachProcessor_) {
+                if (! sortGhostsAssociatedWithEachProcessor_) {
+                  // The user doesn't want to sort remote GIDs (for
+                  // each remote process); they want us to keep remote
+                  // GIDs in their original order.  We do this by
+                  // stuffing each remote GID into an array as we
+                  // encounter it for the first time.  The std::set
+                  // helpfully tracks first encounters.
                   RemoteGIDUnorderedVector.push_back (gid);
                 }
                 ++numRemoteColGIDs;
@@ -4634,9 +4642,11 @@ namespace Tpetra {
 
       // Copy the remote GIDs into myColumns
       if (sortGhostsAssociatedWithEachProcessor_) {
+        // The std::set puts GIDs in increasing order.
         std::copy (RemoteGIDSet.begin(), RemoteGIDSet.end(),
                    RemoteColGIDs.begin());
       } else {
+        // Respect the originally encountered order.
         std::copy (RemoteGIDUnorderedVector.begin(),
                    RemoteGIDUnorderedVector.end(), RemoteColGIDs.begin());
       }
@@ -4669,9 +4679,14 @@ namespace Tpetra {
         (void) stat; // forestall compiler warning for unused variable
 #endif // HAVE_TPETRA_DEBUG
       }
-      // Sort incoming remote column indices so that all columns
-      // coming from a given remote process are contiguous.  This
-      // means the Import's Distributor doesn't need to reorder data.
+      // Sort incoming remote column indices by their owning process
+      // rank, so that all columns coming from a given remote process
+      // are contiguous.  This means the Import's Distributor doesn't
+      // need to reorder data.
+      //
+      // NOTE (mfh 02 Sep 2014) This needs to be a stable sort, so
+      // that it respects either of the possible orderings of GIDs
+      // (sorted, or original order) specified above.
       sort2 (RemoteImageIDs.begin(), RemoteImageIDs.end(), RemoteColGIDs.begin());
 
       // Copy the local GIDs into myColumns. Two cases:
