@@ -24,7 +24,7 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
 
   MULTILINE_SET(Trilinos_CXX_STRONG_COMPILE_WARNING_FLAGS
     "${Trilinos_COMMON_STRONG_COMPILE_WARNING_FLAGS}"
-    " -std=c++03" # C++98 standard code
+    " -std=c++98" # C++98 standard code
     " -Wwrite-strings" # Checks for non-const char * copy of string constants
   )
 
