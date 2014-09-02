@@ -163,34 +163,52 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
                                                     Real &tol) {
 
   // Initialization.
+  Real zero = 0.0;
+  Real one  = 1.0;
   int max_iter = 50;
+  Real zerotol = zero;
+  int iter = 0;
+  int flag = 0;
+
   Teuchos::RCP<Vector<Real> > r1 = v1.clone();
   Teuchos::RCP<Vector<Real> > r2 = v2.clone();
-  v1.zero();
-  v2.zero();
-  std::vector<Real> res(max_iter);
-  std::vector<Teuchos::RCP<Vector<Real> > > V1(max_iter, Teuchos::null);
-  std::vector<Teuchos::RCP<Vector<Real> > > V2(max_iter, Teuchos::null);
+  Teuchos::RCP<Vector<Real> > r2temp = v2.clone();
+  std::vector<Real> res(max_iter, zero);
+  std::vector<Teuchos::RCP<Vector<Real> > > V1;
+  std::vector<Teuchos::RCP<Vector<Real> > > V2;
 
   // Compute initial residual.
-  Real evaltol = 0.0;
-  this->applyAdjointJacobian(*r1, v2, x, evaltol);
-  r1->scale(-1.0); r1->axpy(-1.0, v1); r1->plus(b1);
-  this->applyJacobian(*r2, v1, x, evaltol);
-  r2->scale(-1.0); r2->plus(b2);
-
+  applyAdjointJacobian(*r1, v2, x, zerotol);
+  r1->scale(-one); r1->axpy(-one, v1); r1->plus(b1);
+  applyJacobian(*r2, v1, x, zerotol);
+  r2->scale(-one); r2->plus(b2);
   res[0] = r1->norm() + r2->norm();
 
-  // Compute special stopping condition.
-  tol = tol;
-
-  if (res[0] <= tol) {
+  // Check if residual is identically zero.
+  if (res[0] == zero) {
+    iter = 0;
+    flag = 0;
     return;
   }
 
-  //precond(*r1, *r2); // Apply preconditioner (left only).
-  //V1[0] = v1.clone; V1[0]->set(r1); V1[0]->scale(1.0/r1.norm());
-  //V2[0] = v2.clone; V2[0]->set(r2); V2[0]->scale(1.0/r2.norm());
+  // Apply left preconditioner to constraint residual.
+  r2temp->set(*r2);
+  applyPreconditioner(*r2, *r2temp, x, zerotol);
+
+  // Compute preconditioned residual.
+  res[0] = r1->norm() + r2->norm();
+
+  // Evaluate special stopping condition and check convergence.
+  tol = tol;
+  if ( res[0] <= tol ) {
+    return;
+  }
+
+  V1.push_back(r1->clone()); (V1[0])->set(*r1); (V1[0])->scale(one/res[0]);
+  V2.push_back(r2->clone()); (V2[0])->set(*r2); (V2[0])->scale(one/res[0]);
+
+  iter = flag;
+  flag = iter;
 
 }
 
