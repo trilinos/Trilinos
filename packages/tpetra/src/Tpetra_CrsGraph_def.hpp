@@ -3491,9 +3491,12 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeColMap ()
   {
-    using std::endl;
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::rcp;
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "makeColMap";
@@ -3706,25 +3709,50 @@ namespace Tpetra {
       //    maintain a consistent ordering of GIDs between the columns
       //    and the domain.
 
-      // FIXME (mfh 03 Mar 2013) It's common that the domain Map is
-      // contiguous.  It would be more efficient in that case to avoid
-      // calling getNodeElementList(), since that permanently
-      // constructs and caches the GID list in the contiguous Map.
-      ArrayView<const GO> domainElts = domainMap_->getNodeElementList ();
       const size_t numDomainElts = domainMap_->getNodeNumElements ();
       if (numLocalColGIDs == numDomainElts) {
         // If the number of locally owned GIDs are the same as the
         // number of local domain Map elements, then the local domain
         // Map elements are the same as the locally owned GIDs.
-        std::copy (domainElts.begin(), domainElts.end(), LocalColGIDs.begin());
+        if (domainMap_->isContiguous ()) {
+          // NOTE (mfh 03 Mar 2013, 02 Sep 2014) In the common case
+          // that the domain Map is contiguous, it's more efficient to
+          // avoid calling getNodeElementList(), since that
+          // permanently constructs and caches the GID list in the
+          // contiguous Map.
+          GO curColMapGid = domainMap_->getMinGlobalIndex ();
+          for (size_t k = 0; k < numLocalColGIDs; ++k, ++curColMapGid) {
+            LocalColGIDs[k] = curColMapGid;
+          }
+        }
+        else {
+          ArrayView<const GO> domainElts = domainMap_->getNodeElementList ();
+          std::copy (domainElts.begin(), domainElts.end(), LocalColGIDs.begin());
+        }
       }
       else {
         // Count the number of locally owned GIDs, both to keep track
         // of the current array index, and as a sanity check.
         size_t numLocalCount = 0;
-        for (size_t i = 0; i < numDomainElts; ++i) {
-          if (GIDisLocal[i]) {
-            LocalColGIDs[numLocalCount++] = domainElts[i];
+        if (domainMap_->isContiguous ()) {
+          // NOTE (mfh 03 Mar 2013, 02 Sep 2014) In the common case
+          // that the domain Map is contiguous, it's more efficient to
+          // avoid calling getNodeElementList(), since that
+          // permanently constructs and caches the GID list in the
+          // contiguous Map.
+          GO curColMapGid = domainMap_->getMinGlobalIndex ();
+          for (size_t i = 0; i < numDomainElts; ++i, ++curColMapGid) {
+            if (GIDisLocal[i]) {
+              LocalColGIDs[numLocalCount++] = curColMapGid;
+            }
+          }
+        }
+        else {
+          ArrayView<const GO> domainElts = domainMap_->getNodeElementList ();
+          for (size_t i = 0; i < numDomainElts; ++i) {
+            if (GIDisLocal[i]) {
+              LocalColGIDs[numLocalCount++] = domainElts[i];
+            }
           }
         }
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3786,7 +3814,6 @@ namespace Tpetra {
                                  domainMap_->getComm (),
                                  domainMap_->getNode ()));
     checkInternalState ();
-    return;
   }
 
 
