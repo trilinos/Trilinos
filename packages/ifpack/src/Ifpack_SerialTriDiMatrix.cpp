@@ -63,7 +63,7 @@ Ifpack_SerialTriDiMatrix::Ifpack_SerialTriDiMatrix(int NumRowCol,
                                                    bool set_object_label)
   : Epetra_CompObject(),
     Epetra_Object(-1, false),
-    N_(0),
+    N_(NumRowCol),
     A_Copied_(false),
     CV_(Copy),
     A_(0),
@@ -101,11 +101,15 @@ Ifpack_SerialTriDiMatrix::Ifpack_SerialTriDiMatrix(Epetra_DataAccess CV_in, doub
     throw ReportError("NumRowCol = " + toString(NumRowCol) + ". Should be >= 0", -1);
 
   if (CV_in == Copy) {
-    const int newsize = 4*(N_-1);
+    const int newsize = (N_ == 1) ? 1 : 4*(N_-1);
     if (newsize > 0) {
       A_ = new double[newsize];
       CopyMat(A_in, N_, A_, N_);
       A_Copied_ = true;
+      DL_ = A_;
+      D_  = DL_+(N_-1);
+      DU_ = D_ + N_;
+      DU2_ = DU_ + (N_-1);
     }
     else {
       A_ = 0;
@@ -145,11 +149,9 @@ int Ifpack_SerialTriDiMatrix::Reshape(int NumRows, int NumCols) {
 	  return(-1);
 	if(NumRows != NumCols)
 	  return(-1);
-	
 
 	double* A_tmp = 0;
-	const int newsize = 4*(NumRows-1);
-
+	const int newsize = (N_ == 1)? 1 : 4*(N_-1);
 	if(newsize > 0) {
 		// Allocate space for new matrix
 		A_tmp = new double[newsize];
@@ -157,6 +159,7 @@ int Ifpack_SerialTriDiMatrix::Reshape(int NumRows, int NumCols) {
 			A_tmp[k] = 0.0; // Zero out values
 		if (A_ != 0)
 		  CopyMat(A_, N_, A_tmp, NumRows); // Copy principal submatrix of A to new A
+		
   }
   CleanupData(); // Get rid of anything that might be already allocated
   N_ = NumCols;
@@ -164,6 +167,11 @@ int Ifpack_SerialTriDiMatrix::Reshape(int NumRows, int NumCols) {
     A_ = A_tmp; // Set pointer to new A
     A_Copied_ = true;
   }
+
+  DL_ = A_;
+  D_ = A_+(N_-1);
+  DU_ = D_+N_;
+  DU2_ = DU_+(N_-1);
 
   return(0);
 }
@@ -175,7 +183,7 @@ int Ifpack_SerialTriDiMatrix::Shape(int NumRowCol) {
   CleanupData(); // Get rid of anything that might be already allocated
   N_ = NumRowCol;
   LDA_ = N_;
-  const int newsize = 4*(N_-1);
+  const int newsize = (N_ == 1)? 1 : 4*(N_-1);
   if(newsize > 0) {
     A_ = new double[newsize];
     for (int k = 0; k < newsize; k++)
@@ -253,7 +261,7 @@ Ifpack_SerialTriDiMatrix& Ifpack_SerialTriDiMatrix::operator = (const Ifpack_Ser
 			else { // we need to allocate more space (or less space)
 				CleanupData();
 				N_ = Source.N_;
-				const int newsize = 4*(N_ -1 );
+				const int newsize = (N_ == 1)? 1 : 4*(N_-1);
 				if(newsize > 0) {
 					A_ = new double[newsize];
 					DL_ = A_;
@@ -279,7 +287,9 @@ bool Ifpack_SerialTriDiMatrix::operator==(const Ifpack_SerialTriDiMatrix& rhs) c
   const double* A_tmp = A_;
   const double* rhsA = rhs.A_;
 
-  for(int j=0; j<4*(N_-1); ++j) {
+  const int size = (N_ == 1)? 1 : 4*(N_-1);
+
+  for(int j=0; j<size; ++j) {
     if (std::abs(A_tmp[j] - rhsA[j]) > Epetra_MinDouble) {
       return(false);
     }
@@ -335,10 +345,12 @@ double Ifpack_SerialTriDiMatrix::NormOne() const {
   double * ptr  = A_;
   double sum=0.0;
   
-  for (i=0; i<4*(N_-1); i++) sum += std::abs(*ptr++);
+  const int size = (N_ == 1)? 1 : 4*(N_-1);
+
+  for (i=0; i<size; i++) sum += std::abs(*ptr++);
   
   anorm = EPETRA_MAX(anorm, sum);
-  UpdateFlops((double)4*(N_-1));
+  UpdateFlops((double)size );
   return(anorm);
 }
 //=============================================================================
@@ -353,7 +365,9 @@ int Ifpack_SerialTriDiMatrix::Scale(double ScalarA) {
 
   double * ptr = A_;
 
-  for (i=0; i<4*(N_-1); i++) { *ptr = ScalarA * (*ptr); ptr++; }
+  const int size = (N_ == 1)? 1 : 4*(N_-1);
+
+  for (i=0; i<size ; i++) { *ptr = ScalarA * (*ptr); ptr++; }
  
   UpdateFlops((double)N_*(double)N_);
   return(0);
@@ -477,7 +491,8 @@ int Ifpack_SerialTriDiMatrix::Random() {
   
   Epetra_Util util;
   double* arrayPtr = A_;
-  for(int j = 0; j < 4*(N_-1); j++) {	  
+  const int size = (N_ == 1)? 1 : 4*(N_-1);
+  for(int j = 0; j < size ; j++) {	  
     *arrayPtr++ = util.RandomDouble();	
   }
   

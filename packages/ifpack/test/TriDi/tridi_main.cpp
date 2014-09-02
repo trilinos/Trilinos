@@ -108,8 +108,8 @@ int main(int argc, char *argv[])
   // Redefine verbose to only print on PE 0
   if (verbose && rank!=0) verbose = false;
 	
-  int N = 4;
-  int NRHS = 4;
+  int N = 5;
+  int NRHS = 5;
   double * X = new double[NRHS];
   double * ed_X = new double[NRHS];
 
@@ -133,17 +133,15 @@ int main(int argc, char *argv[])
   ed_solver.SolveWithTranspose(Transpose);
   ed_solver.SolveToRefinedSolution(Refine);
 
-  Matrix = new Ifpack_SerialTriDiMatrix(4,true);
-  ed_Matrix = new Epetra_SerialDenseMatrix(4,4);
-
-  // memset(Matrix->A(),0,sizeof(double)*4*(N-1));
+  Matrix = new Ifpack_SerialTriDiMatrix(5,true);
+  ed_Matrix = new Epetra_SerialDenseMatrix(5,5);
 
   for(int i=0;i<N;++i) {
-    B[i] = ed_B[i] =0.04;
-    Matrix->D()[i]=-2.0;
+    B[i] = ed_B[i] =2;
+    Matrix->D()[i]=2.0;
     if(i<(N-1)) {
-      Matrix->DL()[i]=1.0;
-      Matrix->DU()[i]=1.0;
+      Matrix->DL()[i]=-1.0;
+      if(i!=2) Matrix->DU()[i]=-1.0;
     }
   }
 
@@ -176,9 +174,10 @@ int main(int argc, char *argv[])
   double * ed_a = ed_Matrix->A();
   for(int i=0;i<N;++i)
     for(int j=0;j<N;++j) {
-      if(i==j) ed_a[j*N+i] = -2.0;
-      else if(abs(i-j) == 1)   ed_a[j*N+i] = 1.0;
+      if(i==j) ed_a[j*N+i] = 2.0;
+      else if(abs(i-j) == 1)   ed_a[j*N+i] = -1.0;
       else  ed_a[j*N + i] = 0;
+      if(i==2&&j==3) ed_a[j*N+i] = 0.0;
     }
 
 

@@ -287,8 +287,17 @@ int Ifpack_SerialTriDiSolver::Solve(void) {
     double * DU_  = F->DU();
     double * DU2_ = F->DU2();
 
-    lapack.GTTRS(TRANS_,N_,NRHS_,DL_,D_,DU_,DU2_,IPIV_,X_,N_,&INFO_);
-
+    //    if(N_ != 1) {
+      lapack.GTTRS(TRANS_,N_,NRHS_,DL_,D_,DU_,DU2_,IPIV_,X_,N_,&INFO_);
+    // }
+    // else {
+    //   if(D_[0]!=0) {
+    // 	X_[0]=X_[0]/D_[0];
+    // 	INFO_ = 0;
+    //   }
+    //   else
+    // 	INFO_= -9091 ; // \todo Fix this error code to something real.
+    // }
     if (INFO_!=0) EPETRA_CHK_ERR(INFO_);
     UpdateFlops(2.0*DN*DN*DNRHS);
     Solved_ = true;

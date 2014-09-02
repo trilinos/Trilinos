@@ -285,8 +285,7 @@ This function performs a variety of matrix-matrix multiply operations.
   //! Element access function.
   /*!
     The parentheses operator returns the element in the ith row and jth column if A(i,j) is
-    specified, the expression A[j][i] (note that i and j are reversed) will return the same element.
-    Thus, A(i,j) = A[j][i] for all valid i and j.
+    specified, 
 
     \return Element from the specified row and column.
 

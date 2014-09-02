@@ -65,7 +65,10 @@ int Ifpack_TriDiContainer::Initialize()
   // for (int i = 0 ; i < NumRows_ ; ++i)
   //   for (int j = 0 ; j < NumRows_ ; ++j)
   //     Matrix_(i,j) = 0.0;
-  memset(Matrix_.A(),0,sizeof(double)*4*(NumRows_-1));
+
+  if(Matrix_.A() == NULL ) Matrix_.Shape(NumRows_);
+  int size = (NumRows_ == 1) ? 1 : 4*(NumRows_ -1);
+  memset(Matrix_.A(),0,sizeof(double)*size);
 
   // zero out vector elements
   for (int i = 0 ; i < NumRows_ ; ++i)
