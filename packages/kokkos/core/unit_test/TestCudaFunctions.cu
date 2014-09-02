@@ -242,10 +242,7 @@ namespace Test {
 
 void test_device_cuda_scan()
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::Cuda >( 10 );
-    TestScan< Kokkos::Cuda >( 10000 );
-  }
+  TestScan< Kokkos::Cuda >::test_range( 1 , 1000 );
   TestScan< Kokkos::Cuda >( 1000000 );
   TestScan< Kokkos::Cuda >( 10000000 );
   Kokkos::Cuda::fence();

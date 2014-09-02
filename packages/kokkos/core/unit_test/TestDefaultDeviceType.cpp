@@ -192,10 +192,7 @@ TEST_F( defaultdevicetype , view_aggregate )
 
 TEST_F( defaultdevicetype , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::DefaultExecutionSpace >( 10 );
-    TestScan< Kokkos::DefaultExecutionSpace >( 10000 );
-  }
+  TestScan< Kokkos::DefaultExecutionSpace >::test_range( 1 , 1000 );
   TestScan< Kokkos::DefaultExecutionSpace >( 1000000 );
   TestScan< Kokkos::DefaultExecutionSpace >( 10000000 );
   Kokkos::DefaultExecutionSpace::fence();

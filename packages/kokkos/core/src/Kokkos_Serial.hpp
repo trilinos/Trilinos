@@ -222,6 +222,11 @@ public:
 
   KOKKOS_INLINE_FUNCTION void team_barrier() const {}
 
+  template< class JoinOp >
+  typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
+                                         , const JoinOp & ) const
+    { return value ; }
+
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
    *

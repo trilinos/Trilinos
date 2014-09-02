@@ -84,6 +84,13 @@ struct TestScan {
 
   TestScan( const WorkSpec & N )
     { parallel_scan( N , *this ); }
+
+  static void test_range( const WorkSpec & begin , const WorkSpec & end )
+    {
+      for ( WorkSpec i = begin ; i < end ; ++i ) {
+        (void) TestScan( i );
+      }
+    }
 };
 
 }

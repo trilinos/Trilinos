@@ -190,7 +190,12 @@ public:
     KOKKOS_INLINE_FUNCTION int team_size() const ;
 
     /** \brief  Barrier among the threads of this team */
-    KOKKOS_INLINE_FUNCTION void team_barrier();
+    KOKKOS_INLINE_FUNCTION void team_barrier() const ;
+
+    template< class JoinOp >
+    KOKKOS_INLINE_FUNCTION
+    typename JoinOp::value_type team_reduce( const typename JoinOp::value_type
+                                           , const JoinOp & ) const ;
 
     /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
      *
@@ -198,7 +203,7 @@ public:
      *    reduction_total = dev.team_scan( value ) + value ;
      */
     template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value );
+    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value ) const ;
 
     /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
      *          with intra-team non-deterministic ordering accumulation.
@@ -210,7 +215,7 @@ public:
      *  non-deterministic.
      */
     template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum );
+    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const ;
   };
 };
 
