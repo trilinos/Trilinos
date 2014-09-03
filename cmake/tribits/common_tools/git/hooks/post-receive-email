@@ -180,14 +180,14 @@ generate_create_branch_email()
 	cat <<-EOF
 	To: $recipients
 	From: $email_from
-	Subject: ${emailprefix}$USER created a new branch: $short_refname
+	Subject: ${emailprefix}$GIT_PUSH_USER created a new branch: $short_refname
 	X-Git-Repository: $repo_location
 	X-Git-Refname: $refname
 	X-Git-Reftype: $refname_type
 	X-Git-Oldrev: $oldrev
 	X-Git-Newrev: $newrev
 
-	$USER created the branch "$short_refname"
+	$GIT_PUSH_USER created the branch "$short_refname"
 
 	EOF
 
@@ -291,7 +291,7 @@ generate_update_branch_email()
 	cat <<-EOF
 	To: $recipients
 	From: $email_from
-	Subject: ${emailprefix}$USER pushed to $short_refname
+	Subject: ${emailprefix}$GIT_PUSH_USER pushed to $short_refname
 	X-Git-Repository: $repo_location
 	X-Git-Refname: $refname
 	X-Git-Reftype: $refname_type
@@ -363,7 +363,7 @@ generate_update_branch_email()
 	fi
 
 	if test -z "$rewind_only"; then
-		echo "$USER pushed the following commits to the \"$short_refname\" branch:"
+		echo "$GIT_PUSH_USER pushed the following commits to the \"$short_refname\" branch:"
 		echo ""
 		git rev-list --pretty $oldrev..$newrev
 	else
@@ -407,14 +407,14 @@ generate_delete_branch_email()
 	cat <<-EOF
 	To: $recipients
 	From: $email_from
-	Subject: ${emailprefix}$USER deleted branch: $short_refname
+	Subject: ${emailprefix}$GIT_PUSH_USER deleted branch: $short_refname
 	X-Git-Repository: $repo_location
 	X-Git-Refname: $refname
 	X-Git-Reftype: $refname_type
 	X-Git-Oldrev: $oldrev
 	X-Git-Newrev: $newrev
 
-	$USER deleted the branch "$short_refname"
+	$GIT_PUSH_USER deleted the branch "$short_refname"
 
 	EOF
 
@@ -436,14 +436,14 @@ generate_create_atag_email()
 	cat <<-EOF
 	To: $recipients
 	From: $email_from
-	Subject: ${emailprefix}$USER created a new tag: $short_refname
+	Subject: ${emailprefix}$GIT_PUSH_USER created a new tag: $short_refname
 	X-Git-Repository: $repo_location
 	X-Git-Refname: $refname
 	X-Git-Reftype: $refname_type
 	X-Git-Oldrev: $oldrev
 	X-Git-Newrev: $newrev
 
-	$USER created the tag "$short_refname"
+	$GIT_PUSH_USER created the tag "$short_refname"
 	EOF
 
 	generate_atag_email
@@ -461,14 +461,14 @@ generate_update_atag_email()
 	cat <<-EOF
 	To: $recipients
 	From: $email_from
-	Subject: ${emailprefix}$USER updated the tag $short_refname
+	Subject: ${emailprefix}$GIT_PUSH_USER updated the tag $short_refname
 	X-Git-Repository: $repo_location
 	X-Git-Refname: $refname
 	X-Git-Reftype: $refname_type
 	X-Git-Oldrev: $oldrev
 	X-Git-Newrev: $newrev
 
-	$USER updated the tag "$short_refname"
+	$GIT_PUSH_USER updated the tag "$short_refname"
 	EOF
 	echo "      from  $oldrev (which is now obsolete)"
 	echo "        to  $newrev ($newrev_type)"
@@ -533,14 +533,14 @@ generate_delete_atag_email()
 	cat <<-EOF
 	To: $recipients
 	From: $email_from
-	Subject: ${emailprefix}$USER deleted the tag $short_refname
+	Subject: ${emailprefix}$GIT_PUSH_USER deleted the tag $short_refname
 	X-Git-Repository: $repo_location
 	X-Git-Refname: $refname
 	X-Git-Reftype: $refname_type
 	X-Git-Oldrev: $oldrev
 	X-Git-Newrev: $newrev
 
-	$USER deleted the tag "$short_refname"
+	$GIT_PUSH_USER deleted the tag "$short_refname"
 
 	EOF
 
@@ -564,14 +564,14 @@ generate_create_general_email()
 	cat <<-EOF
 	To: $recipients
 	From: $email_from
-	Subject: ${emailprefix}$USER created $refname_type: $short_refname
+	Subject: ${emailprefix}$GIT_PUSH_USER created $refname_type: $short_refname
 	X-Git-Repository: $repo_location
 	X-Git-Refname: $refname
 	X-Git-Reftype: $refname_type
 	X-Git-Oldrev: $oldrev
 	X-Git-Newrev: $newrev
 
-	$USER created the $refname_type "$short_refname"
+	$GIT_PUSH_USER created the $refname_type "$short_refname"
 	EOF
 
 	echo "        at  $newrev ($newrev_type)"
@@ -591,14 +591,14 @@ generate_update_general_email()
 	cat <<-EOF
 	To: $recipients
 	From: $email_from
-	Subject: ${emailprefix}$USER updated $refname_type: $short_refname
+	Subject: ${emailprefix}$GIT_PUSH_USER updated $refname_type: $short_refname
 	X-Git-Repository: $repo_location
 	X-Git-Refname: $refname
 	X-Git-Reftype: $refname_type
 	X-Git-Oldrev: $oldrev
 	X-Git-Newrev: $newrev
 
-	$USER updated the $refname_type "$short_refname"
+	$GIT_PUSH_USER updated the $refname_type "$short_refname"
 	EOF
 
 	echo "      from  $oldrev"
@@ -646,14 +646,14 @@ generate_delete_general_email()
 	cat <<-EOF
 	To: $recipients
 	From: $email_from
-	Subject: ${emailprefix}$USER deleted $refname_type: $short_refname
+	Subject: ${emailprefix}$GIT_PUSH_USER deleted $refname_type: $short_refname
 	X-Git-Repository: $repo_location
 	X-Git-Refname: $refname
 	X-Git-Reftype: $refname_type
 	X-Git-Oldrev: $oldrev
 	X-Git-Newrev: $newrev
 
-	$USER deleted the $refname_type "$short_refname"
+	$GIT_PUSH_USER deleted the $refname_type "$short_refname"
 	EOF
 
 	echo "       was  $oldrev"
@@ -838,6 +838,12 @@ hrule="-------------------------------------------------------------------------
 test -n "${MAIL_TO}" && recipients=${MAIL_TO}
 test -n "${FROM}" && envelopesender=${FROM}
 test -n "${USER}" && export USER
+
+if [ "${GL_USER}" != "" ] ; then
+  export GIT_PUSH_USER=${GL_USER}
+else
+  export GIT_PUSH_USER=${USER}
+fi  
 
 # Check if we've got anyone to send to
 if [ -z "$recipients" ]

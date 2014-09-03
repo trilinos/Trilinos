@@ -46,6 +46,7 @@ INCLUDE(TribitsAdjustPackageEnables)
 INCLUDE(TribitsSetupMPI)
 INCLUDE(TribitsTestCategories)
 INCLUDE(TribitsGeneralMacros)
+INCLUDE(TribitsAddTestHelpers)
 
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(AdvancedOption)
@@ -418,6 +419,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
 
   ADVANCED_SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE OFF CACHE BOOL
     "Generate a <ProjectName>RepoVersion.txt file.")
+  
+  ADVANCED_SET(${PROJECT_NAME}_SCALE_TEST_TIMEOUT 1.0 CACHE STRING
+    "Scale factor for global DART_TESTING_TIMEOUT and individual test TIMEOUT (default 1.0)."
+    )
+  # NOTE: This value is 1.0, *NOT* 1!  This is used in TRIBITS_SCALE_TIMEOUT()
+  # and there are unit tests that rely on this default!
 
   ADVANCED_SET(${PROJECT_NAME}_REL_CPU_SPEED 1.0 CACHE STRING
     "Relative CPU speed of the computer used to scale performance tests (default 1.0)."
@@ -1832,6 +1839,24 @@ MACRO(TRIBITS_SETUP_ENV)
   ENDIF()
 
 ENDMACRO()
+
+
+#
+# Macro to turn on CTest support
+#
+
+MACRO(TRIBITS_INCLUDE_CTEST_SUPPORT)
+  IF (DART_TESTING_TIMEOUT)
+    SET(DART_TESTING_TIMEOUT_IN ${DART_TESTING_TIMEOUT})
+    TRIBITS_SCALE_TIMEOUT(${DART_TESTING_TIMEOUT} DART_TESTING_TIMEOUT)
+    IF (NOT DART_TESTING_TIMEOUT STREQUAL DART_TESTING_TIMEOUT_IN)
+     MESSAGE("-- DART_TESTING_TIMEOUT=${DART_TESTING_TIMEOUT_IN} being scaled by ${PROJECT_NAME}_SCALE_TEST_TIMEOUT=${${PROJECT_NAME}_SCALE_TEST_TIMEOUT} to ${DART_TESTING_TIMEOUT}")
+    ENDIF()
+  ENDIF()
+  INCLUDE(CTest)
+  TRIBITS_CONFIGURE_CTEST_CUSTOM(${${PROJECT_NAME}_BINARY_DIR})
+ENDMACRO()
+
 
 
 #

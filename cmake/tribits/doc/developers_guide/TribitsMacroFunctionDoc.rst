@@ -389,7 +389,7 @@ functionality described above.
 
 After this function returns, if the test gets added using ``ADD_TEST()``,
 then additional properties can be set and changed using
-``SET_TEST_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
+``SET_TESTS_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
 tests properties that are not directly supported by this function and passed
 through the argument list to this wrapper function can be set in the outer
 ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_ADVANCED_TEST()``.
@@ -812,11 +812,12 @@ Usage::
     that this library is dependent on.  These libraries are passed into
     ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
     dependency structure of the libraries within the package.  **NOTE:** One
-    must **not** list libraries in other upstream SE packages or libraries
-    built externally from this TriBITS CMake project.  The TriBITS system
-    automatically handles linking to libraries in upstream TriBITS SE
+    must **not** list libraries in other upstream `TriBITS SE Packages`_ or
+    libraries built externally from this TriBITS CMake project.  The TriBITS
+    system automatically handles linking to libraries in upstream TriBITS SE
     packages.  External libraries need to be listed in the ``IMPORTEDLIBS``
-    argument instead.
+    argument instead if they are not already specified automatically using a
+    `TriBITS TPL`_.
 
   ``IMPORTEDLIBS <ideplib0> <ideplib1> ...``
 
@@ -828,9 +829,9 @@ Usage::
     will also pick up these libraries and these libraries will show up in
     the generated ``Makefile.export.${PACKAGE_NAME}`` and
     ``${PACKAGE_NAME}Config.cmake`` files (if they are generated).  However,
-    not that external libraries are often better handled as `TriBITS TPLs`_.
-    A well constructed TriBITS package and library should never have to use
-    this option.
+    note that external libraries are often better handled as `TriBITS
+    TPLs`_.  A well constructed TriBITS package and library should never
+    have to use this option!
 
   ``TESTONLY``
 
@@ -1212,12 +1213,14 @@ Usage::
 
     If passed in, gives maximum number of seconds the test will be allowed
     to run before being timed-out.  This sets the CTest property
-    ``TIMEOUT``.  **WARNING:** Rather than just increasing the timeout for
-    an expensive test, please try to either make the test run faster or
-    relegate the test to being run less often (i.e. set ``CATEGORIES
-    NIGHTLY`` or even ``WEEKLY`` for extremely expensive tests).  Expensive
-    tests are one of the worse forms of technical debt that a project can
-    have!
+    ``TIMEOUT``.  The value ``<maxSeconds>`` will be scaled by the value of
+    `${PROJECT_NAME}_SCALE_TEST_TIMEOUT`_.
+
+    **WARNING:** Rather than just increasing the timeout for an expensive
+    test, please try to either make the test run faster or relegate the test
+    to being run less often (i.e. set ``CATEGORIES NIGHTLY`` or even
+    ``WEEKLY`` for extremely expensive tests).  Expensive tests are one of
+    the worse forms of technical debt that a project can have!
 
 In the end, this function just calls the built-in CMake commands
 ``ADD_TEST(${TEST_NAME} ...)`` and ``SET_TESTS_PROPERTIES(${TEST_NAME}
@@ -1379,7 +1382,7 @@ test.
 
 After this function returns, any tests that get added using ``ADD_TEST()``
 can have additional properties set and changed using
-``SET_TEST_PROPERTIES()``.  Therefore, any tests properties that are not
+``SET_TESTS_PROPERTIES()``.  Therefore, any tests properties that are not
 directly supported and passed through this wrapper function can be set in
 the outer ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_TEST()``.
 
@@ -1466,7 +1469,7 @@ directory which contains all of the added tests and test properties that are
 set.  This is the file that is read by ``ctest`` when it runs to determine
 what tests to run, determine pass/fail and adjust other behavior using test
 properties.  In this file, one can see the exact ``ADD_TEST()`` and
-``SET_TEST_PROPERTIES()`` commands.  The is the ultimate way to debug
+``SET_TESTS_PROPERTIES()`` commands.  The is the ultimate way to debug
 exactly what tests are getting added by this function (or if the test is
 even being added at all).
 
@@ -1577,8 +1580,9 @@ by calling the built-in ``CONFIGURE_FILE()`` command::
     )
 
 which does basic substitution of CMake variables (see documentation for
-built-in CMake ``CONFIGURE_FILE()`` command for rules on how it performs
-substitutions).
+built-in CMake `CONFIGURE_FILE()`_ command for rules on how it performs
+substitutions).  This command is typically used to configure the package's
+main `<packageDir>/cmake/<packageName>_config.h.in`_ file.
 
 In addition to just calling ``CONFIGURE_FILE()``, this function also aids in
 creating configured header files adding macros for deprecating code as
@@ -1805,6 +1809,63 @@ be overridden from the env.
 
 ToDo: Finish Documentation!
 
+TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT()
+++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Determine at configure time if any of the upstream dependencies for a
+package require the current package to be rebuilt.
+
+Usage::
+
+  TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT(
+    [SHOW_MOST_RECENT_FILES]
+    [SHOW_OVERALL_MOST_RECENT_FILES]
+    CURRENT_PACKAGE_OUT_OF_DATE_OUT <currentPackageOutOfDate>
+    )
+
+**Arguments:**
+
+  ``SHOW_MOST_RECENT_FILES``
+
+    If specified, then the most recently modified file for each individual
+    base source and binary directory searched will be will be printed the
+    STDOUT.  Setting this implies ``SHOW_OVERALL_MOST_RECENT_FILE``.
+
+  ``SHOW_OVERALL_MOST_RECENT_FILE``
+
+    If specified, then only the most recent modified file over all of the
+    individual directories for each category (i.e. one for upstream SE
+    package source dirs, one for upstream SE package binary dirs, one for
+    the package's source dir, and one for the package's own binary dir) is
+    printed to STDOUT.
+
+  ``CURRENT_PACKAGE_OUT_OF_DATE_OUT <currentPackageOutOfDate>``
+
+    On output, the local variable ``<currentPackageOutOfDate>`` will be set
+    to ``TRUE`` if any of the upstream most modified files are more recent
+    than the most modified file in the package's binary directory.
+    Otherwise, this variable is set to ``FALSE``.
+
+**Description:**
+
+This function is designed to help take an externally configured and built
+piece of software (that generates libraries) and wrap it as a TriBITS
+package or subpackage.  This function uses the lower-level functions:
+
+* `TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()`_ 
+* `TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()`_
+
+to determine the most recent modified files in the upstream TriBITS SE
+packages' source and binary directories as well as the most recent source
+file for the current package.  It then compares these timestamps to the most
+recent binary file timestamp in this package's binary directory.  If any of
+these three files are more recent than this package's most recent binary
+file, then the output variable ``<currentPackageOutOfDate>`` is set to
+``TRUE``.  Otherwise, it is set to ``FALSE``. 
+
+See the demonstration of the usage of this function in the ``WrapExternal``
+package in `TribitsExampleProject`_.
+
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()
 ++++++++++++++++++++++++++++++++++++++
 
@@ -1852,6 +1913,124 @@ and one must be very careful not understand how CPack will use these regexes
 to match files that get excluded from the tarball.  For more details, see
 `Creating Source Distributions`_.
    
+TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+Find the most modified binary file in a set of base directories and return
+its timestamp.
+
+Usage::
+
+  TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP(
+    BINARY_BASE_DIRS <dir0> <dir1> ... 
+    [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]
+    [MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>]
+    [MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>]
+    [SHOW_MOST_RECENT_FILES]
+    [SHOW_OVERALL_MOST_RECENT_FILE]
+    )
+
+This function just calls `TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()`_
+passing in a set of basic exclude regexes like ``CMakeFiles/``,
+``[.]cmake$``, and ``/Makefile$``, etc.  These types of files usually don't
+impact the build of downstream software in CMake projects.
+
+TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()
++++++++++++++++++++++++++++++++++++++++++
+
+Find the most modified file in a set of base directories and return its
+timestamp.
+
+Usage::
+
+  TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(
+    BASE_DIRS <dir0> <dir1> ... 
+    [EXCLUDE_REGEXES "<re0>" "<re1>" ... 
+    [SHOW_MOST_RECENT_FILES]
+    [SHOW_OVERALL_MOST_RECENT_FILE]
+    [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]
+    [MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>]
+    [MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>]
+    )
+
+**Arguments:**
+
+  ``BASE_DIRS <dir0> <dir1> ...``
+
+    Gives the absolute base directory paths that will be searched for the
+    most recently modified files, as described above.
+
+  ``EXCLUDE_REGEXES "<re0>" "<re1>" ...``
+
+    Gives the regular expressions that are used to exclude files from
+    consideration.  Each "<rei>" regex is used with a `grep -v "<rei>"`
+    filter to exclude files before sorting by time stamp.
+
+  ``SHOW_MOST_RECENT_FILES``
+
+    If specified, then the most recently modified file for each individual
+    directory ``<dir0>``, ``<dir1``, ... will be printed the STDOUT.
+    Setting this implies ``SHOW_OVERALL_MOST_RECENT_FILE``.
+
+  ``SHOW_OVERALL_MOST_RECENT_FILE``
+
+    If specified, then only the most recent modified file over all of the
+    individual directories is printed to STDOUT.
+
+  ``MOST_RECENT_TIMESTAMP_OUT <mostRecentTimestamp>``
+
+     On output, the variable `<mostRecentTimestamp>` is set that gives the
+     timestamp of the most recently modified file over all the directories.
+     This number is given as the number of seconds since Jan. 1, 1970, 00:00
+     GMT.
+
+  ``MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>``
+
+    On output, the variable `<mostRecentFilepathBaseDir>` gives absolute base
+    directory of the file with the most recent timestamp over all
+    directories.
+
+  ``MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>``
+
+    On output, the variable `<mostRecentFilepathBaseDir>` gives the file
+    name with relative path to the file with the most recent timestamp over
+    all directories.
+
+**Description:**
+
+This function uses the Linux/Unix command::
+    
+    $ find . -type f -printf '%T@ %p\n'
+        | grep -v "<re0>" | grep -v "<re1>" | ... \
+        | sort -n | tail -1
+
+to return the most recent file in each listed directory <dir0>, <dir1>, etc.
+It then determines the most recently modified file over all of the
+directories and prints and returns in the variables `<mostRecentTimestamp>`,
+`<mostRecentFilepathBaseDir>`, and `<mostRecentRelativeFilePath>`.
+
+TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+Find the most modified source file in a set of base directories and return
+its timestamp.
+
+Usage::
+
+  TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP(
+    SOURCE_BASE_DIRS <dir0> <dir1> ... 
+    [SHOW_MOST_RECENT_FILES]
+    [SHOW_OVERALL_MOST_RECENT_FILE]
+    [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]
+    [MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>]
+    [MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>]
+    )
+
+This function just calls `TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()`_
+passing in a set of basic exclude regexes like ``[.]git/``, ``[.]svn/``,
+etc.  These types of version control files can not possibly directly impact
+the source code.
+
 TRIBITS_INCLUDE_DIRECTORIES()
 +++++++++++++++++++++++++++++
 
