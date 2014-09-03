@@ -233,14 +233,16 @@ public:
 
              On return, \f$\mathsf{pv} = P(x)v\f$, where
              \f$v \in \mathcal{C}\f$, \f$\mathsf{pv} \in \mathcal{C}\f$. \n\n
-             The default implementation is a null-op.
+             The default implementation is the identity operator.
 
              ---
   */
   virtual void applyPreconditioner(Vector<Real> &pv,
                                    const Vector<Real> &v,
                                    const Vector<Real> &x,
-                                   Real &tol) {}
+                                   Real &tol) {
+    pv.set(v);
+  }
 
 
   EqualityConstraint(void) : activated_(true) {}

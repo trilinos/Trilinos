@@ -165,14 +165,16 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   // Initialization.
   Real zero = 0.0;
   Real one  = 1.0;
-  int m = 50;
+  int m = 10;
   Real zerotol = zero;
-  int iter = 0;
-  int flag = 0;
+  //int iter = 0;
+  //int flag = 0;
   int i = 0;
   int k = 0;
   Real temp = zero;
   Real resnrm = zero;
+
+  tol = 1e-10;
 
   Teuchos::RCP<Vector<Real> > r1 = v1.clone();
   Teuchos::RCP<Vector<Real> > r2 = v2.clone();
@@ -192,7 +194,7 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   Teuchos::SerialDenseVector<int, Real> cs(m);
   Teuchos::SerialDenseVector<int, Real> sn(m);
   Teuchos::SerialDenseVector<int, Real> s(m+1);
-  Teuchos::SerialDenseVector<int, Real> y(m);
+  Teuchos::SerialDenseVector<int, Real> y(m+1);
   Teuchos::SerialDenseVector<int, Real> cnorm(m);
   Teuchos::LAPACK<int, Real> lapack;
 
@@ -205,8 +207,8 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
 
   // Check if residual is identically zero.
   if (res[0] == zero) {
-    iter = 0;
-    flag = 0;
+    //iter = 0;
+    //flag = 0;
     return;
   }
 
@@ -231,27 +233,27 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   for (i=0; i<m; i++) {
 
     w1->set(*(V1[i]));
-    applyAdjointJacobian(*w1temp, *(V2[i]), x, zerotol);
     applyJacobian(*w2temp, *w1, x, zerotol);
-    w1->plus(*w1temp);
     applyPreconditioner(*w2, *w2temp, x, zerotol);
+    applyAdjointJacobian(*w1temp, *(V2[i]), x, zerotol);
+    w1->plus(*w1temp);
     
     // Evaluate coefficients and orthogonalize using Gram-Schmidt.
-    for (k=0; k<i+1; k++) {
+    for (k=0; k<=i; k++) {
       H(k,i) = w1->dot(*(V1[k])) + w2->dot(*(V2[k]));
       w1->axpy(-H(k,i), *(V1[k]));
       w2->axpy(-H(k,i), *(V2[k]));
-    } // for (int k=0; k<i; k++)
+    }
     H(i+1,i) = std::sqrt(w1->dot(*w1) + w2->dot(*w2));
     V1.push_back(w1->clone()); (V1[i+1])->set(*w1); (V1[i+1])->scale(one/H(i+1,i));
     V2.push_back(w2->clone()); (V2[i+1])->set(*w2); (V2[i+1])->scale(one/H(i+1,i));
 
     // Apply Givens rotations.
-    for (k=0; k<i; k++) {
+    for (k=0; k<=i-1; k++) {
       temp     = cs(k)*H(k,i) + sn(k)*H(k+1,i);
       H(k+1,i) = -sn(k)*H(k,i) + cs(k)*H(k+1,i);
       H(k,i)   = temp;
-    } // for (int k=0; k<i-1; k++)
+    }
 
     // Form i-th rotation matrix.
     if ( H(i+1,i) == zero ) {
@@ -286,10 +288,10 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
     Real scaling = zero;
     int info = 0;
     y = s;
-    lapack.LATRS(uplo, trans, diag, normin, i, H.values(), m, y.values(), &scaling, cnorm.values(), &info);
+    lapack.LATRS(uplo, trans, diag, normin, i+1, H.values(), m+1, y.values(), &scaling, cnorm.values(), &info);
     z1->zero();
     z2->zero();
-    for (k=0; k<i; k++) {
+    for (k=0; k<=i; k++) {
       z1->axpy(y(k), *(V1[k]));
       z2->axpy(y(k), *(V2[k]));
     }
@@ -306,9 +308,6 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
     // Evaluate special stopping condition.
     tol = tol;
 
-std::cout << "resnrm = " << resnrm << "\n";
-std::cout << "tol = " << tol << "\n";
-
     if (resnrm <= tol) {
       // Update solution vector.
       v1.plus(*z1);
@@ -318,7 +317,8 @@ std::cout << "tol = " << tol << "\n";
 
   } // for (int i=0; i++; i<m)
 
-  for (int j=0; j<m; j++) {
+  res.resize(i+2);
+  for (unsigned j=0; j<res.size(); j++) {
     std::cout << "res(" << j << ")" << res[j] << "\n";
   }
 
