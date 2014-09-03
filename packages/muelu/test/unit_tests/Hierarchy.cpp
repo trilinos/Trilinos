@@ -747,6 +747,23 @@ TEUCHOS_UNIT_TEST(Hierarchy, Write)
   TEST_EQUALITY(norms[0]<1e-15, true);
 }
 
+
+TEUCHOS_UNIT_TEST(Hierarchy, BlockCrs)
+{
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  Teuchos::ParameterList matrixList;
+  matrixList.set("nx", 100);
+  matrixList.set("ny", 100);
+  matrixList.set("matrixType","Laplace2D");
+  RCP<Matrix> A= TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::BuildBlockMatrix(matrixList);
+  //  if(A.is_null()) TEST_EQUALITY(TestHelpers::Parameters::getLib(),Xpetra::UseEpetra); // Don't run test for Epetra
+
+  // CMS: Do actual testing
+  TEST_EQUALITY(0,0);
+}
+
+
+
 }//namespace MueLuTests
 
 //Note from JG:
