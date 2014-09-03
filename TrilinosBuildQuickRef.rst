@@ -1155,6 +1155,7 @@ NOTES:
 * To set or override the test timeout limit at runtime, see `Overridding test
   timeouts`_.
 
+.. _Trilinos_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT:
 
 Scaling test timeouts at configure time
 ---------------------------------------
@@ -1672,13 +1673,31 @@ configure time by setting, for example::
 The default location for the installation of libraries, headers, and
 executables is given by the variables (with defaults)::
 
-  -D Trilinos_INSTALL_INCLUDE_DIR:PATH="include" \
-  -D Trilinos_INSTALL_LIB_DIR:PATH="lib" \
-  -D Trilinos_INSTALL_RUNTIME_DIR:PATH="bin"
+  -D Trilinos_INSTALL_INCLUDE_DIR:STRING="include" \
+  -D Trilinos_INSTALL_LIB_DIR:STRING="lib" \
+  -D Trilinos_INSTALL_RUNTIME_DIR:STRING="bin" \
+  -D Trilinos_INSTALL_EXAMPLE_DIR:STRING="example"
 
-If these paths are relative (i.e. don't start with "/") then they are relative
-to ``${CMAKE_INSTALL_PREFIX}``.  Otherwise the paths can be absolute and don't
-have to be under ``${CMAKE_INSTALL_PREFIX}``.
+If these paths are relative (i.e. don't start with "/" and use type
+``STRING``) then they are relative to ``${CMAKE_INSTALL_PREFIX}``.  Otherwise
+the paths can be absolute (use type ``PATH``) and don't have to be under
+``${CMAKE_INSTALL_PREFIX}``.  For example, to install each part in any
+abritrary location use::
+
+  -D Trilinos_INSTALL_INCLUDE_DIR:PATH="/usr/trilinos_include" \
+  -D Trilinos_INSTALL_LIB_DIR:PATH="/usr/trilinos_lib" \
+  -D Trilinos_INSTALL_RUNTIME_DIR:PATH="/usr/trilinos_bin" \
+  -D Trilinos_INSTALL_EXAMPLE_DIR:PATH="/usr/share/trilinos/examples"
+
+NOTE: The defaults for the above include paths will be set by the standard
+CMake module ``GNUInstallDirs`` if ``Trilinos_USE_GNUINSTALLDIRS=TRUE`` is
+set.  Some projects have this set by default (see the ``CMakeCache.txt`` after
+configuring to see default being used by this project).
+
+WARNING: To overwrite default relative paths, you must use the data type
+``STRING`` for the cache variables.  If you don't, then CMake will use the
+current binary directory for the base path.  Otherwise, if you want to specify
+absolute paths, use the data type ``PATH`` as shown above.
 
 
 Avoiding installing libraries and headers
