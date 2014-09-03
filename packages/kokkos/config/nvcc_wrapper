@@ -1,16 +1,28 @@
-#! /bin/env bash
+#!/bin/bash
 
+#Default settings: change those according to your machine
+#For example have two different wrappers with icpc and g++  as backend
+default_arch="sm_35"
+#default_compiler="/usr/local/gcc/4.8.3/bin/g++"
+default_compiler="g++"
+
+#Internal variables
 cpp_files=""
 xcompiler_args=""
 cuda_arg=""
 xlinker_args=""
+object_files=""
+object_files_xlinker=""
 first_host_option=1
+arch_set=0
+ccbin_set=0
 nvcc_error_code=0
 dry_run=0
 
-while [[ $@ > 1 ]]
-do
+#echo "Arguments: $# $@"
 
+while [ $# -gt 0 ]
+do
   case $1 in
   --show)
     dry_run=1
@@ -20,16 +32,39 @@ do
     cpp_files="$cpp_files $1"
     ;;
   #Handle known nvcc args
-  -O*|-D*|-arch*|-gencode*|-c|-I*|-L*|-l*|-g|--help|--version|--dryrun|--verbose|*.o|*.a|*.so)
+  -O*|-D*|-arch*|-gencode*|-c|-I*|-L*|-l*|-g|--help|--version|--dryrun|--verbose|--std=c++11)
     cuda_args="$cuda_args $1"
     ;;
   #Handle known nvcc args that have an argument
-  -o|-rdc,-ccbin)
+  -o|-rdc)
     cuda_args="$cuda_args $1 $2"
     shift
     ;;
   #strip of pedantic because it produces endless warnings about #LINE added by the preprocessor
   -pedantic)
+    ;;
+  #strip of "-x cu" because we add that
+  -x)
+    if [[ $2 != "cu" ]]; then
+      xcompiler_args="$xcompiler_args,-x,$2"
+    fi
+    shift
+    ;;
+  #Handle -ccbin (if its not set we can set it to a default value)
+  -ccbin)
+    cuda_args="$cuda_args $1 $2"
+    ccbin_set=1
+    shift
+    ;;
+  #Handle -arch argument (if its not set use a default
+  -arch*)
+    cuda_args="$cuda_args $1"
+    arch_set=1
+    ;;
+  #Handle object files: -x cu applies to all input files, so give them to linker, except if only linking
+  *.o|*.a|*.so)
+    object_files="$object_files $1"
+    object_files_xlinker="$object_files_xlinker -Xlinker $1"
     ;;
   #Handle args that should be sent to the linker
   -Wl*)
@@ -37,7 +72,7 @@ do
     ;;
   #All other args are sent to the host compiler
   *)
-    if [[ $first_host_option == 0 ]]; then 
+    if [ $first_host_option -eq 0 ]; then 
       xcompiler_args="$xcompiler_args,$1"
     else
       xcompiler_args="-Xcompiler $1"
@@ -47,21 +82,36 @@ do
   esac
 
   shift
-
 done
 
-command="nvcc $cuda_args $xlinker_args $xcompiler_args"
-
-if [[ "$cpp_files" ]]; then
-  command="$command -x cu $cpp_files"
+#Add default host compiler if necessary
+if [ $ccbin_set -ne 1 ]; then
+  cuda_args="$cuda_args -ccbin $default_compiler"
 fi
 
-if [[ $dry_run == 1 ]]; then
+#Add architecture command
+if [ $arch_set -ne 1 ]; then
+  cuda_args="$cuda_args -arch=$default_arch"
+fi
+
+#Compose compilation command
+command="nvcc $cuda_args $xlinker_args $xcompiler_args"
+
+if [ "$cpp_files" ]; then
+  command="$command $object_files_xlinker -x cu $cpp_files"
+else
+  command="$command $object_files"
+fi
+
+#Print command for dryrun
+if [ $dry_run -eq 1 ]; then
   echo $command
   exit 0
 fi
 
+#Run compilation command
 $command
 nvcc_error_code=$?
 
+#Report error code
 exit $nvcc_error_code
