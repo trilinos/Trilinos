@@ -83,7 +83,10 @@ namespace Xpetra {
   RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
 
 
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = MultiVector<>::scalar_type,
+            class LocalOrdinal = typename MultiVector<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class TpetraMultiVector
     : public virtual MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >
   {

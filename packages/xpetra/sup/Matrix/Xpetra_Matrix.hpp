@@ -50,7 +50,6 @@
 #define XPETRA_MATRIX_HPP
 
 #include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
@@ -90,23 +89,30 @@ namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
-  template <class Scalar,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+  template <class Scalar = MultiVector<>::scalar_type,
+            class LocalOrdinal = Map<>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename Map<LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename Map<LocalOrdinal, GlobalOrdinal>::node_type,
+            class LocalMatOps = void>
   class Matrix : virtual public Teuchos::Describable {
-
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
-    typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
+    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
+    typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> CrsGraph;
 #ifdef HAVE_XPETRA_TPETRA
-    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
+    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMatrix;
 #endif
-    typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
+    typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
     typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
   public:
+    typedef Scalar scalar_type;
+    typedef LocalOrdinal local_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
+    typedef Node node_type;
+    typedef LocalMatOps mat_solve_type; // for backwards compatibility ONLY
+    typedef LocalMatOps mat_vec_type; // for backwards compatibility ONLY
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -551,10 +557,10 @@ namespace Xpetra {
                                                     stridedBlockId
                                                     );
       RCP<const Map> stridedDomainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
-					      getDomainMap(),
-					      stridingInfo,
-					      stridedBlockId
-					      );
+                                              getDomainMap(),
+                                              stridingInfo,
+                                              stridedBlockId
+                                              );
 
       if(IsView("stridedMaps") == true) RemoveView("stridedMaps");
       CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);

@@ -62,38 +62,40 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class LocalOrdinal = CrsGraph<>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename CrsGraph<LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type,
+            class LocalMatOps =
+              typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
   class CrsGraphFactory {
-
   private:
     //! Private constructor. This is a static class.
     CrsGraphFactory() {}
 
   public:
-
     //! Constructor specifying the number of non-zeros for all rows.
-    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
     Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, ProfileType pftype=DynamicProfile) {
       XPETRA_MONITOR("CrsGraphFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
-        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> (map, NumVectors, pftype) );
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> (map, NumVectors, pftype) );
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
       XPETRA_FACTORY_END;
       return null;
     }
-
   };
 
   template <>
   class CrsGraphFactory<int, int> {
-
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef CrsGraph<int, int>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.

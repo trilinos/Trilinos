@@ -50,7 +50,6 @@
 #define XPETRA_CRSMATRIXWRAP_HPP
 
 #include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
@@ -77,13 +76,17 @@ namespace Xpetra {
   @class CrsMatrixWrap
   @brief Concrete implementation of Xpetra::Matrix.
 */
-template <class Scalar,
-          class LocalOrdinal  = int,
-          class GlobalOrdinal = LocalOrdinal,
-          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
-class CrsMatrixWrap : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
-
+template <class Scalar = Matrix<>::scalar_type,
+          class LocalOrdinal = typename Matrix<Scalar>::local_ordinal_type,
+          class GlobalOrdinal =
+            typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+          class Node =
+            typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
+          class LocalMatOps =
+            typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
+class CrsMatrixWrap :
+  public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+{
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
   typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Matrix;
@@ -95,30 +98,27 @@ class CrsMatrixWrap : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,Local
   typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
 public:
-
   //! @name Constructor/Destructor Methods
   //@{
 
   //! Constructor specifying fixed number of entries for each row.
-  CrsMatrixWrap(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
-    : finalDefaultView_(false)
+  CrsMatrixWrap (const RCP<const Map>& rowMap,
+                 size_t maxNumEntriesPerRow,
+                 Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
+    : finalDefaultView_ (false)
   {
-    // Set matrix data
-    matrixData_ = CrsMatrixFactory::Build(rowMap, maxNumEntriesPerRow, pftype);
-
-    // Default view
-    CreateDefaultView();
+    matrixData_ = CrsMatrixFactory::Build (rowMap, maxNumEntriesPerRow, pftype);
+    CreateDefaultView ();
   }
 
   //! Constructor specifying (possibly different) number of entries in each row.
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile)
-    : finalDefaultView_(false)
+  CrsMatrixWrap (const RCP<const Map>& rowMap,
+                 const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
+                 ProfileType pftype = Xpetra::DynamicProfile)
+    : finalDefaultView_ (false)
   {
-    // Set matrix data
     matrixData_ = CrsMatrixFactory::Build(rowMap, NumEntriesPerRowToAlloc, pftype);
-
-    // Default view
-    CreateDefaultView();
+    CreateDefaultView ();
   }
 
   //! Constructor specifying fixed number of entries for each row and column map

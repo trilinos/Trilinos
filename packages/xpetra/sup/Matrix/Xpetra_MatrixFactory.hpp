@@ -57,8 +57,14 @@
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
-
-  template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = Matrix<>::scalar_type,
+            class LocalOrdinal = typename Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
+            class LocalMatOps =
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
   class MatrixFactory {
 #undef XPETRA_MATRIXFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -137,7 +143,15 @@ namespace Xpetra {
   };
 #define XPETRA_MATRIXFACTORY_SHORT
 
-  template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
+
+  template <class Scalar = Matrix<>::scalar_type,
+            class LocalOrdinal = typename Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
+            class LocalMatOps =
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
   class MatrixFactory2 {
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -185,11 +199,11 @@ namespace Xpetra {
 
   template<>
   class MatrixFactory2<double,int,int> {
-    typedef double                                                             Scalar;
-    typedef int                                                                LocalOrdinal;
-    typedef int                                                                GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType                        Node;
-    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+    typedef double                              Scalar;
+    typedef int                                 LocalOrdinal;
+    typedef int                                 GlobalOrdinal;
+    typedef Matrix<double, int, int>::node_type Node;
+    typedef void                                LocalMatOps;
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
 

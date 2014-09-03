@@ -47,22 +47,24 @@
 #define XPETRA_VECTORFACTORY_HPP
 
 #include "Xpetra_ConfigDefs.hpp"
-
 #include "Xpetra_Vector.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
-#include "Xpetra_TpetraVector.hpp"
+#  include "Xpetra_TpetraVector.hpp"
 #endif
 #ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraVector.hpp"
-#include "Xpetra_EpetraIntVector.hpp"
+#  include "Xpetra_EpetraVector.hpp"
+#  include "Xpetra_EpetraIntVector.hpp"
 #endif
 
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
 
-  template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = Vector<>::scalar_type,
+            class LocalOrdinal = typename Vector<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Vector<Scalar, LocalOrdinal>::local_ordinal_type,
+            class Node = typename Vector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class VectorFactory {
     typedef void LocalMatOps;
 #undef XPETRA_VECTORFACTORY_SHORT
@@ -93,11 +95,11 @@ namespace Xpetra {
   template <>
   class VectorFactory<double, int, int> {
 
-    typedef double                                      Scalar;
-    typedef int                                         LocalOrdinal;
-    typedef int                                         GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-    typedef void                                        LocalMatOps;
+    typedef double                              Scalar;
+    typedef int                                 LocalOrdinal;
+    typedef int                                 GlobalOrdinal;
+    typedef Vector<double, int, int>::node_type Node;
+    typedef void                                LocalMatOps;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -129,11 +131,11 @@ namespace Xpetra {
   template <>
   class VectorFactory<int, int, int> {
 
-    typedef int                                         Scalar;
-    typedef int                                         LocalOrdinal;
-    typedef int                                         GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-    typedef void                                        LocalMatOps;
+    typedef int                              Scalar;
+    typedef int                              LocalOrdinal;
+    typedef int                              GlobalOrdinal;
+    typedef Vector<int, int, int>::node_type Node;
+    typedef void                             LocalMatOps;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 

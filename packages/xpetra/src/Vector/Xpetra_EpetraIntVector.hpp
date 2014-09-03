@@ -62,11 +62,10 @@ namespace Xpetra {
   class EpetraIntVector
     : public Vector<int,int,int>
   {
-
     typedef int Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef Vector<int, int, int>::node_type Node;
 
   public:
 
@@ -74,7 +73,7 @@ namespace Xpetra {
     //@{
 
     //! Sets all vector entries to zero.
-    explicit EpetraIntVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut=true)
+    explicit EpetraIntVector(const Teuchos::RCP<const Map<int, int> > &map, bool zeroOut=true)
     {
       XPETRA_RCP_DYNAMIC_CAST(const EpetraMap, map, eMap, "Xpetra::EpetraCrsMatrix constructors only accept Xpetra::EpetraMap as input arguments.");
       vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
@@ -89,7 +88,7 @@ namespace Xpetra {
     //@{
 
     //! TODO missing comment
-    int dot(const Vector<int,int,int> &a) const;
+    int dot (const Vector<int,int,int> &a) const;
 
     //! Return 1-norm of this Vector.
     Teuchos::ScalarTraits<int>::magnitudeType norm1() const;
@@ -142,10 +141,10 @@ namespace Xpetra {
     //@{
 
     //! Return a Vector which is a const view of column j.
-    Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVector(size_t j) const;
+    Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal > > getVector(size_t j) const;
 
     //! Return a Vector which is a nonconst view of column j.
-    Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVectorNonConst(size_t j);
+    Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal > > getVectorNonConst(size_t j);
 
     //! Const Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
@@ -160,13 +159,13 @@ namespace Xpetra {
     //! @name Mathematical methods
     //@{
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-    void dot(const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A, const Teuchos::ArrayView<int> &dots) const;
+    void dot(const MultiVector<int,int,int,Node> &A, const Teuchos::ArrayView<int> &dots) const;
 
     //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
-    void abs(const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A);
+    void abs(const MultiVector<int,int,int,Node> &A);
 
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    void reciprocal(const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A);
+    void reciprocal(const MultiVector<int,int,int,Node> &A);
 
     //! Scale the current values of a multi-vector, this = alpha*this.
     void scale(const int &alpha);
@@ -175,10 +174,10 @@ namespace Xpetra {
     void scale (Teuchos::ArrayView< const int > alpha);
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-    void update(const int &alpha, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A, const int &beta);
+    void update(const int &alpha, const MultiVector<int,int,int,Node> &A, const int &beta);
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    void update(const int &alpha, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A, const int &beta, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &B, const int &gamma);
+    void update(const int &alpha, const MultiVector<int,int,int,Node> &A, const int &beta, const MultiVector<int,int,int,Node> &B, const int &gamma);
 
     //! Compute 1-norm of each vector in multi-vector.
     void norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const;
@@ -190,7 +189,7 @@ namespace Xpetra {
     void normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const;
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    void normWeighted(const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const;
+    void normWeighted(const MultiVector<int,int,int,Node> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const;
 
     //! Compute mean (average) value of each vector in multi-vector.
     void meanValue(const Teuchos::ArrayView<int> &means) const;
@@ -199,10 +198,10 @@ namespace Xpetra {
     void maxValue(const Teuchos::ArrayView<int> &maxs) const;
 
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &B, const int &beta);
+    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,int,Node> &A, const MultiVector<int,int,int,Node> &B, const int &beta);
 
     //! Element-wise multiply of a Vector A with a EpetraMultiVector B.
-    void elementWiseMultiply(int scalarAB, const Vector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &B, int scalarThis);
+    void elementWiseMultiply(int scalarAB, const Vector<int,int,int,Node> &A, const MultiVector<int,int,int,Node> &B, int scalarThis);
     //@}
 
     //! @name Post-construction modification routines
@@ -254,20 +253,28 @@ namespace Xpetra {
     }
 
     // Implementing DistObject
-    Teuchos::RCP<const Map<int,int> > getMap() const {
+    Teuchos::RCP<const Map<int, int> > getMap () const {
       RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(vec_->Map()));
-      return rcp ( new Xpetra::EpetraMap(map) );
+      return rcp (new Xpetra::EpetraMap (map));
     }
 
-    void doImport(const DistObject<int, int, int> &source, const Import<int, int> &importer, CombineMode CM);
+    void
+    doImport (const DistObject<int, int, int> &source,
+              const Import<int, int> &importer, CombineMode CM);
 
-    void doExport(const DistObject<int, int, int> &dest, const Import<int, int>& importer, CombineMode CM);
+    void
+    doExport (const DistObject<int, int, int> &dest,
+              const Import<int, int>& importer, CombineMode CM);
 
-    void doImport(const DistObject<int, int, int> &source, const Export<int, int>& exporter, CombineMode CM);
+    void
+    doImport (const DistObject<int, int, int> &source,
+              const Export<int, int>& exporter, CombineMode CM);
 
-    void doExport(const DistObject<int, int, int> &dest, const Export<int, int>& exporter, CombineMode CM);
+    void
+    doExport (const DistObject<int, int, int> &dest,
+              const Export<int, int>& exporter, CombineMode CM);
 
-    void replaceMap(const RCP<const Map<int,int> >& map) {
+    void replaceMap(const RCP<const Map<int, int> >& map) {
       // do nothing
     }
 
@@ -275,7 +282,7 @@ namespace Xpetra {
     /// \brief Implementation of the assignment operator (operator=);
     ///   does a deep copy.
     virtual void
-    assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
+    assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>& rhs);
 
   private:
     //! The Epetra_IntVector which this class wraps.

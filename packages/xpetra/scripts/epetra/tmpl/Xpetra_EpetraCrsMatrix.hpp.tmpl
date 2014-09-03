@@ -24,8 +24,8 @@ namespace Xpetra {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-    typedef KokkosClassic::DefaultKernels<void,int,Node>::SparseOps LocalMatOps;
+    typedef CrsMatrix<double, int, int>::node_type Node;
+    typedef void LocalMatOps;
 
   public:
 

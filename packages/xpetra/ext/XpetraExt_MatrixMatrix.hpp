@@ -478,7 +478,7 @@ void Jacobi(
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B";
     throw(Xpetra::Exceptions::RuntimeError(msg));
   }
-  
+
   if (!A.isFillComplete())
     throw(Xpetra::Exceptions::RuntimeError("A is not fill-completed"));
   if (!B.isFillComplete())
@@ -498,13 +498,13 @@ void Jacobi(
     const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
-    
+
     Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
     }
-  
+
   if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
       RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
       params->set("Optimize Storage",doOptimizeStorage);
@@ -519,20 +519,20 @@ void Jacobi(
 
 
 template <>
-inline void Jacobi<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>(
+inline void
+Jacobi<double, int, int> (
   double omega,
-  const Xpetra::Vector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & Dinv,
-  const Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & A,
-  const Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & B,
-  Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> &C,
+  const Xpetra::Vector<double,int,int> & Dinv,
+  const Xpetra::Matrix<double,int,int> & A,
+  const Xpetra::Matrix<double,int,int> & B,
+  Xpetra::Matrix<double,int,int>& C,
   bool call_FillComplete_on_result,
   bool doOptimizeStorage) {
 
   typedef double Scalar;
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-  typedef KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps LocalMatOps;
+  typedef Xpetra::Vector<double, int, int>::node_type Node;
 
   if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
@@ -542,7 +542,7 @@ inline void Jacobi<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType,Ko
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B";
     throw(Xpetra::Exceptions::RuntimeError(msg));
   }
-  
+
   if (!A.isFillComplete())
     throw(Xpetra::Exceptions::RuntimeError("A is not fill-completed"));
   if (!B.isFillComplete())
@@ -557,7 +557,7 @@ inline void Jacobi<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType,Ko
     Epetra_CrsMatrix & epA = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
     Epetra_CrsMatrix & epB = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(B);
     Epetra_CrsMatrix & epC = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(C);
-    //    const Epetra_Vector & epD = toEpetra(Dinv);  
+    //    const Epetra_Vector & epD = toEpetra(Dinv);
     XPETRA_DYNAMIC_CAST(const EpetraVector, Dinv, epD, "Xpetra::MatrixMatrix::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
 
@@ -571,17 +571,17 @@ inline void Jacobi<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType,Ko
 #endif
     } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpA = Xpetra::MatrixMatrix::Op2TpetraCrs(A);
-    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
-    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
+    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpA = Xpetra::MatrixMatrix::Op2TpetraCrs(A);
+    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
+    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
-    
+
     Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
     }
-  
+
   if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
       RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
       params->set("Optimize Storage",doOptimizeStorage);
@@ -589,8 +589,8 @@ inline void Jacobi<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType,Ko
     }
 
     // transfer striding information
-    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(Teuchos::rcpFromRef(A));
-    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(Teuchos::rcpFromRef(B));
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Teuchos::rcpFromRef(A));
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Teuchos::rcpFromRef(B));
     C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
 } // end Jacobi
 

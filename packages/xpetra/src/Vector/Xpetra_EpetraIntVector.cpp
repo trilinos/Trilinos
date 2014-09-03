@@ -191,9 +191,6 @@ namespace Xpetra {
   void EpetraIntVector::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     XPETRA_MONITOR("EpetraIntVector::describe");
 
-    //   typedef KokkosClassic::MultiVector<double> KMV;
-    //   typedef KokkosClassic::DefaultArithmetic<KMV> MVT;
-
     // This implementation come from Tpetra_Vector_def.hpp (without modification) // JG: true?
     using std::endl;
     using std::setw;

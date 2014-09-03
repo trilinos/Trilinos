@@ -53,16 +53,19 @@
 #endif
 
 #include "Xpetra_VbrMatrix.hpp"
-
 #include <Tpetra_VbrMatrix.hpp>
 
 namespace Xpetra {
 
-  template <class Scalar,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
+  template <class Scalar = VbrMatrix<>::scalar_type,
+            class LocalOrdinal =
+              typename VbrMatrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename VbrMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
+            class LocalMatOps =
+              typename VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::block_sparse_ops_type>
   class TpetraVbrMatrix :
     public VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalOrdinal> {
   public:
@@ -70,7 +73,7 @@ namespace Xpetra {
     //! @name Constructor/Destructor Methods
     //@{
 
-    TpetraVbrMatrix(const Teuchos::RCP<const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) {  } //TODO
+    TpetraVbrMatrix(const Teuchos::RCP<const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) : mtx_(mtx) {  } //TODO
 
     //! Destructor
     virtual ~TpetraVbrMatrix();
@@ -341,11 +344,11 @@ namespace Xpetra {
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {  mtx_->describable(); }
     //@}
 
-    RCP< const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_VbrMatrix() const {  return mtx_; }
+    RCP< const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_VbrMatrix() const {  return mtx_; }
 
   private:
 
-    const RCP< const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
+    const RCP< const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > mtx_;
 
   };//class VbrMatrix
 

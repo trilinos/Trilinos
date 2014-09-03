@@ -62,16 +62,18 @@
 namespace Xpetra {
 
   // TODO: move that elsewhere
-  RCP< const CrsGraph<int, int> > toXpetra(const Epetra_CrsGraph& graph);
-  const Epetra_CrsGraph & toEpetra(const RCP< const CrsGraph<int, int> > &graph);
+  RCP< const CrsGraph<int, int> >
+  toXpetra (const Epetra_CrsGraph& graph);
+
+  const Epetra_CrsGraph&
+  toEpetra (const RCP<const CrsGraph<int, int> > &graph);
 
   class EpetraCrsGraph
     : public CrsGraph<int, int>
   {
-
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type Node;
     //! The specialization of Map used by this class.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
@@ -126,7 +128,10 @@ namespace Xpetra {
     //@{
 
     //! Returns the communicator.
-    RCP< const Comm< int > >  getComm() const { XPETRA_MONITOR("EpetraCrsGraph::getComm"); return toXpetra(graph_->Comm()); }
+    RCP< const Comm< int > >  getComm() const {
+      XPETRA_MONITOR("EpetraCrsGraph::getComm");
+      return toXpetra (graph_->Comm ());
+    }
 
     //! Returns the Map that describes the row distribution in this graph.
     RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("EpetraCrsGraph::getRowMap"); return toXpetra(graph_->RowMap()); }

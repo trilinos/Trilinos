@@ -65,9 +65,20 @@
 
 namespace Xpetra {
 
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = MultiVector<>::scalar_type,
+            class LocalOrdinal = Map<>::local_ordinal_type,
+            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
+            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
   class MapExtractor : public Teuchos::Describable {
+  public:
+    typedef Scalar scalar_type;
+    typedef LocalOrdinal local_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
+    typedef Node node_type;
+
+  private:
     typedef void LocalMatOps;
+
 #undef XPETRA_MAPEXTRACTOR_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
