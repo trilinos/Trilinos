@@ -11,6 +11,7 @@ ADD_SUBDIRECTORIES(
   IHSS-SORa
   IlukGraph
   OverlappingRowMatrix
+  Performance
   PreconditionerFactory
   Relaxation
   SetParameters

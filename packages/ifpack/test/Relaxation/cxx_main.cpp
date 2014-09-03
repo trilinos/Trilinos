@@ -289,7 +289,7 @@ int CompareLineSmoother(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, Teuchos
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
   AztecOOSolver.SetPrecOperator(&Prec);
 
-  AztecOOSolver.Iterate(1550,1e-5);
+  AztecOOSolver.Iterate(2550,1e-5);
 
   return(AztecOOSolver.NumIters());
 }
@@ -329,7 +329,7 @@ int AllSingle(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, Teuchos::RCP<Epet
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
   AztecOOSolver.SetPrecOperator(&Prec);
 
-  AztecOOSolver.Iterate(1550,1e-5);
+  AztecOOSolver.Iterate(2550,1e-5);
 
   printf(" AllSingle  iters %d \n",AztecOOSolver.NumIters());
   return(AztecOOSolver.NumIters());
@@ -368,7 +368,7 @@ int CompareBlockOverlap(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int Ove
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
   AztecOOSolver.SetPrecOperator(&Prec);
 
-  AztecOOSolver.Iterate(1550,1e-5);
+  AztecOOSolver.Iterate(2550,1e-5);
 
   return(AztecOOSolver.NumIters());
 }
@@ -405,7 +405,7 @@ int CompareBlockSizes(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatr
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
   AztecOOSolver.SetPrecOperator(&Prec);
 
-  AztecOOSolver.Iterate(1550,1e-5);
+  AztecOOSolver.Iterate(2550,1e-5);
 
   return(AztecOOSolver.NumIters());
 }
@@ -449,7 +449,7 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
       AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
 
-    AztecOOSolver.Iterate(1550,1e-2);
+    AztecOOSolver.Iterate(2550,1e-2);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     ItersPoint = AztecOOSolver.NumIters();
@@ -481,7 +481,7 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
       AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Block);
 
-    AztecOOSolver.Iterate(1550,1e-2);
+    AztecOOSolver.Iterate(2550,1e-2);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     ItersBlock = AztecOOSolver.NumIters();
@@ -557,7 +557,7 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
 
-    AztecOOSolver.Iterate(1550,1e-5);
+    AztecOOSolver.Iterate(2550,1e-5);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     // some output
@@ -566,7 +566,7 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
     }
     Iters1 = AztecOOSolver.NumIters();
   }
-
+ 
   // ======================================================== //
   // now re-run with 10 sweeps, solver should converge faster
   // ======================================================== //
@@ -582,7 +582,7 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
     AztecOOSolver.SetAztecOption(AZ_solver,Solver);
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
-    AztecOOSolver.Iterate(1550,1e-5);
+    AztecOOSolver.Iterate(2550,1e-5);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     // some output
@@ -622,7 +622,7 @@ bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A,
   // Set up the list
   Teuchos::ParameterList List;
   List.set("relaxation: damping factor", 1.0);
-  List.set("relaxation: sweeps",1550);
+  List.set("relaxation: sweeps",2550);
   List.set("relaxation: type", PrecType);
   if(backward) List.set("relaxation: backward mode",backward);
 
@@ -687,7 +687,7 @@ int main(int argc, char *argv[])
 
   // size of the global matrix. 
   Teuchos::ParameterList GaleriList;
-  int nx = 3000; 
+  int nx = 300; 
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx * Comm.NumProc());
   GaleriList.set("mx", 1);
