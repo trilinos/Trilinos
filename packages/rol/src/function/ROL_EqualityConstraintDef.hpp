@@ -165,24 +165,43 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   // Initialization.
   Real zero = 0.0;
   Real one  = 1.0;
-  int max_iter = 50;
+  int m = 50;
   Real zerotol = zero;
   int iter = 0;
   int flag = 0;
+  int i = 0;
+  int k = 0;
+  Real temp = zero;
+  Real resnrm = zero;
 
   Teuchos::RCP<Vector<Real> > r1 = v1.clone();
   Teuchos::RCP<Vector<Real> > r2 = v2.clone();
   Teuchos::RCP<Vector<Real> > r2temp = v2.clone();
-  std::vector<Real> res(max_iter, zero);
+  Teuchos::RCP<Vector<Real> > v1trial = v1.clone();
+  Teuchos::RCP<Vector<Real> > v2trial = v2.clone();
+  Teuchos::RCP<Vector<Real> > z1 = v1.clone();
+  Teuchos::RCP<Vector<Real> > z2 = v2.clone();
+  Teuchos::RCP<Vector<Real> > w1 = v1.clone();
+  Teuchos::RCP<Vector<Real> > w2 = v2.clone();
+  Teuchos::RCP<Vector<Real> > w1temp = v1.clone();
+  Teuchos::RCP<Vector<Real> > w2temp = v2.clone();
+  std::vector<Real> res(m+1, zero);
   std::vector<Teuchos::RCP<Vector<Real> > > V1;
   std::vector<Teuchos::RCP<Vector<Real> > > V2;
+  Teuchos::SerialDenseMatrix<int, Real> H(m+1,m);
+  Teuchos::SerialDenseVector<int, Real> cs(m);
+  Teuchos::SerialDenseVector<int, Real> sn(m);
+  Teuchos::SerialDenseVector<int, Real> s(m+1);
+  Teuchos::SerialDenseVector<int, Real> y(m);
+  Teuchos::SerialDenseVector<int, Real> cnorm(m);
+  Teuchos::LAPACK<int, Real> lapack;
 
   // Compute initial residual.
   applyAdjointJacobian(*r1, v2, x, zerotol);
   r1->scale(-one); r1->axpy(-one, v1); r1->plus(b1);
   applyJacobian(*r2, v1, x, zerotol);
   r2->scale(-one); r2->plus(b2);
-  res[0] = r1->norm() + r2->norm();
+  res[0] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
 
   // Check if residual is identically zero.
   if (res[0] == zero) {
@@ -195,8 +214,8 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   r2temp->set(*r2);
   applyPreconditioner(*r2, *r2temp, x, zerotol);
 
-  // Compute preconditioned residual.
-  res[0] = r1->norm() + r2->norm();
+  // Compute norm of preconditioned residual.
+  res[0] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
 
   // Evaluate special stopping condition and check convergence.
   tol = tol;
@@ -207,8 +226,101 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   V1.push_back(r1->clone()); (V1[0])->set(*r1); (V1[0])->scale(one/res[0]);
   V2.push_back(r2->clone()); (V2[0])->set(*r2); (V2[0])->scale(one/res[0]);
 
-  iter = flag;
-  flag = iter;
+  s(0) = res[0];
+
+  for (i=0; i<m; i++) {
+
+    w1->set(*(V1[i]));
+    applyAdjointJacobian(*w1temp, *(V2[i]), x, zerotol);
+    applyJacobian(*w2temp, *w1, x, zerotol);
+    w1->plus(*w1temp);
+    applyPreconditioner(*w2, *w2temp, x, zerotol);
+    
+    // Evaluate coefficients and orthogonalize using Gram-Schmidt.
+    for (k=0; k<i+1; k++) {
+      H(k,i) = w1->dot(*(V1[k])) + w2->dot(*(V2[k]));
+      w1->axpy(-H(k,i), *(V1[k]));
+      w2->axpy(-H(k,i), *(V2[k]));
+    } // for (int k=0; k<i; k++)
+    H(i+1,i) = std::sqrt(w1->dot(*w1) + w2->dot(*w2));
+    V1.push_back(w1->clone()); (V1[i+1])->set(*w1); (V1[i+1])->scale(one/H(i+1,i));
+    V2.push_back(w2->clone()); (V2[i+1])->set(*w2); (V2[i+1])->scale(one/H(i+1,i));
+
+    // Apply Givens rotations.
+    for (k=0; k<i; k++) {
+      temp     = cs(k)*H(k,i) + sn(k)*H(k+1,i);
+      H(k+1,i) = -sn(k)*H(k,i) + cs(k)*H(k+1,i);
+      H(k,i)   = temp;
+    } // for (int k=0; k<i-1; k++)
+
+    // Form i-th rotation matrix.
+    if ( H(i+1,i) == zero ) {
+      cs(i) = one;
+      sn(i) = zero;
+    }
+    else if ( std::abs(H(i+1,i)) > std::abs(H(i,i)) ) {
+      temp = H(i,i) / H(i+1,i);
+      sn(i) = one / std::sqrt( one + temp*temp );
+      cs(i) = temp * sn(i);
+    }
+    else {
+      temp = H(i+1,i) / H(i,i);
+      cs(i) = one / std::sqrt( one + temp*temp );
+      sn(i) = temp * cs(i);
+    }
+
+    // Approximate residual norm.
+    temp     = cs(i)*s(i);
+    s(i+1)   = -sn(i)*s(i);
+    s(i)     = temp;
+    H(i,i)   = cs(i)*H(i,i) + sn(i)*H(i+1,i);
+    H(i+1,i) = zero;
+    resnrm   = std::abs(s(i+1));
+    res[i+1] = resnrm;
+
+    // Update solution approximation.
+    const char uplo = 'U';
+    const char trans = 'N';
+    const char diag = 'N';
+    const char normin = 'N';
+    Real scaling = zero;
+    int info = 0;
+    y = s;
+    lapack.LATRS(uplo, trans, diag, normin, i, H.values(), m, y.values(), &scaling, cnorm.values(), &info);
+    z1->zero();
+    z2->zero();
+    for (k=0; k<i; k++) {
+      z1->axpy(y(k), *(V1[k]));
+      z2->axpy(y(k), *(V2[k]));
+    }
+
+    // Compute true residual.
+    v1trial->set(v1); v1trial->plus(*z1);
+    v2trial->set(v2); v2trial->plus(*z2);
+    applyAdjointJacobian(*r1, *v2trial, x, zerotol);
+    r1->scale(-one); r1->axpy(-one, *v1trial); r1->plus(b1);
+    applyJacobian(*r2, *v1trial, x, zerotol);
+    r2->scale(-one); r2->plus(b2);
+    resnrm = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
+
+    // Evaluate special stopping condition.
+    tol = tol;
+
+std::cout << "resnrm = " << resnrm << "\n";
+std::cout << "tol = " << tol << "\n";
+
+    if (resnrm <= tol) {
+      // Update solution vector.
+      v1.plus(*z1);
+      v2.plus(*z2);
+      break;
+    }
+
+  } // for (int i=0; i++; i<m)
+
+  for (int j=0; j<m; j++) {
+    std::cout << "res(" << j << ")" << res[j] << "\n";
+  }
 
 }
 

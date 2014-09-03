@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<std::vector<RealT> > v2_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
     ROL::StdVector<RealT> v1(v1_rcp);
     ROL::StdVector<RealT> v2(v2_rcp);
-    RealT augtol = 0.0;
+    RealT augtol = 1e-8;
     constr->solveAugmentedSystem(v1, v2, d, vc, xtest, augtol);
     
     // Define Status Test

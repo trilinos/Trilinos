@@ -92,9 +92,9 @@ public:
     return val;
   }
 
-  Real norm () const {
+  Real norm() const {
     Real val = 0;
-    val = sqrt( this->dot(*this) );
+    val = std::sqrt( this->dot(*this) );
     return val;
   }
 
