@@ -63,13 +63,13 @@ namespace Details {
   IFPACK2_INSTANTIATE_LG( IFPACK2_DETAILS_INST_OVERLAPPINGROWGRAPH )
 
   #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class OverlappingRowGraph<Tpetra::CrsGraph<int, int, KokkosClassic::ThrustGPUNode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::ThrustGPUNode>::SparseOps> >;
+  template class OverlappingRowGraph<Tpetra::CrsGraph<int, int, KokkosClassic::ThrustGPUNode> >;
   template class OverlappingRowGraph<Tpetra::RowGraph<int, int, KokkosClassic::ThrustGPUNode> >;
   #endif
 
   #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class OverlappingRowGraph<Tpetra::CrsGraph<int, int, KokkosClassic::TPINode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::TPINode>::SparseOps> >;
-   template class OverlappingRowGraph<Tpetra::RowGraph<int, int, KokkosClassic::TPINode> >;
+  template class OverlappingRowGraph<Tpetra::CrsGraph<int, int, KokkosClassic::TPINode> >;
+  template class OverlappingRowGraph<Tpetra::RowGraph<int, int, KokkosClassic::TPINode> >;
   #endif
 
 } // namespace Details

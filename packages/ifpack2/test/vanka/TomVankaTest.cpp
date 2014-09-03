@@ -135,34 +135,35 @@
 #include <iostream>
 
 
-int main(int argc, char *argv[]){
-  
-  
-  Teuchos::GlobalMPISession mpisess(&argc, &argv);
-  
+int
+main (int argc, char *argv[])
+{
+  Teuchos::GlobalMPISession mpisess (&argc, &argv);
+
   //Define communicator:
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  Tpetra::DefaultPlatform::DefaultPlatformType& platform =
+    Tpetra::DefaultPlatform::getDefaultPlatform ();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
 
   // Fancy ostream, just in case
-  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  out->setOutputToRootOnly(0);
+  Teuchos::RCP<Teuchos::FancyOStream> out =
+    Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
+  out->setOutputToRootOnly (0);
 
   // General stuff
-  typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
-  typedef double Scalar;
+  typedef Tpetra::Vector<>::scalar_type ST;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<LO>::global_ordinal_type GO;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-  typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
-  
+
   // Matrix stuff
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> MAP;
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CRS;
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> VEC;
-  
+  typedef Tpetra::Map<LO,GO,Node> MAP;
+  typedef Tpetra::CrsMatrix<ST,LO,GO,Node> CRS;
+  typedef Tpetra::Vector<ST,LO,GO,Node> VEC;
+
   // Ifpack2 stuff
-  typedef Ifpack2::Preconditioner< Scalar, LocalOrdinal, GlobalOrdinal, Node > PrecType;
-  typedef Ifpack2::DenseContainer< CRS, Scalar > ContainerType;
+  typedef Ifpack2::Preconditioner< ST, LO, GO, Node > PrecType;
+  typedef Ifpack2::DenseContainer< CRS, ST > ContainerType;
   typedef Ifpack2::BlockRelaxation< CRS, ContainerType > BlockRelax;
   typedef Ifpack2::AdditiveSchwarz< CRS > TheSchwarz;
 
@@ -200,15 +201,15 @@ int main(int argc, char *argv[]){
                                          numNodeRowsTotal,
                                          0,
                                          comm ) );
-                                         
+
 
   // Start building a CrsMatrix using this Map
-  ArrayView<const GlobalOrdinal> myGIDs = myMap->getNodeElementList();
-  
+  ArrayView<const GO> myGIDs = myMap->getNodeElementList();
+
   // Create a CrsMatrix using the map
   RCP< CRS > A = rcp(new CRS(myMap,4));
 
-  LocalOrdinal bLID;
+  LO bLID;
 
   // Add rows to "[F B^T]" first
   for (size_t row = 0; row < numNodeRowsF; ++row){
@@ -217,39 +218,39 @@ int main(int argc, char *argv[]){
       bLID = numNodeRowsF;
 
       A->insertGlobalValues(myGIDs[row],
-                            Teuchos::tuple<GlobalOrdinal>(myGIDs[row],myGIDs[row+1],myGIDs[bLID]),
-                            Teuchos::tuple<Scalar>(2.0,-1.0,1.0));
-      
+                            Teuchos::tuple<GO>(myGIDs[row],myGIDs[row+1],myGIDs[bLID]),
+                            Teuchos::tuple<ST>(2.0,-1.0,1.0));
+
     }
     else if ((size_t) row == numNodeRowsF - 1) { //right boundary
-      
+
       bLID = numNodeRowsTotal - 1;
 
       A->insertGlobalValues(myGIDs[row],
-                            Teuchos::tuple<GlobalOrdinal>(myGIDs[row-1],myGIDs[row],myGIDs[bLID]),
-                            Teuchos::tuple<Scalar>(-1.0,2.0,1.0));
+                            Teuchos::tuple<GO>(myGIDs[row-1],myGIDs[row],myGIDs[bLID]),
+                            Teuchos::tuple<ST>(-1.0,2.0,1.0));
     }
     else { //interior
 
       bLID = numNodeRowsF + ( row % numNodeRowsB );
-      
+
       A->insertGlobalValues(myGIDs[row],
-                            Teuchos::tuple<GlobalOrdinal>(myGIDs[row-1],myGIDs[row],myGIDs[row+1],myGIDs[bLID]),
-                            Teuchos::tuple<Scalar>(-1.0,2.0,-1.0,1.0));
+                            Teuchos::tuple<GO>(myGIDs[row-1],myGIDs[row],myGIDs[row+1],myGIDs[bLID]),
+                            Teuchos::tuple<ST>(-1.0,2.0,-1.0,1.0));
     }
   }
 
   // Now add rows to "[B 0]"
   for (size_t row = numNodeRowsF; row < numNodeRowsTotal; ++row){
     A->insertGlobalValues(myGIDs[row],
-                          Teuchos::tuple<GlobalOrdinal>(myGIDs[row-numNodeRowsF],myGIDs[row-numNodeRowsF+numNodeRowsB]),
-                          Teuchos::tuple<Scalar>(1.0,1.0));
+                          Teuchos::tuple<GO>(myGIDs[row-numNodeRowsF],myGIDs[row-numNodeRowsF+numNodeRowsB]),
+                          Teuchos::tuple<ST>(1.0,1.0));
   }
 
   // Complete the fill
   A->fillComplete();
 
-  
+
   //
   // At this point, the matrix should be ready to go. F is
   // tridiagonal, B has two entries per row. Thus, our Vanka blocks
@@ -289,22 +290,22 @@ int main(int argc, char *argv[]){
   // In this case, we want the seed rows to be the rows of B, and we
   // want only one seed row per Vanka block.
   //
-  ArrayRCP<LocalOrdinal> blockSeeds( numNodeRowsTotal,
-                                     Teuchos::OrdinalTraits<LocalOrdinal>::invalid() );
+  ArrayRCP<LO> blockSeeds( numNodeRowsTotal,
+                           Teuchos::OrdinalTraits<LO>::invalid() );
 
   for (size_t rowOfB = numNodeRowsF; rowOfB < numNodeRowsTotal; ++rowOfB ){
     blockSeeds[rowOfB] = rowOfB - numNodeRowsF; // This starts the partition indexing
                                                 // at 0. I don't know if that is required
                                                 // or not...
   }
-  
-  
+
+
   MyList.set("partitioner: map", blockSeeds);
 
 
   // Create the preconditioner
   RCP<TheSchwarz> prec = rcp(new TheSchwarz(A));
-  
+
   // Set the parameters
   prec->setParameters(MyList);
 
@@ -335,17 +336,17 @@ int main(int argc, char *argv[]){
   // Define RHS / Initial Guess
   VEC X( myMap , true );
   VEC B( myMap , false );
-  B.putScalar((Scalar) 2.0);  
-  
+  B.putScalar((ST) 2.0);
+
   //
   // This sets X = 0; B = 2;
   //
 
-  
+
   // Apply the preconditioner
   prec->apply(B,X);
 
-  Array<Scalar> Answer(numNodeRowsTotal);
+  Array<ST> Answer(numNodeRowsTotal);
   Answer[0] = 1.0;
   Answer[1] = 1.0;
   Answer[2] = 5.0 / 4;
@@ -357,7 +358,7 @@ int main(int argc, char *argv[]){
   Answer[8] = 3.0 / 2;
 
   // Get data out of X
-  Teuchos::ArrayRCP<const Scalar> ComputedSol = X.getData();
+  Teuchos::ArrayRCP<const ST> ComputedSol = X.getData();
   // I know the ArrayRCP is "bad" here, but there are only 9
   // entries... I think we'll all be ok.
 
@@ -368,11 +369,11 @@ int main(int argc, char *argv[]){
       return -1;
     }
   }
-  
+
 
   // Success!
   *out << "The test succeeded!\n";
   return 0;
-  
+
 
 }//int main
