@@ -1,16 +1,5 @@
-
-# -*- cmake -*-
-
-set(DOC_PACKAGE_NAME "stratimikos")
-
-  execute_process(
-    COMMAND "${CMAKE_COMMAND}" -E copy
-      "${Trilinos_SOURCE_DIR}/packages/${DOC_PACKAGE_NAME}/doc/build_docs"
-      "${Trilinos_BINARY_DIR}/packages/${DOC_PACKAGE_NAME}/doc"
-    COMMAND "${CMAKE_COMMAND}" -E copy
-      "${Trilinos_SOURCE_DIR}/packages/${DOC_PACKAGE_NAME}/doc/build_docs_guts.py"
-      "${Trilinos_BINARY_DIR}/packages/${DOC_PACKAGE_NAME}/doc"
-    )
-
-
-#add_subdirectory(parameterList)
+FILE( COPY ${Trilinos_SOURCE_DIR}/packages/stratimikos/doc/parameterList
+      DESTINATION ${Trilinos_BINARY_DIR}/packages/stratimikos/doc)
+#
+# Add the Parameter List documentation
+TRIBITS_ADD_TEST_DIRECTORIES(parameterList)

@@ -5,16 +5,16 @@
     <html>
       <head>
         <link rel="stylesheet" type="text/css"
- 	  href="../common/paramList/bootstrap/css/bootstrap.css" />
+ 	  href="common/parameterList/bootstrap/css/bootstrap.css" />
         <link rel="stylesheet" type="text/css"
-   	  href="../common/paramList/trilinos-bootstrap.css" />
+   	  href="common/parameterList/trilinos-bootstrap.css" />
 
         <script type="text/javascript"
-         src="../common/paramList/js/jquery.js"></script>
+         src="common/parameterList/js/jquery.js"></script>
         <script type="text/javascript"
-         src="../common/paramList/js/iframeResizer.contentWindow.min.js"></script>
+         src="common/parameterList/js/iframeResizer.contentWindow.min.js"></script>
         <script type="text/javascript"
-         src="../common/paramList/bootstrap/js/bootstrap.js"></script>
+         src="common/parameterList/bootstrap/js/bootstrap.js"></script>
         <script type="text/javascript">
    $('.accordion-toggle').click(function(){
            $("i", this).toggleClass("t-icon-arrow-right t-icon-arrow-down");

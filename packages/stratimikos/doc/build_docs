@@ -5,19 +5,18 @@
 
 rm -r ../browser/doc/html
 
-#rm -r html
-#rm -rf stratimikos
+rm -r html
 
 # Create new directories manually since the doxygen exe under windows
 # seems to be messing this up.
 
 mkdir ../browser/doc/html
 
+mkdir -p html/common
+cp -r ../../common/parameterList html/common
 
-# Files needed for collapsible parameter list (short term proof of concept)
-
-#mkdir html
 
 # Build the documentation
-./build_docs_guts.py
+./build_docs_guts
+
 
