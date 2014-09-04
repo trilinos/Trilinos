@@ -89,10 +89,10 @@ namespace Tpetra {
   /// different classes implement this interface, including sparse
   /// matrices, direct solvers, iterative solvers, and
   /// preconditioners.
-  template<class Scalar,
-           class LocalOrdinal = int,
-           class GlobalOrdinal = LocalOrdinal,
-           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class Scalar = MultiVector<>::scalar_type,
+           class LocalOrdinal = typename MultiVector<Scalar>::local_ordinal_type,
+           class GlobalOrdinal = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
+           class Node = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class Operator : virtual public Teuchos::Describable {
   public:
     /** \name Typedefs that give access to the template parameters. */

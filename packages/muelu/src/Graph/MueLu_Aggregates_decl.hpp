@@ -85,7 +85,7 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
   class Aggregates : public BaseClass {
 #undef MUELU_AGGREGATES_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
@@ -165,7 +165,7 @@ namespace MueLu {
     const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
     /*! @brief Compute sizes of aggregates
-      
+
       Returns the number of nodes in each aggregate in an array.
       If the aggregate sizes are not stored internally (which is the default), they are computed and returned.
       If the aggregate sizes have been stored internally, then they are *not* recomputed, but instead the

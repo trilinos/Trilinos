@@ -66,7 +66,11 @@ namespace MueLu {
     matrix to do the transpose.  This should probably be fixed at some point.
   */
 
-template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = double,
+            class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps = void>
   class TransPFactory : public TwoLevelFactoryBase {
 #undef MUELU_TRANSPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

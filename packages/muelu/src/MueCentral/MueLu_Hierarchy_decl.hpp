@@ -88,7 +88,11 @@ namespace MueLu {
     restrictors, and coarse level discretizations.  Additionally, this class contains
     an apply method that supports V and W cycles.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = Xpetra::Matrix<>::scalar_type,
+            class LocalOrdinal = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
+            class LocalMatOps = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
   class Hierarchy : public BaseClass {
 #undef MUELU_HIERARCHY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -289,9 +293,9 @@ namespace MueLu {
       return Teuchos::as<int>(Levels_.size());
     }
 
-    template<class Node2, class LocalMatOps2>
-    Teuchos::RCP< Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >
-    clone(const RCP<Node2> &node2) const;
+    template<class Node2>
+    Teuchos::RCP< Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    clone (const RCP<Node2> &node2) const;
 
     void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
@@ -339,12 +343,14 @@ namespace MueLu {
   }; //class Hierarchy
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template<typename Node2, typename LocalMatOps2>
-  Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >
-  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::clone(const Teuchos::RCP<Node2> &node2) const{
-    typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>           New_H_Type;
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>      CloneMatrix;
-    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CloneSmoother;
+  template<typename Node2>
+  Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  clone (const Teuchos::RCP<Node2> &node2) const
+  {
+    typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2>           New_H_Type;
+    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2>      CloneMatrix;
+    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2> CloneSmoother;
 
     Teuchos::RCP<New_H_Type> new_h = Teuchos::rcp(new New_H_Type());
     new_h->Levels_.resize(this->GetNumLevels());
@@ -380,12 +386,12 @@ namespace MueLu {
       }
       if (level->IsAvailable("PreSmoother")){
         Pre      = level->template Get<RCP<SmootherBase> >("PreSmoother");
-        clonePre = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps, Node2, LocalMatOps2>(Pre, cloneA, node2);
+        clonePre = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps, Node2> (Pre, cloneA, node2);
         clonelevel->template Set<RCP<CloneSmoother> >("PreSmoother", clonePre);
       }
       if (level->IsAvailable("PostSmoother")){
         Post      = level->template Get<RCP<SmootherBase> >("PostSmoother");
-        clonePost = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps, Node2, LocalMatOps2>(Post, cloneA, node2);
+        clonePost = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps, Node2> (Post, cloneA, node2);
         clonelevel-> template Set<RCP<CloneSmoother> >("PostSmoother", clonePost);
       }
       new_h->Levels_[i] = clonelevel;

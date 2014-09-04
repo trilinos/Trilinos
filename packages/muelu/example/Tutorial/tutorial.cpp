@@ -68,7 +68,6 @@ typedef double                                                              Scal
 typedef int                                                                 LocalOrdinal;
 typedef int                                                                 GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node;
-typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps  LocalMatOps;
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -94,12 +93,11 @@ typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps  Loca
 int main(int argc, char *argv[]) {
   // Most MueLu and Xpetra classes are templated on some or all of the
   // following template types: Scalar, LocalOrdinal, GlobalOrdinal,
-  // Node, and LocalMatOps. In order to make types more concise, MueLu
-  // has an option to let users refer to its classes by typedefs,
-  // which we call "short names."  Thus, instead of writing, for
-  // instance,
+  // and Node. In order to make types more concise, MueLu has an
+  // option to let users refer to its classes by typedefs, which we
+  // call "short names."  Thus, instead of writing, for instance,
   //
-  //   MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> H;
+  //   MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> H;
   //
   // one can simply write
   //

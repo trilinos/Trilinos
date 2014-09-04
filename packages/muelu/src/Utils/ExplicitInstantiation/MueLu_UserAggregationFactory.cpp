@@ -50,12 +50,12 @@
 #include "MueLu_UserAggregationFactory_def.hpp"
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-template class MueLu::UserAggregationFactory<int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+template class MueLu::UserAggregationFactory<int, int>;
 #endif
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
 # ifdef HAVE_TEUCHOS_LONG_LONG_INT
-template class MueLu::UserAggregationFactory<int, long long int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+template class MueLu::UserAggregationFactory<int, long long int>;
 # else
 # warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
 # endif

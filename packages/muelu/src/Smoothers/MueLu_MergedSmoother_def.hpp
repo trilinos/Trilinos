@@ -189,12 +189,18 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
+  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  Copy () const
+  {
     return rcp(new MergedSmoother(*this));
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayRCP<RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > > MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SmootherListDeepCopy(const ArrayRCP<const RCP<SmootherPrototype> >& srcSmootherList) {
+  ArrayRCP<RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >
+  MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  SmootherListDeepCopy (const ArrayRCP<const RCP<SmootherPrototype> >& srcSmootherList)
+  {
     ArrayRCP<RCP<SmootherPrototype> > newSmootherList(srcSmootherList.size());
 
     for (typename ArrayRCP<RCP<SmootherPrototype> >::size_type i = 0; i < srcSmootherList.size(); i++)

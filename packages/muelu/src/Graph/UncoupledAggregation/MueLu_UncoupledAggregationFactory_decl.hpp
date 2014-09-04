@@ -76,7 +76,10 @@
 
 namespace MueLu {
 
-template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+template <class LocalOrdinal = int,
+          class GlobalOrdinal = LocalOrdinal,
+          class Node = KokkosClassic::DefaultNode::DefaultNodeType,
+          class LocalMatOps = void>
 class UncoupledAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_UNCOUPLEDAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
@@ -155,7 +158,7 @@ public:
   //@{
 
   /*! @brief Append a new aggregation algorithm to list of aggregation algorithms */
-  //void Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & alg);
+  //void Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node> > & alg);
 
   /*! @brief Remove all aggregation algorithms from list */
   //void ClearAggregationAlgorithms() { algos_.clear(); }
@@ -165,7 +168,7 @@ private:
 
   //! aggregation algorithms
   // will be filled in Build routine
-  mutable std::vector<RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > > algos_;
+  mutable std::vector<RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node> > > algos_;
 
   //! boolean flag: definition phase
   //! if true, the aggregation algorithms still can be set and changed.

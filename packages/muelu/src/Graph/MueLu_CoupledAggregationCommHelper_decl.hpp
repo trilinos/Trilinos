@@ -65,7 +65,7 @@ namespace MueLu {
     For more details, see the comments for the ArbitrateAndCommunicate methods.
   */
 
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
   class CoupledAggregationCommHelper : public BaseClass {
 
     typedef double Scalar; // Scalar type only used for weight: always a double.

@@ -464,8 +464,8 @@ namespace MueLuTests {
   void SetBlockDependencyTree(FactoryManager& M, int row, int col, const std::string& mode) {
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef MueLu::Q2Q1PFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Q2Q1PFactory;
-    typedef MueLu::Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Q2Q1uPFactory;
+    typedef MueLu::Q2Q1PFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Q2Q1PFactory;
+    typedef MueLu::Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Q2Q1uPFactory;
 
     RCP<SubBlockAFactory> AFact = rcp(new SubBlockAFactory());
     AFact->SetFactory  ("A",         MueLu::NoFactory::getRCP());

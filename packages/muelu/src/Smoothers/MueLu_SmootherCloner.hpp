@@ -59,18 +59,23 @@
 
 namespace MueLu {
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node1, class LocalMatOps1, class Node2, class LocalMatOps2>
-Teuchos::RCP<SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >
-clone(const Teuchos::RCP<SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node1,LocalMatOps1> >& SB, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >& cloneA, const RCP<Node2>& node2) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node1, class Node2>
+Teuchos::RCP<SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
+clone (const Teuchos::RCP<SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node1> >& SB,
+       const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& cloneA,
+       const RCP<Node2>& node2)
+{
 #if defined(HAVE_MUELU_IFPACK2)
-  Teuchos::RCP<SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >  cloneSB;
-  Teuchos::RCP<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1, LocalMatOps1> > trilSmoother = Teuchos::rcp_dynamic_cast<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1, LocalMatOps1> >(SB);
+  Teuchos::RCP<SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  cloneSB;
+  Teuchos::RCP<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1> > trilSmoother =
+    Teuchos::rcp_dynamic_cast<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1> >(SB);
   if (trilSmoother != Teuchos::null){
-    cloneSB = trilSmoother->clone(node2, cloneA);
+    cloneSB = trilSmoother->clone (node2, cloneA);
     return cloneSB;
   }
 
-  Teuchos::RCP<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1, LocalMatOps1> > ifSmoother = Teuchos::rcp_dynamic_cast<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1, LocalMatOps1> >(SB);
+  Teuchos::RCP<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1> > ifSmoother =
+    Teuchos::rcp_dynamic_cast<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1> >(SB);
   if (ifSmoother != Teuchos::null){
     cloneSB = ifSmoother->clone(node2, cloneA);
     return cloneSB;

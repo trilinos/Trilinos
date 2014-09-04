@@ -28,7 +28,7 @@ done
 # Scalar
 #
 
-echo "// New definition of types using the types Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context." > MueLu_UseShortNamesScalar.hpp
+echo "// New definition of types using the types Scalar, LocalOrdinal, GlobalOrdinal, Node of the current context." > MueLu_UseShortNamesScalar.hpp
 echo >> MueLu_UseShortNamesScalar.hpp
 echo "#include <Xpetra_UseShortNamesScalar.hpp>" >> MueLu_UseShortNamesScalar.hpp
 echo >> MueLu_UseShortNamesScalar.hpp
@@ -45,6 +45,6 @@ done
 
 # Add Utils, Utils2 at the end of the file
 echo "#ifdef MUELU_UTILITIES_SHORT" >> MueLu_UseShortNamesScalar.hpp
-echo "typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;" >> MueLu_UseShortNamesScalar.hpp
-echo "typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;" >> MueLu_UseShortNamesScalar.hpp
+echo "typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;" >> MueLu_UseShortNamesScalar.hpp
+echo "typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2;" >> MueLu_UseShortNamesScalar.hpp
 echo "#endif" >> MueLu_UseShortNamesScalar.hpp

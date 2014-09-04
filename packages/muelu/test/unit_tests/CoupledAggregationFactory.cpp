@@ -58,9 +58,8 @@ namespace MueLuTests {
   //TODO: should go in the Aggregates class
   template <class LocalOrdinal,
             class GlobalOrdinal,
-            class Node,
-            class LocalMatOps>
-  void printAggregates(MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& aggregates, Teuchos::FancyOStream& out) {
+            class Node>
+  void printAggregates(MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node>& aggregates, Teuchos::FancyOStream& out) {
     RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates.GetVertex2AggId()->getMap() );
 
     ArrayRCP<LO> Final = Final_->getDataNonConst(0);
@@ -73,7 +72,7 @@ namespace MueLuTests {
     out << *Final_ << std::endl;
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(CoupledAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoupledAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal) {
 
@@ -83,7 +82,7 @@ namespace MueLuTests {
     }
   } // Constructor
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(CoupledAggregationFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoupledAggregationFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal) {
       //    typedef double Scalar;
@@ -153,13 +152,12 @@ namespace MueLuTests {
   typedef long long int LongLongInt;
 #endif
 
-#define UNIT_TEST_GROUP_5(SC, LO, GO, NO, LMO)                          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(CoupledAggregationFactory, Constructor, SC, LO, GO, NO, LMO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(CoupledAggregationFactory, Build,       SC, LO, GO, NO, LMO)
+#define UNIT_TEST_GROUP_4(SC, LO, GO, NO)                          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoupledAggregationFactory, Constructor, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoupledAggregationFactory, Build,       SC, LO, GO, NO)
 
 #define UNIT_TEST_GROUP_2(LO, GO)                                       \
-  typedef KokkosClassic::DefaultKernels<Scalar,LO,Node>::SparseOps LMO ## LO;  \
-  UNIT_TEST_GROUP_5(Scalar, LO, GO, Node, LMO ## LO)
+  UNIT_TEST_GROUP_4(Scalar, LO, GO, Node)
 
   UNIT_TEST_GROUP_2(int, int)
   UNIT_TEST_GROUP_2(int, LongInt)

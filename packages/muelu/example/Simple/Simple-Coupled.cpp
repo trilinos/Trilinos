@@ -77,35 +77,34 @@
 typedef std::complex<double>                                SC;
 typedef int                                                 LO;
 typedef int                                                 GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType         NO;
-typedef KokkosClassic::DefaultKernels<SC,LO,NO>::SparseOps  LMO;
+typedef Tpetra::Vector<SC, LO, GO>::node_type               NO;
 
 typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
 typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
-typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
+typedef Tpetra::CrsMatrix<SC,LO,GO,NO>           TCRS;
 typedef Xpetra::MultiVector<SC,LO,GO,NO>             XMV;
-typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS;
-typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
-typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
+typedef Xpetra::CrsMatrix<SC,LO,GO,NO>           XCRS;
+typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>     XTCRS;
+typedef Xpetra::Matrix<SC,LO,GO,NO>              XMAT;
+typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO>       XWRAP;
 typedef Xpetra::Map<LO,GO,NO>                        Map;
 typedef Xpetra::MapFactory<LO,GO,NO>                 MapFactory;
-typedef Xpetra::CrsMatrixFactory<SC,LO,GO,NO,LMO>    CrsMatrixFactory;
+typedef Xpetra::CrsMatrixFactory<SC,LO,GO,NO>    CrsMatrixFactory;
 typedef Xpetra::MultiVectorFactory<SC,LO,GO,NO>      MultiVectorFactory;
 
 
 typedef MueLu::Level                                 Level;
-typedef MueLu::Hierarchy<SC,LO,GO,NO,LMO>            Hierarchy;
+typedef MueLu::Hierarchy<SC,LO,GO,NO>            Hierarchy;
 typedef MueLu::FactoryManager<SC,LO,GO>              FactoryManager;
-typedef MueLu::TentativePFactory<SC,LO,GO,NO,LMO>    TPFactory;
-typedef MueLu::SaPFactory<SC,LO,GO,NO,LMO>           SaPFactory;
-typedef MueLu::GenericRFactory<SC,LO,GO,NO,LMO>      GRFactory;
-typedef MueLu::RAPShiftFactory<SC,LO,GO,NO,LMO>      RAPShiftFactory;
-typedef MueLu::CoupledRBMFactory<SC,LO,GO,NO,LMO>    RBMFactory;
-typedef MueLu::SmootherPrototype<SC,LO,GO,NO,LMO>    SmootherPrototype;
-typedef MueLu::Ifpack2Smoother<SC,LO,GO,NO,LMO>      Ifpack2Smoother;
-typedef MueLu::SmootherFactory<SC,LO,GO,NO,LMO>      SmootherFactory;
-typedef MueLu::DirectSolver<SC,LO,GO,NO,LMO>         DirectSolver;
+typedef MueLu::TentativePFactory<SC,LO,GO,NO>    TPFactory;
+typedef MueLu::SaPFactory<SC,LO,GO,NO>           SaPFactory;
+typedef MueLu::GenericRFactory<SC,LO,GO,NO>      GRFactory;
+typedef MueLu::RAPShiftFactory<SC,LO,GO,NO>      RAPShiftFactory;
+typedef MueLu::CoupledRBMFactory<SC,LO,GO,NO>    RBMFactory;
+typedef MueLu::SmootherPrototype<SC,LO,GO,NO>    SmootherPrototype;
+typedef MueLu::Ifpack2Smoother<SC,LO,GO,NO>      Ifpack2Smoother;
+typedef MueLu::SmootherFactory<SC,LO,GO,NO>      SmootherFactory;
+typedef MueLu::DirectSolver<SC,LO,GO,NO>         DirectSolver;
 
 typedef Belos::OperatorT<TMV>                        OP;
 typedef Belos::OperatorTraits<SC,TMV,OP>             OPT;
@@ -215,21 +214,21 @@ int main(int argc, char *argv[]) {
     else                               { current_column = current_column-nAcousticDOFs+nPaddedDOFs;  }
     if(map->isNodeGlobalElement(current_row)==true) {
       K->insertGlobalValues(current_row,
-			    Teuchos::tuple<GO> (current_column),
-			    Teuchos::tuple<SC> (cpx_current_value));
+                            Teuchos::tuple<GO> (current_column),
+                            Teuchos::tuple<SC> (cpx_current_value));
     }
   }
   // pad with identity
   for(int i = 0; i < nAcousticDOFs; i++) {
     if(map->isNodeGlobalElement(3*i+1)==true) {
       K->insertGlobalValues(3*i+1,
-			    Teuchos::tuple<GO> (3*i+1),
-			    Teuchos::tuple<SC> (one));
+                            Teuchos::tuple<GO> (3*i+1),
+                            Teuchos::tuple<SC> (one));
     }
     if(map->isNodeGlobalElement(3*i+2)==true) {
       K->insertGlobalValues(3*i+2,
-			    Teuchos::tuple<GO> (3*i+2),
-			    Teuchos::tuple<SC> (one));
+                            Teuchos::tuple<GO> (3*i+2),
+                            Teuchos::tuple<SC> (one));
     }
   }
   // damping matrix - lump into stiffness matrix
@@ -246,8 +245,8 @@ int main(int argc, char *argv[]) {
     else                               { current_column = current_column-nAcousticDOFs+nPaddedDOFs;  }
     if(map->isNodeGlobalElement(current_row)==true) {
       K->insertGlobalValues(current_row,
-			    Teuchos::tuple<GO> (current_column),
-			    Teuchos::tuple<SC> (ii*omega*cpx_current_value));
+                            Teuchos::tuple<GO> (current_column),
+                            Teuchos::tuple<SC> (ii*omega*cpx_current_value));
     }
   }
   // mass matrix
@@ -264,21 +263,21 @@ int main(int argc, char *argv[]) {
     else                               { current_column = current_column-nAcousticDOFs+nPaddedDOFs;  }
     if(map->isNodeGlobalElement(current_row)==true) {
       M->insertGlobalValues(current_row,
-			     Teuchos::tuple<GO> (current_column),
-			     Teuchos::tuple<SC> (cpx_current_value));
+                             Teuchos::tuple<GO> (current_column),
+                             Teuchos::tuple<SC> (cpx_current_value));
     }
   }
   // pad with identity
   for(int i = 0; i < nAcousticDOFs; i++) {
     if(map->isNodeGlobalElement(3*i+1)==true) {
       M->insertGlobalValues(3*i+1,
-			    Teuchos::tuple<GO> (3*i+1),
-			    Teuchos::tuple<SC> (one));
+                            Teuchos::tuple<GO> (3*i+1),
+                            Teuchos::tuple<SC> (one));
     }
     if(map->isNodeGlobalElement(3*i+2)==true) {
       M->insertGlobalValues(3*i+2,
-			    Teuchos::tuple<GO> (3*i+2),
-			    Teuchos::tuple<SC> (one));
+                            Teuchos::tuple<GO> (3*i+2),
+                            Teuchos::tuple<SC> (one));
     }
   }
   // Complete fill
@@ -295,8 +294,8 @@ int main(int argc, char *argv[]) {
   // combine to make Helmholtz and shifted Laplace operators
   RCP<XMAT> mueluA, mueluS;
   SC shift1(1.0,0.5);
-  MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(mueluK, false, (SC) 1.0, mueluM, false, -omega2, mueluA);
-  MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(mueluK, false, (SC) 1.0, mueluM, false, -shift1*omega2, mueluS);
+  MueLu::Utils2<SC,LO,GO,NO>::TwoMatrixAdd(mueluK, false, (SC) 1.0, mueluM, false, -omega2, mueluA);
+  MueLu::Utils2<SC,LO,GO,NO>::TwoMatrixAdd(mueluK, false, (SC) 1.0, mueluM, false, -shift1*omega2, mueluS);
   mueluA->fillComplete();
   mueluS->fillComplete();
   xmap=mueluA->getDomainMap();
@@ -309,28 +308,28 @@ int main(int argc, char *argv[]) {
   for(int k=0; k<nz; k++) {
     for(int j=0; j<ny; j++) {
       for(int i=0; i<nx; i++) {
-	int curidx = i+nx*j+nx*ny*k;
+        int curidx = i+nx*j+nx*ny*k;
         int curidx0 = curidx*3+0;
         int curidx1 = curidx*3+1;
         int curidx2 = curidx*3+2;
-	SC ih = (SC) (i*h);
-	SC jh = (SC) (j*h);
-	SC kh = (SC) (k*h);
-	if(xmap->isNodeGlobalElement(curidx0)==true) {
-	  coordinates->replaceGlobalValue(curidx0,0,ih);
-	  coordinates->replaceGlobalValue(curidx0,1,jh);
-	  coordinates->replaceGlobalValue(curidx0,2,kh);
-	}
-	if(xmap->isNodeGlobalElement(curidx1)==true) {
-	  coordinates->replaceGlobalValue(curidx1,0,ih);
-	  coordinates->replaceGlobalValue(curidx1,1,jh);
-	  coordinates->replaceGlobalValue(curidx1,2,kh);
-	}
-	if(xmap->isNodeGlobalElement(curidx2)==true) {
-	  coordinates->replaceGlobalValue(curidx2,0,ih);
-	  coordinates->replaceGlobalValue(curidx2,1,jh);
-	  coordinates->replaceGlobalValue(curidx2,2,kh);
-	}
+        SC ih = (SC) (i*h);
+        SC jh = (SC) (j*h);
+        SC kh = (SC) (k*h);
+        if(xmap->isNodeGlobalElement(curidx0)==true) {
+          coordinates->replaceGlobalValue(curidx0,0,ih);
+          coordinates->replaceGlobalValue(curidx0,1,jh);
+          coordinates->replaceGlobalValue(curidx0,2,kh);
+        }
+        if(xmap->isNodeGlobalElement(curidx1)==true) {
+          coordinates->replaceGlobalValue(curidx1,0,ih);
+          coordinates->replaceGlobalValue(curidx1,1,jh);
+          coordinates->replaceGlobalValue(curidx1,2,kh);
+        }
+        if(xmap->isNodeGlobalElement(curidx2)==true) {
+          coordinates->replaceGlobalValue(curidx2,0,ih);
+          coordinates->replaceGlobalValue(curidx2,1,jh);
+          coordinates->replaceGlobalValue(curidx2,2,kh);
+        }
       }
     }
   }
@@ -442,8 +441,8 @@ int main(int argc, char *argv[]) {
     B->replaceGlobalValue(0, 1.0);
 
   // Define Operator and Preconditioner
-  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO>(mueluA));   // Turns a Xpetra::Matrix object into a Belos operator
-  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H));         // Turns a MueLu::Hierarchy object into a Belos operator
+  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO>(mueluA));   // Turns a Xpetra::Matrix object into a Belos operator
+  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO>(H));         // Turns a MueLu::Hierarchy object into a Belos operator
 
   // Construct a Belos LinearProblem object
   RCP<Problem> belosProblem = rcp(new Problem(belosOp,X,B));

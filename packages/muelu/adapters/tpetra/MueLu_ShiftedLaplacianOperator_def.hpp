@@ -71,18 +71,19 @@ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
 getDomainMap () const
 {
-  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> XMatrix;
+  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> XMatrix;
 
   RCP<MueLu::Level> L0 = Hierarchy_->GetLevel (0);
   RCP<XMatrix> A = L0->Get<RCP<XMatrix> > ("A");
 
-  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(A);
+  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpbA =
+    Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(A);
   if (tpbA != Teuchos::null) {
     return Xpetra::toTpetraNonZero (tpbA->getDomainMap ());
   }
 
   RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA =
-    Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs (A);
+    Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs (A);
   return tpA->getDomainMap ();
 }
 
@@ -93,16 +94,18 @@ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
 getRangeMap () const
 {
-  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> XMatrix;
+  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> XMatrix;
 
   RCP<MueLu::Level>  L0 = Hierarchy_->GetLevel(0);
   RCP<XMatrix> A = L0->Get< RCP<XMatrix> >("A");
 
-  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(A);
+  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpbA =
+    Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(A);
   if(tpbA != Teuchos::null)
     return Xpetra::toTpetraNonZero(tpbA->getRangeMap());
 
-  RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs(A);
+  RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA =
+    Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(A);
   return tpA->getRangeMap();
 }
 
@@ -135,12 +138,12 @@ void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
   // update solution with 2-grid error correction
   /*if(option_==1) {
     for(int j=0; j<cycles_; j++) {
-      RCP<XMV> residual       = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Residual(*A_, tY, tX);
+      RCP<XMV> residual       = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Residual(*A_, tY, tX);
       RCP<XMV> coarseResidual = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(R_->getRangeMap(), tX.getNumVectors());
       RCP<XMV> coarseError    = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(R_->getRangeMap(), tX.getNumVectors());
       R_ -> apply(*residual, *coarseResidual, Teuchos::NO_TRANS, (Scalar) 1.0, (Scalar) 0.0);
-      RCP<TMV> tcoarseR = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::MV2NonConstTpetraMV(coarseResidual);
-      RCP<TMV> tcoarseE = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::MV2NonConstTpetraMV(coarseError);
+      RCP<TMV> tcoarseR = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MV2NonConstTpetraMV(coarseResidual);
+      RCP<TMV> tcoarseE = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MV2NonConstTpetraMV(coarseError);
       BelosLP_ -> setProblem(tcoarseE,tcoarseR);
       BelosSM_ -> solve();
       RCP<XMV> fineError      = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(P_->getRangeMap(), tX.getNumVectors());

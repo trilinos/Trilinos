@@ -55,8 +55,7 @@ namespace MueLu {
    typedef double                                           Scalar;
    typedef int                                              LocalOrdinal;
    typedef int                                              GlobalOrdinal;
-   typedef KokkosClassic::DefaultNode::DefaultNodeType             Node;
-   typedef KokkosClassic::DefaultKernels<double,int,NO>::SparseOps LocalMatOps;
+   typedef KokkosClassic::DefaultNode::DefaultNodeType      Node;
 
    Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("ZZ Entire Transpose"));
 
@@ -68,7 +67,7 @@ namespace MueLu {
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     try {
-      Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2EpetraCrs(Op);
+      Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2EpetraCrs(Op);
     }
     catch (...) {
       TorE = "tpetra";
@@ -78,13 +77,13 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
     if (TorE == "tpetra") {
       try {
-        const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& tpetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(Op);
+        const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(Op);
 
         // Compute the transpose A of the Tpetra matrix tpetraOp.
-        RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A;
+        RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
         {
           Teuchos::TimeMonitor tmm (*Teuchos::TimeMonitor::getNewCounter ("ZZ Tpetra Transpose Only"));
-          Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer(rcpFromRef(tpetraOp));
+          Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp));
           A = transposer.createTranspose();
         }
         RCP<Xpetra::TpetraCrsMatrix<SC> > AA   = rcp(new Xpetra::TpetraCrsMatrix<SC>(A));
@@ -108,7 +107,7 @@ namespace MueLu {
     } else {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
       // Epetra case
-      Epetra_CrsMatrix& epetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstEpetraCrs(Op);
+      Epetra_CrsMatrix& epetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstEpetraCrs(Op);
       EpetraExt::RowMatrix_Transpose transposer;
       Epetra_CrsMatrix * A = dynamic_cast<Epetra_CrsMatrix*>(&transposer(epetraOp));
       transposer.ReleaseTranspose(); // So we can keep A in Muelu...
@@ -161,8 +160,7 @@ namespace MueLu {
    typedef double                                           Scalar;
    typedef int                                              LocalOrdinal;
    typedef int                                              GlobalOrdinal;
-   typedef KokkosClassic::DefaultNode::DefaultNodeType             Node;
-   typedef KokkosClassic::DefaultKernels<double,int,NO>::SparseOps LocalMatOps;
+   typedef KokkosClassic::DefaultNode::DefaultNodeType      Node;
 
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");

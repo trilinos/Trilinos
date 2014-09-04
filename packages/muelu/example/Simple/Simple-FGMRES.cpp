@@ -73,28 +73,27 @@
 typedef std::complex<double>                         SC;
 typedef int                                          LO;
 typedef int                                          GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType         NO;
-typedef KokkosClassic::DefaultKernels<SC,LO,NO>::SparseOps  LMO;
+typedef Tpetra::Vector<SC, LO, GO>::node_type        NO;
 
 typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
 typedef Tpetra::MultiVector<SC,LO,GO,NO>             MV;
-typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
-typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS;
-typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
-typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
+typedef Tpetra::CrsMatrix<SC,LO,GO,NO>           TCRS;
+typedef Xpetra::CrsMatrix<SC,LO,GO,NO>           XCRS;
+typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>     XTCRS;
+typedef Xpetra::Matrix<SC,LO,GO,NO>              XMAT;
+typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO>       XWRAP;
 
 typedef MueLu::Level                                 Level;
-typedef MueLu::Hierarchy<SC,LO,GO,NO,LMO>            Hierarchy;
+typedef MueLu::Hierarchy<SC,LO,GO,NO>            Hierarchy;
 typedef MueLu::FactoryManager<SC,LO,GO>              FactoryManager;
-typedef MueLu::TentativePFactory<SC,LO,GO,NO,LMO>    TPFactory;
-typedef MueLu::SaPFactory<SC,LO,GO,NO,LMO>           SaPFactory;
-typedef MueLu::GenericRFactory<SC,LO,GO,NO,LMO>      RFactory;
-typedef MueLu::RAPFactory<SC,LO,GO,NO,LMO>           RAPFactory;
-typedef MueLu::SmootherPrototype<SC,LO,GO,NO,LMO>    SmootherPrototype;
-typedef MueLu::Ifpack2Smoother<SC,LO,GO,NO,LMO>      Ifpack2Smoother;
-typedef MueLu::SmootherFactory<SC,LO,GO,NO,LMO>      SmootherFactory;
-typedef MueLu::DirectSolver<SC,LO,GO,NO,LMO>         DirectSolver;
+typedef MueLu::TentativePFactory<SC,LO,GO,NO>    TPFactory;
+typedef MueLu::SaPFactory<SC,LO,GO,NO>           SaPFactory;
+typedef MueLu::GenericRFactory<SC,LO,GO,NO>      RFactory;
+typedef MueLu::RAPFactory<SC,LO,GO,NO>           RAPFactory;
+typedef MueLu::SmootherPrototype<SC,LO,GO,NO>    SmootherPrototype;
+typedef MueLu::Ifpack2Smoother<SC,LO,GO,NO>      Ifpack2Smoother;
+typedef MueLu::SmootherFactory<SC,LO,GO,NO>      SmootherFactory;
+typedef MueLu::DirectSolver<SC,LO,GO,NO>         DirectSolver;
 
 typedef Belos::OperatorT<MV>                         OP;
 typedef Belos::OperatorTraits<SC,MV,OP>              OPT;
@@ -162,8 +161,8 @@ int main(int argc, char *argv[]) {
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
       S->insertGlobalValues(myGlobalElements[i],
-			    Teuchos::tuple<GO> (myGlobalElements[i]),
-			    Teuchos::tuple<SC> (one));
+                            Teuchos::tuple<GO> (myGlobalElements[i]),
+                            Teuchos::tuple<SC> (one));
     }
     else if (myGlobalElements[i] == numGlobalElements - 1) {
       S->insertGlobalValues(myGlobalElements[i],
@@ -182,8 +181,8 @@ int main(int argc, char *argv[]) {
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
       A->insertGlobalValues(myGlobalElements[i],
-			    Teuchos::tuple<GO> (myGlobalElements[i]),
-			    Teuchos::tuple<SC> (one));
+                            Teuchos::tuple<GO> (myGlobalElements[i]),
+                            Teuchos::tuple<SC> (one));
 
     }
     else if (myGlobalElements[i] == numGlobalElements - 1) {
@@ -238,7 +237,7 @@ int main(int argc, char *argv[]) {
   //ifpack2List.set("fact: absolute threshold", (double)0.0);
   //ifpack2List.set("fact: relative threshold", (double)1.0);
   //ifpack2List.set("fact: relax value", (double)0.0);
-  //smooProto = Teuchos::rcp( new MueLu::Ifpack2Smoother<SC, LO, GO, NO, LMO>("ILUT",ifpack2List) );
+  //smooProto = Teuchos::rcp( new MueLu::Ifpack2Smoother<SC, LO, GO, NO>("ILUT",ifpack2List) );
   // Gauss-Seidel smoother
   //ifpack2Type = "RELAXATION";
   //ifpack2List.set("relaxation: sweeps", (LO) 4);
@@ -291,8 +290,8 @@ int main(int argc, char *argv[]) {
   }
 
   // Define Operator and Preconditioner
-  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO>(mueluA));   // Turns a Xpetra::Matrix object into a Belos operator
-  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H));         // Turns a MueLu::Hierarchy object into a Belos operator
+  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO>(mueluA));   // Turns a Xpetra::Matrix object into a Belos operator
+  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO>(H));         // Turns a MueLu::Hierarchy object into a Belos operator
 
   // Construct a Belos LinearProblem object
   RCP<Problem> belosProblem = rcp(new Problem(belosOp,X,B));

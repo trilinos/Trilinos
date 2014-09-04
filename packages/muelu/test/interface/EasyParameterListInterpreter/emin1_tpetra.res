@@ -76,7 +76,7 @@ Level 1
  emin: num iterations = 2   [default]
  emin: num reuse iterations = 1   [default]
  emin: iterative method = cg   [default]
- P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, KokkosClassic::SerialNode> > {ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep P0 = 0   [default]
  Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]

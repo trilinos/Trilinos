@@ -27,7 +27,11 @@ namespace MueLu {
      only permutations of columns that correspond to DOFs of the same node.
     */
 
-  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template<class Scalar = double,
+           class LocalOrdinal = int,
+           class GlobalOrdinal = LocalOrdinal,
+           class Node = KokkosClassic::DefaultNode::DefaultNodeType,
+           class LocalMatOps = void>
   class LocalPermutationStrategy : public BaseClass {
 #undef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
 #include "MueLu_UseShortNames.hpp"

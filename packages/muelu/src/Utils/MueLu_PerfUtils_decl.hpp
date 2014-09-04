@@ -62,7 +62,7 @@ namespace MueLu {
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+            class LocalMatOps   = void>
   class PerfUtils {
 #undef MUELU_PERFUTILS_SHORT
 #include "MueLu_UseShortNames.hpp"

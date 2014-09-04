@@ -51,12 +51,12 @@
 namespace MueLu {
 
 // Destructor
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::~ShiftedLaplacian() {}
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~ShiftedLaplacian() {}
 
 // Input
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParameters(Teuchos::RCP< Teuchos::ParameterList > paramList) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::RCP< Teuchos::ParameterList > paramList) {
 
   // Parameters
   coarseGridSize_      = paramList->get("MueLu: coarse size", 1000);
@@ -97,8 +97,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPa
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLaplacian(RCP<Matrix>& L) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setLaplacian(RCP<Matrix>& L) {
 
   L_=L;
   LaplaceOperatorSet_=true;
@@ -106,8 +106,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLa
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setProblemMatrix(RCP<Matrix>& A) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setProblemMatrix(RCP<Matrix>& A) {
 
   A_=A;
   if(A_!=Teuchos::null)
@@ -120,8 +120,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraA) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraA) {
 
   TpetraA_=TpetraA;
   ProblemMatrixSet_=true;
@@ -132,8 +132,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPreconditioningMatrix(RCP<Matrix>& P) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setPreconditioningMatrix(RCP<Matrix>& P) {
 
   P_=P;
   PreconditioningMatrixSet_=true;
@@ -141,8 +141,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPreconditioningMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraP) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setPreconditioningMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraP) {
 
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraP) );
@@ -152,8 +152,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setstiff(RCP<Matrix>& K) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setstiff(RCP<Matrix>& K) {
 
   K_=K;
   StiffMatrixSet_=true;
@@ -161,8 +161,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setst
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setstiff(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraK) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setstiff(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraK) {
 
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraK) );
@@ -172,8 +172,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setst
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setmass(RCP<Matrix>& M) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setmass(RCP<Matrix>& M) {
 
   M_=M;
   MassMatrixSet_=true;
@@ -181,8 +181,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setma
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setmass(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraM) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setmass(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraM) {
 
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraM) );
@@ -192,8 +192,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setma
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setdamp(RCP<Matrix>& C) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setdamp(RCP<Matrix>& C) {
 
   C_=C;
   DampMatrixSet_=true;
@@ -201,8 +201,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setda
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraC) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraC) {
 
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraC) );
@@ -212,38 +212,38 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setda
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setcoords(RCP<MultiVector>& Coords) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setcoords(RCP<MultiVector>& Coords) {
 
   Coords_=Coords;
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setNullSpace(RCP<MultiVector> NullSpace) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setNullSpace(RCP<MultiVector> NullSpace) {
 
   NullSpace_=NullSpace;
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setProblemShifts(Scalar ashift1, Scalar ashift2) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setProblemShifts(Scalar ashift1, Scalar ashift2) {
 
   ashift1_=ashift1;
   ashift2_=ashift2;
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPreconditioningShifts(Scalar pshift1, Scalar pshift2) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setPreconditioningShifts(Scalar pshift1, Scalar pshift2) {
 
   pshift1_=pshift1;
   pshift2_=pshift2;
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLevelShifts(std::vector<Scalar> levelshifts) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setLevelShifts(std::vector<Scalar> levelshifts) {
 
   levelshifts_=levelshifts;
   numLevels_=levelshifts_.size();
@@ -253,8 +253,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLe
 }
 
 // initialize
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initialize() {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
 
   TentPfact_ = rcp( new TentativePFactory           );
   Pfact_     = rcp( new SaPFactory                  );
@@ -411,8 +411,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
 }
 
 // setup coarse grids for new frequency
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setupFastRAP() {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupFastRAP() {
 
   int numLevels = Hierarchy_ -> GetNumLevels();
 
@@ -444,8 +444,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
 }
 
 // setup coarse grids for new frequency
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setupSlowRAP() {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupSlowRAP() {
 
   int numLevels = Hierarchy_ -> GetNumLevels();
 
@@ -484,8 +484,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
 }
 
 // setup coarse grids for new frequency
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setupNormalRAP() {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupNormalRAP() {
 
   TentPfact_ = rcp( new TentativePFactory           );
   Pfact_     = rcp( new SaPFactory                  );
@@ -653,8 +653,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resetLinearProblem()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::resetLinearProblem()
 {
   if(useKrylov_==true) {
     LinearProblem_ -> setOperator (  TpetraA_  );
@@ -662,8 +662,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::reset
 }
 
 // Solve phase
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(const RCP<TMV> B, RCP<TMV>& X)
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::solve(const RCP<TMV> B, RCP<TMV>& X)
 {
   if(useKrylov_==true) {
     // Set left and right hand sides for Belos
@@ -682,8 +682,8 @@ int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(
 }
 
 // Solve phase
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multigrid_apply(const RCP<MultiVector> B, RCP<MultiVector>& X)
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(const RCP<MultiVector> B, RCP<MultiVector>& X)
 {
 
   // Set left and right hand sides for Belos
@@ -692,8 +692,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multi
 }
 
 // Solve phase
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B, RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X)
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B, RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X)
 {
 
   Teuchos::RCP< Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > XpetraX
@@ -707,8 +707,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multi
 }
 
 // Get most recent iteration count
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::GetIterations()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetIterations()
 {
   if(useKrylov_==true) {
     int numiters = SolverManager_ -> getNumIters();
@@ -720,8 +720,8 @@ int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::GetIte
 }
 
 // Get most recent solver tolerance achieved
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-double ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::GetResidual()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+double ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetResidual()
 {
   if(useKrylov_==true) {
     double residual = SolverManager_ -> achievedTol();

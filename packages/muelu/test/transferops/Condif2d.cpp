@@ -83,18 +83,14 @@
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
 
-//
 typedef double Scalar;
-typedef int    LocalOrdinal;
+typedef int LocalOrdinal;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 typedef long long int GlobalOrdinal;
 #else
 typedef int GlobalOrdinal;
 #endif
-//
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
-//
 
 int main(int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"

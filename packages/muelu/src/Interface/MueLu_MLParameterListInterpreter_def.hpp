@@ -457,7 +457,11 @@ namespace MueLu {
 
   // TODO: code factorization with MueLu_ParameterListInterpreter.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetSmootherFactory(const Teuchos::ParameterList & paramList, const RCP<FactoryBase> & AFact) {
+  RCP<MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  GetSmootherFactory (const Teuchos::ParameterList & paramList,
+                      const RCP<FactoryBase> & AFact)
+  {
     std::string type = "symmetric Gauss-Seidel"; // default
 
     //
@@ -528,7 +532,10 @@ namespace MueLu {
         MUELU_COPY_PARAM(paramList, "smoother: ifpack overlap",       int, 2,  smootherParamList, "partitioner: overlap");
 
         // TODO change to TrilinosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
-        smooProto = MueLu::GetIfpackSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(ifpackType, smootherParamList, paramList.get<int>("smoother: ifpack overlap"));
+        smooProto =
+          MueLu::GetIfpackSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node> (ifpackType,
+                                                                               smootherParamList,
+                                                                               paramList.get<int> ("smoother: ifpack overlap"));
         smooProto->SetFactory("A", AFact);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");

@@ -103,7 +103,6 @@ typedef int GlobalOrdinal;
 #endif
 //
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 //
 
 namespace MueLuTests {

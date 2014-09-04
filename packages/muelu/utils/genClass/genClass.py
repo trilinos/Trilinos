@@ -63,7 +63,7 @@ def main(argv=None):
     BuildName        = "Build(Level &fineLevel, Level &coarseLevel)"
 
   if templateType == "SC-LO-GO-NO-LMO":
-    templateDefinition = "template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>"
+    templateDefinition = "template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>"
     templateDefShort   = "template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>"
     templateParameters = "<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>"
   elif templateType == "SC-LO-GO":
@@ -75,7 +75,7 @@ def main(argv=None):
     templateDefShort   = "template <class Scalar, class LocalOrdinal>"
     templateParameters = "<Scalar, LocalOrdinal>"
   elif templateType == "LO-GO-NO-LMO":
-    templateDefinition = "template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>"
+    templateDefinition = "template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>"
     templateDefShort   = "template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>"
     templateParameters = "<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>"
   else:
