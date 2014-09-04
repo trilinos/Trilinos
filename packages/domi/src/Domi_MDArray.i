@@ -81,9 +81,10 @@ using Domi::MDArrayView;
   Teuchos::Array< Domi::size_type > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    dims[   axis] = array_size(  npArray, axis);
-    strides[axis] = array_stride(npArray, axis);
-    npSize       += dims[axis] * strides[axis];
+    dims[   axis]  = array_size(  npArray, axis);
+    strides[axis]  = array_stride(npArray, axis);
+    npSize        += dims[axis] * strides[axis];
+    strides[axis] *= sizeof(TYPE);
   }
   Teuchos::ArrayView< TYPE > data((TYPE*) array_data(npArray), npSize);
   Domi::Layout layout = PyArray_IS_C_CONTIGUOUS(npArray) ?
@@ -116,9 +117,10 @@ using Domi::MDArrayView;
   Teuchos::Array< Domi::size_type > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    dims[   axis] = array_size(  npArray, axis);
-    strides[axis] = array_stride(npArray, axis);
-    npSize       += dims[axis] * strides[axis];
+    dims[   axis]  = array_size(  npArray, axis);
+    strides[axis]  = array_stride(npArray, axis);
+    npSize        += dims[axis] * strides[axis];
+    strides[axis] *= sizeof(TYPE);
   }
   Teuchos::ArrayView< TYPE > data((TYPE*) array_data(npArray), npSize);
   Domi::Layout layout = PyArray_IS_C_CONTIGUOUS(npArray) ?
@@ -152,9 +154,10 @@ using Domi::MDArrayView;
   Teuchos::Array< Domi::size_type > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    dims[   axis] = array_size(  npArray, axis);
-    strides[axis] = array_stride(npArray, axis);
-    npSize       += dims[axis] * strides[axis];
+    dims[   axis]  = array_size(  npArray, axis);
+    strides[axis]  = array_stride(npArray, axis);
+    npSize        += dims[axis] * strides[axis];
+    strides[axis] *= sizeof(TYPE);
   }
   Teuchos::ArrayView< TYPE > data((TYPE*) array_data(npArray), npSize);
   Domi::Layout layout = PyArray_IS_C_CONTIGUOUS(npArray) ?
@@ -173,7 +176,7 @@ using Domi::MDArrayView;
   for (int axis = 0; axis < numDims; ++axis)
   {
     npDims[   axis] = $1.dimension(axis);
-    npStrides[axis] = $1.strides()[axis];
+    npStrides[axis] = $1.strides()[axis] * sizeof(TYPE);
   }
   int flags = ($1.layout() == Domi::C_ORDER) ?
               NPY_ARRAY_CARRAY : NPY_ARRAY_FARRAY;
@@ -197,7 +200,7 @@ using Domi::MDArrayView;
   for (int axis = 0; axis < numDims; ++axis)
   {
     npDims[   axis] = $1.dimension(axis);
-    npStrides[axis] = $1.strides()[axis];
+    npStrides[axis] = $1.strides()[axis] * sizeof(TYPE);
   }
   int flags = ($1.layout() == Domi::C_ORDER) ?
               NPY_ARRAY_CARRAY : NPY_ARRAY_FARRAY;
@@ -221,7 +224,7 @@ using Domi::MDArrayView;
   for (int axis = 0; axis < numDims; ++axis)
   {
     npDims[   axis] = $1->dimension(axis);
-    npStrides[axis] = $1->strides()[axis];
+    npStrides[axis] = $1->strides()[axis] * sizeof(TYPE);
   }
   int flags = ($1->layout() == Domi::C_ORDER) ?
               NPY_ARRAY_CARRAY_RO : NPY_ARRAY_FARRAY_RO;
@@ -245,7 +248,7 @@ using Domi::MDArrayView;
   for (int axis = 0; axis < numDims; ++axis)
   {
     npDims[   axis] = $1->dimension(axis);
-    npStrides[axis] = $1->strides()[axis];
+    npStrides[axis] = $1->strides()[axis] * sizeof(TYPE);
   }
   int flags = ($1->layout() == Domi::C_ORDER) ?
               NPY_ARRAY_CARRAY_RO : NPY_ARRAY_FARRAY_RO;
@@ -269,7 +272,7 @@ using Domi::MDArrayView;
   for (int axis = 0; axis < numDims; ++axis)
   {
     npDims[   axis] = $1.dimension(axis);
-    npStrides[axis] = $1.strides()[axis];
+    npStrides[axis] = $1.strides()[axis] * sizeof(TYPE);
   }
   int flags = ($1.layout() == Domi::C_ORDER) ?
               NPY_ARRAY_CARRAY_RO : NPY_ARRAY_FARRAY_RO;
@@ -293,7 +296,7 @@ using Domi::MDArrayView;
   for (int axis = 0; axis < numDims; ++axis)
   {
     npDims[   axis] = $1.dimension(axis);
-    npStrides[axis] = $1.strides()[axis];
+    npStrides[axis] = $1.strides()[axis] * sizeof(TYPE);
   }
   int flags = ($1.layout() == Domi::C_ORDER) ?
               NPY_ARRAY_CARRAY_RO : NPY_ARRAY_FARRAY_RO;
