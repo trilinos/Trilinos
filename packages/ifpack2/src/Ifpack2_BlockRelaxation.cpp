@@ -54,7 +54,7 @@
 // NOTE (mfh 24 May 2014) For some reason unbeknownst to me, all of
 // these explicit instantiations must be put on one line.  Otherwise,
 // the compiler silently ignores them and generates no symbols.
-#define LCLINST( S, LO, GO ) template class BlockRelaxation<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType>, SparseContainer<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType>, ILUT<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > > >; template class BlockRelaxation<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType>, DenseContainer<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType>, S > >;
+#define LCLINST( S, LO, GO ) template class BlockRelaxation<Tpetra::CrsMatrix<S, LO, GO>, SparseContainer<Tpetra::CrsMatrix<S, LO, GO>, ILUT<Tpetra::CrsMatrix<S, LO, GO> > > >; template class BlockRelaxation<Tpetra::CrsMatrix<S, LO, GO>, DenseContainer<Tpetra::CrsMatrix<S, LO, GO>, S > >;
 
 namespace Ifpack2 {
 

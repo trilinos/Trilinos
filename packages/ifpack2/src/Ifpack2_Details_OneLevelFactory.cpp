@@ -56,11 +56,11 @@
   template<> \
   class OneLevelFactory< \
   Tpetra::CrsMatrix< \
-    S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >; \
+    S, LO, GO> >; \
   template<> \
   class OneLevelFactory< \
   Tpetra::RowMatrix< \
-    S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
+    S, LO, GO> >;
 
 namespace Ifpack2 {
 namespace Details {

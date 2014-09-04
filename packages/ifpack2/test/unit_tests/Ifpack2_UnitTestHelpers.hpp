@@ -539,24 +539,34 @@ Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,Glob
 }
 
 
-  template <class Scalar,
-            class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class NotCrsMatrix : public Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+
+  template<class Scalar = Tpetra::RowMatrix<>::scalar_type,
+           class LocalOrdinal =
+             typename Tpetra::RowMatrix<Scalar>::local_ordinal_type,
+           class GlobalOrdinal =
+             typename Tpetra::RowMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
+           class Node =
+             typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  class NotCrsMatrix :
+    public Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   public:
-    NotCrsMatrix(Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A):A_(A){;}
-    virtual ~NotCrsMatrix(){;} 
+    NotCrsMatrix (Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A) : A_(A){;}
+    virtual ~NotCrsMatrix(){;}
     virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const {return A_->getComm();}
     virtual Teuchos::RCP<Node> getNode() const {return A_->getNode();}
-    virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {return A_->getRangeMap();}
-    virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {return A_->getDomainMap();}
-    virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const {return A_->getRowMap();}
-    virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const {return A_->getColMap();}
-    virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const {return A_->getGraph();}
+    virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+    getRangeMap () const {return A_->getRangeMap();}
+    virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+    getDomainMap () const {return A_->getDomainMap();}
+    virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+    getRowMap () const {return A_->getRowMap();}
+    virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+    getColMap () const {return A_->getColMap();}
+    virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >
+    getGraph () const {return A_->getGraph();}
     virtual global_size_t getGlobalNumRows() const {return A_->getGlobalNumRows();}
     virtual global_size_t getGlobalNumCols() const {return A_->getGlobalNumCols();}
-    virtual size_t getNodeNumRows() const {return A_->getNodeNumRows();}                  
+    virtual size_t getNodeNumRows() const {return A_->getNodeNumRows();}
     virtual size_t getNodeNumCols() const {return A_->getNodeNumCols();}
     virtual GlobalOrdinal getIndexBase() const {return A_->getIndexBase();}
     virtual global_size_t getGlobalNumEntries() const {return A_->getGlobalNumEntries();}
@@ -574,13 +584,13 @@ Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,Glob
     virtual bool isGloballyIndexed() const {return A_->isGloballyIndexed();}
     virtual bool isFillComplete() const {return A_->isFillComplete();}
     virtual bool supportsRowViews() const {return A_->supportsRowViews();}
-    
+
     virtual void
     getGlobalRowCopy (GlobalOrdinal GlobalRow,
                       const Teuchos::ArrayView<GlobalOrdinal> &Indices,
                       const Teuchos::ArrayView<Scalar> &Values,
                       size_t &NumEntries) const {A_->getGlobalRowCopy(GlobalRow,Indices,Values,NumEntries);}
-    
+
     virtual void
     getLocalRowCopy (LocalOrdinal LocalRow,
                      const Teuchos::ArrayView<LocalOrdinal> &Indices,
@@ -605,19 +615,19 @@ Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,Glob
     add (const Scalar& alpha,
          const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
          const Scalar& beta,
-	 const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap=Teuchos::null,
+         const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap=Teuchos::null,
          const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap=Teuchos::null,
          const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null) const
     {return A_->add(alpha,A,beta,domainMap,rangeMap,params);}
-    
+
     virtual void
     apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-	   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-	   Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	   Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-	   Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const 
+           Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+           Teuchos::ETransp mode = Teuchos::NO_TRANS,
+           Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const
     {A_->apply(X,Y,mode,alpha,beta);}
-    
+
     virtual void
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
           Teuchos::Array<char>& exports,

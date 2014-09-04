@@ -51,7 +51,7 @@
 namespace Ifpack2 {
 
   #define LCLINST(S,LO,GO) \
-    template class ILUT<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
+    template class ILUT<Tpetra::CrsMatrix<S, LO, GO> >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 

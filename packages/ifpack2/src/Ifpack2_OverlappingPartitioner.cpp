@@ -51,7 +51,7 @@
 namespace Ifpack2 {
 
 #define LCLINST(LO, GO) \
-  template class OverlappingPartitioner<Tpetra::RowGraph<LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
+  template class OverlappingPartitioner<Tpetra::RowGraph<LO, GO> >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 

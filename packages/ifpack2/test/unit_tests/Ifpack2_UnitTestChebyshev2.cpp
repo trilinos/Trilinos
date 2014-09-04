@@ -364,7 +364,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   //typedef long GO;
   typedef int GO;
   //typedef KokkosClassic::SerialNode NT;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
+  typedef Tpetra::Map<LO, GO>::node_type NT;
 
   // Convenience typedefs.
   typedef Tpetra::Map<LO, GO, NT> map_type;
