@@ -63,8 +63,7 @@ void sortingPermutation(const std::vector<Scalar> & values, std::vector<LocalOrd
   template<class Scalar = double,
            class LocalOrdinal = int,
            class GlobalOrdinal = LocalOrdinal,
-           class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-           class LocalMatOps = void>
+           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class AlgebraicPermutationStrategy : public BaseClass {
 #undef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
 #include "MueLu_UseShortNames.hpp"

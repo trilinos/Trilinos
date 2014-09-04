@@ -94,7 +94,7 @@ namespace MueLu {
     \endcode
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class SubBlockAFactory : public SingleLevelFactoryBase {
 #undef MUELU_SUBBLOCKAFACTORY_SHORT
     #include "MueLu_UseShortNames.hpp"

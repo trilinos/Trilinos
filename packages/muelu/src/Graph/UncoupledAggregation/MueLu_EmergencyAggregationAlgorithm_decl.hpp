@@ -70,8 +70,7 @@ namespace MueLu {
 
   template <class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps = void>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class EmergencyAggregationAlgorithm :
     public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_EMERGENCYAGGREGATIONALGORITHM_SHORT

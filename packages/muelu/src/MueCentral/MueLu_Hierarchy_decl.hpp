@@ -91,8 +91,7 @@ namespace MueLu {
   template <class Scalar = Xpetra::Matrix<>::scalar_type,
             class LocalOrdinal = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
+            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class Hierarchy : public BaseClass {
 #undef MUELU_HIERARCHY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -342,10 +341,10 @@ namespace MueLu {
 
   }; //class Hierarchy
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template<typename Node2>
   Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   clone (const Teuchos::RCP<Node2> &node2) const
   {
     typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2>           New_H_Type;
@@ -386,12 +385,12 @@ namespace MueLu {
       }
       if (level->IsAvailable("PreSmoother")){
         Pre      = level->template Get<RCP<SmootherBase> >("PreSmoother");
-        clonePre = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps, Node2> (Pre, cloneA, node2);
+        clonePre = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2> (Pre, cloneA, node2);
         clonelevel->template Set<RCP<CloneSmoother> >("PreSmoother", clonePre);
       }
       if (level->IsAvailable("PostSmoother")){
         Post      = level->template Get<RCP<SmootherBase> >("PostSmoother");
-        clonePost = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps, Node2> (Post, cloneA, node2);
+        clonePost = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2> (Post, cloneA, node2);
         clonelevel-> template Set<RCP<CloneSmoother> >("PostSmoother", clonePost);
       }
       new_h->Levels_[i] = clonelevel;

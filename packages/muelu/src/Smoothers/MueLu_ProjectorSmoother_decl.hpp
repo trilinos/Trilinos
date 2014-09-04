@@ -75,8 +75,7 @@ namespace MueLu {
   template <class Scalar = SmootherPrototype<>::scalar_type,
             class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::mat_vec_type>
+            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class ProjectorSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
 #undef MUELU_PROJECTORSMOOTHER_SHORT

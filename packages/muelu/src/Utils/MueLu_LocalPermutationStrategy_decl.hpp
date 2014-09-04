@@ -30,8 +30,7 @@ namespace MueLu {
   template<class Scalar = double,
            class LocalOrdinal = int,
            class GlobalOrdinal = LocalOrdinal,
-           class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-           class LocalMatOps = void>
+           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class LocalPermutationStrategy : public BaseClass {
 #undef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
 #include "MueLu_UseShortNames.hpp"

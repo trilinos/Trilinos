@@ -76,8 +76,7 @@ namespace MueLu {
 template <class Scalar = double,
           class LocalOrdinal = int,
           class GlobalOrdinal = LocalOrdinal,
-          class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-          class LocalMatOps = void>
+          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockedCoarseMapFactory : public MueLu::CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> { //SingleLevelFactoryBase {
 #undef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

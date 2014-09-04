@@ -73,7 +73,7 @@ namespace MueLu {
         For now we assume, that matrices have real values. The case of complex values is not explored.
     */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class CGSolver : public SolverBase<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_CGSOLVER_SHORT
 #include "MueLu_UseShortNames.hpp"

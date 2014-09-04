@@ -86,8 +86,7 @@ namespace MueLu {
   template <class Scalar = SmootherPrototype<>::scalar_type,
             class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = void>
+            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class Ifpack2Smoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
 #undef MUELU_IFPACK2SMOOTHER_SHORT
@@ -133,7 +132,7 @@ namespace MueLu {
     See also Ifpack2::Relaxation, Ifpack2::Chebyshev, Ifpack2::ILUT, Ifpack2::Krylov.
     */
 
-    template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2, class LocalMatOps2>
+    template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2>
     friend class Ifpack2Smoother;
 
     Ifpack2Smoother(const std::string& type, const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), const LO& overlap = 0); //TODO: empty paramList valid for Ifpack??
@@ -220,7 +219,7 @@ namespace MueLu {
 
   }; // class Ifpack2Smoother
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template<typename Node2>
   RCP<MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
   Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2>& node2, const RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const {

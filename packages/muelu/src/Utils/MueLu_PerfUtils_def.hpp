@@ -95,8 +95,8 @@ namespace MueLu {
     return v1.second < v2.second;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
     typedef Xpetra::global_size_t global_size_t;
 
     std::ostringstream ss;
@@ -173,8 +173,8 @@ namespace MueLu {
     return ss.str();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CommPattern(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CommPattern(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
     std::ostringstream out;
 
     RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();

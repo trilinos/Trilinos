@@ -66,8 +66,7 @@ namespace MueLu {
 */
   template <class LocalOrdinal = Xpetra::CrsGraph<>::local_ordinal_type,
             class GlobalOrdinal = typename Xpetra::CrsGraph<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal>::mat_vec_type>
+            class Node = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
   class Graph
     : public MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node> { //FIXME  shortnames isn't working
 #undef MUELU_GRAPH_SHORT

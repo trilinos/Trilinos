@@ -65,8 +65,8 @@
 
 namespace MueLu {
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const MultiVector& B, const MultiVector& Bc, RCP<const CrsGraph> Ppattern) {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const MultiVector& B, const MultiVector& Bc, RCP<const CrsGraph> Ppattern) {
     const size_t NSDim = Bc.getNumVectors();
 
     Ppattern_ = Ppattern;
@@ -132,8 +132,8 @@ namespace MueLu {
   }
 
   //! \note We assume that the graph of Projected is the same as Ppattern_
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(const Matrix& P, Matrix& Projected) const {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(const Matrix& P, Matrix& Projected) const {
     // We check only row maps. Column may be different.
     TEUCHOS_TEST_FOR_EXCEPTION(!P.getRowMap()->isSameAs(*Projected.getRowMap()), Exceptions::Incompatible,
                                "Row maps are incompatible");

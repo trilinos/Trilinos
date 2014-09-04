@@ -78,8 +78,7 @@ namespace MueLu {
 
 template <class LocalOrdinal = int,
           class GlobalOrdinal = LocalOrdinal,
-          class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-          class LocalMatOps = void>
+          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class UncoupledAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_UNCOUPLEDAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"

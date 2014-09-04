@@ -66,9 +66,9 @@ namespace MueLu {
 
 // ------------- getDomainMap -----------------------
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 getDomainMap () const
 {
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> XMatrix;
@@ -89,9 +89,9 @@ getDomainMap () const
 
 // ------------- getRangeMap -----------------------
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 getRangeMap () const
 {
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> XMatrix;
@@ -111,8 +111,8 @@ getRangeMap () const
 
 // ------------- apply -----------------------
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                                                                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                                                                                Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
 
@@ -166,8 +166,8 @@ void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
 }
 
 // ------------- apply -----------------------
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-bool ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::hasTransposeApply() const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
   return false;
 }
 

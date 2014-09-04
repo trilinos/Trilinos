@@ -77,8 +77,7 @@ namespace MueLu {
 
   template <class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps = void>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class AmalgamationInfo
     : public BaseClass {
 #undef MUELU_AMALGAMATIONINFO_SHORT

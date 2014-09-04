@@ -62,7 +62,7 @@ namespace MueLu {
     @brief Factory for building filtered matrices using filtered graphs.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class FilteredAFactory : public SingleLevelFactoryBase {
 #undef MUELU_FILTEREDAFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

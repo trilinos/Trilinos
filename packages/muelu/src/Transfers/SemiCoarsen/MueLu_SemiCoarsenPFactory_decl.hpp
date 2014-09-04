@@ -66,7 +66,7 @@
 
 namespace MueLu {
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class SemiCoarsenPFactory : public PFactory {
 #undef MUELU_SEMICOARSENPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

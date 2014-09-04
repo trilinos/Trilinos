@@ -75,7 +75,7 @@ namespace MueLu {
     the current level's system matrix's DOFS belong.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class RepartitionFactory : public SingleLevelFactoryBase {
 #undef MUELU_REPARTITIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

@@ -102,8 +102,7 @@ namespace MueLu {
   template<class Scalar = double,
            class LocalOrdinal = int,
            class GlobalOrdinal = LocalOrdinal,
-           class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-           class LocalMatOps = void>
+           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Constraint : public BaseClass {
 #undef MUELU_CONSTRAINT_SHORT
 #include "MueLu_UseShortNames.hpp"

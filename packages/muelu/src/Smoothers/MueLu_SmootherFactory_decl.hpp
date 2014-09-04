@@ -86,16 +86,13 @@ namespace MueLu {
   template <class Scalar = double,
             class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps = void >
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class SmootherFactory : public SmootherFactoryBase {
   public:
     typedef Scalar scalar_type;
     typedef LocalOrdinal local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
-    typedef LocalMatOps mat_solve_type; // for backwards compatibility ONLY
-    typedef LocalMatOps mat_vec_type; // for backwards compatibility ONLY
 
   private:
 #undef MUELU_SMOOTHERFACTORY_SHORT

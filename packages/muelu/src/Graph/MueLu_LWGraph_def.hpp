@@ -53,8 +53,8 @@ namespace MueLu {
   //! Print the object with some verbosity level to an FancyOStream object.
   //using MueLu::Describable::describe; // overloading, not hiding
   //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LWGraph<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0) {

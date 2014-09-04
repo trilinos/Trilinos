@@ -82,7 +82,7 @@ namespace MueLu {
     solvers in Belos.
   */
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class ShiftedLaplacian : public BaseClass {
 
 #undef MUELU_SHIFTEDLAPLACIAN_SHORT

@@ -126,7 +126,7 @@ namespace MueLuTests {
       }
     };
 
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     class TestFactory {
 #include "MueLu_UseShortNames.hpp"
 

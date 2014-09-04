@@ -78,7 +78,6 @@ namespace MueLu {
     typedef int    LocalOrdinal;
     typedef int    GlobalOrdinal;
     typedef SmootherPrototype<double, int, int>::node_type Node;
-    typedef SmootherPrototype<double, int, int>::mat_vec_type LocalMatOps;
 
 #undef MUELU_AMESOSSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"

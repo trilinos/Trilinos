@@ -70,7 +70,7 @@ namespace MueLu {
     @ingroup MueLuTransferClasses
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class RebalanceBlockInterpolationFactory : public TwoLevelFactoryBase {
 #undef MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

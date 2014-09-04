@@ -67,7 +67,7 @@ namespace MueLu {
     from tentative prolongator initialization.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class CoordinatesTransferFactory : public TwoLevelFactoryBase {
 #undef MUELU_COORDINATESTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

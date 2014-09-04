@@ -87,7 +87,7 @@ namespace MueLu {
     const RCP<const FactoryManagerBase> prevFactoryManager_;
   };
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TopRAPFactory : public TwoLevelFactoryBase {
 #include "MueLu_UseShortNames.hpp"
 
@@ -108,7 +108,7 @@ namespace MueLu {
     RCP<const FactoryBase> AcFact_;
   };
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TopSmootherFactory : public SingleLevelFactoryBase { //TODO: inherit from SmootherFactoryBase ?
 #include "MueLu_UseShortNames.hpp"
 

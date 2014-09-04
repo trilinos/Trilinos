@@ -85,7 +85,7 @@ namespace MueLu {
      @ingroup MueLuTransferClasses
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class CoarseMapFactory : public SingleLevelFactoryBase {
 #undef MUELU_COARSEMAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

@@ -62,8 +62,8 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
@@ -218,16 +218,16 @@ namespace MueLu {
     aggregates.SetNumAggregates(numLocalAggregates);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RandomReorder(ArrayRCP<LO> list) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node>::RandomReorder(ArrayRCP<LO> list) const {
     //TODO: replace int
     int n = list.size();
     for(int i = 0; i < n-1; i++)
       std::swap(list[i], list[RandomOrdinal(i,n-1)]);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  int AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RandomOrdinal(int min, int max) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  int AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node>::RandomOrdinal(int min, int max) const {
     return min + as<int>((max-min+1) * (static_cast<double>(std::rand()) / (RAND_MAX + 1.0)));
   }
 

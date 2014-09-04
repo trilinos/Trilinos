@@ -61,12 +61,12 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MHDRAPFactory()
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MHDRAPFactory()
     : implicitTranspose_(true) { }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
 
     if (implicitTranspose_ == false)
       {
@@ -94,8 +94,8 @@ namespace MueLu {
 
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const { // FIXME make fineLevel const
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const { // FIXME make fineLevel const
     {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
@@ -224,8 +224,8 @@ namespace MueLu {
 
 
 /*
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PerfUtils::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PerfUtils::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag) {
     std::stringstream ss(std::stringstream::out);
     ss << msgTag
        << " # global rows = "      << Ac.getGlobalNumRows()
@@ -235,8 +235,8 @@ namespace MueLu {
   }
 */
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag) {
     std::stringstream ss(std::stringstream::out);
 
     // TODO: provide a option to skip this (to avoid global communication)

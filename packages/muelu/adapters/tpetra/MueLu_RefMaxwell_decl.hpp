@@ -97,8 +97,7 @@ namespace MueLu {
             class GlobalOrdinal =
               typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node =
-              typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = void>
+              typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class RefMaxwell : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
 #undef MUELU_REFMAXWELL_SHORT

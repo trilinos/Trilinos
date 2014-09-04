@@ -69,8 +69,7 @@ namespace MueLu {
   template <class Scalar = double,
             class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps = void>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class BrickAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_BRICKAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

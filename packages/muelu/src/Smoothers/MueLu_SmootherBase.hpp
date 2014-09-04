@@ -63,16 +63,13 @@ namespace MueLu {
   template <class Scalar = Xpetra::MultiVector<>::scalar_type,
             class LocalOrdinal = typename Xpetra::MultiVector<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename Xpetra::MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = void /* FIXME (mfh 03 Sep 2014) ??? */ >
+            class Node = typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class SmootherBase : virtual public BaseClass {
   public:
     typedef Scalar scalar_type;
     typedef LocalOrdinal local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
-    typedef LocalMatOps mat_solve_type; // for backwards compatibility ONLY
-    typedef LocalMatOps mat_vec_type; // for backwards compatibility ONLY
 
   private:
 

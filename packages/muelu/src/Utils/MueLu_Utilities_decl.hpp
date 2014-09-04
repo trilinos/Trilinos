@@ -95,7 +95,7 @@ class Epetra_Vector;
 namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class Vector;
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class MultiVector;
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> class CrsMatrix;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class CrsMatrix;
 }
 
 #endif
@@ -127,8 +127,7 @@ namespace MueLu {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = void>
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class Utils {
 #undef MUELU_UTILITIES_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -445,8 +444,7 @@ namespace MueLu {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = void>
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class Utils2 {
 
 #include "MueLu_UseShortNames.hpp"

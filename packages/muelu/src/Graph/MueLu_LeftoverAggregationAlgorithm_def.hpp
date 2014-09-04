@@ -60,14 +60,14 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::LeftoverAggregationAlgorithm():
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::LeftoverAggregationAlgorithm():
     phase3AggCreation_(.5),
     minNodesPerAggregate_(1)
   { }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggregateLeftovers(GraphBase const &graph, Aggregates &aggregates) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::AggregateLeftovers(GraphBase const &graph, Aggregates &aggregates) const {
     Monitor m(*this, "AggregateLeftovers");
 
     my_size_t nVertices = graph.GetNodeNumVertices();
@@ -670,8 +670,8 @@ namespace MueLu {
 
   } //AggregateLeftovers
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RootCandidates(my_size_t nVertices,
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::RootCandidates(my_size_t nVertices,
   ArrayView<const LO> & vertex2AggId, GraphBase const &graph,
                       ArrayRCP<LO> &candidates, my_size_t &nCandidates, global_size_t &nCandidatesGlobal) const
   {
@@ -697,8 +697,8 @@ namespace MueLu {
 
   } //RootCandidates
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  int LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RemoveSmallAggs(Aggregates& aggregates, int min_size,
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  int LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::RemoveSmallAggs(Aggregates& aggregates, int min_size,
                       RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::CoupledAggregationCommHelper<LO,GO,NO,LMO> & myWidget) const {
     int myPid = aggregates.GetMap()->getComm()->getRank();
 

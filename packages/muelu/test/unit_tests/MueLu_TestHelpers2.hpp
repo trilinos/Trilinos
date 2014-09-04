@@ -86,7 +86,7 @@ namespace MueLuTests {
 
   namespace TestHelpers {
 
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     class TestProblem {
 #include "MueLu_UseShortNames.hpp"
 

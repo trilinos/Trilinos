@@ -70,7 +70,7 @@ namespace MueLu {
     @ingroup MueLuTransferClasses
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Q2Q1Q2CoarseGridFactory : public TwoLevelFactoryBase {
 #undef MUELU_Q2Q1Q2COARSEGRIDFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

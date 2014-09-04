@@ -88,7 +88,7 @@ namespace MueLu {
     where omega is some scaling factor and \hat{F} an approximation of F (just the diagonal of F)
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class SchurComplementFactory : public SingleLevelFactoryBase {
 #undef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
     #include "MueLu_UseShortNames.hpp"

@@ -53,7 +53,7 @@
 
 // Tpetra forward declarations
 namespace Tpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> class CrsMatrix;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class CrsMatrix;
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class MultiVector;
 }
 
@@ -78,8 +78,7 @@ namespace MueLu {
   template <class Scalar = SmootherPrototype<>::scalar_type,
             class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = void>
+            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class Amesos2Smoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
 #undef MUELU_AMESOS2SMOOTHER_SHORT

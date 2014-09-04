@@ -67,8 +67,7 @@ namespace MueLu {
 
   template <class LocalOrdinal = Xpetra::Map<>::local_ordinal_type,
             class GlobalOrdinal = typename Xpetra::Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::Map<LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = typename Xpetra::Matrix<double, LocalOrdinal, GlobalOrdinal>::mat_vec_type>
+            class Node = typename Xpetra::Map<LocalOrdinal, GlobalOrdinal>::node_type>
   class RebalanceMapFactory : public SingleLevelFactoryBase {
     typedef double Scalar; // FIXME this is just a dummy scalar for being able to access Xpetra::Matrix
 

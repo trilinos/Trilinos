@@ -78,8 +78,7 @@ namespace MueLu {
   template <class Scalar = SmootherPrototype<>::scalar_type,
             class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::mat_vec_type>
+            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class TrilinosSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_TRILINOSSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -134,7 +133,7 @@ namespace MueLu {
 
 
     //! Friend declaration required for clone() functionality
-    template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2, class LocalMatOps2>
+    template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2>
     friend class TrilinosSmoother;
 
     template<typename Node2>
@@ -193,7 +192,7 @@ namespace MueLu {
 
   }; // class TrilinosSmoother
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template<typename Node2>
   Teuchos::RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
   TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const {

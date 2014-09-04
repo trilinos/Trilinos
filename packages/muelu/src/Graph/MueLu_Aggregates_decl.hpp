@@ -85,7 +85,7 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = void>
+  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Aggregates : public BaseClass {
 #undef MUELU_AGGREGATES_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
