@@ -91,7 +91,7 @@ void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
       const double & y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
       const double & z = workset.int_rules[ir_index]->ip_coordinates(cell,point,2);
 
-      source(cell,point) = sin(2*3.14*x)*sin(2*3.14*y)*sin(2*3.14*z);
+      source(cell,point) = -12.0*M_PI*M_PI*std::sin(2.0*M_PI*x)*std::sin(2*M_PI*y)*std::sin(2.0*M_PI*z);
     }
   }
 }

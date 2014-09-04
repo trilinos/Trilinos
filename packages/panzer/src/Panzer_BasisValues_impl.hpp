@@ -206,7 +206,7 @@ namespace panzer {
     else if(elmtspace==PureBasis::HDIV) {
        Intrepid::FunctionSpaceTools::
          HDIVtransformVALUE<Scalar>(basis,
-                                    jac_inv,
+                                    jac,
                                     jac_det,
                                     basis_ref);
 
@@ -214,7 +214,7 @@ namespace panzer {
           intrepid_basis->getValues(div_basis_ref, cub_points, 
                                        Intrepid::OPERATOR_DIV);
    
-           Intrepid::FunctionSpaceTools::
+          Intrepid::FunctionSpaceTools::
              HDIVtransformDIV<Scalar>(div_basis,
                                       jac_det,   
                                       div_basis_ref);

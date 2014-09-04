@@ -174,7 +174,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Test Field Name", "GRADPHI_FIELD"); 
     p.set("Basis", basis_v);
     p.set("IR", ir);
-    p.set("Multiplier", 1.0);
+    p.set("Multiplier", -1.0); // scale by the right hand side 
+                                            // when phi = sin(2*pi*x)*sin(2*pi*y)*sin(2*pi*z)
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_DivBasisTimesScalar<EvalT,panzer::Traits>(p));

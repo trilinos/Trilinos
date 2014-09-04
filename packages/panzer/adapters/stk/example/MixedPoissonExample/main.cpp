@@ -119,8 +119,12 @@ int main(int argc,char * argv[])
    ////////////////////////////////////////////////////
 
    bool useTpetra = false;
+   int x_elements=10,y_elements=10,z_elements=10;
    Teuchos::CommandLineProcessor clp;
    clp.setOption("use-tpetra","use-epetra",&useTpetra);
+   clp.setOption("x-elements",&x_elements);
+   clp.setOption("y-elements",&y_elements);
+   clp.setOption("z-elements",&z_elements);
 
    // parse commandline argument
    TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
@@ -146,9 +150,9 @@ int main(int argc,char * argv[])
    pl->set("X Blocks",1);
    pl->set("Y Blocks",1);
    pl->set("Z Blocks",1);
-   pl->set("X Elements",15);
-   pl->set("Y Elements",15);
-   pl->set("Z Elements",15);
+   pl->set("X Elements",x_elements);
+   pl->set("Y Elements",y_elements);
+   pl->set("Z Elements",z_elements);
    mesh_factory.setParameterList(pl);
 
    RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
@@ -280,6 +284,9 @@ int main(int argc,char * argv[])
       stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
    }
 
+   // Setup response library for writing out the exact solution fields
+   ////////////////////////////////////////////////////////////////////////
+
    // setup closure model
    /////////////////////////////////////////////////////////////
  
@@ -396,6 +403,8 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
    panzer::EpetraLinearObjContainer & ep_container 
          = Teuchos::dyn_cast<panzer::EpetraLinearObjContainer>(container);
 
+   EpetraExt::RowMatrixToMatrixMarketFile("Matrix.mm",*Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(ep_container.get_A()));
+
    // Setup the linear solve: notice A is used directly 
    Epetra_LinearProblem problem(&*ep_container.get_A(),&*ep_container.get_x(),&*ep_container.get_f()); 
 
@@ -474,6 +483,7 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     p.set("Integration Order",2);
   }
   
+/*
   {
     std::size_t bc_id = 0;
     panzer::BCType bctype = panzer::BCT_Dirichlet;
@@ -563,4 +573,5 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 		  strategy, p);
     bcs.push_back(bc);
   }    
+*/
 }
