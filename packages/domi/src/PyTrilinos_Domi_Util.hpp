@@ -36,6 +36,9 @@
 #include "Domi_MDMap.hpp"
 #include "Domi_MDVector.hpp"
 
+// Verbosity
+#define PYTRILINOS_DOMI_UTIL_VERBOSE
+
 namespace PyTrilinos
 {
 
@@ -186,6 +189,10 @@ convertToMDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   // Get the equivalent MDArrayRCP
   Domi::MDArrayRCP< Scalar > mdArrayRcp =
     convertToMDArrayRCP< Scalar >((PyArrayObject*) distarray.buffer());
+
+#ifdef PYTRILINOS_DOMI_UTIL_VERBOSE
+  std::cout << "mdArrayRcp = " << mdArrayRcp << std::endl;
+#endif
 
   // Return the result
   return Teuchos::rcp(new Domi::MDVector< Scalar >(mdMap, mdArrayRcp));
