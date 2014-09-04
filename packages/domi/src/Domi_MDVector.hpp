@@ -42,6 +42,8 @@
 #ifndef DOMI_MDVECTOR_HPP
 #define DOMI_MDVECTOR_HPP
 
+#define DOMI_MDVECTOR_VERBOSE
+
 // Standard includes
 #include <ctime>
 
@@ -1336,6 +1338,12 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
   _sendMessages(),
   _recvMessages()
 {
+#ifdef DOMI_MDVECTOR_VERBOSE
+  std::cout << "_mdArrayRcp  = " << _mdArrayRcp  << std::endl;
+  std::cout << "_mdArrayView.getRawPtr() = " << _mdArrayView.getRawPtr()
+            << " (constructor)" << std::endl;
+  std::cout << "_mdArrayView = " << _mdArrayView << std::endl;
+#endif
   setObjectLabel("Domi::MDVector");
   int numDims = _mdMap->numDims();
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2501,6 +2509,11 @@ MDArrayView< Scalar >
 MDVector< Scalar, Node >::
 getDataNonConst(bool includePadding)
 {
+#ifdef DOMI_MDVECTOR_VERBOSE
+  std::cout << "_mdArrayView.getRawPtr() = " << _mdArrayView.getRawPtr()
+            << std::endl;
+  std::cout << "_mdArrayView = " << _mdArrayView << std::endl;
+#endif
   if (includePadding)
     return _mdArrayView;
   MDArrayView< Scalar > newArray(_mdArrayView);
