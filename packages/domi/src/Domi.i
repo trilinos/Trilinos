@@ -254,119 +254,124 @@ import numpy
 // Domi MDArrayView support //
 //////////////////////////////
 %ignore Domi::swap;
-%ignore Domi::MDArrayView::operator=;
-%ignore Domi::MDArrayView::operator[];
-%ignore Domi::MDArrayView::begin;
-%ignore Domi::MDArrayView::end;
-%ignore Domi::MDArrayView::cbegin;
-%ignore Domi::MDArrayView::cend;
-%ignore Domi::MDArrayView::rbegin;
-%ignore Domi::MDArrayView::rend;
-%ignore Domi::MDArrayView::crbegin;
-%ignore Domi::MDArrayView::crend;
-%include "Domi_MDArrayView.hpp"
-%template(MDArrayView_long  ) Domi::MDArrayView< long >;
-%template(MDArrayView_double) Domi::MDArrayView< double >;
-%pythoncode
-{
-class MDArrayView(object):
-    def __init__(self, array, dims, **kwargs):
-        dtype   = kwargs.get("dtype"  , None         )
-        strides = kwargs.get("strides", None         )
-        layout  = kwargs.get("layout" , DEFAULT_ORDER)
-        if dtype == None:
-            dtype = array.dtype
-        if type(dtype) == str:
-            dtype = numpy.dtype(dtype)
-        if dtype.type is numpy.int64:
-            if strides is None:
-                self._array = MDArrayView_long(array, dims, layout)
-            else:
-                self._array = MDArrayView_long(array, dims, strides, layout)
-        elif dtype.type is numpy.float64:
-            if strides is None:
-                self._array = MDArrayView_double(array, dims, layout)
-            else:
-                self._array = MDArrayView_double(array, dims, strides, layout)
-        else:
-            raise TypeError("Unsupported or unrecognized dtype = %s" %
-                            str(dtype))
-        self.__dtype = dtype
+%include "Domi_MDArray.i"
 
-    def __getattribute__(self, name):
-        if name in ('__class__', '__repr__', '_array'):
-            return object.__getattribute__(self, name)
-        return getattr(object.__getattribute__(self, '_array'), name)
+// %ignore Domi::MDArrayView::operator=;
+// %ignore Domi::MDArrayView::operator[];
+// %ignore Domi::MDArrayView::begin;
+// %ignore Domi::MDArrayView::end;
+// %ignore Domi::MDArrayView::cbegin;
+// %ignore Domi::MDArrayView::cend;
+// %ignore Domi::MDArrayView::rbegin;
+// %ignore Domi::MDArrayView::rend;
+// %ignore Domi::MDArrayView::crbegin;
+// %ignore Domi::MDArrayView::crend;
+// %include "Domi_MDArrayView.hpp"
+// %template(MDArrayView_int   ) Domi::MDArrayView< int    >;
+// %template(MDArrayView_long  ) Domi::MDArrayView< long   >;
+// %template(MDArrayView_float ) Domi::MDArrayView< float  >;
+// %template(MDArrayView_double) Domi::MDArrayView< double >;
+// %pythoncode
+// {
+// class MDArrayView(object):
+//     def __init__(self, array, dims, **kwargs):
+//         dtype   = kwargs.get("dtype"  , None         )
+//         strides = kwargs.get("strides", None         )
+//         layout  = kwargs.get("layout" , DEFAULT_ORDER)
+//         if dtype == None:
+//             dtype = array.dtype
+//         if type(dtype) == str:
+//             dtype = numpy.dtype(dtype)
+//         if dtype.type is numpy.int64:
+//             if strides is None:
+//                 self._array = MDArrayView_long(array, dims, layout)
+//             else:
+//                 self._array = MDArrayView_long(array, dims, strides, layout)
+//         elif dtype.type is numpy.float64:
+//             if strides is None:
+//                 self._array = MDArrayView_double(array, dims, layout)
+//             else:
+//                 self._array = MDArrayView_double(array, dims, strides, layout)
+//         else:
+//             raise TypeError("Unsupported or unrecognized dtype = %s" %
+//                             str(dtype))
+//         self.__dtype = dtype
 
-    def __dir__(self):
-        return sorted(set(dir(self._array) + dir(MDArrayView)))
-}
+//     def __getattribute__(self, name):
+//         if name in ('__class__', '__dir__', '_array'):
+//             return object.__getattribute__(self, name)
+//         return getattr(object.__getattribute__(self, '_array'), name)
+
+//     def __dir__(self):
+//         return sorted(set(dir(self._array) + dir(MDArrayView)))
+
+//     def __repr__(self):
+//         # 'print' needs to see this method rather than the direct
+//         # __getattribute__ reroute
+//         return object.__getattribute__(self, '_array').__repr__()
+
+//     def __str__(self):
+//         # 'print' needs to see this method rather than the direct
+//         # __getattribute__ reroute
+//         return object.__getattribute__(self, '_array').__str__()
+// }
 
 //////////////////////////
 // Domi MDArray support //
 //////////////////////////
-%ignore Domi::MDArray::operator[];
-%ignore Domi::MDArray::mdArrayViewConst;
-%ignore Domi::MDArray::begin;
-%ignore Domi::MDArray::end;
-%ignore Domi::MDArray::cbegin;
-%ignore Domi::MDArray::cend;
-%ignore Domi::MDArray::rbegin;
-%ignore Domi::MDArray::rend;
-%ignore Domi::MDArray::crbegin;
-%ignore Domi::MDArray::crend;
-%ignore Domi::MDArray::getRawPtr;
-%ignore Domi::MDArray::toString;
-%extend Domi::MDArray
-{
-  std::string __str__()
-  {
-    return self->toString();
-  }
-  std::string __repr__()
-  {
-    return "MDArray(" + self->toString() + ")";
-  }
-}
-%include "Domi_MDArray.hpp"
-%template(MDArray_long  ) Domi::MDArray< long >;
-%template(MDArray_double) Domi::MDArray< double >;
-%pythoncode
-{
-class MDArray(object):
-    def __init__(self, dims, **kwargs):
-        dtype  = kwargs.get("dtype" , "int64"      )
-        value  = kwargs.get("value" , 0            )
-        layout = kwargs.get("layout", DEFAULT_ORDER)
-        if type(dtype) == str:
-            dtype = numpy.dtype(dtype)
-        if dtype.type is numpy.int64:
-            self._array = MDArray_long(dims, value, layout)
-        elif dtype.type is numpy.float64:
-            self._array = MDArray_double(dims, value, layout)
-        else:
-            raise TypeError("Unsupported or unrecognized dtype = %s" %
-                            str(dtype))
-        self.__dtype = dtype
+// %ignore Domi::MDArray::operator[];
+// %ignore Domi::MDArray::mdArrayViewConst;
+// %ignore Domi::MDArray::begin;
+// %ignore Domi::MDArray::end;
+// %ignore Domi::MDArray::cbegin;
+// %ignore Domi::MDArray::cend;
+// %ignore Domi::MDArray::rbegin;
+// %ignore Domi::MDArray::rend;
+// %ignore Domi::MDArray::crbegin;
+// %ignore Domi::MDArray::crend;
+// %ignore Domi::MDArray::getRawPtr;
+// %ignore Domi::MDArray::toString;
+// %include "Domi_MDArray.hpp"
+// %template(MDArray_int   ) Domi::MDArray< int    >;
+// %template(MDArray_long  ) Domi::MDArray< long   >;
+// %template(MDArray_float ) Domi::MDArray< float  >;
+// %template(MDArray_double) Domi::MDArray< double >;
+// %pythoncode
+// {
+// class MDArray(object):
+//     def __init__(self, dims, **kwargs):
+//         dtype  = kwargs.get("dtype" , "int64"      )
+//         value  = kwargs.get("value" , 0            )
+//         layout = kwargs.get("layout", DEFAULT_ORDER)
+//         if type(dtype) == str:
+//             dtype = numpy.dtype(dtype)
+//         if dtype.type is numpy.int64:
+//             self._array = MDArray_long(dims, value, layout)
+//         elif dtype.type is numpy.float64:
+//             self._array = MDArray_double(dims, value, layout)
+//         else:
+//             raise TypeError("Unsupported or unrecognized dtype = %s" %
+//                             str(dtype))
+//         self.__dtype = dtype
 
-    def __getattribute__(self, name):
-        if name in ('__class__', '__dir__', '_array'):
-            return object.__getattribute__(self, name)
-        return getattr(object.__getattribute__(self, '_array'), name)
+//     def __getattribute__(self, name):
+//         if name in ('__class__', '__dir__', '_array'):
+//             return object.__getattribute__(self, name)
+//         return getattr(object.__getattribute__(self, '_array'), name)
 
-    def __dir__(self):
-        return sorted(set(dir(self._array) + dir(MDArray)))
+//     def __dir__(self):
+//         return sorted(set(dir(self._array) + dir(MDArray)))
 
-    def __repr__(self):
-        # 'print' needs to see this method rather than the direct
-        # __getattribute__ reroute
-        return object.__getattribute__(self, '_array').__repr__()
+//     def __repr__(self):
+//         # 'print' needs to see this method rather than the direct
+//         # __getattribute__ reroute
+//         return object.__getattribute__(self, '_array').__repr__()
 
-    def __str__(self):
-        # 'print' needs to see this method rather than the direct
-        # __getattribute__ reroute
-        return object.__getattribute__(self, '_array').__str__()
-}
+//     def __str__(self):
+//         # 'print' needs to see this method rather than the direct
+//         # __getattribute__ reroute
+//         return object.__getattribute__(self, '_array').__str__()
+// }
 
 // This is causing SWIG to abort ...
 // /////////////////////////////
@@ -384,7 +389,7 @@ class MDArray(object):
 // %ignore Domi::MDArrayRCP::crend;
 // %include "Domi_MDArrayRCP.hpp"
 // %template(MDArrayRCP_long  ) Domi::MDArrayRCP< long >;
-// //%template(MDArrayRCP_double) Domi::MDArrayRCP< double >;
+// %template(MDArrayRCP_double) Domi::MDArrayRCP< double >;
 
 // /////////////////////////
 // // Domi MDComm support //
@@ -583,14 +588,22 @@ MDMap = MDMap_default
     }
     return newMdVector;
   }
+
+  Domi::MDArrayView< Scalar > getData(bool includePadding = true)
+  {
+    return self->getDataNonConst(includePadding);
+  }
 }
+%ignore Domi::MDVector::getDataNonConst;
+%ignore Domi::MDVector::getData;
+
 %include "Domi_MDVector.hpp"
-%teuchos_rcp(Domi::MDVector< int >   )
-%template(MDVector_int   ) Domi::MDVector< int >;
-%teuchos_rcp(Domi::MDVector< long >  )
-%template(MDVector_long  ) Domi::MDVector< long >;
-%teuchos_rcp(Domi::MDVector< float > )
-%template(MDVector_float ) Domi::MDVector< float >;
+%teuchos_rcp(Domi::MDVector< int    >)
+%template(MDVector_int   ) Domi::MDVector< int    >;
+%teuchos_rcp(Domi::MDVector< long   >)
+%template(MDVector_long  ) Domi::MDVector< long   >;
+%teuchos_rcp(Domi::MDVector< float  >)
+%template(MDVector_float ) Domi::MDVector< float  >;
 %teuchos_rcp(Domi::MDVector< double >)
 %template(MDVector_double) Domi::MDVector< double >;
 
@@ -604,14 +617,15 @@ Teuchos::RCP< Domi::MDVector< Scalar > >
 from_DistArray(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                PyObject * distArrayObj)
 {
-  if (!PyObject_HasAttrString(distArrayObj, "__distarray__"))
-  {
-    PyErr_SetString(PyExc_ValueError, "Object does not have '__distarray__'"
-                    " method");
-    throw PyTrilinos::PythonException();
-  }
-  PyObject * distarray = PyObject_GetAttrString(distArrayObj, "__distarray__");
-  PyTrilinos::DistArrayProtocol dap(distarray);
+  // if (!PyObject_HasAttrString(distArrayObj, "__distarray__"))
+  // {
+  //   PyErr_SetString(PyExc_ValueError, "Object does not have '__distarray__'"
+  //                   " method");
+  //   throw PyTrilinos::PythonException();
+  // }
+  // PyObject * distarray = PyObject_GetAttrString(distArrayObj, "__distarray__");
+  // PyTrilinos::DistArrayProtocol dap(distarray);
+  PyTrilinos::DistArrayProtocol dap(distArrayObj);
   return PyTrilinos::convertToMDVector< Scalar >(teuchosComm, dap);
 }
 }
@@ -622,15 +636,16 @@ from_DistArray(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 %pythoncode
 {
 def from_DistArray(comm, distarray):
-    dtype = distarray.__distarray__["buffer"].dtype
+    protocol = distarray.__distarray__()
+    dtype = protocol["buffer"].dtype
     if dtype.type is numpy.int32:
-        return from_DistArray_int(comm, distarray)
+        return from_DistArray_int(comm, protocol)
     elif dtype.type is numpy.int64:
-        return from_DistArray_long(comm, distarray)
+        return from_DistArray_long(comm, protocol)
     elif dtype.type is numpy.float32:
-        return from_DistArray_float(comm, distarray)
+        return from_DistArray_float(comm, protocol)
     elif dtype.type is numpy.float64:
-        return from_DistArray_double(comm, distarray)
+        return from_DistArray_double(comm, protocol)
     else:
         raise TypeError("Unsupported or unrecognized dtype = %s" % str(dtype))
 }
