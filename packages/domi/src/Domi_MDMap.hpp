@@ -43,8 +43,9 @@
 #define DOMI_MDMAP_HPP
 
 // System includes
-#include <limits>
 #include <algorithm>
+#include <limits>
+#include <sstream>
 
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
@@ -1372,7 +1373,7 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
           dim_type stop  = recvBuffer(2,axis,rank);
           int      loPad = recvBuffer(3,axis,rank);
           int      hiPad = recvBuffer(4,axis,rank);
-          if (bounds.start() == Slice::Default)
+          if (bounds.stop() == Slice::Default)
           {
             bounds = Slice(start, stop);
             pad[0] = loPad;
@@ -1381,9 +1382,20 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
           else
           {
             if ((bounds.start() != start) || (bounds.stop() != stop))
-              throw BoundsError("Global rank bounds mismatch");
+            {
+              std::cout << "bounds.start() = " << bounds.start() << std::endl;
+              std::stringstream msg;
+              msg << "Global rank bounds mismatch: bounds = " << bounds
+                  << ", (start,stop) = (" << start << "," << stop << ")";
+              throw BoundsError(msg.str());
+            }
             if ((pad[0] != loPad) || (pad[1] != hiPad))
-              throw BoundsError("Padding value mismatch");
+            {
+              std::stringstream msg;
+              msg << "Padding value mismatch: pad = " << pad
+                  << ", (loPad,hiPad) = (" << loPad << "," << hiPad << ")";
+              throw BoundsError(msg.str());
+            }
           }
         }
       }
@@ -1752,7 +1764,7 @@ MDMap(const MDMap< Node > & parent,
     TEUCHOS_TEST_FOR_EXCEPTION(
       (bounds.stop() == bounds.start()),
       RangeError,
-      "Slice along axis " << axis << " has lebgth zero");
+      "Slice along axis " << axis << " has length zero");
 
     // Copy the boundary padding sizes and set initial values for
     // _bndryPad
