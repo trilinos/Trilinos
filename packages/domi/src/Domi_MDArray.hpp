@@ -492,6 +492,7 @@ public:
    */
   const MDArrayView< const T > mdArrayViewConst() const;
 
+#ifndef SWIG
   /** \brief Perform an implicit conversion to a non-const
    *  <tt>MDArrayView</tt>
    */
@@ -501,6 +502,7 @@ public:
    *  <tt>MDArrayView</tt>
    */
   inline operator MDArrayView< const T >() const;
+#endif
 
   //@}
 
@@ -1199,6 +1201,7 @@ MDArray< T >::mdArrayViewConst() const
 
 ////////////////////////////////////////////////////////////////////////
 
+#ifndef SWIG
 template< typename T >
 MDArray< T >::operator MDArrayView< T >() const
 {
@@ -1212,6 +1215,7 @@ MDArray< T >::operator MDArrayView< const T >() const
 {
   return mdArrayViewConst();
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 
