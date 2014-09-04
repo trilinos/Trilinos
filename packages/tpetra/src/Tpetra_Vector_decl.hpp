@@ -65,10 +65,10 @@ namespace Tpetra {
 /// only one vector (column).  It may be used wherever a MultiVector
 /// may be used.  Please see the documentation of MultiVector for more
 /// details.
-template<class Scalar=double,
-         class LocalOrdinal=int,
-         class GlobalOrdinal=LocalOrdinal,
-         class Node=KokkosClassic::DefaultNode::DefaultNodeType>
+template<class Scalar = MultiVector<>::scalar_type,
+         class LocalOrdinal = typename MultiVector<Scalar>::local_ordinal_type,
+         class GlobalOrdinal = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
+         class Node = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
 class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   // need this so that MultiVector::operator() can call Vector's private view constructor
   friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
