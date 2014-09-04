@@ -42,7 +42,7 @@
 #ifndef DOMI_MDVECTOR_HPP
 #define DOMI_MDVECTOR_HPP
 
-#define DOMI_MDVECTOR_VERBOSE
+// #define DOMI_MDVECTOR_VERBOSE
 
 // Standard includes
 #include <ctime>
