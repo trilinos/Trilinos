@@ -110,8 +110,8 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_EPETRA
   //defined after Utils class
-  template<typename SC,typename LO,typename GO,typename NO, typename LMO>
-  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
+  template<typename SC,typename LO,typename GO,typename NO>
+  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
 #endif
 
 #ifdef HAVE_MUELU_EPETRA
@@ -1357,8 +1357,8 @@ namespace MueLu {
     return Teuchos::ScalarTraits<SC>::magnitude(d);
   }
 
-  template <class SC, class LO, class GO, class NO, class LMO>
-  ArrayRCP<const bool> Utils<SC, LO, GO, NO, LMO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
+  template <class SC, class LO, class GO, class NO>
+  ArrayRCP<const bool> Utils<SC, LO, GO, NO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
     LO numRows = A.getNodeNumRows();
 
     typedef Teuchos::ScalarTraits<SC> STS;
@@ -1382,8 +1382,8 @@ namespace MueLu {
   }
 
   //pulled directly from ml_utils.cpp
-  template <class SC, class LO, class GO, class NO, class LMO>
-  void Utils<SC, LO, GO, NO, LMO>::SetRandomSeed(const Teuchos::Comm<int> &comm) {
+  template <class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::SetRandomSeed(const Teuchos::Comm<int> &comm) {
     // Distribute the seeds evenly in [1,maxint-1].  This guarantees nothing
     // about where in random number stream we are, but avoids overflow situations
     // in parallel when multiplying by a PID.  It would be better to use
@@ -1411,8 +1411,8 @@ namespace MueLu {
     // So our setting std::srand() affects that too
   }
 
-  template <class SC, class LO, class GO, class NO, class LMO>
-  void Utils<SC, LO, GO, NO, LMO>::findDirichletRows(Teuchos::RCP<Matrix> A,
+  template <class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::findDirichletRows(Teuchos::RCP<Matrix> A,
                                                      std::vector<LO>& dirichletRows) {
     dirichletRows.resize(0);
     for(size_t i=0; i<A->getNodeNumRows(); i++) {
@@ -1431,8 +1431,8 @@ namespace MueLu {
     }
   }
 
-  template<class SC, class LO, class GO, class NO, class LMO>
-  void Utils<SC, LO, GO, NO, LMO>::findDirichletCols(Teuchos::RCP<Matrix> A,
+  template<class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::findDirichletCols(Teuchos::RCP<Matrix> A,
                                                      std::vector<LO>& dirichletRows,
                                                      std::vector<LO>& dirichletCols) {
     Teuchos::RCP<const Map> domMap = A->getDomainMap();
@@ -1462,8 +1462,8 @@ namespace MueLu {
     }
   }
 
-  template<class SC, class LO, class GO, class NO, class LMO>
-  void Utils<SC, LO, GO, NO, LMO>::Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
+  template<class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
                                                          std::vector<LO>& dirichletRows) {
     for(size_t i=0; i<dirichletRows.size(); i++) {
       Teuchos::ArrayView<const LO> indices;
@@ -1478,8 +1478,8 @@ namespace MueLu {
     }
   }
 
-  template<class SC, class LO, class GO, class NO, class LMO>
-  void Utils<SC, LO, GO, NO, LMO>::Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
+  template<class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
                                                          std::vector<LO>& dirichletCols) {
     for(size_t i=0; i<A->getNodeNumRows(); i++) {
       Teuchos::ArrayView<const LO> indices;
@@ -1498,8 +1498,8 @@ namespace MueLu {
     }
   }
 
-  template<class SC, class LO, class GO, class NO, class LMO>
-  void Utils<SC, LO, GO, NO, LMO>::Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A,
+  template<class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A,
                                                       double tol) {
     Teuchos::RCP<const Map> rowMap = A->getRowMap();
     RCP<Matrix> DiagMatrix = MatrixFactory::Build(rowMap,1);
@@ -1532,7 +1532,7 @@ namespace MueLu {
     A->fillComplete();
     // add matrices together
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(*DiagMatrix,false,(SC)1.0,*A,false,(SC)1.0,NewMatrix,*out);
+    Utils2<SC,LO,GO,NO>::TwoMatrixAdd(*DiagMatrix,false,(SC)1.0,*A,false,(SC)1.0,NewMatrix,*out);
     NewMatrix->fillComplete();
     A=NewMatrix;
 

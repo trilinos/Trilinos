@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
   ParameterList matrixParameters;
   matrixParameters.set("nx",         9999);
   matrixParameters.set("matrixType", "Laplace1D");
-  RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(matrixParameters.get<int>("nx"), lib);
+  RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<int>("nx"), lib);
   RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", A->getRowMap(), matrixParameters);
 
   const int numLists = 2;

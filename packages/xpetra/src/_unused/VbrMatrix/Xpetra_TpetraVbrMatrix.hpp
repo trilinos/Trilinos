@@ -63,9 +63,7 @@ namespace Xpetra {
             class GlobalOrdinal =
               typename VbrMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node =
-              typename VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps =
-              typename VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::block_sparse_ops_type>
+              typename VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class TpetraVbrMatrix :
     public VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalOrdinal> {
   public:

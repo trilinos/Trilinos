@@ -93,7 +93,7 @@ namespace Xpetra {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Import<int, int>::node_type;
+    typedef Import<int, int>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.

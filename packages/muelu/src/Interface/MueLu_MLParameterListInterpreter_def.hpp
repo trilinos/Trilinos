@@ -294,7 +294,7 @@ namespace MueLu {
       MUELU_READ_PARAM(paramList, "repartition: min per proc",                int,                 512,       minperproc);
 
       // create "Partition"
-      Teuchos::RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface = Teuchos::rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
+      Teuchos::RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = Teuchos::rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
       isoInterface->SetFactory("A", AcFact);
 
       // Repartitioning (creates "Importer" from "Partition")

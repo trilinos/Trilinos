@@ -59,7 +59,7 @@ namespace Xpetra {
 
   void EpetraVector::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::sumIntoLocalValue");getEpetra_MultiVector()->SumIntoMyValue(myRow, 0, value); }
 
-  double EpetraVector::dot(const Vector<double,int,int>& a) const {
+  double EpetraVector::dot(const Vector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType>& a) const {
     XPETRA_MONITOR("EpetraVector::dot");
 
     XPETRA_DYNAMIC_CAST(const EpetraVector, a, tA, "This Xpetra::EpetraVector method only accept Xpetra::EpetraVector as input arguments.");
@@ -78,7 +78,7 @@ namespace Xpetra {
   Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::normInf() const { XPETRA_MONITOR("EpetraVector::normInf"); double r; getEpetra_MultiVector()->NormInf(&r); return r; }
 
   Teuchos::ScalarTraits<double>::magnitudeType
-  EpetraVector::normWeighted (const Vector<double,int,int>& weights) const
+  EpetraVector::normWeighted (const Vector<double,int,int, KokkosClassic::DefaultNode::DefaultNodeType>& weights) const
   {
     XPETRA_MONITOR("EpetraVector::normWeighted");
     XPETRA_DYNAMIC_CAST(const EpetraVector, weights, tWeights, "This Xpetra::EpetraVector method only accept Xpetra::EpetraVector as input arguments.");
@@ -121,12 +121,12 @@ namespace Xpetra {
   }
 
   // TODO: move that elsewhere
-  Epetra_Vector & toEpetra(Vector<double, int, int> &x) {
+  Epetra_Vector & toEpetra(Vector<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType> &x) {
     XPETRA_DYNAMIC_CAST(      EpetraVector, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }
 
-  const Epetra_Vector & toEpetra(const Vector<double, int, int> &x) {
+  const Epetra_Vector & toEpetra(const Vector<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType> &x) {
     XPETRA_DYNAMIC_CAST(const EpetraVector, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }

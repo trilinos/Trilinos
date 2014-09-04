@@ -182,8 +182,8 @@ namespace MueLu {
 
     } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO>& tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal>::Op2TpetraCrs(A);
-      Tpetra::CrsMatrix<SC, LO, GO, NO, LMO>&       tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal>::Op2NonConstTpetraCrs(B);
+      const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal>::Op2TpetraCrs(A);
+      Tpetra::CrsMatrix<SC, LO, GO, NO>&       tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal>::Op2NonConstTpetraCrs(B);
 
       Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, beta);
 #else
@@ -224,7 +224,7 @@ namespace MueLu {
 
         fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
              << ", using static profiling" << std::endl;
-        C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
+        C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
 
       } else {
         // general case
@@ -243,7 +243,7 @@ namespace MueLu {
              << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
              << std::endl;
 
-        C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), nnzToAllocate, pft));
+        C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO>(A.getRowMap(), nnzToAllocate, pft));
       }
       if (transposeB)
         fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
@@ -267,7 +267,7 @@ namespace MueLu {
            << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
            << std::endl;
 
-      C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), nnzToAllocate, pft));
+      C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO>(A.getRowMap(), nnzToAllocate, pft));
 
       if (transposeB)
         fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
@@ -291,9 +291,9 @@ namespace MueLu {
 
     } else if (C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO>& tpA = Utils<double,int,int>::Op2TpetraCrs(A);
-      const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO>& tpB = Utils<double,int,int>::Op2TpetraCrs(B);
-      RCP<Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> >  tpC = Utils<double,int,int>::Op2NonConstTpetraCrs(C);
+      const Tpetra::CrsMatrix<SC, LO, GO, NO>&  tpA = Utils<double,int,int>::Op2TpetraCrs(A);
+      const Tpetra::CrsMatrix<SC, LO, GO, NO>&  tpB = Utils<double,int,int>::Op2TpetraCrs(B);
+      RCP<  Tpetra::CrsMatrix<SC, LO, GO, NO> > tpC = Utils<double,int,int>::Op2NonConstTpetraCrs(C);
 
       Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
 #else
@@ -323,7 +323,7 @@ namespace MueLu {
 #endif
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>                sparse_matrix_type;
+      typedef Tpetra::CrsMatrix<SC,LO,GO,NO>                    sparse_matrix_type;
       typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>  reader_type;
       typedef Tpetra::Map<LO,GO,NO>                             map_type;
       typedef Tpetra::MultiVector<SC,LO,GO,NO>                  multivector_type;
@@ -357,7 +357,7 @@ namespace MueLu {
 #endif
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      typedef Tpetra::CrsMatrix<double,int,int,NO,LMO> sparse_matrix_type;
+      typedef Tpetra::CrsMatrix<double,int,int,NO> sparse_matrix_type;
       typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
 
       RCP<NO> node = rcp(new NO());

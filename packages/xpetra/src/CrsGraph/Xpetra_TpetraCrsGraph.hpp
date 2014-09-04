@@ -75,8 +75,7 @@ namespace Xpetra {
 
   template <class LocalOrdinal = CrsGraph<>::local_ordinal_type,
             class GlobalOrdinal = typename CrsGraph<LocalOrdinal>::global_ordinal_type,
-            class Node = typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
+            class Node = typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
   class TpetraCrsGraph
     : public CrsGraph<LocalOrdinal,GlobalOrdinal,Node>
   {
@@ -320,10 +319,6 @@ namespace Xpetra {
     //@}
 
   private:
-    // NOTE (mfh 03 Sep 2014) We no longer use LocalMatOps here.
-    // Tpetra will deprecate the LocalMatOps template parameter, and I
-    // don't know of any cases where users depended on anything other
-    // than the default value of LocalMatOps.
     RCP< Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > graph_;
   }; // TpetraCrsGraph class
 

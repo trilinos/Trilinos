@@ -79,11 +79,9 @@ namespace Xpetra {
             class GlobalOrdinal =
               typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node =
-              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps =
-              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::mat_vec_type>
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class BlockedCrsMatrix :
-    public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
+    public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
     typedef Scalar scalar_type;
     typedef LocalOrdinal local_ordinal_type;

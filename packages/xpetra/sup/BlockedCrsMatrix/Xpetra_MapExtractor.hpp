@@ -77,8 +77,6 @@ namespace Xpetra {
     typedef Node node_type;
 
   private:
-    typedef void LocalMatOps;
-
 #undef XPETRA_MAPEXTRACTOR_SHORT
 #include "Xpetra_UseShortNames.hpp"
 

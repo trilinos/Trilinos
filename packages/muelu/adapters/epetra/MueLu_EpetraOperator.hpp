@@ -63,7 +63,6 @@ namespace MueLu {
     typedef int                                                 LO;
     typedef int                                                 GO;
     typedef KokkosClassic::DefaultNode::DefaultNodeType         NO;
-    typedef void                                                LMO;
 
     typedef Xpetra::Matrix<SC,LO,GO,NO>                     Matrix;
     typedef MueLu::Hierarchy<SC,LO,GO,NO>                   Hierarchy;

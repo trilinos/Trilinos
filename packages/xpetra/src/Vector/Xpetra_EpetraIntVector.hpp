@@ -65,7 +65,7 @@ namespace Xpetra {
     typedef int Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Vector<int, int, int>::node_type Node;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   public:
 
@@ -73,7 +73,7 @@ namespace Xpetra {
     //@{
 
     //! Sets all vector entries to zero.
-    explicit EpetraIntVector(const Teuchos::RCP<const Map<int, int> > &map, bool zeroOut=true)
+    explicit EpetraIntVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true)
     {
       XPETRA_RCP_DYNAMIC_CAST(const EpetraMap, map, eMap, "Xpetra::EpetraCrsMatrix constructors only accept Xpetra::EpetraMap as input arguments.");
       vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
@@ -88,7 +88,7 @@ namespace Xpetra {
     //@{
 
     //! TODO missing comment
-    int dot (const Vector<int,int,int> &a) const;
+    int dot (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &a) const;
 
     //! Return 1-norm of this Vector.
     Teuchos::ScalarTraits<int>::magnitudeType norm1() const;
@@ -100,7 +100,7 @@ namespace Xpetra {
     Teuchos::ScalarTraits<int>::magnitudeType normInf() const;
 
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    Teuchos::ScalarTraits<int>::magnitudeType normWeighted(const Vector<int,int,int> &weights) const;
+    Teuchos::ScalarTraits<int>::magnitudeType normWeighted(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &weights) const;
 
     //! Compute mean (average) value of this Vector.
     int meanValue() const;
@@ -141,10 +141,10 @@ namespace Xpetra {
     //@{
 
     //! Return a Vector which is a const view of column j.
-    Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal > > getVector(size_t j) const;
+    Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVector(size_t j) const;
 
     //! Return a Vector which is a nonconst view of column j.
-    Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal > > getVectorNonConst(size_t j);
+    Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVectorNonConst(size_t j);
 
     //! Const Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.

@@ -85,7 +85,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
     try {
       // GetAmesosSmoother masks the template argument matching, and simply throws if template arguments are incompatible with Epetra
-      sEpetra_ = GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList);
+      sEpetra_ = GetAmesosSmoother<SC,LO,GO,NO>(type_, paramList);
       TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos direct solver");
     } catch (Exceptions::RuntimeError) {
       // AmesosSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int

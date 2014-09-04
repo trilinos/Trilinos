@@ -332,7 +332,7 @@ int main(int argc, char *argv[]) {
   typedef Belos::OperatorT<MV> OP;
 
   // Define Belos Operator
-  Teuchos::RCP<OP> belosOp = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
+  Teuchos::RCP<OP> belosOp = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
 
   // Belos parameter list
   int maxIts = 20;
@@ -347,7 +347,7 @@ int main(int argc, char *argv[]) {
     H[i]->IsPreconditioner(true);
 
     // Define Belos Preconditioner
-    Teuchos::RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO, LMO>(H[i])); // Turns a MueLu::Hierarchy object into a Belos operator
+    Teuchos::RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H[i])); // Turns a MueLu::Hierarchy object into a Belos operator
 
     // Construct a Belos LinearProblem object
     RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));

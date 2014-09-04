@@ -131,7 +131,7 @@ namespace MueLu {
 
     //!
 
-    template<class S2, class LO2, class GO2, class N2, class LMO2>
+    template<class S2, class LO2, class GO2, class N2>
     friend class Hierarchy;
 
   private:

@@ -98,15 +98,13 @@ template <class Scalar = MultiVector<>::scalar_type,
           class GlobalOrdinal =
             typename Map<LocalOrdinal>::global_ordinal_type,
           class Node =
-            typename Map<LocalOrdinal, GlobalOrdinal>::node_type,
-          class LocalMatOps = void /* FIXME (mfh 03 Sep 2014) */ >
+            typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
 class VbrMatrix { //: public Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
  public:
   typedef Scalar scalar_type;
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node node_type;
-  typedef LocalMatOps block_sparse_ops_type; // for backwards compatibility ONLY
 
   //! @name Constructor/Destructor Methods
   //@{

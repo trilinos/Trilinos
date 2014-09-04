@@ -301,7 +301,7 @@ int main(int argc, char *argv[]) {
   {
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("RAPScalingTest: 2 - Setup")));
 
-    MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel); // set a default FactoryManager
+    MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel); // set a default FactoryManager
     fineLevel.Set("A", A);
     fineLevel.Set("Coordinates", coordinates);
 

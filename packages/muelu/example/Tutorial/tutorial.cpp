@@ -348,8 +348,8 @@ int main(int argc, char *argv[]) {
   // wrap MueLu and Xpetra objects into Belos operators.  This is only
   // one of many different ways one could choose to wrap MueLu and
   // Xpetra objects in order to get them to work with Belos.
-  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A));
-  RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO, LMO>(H));
+  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A));
+  RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H));
 
   // Construct a Belos LinearProblem object. This is a complete
   // problem formulation. All the data necessary to solve the system

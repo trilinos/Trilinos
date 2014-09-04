@@ -51,12 +51,6 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-// Tpetra forward declarations
-namespace Tpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class CrsMatrix;
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class MultiVector;
-}
-
 #include "MueLu_SchwarzSmoother_fwd.hpp"
 
 #include "Ifpack2_Preconditioner.hpp"

@@ -96,8 +96,6 @@ namespace Xpetra {
             class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
             class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
   class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node> {
-    typedef void LocalMatOps;
-
   public:
     typedef LocalOrdinal local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;

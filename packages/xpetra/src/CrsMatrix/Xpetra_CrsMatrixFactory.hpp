@@ -68,9 +68,7 @@ namespace Xpetra {
             class GlobalOrdinal =
               typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node =
-              typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps =
-              typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
+              typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class CrsMatrixFactory {
   private:
     //! Private constructor. This is a static class.

@@ -56,7 +56,6 @@ typedef double Scalar;
 typedef int LocalOrdinal;
 typedef int GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-typedef void LocalMatOps;
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

@@ -77,7 +77,8 @@ namespace MueLu {
     typedef double Scalar;
     typedef int    LocalOrdinal;
     typedef int    GlobalOrdinal;
-    typedef SmootherPrototype<double, int, int>::node_type Node;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+
 
 #undef MUELU_AMESOSSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"

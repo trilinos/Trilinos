@@ -62,9 +62,7 @@ namespace Xpetra {
             class GlobalOrdinal =
               typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node =
-              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps =
-              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class MatrixFactory {
 #undef XPETRA_MATRIXFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -149,9 +147,7 @@ namespace Xpetra {
             class GlobalOrdinal =
               typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node =
-              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps =
-              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class MatrixFactory2 {
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -203,7 +199,6 @@ namespace Xpetra {
     typedef int                                 LocalOrdinal;
     typedef int                                 GlobalOrdinal;
     typedef Matrix<double, int, int>::node_type Node;
-    typedef void                                LocalMatOps;
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
 

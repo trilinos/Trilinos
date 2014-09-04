@@ -81,20 +81,18 @@ template <class Scalar = Matrix<>::scalar_type,
           class GlobalOrdinal =
             typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
           class Node =
-            typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-          class LocalMatOps =
-            typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
+            typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
 class CrsMatrixWrap :
-  public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
 {
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-  typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
-  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Matrix;
-  typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
+  typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
+  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
+  typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> CrsGraph;
 #ifdef HAVE_XPETRA_TPETRA
-  typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
+  typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMatrix;
 #endif
-  typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
+  typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
   typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
 public:

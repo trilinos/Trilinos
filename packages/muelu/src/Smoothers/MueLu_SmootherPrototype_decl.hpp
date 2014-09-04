@@ -79,8 +79,6 @@ namespace MueLu {
     typedef LocalOrdinal local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
-    typedef void mat_solve_type; // for backwards compatibility ONLY
-    typedef void mat_vec_type; // for backwards compatibility ONLY
 
   private:
 #undef MUELU_SMOOTHERPROTOTYPE_SHORT

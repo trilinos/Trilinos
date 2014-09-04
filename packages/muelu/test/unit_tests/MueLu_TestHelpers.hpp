@@ -210,22 +210,22 @@ namespace MueLuTests {
      static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) {
        RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
        RCP<Matrix> Op;
-	  
+
         if (lib == Xpetra::NotSpecified)
           lib = TestHelpers::Parameters::getLib();
 
 	// This only works for Tpetra
 	if(lib!=Xpetra::UseTpetra) return Op;
-	
+
 	// Make the graph
 	RCP<Matrix> FirstMatrix = BuildMatrix(matrixList,lib);
-	RCP<const Xpetra::CrsGraph<LO,GO,NO,LMO> > Graph = FirstMatrix->getCrsGraph();
-	
+	RCP<const Xpetra::CrsGraph<LO,GO,NO> > Graph = FirstMatrix->getCrsGraph();
+
 #if defined(HAVE_MUELU_TPETRA)
 	// Thanks for the code, Travis!
-	int blocksize = 5; 
-	RCP<const Xpetra::TpetraCrsGraph<LO,GO,NO,LMO> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LO,GO,NO,LMO> >(Graph);
-       	RCP<const Tpetra::CrsGraph<LO,GO,NO,LMO> > TTGraph = TGraph->getTpetra_CrsGraph();
+	int blocksize = 5;
+	RCP<const Xpetra::TpetraCrsGraph<LO,GO,NO> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LO,GO,NO> >(Graph);
+	RCP<const Tpetra::CrsGraph<LO,GO,NO> > TTGraph = TGraph->getTpetra_CrsGraph();
 
 	RCP<Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,NO> > bcrsmatrix = rcp(new Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,NO> (*TTGraph, blocksize));
 
@@ -241,14 +241,14 @@ namespace MueLuTests {
 	basematrix[3] = three;
 	basematrix[4] = two;
 	basematrix[7] = three;
-	basematrix[8] = two;	
+	basematrix[8] = two;
 	Teuchos::Array<LO> lclColInds(1);
 	for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
 	  lclColInds[0] = lclRowInd;
 	  bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
 	}
 	// CMS: What Xpetra object do we wrap this guy in?
-	//	Op = rcp(new Xpetra::TpetraRowMatrix<LO,GO,NO,LMO>(bcrsmatrix));
+	//	Op = rcp(new Xpetra::TpetraRowMatrix<LO,GO,NO>(bcrsmatrix));
 
 #endif
 	  return Op;

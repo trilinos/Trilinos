@@ -225,7 +225,7 @@ namespace MueLu {
       paramList.set(eigRatioString, ratio);
     }
 
-    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA;
+    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA;
     if (isBlockedMatrix == true) tpA = Utils::Op2NonConstTpetraCrs(merged2Mat);
     else                         tpA = Utils::Op2NonConstTpetraCrs(A_);
 
@@ -238,7 +238,7 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
 
     if (type_ == "CHEBYSHEV" && lambdaMax == negone) {
-      typedef Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> MatrixType;
+      typedef Tpetra::CrsMatrix<SC, LO, GO, NO> MatrixType;
 
       Teuchos::RCP<Ifpack2::Chebyshev<MatrixType> > chebyPrec = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec_);
       if (chebyPrec != Teuchos::null) {

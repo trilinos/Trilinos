@@ -75,7 +75,7 @@ namespace Xpetra {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Vector<double, int, int>::node_type Node;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   public:
 

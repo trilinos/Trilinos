@@ -66,7 +66,6 @@ namespace Xpetra {
             class GlobalOrdinal = typename Vector<Scalar, LocalOrdinal>::local_ordinal_type,
             class Node = typename Vector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class VectorFactory {
-    typedef void LocalMatOps;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -99,7 +98,6 @@ namespace Xpetra {
     typedef int                                 LocalOrdinal;
     typedef int                                 GlobalOrdinal;
     typedef Vector<double, int, int>::node_type Node;
-    typedef void                                LocalMatOps;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -135,7 +133,6 @@ namespace Xpetra {
     typedef int                              LocalOrdinal;
     typedef int                              GlobalOrdinal;
     typedef Vector<int, int, int>::node_type Node;
-    typedef void                             LocalMatOps;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 

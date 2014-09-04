@@ -210,10 +210,10 @@ namespace MueLu {
     Teuchos::ArrayView<const GO> globalRowList = OverlapMap_->getNodeElementList();
     localRowMap_ = Teuchos::rcp(new Tpetra::Map<LO,GO,NO>(numOverlapRows, 0, localComm,
                                                           Tpetra::LocallyReplicated, tA->getNode()));
-    Teuchos::RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > OverlapA
-      = Teuchos::rcp(new Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>(OverlapMap_,OverlapMap_,100));
-    Teuchos::RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > LocalA
-      = Teuchos::rcp(new Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>(localRowMap_,localRowMap_,100));
+    Teuchos::RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> > OverlapA
+      = Teuchos::rcp(new Tpetra::CrsMatrix<SC,LO,GO,NO>(OverlapMap_,OverlapMap_,100));
+    Teuchos::RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> > LocalA
+      = Teuchos::rcp(new Tpetra::CrsMatrix<SC,LO,GO,NO>(localRowMap_,localRowMap_,100));
     // Import/Export objects
     TpetraExporter_ = Teuchos::rcp (new Tpetra::Export<LO,GO,NO> (OverlapMap_, UniqueMap_));
     TpetraImporter_ = Teuchos::rcp (new Tpetra::Import<LO,GO,NO> (UniqueMap_, OverlapMap_));

@@ -66,8 +66,6 @@ namespace Xpetra {
             class Node =
               typename StridedMap<LocalOrdinal, GlobalOrdinal>::node_type>
   class StridedMapFactory {
-    typedef void LocalMatOps;
-
 #undef XPETRA_STRIDEDMAPFACTORY_SHORT
 #include "Xpetra_UseShortNamesOrdinal.hpp"
 

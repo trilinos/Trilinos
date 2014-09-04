@@ -62,9 +62,7 @@ namespace Xpetra {
             class GlobalOrdinal =
               typename CrsGraph<LocalOrdinal>::global_ordinal_type,
             class Node =
-              typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps =
-              typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
+              typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
   class CrsMatrix
     : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
       public DistObject<char, LocalOrdinal,GlobalOrdinal,Node>
@@ -74,8 +72,6 @@ namespace Xpetra {
     typedef LocalOrdinal local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
-    typedef LocalMatOps mat_solve_type; // for backwards compatibility ONLY
-    typedef LocalMatOps mat_vec_type; // for backwards compatibility ONLY
 
     //! @name Constructor/Destructor Methods
     //@{

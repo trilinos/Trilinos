@@ -90,7 +90,7 @@ namespace MueLuTests {
 
       out << "version: " << MueLu::Version() << std::endl;
 
-      RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(16);
+      RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16);
       RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
 
       {

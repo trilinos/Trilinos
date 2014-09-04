@@ -158,14 +158,14 @@ namespace MueLuTests {
     }
 #endif
 
-    RCP<TestProblem<SC,LO,GO,NO,LMO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
+    RCP<TestProblem<SC,LO,GO,NO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO>(lib);
 
     typedef Xpetra::MultiVector<SC> MV;
     typedef Belos::OperatorT<MV>    OP;
 
     // Construct a Belos LinearProblem object
-    RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(p->GetA()));
-    RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(p->GetH()));
+    RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(p->GetA()));
+    RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(p->GetH()));
 
     // Run Belos
     RCP<MultiVector> X = p->GetNewX0();
@@ -184,14 +184,14 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     if (lib == Xpetra::UseEpetra) {  // Epetra specific test: run only once.
 
-      RCP<TestProblem<SC,LO,GO,NO,LMO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
+      RCP<TestProblem<SC,LO,GO,NO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO>(lib);
 
       typedef Epetra_MultiVector   MV;
       typedef Belos::OperatorT<MV> OP;
 
       // Construct a Belos LinearProblem object
-      RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>    (p->GetA()));
-      RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(p->GetH()));
+      RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>    (p->GetA()));
+      RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(p->GetH()));
 
       // X, B
       RCP<MV> X = Utils::MV2NonConstEpetraMV(p->GetNewX0());
@@ -215,7 +215,7 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     if (lib == Xpetra::UseEpetra) {  // Epetra specific test: run only once.
 
-      RCP<TestProblem<SC,LO,GO,NO,LMO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
+      RCP<TestProblem<SC,LO,GO,NO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO>(lib);
 
       typedef Belos::MultiVec<double> MV;
       typedef Belos::Operator<double> OP;
@@ -223,7 +223,7 @@ namespace MueLuTests {
       // Construct a Belos LinearProblem object
       RCP<Epetra_CrsMatrix> A = Utils::Op2NonConstEpetraCrs(p->GetA());
       RCP<OP> belosOp   = rcp(new Belos::EpetraOp(A));
-      RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(p->GetH()));
+      RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(p->GetH()));
 
       // X, B
       RCP<Epetra_MultiVector> eX = Utils::MV2NonConstEpetraMV(p->GetNewX0());
@@ -253,14 +253,14 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     if (lib == Xpetra::UseTpetra) {  // Tpetra specific test: run only once.
 
-      RCP<TestProblem<SC,LO,GO,NO,LMO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
+      RCP<TestProblem<SC,LO,GO,NO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO>(lib);
 
       typedef Tpetra::MultiVector<SC> MV;
       typedef Belos::OperatorT<MV>    OP;
 
       // Construct a Belos LinearProblem object
-      RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(p->GetA()));
-      RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(p->GetH()));
+      RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(p->GetA()));
+      RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(p->GetH()));
 
       //X, B
       RCP<MV> X = Utils::MV2NonConstTpetraMV(p->GetNewX0());

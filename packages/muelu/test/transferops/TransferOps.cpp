@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
   // MueLu setup
   mtime.push_back(M.getNewTimer("MueLu Setup"));
   mtime.back()->start(); // start time measurement
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp ( new Hierarchy() );
+  RCP<MueLu::Hierarchy<SC,LO,GO,NO> > H = rcp ( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   H->SetMaxCoarseSize((GO) maxCoarseSize);;
 
@@ -448,13 +448,13 @@ int main(int argc, char *argv[]) {
     typedef Belos::OperatorT<MV>      OP;
 
     // Vectors
-    RCP<MV> belosX     = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(X);
-    RCP<MV> belosRHS   = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(rhs);
-    RCP<MV> belosResid = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(resid);
+    RCP<MV> belosX     = MueLu::Utils<SC,LO,GO,NO>::MV2NonConstTpetraMV(X);
+    RCP<MV> belosRHS   = MueLu::Utils<SC,LO,GO,NO>::MV2NonConstTpetraMV(rhs);
+    RCP<MV> belosResid = MueLu::Utils<SC,LO,GO,NO>::MV2NonConstTpetraMV(resid);
 
     // construct Belos LinearProblem
-    RCP<OP> belosOp      = Teuchos::rcp (new Belos::XpetraOp<SC,LO,GO,NO,LMO>(Op) );  // Xpetra::Op -> Belos::Op
-    RCP<OP> belosPrec    = Teuchos::rcp (new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H)); // Hierarchy  -> prec
+    RCP<OP> belosOp      = Teuchos::rcp (new Belos::XpetraOp<SC,LO,GO,NO>(Op) );  // Xpetra::Op -> Belos::Op
+    RCP<OP> belosPrec    = Teuchos::rcp (new Belos::MueLuOp<SC,LO,GO,NO>(H)); // Hierarchy  -> prec
 
     RCP<Belos::LinearProblem<double,MV,OP> > problem = Teuchos::rcp( new Belos::LinearProblem<double,MV,OP>(belosOp, belosX, belosRHS) );
     problem->setLeftPrec( belosPrec );

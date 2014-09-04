@@ -66,9 +66,7 @@ namespace Xpetra {
             class GlobalOrdinal =
               typename CrsGraph<LocalOrdinal>::global_ordinal_type,
             class Node =
-              typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps =
-              typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::mat_vec_type>
+              typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
   class CrsGraphFactory {
   private:
     //! Private constructor. This is a static class.

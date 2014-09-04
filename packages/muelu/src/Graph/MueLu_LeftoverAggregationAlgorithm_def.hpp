@@ -80,7 +80,7 @@ namespace MueLu {
     const RCP<const Map> nonUniqueMap = aggregates.GetMap(); //column map of underlying graph
     const RCP<const Map> uniqueMap    = graph.GetDomainMap();
 
-    MueLu::CoupledAggregationCommHelper<LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
+    MueLu::CoupledAggregationCommHelper<LO,GO,NO> myWidget(uniqueMap, nonUniqueMap);
 
     //TODO JJH We want to skip this call
     RCP<Xpetra::Vector<double,LO,GO,NO> > distWeights = Xpetra::VectorFactory<double,LO,GO,NO>::Build(nonUniqueMap);
@@ -699,7 +699,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   int LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                      RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::CoupledAggregationCommHelper<LO,GO,NO,LMO> & myWidget) const {
+                      RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::CoupledAggregationCommHelper<LO,GO,NO> & myWidget) const {
     int myPid = aggregates.GetMap()->getComm()->getRank();
 
     LO nAggregates = aggregates.GetNumAggregates();

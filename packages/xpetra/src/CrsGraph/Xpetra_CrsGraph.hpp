@@ -76,8 +76,7 @@ namespace Xpetra {
 
   template <class LocalOrdinal = Map<>::local_ordinal_type,
             class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = void /* NOTE (mfh 03 Sep 2014) This template parameter will be deprecated */ >
+            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
   class CrsGraph
     : /*public RowGraph<>,*/ public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>
   {
@@ -85,8 +84,6 @@ namespace Xpetra {
     typedef LocalOrdinal local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
-    typedef LocalMatOps mat_solve_type; // for backwards compatibility ONLY
-    typedef LocalMatOps mat_vec_type; // for backwards compatibility ONLY
 
     //! @name Constructor/Destructor Methods
     //@{

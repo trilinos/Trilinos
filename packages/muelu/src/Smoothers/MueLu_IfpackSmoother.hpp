@@ -75,7 +75,7 @@ namespace MueLu {
     typedef double                                                              Scalar;
     typedef int                                                                 LocalOrdinal;
     typedef int                                                                 GlobalOrdinal;
-    typedef SmootherPrototype<double, int, int>::node_type                      Node;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node;
 #undef MUELU_IFPACKSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -209,7 +209,7 @@ namespace MueLu {
   }
 
   template <>
-  RCP<MueLu::SmootherPrototype<double, int, int> >
+  inline RCP<MueLu::SmootherPrototype<double, int, int> >
   GetIfpackSmoother<double, int, int> (const std::string& type,
                                        const Teuchos::ParameterList& paramList,
                                        const int& overlap)

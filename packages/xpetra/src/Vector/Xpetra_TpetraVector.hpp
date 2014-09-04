@@ -87,7 +87,6 @@ namespace Xpetra {
     : public virtual Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
       public TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
-    typedef void LocalMatOps;
 #undef XPETRA_TPETRAMULTIVECTOR_SHORT
 #include "Xpetra_UseShortNames.hpp"
 

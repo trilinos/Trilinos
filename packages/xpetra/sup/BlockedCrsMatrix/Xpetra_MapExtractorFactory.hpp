@@ -55,11 +55,10 @@ namespace Xpetra {
 
   // factory class
   template <class Scalar = MapExtractor<>::scalar_type,
-            class LocalOrdinal = typename MapExtractor<Scalar>::local_ordinal_type
+            class LocalOrdinal  = typename MapExtractor<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename MapExtractor<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+            class Node          = typename MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class MapExtractorFactory {
-    typedef void LocalMatOps;
 #undef XPETRA_MAPEXTRACTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
