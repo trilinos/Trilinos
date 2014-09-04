@@ -191,8 +191,6 @@ ENDFUNCTION()
 #
 MACRO(PARSE_ARGUMENTS prefix arg_names option_names)
 
-  PRINT_VAR(arg_names)
-
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: prefix='${prefix}'")
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: arg_names='${arg_names}'")
   PARSE_ARGUMENTS_DUMP_OUTPUT("PARSE_ARGUMENTS: option_names='${option_names}'")
