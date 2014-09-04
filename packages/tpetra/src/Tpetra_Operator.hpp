@@ -42,7 +42,7 @@
 #ifndef TPETRA_OPERATOR_HPP
 #define TPETRA_OPERATOR_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_MultiVector_decl.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -54,11 +54,11 @@ namespace Tpetra {
   // declarations.
   //
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Map;
+  // template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  // class Map;
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MultiVector;
+  // template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  // class MultiVector;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class Operator
