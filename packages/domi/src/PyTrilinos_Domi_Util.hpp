@@ -37,7 +37,7 @@
 #include "Domi_MDVector.hpp"
 
 // Verbosity
-#define PYTRILINOS_DOMI_UTIL_VERBOSE
+// #define PYTRILINOS_DOMI_UTIL_VERBOSE
 
 namespace PyTrilinos
 {
