@@ -90,12 +90,16 @@ namespace Tpetra {
   /// implementations of RowMatrix, which do useful things like
   /// wrapping an existing matrix to view only certain desired
   /// entries.
-  template <class Scalar,
-            class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class Scalar =
+             Operator<>::scalar_type,
+           class LocalOrdinal =
+             typename Operator<Scalar>::local_ordinal_type,
+           class GlobalOrdinal =
+             typename Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+           class Node =
+             typename Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class RowMatrix :
-    virtual public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
+    virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     virtual public SrcDistObject,
     public Packable<char, LocalOrdinal> {
   public:

@@ -66,11 +66,12 @@ namespace Tpetra {
   ///   documentation of Map for requirements.
   /// \tparam Node The Kokkos Node type.  See the documentation of Map
   ///   for requirements.
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class RowGraph : virtual public Teuchos::Describable,
-                   public Packable<GlobalOrdinal, LocalOrdinal> {
+  template <class LocalOrdinal = Map<>::local_ordinal_type,
+            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
+            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  class RowGraph :
+    virtual public Teuchos::Describable,
+    public Packable<GlobalOrdinal, LocalOrdinal> {
   public:
     //! \name Typedefs
     //@{

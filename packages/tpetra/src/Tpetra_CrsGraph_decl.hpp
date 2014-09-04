@@ -222,9 +222,9 @@ namespace Tpetra {
   /// stored in the local graph and communicated to the appropriate
   /// node on the next call to globalAssemble() or fillComplete() (the
   /// latter calls the former).
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
+  template <class LocalOrdinal = RowGraph<>::local_ordinal_type,
+            class GlobalOrdinal = typename RowGraph<LocalOrdinal>::global_ordinal_type,
+            class Node = typename RowGraph<LocalOrdinal, GlobalOrdinal>::node_type,
             class LocalMatOps = typename CrsGraphSparseOpsSelector<LocalOrdinal, Node>::sparse_ops_type>
   class CrsGraph :
     public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
