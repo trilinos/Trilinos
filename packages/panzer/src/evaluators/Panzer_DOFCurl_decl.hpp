@@ -72,8 +72,6 @@ private:
   std::string basis_name;
   std::size_t basis_index;
   int basis_dimension;
-
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
 };
 
 // Specitialization for the Jacobian
@@ -103,8 +101,6 @@ private:
 
   bool accelerate_jacobian;
   std::vector<int> offsets;
-
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
 };
 
 

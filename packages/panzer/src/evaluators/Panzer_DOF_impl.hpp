@@ -64,7 +64,6 @@ namespace {
 template <typename ScalarT,typename ArrayT>
 inline void evaluateDOF_withSens(const int numCells,
                                  PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDField<ScalarT> & dof_ip,
-                                 PHX::MDField<ScalarT,Cell,BASIS> & dof_orientation,
                                  bool is_vector_basis,
                                  int num_cells,
                                  ArrayT & basis)
@@ -104,7 +103,6 @@ inline void evaluateDOF_withSens(const int numCells,
 template <typename ScalarT,typename ArrayT>
 inline void evaluateDOF_fastSens(const int numCells,
                                  PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDField<ScalarT> & dof_ip,
-                                 PHX::MDField<ScalarT,Cell,BASIS> & dof_orientation,
                                  bool is_vector_basis,
                                  int num_cells,
                                  const std::vector<int> & offsets,
@@ -228,7 +226,7 @@ evaluateFields(typename Traits::EvalData workset)
 { 
   panzer::BasisValues<double,Intrepid::FieldContainer<double> > & basisValues = *workset.bases[basis_index];
 
-  evaluateDOF_withSens(workset.num_cells,dof_basis,dof_ip,dof_orientation,is_vector_basis,workset.num_cells,basisValues.basis);
+  evaluateDOF_withSens(workset.num_cells,dof_basis,dof_ip,is_vector_basis,workset.num_cells,basisValues.basis);
 }
 
 //**********************************************************************
@@ -295,9 +293,9 @@ evaluateFields(typename Traits::EvalData workset)
   panzer::BasisValues<double,Intrepid::FieldContainer<double> > & basisValues = *workset.bases[basis_index];
 
   if(accelerate_jacobian)
-    evaluateDOF_fastSens(workset.num_cells,dof_basis,dof_ip,dof_orientation,is_vector_basis,workset.num_cells,offsets,basisValues.basis);
+    evaluateDOF_fastSens(workset.num_cells,dof_basis,dof_ip,is_vector_basis,workset.num_cells,offsets,basisValues.basis);
   else
-    evaluateDOF_withSens(workset.num_cells,dof_basis,dof_ip,dof_orientation,is_vector_basis,workset.num_cells,basisValues.basis);
+    evaluateDOF_withSens(workset.num_cells,dof_basis,dof_ip,is_vector_basis,workset.num_cells,basisValues.basis);
 }
 
 }
