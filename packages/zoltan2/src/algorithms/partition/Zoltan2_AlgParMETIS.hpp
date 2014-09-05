@@ -163,7 +163,7 @@ void AlgParMETIS<Adapter>::partition(
   pm_idx_t pm_nVtx;
   TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nVtx, nVtx, env);
 
-  pm_idx_t *pm_vwgts;
+  pm_idx_t *pm_vwgts = NULL;
   if (nVwgt) {
     pm_vwgts = new pm_idx_t[nVtx*nVwgt];
     scale_weights(nVtx, vwgts, pm_vwgts);
@@ -177,7 +177,7 @@ void AlgParMETIS<Adapter>::partition(
   int nEwgt = model->getNumWeightsPerEdge();
   size_t nEdge = model->getEdgeList(adjgnos, procs, offsets, ewgts);
 
-  pm_idx_t *pm_ewgts;
+  pm_idx_t *pm_ewgts = NULL;
   if (nEwgt) {
     pm_ewgts = new pm_idx_t[nEdge*nEwgt]; 
     scale_weights(nEdge, ewgts, pm_ewgts);
