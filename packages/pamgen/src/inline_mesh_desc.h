@@ -38,8 +38,8 @@ public:
   
   long long reportSize(const long long &, const long long &, const long long &,std::stringstream & ss,long long max_int);
 
-  virtual long long numBlocks(){return inline_bx*inline_by*inline_bz;};
-  virtual long long blockKstride(){return inline_bx*inline_by;};
+  virtual long long numBlocks(){return inline_b[0]*inline_b[1]*inline_b[2];};
+  virtual long long blockKstride(){return inline_b[0]*inline_b[1];};
   virtual long long GlobalNumElements(){return nelx_tot*nely_tot*nelz_tot;};
 
   virtual void Display_Class(std::ostream&, const std::string &indent); //called by Class_Display
@@ -215,12 +215,8 @@ virtual  void Calc_Parallel_Info(
 
   long long dimension;
   long long trisection_blocks;
-  long long inline_bx;
-  long long inline_by;
-  long long inline_bz;
-  long long inline_nx;
-  long long inline_ny;
-  long long inline_nz;
+  long long inline_b[3];
+  long long inline_n[3];
   long long * a_inline_nx;//individual block values
   long long * a_inline_ny;
   long long * a_inline_nz;
@@ -241,12 +237,8 @@ virtual  void Calc_Parallel_Info(
   double ** last_size;
   long long ** interval;
   double inline_offset[3];
-  double inline_gminx;
-  double inline_gminy;
-  double inline_gminz;
-  double inline_gmaxx;
-  double inline_gmaxy;
-  double inline_gmaxz;
+  double inline_gmin[3];
+  double inline_gmax[3];
 
   double transition_radius;
 

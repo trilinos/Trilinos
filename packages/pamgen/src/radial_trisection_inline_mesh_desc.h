@@ -68,8 +68,8 @@ public:
   virtual std::string Calc_Intervals();
   virtual long long Calc_Coord_Vectors();
 
-  virtual long long numBlocks(){return((inline_bx-1)*inline_by+1)*inline_bz;}
-  virtual long long blockKstride(){return(inline_bx-1)*inline_by+1;}
+  virtual long long numBlocks(){return((inline_b[0]-1)*inline_b[1]+1)*inline_b[2];}
+  virtual long long blockKstride(){return(inline_b[0]-1)*inline_b[1]+1;}
 
   virtual long long GlobalNumElements();
 

@@ -19,9 +19,9 @@ void Brick_Inline_Mesh_Desc::calculateSize(long long & total_el_count,
   total_edge_count = 0L;
 
   if(dimension == 3){
-    for(long long k = 0; k < inline_bz; k ++){
-      for(long long j = 0; j < inline_by; j ++){
-	for(long long i = 0; i < inline_bx; i ++){
+    for(long long k = 0; k < inline_b[2]; k ++){
+      for(long long j = 0; j < inline_b[1]; j ++){
+	for(long long i = 0; i < inline_b[0]; i ++){
 	  total_el_count += 
 	    (long long)interval[0][i]*
 	    (long long)interval[1][j]*
@@ -31,8 +31,8 @@ void Brick_Inline_Mesh_Desc::calculateSize(long long & total_el_count,
     }
   }
   else{
-    for(long long j = 0; j < inline_by; j ++){
-      for(long long i = 0; i < inline_bx; i ++){
+    for(long long j = 0; j < inline_b[1]; j ++){
+      for(long long i = 0; i < inline_b[0]; i ++){
 	total_el_count += 
 	  (long long)interval[0][i]*
 	  (long long)interval[1][j];
@@ -45,14 +45,14 @@ void Brick_Inline_Mesh_Desc::calculateSize(long long & total_el_count,
   nodes_temp[1] = 0;
   nodes_temp[2] = 0;
 
-  for(long long i = 0; i < inline_bx; i ++){
+  for(long long i = 0; i < inline_b[0]; i ++){
     nodes_temp[0] += interval[0][i];
   }
-  for(long long j = 0; j < inline_by; j ++){
+  for(long long j = 0; j < inline_b[1]; j ++){
     nodes_temp[1] += interval[1][j];
   }
   if(dimension == 3){
-    for(long long k = 0; k < inline_bz; k ++){
+    for(long long k = 0; k < inline_b[2]; k ++){
       nodes_temp[2] += interval[2][k];
     }
   }
@@ -81,43 +81,9 @@ void Brick_Inline_Mesh_Desc::calculateSize(long long & total_el_count,
 /*****************************************************************************/
 {
   std::string error_string;
-  for(long long i = 0; i < inline_bx; i ++){
-    long long axis = 0;
-    if((first_size[axis][i] > 0.) && (last_size[axis][i] == 0.)){
-      last_size[axis][i] = first_size[axis][i];
-    }
-    if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-      double xave = (first_size[axis][i]+last_size[axis][i])/2.;
-      double k = a_lot_positive + (block_dist[axis][i]/xave);
-      long long ktil =(long long)k;
-      if(ktil < 1)ktil = 1;
-      double delxtil = block_dist[axis][i]/(double)ktil;
-      double s = xave-delxtil;
-      interval[axis][i] = ktil;
-      first_size[axis][i]-=s;
-      last_size[axis][i] -=s;
-    }
-  }
-  for(long long i = 0; i < inline_by; i ++){
-    long long axis = 1;
-    if((first_size[axis][i] > 0.) && (last_size[axis][i] == 0.)){
-      last_size[axis][i] = first_size[axis][i];
-    }
-    if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-      double xave = (first_size[axis][i]+last_size[axis][i])/2.;
-      double k = a_lot_positive + (block_dist[axis][i]/xave);
-      long long ktil =(long long)k;
-      if(ktil < 1)ktil = 1;
-      double delxtil = block_dist[axis][i]/(double)ktil;
-      double s = xave-delxtil;
-      interval[axis][i] = ktil;
-      first_size[axis][i]-=s;
-      last_size[axis][i] -=s;
-    }
-  }
-  if(dimension == 3){
-    for(long long i = 0; i < inline_bz; i ++){
-      long long axis = 2;
+
+  for(long long axis = 0; axis < dimension; axis ++){
+    for(long long i = 0; i < inline_b[axis]; i ++){
       if((first_size[axis][i] > 0.) && (last_size[axis][i] == 0.)){
 	last_size[axis][i] = first_size[axis][i];
       }
@@ -130,7 +96,7 @@ void Brick_Inline_Mesh_Desc::calculateSize(long long & total_el_count,
 	double s = xave-delxtil;
 	interval[axis][i] = ktil;
 	first_size[axis][i]-=s;
-	last_size[axis][i] -=s;
+      last_size[axis][i] -=s;
       }
     }
   }
@@ -141,46 +107,46 @@ void Brick_Inline_Mesh_Desc::calculateSize(long long & total_el_count,
 long long Brick_Inline_Mesh_Desc::Set_Up()
 /*****************************************************************************/
 {
-  a_inline_nx = new long long [inline_bx];
-  a_inline_ny = new long long [inline_by];
-  a_inline_nz = new long long [inline_bz];
-  c_inline_nx = new long long [inline_bx+1];
-  c_inline_ny = new long long [inline_by+1];
-  c_inline_nz = new long long [inline_bz+1];
+  a_inline_nx = new long long [inline_b[0]];
+  a_inline_ny = new long long [inline_b[1]];
+  a_inline_nz = new long long [inline_b[2]];
+  c_inline_nx = new long long [inline_b[0]+1];
+  c_inline_ny = new long long [inline_b[1]+1];
+  c_inline_nz = new long long [inline_b[2]+1];
   
-  for(long long i = 0; i < inline_bx; i ++){
+  for(long long i = 0; i < inline_b[0]; i ++){
     a_inline_nx[i] = interval[0][i];
     c_inline_nx[i] = 0;
     nelx_tot += a_inline_nx[i];
     if(i)c_inline_nx[i] = c_inline_nx[i-1]+a_inline_nx[i-1];
-    c_block_dist[0][i] = inline_gminx;//inner radius
+    c_block_dist[0][i] = inline_gmin[0];//inner radius
     if(i)c_block_dist[0][i] = c_block_dist[0][i-1]+block_dist[0][i-1];
   }
-  c_inline_nx[inline_bx] = c_inline_nx[inline_bx - 1]+a_inline_nx[inline_bx - 1];
-  c_block_dist[0][inline_bx] = c_block_dist[0][inline_bx - 1]+block_dist[0][inline_bx - 1];
+  c_inline_nx[inline_b[0]] = c_inline_nx[inline_b[0] - 1]+a_inline_nx[inline_b[0] - 1];
+  c_block_dist[0][inline_b[0]] = c_block_dist[0][inline_b[0] - 1]+block_dist[0][inline_b[0] - 1];
 
-  for(long long i = 0; i < inline_by; i ++){
+  for(long long i = 0; i < inline_b[1]; i ++){
     a_inline_ny[i] = interval[1][i];
     c_inline_ny[i] = 0;
     nely_tot += a_inline_ny[i];
     if(i)c_inline_ny[i] = c_inline_ny[i-1]+a_inline_ny[i-1];
-    c_block_dist[1][i] = inline_gminy;
+    c_block_dist[1][i] = inline_gmin[1];
     if(i)c_block_dist[1][i] = c_block_dist[1][i-1]+block_dist[1][i-1];
   }
-  c_inline_ny[inline_by] = c_inline_ny[inline_by-1]+a_inline_ny[inline_by-1];
-  c_block_dist[1][inline_by] = c_block_dist[1][inline_by - 1]+block_dist[1][inline_by - 1];
+  c_inline_ny[inline_b[1]] = c_inline_ny[inline_b[1]-1]+a_inline_ny[inline_b[1]-1];
+  c_block_dist[1][inline_b[1]] = c_block_dist[1][inline_b[1] - 1]+block_dist[1][inline_b[1] - 1];
 
   if(dimension == 3){
-    for(long long i = 0; i < inline_bz; i ++){
+    for(long long i = 0; i < inline_b[2]; i ++){
       a_inline_nz[i] = interval[2][i];
       c_inline_nz[i] = 0;
       nelz_tot += a_inline_nz[i];
       if(i)c_inline_nz[i] = c_inline_nz[i-1]+a_inline_nz[i-1];
-      c_block_dist[2][i] = inline_gminz;
+      c_block_dist[2][i] = inline_gmin[2];
       if(i)c_block_dist[2][i] = c_block_dist[2][i-1]+block_dist[2][i-1];
     }
-    c_inline_nz[inline_bz] = c_inline_nz[inline_bz-1]+a_inline_nz[inline_bz-1];
-    c_block_dist[2][inline_bz] = c_block_dist[2][inline_bz - 1]+block_dist[2][inline_bz - 1];
+    c_inline_nz[inline_b[2]] = c_inline_nz[inline_b[2]-1]+a_inline_nz[inline_b[2]-1];
+    c_block_dist[2][inline_b[2]] = c_block_dist[2][inline_b[2] - 1]+block_dist[2][inline_b[2] - 1];
   }
   else{
     nelz_tot = 1;
@@ -193,9 +159,9 @@ long long Brick_Inline_Mesh_Desc::Set_Up()
   els_in_block = new long long[numBlocks()];
 
   long long bl_ct = 0;
-  for(long long k = 0; k < inline_bz; k ++){
-    for(long long j = 0; j < inline_by; j ++){
-      for(long long i = 0; i < inline_bx; i ++){
+  for(long long k = 0; k < inline_b[2]; k ++){
+    for(long long j = 0; j < inline_b[1]; j ++){
+      for(long long i = 0; i < inline_b[0]; i ++){
 	els_in_block[bl_ct] = a_inline_nx[i]*a_inline_ny[j]*a_inline_nz[k];
 	cum_block_totals[bl_ct]=0;
         if(bl_ct){
@@ -207,23 +173,16 @@ long long Brick_Inline_Mesh_Desc::Set_Up()
   }
 
   // this tolerance is dangerous
-  if(fabs(c_block_dist[1][inline_by]-360.0)< 1.0) periodic_j = true;
+  if(fabs(c_block_dist[1][inline_b[1]]-360.0)< 1.0) periodic_j = true;
   
   
-  inline_gmaxx = inline_gminx;
-  inline_gmaxy = inline_gminy;    
-  inline_gmaxz = inline_gminz;
-  for(long long i = 0; i < inline_bx; i ++){
-    inline_gmaxx += block_dist[0][i];
-  }
-  for(long long i = 0; i < inline_by; i ++){
-    inline_gmaxy += block_dist[1][i];
-  }
-  if(dimension == 3){
-    for(long long i = 0; i < inline_bz; i ++){
-      inline_gmaxz += block_dist[2][i];
+  for(long long axis = 0; axis < dimension; axis ++){
+    inline_gmax[axis] = inline_gmin[axis];
+    for(long long i = 0; i < inline_b[axis]; i ++){
+      inline_gmax[axis] += block_dist[axis][i];
     }
   }
+
   return 0;
 }
 
@@ -233,13 +192,13 @@ long long Brick_Inline_Mesh_Desc::Calc_Coord_Vectors()
 {
   long long nnx = nelx_tot+1;
   long long nny = nely_tot+1;
-  double xdelta = inline_gmaxx-inline_gminx;
-  double ydelta = inline_gmaxy-inline_gminy;
+  double xdelta = inline_gmax[0]-inline_gmin[0];
+  double ydelta = inline_gmax[1]-inline_gmin[1];
   Icoors = new double[nnx];
   Jcoors = new double[nny];
 
   long long nct = 0;
-  for(long long i = 0; i < inline_bx; i ++){
+  for(long long i = 0; i < inline_b[0]; i ++){
     long long axis = 0;
     double sum = 0.;
     for(long long j = 0; j < a_inline_nx[i]; j ++){
@@ -258,7 +217,7 @@ long long Brick_Inline_Mesh_Desc::Calc_Coord_Vectors()
   }
 
   nct = 0;
-  for(long long i = 0; i < inline_by; i ++){
+  for(long long i = 0; i < inline_b[1]; i ++){
     long long axis = 1;
     double sum = 0.;
     for(long long j = 0; j < a_inline_ny[i]; j ++){
@@ -276,33 +235,33 @@ long long Brick_Inline_Mesh_Desc::Calc_Coord_Vectors()
     }
   }
 
-  if(Element_Density_Functions[0])Element_Density_Functions[0]->Integrate(inline_gminx,inline_gmaxx, error_stream);
+  if(Element_Density_Functions[0])Element_Density_Functions[0]->Integrate(inline_gmin[0],inline_gmax[0], error_stream);
   if(!error_stream.str().empty()){return 1;}
-  if(Element_Density_Functions[1])Element_Density_Functions[1]->Integrate(inline_gminy,inline_gmaxy, error_stream);
+  if(Element_Density_Functions[1])Element_Density_Functions[1]->Integrate(inline_gmin[1],inline_gmax[1], error_stream);
   if(!error_stream.str().empty()){return 1;}
   if(Element_Density_Functions[0]){
     for(long long ict = 0; ict < nnx; ict ++){
-      double factor = (Icoors[ict]-inline_gminx)/xdelta;
+      double factor = (Icoors[ict]-inline_gmin[0])/xdelta;
       double interpolant =  Element_Density_Functions[0]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-      double new_coord = inline_gminx+interpolant*xdelta;
+      double new_coord = inline_gmin[0]+interpolant*xdelta;
       Icoors[ict] = new_coord;
     }
   }
   if(Element_Density_Functions[1]){
     for(long long ict = 0; ict < nny; ict ++){
-      double factor = (Jcoors[ict]-inline_gminy)/ydelta;
+      double factor = (Jcoors[ict]-inline_gmin[1])/ydelta;
       double interpolant =  Element_Density_Functions[1]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-      double new_coord = inline_gminy+interpolant*ydelta;
+      double new_coord = inline_gmin[1]+interpolant*ydelta;
       Jcoors[ict] = new_coord;
     }
   }
   if(dimension == 3){
     long long nnz = nelz_tot+1;
-    double zdelta = inline_gmaxz-inline_gminz;
+    double zdelta = inline_gmax[2]-inline_gmin[2];
     Kcoors = new double[nnz];
     
     nct = 0;
-    for(long long i = 0; i < inline_bz; i ++){
+    for(long long i = 0; i < inline_b[2]; i ++){
       long long axis = 2;
       double sum = 0.;
       for(long long j = 0; j < a_inline_nz[i]; j ++){
@@ -320,13 +279,13 @@ long long Brick_Inline_Mesh_Desc::Calc_Coord_Vectors()
       }
     }
     
-    if(Element_Density_Functions[2])Element_Density_Functions[2]->Integrate(inline_gminz,inline_gmaxz,error_stream);
+    if(Element_Density_Functions[2])Element_Density_Functions[2]->Integrate(inline_gmin[2],inline_gmax[2],error_stream);
     if(!error_stream.str().empty()){return 1;}
     if(Element_Density_Functions[2]){
       for(long long ict = 0; ict < nnz; ict ++){
-	double factor = (Kcoors[ict]-inline_gminz)/zdelta;
+	double factor = (Kcoors[ict]-inline_gmin[2])/zdelta;
 	double interpolant =  Element_Density_Functions[2]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-	double new_coord = inline_gminz+interpolant*zdelta;
+	double new_coord = inline_gmin[2]+interpolant*zdelta;
 	Kcoors[ict] = new_coord;
       }
     }

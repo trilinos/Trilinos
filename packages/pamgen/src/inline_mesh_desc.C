@@ -449,16 +449,16 @@ void Inline_Mesh_Desc::Build_Global_Lists(const std::set <long long> & global_el
     //       long long block_k = global_k/(inline_nz);
     //       long long block_j = global_j/(inline_ny);
     //       long long block_i = global_i/(inline_nx);
-    long long block_k = get_block_index(global_k,inline_bz,c_inline_nz);
-    long long block_j = get_block_index(global_j,inline_by,c_inline_ny);
-    long long block_i = get_block_index(global_i,inline_bx,c_inline_nx);
+    long long block_k = get_block_index(global_k,inline_b[2],c_inline_nz);
+    long long block_j = get_block_index(global_j,inline_b[1],c_inline_ny);
+    long long block_i = get_block_index(global_i,inline_b[0],c_inline_nx);
 
     // This is the ordinal number of the block the element resides in
-    long long local_block = block_i + block_j*(inline_bx)+ block_k*(blockKstride());
+    long long local_block = block_i + block_j*(inline_b[0])+ block_k*(blockKstride());
     element_block_lists[local_block].push_back(the_element);
     long long nn;
 
-    if(periodic_j && (block_j == (inline_by-1)) && (global_j == (nely_tot-1))){
+    if(periodic_j && (block_j == (inline_b[1]-1)) && (global_j == (nely_tot-1))){
       if(dimension == 2){
       nn = (global_i+0)*instride + (global_j+0)*jnstride;                         global_node_list.push_back(nn);
       nn = (global_i+1)*instride + (global_j+0)*jnstride;                         global_node_list.push_back(nn);
@@ -715,9 +715,9 @@ void Inline_Mesh_Desc::Populate_Connectivity(long long * const * conn_array,
 	  conn[elct*num_nodes_per_element + 1 + 4] = get_map_entry(global_node_map,(Ig+1)*instride + (Jg+0)*jnstride+(Kg+1)*knstride)+1;
 	}
         long long Kblock = bct/(blockKstride());
-        long long Jblock = (bct-Kblock*blockKstride())/inline_bx;
+        long long Jblock = (bct-Kblock*blockKstride())/inline_b[0];
         //last j block
-        if((Jblock == (inline_by-1)) && (Jg == (nely_tot-1))){
+        if((Jblock == (inline_b[1]-1)) && (Jg == (nely_tot-1))){
           // last element in j direction in block
           conn[elct*num_nodes_per_element + 2] = get_map_entry(global_node_map,(Ig+1)*instride + (0+0)*jnstride+(Kg+0)*knstride) + 1;
           conn[elct*num_nodes_per_element + 3] = get_map_entry(global_node_map,(Ig+0)*instride + (0+0)*jnstride+(Kg+0)*knstride) + 1;
@@ -765,13 +765,13 @@ void Inline_Mesh_Desc::Populate_Map_and_Global_Element_List(long long * the_map,
       long long Jg = (the_el - Kg*kestride)/(jestride);
       long long Ig = the_el  - Kg*kestride - Jg*jestride;
 
-      long long Kbg = get_block_index(Kg,inline_bz,c_inline_nz);
-      long long Jbg = get_block_index(Jg,inline_by,c_inline_ny);
-      long long Ibg = get_block_index(Ig,inline_bx,c_inline_nx);
+      long long Kbg = get_block_index(Kg,inline_b[2],c_inline_nz);
+      long long Jbg = get_block_index(Jg,inline_b[1],c_inline_ny);
+      long long Ibg = get_block_index(Ig,inline_b[0],c_inline_nx);
 
 
       //ordinal of the block
-      long long the_block = Ibg + Jbg*inline_bx + Kbg*blockKstride();
+      long long the_block = Ibg + Jbg*inline_b[0] + Kbg*blockKstride();
 
       //indices inside the block
       long long Kblock = Kg-c_inline_nz[Kbg];
@@ -795,17 +795,17 @@ void Inline_Mesh_Desc::Populate_Map_and_Global_Element_List(long long * the_map,
 long long Inline_Mesh_Desc::Check_Spans()
 /****************************************************************************/
 {
-  if((inline_gmaxx - inline_gminx) <= 0.){
+  if((inline_gmax[0] - inline_gmin[0]) <= 0.){
     error_stream << "Invalid span for 'X' range of inline mesh specification. The span must be positive";
     return 1;
   }
   
-  if((inline_gmaxy - inline_gminy) <= 0.){
+  if((inline_gmax[1] - inline_gmin[1]) <= 0.){
     error_stream << "Invalid span for 'Y' range of inline mesh specification. The span must be positive";
     return 1;
   }
   if(dimension == 3){
-    if((inline_gmaxz-inline_gminz) <= 0.){
+    if((inline_gmax[2]-inline_gmin[2]) <= 0.){
       error_stream << "Invalid span for 'Z' range of inline mesh specification. The span must be positive";
       return 1;
     }
@@ -858,11 +858,11 @@ long long Inline_Mesh_Desc::Check_Block_BC_Sets()
 long long Inline_Mesh_Desc::Check_Blocks()
 /****************************************************************************/
 {
-  if(inline_bx == 0 || inline_by == 0 || inline_bz == 0){
+  if(inline_b[0] == 0 || inline_b[1] == 0 || inline_b[2] == 0){
     error_stream << "Terminating from Inline_Mesh_Desc::Check_Blocks, zero value found,";
-    error_stream << " inline_bx " << inline_bx;
-    error_stream << " inline_by " << inline_by;
-    error_stream << " inline_bz " << inline_bz;
+    error_stream << " inline_b[0] " << inline_b[0];
+    error_stream << " inline_b[1] " << inline_b[1];
+    error_stream << " inline_b[2] " << inline_b[2];
     return 1;
   }
   return 0;
@@ -881,9 +881,9 @@ void Inline_Mesh_Desc::Size_BC_Sets(long long nnx,
       Topo_Loc the_location = (*setit)->the_locs[ict].location;
       if((*setit)->the_locs[ict].block_boundary_set){
 	long long bid = (*setit)->the_locs[ict].block_id-1;
-	long long kind = bid/(inline_bx*inline_by);
-	long long jind = (bid-kind*(inline_bx * inline_by))/inline_bx;
-	long long iind = bid - jind *(inline_bx) - kind*(inline_bx * inline_by);
+	long long kind = bid/(inline_b[0]*inline_b[1]);
+	long long jind = (bid-kind*(inline_b[0] * inline_b[1]))/inline_b[0];
+	long long iind = bid - jind *(inline_b[0]) - kind*(inline_b[0] * inline_b[1]);
 	
 	(*setit)->the_locs[ict].limits = getLimits(the_location,
 						   c_inline_nx[iind],c_inline_nx[iind+1]+1,
@@ -908,9 +908,9 @@ void Inline_Mesh_Desc::Size_BC_Sets(long long nnx,
       Topo_Loc the_location = (*setit)->the_locs[ict].location;
       if((*setit)->the_locs[ict].block_boundary_set){
 	long long bid = (*setit)->the_locs[ict].block_id-1;
-	long long kind = bid/(inline_bx*inline_by);
-	long long jind = (bid-kind*(inline_bx * inline_by))/inline_bx;
-	long long iind = bid - jind *(inline_bx) - kind*(inline_bx * inline_by);
+	long long kind = bid/(inline_b[0]*inline_b[1]);
+	long long jind = (bid-kind*(inline_b[0] * inline_b[1]))/inline_b[0];
+	long long iind = bid - jind *(inline_b[0]) - kind*(inline_b[0] * inline_b[1]);
 	(*setit)->the_locs[ict].limits = getLimits(the_location,
 						   c_inline_nx[iind],c_inline_nx[iind+1],
 						   c_inline_ny[jind],c_inline_ny[jind+1],
@@ -1121,21 +1121,21 @@ void Inline_Mesh_Desc::ZeroSet()
   inline_geometry_type = UNKNOWN;
   inline_decomposition_type = BISECTION;
   trisection_blocks = 0;
-  inline_bx = 0;
-  inline_by = 0;
-  inline_bz = 1;
-  inline_nx = 1;
-  inline_ny = 1;
-  inline_nz = 1;
+  inline_b[0] = 0;
+  inline_b[1] = 0;
+  inline_b[2] = 1;
+  inline_n[0] = 1;
+  inline_n[1] = 1;
+  inline_n[2] = 1;
   inline_offset[0] = 0.;
   inline_offset[1] = 0.;
   inline_offset[2] = 0.;
-  inline_gminx = 0.;
-  inline_gminy = 0.;
-  inline_gminz = 0.;
-  inline_gmaxx = 0.;
-  inline_gmaxy = 0.;
-  inline_gmaxz = 0.;
+  inline_gmin[0] = 0.;
+  inline_gmin[1] = 0.;
+  inline_gmin[2] = 0.;
+  inline_gmax[0] = 0.;
+  inline_gmax[1] = 0.;
+  inline_gmax[2] = 0.;
   inc_nels[0] = 0;
   inc_nels[1] = 0;
   inc_nels[2] = 0;
@@ -2064,8 +2064,8 @@ void Inline_Mesh_Desc::getGlobal_Element_Block_Totals(long long * totals_array)
 {
   for(long long bct = 0; bct < numBlocks();bct ++ ){
     long long kind = bct/blockKstride();
-    long long jind = (bct - kind * blockKstride())/inline_bx;
-    long long iind = bct - jind * inline_bx - kind * blockKstride();
+    long long jind = (bct - kind * blockKstride())/inline_b[0];
+    long long iind = bct - jind * inline_b[0] - kind * blockKstride();
     totals_array[bct] = a_inline_nx[iind]*a_inline_ny[jind]*a_inline_nz[kind];
   } 
 }
