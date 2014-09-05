@@ -158,7 +158,7 @@ namespace Belos {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type Node;
+    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type Node;
 
   public:
 
