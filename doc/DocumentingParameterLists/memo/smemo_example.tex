@@ -1,0 +1,316 @@
+%
+% Version Feb 28, 2008
+%
+% This is an example LaTeX file which demonstrates the use of the
+% smemo class file, designed to resemble the official Sandia memo
+% format. Most of the text here is taken directly from Rolf's SAND
+% report examples.
+%
+% I believe the class file was started ~10 years ago in 1520 by Mark
+% Blanford. It was rewritten in October of 2004 by a contractor (see
+% sfonts.sty for contact information). I (Rich Field) have made a few
+% very minor changes since then.
+%
+\documentclass[pdf,ps2pdf,12pt]{smemo}
+\usepackage{epsfig}
+\usepackage[FIGBOTCAP,normal,bf,tight]{subfigure}
+
+% This following will use PostScript fonts instead of the default
+% ComputerModern fonts. You need to edit the sfonts.sty file to ask it
+% to use the PS font names you have on your system. It shouldn't be
+% difficult to do this.
+%\usepackage{sfonts}
+
+% The following can be used to mark "OUO" on the top and bottom of
+% each page. More markings are needed, but this is a start...perhaps
+% some LaTeX guru can figure this out.
+%\input{markOUO}
+
+% ---------------------------------------------------------------------------- %
+%
+% Start the document
+%
+\begin{document}
+
+\begin{memo}
+
+% If different from today's; or use \nodate to suppress date
+\date{}
+
+% if to one person, put their name here
+% e.g. \to{H. S. Granger, Org. 0001, MS-9999}
+% otherwise use \to{Distribution} and include distribution list at end
+\to{Distribution}
+
+% For running head, if heading on following pages is not Addressee
+%\headtext{}
+
+\from{J. E. Smith, Org. 0002, MS-0001}
+
+\subject{On the Use of Dry Erase Markers at National Laboratories}
+
+% ---------------------------------------------------------------------------- %
+%
+% Main text of memo begins here
+%
+It would appear that many projects carried out at the national DOE
+laboratories could benefit from some dry erase markers. This report examines the
+requirements for the use of dry erase markers and gives a few specific examples on
+how dry erase markers can be used to advance the state of the art.
+
+\section{Introduction}\label{Intro}
+In~\cite{Potter} we have shown that dry erase markers have
+a use in science. In this report we address the use of dry
+erase markers specifically to the science and engineering
+performed at the DOE national laboratories. Let us begin
+with a description of a couple of basic dry erase marker
+drawings. We use the circle and the square to make our point.
+
+\subsection{The Circle}
+	    Figure~\ref{fig1} shows one of the basic shapes. It
+	    appears in many dry erase drawings and has many important
+	    properties.
+
+	    \begin{figure}[ht]
+		\centering
+		\begin{picture}(50,50)(0,0)
+		    \put(25,25){\circle{50}}
+		    \put(25,25){\circle{1}}
+		\end{picture}
+		\caption[The circle]{A circle is one of the basic
+		    shapes.  It has many important properties. Note,
+		    for example, that every point along its
+		    circumference is at exactly the same distance
+		    from the center. A truly important property
+		    for a cicrle.}
+		\label{fig1}
+	    \end{figure}
+
+	    Whole books have been written about the circle and
+	    similar, lesser shapes. So, it would be presumptuous to
+	    attempt to even list some of its properties and uses
+	    in dry erase marker drawings. Simply admire the shape
+	    in Figure~\ref{fig1} and its power will soon engulf
+	    you in ideas and beautiful feelings of completeness.
+
+
+
+\subsubsection{Small Circles}
+We also need an example of a subsubsection to make sure titles and
+table of content entries work for those.
+
+And while we are at it, we might as well check paragraph
+spacing. Although, we will do that again in Section~\ref{sec:long}.
+
+\subsection{The Square}
+Figure~\ref{fig2} illustrates another famous shape. We will
+show some of its uses in later chapters, but we wanted to introduce it
+here because this is a good place for another figure.
+
+\begin{figure}[ht]
+  \centering
+  \begin{picture}(50,50)(0,0)
+    \put(0,0){\framebox(50,50){}}
+    \put(25,25){\circle{1}}
+  \end{picture}
+  \caption[The square]{A square is another of the basic
+    shapes. It is not quite as powerful as the circle. It
+    has some similarities (note that the four corners all have
+    the same distance to the center), and has many fine
+    uses in everyday dry erase marker drawing.}
+  \label{fig2}
+\end{figure}
+
+\subsection{The Dot}
+We also need a figure with a short caption. In order to do this,
+we introduce the dot. Figure~\ref{fig3} shows the shape of a dot.
+
+\begin{figure}[ht]
+  \centering
+  \begin{picture}(50,50)(0,0)
+    \put(25,25){\circle{1}}
+  \end{picture}
+  \caption[The dot]{A simple dot}
+  \label{fig3}
+\end{figure}
+
+\subsection{Tables and Such}
+In order to test our class file, we also need to have some tables. One
+should be enough for our purposes, so here it is: Table~\ref{tab1}. On
+second thought, we need another one to test the list of tables with
+multiple entries. So, we introduce Table~\ref{tab2}.
+
+\begin{table}[ht]
+  \centering
+  \caption[Shapes]{This superb table lists a few
+    of the more important shapes and some of
+    their properties. Be aware that this condensed list
+    can by no means describe all the properties or
+    shapes drawable by dry erase markers.}
+  \bigskip
+
+  \begin{tabular}{|l|c|l|c|}
+    \hline \hline
+    Name  & Number of & Importance & Shape \\
+    & corners   &            &       \\
+    \hline
+    circle & 0        & high       & $\bigcirc$ \\
+    square & 4        & medium     & $\diamond$ \\
+    triangle & 3      & low        & $\triangle$ \\
+    \hline
+  \end{tabular}
+  \label{tab1}
+\end{table}
+
+\begin{table}[ht]
+  \centering
+  \caption{A magic square}
+  \bigskip
+  
+  \begin{tabular}{|c|c|c|c|}
+    \hline
+    1 & 15 & 14 & 4 \\ \hline
+    12 & 6 & 7 & 9 \\ \hline
+    8 & 10 & 11 & 5 \\ \hline
+    13 & 3 & 2 & 16 \\ \hline
+  \end{tabular}
+  \label{tab2}
+\end{table}
+
+\section{A Section With Subfigures}
+The subfigure package used to cause problems until James Gruetzner and
+Todd Pitts found out that the subfigure package uses {\tt
+  addcontentsline}, which is redefined in the SANDreport class. The
+class uses the ifthen package, but it is not loaded at the time the
+subfigure package uses {\tt addcontentsline}.  The new code avoids
+using the ifthen package.  Have a look at Figure~\ref{fig:creatures} 
+for an example.
+
+\begin{figure}[!btp]
+  \centering
+  %\subfigure[A Hyppogriff]{
+    %\label{fig:sub:intro:creatures:hippogriff}
+    %\includegraphics[keepaspectratio=true, width=2.0in]{hippogriff}
+  %}
+  %\subfigure[A Dragon]{
+    %\label{fig:sub:intro:creatures:dragon}
+    %\includegraphics[keepaspectratio=true, width=2.0in]{dragon}
+  %}
+  \caption{Creatures not drawn using dry erase markers.}
+  \label{fig:creatures}
+\end{figure}
+
+\section{A Long Section}\label{sec:long}
+We need a long chapter to test full-page formatting. Therefore, we
+switch to the ancient language of Latin.
+
+%\input{LoremIpsum}
+
+\section{Conclusions}
+Of course, no report would be complete without some conclusions.
+This section is where they would go, if we had some.
+
+% I've never used the following 3 commands but maybe you will
+\initials{ H.P. }
+
+%\enc{   }
+
+\keywords{ Dry erase markers }
+
+\nocite{*}
+
+% ---------------------------------------------------------------------- %
+% References
+%
+\normalfont 
+\bibliographystyle{plain}
+\bibliography{SANDExample}
+
+% ---------------------------------------------------------------------- %
+% Appendices
+% 
+\clearpage
+\renewcommand{\thesection}{\Alph{section}}
+\setcounter{section}{0}
+
+\section{Historical Perspective}
+This is an example of an appendix.
+
+\subsection{The Past a Long Time Ago}
+This is where we talk about things so old nobody can verify them. We
+are safe. 
+
+\subsection{The Past More Recently}
+Now we have to be a little bit more careful, since records exist from
+that time, and some people still alive actually lived back then.
+
+\section{Some Other Appendix}
+Just to show what a second Appendix would look like. It contains
+a table. 
+
+\begin{table}[ht]
+  \centering
+  \caption{A small table}
+  \bigskip
+  
+  \begin{tabular}{|c|c|}
+    \hline
+    A & B  \\ \hline
+    C & D  \\ \hline
+  \end{tabular}
+  \label{tab3}
+\end{table}
+
+\begin{figure}[ht]
+  \centering
+  \begin{picture}(50,50)(0,0)
+    \put(25,25){\circle{1}}
+    \put(25,25){\circle{5}}
+    \put(25,25){\circle{10}}
+    \put(25,25){\circle{15}}
+    \put(25,25){\circle{20}}
+    \put(25,25){\circle{25}}
+    \put(25,25){\circle{30}}
+    \put(25,25){\circle{35}}
+    \put(25,25){\circle{40}}
+    \put(25,25){\circle{45}}
+    \put(25,25){\circle{50}}
+  \end{picture}
+  \caption{Dizzy yet?}
+  \label{fig4}
+\end{figure}
+
+% ---------------------------------------------------------------------- %
+% Distribution list
+% 
+\clearpage
+\begin{distribution}{External Distribution:}
+    \normalfont
+    An Address\\
+    99 $99^{th}$ street NW\\
+    City, State\\
+    \\
+    Some Address\\
+    and street\\
+    City, State\\
+    \\
+    Another Address\\
+    On a street\\
+    City, State\\
+    U.S.A.
+\end{distribution}
+
+\begin{distribution}{Internal Distribution:}
+    \normalfont
+    \begin{tabular}{@{}lll}
+	MS-1319 & R. E. Riesen & Org. 1423\\[3pt]
+	MS-1234 & A. Nother & Org. 4321
+    \end{tabular}
+\end{distribution}
+
+% ---------------------------------------------------------------------- %
+% End
+% 
+\end{memo}
+
+\end{document}
