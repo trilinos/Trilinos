@@ -276,7 +276,7 @@ virtual  void Calc_Parallel_Info(
 // protected:
 
 // private:
-  virtual long long Calc_Coord_Vectors(){return 0;}
+  virtual long long Calc_Coord_Vectors();
   virtual void Populate_Coords(double * coords,   
 		       std::vector<long long> & global_node_vector, 
 		       std::map <long long, long long> & global_node_map,

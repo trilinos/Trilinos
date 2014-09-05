@@ -165,47 +165,6 @@ long long Brick_Inline_Mesh_Desc::Set_Up()
 }
 
 /****************************************************************************/
-long long Brick_Inline_Mesh_Desc::Calc_Coord_Vectors()
-/****************************************************************************/
-{
-
-  for(long long axis = 0; axis < dimension; axis ++){
-    IJKcoors[axis] = new double[nel_tot[axis]+1];
-
-    long long nct = 0;
-    for(long long i = 0; i < inline_b[axis]; i ++){
-      double sum = 0.;
-      for(long long j = 0; j < a_inline_n[axis][i]; j ++){
-	if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-	  IJKcoors[axis][nct] = c_block_dist[axis][i]+sum;
-	  sum += first_size[axis][i];
-	  if(interval[axis][i]-1) sum += (double)j*(last_size[axis][i]-first_size[axis][i])/((double)interval[axis][i]-1);
-	  IJKcoors[axis][nct+1] = c_block_dist[axis][i+1];
-	}
-	else{
-	  IJKcoors[axis][nct] = c_block_dist[axis][i]+j*block_dist[axis][i]/(double)a_inline_n[axis][i];
-	  IJKcoors[axis][nct+1] = c_block_dist[axis][i]+(j+1)*block_dist[axis][i]/(double)a_inline_n[axis][i];
-	}
-	nct ++;
-      }
-    }
-    if(Element_Density_Functions[axis]){
-      Element_Density_Functions[axis]->Integrate(inline_gmin[axis],inline_gmax[axis], error_stream);
-      if(!error_stream.str().empty()){return 1;}
-      double delta = inline_gmax[axis]-inline_gmin[axis];
-      for(long long ict = 0; ict < (nel_tot[axis]+1); ict ++){
-	double factor = (IJKcoors[axis][ict]-inline_gmin[axis])/delta;
-	double interpolant =  Element_Density_Functions[axis]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-	double new_coord = inline_gmin[axis]+interpolant*delta;
-	IJKcoors[axis][ict] = new_coord;
-      }
-    }
-  }
-
-  return 0;
-}
-
-/****************************************************************************/
 void Brick_Inline_Mesh_Desc::Populate_Coords(double * coords,   
 						    std::vector<long long> & global_node_vector,                             
 						    std::map <long long, long long> & global_node_map,
