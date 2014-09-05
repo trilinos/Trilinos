@@ -200,7 +200,7 @@ namespace stk {
       // \param[in] comm MPI Communicator to be used for all
       // parallel communication needed to generate the mesh.
       StkMeshIoBroker(stk::ParallelMachine comm,
-		      stk::mesh::ConnectivityMap *connectivity_map = NULL);
+		      const stk::mesh::ConnectivityMap *connectivity_map = NULL);
       StkMeshIoBroker();
 
       ~StkMeshIoBroker();
@@ -611,7 +611,7 @@ namespace stk {
 
       Teuchos::RCP<stk::mesh::Selector> m_deprecated_selector;
 
-      stk::mesh::ConnectivityMap* m_connectivity_map;
+      const stk::mesh::ConnectivityMap* m_connectivity_map;
 
       std::vector<Teuchos::RCP<OutputFile> > m_output_files;
       std::vector<Teuchos::RCP<Heartbeat> > m_heartbeat;

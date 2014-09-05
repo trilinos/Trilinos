@@ -1140,7 +1140,7 @@ namespace stk {
       Ioss::Init::Initializer::initialize_ioss();
     }
 
-    StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm, stk::mesh::ConnectivityMap * connectivity_map)
+    StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm, const stk::mesh::ConnectivityMap * connectivity_map)
       : m_communicator(comm), m_connectivity_map(connectivity_map), m_active_mesh_index(0)
     {
       Ioss::Init::Initializer::initialize_ioss();
