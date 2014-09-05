@@ -88,9 +88,11 @@ class Epetra_Vector;
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
-#include <Xpetra_TpetraMultiVector_fwd.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix_fwd.hpp>
-#include <Tpetra_Map_decl.hpp>
+#include <Xpetra_TpetraMultiVector_fwd.hpp>
 #endif
 
 namespace MueLu {
