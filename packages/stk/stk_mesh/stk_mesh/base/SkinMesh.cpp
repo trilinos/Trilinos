@@ -87,6 +87,22 @@ void get_common_elements( BulkData const& mesh, EntityVector const& nodes, Entit
 
 typedef std::set< std::pair<Entity, unsigned> > Boundary;
 
+bool isTopologySupportedForSkinning(stk::topology topology)
+{
+    if (topology.is_shell())
+    {
+        return false;
+    }
+    else if ( topology.dimension() < 2 )
+    {
+        return false;
+    }
+    else if ( topology.num_sides() == 0 )
+    {
+        return false;
+    }
+    return true;
+}
 size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
                                                    const BucketVector& element_buckets,
                                                    Boundary& boundary,
@@ -97,17 +113,12 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
   for (size_t i=0, ie=element_buckets.size(); i<ie; ++i) {
     const Bucket & b = *element_buckets[i];
     stk::topology element_topology = b.topology();
-    const unsigned num_sides = element_topology.num_sides();
-
-    // skip over elements which do not have sides
-    if (num_sides == 0u) continue;
-
-    // TODO: skip shells and particles for now
-    if (element_topology.is_shell() || (element_topology == stk::topology::PARTICLE) ) {
-      std::cerr << "Skinning shells and particlesis currently not supported!";
-      //ThrowErrorMsgIf(element_topology.is_shell(), "Skinnig meshes with shells is currently unsupported");
+    if (!isTopologySupportedForSkinning(element_topology))
+    {
+      std::cerr << "Skinning " << element_topology << " is currently not supported." << std::endl;
       continue;
     }
+    const unsigned num_sides = element_topology.num_sides();
 
     for (size_t j=0, je=b.size(); j<je; ++j) {
       Entity elem = b[j];
