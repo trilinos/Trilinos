@@ -13,7 +13,7 @@ rm -r html
 mkdir ../browser/doc/html
 
 mkdir -p html/common
-cp -r ../../common/parameterList html/common
+cp -r ../../../doc/DocumentingParameterLists/webfiles html/common/parameterList
 
 
 # Build the documentation
