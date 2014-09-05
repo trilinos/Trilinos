@@ -126,9 +126,6 @@ virtual  void Calc_Parallel_Info(
 			 std::vector <long long> & element_neighbor_vector,
 			 std::list <std::pair <long long ,Topo_Loc > > * & boundary_element_list);
 
-  virtual void Populate_Connectivity(long long * const * conn_array, 
-				     std::map <long long, long long> & global_node_map);
-
   virtual void Populate_Map_and_Global_Element_List(long long * map, long long * gel);
 
   virtual long long Rename_Block_BC_Sets();

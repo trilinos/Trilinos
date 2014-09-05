@@ -108,56 +108,56 @@ std::string Radial_Inline_Mesh_Desc::Calc_Intervals()
 long long Radial_Inline_Mesh_Desc::Set_Up()
 /*****************************************************************************/
 {
-  a_inline_nx = new long long [inline_b[0]];
-  a_inline_ny = new long long [inline_b[1]];
-  a_inline_nz = new long long [inline_b[2]];
-  c_inline_nx = new long long [inline_b[0]+1];
-  c_inline_ny = new long long [inline_b[1]+1];
-  c_inline_nz = new long long [inline_b[2]+1];
+  a_inline_n[0] = new long long [inline_b[0]];
+  a_inline_n[1] = new long long [inline_b[1]];
+  a_inline_n[2] = new long long [inline_b[2]];
+  c_inline_n[0] = new long long [inline_b[0]+1];
+  c_inline_n[1] = new long long [inline_b[1]+1];
+  c_inline_n[2] = new long long [inline_b[2]+1];
   
   for(long long i = 0; i < inline_b[0]; i ++){
-    a_inline_nx[i] = inline_n[0];
-    a_inline_nx[i] = interval[0][i];
-    c_inline_nx[i] = 0;
-    nelx_tot += a_inline_nx[i];
-    if(i)c_inline_nx[i] = c_inline_nx[i-1]+a_inline_nx[i-1];
+    a_inline_n[0][i] = inline_n[0];
+    a_inline_n[0][i] = interval[0][i];
+    c_inline_n[0][i] = 0;
+    nel_tot[0] += a_inline_n[0][i];
+    if(i)c_inline_n[0][i] = c_inline_n[0][i-1]+a_inline_n[0][i-1];
     c_block_dist[0][i] = inline_gmin[0];//inner radius
     if(i)c_block_dist[0][i] = c_block_dist[0][i-1]+block_dist[0][i-1];
   }
-  c_inline_nx[inline_b[0]] = c_inline_nx[inline_b[0] - 1]+a_inline_nx[inline_b[0] - 1];
+  c_inline_n[0][inline_b[0]] = c_inline_n[0][inline_b[0] - 1]+a_inline_n[0][inline_b[0] - 1];
   c_block_dist[0][inline_b[0]] = c_block_dist[0][inline_b[0] - 1]+block_dist[0][inline_b[0] - 1];
 
   for(long long i = 0; i < inline_b[1]; i ++){
-    a_inline_ny[i] = inline_n[1];
-    a_inline_ny[i] = interval[1][i];
-    c_inline_ny[i] = 0;
-    nely_tot += a_inline_ny[i];
-    if(i)c_inline_ny[i] = c_inline_ny[i-1]+a_inline_ny[i-1];
+    a_inline_n[1][i] = inline_n[1];
+    a_inline_n[1][i] = interval[1][i];
+    c_inline_n[1][i] = 0;
+    nel_tot[1] += a_inline_n[1][i];
+    if(i)c_inline_n[1][i] = c_inline_n[1][i-1]+a_inline_n[1][i-1];
     c_block_dist[1][i] = inline_gmin[1];
     if(i)c_block_dist[1][i] = c_block_dist[1][i-1]+block_dist[1][i-1];
   }
-  c_inline_ny[inline_b[1]] = c_inline_ny[inline_b[1]-1]+a_inline_ny[inline_b[1]-1];
+  c_inline_n[1][inline_b[1]] = c_inline_n[1][inline_b[1]-1]+a_inline_n[1][inline_b[1]-1];
   c_block_dist[1][inline_b[1]] = c_block_dist[1][inline_b[1] - 1]+block_dist[1][inline_b[1] - 1];
 
   if(dimension == 3){
     for(long long i = 0; i < inline_b[2]; i ++){
-      a_inline_nz[i] = inline_n[2];
-      a_inline_nz[i] = interval[2][i];
+      a_inline_n[2][i] = inline_n[2];
+      a_inline_n[2][i] = interval[2][i];
       
-      c_inline_nz[i] = 0;
-      nelz_tot += a_inline_nz[i];
-      if(i)c_inline_nz[i] = c_inline_nz[i-1]+a_inline_nz[i-1];
+      c_inline_n[2][i] = 0;
+      nel_tot[2] += a_inline_n[2][i];
+      if(i)c_inline_n[2][i] = c_inline_n[2][i-1]+a_inline_n[2][i-1];
       c_block_dist[2][i] = inline_gmin[2];
       if(i)c_block_dist[2][i] = c_block_dist[2][i-1]+block_dist[2][i-1];
     }
-    c_inline_nz[inline_b[2]] = c_inline_nz[inline_b[2]-1]+a_inline_nz[inline_b[2]-1];
+    c_inline_n[2][inline_b[2]] = c_inline_n[2][inline_b[2]-1]+a_inline_n[2][inline_b[2]-1];
     c_block_dist[2][inline_b[2]] = c_block_dist[2][inline_b[2] - 1]+block_dist[2][inline_b[2] - 1];
   }
   else{
-    nelz_tot = 1;
-    a_inline_nz[0] = 1;
-    c_inline_nz[0] = 0;
-    c_inline_nz[1] = 1;
+    nel_tot[2] = 1;
+    a_inline_n[2][0] = 1;
+    c_inline_n[2][0] = 0;
+    c_inline_n[2][1] = 1;
   }
 
   cum_block_totals = new long long[inline_b[0]*inline_b[1]*inline_b[2]];
@@ -167,7 +167,7 @@ long long Radial_Inline_Mesh_Desc::Set_Up()
   for(long long k = 0; k < inline_b[2]; k ++){
     for(long long j = 0; j < inline_b[1]; j ++){
       for(long long i = 0; i < inline_b[0]; i ++){
-        els_in_block[bl_ct] = a_inline_nx[i]*a_inline_ny[j]*a_inline_nz[k];
+        els_in_block[bl_ct] = a_inline_n[0][i]*a_inline_n[1][j]*a_inline_n[2][k];
         cum_block_totals[bl_ct]=0;
         if(bl_ct){
 	  cum_block_totals[bl_ct] = cum_block_totals[bl_ct-1]+els_in_block[bl_ct-1];
@@ -206,7 +206,7 @@ long long Radial_Inline_Mesh_Desc::Set_Up()
     }
     //must have 90/180/360 degrees and even numbers of elements
     long long mod = (long long)(c_block_dist[1][inline_b[1]]/90.);
-    if(nely_tot % (mod*2) != 0){
+    if(nel_tot[1] % (mod*2) != 0){
       error_stream << "Radial_Inline_Mesh_Desc::Set_Up(...): "
 		   << "ENFORCE PERIODIC Requires an even number of elements in ech 90 degree quadrant.";
       return 1;
@@ -224,106 +224,40 @@ long long Radial_Inline_Mesh_Desc::Set_Up()
 long long Radial_Inline_Mesh_Desc::Calc_Coord_Vectors()
 /****************************************************************************/
 {
-  long long nnx = nelx_tot+1;
-  long long nny = nely_tot+1;
-  Real xdelta = inline_gmax[0]-inline_gmin[0];
-  Real ydelta = inline_gmax[1]-inline_gmin[1];
-  Icoors = new Real[nnx];
-  Jcoors = new Real[nny];
 
-  long long nct = 0;
-  for(long long i = 0; i < inline_b[0]; i ++){
-    long long axis = 0;
-    Real sum = 0.;
-    for(long long j = 0; j < a_inline_nx[i]; j ++){
-      if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-        Icoors[nct] = c_block_dist[axis][i]+sum;
-        sum += first_size[axis][i];
-        if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
-        Icoors[nct+1] = c_block_dist[axis][i+1];
-      }
-      else{
-        Icoors[nct] = c_block_dist[0][i]+j*block_dist[0][i]/(Real)a_inline_nx[i];
-        Icoors[nct+1] = c_block_dist[0][i]+(j+1)*block_dist[0][i]/(Real)a_inline_nx[i];
-      }
-      nct ++;
-    }
-  }
+  for(long long axis = 0; axis < dimension; axis ++){
+    IJKcoors[axis] = new double[nel_tot[axis]+1];
 
-  nct = 0;
-  for(long long i = 0; i < inline_b[1]; i ++){
-    long long axis = 1;
-    Real sum = 0.;
-    for(long long j = 0; j < a_inline_ny[i]; j ++){
-      if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-        Jcoors[nct] = c_block_dist[axis][i]+sum;
-        sum += first_size[axis][i];
-        if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
-        Jcoors[nct+1] = c_block_dist[axis][i+1];
-      }
-      else{
-        Jcoors[nct] = c_block_dist[1][i]+j*block_dist[1][i]/(Real)a_inline_ny[i];
-        Jcoors[nct+1] = c_block_dist[1][i]+(j+1)*block_dist[1][i]/(Real)a_inline_ny[i];
-      }
-      nct ++;
-    }
-  }
-  if(Element_Density_Functions[0])Element_Density_Functions[0]->Integrate(inline_gmin[0],inline_gmax[0], error_stream);
-  if(!error_stream.str().empty()){return 1;}
-  if(Element_Density_Functions[1])Element_Density_Functions[1]->Integrate(inline_gmin[1],inline_gmax[1], error_stream);
-  if(!error_stream.str().empty()){return 1;}
-  if(Element_Density_Functions[0]){
-    for(long long ict = 0; ict < nnx; ict ++){
-      Real factor = (Icoors[ict]-inline_gmin[0])/xdelta;
-      Real interpolant =  Element_Density_Functions[0]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-      Real new_coord = inline_gmin[0]+interpolant*xdelta;
-      Icoors[ict] = new_coord;
-    }
-  }
-  if(Element_Density_Functions[1]){
-    for(long long ict = 0; ict < nny; ict ++){
-      Real factor = (Jcoors[ict]-inline_gmin[1])/ydelta;
-      Real interpolant =  Element_Density_Functions[1]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-      Real new_coord = inline_gmin[1]+interpolant*ydelta;
-      Jcoors[ict] = new_coord;
-    }
-  }
-
-  if(dimension == 3){
-    long long nnz = nelz_tot+1;
-    Real zdelta = inline_gmax[2]-inline_gmin[2];
-    Kcoors = new Real[nnz];
-    
-    nct = 0;
-    for(long long i = 0; i < inline_b[2]; i ++){
-      long long axis = 2;
-      Real sum = 0.;
-      for(long long j = 0; j < a_inline_nz[i]; j ++){
+    long long nct = 0;
+    for(long long i = 0; i < inline_b[axis]; i ++){
+      double sum = 0.;
+      for(long long j = 0; j < a_inline_n[axis][i]; j ++){
 	if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-	  Kcoors[nct] = c_block_dist[axis][i]+sum;
+	  IJKcoors[axis][nct] = c_block_dist[axis][i]+sum;
 	  sum += first_size[axis][i];
-          if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
-	  Kcoors[nct+1] = c_block_dist[axis][i+1];
+	  if(interval[axis][i]-1) sum += (double)j*(last_size[axis][i]-first_size[axis][i])/((double)interval[axis][i]-1);
+	  IJKcoors[axis][nct+1] = c_block_dist[axis][i+1];
 	}
 	else{
-	  Kcoors[nct] = c_block_dist[2][i]+j*block_dist[2][i]/(Real)a_inline_nz[i];
-	  Kcoors[nct+1] = c_block_dist[2][i]+(j+1)*block_dist[2][i]/(Real)a_inline_nz[i];
+	  IJKcoors[axis][nct] = c_block_dist[axis][i]+j*block_dist[axis][i]/(double)a_inline_n[axis][i];
+	  IJKcoors[axis][nct+1] = c_block_dist[axis][i]+(j+1)*block_dist[axis][i]/(double)a_inline_n[axis][i];
 	}
 	nct ++;
       }
     }
-    
-    if(Element_Density_Functions[2])Element_Density_Functions[2]->Integrate(inline_gmin[2],inline_gmax[2], error_stream);
-    if(!error_stream.str().empty()){return 1;}
-    if(Element_Density_Functions[2]){
-      for(long long ict = 0; ict < nnz; ict ++){
-	Real factor = (Kcoors[ict]-inline_gmin[2])/zdelta;
-	Real interpolant =  Element_Density_Functions[2]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-	Real new_coord = inline_gmin[2]+interpolant*zdelta;
-	Kcoors[ict] = new_coord;
+    if(Element_Density_Functions[axis]){
+      Element_Density_Functions[axis]->Integrate(inline_gmin[axis],inline_gmax[axis], error_stream);
+      if(!error_stream.str().empty()){return 1;}
+      double delta = inline_gmax[axis]-inline_gmin[axis];
+      for(long long ict = 0; ict < (nel_tot[axis]+1); ict ++){
+	double factor = (IJKcoors[axis][ict]-inline_gmin[axis])/delta;
+	double interpolant =  Element_Density_Functions[axis]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
+	double new_coord = inline_gmin[axis]+interpolant*delta;
+	IJKcoors[axis][ict] = new_coord;
       }
     }
   }
+
   return 0;
 }
 
@@ -337,20 +271,22 @@ void Radial_Inline_Mesh_Desc::Populate_Coords(Real * coords,
 {
   Real deg_to_rad = M_PI/180.0;
   Real total_theta = c_block_dist[1][inline_b[1]];
+  long long global_ind[3];
   for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
     long long the_node = global_node_vector[gnv];
-    long long global_k = the_node/knstride;
-    long long global_j = (the_node-global_k*knstride)/jnstride;
-    long long global_i = the_node - global_k*knstride-global_j*jnstride;
+    global_ind[2] = the_node/knstride;
+    global_ind[1] = (the_node-global_ind[2]*knstride)/jnstride;
+    global_ind[0] = the_node - global_ind[2]*knstride-global_ind[1]*jnstride;
+
     long long the_local_node = get_map_entry(global_node_map,the_node);
-    coords[the_local_node+0*num_nodes]= Icoors[global_i]*cos(Jcoors[global_j]*deg_to_rad);
-    coords[the_local_node+1*num_nodes]= Icoors[global_i]*sin(Jcoors[global_j]*deg_to_rad);
+    coords[the_local_node+0*num_nodes]= IJKcoors[0][global_ind[0]]*cos(IJKcoors[1][global_ind[1]]*deg_to_rad);
+    coords[the_local_node+1*num_nodes]= IJKcoors[0][global_ind[0]]*sin(IJKcoors[1][global_ind[1]]*deg_to_rad);
     if(dimension == 3){
-      coords[the_local_node+2*num_nodes]= Kcoors[global_k];
+      coords[the_local_node+2*num_nodes]= IJKcoors[2][global_ind[2]];
     }
     
     if(enforce_periodic){
-      Vector tv = calc_coords_periodic(total_theta, global_i, global_j, global_k);
+      Vector tv = calc_coords_periodic(total_theta, global_ind[0], global_ind[1], global_ind[2]);
       coords[the_local_node+0*num_nodes]= tv.X();
       coords[the_local_node+1*num_nodes]= tv.Y();
       if(dimension == 3){
@@ -371,9 +307,9 @@ Vector Radial_Inline_Mesh_Desc::calc_coords_periodic(double total_theta,
   // it calculates all coordinates in the first 45 degrees of the domain
   // and then transforms them to the appropriate octant
   long long per=0;
-  if(total_theta == 90.)per = nely_tot/2;
-  if(total_theta == 180.)per = nely_tot/4;
-  if(total_theta == 360.)per = nely_tot/8;
+  if(total_theta == 90.)per = nel_tot[1]/2;
+  if(total_theta == 180.)per = nel_tot[1]/4;
+  if(total_theta == 360.)per = nel_tot[1]/8;
   
   long long jmod = j%per;
   long long jmult = j/per;
@@ -386,16 +322,16 @@ Vector Radial_Inline_Mesh_Desc::calc_coords_periodic(double total_theta,
   double xval,yval,zval;
   double deg_to_rad = M_PI/180.0;
 
-  xval = Icoors[i]*cos(Jcoors[jmod]*deg_to_rad);
-  yval = Icoors[i]*sin(Jcoors[jmod]*deg_to_rad);
+  xval = IJKcoors[0][i]*cos(IJKcoors[1][jmod]*deg_to_rad);
+  yval = IJKcoors[0][i]*sin(IJKcoors[1][jmod]*deg_to_rad);
   if(jmod == per){
-    xval = Icoors[i]*cos(Jcoors[jmod]*deg_to_rad);
+    xval = IJKcoors[0][i]*cos(IJKcoors[1][jmod]*deg_to_rad);
     yval = xval;
   }
 
   zval = 0.0;
   if(dimension == 3){
-    zval = Kcoors[k];
+    zval = IJKcoors[2][k];
   }
 
   Vector res = Vector( xval,yval,zval);

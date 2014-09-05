@@ -40,7 +40,7 @@ public:
 
   virtual long long numBlocks(){return inline_b[0]*inline_b[1]*inline_b[2];};
   virtual long long blockKstride(){return inline_b[0]*inline_b[1];};
-  virtual long long GlobalNumElements(){return nelx_tot*nely_tot*nelz_tot;};
+  virtual long long GlobalNumElements(){return nel_tot[0]*nel_tot[1]*nel_tot[2];};
 
   virtual void Display_Class(std::ostream&, const std::string &indent); //called by Class_Display
 
@@ -217,17 +217,11 @@ virtual  void Calc_Parallel_Info(
   long long trisection_blocks;
   long long inline_b[3];
   long long inline_n[3];
-  long long * a_inline_nx;//individual block values
-  long long * a_inline_ny;
-  long long * a_inline_nz;
-  long long * c_inline_nx;//cumulative totals
-  long long * c_inline_ny;
-  long long * c_inline_nz;
+  long long * a_inline_n[3];//individual block values
+  long long * c_inline_n[3];//cumulative totals
   long long * cum_block_totals;
   long long * els_in_block;
-  long long nelx_tot;
-  long long nely_tot;
-  long long nelz_tot;
+  long long nel_tot[3];
   long long inc_nels[3];
   bool inc_nocuts[3];
   long long inline_nprocs[3];
@@ -292,9 +286,8 @@ virtual  void Calc_Parallel_Info(
 
   void Customize_Coords(double * coords,long long num_nodes,long long dim);
 
-  double * Icoors;
-  double * Jcoors;
-  double * Kcoors;
+  double * IJKcoors[3];
+ 
   long long topo_loc_to_exo_face[6];
 
   LoopLimits getLimits( Topo_Loc the_set_location,

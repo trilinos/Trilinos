@@ -192,56 +192,56 @@ long long Radial_Trisection_Inline_Mesh_Desc::Set_Up()
   inline_gmin[0] = 0.;//always zero for trisection
 
 
-  a_inline_nx = new long long [inline_b[0]];
-  a_inline_ny = new long long [inline_b[1]];
-  a_inline_nz = new long long [inline_b[2]];
-  c_inline_nx = new long long [inline_b[0]+1];
-  c_inline_ny = new long long [inline_b[1]+1];
-  c_inline_nz = new long long [inline_b[2]+1];
+  a_inline_n[0] = new long long [inline_b[0]];
+  a_inline_n[1] = new long long [inline_b[1]];
+  a_inline_n[2] = new long long [inline_b[2]];
+  c_inline_n[0] = new long long [inline_b[0]+1];
+  c_inline_n[1] = new long long [inline_b[1]+1];
+  c_inline_n[2] = new long long [inline_b[2]+1];
 
   for(long long i = 0; i < inline_b[0]; i ++){
-    a_inline_nx[i] = inline_n[0];
-    a_inline_nx[i] = interval[0][i];
-    c_inline_nx[i] = 0;
-    nelx_tot += a_inline_nx[i];
-    if(i)c_inline_nx[i] = c_inline_nx[i-1]+a_inline_nx[i-1];
+    a_inline_n[0][i] = inline_n[0];
+    a_inline_n[0][i] = interval[0][i];
+    c_inline_n[0][i] = 0;
+    nel_tot[0] += a_inline_n[0][i];
+    if(i)c_inline_n[0][i] = c_inline_n[0][i-1]+a_inline_n[0][i-1];
     c_block_dist[0][i] = inline_gmin[0];//inner radius
     if(i)c_block_dist[0][i] = c_block_dist[0][i-1]+block_dist[0][i-1];
   }
-  c_inline_nx[inline_b[0]] = c_inline_nx[inline_b[0] - 1]+a_inline_nx[inline_b[0] - 1];
+  c_inline_n[0][inline_b[0]] = c_inline_n[0][inline_b[0] - 1]+a_inline_n[0][inline_b[0] - 1];
   c_block_dist[0][inline_b[0]] = c_block_dist[0][inline_b[0] - 1]+block_dist[0][inline_b[0] - 1];
 
   for(long long i = 0; i < inline_b[1]; i ++){
-    a_inline_ny[i] = inline_n[1];
-    a_inline_ny[i] = interval[1][i];
-    c_inline_ny[i] = 0;
-    nely_tot += a_inline_ny[i];
-    if(i)c_inline_ny[i] = c_inline_ny[i-1]+a_inline_ny[i-1];
+    a_inline_n[1][i] = inline_n[1];
+    a_inline_n[1][i] = interval[1][i];
+    c_inline_n[1][i] = 0;
+    nel_tot[1] += a_inline_n[1][i];
+    if(i)c_inline_n[1][i] = c_inline_n[1][i-1]+a_inline_n[1][i-1];
     c_block_dist[1][i] = inline_gmin[1];
     if(i)c_block_dist[1][i] = c_block_dist[1][i-1]+block_dist[1][i-1];
   }
-  c_inline_ny[inline_b[1]] = c_inline_ny[inline_b[1]-1]+a_inline_ny[inline_b[1]-1];
+  c_inline_n[1][inline_b[1]] = c_inline_n[1][inline_b[1]-1]+a_inline_n[1][inline_b[1]-1];
   c_block_dist[1][inline_b[1]] = c_block_dist[1][inline_b[1] - 1]+block_dist[1][inline_b[1] - 1];
 
   if(dimension == 3){
     for(long long i = 0; i < inline_b[2]; i ++){
-      a_inline_nz[i] = inline_n[2];
-      a_inline_nz[i] = interval[2][i];
+      a_inline_n[2][i] = inline_n[2];
+      a_inline_n[2][i] = interval[2][i];
       
-      c_inline_nz[i] = 0;
-      nelz_tot += a_inline_nz[i];
-      if(i)c_inline_nz[i] = c_inline_nz[i-1]+a_inline_nz[i-1];
+      c_inline_n[2][i] = 0;
+      nel_tot[2] += a_inline_n[2][i];
+      if(i)c_inline_n[2][i] = c_inline_n[2][i-1]+a_inline_n[2][i-1];
       c_block_dist[2][i] = inline_gmin[2];
       if(i)c_block_dist[2][i] = c_block_dist[2][i-1]+block_dist[2][i-1];
     }
-    c_inline_nz[inline_b[2]] = c_inline_nz[inline_b[2]-1]+a_inline_nz[inline_b[2]-1];
+    c_inline_n[2][inline_b[2]] = c_inline_n[2][inline_b[2]-1]+a_inline_n[2][inline_b[2]-1];
     c_block_dist[2][inline_b[2]] = c_block_dist[2][inline_b[2] - 1]+block_dist[2][inline_b[2] - 1];
   }
   else{
-    nelz_tot = 1;
-    a_inline_nz[0] = 1;
-    c_inline_nz[0] = 0;
-    c_inline_nz[1] = 1;
+    nel_tot[2] = 1;
+    a_inline_n[2][0] = 1;
+    c_inline_n[2][0] = 0;
+    c_inline_n[2][1] = 1;
   }
 
   // this tolerance is dangerous
@@ -264,7 +264,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::Set_Up()
     }
   }
   
-  long long total_theta = c_inline_ny[inline_b[1]];
+  long long total_theta = c_inline_n[1][inline_b[1]];
   div = total_theta/(2*trisection_blocks);
   mod = total_theta % (2*trisection_blocks);
 
@@ -285,7 +285,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::Set_Up()
     for(long long j = 0; j < inline_b[1]; j ++){
       for(long long i = 0; i < inline_b[0]; i ++){
 	bl_ct = i + j * inline_b[0] + k * inline_b[0]*inline_b[1];
-        els_in_block[bl_ct] = a_inline_nx[i]*a_inline_ny[j]*a_inline_nz[k];
+        els_in_block[bl_ct] = a_inline_n[0][i]*a_inline_n[1][j]*a_inline_n[2][k];
       }
     }
   }
@@ -312,7 +312,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::Set_Up()
 	total_element_count += els_in_block[bl_ct];
       }
     }
-    total_element_count += trisection_blocks*a_inline_nz[k]*div*div;
+    total_element_count += trisection_blocks*a_inline_n[2][k]*div*div;
 
   }
 
@@ -339,123 +339,106 @@ long long Radial_Trisection_Inline_Mesh_Desc::Set_Up()
 long long Radial_Trisection_Inline_Mesh_Desc::Calc_Coord_Vectors()
 /****************************************************************************/
 {
-  long long nnx = nelx_tot+1;
-  long long nny = nely_tot+1;
-  Real xdelta = inline_gmax[0]-inline_gmin[0];
-  Real ydelta = inline_gmax[1]-inline_gmin[1];
-  Icoors = new Real[nnx];
-  Jcoors = new Real[nny];
+  IJKcoors[0] = new Real[nel_tot[0]+1];
+  IJKcoors[1] = new Real[nel_tot[1]+1];
 
-  long long nct = 0;
-  for(long long i = 0; i < inline_b[0]; i ++){
+  {
     long long axis = 0;
-    Real sum = 0.;
-    for(long long j = 0; j < a_inline_nx[i]; j ++){
-      if(i == 0){
-	if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-	  Icoors[nct] = c_block_dist[axis][i]+transition_radius + sum;
-	  sum += first_size[axis][i];
-          if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
-	  Icoors[nct+1] = c_block_dist[axis][i+1];
-	}
-	else{
-	  Icoors[nct] = c_block_dist[0][i] + transition_radius + j*(block_dist[0][i]-transition_radius)/(Real)a_inline_nx[i];
-	  Icoors[nct+1] = c_block_dist[0][i]+ transition_radius + (j+1)*(block_dist[0][i]-transition_radius)/(Real)a_inline_nx[i];
-	}
-      }
-      else{
-	if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-	  Icoors[nct] = c_block_dist[axis][i] + sum;
-	  sum += first_size[axis][i];
-          if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
-	  Icoors[nct+1] = c_block_dist[axis][i+1];
-	}
-	else{
-	  Icoors[nct] = c_block_dist[0][i]+j*block_dist[0][i]/(Real)a_inline_nx[i];
-	  Icoors[nct+1] = c_block_dist[0][i]+(j+1)*block_dist[0][i]/(Real)a_inline_nx[i];
-	}
-      }
-      nct ++;
-    }
-  }
-
-  nct = 0;
-  for(long long i = 0; i < inline_b[1]; i ++){
-    long long axis = 1;
-    Real sum = 0.;
-    for(long long j = 0; j < a_inline_ny[i]; j ++){
-      if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-        Jcoors[nct] = c_block_dist[axis][i]+sum;
-        sum += first_size[axis][i];
-        if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
-        Jcoors[nct+1] = c_block_dist[axis][i+1];
-      }
-      else{
-        Jcoors[nct] = c_block_dist[1][i]+j*block_dist[1][i]/(Real)a_inline_ny[i];
-        Jcoors[nct+1] = c_block_dist[1][i]+(j+1)*block_dist[1][i]/(Real)a_inline_ny[i];
-      }
-      nct ++;
-    }
-  }
-  std::stringstream terror_stream;
-  if(Element_Density_Functions[0])Element_Density_Functions[0]->Integrate(inline_gmin[0],inline_gmax[0],terror_stream);
-  if(!terror_stream.str().empty()){error_stream << terror_stream.str();return 1;}
-  if(Element_Density_Functions[1])Element_Density_Functions[1]->Integrate(inline_gmin[1],inline_gmax[1],terror_stream);
-  if(!terror_stream.str().empty()){error_stream << terror_stream.str();return 1;}
-  if(Element_Density_Functions[0]){
-    for(long long ict = 0; ict < nnx; ict ++){
-      Real factor = (Icoors[ict]-inline_gmin[0])/xdelta;
-      Real interpolant =  Element_Density_Functions[0]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-      Real new_coord = inline_gmin[0]+interpolant*xdelta;
-      Icoors[ict] = new_coord;
-    }
-  }
-  if(Element_Density_Functions[1]){
-    for(long long ict = 0; ict < nny; ict ++){
-      Real factor = (Jcoors[ict]-inline_gmin[1])/ydelta;
-      Real interpolant =  Element_Density_Functions[1]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-      Real new_coord = inline_gmin[1]+interpolant*ydelta;
-      Jcoors[ict] = new_coord;
-    }
-  }
-  if(dimension == 3){
-    long long nnz = nelz_tot+1;
-    Real zdelta = inline_gmax[2]-inline_gmin[2];
-    Kcoors = new Real[nnz];
-    
-    nct = 0;
-    for(long long i = 0; i < inline_b[2]; i ++){
-      long long axis = 2;
+    long long nct = 0;
+    for(long long i = 0; i < inline_b[axis]; i ++){
       Real sum = 0.;
-      for(long long j = 0; j < a_inline_nz[i]; j ++){
-	if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-	  Kcoors[nct] = c_block_dist[axis][i]+sum;
-	  sum += first_size[axis][i];
-          if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
-	  Kcoors[nct+1] = c_block_dist[axis][i+1];
+      for(long long j = 0; j < a_inline_n[axis][i]; j ++){
+	if(i == 0){
+	  if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
+	    IJKcoors[axis][nct] = c_block_dist[axis][i]+transition_radius + sum;
+	    sum += first_size[axis][i];
+	    if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
+	    IJKcoors[axis][nct+1] = c_block_dist[axis][i+1];
+	  }
+	  else{
+	    IJKcoors[axis][nct] = c_block_dist[axis][i] + transition_radius + j*(block_dist[axis][i]-transition_radius)/(Real)a_inline_n[axis][i];
+	    IJKcoors[axis][nct+1] = c_block_dist[axis][i]+ transition_radius + (j+1)*(block_dist[axis][i]-transition_radius)/(Real)a_inline_n[axis][i];
+	  }
 	}
 	else{
-	  Kcoors[nct] = c_block_dist[2][i]+j*block_dist[2][i]/(Real)a_inline_nz[i];
-	  Kcoors[nct+1] = c_block_dist[2][i]+(j+1)*block_dist[2][i]/(Real)a_inline_nz[i];
+	  if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
+	    IJKcoors[axis][nct] = c_block_dist[axis][i] + sum;
+	    sum += first_size[axis][i];
+	    if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
+	    IJKcoors[axis][nct+1] = c_block_dist[axis][i+1];
+	  }
+	  else{
+	    IJKcoors[axis][nct] = c_block_dist[axis][i]+j*block_dist[axis][i]/(Real)a_inline_n[axis][i];
+	    IJKcoors[axis][nct+1] = c_block_dist[axis][i]+(j+1)*block_dist[axis][i]/(Real)a_inline_n[axis][i];
+	  }
 	}
 	nct ++;
       }
     }
-    
-    if(Element_Density_Functions[2])Element_Density_Functions[2]->Integrate(inline_gmin[2],inline_gmax[2],terror_stream);
-    if(!terror_stream.str().empty()){error_stream << terror_stream.str();return 1;}
-    if(Element_Density_Functions[2]){
-      for(long long ict = 0; ict < nnz; ict ++){
-	Real factor = (Kcoors[ict]-inline_gmin[2])/zdelta;
-	Real interpolant =  Element_Density_Functions[2]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-	Real new_coord = inline_gmin[2]+interpolant*zdelta;
-	Kcoors[ict] = new_coord;
+  }
+
+  {
+    long long axis = 1;
+    long long nct = 0;
+    for(long long i = 0; i < inline_b[axis]; i ++){
+      Real sum = 0.;
+      for(long long j = 0; j < a_inline_n[axis][i]; j ++){
+	if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
+	  IJKcoors[axis][nct] = c_block_dist[axis][i]+sum;
+	  sum += first_size[axis][i];
+	  if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
+	  IJKcoors[axis][nct+1] = c_block_dist[axis][i+1];
+	}
+	else{
+	  IJKcoors[axis][nct] = c_block_dist[axis][i]+j*block_dist[axis][i]/(Real)a_inline_n[axis][i];
+	  IJKcoors[axis][nct+1] = c_block_dist[axis][i]+(j+1)*block_dist[axis][i]/(Real)a_inline_n[axis][i];
+	}
+	nct ++;
       }
     }
   }
+
+
+  if(dimension == 3){
+    long long nct = 0;
+    long long axis = 2;
+    IJKcoors[axis] = new Real[nel_tot[axis]+1];
+    
+    for(long long i = 0; i < inline_b[axis]; i ++){
+      Real sum = 0.;
+      for(long long j = 0; j < a_inline_n[axis][i]; j ++){
+	if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
+	  IJKcoors[axis][nct] = c_block_dist[axis][i]+sum;
+	  sum += first_size[axis][i];
+          if(interval[axis][i]-1) sum += (Real)j*(last_size[axis][i]-first_size[axis][i])/((Real)interval[axis][i]-1);
+	  IJKcoors[axis][nct+1] = c_block_dist[axis][i+1];
+	}
+	else{
+	  IJKcoors[axis][nct] = c_block_dist[axis][i]+j*block_dist[axis][i]/(Real)a_inline_n[axis][i];
+	  IJKcoors[axis][nct+1] = c_block_dist[axis][i]+(j+1)*block_dist[axis][i]/(Real)a_inline_n[axis][i];
+	}
+	nct ++;
+      }
+    }
+  }
+  
+  for(long long axis = 0; axis < dimension; axis ++){
+    std::stringstream terror_stream;
+    Real delta = inline_gmax[axis]-inline_gmin[axis];
+    if(Element_Density_Functions[axis]){
+      Element_Density_Functions[axis]->Integrate(inline_gmin[axis],inline_gmax[axis],terror_stream);
+      if(!terror_stream.str().empty()){error_stream << terror_stream.str();return 1;}
+      for(long long ict = 0; ict < (nel_tot[axis]+1); ict ++){
+	Real factor = (IJKcoors[axis][ict]-inline_gmin[axis])/delta;
+	Real interpolant =  Element_Density_Functions[axis]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
+	Real new_coord = inline_gmin[axis]+interpolant*delta;
+	IJKcoors[axis][ict] = new_coord;
+      }
+    }
+  }
+
   return 0;
 }
-
 
 /****************************************************************************/
 Vector Radial_Trisection_Inline_Mesh_Desc::calc_coords_periodic_trisect_blocks(double total_theta,
@@ -471,9 +454,9 @@ Vector Radial_Trisection_Inline_Mesh_Desc::calc_coords_periodic_trisect_blocks(d
   // trisection block (the first octant, first 45 degrees) 
   // and then transforms the result back to the original octant
   long long per = 0;
-  if(total_theta == 90.)per = nely_tot/2;
-  if(total_theta == 180.)per = nely_tot/4;
-  if(total_theta == 360.)per = nely_tot/8;
+  if(total_theta == 90.)per = nel_tot[1]/2;
+  if(total_theta == 180.)per = nel_tot[1]/4;
+  if(total_theta == 360.)per = nel_tot[1]/8;
   
   long long jmod = nj%per;
   long long jmult = nj/per;
@@ -486,7 +469,7 @@ Vector Radial_Trisection_Inline_Mesh_Desc::calc_coords_periodic_trisect_blocks(d
   double xval,yval,zval;
   double deg_to_rad = M_PI/180.0;
 
-  Real angle = total_theta *((Real)jmod/(Real)(c_inline_ny[inline_b[1]]));
+  Real angle = total_theta *((Real)jmod/(Real)(c_inline_n[1][inline_b[1]]));
   Real outer_radius = c_block_dist[0][1];
   
   // need inner radius.
@@ -502,13 +485,13 @@ Vector Radial_Trisection_Inline_Mesh_Desc::calc_coords_periodic_trisect_blocks(d
   long long maxj = div+1;
   Vector loc = quads[bl]->Interpolate(Vector((Real)bi/(Real)maxi,(Real)bj/(Real)maxj,0.));
   
-  Real param = (Icoors[ni]-transition_radius)/(block_dist[0][0]-transition_radius);
+  Real param = (IJKcoors[0][ni]-transition_radius)/(block_dist[0][0]-transition_radius);
   
   xval = loc.x  + param*( outer_radius*cos(deg_to_rad*angle) -loc.x);
   yval = loc.y  + param*( outer_radius*sin(deg_to_rad*angle) -loc.y);
   zval = 0.0;
   if(dimension == 3){
-    zval = Kcoors[nk];
+    zval = IJKcoors[2][nk];
   }
   
   if(jmod == per){
@@ -595,10 +578,10 @@ void Radial_Trisection_Inline_Mesh_Desc::Populate_Coords(Real * coords,
 
     long long the_local_node = get_map_entry(global_node_map,the_node);
     if(l == trisection_blocks){
-      coords[the_local_node+0*num_nodes]= Icoors[i]*cos(Jcoors[j]*deg_to_rad);
-      coords[the_local_node+1*num_nodes]= Icoors[i]*sin(Jcoors[j]*deg_to_rad);
+      coords[the_local_node+0*num_nodes]= IJKcoors[0][i]*cos(IJKcoors[1][j]*deg_to_rad);
+      coords[the_local_node+1*num_nodes]= IJKcoors[0][i]*sin(IJKcoors[1][j]*deg_to_rad);
       if(dimension == 3){
-	coords[the_local_node+2*num_nodes]= Kcoors[k];
+	coords[the_local_node+2*num_nodes]= IJKcoors[2][k];
       }
       //enforce_periodicity on outer blocks
       if(enforce_periodic){
@@ -614,7 +597,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Populate_Coords(Real * coords,
       long long maxi = div+1;
       long long maxj = div+1;
       if(dimension == 3){
-	coords[the_local_node+2*num_nodes]= Kcoors[k];
+	coords[the_local_node+2*num_nodes]= IJKcoors[2][k];
       }
       Vector loc = quads[l]->Interpolate(Vector((Real)i/(Real)maxi,(Real)j/(Real)maxj,0.));
       coords[the_local_node+0*num_nodes] = loc.x;
@@ -741,7 +724,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Populate_Coords(Real * coords,
 	get_l_i_j_k_from_node_number(nn[i],nl,ni,nj,nk);
 	if((nl == trisection_blocks) && (ni > 0)){// these are block 0 nodes that need to be repositioned
 
-	  Real angle = total_theta *((Real)nj/(Real)(c_inline_ny[inline_b[1]]));
+	  Real angle = total_theta *((Real)nj/(Real)(c_inline_n[1][inline_b[1]]));
 	  angle += inline_gmin[1];
 	  Real outer_radius = c_block_dist[0][1];
 
@@ -758,7 +741,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Populate_Coords(Real * coords,
 	  long long maxj = div+1;
 	  Vector loc = quads[bl]->Interpolate(Vector((Real)bi/(Real)maxi,(Real)bj/(Real)maxj,0.));
 
-	  Real param = (Icoors[ni]-transition_radius)/(block_dist[0][0]-transition_radius);
+	  Real param = (IJKcoors[0][ni]-transition_radius)/(block_dist[0][0]-transition_radius);
 
 	  coords[ln[i]+0*num_nodes] = loc.x  + param*( outer_radius*cos(deg_to_rad*angle) -loc.x);
 	  coords[ln[i]+1*num_nodes] = loc.y  + param*( outer_radius*sin(deg_to_rad*angle) -loc.y);        
@@ -796,16 +779,16 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
 /*****************************************************************************/
 {
   instride = 1;
-  jnstride = nelx_tot+1;
+  jnstride = nel_tot[0]+1;
   
   if(inline_geometry_type == RADIAL && periodic_j){
     instride = 1;
-    jnstride = nelx_tot+1;
+    jnstride = nel_tot[0]+1;
   }
   
   iestride = 1;
-  jestride = nelx_tot;
-  kestride = (nelx_tot)*(nely_tot);
+  jestride = nel_tot[0];
+  kestride = (nel_tot[0])*(nel_tot[1]);
   for(long long i = 0; i < trisection_blocks; i ++){
     kestride += div * div;
   }
@@ -821,9 +804,9 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
   }
   nn_center = knstride;
   // add rainbow
-  knstride += (nely_tot+1)*(nelx_tot+1-1);
+  knstride += (nel_tot[1]+1)*(nel_tot[0]+1-1);
   if(periodic_j){
-    knstride -= (nelx_tot+1-1);
+    knstride -= (nel_tot[0]+1-1);
   }
 
   //cumulative nodes in trisection blocks
@@ -850,7 +833,7 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
   std::vector <Partition *> sorted_partition_list;
   
   if(inline_decomposition_type == SEQUENTIAL){
-    long long total = kestride * nelz_tot;
+    long long total = kestride * nel_tot[2];
     long long num_per_proc = total/num_processors;
     long long remainder = total - num_per_proc*num_processors;
     long long my_start = my_rank * num_per_proc;
@@ -863,7 +846,7 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
     return 0;
   }
   else if(inline_decomposition_type == RANDOM){
-    long long total = kestride * nelz_tot;
+    long long total = kestride * nel_tot[2];
     for(long long i = 0; i < total; i ++){
       SRANDOM(i);
       long long rand_num = RANDOM();
@@ -878,11 +861,11 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
     long long decomp_result = 0;
     if(dimension == 3){
       //fix i/r/x at 1 to prevent r cuts
-      decomp_result = dom_decomp_3d(1,nely_tot,nelz_tot,num_processors,
+      decomp_result = dom_decomp_3d(1,nel_tot[1],nel_tot[2],num_processors,
 					&(inc_nels[0]),&(inc_nels[1]),&(inc_nels[2]));
     }
     else{
-      decomp_result = dom_decomp_2d(1,nely_tot,num_processors,
+      decomp_result = dom_decomp_2d(1,nel_tot[1],num_processors,
 					&(inc_nels[0]),&(inc_nels[1]));
     }
     
@@ -897,16 +880,16 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
       remaining_cuts[0] = 1;
       remaining_cuts[1] = inc_nels[1];
       remaining_cuts[2] = inc_nels[2];
-      inc_nels[0] = nelx_tot/inc_nels[0];
-      inc_nels[1] = nely_tot/inc_nels[1];
-      inc_nels[2] = nelz_tot/inc_nels[2];
+      inc_nels[0] = nel_tot[0]/inc_nels[0];
+      inc_nels[1] = nel_tot[1]/inc_nels[1];
+      inc_nels[2] = nel_tot[2]/inc_nels[2];
     }
     else{
       remaining_cuts[0] = 1;
       remaining_cuts[1] = inc_nels[1];
       remaining_cuts[2] = 1;
-      inc_nels[0] = nelx_tot/inc_nels[0];
-      inc_nels[1] = nely_tot/inc_nels[1];
+      inc_nels[0] = nel_tot[0]/inc_nels[0];
+      inc_nels[1] = nel_tot[1]/inc_nels[1];
       inc_nels[2] = 1;
     }
 
@@ -924,7 +907,7 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
 	
     base_partition  = new Partition(0,0,0,
 				    0,1,
-				    nelx_tot,nely_tot,nelz_tot,
+				    nel_tot[0],nel_tot[1],nel_tot[2],
 				    inline_decomposition_type,remaining_cuts);
 
     sorted_partition_list.push_back(base_partition);
@@ -1010,10 +993,10 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
       remaining_cuts[2] = 1;
     }
     
-    inc_nels[0] = nelx_tot/inline_nprocs[0];
-    inc_nels[1] = nely_tot/inline_nprocs[1];
+    inc_nels[0] = nel_tot[0]/inline_nprocs[0];
+    inc_nels[1] = nel_tot[1]/inline_nprocs[1];
     if(dimension == 3){
-      inc_nels[2] = nelz_tot/inline_nprocs[2];
+      inc_nels[2] = nel_tot[2]/inline_nprocs[2];
     }
     else{
       inc_nels[2] = 1;
@@ -1022,21 +1005,21 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
     if(inc_nels[0] == 0 ){
       error_stream << "Radial_Trisection_inline_Mesh_Desc::Decompose"
 	  << " Value for numprocs specified in I direction " << inline_nprocs[0] 
-	  << " is greater than the number of elements in I " << nelx_tot << ".";
+	  << " is greater than the number of elements in I " << nel_tot[0] << ".";
       return 1;
     }
 
     if(inc_nels[1] == 0 ){
       error_stream << "Radial_Trisection_inline_Mesh_Desc::Decompose"
 	  << " Value for numprocs specified in J direction " << inline_nprocs[1] 
-	  << " is greater than the number of elements in J " << nely_tot << ".";
+	  << " is greater than the number of elements in J " << nel_tot[1] << ".";
       return 1;
     }
 
     if(inc_nels[2] == 0 ){
       error_stream << "Radial_Trisection_inline_Mesh_Desc::Decompose"
 	  << " Value for numprocs specified in K direction " << inline_nprocs[2] 
-		   << " is greater than the number of elements in K " << nelz_tot << ".";
+		   << " is greater than the number of elements in K " << nel_tot[2] << ".";
       return 1;
     }
 	
@@ -1050,7 +1033,7 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
 
     base_partition  = new Partition(0,0,0,
 				    0,1,
-				    nelx_tot,nely_tot,nelz_tot,
+				    nel_tot[0],nel_tot[1],nel_tot[2],
 				    inline_decomposition_type,remaining_cuts);
 
     sorted_partition_list.push_back(base_partition);
@@ -1174,14 +1157,14 @@ long long Radial_Trisection_Inline_Mesh_Desc::get_node_number_from_l_i_j_k( long
       }
     }
     else{
-      if((j == nely_tot) && periodic_j){
+      if((j == nel_tot[1]) && periodic_j){
 	nno+= nn_center;
 	nno += i-1;
       }
       else{
 	nno+= nn_center;
 	nno += i-1;
-	nno += j*nelx_tot;
+	nno += j*nel_tot[0];
       }
     }
   }
@@ -1223,17 +1206,17 @@ long long Radial_Trisection_Inline_Mesh_Desc::get_element_number_from_l_i_j_k( l
   // return -1 if off mesh
   // adjust and recurse if i or j throw element onto adjacent block
   if(k < 0) return -1;
-  if(k >= nelz_tot) return -1;
+  if(k >= nel_tot[2]) return -1;
   if(l == trisection_blocks){
     
     if(periodic_j){
       //MOD for for 360
-      if(j < 0)j = nely_tot-1;
-      if(j >= nely_tot)j = 0;
+      if(j < 0)j = nel_tot[1]-1;
+      if(j >= nel_tot[1])j = 0;
     }
     else{
       if(j < 0) return -1;
-      if(j >= nely_tot)return -1;
+      if(j >= nel_tot[1])return -1;
     }
 
     if(i < 0){
@@ -1250,7 +1233,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::get_element_number_from_l_i_j_k( l
 	return get_element_number_from_l_i_j_k(loff,iloc,jloc,k);
       }
     }
-    if(i >= nelx_tot)return -1;
+    if(i >= nel_tot[0])return -1;
   }
   else{
     //i
@@ -1358,14 +1341,14 @@ void Radial_Trisection_Inline_Mesh_Desc::get_l_i_j_k_from_node_number(long long 
     if(periodic_j){
       l = trisection_blocks;
       remainder -= nn_center;
-      j = remainder / nelx_tot;
-      i = remainder - j*nelx_tot + 1;
+      j = remainder / nel_tot[0];
+      i = remainder - j*nel_tot[0] + 1;
     }
     else{
       l = trisection_blocks;
       remainder -= nn_center;
-      j = remainder / nelx_tot;
-      i = remainder - j*nelx_tot + 1;
+      j = remainder / nel_tot[0];
+      i = remainder - j*nel_tot[0] + 1;
     }
   }
   else{
@@ -1412,14 +1395,14 @@ void Radial_Trisection_Inline_Mesh_Desc::Build_Global_Lists(const std::set <long
     get_l_i_j_k_from_element_number(the_element,global_l,global_i,global_j,global_k);
 
     //allow only blocks in i/x/r direction
-    long long block_k  = get_block_index(global_k,inline_b[2],c_inline_nz);
+    long long block_k  = get_block_index(global_k,inline_b[2],c_inline_n[2]);
     long long block_j = 0;
     if(global_l == trisection_blocks){
-      block_j = get_block_index(global_j,inline_b[1],c_inline_ny);
+      block_j = get_block_index(global_j,inline_b[1],c_inline_n[1]);
     }
     long long block_i = 0;
     if(global_l == trisection_blocks){
-      block_i = get_block_index(global_i,inline_b[0],c_inline_nx);
+      block_i = get_block_index(global_i,inline_b[0],c_inline_n[0]);
     }   
 
     // This is the ordinal number of the block the element resides in
@@ -1502,19 +1485,17 @@ LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(bool is_bloc
 
   long long bid = input_id-1;
   long long kind = bid/(inline_b[0]*inline_b[1]);
-  long long jind = (bid-kind*(inline_b[0] * inline_b[1]))/inline_b[0];
-  long long iind = bid - jind *(inline_b[0]) - kind*(inline_b[0] * inline_b[1]);
-     
+
 
   new_location = the_location;
   switch(the_location) {
   
   case ALL_NODES:{
-    ll = getLimits(the_location,0,div+nodeset_plus_1,0,div+nodeset_plus_1,0,nelz_tot+nodeset_plus_1,div+nodeset_plus_1,div+nodeset_plus_1);
+    ll = getLimits(the_location,0,div+nodeset_plus_1,0,div+nodeset_plus_1,0,nel_tot[2]+nodeset_plus_1,div+nodeset_plus_1,div+nodeset_plus_1);
     break;
   }
   case Z_AXIS:{
-    ll = getLimits(EDGE4,0,div+nodeset_plus_1,0,div+nodeset_plus_1,0,nelz_tot+nodeset_plus_1,div+nodeset_plus_1,div+nodeset_plus_1);
+    ll = getLimits(EDGE4,0,div+nodeset_plus_1,0,div+nodeset_plus_1,0,nel_tot[2]+nodeset_plus_1,div+nodeset_plus_1,div+nodeset_plus_1);
     break;
   }
   case PLUS_I:{
@@ -1527,14 +1508,14 @@ LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(bool is_bloc
       ll = getLimits(the_location,
 		     0,div+nodeset_plus_1,
 		     0,div+nodeset_plus_1,
-		     c_inline_nz[kind],c_inline_nz[kind+1]+nodeset_plus_1,
+		     c_inline_n[2][kind],c_inline_n[2][kind+1]+nodeset_plus_1,
 		     div+nodeset_plus_1,div+nodeset_plus_1);
       }
       else{
 	ll = getLimits(the_location,
 		       0,div+nodeset_plus_1,
 		       0,div+nodeset_plus_1,
-		       0,nelz_tot+nodeset_plus_1,
+		       0,nel_tot[2]+nodeset_plus_1,
 		       div+nodeset_plus_1,div+nodeset_plus_1);
       }
     }
@@ -1547,7 +1528,7 @@ LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(bool is_bloc
       ll = getLimits(MINUS_I,
 		     0,div+nodeset_plus_1,
 		     0,div+nodeset_plus_1,
-		     c_inline_nz[kind],c_inline_nz[kind+1]+nodeset_plus_1,
+		     c_inline_n[2][kind],c_inline_n[2][kind+1]+nodeset_plus_1,
 		     div+nodeset_plus_1,div+nodeset_plus_1);
       new_location = MINUS_I;
       }
@@ -1555,7 +1536,7 @@ LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(bool is_bloc
 	ll = getLimits(MINUS_I,
 		       0,div+nodeset_plus_1,
 		       0,div+nodeset_plus_1,
-		       0,nelz_tot+nodeset_plus_1,
+		       0,nel_tot[2]+nodeset_plus_1,
 		       div+nodeset_plus_1,div+nodeset_plus_1);
 	new_location = MINUS_I;
       }
@@ -1567,14 +1548,14 @@ LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(bool is_bloc
     ll = getLimits(the_location,
 		   0,div+nodeset_plus_1,
 		   0,div+nodeset_plus_1,
-		   c_inline_nz[kind],c_inline_nz[kind+1]+nodeset_plus_1,
+		   c_inline_n[2][kind],c_inline_n[2][kind+1]+nodeset_plus_1,
 		   div+nodeset_plus_1,div+nodeset_plus_1);
     }
     else{
       ll = getLimits(the_location,
 		     0,div+nodeset_plus_1,
 		     0,div+nodeset_plus_1,
-		     0,nelz_tot+nodeset_plus_1,
+		     0,nel_tot[2]+nodeset_plus_1,
 		     div+nodeset_plus_1,div+nodeset_plus_1);
     }
     break;
@@ -1584,14 +1565,14 @@ LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(bool is_bloc
       ll = getLimits(the_location,
 		     0,div+nodeset_plus_1,
 		     0,div+nodeset_plus_1,
-		     c_inline_nz[kind],c_inline_nz[kind+1]+nodeset_plus_1,
+		     c_inline_n[2][kind],c_inline_n[2][kind+1]+nodeset_plus_1,
 		     div+nodeset_plus_1,div+nodeset_plus_1);
     }
     else{
       ll = getLimits(the_location,
 		     0,div+nodeset_plus_1,
 		     0,div+nodeset_plus_1,
-		     0,nelz_tot+nodeset_plus_1,
+		     0,nel_tot[2]+nodeset_plus_1,
 		     div+nodeset_plus_1,div+nodeset_plus_1);
     }
     break;		     
@@ -1861,60 +1842,6 @@ long long Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets()
   return 0;
 }
 
-
-/****************************************************************************/
-void Radial_Trisection_Inline_Mesh_Desc::Populate_Connectivity(long long * const * conn_array,                                         
-								     std::map <long long, long long> & global_node_map
-)
-/****************************************************************************/
-{
-  long long num_nodes_per_element = 4;
-    
-  if(dimension == 3){
-    num_nodes_per_element = 8;
-  }
-
-  //Nodes are ordered across the entire block domain.
-  //To calculate connectivity for a given element in a given block.
-  //It is necessary to calculate the global element indices in i,j,k
-  //that identify that element in the global space.
-  long long total_element_count = 0;
-  for(long long bct = 0; bct < numBlocks(); bct ++ ){
-    long long * conn = conn_array[bct];
-    //build connectivity for each element
-    //nodes are numbered 1-tot_num_nodes+1 across all blocks
-    //incrementing i fastest
-    for(unsigned elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
-      long long the_el = element_block_lists[bct][elct];
-      long long l;
-      long long i;
-      long long j;
-      long long k;
-
-      get_l_i_j_k_from_element_number(the_el,l,i,j,k);
-      long long nn0 = get_node_number_from_l_i_j_k(l, i + 0, j + 0, k + 0);
-      long long nn1 = get_node_number_from_l_i_j_k(l, i + 1, j + 0, k + 0);
-      long long nn2 = get_node_number_from_l_i_j_k(l, i + 1, j + 1, k + 0);
-      long long nn3 = get_node_number_from_l_i_j_k(l, i + 0, j + 1, k + 0);
-
-      conn[elct*num_nodes_per_element + 0 + 0] = get_map_entry(global_node_map,nn0)+1;
-      conn[elct*num_nodes_per_element + 1 + 0] = get_map_entry(global_node_map,nn1)+1;
-      conn[elct*num_nodes_per_element + 2 + 0] = get_map_entry(global_node_map,nn2)+1;
-      conn[elct*num_nodes_per_element + 3 + 0] = get_map_entry(global_node_map,nn3)+1;
-      if(dimension == 3){
-	long long nn4 = get_node_number_from_l_i_j_k(l, i + 0, j + 0, k + 1);
-	long long nn5 = get_node_number_from_l_i_j_k(l, i + 1, j + 0, k + 1);
-	long long nn6 = get_node_number_from_l_i_j_k(l, i + 1, j + 1, k + 1);
-	long long nn7 = get_node_number_from_l_i_j_k(l, i + 0, j + 1, k + 1);
-	conn[elct*num_nodes_per_element + 0 + 4] = get_map_entry(global_node_map,nn4)+1;
-	conn[elct*num_nodes_per_element + 1 + 4] = get_map_entry(global_node_map,nn5)+1;
-	conn[elct*num_nodes_per_element + 2 + 4] = get_map_entry(global_node_map,nn6)+1;
-	conn[elct*num_nodes_per_element + 3 + 4] = get_map_entry(global_node_map,nn7)+1;
-      }
-    }
-  }
-}
-
 /****************************************************************************/
 long long Radial_Trisection_Inline_Mesh_Desc::Populate_Sideset_Info(std::map <long long, long long> & global_element_map,
 								     std::map <long long, long long> & global_node_map,
@@ -1964,7 +1891,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::Populate_Sideset_Info(std::map <lo
       // adjust for periodicity in j 
       long long glj_plus1 = gl_j + 1;
       if(periodic_j){
-        if(glj_plus1 == nely_tot){
+        if(glj_plus1 == nel_tot[1]){
           glj_plus1 = 0;
         } 
       }
@@ -2093,14 +2020,14 @@ long long Radial_Trisection_Inline_Mesh_Desc::GetBlockBasedGlobalID(long long th
   //global element indices
   
   
-  long long Kbg = get_block_index(Kg,inline_b[2],c_inline_nz);
+  long long Kbg = get_block_index(Kg,inline_b[2],c_inline_n[2]);
   long long Jbg = 0;
   if(l == trisection_blocks){
-    Jbg = get_block_index(Jg,inline_b[1],c_inline_ny);
+    Jbg = get_block_index(Jg,inline_b[1],c_inline_n[1]);
   }
   long long Ibg = 0;
   if(l == trisection_blocks){
-    Ibg = get_block_index(Ig,inline_b[0],c_inline_nx);
+    Ibg = get_block_index(Ig,inline_b[0],c_inline_n[0]);
   }
   
   //ordinal of the block
@@ -2108,23 +2035,23 @@ long long Radial_Trisection_Inline_Mesh_Desc::GetBlockBasedGlobalID(long long th
   
   
   //indices inside the block
-  long long Kblock = Kg-c_inline_nz[Kbg];
-  long long Jblock = Jg-c_inline_ny[Jbg];
-  long long Iblock = Ig-c_inline_nx[Ibg];
+  long long Kblock = Kg-c_inline_n[2][Kbg];
+  long long Jblock = Jg-c_inline_n[1][Jbg];
+  long long Iblock = Ig-c_inline_n[0][Ibg];
   
   long long elid = 0;
   if(l == trisection_blocks && (Ibg > 0)){
-    elid = l*a_inline_nz[Kbg] * div * div;
-    elid += cum_block_totals[mesh_block_id] + Iblock + Jblock*a_inline_nx[Ibg] + Kblock*a_inline_nx[Ibg]*a_inline_ny[Jbg];
+    elid = l*a_inline_n[2][Kbg] * div * div;
+    elid += cum_block_totals[mesh_block_id] + Iblock + Jblock*a_inline_n[0][Ibg] + Kblock*a_inline_n[0][Ibg]*a_inline_n[1][Jbg];
   }
   else if (l == trisection_blocks){
     elid = cum_block_totals[mesh_block_id];
-    elid += l*a_inline_nz[Kbg] * div * div;
-    elid += Iblock + Jblock*a_inline_nx[Ibg] + Kblock*a_inline_nx[Ibg]*a_inline_ny[Jbg];
+    elid += l*a_inline_n[2][Kbg] * div * div;
+    elid += Iblock + Jblock*a_inline_n[0][Ibg] + Kblock*a_inline_n[0][Ibg]*a_inline_n[1][Jbg];
   }
   else{
     elid = cum_block_totals[mesh_block_id];
-    elid += l*a_inline_nz[Kbg]*div * div;
+    elid += l*a_inline_n[2][Kbg]*div * div;
     elid += Ig + Jg * div + Kblock*div*div;
   }
 
@@ -2139,7 +2066,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::Element_Proc(long long global_elem
 {
   long long proc = 0;
   if(inline_decomposition_type == SEQUENTIAL){
-    long long total = kestride * nelz_tot;
+    long long total = kestride * nel_tot[2];
     long long num_per_proc = total/num_processors;
     proc = global_element_id/num_per_proc;
     if(proc >= num_processors)proc = num_processors-1;
@@ -2184,15 +2111,15 @@ void Radial_Trisection_Inline_Mesh_Desc::getGlobal_Element_Block_Totals(long lon
 	long long block_num = kct*blockKstride();
 	block_num += jct*(inline_b[0]-1);
 	block_num += ict;
-	totals_array[block_num] += a_inline_nx[ict]*a_inline_ny[jct]*a_inline_nz[kct];
+	totals_array[block_num] += a_inline_n[0][ict]*a_inline_n[1][jct]*a_inline_n[2][kct];
       }
     }
   }
   for(long long kct = 0; kct < inline_b[2]; kct ++){
     for(long long ict = 0; ict < 1; ict ++){
       long long block_num = kct*blockKstride();
-      totals_array[block_num] += a_inline_nx[ict]*c_inline_ny[inline_b[1]]*a_inline_nz[kct];
-      totals_array[block_num] += trisection_blocks*div*div*a_inline_nz[kct];
+      totals_array[block_num] += a_inline_n[0][ict]*c_inline_n[1][inline_b[1]]*a_inline_n[2][kct];
+      totals_array[block_num] += trisection_blocks*div*div*a_inline_n[2][kct];
     }
   }
 }
@@ -2504,14 +2431,14 @@ long long Radial_Trisection_Inline_Mesh_Desc::GlobalNumElements()
   for(long long kct = 0; kct < inline_b[2]; kct ++){
     for(long long jct = 0; jct < inline_b[1]; jct ++){
       for(long long ict = 1; ict < inline_b[0]; ict ++){
-	total_count += a_inline_nx[ict]*a_inline_ny[jct]*a_inline_nz[kct];
+	total_count += a_inline_n[0][ict]*a_inline_n[1][jct]*a_inline_n[2][kct];
       }
     }
   }
   for(long long kct = 0; kct < inline_b[2]; kct ++){
     for(long long ict = 0; ict < 1; ict ++){
-      total_count += a_inline_nx[ict]*c_inline_ny[inline_b[1]]*a_inline_nz[kct];
-      total_count += trisection_blocks*div*div*a_inline_nz[kct];
+      total_count += a_inline_n[0][ict]*c_inline_n[1][inline_b[1]]*a_inline_n[2][kct];
+      total_count += trisection_blocks*div*div*a_inline_n[2][kct];
     }
   }
   return total_count;

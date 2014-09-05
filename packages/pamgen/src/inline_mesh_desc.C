@@ -57,13 +57,13 @@ Inline_Mesh_Desc::~Inline_Mesh_Desc()
   delete [] last_size;
   delete [] interval;
 
-  delete [] a_inline_nx;
-  delete [] a_inline_ny;
-  delete [] a_inline_nz;
+  delete [] a_inline_n[0];
+  delete [] a_inline_n[1];
+  delete [] a_inline_n[2];
 
-  delete [] c_inline_nx;
-  delete [] c_inline_ny;
-  delete [] c_inline_nz;
+  delete [] c_inline_n[0];
+  delete [] c_inline_n[1];
+  delete [] c_inline_n[2];
 
   if(cum_block_totals)delete [] cum_block_totals;
   if(els_in_block) delete [] els_in_block;
@@ -77,9 +77,9 @@ Inline_Mesh_Desc::~Inline_Mesh_Desc()
     delete base_partition;
     base_partition = NULL;
   }
-  if (Icoors)delete [] Icoors;
-  if (Jcoors)delete [] Jcoors;
-  if (Kcoors)delete [] Kcoors;
+  if (IJKcoors[0])delete [] IJKcoors[0];
+  if (IJKcoors[1])delete [] IJKcoors[1];
+  if (IJKcoors[2])delete [] IJKcoors[2];
   if(element_block_lists)delete [] element_block_lists;
   if(sideset_list.size())delete [] sideset_vectors;
   if(nodeset_list.size())delete [] nodeset_vectors;
@@ -151,7 +151,7 @@ long long Inline_Mesh_Desc::get_map_entry(const std::map < long long, long long 
 /****************************************************************************/
 long long Inline_Mesh_Desc::get_block_index(long long ordinal_val, 
 				   long long count ,
-				   long long * cumulative)//c_inline_nz);
+				   long long * cumulative)//c_inline_n[2]);
 /****************************************************************************/
 
 {
@@ -172,7 +172,7 @@ long long Inline_Mesh_Desc::Element_Proc(long long global_element_id)
 {
   long long proc = 0;
   if(inline_decomposition_type == SEQUENTIAL){
-    long long total = kestride * nelz_tot;
+    long long total = kestride * nel_tot[2];
     long long num_per_proc = total/num_processors;
     proc = global_element_id/num_per_proc;
     if(proc >= num_processors)proc = num_processors-1;
@@ -241,7 +241,7 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
   remaining_cuts[1] = inline_nprocs[1];
   remaining_cuts[2] = inline_nprocs[2];
 
-  base_partition  = new Partition(0,0,0,0,1,nelx_tot,nely_tot,nelz_tot,inline_decomposition_type,remaining_cuts);
+  base_partition  = new Partition(0,0,0,0,1,nel_tot[0],nel_tot[1],nel_tot[2],inline_decomposition_type,remaining_cuts);
   //Place it in a list sorted by number of elements
   sorted_partition_list.push_back(base_partition);
   Partition* biggest;
@@ -254,29 +254,29 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
 		 << inline_nprocs[2] << " does not correspond to the number of processors " << num_processors << "." ;
     return 1;
    }
-    inc_nels[0] = nelx_tot/inline_nprocs[0];
-    inc_nels[1] = nely_tot/inline_nprocs[1];
-    inc_nels[2] = nelz_tot/inline_nprocs[2];
+    inc_nels[0] = nel_tot[0]/inline_nprocs[0];
+    inc_nels[1] = nel_tot[1]/inline_nprocs[1];
+    inc_nels[2] = nel_tot[2]/inline_nprocs[2];
 
 
     if(inc_nels[0] == 0 ){
       error_stream << "Inline_Mesh_Desc::Decompose"
 		   << " Value for numprocs specified in I direction " << inline_nprocs[0] 
-		   << " is greater than the number of elements in I " << nelx_tot << ".";
+		   << " is greater than the number of elements in I " << nel_tot[0] << ".";
       return 1;
     }
 
     if(inc_nels[1] == 0 ){
       error_stream << "Inline_Mesh_Desc::Decompose"
 		   << " Value for numprocs specified in J direction " << inline_nprocs[1] 
-		   << " is greater than the number of elements in J " << nely_tot << ".";
+		   << " is greater than the number of elements in J " << nel_tot[1] << ".";
       return 1;
     }
 
     if(inc_nels[2] == 0 ){
       error_stream << "Inline_Mesh_Desc::Decompose"
 		   << " Value for numprocs specified in K direction " << inline_nprocs[2] 
-		   << " is greater than the number of elements in K " << nelz_tot << ".";
+		   << " is greater than the number of elements in K " << nel_tot[2] << ".";
       return 1;
     }
     
@@ -308,10 +308,10 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
   long long remaining_cuts[3];
   long long decomp_result = 0;
   if(dimension == 3){
-    decomp_result = dom_decomp_3d(nelx_tot,nely_tot,nelz_tot,num_processors,&(inc_nels[0]),&(inc_nels[1]),&(inc_nels[2]));
+    decomp_result = dom_decomp_3d(nel_tot[0],nel_tot[1],nel_tot[2],num_processors,&(inc_nels[0]),&(inc_nels[1]),&(inc_nels[2]));
   }
   else{
-    decomp_result = dom_decomp_2d(nelx_tot,nely_tot,num_processors,&(inc_nels[0]),&(inc_nels[1]));
+    decomp_result = dom_decomp_2d(nel_tot[0],nel_tot[1],num_processors,&(inc_nels[0]),&(inc_nels[1]));
   }
 
     if(decomp_result != 0){
@@ -325,16 +325,16 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     remaining_cuts[0] = inc_nels[0];
     remaining_cuts[1] = inc_nels[1];
     remaining_cuts[2] = inc_nels[2];
-    inc_nels[0] = nelx_tot/inc_nels[0];
-    inc_nels[1] = nely_tot/inc_nels[1];
-    inc_nels[2] = nelz_tot/inc_nels[2];
+    inc_nels[0] = nel_tot[0]/inc_nels[0];
+    inc_nels[1] = nel_tot[1]/inc_nels[1];
+    inc_nels[2] = nel_tot[2]/inc_nels[2];
   }
   else{
     remaining_cuts[0] = inc_nels[0];
     remaining_cuts[1] = inc_nels[1];
     remaining_cuts[2] = 1;
-    inc_nels[0] = nelx_tot/inc_nels[0];
-    inc_nels[1] = nely_tot/inc_nels[1];
+    inc_nels[0] = nel_tot[0]/inc_nels[0];
+    inc_nels[1] = nel_tot[1]/inc_nels[1];
     inc_nels[2] = 1;
   }
 
@@ -348,7 +348,7 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
       info_stream << "Number of mesh segments in directions K/Z/PHI \t" << remaining_cuts[2] << "\n";
     }
 
-    base_partition  = new Partition(0,0,0,0,1,nelx_tot,nely_tot,nelz_tot,inline_decomposition_type,remaining_cuts);
+    base_partition  = new Partition(0,0,0,0,1,nel_tot[0],nel_tot[1],nel_tot[2],inline_decomposition_type,remaining_cuts);
   //Place it in a list sorted by number of elements
   sorted_partition_list.push_back(base_partition);
   Partition* biggest;
@@ -367,7 +367,7 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     }
   }
   else if(inline_decomposition_type == RANDOM){
-    long long total = kestride * nelz_tot;
+    long long total = kestride * nel_tot[2];
     for(long long i = 0; i < total; i ++){
       SRANDOM(i);
       long long rand_num = RANDOM();
@@ -377,7 +377,7 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     return 0;
   }
   else if(inline_decomposition_type == SEQUENTIAL){
-    long long total = kestride * nelz_tot;
+    long long total = kestride * nel_tot[2];
     long long num_per_proc = total/num_processors;
     long long remainder = total - num_per_proc*num_processors;
     long long my_start = my_rank * num_per_proc;
@@ -449,16 +449,16 @@ void Inline_Mesh_Desc::Build_Global_Lists(const std::set <long long> & global_el
     //       long long block_k = global_k/(inline_nz);
     //       long long block_j = global_j/(inline_ny);
     //       long long block_i = global_i/(inline_nx);
-    long long block_k = get_block_index(global_k,inline_b[2],c_inline_nz);
-    long long block_j = get_block_index(global_j,inline_b[1],c_inline_ny);
-    long long block_i = get_block_index(global_i,inline_b[0],c_inline_nx);
+    long long block_k = get_block_index(global_k,inline_b[2],c_inline_n[2]);
+    long long block_j = get_block_index(global_j,inline_b[1],c_inline_n[1]);
+    long long block_i = get_block_index(global_i,inline_b[0],c_inline_n[0]);
 
     // This is the ordinal number of the block the element resides in
     long long local_block = block_i + block_j*(inline_b[0])+ block_k*(blockKstride());
     element_block_lists[local_block].push_back(the_element);
     long long nn;
 
-    if(periodic_j && (block_j == (inline_b[1]-1)) && (global_j == (nely_tot-1))){
+    if(periodic_j && (block_j == (inline_b[1]-1)) && (global_j == (nel_tot[1]-1))){
       if(dimension == 2){
       nn = (global_i+0)*instride + (global_j+0)*jnstride;                         global_node_list.push_back(nn);
       nn = (global_i+1)*instride + (global_j+0)*jnstride;                         global_node_list.push_back(nn);
@@ -585,7 +585,7 @@ long long Inline_Mesh_Desc::Populate_Sideset_Info(std::map <long long, long long
       // adjust for periodicity in j 
       long long glj_plus1 = gl_j + 1;
       if(periodic_j){
-        if(glj_plus1 == nely_tot){
+        if(glj_plus1 == nel_tot[1]){
           glj_plus1 = 0;
         } 
       }
@@ -703,49 +703,22 @@ void Inline_Mesh_Desc::Populate_Connectivity(long long * const * conn_array,
     //incrementing i fastest
     for(unsigned elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
       long long the_el = element_block_lists[bct][elct];
-      long long Kg = the_el/(nelx_tot*nely_tot);
-      long long Jg = (the_el - Kg*nelx_tot*nely_tot)/(nelx_tot);
-      long long Ig = the_el  - Kg*nelx_tot*nely_tot - Jg*nelx_tot;
+      long long Kg;
+      long long Jg;
+      long long Ig;
+      long long l;
+      get_l_i_j_k_from_element_number(the_el,l,Ig,Jg,Kg);
 
-      if(periodic_j){
-        conn[elct*num_nodes_per_element + 0] = get_map_entry(global_node_map,(Ig+0)*instride + (Jg+0)*jnstride+(Kg+0)*knstride)+1;
-        conn[elct*num_nodes_per_element + 1] = get_map_entry(global_node_map,(Ig+1)*instride + (Jg+0)*jnstride+(Kg+0)*knstride)+1;
-	if(dimension == 3){
-	  conn[elct*num_nodes_per_element + 0 + 4] = get_map_entry(global_node_map,(Ig+0)*instride + (Jg+0)*jnstride+(Kg+1)*knstride)+1;
-	  conn[elct*num_nodes_per_element + 1 + 4] = get_map_entry(global_node_map,(Ig+1)*instride + (Jg+0)*jnstride+(Kg+1)*knstride)+1;
-	}
-        long long Kblock = bct/(blockKstride());
-        long long Jblock = (bct-Kblock*blockKstride())/inline_b[0];
-        //last j block
-        if((Jblock == (inline_b[1]-1)) && (Jg == (nely_tot-1))){
-          // last element in j direction in block
-          conn[elct*num_nodes_per_element + 2] = get_map_entry(global_node_map,(Ig+1)*instride + (0+0)*jnstride+(Kg+0)*knstride) + 1;
-          conn[elct*num_nodes_per_element + 3] = get_map_entry(global_node_map,(Ig+0)*instride + (0+0)*jnstride+(Kg+0)*knstride) + 1;
-	  if(dimension == 3){
-	    conn[elct*num_nodes_per_element + 2 + 4] = get_map_entry(global_node_map,(Ig+1)*instride + (0+0)*jnstride+(Kg+1)*knstride) + 1;
-	    conn[elct*num_nodes_per_element + 3 + 4] = get_map_entry(global_node_map,(Ig+0)*instride + (0+0)*jnstride+(Kg+1)*knstride) + 1;
-	  }
-        }
-        else{
-          conn[elct*num_nodes_per_element + 2] = get_map_entry(global_node_map,(Ig+1)*instride + (Jg+1)*jnstride+(Kg+0)*knstride)+1;
-          conn[elct*num_nodes_per_element + 3] = get_map_entry(global_node_map,(Ig+0)*instride + (Jg+1)*jnstride+(Kg+0)*knstride)+1;
-	  if(dimension == 3){
-	    conn[elct*num_nodes_per_element + 2 + 4] = get_map_entry(global_node_map,(Ig+1)*instride + (Jg+1)*jnstride+(Kg+1)*knstride)+1;
-	    conn[elct*num_nodes_per_element + 3 + 4] = get_map_entry(global_node_map,(Ig+0)*instride + (Jg+1)*jnstride+(Kg+1)*knstride)+1;
-	  }
-        }
-      }
-      else{
-        conn[elct*num_nodes_per_element + 0] = get_map_entry(global_node_map,(Ig+0)*instride + (Jg+0)*jnstride+(Kg+0)*knstride)+1;
-        conn[elct*num_nodes_per_element + 1] = get_map_entry(global_node_map,(Ig+1)*instride + (Jg+0)*jnstride+(Kg+0)*knstride)+1;
-        conn[elct*num_nodes_per_element + 2] = get_map_entry(global_node_map,(Ig+1)*instride + (Jg+1)*jnstride+(Kg+0)*knstride)+1;
-        conn[elct*num_nodes_per_element + 3] = get_map_entry(global_node_map,(Ig+0)*instride + (Jg+1)*jnstride+(Kg+0)*knstride)+1;
-	if(dimension == 3){
-	  conn[elct*num_nodes_per_element + 0 + 4] = get_map_entry(global_node_map,(Ig+0)*instride + (Jg+0)*jnstride+(Kg+1)*knstride)+1;
-	  conn[elct*num_nodes_per_element + 1 + 4] = get_map_entry(global_node_map,(Ig+1)*instride + (Jg+0)*jnstride+(Kg+1)*knstride)+1;
-	  conn[elct*num_nodes_per_element + 2 + 4] = get_map_entry(global_node_map,(Ig+1)*instride + (Jg+1)*jnstride+(Kg+1)*knstride)+1;
-	  conn[elct*num_nodes_per_element + 3 + 4] = get_map_entry(global_node_map,(Ig+0)*instride + (Jg+1)*jnstride+(Kg+1)*knstride)+1;
-	}
+
+      conn[elct*num_nodes_per_element + 0 + 0] = get_map_entry(global_node_map,get_node_number_from_l_i_j_k(l, Ig + 0, Jg + 0, Kg + 0))+1;
+      conn[elct*num_nodes_per_element + 1 + 0] = get_map_entry(global_node_map,get_node_number_from_l_i_j_k(l, Ig + 1, Jg + 0, Kg + 0))+1;
+      conn[elct*num_nodes_per_element + 2 + 0] = get_map_entry(global_node_map,get_node_number_from_l_i_j_k(l, Ig + 1, Jg + 1, Kg + 0))+1;
+      conn[elct*num_nodes_per_element + 3 + 0] = get_map_entry(global_node_map,get_node_number_from_l_i_j_k(l, Ig + 0, Jg + 1, Kg + 0))+1;
+      if(dimension == 3){
+	conn[elct*num_nodes_per_element + 0 + 4] = get_map_entry(global_node_map,get_node_number_from_l_i_j_k(l, Ig + 0, Jg + 0, Kg + 1))+1;
+	conn[elct*num_nodes_per_element + 1 + 4] = get_map_entry(global_node_map,get_node_number_from_l_i_j_k(l, Ig + 1, Jg + 0, Kg + 1))+1;
+	conn[elct*num_nodes_per_element + 2 + 4] = get_map_entry(global_node_map,get_node_number_from_l_i_j_k(l, Ig + 1, Jg + 1, Kg + 1))+1;
+	conn[elct*num_nodes_per_element + 3 + 4] = get_map_entry(global_node_map,get_node_number_from_l_i_j_k(l, Ig + 0, Jg + 1, Kg + 1))+1;
       }
     }
   }
@@ -765,24 +738,24 @@ void Inline_Mesh_Desc::Populate_Map_and_Global_Element_List(long long * the_map,
       long long Jg = (the_el - Kg*kestride)/(jestride);
       long long Ig = the_el  - Kg*kestride - Jg*jestride;
 
-      long long Kbg = get_block_index(Kg,inline_b[2],c_inline_nz);
-      long long Jbg = get_block_index(Jg,inline_b[1],c_inline_ny);
-      long long Ibg = get_block_index(Ig,inline_b[0],c_inline_nx);
+      long long Kbg = get_block_index(Kg,inline_b[2],c_inline_n[2]);
+      long long Jbg = get_block_index(Jg,inline_b[1],c_inline_n[1]);
+      long long Ibg = get_block_index(Ig,inline_b[0],c_inline_n[0]);
 
 
       //ordinal of the block
       long long the_block = Ibg + Jbg*inline_b[0] + Kbg*blockKstride();
 
       //indices inside the block
-      long long Kblock = Kg-c_inline_nz[Kbg];
-      long long Jblock = Jg-c_inline_ny[Jbg];
-      long long Iblock = Ig-c_inline_nx[Ibg];
+      long long Kblock = Kg-c_inline_n[2][Kbg];
+      long long Jblock = Jg-c_inline_n[1][Jbg];
+      long long Iblock = Ig-c_inline_n[0][Ibg];
 
 
       //product
       //       long long elid = the_block*inline_nx*inline_ny*inline_nz + Iblock + Jblock*inline_nx + Kblock*inline_nx*inline_ny;
       long long elid = cum_block_totals[the_block] +
-        Iblock + Jblock*a_inline_nx[Ibg] + Kblock*a_inline_nx[Ibg]*a_inline_ny[Jbg];
+        Iblock + Jblock*a_inline_n[0][Ibg] + Kblock*a_inline_n[0][Ibg]*a_inline_n[1][Jbg];
 
       the_map[total_count] = elid + 1;
       global_element_numbers[total_count] = elid + 1;
@@ -886,9 +859,9 @@ void Inline_Mesh_Desc::Size_BC_Sets(long long nnx,
 	long long iind = bid - jind *(inline_b[0]) - kind*(inline_b[0] * inline_b[1]);
 	
 	(*setit)->the_locs[ict].limits = getLimits(the_location,
-						   c_inline_nx[iind],c_inline_nx[iind+1]+1,
-						   c_inline_ny[jind],c_inline_ny[jind+1]+1,
-						   c_inline_nz[kind],c_inline_nz[kind+1]+1,
+						   c_inline_n[0][iind],c_inline_n[0][iind+1]+1,
+						   c_inline_n[1][jind],c_inline_n[1][jind+1]+1,
+						   c_inline_n[2][kind],c_inline_n[2][kind+1]+1,
 						   nnx, 
 						   nny);
       }
@@ -912,19 +885,19 @@ void Inline_Mesh_Desc::Size_BC_Sets(long long nnx,
 	long long jind = (bid-kind*(inline_b[0] * inline_b[1]))/inline_b[0];
 	long long iind = bid - jind *(inline_b[0]) - kind*(inline_b[0] * inline_b[1]);
 	(*setit)->the_locs[ict].limits = getLimits(the_location,
-						   c_inline_nx[iind],c_inline_nx[iind+1],
-						   c_inline_ny[jind],c_inline_ny[jind+1],
-						   c_inline_nz[kind],c_inline_nz[kind+1],
-						   nelx_tot, 
-						   nely_tot);
+						   c_inline_n[0][iind],c_inline_n[0][iind+1],
+						   c_inline_n[1][jind],c_inline_n[1][jind+1],
+						   c_inline_n[2][kind],c_inline_n[2][kind+1],
+						   nel_tot[0], 
+						   nel_tot[1]);
       }
       else{
 	(*setit)->the_locs[ict].limits = getLimits(the_location,
-						   0,nelx_tot,
-						   0,nely_tot,
-						   0,nelz_tot,
-						   nelx_tot,
-						   nely_tot);
+						   0,nel_tot[0],
+						   0,nel_tot[1],
+						   0,nel_tot[2],
+						   nel_tot[0],
+						   nel_tot[1]);
       } 
     }
   }
@@ -1154,17 +1127,17 @@ void Inline_Mesh_Desc::ZeroSet()
   Element_Density_Functions[1] = NULL;
   Element_Density_Functions[2] = NULL;
   Geometry_Transform_Function = NULL;
-  a_inline_nx = NULL;
-  a_inline_ny = NULL;
-  a_inline_nz = NULL;
-  c_inline_nx = NULL;
-  c_inline_ny = NULL;
-  c_inline_nz = NULL;
+  a_inline_n[0] = NULL;
+  a_inline_n[1] = NULL;
+  a_inline_n[2] = NULL;
+  c_inline_n[0] = NULL;
+  c_inline_n[1] = NULL;
+  c_inline_n[2] = NULL;
   cum_block_totals = NULL;
   els_in_block = NULL;
-  nelx_tot = 0;
-  nely_tot = 0;
-  nelz_tot = 0;
+  nel_tot[0] = 0;
+  nel_tot[1] = 0;
+  nel_tot[2] = 0;
   block_dist = new double * [3];
   c_block_dist = new double * [3];
   first_size = new double * [3];
@@ -1178,9 +1151,9 @@ void Inline_Mesh_Desc::ZeroSet()
     interval[i] = NULL;
   }
 
-    Icoors = NULL;
-    Jcoors = NULL;
-    Kcoors = NULL;
+    IJKcoors[0] = NULL;
+    IJKcoors[1] = NULL;
+    IJKcoors[2] = NULL;
     base_partition = NULL;
     
     transition_radius = -1;
@@ -1306,18 +1279,18 @@ void Inline_Mesh_Desc::setStrides()
 /*****************************************************************************/
 {
   instride = 1;
-  jnstride = nelx_tot+1;
-  knstride = (nelx_tot+1)*(nely_tot+1);
+  jnstride = nel_tot[0]+1;
+  knstride = (nel_tot[0]+1)*(nel_tot[1]+1);
   
   if(inline_geometry_type == RADIAL && periodic_j){
     instride = 1;
-    jnstride = nelx_tot+1;
-    knstride = (nelx_tot+1)*(nely_tot);
+    jnstride = nel_tot[0]+1;
+    knstride = (nel_tot[0]+1)*(nel_tot[1]);
   }
   
   iestride = 1;
-  jestride = nelx_tot;
-  kestride = (nelx_tot)*(nely_tot);
+  jestride = nel_tot[0];
+  kestride = (nel_tot[0])*(nel_tot[1]);
 
 }
 
@@ -1350,8 +1323,8 @@ void Inline_Mesh_Desc::get_l_i_j_k_from_node_number(long long nn,
 {
   k = nn/knstride;
   long long remainder = nn - k*knstride;  
-  j = remainder / (nelx_tot+1);
-  i = remainder - j*(nelx_tot+1);
+  j = remainder / (nel_tot[0]+1);
+  i = remainder - j*(nel_tot[0]+1);
 }
 
 /****************************************************************************/
@@ -1365,18 +1338,18 @@ long long Inline_Mesh_Desc::get_element_number_from_l_i_j_k( long long  l,
   // return -1 if off mesh
   // adjust and recurse if i or j throw element onto adjacent block
   if(k < 0) return -1;
-  if(k >= nelz_tot) return -1;
+  if(k >= nel_tot[2]) return -1;
   if(periodic_j){
-    if(j < 0) j = nely_tot-1;
-    if(j >= nely_tot)j = 0;
+    if(j < 0) j = nel_tot[1]-1;
+    if(j >= nel_tot[1])j = 0;
   }
   else{
   if(j < 0) return -1;
-  if(j >= nely_tot)return -1;
+  if(j >= nel_tot[1])return -1;
   }
 
   if(i<0)return -1;
-  if(i >= nelx_tot)return -1;
+  if(i >= nel_tot[0])return -1;
 
   long long elno;
   elno = k*kestride;
@@ -1388,13 +1361,13 @@ long long Inline_Mesh_Desc::get_element_number_from_l_i_j_k( long long  l,
 
 /****************************************************************************/
 long long Inline_Mesh_Desc::get_node_number_from_l_i_j_k( long long  l,
-								 long long  i,
-								 long long  j,
-								 long long  k)
+							  long long  i,
+							  long long  j,
+							  long long  k)
   /****************************************************************************/
 {
   if(periodic_j){
-    if( j == nely_tot)j = 0;
+    if( j == nel_tot[1])j = 0;
   }
   long long nno = k*knstride;
   nno += j*jnstride;
@@ -2066,7 +2039,7 @@ void Inline_Mesh_Desc::getGlobal_Element_Block_Totals(long long * totals_array)
     long long kind = bct/blockKstride();
     long long jind = (bct - kind * blockKstride())/inline_b[0];
     long long iind = bct - jind * inline_b[0] - kind * blockKstride();
-    totals_array[bct] = a_inline_nx[iind]*a_inline_ny[jind]*a_inline_nz[kind];
+    totals_array[bct] = a_inline_n[0][iind]*a_inline_n[1][jind]*a_inline_n[2][kind];
   } 
 }
 

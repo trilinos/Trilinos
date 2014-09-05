@@ -34,17 +34,17 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
   //Pre-Process BC's
   // set up nnx/nny/nnz for calculating bc loop limits
-  long long nnx = imd->nelx_tot+1;
-  long long nny = imd->nely_tot+1;
+  long long nnx = imd->nel_tot[0]+1;
+  long long nny = imd->nel_tot[1]+1;
   long long nnz = 1;
   if(dim == 3){
-    nnz = imd->nelz_tot+1;
+    nnz = imd->nel_tot[2]+1;
   }
   
   imd->Size_BC_Sets(nnx,nny,nnz);
 
   if(imd->inline_geometry_type == RADIAL && imd->periodic_j){
-    nny = imd->nely_tot;
+    nny = imd->nel_tot[1];
   }
 
   ms_lt::Mesh_Specification * nemesis_db = new ms_lt::Mesh_Specification();

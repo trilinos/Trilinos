@@ -107,53 +107,31 @@ void Brick_Inline_Mesh_Desc::calculateSize(long long & total_el_count,
 long long Brick_Inline_Mesh_Desc::Set_Up()
 /*****************************************************************************/
 {
-  a_inline_nx = new long long [inline_b[0]];
-  a_inline_ny = new long long [inline_b[1]];
-  a_inline_nz = new long long [inline_b[2]];
-  c_inline_nx = new long long [inline_b[0]+1];
-  c_inline_ny = new long long [inline_b[1]+1];
-  c_inline_nz = new long long [inline_b[2]+1];
-  
-  for(long long i = 0; i < inline_b[0]; i ++){
-    a_inline_nx[i] = interval[0][i];
-    c_inline_nx[i] = 0;
-    nelx_tot += a_inline_nx[i];
-    if(i)c_inline_nx[i] = c_inline_nx[i-1]+a_inline_nx[i-1];
-    c_block_dist[0][i] = inline_gmin[0];//inner radius
-    if(i)c_block_dist[0][i] = c_block_dist[0][i-1]+block_dist[0][i-1];
+  for(long long axis = 0 ; axis < 3; axis ++){
+    a_inline_n[axis] = new long long [inline_b[axis]];
+    c_inline_n[axis] = new long long [inline_b[axis]+1];
   }
-  c_inline_nx[inline_b[0]] = c_inline_nx[inline_b[0] - 1]+a_inline_nx[inline_b[0] - 1];
-  c_block_dist[0][inline_b[0]] = c_block_dist[0][inline_b[0] - 1]+block_dist[0][inline_b[0] - 1];
 
-  for(long long i = 0; i < inline_b[1]; i ++){
-    a_inline_ny[i] = interval[1][i];
-    c_inline_ny[i] = 0;
-    nely_tot += a_inline_ny[i];
-    if(i)c_inline_ny[i] = c_inline_ny[i-1]+a_inline_ny[i-1];
-    c_block_dist[1][i] = inline_gmin[1];
-    if(i)c_block_dist[1][i] = c_block_dist[1][i-1]+block_dist[1][i-1];
-  }
-  c_inline_ny[inline_b[1]] = c_inline_ny[inline_b[1]-1]+a_inline_ny[inline_b[1]-1];
-  c_block_dist[1][inline_b[1]] = c_block_dist[1][inline_b[1] - 1]+block_dist[1][inline_b[1] - 1];
+  if(dimension != 3){
+    nel_tot[2] = 1;
+    a_inline_n[2][0] = 1;
+    c_inline_n[2][0] = 0;
+    c_inline_n[2][1] = 1;
+  }  
 
-  if(dimension == 3){
-    for(long long i = 0; i < inline_b[2]; i ++){
-      a_inline_nz[i] = interval[2][i];
-      c_inline_nz[i] = 0;
-      nelz_tot += a_inline_nz[i];
-      if(i)c_inline_nz[i] = c_inline_nz[i-1]+a_inline_nz[i-1];
-      c_block_dist[2][i] = inline_gmin[2];
-      if(i)c_block_dist[2][i] = c_block_dist[2][i-1]+block_dist[2][i-1];
+  for(long long axis = 0 ; axis < dimension; axis ++){
+    for(long long i = 0; i < inline_b[axis]; i ++){
+      a_inline_n[axis][i] = interval[axis][i];
+      c_inline_n[axis][i] = 0;
+      nel_tot[axis] += a_inline_n[axis][i];
+      if(i)c_inline_n[axis][i] = c_inline_n[axis][i-1]+a_inline_n[axis][i-1];
+      c_block_dist[axis][i] = inline_gmin[axis];//inner radius
+      if(i)c_block_dist[axis][i] = c_block_dist[axis][i-1]+block_dist[axis][i-1];
     }
-    c_inline_nz[inline_b[2]] = c_inline_nz[inline_b[2]-1]+a_inline_nz[inline_b[2]-1];
-    c_block_dist[2][inline_b[2]] = c_block_dist[2][inline_b[2] - 1]+block_dist[2][inline_b[2] - 1];
+    c_inline_n[axis][inline_b[axis]] = c_inline_n[axis][inline_b[axis] - 1]+a_inline_n[axis][inline_b[axis] - 1];
+    c_block_dist[axis][inline_b[axis]] = c_block_dist[axis][inline_b[axis] - 1]+block_dist[axis][inline_b[axis] - 1];
   }
-  else{
-    nelz_tot = 1;
-    a_inline_nz[0] = 1;
-    c_inline_nz[0] = 0;
-    c_inline_nz[1] = 1;
-  }
+
 
   cum_block_totals = new long long[numBlocks()];
   els_in_block = new long long[numBlocks()];
@@ -162,7 +140,7 @@ long long Brick_Inline_Mesh_Desc::Set_Up()
   for(long long k = 0; k < inline_b[2]; k ++){
     for(long long j = 0; j < inline_b[1]; j ++){
       for(long long i = 0; i < inline_b[0]; i ++){
-	els_in_block[bl_ct] = a_inline_nx[i]*a_inline_ny[j]*a_inline_nz[k];
+	els_in_block[bl_ct] = a_inline_n[0][i]*a_inline_n[1][j]*a_inline_n[2][k];
 	cum_block_totals[bl_ct]=0;
         if(bl_ct){
 	  cum_block_totals[bl_ct] = cum_block_totals[bl_ct-1]+els_in_block[bl_ct-1];
@@ -190,106 +168,40 @@ long long Brick_Inline_Mesh_Desc::Set_Up()
 long long Brick_Inline_Mesh_Desc::Calc_Coord_Vectors()
 /****************************************************************************/
 {
-  long long nnx = nelx_tot+1;
-  long long nny = nely_tot+1;
-  double xdelta = inline_gmax[0]-inline_gmin[0];
-  double ydelta = inline_gmax[1]-inline_gmin[1];
-  Icoors = new double[nnx];
-  Jcoors = new double[nny];
 
-  long long nct = 0;
-  for(long long i = 0; i < inline_b[0]; i ++){
-    long long axis = 0;
-    double sum = 0.;
-    for(long long j = 0; j < a_inline_nx[i]; j ++){
-      if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-        Icoors[nct] = c_block_dist[axis][i]+sum;
-        sum += first_size[axis][i];
-        if(interval[axis][i]-1) sum += (double)j*(last_size[axis][i]-first_size[axis][i])/((double)interval[axis][i]-1);
-        Icoors[nct+1] = c_block_dist[axis][i+1];
-      }
-      else{
-        Icoors[nct] = c_block_dist[0][i]+j*block_dist[0][i]/(double)a_inline_nx[i];
-        Icoors[nct+1] = c_block_dist[0][i]+(j+1)*block_dist[0][i]/(double)a_inline_nx[i];
-      }
-      nct ++;
-    }
-  }
+  for(long long axis = 0; axis < dimension; axis ++){
+    IJKcoors[axis] = new double[nel_tot[axis]+1];
 
-  nct = 0;
-  for(long long i = 0; i < inline_b[1]; i ++){
-    long long axis = 1;
-    double sum = 0.;
-    for(long long j = 0; j < a_inline_ny[i]; j ++){
-      if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-        Jcoors[nct] = c_block_dist[axis][i]+sum;
-        sum += first_size[axis][i];
-        if(interval[axis][i]-1) sum += (double)j*(last_size[axis][i]-first_size[axis][i])/((double)interval[axis][i]-1);
-        Jcoors[nct+1] = c_block_dist[axis][i+1];
-      }
-      else{
-        Jcoors[nct] = c_block_dist[1][i]+j*block_dist[1][i]/(double)a_inline_ny[i];
-        Jcoors[nct+1] = c_block_dist[1][i]+(j+1)*block_dist[1][i]/(double)a_inline_ny[i];
-      }
-      nct ++;
-    }
-  }
-
-  if(Element_Density_Functions[0])Element_Density_Functions[0]->Integrate(inline_gmin[0],inline_gmax[0], error_stream);
-  if(!error_stream.str().empty()){return 1;}
-  if(Element_Density_Functions[1])Element_Density_Functions[1]->Integrate(inline_gmin[1],inline_gmax[1], error_stream);
-  if(!error_stream.str().empty()){return 1;}
-  if(Element_Density_Functions[0]){
-    for(long long ict = 0; ict < nnx; ict ++){
-      double factor = (Icoors[ict]-inline_gmin[0])/xdelta;
-      double interpolant =  Element_Density_Functions[0]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-      double new_coord = inline_gmin[0]+interpolant*xdelta;
-      Icoors[ict] = new_coord;
-    }
-  }
-  if(Element_Density_Functions[1]){
-    for(long long ict = 0; ict < nny; ict ++){
-      double factor = (Jcoors[ict]-inline_gmin[1])/ydelta;
-      double interpolant =  Element_Density_Functions[1]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-      double new_coord = inline_gmin[1]+interpolant*ydelta;
-      Jcoors[ict] = new_coord;
-    }
-  }
-  if(dimension == 3){
-    long long nnz = nelz_tot+1;
-    double zdelta = inline_gmax[2]-inline_gmin[2];
-    Kcoors = new double[nnz];
-    
-    nct = 0;
-    for(long long i = 0; i < inline_b[2]; i ++){
-      long long axis = 2;
+    long long nct = 0;
+    for(long long i = 0; i < inline_b[axis]; i ++){
       double sum = 0.;
-      for(long long j = 0; j < a_inline_nz[i]; j ++){
+      for(long long j = 0; j < a_inline_n[axis][i]; j ++){
 	if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
-	  Kcoors[nct] = c_block_dist[axis][i]+sum;
+	  IJKcoors[axis][nct] = c_block_dist[axis][i]+sum;
 	  sum += first_size[axis][i];
-          if(interval[axis][i]-1) sum += (double)j*(last_size[axis][i]-first_size[axis][i])/((double)interval[axis][i]-1);
-	  Kcoors[nct+1] = c_block_dist[axis][i+1];
+	  if(interval[axis][i]-1) sum += (double)j*(last_size[axis][i]-first_size[axis][i])/((double)interval[axis][i]-1);
+	  IJKcoors[axis][nct+1] = c_block_dist[axis][i+1];
 	}
 	else{
-	  Kcoors[nct] = c_block_dist[2][i]+j*block_dist[2][i]/(double)a_inline_nz[i];
-	  Kcoors[nct+1] = c_block_dist[2][i]+(j+1)*block_dist[2][i]/(double)a_inline_nz[i];
+	  IJKcoors[axis][nct] = c_block_dist[axis][i]+j*block_dist[axis][i]/(double)a_inline_n[axis][i];
+	  IJKcoors[axis][nct+1] = c_block_dist[axis][i]+(j+1)*block_dist[axis][i]/(double)a_inline_n[axis][i];
 	}
 	nct ++;
       }
     }
-    
-    if(Element_Density_Functions[2])Element_Density_Functions[2]->Integrate(inline_gmin[2],inline_gmax[2],error_stream);
-    if(!error_stream.str().empty()){return 1;}
-    if(Element_Density_Functions[2]){
-      for(long long ict = 0; ict < nnz; ict ++){
-	double factor = (Kcoors[ict]-inline_gmin[2])/zdelta;
-	double interpolant =  Element_Density_Functions[2]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
-	double new_coord = inline_gmin[2]+interpolant*zdelta;
-	Kcoors[ict] = new_coord;
+    if(Element_Density_Functions[axis]){
+      Element_Density_Functions[axis]->Integrate(inline_gmin[axis],inline_gmax[axis], error_stream);
+      if(!error_stream.str().empty()){return 1;}
+      double delta = inline_gmax[axis]-inline_gmin[axis];
+      for(long long ict = 0; ict < (nel_tot[axis]+1); ict ++){
+	double factor = (IJKcoors[axis][ict]-inline_gmin[axis])/delta;
+	double interpolant =  Element_Density_Functions[axis]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
+	double new_coord = inline_gmin[axis]+interpolant*delta;
+	IJKcoors[axis][ict] = new_coord;
       }
     }
   }
+
   return 0;
 }
 
@@ -301,16 +213,15 @@ void Brick_Inline_Mesh_Desc::Populate_Coords(double * coords,
 
 /****************************************************************************/
 {
+  long long global_ind[3];
   for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
     long long the_node = global_node_vector[gnv];
-    long long global_k = the_node/knstride;
-    long long global_j = (the_node-global_k*knstride)/jnstride;
-    long long global_i = the_node - global_k*knstride-global_j*jnstride;
+    global_ind[2] = the_node/knstride;
+    global_ind[1] = (the_node-global_ind[2]*knstride)/jnstride;
+    global_ind[0] = the_node - global_ind[2]*knstride-global_ind[1]*jnstride;
     long long the_local_node = get_map_entry(global_node_map,the_node);
-    coords[the_local_node+0*num_nodes]= Icoors[global_i];
-    coords[the_local_node+1*num_nodes]= Jcoors[global_j];
-    if(dimension == 3){
-      coords[the_local_node+2*num_nodes]= Kcoors[global_k];
+    for(long long axis = 0; axis < dimension; axis ++){
+      coords[the_local_node+axis*num_nodes]= IJKcoors[axis][global_ind[axis]];
     }
   }
 }
