@@ -41,7 +41,7 @@ TEST(side_node_ordinals, hex8)
   //We will use boost::mpl 'random access iterators' to repeat the same EXPECT_EQ tests that
   //were performed above for the node-ordinals of side 1.
   //
-  typedef typename stk::topology::topology_type<stk::topology::HEX_8>::face_node_ordinals_vector face_node_ordinals_vector;
+  typedef stk::topology::topology_type<stk::topology::HEX_8>::face_node_ordinals_vector face_node_ordinals_vector;
 
   typedef boost::mpl::at_c<face_node_ordinals_vector, side1_ordinal>::type side1_node_ordinals_iterator;
 
