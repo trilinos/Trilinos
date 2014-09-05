@@ -529,7 +529,7 @@ void field_axpy(
         const Scalar alpha,
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(&xFieldBase.get_mesh()==&yFieldBase.get_mesh());
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
@@ -573,7 +573,7 @@ void field_axpy(
         const Scalar alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(&xField.get_mesh()==&yField.get_mesh());
     ThrowAssert(xField.entity_rank() == yField.entity_rank());
@@ -615,7 +615,7 @@ void INTERNAL_field_product(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
         const FieldBase & zFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
 
@@ -643,7 +643,7 @@ void field_product(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
         const FieldBase & zFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
     ThrowAssert(yFieldBase.entity_rank() == zFieldBase.entity_rank());
@@ -685,7 +685,7 @@ void field_product(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & zField,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xField.entity_rank() == yField.entity_rank());
     ThrowAssert(yField.entity_rank() == zField.entity_rank());
@@ -730,7 +730,7 @@ inline
 void INTERNAL_field_copy(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
 
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
@@ -757,7 +757,7 @@ inline
 void field_copy(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
     ThrowAssert(&xFieldBase.get_mesh() == &yFieldBase.get_mesh());
@@ -794,7 +794,7 @@ inline
 void field_copy(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
-        const Selector selector)
+        const Selector& selector)
 {
 
     ThrowAssert(xField.entity_rank() == yField.entity_rank());
@@ -834,7 +834,7 @@ inline
 Scalar field_dot(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
 
@@ -873,7 +873,7 @@ inline
 std::complex<Scalar>  field_dot(
         const Field<std::complex<Scalar> ,T1,T2,T3,T4,T5,T6,T7>& xField,
         const Field<std::complex<Scalar> ,T1,T2,T3,T4,T5,T6,T7>& yField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm) {
 
     ThrowAssert(xField.entity_rank() == yField.entity_rank());
@@ -916,7 +916,7 @@ inline
 Scalar field_dot(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
-        const Selector selector)
+        const Selector& selector)
 {
     const MPI_Comm comm = xField.get_mesh().parallel();
     return field_dot(xField,yField,selector,comm);
@@ -938,7 +938,7 @@ void field_dot(
         std::complex<Scalar> & global_result,
         const FieldBase & xFieldBase, //CR LAST COMMENT LOCATION
         const FieldBase & yFieldBase,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
@@ -984,7 +984,7 @@ void field_dot(
         Scalar & glob_result,
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
@@ -1025,7 +1025,7 @@ void field_dot(
         Scalar & result,
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     const MPI_Comm comm = xFieldBase.get_mesh().parallel();
     field_dot(result,xFieldBase,yFieldBase,selector,comm);
@@ -1047,7 +1047,7 @@ inline
 void field_scale(
         const Scalar alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector)
+        const Selector& selector)
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
@@ -1081,7 +1081,7 @@ inline
 void field_scale(
         const Scalar alpha,
         const FieldBase & xFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
 
@@ -1117,7 +1117,7 @@ inline
 void field_fill(
         const Scalar alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector)
+        const Selector& selector)
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
@@ -1151,7 +1151,7 @@ inline
 void field_fill_component(
         const Scalar* alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector)
+        const Selector& selector)
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
@@ -1186,7 +1186,7 @@ inline
 void field_fill_component(
         const Scalar* alpha,
         const FieldBase & xFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
 
@@ -1223,7 +1223,7 @@ inline
 void field_fill(
         const Scalar alpha,
         const FieldBase & xFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
 
@@ -1259,7 +1259,7 @@ inline
 void field_swap(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xField.entity_rank() == yField.entity_rank());
     ThrowAssert(&xField.get_mesh() == &yField.get_mesh());
@@ -1298,7 +1298,7 @@ inline
 void INTERNAL_field_swap(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
 
@@ -1323,7 +1323,7 @@ inline
 void field_swap(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
     ThrowAssert(&xFieldBase.get_mesh() == &yFieldBase.get_mesh());
@@ -1359,7 +1359,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 Scalar field_nrm2(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
@@ -1392,7 +1392,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 std::complex<Scalar> field_nrm2(
         const Field< std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm) {
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
@@ -1425,7 +1425,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 Scalar field_nrm2(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector)
+        const Selector& selector)
 {
     const MPI_Comm comm = xField.get_mesh().parallel();
     return field_nrm2(xField,selector,comm);
@@ -1446,7 +1446,7 @@ inline
 void field_nrm2(
         Scalar & glob_result,
         const FieldBase & xFieldBase,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
@@ -1482,7 +1482,7 @@ inline
 void field_nrm2(
         std::complex<Scalar> & result,
         const FieldBase & xFieldBase,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     ThrowAssert(xFieldBase.data_traits().type_info == typeid(std::complex<Scalar>));
@@ -1518,7 +1518,7 @@ inline
 void field_nrm2(
         Scalar & result,
         const FieldBase & xFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     const MPI_Comm comm = xFieldBase.get_mesh().parallel();
     field_nrm2(result,xFieldBase,selector,comm);
@@ -1538,7 +1538,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 Scalar field_asum(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
@@ -1571,7 +1571,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 std::complex<Scalar> field_asum(
         const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm) {
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
@@ -1604,7 +1604,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 Scalar field_asum(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector)
+        const Selector& selector)
 {
     const MPI_Comm comm = xField.get_mesh().parallel();
     return field_asum(xField,selector,comm);
