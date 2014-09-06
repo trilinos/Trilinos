@@ -7822,9 +7822,19 @@ MPI executables.  If not specified, this will default to
 <tt class="docutils literal">&lt;overallNumProcs&gt;</tt> from <tt class="docutils literal">OVERALL_NUM_MPI_PROCS &lt;overallNumProcs&gt;</tt>.</blockquote>
 <p><tt class="docutils literal">OUTPUT_FILE &lt;outputFile&gt;</tt></p>
 <blockquote>
-If specified, then stdout and stderr for the test case will be sent to
+<p>If specified, then stdout and stderr for the test case will be sent to
 <tt class="docutils literal">&lt;outputFile&gt;</tt>.  By default, the contents of this file will <strong>also</strong>
-be printed to STDOUT unless <tt class="docutils literal">NO_ECHO_OUT</tt> is passed as well.</blockquote>
+be printed to STDOUT unless <tt class="docutils literal">NO_ECHO_OUT</tt> is passed as well.</p>
+<p>NOTE: Contrary to CMake documentation for EXECUTE_PROCESS(), STDERR
+output will get included after all STDOUT output.  Therefore, you can't
+write any tests that depend on the order of STDOUT and STDERR output in
+relation to each other.  Also note that all of STDOUT and STDERR will be
+first read into the CTest executable process main memory before the file
+<tt class="docutils literal">&lt;outputFile&gt;</tt> is written.  Therefore, don't run executables or
+commands that generate massive amounts of console output or it may
+exhaust main memory.  Instead, have the command or executable write
+directly to a file instead of going through STDOUT.</p>
+</blockquote>
 <p><tt class="docutils literal">NO_ECHO_OUTPUT</tt></p>
 <blockquote>
 If specified, then the output for the test command will not be echoed to

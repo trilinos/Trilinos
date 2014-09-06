@@ -64,15 +64,21 @@ int main( int argc, char* argv[] )
   int returnVal = 0;
   if (argc > 2)
     returnVal = std::atoi(argv[2]);
+  std::string printMsgStdErr = "";
+  if (argc > 3)
+    printMsgStdErr = argv[3];
 
   if (printMsg.length() && procRank==0)
-    std::cout << "\n" << printMsg << "\n";
+    std::cout << "\n" << printMsg << "\n" << std::flush;
+
+  if (printMsgStdErr.length() && procRank==0)
+    std::cerr << "\n" << printMsgStdErr << "\n" << std::flush;
  
   if (procRank==0) {
     if (success)
-      std::cout << "\nEnd Result: TEST PASSED" << std::endl;
+      std::cout << "\nEnd Result: TEST PASSED\n";
     else
-      std::cout << "\nEnd Result: TEST FAILED" << std::endl;
+      std::cout << "\nEnd Result: TEST FAILED\n";
   }
 
 #ifdef HAVE_MPI

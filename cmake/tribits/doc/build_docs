@@ -13,6 +13,15 @@ _BASE_DIR=$PWD
 
 echo
 echo "***"
+echo "*** Generating index.html ..."
+echo "***"
+echo
+
+cd $_BASE_DIR
+./generate-index.sh
+
+echo
+echo "***"
 echo "*** Generating TribitsDevelopersGuide.[rst,html,pdf] ..."
 echo "***"
 echo
@@ -37,29 +46,29 @@ echo "See generated files:"
 echo
 ls $_BASE_DIR/build_quick_ref/TribitsBuildQuickRef.*
 
-echo
-echo "***"
-echo "*** Generating TribitsOverview.pdf ..."
-echo "***"
-echo
-
-cd $_BASE_DIR/overview
-source source_set_env 
-make
-echo
-echo "See generated files:"
-echo
-ls $_BASE_DIR/overview/TribitsOverview.pdf
-
-echo
-echo "***"
-echo "*** Generating TribitsLifecycleModel.pdf ..."
-echo "***"
-echo
-
-cd $_BASE_DIR/lifecycle_model
-make
-echo
-echo "See generated files:"
-echo
-ls $_BASE_DIR/lifecycle_model/TribitsLifecycleModel.pdf
+#echo
+#echo "***"
+#echo "*** Generating TribitsOverview.pdf ..."
+#echo "***"
+#echo
+#
+#cd $_BASE_DIR/overview
+#source source_set_env 
+#make
+#echo
+#echo "See generated files:"
+#echo
+#ls $_BASE_DIR/overview/TribitsOverview.pdf
+#
+#echo
+#echo "***"
+#echo "*** Generating TribitsLifecycleModel.pdf ..."
+#echo "***"
+#echo
+#
+#cd $_BASE_DIR/lifecycle_model
+#make
+#echo
+#echo "See generated files:"
+#echo
+#ls $_BASE_DIR/lifecycle_model/TribitsLifecycleModel.pdf
