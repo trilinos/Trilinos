@@ -304,6 +304,17 @@ INCLUDE(PrintVar)
 #     ``<outputFile>``.  By default, the contents of this file will **also**
 #     be printed to STDOUT unless ``NO_ECHO_OUT`` is passed as well.
 #
+#     NOTE: Contrary to CMake documentation for EXECUTE_PROCESS(), STDOUT and
+#     STDERR may not get output in the correct order interleaved correctly,
+#     even in serial without MPI.  Therefore, you can't write any tests that
+#     depend on the order of STDOUT and STDERR output in relation to each
+#     other.  Also note that all of STDOUT and STDERR will be first read into
+#     the CTest executable process main memory before the file
+#     ``<outputFile>`` is written.  Therefore, don't run executables or
+#     commands that generate massive amounts of console output or it may
+#     exhaust main memory.  Instead, have the command or executable write
+#     directly to a file instead of going through STDOUT.
+#
 #   ``NO_ECHO_OUTPUT``
 #
 #     If specified, then the output for the test command will not be echoed to

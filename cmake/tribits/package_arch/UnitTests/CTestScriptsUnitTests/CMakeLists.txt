@@ -123,7 +123,6 @@ TRIBITS_ADD_ADVANCED_TEST(
     OUTPUT_FILE cmnd_1_args_1_print_msg_out_file_outputFile.out
     PASS_REGULAR_EXPRESSION "This is a crazy test"
   OVERALL_NUM_MPI_PROCS 1
-  XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -149,11 +148,11 @@ TRIBITS_ADD_ADVANCED_TEST(
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
-  CTestScripts_cmnd_1_args_1_pass_regular_expression_all
+  CTestScripts_cmnd_1_args_2_stderr_pass_regular_expression_all
   TEST_0 EXEC GenericDriver
-    ARGS "This is a crazy test\n\nThis is not the best test" 5
-    #OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_outputFile.out
-    PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
+    ARGS "This is a crazy test\n\nThis is not the best test" 5 "This goes to stderr"
+    OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_outputFile.out
+    PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test" "This goes to stderr"
   OVERALL_NUM_MPI_PROCS 1
   )
 
@@ -161,7 +160,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all_compare_1
   TEST_0 EXEC GenericDriver
     ARGS "This is a crazy test\n\nThis is not the best test" 5
-    #OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_1_outputFile.out
+    OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_1_outputFile.out
     PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Pass criteria = Match REGEX {This is a crazy test} [^a]PASSED[^a]"
   OVERALL_NUM_MPI_PROCS 1
@@ -171,7 +170,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all_compare_2
   TEST_0 EXEC GenericDriver
     ARGS "This is a crazy test\n\nThis is not the best test" 5
-    #OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_2_outputFile.out
+    OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_2_outputFile.out
     PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Pass criteria = Match REGEX {This is not the best test} [^a]PASSED[^a]"
   OVERALL_NUM_MPI_PROCS 1
@@ -207,7 +206,6 @@ TRIBITS_ADD_ADVANCED_TEST(
     WORKING_DIRECTORY TEST_NAME
     OUTPUT_FILE cmnd_1_args_1_working_directory_console.out
   OVERALL_NUM_MPI_PROCS 1
-  XHOSTTYPE Windows
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -264,34 +262,45 @@ TRIBITS_ADD_ADVANCED_TEST(
   OVERALL_NUM_MPI_PROCS 1
   )
 
-IF (WIN23 AND NOT CYGWIN)
+IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+  # cmake -E compare_files only gives return != 0 if the files don't compare.
+  # It gives no diff output.
   SET(DIFF_COMMAND_STUFF "${CMAKE_COMMAND}" ARGS -E compare_files)
 ELSE()
+  # Diff gives output of the diff so it is better to use if we have it.
+  # Otherwise, I need to write a portable diff (using a CMake -P script).
   SET(DIFF_COMMAND_STUFF diff ARGS)
 ENDIF()
 
 TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_3_args_1_overall_working_directory
+  MESSAGE "NOTE: This test does not check the order of STDOUT and STDERR, only that both exist in the output file.  It seems that EXECUTE_PROCESS() and MPI do not behave well together w.r.t. to STDOUT and STDERR outputting.  The fault may be with the MPI implementation.  Also, even in serial it would seem that the order of STDOUT and STDERR gets messed up when the machine is loaded."
   OVERALL_WORKING_DIRECTORY TEST_NAME
   TEST_0 EXEC GenericDriver
-    ARGS "This is a crazy test!" 0
+    ARGS "This is a crazy test!" 0 "This is a bad crazy test!"
     OUTPUT_FILE cmnd_3_args_1_overall_working_directory_console.out
-  TEST_1 CMND "${CMAKE_COMMAND}"
-    ARGS -E copy
-      cmnd_3_args_1_overall_working_directory_console.out
-      cmnd_3_args_1_overall_working_directory_console.gold.out
-  TEST_2 CMND ${DIFF_COMMAND_STUFF}
-    cmnd_3_args_1_overall_working_directory_console.out
-    cmnd_3_args_1_overall_working_directory_console.gold.out
+  TEST_1 CMND cat
+    ARGS cmnd_3_args_1_overall_working_directory_console.out
+    PASS_REGULAR_EXPRESSION_ALL
+       "This is a crazy test"
+       "This is a bad crazy test"
   OVERALL_NUM_MPI_PROCS 1
   XHOSTTYPE Windows
   )
+# NOTE: The above test does not run on Windows because it relies on the 'cat'
+# command.  The form of this test is needed in order to check that both STDOUT
+# and STDERR output are both in the output file but we can't rely on the
+# order.  It seems that EXECUTE_PROCESS() and mpiexec don't work together to
+# produce ordered STDOUT and STDERR very well.  Also, even in serial, it seems
+# that when the machine is loaded that the order of STDOUT and STDERR can get
+# messed up.  It is not clear if this is a problem with EXECUTE_PROCESS() or
+# not.
 
 TRIBITS_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_3_args_1_overall_working_directory_working_directory
   OVERALL_WORKING_DIRECTORY TEST_NAME
   TEST_0 EXEC GenericDriver
-    ARGS "This is a crazy test!" 0
+    ARGS "This is another crazy test!" 0
     OUTPUT_FILE cmnd_3_args_1_overall_working_directory_working_directory_console.out
     WORKING_DIRECTORY GenericDriver
   TEST_1 CMND "${CMAKE_COMMAND}"
@@ -299,11 +308,10 @@ TRIBITS_ADD_ADVANCED_TEST(
       ../GenericDriver/cmnd_3_args_1_overall_working_directory_working_directory_console.out
       cmnd_3_args_1_overall_working_directory_working_directory_console.gold.out
     WORKING_DIRECTORY Gold
-  TEST_2 CMND ${DIFF_COMMAND_STUFF}
+  TEST_2 CMND ${DIFF_COMMAND_STUFF}  # Contains the ARGS part
     GenericDriver/cmnd_3_args_1_overall_working_directory_working_directory_console.out
     Gold/cmnd_3_args_1_overall_working_directory_working_directory_console.gold.out
   OVERALL_NUM_MPI_PROCS 1
-  XHOSTTYPE Windows
   )
 
 # Demonstrate processes never dying
