@@ -113,8 +113,7 @@ non-optimized-storage state.
 template<class Scalar = Operator<>::scalar_type,
          class LocalOrdinal = typename Operator<Scalar>::local_ordinal_type,
          class GlobalOrdinal = typename Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-         class Node = typename Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-         class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::BlockSparseOps >
+         class Node = typename Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
 class VbrMatrix :
   public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
   public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
@@ -123,7 +122,7 @@ public:
   typedef LocalOrdinal  local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node          node_type;
-  typedef LocalMatOps   mat_vec_type;
+  typedef typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::BlockSparseOps mat_vec_type;
 
   //! @name Constructor/Destructor Methods
   //@{
@@ -597,7 +596,7 @@ public:
   Teuchos::ArrayRCP<Scalar> pbuf_values1D_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_indx_;
 
-  LocalMatOps lclMatOps_;
+  mat_vec_type lclMatOps_;
   Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
   Teuchos::RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedVec_;
