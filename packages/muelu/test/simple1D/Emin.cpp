@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;
 
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
+  RCP<MueLu::Hierarchy<SC,LO,GO,NO> > H = rcp( new Hierarchy() );
   H->SetDefaultVerbLevel(MueLu::Extreme);
   H->IsPreconditioner(false);
 

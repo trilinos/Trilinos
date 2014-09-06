@@ -45,12 +45,12 @@
 // @HEADER
 // Get rid of template parameters
 
-// New definition of types using the types Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
+// New definition of types using the types Scalar, LocalOrdinal, GlobalOrdinal, Node of the current context.
 
 // Note: There is no #ifndef/#define/#end in this header file because it can be included more than once (it can be included in methods templated by Scalar, LocalOrdinal, GlobalOrdinal, Node).
 
 #ifdef XPETRA_CRSMATRIX_SHORT
-typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
+typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
 #endif
 
 #ifdef XPETRA_VECTOR_SHORT
@@ -62,15 +62,15 @@ typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVect
 #endif
 
 #ifdef XPETRA_MATRIX_SHORT
-typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Matrix;
+typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
 #endif
 
 #ifdef XPETRA_BLOCKEDCRSMATRIX_SHORT
-typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsMatrix;
+typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsMatrix;
 #endif
 
 #ifdef XPETRA_CRSMATRIXWRAP_SHORT
-typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixWrap;
+typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixWrap;
 #endif
 
 #ifdef XPETRA_VECTORFACTORY_SHORT
@@ -78,7 +78,7 @@ typedef Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> VectorF
 #endif
 
 #ifdef XPETRA_CRSMATRIXFACTORY_SHORT
-typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
+typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
 #endif
 
 #ifdef XPETRA_MULTIVECTORFACTORY_SHORT
@@ -86,15 +86,15 @@ typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Mu
 #endif
 
 #ifdef XPETRA_MATRIXFACTORY_SHORT
-typedef Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MatrixFactory;
+typedef Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixFactory;
 #endif
 
 #ifdef XPETRA_MATRIXFACTORY2_SHORT
-typedef Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MatrixFactory2;
+typedef Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixFactory2;
 #endif
 
 #ifdef XPETRA_TPETRACRSMATRIX_SHORT
-typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
+typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMatrix;
 #endif
 
 #ifdef XPETRA_EPETRACRSMATRIX_SHORT

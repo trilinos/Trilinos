@@ -141,11 +141,13 @@ namespace Xpetra {
   }
 
   // TODO: move that elsewhere
-  RCP< const CrsGraph<int, int> > toXpetra(const Epetra_CrsGraph &g) {
-    RCP<const Epetra_CrsGraph> const_graph = rcp(new Epetra_CrsGraph(g));
-
-    RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(const_graph); //TODO: can I avoid the const_cast ?
-    return rcp( new Xpetra::EpetraCrsGraph(graph) );
+  RCP<const CrsGraph<int, int> >
+  toXpetra (const Epetra_CrsGraph &g)
+  {
+    RCP<const Epetra_CrsGraph> const_graph = rcp (new Epetra_CrsGraph (g));
+    RCP<Epetra_CrsGraph> graph =
+      Teuchos::rcp_const_cast<Epetra_CrsGraph> (const_graph);
+    return rcp (new Xpetra::EpetraCrsGraph (graph));
   }
   //
 

@@ -63,16 +63,16 @@
 
 namespace MueLu {
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SchurComplementFactory(/*Scalar omega*//**size_t row, size_t col, LocalOrdinal blksize*/)
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SchurComplementFactory(/*Scalar omega*//**size_t row, size_t col, LocalOrdinal blksize*/)
 //: omega_(omega)
   { }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~SchurComplementFactory() {}
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~SchurComplementFactory() {}
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-RCP<const ParameterList> SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const ParameterList> SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set< RCP<const FactoryBase> >("A", MueLu::NoFactory::getRCP()/*Teuchos::null*/, "Generating factory of the matrix A used for building SchurComplement (must be a 2x2 blocked operator, default = MueLu::NoFactory::getRCP())");
@@ -83,13 +83,13 @@ RCP<const ParameterList> SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdi
 }
 
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
   Input(currentLevel, "A");
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & currentLevel) const
 {
   FactoryMonitor  m(*this, "SchurComplementFactory", currentLevel);
   Teuchos::RCP<Matrix> A = Get<RCP<Matrix> >(currentLevel, "A");

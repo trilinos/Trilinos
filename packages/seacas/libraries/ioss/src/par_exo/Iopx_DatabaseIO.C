@@ -888,6 +888,9 @@ namespace Iopx {
     // See if any coordinate frames exist on mesh.  If so, define them on region.
     add_coordinate_frames(get_file_pointer(), this_region);
 
+    this_region->property_add(Ioss::Property("global_node_count",    (int64_t)decomp->globalNodeCount));
+    this_region->property_add(Ioss::Property("global_element_count", (int64_t)decomp->globalElementCount));
+
     this_region->property_add(Ioss::Property(std::string("title"), info.title));
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
                                              spatialDimension));

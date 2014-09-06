@@ -84,9 +84,9 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-    Level fineLevel, coarseLevel; TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    Level fineLevel, coarseLevel; TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
+    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(27*comm->getSize());
     fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;
@@ -163,13 +163,13 @@ namespace MueLuTests {
     defManager->SetFactory("Aggregates", rcp(new CoupledAggregationFactory()));   // real aggregation factory for Ptent
 
     Level fineLevel, coarseLevel;
-    TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     // overwrite default factory manager
     fineLevel.SetFactoryManager(defManager);
     coarseLevel.SetFactoryManager(defManager);
 
-    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(19*comm->getSize());
+    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(19*comm->getSize());
     fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;

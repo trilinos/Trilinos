@@ -110,11 +110,14 @@
 
 typedef struct {
 
-	uint32_t min_atomics_vars;
+    uint32_t min_atomics_vars;
 
     bool     use_wr_pool;
 
     bool     use_rdma_target_ack;
+
+    bool     use_mlock;
+    bool     use_memset;
 
 } nnti_ib_config;
 
@@ -160,15 +163,15 @@ typedef enum {
 #define IB_OP_COMPARE_SWAP  10
 
 typedef enum {
-	NNTI_IB_WR_STATE_RESET,         // this work request is idle
-	NNTI_IB_WR_STATE_POSTED,        // target is ready to receive data
-	NNTI_IB_WR_STATE_STARTED,       // initiator has posted the sq_wr descriptor
-	NNTI_IB_WR_STATE_ATTACHED,      // target has attached this work request to an NNTI_work_request_t
-	NNTI_IB_WR_STATE_CANCELING,     // NNTI_cancel() called, but not NNTI_wait()
-	NNTI_IB_WR_STATE_RDMA_COMPLETE, // RDMA op complete
-	NNTI_IB_WR_STATE_ACK_COMPLETE,   // work completion transfer complete
-	NNTI_IB_WR_STATE_WAIT_COMPLETE, // NNTI_wait() called and completed successfully
-	NNTI_IB_WR_STATE_ERROR          // something went wrong.  check wr->result
+    NNTI_IB_WR_STATE_RESET,         // this work request is idle
+    NNTI_IB_WR_STATE_POSTED,        // target is ready to receive data
+    NNTI_IB_WR_STATE_STARTED,       // initiator has posted the sq_wr descriptor
+    NNTI_IB_WR_STATE_ATTACHED,      // target has attached this work request to an NNTI_work_request_t
+    NNTI_IB_WR_STATE_CANCELING,     // NNTI_cancel() called, but not NNTI_wait()
+    NNTI_IB_WR_STATE_RDMA_COMPLETE, // RDMA op complete
+    NNTI_IB_WR_STATE_ACK_COMPLETE,   // work completion transfer complete
+    NNTI_IB_WR_STATE_WAIT_COMPLETE, // NNTI_wait() called and completed successfully
+    NNTI_IB_WR_STATE_ERROR          // something went wrong.  check wr->result
 } nnti_ib_wr_state_t;
 
 #define SRQ_DEPTH 20480
@@ -311,7 +314,8 @@ static nthread_lock_t nnti_ib_lock;
 static nthread_lock_t nnti_progress_lock;
 static nthread_cond_t nnti_progress_cond;
 
-
+static void *aligned_malloc(
+        size_t size);
 static struct ibv_mr *register_memory_segment(
         void *buf,
         uint64_t len,
@@ -1300,7 +1304,7 @@ NNTI_result_t NNTI_ib_alloc (
     assert(ops>0);
     assert(reg_buf);
 
-    char *buf=(char *)malloc(element_size*num_elements);
+    char *buf=(char *)aligned_malloc(element_size*num_elements);
     assert(buf);
 
     nnti_rc=NNTI_ib_register_memory(
@@ -2100,11 +2104,14 @@ NNTI_result_t NNTI_ib_get (
     log_level debug_level = nnti_debug_level;
 
     trios_declare_timer(call_time);
+    trios_declare_timer(total_time);
 
     struct ibv_send_wr *bad_wr=NULL;
 
     ib_memory_handle *ib_mem_hdl=NULL;
     ib_work_request  *ib_wr=NULL;
+
+    trios_start_timer(total_time);
 
     log_debug(debug_level, "enter (wr=%p)", wr);
 
@@ -2275,6 +2282,8 @@ NNTI_result_t NNTI_ib_get (
 
     log_debug(nnti_debug_level, "exit");
 
+    trios_stop_timer("NNTI_ib_get - total", total_time);
+
     return(rc);
 }
 
@@ -2328,36 +2337,36 @@ NNTI_result_t NNTI_ib_gather (
 
 
 NNTI_result_t NNTI_ib_atomic_set_callback (
-		const NNTI_transport_t *trans_hdl,
-		const uint64_t          local_atomic,
-		NNTI_callback_fn_t      cbfunc,
-		void                   *context)
+        const NNTI_transport_t *trans_hdl,
+        const uint64_t          local_atomic,
+        NNTI_callback_fn_t      cbfunc,
+        void                   *context)
 {
     return NNTI_ENOTSUP;
 }
 
 
 NNTI_result_t NNTI_ib_atomic_read (
-		const NNTI_transport_t *trans_hdl,
-		const uint64_t          local_atomic,
-		int64_t                *value)
+        const NNTI_transport_t *trans_hdl,
+        const uint64_t          local_atomic,
+        int64_t                *value)
 {
-	nthread_lock(&transport_global_data.atomics_lock);
-	*value = transport_global_data.atomics[local_atomic];
-	nthread_unlock(&transport_global_data.atomics_lock);
+    nthread_lock(&transport_global_data.atomics_lock);
+    *value = transport_global_data.atomics[local_atomic];
+    nthread_unlock(&transport_global_data.atomics_lock);
 
     return NNTI_OK;
 }
 
 
 NNTI_result_t NNTI_ib_atomic_fop (
-		const NNTI_transport_t *trans_hdl,
-		const NNTI_peer_t      *peer_hdl,
-		const uint64_t          target_atomic,
-		const uint64_t          result_atomic,
-		const int64_t           operand,
-		const NNTI_atomic_op_t  op,
-		NNTI_work_request_t    *wr)
+        const NNTI_transport_t *trans_hdl,
+        const NNTI_peer_t      *peer_hdl,
+        const uint64_t          target_atomic,
+        const uint64_t          result_atomic,
+        const int64_t           operand,
+        const NNTI_atomic_op_t  op,
+        NNTI_work_request_t    *wr)
 {
     NNTI_result_t rc=NNTI_OK;
 
@@ -2454,13 +2463,13 @@ NNTI_result_t NNTI_ib_atomic_fop (
 
 
 NNTI_result_t NNTI_ib_atomic_cswap (
-		const NNTI_transport_t *trans_hdl,
-		const NNTI_peer_t      *peer_hdl,
-		const uint64_t          target_atomic,
-		const uint64_t          result_atomic,
-		const int64_t           compare_operand,
-		const int64_t           swap_operand,
-		NNTI_work_request_t    *wr)
+        const NNTI_transport_t *trans_hdl,
+        const NNTI_peer_t      *peer_hdl,
+        const uint64_t          target_atomic,
+        const uint64_t          result_atomic,
+        const int64_t           compare_operand,
+        const int64_t           swap_operand,
+        NNTI_work_request_t    *wr)
 {
     NNTI_result_t rc=NNTI_OK;
 
@@ -2566,7 +2575,7 @@ NNTI_result_t NNTI_ib_create_work_request (
         NNTI_buffer_t        *reg_buf,
         NNTI_work_request_t  *wr)
 {
-	wr_queue_iter_t   iter;
+    wr_queue_iter_t   iter;
     ib_memory_handle *ib_mem_hdl=NULL;
     ib_work_request  *ib_wr=NULL;
 
@@ -2578,10 +2587,10 @@ NNTI_result_t NNTI_ib_create_work_request (
     nthread_lock(&ib_mem_hdl->wr_queue_lock);
 
     for ( iter=ib_mem_hdl->wr_queue.begin() ; iter != ib_mem_hdl->wr_queue.end() ; ++iter ) {
-    	if ((*iter)->nnti_wr == NULL) {
-    		ib_wr=*iter;
-    		break;
-    	}
+        if ((*iter)->nnti_wr == NULL) {
+            ib_wr=*iter;
+            break;
+        }
     }
     assert(ib_wr);
 
@@ -2634,50 +2643,50 @@ NNTI_result_t NNTI_ib_destroy_work_request (
 
     log_debug(nnti_debug_level, "enter (wr=%p ; ib_wr=%p)", wr, ib_wr);
 
-	ib_mem_hdl=IB_MEM_HDL(wr->reg_buf);
-	assert(ib_mem_hdl);
-	if ((ib_mem_hdl->type == SEND_BUFFER) || (ib_mem_hdl->type == GET_DST_BUFFER) || (ib_mem_hdl->type == PUT_SRC_BUFFER)) {
-		// work requrests from initiator buffers are cleaned up in NNTI_ib_wait*().  nothing to do here.
-		return(NNTI_OK);
-	}
+    ib_mem_hdl=IB_MEM_HDL(wr->reg_buf);
+    assert(ib_mem_hdl);
+    if ((ib_mem_hdl->type == SEND_BUFFER) || (ib_mem_hdl->type == GET_DST_BUFFER) || (ib_mem_hdl->type == PUT_SRC_BUFFER)) {
+        // work requrests from initiator buffers are cleaned up in NNTI_ib_wait*().  nothing to do here.
+        return(NNTI_OK);
+    }
 
-	ib_wr=IB_WORK_REQUEST(wr);
-	assert(ib_wr);
+    ib_wr=IB_WORK_REQUEST(wr);
+    assert(ib_wr);
 
     if (ib_mem_hdl->type == REQUEST_BUFFER) {
-    	if (ib_wr->state == NNTI_IB_WR_STATE_WAIT_COMPLETE) {
-    		repost_recv_work_request(wr, ib_wr);
+        if (ib_wr->state == NNTI_IB_WR_STATE_WAIT_COMPLETE) {
+            repost_recv_work_request(wr, ib_wr);
 
-    		nthread_lock(&ib_mem_hdl->wr_queue_lock);
-    		wr_queue_iter_t q_victim=find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr);
-    		if (q_victim != ib_mem_hdl->wr_queue.end()) {
-    			log_debug(nnti_debug_level, "erasing ib_wr=%p from the wr_queue", ib_wr);
-    			ib_mem_hdl->wr_queue.erase(q_victim);
-    		}
-    		assert(find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr) == ib_mem_hdl->wr_queue.end());
+            nthread_lock(&ib_mem_hdl->wr_queue_lock);
+            wr_queue_iter_t q_victim=find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr);
+            if (q_victim != ib_mem_hdl->wr_queue.end()) {
+                log_debug(nnti_debug_level, "erasing ib_wr=%p from the wr_queue", ib_wr);
+                ib_mem_hdl->wr_queue.erase(q_victim);
+            }
+            assert(find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr) == ib_mem_hdl->wr_queue.end());
 
-    		ib_mem_hdl->wr_queue.push_back(ib_wr);
+            ib_mem_hdl->wr_queue.push_back(ib_wr);
 
             nthread_unlock(&ib_mem_hdl->wr_queue_lock);
-    	}
+        }
         ib_wr->nnti_wr=NULL;
 
     } else if (ib_mem_hdl->type == RECEIVE_BUFFER) {
-    	if (ib_wr->state == NNTI_IB_WR_STATE_WAIT_COMPLETE) {
-    		repost_recv_work_request(wr, ib_wr);
+        if (ib_wr->state == NNTI_IB_WR_STATE_WAIT_COMPLETE) {
+            repost_recv_work_request(wr, ib_wr);
 
-    		nthread_lock(&ib_mem_hdl->wr_queue_lock);
-    		wr_queue_iter_t q_victim=find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr);
-    		if (q_victim != ib_mem_hdl->wr_queue.end()) {
-    			log_debug(nnti_debug_level, "erasing ib_wr=%p from the wr_queue", ib_wr);
-    			ib_mem_hdl->wr_queue.erase(q_victim);
-    		}
-    		assert(find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr) == ib_mem_hdl->wr_queue.end());
+            nthread_lock(&ib_mem_hdl->wr_queue_lock);
+            wr_queue_iter_t q_victim=find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr);
+            if (q_victim != ib_mem_hdl->wr_queue.end()) {
+                log_debug(nnti_debug_level, "erasing ib_wr=%p from the wr_queue", ib_wr);
+                ib_mem_hdl->wr_queue.erase(q_victim);
+            }
+            assert(find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr) == ib_mem_hdl->wr_queue.end());
 
-    		ib_mem_hdl->wr_queue.push_back(ib_wr);
+            ib_mem_hdl->wr_queue.push_back(ib_wr);
 
-    		nthread_unlock(&ib_mem_hdl->wr_queue_lock);
-    	}
+            nthread_unlock(&ib_mem_hdl->wr_queue_lock);
+        }
         ib_wr->nnti_wr=NULL;
 
     }
@@ -2701,20 +2710,20 @@ NNTI_result_t NNTI_ib_destroy_work_request (
 NNTI_result_t NNTI_ib_cancel (
         NNTI_work_request_t *wr)
 {
-	NNTI_result_t rc=NNTI_OK;
-	ib_work_request *ib_wr=NULL;
+    NNTI_result_t rc=NNTI_OK;
+    ib_work_request *ib_wr=NULL;
 
     log_debug(nnti_debug_level, "enter (wr=%p)", wr);
 
-	ib_wr=IB_WORK_REQUEST(wr);
-	assert(ib_wr);
+    ib_wr=IB_WORK_REQUEST(wr);
+    assert(ib_wr);
 
-	/* TODO: does this need a lock? */
-	if ((ib_wr->state == NNTI_IB_WR_STATE_STARTED) || (ib_wr->state == NNTI_IB_WR_STATE_POSTED)) {
-    	ib_wr->state = NNTI_IB_WR_STATE_CANCELING;
+    /* TODO: does this need a lock? */
+    if ((ib_wr->state == NNTI_IB_WR_STATE_STARTED) || (ib_wr->state == NNTI_IB_WR_STATE_POSTED)) {
+        ib_wr->state = NNTI_IB_WR_STATE_CANCELING;
     } else {
-    	log_warn(nnti_debug_level, "wr=%p is not in progress (current state is %d).  Cannot cancel.", wr, ib_wr->state);
-    	rc=NNTI_EINVAL;
+        log_warn(nnti_debug_level, "wr=%p is not in progress (current state is %d).  Cannot cancel.", wr, ib_wr->state);
+        rc=NNTI_EINVAL;
     }
 
     log_debug(nnti_debug_level, "exit (wr=%p)", wr);
@@ -2731,21 +2740,21 @@ NNTI_result_t NNTI_ib_cancelall (
         NNTI_work_request_t **wr_list,
         const uint32_t        wr_count)
 {
-	NNTI_result_t rc=NNTI_OK;
-	ib_work_request *ib_wr=NULL;
+    NNTI_result_t rc=NNTI_OK;
+    ib_work_request *ib_wr=NULL;
 
     log_debug(nnti_debug_level, "enter");
 
     for (int i=0;i<wr_count;i++) {
-    	ib_wr=IB_WORK_REQUEST(wr_list[i]);
-    	assert(ib_wr);
+        ib_wr=IB_WORK_REQUEST(wr_list[i]);
+        assert(ib_wr);
 
-		/* TODO: does this need a lock? */
-    	if ((ib_wr->state == NNTI_IB_WR_STATE_STARTED) || (ib_wr->state == NNTI_IB_WR_STATE_POSTED)) {
-        	ib_wr->state = NNTI_IB_WR_STATE_CANCELING;
+        /* TODO: does this need a lock? */
+        if ((ib_wr->state == NNTI_IB_WR_STATE_STARTED) || (ib_wr->state == NNTI_IB_WR_STATE_POSTED)) {
+            ib_wr->state = NNTI_IB_WR_STATE_CANCELING;
         } else {
-        	log_warn(nnti_debug_level, "wr_list[%d]=%p is not in progress (current state is %d).  Cannot cancel.", i, wr_list[i], ib_wr->state);
-        	rc=NNTI_EINVAL;
+            log_warn(nnti_debug_level, "wr_list[%d]=%p is not in progress (current state is %d).  Cannot cancel.", i, wr_list[i], ib_wr->state);
+            rc=NNTI_EINVAL;
         }
     }
 
@@ -2826,16 +2835,18 @@ NNTI_result_t NNTI_ib_wait (
     assert(ib_wr);
 
     if (is_wr_canceling(ib_wr)) {
-    	cancel_wr(ib_wr);
+        cancel_wr(ib_wr);
     } else if (is_wr_complete(ib_wr) == TRUE) {
         log_debug(debug_level, "wr already complete (wr=%p ; ib_wr=%p)", wr, IB_WORK_REQUEST(wr));
         nnti_rc = NNTI_OK;
     } else {
         log_debug(debug_level, "wr NOT complete (wr=%p ; ib_wr=%p)", wr, IB_WORK_REQUEST(wr));
 
+        trios_start_timer(call_time);
+
         while (1) {
 
-        	print_all_qp_state();
+            print_all_qp_state();
 
             rc=progress(timeout-elapsed_time);
 
@@ -2885,9 +2896,13 @@ NNTI_result_t NNTI_ib_wait (
                 break;
             }
         }
+
+        trios_stop_timer("NNTI_ib_wait - wr complete", call_time);
     }
 
+    trios_start_timer(call_time);
     create_status(wr, ib_wr, nnti_rc, status);
+    trios_stop_timer("NNTI_ib_wait - create_status", call_time);
 
     if (logging_debug(debug_level)) {
         fprint_NNTI_status(logger_get_file(), "status",
@@ -2896,77 +2911,81 @@ NNTI_result_t NNTI_ib_wait (
 
     if (is_wr_complete(ib_wr)) {
 
-    	ib_wr->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
+        trios_start_timer(call_time);
 
-    	if (ib_wr->nnti_wr->ops == NNTI_ATOMICS) {
-			nthread_lock(&nnti_wrmap_lock);
-			wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
-			if (m_victim != wrmap.end()) {
-				log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", ib_wr, ib_wr->key);
-				wrmap.erase(m_victim);
-			}
-			nthread_unlock(&nnti_wrmap_lock);
+        ib_wr->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
 
-			if (config.use_wr_pool) {
-				wr_pool_sendrecv_push(ib_wr);
-			} else {
-				if (config.use_rdma_target_ack) {
-					unregister_ack(ib_wr);
-				}
-				log_debug(nnti_debug_level, "freeing ib_wr=%p", ib_wr);
-				free(ib_wr);
-			}
-			/*
-			 * This work request (wr) has reached a completed (final) state.  wr is reset here.
-			 */
-			wr->transport_private=(uint64_t)NULL;
+        if (ib_wr->nnti_wr->ops == NNTI_ATOMICS) {
+            nthread_lock(&nnti_wrmap_lock);
+            wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
+            if (m_victim != wrmap.end()) {
+                log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", ib_wr, ib_wr->key);
+                wrmap.erase(m_victim);
+            }
+            nthread_unlock(&nnti_wrmap_lock);
 
-    	} else {
-    		ib_mem_hdl=IB_MEM_HDL(wr->reg_buf);
-    		assert(ib_mem_hdl);
+            if (config.use_wr_pool) {
+                wr_pool_sendrecv_push(ib_wr);
+            } else {
+                if (config.use_rdma_target_ack) {
+                    unregister_ack(ib_wr);
+                }
+                log_debug(nnti_debug_level, "freeing ib_wr=%p", ib_wr);
+                free(ib_wr);
+            }
+            /*
+             * This work request (wr) has reached a completed (final) state.  wr is reset here.
+             */
+            wr->transport_private=(uint64_t)NULL;
 
-    		if ((ib_mem_hdl->type == REQUEST_BUFFER) || (ib_mem_hdl->type == RECEIVE_BUFFER)) {
-    			// defer cleanup to NNTI_ib_destroy_work_request()
-    		}
-    		else if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
-    				(ib_mem_hdl->type == GET_SRC_BUFFER)      ||
-    				(ib_mem_hdl->type == PUT_DST_BUFFER))     {
-    			if (config.use_rdma_target_ack) {
-    				repost_ack_recv_work_request(wr, ib_wr);
-    			}
-    		}
-    		else {
-    			nthread_lock(&ib_mem_hdl->wr_queue_lock);
-    			wr_queue_iter_t q_victim=find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr);
-    			if (q_victim != ib_mem_hdl->wr_queue.end()) {
-    				log_debug(nnti_debug_level, "erasing ib_wr=%p from the wr_queue", ib_wr);
-    				ib_mem_hdl->wr_queue.erase(q_victim);
-    			}
-    			nthread_unlock(&ib_mem_hdl->wr_queue_lock);
+        } else {
+            ib_mem_hdl=IB_MEM_HDL(wr->reg_buf);
+            assert(ib_mem_hdl);
 
-    			nthread_lock(&nnti_wrmap_lock);
-    			wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
-    			if (m_victim != wrmap.end()) {
-    				log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", ib_wr, ib_wr->key);
-    				wrmap.erase(m_victim);
-    			}
-    			nthread_unlock(&nnti_wrmap_lock);
+            if ((ib_mem_hdl->type == REQUEST_BUFFER) || (ib_mem_hdl->type == RECEIVE_BUFFER)) {
+                // defer cleanup to NNTI_ib_destroy_work_request()
+            }
+            else if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
+                    (ib_mem_hdl->type == GET_SRC_BUFFER)      ||
+                    (ib_mem_hdl->type == PUT_DST_BUFFER))     {
+                if (config.use_rdma_target_ack) {
+                    repost_ack_recv_work_request(wr, ib_wr);
+                }
+            }
+            else {
+                nthread_lock(&ib_mem_hdl->wr_queue_lock);
+                wr_queue_iter_t q_victim=find(ib_mem_hdl->wr_queue.begin(), ib_mem_hdl->wr_queue.end(), ib_wr);
+                if (q_victim != ib_mem_hdl->wr_queue.end()) {
+                    log_debug(nnti_debug_level, "erasing ib_wr=%p from the wr_queue", ib_wr);
+                    ib_mem_hdl->wr_queue.erase(q_victim);
+                }
+                nthread_unlock(&ib_mem_hdl->wr_queue_lock);
 
-    			if (config.use_wr_pool) {
-    				wr_pool_sendrecv_push(ib_wr);
-    			} else {
-    				if (config.use_rdma_target_ack) {
-    					unregister_ack(ib_wr);
-    				}
-    				log_debug(nnti_debug_level, "freeing ib_wr=%p", ib_wr);
-    				free(ib_wr);
-    			}
-    			/*
-    			 * This work request (wr) has reached a completed (final) state.  wr is reset here.
-    			 */
-    			wr->transport_private=(uint64_t)NULL;
-    		}
-    	}
+                nthread_lock(&nnti_wrmap_lock);
+                wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
+                if (m_victim != wrmap.end()) {
+                    log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", ib_wr, ib_wr->key);
+                    wrmap.erase(m_victim);
+                }
+                nthread_unlock(&nnti_wrmap_lock);
+
+                if (config.use_wr_pool) {
+                    wr_pool_sendrecv_push(ib_wr);
+                } else {
+                    if (config.use_rdma_target_ack) {
+                        unregister_ack(ib_wr);
+                    }
+                    log_debug(nnti_debug_level, "freeing ib_wr=%p", ib_wr);
+                    free(ib_wr);
+                }
+                /*
+                 * This work request (wr) has reached a completed (final) state.  wr is reset here.
+                 */
+                wr->transport_private=(uint64_t)NULL;
+            }
+        }
+
+        trios_stop_timer("NNTI_ib_wait - wr cleanup", call_time);
     }
 
     trios_stop_timer("NNTI_ib_wait", total_time);
@@ -3034,7 +3053,7 @@ NNTI_result_t NNTI_ib_waitany (
                 ib_wr=IB_WORK_REQUEST(wr_list[i]);
                 assert(ib_wr);
                 if (is_wr_canceling(ib_wr)) {
-                	cancel_wr(ib_wr);
+                    cancel_wr(ib_wr);
                 }
             }
         }
@@ -3108,13 +3127,13 @@ NNTI_result_t NNTI_ib_waitany (
 
     if (is_wr_complete(IB_WORK_REQUEST(wr_list[*which]))) {
 
-    	IB_WORK_REQUEST(wr_list[*which])->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
+        IB_WORK_REQUEST(wr_list[*which])->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
 
-    	ib_mem_hdl=IB_MEM_HDL(wr_list[*which]->reg_buf);
+        ib_mem_hdl=IB_MEM_HDL(wr_list[*which]->reg_buf);
         assert(ib_mem_hdl);
 
         if ((ib_mem_hdl->type == REQUEST_BUFFER) || (ib_mem_hdl->type == RECEIVE_BUFFER)) {
-        	// defer cleanup to NNTI_ib_destroy_work_request()
+            // defer cleanup to NNTI_ib_destroy_work_request()
         }
         else if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
                 (ib_mem_hdl->type == GET_SRC_BUFFER)      ||
@@ -3220,7 +3239,7 @@ NNTI_result_t NNTI_ib_waitall (
                 ib_wr=IB_WORK_REQUEST(wr_list[i]);
                 assert(ib_wr);
                 if (is_wr_canceling(ib_wr)) {
-                	cancel_wr(ib_wr);
+                    cancel_wr(ib_wr);
                 }
             }
         }
@@ -3285,9 +3304,9 @@ NNTI_result_t NNTI_ib_waitall (
 
     for (uint32_t i=0;i<wr_count;i++) {
 
-    	if (wr_list[i] == NULL) {
-    		continue;
-    	}
+        if (wr_list[i] == NULL) {
+            continue;
+        }
 
         create_status(wr_list[i], IB_WORK_REQUEST(wr_list[i]), nnti_rc, status[i]);
 
@@ -3298,13 +3317,13 @@ NNTI_result_t NNTI_ib_waitall (
 
         if (is_wr_complete(IB_WORK_REQUEST(wr_list[i]))) {
 
-        	IB_WORK_REQUEST(wr_list[i])->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
+            IB_WORK_REQUEST(wr_list[i])->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
 
             ib_mem_hdl=IB_MEM_HDL(wr_list[i]->reg_buf);
             assert(ib_mem_hdl);
 
             if ((ib_mem_hdl->type == REQUEST_BUFFER) || (ib_mem_hdl->type == RECEIVE_BUFFER)) {
-            	// defer cleanup to NNTI_ib_destroy_work_request()
+                // defer cleanup to NNTI_ib_destroy_work_request()
             }
             else if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
                     (ib_mem_hdl->type == GET_SRC_BUFFER)      ||
@@ -3597,9 +3616,9 @@ static NNTI_result_t setup_atomics(void)
 
     atomics_bytes=config.min_atomics_vars * sizeof(int64_t);
     trios_start_timer(callTime);
-    transport_global_data.atomics=(int64_t*)malloc(atomics_bytes);
+    transport_global_data.atomics=(int64_t*)aligned_malloc(atomics_bytes);
     if (transport_global_data.atomics == NULL) {
-    	return(NNTI_ENOMEM);
+        return(NNTI_ENOMEM);
     }
     memset(transport_global_data.atomics, 0, atomics_bytes);
     trios_stop_timer("malloc and memset", callTime);
@@ -3607,12 +3626,12 @@ static NNTI_result_t setup_atomics(void)
     trios_start_timer(callTime);
     mr = ibv_reg_mr_wrapper(transport_global_data.pd, transport_global_data.atomics, atomics_bytes, flags);
     if (!mr) {
-    	log_error(
-    			nnti_debug_level,
-    			"failed to register memory region (IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ "
-    			"| IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_ATOMIC): %s",
-    			strerror(errno));
-    	return(NNTI_ENOMEM);
+        log_error(
+                nnti_debug_level,
+                "failed to register memory region (IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ "
+                "| IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_ATOMIC): %s",
+                strerror(errno));
+        return(NNTI_ENOMEM);
     }
     trios_stop_timer("register", callTime);
 
@@ -3621,6 +3640,26 @@ static NNTI_result_t setup_atomics(void)
     log_debug(nnti_debug_level, "exit (buf==%p, mr==%p, lkey %x, rkey %x)...", transport_global_data.atomics, mr, mr->lkey, mr->rkey);
 
     return(NNTI_OK);
+}
+
+static void *aligned_malloc(
+        size_t size)
+{
+    int rc = 0;
+    void * ptr = NULL;
+
+#ifdef NO_MEMALIGN
+      ptr = malloc( size );
+#else
+      rc = posix_memalign( &ptr , 128 , size );
+#endif
+
+    if (rc!=0) {
+        log_error(nnti_debug_level, "posix_memalign() failed: rc=%d (%s)", rc, strerror(errno));
+        ptr=NULL;
+    }
+
+    return ptr;
 }
 
 static struct ibv_mr *register_memory_segment(
@@ -3636,10 +3675,16 @@ static struct ibv_mr *register_memory_segment(
 
     log_debug(nnti_debug_level, "enter buffer(%p) len(%d)", buf, len);
 
-//    trios_start_timer(callTime);
-//    mlock(buf, len);
-//    munlock(buf, len);
-//    trios_stop_timer("mlock", callTime);
+    if (config.use_memset) {
+        trios_start_timer(callTime);
+        memset(buf, 0, len);
+        trios_stop_timer("memset", callTime);
+    }
+    if (config.use_mlock) {
+        trios_start_timer(callTime);
+        mlock(buf, len);
+        trios_stop_timer("mlock", callTime);
+    }
 
     trios_start_timer(callTime);
     mr = ibv_reg_mr_wrapper(transport_global_data.pd, buf, len, access);
@@ -3677,10 +3722,16 @@ static int register_ack(ib_work_request *ib_wr)
 
     len = sizeof(ib_wr->ack);
 
-//    trios_start_timer(callTime);
-//    mlock(&ib_wr->ack, len);
-//    munlock(&ib_wr->ack, len);
-//    trios_stop_timer("mlock", callTime);
+    if (config.use_memset) {
+        trios_start_timer(callTime);
+        memset(&ib_wr->ack, 0, len);
+        trios_stop_timer("memset", callTime);
+    }
+    if (config.use_mlock) {
+        trios_start_timer(callTime);
+        mlock(&ib_wr->ack, len);
+        trios_stop_timer("mlock", callTime);
+    }
 
     trios_start_timer(callTime);
     mr = ibv_reg_mr_wrapper(transport_global_data.pd, &ib_wr->ack, len, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
@@ -3701,7 +3752,6 @@ static int register_ack(ib_work_request *ib_wr)
 static int unregister_memory_segment(struct ibv_mr *mr)
 {
     NNTI_result_t rc=NNTI_OK; /* return code */
-//    int i=0;
     int ibv_rc=0;
     trios_declare_timer(callTime);
 
@@ -3713,6 +3763,12 @@ static int unregister_memory_segment(struct ibv_mr *mr)
         log_error(nnti_debug_level, "deregistering the memory buffer failed");
     }
     trios_stop_timer("deregister", callTime);
+
+    if (config.use_mlock) {
+        trios_start_timer(callTime);
+        munlock(mr->addr, mr->length);
+        trios_stop_timer("munlock", callTime);
+    }
 
     log_debug(nnti_debug_level, "exit");
 
@@ -3734,6 +3790,12 @@ static int unregister_ack(ib_work_request *ib_wr)
             log_error(nnti_debug_level, "deregistering the ACK buffer failed");
         }
         trios_stop_timer("deregister", callTime);
+    }
+
+    if (config.use_mlock) {
+        trios_start_timer(callTime);
+        munlock(ib_wr->ack_mr->addr, ib_wr->ack_mr->length);
+        trios_stop_timer("munlock", callTime);
     }
 
     log_debug(nnti_debug_level, "exit");
@@ -3785,7 +3847,7 @@ static ib_work_request *decode_work_request(
 
         nthread_lock(&nnti_wrmap_lock);
         if (wrmap.find(wc->wr_id) != wrmap.end()) {
-        	ib_wr = wrmap[wc->wr_id];
+            ib_wr = wrmap[wc->wr_id];
         }
         nthread_unlock(&nnti_wrmap_lock);
         assert(ib_wr);
@@ -3795,7 +3857,7 @@ static ib_work_request *decode_work_request(
 
         nthread_lock(&nnti_wrmap_lock);
         if (wrmap.find(wc->wr_id) != wrmap.end()) {
-        	ib_wr = wrmap[wc->wr_id];
+            ib_wr = wrmap[wc->wr_id];
         }
         nthread_unlock(&nnti_wrmap_lock);
         assert(ib_wr);
@@ -3807,7 +3869,7 @@ static ib_work_request *decode_work_request(
             // This is not a request buffer and I am the initiator, so wc.wr_id is the hash of the work request
             nthread_lock(&nnti_wrmap_lock);
             if (wrmap.find(wc->wr_id) != wrmap.end()) {
-            	ib_wr = wrmap[wc->wr_id];
+                ib_wr = wrmap[wc->wr_id];
             }
             nthread_unlock(&nnti_wrmap_lock);
             assert(ib_wr);
@@ -3936,7 +3998,7 @@ static int process_event(
             else if ((config.use_rdma_target_ack) &&
                      ((wc->opcode==IBV_WC_RDMA_WRITE) &&
                       (wc->wc_flags==IBV_WC_WITH_IMM))) {
-            	if (ib_wr->state == NNTI_IB_WR_STATE_RDMA_COMPLETE) {
+                if (ib_wr->state == NNTI_IB_WR_STATE_RDMA_COMPLETE) {
                     log_debug(debug_level, "RDMA read ACK (initiator) completion - wc==%p, ib_wr==%p", wc, ib_wr);
                     ib_wr->last_op=IB_OP_GET_INITIATOR;
                     ib_wr->state=NNTI_IB_WR_STATE_ACK_COMPLETE;
@@ -4049,7 +4111,7 @@ static int process_event(
                     }
                     if (wc->wc_flags==IBV_WC_WITH_IMM) {
                         if ((config.use_rdma_target_ack) &&
-                        	(ib_wr->state==NNTI_IB_WR_STATE_RDMA_COMPLETE)) {
+                            (ib_wr->state==NNTI_IB_WR_STATE_RDMA_COMPLETE)) {
                             log_debug(debug_level, "RDMA target ACK (write initiator) completion - wc==%p, ib_wr==%p", wc, ib_wr);
                             ib_wr->last_op=IB_OP_PUT_INITIATOR;
                             ib_wr->state=NNTI_IB_WR_STATE_ACK_COMPLETE;
@@ -4481,7 +4543,7 @@ static int8_t is_wr_complete(
     int8_t rc=FALSE;
 
     if ((ib_wr->state==NNTI_IB_WR_STATE_RDMA_COMPLETE) ||
-    	(ib_wr->state==NNTI_IB_WR_STATE_WAIT_COMPLETE)) {
+        (ib_wr->state==NNTI_IB_WR_STATE_WAIT_COMPLETE)) {
         rc=TRUE;
     }
 
@@ -4605,9 +4667,13 @@ static void create_status(
 
     NNTI_buffer_t *reg_buf;
 
+    trios_declare_timer(total_time);
+
     assert(wr);
     assert(ib_wr);
     assert(status);
+
+    trios_start_timer(total_time);
 
     memset(status, 0, sizeof(NNTI_status_t));
     status->op     = wr->ops;
@@ -4624,7 +4690,7 @@ static void create_status(
         conn = get_conn_qpn(ib_wr->last_wc.qp_num);
 
         if (ib_wr->nnti_wr->ops != NNTI_ATOMICS) {
-        	status->start  = (uint64_t)ib_wr->reg_buf->payload;
+            status->start  = (uint64_t)ib_wr->reg_buf->payload;
         }
         switch (ib_wr->last_op) {
             case IB_OP_PUT_INITIATOR:
@@ -4677,6 +4743,8 @@ static void create_status(
                 break;
         }
     }
+
+    trios_stop_timer("create_status - total", total_time);
 }
 
 static void create_peer(NNTI_peer_t *peer, char *name, NNTI_ip_addr addr, NNTI_tcp_port port)
@@ -5521,10 +5589,16 @@ static NNTI_result_t wr_pool_register(
 
     len = sizeof(ib_wr->ack);
 
-    trios_start_timer(callTime);
-    mlock(&ib_wr->ack, len);
-    munlock(&ib_wr->ack, len);
-    trios_stop_timer("mlock", callTime);
+    if (config.use_memset) {
+        trios_start_timer(callTime);
+        memset(&ib_wr->ack, 0, len);
+        trios_stop_timer("memset", callTime);
+    }
+    if (config.use_mlock) {
+        trios_start_timer(callTime);
+        mlock(&ib_wr->ack, len);
+        trios_stop_timer("mlock", callTime);
+    }
 
     trios_start_timer(callTime);
     mr = ibv_reg_mr_wrapper(
@@ -5564,6 +5638,12 @@ static NNTI_result_t wr_pool_deregister(
     } else {
         log_debug(nnti_debug_level, "exit ib_wr(%p) - not registered", ib_wr);
         return(NNTI_OK);
+    }
+
+    if (config.use_mlock) {
+        trios_start_timer(callTime);
+        munlock(ib_wr->ack_mr->addr, ib_wr->ack_mr->length);
+        trios_stop_timer("munlock", callTime);
     }
 
     log_debug(nnti_debug_level, "exit");
@@ -5892,11 +5972,15 @@ cleanup:
 static NNTI_result_t check_listen_socket_for_new_connections()
 {
     bool done=false;
+    trios_declare_timer(callTime);
+
+    trios_start_timer(callTime);
     while(!done) {
         if (check_for_waiting_connection() != NNTI_OK) {
             done=true;
         }
     }
+    trios_stop_timer("check_for_waiting_connection", callTime);
 
     return(NNTI_OK);
 }
@@ -5912,7 +5996,7 @@ static struct ibv_device *get_ib_device(void)
     if (dev_count == 0)
         return NULL;
     if (dev_count > 1) {
-    	log_debug(nnti_debug_level, "found %d devices, defaulting the dev_list[0] (%p)", dev_count, dev_list[0]);
+        log_debug(nnti_debug_level, "found %d devices, defaulting the dev_list[0] (%p)", dev_count, dev_list[0]);
     }
     dev = dev_list[0];
     ibv_free_device_list_wrapper(dev_list);
@@ -5922,25 +6006,27 @@ static struct ibv_device *get_ib_device(void)
 
 static void get_qp_state(struct ibv_qp *qp)
 {
-	struct ibv_qp_attr attr;
-	struct ibv_qp_init_attr init_attr;
+    struct ibv_qp_attr attr;
+    struct ibv_qp_init_attr init_attr;
 
-	if (ibv_query_qp(qp, &attr,
-			  IBV_QP_STATE, &init_attr)) {
-		log_error(nnti_debug_level, "Failed to query QP state\n");
-		return;
-	}
-	log_debug(nnti_debug_level, "qp(%p)->state=%d", qp, attr.qp_state);
+    if (ibv_query_qp(qp, &attr,
+              IBV_QP_STATE, &init_attr)) {
+        log_error(nnti_debug_level, "Failed to query QP state\n");
+        return;
+    }
+    log_debug(nnti_debug_level, "qp(%p)->state=%d", qp, attr.qp_state);
 }
 
 static void print_all_qp_state(void)
 {
-	ib_connection     *conn=NULL;
-	conn_by_qpn_iter_t i=connections_by_qpn.begin();
-	if (i != connections_by_qpn.end()) {
-		conn=i->second;
-		get_qp_state(conn->req_qp.qp);
-	}
+    if (logging_debug(nnti_debug_level)) {
+        ib_connection     *conn=NULL;
+        conn_by_qpn_iter_t i=connections_by_qpn.begin();
+        if (i != connections_by_qpn.end()) {
+            conn=i->second;
+            get_qp_state(conn->req_qp.qp);
+        }
+    }
 }
 
 static void print_wc(const struct ibv_wc *wc, bool force)
@@ -6268,7 +6354,7 @@ NNTI_result_t progress(int timeout)
 
                 print_wc(&wc, false);
                 if ((wc.status == IBV_WC_RNR_RETRY_EXC_ERR) ||
-                	(wc.status == IBV_WC_RETRY_EXC_ERR)) {
+                    (wc.status == IBV_WC_RETRY_EXC_ERR)) {
                     nnti_rc=NNTI_EDROPPED;
 
                     ib_work_request *ib_wr=decode_work_request(&wc);
@@ -6290,8 +6376,12 @@ NNTI_result_t progress(int timeout)
                     nnti_rc=NNTI_EIO;
                 }
 
+                trios_start_timer(call_time);
                 ib_work_request *ib_wr=decode_work_request(&wc);
+                trios_stop_timer("progress - decode_work_request", call_time);
+                trios_start_timer(call_time);
                 process_event(ib_wr, &wc);
+                trios_stop_timer("progress - process_event", call_time);
 
                 made_progress=true;
             }
@@ -6403,16 +6493,13 @@ static void config_init(nnti_ib_config *c)
     c->min_atomics_vars    = 512;
     c->use_wr_pool         = false;
     c->use_rdma_target_ack = false;
+    c->use_mlock           = true;
+    c->use_memset          = true;
 }
 
 static void config_get_from_env(nnti_ib_config *c)
 {
     char *env_str=NULL;
-
-    // defaults
-    c->min_atomics_vars    = 512;
-    c->use_wr_pool         = false;
-    c->use_rdma_target_ack = false;
 
     if ((env_str=getenv("TRIOS_NNTI_MIN_ATOMIC_VARS")) != NULL) {
         errno=0;
@@ -6449,6 +6536,30 @@ static void config_get_from_env(nnti_ib_config *c)
         }
     } else {
         log_debug(nnti_debug_level, "TRIOS_NNTI_USE_RDMA_TARGET_ACK is undefined.  using c->use_rdma_target_ack default");
+    }
+    if ((env_str=getenv("TRIOS_NNTI_USE_MLOCK")) != NULL) {
+        if ((!strcasecmp(env_str, "TRUE")) ||
+            (!strcmp(env_str, "1"))) {
+            log_debug(LOG_ALL, "setting c->use_mlock to TRUE");
+            c->use_mlock=true;
+        } else {
+            log_debug(LOG_ALL, "setting c->use_mlock to FALSE");
+            c->use_mlock=false;
+        }
+    } else {
+        log_debug(nnti_debug_level, "TRIOS_NNTI_USE_MLOCK is undefined.  using c->mlock default");
+    }
+    if ((env_str=getenv("TRIOS_NNTI_USE_MEMSET")) != NULL) {
+        if ((!strcasecmp(env_str, "TRUE")) ||
+            (!strcmp(env_str, "1"))) {
+            log_debug(LOG_ALL, "setting c->use_memset to TRUE");
+            c->use_memset=true;
+        } else {
+            log_debug(LOG_ALL, "setting c->use_memset to FALSE");
+            c->use_memset=false;
+        }
+    } else {
+        log_debug(nnti_debug_level, "TRIOS_NNTI_USE_MEMSET is undefined.  using c->memset default");
     }
 }
 

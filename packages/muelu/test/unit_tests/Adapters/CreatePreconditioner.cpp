@@ -76,8 +76,8 @@ namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
-  typedef MueLu::Utils<SC,LO,GO,NO,LMO>          Utils;
-  typedef MueLu::TpetraOperator<SC,LO,GO,NO,LMO> TpetraOperator;
+  typedef MueLu::Utils<SC,LO,GO,NO>          Utils;
+  typedef MueLu::TpetraOperator<SC,LO,GO,NO> TpetraOperator;
   typedef MueLu::EpetraOperator                  EpetraOperator;
 
   TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner)
@@ -87,7 +87,7 @@ namespace MueLuTests {
     // Matrix
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO nx = 1000;
-    RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx * comm->getSize());
+    RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize());
     RCP<const Map > map = Op->getRowMap();
 
     Teuchos::RCP<TpetraOperator> tH;
@@ -97,10 +97,10 @@ namespace MueLuTests {
 
     std::string xmlFileName = "test.xml";
     if (lib == Xpetra::UseTpetra) {
-      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstTpetraCrs(Op);
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
       tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName);
     } else {
-      RCP<Epetra_CrsMatrix> epA = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
+      RCP<Epetra_CrsMatrix> epA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
       eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName);
     }
 
@@ -130,12 +130,12 @@ namespace MueLuTests {
 
     xmlFileName = "testWithRebalance.xml";
     if (lib == Xpetra::UseTpetra) {
-      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstTpetraCrs(Op);
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
       tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates);
 
     } else {
-      RCP<Epetra_CrsMatrix>   epA           = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
+      RCP<Epetra_CrsMatrix>   epA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
       RCP<Epetra_MultiVector> epcoordinates = Utils::MV2NonConstEpetraMV(coordinates);
       eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName, epcoordinates);
     }
@@ -152,13 +152,13 @@ namespace MueLuTests {
     RCP<Xpetra::MultiVector<SC, LO, GO, NO> > nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), 1);
     nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
     if (lib == Xpetra::UseTpetra) {
-      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstTpetraCrs(Op);
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
       tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates, tpnullspace);
 
     } else {
-      RCP<Epetra_CrsMatrix>   epA           = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
+      RCP<Epetra_CrsMatrix>   epA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
       RCP<Epetra_MultiVector> epcoordinates = Utils::MV2NonConstEpetraMV(coordinates);
       RCP<Epetra_MultiVector> epnullspace   = Utils::MV2NonConstEpetraMV(nullspace);
       eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName, epcoordinates, epnullspace);
@@ -186,7 +186,7 @@ namespace MueLuTests {
     // Matrix
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO nx = 972;
-    RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx * comm->getSize());
+    RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize());
     RCP<const Map > map = Op->getRowMap();
 
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
@@ -203,12 +203,12 @@ namespace MueLuTests {
       if (k == 1) xmlFileName = "testPDE1.xml";
 
       if (lib == Xpetra::UseTpetra) {
-        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstTpetraCrs(Op);
+        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
         tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates);
 
       } else {
-        RCP<Epetra_CrsMatrix>   epA           = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
+        RCP<Epetra_CrsMatrix>   epA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
         RCP<Epetra_MultiVector> epcoordinates = Utils::MV2NonConstEpetraMV(coordinates);
         eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName, epcoordinates);
       }
@@ -236,13 +236,13 @@ namespace MueLuTests {
       nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
 
       if (lib == Xpetra::UseTpetra) {
-        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstTpetraCrs(Op);
+        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
         tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates, tpnullspace);
 
       } else {
-        RCP<Epetra_CrsMatrix>   epA           = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
+        RCP<Epetra_CrsMatrix>   epA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
         RCP<Epetra_MultiVector> epcoordinates = Utils::MV2NonConstEpetraMV(coordinates);
         RCP<Epetra_MultiVector> epnullspace   = Utils::MV2NonConstEpetraMV(nullspace);
         eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName, epcoordinates, epnullspace);

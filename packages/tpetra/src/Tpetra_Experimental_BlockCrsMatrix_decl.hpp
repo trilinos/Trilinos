@@ -119,10 +119,10 @@ namespace Experimental {
 /// }
 /// \endcode
 ///
-template<class Scalar = double,
-         class LO = int,
-         class GO = LO,
-         class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+template<class Scalar = BlockMultiVector<>::scalar_type,
+         class LO = typename BlockMultiVector<Scalar>::local_ordinal_type,
+         class GO = typename BlockMultiVector<Scalar, LO>::global_ordinal_type,
+         class Node = typename BlockMultiVector<Scalar, LO, GO>::node_type>
 class BlockCrsMatrix :
   virtual public Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   virtual public Tpetra::DistObject<char, LO, GO, Node>

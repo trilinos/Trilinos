@@ -115,7 +115,6 @@ typedef int GlobalOrdinal;
 // #endif
 
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 /////////////////////////
 // helper function
@@ -269,8 +268,8 @@ int main(int argc, char *argv[]) {
   // build blocked operator
   Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(mapExtractor,mapExtractor,10));
 
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > crsMat11 = Op11->getCrsMatrix();
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > crsMat22 = Op22->getCrsMatrix();
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat11 = Op11->getCrsMatrix();
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat22 = Op22->getCrsMatrix();
   bOp->setMatrix(0,0,crsMat11);
   bOp->setMatrix(1,1,crsMat22);
 

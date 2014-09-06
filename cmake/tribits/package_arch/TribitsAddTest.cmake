@@ -41,7 +41,6 @@ INCLUDE(TribitsAddTestHelpers)
 
 
 #
-#
 # @FUNCTION: TRIBITS_ADD_TEST()
 #
 # Add a test or a set of tests for a single executable or command using CTest
@@ -303,12 +302,14 @@ INCLUDE(TribitsAddTestHelpers)
 #
 #     If passed in, gives maximum number of seconds the test will be allowed
 #     to run before being timed-out.  This sets the CTest property
-#     ``TIMEOUT``.  **WARNING:** Rather than just increasing the timeout for
-#     an expensive test, please try to either make the test run faster or
-#     relegate the test to being run less often (i.e. set ``CATEGORIES
-#     NIGHTLY`` or even ``WEEKLY`` for extremely expensive tests).  Expensive
-#     tests are one of the worse forms of technical debt that a project can
-#     have!
+#     ``TIMEOUT``.  The value ``<maxSeconds>`` will be scaled by the value of
+#     `${PROJECT_NAME}_SCALE_TEST_TIMEOUT`_.
+#
+#     **WARNING:** Rather than just increasing the timeout for an expensive
+#     test, please try to either make the test run faster or relegate the test
+#     to being run less often (i.e. set ``CATEGORIES NIGHTLY`` or even
+#     ``WEEKLY`` for extremely expensive tests).  Expensive tests are one of
+#     the worse forms of technical debt that a project can have!
 #
 # In the end, this function just calls the built-in CMake commands
 # ``ADD_TEST(${TEST_NAME} ...)`` and ``SET_TESTS_PROPERTIES(${TEST_NAME}
@@ -470,7 +471,7 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # After this function returns, any tests that get added using ``ADD_TEST()``
 # can have additional properties set and changed using
-# ``SET_TEST_PROPERTIES()``.  Therefore, any tests properties that are not
+# ``SET_TESTS_PROPERTIES()``.  Therefore, any tests properties that are not
 # directly supported and passed through this wrapper function can be set in
 # the outer ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_TEST()``.
 #
@@ -557,7 +558,7 @@ INCLUDE(TribitsAddTestHelpers)
 # set.  This is the file that is read by ``ctest`` when it runs to determine
 # what tests to run, determine pass/fail and adjust other behavior using test
 # properties.  In this file, one can see the exact ``ADD_TEST()`` and
-# ``SET_TEST_PROPERTIES()`` commands.  The is the ultimate way to debug
+# ``SET_TESTS_PROPERTIES()`` commands.  The is the ultimate way to debug
 # exactly what tests are getting added by this function (or if the test is
 # even being added at all).
 #
@@ -583,7 +584,8 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
     MESSAGE("TRIBITS_ADD_TEST: ${EXE_NAME} ${ARGN}")
   ENDIF()
 
-  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT "")
+  GLOBAL_SET(TRIBITS_ADD_TEST_ADD_TEST_INPUT "")
+  GLOBAL_SET(TRIBITS_SET_TEST_PROPERTIES_INPUT)
    
   #
   # A) Parse the input arguments

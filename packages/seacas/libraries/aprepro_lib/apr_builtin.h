@@ -119,6 +119,10 @@ namespace SEAMS {
   const char *do_include_path(char *newpath);
   const char *do_intout(double intval);
   const char *do_print_array(array *my_array_data);
+  const char *do_str_if(char *string);
+  const char *do_str_notif(char *string);
+  const char *do_str_elseif(char *string);
+  const char *do_delete(char *string);
 
   array *do_csv_array(const char *filename, double rows_to_skip);
   array *do_csv_array1(const char *filename);

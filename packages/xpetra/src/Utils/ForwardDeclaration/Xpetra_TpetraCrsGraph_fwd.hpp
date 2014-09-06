@@ -47,7 +47,7 @@
 #define XPETRA_TPETRACRSGRAPH_FWD_HPP
 
 namespace Xpetra {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   class TpetraCrsGraph;
 }
 

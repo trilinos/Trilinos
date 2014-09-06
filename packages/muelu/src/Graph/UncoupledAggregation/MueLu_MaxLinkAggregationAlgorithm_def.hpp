@@ -69,8 +69,8 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 

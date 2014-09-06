@@ -469,6 +469,47 @@ public:
       return accum ;
     }
 
+  template< class JoinOp >
+  inline typename JoinOp::value_type
+    team_reduce( const typename JoinOp::value_type & value
+               , const JoinOp & op ) const
+    {
+      // Make sure there is enough scratch space:
+      typedef typename if_c< sizeof(typename JoinOp::value_type) < ThreadsExec::REDUCE_TEAM_BASE
+                           , typename JoinOp::value_type , void >::type type ;
+
+      type * const local_value = ((type*) m_exec.scratch_memory());
+
+      // Set this thread's contribution
+      *local_value = value ;
+
+      // Fence to make sure the base team member has access:
+      memory_fence();
+
+      if ( team_fan_in() ) {
+        // The last thread to synchronize returns true, all other threads wait for team_fan_out()
+        type * const team_value = ((type*) m_team_base[0]->scratch_memory());
+
+        // Join to the team value:
+        for ( int i = 1 ; i < m_team_size ; ++i ) {
+          op.join( *team_value , *((type*) m_team_base[i]->scratch_memory()) );
+        }
+
+        // Team base thread may "lap" member threads so copy out to their local value.
+        for ( int i = 1 ; i < m_team_size ; ++i ) {
+          *((type*) m_team_base[i]->scratch_memory()) = *team_value ;
+        }
+
+        // Fence to make sure all team members have access
+        memory_fence();
+      }
+
+      team_fan_out();
+
+      // Value was changed by the team base
+      return *((type volatile const *) local_value);
+    }
+
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
    *

@@ -47,8 +47,7 @@
 #define XPETRA_VBRMATRIX_HPP
 
 #include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
-#include <Kokkos_VbrMatrix.hpp>
+#include <Kokkos_VbrMatrix.hpp> // FIXME (mfh 03 Sep 2014) Do we need to include this???
 
 #include "Xpetra_ConfigDefs.hpp"
 // #include "Xpetra_Matrix.hpp"
@@ -93,13 +92,19 @@ to the optimized-storage state by calling the method fillComplete().
 Once in the optimized-storage state, the VbrMatrix can not be returned to the
 non-optimized-storage state.
 */
-template <class Scalar,
-          class LocalOrdinal  = int,
-          class GlobalOrdinal = LocalOrdinal,
-          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
+
+template <class Scalar = MultiVector<>::scalar_type,
+          class LocalOrdinal = Map<>::local_ordinal_type,
+          class GlobalOrdinal =
+            typename Map<LocalOrdinal>::global_ordinal_type,
+          class Node =
+            typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
 class VbrMatrix { //: public Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
  public:
+  typedef Scalar scalar_type;
+  typedef LocalOrdinal local_ordinal_type;
+  typedef GlobalOrdinal global_ordinal_type;
+  typedef Node node_type;
 
   //! @name Constructor/Destructor Methods
   //@{

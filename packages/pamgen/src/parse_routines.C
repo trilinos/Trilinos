@@ -426,102 +426,102 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       }
       break;}
     case P_GMIN:{
-      Inline_Mesh_Desc::im_static_storage->inline_gminx = token_stream->Parse_Real();
-      Inline_Mesh_Desc::im_static_storage->inline_gminy = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmin[0] = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmin[1] = token_stream->Parse_Real();
       if(sdimension == 3){
-	Inline_Mesh_Desc::im_static_storage->inline_gminz = token_stream->Parse_Real();
+	Inline_Mesh_Desc::im_static_storage->inline_gmin[2] = token_stream->Parse_Real();
       }
       break;}
     case P_GMAX:{
-      Inline_Mesh_Desc::im_static_storage->inline_gmaxx = token_stream->Parse_Real();
-      Inline_Mesh_Desc::im_static_storage->inline_gmaxy = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmax[0] = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmax[1] = token_stream->Parse_Real();
       if(sdimension == 3){
-	Inline_Mesh_Desc::im_static_storage->inline_gmaxz = token_stream->Parse_Real();
+	Inline_Mesh_Desc::im_static_storage->inline_gmax[2] = token_stream->Parse_Real();
       }
       break;}
     case P_RI:{
-      Inline_Mesh_Desc::im_static_storage->inline_gminx = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmin[0] = token_stream->Parse_Real();
       break;}
     case P_RO:{
-      Inline_Mesh_Desc::im_static_storage->inline_gmaxx = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmax[0] = token_stream->Parse_Real();
       break;}
     case P_THETA:{
-      Inline_Mesh_Desc::im_static_storage->inline_gmaxy = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmax[1] = token_stream->Parse_Real();
       if(sdimension == 2){
-	if(Inline_Mesh_Desc::im_static_storage->inline_gmaxy >= 360.0){
-	  Inline_Mesh_Desc::im_static_storage->inline_gmaxy = 360.0;
+	if(Inline_Mesh_Desc::im_static_storage->inline_gmax[1] >= 360.0){
+	  Inline_Mesh_Desc::im_static_storage->inline_gmax[1] = 360.0;
 	  Inline_Mesh_Desc::im_static_storage->periodic_j = true;
 	}
       }
       else{
-	if(Inline_Mesh_Desc::im_static_storage->inline_gmaxy >= 180.0){
-	  Inline_Mesh_Desc::im_static_storage->inline_gmaxy = 180.0;
+	if(Inline_Mesh_Desc::im_static_storage->inline_gmax[1] >= 180.0){
+	  Inline_Mesh_Desc::im_static_storage->inline_gmax[1] = 180.0;
 	  // An in this case there should be a degenerate type
 	  // bc applied along the x-axis 
 	}
       }
       break;}
     case P_PHI:{
-      Inline_Mesh_Desc::im_static_storage->inline_gmaxz = token_stream->Parse_Real();
-      if(Inline_Mesh_Desc::im_static_storage->inline_gmaxz >= 360.0){
-	Inline_Mesh_Desc::im_static_storage->inline_gmaxz = 360.0;     
+      Inline_Mesh_Desc::im_static_storage->inline_gmax[2] = token_stream->Parse_Real();
+      if(Inline_Mesh_Desc::im_static_storage->inline_gmax[2] >= 360.0){
+	Inline_Mesh_Desc::im_static_storage->inline_gmax[2] = 360.0;     
 	Inline_Mesh_Desc::im_static_storage->periodic_k = true;
       }
       break;}
     case P_XMIN:{
-      Inline_Mesh_Desc::im_static_storage->inline_gminx = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmin[0] = token_stream->Parse_Real();
       break;}
     case P_YMIN:{
-      Inline_Mesh_Desc::im_static_storage->inline_gminy = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmin[1] = token_stream->Parse_Real();
       break;}
     case P_MINTHETA:{
-      Inline_Mesh_Desc::im_static_storage->inline_gminy = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmin[1] = token_stream->Parse_Real();
       break;}
     case P_ZMIN:{
-      Inline_Mesh_Desc::im_static_storage->inline_gminz = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmin[2] = token_stream->Parse_Real();
       break;}
     case P_ZMAX:{
-      Inline_Mesh_Desc::im_static_storage->inline_gmaxz = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmax[2] = token_stream->Parse_Real();
       break;}
     case P_NX:{
-      Inline_Mesh_Desc::im_static_storage->inline_nx = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_n[0] = token_stream->Parse_Integer();
       break;}
     case P_NY:{
-      Inline_Mesh_Desc::im_static_storage->inline_ny = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_n[1] = token_stream->Parse_Integer();
       break;}
     case P_NZ:{
       if(sdimension == 2){
 	token_stream->Semantics_Error(std::string("NZ may not be specified in 2D simulations."));   
       }
       else{
-	Inline_Mesh_Desc::im_static_storage->inline_nz = token_stream->Parse_Integer();
+	Inline_Mesh_Desc::im_static_storage->inline_n[2] = token_stream->Parse_Integer();
       }
       break;}
     case P_NTHETA:{
-      Inline_Mesh_Desc::im_static_storage->inline_ny = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_n[1] = token_stream->Parse_Integer();
       break;}   
 
 
     case P_NUMZ:{
       cubit_axis = 2;
-      Inline_Mesh_Desc::im_static_storage->inline_bz = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_b[2] = token_stream->Parse_Integer();
 
       if(Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_bz];
+      Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[2]];
 
       if(Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_bz+1];
+      Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[2]+1];
 
       if(Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_bz];
+      Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[2]];
 
       if(Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_bz];
+      Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[2]];
 
       if(Inline_Mesh_Desc::im_static_storage->interval[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->interval[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->interval[cubit_axis] = new long long[Inline_Mesh_Desc::im_static_storage->inline_bz];
+      Inline_Mesh_Desc::im_static_storage->interval[cubit_axis] = new long long[Inline_Mesh_Desc::im_static_storage->inline_b[2]];
 
-      for(long long i = 0; i < Inline_Mesh_Desc::im_static_storage->inline_bz; i ++){
+      for(long long i = 0; i < Inline_Mesh_Desc::im_static_storage->inline_b[2]; i ++){
 	Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis][i] = 0.;
@@ -532,24 +532,24 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       break;}      
     case P_NUMR:{
       cubit_axis = 0;
-      Inline_Mesh_Desc::im_static_storage->inline_bx = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_b[0] = token_stream->Parse_Integer();
 
       if(Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_bx];
+      Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[0]];
 
       if(Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_bx+1];
+      Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[0]+1];
 
       if(Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_bx];
+      Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[0]];
 
       if(Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_bx];
+      Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[0]];
 
       if(Inline_Mesh_Desc::im_static_storage->interval[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->interval[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->interval[cubit_axis] = new long long[Inline_Mesh_Desc::im_static_storage->inline_bx];
+      Inline_Mesh_Desc::im_static_storage->interval[cubit_axis] = new long long[Inline_Mesh_Desc::im_static_storage->inline_b[0]];
 
-      for(long long i = 0; i < Inline_Mesh_Desc::im_static_storage->inline_bx; i ++){
+      for(long long i = 0; i < Inline_Mesh_Desc::im_static_storage->inline_b[0]; i ++){
 	Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis][i] = 0.;
@@ -560,23 +560,23 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       break;}      
     case P_NUMA:{
       cubit_axis = 1;
-      Inline_Mesh_Desc::im_static_storage->inline_by = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_b[1] = token_stream->Parse_Integer();
 
       if(Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_by];
+      Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[1]];
 
       if(Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_by+1];
+      Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[1]+1];
 
       if(Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_by];
+      Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[1]];
 
       if(Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_by];
+      Inline_Mesh_Desc::im_static_storage->last_size[cubit_axis] = new Real[Inline_Mesh_Desc::im_static_storage->inline_b[1]];
 
       if(Inline_Mesh_Desc::im_static_storage->interval[cubit_axis])delete Inline_Mesh_Desc::im_static_storage->interval[cubit_axis];
-      Inline_Mesh_Desc::im_static_storage->interval[cubit_axis] = new long long[Inline_Mesh_Desc::im_static_storage->inline_by];
-      for(long long i = 0; i < Inline_Mesh_Desc::im_static_storage->inline_by; i ++){
+      Inline_Mesh_Desc::im_static_storage->interval[cubit_axis] = new long long[Inline_Mesh_Desc::im_static_storage->inline_b[1]];
+      for(long long i = 0; i < Inline_Mesh_Desc::im_static_storage->inline_b[1]; i ++){
 	Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::im_static_storage->c_block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::im_static_storage->first_size[cubit_axis][i] = 0.;
@@ -587,7 +587,7 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       break;} 
 
     case P_INITIAL_RADIUS:{
-      Inline_Mesh_Desc::im_static_storage->inline_gminx = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_gmin[0] = token_stream->Parse_Real();
       break;}  
 
     case P_TRISECTION_BLOCKS:{
@@ -608,27 +608,27 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
 
     case P_ZBLOCK:{
       block_index = token_stream->Parse_Integer()-1;
-      if(block_index+1 > Inline_Mesh_Desc::im_static_storage->inline_bz){
+      if(block_index+1 > Inline_Mesh_Desc::im_static_storage->inline_b[2]){
 	std::stringstream ss;
-	ss << "Zblock index out of range, should run from 1 to " << Inline_Mesh_Desc::im_static_storage->inline_bz << ".";
+	ss << "Zblock index out of range, should run from 1 to " << Inline_Mesh_Desc::im_static_storage->inline_b[2] << ".";
 	token_stream->Semantics_Error(ss.str());  
       }
       Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][block_index] = token_stream->Parse_Real();
       break;}      
     case P_RBLOCK:{
       block_index = token_stream->Parse_Integer()-1;
-      if(block_index+1 > Inline_Mesh_Desc::im_static_storage->inline_bx){
+      if(block_index+1 > Inline_Mesh_Desc::im_static_storage->inline_b[0]){
 	std::stringstream ss;
-	ss << "Rblock/Xblock index out of range, should run from 1 to " << Inline_Mesh_Desc::im_static_storage->inline_bx << ".";
+	ss << "Rblock/Xblock index out of range, should run from 1 to " << Inline_Mesh_Desc::im_static_storage->inline_b[0] << ".";
 	token_stream->Semantics_Error(ss.str());  
       }
       Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][block_index] = token_stream->Parse_Real();
       break;}      
     case P_ABLOCK:{
       block_index = token_stream->Parse_Integer()-1;
-      if(block_index+1 > Inline_Mesh_Desc::im_static_storage->inline_by){
+      if(block_index+1 > Inline_Mesh_Desc::im_static_storage->inline_b[1]){
 	std::stringstream ss;
-	ss << "Ablock/Yblock index out of range, should run from 1 to " << Inline_Mesh_Desc::im_static_storage->inline_by << ".";
+	ss << "Ablock/Yblock index out of range, should run from 1 to " << Inline_Mesh_Desc::im_static_storage->inline_b[1] << ".";
 	token_stream->Semantics_Error(ss.str());  
       }
       Inline_Mesh_Desc::im_static_storage->block_dist[cubit_axis][block_index] = token_stream->Parse_Real();
@@ -636,33 +636,33 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
 
 
     case P_NPHI:{
-      Inline_Mesh_Desc::im_static_storage->inline_nz = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_n[2] = token_stream->Parse_Integer();
       break;}    
     case P_NR:{
-      Inline_Mesh_Desc::im_static_storage->inline_nx = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_n[0] = token_stream->Parse_Integer();
       break;}
     case P_BX:{
-      Inline_Mesh_Desc::im_static_storage->inline_bx = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_b[0] = token_stream->Parse_Integer();
       break;}
     case P_BY:{
-      Inline_Mesh_Desc::im_static_storage->inline_by = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_b[1] = token_stream->Parse_Integer();
       break;}
     case P_BZ:{
       if(sdimension == 2){
 	token_stream->Semantics_Error(std::string("BZ may not be specified in 2D simulations."));   
       }
       else{
-	Inline_Mesh_Desc::im_static_storage->inline_bz = token_stream->Parse_Integer();
+	Inline_Mesh_Desc::im_static_storage->inline_b[2] = token_stream->Parse_Integer();
       }
       break;}
     case P_BTHETA:{
-      Inline_Mesh_Desc::im_static_storage->inline_by = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_b[1] = token_stream->Parse_Integer();
       break;}    
     case P_BPHI:{
-      Inline_Mesh_Desc::im_static_storage->inline_bz = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_b[2] = token_stream->Parse_Integer();
       break;}    
     case P_BR:{
-      Inline_Mesh_Desc::im_static_storage->inline_bx = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->inline_b[0] = token_stream->Parse_Integer();
       break;}
     case P_AMR:{
 

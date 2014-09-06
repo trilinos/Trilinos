@@ -188,6 +188,14 @@ public:
              value_type volatile const & input ) const
     { if ( input ) error = 1 ; }
 
+  struct JoinMax {
+    typedef long int value_type ;
+    KOKKOS_INLINE_FUNCTION
+    void join( value_type volatile & dst
+             , value_type volatile const & input ) const
+      { if ( dst < input ) dst = input ; }
+  };
+
   KOKKOS_INLINE_FUNCTION
   void operator()( const typename policy_type::member_type ind , value_type & error ) const
   {
@@ -196,6 +204,17 @@ public:
       *total = ( thread_count * ( thread_count + 1 ) ) / 2 ;
     }
 
+    // Team max:
+    const int long m = ind.team_reduce( (long int) ( ind.league_rank() + ind.team_rank() ) , JoinMax() );
+
+    if ( m != ind.league_rank() + ( ind.team_size() - 1 ) ) {
+      printf("ScanTeamFunctor[%d.%d of %d.%d] reduce_max_answer(%ld) != reduce_max(%ld)\n"
+            , ind.league_rank(), ind.team_rank()
+            , ind.league_size(), ind.team_size()
+            , (long int)(ind.league_rank() + ( ind.team_size() - 1 )) , m );
+    }
+
+    // Scan:
     const long int answer =
       ( ind.league_rank() + 1 ) * ind.team_rank() +
       ( ind.team_rank() * ( ind.team_rank() + 1 ) ) / 2 ;

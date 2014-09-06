@@ -51,9 +51,9 @@ int main(int argc, char *argv[]) {
 
   using Teuchos::RCP; //reference count pointers
 
-  typedef MueLu::GeoInterpFactory<SC,LO,GO,NO,LMO> GeoInterpFactory;
-  typedef MueLu::Q2Q1Q2CoarseGridFactory<SC,LO,GO,NO,LMO> Q2Q1Q2CoarseGridFactory;
-  typedef MueLu::MHDRAPFactory<SC,LO,GO,NO,LMO> MHDRAPFactory;
+  typedef MueLu::GeoInterpFactory<SC,LO,GO,NO>          GeoInterpFactory;
+  typedef MueLu::Q2Q1Q2CoarseGridFactory<SC,LO,GO,NO>   Q2Q1Q2CoarseGridFactory;
+  typedef MueLu::MHDRAPFactory<SC,LO,GO,NO>             MHDRAPFactory;
 
   //
   // MPI initialization using Teuchos
@@ -313,7 +313,7 @@ int main(int argc, char *argv[]) {
   // Create a GeoInterpFactory
   RCP<GeoInterpFactory> geoInterp = rcp( new GeoInterpFactory() );
   RCP<Q2Q1Q2CoarseGridFactory> coarseElementFact = rcp( new Q2Q1Q2CoarseGridFactory() );
-  RCP<MueLu::MHDRAPFactory<SC,LO,GO,NO,LMO> > rapFact = rcp( new MueLu::MHDRAPFactory<SC,LO,GO,NO,LMO>() );
+  RCP<MueLu::MHDRAPFactory<SC,LO,GO,NO> > rapFact = rcp( new MueLu::MHDRAPFactory<SC,LO,GO,NO>() );
 
 
   RCP<FactoryManager> M = rcp(new FactoryManager() );

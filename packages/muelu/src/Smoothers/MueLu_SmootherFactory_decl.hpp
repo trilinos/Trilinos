@@ -83,8 +83,18 @@ namespace MueLu {
     factory doesn't have any knowledge about that.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = double,
+            class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class SmootherFactory : public SmootherFactoryBase {
+  public:
+    typedef Scalar scalar_type;
+    typedef LocalOrdinal local_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
+    typedef Node node_type;
+
+  private:
 #undef MUELU_SMOOTHERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 

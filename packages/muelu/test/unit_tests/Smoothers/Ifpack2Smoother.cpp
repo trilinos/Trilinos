@@ -188,8 +188,8 @@ namespace MueLuTests {
       Ifpack2Smoother smoother("ILUT",paramList);
 
       //I don't use the testApply infrastructure because it has no provision for an initial guess.
-      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
-      Level level; TestHelpers::TestFactory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
+      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(125);
+      Level level; TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
       level.Set("A", A);
       smoother.Setup(level);
 

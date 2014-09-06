@@ -965,6 +965,30 @@ const char *do_elseif(double x)
   return NULL;
 }
 
+const char *do_str_if(char *string)
+{
+  std::string test(string);
+  aprepro->lexer->if_handler(!test.empty());
+
+  return NULL;
+}
+
+const char *do_str_notif(char* string)
+{
+  std::string test(string);
+  aprepro->lexer->if_handler(test.empty());
+
+  return NULL;
+}
+
+const char*do_str_elseif(char* string)
+{
+  std::string test(string);
+  aprepro->lexer->elseif_handler(!test.empty());
+
+  return NULL;
+}
+
 const char *do_switch(double x)
 {
   aprepro->lexer->switch_handler(x);
@@ -1056,6 +1080,13 @@ const char *do_print_array(const array *my_array_data)
   else {
     return "";
   }
+}
+
+const char *do_delete(char *string)
+{
+  aprepro->remove_variable(string);
+
+  return NULL;
 }
 
 array *do_make_array(double rows, double cols)

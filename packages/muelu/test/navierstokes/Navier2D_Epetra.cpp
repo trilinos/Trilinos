@@ -336,12 +336,12 @@ int main(int argc, char *argv[]) {
     rebAmalgFact->SetFactory("A", Acfact);
 
     // create amalgamated "Partition"
-    RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
+    RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
     isoInterface->SetFactory("A", Acfact);
     isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
 
     // create "Partition" by unamalgamtion
-    RCP<MueLu::RepartitionInterface<LO, GO, NO, LMO> > repInterface = rcp(new MueLu::RepartitionInterface<LO, GO, NO, LMO>());
+    RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
     repInterface->SetFactory("A", Acfact);
     repInterface->SetFactory("AmalgamatedPartition", isoInterface);
 

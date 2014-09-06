@@ -62,9 +62,14 @@
 
 namespace Xpetra {
 
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = MultiVector<>::scalar_type,
+            class LocalOrdinal =
+              typename MultiVector<Scalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class MultiVectorFactory {
-
   private:
     //! Private constructor. This is a static class.
     MultiVectorFactory() {}
@@ -72,7 +77,11 @@ namespace Xpetra {
   public:
 
     //! Constructor specifying the number of non-zeros for all rows.
-    static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, bool zeroOut=true) {
+    static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+    Build (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map,
+           size_t NumVectors,
+           bool zeroOut=true)
+    {
       XPETRA_MONITOR("MultiVectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -101,11 +110,10 @@ namespace Xpetra {
 
   template <>
   class MultiVectorFactory<double, int, int> {
-
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef MultiVector<double, int, int>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.

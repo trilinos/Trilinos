@@ -140,8 +140,8 @@ int main(int argc, char *argv[]) {
   //
 
   // Turns a Epetra_CrsMatrix into a MueLu::Matrix
-  RCP<Xpetra::CrsMatrix<SC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(A)); //TODO: should not be needed
-  RCP<Xpetra::Matrix <SC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<SC, LO, GO, NO, LMO>(mueluA_));
+  RCP<Xpetra::CrsMatrix<SC, LO, GO, NO> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(A)); //TODO: should not be needed
+  RCP<Xpetra::Matrix <SC, LO, GO, NO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<SC, LO, GO, NO>(mueluA_));
 
   // Multigrid Hierarchy
   RCP<Hierarchy> H = rcp(new Hierarchy(mueluA));

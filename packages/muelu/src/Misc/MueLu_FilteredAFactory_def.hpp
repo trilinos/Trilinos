@@ -58,8 +58,8 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -74,16 +74,16 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Graph");
     // NOTE: we do this DeclareInput in such complicated fashion because this is not a part of the parameter list
     currentLevel.DeclareInput("Filtering", currentLevel.GetFactoryManager()->GetFactory("Filtering").get());
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Matrix filtering", currentLevel);
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -148,8 +148,8 @@ namespace MueLu {
   // This trick allows us to bypass constructing a new matrix. Instead, we
   // make a deep copy of the original one, and fill it in with zeros, which
   // are ignored during the prolongator smoothing.
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const {
     SC zero = Teuchos::ScalarTraits<SC>::zero();
 
@@ -238,8 +238,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildNew(const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const {
     SC zero = Teuchos::ScalarTraits<SC>::zero();
 

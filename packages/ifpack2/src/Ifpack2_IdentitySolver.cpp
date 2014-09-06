@@ -50,7 +50,7 @@
 
 namespace Ifpack2 {
 
-#define LCLINST(S,LO,GO) template class IdentitySolver<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >; template class IdentitySolver<Tpetra::RowMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
+#define LCLINST(S,LO,GO) template class IdentitySolver<Tpetra::CrsMatrix<S, LO, GO> >; template class IdentitySolver<Tpetra::RowMatrix<S, LO, GO> >;
 
   // IFPACK2_INST(IdentitySolver,S,LO,GO)
 

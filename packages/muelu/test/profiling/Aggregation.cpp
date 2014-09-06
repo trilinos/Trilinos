@@ -77,7 +77,6 @@ typedef double Scalar;
 typedef int    LocalOrdinal;
 typedef int    GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 #include <unistd.h>
 /**********************************************************************************/

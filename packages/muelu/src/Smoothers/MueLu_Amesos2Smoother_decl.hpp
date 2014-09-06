@@ -51,12 +51,6 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-// Tpetra forward declarations
-namespace Tpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> class CrsMatrix;
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class MultiVector;
-}
-
 #include "MueLu_Amesos2Smoother_fwd.hpp"
 
 #include "MueLu_SmootherPrototype.hpp"
@@ -75,8 +69,11 @@ namespace MueLu {
     based on the type and ParameterList passed into the constructor.  See the constructor for more information.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class Amesos2Smoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  template <class Scalar = SmootherPrototype<>::scalar_type,
+            class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  class Amesos2Smoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
 #undef MUELU_AMESOS2SMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -136,7 +133,7 @@ namespace MueLu {
     //@}
 
   private:
-    typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Tpetra_CrsMatrix;
+    typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_CrsMatrix;
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_MultiVector;
 
     //! amesos2-specific key phrase that denote smoother type

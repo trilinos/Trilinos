@@ -627,19 +627,6 @@ private:
   ///
   /// We use this for dynamic casts to dispatch to the most efficient
   /// implementation of various relaxation kernels.
-  ///
-  /// \note This typedef isn't ideal because it won't catch
-  ///   Tpetra::CrsMatrix specializations with nondefault LocalMatOps
-  ///   (fifth) template parameter.  The code will still be correct if
-  ///   the cast fails, but it won't pick up the "cached offsets"
-  ///   optimization.  An alternate approach would be to push kernels
-  ///   (like Gauss-Seidel) to the RowMatrix interface, so that
-  ///   RowMatrix's polymorphism can dispatch to the most efficient
-  ///   implementation.  We accept this as reasonable because (a) the
-  ///   fifth template parameter of Tpetra::CrsMatrix and
-  ///   Tpetra::CrsGraph will be deprecated soon, and (b) very few
-  ///   users had interest in anything other than the default value of
-  ///   the fifth template parameter.
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> crs_matrix_type;
   typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type,

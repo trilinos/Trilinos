@@ -3491,9 +3491,12 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeColMap ()
   {
-    using std::endl;
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::rcp;
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "makeColMap";
@@ -3555,26 +3558,36 @@ namespace Tpetra {
       for (size_t r = 0; r < myNumRows; ++r) {
         RowInfo rowinfo = getRowInfo (r);
         if (rowinfo.numEntries > 0) {
-          // FIXME (mfh 03 Mar 2013) It's a bit puzzling to me why the
-          // ArrayView that getGlobalView() returns doesn't return
-          // rowinfo.numEntries entries.
+          // NOTE (mfh 02 Sep 2014) getGlobalView() returns a view of
+          // all the space in the row, not just the occupied entries.
+          // (This matters for the case of unpacked 1-D storage.  We
+          // might not have packed it yet.)  That's why we need to
+          // take a subview.
           ArrayView<const GO> rowGids = getGlobalView (rowinfo);
           rowGids = rowGids (0, rowinfo.numEntries);
 
           for (size_t k = 0; k < rowinfo.numEntries; ++k) {
             const GO gid = rowGids[k];
             const LO lid = domainMap_->getLocalElement (gid);
-            if (lid != LINV) {
+            if (lid != LINV) { // gid is locally owned
               const char alreadyFound = GIDisLocal[lid];
               if (alreadyFound == 0) {
-                GIDisLocal[lid] = 1;
+                GIDisLocal[lid] = static_cast<char> (1);
                 ++numLocalColGIDs;
               }
             }
             else {
               const bool notAlreadyFound = RemoteGIDSet.insert (gid).second;
               if (notAlreadyFound) { // gid did not exist in the set before
-                RemoteGIDUnorderedVector.push_back (gid);
+                if (! sortGhostsAssociatedWithEachProcessor_) {
+                  // The user doesn't want to sort remote GIDs (for
+                  // each remote process); they want us to keep remote
+                  // GIDs in their original order.  We do this by
+                  // stuffing each remote GID into an array as we
+                  // encounter it for the first time.  The std::set
+                  // helpfully tracks first encounters.
+                  RemoteGIDUnorderedVector.push_back (gid);
+                }
                 ++numRemoteColGIDs;
               }
             }
@@ -3639,9 +3652,11 @@ namespace Tpetra {
 
       // Copy the remote GIDs into myColumns
       if (sortGhostsAssociatedWithEachProcessor_) {
+        // The std::set puts GIDs in increasing order.
         std::copy (RemoteGIDSet.begin(), RemoteGIDSet.end(),
                    RemoteColGIDs.begin());
       } else {
+        // Respect the originally encountered order.
         std::copy (RemoteGIDUnorderedVector.begin(),
                    RemoteGIDUnorderedVector.end(), RemoteColGIDs.begin());
       }
@@ -3674,9 +3689,14 @@ namespace Tpetra {
         (void) stat; // forestall compiler warning for unused variable
 #endif // HAVE_TPETRA_DEBUG
       }
-      // Sort incoming remote column indices so that all columns
-      // coming from a given remote process are contiguous.  This
-      // means the Import's Distributor doesn't need to reorder data.
+      // Sort incoming remote column indices by their owning process
+      // rank, so that all columns coming from a given remote process
+      // are contiguous.  This means the Import's Distributor doesn't
+      // need to reorder data.
+      //
+      // NOTE (mfh 02 Sep 2014) This needs to be a stable sort, so
+      // that it respects either of the possible orderings of GIDs
+      // (sorted, or original order) specified above.
       sort2 (RemoteImageIDs.begin(), RemoteImageIDs.end(), RemoteColGIDs.begin());
 
       // Copy the local GIDs into myColumns. Two cases:
@@ -3689,25 +3709,50 @@ namespace Tpetra {
       //    maintain a consistent ordering of GIDs between the columns
       //    and the domain.
 
-      // FIXME (mfh 03 Mar 2013) It's common that the domain Map is
-      // contiguous.  It would be more efficient in that case to avoid
-      // calling getNodeElementList(), since that permanently
-      // constructs and caches the GID list in the contiguous Map.
-      ArrayView<const GO> domainElts = domainMap_->getNodeElementList ();
       const size_t numDomainElts = domainMap_->getNodeNumElements ();
       if (numLocalColGIDs == numDomainElts) {
         // If the number of locally owned GIDs are the same as the
         // number of local domain Map elements, then the local domain
         // Map elements are the same as the locally owned GIDs.
-        std::copy (domainElts.begin(), domainElts.end(), LocalColGIDs.begin());
+        if (domainMap_->isContiguous ()) {
+          // NOTE (mfh 03 Mar 2013, 02 Sep 2014) In the common case
+          // that the domain Map is contiguous, it's more efficient to
+          // avoid calling getNodeElementList(), since that
+          // permanently constructs and caches the GID list in the
+          // contiguous Map.
+          GO curColMapGid = domainMap_->getMinGlobalIndex ();
+          for (size_t k = 0; k < numLocalColGIDs; ++k, ++curColMapGid) {
+            LocalColGIDs[k] = curColMapGid;
+          }
+        }
+        else {
+          ArrayView<const GO> domainElts = domainMap_->getNodeElementList ();
+          std::copy (domainElts.begin(), domainElts.end(), LocalColGIDs.begin());
+        }
       }
       else {
         // Count the number of locally owned GIDs, both to keep track
         // of the current array index, and as a sanity check.
         size_t numLocalCount = 0;
-        for (size_t i = 0; i < numDomainElts; ++i) {
-          if (GIDisLocal[i]) {
-            LocalColGIDs[numLocalCount++] = domainElts[i];
+        if (domainMap_->isContiguous ()) {
+          // NOTE (mfh 03 Mar 2013, 02 Sep 2014) In the common case
+          // that the domain Map is contiguous, it's more efficient to
+          // avoid calling getNodeElementList(), since that
+          // permanently constructs and caches the GID list in the
+          // contiguous Map.
+          GO curColMapGid = domainMap_->getMinGlobalIndex ();
+          for (size_t i = 0; i < numDomainElts; ++i, ++curColMapGid) {
+            if (GIDisLocal[i]) {
+              LocalColGIDs[numLocalCount++] = curColMapGid;
+            }
+          }
+        }
+        else {
+          ArrayView<const GO> domainElts = domainMap_->getNodeElementList ();
+          for (size_t i = 0; i < numDomainElts; ++i) {
+            if (GIDisLocal[i]) {
+              LocalColGIDs[numLocalCount++] = domainElts[i];
+            }
           }
         }
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3769,7 +3814,6 @@ namespace Tpetra {
                                  domainMap_->getComm (),
                                  domainMap_->getNode ()));
     checkInternalState ();
-    return;
   }
 
 

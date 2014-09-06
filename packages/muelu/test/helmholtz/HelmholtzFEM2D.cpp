@@ -61,13 +61,13 @@
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
-  typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
-  typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
-  typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
-  typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-  typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS;
-  typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
-  typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
+  typedef Tpetra::Vector<SC,LO,GO,NO>              TVEC;
+  typedef Tpetra::MultiVector<SC,LO,GO,NO>         TMV;
+  typedef Tpetra::CrsMatrix<SC,LO,GO,NO>           TCRS;
+  typedef Xpetra::CrsMatrix<SC,LO,GO,NO>           XCRS;
+  typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>     XTCRS;
+  typedef Xpetra::Matrix<SC,LO,GO,NO>              XMAT;
+  typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO>       XWRAP;
 
   using Teuchos::RCP;
   using Teuchos::rcp;

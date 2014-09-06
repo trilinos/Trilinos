@@ -243,13 +243,18 @@ namespace Tpetra {
   /// object, that keeps the same source and target Map objects but
   /// has a different communication plan.  We have not yet implemented
   /// this optimization.
-  template <class Scalar        = double,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename CrsMatrixSparseOpsSelector<Scalar, LocalOrdinal, Node>::sparse_ops_type>
-  class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
-                    public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
+  template <class Scalar = RowMatrix<>::scalar_type,
+            class LocalOrdinal = typename RowMatrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename RowMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
+            class LocalMatOps =
+              typename CrsMatrixSparseOpsSelector<
+                Scalar, LocalOrdinal, Node>::sparse_ops_type>
+  class CrsMatrix :
+    public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
+    public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
   public:
     //! @name Typedefs
     //@{
@@ -263,13 +268,17 @@ namespace Tpetra {
     //! This class' fourth template parameter; the Kokkos Node type.
     typedef Node node_type;
 
-    /// \brief This class' fifth template parameter; the implementation of local sparse kernels.
+    /// \brief This class' fifth template parameter; the
+    ///   implementation of local sparse kernels.
     ///
-    /// We define both this typedef and mat_solve_type for backwards compatibility.
+    /// We define both this typedef and mat_solve_type for backwards
+    /// compatibility.
     typedef LocalMatOps mat_vec_type;
-    /// \brief This class' fifth template parameter; the implementation of local sparse kernels.
+    /// \brief This class' fifth template parameter; the
+    ///   implementation of local sparse kernels.
     ///
-    /// We define both this typedef and mat_vec_type for backwards compatibility.
+    /// We define both this typedef and mat_vec_type for backwards
+    /// compatibility.
     typedef LocalMatOps mat_solve_type;
 
     //! The Map specialization suitable for this CrsMatrix specialization.

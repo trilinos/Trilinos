@@ -306,8 +306,8 @@ int main(int argc, char *argv[]) {
     H->IsPreconditioner(true);
 
     // Define Operator and Preconditioner
-    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
-    Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
+    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
+    Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
 
     // Construct a Belos LinearProblem object
     RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
@@ -358,18 +358,17 @@ int main(int argc, char *argv[]) {
 
     //Clone the preconditioner to ThrustGPU node type
     typedef KokkosClassic::ThrustGPUNode NO2;
-    typedef KokkosClassic::DefaultKernels<void, LO, NO2>::SparseOps LMO2;
-    typedef MueLu::Hierarchy<SC,LO,GO,NO2, LMO2> Hierarchy2;
+    typedef MueLu::Hierarchy<SC,LO,GO,NO2> Hierarchy2;
     typedef Xpetra::MultiVector<SC,LO,GO,NO2> MV2;
     typedef Belos::OperatorT<MV2> OP2;
 
     ParameterList plClone;
     plClone.set<LocalOrdinal>("Verbose", 1);
     RCP<NO2> node = rcp(new NO2(plClone));
-    RCP<Hierarchy2> clonedH = H->clone<NO2, LMO2>(node);
+    RCP<Hierarchy2> clonedH = H->clone<NO2>(node);
 
     //Clone A, X, B to new node type
-    RCP< Xpetra::Matrix<SC,LO,GO,NO2,LMO2 > > clonedA = Xpetra::clone(*A, node);
+    RCP< Xpetra::Matrix<SC,LO,GO,NO2 > > clonedA = Xpetra::clone(*A, node);
     RCP< MV2 > clonedX = Xpetra::clone(*X, node);
     clonedX->putScalar(zero);
     RCP< MV2 > clonedB = Xpetra::clone(*B, node);
@@ -377,8 +376,8 @@ int main(int argc, char *argv[]) {
 
 
     // Define Operator and Preconditioner
-    Teuchos::RCP<OP2> belosOp2   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO2, LMO2>(clonedA)); // Turns a Xpetra::Matrix object into a Belos operator
-    Teuchos::RCP<OP2> belosPrec2 = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO2, LMO2>(clonedH));  // Turns a MueLu::Hierarchy object into a Belos operator
+    Teuchos::RCP<OP2> belosOp2   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO2>(clonedA)); // Turns a Xpetra::Matrix object into a Belos operator
+    Teuchos::RCP<OP2> belosPrec2 = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO2>(clonedH));  // Turns a MueLu::Hierarchy object into a Belos operator
 
     // Construct a Belos LinearProblem object
     RCP< Belos::LinearProblem<SC, MV2, OP2> > belosProblem2 = rcp(new Belos::LinearProblem<SC, MV2, OP2>(belosOp2, clonedX, clonedB));
@@ -420,7 +419,7 @@ int main(int argc, char *argv[]) {
     Scalar norm;
     clonedXcpu->norm2(Teuchos::arrayView(&norm,1));
     std::cout <<"\nNorm of serial node soln - ThrustGPU node soln = "
-		<< norm << std::endl;
+                << norm << std::endl;
 
     bool passed = false;
     if (norm <= Scalar(1e-10))

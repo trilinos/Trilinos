@@ -111,6 +111,57 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
   )
 
 
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld_ScaleTimeout
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  CATEGORIES CONTINUOUS
+
+  TEST_0 CMND ${CMAKE_COMMAND}
+    ARGS
+      ${COMMON_ENV_ARGS_PASSTHROUGH}
+      -DDART_TESTING_TIMEOUT=200.0
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsHelloWorld
+    PASS_REGULAR_EXPRESSION_ALL "Generating done"
+    MESSAGE "Configure with default 1.0 scaling"
+  TEST_1 CMND grep ARGS "^TimeOut: " DartConfiguration.tcl
+    PASS_REGULAR_EXPRESSION "TimeOut: 200.0"
+  TEST_2 CMND grep ARGS "^DART_TESTING_TIMEOUT:" CMakeCache.txt
+    MESSAGE "DART_TESTING_TIMEOUT in cache does not change!"
+    PASS_REGULAR_EXPRESSION "DART_TESTING_TIMEOUT:STRING=200.0"
+
+  TEST_3 CMND ${CMAKE_COMMAND}
+    ARGS
+      -DTribitsHelloWorld_SCALE_TEST_TIMEOUT=1.5
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsHelloWorld
+    MESSAGE "Configure with 1.5 scaling"
+    PASS_REGULAR_EXPRESSION_ALL
+      "DART_TESTING_TIMEOUT=200.0 being scaled by TribitsHelloWorld_SCALE_TEST_TIMEOUT=1.5 to 300"
+      "Generating done"
+
+  TEST_4 CMND grep ARGS "^TimeOut: " DartConfiguration.tcl
+    PASS_REGULAR_EXPRESSION "TimeOut: 300"
+  TEST_5 CMND grep ARGS "^DART_TESTING_TIMEOUT:" CMakeCache.txt
+    MESSAGE "DART_TESTING_TIMEOUT in cache does not change!"
+    PASS_REGULAR_EXPRESSION "DART_TESTING_TIMEOUT:STRING=200.0"
+
+  TEST_6 CMND ${CMAKE_COMMAND}
+    ARGS
+      -DTribitsHelloWorld_SCALE_TEST_TIMEOUT=2.0
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsHelloWorld
+    MESSAGE "Configure with 2.0 scaling"
+    PASS_REGULAR_EXPRESSION_ALL
+      "DART_TESTING_TIMEOUT=200.0 being scaled by TribitsHelloWorld_SCALE_TEST_TIMEOUT=2.0 to 400"
+      "Generating done"
+  TEST_7 CMND grep ARGS "^TimeOut: " DartConfiguration.tcl
+    PASS_REGULAR_EXPRESSION "TimeOut: 400"
+  TEST_8 CMND grep ARGS "^DART_TESTING_TIMEOUT:" CMakeCache.txt
+    MESSAGE "DART_TESTING_TIMEOUT in cache does not change!"
+    PASS_REGULAR_EXPRESSION "DART_TESTING_TIMEOUT:STRING=200.0"
+
+  )
+
+
 ASSERT_DEFINED(TPL_ENABLE_MPI)
 IF (TPL_ENABLE_MPI)
   SET(TPL_MPI_FILE_TRACE
@@ -304,15 +355,21 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   CATEGORIES CONTINUOUS
-  TEST_0 CMND ${CMAKE_COMMAND}
+
+  TEST_0 CMND cp
+    ARGS -r ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
+      .
+
+  TEST_1 CMND ${CMAKE_COMMAND}
     ARGS
       ${COMMON_ENV_ARGS_PASSTHROUGH}
       -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -DTribitsExProj_ENABLE_DEBUG=OFF
       -DTribitsExProj_ENABLE_EXPORT_MAKEFILES=OFF
       -DTribitsExProj_ENABLE_INSTALL_CMAKE_CONFIG_FILES=OFF
       -DTribitsExProj_ENABLE_WrapExternal=ON
       -DTribitsExProj_ENABLE_TESTS=ON
-      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
+      TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
       "Explicitly enabled packages on input .by user.:  WrapExternal 1"
       "Explicitly disabled packages on input .by user or by default.:  0"
@@ -324,15 +381,67 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
       "Final set of enabled packages:  SimpleCxx PackageWithSubpackages WrapExternal 3"
       "Final set of enabled SE packages:  SimpleCxx PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages WrapExternal 6"
       "Final set of non-enabled packages:  MixedLanguage 1"
+      "This package has no unfiltered binary files so consider out of date"
       "Configuring done"
       "Generating done"
       "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_WrapExternal"
-  TEST_1 CMND make
-    ARGS ${CTEST_BUILD_FLAGS}
+  TEST_2 CMND make ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target WrapExternal_run_external_func"
-  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+  TEST_3 CMND ${CMAKE_CTEST_COMMAND}
     PASS_REGULAR_EXPRESSION_ALL
       "WrapExternal_run_external_func${TEST_MPI_1_SUFFIX} .* Passed"
       "100% tests passed, 0 tests failed out of 1"
+
+  TEST_4 CMND touch
+     ARGS TribitsExampleProject/packages/simple_cxx/src/SimpleCxx_HelloWorld.cpp
+     MESSAGE "Test that changing upstream source will trigger rebuild"
+  TEST_5 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
+     MESSAGE "Recofigure with changed upstream source"
+    PASS_REGULAR_EXPRESSION_ALL
+      "The upstream SE package source file ./src/SimpleCxx_HelloWorld.cpp is more recent than this package's binary file ./WrapExternal_run_external_func.exe"
+      "Blowing away WrapExternal build dir external_func/ so it will build from scratch"
+  TEST_6 CMND make ARGS ${CTEST_BUILD_FLAGS}
+    MESSAGE "Rebuild only exteranl_func"
+    PASS_REGULAR_EXPRESSION_ALL
+      "Built target simplecxx"
+      "Built target pws_a"
+      "Built target pws_b"
+      "Built target pws_c"
+      "Generating external_func/libexternal_func.a"
+      "Linking CXX executable WrapExternal_run_external_func.exe"
+
+  TEST_7 CMND ${CMAKE_COMMAND}
+     ARGS  -DSimpleCxx_ENABLE_DEBUG=ON  TribitsExampleProject
+     MESSAGE "Recofigure changing the debug mode to trigger rebuild"
+    PASS_REGULAR_EXPRESSION_ALL
+      "The upstream SE package binary file ./src/SimpleCxx_config.h is more recent than this package's binary file ./WrapExternal_run_external_func.exe"
+      "Blowing away WrapExternal build dir external_func/ so it will build from scratch"
+  TEST_8 CMND make ARGS ${CTEST_BUILD_FLAGS}
+    PASS_REGULAR_EXPRESSION_ALL
+      "Generating external_func/libexternal_func.a"
+      "Linking CXX executable WrapExternal_run_external_func.exe"
+
+  TEST_9 CMND touch
+     ARGS TribitsExampleProject/packages/wrap_external/external_func/configure.py
+     MESSAGE "Test that changing the external file will trigger rebuild"
+  TEST_10 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
+     MESSAGE "Recofigure with changes external file"
+    PASS_REGULAR_EXPRESSION_ALL
+      "The this package's source file ./external_func/configure.py is more recent than this package's binary file ./WrapExternal_run_external_func.exe"
+      "Blowing away WrapExternal build dir external_func/ so it will build from scratch"
+  TEST_11 CMND make ARGS ${CTEST_BUILD_FLAGS}
+    PASS_REGULAR_EXPRESSION_ALL
+      "Generating external_func/libexternal_func.a"
+      "Linking CXX executable WrapExternal_run_external_func.exe"
+
+  TEST_12 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
+     MESSAGE "Recofigure with no changes that will not do anything"
+    PASS_REGULAR_EXPRESSION_ALL
+      "This package's most recent binary file ./WrapExternal_run_external_func.exe is more recent than its upstream SE package source or binary files or this package's source files"
+  TEST_13 CMND make ARGS ${CTEST_BUILD_FLAGS}
+    PASS_REGULAR_EXPRESSION_ALL
+      "Built target build_external_func"
+      "Built target WrapExternal_run_external_func"
+
   )

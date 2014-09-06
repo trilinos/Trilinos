@@ -47,7 +47,7 @@
 #define XPETRA_TPETRACRSMATRIX_FWD_HPP
 
 namespace Xpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class TpetraCrsMatrix;
 }
 

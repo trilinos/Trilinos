@@ -56,11 +56,12 @@ namespace Tpetra {
   This class inherits (is-a) Tpetra::MultiVector, adding block-entry
   functionality for referencing/accessing data.
 */
-template <class Scalar = double,
-          class LocalOrdinal = int,
-          class GlobalOrdinal = LocalOrdinal,
-          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-class BlockMultiVector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+template <class Scalar = MultiVector<>::scalar_type,
+          class LocalOrdinal = MultiVector<>::local_ordinal_type,
+          class GlobalOrdinal = typename MultiVector<LocalOrdinal>::global_ordinal_type,
+          class Node = typename MultiVector<LocalOrdinal, GlobalOrdinal>::node_type>
+class BlockMultiVector :
+  public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 public:
   typedef Scalar        scalar_type;
   typedef LocalOrdinal  local_ordinal_type;

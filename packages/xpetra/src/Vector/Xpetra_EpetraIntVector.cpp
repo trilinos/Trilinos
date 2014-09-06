@@ -57,7 +57,7 @@ namespace Xpetra {
 
   void EpetraIntVector::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  int EpetraIntVector::dot(const Vector<int,int,int> &a) const { XPETRA_MONITOR("EpetraIntVector::dot"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+  int EpetraIntVector::dot(const Vector<int,int,int,Node> &a) const { XPETRA_MONITOR("EpetraIntVector::dot"); TEUCHOS_TEST_FOR_EXCEPTION(-1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
   Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::norm1() const { XPETRA_MONITOR("EpetraIntVector::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
@@ -65,7 +65,7 @@ namespace Xpetra {
 
   Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::normInf() const { XPETRA_MONITOR("EpetraIntVector::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::normWeighted(const Vector<int,int,int> &weights) const { XPETRA_MONITOR("EpetraIntVector::normWeighted"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::normWeighted(const Vector<int,int,int,Node> &weights) const { XPETRA_MONITOR("EpetraIntVector::normWeighted"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
   int EpetraIntVector::meanValue() const { XPETRA_MONITOR("EpetraIntVector::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
@@ -161,7 +161,7 @@ namespace Xpetra {
 
   void EpetraIntVector::multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,int> &A, const MultiVector<int,int,int> &B, const int &beta) { XPETRA_MONITOR("EpetraIntVector::multiply"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Not available in Epetra"); }
 
-  void EpetraIntVector::elementWiseMultiply(int scalarAB, const Vector<int,int,int> &A, const MultiVector<int,int,int> &B, int scalarThis) {
+  void EpetraIntVector::elementWiseMultiply(int scalarAB, const Vector<int,int,int,Node> &A, const MultiVector<int,int,int> &B, int scalarThis) {
     XPETRA_MONITOR("EpetraIntVector::elementWiseMultiply");
 
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra_EpetraIntVector: elementWiseMultiply not implemented because Epetra_IntVector does not support this operation");
@@ -190,9 +190,6 @@ namespace Xpetra {
 
   void EpetraIntVector::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     XPETRA_MONITOR("EpetraIntVector::describe");
-
-    //   typedef KokkosClassic::MultiVector<double> KMV;
-    //   typedef KokkosClassic::DefaultArithmetic<KMV> MVT;
 
     // This implementation come from Tpetra_Vector_def.hpp (without modification) // JG: true?
     using std::endl;

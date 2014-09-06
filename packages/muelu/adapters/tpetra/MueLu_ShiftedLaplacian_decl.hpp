@@ -82,7 +82,7 @@ namespace MueLu {
     solvers in Belos.
   */
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class ShiftedLaplacian : public BaseClass {
 
 #undef MUELU_SHIFTEDLAPLACIAN_SHORT
@@ -121,15 +121,15 @@ namespace MueLu {
     // Set matrices
     void setLaplacian(RCP<Matrix>& L);
     void setProblemMatrix(RCP<Matrix>& A);
-    void setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraA);
+    void setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraA);
     void setPreconditioningMatrix(RCP<Matrix>& P);
-    void setPreconditioningMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraP);
+    void setPreconditioningMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraP);
     void setstiff(RCP<Matrix>& K);
-    void setstiff(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraK);
+    void setstiff(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraK);
     void setmass(RCP<Matrix>& M);
-    void setmass(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraM);
+    void setmass(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraM);
     void setdamp(RCP<Matrix>& C);
-    void setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraC);
+    void setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraC);
     void setcoords(RCP<MultiVector>& Coords);
     void setNullSpace(RCP<MultiVector> NullSpace);
     void setProblemShifts(Scalar ashift1, Scalar ashift2);
@@ -243,7 +243,7 @@ namespace MueLu {
 
     // Operator and Preconditioner
     RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp_;
-    RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >           TpetraA_;
+    RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >               TpetraA_;
 
     // Belos Linear Problem and Solver
     RCP<LinearProblem>                LinearProblem_;

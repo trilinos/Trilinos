@@ -17,7 +17,7 @@ else()
   set(RUN_REGULAR_TESTS ON)
 endif()
 
-SET(TIMEOUT_MINUTES 300) # 5 hours
+SET(TIMEOUT_MINUTES 360) # 6 hours
 
 IF (RUN_REGULAR_TESTS)
 

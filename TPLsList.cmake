@@ -132,7 +132,6 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   METIS           "cmake/TPLs/"    TS
   ParMETIS        "cmake/TPLs/"    SS
   LibTopoMap      "cmake/TPLs/"    SS
-  LibM            "cmake/TPLs/"    SS
   PaToH           "cmake/TPLs/"    SS
   CppUnit         "cmake/TPLs/"    SS
   ADOLC           "cmake/TPLs/"    SS

@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
   M->SetFactory("PostSmoother",    smootherFact);
 
   MueLu::SetFactoryManager SFMCoarse(Finest, M);
-  Finest->Request(MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(M, "Smoother"));
+  Finest->Request(MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>(M, "Smoother"));
 
   // call setup (= extract blocks and extract diagonal of F)
   BraessSarazinSm->Setup(*Finest);

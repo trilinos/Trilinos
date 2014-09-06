@@ -97,6 +97,24 @@ public:
 
   __device__ inline void team_barrier() const { __syncthreads(); }
 
+  template< class JoinOp >
+  __device__ inline
+  typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
+                                         , const JoinOp & op ) const
+    {
+      typename JoinOp::value_type * const base_data = (typename JoinOp::value_type *) m_team_reduce ;
+
+      __syncthreads(); // Don't write in to shared data until all threads have entered this function
+
+      if ( 0 == threadIdx.x ) { base_data[0] = 0 ; }
+
+      base_data[ threadIdx.x ] = value ;
+
+      Impl::cuda_intra_block_reduce_scan<false>( op , base_data );
+
+      return base_data[ blockDim.x - 1 ];
+    }
+
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
    *
@@ -164,6 +182,10 @@ public:
   int team_size() const ;
 
   void team_barrier() const ;
+
+  template< class JoinOp >
+  typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
+                                         , const JoinOp & op ) const ;
 
   template< typename Type >
   Type team_scan( const Type & value , Type * const global_accum ) const ;

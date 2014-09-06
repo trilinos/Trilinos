@@ -71,20 +71,20 @@
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
-  typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
-  typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
-  typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
-  typedef Xpetra::CrsMatrix<SC,LO,GO,NO,LMO>           XCRS;
-  typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO,LMO>     XTCRS;
-  typedef Xpetra::Matrix<SC,LO,GO,NO,LMO>              XMAT;
-  typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO>       XWRAP;
+  typedef Tpetra::Vector<SC,LO,GO,NO>              TVEC;
+  typedef Tpetra::MultiVector<SC,LO,GO,NO>         TMV;
+  typedef Tpetra::CrsMatrix<SC,LO,GO,NO>           TCRS;
+  typedef Xpetra::CrsMatrix<SC,LO,GO,NO>           XCRS;
+  typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>     XTCRS;
+  typedef Xpetra::Matrix<SC,LO,GO,NO>              XMAT;
+  typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO>       XWRAP;
 
-  typedef Belos::OperatorT<TMV>                        TOP;
-  typedef Belos::OperatorTraits<SC,TMV,TOP>            TOPT;
-  typedef Belos::MultiVecTraits<SC,TMV>                TMVT;
-  typedef Belos::LinearProblem<SC,TMV,TOP>             TProblem;
-  typedef Belos::SolverManager<SC,TMV,TOP>             TBelosSolver;
-  typedef Belos::BlockGmresSolMgr<SC,TMV,TOP>          TBelosGMRES;
+  typedef Belos::OperatorT<TMV>                    TOP;
+  typedef Belos::OperatorTraits<SC,TMV,TOP>        TOPT;
+  typedef Belos::MultiVecTraits<SC,TMV>            TMVT;
+  typedef Belos::LinearProblem<SC,TMV,TOP>         TProblem;
+  typedef Belos::SolverManager<SC,TMV,TOP>         TBelosSolver;
+  typedef Belos::BlockGmresSolMgr<SC,TMV,TOP>      TBelosGMRES;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -176,8 +176,8 @@ int main(int argc, char *argv[]) {
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Belos Solve")));
 
   // Define Operator and Preconditioner
-  RCP<TOP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO> (A) );    // Turns a Xpetra::Matrix object into a Belos operator
-  RCP<TOP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO,LMO>  (H) );    // Turns a MueLu::Hierarchy object into a Belos operator
+  RCP<TOP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO> (A) );    // Turns a Xpetra::Matrix object into a Belos operator
+  RCP<TOP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO>  (H) );    // Turns a MueLu::Hierarchy object into a Belos operator
 
   // Construct a Belos LinearProblem object
   RCP<TProblem> belosProblem = rcp(new TProblem(belosOp,X,B));

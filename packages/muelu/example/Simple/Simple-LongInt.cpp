@@ -58,7 +58,6 @@ typedef double Scalar;
 typedef int LocalOrdinal;
 typedef long long int GlobalOrdinal; // <<<<<<
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>

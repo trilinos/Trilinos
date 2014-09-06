@@ -748,11 +748,6 @@ void Relaxation<MatrixType>::compute ()
       // method (not inherited from RowMatrix's interface).  It's
       // perfectly valid to do relaxation on a RowMatrix which is not
       // a CrsMatrix.
-      //
-      // This cast isn't ideal because it won't catch CrsMatrix
-      // specializations with nondefault LocalMatOps (fifth) template
-      // parameter.  The code will still be correct if the cast fails,
-      // but it won't pick up the "cached offsets" optimization.
       const crs_matrix_type* crsMat =
         dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
       if (crsMat == NULL || ! crsMat->isStaticGraph ()) {

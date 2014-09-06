@@ -42,23 +42,22 @@
 #ifndef TPETRA_CRSMATRIXMULTIPLYOP_DECL_HPP
 #define TPETRA_CRSMATRIXMULTIPLYOP_DECL_HPP
 
-#include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Operator.hpp"
+/// \file Tpetra_CrsMatrixMultiplyOp_decl.hpp
+///
+/// Declaration of Tpetra::CrsMatrixMultiplyOp and its nonmember constructor.
+
+#include <Tpetra_CrsMatrix.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-
-
-/*! \file Tpetra_CrsMatrixMultiplyOp_decl.hpp
-
-    The declarations for the class Tpetra::CrsMatrixMultiplyOp and related non-member constructors.
- */
 
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration
-  template <class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class MatScalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node,
+            class LocalMatOps>
   class CrsMatrix;
 #endif
 
@@ -116,27 +115,41 @@ namespace Tpetra {
   /// \tparam MatScalar The type of the entries of the CrsMatrix; the
   ///   first template parameter of CrsMatrix.
   ///
-  /// \tparam LocalOrdinal The second template parameter of CrsMatrix
-  ///   and Operator.
+  /// \tparam LocalOrdinal The type of the local indices of the
+  ///   CrsMatrix; the second template parameter of CrsMatrix and
+  ///   Operator.
   ///
-  /// \tparam GlobalOrdinal The third template parameter of CrsMatrix
-  ///   and Operator.
+  /// \tparam GlobalOrdinal The type of the global indices of the
+  ///   CrsMatrix; the third template parameter of CrsMatrix and
+  ///   Operator.
   ///
   /// \tparam Node The fourth template parameter of CrsMatrix and
   ///   Operator.
   ///
-  /// \tparam LocalMatOps The fifth template parameter of CrsMatrix.
-  ///   (Operator only takes four template parameters.)
+  /// \tparam LocalMatOps The optional and deprecated fifth template
+  ///   parameter of CrsMatrix.  (Operator only takes four template
+  ///   parameters.)  Please omit this unless you really know what you
+  ///   are doing.
   template <class Scalar,
             class MatScalar = Scalar,
-            class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename KokkosClassic::DefaultKernels<MatScalar,LocalOrdinal,Node>::SparseOps >
+            class LocalOrdinal =
+              typename CrsMatrix<MatScalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename CrsMatrix<MatScalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal>::node_type,
+            class LocalMatOps =
+              typename CrsMatrixSparseOpsSelector<MatScalar, LocalOrdinal, Node>::sparse_ops_type>
   class CrsMatrixMultiplyOp :
-    public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+    public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
   public:
+    //! The specialization of CrsMatrix which this class wraps.
+    typedef CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
+      crs_matrix_type;
+    //! The specialization of Map which this class uses.
+    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+
     //! @name Constructor and destructor
     //@{
 
@@ -144,10 +157,10 @@ namespace Tpetra {
     ///
     /// \param A [in] The CrsMatrix to wrap as an
     ///   <tt>Operator<Scalar, ...></tt>.
-    CrsMatrixMultiplyOp(const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A);
+    CrsMatrixMultiplyOp (const Teuchos::RCP<const crs_matrix_type>& A);
 
     //! Destructor
-    virtual ~CrsMatrixMultiplyOp();
+    virtual ~CrsMatrixMultiplyOp ();
 
     //@}
     //! @name Methods implementing Operator
@@ -252,10 +265,10 @@ namespace Tpetra {
     bool hasTransposeApply() const;
 
     //! The domain Map of this Operator.
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+    Teuchos::RCP<const map_type> getDomainMap () const;
 
     //! The range Map of this Operator.
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+    Teuchos::RCP<const map_type> getRangeMap () const;
 
     //@}
 
@@ -263,7 +276,7 @@ namespace Tpetra {
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
     //! The underlying CrsMatrix object.
-    const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > matrix_;
+    const Teuchos::RCP<const crs_matrix_type> matrix_;
 
     /// \brief Column Map MultiVector used in apply().
     ///
@@ -302,7 +315,7 @@ namespace Tpetra {
     void
     applyTranspose (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                     MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-		    Teuchos::ETransp mode, 
+                    Teuchos::ETransp mode,
                     Scalar alpha,
                     Scalar beta) const;
 

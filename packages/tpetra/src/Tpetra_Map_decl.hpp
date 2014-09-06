@@ -961,8 +961,7 @@ namespace Tpetra {
   ///   the default Kokkos Node.
   ///
   /// This method returns a Map instantiated on the default Kokkos
-  /// Node type, KokkosClassic::DefaultNode::DefaultNodeType.  The Map is
-  /// configured to use zero-based indexing.
+  /// Node type.  The Map is configured to use zero-based indexing.
   ///
   /// \param numElements [in] Number of elements on each process.
   ///   Each process gets the same set of elements, namely <tt>0, 1,
@@ -1001,8 +1000,7 @@ namespace Tpetra {
   ///   contiguous Map with the default Kokkos Node.
   ///
   /// This method returns a Map instantiated on the Kokkos default
-  /// Node type, KokkosClassic::DefaultNode::DefaultNodeType.  The
-  /// resulting Map uses zero-based indexing.
+  /// Node type.  The resulting Map uses zero-based indexing.
   ///
   /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal>
@@ -1025,14 +1023,14 @@ namespace Tpetra {
 
   /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with the default Kokkos Node.
 
-      This method returns a Map instantiated on the Kokkos default node type, KokkosClassic::DefaultNode::DefaultNodeType.
+      This method returns a Map instantiated on the Kokkos default node type.
 
       The Map is configured to use zero-based indexing.
 
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> >
   createContigMap (global_size_t numElements,
                    size_t localNumElements,
                    const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
@@ -1052,14 +1050,14 @@ namespace Tpetra {
 
   /** \brief Non-member constructor for a non-contiguous Map with the default Kokkos Node.
 
-      This method returns a Map instantiated on the Kokkos default node type, KokkosClassic::DefaultNode::DefaultNodeType.
+      This method returns a Map instantiated on the Kokkos default node type.
 
       The Map is configured to use zero-based indexing.
 
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> >
   createNonContigMap (const ArrayView<const GlobalOrdinal> &elementList,
                       const RCP<const Teuchos::Comm<int> > &comm);
 

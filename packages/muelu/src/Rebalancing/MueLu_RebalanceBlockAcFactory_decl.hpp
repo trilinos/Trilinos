@@ -76,7 +76,7 @@ namespace MueLu {
     @class RebalanceAcFactory
     @brief Factory for building coarse matrices.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class RebalanceBlockAcFactory : public TwoLevelFactoryBase {
 #undef MUELU_REBALANCEBLOCKACFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

@@ -468,12 +468,12 @@ CudaInternal::scratch_flags( const Cuda::size_type size )
 {
   if ( verify_is_initialized("scratch_flags") && m_scratchFlagsCount * sizeScratchGrain < size ) {
 
-    Cuda::memory_space::decrement( m_scratchFlags );
+    CudaSpace::decrement( m_scratchFlags );
   
     m_scratchFlagsCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
     m_scratchFlags = (size_type *)
-      Cuda::memory_space::allocate(
+      CudaSpace::allocate(
         std::string("InternalScratchFlags") ,
         typeid( ScratchGrain ),
         sizeof( ScratchGrain ),
@@ -490,12 +490,12 @@ CudaInternal::scratch_space( const Cuda::size_type size )
 {
   if ( verify_is_initialized("scratch_space") && m_scratchSpaceCount * sizeScratchGrain < size ) {
 
-    Cuda::memory_space::decrement( m_scratchSpace );
+    CudaSpace::decrement( m_scratchSpace );
   
     m_scratchSpaceCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
     m_scratchSpace = (size_type *)
-      Cuda::memory_space::allocate(
+      CudaSpace::allocate(
         std::string("InternalScratchSpace") ,
         typeid( ScratchGrain ),
         sizeof( ScratchGrain ),
@@ -508,32 +508,19 @@ CudaInternal::scratch_space( const Cuda::size_type size )
 Cuda::size_type *
 CudaInternal::scratch_unified( const Cuda::size_type size )
 {
+  if ( verify_is_initialized("scratch_unified") &&
+       m_scratchUnifiedSupported && m_scratchUnifiedCount * sizeScratchGrain < size ) {
 
-  if ( verify_is_initialized("scratch_unified") && m_scratchUnifiedSupported ) {
+    CudaHostPinnedSpace::decrement( m_scratchUnified );
 
-    const bool allocate   = m_scratchUnifiedCount * sizeScratchGrain < size ;
-    const bool deallocate = m_scratchUnified && ( 0 == size || allocate );
+    m_scratchUnifiedCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
-    if ( allocate || deallocate ) {
-      Kokkos::Impl::cuda_device_synchronize();
-    }
-
-    if ( deallocate ) {
-
-      CUDA_SAFE_CALL( cudaFreeHost( m_scratchUnified ) );
-
-      m_scratchUnified = 0 ;
-      m_scratchUnifiedCount = 0 ;
-    }
-
-    if ( allocate ) {
-
-      m_scratchUnifiedCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
-
-      CUDA_SAFE_CALL( cudaHostAlloc( (void **)( & m_scratchUnified ) ,
-                      m_scratchUnifiedCount * sizeScratchGrain ,
-                      cudaHostAllocDefault ) );
-    }
+    m_scratchUnified = (size_type *)
+      CudaHostPinnedSpace::allocate(
+        std::string("InternalScratchUnified") ,
+        typeid( ScratchGrain ),
+        sizeof( ScratchGrain ),
+        m_scratchUnifiedCount );
   }
 
   return m_scratchUnified ;
@@ -545,18 +532,20 @@ void CudaInternal::finalize()
 {
   if ( 0 != m_scratchSpace || 0 != m_scratchFlags ) {
 
-    Cuda::memory_space::decrement( m_scratchSpace );
-    Cuda::memory_space::decrement( m_scratchFlags );
-    (void) scratch_unified( 0 );
-
-    m_cudaDev            = -1 ;
-    m_maxWarpCount       = 0 ;
-    m_maxBlock           = 0 ; 
-    m_maxSharedWords     = 0 ;
-    m_scratchSpaceCount  = 0 ;
-    m_scratchFlagsCount  = 0 ;
-    m_scratchSpace       = 0 ;
-    m_scratchFlags       = 0 ;
+    CudaSpace::decrement( m_scratchSpace );
+    CudaSpace::decrement( m_scratchFlags );
+    CudaHostPinnedSpace::decrement( m_scratchUnified );
+  
+    m_cudaDev             = -1 ;
+    m_maxWarpCount        = 0 ;
+    m_maxBlock            = 0 ; 
+    m_maxSharedWords      = 0 ;
+    m_scratchSpaceCount   = 0 ;
+    m_scratchFlagsCount   = 0 ;
+    m_scratchUnifiedCount = 0 ;
+    m_scratchSpace        = 0 ;
+    m_scratchFlags        = 0 ;
+    m_scratchUnified      = 0 ;
   }
 }
 

@@ -45,25 +45,23 @@
 #include <Tpetra_ConfigDefs.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
+#include <Tpetra_Map_decl.hpp>
 
 namespace Tpetra {
   //
-  // Forward declarations.  The "doxygen" bit simply tells Doxygen
-  // (our automatic documentation generation system) to skip forward
+  // Forward declaration.  The "doxygen" bit simply tells Doxygen (our
+  // automatic documentation generation system) to skip forward
   // declarations.
   //
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 class Distributor;
-
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Details {
 
-template <class LO,
-          class GO = LO,
-          class NT = KokkosClassic::DefaultNode::DefaultNodeType>
+template <class LO = Map<>::local_ordinal_type,
+          class GO = typename Map<LO>::global_ordinal_type,
+          class NT = typename Map<LO, GO>::node_type>
 class Transfer : public Teuchos::Describable {
 public:
   //! Destructor (declared virtual for memory safety of derived classes).

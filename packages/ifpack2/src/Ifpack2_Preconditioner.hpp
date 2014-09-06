@@ -66,7 +66,7 @@ namespace Ifpack2 {
 ///   third template parameter of Tpetra::RowMatrix
 /// @tparam Node The matrix's Kokkos Node type; same as the fourth
 ///   template parameter of Tpetra::RowMatrix
-/// 
+///
 /// The Preconditioner class defines the interface that all Ifpack2
 /// preconditioners must implement.  Preconditioner inherits from
 /// Tpetra::Operator.  Its apply() method applies the preconditioner.  (If
@@ -76,7 +76,7 @@ namespace Ifpack2 {
 /// method "applies" the preconditioner \f$M\f$.  In Ifpack2, the apply()
 /// method applies or "solves with" the preconditioner \f$M^{-1}\f$, and
 /// there is no method comparable to Apply() in IFPACK.)
-/// 
+///
 /// Preconditioner provides the following methods
 ///   - initialize() performs all operations based on the graph of the
 ///     matrix (without considering the numerical values)
@@ -88,7 +88,7 @@ namespace Ifpack2 {
 ///   - isComputed() returns true if the preconditioner has been
 ///     successfully computed, false otherwise.
 ///   - getMatrix() returns a reference to the matrix to be preconditioned
-/// 
+///
 /// Implementations of compute() must internally call initialize() if
 /// isInitialized() returns false. The preconditioner is applied by
 /// apply() (which returns if isComputed() is false). Every time that
@@ -97,12 +97,16 @@ namespace Ifpack2 {
 /// time compute() is called, the object recomputes the actual values of
 /// the preconditioner.
 ///
-template<class Scalar,
-         class LocalOrdinal = int,
-         class GlobalOrdinal = LocalOrdinal,
-         class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+template<class Scalar =
+           Tpetra::Operator<>::scalar_type,
+         class LocalOrdinal =
+           typename Tpetra::Operator<Scalar>::local_ordinal_type,
+         class GlobalOrdinal =
+           typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+         class Node =
+           typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
 class Preconditioner :
-    virtual public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  virtual public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 public:
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;

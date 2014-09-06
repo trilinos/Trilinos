@@ -76,7 +76,6 @@ typedef double  Scalar;
 typedef int     LocalOrdinal;
 typedef int     GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 #include <unistd.h>
 /**********************************************************************************/
@@ -136,7 +135,7 @@ bool runPermutationTest(const std::string input_filename, const std::string expe
   Finest->Set("A", A);
 
   // permute full matrix
-  Teuchos::RCP<PermutationFactory> PermFact = Teuchos::rcp(new MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>());
+  Teuchos::RCP<PermutationFactory> PermFact = Teuchos::rcp(new MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
   PermFact->SetParameter("PermutationStrategy",Teuchos::ParameterEntry(std::string("Algebraic")));
   //PermFact->SetParameter("PermutationStrategy",Teuchos::ParameterEntry(std::string("Local")));
   PermFact->SetParameter("PermutationRowMapName",Teuchos::ParameterEntry(std::string("")));
@@ -234,7 +233,7 @@ bool runPermutationTest2(const std::string input_filename, const std::string exp
   Finest->Set("A", A);
 
   // permute full matrix
-  Teuchos::RCP<PermutationFactory> PermFact = Teuchos::rcp(new MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>());
+  Teuchos::RCP<PermutationFactory> PermFact = Teuchos::rcp(new MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
   PermFact->SetParameter("PermutationStrategy",Teuchos::ParameterEntry(std::string("Local")));
   PermFact->SetParameter("PermutationRowMapName",Teuchos::ParameterEntry(std::string("")));
   PermFact->SetFactory("PermutationRowMapFactory", Teuchos::null);

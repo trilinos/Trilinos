@@ -75,7 +75,7 @@ namespace MueLuTests {
     RCP<Factory> TentativePFact = rcp(new TentativePFactory());
     RCP<Factory> TentativeRFact = rcp(new TransPFactory());  // Use Ptent for coordinate projection
 
-    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("Coordinates"));
+    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO>("Coordinates"));
     mvtf->SetFactory("R", TentativeRFact);
 
     TEST_EQUALITY(mvtf != Teuchos::null, true);
@@ -92,9 +92,9 @@ namespace MueLuTests {
     out << "equal to the number of fine degrees of freedom." << std::endl;
 
     Level fineLevel, coarseLevel;
-    TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     GO nx = 199;
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx);
     fineLevel.Set("A",A);
 
     RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(),1);
@@ -111,7 +111,7 @@ namespace MueLuTests {
     //    fineLevel.SetFactoryManager(M);
     coarseLevel.SetFactoryManager(M);
 
-    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("onesVector"));
+    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO>("onesVector"));
     mvtf->SetFactory("R",RFact);
 
     coarseLevel.Request("onesVector",mvtf.get());
@@ -136,7 +136,7 @@ namespace MueLuTests {
     out << "Tests usage on a three-level hierarchy." << std::endl;
 
     GO nx = 199;
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx);
 
 
     // Set up three level hierarchy.
@@ -182,7 +182,7 @@ namespace MueLuTests {
     RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(),1);
     fineOnes->putScalar(1.0);
     fineLevel->Set("onesVector",fineOnes);
-    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("onesVector"));
+    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO>("onesVector"));
     mvtf->SetFactory("R",RFact);
     M.SetFactory("onesVector",mvtf);
     AcFact->AddTransferFactory(mvtf);

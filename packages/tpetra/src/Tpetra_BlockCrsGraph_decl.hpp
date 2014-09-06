@@ -61,7 +61,9 @@ namespace Tpetra {
 
   BlockCrsGraph is used by Tpetra::VbrMatrix (variable block row matrix).
 */
-template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+template <class LocalOrdinal = CrsGraph<>::local_ordinal_type,
+          class GlobalOrdinal = typename CrsGraph<LocalOrdinal>::global_ordinal_type,
+          class Node = typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
 class BlockCrsGraph : public Teuchos::Describable {
  public:
   typedef LocalOrdinal  local_ordinal_type;

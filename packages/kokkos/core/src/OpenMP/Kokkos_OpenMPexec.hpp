@@ -214,6 +214,47 @@ public:
       }
     }
 
+  template< class JoinOp >
+  inline typename JoinOp::value_type
+    team_reduce( const typename JoinOp::value_type & value
+               , const JoinOp & op ) const
+    {
+      // Make sure there is enough scratch space:
+      typedef typename if_c< sizeof(typename JoinOp::value_type) < TEAM_REDUCE_SIZE
+                           , typename JoinOp::value_type , void >::type type ;
+
+      type * const local_value = ((type*) m_exec.scratch_thread());
+
+      // Set this thread's contribution
+      *local_value = value ;
+
+      // Fence to make sure the base team member has access:
+      memory_fence();
+
+      if ( team_fan_in() ) {
+        // The last thread to synchronize returns true, all other threads wait for team_fan_out()
+        type * const team_value  = ((type*) m_exec.pool_rev( m_team_base_rev )->scratch_thread());
+
+        // Join to the team value:
+        for ( int i = 1 ; i < m_team_size ; ++i ) {
+          op.join( *team_value , *((type*) m_exec.pool_rev( m_team_base_rev + i )->scratch_thread()) );
+        }
+
+        // The base team member may "lap" the other team members,
+        // copy to their local value before proceeding.
+        for ( int i = 1 ; i < m_team_size ; ++i ) {
+          *((type*) m_exec.pool_rev( m_team_base_rev + i )->scratch_thread()) = *team_value ;
+        }
+
+        // Fence to make sure all team members have access
+        memory_fence();
+      }
+
+      team_fan_out();
+
+      return *((type volatile const *)local_value);
+    }
+
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
    *

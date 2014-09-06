@@ -1347,62 +1347,64 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
-    using Teuchos::ScalarTraits;
-    typedef ScalarTraits<Scalar> SCT;
-    typedef typename SCT::magnitudeType Mag;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType MT;
+    typedef Teuchos::ScalarTraits<MT> STM;
 
-    const char tfecfFuncName[] = "normWeighted()";
+    const char tfecfFuncName[] = "normWeighted: ";
 
-    const Mag OneOverN = ScalarTraits<Mag>::one() / getGlobalLength();
-    bool OneW = false;
-    const size_t numVecs = this->getNumVectors();
-    if (weights.getNumVectors() == 1) {
-      OneW = true;
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(weights.getNumVectors() != numVecs, std::runtime_error,
-        ": MultiVector of weights must contain either one vector or the same number of vectors as this.");
-    }
+    const MT OneOverN =
+      STM::one () / static_cast<MT> (this->getGlobalLength ());
+    const size_t numVecs = this->getNumVectors ();
+    const size_t myLen = this->getLocalLength ();
+    const bool OneW = (weights.getNumVectors () == 1);
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! OneW && weights.getNumVectors () != numVecs, std::runtime_error,
+      "The input MultiVector of weights must either have only one vector "
+      "(column), or it must have the same number of vectors as this.  "
+      "weights.getNumVectors() = " << weights.getNumVectors () << ", and "
+      "this->getNumVectors() = " << numVecs << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (norms.size ()) != numVecs, std::invalid_argument,
+      "norms.size() must be as large as the number of vectors in *this.  "
+      "norms.size() = " << norms.size () << " != this->getNumVectors() = "
+      << numVecs << ".");
+
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*weights.getMap()), std::runtime_error,
-      ": MultiVectors do not have compatible Maps:" << std::endl
-      << "this->getMap(): " << std::endl << *this->getMap()
-      << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! this->getMap ()->isCompatible (* (weights.getMap ())),
+      std::runtime_error, "MultiVectors do not have compatible Maps.");
 #else
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != weights.getLocalLength(), std::runtime_error,
-      ": MultiVectors do not have the same local length.");
-#endif
-    const size_t myLen = getLocalLength();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myLen != weights.getLocalLength (), std::runtime_error,
+      "This MultiVector and the input argument 'weights' do not have the same "
+      "local length.  this->getLocalLength() = " << myLen << " != weights."
+      "getLocalLength() = " << weights.getLocalLength () << ".");
+#endif // HAVE_TPETRA_DEBUG
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(static_cast<size_t>(norms.size()) != numVecs, std::runtime_error,
-      ": norms.size() must be as large as the number of vectors in *this.");
-    if (isConstantStride() && weights.isConstantStride()) {
-      MVT::WeightedNorm(lclMV_,weights.lclMV_,norms);
-    }
-    else {
-      KMV v(MVT::getNode(lclMV_)), w(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vptr = arcp_const_cast<Scalar> (MVT::getValues (lclMV_));
-      ArrayRCP<Scalar> wptr = arcp_const_cast<Scalar> (MVT::getValues (weights.lclMV_));
-      ArrayRCP<Scalar> wj   = wptr.persistingView (0,myLen);
-      MVT::initializeValues (w,myLen, 1, wj, myLen);
-      for (size_t j=0; j < numVecs; ++j) {
-        ArrayRCP<Scalar> vj = getSubArrayRCP (vptr, j);
-        MVT::initializeValues(v,myLen, 1,  vj, myLen);
-        if (! OneW) {
-          wj = weights.getSubArrayRCP(wptr,j);
-          MVT::initializeValues (w, myLen, 1, wj, myLen);
-        }
-        norms[j] = MVT::WeightedNorm ((const KMV&)v, (const KMV &)w);
+    for (size_t j = 0; j < numVecs; ++j) {
+      ArrayRCP<const Scalar> X_j = this->getData (j);
+      ArrayRCP<const Scalar> W_j =
+        OneW ? weights.getData (0) : weights.getData (j);
+      MT norm_j = STM::zero ();
+      for (size_t i = 0; i < myLen; ++i) {
+        const Scalar tmp = X_j[i] / W_j[i];
+        const MT tmp_real = STS::real (tmp);
+        const MT tmp_imag = STS::imag (tmp);
+        norm_j += tmp_real * tmp_real + tmp_imag * tmp_imag;
       }
+      norms[j] = norm_j;
     }
+
     if (this->isDistributed ()) {
-      Array<Mag> lnorms(norms);
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
-                 static_cast<int> (numVecs), lnorms.getRawPtr (),
-                 norms.getRawPtr ());
+      Array<MT> lnorms (norms);
+      reduceAll<int, MT> (* (this->getMap ()->getComm ()), REDUCE_SUM,
+                          static_cast<int> (numVecs), lnorms.getRawPtr (),
+                          norms.getRawPtr ());
     }
-    for (typename ArrayView<Mag>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
-      *n = ScalarTraits<Mag>::squareroot(*n * OneOverN);
+    for (size_t k = 0; k < numVecs; ++k) {
+      norms[k] = STM::squareroot (norms[k] * OneOverN);
     }
   }
 

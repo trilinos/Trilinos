@@ -215,10 +215,7 @@ TEST_F( qthread , view_aggregate )
 
 TEST_F( qthread , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::Qthread >( 10 );
-    TestScan< Kokkos::Qthread >( 10000 );
-  }
+  TestScan< Kokkos::Qthread >::test_range( 1 , 1000 );
   TestScan< Kokkos::Qthread >( 1000000 );
   TestScan< Kokkos::Qthread >( 10000000 );
   Kokkos::Qthread::fence();

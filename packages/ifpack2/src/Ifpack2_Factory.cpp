@@ -81,7 +81,7 @@ bool supportsUnsymmetric (const std::string& prec_type)
   //
   // mfh 12 Dec 2013: For some reason, this all has to be on one line,
   // otherwise the macro definition includes the whole rest of the file.
-#define LCLINST(S, LO, GO) template Teuchos::RCP<Preconditioner<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > Factory::create<Tpetra::CrsMatrix< S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >&); template Teuchos::RCP<Preconditioner<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > Factory::create<Tpetra::CrsMatrix< S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >&, const int);
+#define LCLINST(S, LO, GO) template Teuchos::RCP<Preconditioner<S, LO, GO> > Factory::create<Tpetra::CrsMatrix< S, LO, GO> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO> >&); template Teuchos::RCP<Preconditioner<S, LO, GO> > Factory::create<Tpetra::CrsMatrix< S, LO, GO> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO> >&, const int);
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 

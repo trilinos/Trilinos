@@ -422,7 +422,7 @@ int main(int argc, char *argv[]) {
 
   /* TODO: not available yet for BlockedRAPFactory. Need some inheritence.
   // register aggregation export factory in RAPFactory
-  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>());
+  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
   aggExpFact->SetParameter("Output filename","aggs_level%LEVELID_proc%PROCID.out");
   aggExpFact->SetFactory("Aggregates", CoupledAggFact11);
   aggExpFact->SetFactory("DofsPerNode", dropFact11);

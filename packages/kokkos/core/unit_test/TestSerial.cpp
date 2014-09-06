@@ -116,6 +116,7 @@ TEST_F( serial, long_reduce_dynamic_view ) {
 
 TEST_F( serial , scan )
 {
+  TestScan< Kokkos::Serial >::test_range( 1 , 1000 );
   TestScan< Kokkos::Serial >( 10 );
   TestScan< Kokkos::Serial >( 10000 );
 }
