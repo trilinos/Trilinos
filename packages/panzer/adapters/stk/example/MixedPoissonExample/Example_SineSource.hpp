@@ -40,63 +40,53 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EXAMPLE_SIMPLE_SOURCE_IMPL_HPP
-#define EXAMPLE_SIMPLE_SOURCE_IMPL_HPP
+#ifndef __Example_SineSource_hpp__
+#define __Example_SineSource_hpp__
 
-#include <cmath>
+#include "Panzer_config.hpp"
 
-#include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Utilities.hpp"
+#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_FieldManager.hpp"
+
+#include "Panzer_Dimension.hpp"
+#include "Panzer_FieldLibrary.hpp"
+
+#include <string>
 
 namespace Example {
+    
+  using panzer::Cell;
+  using panzer::Point;
+  using panzer::Dim;
 
-//**********************************************************************
-template <typename EvalT,typename Traits>
-SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
-                                         const panzer::IntegrationRule & ir)
-{
-  using Teuchos::RCP;
+/** A source for the curl Laplacian that results in the solution
+  */
+template<typename EvalT, typename Traits>
+class SineSource : public PHX::EvaluatorWithBaseImpl<Traits>,
+                        public PHX::EvaluatorDerived<EvalT, Traits>  {
 
-  Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
-  ir_degree = ir.cubature_degree;
+public:
+    SineSource(const std::string & name,
+                       const panzer::IntegrationRule & ir);
+                                                                        
+    void postRegistrationSetup(typename Traits::SetupData d,           
+                               PHX::FieldManager<Traits>& fm);        
+                                                                     
+    void evaluateFields(typename Traits::EvalData d);               
 
-  source = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
 
-  this->addEvaluatedField(source);
-  
-  std::string n = "Simple Source";
-  this->setName(n);
+private:
+  typedef typename EvalT::ScalarT ScalarT;
+
+  // Simulation source
+  PHX::MDField<ScalarT,Cell,Point> source;
+  int ir_degree, ir_index;
+};
+
 }
 
-//**********************************************************************
-template <typename EvalT,typename Traits>
-void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
-                                                       PHX::FieldManager<Traits>& fm)
-{
-
-  this->utils.setFieldData(source,fm);
-
-  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0]);
-}
-
-//**********************************************************************
-template <typename EvalT,typename Traits>
-void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
-{ 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < source.dimension(1); ++point) {
-
-      const double & x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
-      const double & y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
-      const double & z = workset.int_rules[ir_index]->ip_coordinates(cell,point,2);
-
-      source(cell,point) = -12.0*M_PI*M_PI*std::sin(2.0*M_PI*x)*std::sin(2*M_PI*y)*std::sin(2.0*M_PI*z);
-    }
-  }
-}
-
-//**********************************************************************
-}
+#include "Example_SineSource_impl.hpp"
 
 #endif

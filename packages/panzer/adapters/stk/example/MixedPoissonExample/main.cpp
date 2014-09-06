@@ -65,6 +65,8 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
+#include "Panzer_Response_Functional.hpp"
 
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
@@ -271,21 +273,31 @@ int main(int argc,char * argv[])
    {
       // get a vector of all the element blocks 
       std::vector<std::string> eBlocks;
-      {
-         // get all element blocks and add them to the list
-         std::vector<std::string> eBlockNames;
-         mesh->getElementBlockNames(eBlockNames);
-         for(std::size_t i=0;i<eBlockNames.size();i++)
-            eBlocks.push_back(eBlockNames[i]);
-      }
+      mesh->getElementBlockNames(eBlocks);
       
       panzer_stk_classic::RespFactorySolnWriter_Builder builder;
       builder.mesh = mesh;
       stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
    }
 
-   // Setup response library for writing out the exact solution fields
+   // Setup response library for checking the error in this manufactered solution
    ////////////////////////////////////////////////////////////////////////
+
+   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > errorResponseLibrary
+      = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
+
+   {
+     std::vector<std::string> eBlocks;
+     mesh->getElementBlockNames(eBlocks);
+
+     panzer::FunctionalResponse_Builder<int,int> builder;
+     builder.comm = MPI_COMM_WORLD;
+     builder.cubatureDegree = 2;
+     builder.requiresCellIntegral = true;
+     builder.quadPointField = "PHI_ERROR";
+
+     errorResponseLibrary->addResponse("PHI L2 Error",eBlocks,builder);
+   }
 
    // setup closure model
    /////////////////////////////////////////////////////////////
@@ -296,8 +308,17 @@ int main(int argc,char * argv[])
    cm_factory.buildObjects(cm_builder);
 
    Teuchos::ParameterList closure_models("Closure Models");
-   closure_models.sublist("solid").sublist("SOURCE").set<std::string>("Type","SIMPLE SOURCE");
-      // SOURCE field is required by the MixedPoissonEquationSet
+   {
+      closure_models.sublist("solid").sublist("SOURCE").set<std::string>("Type","SINE SOURCE");
+        // SOURCE field is required by the MixedPoissonEquationSet
+
+     // required for error calculation
+     closure_models.sublist("solid").sublist("PHI_ERROR").set<std::string>("Type","ERROR_CALC");
+     closure_models.sublist("solid").sublist("PHI_ERROR").set<std::string>("Field A","PHI");
+     closure_models.sublist("solid").sublist("PHI_ERROR").set<std::string>("Field B","PHI_EXACT");
+
+     closure_models.sublist("solid").sublist("PHI_EXACT").set<std::string>("Type","PHI_EXACT");
+   }
 
    Teuchos::ParameterList user_data("User Data"); // user data can be empty here
 
@@ -329,6 +350,12 @@ int main(int argc,char * argv[])
                                         cm_factory,
                                         closure_models,
                                         user_data);
+
+      user_data.set<int>("Workset Size",workset_size);
+      errorResponseLibrary->buildResponseEvaluators(physicsBlocks,
+                                                    cm_factory,
+                                                    closure_models,
+                                                    user_data);
    }
 
    // assemble linear system
@@ -374,7 +401,6 @@ int main(int argc,char * argv[])
    // write out solution
    if(true) {
       // fill STK mesh objects
-      Teuchos::RCP<panzer::ResponseBase> resp = stkIOResponseLibrary->getResponse<panzer::Traits::Residual>("Main Field Output");
       panzer::AssemblyEngineInArgs respInput(ghostCont,container);
       respInput.alpha = 0;
       respInput.beta = 1;
@@ -384,6 +410,29 @@ int main(int argc,char * argv[])
 
       // write to exodus
       mesh->writeToExodus("output.exo");
+   }
+
+   // compute error norm
+   /////////////////////////////////////////////////////////////
+
+   if(true) {
+      Teuchos::FancyOStream lout(Teuchos::rcpFromRef(std::cout));
+      lout.setOutputToRootOnly(0);
+
+      panzer::AssemblyEngineInArgs respInput(ghostCont,container);
+      respInput.alpha = 0;
+      respInput.beta = 1;
+
+      Teuchos::RCP<panzer::ResponseBase> resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("PHI L2 Error");
+      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > resp_func = 
+             Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(resp);
+      Teuchos::RCP<Thyra::VectorBase<double> > respVec = Thyra::createMember(resp_func->getVectorSpace());
+      resp_func->setVector(respVec);
+
+      errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
+      errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
+
+      lout << "Error = " << sqrt(resp_func->value) << std::endl;
    }
 
    // all done!
@@ -483,7 +532,6 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     p.set("Integration Order",2);
   }
   
-/*
   {
     std::size_t bc_id = 0;
     panzer::BCType bctype = panzer::BCT_Dirichlet;
@@ -573,5 +621,4 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 		  strategy, p);
     bcs.push_back(bc);
   }    
-*/
 }
