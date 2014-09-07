@@ -424,30 +424,33 @@ import numpy
     int domiAxis = 0;
     for (Py_ssize_t axis = 0; axis < numIndexes; ++axis)
     {
-      PyObject * index = PySequence_GetItem(indexes, axis);
-      if (PyInt_Check(index))
+      if (newMdComm.onSubcommunicator())
       {
-        int axisRank = (int) PyInt_AsLong(index);
-        newMdComm = Domi::MDComm(newMdComm, domiAxis, axisRank);
-        // Do not increment domiAxis, because the new MDComm has one
-        // fewer dimension!
+        PyObject * index = PySequence_GetItem(indexes, axis);
+        if (PyInt_Check(index))
+        {
+          int axisRank = (int) PyInt_AsLong(index);
+          newMdComm = Domi::MDComm(newMdComm, domiAxis, axisRank);
+          // Do not increment domiAxis, because the new MDComm has one
+          // fewer dimension!
+        }
+        else if (PySlice_Check(index))
+        {
+          PySliceObject * pySlice = (PySliceObject*) index;
+          Py_ssize_t commDim = (Py_ssize_t) newMdComm.getCommDim(domiAxis);
+          Domi::Slice slice = PyTrilinos::convertToDomiSlice(pySlice, commDim);
+          newMdComm = Domi::MDComm(newMdComm, domiAxis, slice);
+          domiAxis++;
+        }
+        else
+        {
+          PyErr_SetString(PyExc_TypeError, "Argument type error for "
+                          "Domi.MDComm __getitem__.  Argument must be a "
+                          "sequence of integers and/or slices");
+          throw PyTrilinos::PythonException();
+        }
+        Py_DECREF(index);
       }
-      else if (PySlice_Check(index))
-      {
-        PySliceObject * pySlice = (PySliceObject*) index;
-        Py_ssize_t commDim = (Py_ssize_t) newMdComm.getCommDim(domiAxis);
-        Domi::Slice slice = PyTrilinos::convertToDomiSlice(pySlice, commDim);
-        newMdComm = Domi::MDComm(newMdComm, domiAxis, slice);
-        domiAxis++;
-      }
-      else
-      {
-        PyErr_SetString(PyExc_TypeError, "Argument type error for "
-                        "Domi.MDComm __getitem__.  Argument must be a "
-                        "sequence of integers and/or slices");
-        throw PyTrilinos::PythonException();
-      }
-      Py_DECREF(index);
     }
     return newMdComm;
   }
@@ -485,30 +488,33 @@ import numpy
     int domiAxis = 0;
     for (Py_ssize_t axis = 0; axis < numIndexes; ++axis)
     {
-      PyObject * index = PySequence_GetItem(indexes, axis);
-      if (PyInt_Check(index))
+      if (newMdMap.onSubcommunicator())
       {
-        int axisRank = (int) PyInt_AsLong(index);
-        newMdMap = Domi::MDMap< Node >(newMdMap, domiAxis, axisRank);
-        // Do not increment domiAxis, because the new MDMap has one
-        // fewer dimension!
+        PyObject * index = PySequence_GetItem(indexes, axis);
+        if (PyInt_Check(index))
+        {
+          int axisRank = (int) PyInt_AsLong(index);
+          newMdMap = Domi::MDMap< Node >(newMdMap, domiAxis, axisRank);
+          // Do not increment domiAxis, because the new MDMap has one
+          // fewer dimension!
+        }
+        else if (PySlice_Check(index))
+        {
+          PySliceObject * pySlice = (PySliceObject*) index;
+          Py_ssize_t dim = (Py_ssize_t) newMdMap.getGlobalDim(domiAxis);
+          Domi::Slice slice = PyTrilinos::convertToDomiSlice(pySlice, dim);
+          newMdMap = Domi::MDMap< Node >(newMdMap, domiAxis, slice);
+          domiAxis++;
+        }
+        else
+        {
+          PyErr_SetString(PyExc_TypeError, "Argument type error for "
+                          "Domi.MDMap __getitem__.  Argument must be a "
+                          "sequence of integers and/or slices");
+          throw PyTrilinos::PythonException();
+        }
+        Py_DECREF(index);
       }
-      else if (PySlice_Check(index))
-      {
-        PySliceObject * pySlice = (PySliceObject*) index;
-        Py_ssize_t dim = (Py_ssize_t) newMdMap.getGlobalDim(domiAxis);
-        Domi::Slice slice = PyTrilinos::convertToDomiSlice(pySlice, dim);
-        newMdMap = Domi::MDMap< Node >(newMdMap, domiAxis, slice);
-        domiAxis++;
-      }
-      else
-      {
-        PyErr_SetString(PyExc_TypeError, "Argument type error for "
-                        "Domi.MDMap __getitem__.  Argument must be a "
-                        "sequence of integers and/or slices");
-        throw PyTrilinos::PythonException();
-      }
-      Py_DECREF(index);
     }
     return newMdMap;
   }
@@ -557,34 +563,37 @@ MDMap = MDMap_default
     int domiAxis = 0;
     for (Py_ssize_t axis = 0; axis < numIndexes; ++axis)
     {
-      PyObject * index = PySequence_GetItem(indexes, axis);
-      if (PyInt_Check(index))
+      if (newMdVector.onSubcommunicator())
       {
-        int axisRank = (int) PyInt_AsLong(index);
-        newMdVector = Domi::MDVector< Scalar, Node >(newMdVector,
-                                                     domiAxis,
-                                                     axisRank);
-        // Do not increment domiAxis, because the new MDVector has one
-        // fewer dimension!
+        PyObject * index = PySequence_GetItem(indexes, axis);
+        if (PyInt_Check(index))
+        {
+          int axisRank = (int) PyInt_AsLong(index);
+          newMdVector = Domi::MDVector< Scalar, Node >(newMdVector,
+                                                       domiAxis,
+                                                       axisRank);
+          // Do not increment domiAxis, because the new MDVector has one
+          // fewer dimension!
+        }
+        else if (PySlice_Check(index))
+        {
+          PySliceObject * pySlice = (PySliceObject*) index;
+          Py_ssize_t dim = (Py_ssize_t) newMdVector.getGlobalDim(domiAxis);
+          Domi::Slice slice = PyTrilinos::convertToDomiSlice(pySlice, dim);
+          newMdVector = Domi::MDVector< Scalar, Node >(newMdVector,
+                                                       domiAxis,
+                                                       slice);
+          domiAxis++;
+        }
+        else
+        {
+          PyErr_SetString(PyExc_TypeError, "Argument type error for "
+                          "Domi.MDVector __getitem__.  Argument must be a "
+                          "sequence of integers and/or slices");
+          throw PyTrilinos::PythonException();
+        }
+        Py_DECREF(index);
       }
-      else if (PySlice_Check(index))
-      {
-        PySliceObject * pySlice = (PySliceObject*) index;
-        Py_ssize_t dim = (Py_ssize_t) newMdVector.getGlobalDim(domiAxis);
-        Domi::Slice slice = PyTrilinos::convertToDomiSlice(pySlice, dim);
-        newMdVector = Domi::MDVector< Scalar, Node >(newMdVector,
-                                                     domiAxis,
-                                                     slice);
-        domiAxis++;
-      }
-      else
-      {
-        PyErr_SetString(PyExc_TypeError, "Argument type error for "
-                        "Domi.MDVector __getitem__.  Argument must be a "
-                        "sequence of integers and/or slices");
-        throw PyTrilinos::PythonException();
-      }
-      Py_DECREF(index);
     }
     return newMdVector;
   }
