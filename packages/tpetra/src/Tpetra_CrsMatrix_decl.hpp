@@ -109,6 +109,8 @@ namespace Tpetra {
   /// isLocallyIndexed() to find out whether the matrix currently stores
   /// indices as local or global.
   ///
+  /// It may also help to read CrsGraph's documentation.
+  ///
   /// \section Tpetra_CrsMatrix_insertion_into_nonowned_rows Insertion into nonowned rows
   ///
   /// All methods (except for insertGlobalValues() and
