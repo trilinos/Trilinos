@@ -50,7 +50,7 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration (needed for "friend" inside CrsGraph)
-  template <class S, class LO, class GO, class N, class SpMatOps>
+  template <class S, class LO, class GO, class N>
   class CrsMatrix;
 
   namespace Experimental {
@@ -130,9 +130,9 @@ namespace Tpetra {
         Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
         public Teuchos::ParameterListAcceptorDefaultBase
   {
-    template <class S, class LO, class GO, class N, class SpMatOps>
+    template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
-    template <class LO2, class GO2, class N2, class SpMatOps2>
+    template <class LO2, class GO2, class N2>
     friend class CrsGraph;
     template <class S, class LO, class GO, class N>
     friend class ::Tpetra::Experimental::BlockCrsMatrix;

@@ -93,8 +93,6 @@ namespace Tpetra {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
     //! Backwards compatibility typedef.
-    typedef void LocalMatOps;
-    //! Backwards compatibility typedef.
     typedef void mat_vec_type;
     //! Backwards compatibility typedef.
     typedef void mat_solve_type;

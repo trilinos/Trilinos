@@ -65,8 +65,7 @@ namespace Tpetra {
 template <class Scalar = CrsMatrix<>::scalar_type,
           class LocalOrdinal = typename CrsMatrix<Scalar>::local_ordinal_type,
           class GlobalOrdinal = typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
-          class Node = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-          class SpMatOps = typename CrsMatrixSparseOpsSelector<Scalar, LocalOrdinal, Node>::sparse_ops_type>
+          class Node = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
 class RowMatrixTransposer {
 public:
   //! @name Typedefs
@@ -75,12 +74,12 @@ public:
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node node_type;
-  // These match the two typedefs in CrsMatrix.
-  typedef SpMatOps mat_vec_type;
-  typedef SpMatOps mat_solve_type;
+  // For backwards compatibility ONLY.
+  typedef void mat_vec_type;
+  typedef void mat_solve_type;
 
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_matrix_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
 
   //@}
   //! @name Constructors

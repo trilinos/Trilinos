@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -52,36 +52,32 @@
 namespace Amesos2 {
 
   template <typename Scalar,
-	    typename LocalOrdinal,
-	    typename GlobalOrdinal,
-	    typename Node,
-	    typename LocalMatOps >
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node>
   ConcreteMatrixAdapter<
     Tpetra::CrsMatrix<Scalar,
-		      LocalOrdinal,
-		      GlobalOrdinal,
-		      Node,
-		      LocalMatOps>
-    >::ConcreteMatrixAdapter(Teuchos::RCP<matrix_t> m) 
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>
+    >::ConcreteMatrixAdapter(Teuchos::RCP<matrix_t> m)
       : AbstractConcreteMatrixAdapter<Tpetra::RowMatrix<Scalar,
-							LocalOrdinal,
-							GlobalOrdinal,
-							Node>,
-				      Tpetra::CrsMatrix<Scalar,
-							LocalOrdinal,
-							GlobalOrdinal,
-							Node,
-							LocalMatOps> >(m) // with implicit cast
+                                                        LocalOrdinal,
+                                                        GlobalOrdinal,
+                                                        Node>,
+                                      Tpetra::CrsMatrix<Scalar,
+                                                        LocalOrdinal,
+                                                        GlobalOrdinal,
+                                                        Node> >(m) // with implicit cast
     {}
 
   template <typename Scalar,
-	    typename LocalOrdinal,
-	    typename GlobalOrdinal,
-	    typename Node,
-	    typename LocalMatOps >
-  Teuchos::RCP<const MatrixAdapter<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > >
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node>
+  Teuchos::RCP<const MatrixAdapter<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >
   ConcreteMatrixAdapter<
-    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
+    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     >::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
     {
       using Teuchos::RCP;
@@ -91,17 +87,17 @@ namespace Amesos2 {
 
       RCP<matrix_t> t_mat;
       t_mat = rcp (new matrix_t (rcpFromPtr (map), this->getMaxRowNNZ()));
-      
-      RCP<import_t> importer = 
-	rcp (new import_t (this->getRowMap(), rcpFromPtr (map)));
-      
+
+      RCP<import_t> importer =
+        rcp (new import_t (this->getRowMap(), rcpFromPtr (map)));
+
       // mfh 27 Mar 2012: INSERT is correct in this case, because
       // we're Importing into an empty matrix with a dynamic graph.
       t_mat->doImport (*(this->mat_), *importer, Tpetra::INSERT);
-      
+
       return rcp (new ConcreteMatrixAdapter<matrix_t> (t_mat));
     }
 
 } // end namespace Amesos2
 
-#endif	// AMESOS2_TPETRACRSMATRIX_MATRIXADAPTER_DEF_HPP
+#endif  // AMESOS2_TPETRACRSMATRIX_MATRIXADAPTER_DEF_HPP

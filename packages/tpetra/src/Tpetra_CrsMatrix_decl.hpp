@@ -57,79 +57,9 @@
 
 
 namespace Tpetra {
-  //
-  // Dear users: The stuff in the "anonymous" namespace below is just
-  // an implementation detail.  Please skip over it and go down to the
-  // CrsMatrix class declaration.  Thank you.
-  //
-  namespace { // anonymous
-    // mfh 30 Aug 2014: This class exists so that if one builds Tpetra
-    // with Kokkos refactor _dis_abled, but uses one of the new Kokkos
-    // wrapper Node types, you won't get build errors.  The build
-    // errors come about because, as of 29 Aug 2014, the default value
-    // of the SparseOps typedef in KokkosClassic::DefaultKernels is
-    // void.  Setting this to void enables the upcoming deprecation of
-    // the KokkosClassic subpackage, but it breaks the build if Kokkos
-    // refactor is disabled.  This class selects a reasonable value of
-    // SparseOps in case Kokkos refactor is disabled.  This addresses
-    // Bug 6210.
-    template<class ST, class LO, class NT>
-    class CrsMatrixSparseOpsSelector {
-    public:
-      typedef NT node_type;
-      typedef typename KokkosClassic::DefaultKernels<ST, LO, NT>::SparseOps
-        sparse_ops_type;
-      // mfh 30 Aug 2014: I don't know why CrsMatrix always used this
-      // bind_scalar business.  Well, I can guess: Chris Baker's idea
-      // was that some implementations of SparseOps might not work for
-      // all Scalar types.  (cuSPARSE is an example, since NVIDIA only
-      // wrote sparse matrix-vector multiply routines for float and
-      // double.)  In cases like that, the "other_type" typedef would
-      // point to some other, "generic" implementation of SparseOps.
-      //
-      // The Kokkos refactor version of Tpetra will hide this
-      // complexity at the KokkosLinAlg level, so that users won't
-      // have to look at type selectors quite so much.
-      typedef typename sparse_ops_type::template bind_scalar<ST>::other_type
-        other_type;
-      typedef typename sparse_ops_type::template graph<LO, NT>::graph_type
-        local_graph_type;
-      typedef typename sparse_ops_type::template matrix<ST, LO, NT>::matrix_type
-        local_matrix_type;
-    };
-
-#ifdef HAVE_TPETRA_KOKKOSCOMPAT
-    // mfh 30 Aug 2014: Partial specialization for the new Kokkos
-    // wrapper nodes.  If Kokkos refactor is enabled, the typedef
-    // inside is just void, since the Kokkos refactor version of
-    // Tpetra doesn't use that typedef.  If Kokkos refactor is
-    // disabled, the typedef has its original default value for the
-    // "classic" version of Tpetra.
-    template<class ST, class LO, class DT>
-    class CrsMatrixSparseOpsSelector<ST, LO, Kokkos::Compat::KokkosDeviceWrapperNode<DT> > {
-    public:
-      typedef Kokkos::Compat::KokkosDeviceWrapperNode<DT> node_type;
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-      typedef void sparse_ops_type;
-      typedef void other_type;
-      typedef void local_graph_type;
-      typedef void local_matrix_type;
-#else
-      typedef typename KokkosClassic::DefaultKernels<ST, LO, node_type>::SparseOps
-        sparse_ops_type;
-      typedef typename sparse_ops_type::template bind_scalar<ST>::other_type
-        other_type;
-      typedef typename sparse_ops_type::template graph<LO, node_type>::graph_type
-        local_graph_type;
-      typedef typename sparse_ops_type::template matrix<ST, LO, node_type>::matrix_type
-        local_matrix_type;
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
-    };
-#endif // HAVE_TPETRA_KOKKOSCOMPAT
-  } // namespace (anonymous)
-
   /// \class CrsMatrix
-  /// \brief Sparse matrix that presents a compressed sparse row interface.
+  /// \brief Sparse matrix that presents a row-oriented interface that
+  ///   lets users read or modify entries.
   ///
   /// \tparam Scalar The type of the numerical entries of the matrix.
   ///   (You can use real-valued or complex-valued types here, unlike
@@ -140,11 +70,6 @@ namespace Tpetra {
   ///   documentation of Map for requirements.
   /// \tparam Node The Kokkos Node type.  See the documentation of Map
   ///   for requirements.
-  /// \tparam LocalMatOps Type implementing local sparse
-  ///   matrix-(multi)vector multiply and local sparse triangular solve.
-  ///   It must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
-  ///   The default \c LocalMatOps type should suffice for most users.
-  ///   The actual default type depends on your Trilinos build options.
   ///
   /// This class implements a distributed-memory parallel sparse matrix,
   /// and provides sparse matrix-vector multiply (including transpose)
@@ -248,10 +173,7 @@ namespace Tpetra {
             class GlobalOrdinal =
               typename RowMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node =
-              typename RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps =
-              typename CrsMatrixSparseOpsSelector<
-                Scalar, LocalOrdinal, Node>::sparse_ops_type>
+              typename RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class CrsMatrix :
     public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
     public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
@@ -268,18 +190,16 @@ namespace Tpetra {
     //! This class' fourth template parameter; the Kokkos Node type.
     typedef Node node_type;
 
-    /// \brief This class' fifth template parameter; the
-    ///   implementation of local sparse kernels.
+    /// \brief The implementation of local sparse kernels.
     ///
     /// We define both this typedef and mat_solve_type for backwards
     /// compatibility.
-    typedef LocalMatOps mat_vec_type;
-    /// \brief This class' fifth template parameter; the
-    ///   implementation of local sparse kernels.
+    typedef typename KokkosClassic::DefaultKernels<ST, LO, NT>::SparseOps mat_vec_type;
+    /// \brief The implementation of local sparse kernels.
     ///
     /// We define both this typedef and mat_vec_type for backwards
     /// compatibility.
-    typedef LocalMatOps mat_solve_type;
+    typedef mat_vec_type mat_solve_type;
 
     //! The Map specialization suitable for this CrsMatrix specialization.
     typedef Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
@@ -291,7 +211,7 @@ namespace Tpetra {
     typedef Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;
 
     //! The CrsGraph specialization suitable for this CrsMatrix specialization.
-    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> crs_graph_type;
+    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, node_type> crs_graph_type;
 
     //@}
     //! @name Constructors and destructor
@@ -2073,7 +1993,7 @@ namespace Tpetra {
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> > & destMatrix,
+    importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type> > & destMatrix,
                            const import_type& importer,
                            const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
@@ -2095,7 +2015,7 @@ namespace Tpetra {
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> > & destMatrix,
+    exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type> > & destMatrix,
                            const export_type& exporter,
                            const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
@@ -2122,7 +2042,7 @@ namespace Tpetra {
     ///
     /// Fusing these tasks can avoid some communication and work.
     void
-    transferAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > & destMat,
+    transferAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & destMat,
                              const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& rowTransfer, // either Import or Export
                              const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
@@ -2130,12 +2050,12 @@ namespace Tpetra {
 
     // We forbid copy construction by declaring this method private
     // and not implementing it.
-    CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> &rhs);
+    CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &rhs);
 
     // We forbid assignment (operator=) by declaring this method
     // private and not implementing it.
-    CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps>&
-    operator= (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> &rhs);
+    CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type>&
+    operator= (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &rhs);
 
     /// \brief Like insertGlobalValues(), but with column filtering.
     ///
@@ -2291,18 +2211,21 @@ namespace Tpetra {
     // typedefs in a class, nor is it a nonambiguous abbreviation (is
     // it RowGraph or CrsGraph?).
     typedef crs_graph_type Graph;
-    typedef typename CrsMatrixSparseOpsSelector<
-      scalar_type,
-      local_ordinal_type,
-      node_type>::other_type sparse_ops_type;
-    typedef typename CrsMatrixSparseOpsSelector<
-      scalar_type,
-      local_ordinal_type,
-      node_type>::local_graph_type local_graph_type;
-    typedef typename CrsMatrixSparseOpsSelector<
-      scalar_type,
-      local_ordinal_type,
-      node_type>::local_matrix_type local_matrix_type;
+
+    // mfh 30 Aug 2014: I don't know why CrsMatrix always used this
+    // bind_scalar business.  Well, I can guess: Chris Baker's idea
+    // was that some implementations of SparseOps might not work for
+    // all Scalar types.  (cuSPARSE is an example, since NVIDIA only
+    // wrote sparse matrix-vector multiply routines for float and
+    // double.)  In cases like that, the "other_type" typedef would
+    // point to some other, "generic" implementation of SparseOps.
+    //
+    // The Kokkos refactor version of Tpetra will hide this
+    // complexity at the KokkosLinAlg level, so that users won't
+    // have to look at type selectors quite so much.
+    typedef typename mat_vec_type::template bind_scalar<ST>::other_type other_type;
+    typedef typename other_type::template graph<LO, NT>::graph_type local_graph_type;
+    typedef typename other_type::template matrix<ST, LO, NT>::matrix_type local_matrix_type;
 
     // Enums
     enum GraphAllocationStatus {
@@ -2462,14 +2385,16 @@ namespace Tpetra {
     /// This method is only called in fillComplete(), and it is only
     /// called if the graph's structure is already fixed (that is, if
     /// the matrix does not own the graph).
-    void fillLocalMatrix(const RCP<ParameterList> &params);
+    void fillLocalMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params);
+
     /// \brief Fill data into the local graph and matrix.
     ///
     /// This method is only called in fillComplete(), and it is only
     /// called if the graph's structure is <i>not</i> already fixed
     /// (that is, if the matrix <i>does</i> own the graph).
-    void fillLocalGraphAndMatrix(const RCP<ParameterList> &params);
-    // debugging
+    void fillLocalGraphAndMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+    //! Throw an exception if the internal state of the matrix is inconsistent.
     void checkInternalState() const;
 
     /// \name (Global) graph pointers
@@ -2704,11 +2629,6 @@ namespace Tpetra {
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Tpetra_KokkosRefactor_CrsMatrix_decl.hpp"
 #endif
-
-/**
-  \example LocalMatOpExample.cpp
-  An example using a different sparse mat-vec with Tpetra::CrsMatrix and Tpetra::CrsGraph.
- */
 
 /**
   \example CrsMatrix_NonlocalAfterResume.hpp

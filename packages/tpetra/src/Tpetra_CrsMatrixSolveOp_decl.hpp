@@ -67,8 +67,6 @@ namespace Tpetra {
   ///   CrsMatrix and Operator.
   /// \tparam Node Same as the fourth template parameter of CrsMatrix
   ///   and Operator.
-  /// \tparam LocalMatOps Same as the fifth template parameter of
-  ///   CrsMatrix.
   ///
   /// This class' apply() method does a "local" triangular solve.
   /// "Local" is in quotes because apply() does the same communication
@@ -89,19 +87,16 @@ namespace Tpetra {
   template <class Scalar,
             class MatScalar = Scalar,
             class LocalOrdinal =
-              typename CrsMatrix<MatScalar>::local_ordinal_type,
+            typename CrsMatrix<MatScalar>::local_ordinal_type,
             class GlobalOrdinal =
-              typename CrsMatrix<MatScalar, LocalOrdinal>::global_ordinal_type,
+            typename CrsMatrix<MatScalar, LocalOrdinal>::global_ordinal_type,
             class Node =
-              typename CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps =
-              typename CrsMatrixSparseOpsSelector<MatScalar, LocalOrdinal, Node>::sparse_ops_type>
+            typename CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class CrsMatrixSolveOp :
     public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
     //! The specialization of CrsMatrix which this class wraps.
-    typedef CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
-      crs_matrix_type;
+    typedef CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
     //! The specialization of Map which this class uses.
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
@@ -158,13 +153,18 @@ namespace Tpetra {
 
   /// \brief Nonmember function that wraps a CrsMatrix in a CrsMatrixSolveOp.
   /// \relatesalso CrsMatrixSolveOp
-  template<class Scalar, class MatScalar, class LocalOrdinal,
-           class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::RCP<CrsMatrixSolveOp<Scalar, MatScalar, LocalOrdinal,
-                                GlobalOrdinal, Node, LocalMatOps> >
-  createCrsMatrixSolveOp (const Teuchos::RCP<
-    const CrsMatrix<
-      MatScalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &A);
+  ///
+  /// The function has the same template parameters of CrsMatrixSolveOp.
+  ///
+  /// \param A [in] The CrsMatrix instance to wrap in an CrsMatrixSolveOp.
+  /// \return The CrsMatrixSolveOp wrapper for the given CrsMatrix.
+  template<class Scalar,
+           class MatScalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node>
+  Teuchos::RCP<CrsMatrixSolveOp<Scalar, MatScalar, LocalOrdinal, GlobalOrdinal, Node> >
+  createCrsMatrixSolveOp (const Teuchos::RCP<const CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal, Node> > &A);
 
 } // namespace Tpetra
 
