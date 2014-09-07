@@ -56,14 +56,19 @@
 
 INCLUDE(TribitsListHelpers)
 
-# If this project does not include the TriBITS (tribits) repo, then add
-# testing of the TriBITS package
 IF (TriBITS_SOURCE_DIR)
+  # The TriBITS repo is defined, so let that repo define the TriBITS testing
+  # package.
   SET(TRIBITS_PACKAGE_LINE)
 ELSE()
+  # There is no TriBITS repo defined so let the Trilinos repo define the
+  # TriBITS packge.
   SET(TRIBITS_PACKAGE_LINE
-    TriBITS   cmake/tribits   PS
+    TriBITS   "${${PROJECT_NAME}_TRIBITS_DIR}"   PS
     )
+  # NOTE: We use ${${PROJECT_NAME}_TRIBITS_DIR}, *not* hard-coded
+  # cmake/tribits/ in case we are pointing to a different TriBITS
+  # implementation for testing purposes.
 ENDIF()
 
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
