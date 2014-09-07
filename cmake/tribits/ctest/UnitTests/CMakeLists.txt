@@ -332,12 +332,12 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     Trilinos_ADDITIONAL_PACKAGES=Stalix
   PASS_REGULAR_EXPRESSION_ALL
     "preCopyrightTrilinos: Doing GIT update from URL 'url1:/git/preCopyrightTrilinos' to dir '.*/MockTrilinos/preCopyrightTrilinos'"
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.reset.--hard.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.reset.out."
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.clean.-df.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.clean.out."
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.pull.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.update.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.reset.--hard.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.reset.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.clean.-df.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.clean.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.pull.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.update.out."
     "EXECUTE_PROCESS.COMMAND;/somebasedir/git.log.--pretty=format:.*.-C.HEAD..ORIG_HEAD.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY;.*/package_arch/UnitTests/MockTrilinos/preCopyrightTrilinos."
     "Dakota: Doing initial SVN clone/checkout from URL 'url3/somedirpath/trunk' to dir 'packages/TriKota/Dakota'"
-    "EXECUTE_PROCESS.COMMAND./someotherbasedir/svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/MockTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/Dakota.update.out."
+    "EXECUTE_PROCESS.COMMAND./someotherbasedir/svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/MockTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/Dakota.update.out."
     "EXECUTE_PROCESS.echo.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY.*/package_arch/UnitTests/MockTrilinos/packages/TriKota/Dakota."
     ".... preCopyrightTrilinos updates."
     "... Dakota cloned version."

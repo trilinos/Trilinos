@@ -70,7 +70,7 @@ TRIBITS_ADD_ADVANCED_TEST( RawHelloWorld
     PASS_REGULAR_EXPRESSION_ALL
       "Configuring done"
       "Generating done"
-      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_RawHelloWorld"
+      "Build files have been written to: .*doc/examples/UnitTests/TriBITS_RawHelloWorld"
   TEST_1 CMND make
     ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
@@ -96,7 +96,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
     PASS_REGULAR_EXPRESSION_ALL
       "Configuring done"
       "Generating done"
-      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsHelloWorld"
+      "Build files have been written to: .*doc/examples/UnitTests/TriBITS_TribitsHelloWorld"
   TEST_1 CMND make
     ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
@@ -201,7 +201,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
       "Performing Test HAVE_SIMPLECXX___INT64"
       "Configuring done"
       "Generating done"
-      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT_NoFortran"
+      "Build files have been written to: .*doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT_NoFortran"
       "-- File Trace: PROJECT    INCLUDE    .*/TribitsExampleProject/Version.cmake"
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/cmake/CallbackSetupExtraOptions.cmake"
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/PackagesList.cmake"
@@ -297,7 +297,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         "Final set of non-enabled packages:  WrapExternal 1"
         "Configuring done"
         "Generating done"
-        "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT"
+        "Build files have been written to: .*doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT"
     TEST_1 CMND make
       MESSAGE "Build the default 'all' target using raw 'make'"
       ARGS ${CTEST_BUILD_FLAGS}
@@ -384,7 +384,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
       "This package has no unfiltered binary files so consider out of date"
       "Configuring done"
       "Generating done"
-      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_WrapExternal"
+      "Build files have been written to: .*doc/examples/UnitTests/TriBITS_TribitsExampleProject_WrapExternal"
   TEST_2 CMND make ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target WrapExternal_run_external_func"

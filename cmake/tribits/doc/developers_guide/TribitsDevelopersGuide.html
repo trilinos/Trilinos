@@ -5655,9 +5655,9 @@ Python.  The primary tools supporting multi-repository projects are the
 <tt class="docutils literal">Nightly</tt>, see <a class="reference internal" href="#repository-test-classification">Repository Test Classification</a>) and it will automatically
 perform all of the various actions for all of the selected repositories.  See
 <a class="reference internal" href="#checkin-test-py">checkin-test.py</a> and <a class="reference internal" href="#checkin-test-py-help">checkin-test.py --help</a> for more details.</p>
-<p id="egdist">The tool <strong>egdist</strong> is a simple Python script that distributes an eg/git
-command across a set of git repos.  This tool is not specific to TriBITS but
-it is very useful for dealing with TriBITS projects with multiple
+<p id="egdist">The tool <strong>egdist</strong> is a simple stand-alone Python script that distributes an
+eg/git command across a set of git repos.  This tool is not specific to
+TriBITS but it is very useful for dealing with TriBITS projects with multiple
 repositories.  It only requires that a base git repo and a set of zero or more
 git repos cloned under it.  For example, consider the TriBITS meta-project
 given in the ExtraRepositoriesList.cmake file:</p>
@@ -5711,6 +5711,10 @@ egdist pull
 
 # Push local commits to tracking branches
 egdist push
+</pre>
+<p>The script <tt class="docutils literal">egdist</tt> is version controlled in the main TriBIT repo under:</p>
+<pre class="literal-block">
+common_tools/git/egdist
 </pre>
 <p>See <a class="reference internal" href="#egdist-help">egdist --help</a> for more details.</p>
 <p>The TriBITS approach to managing multiple VC repos described above works well
@@ -7825,11 +7829,12 @@ MPI executables.  If not specified, this will default to
 <p>If specified, then stdout and stderr for the test case will be sent to
 <tt class="docutils literal">&lt;outputFile&gt;</tt>.  By default, the contents of this file will <strong>also</strong>
 be printed to STDOUT unless <tt class="docutils literal">NO_ECHO_OUT</tt> is passed as well.</p>
-<p>NOTE: Contrary to CMake documentation for EXECUTE_PROCESS(), STDERR
-output will get included after all STDOUT output.  Therefore, you can't
-write any tests that depend on the order of STDOUT and STDERR output in
-relation to each other.  Also note that all of STDOUT and STDERR will be
-first read into the CTest executable process main memory before the file
+<p>NOTE: Contrary to CMake documentation for EXECUTE_PROCESS(), STDOUT and
+STDERR may not get output in the correct order interleaved correctly,
+even in serial without MPI.  Therefore, you can't write any tests that
+depend on the order of STDOUT and STDERR output in relation to each
+other.  Also note that all of STDOUT and STDERR will be first read into
+the CTest executable process main memory before the file
 <tt class="docutils literal">&lt;outputFile&gt;</tt> is written.  Therefore, don't run executables or
 commands that generate massive amounts of console output or it may
 exhaust main memory.  Instead, have the command or executable write
@@ -9819,6 +9824,11 @@ Packaging Principles</a>).  Package <tt class="docutils literal">i</tt> can only
 package in this list (or in upstream TriBITS repositories).  This avoids an
 expensive package sorting algorithm and makes it easy to flag packages with
 circular dependencies or misspelling of package names.</p>
+<p>NOTE: For some rare use cases, the package directory <tt class="docutils literal">&lt;pkgi_dir&gt;</tt> is
+allowed to be specified as an absolute directory but this absolute directory
+must be a subdirectory of the project source base directory given by
+<a class="reference internal" href="#project-source-dir">PROJECT_SOURCE_DIR</a>.  If not, <tt class="docutils literal">MESSAGE(FATAL_ERROR <span class="pre">...)</span></tt> is called and
+processing stops immediately.</p>
 <p>NOTE: This macro just sets the variable:</p>
 <pre class="literal-block">
 ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS

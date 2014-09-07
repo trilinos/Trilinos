@@ -31,4 +31,10 @@ TRIBITS_SRC_DIR_ABS=$(readlink -f $TRIBITS_SRC_DIR)
 $TRIBITS_SRC_DIR_ABS/checkin-test.py \
 --src-dir=${TRIBITS_SRC_DIR_ABS} \
 -j16 \
+--no-rebase --no-append-test-results \
 $EXTRA_ARGS  
+
+# NOTE: The last two options --no-rebase --no-append-test-results ensure that
+# the checkin-test.py script does *not* modify the SHA1s of the local commits
+# when pushing to the master repo.  This is important when git commit SHA1s
+# are snaphsotted into other projects (e.g. Trilinos).

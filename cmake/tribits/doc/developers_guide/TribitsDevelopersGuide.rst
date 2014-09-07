@@ -4823,9 +4823,9 @@ perform all of the various actions for all of the selected repositories.  See
 
 .. _egdist:
 
-The tool **egdist** is a simple Python script that distributes an eg/git
-command across a set of git repos.  This tool is not specific to TriBITS but
-it is very useful for dealing with TriBITS projects with multiple
+The tool **egdist** is a simple stand-alone Python script that distributes an
+eg/git command across a set of git repos.  This tool is not specific to
+TriBITS but it is very useful for dealing with TriBITS projects with multiple
 repositories.  It only requires that a base git repo and a set of zero or more
 git repos cloned under it.  For example, consider the TriBITS meta-project
 given in the ExtraRepositoriesList.cmake file:
@@ -4873,6 +4873,10 @@ Common aggregate commands then run under the ``BaseRepo/`` directory are::
 
   # Push local commits to tracking branches
   egdist push
+
+The script ``egdist`` is version controlled in the main TriBIT repo under::
+
+   common_tools/git/egdist
 
 See `egdist --help`_ for more details.
 
