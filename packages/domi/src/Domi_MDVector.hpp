@@ -53,6 +53,7 @@
 #include "Domi_MDArrayRCP.hpp"
 
 // Teuchos includes
+#include "Teuchos_DataAccess.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ScalarTraitsDecl.hpp"
 #include "Teuchos_Comm.hpp"
@@ -231,15 +232,20 @@ public:
   MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
            const MDArrayRCP< Scalar > & source);
 
-  /** \brief Copy constructor
+  /** \brief Copy constructor with view or copy semantics
    *
    * \param source [in] source MDVector
    *
+   * \param access [in] enumeration specifying view or copy
+   *        construction
+   *
    * Create a new MDVector with the same structure of the source
-   * MDVector and perform a deep copy of the source MDVector data into
-   * the new MDVector.
+   * MDVector and either perform a deep copy or take a view of the
+   * source MDVector data for the new MDVector.  Default behavior is
+   * to use view semantics.
    */
-  MDVector(const MDVector< Scalar, Node > & source);
+  MDVector(const MDVector< Scalar, Node > & source,
+           Teuchos::DataAccess access = Teuchos::View);
 
   /** \brief Constructor with Teuchos::Comm and ParameterList
    *
@@ -1366,11 +1372,12 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
 template< class Scalar,
           class Node >
 MDVector< Scalar, Node >::
-MDVector(const MDVector< Scalar, Node > & source) :
+MDVector(const MDVector< Scalar, Node > & source,
+         Teuchos::DataAccess access) :
   _teuchosComm(source.getMDMap()->getTeuchosComm()),
   _mdMap(source.getMDMap()),
-  _mdArrayRcp(),
-  _mdArrayView(),
+  _mdArrayRcp(source._mdArrayRcp),
+  _mdArrayView(source._mdArrayView),
   _nextAxis(0),
 #ifdef HAVE_MPI
   _requests(),
@@ -1380,25 +1387,38 @@ MDVector(const MDVector< Scalar, Node > & source) :
 {
   setObjectLabel("Domi::MDVector");
 
-  // Obtain the array of dimensions
-  int numDims = _mdMap->numDims();
-  Teuchos::Array< dim_type > dims(numDims);
-  for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = _mdMap->getLocalDim(axis,true);
-
-  // Reset the MDArrayRCP and set the MDArrayView
-  _mdArrayRcp  = MDArrayRCP< Scalar >(dims, 0, source.getLayout());
-  _mdArrayView = _mdArrayRcp();
-
-  // Copy the source data to the new MDVector
-  typedef typename MDArrayView< Scalar >::iterator iterator;
-  typedef typename MDArrayView< Scalar >::const_iterator const_iterator;
-  const_iterator src = source.getData().begin();
-  for (iterator trg = _mdArrayView.begin(); trg != _mdArrayView.end(); ++trg)
+  if (access == Teuchos::Copy)
   {
-    *trg = *src;
-    ++src;
+#ifdef DOMI_MDVECTOR_VERBOSE
+    std::cout << "Inside MDVector copy constructor with copy access" << std::endl;
+#endif
+    // Obtain the array of dimensions
+    int numDims = _mdMap->numDims();
+    Teuchos::Array< dim_type > dims(numDims);
+    for (int axis = 0; axis < numDims; ++axis)
+      dims[axis] = _mdMap->getLocalDim(axis,true);
+
+    // Reset the MDArrayRCP and set the MDArrayView
+    _mdArrayRcp  = MDArrayRCP< Scalar >(dims, 0, source.getLayout());
+    _mdArrayView = _mdArrayRcp();
+
+    // Copy the source data to the new MDVector
+    typedef typename MDArrayView< Scalar >::iterator iterator;
+    typedef typename MDArrayView< Scalar >::const_iterator const_iterator;
+    const_iterator src = source.getData().begin();
+    for (iterator trg = _mdArrayView.begin(); trg != _mdArrayView.end(); ++trg)
+    {
+      *trg = *src;
+      ++src;
+    }
   }
+#ifdef DOMI_MDVECTOR_VERBOSE
+  else
+  {
+    std::cout << "Inside MDVector copy constructor with view access"
+              << std::endl;
+  }
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1556,7 +1576,7 @@ MDVector(const MDVector< Scalar, Node > & parent,
          int axis,
          const Slice & slice,
          int bndryPad) :
-  _teuchosComm(parent._teuchosComm),
+  _teuchosComm(),
   _mdMap(),
   _mdArrayRcp(parent._mdArrayRcp),
   _mdArrayView(parent._mdArrayView),
@@ -1567,6 +1587,12 @@ MDVector(const MDVector< Scalar, Node > & parent,
   _sendMessages(),
   _recvMessages()
 {
+#ifdef DOMI_MDVECTOR_VERBOSE
+  std::cout << "slice axis " << axis << std::endl;
+  std::cout << "  _mdArrayRcp  @ " << _mdArrayRcp.getRawPtr()  << std::endl;
+  std::cout << "  _mdArrayView @ " << _mdArrayView.getRawPtr() << std::endl;
+#endif
+
   setObjectLabel("Domi::MDVector");
 
   // Obtain the parent MDMap
@@ -1619,6 +1645,11 @@ MDVector(const MDVector< Scalar, Node > & parent,
     _mdArrayRcp.clear();
     _mdArrayView = MDArrayView< Scalar >();
   }
+#ifdef DOMI_MDVECTOR_VERBOSE
+  std::cout << "  _mdArrayView @ " << _mdArrayView.getRawPtr() << std::endl;
+  std::cout << "  offset = " << int(_mdArrayView.getRawPtr() -
+                                    _mdArrayRcp.getRawPtr()) << std::endl;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////

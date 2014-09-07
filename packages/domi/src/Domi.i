@@ -548,8 +548,8 @@ MDMap = MDMap_default
     Py_ssize_t numIndexes = PySequence_Size(indexes);
     if (numIndexes > self->numDims()) numIndexes = self->numDims();
 
-    // Initialize the new MDVector as a copy of this MDVector
-    Domi::MDVector< Scalar, Node > newMdVector(*self);
+    // Initialize the new MDVector as a view of this MDVector
+    Domi::MDVector< Scalar, Node > newMdVector(*self, Teuchos::View);
 
     // 'domiAxis' will be the index for the new MDVector as we construct
     // it.  'axis' will be the index for the sequence of indexes.
