@@ -137,6 +137,37 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
        else { TEUCHOS_ASSERT(false); } // what do I do with 1D?
      }
   }
+  else if(elmtspace==panzer::PureBasis::HDIV) {
+     // HDIV is a vector field
+
+     // build values
+     ///////////////////////////////////////////////
+
+     basis_ref = af.template buildArray<Scalar,BASIS,IP,Dim>("basis_ref",card,num_quad,dim); // F, P, D
+     basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("basis",numcells,card,num_quad,dim);
+
+     weighted_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("weighted_basis",numcells,card,num_quad,dim);
+
+     // build gradients
+     ///////////////////////////////////////////////
+
+     // nothing - HCURL does not support GRAD operation
+
+     // build curl
+     ///////////////////////////////////////////////
+
+     // nothing - HDIV does not support CURL operation
+
+     // build div
+     ///////////////////////////////////////////////
+
+     if(compute_derivatives) {
+       div_basis_ref = af.template buildArray<Scalar,BASIS,IP>("div_basis_ref",card,num_quad); // F, P
+       div_basis = af.template buildArray<Scalar,Cell,BASIS,IP>("div_basis",numcells,card,num_quad);
+  
+       weighted_div_basis = af.template buildArray<Scalar,Cell,BASIS,IP>("weighted_div_basis",numcells,card,num_quad);
+     }
+  }
   else if(elmtspace==panzer::PureBasis::CONST) {
      // CONST is a nodal field
 

@@ -8,11 +8,11 @@
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
+// Redistribution and use in solution and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
 //
-// 1. Redistributions of source code must retain the above copyright
+// 1. Redistributions of solution code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //
 // 2. Redistributions in binary form must reproduce the above copyright
@@ -40,89 +40,63 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_SUM_IMPL_HPP
-#define PANZER_SUM_IMPL_HPP
+#ifndef __Example_SineSolution_impl_hpp__
+#define __Example_SineSolution_impl_hpp__
 
-#include <cstddef>
-#include <string>
-#include <vector>
+#include <cmath>
 
-#define PANZER_USE_FAST_SUM 1
-// #define PANZER_USE_FAST_SUM 0
+#include "Panzer_BasisIRLayout.hpp"
+#include "Panzer_Workset.hpp"
+#include "Panzer_Workset_Utilities.hpp"
 
-namespace panzer {
+namespace Example {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Sum,p)
+template <typename EvalT,typename Traits>
+SineSolution<EvalT,Traits>::SineSolution(const std::string & name,
+                                         const panzer::IntegrationRule & ir)
 {
-  std::string sum_name = p.get<std::string>("Sum Name");
-  Teuchos::RCP<std::vector<std::string> > value_names = 
-    p.get<Teuchos::RCP<std::vector<std::string> > >("Values Names");
-  Teuchos::RCP<PHX::DataLayout> data_layout = 
-    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
+  using Teuchos::RCP;
 
-  // check if the user wants to scale each term independently
-  if(p.isType<Teuchos::RCP<const std::vector<double> > >("Scalars")) {
-    scalars = *p.get<Teuchos::RCP<const std::vector<double> > >("Scalars");
+  Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
+  ir_degree = ir.cubature_degree;
 
-    // safety/sanity check
-    TEUCHOS_ASSERT(scalars.size()==value_names->size());
-  }
-  else {
-    // otherwise use all ones (a simple sum)
-    scalars = std::vector<double>(value_names->size(),1.0);
-  }
+  solution = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
+
+  this->addEvaluatedField(solution);
   
-  sum = PHX::MDField<ScalarT>(sum_name, data_layout);
-  
-  this->addEvaluatedField(sum);
- 
-  values.resize(value_names->size());
-  for (std::size_t i=0; i < value_names->size(); ++i) {
-    values[i] = PHX::MDField<ScalarT>( (*value_names)[i], data_layout);
-    this->addDependentField(values[i]);
-  }
- 
-  std::string n = "Sum Evaluator";
+  std::string n = "Sine Solution";
   this->setName(n);
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Sum,worksets,fm)
+template <typename EvalT,typename Traits>
+void SineSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+                                                       PHX::FieldManager<Traits>& fm)
 {
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i)
-    this->utils.setFieldData(values[i],fm);
 
-  cell_data_size = sum.size() / sum.fieldTag().dataLayout().dimension(0);
+  this->utils.setFieldData(solution,fm);
+
+  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0]);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Sum,workset)
+template <typename EvalT,typename Traits>
+void SineSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
-  std::size_t length = workset.num_cells * cell_data_size;
+  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (int point = 0; point < solution.dimension(1); ++point) {
 
-#if PANZER_USE_FAST_SUM 
-  for (std::size_t i = 0; i < length; ++i)
-    sum[i] = 0.0;
+      const double & x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
+      const double & y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
+      const double & z = workset.int_rules[ir_index]->ip_coordinates(cell,point,2);
 
-  for (std::size_t j = 0; j < values.size(); ++j) {
-    for (std::size_t i = 0; i < length; ++i)
-      sum[i] += scalars[j]*(values[j][i]);
+      solution(cell,point) = std::sin(2.0*M_PI*x)*std::sin(2*M_PI*y)*std::sin(2.0*M_PI*z);
+    }
   }
-#else
-
-  for (std::size_t i = 0; i < length; ++i) {
-    sum[i] = 0.0;
-    for (std::size_t j = 0; j < values.size(); ++j)
-      sum[i] += scalars[j]*(values[j][i]);
-  }
-#endif
-
 }
 
 //**********************************************************************
-
 }
 
 #endif

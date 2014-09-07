@@ -108,7 +108,6 @@ private:
   bool accelerate_jacobian;
   std::vector<int> offsets;
 
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
   bool is_vector_basis;
 };
 

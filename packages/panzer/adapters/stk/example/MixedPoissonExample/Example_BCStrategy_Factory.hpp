@@ -40,71 +40,50 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_DOF_CURL_DECL_HPP
-#define PANZER_EVALUATOR_DOF_CURL_DECL_HPP
+#ifndef __Example_BCStrategyFactory_hpp__
+#define __Example_BCStrategyFactory_hpp__
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Panzer_Traits.hpp"
+#include "Panzer_BCStrategy_TemplateManager.hpp"
+#include "Panzer_BCStrategy_Factory.hpp"
+#include "Panzer_BCStrategy_Factory_Defines.hpp"
 
-namespace panzer {
-    
-//! Interpolates basis DOF values to IP DOF Curl values
-template<typename EvalT, typename Traits>                   
-class DOFCurl : public PHX::EvaluatorWithBaseImpl<Traits>,      
-                public PHX::EvaluatorDerived<EvalT, Traits>  {   
-public:
+// Add my bcstrategies here
+#include "Example_BCStrategy_Dirichlet_Constant.hpp"
 
-  DOFCurl(const Teuchos::ParameterList& p);
-
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
-  void evaluateFields(typename Traits::EvalData d);
-
-private:
-
-  typedef typename EvalT::ScalarT ScalarT;
-
+namespace Example {
   
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
-  PHX::MDField<ScalarT> dof_curl;
+PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Constant", 
+                                           BCStrategy_Dirichlet_Constant,
+                                           BCStrategy_Dirichlet_Constant)
 
-  std::string basis_name;
-  std::size_t basis_index;
-  int basis_dimension;
+struct BCStrategyFactory : public panzer::BCStrategyFactory {
+
+   Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
+   buildBCStrategy(const panzer::BC& bc,const Teuchos::RCP<panzer::GlobalData>& global_data) const
+   {
+
+      Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs_tm = 
+	Teuchos::rcp(new panzer::BCStrategy_TemplateManager<panzer::Traits>);
+      
+      bool found = false;
+
+      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant", 
+				      Example::BCStrategy_Dirichlet_Constant,
+				      BCStrategy_Dirichlet_Constant)
+
+      TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
+			 "Error - the BC Strategy called \"" << bc.strategy() <<
+			 "\" is not a valid identifier in the BCStrategyFactory.  Either add a "
+                         "valid implementation to your factory or fix your input file.  The "
+                         "relevant boundary condition is:\n\n" << bc << std::endl);
+      
+      return bcs_tm;
+   }
+
 };
-
-// Specitialization for the Jacobian
-template<typename Traits>                   
-class DOFCurl<panzer::Traits::Jacobian,Traits> : 
-                public PHX::EvaluatorWithBaseImpl<Traits>,      
-                public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>  {   
-public:
-
-  DOFCurl(const Teuchos::ParameterList& p);
-
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
-  void evaluateFields(typename Traits::EvalData d);
-
-private:
-
-  typedef panzer::Traits::Jacobian::ScalarT ScalarT;
-
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
-  PHX::MDField<ScalarT> dof_curl;
-
-  std::string basis_name;
-  std::size_t basis_index;
-  int basis_dimension;
-
-  bool accelerate_jacobian;
-  std::vector<int> offsets;
-};
-
-
-
+  
 }
 
 #endif

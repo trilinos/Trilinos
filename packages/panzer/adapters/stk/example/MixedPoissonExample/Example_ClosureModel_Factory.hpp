@@ -40,71 +40,32 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_DOF_CURL_DECL_HPP
-#define PANZER_EVALUATOR_DOF_CURL_DECL_HPP
+#ifndef __Example_ClosureModelFactory_hpp__
+#define __Example_ClosureModelFactory_hpp__
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+#include "Panzer_ClosureModel_Factory.hpp"
 
-namespace panzer {
-    
-//! Interpolates basis DOF values to IP DOF Curl values
-template<typename EvalT, typename Traits>                   
-class DOFCurl : public PHX::EvaluatorWithBaseImpl<Traits>,      
-                public PHX::EvaluatorDerived<EvalT, Traits>  {   
+namespace Example {
+
+template<typename EvalT>
+class ModelFactory : public panzer::ClosureModelFactory<EvalT> {
+
 public:
 
-  DOFCurl(const Teuchos::ParameterList& p);
+   Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
+   buildClosureModels(const std::string& model_id,
+                      const Teuchos::ParameterList& models,
+		      const panzer::FieldLayoutLibrary& fl,
+		      const Teuchos::RCP<panzer::IntegrationRule>& ir,
+                      const Teuchos::ParameterList& default_params,
+                      const Teuchos::ParameterList& user_data,
+		      const Teuchos::RCP<panzer::GlobalData>& global_data,
+                      PHX::FieldManager<panzer::Traits>& fm) const;
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
-  void evaluateFields(typename Traits::EvalData d);
-
-private:
-
-  typedef typename EvalT::ScalarT ScalarT;
-
-  
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
-  PHX::MDField<ScalarT> dof_curl;
-
-  std::string basis_name;
-  std::size_t basis_index;
-  int basis_dimension;
 };
-
-// Specitialization for the Jacobian
-template<typename Traits>                   
-class DOFCurl<panzer::Traits::Jacobian,Traits> : 
-                public PHX::EvaluatorWithBaseImpl<Traits>,      
-                public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>  {   
-public:
-
-  DOFCurl(const Teuchos::ParameterList& p);
-
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
-  void evaluateFields(typename Traits::EvalData d);
-
-private:
-
-  typedef panzer::Traits::Jacobian::ScalarT ScalarT;
-
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
-  PHX::MDField<ScalarT> dof_curl;
-
-  std::string basis_name;
-  std::size_t basis_index;
-  int basis_dimension;
-
-  bool accelerate_jacobian;
-  std::vector<int> offsets;
-};
-
-
 
 }
+
+#include "Example_ClosureModel_Factory_impl.hpp"
 
 #endif

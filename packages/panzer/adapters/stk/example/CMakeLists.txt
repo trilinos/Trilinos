@@ -1,6 +1,7 @@
 ADD_SUBDIRECTORY(square_mesh)
 ADD_SUBDIRECTORY(PoissonExample)
 ADD_SUBDIRECTORY(CurlLaplacianExample)
+ADD_SUBDIRECTORY(MixedPoissonExample)
 
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
    ADD_SUBDIRECTORY(assembly_engine)

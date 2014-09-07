@@ -40,70 +40,53 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_DOF_CURL_DECL_HPP
-#define PANZER_EVALUATOR_DOF_CURL_DECL_HPP
+#ifndef __Example_EquationSetFactory_hpp__
+#define __Example_EquationSetFactory_hpp__
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+#include "Panzer_EquationSet_Factory.hpp"
+#include "Panzer_EquationSet_Factory_Defines.hpp"
+#include "Panzer_CellData.hpp"
 
-namespace panzer {
+// Add my equation sets here
+#include "Example_MixedPoissonEquationSet.hpp"
+
+namespace Example {
+
+// A macro that defines a class to make construction of the equation sets easier
+//   - The equation set is constructed over a list of automatic differention types
+PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("MixedPoisson", MixedPoissonEquationSet, MixedPoissonEquationSet)
+
+// A user written factory that creates each equation set.  The key member here
+// is buildEquationSet
+class EquationSetFactory : public panzer::EquationSetFactory {
+public:
+
+   Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
+   buildEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
+		    const int& default_integration_order,
+                    const panzer::CellData& cell_data,
+		    const Teuchos::RCP<panzer::GlobalData>& global_data,
+                    const bool build_transient_support) const
+   {
+      Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set= 
+         Teuchos::rcp(new panzer::EquationSet_TemplateManager<panzer::Traits>);
+         
+      bool found = false; // this is used by PANZER_BUILD_EQSET_OBJECTS
+         
+      // macro checks if(ies.name=="MixedPoisson") then an EquationSet_Energy object is constructed
+      PANZER_BUILD_EQSET_OBJECTS("MixedPoisson", MixedPoissonEquationSet, MixedPoissonEquationSet)
+         
+      // make sure your equation set has been found
+      if(!found) {
+	std::string msg = "Error - the \"Equation Set\" called \"" + params->get<std::string>("Type") +
+                           "\" is not a valid equation set identifier. Please supply the correct factory.\n";
+         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+      }
+         
+      return eq_set;
+   }
     
-//! Interpolates basis DOF values to IP DOF Curl values
-template<typename EvalT, typename Traits>                   
-class DOFCurl : public PHX::EvaluatorWithBaseImpl<Traits>,      
-                public PHX::EvaluatorDerived<EvalT, Traits>  {   
-public:
-
-  DOFCurl(const Teuchos::ParameterList& p);
-
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
-  void evaluateFields(typename Traits::EvalData d);
-
-private:
-
-  typedef typename EvalT::ScalarT ScalarT;
-
-  
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
-  PHX::MDField<ScalarT> dof_curl;
-
-  std::string basis_name;
-  std::size_t basis_index;
-  int basis_dimension;
 };
-
-// Specitialization for the Jacobian
-template<typename Traits>                   
-class DOFCurl<panzer::Traits::Jacobian,Traits> : 
-                public PHX::EvaluatorWithBaseImpl<Traits>,      
-                public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>  {   
-public:
-
-  DOFCurl(const Teuchos::ParameterList& p);
-
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
-  void evaluateFields(typename Traits::EvalData d);
-
-private:
-
-  typedef panzer::Traits::Jacobian::ScalarT ScalarT;
-
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
-  PHX::MDField<ScalarT> dof_curl;
-
-  std::string basis_name;
-  std::size_t basis_index;
-  int basis_dimension;
-
-  bool accelerate_jacobian;
-  std::vector<int> offsets;
-};
-
-
 
 }
 

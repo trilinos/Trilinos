@@ -133,7 +133,6 @@ namespace {
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     my_DOFManager->buildGlobalUnknowns();
-    //Now that we have created the SingleBlockDOFManager, we can ensure it was created correctly.
     TEST_EQUALITY(my_DOFManager->getConnManager(),conn);
 
 
@@ -698,7 +697,6 @@ namespace {
 
 
     my_DOFManager->buildGlobalUnknowns();
-    //Now that we have created the SingleBlockDOFManager, we can ensure it was created correctly.
     TEST_EQUALITY(my_DOFManager->getConnManager(),conn);
 
     TEST_EQUALITY(my_DOFManager->getElementBlockGIDCount("eblock-0_0"),2*4);

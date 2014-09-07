@@ -40,71 +40,53 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_DOF_CURL_DECL_HPP
-#define PANZER_EVALUATOR_DOF_CURL_DECL_HPP
+#ifndef __Example_SineSolution_hpp__
+#define __Example_SineSolution_hpp__
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+#include "Panzer_config.hpp"
 
-namespace panzer {
+#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_FieldManager.hpp"
+
+#include "Panzer_Dimension.hpp"
+#include "Panzer_FieldLibrary.hpp"
+
+#include <string>
+
+namespace Example {
     
-//! Interpolates basis DOF values to IP DOF Curl values
-template<typename EvalT, typename Traits>                   
-class DOFCurl : public PHX::EvaluatorWithBaseImpl<Traits>,      
-                public PHX::EvaluatorDerived<EvalT, Traits>  {   
+  using panzer::Cell;
+  using panzer::Point;
+  using panzer::Dim;
+
+/** The analytic solution to the mixed poisson equation for the sine source.
+  */
+template<typename EvalT, typename Traits>
+class SineSolution : public PHX::EvaluatorWithBaseImpl<Traits>,
+                        public PHX::EvaluatorDerived<EvalT, Traits>  {
+
 public:
+    SineSolution(const std::string & name,
+                       const panzer::IntegrationRule & ir);
+                                                                        
+    void postRegistrationSetup(typename Traits::SetupData d,           
+                               PHX::FieldManager<Traits>& fm);        
+                                                                     
+    void evaluateFields(typename Traits::EvalData d);               
 
-  DOFCurl(const Teuchos::ParameterList& p);
-
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
-  void evaluateFields(typename Traits::EvalData d);
 
 private:
-
   typedef typename EvalT::ScalarT ScalarT;
 
-  
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
-  PHX::MDField<ScalarT> dof_curl;
-
-  std::string basis_name;
-  std::size_t basis_index;
-  int basis_dimension;
+  // Simulation solution
+  PHX::MDField<ScalarT,Cell,Point> solution;
+  int ir_degree, ir_index;
 };
-
-// Specitialization for the Jacobian
-template<typename Traits>                   
-class DOFCurl<panzer::Traits::Jacobian,Traits> : 
-                public PHX::EvaluatorWithBaseImpl<Traits>,      
-                public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>  {   
-public:
-
-  DOFCurl(const Teuchos::ParameterList& p);
-
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
-  void evaluateFields(typename Traits::EvalData d);
-
-private:
-
-  typedef panzer::Traits::Jacobian::ScalarT ScalarT;
-
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
-  PHX::MDField<ScalarT> dof_curl;
-
-  std::string basis_name;
-  std::size_t basis_index;
-  int basis_dimension;
-
-  bool accelerate_jacobian;
-  std::vector<int> offsets;
-};
-
-
 
 }
+
+#include "Example_SineSolution_impl.hpp"
 
 #endif

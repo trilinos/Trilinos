@@ -35,7 +35,7 @@
   </parameter>
 
   <parameter>
-    <name>Export data</name>
+    <name>export data</name>
     <type>\parameterlist</type>
     <description>Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", "P", "R") of type "string" and value "\{levels separated by commas\}". A matrix is saved in two files: a) data is saved in the MatrixMarket format in a file called "A\_level.mm", or similar; b) row map is saved in the MatrixMarket format in a file called "rowmap\_A\_level.mm", or similar.</description>
   </parameter>

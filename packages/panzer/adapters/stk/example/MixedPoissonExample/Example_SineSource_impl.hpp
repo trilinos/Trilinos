@@ -40,14 +40,63 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_ConfigDefs.hpp"
-#include "Panzer_Traits.hpp"
+#ifndef __Example_SineSource_impl_hpp__
+#define __Example_SineSource_impl_hpp__
 
-#include "Panzer_SingleBlockDOFManager_impl.hpp"
-#include "Panzer_SingleBlockDOFManager_decl.hpp"
+#include <cmath>
 
-template class panzer::SingleBlockDOFManager<int,int>;
+#include "Panzer_BasisIRLayout.hpp"
+#include "Panzer_Workset.hpp"
+#include "Panzer_Workset_Utilities.hpp"
 
-#ifndef PANZER_ORDINAL64_IS_INT
-template class panzer::SingleBlockDOFManager<int,panzer::Ordinal64>;
+namespace Example {
+
+//**********************************************************************
+template <typename EvalT,typename Traits>
+SineSource<EvalT,Traits>::SineSource(const std::string & name,
+                                         const panzer::IntegrationRule & ir)
+{
+  using Teuchos::RCP;
+
+  Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
+  ir_degree = ir.cubature_degree;
+
+  source = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
+
+  this->addEvaluatedField(source);
+  
+  std::string n = "Sine Source";
+  this->setName(n);
+}
+
+//**********************************************************************
+template <typename EvalT,typename Traits>
+void SineSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+                                                       PHX::FieldManager<Traits>& fm)
+{
+
+  this->utils.setFieldData(source,fm);
+
+  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0]);
+}
+
+//**********************************************************************
+template <typename EvalT,typename Traits>
+void SineSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
+{ 
+  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (int point = 0; point < source.dimension(1); ++point) {
+
+      const double & x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
+      const double & y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
+      const double & z = workset.int_rules[ir_index]->ip_coordinates(cell,point,2);
+
+      source(cell,point) = -12.0*M_PI*M_PI*std::sin(2.0*M_PI*x)*std::sin(2*M_PI*y)*std::sin(2.0*M_PI*z);
+    }
+  }
+}
+
+//**********************************************************************
+}
+
 #endif
