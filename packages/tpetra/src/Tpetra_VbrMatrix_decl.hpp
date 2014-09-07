@@ -122,7 +122,7 @@ public:
   typedef LocalOrdinal  local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node          node_type;
-  typedef typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::BlockSparseOps mat_vec_type;
+  typedef typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::BlockSparseOps sparse_ops_type;
 
   //! @name Constructor/Destructor Methods
   //@{
@@ -596,7 +596,7 @@ public:
   Teuchos::ArrayRCP<Scalar> pbuf_values1D_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_indx_;
 
-  mat_vec_type lclMatOps_;
+  sparse_ops_type lclMatOps_;
   Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
   Teuchos::RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedVec_;

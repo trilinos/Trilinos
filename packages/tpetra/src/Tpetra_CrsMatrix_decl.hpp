@@ -172,10 +172,8 @@ namespace Tpetra {
   /// this optimization.
   template <class Scalar = RowMatrix<>::scalar_type,
             class LocalOrdinal = typename RowMatrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename RowMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+            class GlobalOrdinal = typename RowMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class CrsMatrix :
     public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
     public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
@@ -191,17 +189,6 @@ namespace Tpetra {
     typedef GlobalOrdinal global_ordinal_type;
     //! This class' fourth template parameter; the Kokkos Node type.
     typedef Node node_type;
-
-    /// \brief The implementation of local sparse kernels.
-    ///
-    /// We define both this typedef and mat_solve_type for backwards
-    /// compatibility.
-    typedef typename KokkosClassic::DefaultKernels<ST, LO, NT>::SparseOps mat_vec_type;
-    /// \brief The implementation of local sparse kernels.
-    ///
-    /// We define both this typedef and mat_vec_type for backwards
-    /// compatibility.
-    typedef mat_vec_type mat_solve_type;
 
     //! The Map specialization suitable for this CrsMatrix specialization.
     typedef Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
@@ -376,7 +363,7 @@ namespace Tpetra {
                const RCP<ParameterList>& params = null);
 
     // This friend declaration makes the clone() method work.
-    template <class S2, class LO2, class GO2, class N2, class LMO2>
+    template <class S2, class LO2, class GO2, class N2>
     friend class CrsMatrix;
 
     /// \brief Create a deep copy of this CrsMatrix, where the copy
@@ -2214,20 +2201,21 @@ namespace Tpetra {
     // it RowGraph or CrsGraph?).
     typedef crs_graph_type Graph;
 
-    // mfh 30 Aug 2014: I don't know why CrsMatrix always used this
-    // bind_scalar business.  Well, I can guess: Chris Baker's idea
-    // was that some implementations of SparseOps might not work for
-    // all Scalar types.  (cuSPARSE is an example, since NVIDIA only
-    // wrote sparse matrix-vector multiply routines for float and
-    // double.)  In cases like that, the "other_type" typedef would
-    // point to some other, "generic" implementation of SparseOps.
+    // mfh 30 Aug 2014: CrsMatrix used this bind_scalar business
+    // because Chris Baker expected that some implementations of
+    // SparseOps might not work for all Scalar types.  (cuSPARSE is an
+    // example, since NVIDIA only wrote sparse matrix-vector multiply
+    // routines for float and double.)  In cases like that, the
+    // "other_type" typedef would point to some other, "generic"
+    // implementation of SparseOps.
     //
-    // The Kokkos refactor version of Tpetra will hide this
-    // complexity at the KokkosLinAlg level, so that users won't
-    // have to look at type selectors quite so much.
-    typedef typename mat_vec_type::template bind_scalar<ST>::other_type other_type;
-    typedef typename other_type::template graph<LO, NT>::graph_type local_graph_type;
-    typedef typename other_type::template matrix<ST, LO, NT>::matrix_type local_matrix_type;
+    // The Kokkos refactor version of Tpetra will hide this complexity
+    // at the KokkosLinAlg level, so that users won't have to look at
+    // type selectors quite so much.
+    typedef typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, node_type>::SparseOps source_sparse_ops_type;
+    typedef typename source_sparse_ops_type::template bind_scalar<Scalar>::other_type sparse_ops_type;
+    typedef typename sparse_ops_type::template graph<LocalOrdinal, node_type>::graph_type local_graph_type;
+    typedef typename sparse_ops_type::template matrix<Scalar, LocalOrdinal, node_type>::matrix_type local_matrix_type;
 
     // Enums
     enum GraphAllocationStatus {
