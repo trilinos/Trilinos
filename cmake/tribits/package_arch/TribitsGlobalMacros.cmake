@@ -114,7 +114,7 @@ ENDMACRO()
 MACRO(TRIBITS_SETUP_BASIC_SYSTEM_VARS)
 
   # CMAKE_HOST_SYSTEM_NAME is provided by CMake automatically but can actually
-  # be overridded in the cache.
+  # be overridden in the cache.
   PRINT_VAR(CMAKE_HOST_SYSTEM_NAME)
   
   SITE_NAME(${PROJECT_NAME}_HOSTNAME)
@@ -370,12 +370,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ENDIF()
   ADVANCED_SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES
      ${${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT} CACHE BOOL
-    "Generate packages dependency data-structures needed for depenency export files." )
+    "Generate packages dependency data-structures needed for dependency export files." )
 
   # ${PROJECT_NAME}_ELEVATE_SS_TO_PS is depreciated!
   IF (${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT)
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("-- " "WARNING: ${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT is depricated."
+      MESSAGE("-- " "WARNING: ${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT is deprecated."
         "  Use ${PROJECT_NAME}_ELEVATE_ST_TO_PT_DEFAULT instead!")
     ENDIF()
     SET(${PROJECT_NAME}_ELEVATE_ST_TO_PT_DEFAULT ON)
@@ -395,7 +395,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_CPACK_PACKAGING
      ${${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT}
      CACHE BOOL
-    "Eanble support for creating a distribution using CPack" )
+    "Enable support for creating a distribution using CPack" )
 
   IF ("${${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT TRUE)
@@ -539,13 +539,13 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ADVANCED_SET(${PROJECT_NAME}_EXTRAREPOS_FILE
     "${${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT}"
     CACHE FILENAME
-    "File contining the list of extra repositories containing add-on packages to process")
+    "File containing the list of extra repositories containing add-on packages to process")
   #PRINT_VAR(${PROJECT_NAME}_EXTRAREPOS_FILE)
 
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
     ""
     CACHE STRING
-    "Type of testing to pull in extra respositories (Continuous, or Nightly)" )
+    "Type of testing to pull in extra repositories (Continuous, or Nightly)" )
 
   ADVANCED_SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES
     FALSE CACHE BOOL
@@ -587,11 +587,11 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     )
   
   ADVANCED_OPTION(${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
-    "Shortcircut after dependency handling is complete"
+    "Short-circuit after dependency handling is complete"
     OFF )
   
   ADVANCED_OPTION(${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY
-    "Only trace dependnecy handling.  Don't configure to build anything!"
+    "Only trace dependency handling.  Don't configure to build anything!"
     OFF )
 
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING
