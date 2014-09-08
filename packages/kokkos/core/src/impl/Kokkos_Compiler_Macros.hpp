@@ -79,9 +79,20 @@
   #define KOKKOS_COMPILER_NVCC __NVCC__
 
   #if defined( KOKKOS_HAVE_CXX11 )
-  #error "NVCC does not support C++11"
+    // CUDA supports (inofficially) C++11 in device code starting with 
+    // version 6.5. This includes auto type and device code internal
+    // lambdas.
+    #if ( CUDA_VERSION < 6050 )
+      #error "NVCC does not support C++11"
+    #endif
   #endif
-
+#else
+  #if defined( KOKKOS_HAVE_CXX11 )
+    // CUDA (including version 6.5) does not support giving lambdas as
+    // arguments to global functions. Thus its not currently possible
+    // to dispatch lambdas from the host.
+    #define KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA
+  #endif
 #endif /* #if defined( __NVCC__ ) */
 
 
