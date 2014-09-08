@@ -53,7 +53,124 @@ namespace Kokkos {
 // Scalar type.  (For example, in the mat-vec, the "ThreadsPerRow"
 // internal parameter depends both on the ExecutionSpace and the Scalar type,
 // and it controls whether shfl_down() gets called.)
+
 template<typename Scalar>
+KOKKOS_INLINE_FUNCTION
+Scalar shfl(const Scalar &val, const int& srcLane, const int& width, void*);
+
+template<typename Scalar>
+KOKKOS_INLINE_FUNCTION
+Scalar shfl_down(const Scalar &val, const int& delta, const int& width, void*);
+
+#ifdef __CUDA_ARCH__
+  #if (__CUDA_ARCH__ >= 300)
+
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    int shfl<int>(const int &val, const int& srcLane, const int& width, void* ) {
+      return __shfl(val,srcLane,width);
+    }
+
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    float shfl<float>(const float &val, const int& srcLane, const int& width, void* ) {
+      return __shfl(val,srcLane,width);
+    }
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl(const Scalar &val, const int& srcLane, const int& width
+        , typename Impl::enable_if< (sizeof(Scalar) == 4) >::type * = 0) {
+      Scalar tmp1 = val;
+      float tmp = *reinterpret_cast<float*>(&tmp1);
+      tmp = __shfl(tmp,srcLane,width);
+      return *reinterpret_cast<Scalar*>(&tmp);
+    }
+
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    double shfl(const double &val, const int& srcLane, const int& width, void*) {
+      int lo = __double2loint(val);
+      int hi = __double2hiint(val);
+      lo = __shfl(lo,srcLane,width);
+      hi = __shfl(hi,srcLane,width);
+      return __hiloint2double(hi,lo);
+    }
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl(const Scalar &val, const int& srcLane, const int& width
+        , typename Impl::enable_if< (sizeof(Scalar) == 8) >::type * = 0) {
+      int lo = __double2loint(*reinterpret_cast<const double*>(&val));
+      int hi = __double2hiint(*reinterpret_cast<const double*>(&val));
+      lo = __shfl(lo,srcLane,width);
+      hi = __shfl(hi,srcLane,width);
+      const double tmp = __hiloint2double(hi,lo);
+      return *(reinterpret_cast<const Scalar*>(&tmp));
+    }
+
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    int shfl_down<int>(const int &val, const int& delta, const int& width, void* ) {
+      return __shfl_down(val,delta,width);
+    }
+
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    float shfl_down<float>(const float &val, const int& delta, const int& width, void* ) {
+      return __shfl_down(val,delta,width);
+    }
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl_down(const Scalar &val, const int& delta, const int& width
+        , typename Impl::enable_if< (sizeof(Scalar) == 4) >::type * = 0) {
+      Scalar tmp1 = val;
+      float tmp = *reinterpret_cast<float*>(&tmp1);
+      tmp = __shfl_down(tmp,delta,width);
+      return *reinterpret_cast<Scalar*>(&tmp);
+    }
+
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    double shfl_down(const double &val, const int& delta, const int& width, void*) {
+      int lo = __double2loint(val);
+      int hi = __double2hiint(val);
+      lo = __shfl_down(lo,delta,width);
+      hi = __shfl_down(hi,delta,width);
+      return __hiloint2double(hi,lo);
+    }
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl_down(const Scalar &val, const int& delta, const int& width
+        , typename Impl::enable_if< (sizeof(Scalar) == 8) >::type * = 0) {
+      int lo = __double2loint(*reinterpret_cast<const double*>(&val));
+      int hi = __double2hiint(*reinterpret_cast<const double*>(&val));
+      lo = __shfl_down(lo,delta,width);
+      hi = __shfl_down(hi,delta,width);
+      const double tmp = __hiloint2double(hi,lo);
+      return *(reinterpret_cast<const Scalar*>(&tmp));
+    }
+
+  #else
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl(const Scalar &val, const int& srcLane, const int& width, void*) {
+      if(width > 1) cuda_abort("Error: calling shfl from a device with CC<3.0.")
+      return val;
+    }
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl_down(const Scalar &val, const int& delta, const int& width, void*) {
+      if(width > 1) cuda_abort("Error: calling shfl_down from a device with CC<3.0.")
+      return val;
+    }
+  #endif
+#endif
+
+/*template<typename Scalar>
 KOKKOS_INLINE_FUNCTION
 Scalar shfl_down(const Scalar &val, const int& delta, const int& width){
   return val;
@@ -158,7 +275,7 @@ unsigned long shfl_down<unsigned long>(const unsigned long &val, const int& delt
 #else
   return val;
 #endif
-}
+}*/
 
 template<int N>
 struct Vectorization<Cuda,N> {
