@@ -71,7 +71,7 @@ namespace Example {
 template <class SM, class SV, class LO, class GO, class N, class LMO>
 result_struct
 belos_solve(
-  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N,LMO> >& A,
+  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
   const int use_muelu,
@@ -178,7 +178,7 @@ namespace Example {
 template <class SM, class SV, class LO, class GO, class N, class LMO>
 result_struct
 belos_solve(
-  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N,LMO> >& A,
+  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
   const int use_muelu,
