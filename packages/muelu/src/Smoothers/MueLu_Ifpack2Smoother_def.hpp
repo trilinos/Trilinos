@@ -52,6 +52,8 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include <Tpetra_RowMatrix.hpp>
+
 #include <Ifpack2_Chebyshev.hpp>
 #include <Ifpack2_Factory.hpp>
 #include <Ifpack2_Parameters.hpp>
@@ -225,12 +227,10 @@ namespace MueLu {
       paramList.set(eigRatioString, ratio);
     }
 
-    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA;
-    if (isBlockedMatrix == true) tpA = Utils::Op2NonConstTpetraCrs(merged2Mat);
-    else                         tpA = Utils::Op2NonConstTpetraCrs(A_);
-
+    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA;
+    if (isBlockedMatrix == true) tpA = Utils::Op2NonConstTpetraRow(merged2Mat);
+    else                         tpA = Utils::Op2NonConstTpetraRow(A_);
     prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
-
     SetPrecParameters();
     prec_->initialize();
     prec_->compute();

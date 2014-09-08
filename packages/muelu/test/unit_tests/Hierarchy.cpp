@@ -750,15 +750,56 @@ TEUCHOS_UNIT_TEST(Hierarchy, Write)
 
 TEUCHOS_UNIT_TEST(Hierarchy, BlockCrs)
 {
+  MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
+
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   Teuchos::ParameterList matrixList;
   matrixList.set("nx", 100);
   matrixList.set("ny", 100);
   matrixList.set("matrixType","Laplace2D");
   RCP<Matrix> A= TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrix(matrixList);
-  //  if(A.is_null()) TEST_EQUALITY(TestHelpers::Parameters::getLib(),Xpetra::UseEpetra); // Don't run test for Epetra
+  if(A.is_null()) TEST_EQUALITY(TestHelpers::Parameters::getLib(),Xpetra::UseEpetra); // Don't run test for Epetra
+  
 
-  // CMS: Do actual testing
+  Hierarchy H(A);
+  H.SetMaxCoarseSize(2*A->getGlobalNumRows()); // set max coarse size to fit problem size (-> 1 level method)
+  H.setVerbLevel(Teuchos::VERB_HIGH);
+
+  // Build a CoarseSolver Factory to do SGS
+  std::string ifpack2Type;
+  Teuchos::ParameterList ifpack2List;
+  ifpack2Type = "RELAXATION";
+  ifpack2List.set("relaxation: sweeps", (LO) 2);
+  ifpack2List.set("relaxation: damping factor", 1.0); 
+  ifpack2List.set("relaxation: type", "Symmetric Gauss-Seidel");
+  RCP<SmootherPrototype> smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type,ifpack2List) );
+  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
+
+  // Multigrid setup phase (using default parameters)
+  FactoryManager M0; // how to build aggregates and smoother of the first level
+  M0.SetFactory("CoarseSolver", SmooFact);
+
+  bool r = H.Setup(0, Teuchos::null,  ptrInArg(M0), Teuchos::null); 
+  TEST_EQUALITY(r, true);
+
+  RCP<Level> l0 = H.GetLevel(0);
+
+  TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
+  TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
+
+  TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
+  TEST_EQUALITY(l0->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+  //TEST_EQUALITY(l0->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final); // direct solve
+
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRangeMap(), 1);
+  RCP<MultiVector> X   = MultiVectorFactory::Build(A->getDomainMap(), 1);
+  RHS->setSeed(846930886);
+  RHS->randomize();
+  X->putScalar( (SC) 0.0);
+
+  int iterations=10;
+  H.Iterate(*RHS, *X, iterations);
   TEST_EQUALITY(0,0);
 }
 

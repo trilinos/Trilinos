@@ -84,6 +84,7 @@
 #ifdef HAVE_MUELU_TPETRA
 #include "Xpetra_TpetraCrsGraph.hpp"
 #include "Xpetra_TpetraRowMatrix.hpp"
+#include "Xpetra_TpetraBlockCrsMatrix.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix.hpp"
@@ -247,9 +248,10 @@ namespace MueLuTests {
 	  lclColInds[0] = lclRowInd;
 	  bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
 	}
-	// CMS: What Xpetra object do we wrap this guy in?
-	//	Op = rcp(new Xpetra::TpetraRowMatrix<LO,GO,NO>(bcrsmatrix));
+	bcrsmatrix->computeDiagonalGraph(); // Needs to get done to smooth for some reason
 
+	RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsmatrix));
+	Op = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
 #endif
 	  return Op;
       } // BuildMatrix()
