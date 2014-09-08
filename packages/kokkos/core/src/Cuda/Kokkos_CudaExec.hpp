@@ -164,7 +164,7 @@ struct CudaParallelLaunch< DriverType , true > {
                       const dim3       & block ,
                       const int          shmem )
   {
-    if ( grid.x && block.x ) {
+    if ( grid.x && ( block.x * block.y * block.z ) ) {
 
       if ( sizeof( Kokkos::Impl::CudaTraits::ConstantGlobalBufferType ) <
            sizeof( DriverType ) ) {
@@ -202,7 +202,7 @@ struct CudaParallelLaunch< DriverType , false > {
                       const dim3       & block ,
                       const int          shmem )
   {
-    if ( grid.x && block.x ) {
+    if ( grid.x && ( block.x * block.y * block.z ) ) {
 
       if ( CudaTraits::SharedMemoryCapacity < shmem ) {
         Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
