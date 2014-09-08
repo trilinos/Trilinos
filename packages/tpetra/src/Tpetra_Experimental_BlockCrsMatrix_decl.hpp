@@ -559,7 +559,11 @@ public:
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 
 
+  //! Computes the DiagonalGraph
   void computeDiagonalGraph ();
+
+  //! Reports on whether the DiagonalGraph has been Computed
+  bool isComputedDiagonalGraph() const { return computedDiagonalGraph_;}
 
   Teuchos::RCP<crs_graph_type> getDiagonalGraph () const;
 
