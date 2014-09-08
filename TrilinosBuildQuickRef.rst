@@ -42,6 +42,14 @@ This will enable Teuchos time monitors by default in all Trilinos packages
 that support them.  To print the timers at the end of the program, call
 ``Teuchos::TimeMonitor::summarize()``.
 
+In order do co-development of TriBTS and Trilinos (see http://http://trac.trilinos.org/wiki/TriBITSTrilinosDev), set::
+
+   -D <Project>_TRIBITS_DIR:STRING=TriBITS \
+   -D <Project>_TRIBITS_PACKAGE_USE_TRIBITS_DIR=TRUE
+
+(NOTE: You have to use the data-type ``STRING`` with ``Trilinos_TRIBITS_DIR``
+or CMake will automatically assume it is relative to the build dir!)
+
 
 .. Common references to other documents
 
