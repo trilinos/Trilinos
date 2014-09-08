@@ -73,11 +73,14 @@
 // subdomain solver's type.
 
 #define IFPACK2_INST_ADDITIVE_SCHWARZ(S,LO,GO) \
-  template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO > >;
+  template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO > >; \
+  template class AdditiveSchwarz<Tpetra::RowMatrix< S, LO, GO > >; 
 
 #define IFPACK2_INST_ADDITIVE_SCHWARZ_ILUT(S,LO,GO) \
   template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO >, \
-                                 Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO > > >;
+                                 Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO > > >; \
+  template class AdditiveSchwarz<Tpetra::RowMatrix< S, LO, GO >, \
+                                 Ifpack2::ILUT<Tpetra::RowMatrix< S, LO, GO > > >;
 
 namespace Ifpack2 {
 

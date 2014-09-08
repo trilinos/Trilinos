@@ -55,7 +55,7 @@
 
 // Explicit instantiation macro for SparseContainer.
 // Only instantiate in the Ifpack2 namespace.
-#define LCLINST(S,LO,GO) template class SparseContainer<Tpetra::CrsMatrix<S,LO,GO>, ILUT<Tpetra::CrsMatrix<S,LO,GO> > >;
+#define LCLINST(S,LO,GO) template class SparseContainer<Tpetra::CrsMatrix<S,LO,GO>, ILUT<Tpetra::CrsMatrix<S,LO,GO> > >; template class SparseContainer<Tpetra::RowMatrix<S,LO,GO>, ILUT<Tpetra::RowMatrix<S,LO,GO> > >;
 
 namespace Ifpack2 {
 

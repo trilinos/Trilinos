@@ -54,7 +54,9 @@
 namespace Ifpack2 {
 namespace Details {
 
-#define LCLINST(S,LO,GO) IFPACK2_INST(Amesos2Wrapper,S,LO,GO)
+#define LCLINST(S,LO,GO) \
+  template class Ifpack2::Details::Amesos2Wrapper< Tpetra::CrsMatrix<S, LO, GO> >; \
+  template class Ifpack2::Details::Amesos2Wrapper< Tpetra::RowMatrix<S, LO, GO> >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 

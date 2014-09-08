@@ -53,14 +53,13 @@
 // Explicit instantiation macro for OneLevelFactory.
 // Only invoke this macro in the Ifpack2::Details namespace.
 #  define LCLINST(S, LO, GO) \
-  template<> \
-  class OneLevelFactory< \
+  template class OneLevelFactory< \
   Tpetra::CrsMatrix< \
     S, LO, GO> >; \
-  template<> \
-  class OneLevelFactory< \
+  template class OneLevelFactory< \
   Tpetra::RowMatrix< \
     S, LO, GO> >;
+
 
 namespace Ifpack2 {
 namespace Details {

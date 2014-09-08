@@ -49,7 +49,8 @@
 #include "Ifpack2_ETIHelperMacros.h"
 
 #define IFPACK2_INST_SPARSE_PREC(S,LO,GO) \
-  template class Krylov< Tpetra::CrsMatrix<S,LO,GO> >;
+  template class Krylov< Tpetra::CrsMatrix<S,LO,GO> >; \
+  template class Krylov< Tpetra::RowMatrix<S,LO,GO> >;
 
 namespace Ifpack2 {
   
