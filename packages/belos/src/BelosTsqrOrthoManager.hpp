@@ -264,15 +264,17 @@ public:
     return impl_.normalize (X, B);
   }
 
-  int
-  projectAndNormalize (MV &X,
-                       Teuchos::Array<mat_ptr> C,
-                       mat_ptr B,
-                       Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
+protected:
+  virtual int
+  projectAndNormalizeImpl (MV &X,
+                           Teuchos::Array<mat_ptr> C,
+                           mat_ptr B,
+                           Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
     return impl_.projectAndNormalize (X, C, B, Q);
   }
 
+public:
   /// \brief Normalize X into Q*B, overwriting X with invalid values.
   ///
   /// We expose this interface to applications because TSQR is not
@@ -563,12 +565,13 @@ public:
   // <https://software.sandia.gov/bugzilla/show_bug.cgi?id=6129>.
   //using Belos::OrthoManager<Scalar, MV>::projectAndNormalize;
 
-  int
-  projectAndNormalize (MV &X,
-                       Teuchos::RCP<MV> MX,
-                       Teuchos::Array<mat_ptr> C,
-                       mat_ptr B,
-                       Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
+protected:
+  virtual int
+  projectAndNormalizeWithMxImpl (MV &X,
+                                 Teuchos::RCP<MV> MX,
+                                 Teuchos::Array<mat_ptr> C,
+                                 mat_ptr B,
+                                 Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
     if (getOp().is_null()) {
       const int rank = tsqr_.projectAndNormalize (X, C, B, Q);
@@ -583,6 +586,7 @@ public:
     }
   }
 
+public:
   int
   normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B) const
   {

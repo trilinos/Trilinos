@@ -47,16 +47,16 @@
 #define BELOS_ORTHOMANAGER_HPP
 
 /*! \class Belos::OrthoManager
-  
-  \brief Belos's templated virtual class for providing routines for orthogonalization and 
-  orthonormzalition of multivectors. 
+
+  \brief Belos's templated virtual class for providing routines for orthogonalization and
+  orthonormzalition of multivectors.
 
   This class defines concepts of orthogonality through the definition of an
   inner product. It also provides computational routines for orthogonalization.
 
   A concrete implementation of this class is necessary. The user can create
   their own implementation if those supplied are not suitable for their needs.
-  
+
   \author Chris Baker, Teri Barth, and Heidi Thornquist
 */
 
@@ -72,7 +72,7 @@ namespace Belos {
 
 
   //! @name OrthoManager Exceptions
-  //@{ 
+  //@{
 
   /** \brief Exception thrown to signal error in an orthogonalization manager method.
    */
@@ -85,7 +85,7 @@ namespace Belos {
   class OrthoManager {
   public:
     //! @name Constructor/Destructor
-    //@{ 
+    //@{
     //! Default constructor.
     OrthoManager() {};
 
@@ -94,15 +94,15 @@ namespace Belos {
     //@}
 
     //! @name Orthogonalization methods
-    //@{ 
+    //@{
 
     /*! \brief Provides the inner product defining the orthogonality concepts.
 
     All concepts of orthogonality discussed in this class are with respect to this inner product.
 
     \note This can be different than the MvTransMv method from the multivector class. For example,
-    if there is a mass matrix \c M, then this might be the \c M inner product (\f$x^HMx\f$). 
-    
+    if there is a mass matrix \c M, then this might be the \c M inner product (\f$x^HMx\f$).
+
      */
     virtual void innerProd( const MV &X, const MV &Y, Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const = 0;
 
@@ -155,18 +155,18 @@ namespace Belos {
     ///   is assumed to have orthonormal columns, and the
     ///   <tt>Q[i]</tt> are assumed to be mutually orthogonal.
     ///
-    virtual void 
-    project (MV &X, 
-	     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-	     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
+    virtual void
+    project (MV &X,
+             Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+             Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
 
     /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
      *
-     * This routine returns an integer \c rank stating the rank of the computed basis. If \c X does not have full rank and the normalize() routine does 
-     * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of 
+     * This routine returns an integer \c rank stating the rank of the computed basis. If \c X does not have full rank and the normalize() routine does
+     * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of
      * output \c X and first \c rank rows of \c B will be valid.
-     *  
-     @param X [in/out] The multivector to the modified. 
+     *
+     @param X [in/out] The multivector to the modified.
        On output, \c X will have some number of orthonormal columns (with respect to innerProd()).
 
      @param B [out] The coefficients of the original \c X with respect to the computed basis. This matrix is not necessarily triangular; see the documentation
@@ -176,6 +176,14 @@ namespace Belos {
     */
     virtual int normalize ( MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
 
+  protected:
+    virtual int
+    projectAndNormalizeImpl (MV &X,
+                             Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                             Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                             Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
+
+  public:
 
     /// \brief Project X against the Q[i] and normalize X
     ///
@@ -190,7 +198,7 @@ namespace Belos {
     /// doe not attempt to augment the subspace, then \c rank may be
     /// smaller than the number of columns of \c X. In this case, only
     /// the first \c rank columns of output \c X and first \c rank
-    /// rows of \c B will be valid.  
+    /// rows of \c B will be valid.
     ///
     /// \note This routine guarantees both the orthgonality
     ///   constraints against the <tt>Q[i]</tt> as well as the
@@ -231,24 +239,28 @@ namespace Belos {
     ///
     /// \return Rank of the basis computed by this method.
     ///
-    virtual int 
-    projectAndNormalize (MV &X, 
-			 Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-			 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-			 Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
+    int
+    projectAndNormalize (MV &X,
+                         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                         Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                         Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
+    {
+      return this->projectAndNormalizeImpl (X, C, B, Q);
+    }
+
     //@}
 
     //! @name Error methods
-    //@{ 
+    //@{
 
     /*! \brief This method computes the error in orthonormality of a multivector.
      */
-    virtual typename Teuchos::ScalarTraits< ScalarType >::magnitudeType 
+    virtual typename Teuchos::ScalarTraits< ScalarType >::magnitudeType
     orthonormError(const MV &X) const = 0;
 
     /*! \brief This method computes the error in orthogonality of two multivectors.
      */
-    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     orthogError(const MV &X1, const MV &X2) const = 0;
 
     //@}
@@ -260,11 +272,11 @@ namespace Belos {
     /*! \brief This method sets the label used by the timers in the orthogonalization manager.
      */
     virtual void setLabel(const std::string& label) = 0;
- 
+
     /*! \brief This method returns the label being used by the timers in the orthogonalization manager.
      */
     virtual const std::string& getLabel() const = 0;
-    
+
     //@}
 
   };
