@@ -127,7 +127,7 @@ Ifpack_SerialTriDiMatrix::Ifpack_SerialTriDiMatrix(const Ifpack_SerialTriDiMatri
 {
   SetLabel(Source.Label());
   if(CV_ == Copy) {
-    const int newsize = 4* (N_-1);
+    const int newsize =  (N_ == 1)? 1 : 4*(N_-1);
     if(newsize > 0) {
       A_ = new double[newsize];
       CopyMat(Source.A_, Source.N() , A_, N_);

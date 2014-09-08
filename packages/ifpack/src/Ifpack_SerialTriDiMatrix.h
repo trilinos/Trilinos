@@ -496,6 +496,8 @@ inline double& Ifpack_SerialTriDiMatrix::operator () (int RowIndex, int ColIndex
 #endif
   return D_[0]; // ultimate badness, should never get here
  }
+  throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) +
+		    " Out of Range -1 to 2");
  return D_[0]; // ultimat badness, should never get here
 }
 //=========================================================================

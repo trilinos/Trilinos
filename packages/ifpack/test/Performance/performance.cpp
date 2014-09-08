@@ -40,6 +40,7 @@
 //@HEADER
 */
 
+#include <sys/resource.h>
 #include "Ifpack_ConfigDefs.h"
 
 #ifdef HAVE_MPI
@@ -60,7 +61,6 @@
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_BlockRelaxation.h"
 #include "Ifpack_SparseContainer.h"
-#include "Ifpack_TriDiContainer.h"
 
 #include "Ifpack_Amesos.h"
 #include "AztecOO.h"
@@ -103,10 +103,7 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
     // set AztecOO solver object
     AztecOO AztecOOSolver(Problem);
     AztecOOSolver.SetAztecOption(AZ_solver,Solver);
-    if (verbose)
-      AztecOOSolver.SetAztecOption(AZ_output,32);
-    else
-      AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
+    AztecOOSolver.SetAztecOption(AZ_output,32);
     AztecOOSolver.SetPrecOperator(&Point);
 
     AztecOOSolver.Iterate(1550,1e-2);
@@ -119,7 +116,7 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
       cout << "Norm of the true residual = " << TrueResidual << endl;
     }
   }
-
+  if(verbose) printf(" point finished \n");
   // ================================================== //
   // get the number of iterations with block relaxation //
   // ================================================== //
@@ -135,10 +132,7 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
     // set AztecOO solver object
     AztecOO AztecOOSolver(Problem);
     AztecOOSolver.SetAztecOption(AZ_solver,Solver);
-    if (verbose)
-      AztecOOSolver.SetAztecOption(AZ_output,32);
-    else
-      AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
+    AztecOOSolver.SetAztecOption(AZ_output,32);
     AztecOOSolver.SetPrecOperator(&Block);
 
     AztecOOSolver.Iterate(1550,1e-2);
@@ -146,24 +140,24 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
     double TrueResidual = AztecOOSolver.TrueResidual();
     ItersBlock = AztecOOSolver.NumIters();
     // some output
-    if (verbose && Problem.GetMatrix()->Comm().MyPID() == 0) {
+    if ( Problem.GetMatrix()->Comm().MyPID() == 0) {
       cout << "Iterations " << ItersBlock << endl;
       cout << "Norm of the true residual = " << TrueResidual << endl;
     }
   }
+
+  if(verbose) printf(" point finished \n");
 
   int diff = ItersPoint - ItersBlock;
   if (diff < 0) diff = -diff;
     
   if (diff > 10)
   {
-    if (verbose)
-      cout << "ComparePointandBlock TEST FAILED!" << endl;
+    if(verbose) cout << "ComparePointandBlock TEST FAILED!" << endl;
     return(false);
   }
   else {
-    if (verbose)
-      cout << "ComparePointandBlock TEST PASSED" << endl;
+    if(verbose) cout << "ComparePointandBlock TEST PASSED" << endl;
     return(true);
   }
 }
@@ -214,25 +208,51 @@ int main(int argc, char *argv[])
 
   // test the preconditioner
   int TestPassed = true;
-
+  int who = RUSAGE_SELF;
+  struct rusage usage;
+  int ret;
+  ret = getrusage(who, &usage);
+  struct timeval ru_utime;
+  //  struct timeval ru_stime;
+  ru_utime = usage.ru_utime;
+  
 
   // ================================== //
   // compare point and block relaxation //
   // ================================== //
 
-
-
   TestPassed = TestPassed && 
     ComparePointAndBlock("Jacobi",A,10);
+  if(verbose) printf(" Jacobi Finished \n");
 
+  ret = getrusage(who, &usage);
+  int sec =  usage.ru_utime.tv_sec -ru_utime.tv_sec;
+  int usec = usage.ru_utime.tv_usec -ru_utime.tv_usec;
+  double tt = (double)sec + 1e-6*(double)usec;
+  ru_utime = usage.ru_utime;
+  if(verbose) printf(" Jacobi time %f \n",tt);
 
   TestPassed = TestPassed && 
     ComparePointAndBlock("symmetric Gauss-Seidel",A,10);
+  if(verbose) printf(" sGS finished \n");
+
+  ret = getrusage(who, &usage);
+  sec =  usage.ru_utime.tv_sec -ru_utime.tv_sec;
+  usec = usage.ru_utime.tv_usec -ru_utime.tv_usec;
+  tt = (double)sec + 1e-6*(double)usec;
+  ru_utime = usage.ru_utime;
+  if(verbose) printf(" sGS time %f \n",tt);
 
   if (!SymmetricGallery) {
-
     TestPassed = TestPassed && 
       ComparePointAndBlock("Gauss-Seidel",A,10);
+    ret = getrusage(who, &usage);
+    sec =  usage.ru_utime.tv_sec -ru_utime.tv_sec;
+    usec = usage.ru_utime.tv_usec -ru_utime.tv_usec; 
+    tt = (double)sec + 1e-6*(double)usec;
+    ru_utime = usage.ru_utime;
+    if(verbose) printf(" GS time %f \n",tt);
+    if(verbose) printf(" GS Finished \n");
   }
 
   if (!TestPassed) {
