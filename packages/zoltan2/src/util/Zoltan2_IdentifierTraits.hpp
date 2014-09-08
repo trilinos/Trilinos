@@ -483,7 +483,9 @@ struct IdentifierTraits<int> {
 template<>
 struct IdentifierTraits<unsigned int> {
   typedef unsigned int T;
-  static inline int hashCode(const T  a) {return static_cast<int>(a);}
+  static inline int hashCode(const T  a) {
+    return getHashCode(
+      reinterpret_cast<const unsigned char *>(&a), sizeof(T));}
   static inline bool hasUniqueKey() { return true;}
   static inline double key(const T a){return static_cast<double>(a); }
   static inline std::string name()   {return("unsigned int");}
@@ -638,8 +640,14 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   typedef typename std::pair<pair_t, pair_t> pairPair_t;
 
   static inline int hashCode(const pair_t p)  {
-    return IdentifierTraits<T1>::hashCode(p.first) +
-      IdentifierTraits<T2>::hashCode(p.second);
+    int total = IdentifierTraits<T1>::hashCode(p.first) +
+                IdentifierTraits<T2>::hashCode(p.second);
+    if (total < 0)
+    {
+        int maxNegativeInt = 1<<31;
+        total += maxNegativeInt;
+    }
+    return total;
   }
 
   static inline bool hasUniqueKey() {

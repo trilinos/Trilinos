@@ -81,7 +81,10 @@ int getHashCode(const unsigned char *a, size_t len)
       c = 0;
   }
   if (total < 0)
-    total *= -1;
+  {
+      int maxNegativeInt = 1<<31;
+      total += maxNegativeInt;
+  }
   return total;
 }
 
