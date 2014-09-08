@@ -91,7 +91,7 @@
     // CUDA (including version 6.5) does not support giving lambdas as
     // arguments to global functions. Thus its not currently possible
     // to dispatch lambdas from the host.
-    #define KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA
+    #define KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA 1
   #endif
 #endif /* #if defined( __NVCC__ ) */
 
