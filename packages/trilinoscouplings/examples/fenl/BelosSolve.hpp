@@ -68,7 +68,7 @@
 namespace Kokkos {
 namespace Example {
 
-template <class SM, class SV, class LO, class GO, class N, class LMO>
+template <class SM, class SV, class LO, class GO, class N>
 result_struct
 belos_solve(
   const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
@@ -175,7 +175,7 @@ belos_solve(
 namespace Kokkos {
 namespace Example {
 
-template <class SM, class SV, class LO, class GO, class N, class LMO>
+template <class SM, class SV, class LO, class GO, class N>
 result_struct
 belos_solve(
   const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
