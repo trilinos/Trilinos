@@ -2,8 +2,26 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Dev version (11.9):
--------------------
+Development version (11.11):
+----------------------------
+
+* Removed the LocalMatOps template parameter
+
+CrsGraph, CrsMatrix, VbrMatrix, and other classes used to have a
+LocalMatOps template parameter.  This was the fourth template
+parameter of CrsGraph and the fifth template parameter of CrsMatrix.
+It was always optional.  Chris Baker intended it as an extension point
+for users or third-party vendors to insert their own sparse
+matrix-vector multiply or triangular solve routines.  However, no one
+ever used it for this purpose as far as we know.  When it started to
+hinder the Kokkos refactor effort (see release notes for Trilinos
+11.10 below), we removed it.  This should speed up compilation times.
+
+Lesson: It's always easier to _add_ a template parameter (at the end,
+if it's optional) than it is to remove one.
+
+Trilinos 11.10:
+---------------
 
 * Continued work on the Kokkos refactor version of Tpetra
 

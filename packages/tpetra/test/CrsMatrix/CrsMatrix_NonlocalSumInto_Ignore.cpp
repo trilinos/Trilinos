@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
 
   // CrsGraph specialization corresponding to CrsMatrixType (the
   // CrsMatrix specialization).
-  typedef Tpetra::CrsGraph<LO, GO, NT, typename CrsMatrixType::mat_solve_type> crs_graph_type;
+  typedef Tpetra::CrsGraph<LO, GO, NT> crs_graph_type;
 
   ////////////////////////////////////////////////////////////////////
   // HERE BEGINS THE TEST.

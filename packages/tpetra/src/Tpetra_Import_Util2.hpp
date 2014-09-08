@@ -58,7 +58,7 @@
 #include <utility>
 
 namespace Tpetra {
-  namespace Import_Util {  
+  namespace Import_Util {
 
     //! packAndPrepareWithOwningPIDs.
     /*! Note: The SourcePids vector should contain a list of owning PIDs for each column in the ColMap, as from Epetra_Util::GetPids,
@@ -67,15 +67,15 @@ namespace Tpetra {
 
       \warning This method is intended for expert developer use only, and should never be called by user code.
     */
-    template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, typename LocalMatOps>
-    void packAndPrepareWithOwningPIDs(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & SourceMatrix,
-                                      const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                                      Teuchos::Array<char>& exports,
-                                      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                                      size_t& constantNumPackets,
-                                      Distributor &distor,
-                                      const Teuchos::ArrayView<int>& SourcePids);
-
+    template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+    void
+    packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& SourceMatrix,
+                                  const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                                  Teuchos::Array<char>& exports,
+                                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                                  size_t& constantNumPackets,
+                                  Distributor &distor,
+                                  const Teuchos::ArrayView<int>& SourcePids);
 
     //! unpackAndCombineWithOwningPIDsCount.
     /*! \brief Perform the count for unpacking the imported column indices pids, and values, and combining them into matrix.
@@ -85,31 +85,33 @@ namespace Tpetra {
 
       \warning This method is intended for expert developer use only, and should never be called by user code.
     */
-    template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, typename LocalMatOps>
-    size_t unpackAndCombineWithOwningPIDsCount(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & SourceMatrix,
-                                               const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                                               const Teuchos::ArrayView<const char> &imports,
-                                               const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                                               size_t constantNumPackets,
-                                               Distributor &distor,
-                                               CombineMode combineMode,
-                                               size_t numSameIDs,
-                                               const ArrayView<const LocalOrdinal> &permuteToLIDs,
-                                               const ArrayView<const LocalOrdinal> &permuteFromLIDs);
+    template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+    size_t
+    unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& SourceMatrix,
+                                         const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+                                         const Teuchos::ArrayView<const char> &imports,
+                                         const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                                         size_t constantNumPackets,
+                                         Distributor &distor,
+                                         CombineMode combineMode,
+                                         size_t numSameIDs,
+                                         const ArrayView<const LocalOrdinal> &permuteToLIDs,
+                                         const ArrayView<const LocalOrdinal> &permuteFromLIDs);
 
-
-    // ===================================================================
     //! unpackAndCombineIntoCrsArrays
     /*! You should call unpackWithOwningPIDsCount first and allocate all arrays accordingly.
 
-      Note: The SourcePids vector (on input) should contain of owning PIDs for each column in the (source) ColMap, as from Tpetra::Import_Util::getPids,
-      with the "-1 for local" option being used.
+      Note: The SourcePids vector (on input) should contain of owning
+      PIDs for each column in the (source) ColMap, as from
+      Tpetra::Import_Util::getPids, with the "-1 for local" option
+      being used.
 
-      Note: The TargetPids vector (on output) will contain of owning PIDs for each entry in the matrix,
-      with the "-1 for local" for locally owned entries.
+      Note: The TargetPids vector (on output) will contain of owning
+      PIDs for each entry in the matrix, with the "-1 for local" for
+      locally owned entries.
     */
-    template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, typename LocalMatOps>
-    void unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & SourceMatrix,
+    template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+    void unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & SourceMatrix,
                                        const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
                                        const Teuchos::ArrayView<const char> &imports,
                                        const Teuchos::ArrayView<size_t> &numPacketsPerLID,
@@ -128,23 +130,24 @@ namespace Tpetra {
                                        const Teuchos::ArrayView<const int> &SourcePids,
                                        Teuchos::Array<int> &TargetPids);
 
-
-    // ===================================================================
     //! sortCrsEntries
     /*! sorts the entries of the matrix by colind w/i each row
     */
     template<typename Scalar, typename Ordinal>
-    void sortCrsEntries(const Teuchos::ArrayView<size_t> &CRS_rowptr, const Teuchos::ArrayView<Ordinal> & CRS_colind, const Teuchos::ArrayView<Scalar> &CRS_vals);
+    void
+    sortCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
+                    const Teuchos::ArrayView<Ordinal>& CRS_colind,
+                    const Teuchos::ArrayView<Scalar>&CRS_vals);
 
-    // ===================================================================
     //! sortAndMergeCrsEntries
     /*! sorts the entries of the matrix by colind w/i each row, merging entries in a row with the same colind
     */
     template<typename Scalar, typename Ordinal>
-    void sortAndMergeCrsEntries(const Teuchos::ArrayView<size_t> &CRS_rowptr, const Teuchos::ArrayView<Ordinal> & CRS_colind, const Teuchos::ArrayView<Scalar> &CRS_vals);
+    void
+    sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
+                            const Teuchos::ArrayView<Ordinal>& CRS_colind,
+                            const Teuchos::ArrayView<Scalar>& CRS_vals);
 
-
-    // ===================================================================
     //! lowCommunicationMakeColMapAndReindex
     /*! If you know the owning PIDs already, you can make the colmap a lot less expensively.
       If LocalOrdinal and GlobalOrdinal are the same, you can (and should) use the same array for
@@ -158,13 +161,14 @@ namespace Tpetra {
       \warning This method is intended for expert developer use only, and should never be called by user code.
 */
     template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-    void lowCommunicationMakeColMapAndReindex(const ArrayView<const size_t> &rowPointers,
-                                              const ArrayView<LocalOrdinal> &columnIndices_LID,
-                                              const ArrayView<GlobalOrdinal> &columnIndices_GID,
-                                              const Tpetra::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
-                                              const Teuchos::ArrayView<const int> &owningPids,
-                                              Teuchos::Array<int> &remotePids,
-                                              Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
+    void
+    lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowPointers,
+                                          const Teuchos::ArrayView<LocalOrdinal> &columnIndices_LID,
+                                          const Teuchos::ArrayView<GlobalOrdinal> &columnIndices_GID,
+                                          const Tpetra::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+                                          const Teuchos::ArrayView<const int> &owningPids,
+                                          Teuchos::Array<int> &remotePids,
+                                          Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
     template <typename Matrix>
     struct MatrixSerializationTraits {
@@ -192,28 +196,19 @@ namespace Tpetra {
       }
     };
 
+  } // namespace Import_Util
+} // namespace Tpetra
 
-  }// end Import_Util
-}//end Tpetra
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-//----------------------------------------------------------------------------
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, typename LocalMatOps>
-void Tpetra::Import_Util::packAndPrepareWithOwningPIDs(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> &SourceMatrix,
-                                                       const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                                                       Teuchos::Array<char>& exports,
-                                                       const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                                                       size_t& constantNumPackets,
-                                                       Distributor &distor,
-                                                       const Teuchos::ArrayView<int>& SourcePids) {
-
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void
+Tpetra::Import_Util::packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &SourceMatrix,
+                                                   const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                                                   Teuchos::Array<char>& exports,
+                                                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                                                   size_t& constantNumPackets,
+                                                   Distributor &distor,
+                                                   const Teuchos::ArrayView<int>& SourcePids)
+{
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::as;
@@ -222,7 +217,7 @@ void Tpetra::Import_Util::packAndPrepareWithOwningPIDs(const CrsMatrix<Scalar, L
   typedef GlobalOrdinal GO;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node>  map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> matrix_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef MatrixSerializationTraits<matrix_type> serialization_type;
 
   TEUCHOS_TEST_FOR_EXCEPTION(!SourceMatrix.isLocallyIndexed(),std::invalid_argument, "packAndPrepareWithOwningPIDs: SourceMatrix must be locally indexed.");
@@ -326,8 +321,8 @@ void Tpetra::Import_Util::packAndPrepareWithOwningPIDs(const CrsMatrix<Scalar, L
 
 
 //----------------------------------------------------------------------------
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, typename LocalMatOps>
-size_t Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & SourceMatrix,
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+size_t Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & SourceMatrix,
                                                                 const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
                                                                 const Teuchos::ArrayView<const char> &imports,
                                                                 const Teuchos::ArrayView<size_t> &numPacketsPerLID,
@@ -339,7 +334,7 @@ size_t Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount(const CrsMatrix<
                                                                 const ArrayView<const LocalOrdinal> &permuteFromLIDs) {
   typedef LocalOrdinal LO;
   typedef typename ArrayView<const LO>::size_type size_type;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> matrix_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef MatrixSerializationTraits<matrix_type> serialization_type;
   size_t nnz = 0;
 
@@ -380,8 +375,8 @@ size_t Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount(const CrsMatrix<
 
 
 //----------------------------------------------------------------------------
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, typename LocalMatOps>
-void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & SourceMatrix,
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & SourceMatrix,
                                                         const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
                                                         const Teuchos::ArrayView<const char> &imports,
                                                         const Teuchos::ArrayView<size_t> &numPacketsPerLID,
@@ -406,14 +401,14 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
   typedef GlobalOrdinal GO;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node>  map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> matrix_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef MatrixSerializationTraits<matrix_type> serialization_type;
 
   size_t i,j;
   size_t N=TargetNumRows;
   size_t mynnz = TargetNumNonzeros;
   // In the case of reduced communicators, the SourceMatrix won't have the right "MyPID", so thus we have to supply it.
-  int MyPID = MyTargetPID; 
+  int MyPID = MyTargetPID;
 
 
   // Zero the rowptr
@@ -464,8 +459,8 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(CSR_rowptr[N] != mynnz,
-			     std::invalid_argument, "unpackAndCombineIntoCrsArrays: CSR_rowptr[last] = " << CSR_rowptr[N]
-                             << "!= mynnz = " << mynnz << ".");  
+                             std::invalid_argument, "unpackAndCombineIntoCrsArrays: CSR_rowptr[last] = " << CSR_rowptr[N]
+                             << "!= mynnz = " << mynnz << ".");
 
   // Preseed TargetPids with -1 for local
   if(as<size_t>(TargetPids.size())!=mynnz) TargetPids.resize(mynnz);
@@ -640,15 +635,15 @@ void Tpetra::Import_Util::sortAndMergeCrsEntries(const Teuchos::ArrayView<size_t
     // Merge & shrink
     for(size_t j=CRS_rowptr[i]; j < CRS_rowptr[i+1]; j++) {
       if(j > CRS_rowptr[i] && CRS_colind[j]==CRS_colind[new_curr-1]) {
-	CRS_vals[new_curr-1] += CRS_vals[j];
+        CRS_vals[new_curr-1] += CRS_vals[j];
       }
       else if(new_curr==j) {
-	new_curr++;
+        new_curr++;
       }
       else {
-	CRS_colind[new_curr] = CRS_colind[j];
-	CRS_vals[new_curr]   = CRS_vals[j];
-	new_curr++;
+        CRS_colind[new_curr] = CRS_colind[j];
+        CRS_vals[new_curr]   = CRS_vals[j];
+        new_curr++;
       }
     }
 
@@ -673,7 +668,7 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
   // columnMap = domainMap.
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &domainMap = *domainMapRCP;
 
-  // Scan all column indices and sort into two groups: 
+  // Scan all column indices and sort into two groups:
   // Local:  those whose GID matches a GID of the domain map on this processor and
   // Remote: All others.
   size_t numDomainElements = domainMap.getNodeNumElements();
@@ -684,20 +679,20 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
   // on this processor, but this would require two passes through the column IDs, so we make it the max of 100
   // and the number of block rows.
   const size_t numMyRows =  rowptr.size()-1;
-  int    hashsize        = Teuchos::as<int>(numMyRows); 
+  int    hashsize        = Teuchos::as<int>(numMyRows);
   if (hashsize < 100) hashsize = 100;
 
-  Tpetra::Details::HashTable<GlobalOrdinal,LocalOrdinal> RemoteGIDs(hashsize); 
+  Tpetra::Details::HashTable<GlobalOrdinal,LocalOrdinal> RemoteGIDs(hashsize);
   Teuchos::Array<GlobalOrdinal> RemoteGIDList; RemoteGIDList.reserve(hashsize);
   Teuchos::Array<int> PIDList;                 PIDList.reserve(hashsize);
 
-  // Here we start using the *LocalOrdinal* colind_LID array.  This is safe even if both 
+  // Here we start using the *LocalOrdinal* colind_LID array.  This is safe even if both
   // columnIndices arrays are actually the same (because LocalOrdinal==GlobalOrdinal).
-  // For *local* GID's set colind_LID with with their LID in the domainMap.  For *remote* GIDs, 
+  // For *local* GID's set colind_LID with with their LID in the domainMap.  For *remote* GIDs,
   // we set colind_LID with (numDomainElements+NumRemoteColGIDs) before the increment of
-  // the remote count.  These numberings will be separate because no local LID is greater 
-  // than numDomainElements. 
-  
+  // the remote count.  These numberings will be separate because no local LID is greater
+  // than numDomainElements.
+
   size_t NumLocalColGIDs = 0;
   LocalOrdinal NumRemoteColGIDs = 0;
   for(size_t i = 0; i < numMyRows; i++) {
@@ -711,7 +706,7 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
           LocalGIDs[LID] = true; // There is a column in the graph associated with this domain map GID
           NumLocalColGIDs++;
         }
-        colind_LID[j] = LID; 
+        colind_LID[j] = LID;
       }
       else {
         LocalOrdinal hash_value=RemoteGIDs.get(GID);
@@ -725,17 +720,17 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
           NumRemoteColGIDs++;
         }
         else
-          colind_LID[j] = Teuchos::as<LocalOrdinal>(numDomainElements + hash_value);      
+          colind_LID[j] = Teuchos::as<LocalOrdinal>(numDomainElements + hash_value);
       }
     }
   }
 
   // Possible short-circuit:  If all domain map GIDs are present as column indices, then set ColMap=domainMap and quit
-  if (domainMap.getComm()->getSize()==1) {  
+  if (domainMap.getComm()->getSize()==1) {
     // Sanity check: When there is one processor,there can be no remoteGIDs
-    TEUCHOS_TEST_FOR_EXCEPTION(NumRemoteColGIDs!=0,std::runtime_error,"lowCommunicationMakeColMapAndReindex: Some column IDs are not in domainMap."); 
+    TEUCHOS_TEST_FOR_EXCEPTION(NumRemoteColGIDs!=0,std::runtime_error,"lowCommunicationMakeColMapAndReindex: Some column IDs are not in domainMap.");
     if (Teuchos::as<size_t>(NumLocalColGIDs)==numDomainElements) {
-      // In this case, we just use the domainMap's indices, which is, not coincidently, what we clobbered colind with up above anyway. 
+      // In this case, we just use the domainMap's indices, which is, not coincidently, what we clobbered colind with up above anyway.
       // No further reindexing is needed.
       colMap = domainMapRCP;
       return;
@@ -751,9 +746,9 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
     ColIndices.resize(numMyCols);
     if(NumLocalColGIDs!=Teuchos::as<size_t>(numMyCols)) RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back half of ColIndices
   }
-  
-  for(LocalOrdinal i = 0; i < NumRemoteColGIDs; i++) 
-    RemoteColIndices[i] = RemoteGIDList[i]; 
+
+  for(LocalOrdinal i = 0; i < NumRemoteColGIDs; i++)
+    RemoteColIndices[i] = RemoteGIDList[i];
 
   // Build permute array for *remote* reindexing.
   Teuchos::Array<LocalOrdinal> RemotePermuteIDs(NumRemoteColGIDs);
@@ -764,14 +759,14 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
   // This is a sort with two auxillary arrays: RemoteColIndices and RemotePermuteIDs.
   Tpetra::sort3(PIDList.begin(),PIDList.end(),ColIndices.begin()+NumLocalColGIDs,RemotePermuteIDs.begin());
 
-  // Stash the RemotePIDs  
+  // Stash the RemotePIDs
   // Note: If Teuchos::Array had a shrink_to_fit like std::vector, we'd call it here.
   remotePIDs = PIDList;
 
   // Sort external column indices so that columns from a given remote processor are not only contiguous
   // but also in ascending order. NOTE: I don't know if the number of externals associated
   // with a given remote processor is known at this point ... so I count them here.
-  
+
   // NTS: Only sort the RemoteColIndices this time...
   LocalOrdinal StartCurrent = 0, StartNext = 1;
   while ( StartNext < NumRemoteColGIDs ) {
@@ -781,7 +776,7 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
       StartCurrent = StartNext; StartNext++;
     }
   }
-    Tpetra::sort2(ColIndices.begin()+NumLocalColGIDs+StartCurrent,ColIndices.begin()+NumLocalColGIDs+StartNext,RemotePermuteIDs.begin()+StartCurrent); 
+    Tpetra::sort2(ColIndices.begin()+NumLocalColGIDs+StartCurrent,ColIndices.begin()+NumLocalColGIDs+StartNext,RemotePermuteIDs.begin()+StartCurrent);
 
   // Reverse the permutation to get the information we actually care about
   Teuchos::Array<LocalOrdinal> ReverseRemotePermuteIDs(NumRemoteColGIDs);
@@ -793,19 +788,19 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
 
   // Now fill front end. Two cases:
   // (1) If the number of Local column GIDs is the same as the number of Local domain GIDs, we
-  //     can simply read the domain GIDs into the front part of ColIndices, otherwise 
+  //     can simply read the domain GIDs into the front part of ColIndices, otherwise
   // (2) We step through the GIDs of the domainMap, checking to see if each domain GID is a column GID.
   //     we want to do this to maintain a consistent ordering of GIDs between the columns and the domain.
   Teuchos::ArrayView<const GlobalOrdinal> domainGlobalElements = domainMap.getNodeElementList();
   if(Teuchos::as<size_t>(NumLocalColGIDs) == numDomainElements) {
     if(NumLocalColGIDs > 0) {
-      // Load Global Indices into first numMyCols elements column GID list     
+      // Load Global Indices into first numMyCols elements column GID list
       std::copy(domainGlobalElements.begin(),domainGlobalElements.end(),ColIndices.begin());
     }
   }
   else {
     LocalOrdinal NumLocalAgain = 0;
-    use_local_permute = true;    
+    use_local_permute = true;
     for(size_t i = 0; i < numDomainElements; i++) {
       if(LocalGIDs[i]) {
         LocalPermuteIDs[i] = NumLocalAgain;
@@ -815,10 +810,10 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(NumLocalAgain)!=NumLocalColGIDs,std::runtime_error,"lowCommunicationMakeColMapAndReindex: Local ID count test failed.");
   }
 
-  // Make Column map 
+  // Make Column map
   Tpetra::global_size_t minus_one = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   colMap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(minus_one,ColIndices,domainMap.getIndexBase(),domainMap.getComm(),domainMap.getNode()));
- 
+
   // Low-cost reindex of the matrix
   for(size_t i=0; i<numMyRows; i++){
     for(size_t j=rowptr[i]; j<rowptr[i+1]; j++){

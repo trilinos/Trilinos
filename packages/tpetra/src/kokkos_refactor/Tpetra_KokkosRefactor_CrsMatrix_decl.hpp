@@ -92,13 +92,6 @@ namespace Tpetra {
     /// for backwards compatibility.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
-    //! Backwards compatibility typedef.
-    typedef void LocalMatOps;
-    //! Backwards compatibility typedef.
-    typedef void mat_vec_type;
-    //! Backwards compatibility typedef.
-    typedef void mat_solve_type;
-
     //! The Map specialization suitable for this CrsMatrix specialization.
     typedef Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
 
@@ -332,7 +325,7 @@ namespace Tpetra {
 
 
     // This friend declaration makes the clone() method work.
-    template <class S2, class LO2, class GO2, class N2, class LMO2>
+    template <class S2, class LO2, class GO2, class N2>
     friend class CrsMatrix;
 
     /// \brief Create a deep copy of this CrsMatrix, where the copy

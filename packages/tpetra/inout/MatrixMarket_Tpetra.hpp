@@ -207,15 +207,7 @@ namespace Tpetra {
     /// We do this because the typical use case of Matrix Market files
     /// in Trilinos is to test sparse matrix methods, which usually
     /// involves reading a sparse matrix A and perhaps also a dense
-    /// right-hand side b.  Also, this lets you use CrsMatrix objects
-    /// with non-default LocalMatOps template parameters.  (If we
-    /// templated on Scalar, LocalOrdinal, GlobalOrdinal, and Node, we
-    /// would also have to template on LocalMatOps in order to deal
-    /// with CrsMatrix types with nondefault LocalMatOps.  That would
-    /// tie Reader to CrsMatrix anyway, since MultiVector is not
-    /// templated on LocalMatOps.  As a result, we might as well just
-    /// template on the CrsMatrix type, in order to use arbitrary
-    /// LocalMatOps types without additional code.)
+    /// right-hand side b.
     ///
     /// \tparam SparseMatrixType A specialization of CrsMatrix.
     ///
@@ -4855,15 +4847,7 @@ namespace Tpetra {
     /// because the typical use case of Matrix Market files in
     /// Trilinos is to test sparse matrix methods, which usually
     /// involves reading a sparse matrix A and perhaps also a dense
-    /// right-hand side b.  Also, this lets you use CrsMatrix objects
-    /// with non-default LocalMatOps template parameters.  (If we
-    /// templated on Scalar, LocalOrdinal, GlobalOrdinal, and Node, we
-    /// would also have to template on LocalMatOps in order to deal
-    /// with CrsMatrix types with nondefault LocalMatOps.  That would
-    /// tie Writer to CrsMatrix anyway, since MultiVector is not
-    /// templated on LocalMatOps.  As a result, we might as well just
-    /// template on the CrsMatrix type, in order to use arbitrary
-    /// LocalMatOps types without additional code.)
+    /// right-hand side b.
     template<class SparseMatrixType>
     class Writer {
     public:

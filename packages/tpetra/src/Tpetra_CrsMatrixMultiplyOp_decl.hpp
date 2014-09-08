@@ -56,8 +56,7 @@ namespace Tpetra {
   template <class MatScalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node,
-            class LocalMatOps>
+            class Node>
   class CrsMatrix;
 #endif
 
@@ -125,28 +124,20 @@ namespace Tpetra {
   ///
   /// \tparam Node The fourth template parameter of CrsMatrix and
   ///   Operator.
-  ///
-  /// \tparam LocalMatOps The optional and deprecated fifth template
-  ///   parameter of CrsMatrix.  (Operator only takes four template
-  ///   parameters.)  Please omit this unless you really know what you
-  ///   are doing.
   template <class Scalar,
             class MatScalar = Scalar,
             class LocalOrdinal =
-              typename CrsMatrix<MatScalar>::local_ordinal_type,
+            typename CrsMatrix<MatScalar>::local_ordinal_type,
             class GlobalOrdinal =
-              typename CrsMatrix<MatScalar, LocalOrdinal>::global_ordinal_type,
+            typename CrsMatrix<MatScalar, LocalOrdinal>::global_ordinal_type,
             class Node =
-              typename CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps =
-              typename CrsMatrixSparseOpsSelector<MatScalar, LocalOrdinal, Node>::sparse_ops_type>
+            typename CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class CrsMatrixMultiplyOp :
     public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
   public:
     //! The specialization of CrsMatrix which this class wraps.
-    typedef CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
-      crs_matrix_type;
+    typedef CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
     //! The specialization of Map which this class uses.
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
@@ -387,10 +378,11 @@ namespace Tpetra {
             class MatScalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node,
-            class LocalMatOps>
-  Teuchos::RCP< CrsMatrixMultiplyOp<Scalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
-  createCrsMatrixMultiplyOp(const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A);
+            class Node>
+  Teuchos::RCP<
+    CrsMatrixMultiplyOp<Scalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node> >
+  createCrsMatrixMultiplyOp (const Teuchos::RCP<
+    const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node> > &A);
 
 } // end of namespace Tpetra
 

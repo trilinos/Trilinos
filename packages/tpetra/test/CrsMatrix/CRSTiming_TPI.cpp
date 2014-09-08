@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 
   //
   // Get example parameters from command-line processor
-  //  
+  //
   int numThreads = -1;
   std::string filename("bcsstk14.hb");
   int verbose = 1;
@@ -90,11 +90,12 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  // 
+  //
   // Say hello, print some communicator info
   //
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
-  if (comm->getRank() == 0) {
+  Teuchos::RCP<const Teuchos::Comm<int> > comm =
+    Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
+  if (comm->getRank () == 0) {
     std::cout << "\n" << Tpetra::version() << std::endl << std::endl;
     std::cout << argv[0] << filename << std::endl;
     std::cout << "Comm info: " << *comm;
@@ -105,16 +106,6 @@ int main(int argc, char *argv[]) {
   params.set<int>("Num Threads",numThreads);
   params.set<int>("Verbose",verbose);
   Teuchos::RCP<Node> node = Teuchos::rcp(new Node(params));
-
-  if (comm->getRank() == 0) {
-    typedef KokkosClassic::DefaultKernels<double,int,Node>::SparseOps DSM;
-    KokkosClassic::CrsMatrix<double,int,Node,DSM> *mat = NULL;
-#ifdef HAVE_KOKKOS_FIRST_TOUCH_MATVEC_ALLOCATION
-    std::cout << "Using Kokkos first-touch matrix objects." << std::endl;
-#else
-    std::cout << "Not using Kokkos first-touch matrix objects." << std::endl;
-#endif
-  }
 
   //
   // Read Tpetra::CrsMatrix from file

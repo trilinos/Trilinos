@@ -42,6 +42,8 @@
 #ifndef TPETRA_CRSGRAPH_DECL_HPP
 #define TPETRA_CRSGRAPH_DECL_HPP
 
+#include "Tpetra_ConfigDefs.hpp"
+
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
@@ -49,10 +51,9 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_RowGraph.hpp"
-#include "Tpetra_DistObject.hpp"
-#include "Tpetra_Exceptions.hpp"
+#include <Tpetra_RowGraph.hpp>
+#include <Tpetra_DistObject.hpp>
+#include <Tpetra_Exceptions.hpp>
 
 
 namespace Tpetra {
@@ -63,10 +64,10 @@ namespace Tpetra {
   // over them and go down to the CrsMatrix class declaration.  Thank
   // you.
   //
-  template <class LO, class GO, class N, class SpMatOps>
+  template <class LO, class GO, class N>
   class CrsGraph;
 
-  template <class S, class LO, class GO, class N, class SpMatOps>
+  template <class S, class LO, class GO, class N>
   class CrsMatrix;
 
   namespace Experimental {
@@ -85,56 +86,6 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     };
   } // namespace Details
-
-  //
-  // Dear users: The stuff in the "anonymous" namespace below is just
-  // an implementation detail.  Please skip over it and go down to the
-  // CrsMatrix class declaration.  Thank you.
-  //
-  namespace { // anonymous
-    // mfh 30 Aug 2014: This class exists so that if one builds Tpetra
-    // with Kokkos refactor _dis_abled, but uses one of the new Kokkos
-    // wrapper Node types, you won't get build errors.  The build
-    // errors come about because, as of 29 Aug 2014, the default value
-    // of the SparseOps typedef in KokkosClassic::DefaultKernels is
-    // void.  Setting this to void enables the upcoming deprecation of
-    // the KokkosClassic subpackage, but it breaks the build if Kokkos
-    // refactor is disabled.  This class selects a reasonable value of
-    // SparseOps in case Kokkos refactor is disabled.  This addresses
-    // Bug 6210.
-    template<class LO, class NT>
-    class CrsGraphSparseOpsSelector {
-    public:
-      typedef NT node_type;
-      typedef typename KokkosClassic::DefaultKernels<void, LO, NT>::SparseOps
-        sparse_ops_type;
-      typedef typename sparse_ops_type::template graph<LO, NT>::graph_type
-        local_graph_type;
-    };
-
-#ifdef HAVE_TPETRA_KOKKOSCOMPAT
-    // mfh 30 Aug 2014: Partial specialization for the new Kokkos
-    // wrapper nodes.  If Kokkos refactor is enabled, the typedef
-    // inside is just void, since the Kokkos refactor version of
-    // Tpetra doesn't use that typedef.  If Kokkos refactor is
-    // disabled, the typedef has its original default value for the
-    // "classic" version of Tpetra.
-    template<class LO, class DT>
-    class CrsGraphSparseOpsSelector<LO, Kokkos::Compat::KokkosDeviceWrapperNode<DT> > {
-    public:
-      typedef Kokkos::Compat::KokkosDeviceWrapperNode<DT> node_type;
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-      typedef void sparse_ops_type;
-      typedef void local_graph_type;
-#else
-      typedef typename KokkosClassic::DefaultKernels<
-        void, LO, node_type>::SparseOps sparse_ops_type;
-      typedef typename sparse_ops_type::template graph<
-        LO, node_type>::graph_type local_graph_type;
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
-    };
-#endif // HAVE_TPETRA_KOKKOSCOMPAT
-  } // namespace (anonymous)
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -168,12 +119,6 @@ namespace Tpetra {
   ///   documentation of Map for requirements.
   /// \tparam Node The Kokkos Node type.  See the documentation of Map
   ///   for requirements.
-  /// \tparam LocalMatOps Type implementing local sparse
-  ///   graph-(multi)vector multiply and local sparse triangular
-  ///   solve.  It must implement the \ref kokkos_crs_ops "Kokkos CRS
-  ///   Ops API."  The default \c LocalMatOps type should suffice for
-  ///   most users.  The actual default type depends on your Trilinos
-  ///   build options.
   ///
   /// This class implements a distributed-memory parallel sparse
   /// graph.  It provides access by rows to the elements of the graph,
@@ -224,18 +169,17 @@ namespace Tpetra {
   /// latter calls the former).
   template <class LocalOrdinal = RowGraph<>::local_ordinal_type,
             class GlobalOrdinal = typename RowGraph<LocalOrdinal>::global_ordinal_type,
-            class Node = typename RowGraph<LocalOrdinal, GlobalOrdinal>::node_type,
-            class LocalMatOps = typename CrsGraphSparseOpsSelector<LocalOrdinal, Node>::sparse_ops_type>
+            class Node = typename RowGraph<LocalOrdinal, GlobalOrdinal>::node_type>
   class CrsGraph :
     public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
     public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>,
     public Teuchos::ParameterListAcceptorDefaultBase
   {
-    template <class S, class LO, class GO, class N, class SpMatOps>
+    template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
     template <class S, class LO, class GO, class N>
     friend class Experimental::BlockCrsMatrix;
-    template <class LO2, class GO2, class N2, class SpMatOps2>
+    template <class LO2, class GO2, class N2>
     friend class CrsGraph;
     template<class OutputCrsGraphType, class InputCrsGraphType>
     friend class Details::CrsGraphCopier;
@@ -406,14 +350,12 @@ namespace Tpetra {
     ///   and range maps passed to fillComplete() are those of the map
     ///   being cloned, if they exist. Otherwise, the row map is used.
     template<class Node2>
-    Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node2,
-                 typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node2>::SparseOps> >
+    Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node2> >
     clone (const Teuchos::RCP<Node2> &node2,
            const Teuchos::RCP<Teuchos::ParameterList> &params = null) const
     {
-      typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node2,
-        typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node2>::SparseOps> output_crs_graph_type;
-      typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> input_crs_graph_type;
+      typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node2> output_crs_graph_type;
+      typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> input_crs_graph_type;
       typedef Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
       return copier_type::clone (*this, node2, params);
     }
@@ -1110,8 +1052,10 @@ namespace Tpetra {
     //@}
 
   protected:
-    typedef typename CrsGraphSparseOpsSelector<
-      local_ordinal_type, node_type>::local_graph_type local_graph_type;
+    typedef typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps
+      sparse_ops_type;
+    typedef typename sparse_ops_type::template graph<LocalOrdinal, Node>::graph_type
+      local_graph_type;
 
     // these structs are conveniences, to cut down on the number of
     // arguments to some of the methods below.
