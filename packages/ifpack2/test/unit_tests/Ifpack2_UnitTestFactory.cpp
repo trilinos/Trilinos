@@ -105,6 +105,21 @@ void check_precond_basics(Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdin
   TEST_EQUALITY( precond->getNumCompute(), 1);
 }
 
+
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+void check_precond_apply(Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& precond, Teuchos::FancyOStream& out, bool& success)
+{
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  MV x(precond->getDomainMap(),1);
+  MV y(precond->getRangeMap(),1);
+
+  x.putScalar(1);
+  y.putScalar(0);
+
+  TEST_NOTHROW(precond->apply(x, y));
+}
+
+
 //this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, Test0, Scalar, LocalOrdinal, GlobalOrdinal)
 {
@@ -188,6 +203,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal
   Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_relax = factory.create("RELAXATION", rowmatrix);
   TEST_EQUALITY(prec_relax != Teuchos::null, true);
   check_precond_basics(prec_relax, out, success);
+  check_precond_apply(prec_relax, out, success);
 
   // NOTE: As we expand support for the BlockCrsMatrix to other smoother types besides RELAXATION, tests should be added here.
 
