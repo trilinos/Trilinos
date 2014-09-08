@@ -1446,7 +1446,7 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   if (ZeroStartingSolution_) {
     yBlockCol->putScalar (STS::zero ());
   }
-  else
+  else if (performImport)
   {
     yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
   }
@@ -1773,7 +1773,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   if (ZeroStartingSolution_) {
     yBlockCol->putScalar (STS::zero ());
   }
-  else
+  else if (performImport)
   {
     yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
   }
