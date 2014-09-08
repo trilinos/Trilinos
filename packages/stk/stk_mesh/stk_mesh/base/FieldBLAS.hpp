@@ -862,9 +862,7 @@ Scalar field_dot(
     }
 
     Scalar glob_result = local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     return glob_result;
 }
 
@@ -905,9 +903,7 @@ std::complex<Scalar>  field_dot(
 
     Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
     Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
-#endif
     return std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
 }
 
@@ -972,9 +968,7 @@ void field_dot(
 
     Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
     Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
-#endif
     global_result = std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
 }
 
@@ -1014,9 +1008,7 @@ void field_dot(
     }
 
     glob_result = local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
 }
 
 template<class Scalar>
@@ -1382,9 +1374,7 @@ Scalar field_nrm2(
     }
 
     Scalar glob_result=local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     return sqrt(glob_result);
 }
 
@@ -1415,9 +1405,7 @@ std::complex<Scalar> field_nrm2(
     }
 
     Scalar glob_result=local_result_r;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
-#endif
     return std::complex<Scalar>(sqrt(glob_result),0.0);
 }
 
@@ -1471,9 +1459,7 @@ void field_nrm2(
     }
 
     glob_result=local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     glob_result=sqrt(glob_result);
 }
 
@@ -1507,9 +1493,7 @@ void field_nrm2(
     }
 
     Scalar glob_result=local_result_r;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
-#endif
     result=std::complex<Scalar>(sqrt(glob_result),0.0);
 }
 
@@ -1561,9 +1545,7 @@ Scalar field_asum(
     }
 
     Scalar glob_result=local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     return glob_result;
 }
 
@@ -1594,9 +1576,7 @@ std::complex<Scalar> field_asum(
     }
 
     Scalar glob_result = local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     return std::complex<Scalar>(glob_result,0.0);
 }
 
@@ -1649,9 +1629,7 @@ void field_asum(
     }
 
     glob_result=local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
 }
 
 template<class Scalar>
@@ -1684,9 +1662,7 @@ void field_asum(
     }
 
     Scalar glob_result=local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     result=std::complex<Scalar>(glob_result,0.0);
 }
 
@@ -1764,9 +1740,7 @@ Entity field_eamax(
     EntityId local_EntityId = xField.get_mesh().identifier(local_result);
     EntityId  glob_EntityId = local_EntityId;
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_maxloc(xField.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
-#endif
     if (glob_EntityId==local_EntityId)
     {
         local_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
@@ -1829,9 +1803,7 @@ Entity field_eamax(
     EntityId     local_EntityId = xField.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     Scalar global_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_maxloc(xField.get_mesh().parallel(),&local_amax,&local_EntityId,&global_amax,&glob_EntityId,1u);
-#endif
     if (glob_EntityId==local_EntityId)
     {
         local_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
@@ -1882,9 +1854,7 @@ Scalar field_amax(
     }
 
     Scalar global_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_max(comm,&local_amax,&global_amax,1u);
-#endif
     return global_amax;
 }
 
@@ -1920,9 +1890,7 @@ std::complex<Scalar> field_amax(
     }
 
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-#endif
     return std::complex<Scalar>(glob_amax,0.0);
 }
 
@@ -1997,9 +1965,7 @@ Entity INTERNAL_field_eamax_complex(
     EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
     EntityId  glob_EntityId = local_EntityId;
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_maxloc(xFieldBase.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
-#endif
     if (glob_EntityId == local_EntityId) {
         local_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
     } else {
@@ -2061,9 +2027,7 @@ Entity INTERNAL_field_eamax(
     EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_maxloc(xFieldBase.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
-#endif
     if (glob_EntityId==local_EntityId)
     {
         local_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
@@ -2139,9 +2103,7 @@ void field_amax(
     }
 
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-#endif
     result = std::complex<Scalar>(glob_amax,0.0);
 }
 
@@ -2180,9 +2142,7 @@ void field_amax(
     }
 
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-#endif
     result = glob_amax;
 }
 
@@ -2260,9 +2220,7 @@ Entity field_eamin(
     EntityId local_EntityId = xField.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-#endif
     if (glob_EntityId == local_EntityId) {
         glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
     } else {
@@ -2324,9 +2282,7 @@ Entity field_eamin(
     EntityId local_EntityId = xField.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&glob_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-#endif
+    stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
     if (glob_EntityId == local_EntityId) {
         glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
     } else {
@@ -2376,9 +2332,7 @@ std::complex<Scalar> field_amin(
     }
 
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-#endif
     return sqrt(glob_amin);
 }
 
@@ -2414,9 +2368,7 @@ Scalar field_amin(
     }
 
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-#endif
     return glob_amin;
 }
 
@@ -2491,9 +2443,7 @@ Entity INTERNAL_field_eamin_complex(
     EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     double glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_minloc(xFieldBase.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-#endif
     if (glob_EntityId == local_EntityId) {
         glob_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
     } else {
@@ -2555,10 +2505,8 @@ Entity INTERNAL_field_eamin(
     EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     double glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_minloc(xFieldBase.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-#endif
-    if (glob_EntityId == local_EntityId) {
+   if (glob_EntityId == local_EntityId) {
         glob_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
     } else {
         glob_result = Entity();
@@ -2633,9 +2581,7 @@ void field_amin(
     }
 
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-#endif
     result=std::complex<Scalar>(glob_amin,0.0);
 }
 
@@ -2674,9 +2620,7 @@ void field_amin(
         }
     }
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-#endif
     result=glob_amin;
 }
 
