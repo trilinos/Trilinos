@@ -104,7 +104,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
     commDims[axis] = mdComm->getCommDim(axis);
 
   // Construct dimensions
-  dim_type localDim = 10;
+  dim_type localDim = 4;
   Array< dim_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
     dims[axis] = localDim * mdComm->getCommDim(axis);
