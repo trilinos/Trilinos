@@ -173,6 +173,8 @@ public:
     /***************************************************************************************************/
 
     // Compute Ratio of Actual and Predicted Reduction
+    aRed -= this->eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
+    this->pRed_ -= this->eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
     Real rho  = 0.0; 
     if ((std::abs(aRed) < this->eps_) && (std::abs(this->pRed_) < this->eps_)) {
       rho = 1.0; 
@@ -221,15 +223,15 @@ public:
     
     // Accept or Reject Step and Update Trust Region
     if ((rho < this->eta0_ && flagTR == 0) || flagTR >= 2 || !decr ) { // Step Rejected 
-      fnew = fold;
+      fnew = fold1;
       if (rho < 0.0) { // Negative reduction, interpolate to find new trust-region radius
         Real gs = g.dot(s);
         Teuchos::RCP<Vector<Real> > Hs = x.clone();
         pObj.hessVec(*Hs,s,x,tol);
         Real modelVal = Hs->dot(s);
         modelVal *= 0.5;
-        modelVal += gs + fold;
-        Real theta = (1.0-this->eta2_)*gs/((1.0-this->eta2_)*(fold+gs)+this->eta2_*modelVal-fnew);
+        modelVal += gs + fold1;
+        Real theta = (1.0-this->eta2_)*gs/((1.0-this->eta2_)*(fold1+gs)+this->eta2_*modelVal-fnew);
         del  = std::min(this->gamma1_*snorm,std::max(this->gamma0_,theta)*del);
       }
       else { // Shrink trust-region radius
