@@ -205,6 +205,7 @@ public:
   void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<std::vector<Real> > up =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(u)).getVector());
+    up->assign(up->size(),z.norm());
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // Compute residual and residual norm
@@ -426,8 +427,8 @@ public:
     ahwv.zero();
   }
 
-//  void solveAugmentedSystem(ROL::Vector<Real> &v1, ROL::Vector<Real> &v2, const ROL::Vector<Real> &b1,
-//                            const ROL::Vector<Real> &b2, const ROL::Vector<Real> &x, Real &tol) {}
+  //void solveAugmentedSystem(ROL::Vector<Real> &v1, ROL::Vector<Real> &v2, const ROL::Vector<Real> &b1,
+  //                          const ROL::Vector<Real> &b2, const ROL::Vector<Real> &x, Real &tol) {}
 };
 
 template<class Real>
@@ -628,7 +629,7 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize full objective function.
-    int nx      = 1028;  // Set spatial discretization.
+    int nx      = 128;   // Set spatial discretization.
     RealT alpha = 1.e-3; // Set penalty parameter.
     Objective_BurgersControl<RealT> obj(alpha,nx);
     // Initialize equality constraints
@@ -686,14 +687,15 @@ int main(int argc, char *argv[]) {
     // Define status test.
     RealT gtol  = 1e-14;  // norm of gradient tolerance
     RealT stol  = 1e-16;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
+    int   maxit = 1000;   // maximum number of iterations
     ROL::StatusTest<RealT> status(gtol, stol, maxit);    
     // Define step.
     ROL::TrustRegionStep<RealT> stepr(*parlist_tr);
     // Define algorithm.
     ROL::DefaultAlgorithm<RealT> algo(stepr,status,false);
     // Run Algorithm
-    z.zero();
+    //z.zero();
+    z.scale(10.0);
     algo.run(z,robj,true);
   }
   catch (std::logic_error err) {
