@@ -92,8 +92,9 @@ namespace MueLu {
 
         return AAAA;
       }
-      catch (...) {
-        throw Exceptions::RuntimeError("Utils::Transpose: Can only transpose Crs matrices");
+      catch (std::exception& e) {
+        std::cout << "threw exception '" << e.what() << "'" << std::endl;
+        throw Exceptions::RuntimeError("Utils::Transpose failed, perhaps because matrix is not a Crs matrix");
       }
     } //if
 #endif
