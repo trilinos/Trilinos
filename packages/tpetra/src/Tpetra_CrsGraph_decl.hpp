@@ -1951,8 +1951,8 @@ public:
     bool failed = false;
 
     if (useLocalIndices) {
-      const GO localMinLID = inputRowMap.getMinLocalIndex ();
-      const GO localMaxLID = inputRowMap.getMaxLocalIndex ();
+      const LO localMinLID = inputRowMap.getMinLocalIndex ();
+      const LO localMaxLID = inputRowMap.getMaxLocalIndex ();
 
       if (graphIn.isLocallyIndexed ()) {
         if (numRows != 0) {
