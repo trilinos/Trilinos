@@ -239,6 +239,7 @@ void update_shared_entities_global_ids( BulkData & mesh, std::vector<shared_enti
 void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities)
 {
     const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entityRank);
+    const bool add_node_sharing_called = mesh.addNodeSharingCalled();
 
     for(size_t bucketIndex = 0; bucketIndex < entity_buckets.size(); bucketIndex++)
     {
@@ -248,6 +249,12 @@ void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, st
         {
             Entity entity = bucket[entityIndex];
             const unsigned num_nodes_on_entity = bucket.num_nodes(entityIndex);
+
+            if (!add_node_sharing_called && mesh.state(entity) == stk::mesh::Unchanged)
+            {
+              // No nodes newly shared and entity has not had nodes added, so entity cannot become shared.
+              continue;
+            }
 
             if ( num_nodes_on_entity > 1 )
             {
@@ -400,6 +407,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_entity_keys(),
     m_entity_states(),
     m_mark_entity(),
+    m_add_node_sharing_called(false),
     m_closure_count(),
     m_entity_sync_counts(),
     m_local_ids(),
@@ -1233,6 +1241,8 @@ void BulkData::add_node_sharing( Entity node, int sharing_proc )
   // Only valid to specify sharing information for newly-created nodes
   ThrowRequire(entity_rank(node) == stk::topology::NODE_RANK);
   ThrowRequire(state(node) == Created);
+
+  m_add_node_sharing_called = true;
 
   markEntity(node, IS_SHARED);
   entity_comm_map_insert(node, EntityCommInfo(stk::mesh::BulkData::SHARED, sharing_proc));
@@ -5897,6 +5907,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
   internal_update_fast_comm_maps();
 
   m_sync_state = SYNCHRONIZED ;
+  m_add_node_sharing_called = false;
 
   update_deleted_entities_container();
 
@@ -6424,6 +6435,7 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
   internal_update_fast_comm_maps();
 
   m_sync_state = SYNCHRONIZED ;
+  m_add_node_sharing_called = false;
 
   update_deleted_entities_container();
 

@@ -815,6 +815,11 @@ public:
       return static_cast<entitySharing>(m_mark_entity[entity.local_offset()]);
   }
 
+  bool addNodeSharingCalled() const
+  {
+    return m_add_node_sharing_called;
+  }
+
   Bucket & bucket(Entity entity) const
   {
     entity_getter_debug_check(entity);
@@ -1251,6 +1256,7 @@ private:
   std::vector<EntityKey>   m_entity_keys;
   std::vector<uint16_t>    m_entity_states;
   std::vector<int>         m_mark_entity;
+  bool                     m_add_node_sharing_called;
 protected:
   std::vector<uint16_t>    m_closure_count;
 private:
