@@ -63,6 +63,7 @@ using Teuchos::ArrayView;
 using Teuchos::Tuple;
 using Teuchos::tuple;
 typedef Domi::dim_type dim_type;
+typedef Domi::size_type size_type;
 using Domi::splitStringOfIntsWithCommas;
 
 string dims      = "20,16";
@@ -288,6 +289,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
     {
       int lid = mdMap->getLocalID(tuple(i));
       Sca gid = (Sca) mdMap->getGlobalID(lid);
+      if (mdMap->isPeriodic(0))
+      {
+        Teuchos::Array< dim_type > globalIndex =
+          mdMap->getGlobalIndex((size_type)gid);
+        if (globalIndex[0] < mdMap->getCommPadSize(0))
+          gid += mdMap->getGlobalDim(0);
+      }
       if (mdMap->isBndryPad(tuple(i)))
         gid = -1;
       if (verbose)
@@ -305,6 +313,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         int lid = mdMap->getLocalID(tuple(i,j));
         Sca gid = (Sca) mdMap->getGlobalID(lid);
+        if (mdMap->isPeriodic(0))
+        {
+          Teuchos::Array< dim_type > globalIndex =
+            mdMap->getGlobalIndex((size_type)gid);
+          if (globalIndex[0] < mdMap->getCommPadSize(0))
+            gid += mdMap->getGlobalDim(0);
+        }
+        if (mdMap->isPeriodic(1))
+        {
+          Teuchos::Array< dim_type > globalIndex =
+            mdMap->getGlobalIndex((size_type)gid);
+          if (globalIndex[1] < mdMap->getGlobalBounds(1).start())
+            gid += mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+          if (globalIndex[1] >= mdMap->getGlobalBounds(1).stop())
+            gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+        }
         if (mdMap->isBndryPad(tuple(i,j)))
           gid = -1;
         if (verbose)
@@ -325,6 +349,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
         {
           int lid = mdMap->getLocalID(tuple(i,j,k));
           Sca gid = (Sca) mdMap->getGlobalID(lid);
+          if (mdMap->isPeriodic(0))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[0] < mdMap->getCommPadSize(0))
+              gid += mdMap->getGlobalDim(0);
+          }
+          if (mdMap->isPeriodic(1))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[1] < mdMap->getCommPadSize(1))
+              gid += mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+            if (globalIndex[1] >= mdMap->getGlobalBounds(1).stop())
+              gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+          }
+          if (mdMap->isPeriodic(2))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[2] < mdMap->getCommPadSize(2))
+              gid += mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1) *
+                mdMap->getGlobalDim(2);
+            if (globalIndex[2] >= mdMap->getGlobalBounds(2).stop())
+              gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1) *
+                mdMap->getGlobalDim(2);
+          }
           if (mdMap->isBndryPad(tuple(i,j,k)))
             gid = -1;
           if (verbose)
@@ -348,6 +399,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
     {
       int lid = mdMap->getLocalID(tuple(i+ioff));
       Sca gid = (Sca) mdMap->getGlobalID(lid);
+      if (mdMap->isPeriodic(0))
+      {
+        Teuchos::Array< dim_type > globalIndex =
+          mdMap->getGlobalIndex((size_type)gid);
+        if (globalIndex[0] >= mdMap->getGlobalBounds(0).stop())
+          gid -= mdMap->getGlobalDim(0);
+      }
       if (mdMap->isBndryPad(tuple(i+ioff)))
         gid = -1;
       if (verbose)
@@ -365,6 +423,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         int lid = mdMap->getLocalID(tuple(i+ioff,j));
         Sca gid = (Sca) mdMap->getGlobalID(lid);
+        if (mdMap->isPeriodic(0))
+        {
+          Teuchos::Array< dim_type > globalIndex =
+            mdMap->getGlobalIndex((size_type)gid);
+          if (globalIndex[0] >= mdMap->getGlobalBounds(0).stop())
+            gid -= mdMap->getGlobalDim(0);
+        }
+        if (mdMap->isPeriodic(1))
+        {
+          Teuchos::Array< dim_type > globalIndex =
+            mdMap->getGlobalIndex((size_type)gid);
+          if (globalIndex[1] < mdMap->getGlobalBounds(1).start())
+            gid += mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+          if (globalIndex[1] >= mdMap->getGlobalBounds(1).stop())
+            gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+        }
         if (mdMap->isBndryPad(tuple(i+ioff,j)))
           gid = -1;
         if (verbose)
@@ -385,6 +459,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
         {
           int lid = mdMap->getLocalID(tuple(i+ioff,j,k));
           Sca gid = (Sca) mdMap->getGlobalID(lid);
+          if (mdMap->isPeriodic(0))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[0] >= mdMap->getGlobalBounds(0).stop())
+              gid -= mdMap->getGlobalDim(0);
+          }
+          if (mdMap->isPeriodic(1))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[1] < mdMap->getGlobalBounds(1).start())
+              gid += mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+            if (globalIndex[1] >= mdMap->getGlobalBounds(1).stop())
+              gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+          }
+          if (mdMap->isPeriodic(2))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[2] < mdMap->getGlobalBounds(2).start())
+              gid += mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1) *
+                mdMap->getGlobalDim(2);
+            if (globalIndex[2] >= mdMap->getGlobalBounds(2).stop())
+              gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1) *
+                mdMap->getGlobalDim(2);
+          }
           if (mdMap->isBndryPad(tuple(i+ioff,j,k)))
             gid = -1;
           if (verbose)
@@ -412,6 +513,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         int lid = mdMap->getLocalID(tuple(i,j));
         Sca gid = (Sca) mdMap->getGlobalID(lid);
+        if (mdMap->isPeriodic(0))
+        {
+          Teuchos::Array< dim_type > globalIndex =
+            mdMap->getGlobalIndex((size_type)gid);
+          if (globalIndex[0] < mdMap->getCommPadSize(0))
+            gid += mdMap->getGlobalDim(0);
+          if (globalIndex[0] >= mdMap->getGlobalBounds(0).stop())
+            gid -= mdMap->getGlobalDim(0);
+        }
+        if (mdMap->isPeriodic(1))
+        {
+          Teuchos::Array< dim_type > globalIndex =
+            mdMap->getGlobalIndex((size_type)gid);
+          if (globalIndex[1] < mdMap->getCommPadSize(1))
+            gid += mdMap->getGlobalDim(0)*mdMap->getGlobalDim(1);
+        }
         if (mdMap->isBndryPad(tuple(i,j)))
           gid = -1;
         if (verbose)
@@ -432,6 +549,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
         {
           int lid = mdMap->getLocalID(tuple(i,j,k));
           Sca gid = (Sca) mdMap->getGlobalID(lid);
+          if (mdMap->isPeriodic(0))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[0] < mdMap->getCommPadSize(0))
+              gid += mdMap->getGlobalDim(0);
+            if (globalIndex[0] >= mdMap->getGlobalBounds(0).stop())
+              gid -= mdMap->getGlobalDim(0);
+          }
+          if (mdMap->isPeriodic(1))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[1] < mdMap->getCommPadSize(1))
+              gid += mdMap->getGlobalDim(0)*mdMap->getGlobalDim(1);
+          }
+          if (mdMap->isPeriodic(2))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[2] < mdMap->getCommPadSize(2))
+              gid += mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1) *
+                mdMap->getGlobalDim(2);
+            if (globalIndex[2] >= mdMap->getGlobalBounds(2).stop())
+              gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1) *
+                mdMap->getGlobalDim(2);
+          }
           if (mdMap->isBndryPad(tuple(i,j,k)))
             gid = -1;
           if (verbose)
@@ -460,6 +604,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
       {
         int lid = mdMap->getLocalID(tuple(i,j+joff));
         Sca gid = (Sca) mdMap->getGlobalID(lid);
+        if (mdMap->isPeriodic(0))
+        {
+          Teuchos::Array< dim_type > globalIndex =
+            mdMap->getGlobalIndex((size_type)gid);
+          if (globalIndex[0] < mdMap->getGlobalBounds(0).start())
+            gid += mdMap->getGlobalDim(0);
+          if (globalIndex[0] >= mdMap->getGlobalBounds(0).stop())
+            gid -= mdMap->getGlobalDim(0);
+        }
+        if (mdMap->isPeriodic(1))
+        {
+          Teuchos::Array< dim_type > globalIndex =
+            mdMap->getGlobalIndex((size_type)gid);
+          if (globalIndex[1] >= mdMap->getGlobalBounds(1).stop())
+            gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+        }
         if (mdMap->isBndryPad(tuple(i,j+joff)))
           gid = -1;
         if (verbose)
@@ -480,6 +640,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
         {
           int lid = mdMap->getLocalID(tuple(i,j+joff,k));
           Sca gid = (Sca) mdMap->getGlobalID(lid);
+          if (mdMap->isPeriodic(0))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[0] < mdMap->getGlobalBounds(0).start())
+              gid += mdMap->getGlobalDim(0);
+            if (globalIndex[0] >= mdMap->getGlobalBounds(0).stop())
+              gid -= mdMap->getGlobalDim(0);
+          }
+          if (mdMap->isPeriodic(1))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[1] >= mdMap->getGlobalBounds(1).stop())
+              gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+          }
+          if (mdMap->isPeriodic(2))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[2] < mdMap->getGlobalBounds(2).start())
+              gid += mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1) *
+                mdMap->getGlobalDim(2);
+            if (globalIndex[2] >= mdMap->getGlobalBounds(2).stop())
+              gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1) *
+                mdMap->getGlobalDim(2);
+          }
           if (mdMap->isBndryPad(tuple(i,j+joff,k)))
             gid = -1;
           if (verbose)
@@ -506,6 +693,32 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
         {
           int lid = mdMap->getLocalID(tuple(i,j,k));
           Sca gid = (Sca) mdMap->getGlobalID(lid);
+          if (mdMap->isPeriodic(0))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[0] < mdMap->getCommPadSize(0))
+              gid += mdMap->getGlobalDim(0);
+            if (globalIndex[0] >= mdMap->getGlobalBounds(0).stop())
+              gid -= mdMap->getGlobalDim(0);
+          }
+          if (mdMap->isPeriodic(1))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[1] < mdMap->getCommPadSize(1))
+              gid += mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+            if (globalIndex[1] >= mdMap->getGlobalBounds(1).stop())
+              gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+          }
+          if (mdMap->isPeriodic(2))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[2] < mdMap->getCommPadSize(2))
+              gid += mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1) *
+                mdMap->getGlobalDim(2);
+          }
           if (mdMap->isBndryPad(tuple(i,j,k)))
             gid = -1;
           if (verbose)
@@ -533,6 +746,32 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
         {
           int lid = mdMap->getLocalID(tuple(i,j,k+koff));
           Sca gid = (Sca) mdMap->getGlobalID(lid);
+          if (mdMap->isPeriodic(0))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[0] < mdMap->getCommPadSize(0))
+              gid += mdMap->getGlobalDim(0);
+            if (globalIndex[0] >= mdMap->getGlobalBounds(0).stop())
+              gid -= mdMap->getGlobalDim(0);
+          }
+          if (mdMap->isPeriodic(1))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[1] < mdMap->getCommPadSize(1))
+              gid += mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+            if (globalIndex[1] >= mdMap->getGlobalBounds(1).stop())
+              gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1);
+          }
+          if (mdMap->isPeriodic(2))
+          {
+            Teuchos::Array< dim_type > globalIndex =
+              mdMap->getGlobalIndex((size_type)gid);
+            if (globalIndex[2] >= mdMap->getGlobalBounds(2).stop())
+              gid -= mdMap->getGlobalDim(0) * mdMap->getGlobalDim(1) *
+                mdMap->getGlobalDim(2);
+          }
           if (mdMap->isBndryPad(tuple(i,j,k+koff)))
             gid = -1;
           if (verbose)
