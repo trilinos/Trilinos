@@ -52,7 +52,8 @@
 namespace Xpetra {
 
   template<class GlobalOrdinalArg>
-  RCP<Xpetra::Matrix<double,int,GlobalOrdinalArg> > MatrixFactory2<double,int,GlobalOrdinalArg>::BuildCopy(const RCP<const Matrix> A) {
+//  RCP<Xpetra::Matrix<double,int,GlobalOrdinalArg> > MatrixFactory2<double,int,GlobalOrdinalArg>::BuildCopy(const RCP<const Matrix> A) {
+  RCP<typename MatrixFactory2<double,int,GlobalOrdinalArg>::Matrix> MatrixFactory2<double,int,GlobalOrdinalArg>::BuildCopy(const RCP<const Matrix> A) {
     RCP<const CrsMatrixWrap> oldOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(A);
     if (oldOp == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");

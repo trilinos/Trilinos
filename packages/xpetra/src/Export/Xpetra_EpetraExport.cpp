@@ -59,7 +59,7 @@ namespace Xpetra {
   }
 
   template<class EpetraGlobalOrdinal>
-  EpetraExportT<EpetraGlobalOrdinal>::EpetraExportT(const Teuchos::RCP<const Map<int,GlobalOrdinal> > & source, const Teuchos::RCP<const Map<int,GlobalOrdinal> > & target)
+  EpetraExportT<EpetraGlobalOrdinal>::EpetraExportT(const Teuchos::RCP<const map_type> & source, const Teuchos::RCP<const map_type> & target)
     : export_(rcp(new Epetra_Export(toEpetra(source), toEpetra(target)))) { } // Warning: Epetra(Target, Source) vs. Tpetra(Source, Target)
 
   //

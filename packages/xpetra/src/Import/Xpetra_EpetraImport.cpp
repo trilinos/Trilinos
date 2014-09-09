@@ -49,7 +49,7 @@
 namespace Xpetra {
 
   template<class EpetraGlobalOrdinal>
-  EpetraImportT<EpetraGlobalOrdinal>::EpetraImportT(const Teuchos::RCP<const Map<int,GlobalOrdinal> > & source, const Teuchos::RCP<const Map<int,GlobalOrdinal> > & target)
+  EpetraImportT<EpetraGlobalOrdinal>::EpetraImportT(const Teuchos::RCP<const map_type > & source, const Teuchos::RCP<const map_type > & target)
     : import_(rcp(new Epetra_Import(toEpetra(target), toEpetra(source)))) { } // Warning: Epetra(Target, Source) vs. Tpetra(Source, Target)
 
   // //! copy constructor.
