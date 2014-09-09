@@ -69,6 +69,7 @@ namespace Ifpack2 {
 #  if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
 
   template class SparseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > >;
+  template class SparseContainer<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, ILUT<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> > >;
 
 #  endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
 

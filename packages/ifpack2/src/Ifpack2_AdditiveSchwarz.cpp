@@ -94,12 +94,18 @@ namespace Ifpack2 {
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode>,
                                  Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > >;
+  template class AdditiveSchwarz<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+  template class AdditiveSchwarz<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode>,
+                                 Ifpack2::ILUT<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > >;
 #endif
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>,
                                  Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > >;
+  template class AdditiveSchwarz<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
+  template class AdditiveSchwarz<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>,
+                                 Ifpack2::ILUT<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> > >;
 #endif
 
 }
