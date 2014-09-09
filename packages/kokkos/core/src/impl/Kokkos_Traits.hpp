@@ -322,6 +322,13 @@ template <> struct is_integral<uint16_t> : public true_ {};
 template <> struct is_integral<uint32_t> : public true_ {};
 template <> struct is_integral<uint64_t> : public true_ {};
 
+//----------------------------------------------------------------------------
+
+template <typename T> struct is_integral_constant : public false_ {};
+
+template < typename T , T v >
+struct is_integral_constant< integral_constant<T,v> > : public true_ {};
+
 } // namespace Impl
 } // namespace Kokkos
 

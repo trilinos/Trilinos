@@ -45,6 +45,7 @@
 #define KOKKOS_EXECPOLICY_HPP
 
 #include <Kokkos_Macros.hpp>
+#include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
 //----------------------------------------------------------------------------
@@ -52,16 +53,98 @@
 namespace Kokkos {
 
 /** \brief  Execution policy for work over a range of an integral type.
+ *
+ * Valid template argument options:
+ *
+ *  With a specificed execution space:
+ *    < ExecSpace , WorkTag , { IntConst | IntType } >
+ *    < ExecSpace , WorkTag , void >
+ *    < ExecSpace , { IntConst | IntType } , void >
+ *    < ExecSpace , void , void >
+ *
+ *  With the default execution space:
+ *    < WorkTag , { IntConst | IntType } , void >
+ *    < WorkTag , void , void >
+ *    < { IntConst | IntType } , void , void >
+ *    < void , void , void >
+ *
+ *  IntType  is a fundamental integral type
+ *  IntConst is an Impl::integral_constant< IntType , Blocking >
+ *
+ *  Blocking is the granularity of partitioning the range among threads.
  */
-template< class ExecSpace  = Kokkos::DefaultExecutionSpace
-        , class WorkArgTag = void
-        , typename IntType = int
-        , unsigned GranularityPowerOfTwo = 3 /* Chunk size 8 */
+template< class Arg0 = void
+        , class Arg1 = void
+        , class Arg2 = void
         >
 class RangePolicy {
 private:
 
-  enum { Granularity     = IntType(1) << GranularityPowerOfTwo };
+  // Default integral type and blocking factor:
+  typedef Impl::integral_constant< int , 8 > DefaultIntConstType ;
+
+  enum { Arg0_Void = Impl::is_same< Arg0 , void >::value };
+  enum { Arg1_Void = Impl::is_same< Arg1 , void >::value };
+  enum { Arg2_Void = Impl::is_same< Arg2 , void >::value };
+
+  enum { Arg0_ExecSpace = Impl::is_execution_space< Arg0 >::value };
+
+  enum { Arg0_IntConst = Impl::is_integral_constant< Arg0 >::value };
+  enum { Arg1_IntConst = Impl::is_integral_constant< Arg1 >::value };
+  enum { Arg2_IntConst = Impl::is_integral_constant< Arg2 >::value };
+
+  enum { Arg0_IntType = Impl::is_integral< Arg0 >::value };
+  enum { Arg1_IntType = Impl::is_integral< Arg1 >::value };
+  enum { Arg2_IntType = Impl::is_integral< Arg2 >::value };
+
+  enum { Arg0_WorkTag = ! Arg0_ExecSpace && ! Arg0_IntConst && ! Arg0_IntType && ! Arg0_Void };
+  enum { Arg1_WorkTag =   Arg0_ExecSpace && ! Arg1_IntConst && ! Arg1_IntType && ! Arg1_Void };
+
+
+  enum { ArgOption_OK = Impl::StaticAssert< (
+    ( Arg0_ExecSpace && Arg1_WorkTag && ( Arg2_IntConst || Arg2_IntType ) ) ||
+    ( Arg0_ExecSpace && Arg1_WorkTag && Arg2_Void ) ||
+    ( Arg0_ExecSpace && ( Arg1_IntConst || Arg2_IntType ) && Arg2_Void ) ||
+    ( Arg0_ExecSpace && Arg1_Void && Arg2_Void ) ||
+    ( Arg0_WorkTag && ( Arg1_IntConst || Arg2_IntType ) && Arg2_Void ) ||
+    ( Arg0_WorkTag && Arg1_Void && Arg2_Void ) ||
+    ( ( Arg0_IntConst || Arg0_IntType ) && Arg1_Void && Arg2_Void ) ||
+    ( Arg0_Void && Arg1_Void && Arg2_Void )
+    ) >::value };
+
+  // The first argument is the execution space, otherwise the default execution space
+  typedef typename Impl::if_c< Arg0_ExecSpace , Arg0 ,
+          Kokkos::DefaultExecutionSpace
+          >::type
+    ExecSpace ;
+
+  // The work argument tag is the first or second argument
+  typedef typename Impl::if_c< Arg0_WorkTag , Arg0 ,
+          typename Impl::if_c< Arg1_WorkTag , Arg1 , void
+          >::type >::type
+    WorkArgTag ;
+
+  // The integral constant is
+  //   Arg0 with no execution space and work arg tag
+  //   Arg1 with Arg0 == execution space or  Arg0 == work arg tag
+  //   Arg2 with Arg0 == execution space and Arg1 == work arg tag
+  typedef typename Impl::if_c< Arg0_IntConst , Arg0 ,
+          typename Impl::if_c< Arg1_IntConst , Arg1 ,
+          typename Impl::if_c< Arg2_IntConst , Arg2 ,
+          typename Impl::if_c< Arg0_IntType , Impl::integral_constant< Arg0 , DefaultIntConstType::value > ,
+          typename Impl::if_c< Arg1_IntType , Impl::integral_constant< Arg1 , DefaultIntConstType::value > ,
+          typename Impl::if_c< Arg2_IntType , Impl::integral_constant< Arg2 , DefaultIntConstType::value > ,
+                                              DefaultIntConstType
+          >::type >::type >::type
+          >::type >::type >::type
+    IntConstType ;
+
+  // Only accept the integral type if the blocking is a power of two
+  typedef typename Impl::enable_if< Impl::is_power_of_two< IntConstType::value >::value
+                                  , typename IntConstType::value_type >::type
+    IntType ;
+
+  enum { Granularity     = IntConstType::value };
   enum { GranularityMask = IntType(Granularity) - 1 };
 
   IntType m_begin ;
@@ -70,7 +153,8 @@ private:
 public:
 
   typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef ExecSpace                  execution_space ; ///< Execution type
+  typedef ExecSpace                  execution_space ;
+  typedef RangePolicy                execution_policy ;
   typedef IntType                    member_type ;
 
   KOKKOS_INLINE_FUNCTION member_type begin() const { return m_begin ; }

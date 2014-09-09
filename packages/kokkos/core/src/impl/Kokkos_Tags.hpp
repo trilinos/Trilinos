@@ -66,43 +66,65 @@ struct ExecutionSpaceTag {};
 template< class C , class Enable = void >
 struct is_memory_space : public bool_< false > {};
 
+template< class C , class Enable = void >
+struct is_execution_space : public bool_< false > {};
+
+template< class C , class Enable = void >
+struct is_execution_policy : public bool_< false > {};
+
+template< class C , class Enable = void >
+struct is_layout : public Impl::false_type {};
+
+template< class C , class Enable = void >
+struct is_memorytraits : public Impl::false_type {};
+
+#if 1
+
 template< class C >
 struct is_memory_space< C , typename Impl::enable_if_type< typename C::kokkos_tag >::type >
   : public bool_< Impl::is_same< typename C::kokkos_tag , Impl::MemorySpaceTag >::value > {};
-
-
-template< class C , class Enable = void >
-struct is_execution_space : public bool_< false > {};
 
 template< class C >
 struct is_execution_space< C , typename Impl::enable_if_type< typename C::kokkos_tag >::type >
   : public bool_< Impl::is_same< typename C::kokkos_tag , Impl::ExecutionSpaceTag >::value > {};
 
-
-template< class C , class Enable = void >
-struct is_execution_policy : public bool_< false > {};
-
 template< class C >
 struct is_execution_policy< C , typename Impl::enable_if_type< typename C::kokkos_tag >::type >
   : public bool_< Impl::is_same< typename C::kokkos_tag , Impl::ExecutionPolicyTag >::value > {};
-
-
-template< class C , class Enable = void >
-struct is_layout : public Impl::false_type {};
 
 template<class C>
 struct is_layout<C,typename Impl::enable_if_type< typename C::kokkos_tag >::type > {
   enum {value=bool(Impl::is_same<Impl::LayoutTag,typename C::kokkos_tag>::value)};
 };
 
-
-template< class C , class Enable = void >
-struct is_memorytraits : public Impl::false_type {};
-
 template<class C>
 struct is_memorytraits<C,typename Impl::enable_if_type< typename C::kokkos_tag >::type > {
   enum {value=bool(Impl::is_same<Impl::MemoryTraitsTag,typename C::kokkos_tag>::value)};
 };
+
+#else
+
+template< class C >
+struct is_memory_space< C , typename Impl::enable_if_type< typename C::memory_space >::type >
+  : public bool_< Impl::is_same< C , typename C::memory_space >::value > {};
+
+template< class C >
+struct is_execution_space< C , typename Impl::enable_if_type< typename C::execution_space >::type >
+  : public bool_< Impl::is_same< C , typename C::execution_space >::value > {};
+
+template< class C >
+struct is_execution_policy< C , typename Impl::enable_if_type< typename C::execution_policy >::type >
+  : public bool_< Impl::is_same< C , typename C::execution_policy >::value > {};
+
+template< class C >
+struct is_array_layout< C , typename Impl::enable_if_type< typename C::array_layout >::type >
+  : public bool_< Impl::is_same< C , typename C::array_layout >::value > {};
+
+template< class C >
+struct is_memorytraits< C , typename Impl::enable_if_type< typename C::memorytraits >::type >
+  : public bool_< Impl::is_same< C , typename C::memorytraits >::value > {};
+
+#endif
 
 }
 }

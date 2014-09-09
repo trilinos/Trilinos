@@ -505,14 +505,14 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P >
+                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                  , Kokkos::Serial
                  >
 {
 public:
-  typedef Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
 
   ParallelFor( const FunctorType & functor
              , const Policy      & policy )
@@ -524,14 +524,14 @@ public:
     }
 };
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P >
+                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                     , Kokkos::Serial
                     >
 {
 public:
-  typedef Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
 
   typedef ReduceAdapter< FunctorType >  Reduce ;
   typedef typename Reduce::pointer_type pointer_type ;
@@ -564,14 +564,14 @@ public:
     }
 };
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P >
+                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                   , Kokkos::Serial
                   >
 {
 public:
-  typedef Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
 
   typedef ReduceAdapter< FunctorType >  Reduce ;
   typedef typename Reduce::pointer_type pointer_type ;

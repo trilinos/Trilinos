@@ -55,14 +55,14 @@
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Kokkos::OpenMP , void , IntType , P >
+                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                  , Kokkos::OpenMP
                  >
 {
 public:
-  typedef Kokkos::RangePolicy< Kokkos::OpenMP , void , IntType , P > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
 
   inline
   ParallelFor( const FunctorType & functor
@@ -94,16 +94,16 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Kokkos::OpenMP , void , IntType , P >
+                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                     , Kokkos::OpenMP
                     >
 {
 public:
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
-  typedef Kokkos::RangePolicy< Kokkos::OpenMP , void , IntType , P > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
 
   template< class HostViewType >
   inline
@@ -160,16 +160,16 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Kokkos::OpenMP , void , IntType , P >
+                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                   , Kokkos::OpenMP
                   >
 {
 public:
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
-  typedef Kokkos::RangePolicy< Kokkos::OpenMP , void , IntType , P > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
 
   inline
   ParallelScan( const FunctorType & functor , const Policy & policy )
