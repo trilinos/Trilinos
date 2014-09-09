@@ -410,7 +410,8 @@ namespace MueLu {
     MaxNnz = 2*DofsPerNode*Ndofs;
 
     RCP<const Map> rowMap = Amat->getRowMap();
-    coarseMap = MapFactory::createUniformContigMapWithNode(rowMap->lib(),NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()), rowMap->getNode());
+    int GNdofs= rowMap->getGlobalNumElements();
+    coarseMap = MapFactory::createContigMapWithNode(rowMap->lib(),(NCLayers*GNdofs)/nz, NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()), rowMap->getNode());
     P       = rcp(new CrsMatrixWrap(rowMap, coarseMap , 0, Xpetra::StaticProfile));
 
 
