@@ -3017,7 +3017,7 @@ startUpdateCommPad(int axis)
     MessageInfo message = _sendMessages[axis][boundary];
     if (message.proc >= 0)
     {
-      tag = rank * numProc + message.proc;
+      tag = 2 * (rank * numProc + message.proc) + boundary;
 
 #ifdef DOMI_MDVECTOR_OUTPUT_UPDATECOMMPAD
       cout << rank << ": post send for axis " << axis << ", boundary "
@@ -3043,7 +3043,7 @@ startUpdateCommPad(int axis)
     MessageInfo message = _recvMessages[axis][boundary];
     if (message.proc >= 0)
     {
-      tag = message.proc * numProc + rank;
+      tag = 2 * (message.proc * numProc + rank) + (1-boundary);
 
 #ifdef DOMI_MDVECTOR_OUTPUT_UPDATECOMMPAD
       cout << rank << ": post recv for axis " << axis << ", boundary "
@@ -3128,7 +3128,7 @@ void
 MDVector< Scalar, Node >::
 initializeMessages()
 {
-  // #define DOMI_MDVECTOR_OUTPUT_INITIALIZE
+  // #define DOMI_MDVECTOR_MESSAGE_INITIALIZE
 
   int ndims = numDims();
   Teuchos::Array<int> sizes(ndims);
@@ -3139,7 +3139,7 @@ initializeMessages()
   _sendMessages.resize(ndims);
   _recvMessages.resize(ndims);
 
-#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+#ifdef DOMI_MDVECTOR_MESSAGE_INITIALIZE
   std::stringstream msg;
   int rank = _teuchosComm->getRank();
 #endif
@@ -3163,7 +3163,7 @@ initializeMessages()
     // Set the lower receive and send messages
     int proc = getLowerNeighbor(msgAxis);
 
-#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+#ifdef DOMI_MDVECTOR_MESSAGE_INITIALIZE
     msg << endl << "P" << rank << ": axis " << msgAxis << ", lower neighbor = "
         << proc << endl;
 #endif
@@ -3184,7 +3184,7 @@ initializeMessages()
 #ifdef HAVE_MPI
       {
 
-#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+#ifdef DOMI_MDVECTOR_MESSAGE_INITIALIZE
         msg << endl << "P" << rank << ": axis " << msgAxis
             << ", Lower receive message:" << endl << "  ndims    = " << ndims
             << endl << "  sizes    = " << sizes << endl << "  subsizes = "
@@ -3216,7 +3216,7 @@ initializeMessages()
 #ifdef HAVE_MPI
       {
 
-#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+#ifdef DOMI_MDVECTOR_MESSAGE_INITIALIZE
         msg << endl << "P" << rank << ": axis " << msgAxis
             << ", Lower send message:" << endl << "  ndims    = " << ndims
             << endl << "  sizes    = " << sizes << endl << "  subsizes = "
@@ -3243,7 +3243,7 @@ initializeMessages()
     // Set the upper receive and send messages
     proc = getUpperNeighbor(msgAxis);
 
-#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+#ifdef DOMI_MDVECTOR_MESSAGE_INITIALIZE
     msg << endl << "P" << rank << ": axis " << msgAxis << ", upper neighbor = "
         << proc << endl;
 #endif
@@ -3260,7 +3260,7 @@ initializeMessages()
 #ifdef HAVE_MPI
       {
 
-#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+#ifdef DOMI_MDVECTOR_MESSAGE_INITIALIZE
         msg << endl << "P" << rank << ": axis " << msgAxis
             << ", Upper receive message:" << endl << "  ndims    = " << ndims
             << endl << "  sizes    = " << sizes << endl << "  subsizes = "
@@ -3292,7 +3292,7 @@ initializeMessages()
 #ifdef HAVE_MPI
       {
 
-#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+#ifdef DOMI_MDVECTOR_MESSAGE_INITIALIZE
         msg << endl << "P" << rank << ": axis " << msgAxis
             << ", Upper send message:" << endl << "  ndims    = " << ndims
             << endl << "  sizes    = " << sizes << endl << "  subsizes = "
@@ -3317,7 +3317,7 @@ initializeMessages()
     _sendMessages[msgAxis][1] = messageInfo;
   }
 
-#ifdef DOMI_MDVECTOR_OUTPUT_INITIALIZE
+#ifdef DOMI_MDVECTOR_MESSAGE_INITIALIZE
   for (int proc = 0; proc < _teuchosComm->getSize(); ++proc)
   {
     if (proc == rank)
