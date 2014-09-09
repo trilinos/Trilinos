@@ -115,6 +115,8 @@ gaussSeidel (const LocalOrdinal numRows,
 {
   using Kokkos::Details::ArithTraits;
   typedef LocalOrdinal LO;
+  const OffsetType theNumRows = static_cast<OffsetType> (numRows);
+  const OffsetType theNumCols = static_cast<OffsetType> (numCols);
 
   if (numRows == 0 || numCols == 0) {
     return; // Nothing to do.
@@ -127,10 +129,10 @@ gaussSeidel (const LocalOrdinal numRows,
     // this case.
     const MatrixScalar oneMinusOmega =
       ArithTraits<MatrixScalar>::one () - omega;
-    for (OffsetType j = 0; j < numCols; ++j) {
+    for (OffsetType j = 0; j < theNumCols; ++j) {
       RangeScalar* const x_j = X + j*x_stride;
       const DomainScalar* const b_j = B + j*b_stride;
-      for (OffsetType i = 0; i < numRows; ++i) {
+      for (OffsetType i = 0; i < theNumRows; ++i) {
         x_j[i] = oneMinusOmega * x_j[i] + omega * b_j[i];
       }
     }
@@ -185,17 +187,17 @@ gaussSeidel (const LocalOrdinal numRows,
 
     if (direction == Kokkos::Forward) {
       for (LO i = 0; i < numRows; ++i) {
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
@@ -204,23 +206,23 @@ gaussSeidel (const LocalOrdinal numRows,
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
       for (LO i = numRows - 1; i != 0; --i) {
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
       { // last loop iteration
         const LO i = 0;
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
@@ -230,7 +232,7 @@ gaussSeidel (const LocalOrdinal numRows,
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
@@ -295,6 +297,8 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
 {
   using Kokkos::Details::ArithTraits;
   typedef LocalOrdinal LO;
+  const OffsetType theNumRows = static_cast<OffsetType> (numRows);
+  const OffsetType theNumCols = static_cast<OffsetType> (numCols);
 
   if (numRows == 0 || numCols == 0) {
     return; // Nothing to do.
@@ -307,10 +311,10 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
     // dependencies in this case.
     const MatrixScalar oneMinusOmega =
       ArithTraits<MatrixScalar>::one () - omega;
-    for (OffsetType j = 0; j < numCols; ++j) {
+    for (OffsetType j = 0; j < theNumCols; ++j) {
       RangeScalar* const x_j = X + j*x_stride;
       const DomainScalar* const b_j = B + j*b_stride;
-      for (OffsetType i = 0; i < numRows; ++i) {
+      for (OffsetType i = 0; i < theNumRows; ++i) {
         x_j[i] = oneMinusOmega * x_j[i] + omega * b_j[i];
       }
     }
@@ -375,11 +379,11 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
@@ -399,7 +403,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
@@ -412,11 +416,11 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
@@ -1179,14 +1183,16 @@ triSolveKokkos (RangeMultiVectorType X,
     << Teuchos::CONJ_TRANS << ".");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numRows != X.dimension_0 (), std::invalid_argument, prefix << "numRows = "
-    << numRows << " != X.dimension_0() = " << X.dimension_0 () << ".");
+    numRows != static_cast<LO> (X.dimension_0 ()), std::invalid_argument,
+    prefix << "numRows = " << numRows << " != X.dimension_0() = " <<
+    X.dimension_0 () << ".");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numCols != Y.dimension_0 (), std::invalid_argument, prefix << "numCols = "
-    << numCols << " != Y.dimension_0() = " << Y.dimension_0 () << ".");
+    numCols != static_cast<LO> (Y.dimension_0 ()), std::invalid_argument,
+    prefix << "numCols = " << numCols << " != Y.dimension_0() = " <<
+    Y.dimension_0 () << ".");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numVecs != Y.dimension_1 (), std::invalid_argument, prefix <<
-    "X.dimension_1 () = " << numVecs << " != Y.dimension_1 () = "
+    numVecs != static_cast<LO> (Y.dimension_1 ()), std::invalid_argument,
+    prefix << "X.dimension_1 () = " << numVecs << " != Y.dimension_1 () = "
     << Y.dimension_1 () << ".");
 
   if (trans == Teuchos::NO_TRANS) {          // no transpose
