@@ -2336,7 +2336,6 @@ namespace Experimental {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getFrobeniusNorm: "
       "not implemented.");
-    return Teuchos::ScalarTraits<Mag>::zero();
   }
 
 
