@@ -238,7 +238,7 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
 
     if (type_ == "CHEBYSHEV" && lambdaMax == negone) {
-      typedef Tpetra::CrsMatrix<SC, LO, GO, NO> MatrixType;
+      typedef Tpetra::RowMatrix<SC, LO, GO, NO> MatrixType;
 
       Teuchos::RCP<Ifpack2::Chebyshev<MatrixType> > chebyPrec = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec_);
       if (chebyPrec != Teuchos::null) {
