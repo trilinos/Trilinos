@@ -388,14 +388,14 @@ namespace Tpetra {
         // Abbreviations so that the map creation call isn't too long.
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
-        typedef node_type Node;
+        typedef node_type NT;
 
         if (numRows == numCols) {
           return pRangeMap;
         } else {
-          return createUniformContigMapWithNode<LO,GO,Node> (numCols,
-                                                             pRangeMap->getComm (),
-                                                             pRangeMap->getNode ());
+          return createUniformContigMapWithNode<LO,GO,NT> (numCols,
+                                                           pRangeMap->getComm (),
+                                                           pRangeMap->getNode ());
         }
       }
 
