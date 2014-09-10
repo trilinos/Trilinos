@@ -15,7 +15,10 @@ namespace {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::Comm;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
   using Teuchos::RCP;
+  using std::endl;
   typedef Tpetra::MultiVector<> MV;
   typedef Tpetra::Vector<> V;
   typedef Tpetra::global_size_t GST;
@@ -44,10 +47,15 @@ namespace {
     const size_t numCols = 3;
     const GO indexBase = 1; // just for a change
 
+    out << "Test SetBlock with index vector: Y(:, [1,2]) := X(:, [0,1])"
+        << endl;
+
     RCP<const Comm<int> > comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
     RCP<const Map<> > map (new Map<> (INV, numLclRows, indexBase, comm));
     const GST numGblRows = map->getGlobalNumElements ();
+
+    out << "Creating and filling MultiVector X" << endl;
 
     // Create a MultiVector X, and fill it such that each entry has a
     // globally unique value.  This will help us test SetBlock both
@@ -74,13 +82,24 @@ namespace {
       }
     }
 
+    // Compute what the one-norm of each column of X should be.
+    {
+      Array<norm_type> X_norms_in (X_norms); // deep copy
+      reduceAll<int, norm_type> (*comm, REDUCE_SUM, static_cast<int> (numCols),
+                                 X_norms_in.getRawPtr (), X_norms.getRawPtr ());
+    }
+
     // Test that the norms of the columns of X have their expected values.
     Array<norm_type> norms (numCols);
     X.norm1 (norms);
     for (size_t j = 0; j < numCols; ++j) {
+      out << "Expected 1-norm of X_" << j << ": " << X_norms[j] << endl;
+      out << "Actual 1-norm of X_" << j << ": " << norms[j] << endl;
       TEST_ASSERT( X_norms[j] != STN::zero () );
       TEST_ASSERT( norms[j] == X_norms[j] );
     }
+
+    out << "Create MultiVector Y" << endl;
 
     // Create a MultiVector Y, and make it a deep copy of X.
     MV Y (map, numCols);
@@ -92,17 +111,23 @@ namespace {
       TEST_ASSERT( norms[j] == X_norms[j] );
     }
 
+    out << "Call SetBlock(X, [1, 2], Y)" << endl;
+
     // Y(:, [1,2]) := X(:, [0,1])
     std::vector<int> index (2);
     index[0] = 1;
     index[1] = 2;
     MVT::SetBlock (X, index, Y);
 
+    out << "Test that the norms of the columns of X have not changed" << endl;
+
     // Test that the norms of the columns of X have not changed.
     X.norm1 (norms);
     for (size_t j = 0; j < numCols; ++j) {
       TEST_ASSERT( norms[j] == X_norms[j] );
     }
+
+    out << "Test the norms of the columns of Y" << endl;
 
     // Test that the norm of the first column of Y has not changed.
     Y.norm1 (norms);
@@ -113,6 +138,8 @@ namespace {
     TEST_ASSERT( norms[1] == X_norms[0] );
     TEST_ASSERT( norms[2] == X_norms[1] );
 
+    out << "Test the values in the columns of Y" << endl;
+
     // Test that after calling SetBlock, Y(:,1:2) == X(:,0:1) (where
     // 0:1 means [0, 1] (inclusive range) and 1:2 means [1, 2]).
     MV Z (map, static_cast<size_t> (2));
@@ -120,7 +147,7 @@ namespace {
     RCP<const MV> Y_view = Y.subView (Teuchos::Range1D (1, 2));
     // Z := X(:, 0:1) - Y(: 1:2)
     Z.update (STS::one (), *X_view, -STS::one (), *Y_view, STS::zero ());
-    Z.norm1 (norms);
+    Z.norm1 (norms (0, 2));
     TEST_ASSERT( norms[0] == STN::zero () );
     TEST_ASSERT( norms[1] == STN::zero () );
 
@@ -173,10 +200,19 @@ namespace {
       }
     }
 
+    // Compute what the one-norm of each column of X should be.
+    {
+      Array<norm_type> X_norms_in (X_norms); // deep copy
+      reduceAll<int, norm_type> (*comm, REDUCE_SUM, static_cast<int> (numCols),
+                                 X_norms_in.getRawPtr (), X_norms.getRawPtr ());
+    }
+
     // Test that the norms of the columns of X have their expected values.
     Array<norm_type> norms (numCols);
     X.norm1 (norms);
     for (size_t j = 0; j < numCols; ++j) {
+      out << "Expected 1-norm of X_" << j << ": " << X_norms[j] << endl;
+      out << "Actual 1-norm of X_" << j << ": " << norms[j] << endl;
       TEST_ASSERT( X_norms[j] != STN::zero () );
       TEST_ASSERT( norms[j] == X_norms[j] );
     }
@@ -230,8 +266,6 @@ namespace {
     TEST_ASSERT( norms[2] == X_norms[1] );
   }
 
-
-
   //
   // Repeat TpetraSetBlock1, but put the column indices in a different order:
   //
@@ -274,10 +308,19 @@ namespace {
       }
     }
 
+    // Compute what the one-norm of each column of X should be.
+    {
+      Array<norm_type> X_norms_in (X_norms); // deep copy
+      reduceAll<int, norm_type> (*comm, REDUCE_SUM, static_cast<int> (numCols),
+                                 X_norms_in.getRawPtr (), X_norms.getRawPtr ());
+    }
+
     // Test that the norms of the columns of X have their expected values.
     Array<norm_type> norms (numCols);
     X.norm1 (norms);
     for (size_t j = 0; j < numCols; ++j) {
+      out << "Expected 1-norm of X_" << j << ": " << X_norms[j] << endl;
+      out << "Actual 1-norm of X_" << j << ": " << norms[j] << endl;
       TEST_ASSERT( X_norms[j] != STN::zero () );
       TEST_ASSERT( norms[j] == X_norms[j] );
     }
