@@ -750,6 +750,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Write)
 
 TEUCHOS_UNIT_TEST(Hierarchy, BlockCrs)
 {
+#if defined(HAVE_MUELU_TPETRA)
   MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -801,7 +802,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, BlockCrs)
   int iterations=10;
   H.Iterate(*RHS, *X, iterations);
   }
-
+#endif
   TEST_EQUALITY(0,0);
 }
 
