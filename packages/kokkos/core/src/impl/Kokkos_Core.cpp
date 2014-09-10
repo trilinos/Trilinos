@@ -52,9 +52,9 @@
 
 namespace Kokkos {
 
-  typedef Kokkos::DefaultExecutionSpace::host_mirror_device_type  DefaultHostMirrorDeviceType ;
+  typedef Kokkos::DefaultExecutionSpace::host_mirror_device_type  DefaultHostMirrorSpaceType ;
 
-  enum { DefaultIsNotHostSpace = ! Impl::is_same< Kokkos::DefaultExecutionSpace , DefaultHostMirrorDeviceType >::value };
+  enum { DefaultIsNotHostSpace = ! Impl::is_same< Kokkos::DefaultExecutionSpace , DefaultHostMirrorSpaceType >::value };
 
   void initialize() {
     if ( DefaultIsNotHostSpace ) {
@@ -123,16 +123,16 @@ namespace Kokkos {
          std::cout << std::endl;
          std::cout << "--help               : print this message" << std::endl;
          std::cout << "--threads INT        : specify total number of threads or" << std::endl;
-         std::cout << "                       number of threads per numa region if " << std::endl;
+         std::cout << "                       number of threads per NUMA region if " << std::endl;
          std::cout << "                       used in conjunction with '--numa' option. " << std::endl;
-         std::cout << "--numa INT           : specify number of numa regions used by process." << std::endl;
-         std::cout << "--device INT         : specify device id to be used by kokkos. " << std::endl;
-         std::cout << "--ndevices INT [INT] : used when running MPI jobs. Specify number of" << std::endl;
-         std::cout << "                       of devices per node to be used. Process to device" << std::endl;
-         std::cout << "                       mapping happens by obtaining the local mpi rank" << std::endl;
-         std::cout << "                       and assigning devices round robbin. The optional" << std::endl;
-         std::cout << "                       second argument allows for an exisiting device" << std::endl;
-         std::cout << "                       to be ignored. This is most usefull on workstations" << std::endl;
+         std::cout << "--numa INT           : specify number of NUMA regions used by process." << std::endl;
+         std::cout << "--device INT         : specify device id to be used by Kokkos. " << std::endl;
+         std::cout << "--ngpus INT [INT]    : used when running MPI jobs. Specify number of" << std::endl;
+         std::cout << "                       devices per node to be used. Process to device" << std::endl;
+         std::cout << "                       mapping happens by obtaining the local MPI rank" << std::endl;
+         std::cout << "                       and assigning devices round-robin. The optional" << std::endl;
+         std::cout << "                       second argument allows for an existing device" << std::endl;
+         std::cout << "                       to be ignored. This is most useful on workstations" << std::endl;
          std::cout << "                       with multiple GPUs of which one is used to drive" << std::endl;
          std::cout << "                       screen output." << std::endl;
          std::cout << std::endl;
@@ -147,11 +147,11 @@ namespace Kokkos {
     if(DefaultIsNotHostSpace) {
       if(nthreads>0) {
         if(numa>0)
-          DefaultHostMirrorDeviceType::initialize(nthreads,numa);
+          DefaultHostMirrorSpaceType::initialize(nthreads,numa);
         else
-          DefaultHostMirrorDeviceType::initialize(nthreads);
+          DefaultHostMirrorSpaceType::initialize(nthreads);
       } else
-        DefaultHostMirrorDeviceType::initialize();
+        DefaultHostMirrorSpaceType::initialize();
     }
 
     #ifdef KOKKOS_HAVE_CUDA
@@ -175,14 +175,14 @@ namespace Kokkos {
 
   void finalize() {
     if(DefaultIsNotHostSpace) {
-      DefaultHostMirrorDeviceType::finalize();
+      DefaultHostMirrorSpaceType::finalize();
     }
     Kokkos::DefaultExecutionSpace::finalize();
   }
 
   void fence() {
     if(DefaultIsNotHostSpace) {
-      DefaultHostMirrorDeviceType::fence();
+      DefaultHostMirrorSpaceType::fence();
     }
     Kokkos::DefaultExecutionSpace::fence();
   }

@@ -443,12 +443,12 @@ namespace Kokkos {
 /// scan will overwrite that array with [1, 3, 6, 10].
 ///
 /// \code
-/// template<class DeviceType>
+/// template<class SpaceType>
 /// class InclScanFunctor {
 /// public:
-///   typedef DeviceType device_type;
+///   typedef SpaceType device_type;
 ///   typedef int value_type;
-///   typedef typename DeviceType::size_type size_type;
+///   typedef typename SpaceType::size_type size_type;
 ///
 ///   InclScanFunctor (Kokkos::View<value_type*, device_type> x) : x_ (x) {}
 ///
@@ -477,12 +477,12 @@ namespace Kokkos {
 /// will overwrite that array with [0, 1, 3, 6].
 ///
 /// \code
-/// template<class DeviceType>
+/// template<class SpaceType>
 /// class ExclScanFunctor {
 /// public:
-///   typedef DeviceType device_type;
+///   typedef SpaceType device_type;
 ///   typedef int value_type;
-///   typedef typename DeviceType::size_type size_type;
+///   typedef typename SpaceType::size_type size_type;
 ///
 ///   ExclScanFunctor (Kokkos::View<value_type*, device_type> x) : x_ (x) {}
 ///
@@ -513,12 +513,12 @@ namespace Kokkos {
 /// array with [0, 1, 3, 6, 10].
 ///
 /// \code
-/// template<class DeviceType>
+/// template<class SpaceType>
 /// class OffsetScanFunctor {
 /// public:
-///   typedef DeviceType device_type;
+///   typedef SpaceType device_type;
 ///   typedef int value_type;
-///   typedef typename DeviceType::size_type size_type;
+///   typedef typename SpaceType::size_type size_type;
 ///
 ///   // lastIndex_ is the last valid index (zero-based) of x.
 ///   // If x has length zero, then lastIndex_ won't be used anyway.

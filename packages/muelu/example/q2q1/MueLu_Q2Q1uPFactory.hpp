@@ -102,7 +102,10 @@ namespace MueLu {
   };
 
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = Xpetra::Matrix<>::scalar_type,
+            class LocalOrdinal = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class Q2Q1uPFactory : public PFactory {
 #include "MueLu_UseShortNames.hpp"
   typedef MyCptList_<LocalOrdinal> MyCptList;
@@ -158,8 +161,8 @@ namespace MueLu {
     void DumpCoords(const MultiVector&       coords, const std::string& filename) const;
   };
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",                          null, "Generating factory of the matrix A");
@@ -176,8 +179,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel, "A");
 
     if (fineLevel.GetLevelID()) {
@@ -193,13 +196,13 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
@@ -410,8 +413,8 @@ namespace MueLu {
   // malloc(). I doubt that these are a big problem, but one could allocate
   // some workspaces ahead of time to avoid the constant malloc/free cycle in
   // CompDistances().
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   FindDist4Cpts(const Matrix& A, const MultiVector& coords, const Array<LO>& userCpts, std::vector<char>& status, MyCptList& myCpts, int levelID) const {
     int    NDim    = coords.getNumVectors();
     size_t numRows = A.getNodeNumRows();
@@ -778,8 +781,8 @@ namespace MueLu {
   // possible new CPOINT as well as the orientation of the new possible CPOINT
   // with respect to k's current CPOINTs. Generally, points which are on the
   // opposite side of k' current CPOINTs are favored.
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   PhaseTwoPattern(const Matrix& A, const MultiVector& coords, const std::vector<char>& status, MyCptList& myCpts) const {
     int    NDim    = coords.getNumVectors();
     size_t numRows = A.getNodeNumRows();
@@ -931,8 +934,8 @@ namespace MueLu {
   // addition, however, we look to see if a possible mid-point is "close" or
   // not to an already computed mid-point. If it is NOT too close, then this
   // possible mid-point is declared to be an actual mid-point.
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   FindMidPoints(const Matrix& A, const MultiVector& coords, Array<LO>& Cptlist, const MyCptList& myCpts) const {
     int    NDim    = coords.getNumVectors();
     size_t numRows = A.getNodeNumRows();
@@ -1158,8 +1161,8 @@ namespace MueLu {
   }
 
   // Convert information in Cptlist, myCpts into a sparsity pattern matrix
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P) const {
     RCP<const Map> rowMap = A.getRowMap();
     size_t numRows = myCpts.getNodeNumRows();
@@ -1217,8 +1220,8 @@ namespace MueLu {
   }
 
   // Compute all points which are within a distance 1-4 from StartPt
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CompDistances(const Matrix& A, LO start, int numDist, std::vector<LO>& dist1, std::vector<LO>& dist2, std::vector<LO>& dist3, std::vector<LO>& dist4) const {
     TEUCHOS_TEST_FOR_EXCEPTION(numDist < 1 || numDist > 4, Exceptions::InvalidArgument, "CompDistances() cannot compute " << numDist << " distances");
 
@@ -1252,8 +1255,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CreateCrsPointers(const Matrix& A, ArrayRCP<const size_t>& ia, ArrayRCP<const LO>& ja) const {
     RCP<const CrsMatrixWrap> Awrap = rcp_dynamic_cast<const CrsMatrixWrap>(rcpFromRef(A));
     TEUCHOS_TEST_FOR_EXCEPTION(Awrap.is_null(), Exceptions::RuntimeError, "A is not of CrsMatrixWrap type");
@@ -1262,8 +1265,8 @@ namespace MueLu {
     Awrap->getCrsMatrix()->getAllValues(ia, ja, val);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DumpStatus(const std::vector<char>& status, bool pressureMode, const std::string& filename) const {
     if (pressureMode) {
       std::ofstream ofs(filename.c_str());
@@ -1280,8 +1283,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DumpCoords(const MultiVector& coords, const std::string& filename) const {
     const int NDim = coords.getNumVectors();
     const int n    = coords.getLocalLength();

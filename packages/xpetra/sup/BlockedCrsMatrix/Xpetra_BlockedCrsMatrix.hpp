@@ -47,7 +47,6 @@
 #define XPETRA_BLOCKEDCRSMATRIX_HPP
 
 #include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
@@ -74,12 +73,22 @@ namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
-  template <class Scalar,
-           class LocalOrdinal  = int,
-           class GlobalOrdinal = LocalOrdinal,
-           class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-           class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
-           class BlockedCrsMatrix : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+  template <class Scalar = Matrix<>::scalar_type,
+            class LocalOrdinal =
+              typename Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  class BlockedCrsMatrix :
+    public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  public:
+    typedef Scalar scalar_type;
+    typedef LocalOrdinal local_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
+    typedef Node node_type;
+
+  private:
 #undef XPETRA_BLOCKEDCRSMATRIX_SHORT
 #include "Xpetra_UseShortNames.hpp"
 

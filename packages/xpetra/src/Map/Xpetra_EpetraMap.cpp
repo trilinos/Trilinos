@@ -231,8 +231,12 @@ namespace Xpetra {
 
   Teuchos::ArrayView< const int > EpetraMap::getNodeElementList() const { XPETRA_MONITOR("EpetraMap::getNodeElementList"); return ArrayView< const int >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
 
-  //typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-  Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> EpetraMap::getNode() const { XPETRA_MONITOR("EpetraMap::getNode"); return KokkosClassic::DefaultNode::getDefaultNode(); } //removed &
+  Teuchos::RCP<EpetraMap::node_type>
+  EpetraMap::getNode () const
+  {
+    XPETRA_MONITOR("EpetraMap::getNode");
+    return KokkosClassic::DefaultNode::getDefaultNode();
+  } //removed &
 
   RCP<const Map<int,int> > EpetraMap::removeEmptyProcesses () const {
    const Epetra_BlockMap * NewMap = map_->RemoveEmptyProcesses();

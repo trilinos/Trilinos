@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
   typedef Tpetra::Map<LO,GO,NO>               TMap;
   typedef Tpetra::MultiVector<SC,LO,GO,NO>    TMV;
-  typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>  TCRS;
+  typedef Tpetra::CrsMatrix<SC,LO,GO,NO>      TCRS;
   typedef Tpetra::Operator<SC,LO,GO,NO>       OP;
   typedef Belos::LinearProblem<SC,TMV,OP>     BelosProblem;
   typedef Belos::SolverManager<SC,TMV,OP>     BelosManager;

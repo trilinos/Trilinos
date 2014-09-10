@@ -50,26 +50,6 @@
 
 namespace {
 
-class TestMemoryTrackingEntry : public Kokkos::Impl::MemoryTrackingEntry {
-public:
-
-  ~TestMemoryTrackingEntry();
-
-  template< class T >
-  TestMemoryTrackingEntry( const T * ptr , const unsigned length , const std::string & theLabel )
-    : Kokkos::Impl::MemoryTrackingEntry( theLabel , typeid(T) , ptr , sizeof(T) * length )
-    {}
-};
-
-TestMemoryTrackingEntry::~TestMemoryTrackingEntry()
-{
-  if ( Kokkos::Impl::MemoryTrackingEntry::count() ) {
-    std::cerr << "~TestMemoryTrackingEntry(" ;
-    Kokkos::Impl::MemoryTrackingEntry::print( std::cerr );
-    std::cerr << ")" << std::endl ;
-  }
-}
-
 class TestMemoryTracking {
 public:
 
@@ -77,49 +57,60 @@ public:
 
   void run_test()
   {
-    Kokkos::Impl::MemoryTracking tracking( "test" );
+    Kokkos::Impl::MemoryTracking<> tracking( "test" );
 
     int a ;
     double b ;
     long c[10] ;
 
-    tracking.insert( new TestMemoryTrackingEntry( & a , 1 , "a" ) );
-    tracking.insert( new TestMemoryTrackingEntry( & b , 1 , "b" ) );
-    tracking.insert( new TestMemoryTrackingEntry( c , 10 , "c[10]" ) );
+    tracking.insert( std::string("a") , & a , sizeof(int) , 1 );
+    tracking.insert( std::string("b") , & b , sizeof(double) , 1 );
+    tracking.insert( std::string("c[10]") , c , sizeof(long) , 10 );
 
-    Kokkos::Impl::MemoryTrackingEntry * info_a = tracking.query( & a );
-    Kokkos::Impl::MemoryTrackingEntry * info_b = tracking.query( & b );
-    Kokkos::Impl::MemoryTrackingEntry * info_c = tracking.query( c );
+    Kokkos::Impl::MemoryTracking<>::Entry * info_a = tracking.query( & a );
+    Kokkos::Impl::MemoryTracking<>::Entry * info_b = tracking.query( & b );
+    Kokkos::Impl::MemoryTracking<>::Entry * info_c = tracking.query( c );
 
     ASSERT_TRUE( 0 != info_a );
     ASSERT_TRUE( 0 != info_b );
     ASSERT_TRUE( 0 != info_c );
 
-    ASSERT_TRUE( info_a->label   == std::string("a") );
-    ASSERT_TRUE( info_a->type    == typeid( int ) );
+    ASSERT_TRUE( info_a->m_alloc_ptr == & a );
+    ASSERT_TRUE( info_b->m_alloc_ptr == & b );
+    ASSERT_TRUE( info_c->m_alloc_ptr == & c[0] );
+
+    ASSERT_TRUE( info_a->m_type_size == sizeof(int) );
+    ASSERT_TRUE( info_b->m_type_size == sizeof(double) );
+    ASSERT_TRUE( info_c->m_type_size == sizeof(long) );
+
+    ASSERT_TRUE( info_a->m_array_len == 1 );
+    ASSERT_TRUE( info_b->m_array_len == 1 );
+    ASSERT_TRUE( info_c->m_array_len == 10 );
+
+    ASSERT_TRUE( std::string( info_a->label() ) == std::string("a") );
+    ASSERT_TRUE( std::string( info_b->label() ) == std::string("b") );
+    ASSERT_TRUE( std::string( info_c->label() ) == std::string("c[10]") );
+
     ASSERT_TRUE( info_a->count() == 1 );
-
-    ASSERT_TRUE( info_b->label   == std::string("b") );
-    ASSERT_TRUE( info_b->type    == typeid( double ) );
     ASSERT_TRUE( info_b->count() == 1 );
-
-    ASSERT_TRUE( info_c->label   == std::string("c[10]") );
-    ASSERT_TRUE( info_c->type    == typeid( long ) );
     ASSERT_TRUE( info_c->count() == 1 );
 
     tracking.increment( & a ); ASSERT_TRUE( 2 == info_a->count() );
     tracking.increment( & a ); ASSERT_TRUE( 3 == info_a->count() );
-    tracking.decrement( & a ); ASSERT_TRUE( 2 == info_a->count() );
-    tracking.decrement( & a ); ASSERT_TRUE( 1 == info_a->count() );
-    tracking.decrement( & a ); ASSERT_TRUE( 0 == tracking.query( & a ) );
+
+    void * ptr = 0 ;
+
+    ptr = tracking.decrement( & a ); ASSERT_TRUE( ptr == 0 ); ASSERT_TRUE( 2 == info_a->count() );
+    ptr = tracking.decrement( & a ); ASSERT_TRUE( ptr == 0 ); ASSERT_TRUE( 1 == info_a->count() );
+    ptr = tracking.decrement( & a ); ASSERT_TRUE( ptr == & a ); ASSERT_TRUE( 0 == tracking.query( & a ) );
     info_a = 0 ;
 
     tracking.increment( & c[2] ); ASSERT_TRUE( 2 == info_c->count() );
-    tracking.decrement( & c[3] ); ASSERT_TRUE( 1 == info_c->count() );
-    tracking.decrement( & c[4] ); ASSERT_TRUE( 0 == tracking.query( c ) );
+    ptr = tracking.decrement( & c[3] ); ASSERT_TRUE( ptr == 0 ); ASSERT_TRUE( 1 == info_c->count() );
+    ptr = tracking.decrement( & c[4] ); ASSERT_TRUE( ptr == & c[0] ); ASSERT_TRUE( 0 == tracking.query( c ) );
     info_c = 0 ;
 
-    tracking.decrement( & b ); ASSERT_TRUE( 0 == tracking.query( & b ) );
+    ptr = tracking.decrement( & b ); ASSERT_TRUE( ptr == & b ); ASSERT_TRUE( 0 == tracking.query( & b ) );
     info_b = 0 ;
   }
 };

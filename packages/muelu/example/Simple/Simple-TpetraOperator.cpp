@@ -79,16 +79,16 @@ int main(int argc, char *argv[]) {
 //
 // MueLu_UseShortNamesScalar.hpp (included by MueLu_UseShortNames.hpp)
 // typedefs MueLu classes like
-// MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
-// to "short names" (Hierarchy, in this case).  Including the header
-// file here ensures that the typedefs don't pollute the global
-// namespace; they just go into the body of main(). This header file
-// also includes xpetra/src/Headers/Xpetra_UseShortNames.hpp, which
-// sets up abbreviation typedefs like SC (for Scalar, the scalar
-// type), LO (for LocalOrdinal, the local ordinal type), GO
-// (GlobalOrdinal, the global ordinal type), and NO (the Kokkos Node
-// type).  MueLu_UseDefaultTypes.hpp (included above) sets up defaults
-// for common template parameters like Scalar, LocalOrdinal, and
+// MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> to "short
+// names" (Hierarchy, in this case).  Including the header file here
+// ensures that the typedefs don't pollute the global namespace; they
+// just go into the body of main(). This header file also includes
+// xpetra/src/Headers/Xpetra_UseShortNames.hpp, which sets up
+// abbreviation typedefs like SC (for Scalar, the scalar type), LO
+// (for LocalOrdinal, the local ordinal type), GO (GlobalOrdinal, the
+// global ordinal type), and NO (the Kokkos Node type).
+// MueLu_UseDefaultTypes.hpp (included above) sets up defaults for
+// common template parameters like Scalar, LocalOrdinal, and
 // GlobalOrdinal.
 #include <MueLu_UseShortNames.hpp>    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
 
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
   // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-  RCP<Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > A = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NO, LMO>(map, 3));
+  RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > A = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NO>(map, 3));
 
   // Add rows one-at-a-time
   for (size_t i = 0; i < numMyElements; i++) {
@@ -152,13 +152,13 @@ int main(int argc, char *argv[]) {
   //
 
   // Turns a Tpetra::CrsMatrix into a MueLu::Matrix
-  RCP<Xpetra::CrsMatrix<SC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::TpetraCrsMatrix<SC, LO, GO, NO, LMO>(A)); //TODO: should not be needed
-  RCP<Xpetra::Matrix <SC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<SC, LO, GO, NO, LMO>(mueluA_));
+  RCP<Xpetra::CrsMatrix<SC, LO, GO, NO> > mueluA_ = rcp(new Xpetra::TpetraCrsMatrix<SC, LO, GO, NO>(A)); //TODO: should not be needed
+  RCP<Xpetra::Matrix <SC, LO, GO, NO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<SC, LO, GO, NO>(mueluA_));
 
   // Create the multigrid hierarchy
   //
   // MueLu_UseShortNames.hpp (see note above) typedefs
-  // MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  // MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   // to Hierarchy.  This lets use use Hierarchy here without needing
   // to qualify its namespace or template parameters.
   RCP<Hierarchy> H = rcp(new Hierarchy(mueluA));
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::Operator<SC,LO,GO,NO>       OP;
 
   // Wrap MueLu Hierarchy as a Tpetra::Operator
-  RCP<MueLu::TpetraOperator<SC,LO,GO,NO,LMO> > tH = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO,LMO>(H));
+  RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
 
   // Construct a Belos LinearProblem object
   RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(A, X, B));

@@ -80,6 +80,22 @@ $ Check line counting -- should be on line 78: {Parse Error}
 {endif}
 
 $ ========================================================================
+$ Test string if lines
+{if("Greg")}
+ This line should be echoed ("greg")
+{else}
+ This line should not be echoed ("greg")
+{endif}
+
+{empty=""}
+{if(empty)}
+ This line should not be echoed (empty)
+{else}
+ This line should be echoed (empty)
+{endif}
+
+
+$ ========================================================================
 $ Test if lines
 {if(sqrt(4) == 2)}
   This line should be echoed. (a)
@@ -220,3 +236,10 @@ $ Check parsing of escaped braces...
 \{ int a = b + {PI/2} \}
 \{ \}
 
+$ Test variable deletion
+{new_var = sqrt(2) * sqrt(3)}
+{new_var}
+{delete("new_var")}
+{new_var}  This should print warning about undefined variable
+
+$End of test file

@@ -55,12 +55,14 @@
 #endif
 
 namespace Kokkos {
-namespace Compat {
-  template<class DeviceType>
-  class KokkosDeviceWrapperNode;
-}
-class Cuda;
-}
+  namespace Compat {
+    // Forward declaration (to avoid circular subpackage dependencies).
+    template<class DeviceType>
+    class KokkosDeviceWrapperNode;
+  } // namespace Compat
+  // Forward declaration (to avoid circular subpackage dependencies).
+  class Cuda;
+} // namespace Kokkos
 
 namespace KokkosClassic {
 
@@ -104,32 +106,33 @@ namespace KokkosClassic {
   /// particularly important for the GPU case (Node = ThrustGPUNode).
   template <class Scalar, class Ordinal, class Node>
   struct DefaultKernels {
-    typedef DefaultHostSparseOps <void  ,Ordinal,Node,details::DefaultCRSAllocator>  SparseOps;
-    typedef DefaultBlockSparseOps<Scalar,Ordinal,Node>  BlockSparseOps;
-    typedef DefaultRelaxation    <Scalar,Ordinal,Node>  Relaxations;
+    typedef DefaultHostSparseOps<void, Ordinal, Node> SparseOps;
+    typedef DefaultBlockSparseOps<Scalar, Ordinal, Node> BlockSparseOps;
+    typedef DefaultRelaxation<Scalar, Ordinal, Node> Relaxations;
   };
 
-  // Partial specialization for Node=SerialNode.  AltSparseOps doesn't
-  // use Kokkos' parallel programming programming model, and does not
-  // rely so heavily on inlining.  Thus, it's a reasonable choice when
-  // not using threads.
+  /// \brief Partial specialization for Node=SerialNode.
+  ///
+  /// AltSparseOps doesn't use KokkosClassic's parallel programming
+  /// programming model, doesn't do deep copies for first touch, and
+  /// doesn't rely so heavily on inlining.  Thus, it's a reasonable
+  /// choice when not using threads.
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar, Ordinal, SerialNode> {
-    typedef AltSparseOps<void, Ordinal, SerialNode, 
-			 details::AltSparseOpsDefaultAllocator<Ordinal, SerialNode> > SparseOps;
-    typedef DefaultBlockSparseOps<Scalar, Ordinal, SerialNode>  BlockSparseOps;
-    typedef DefaultRelaxation<Scalar, Ordinal, SerialNode>  Relaxations;
+    typedef AltSparseOps<void, Ordinal, SerialNode,
+                         details::AltSparseOpsDefaultAllocator<Ordinal, SerialNode> > SparseOps;
+    typedef DefaultBlockSparseOps<Scalar, Ordinal, SerialNode> BlockSparseOps;
+    typedef DefaultRelaxation<Scalar, Ordinal, SerialNode> Relaxations;
   };
-
 
 #if defined(HAVE_KOKKOSCLASSIC_TBB)
   class TBBNode;
   //! Partial specialization for TBBNode, using first-touch allocation.
   template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar,Ordinal,TBBNode> {
-    typedef DefaultHostSparseOps <void  ,Ordinal,TBBNode,details::FirstTouchCRSAllocator>  SparseOps;
-    typedef DefaultBlockSparseOps<Scalar,Ordinal,TBBNode>  BlockSparseOps;
-    typedef DefaultRelaxation    <Scalar,Ordinal,TBBNode>  Relaxations;
+  struct DefaultKernels<Scalar, Ordinal, TBBNode> {
+    typedef DefaultHostSparseOps<void, Ordinal, TBBNode, details::FirstTouchCRSAllocator> SparseOps;
+    typedef DefaultBlockSparseOps<Scalar, Ordinal, TBBNode> BlockSparseOps;
+    typedef DefaultRelaxation<Scalar, Ordinal, TBBNode> Relaxations;
   };
 #endif // HAVE_KOKKOSCLASSIC_TBB
 
@@ -137,10 +140,10 @@ namespace KokkosClassic {
   class TPINode;
   //! Partial specialization for TPINode, using first-touch allocation.
   template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar,Ordinal,TPINode> {
-    typedef DefaultHostSparseOps <void  ,Ordinal,TPINode,details::FirstTouchCRSAllocator>  SparseOps;
-    typedef DefaultBlockSparseOps<Scalar,Ordinal,TPINode>  BlockSparseOps;
-    typedef DefaultRelaxation    <Scalar,Ordinal,TPINode>  Relaxations;
+  struct DefaultKernels<Scalar, Ordinal, TPINode> {
+    typedef DefaultHostSparseOps<void, Ordinal, TPINode, details::FirstTouchCRSAllocator> SparseOps;
+    typedef DefaultBlockSparseOps<Scalar, Ordinal, TPINode> BlockSparseOps;
+    typedef DefaultRelaxation<Scalar, Ordinal, TPINode> Relaxations;
   };
 #endif // HAVE_KOKKOSCLASSIC_TPI
 
@@ -148,10 +151,10 @@ namespace KokkosClassic {
   class OpenMPNode;
   //! Partial specialization for OpenMPNode, using first-touch allocation.
   template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar,Ordinal,OpenMPNode> {
-    typedef DefaultHostSparseOps <void  ,Ordinal,OpenMPNode, details::FirstTouchCRSAllocator>  SparseOps;
-    typedef DefaultBlockSparseOps<Scalar,Ordinal,OpenMPNode>  BlockSparseOps;
-    typedef DefaultRelaxation    <Scalar,Ordinal,OpenMPNode>  Relaxations;
+  struct DefaultKernels<Scalar, Ordinal, OpenMPNode> {
+    typedef DefaultHostSparseOps<void, Ordinal, OpenMPNode, details::FirstTouchCRSAllocator> SparseOps;
+    typedef DefaultBlockSparseOps<Scalar, Ordinal, OpenMPNode> BlockSparseOps;
+    typedef DefaultRelaxation<Scalar, Ordinal, OpenMPNode> Relaxations;
   };
 #endif // HAVE_KOKKOSCLASSIC_OPENMP
 
@@ -168,12 +171,12 @@ namespace KokkosClassic {
 
 #if defined(HAVE_KOKKOSCLASSIC_CUSP)
   template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
-    typedef CuspOps<void,Ordinal,ThrustGPUNode> SparseOps;
+  struct DefaultKernels<Scalar, Ordinal, ThrustGPUNode> {
+    typedef CuspOps<void, Ordinal, ThrustGPUNode> SparseOps;
   };
 #else
   template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
+  struct DefaultKernels<Scalar, Ordinal, ThrustGPUNode> {
     // By default, if you don't have CUSP, you won't have any kernels
     // for arbtrary Scalar and Ordinal types.  Compilation of
     // DefaultKernels in that case will fail, since the SparseOps
@@ -187,31 +190,17 @@ namespace KokkosClassic {
   // refer to DefaultKernels<T,LO,NT> for T != void, float, or double
   // will result in a compile-time error.
   template <>
-  struct DefaultKernels<void,int,ThrustGPUNode> {
-    typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
+  struct DefaultKernels<void, int, ThrustGPUNode> {
+    typedef CUSPARSEOps<void, ThrustGPUNode> SparseOps;
   };
   template <>
-  struct DefaultKernels<float,int,ThrustGPUNode> {
-    typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
+  struct DefaultKernels<float, int, ThrustGPUNode> {
+    typedef CUSPARSEOps<void, ThrustGPUNode> SparseOps;
   };
   template <>
-  struct DefaultKernels<double,int,ThrustGPUNode> {
-    typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
+  struct DefaultKernels<double, int, ThrustGPUNode> {
+    typedef CUSPARSEOps<void, ThrustGPUNode> SparseOps;
   };
-/*  template <>
-  struct DefaultKernels<void,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
-//    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
-    typedef DefaultHostSparseOps <void  , int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> , details::DefaultCRSAllocator>  SparseOps;
-  };
-  template <>
-  struct DefaultKernels<float,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
-//    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
-    typedef DefaultHostSparseOps <float  , int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> , details::DefaultCRSAllocator>  SparseOps;
-  };
-  template <>
-  struct DefaultKernels<double,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
-    typedef DefaultHostSparseOps <double  , int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> , details::DefaultCRSAllocator>  SparseOps;
-  };*/
 #endif
 
 } // namespace KokkosClassic

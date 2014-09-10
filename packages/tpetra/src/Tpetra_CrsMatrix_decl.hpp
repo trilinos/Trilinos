@@ -57,9 +57,9 @@
 
 
 namespace Tpetra {
-
   /// \class CrsMatrix
-  /// \brief Sparse matrix that presents a compressed sparse row interface.
+  /// \brief Sparse matrix that presents a row-oriented interface that
+  ///   lets users read or modify entries.
   ///
   /// \tparam Scalar The type of the numerical entries of the matrix.
   ///   (You can use real-valued or complex-valued types here, unlike
@@ -70,11 +70,6 @@ namespace Tpetra {
   ///   documentation of Map for requirements.
   /// \tparam Node The Kokkos Node type.  See the documentation of Map
   ///   for requirements.
-  /// \tparam LocalMatOps Type implementing local sparse
-  ///   matrix-(multi)vector multiply and local sparse triangular solve.
-  ///   It must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
-  ///   The default \c LocalMatOps type should suffice for most users.
-  ///   The actual default type depends on your Trilinos build options.
   ///
   /// This class implements a distributed-memory parallel sparse matrix,
   /// and provides sparse matrix-vector multiply (including transpose)
@@ -113,6 +108,8 @@ namespace Tpetra {
   /// storing indices as local.  Call isGloballyIndexed() or
   /// isLocallyIndexed() to find out whether the matrix currently stores
   /// indices as local or global.
+  ///
+  /// It may also help to read CrsGraph's documentation.
   ///
   /// \section Tpetra_CrsMatrix_insertion_into_nonowned_rows Insertion into nonowned rows
   ///
@@ -173,13 +170,13 @@ namespace Tpetra {
   /// object, that keeps the same source and target Map objects but
   /// has a different communication plan.  We have not yet implemented
   /// this optimization.
-  template <class Scalar        = double,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
-  class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
-                    public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
+  template <class Scalar = RowMatrix<>::scalar_type,
+            class LocalOrdinal = typename RowMatrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename RowMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  class CrsMatrix :
+    public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
+    public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
   public:
     //! @name Typedefs
     //@{
@@ -193,15 +190,6 @@ namespace Tpetra {
     //! This class' fourth template parameter; the Kokkos Node type.
     typedef Node node_type;
 
-    /// \brief This class' fifth template parameter; the implementation of local sparse kernels.
-    ///
-    /// We define both this typedef and mat_solve_type for backwards compatibility.
-    typedef LocalMatOps mat_vec_type;
-    /// \brief This class' fifth template parameter; the implementation of local sparse kernels.
-    ///
-    /// We define both this typedef and mat_vec_type for backwards compatibility.
-    typedef LocalMatOps mat_solve_type;
-
     //! The Map specialization suitable for this CrsMatrix specialization.
     typedef Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
 
@@ -212,7 +200,7 @@ namespace Tpetra {
     typedef Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;
 
     //! The CrsGraph specialization suitable for this CrsMatrix specialization.
-    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> crs_graph_type;
+    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, node_type> crs_graph_type;
 
     //@}
     //! @name Constructors and destructor
@@ -375,7 +363,7 @@ namespace Tpetra {
                const RCP<ParameterList>& params = null);
 
     // This friend declaration makes the clone() method work.
-    template <class S2, class LO2, class GO2, class N2, class LMO2>
+    template <class S2, class LO2, class GO2, class N2>
     friend class CrsMatrix;
 
     /// \brief Create a deep copy of this CrsMatrix, where the copy
@@ -403,9 +391,22 @@ namespace Tpetra {
     ///   those of the map being cloned, if they exist. Otherwise, the
     ///   row Map is used.
     template <class Node2>
-    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
-    clone (const RCP<Node2>& node2, const RCP<ParameterList>& params = null) const
+    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    clone (const Teuchos::RCP<Node2>& node2,
+           const Teuchos::RCP<Teuchos::ParameterList>& params =
+           Teuchos::null) const
     {
+      using Teuchos::arcp;
+      using Teuchos::Array;
+      using Teuchos::ArrayRCP;
+      using Teuchos::ArrayView;
+      using Teuchos::null;
+      using Teuchos::ParameterList;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::sublist;
+      typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2> CrsMatrix2;
+      typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
       const char tfecfFuncName[] = "clone";
 
       // Get parameter values.  Set them initially to their default values.
@@ -426,29 +427,22 @@ namespace Tpetra {
         ": You requested that the returned clone have local indices, but the "
         "the source matrix does not have a column Map yet.");
 
-      typedef typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps LocalMatOps2;
-      typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CrsMatrix2;
-      typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
-      RCP<const Map2> clonedRowMap = this->getRowMap ()->template clone<Node2> (node2);
-
+      RCP<const Map2> clonedRowMap =
+        this->getRowMap ()->template clone<Node2> (node2);
       RCP<CrsMatrix2> clonedMatrix;
       ArrayRCP<const size_t> numEntries;
       size_t numEntriesForAll = 0;
       if (! staticGraph_->indicesAreAllocated ()) {
         if (! staticGraph_->numAllocPerRow_.is_null ()) {
           numEntries = staticGraph_->numAllocPerRow_;
-        }
-        else {
+        } else {
           numEntriesForAll = staticGraph_->numAllocForAllRows_;
         }
-      }
-      else if (! staticGraph_->numRowEntries_.is_null ()) {
+      } else if (! staticGraph_->numRowEntries_.is_null ()) {
         numEntries = staticGraph_->numRowEntries_;
-      }
-      else if (staticGraph_->nodeNumAllocated_ == 0) {
+      } else if (staticGraph_->nodeNumAllocated_ == 0) {
         numEntriesForAll = 0;
-      }
-      else {
+      } else {
         // We're left with the case that we have optimized storage.
         // In this case, we have to construct a list of row sizes.
         TEUCHOS_TEST_FOR_EXCEPTION(
@@ -476,19 +470,16 @@ namespace Tpetra {
           clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap,
                                               numEntriesForAll, pftype,
                                               matrixparams));
-        }
-        else {
+        } else {
           clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap,
                                               numEntries, pftype,
                                               matrixparams));
         }
-      }
-      else {
+      } else {
         if (numEntries.is_null ()) {
           clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntriesForAll,
                                               pftype, matrixparams));
-        }
-        else {
+        } else {
           clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntries, pftype,
                                               matrixparams));
         }
@@ -519,10 +510,10 @@ namespace Tpetra {
                lrow <= clonedRowMap->getMaxLocalIndex ();
                ++lrow) {
             size_t theNumEntries = this->getNumEntriesInLocalRow (lrow);
-            if (theNumEntries > Teuchos::as<size_t> (linds.size ())) {
+            if (theNumEntries > static_cast<size_t> (linds.size ())) {
               linds.resize (theNumEntries);
             }
-            if (theNumEntries > Teuchos::as<size_t> (vals.size ())) {
+            if (theNumEntries > static_cast<size_t> (vals.size ())) {
               vals.resize (theNumEntries);
             }
             this->getLocalRowCopy (clonedRowMap->getGlobalElement (lrow),
@@ -556,10 +547,10 @@ namespace Tpetra {
                grow <= clonedRowMap->getMaxGlobalIndex ();
                ++grow) {
             size_t theNumEntries = this->getNumEntriesInGlobalRow (grow);
-            if (theNumEntries > Teuchos::as<size_t> (ginds.size ())) {
+            if (theNumEntries > static_cast<size_t> (ginds.size ())) {
               ginds.resize (theNumEntries);
             }
-            if (theNumEntries > Teuchos::as<size_t> (vals.size ())) {
+            if (theNumEntries > static_cast<size_t> (vals.size ())) {
               vals.resize (theNumEntries);
             }
             this->getGlobalRowCopy (grow, ginds (), vals (), theNumEntries);
@@ -579,16 +570,16 @@ namespace Tpetra {
           RCP<const Map2> clonedDomainMap;
           if (! this->getRangeMap ().is_null () &&
               this->getRangeMap () != clonedRowMap) {
-            clonedRangeMap  = this->getRangeMap ()->template clone<Node2> (node2);
-          }
-          else {
+            clonedRangeMap  =
+              this->getRangeMap ()->template clone<Node2> (node2);
+          } else {
             clonedRangeMap = clonedRowMap;
           }
           if (! this->getDomainMap ().is_null () &&
               this->getDomainMap () != clonedRowMap) {
-            clonedDomainMap = this->getDomainMap ()->template clone<Node2> (node2);
-          }
-          else {
+            clonedDomainMap =
+              this->getDomainMap ()->template clone<Node2> (node2);
+          } else {
             clonedDomainMap = clonedRowMap;
           }
           clonedMatrix->fillComplete (clonedDomainMap, clonedRangeMap,
@@ -598,10 +589,10 @@ namespace Tpetra {
           const bool caughtExceptionOnClone = true;
           TEUCHOS_TEST_FOR_EXCEPTION(
             caughtExceptionOnClone, std::runtime_error,
-            Teuchos::typeName (*this) << std::endl << "clone: " << std::endl <<
-            "Caught the following exception while calling fillComplete() on a "
-            "clone of type" << std::endl << Teuchos::typeName (*clonedMatrix)
-            << ": " << std::endl << e.what () << std::endl);
+            "Tpetra::CrsMatrix::clone: Caught the following exception while "
+            "calling fillComplete() on a clone of type "
+            << Teuchos::typeName (*clonedMatrix) << ": "
+            << e.what () << std::endl);
         }
       }
       return clonedMatrix;
@@ -1991,7 +1982,7 @@ namespace Tpetra {
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> > & destMatrix,
+    importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type> > & destMatrix,
                            const import_type& importer,
                            const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
@@ -2013,7 +2004,7 @@ namespace Tpetra {
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> > & destMatrix,
+    exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type> > & destMatrix,
                            const export_type& exporter,
                            const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
@@ -2040,7 +2031,7 @@ namespace Tpetra {
     ///
     /// Fusing these tasks can avoid some communication and work.
     void
-    transferAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > & destMat,
+    transferAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & destMat,
                              const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& rowTransfer, // either Import or Export
                              const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
@@ -2048,12 +2039,12 @@ namespace Tpetra {
 
     // We forbid copy construction by declaring this method private
     // and not implementing it.
-    CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> &rhs);
+    CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &rhs);
 
     // We forbid assignment (operator=) by declaring this method
     // private and not implementing it.
-    CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps>&
-    operator= (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> &rhs);
+    CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type>&
+    operator= (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &rhs);
 
     /// \brief Like insertGlobalValues(), but with column filtering.
     ///
@@ -2204,10 +2195,27 @@ namespace Tpetra {
     typedef ScalarTraits<Magnitude>                         STM;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> MV;
     typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>      V;
+    // This typedef stays only for the sake of backwards
+    // compatibility.  It does not follow the standard format for
+    // typedefs in a class, nor is it a nonambiguous abbreviation (is
+    // it RowGraph or CrsGraph?).
     typedef crs_graph_type Graph;
-    typedef typename LocalMatOps::template bind_scalar<Scalar>::other_type                    sparse_ops_type;
-    typedef typename sparse_ops_type::template graph<LocalOrdinal,node_type>::graph_type          local_graph_type;
-    typedef typename sparse_ops_type::template matrix<Scalar,LocalOrdinal,node_type>::matrix_type local_matrix_type;
+
+    // mfh 30 Aug 2014: CrsMatrix used this bind_scalar business
+    // because Chris Baker expected that some implementations of
+    // SparseOps might not work for all Scalar types.  (cuSPARSE is an
+    // example, since NVIDIA only wrote sparse matrix-vector multiply
+    // routines for float and double.)  In cases like that, the
+    // "other_type" typedef would point to some other, "generic"
+    // implementation of SparseOps.
+    //
+    // The Kokkos refactor version of Tpetra will hide this complexity
+    // at the KokkosLinAlg level, so that users won't have to look at
+    // type selectors quite so much.
+    typedef typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, node_type>::SparseOps source_sparse_ops_type;
+    typedef typename source_sparse_ops_type::template bind_scalar<Scalar>::other_type sparse_ops_type;
+    typedef typename sparse_ops_type::template graph<LocalOrdinal, node_type>::graph_type local_graph_type;
+    typedef typename sparse_ops_type::template matrix<Scalar, LocalOrdinal, node_type>::matrix_type local_matrix_type;
 
     // Enums
     enum GraphAllocationStatus {
@@ -2367,14 +2375,16 @@ namespace Tpetra {
     /// This method is only called in fillComplete(), and it is only
     /// called if the graph's structure is already fixed (that is, if
     /// the matrix does not own the graph).
-    void fillLocalMatrix(const RCP<ParameterList> &params);
+    void fillLocalMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params);
+
     /// \brief Fill data into the local graph and matrix.
     ///
     /// This method is only called in fillComplete(), and it is only
     /// called if the graph's structure is <i>not</i> already fixed
     /// (that is, if the matrix <i>does</i> own the graph).
-    void fillLocalGraphAndMatrix(const RCP<ParameterList> &params);
-    // debugging
+    void fillLocalGraphAndMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+    //! Throw an exception if the internal state of the matrix is inconsistent.
     void checkInternalState() const;
 
     /// \name (Global) graph pointers
@@ -2389,22 +2399,22 @@ namespace Tpetra {
     /// argument.  In this case, staticGraph_ is set to the input
     /// CrsGraph.
     //@{
-    RCP<const Graph> staticGraph_;
-    RCP<      Graph>     myGraph_;
+    Teuchos::RCP<const crs_graph_type> staticGraph_;
+    Teuchos::RCP<crs_graph_type> myGraph_;
     //@}
 
     /// The local sparse matrix kernels, after kernel optimizations.
     ///
     /// resumeFill() sets this to null.  fillComplete() initializes
     /// this object using the local graph and matrix.
-    RCP<sparse_ops_type>   lclMatOps_;
+    Teuchos::RCP<sparse_ops_type>   lclMatOps_;
     /// The local sparse matrix, before kernel optimizations.
     ///
     /// resumeFill() sets this to null.  fillLocalGraphAndMatrix() and
     /// fillLocalMatrix() initialize this.  Once fillComplete() has
     /// initialized the sparse kernels object (lclMatOps_ above), this
     /// object is set to null again.
-    RCP<local_matrix_type> lclMatrix_;
+    Teuchos::RCP<local_matrix_type> lclMatrix_;
 
     /// \name Sparse matrix values.
     ///
@@ -2609,11 +2619,6 @@ namespace Tpetra {
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Tpetra_KokkosRefactor_CrsMatrix_decl.hpp"
 #endif
-
-/**
-  \example LocalMatOpExample.cpp
-  An example using a different sparse mat-vec with Tpetra::CrsMatrix and Tpetra::CrsGraph.
- */
 
 /**
   \example CrsMatrix_NonlocalAfterResume.hpp

@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   // register aggregation export factory in RAPFactory
-  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>());
+  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
   //aggExpFact->SetParameter("Output filename",Teuchos::ParameterEntry(std::string("aggs_level%LEVELID_proc%PROCID.out")));
   aggExpFact->SetFactory("Aggregates", CoupledAggFact);
   aggExpFact->SetFactory("DofsPerNode", dropFact);

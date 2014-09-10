@@ -110,20 +110,19 @@ to the optimized-storage state by calling the method fillComplete().
 Once in the optimized-storage state, the VbrMatrix can not be returned to the
 non-optimized-storage state.
 */
-template <class Scalar,
-          class LocalOrdinal  = int,
-          class GlobalOrdinal = LocalOrdinal,
-          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
+template<class Scalar = Operator<>::scalar_type,
+         class LocalOrdinal = typename Operator<Scalar>::local_ordinal_type,
+         class GlobalOrdinal = typename Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+         class Node = typename Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
 class VbrMatrix :
-    public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
-    public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
+  public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 public:
   typedef Scalar        scalar_type;
   typedef LocalOrdinal  local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node          node_type;
-  typedef LocalMatOps   mat_vec_type;
+  typedef typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::BlockSparseOps sparse_ops_type;
 
   //! @name Constructor/Destructor Methods
   //@{
@@ -134,9 +133,9 @@ public:
     Block-entries (rectangular, dense submatrices) may be inserted using class
     methods such as setGlobalBlockEntry(...), declared below.
   */
-  VbrMatrix (const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRowMap, 
-	     size_t maxNumEntriesPerRow, 
-	     ProfileType pftype = DynamicProfile);
+  VbrMatrix (const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRowMap,
+             size_t maxNumEntriesPerRow,
+             ProfileType pftype = DynamicProfile);
 
   //! Constructor specifying a pre-filled block-graph.
   /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will
@@ -165,12 +164,12 @@ public:
       See also the Operator::apply method which is implemented below.
   */
   template <class DomainScalar, class RangeScalar>
-  void 
-  multiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-	    MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y, 
-	    Teuchos::ETransp trans, 
-	    RangeScalar alpha, 
-	    RangeScalar beta) const;
+  void
+  multiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+            MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+            Teuchos::ETransp trans,
+            RangeScalar alpha,
+            RangeScalar beta) const;
 
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
@@ -186,10 +185,10 @@ public:
       point-diagonal must be zero.
   */
   template <class DomainScalar, class RangeScalar>
-  void 
-  solve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y, 
-	 MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-	 Teuchos::ETransp trans) const;
+  void
+  solve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+         MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+         Teuchos::ETransp trans) const;
 
   //@}
   //! @name Operator Methods
@@ -213,10 +212,10 @@ public:
    */
   void
   apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-	 MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-	 Teuchos::ETransp trans = Teuchos::NO_TRANS,
-	 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-	 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+         MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+         Teuchos::ETransp trans = Teuchos::NO_TRANS,
+         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
@@ -224,8 +223,8 @@ public:
   */
   void
   applyInverse (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
-		MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-		Teuchos::ETransp trans) const;
+                MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                Teuchos::ETransp trans) const;
 
   //! Indicates whether this operator supports applying the adjoint operator.
   /*!
@@ -514,27 +513,27 @@ public:
 
   virtual bool checkSizes (const SrcDistObject& source);
 
-  virtual void 
-  copyAndPermute (const SrcDistObject& source, 
-		  size_t numSameIDs, 
-		  const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs, 
-		  const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
-
-  virtual void 
-  packAndPrepare (const SrcDistObject& source, 
-		  const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs, 
-		  Teuchos::Array<char>& exports, 
-		  const Teuchos::ArrayView<size_t>& numPacketsPerLID, 
-		  size_t& constantNumPackets, 
-		  Distributor& distor);
+  virtual void
+  copyAndPermute (const SrcDistObject& source,
+                  size_t numSameIDs,
+                  const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+                  const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
 
   virtual void
-  unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs, 
-		    const Teuchos::ArrayView<const char>& imports, 
-		    const Teuchos::ArrayView<size_t>& numPacketsPerLID, 
-		    size_t constantNumPackets, 
-		    Distributor& distor, 
-		    CombineMode CM);
+  packAndPrepare (const SrcDistObject& source,
+                  const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                  Teuchos::Array<char>& exports,
+                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                  size_t& constantNumPackets,
+                  Distributor& distor);
+
+  virtual void
+  unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+                    const Teuchos::ArrayView<const char>& imports,
+                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                    size_t constantNumPackets,
+                    Distributor& distor,
+                    CombineMode CM);
 
   //@}
   //! @name Implementation of Teuchos::Describable
@@ -597,7 +596,7 @@ public:
   Teuchos::ArrayRCP<Scalar> pbuf_values1D_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_indx_;
 
-  LocalMatOps lclMatOps_;
+  sparse_ops_type lclMatOps_;
   Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
   Teuchos::RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedVec_;

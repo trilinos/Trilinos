@@ -62,6 +62,7 @@ namespace Kokkos {
     COMPAT_INSTANT_CUDA(unsigned)
     COMPAT_INSTANT_CUDA(unsigned long)
     COMPAT_INSTANT_CUDA(char)
+    COMPAT_INSTANT_CUDA(short)
 
   } // namespace Compat
 } // namespace Kokkos

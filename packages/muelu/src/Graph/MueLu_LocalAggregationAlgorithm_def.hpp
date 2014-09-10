@@ -62,13 +62,13 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::LocalAggregationAlgorithm()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::LocalAggregationAlgorithm()
     : ordering_("natural"), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0)
   { }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarsenUncoupled(GraphBase const & graph, Aggregates & aggregates) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::CoarsenUncoupled(GraphBase const & graph, Aggregates & aggregates) const {
     Monitor m(*this, "Coarsen Uncoupled");
 
     GetOStream(Runtime1) << "Ordering:                  " << ordering_ << std::endl;
@@ -331,8 +331,8 @@ namespace MueLu {
 
   } // CoarsenUncoupled
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RandomReorder(Teuchos::ArrayRCP<LO> list) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::RandomReorder(Teuchos::ArrayRCP<LO> list) const {
     //TODO: replace int
     int n = list.size();
     for(int i=0; i<n-1; i++) {
@@ -340,8 +340,8 @@ namespace MueLu {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  int LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RandomOrdinal(int min, int max) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  int LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::RandomOrdinal(int min, int max) const {
     return min + Teuchos::as<int>((max-min+1) * (static_cast<double>(std::rand()) / (RAND_MAX + 1.0)));
   }
 

@@ -51,7 +51,7 @@
 
 // Explicit instantiation macro for DenseContainer.
 // Only instantiate in the Ifpack2 namespace.
-#define LCLINST(S, LO, GO) template class DenseContainer<Tpetra::CrsMatrix< S , LO , GO, KokkosClassic::DefaultNode::DefaultNodeType >, S >;
+#define LCLINST(S, LO, GO ) template class DenseContainer<Tpetra::CrsMatrix< S , LO , GO >, S >; template class DenseContainer<Tpetra::RowMatrix< S , LO , GO >, S >;
 
 
 namespace Ifpack2 {
@@ -66,6 +66,7 @@ namespace Ifpack2 {
 #  if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
 
   template class DenseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, double >;
+  template class DenseContainer<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, double >;
 
 #  endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
 

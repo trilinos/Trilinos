@@ -32,6 +32,9 @@
 // Python exception handling
 #include "PyTrilinos_PythonException.h"
 
+// Verbosity
+// #define PYTRILINOS_DAP_VERBOSE
+
 ////////////////////////////////////////////////////////////////////////
 
 namespace PyTrilinos
@@ -48,6 +51,10 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
                     "'dim_dict' element is not a dictionary");
     throw PythonException();
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "dim_dict = " << PyString_AsString(PyObject_Str(dim_dict))
+            << std::endl;
+#endif
 
   ////////////////////////////////
   // Get the 'dist_type' attribute
@@ -79,6 +86,9 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
                  distTypeStr);
     throw PythonException();
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "  dist_type = '" << distTypeStr << "'" << std::endl;
+#endif
 
   ///////////////////////////
   // Get the 'size' attribute
@@ -101,6 +111,9 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
     PyErr_Format(PyExc_ValueError, "'dim_dict' attribute 'size' = %d is less "
                  "than zero", size);
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "  size = " << size << std::endl;
+#endif
 
   /////////////////////////////////////
   // Get the 'proc_grid_size' attribute
@@ -124,6 +137,9 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
     PyErr_Format(PyExc_ValueError, "'dim_dict' attribute 'proc_grid_size' = "
                  "%d is less than one", proc_grid_size);
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "  proc_grid_size = " << proc_grid_size << std::endl;
+#endif
 
   /////////////////////////////////////
   // Get the 'proc_grid_rank' attribute
@@ -147,6 +163,9 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
     PyErr_Format(PyExc_ValueError, "'dim_dict' attribute 'proc_grid_rank' = "
                  "%d is out of range [0, %d)", proc_grid_rank, proc_grid_size);
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "  proc_grid_rank = " << proc_grid_rank << std::endl;
+#endif
 
   ////////////////////////////
   // Get the 'start' attribute
@@ -181,6 +200,9 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
                    "%d is out of range [0, %d]", start, size);
     }
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "  start = " << start << std::endl;
+#endif
 
   ///////////////////////////
   // Get the 'stop' attribute
@@ -214,6 +236,9 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
                    "%d is out of range [0, %d]", stop, size);
     }
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "  stop = " << stop << std::endl;
+#endif
 
   /////////////////////////////////
   // Get the 'block_size' attribute
@@ -238,6 +263,9 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
                    "%d is less than one", block_size);
     }
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "  block_size = " << block_size << std::endl;
+#endif
 
   //////////////////////////////
   // Get the 'padding' attribute
@@ -289,6 +317,9 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
                    "%d is less than zero", padding[1]);
     }
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "  padding = " << padding << std::endl;
+#endif
 
   ///////////////////////////////
   // Get the 'periodic' attribute
@@ -309,6 +340,9 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
     if (periodicObj == Py_True) periodic = true;
     else                        periodic = false;
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "  periodic = " << (periodic ? "true" : "false") << std::endl;
+#endif
 
   /////////////////////////////////
   // Get the 'one_to_one' attribute
@@ -329,6 +363,10 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
     if (oneToOneObj == Py_True) one_to_one = true;
     else                        one_to_one = false;
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "  one_to_one = " << (one_to_one ? "true" : "false")
+            << std::endl;
+#endif
 
   //////////////////////////////
   // Get the 'indices' attribute
@@ -360,6 +398,9 @@ DimensionDictionary::DimensionDictionary(PyObject * dim_dict)
       indices[i] = *(source++);
     Py_DECREF(indicesArray);
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "  indices = " << indices() << std::endl;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -375,11 +416,35 @@ DistArrayProtocol::DistArrayProtocol(PyObject * distarray)
   // Check for a dictionary
   if (!PyDict_Check(distarray))
   {
-    PyErr_SetString(PyExc_ValueError, "distarray object must be a dictionary");
+    PyObject * pyType = PyObject_Type(distarray);
+    char * typeStr = PyString_AsString(PyObject_Str(pyType));
+    //PyErr_SetString(PyExc_ValueError, "distarray object must be a dictionary");
+    PyErr_Format(PyExc_ValueError, "distarray object must be a dictionary, "
+                 "given '%s'", typeStr);
     throw PythonException();
   }
   __distarray__ = distarray;
   Py_INCREF(__distarray__);
+
+  // Check for an instance method
+  // if (!PyMethod_Check(distarray))
+  // {
+  //   PyObject * pyType = PyObject_Type(distarray);
+  //   char * typeStr = PyString_AsString(PyObject_Str(pyType));
+  //   PyErr_Format(PyExc_ValueError, "distarray attribute must be an instance "
+  //                "method, given '%s'", typeStr);
+  //   throw PythonException();    
+  // }
+  // std::cout << "a" << std::endl;
+  // //PyObject * self = PyMethod_Self(distarray);
+  // //std::cout << "b" << std::endl;
+  // PyObject * function = PyMethod_Function(distarray);
+  // std::cout << "b" << std::endl;
+  // if (function == NULL) throw PythonException();
+  // std::cout << "d" << std::endl;
+  // __distarray__ = PyObject_CallObject(function, NULL);
+  // std::cout << "__distarray__ = "
+  //           << PyString_AsString(PyObject_Str(__distarray__)) << std::endl;
 
   //////////////////
   // Get the version
@@ -397,6 +462,9 @@ DistArrayProtocol::DistArrayProtocol(PyObject * distarray)
     Py_XDECREF(__distarray__);
     throw PythonException();
   }
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "__version__ = " << __version__ << std::endl;
+#endif
 
   /////////////////
   // Get the buffer
@@ -411,6 +479,10 @@ DistArrayProtocol::DistArrayProtocol(PyObject * distarray)
   }
   // What is the appropriate type check for buffer?
   Py_INCREF(__buffer__);
+#ifdef PYTRILINOS_DAP_VERBOSE
+  std::cout << "buffer = " << PyString_AsString(PyObject_Str(__buffer__))
+            << std::endl;
+#endif
 
   /////////////////////////////////
   // Get the dim_data Python object
@@ -443,6 +515,9 @@ DistArrayProtocol::DistArrayProtocol(PyObject * distarray)
     try
     {
       PyObject * dim_dict = PySequence_GetItem(dimDataObj, axis);
+#ifdef PYTRILINOS_DAP_VERBOSE
+      std::cout << "axis " << axis << ": ";
+#endif
       dim_data.push_back(DimensionDictionary(dim_dict));
     }
     catch (PythonException e)

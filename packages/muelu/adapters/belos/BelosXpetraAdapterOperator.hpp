@@ -76,8 +76,7 @@ namespace Belos {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class XpetraOp :
     public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #ifdef HAVE_XPETRA_TPETRA
@@ -91,7 +90,7 @@ namespace Belos {
     //@{
 
     //! Default constructor
-    XpetraOp(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
+    XpetraOp (const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & Op) : Op_(Op) {}
 
     //! Destructor.
     virtual ~XpetraOp() {};
@@ -141,7 +140,7 @@ namespace Belos {
 
   private:
 
-    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op_;
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op_;
   };
 
   template <>
@@ -155,16 +154,14 @@ namespace Belos {
     , public OperatorT<Epetra_MultiVector>
 #endif
   {
-
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type Node;
 
   public:
 
-    XpetraOp(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
+    XpetraOp(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & Op) : Op_(Op) {}
 
     virtual ~XpetraOp() {};
 
@@ -220,7 +217,7 @@ namespace Belos {
 
   private:
 
-    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op_;
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op_;
   };
 
 } // namespace Belos

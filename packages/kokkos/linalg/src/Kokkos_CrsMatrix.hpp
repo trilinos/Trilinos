@@ -323,11 +323,7 @@ public:
   // building.  OpenMP is not on by default, so if you specified in
   // the build that you wanted OpenMP, then we say that the default
   // host type is OpenMP instead of Threads.
-#ifdef _OPENMP
-  typedef Kokkos::OpenMP host_device_type;
-#else
-  typedef Kokkos::Threads host_device_type;
-#endif
+  typedef typename device_type::host_mirror_device_type host_device_type;
 
   //! Type of a host-memory mirror of the sparse matrix.
   typedef CrsMatrix<ScalarType, OrdinalType, host_device_type, MemoryTraits> HostMirror;

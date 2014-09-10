@@ -73,13 +73,13 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UncoupledAggregationFactory()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::UncoupledAggregationFactory()
   : bDefinitionPhase_(true)
   { }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
@@ -123,8 +123,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "Graph");
     Input(currentLevel, "DofsPerNode");
 
@@ -137,8 +137,8 @@ namespace MueLu {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     ParameterList pL = GetParameterList();
@@ -149,16 +149,15 @@ namespace MueLu {
 
     // TODO Can we keep different aggregation algorithms over more Build calls?
     algos_.clear();
+    algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm(graphFact)));
     if (pL.get<std::string>("aggregation: mode") == "old") {
       if (pL.get<bool>("UseOnePtAggregationAlgorithm")             == true)   algos_.push_back(rcp(new OnePtAggregationAlgorithm             (graphFact)));
-      if (pL.get<bool>("UsePreserveDirichletAggregationAlgorithm") == true)   algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
       if (pL.get<bool>("UseUncoupledAggregationAlgorithm")         == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
       if (pL.get<bool>("UseMaxLinkAggregationAlgorithm")           == true)   algos_.push_back(rcp(new MaxLinkAggregationAlgorithm           (graphFact)));
       if (pL.get<bool>("UseEmergencyAggregationAlgorithm")         == true)   algos_.push_back(rcp(new EmergencyAggregationAlgorithm         (graphFact)));
                                                                               algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
 
     } else {
-      if (pL.get<bool>("aggregation: preserve Dirichlet points")   == true)   algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 1" )             == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 2a")             == true)   algos_.push_back(rcp(new AggregationPhase2aAlgorithm           (graphFact)));
       if (pL.get<bool>("aggregation: enable phase 2b")             == true)   algos_.push_back(rcp(new AggregationPhase2bAlgorithm           (graphFact)));

@@ -68,7 +68,7 @@ class ThreadsExec ;
 
 namespace Kokkos {
 
-/** \brief  Device for a pool of Pthreads or C11 threads on a CPU. */
+/** \brief  Execution space for a pool of Pthreads or C11 threads on a CPU. */
 class Threads {
 public:
   //! \name Type declarations that all Kokkos devices must provide.
@@ -132,7 +132,7 @@ public:
   //@}
   /*------------------------------------------------------------------------*/
   /*------------------------------------------------------------------------*/
-  //! \name Device-specific functions
+  //! \name Space-specific functions
   //@{
 
   /** \brief Initialize the device in the "ready to work" state.

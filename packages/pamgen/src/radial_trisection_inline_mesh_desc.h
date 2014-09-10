@@ -68,8 +68,8 @@ public:
   virtual std::string Calc_Intervals();
   virtual long long Calc_Coord_Vectors();
 
-  virtual long long numBlocks(){return((inline_bx-1)*inline_by+1)*inline_bz;}
-  virtual long long blockKstride(){return(inline_bx-1)*inline_by+1;}
+  virtual long long numBlocks(){return((inline_b[0]-1)*inline_b[1]+1)*inline_b[2];}
+  virtual long long blockKstride(){return(inline_b[0]-1)*inline_b[1]+1;}
 
   virtual long long GlobalNumElements();
 
@@ -125,9 +125,6 @@ virtual  void Calc_Parallel_Info(
 			 std::list <long long>  * & boundary_node_list,
 			 std::vector <long long> & element_neighbor_vector,
 			 std::list <std::pair <long long ,Topo_Loc > > * & boundary_element_list);
-
-  virtual void Populate_Connectivity(long long * const * conn_array, 
-				     std::map <long long, long long> & global_node_map);
 
   virtual void Populate_Map_and_Global_Element_List(long long * map, long long * gel);
 

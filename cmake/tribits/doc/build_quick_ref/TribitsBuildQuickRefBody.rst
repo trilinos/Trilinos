@@ -1088,8 +1088,8 @@ where ``<fulltestName>`` must exactly match the test listed out by ``ctest
 Setting test timeouts at configure time
 ---------------------------------------
 
-A maximum time limit for any single test can be set at configure time by
-setting::
+A maximum default time limit for any single test can be set at configure time
+by setting::
 
   -D DART_TESTING_TIMEOUT:STRING=<maxSeconds>
 
@@ -1105,9 +1105,44 @@ NOTES:
   tests can take longer to run and may result in timeouts that would not
   otherwise occur.
 * Individual tests can have there timeout limit increased on a test-by-test
-  basis internally in the project's CMakeLists.txt files.
+  basis internally in the project's CMakeLists.txt files (see the ``TIMEOUT``
+  argument for ``TRIBITS_ADD_TEST()`` and ``TRIBITS_ADD_ADVANCED_TEST()``).
 * To set or override the test timeout limit at runtime, see `Overridding test
   timeouts`_.
+
+.. _<Project>_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT:
+
+Scaling test timeouts at configure time
+---------------------------------------
+
+The global default test timeout ``DART_TESTING_TIMEOUT`` as well as all of the
+timeouts for the individual tests that have their own timeout set (through the
+``TIMEOUT`` argument for each individual test) can be scaled by a constant
+factor ``<testTimeoutScaleFactor>`` by configuring with::
+
+  -D <Project>_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT:STRING=<testTimeoutScaleFactor>
+
+Here, ``<testTimeoutScaleFactor>`` can be an integral number like ``5`` or can
+be fractional number like ``1.5``.
+
+This feature is generally used to compensate for slower machines or overloaded
+test machines and therefore only scaling factors greater than 1 are to be
+used.  The primary use case for this feature is to add large scale factors
+(e.g. ``40`` to ``100``) to compensate for running test using valgrind (see
+`Running memory checking`_).
+
+NOTES:
+
+* When scaling the timeouts, the timeout is first truncated to integral
+  seconds so an original timeout like ``200.5`` will be truncated to ``200``
+  before it gets scaled.
+
+* Only the first fractional digit is used so ``1.57`` is truncated to ``1.5``
+  before scaling the test timeouts.
+
+* The cache value of the variable ``DART_TESTING_TIMEOUT`` is not changed in
+  the CMake cache file.  Only the value of the timeout written into the
+  DartConfiguration.tcl file will be scaled.
 
 
 Enabling support for coverage testing
@@ -1397,23 +1432,48 @@ Building a single object file
 -----------------------------
 
 To build just a single object file (i.e. to debug a compile problem), first,
-look for the name of the object file to build based on the source file, for
-example for the source file ``SomeSourceFile.cpp``, use::
+look for the target name for the object file build based on the source file,
+for example for the source file ``SomeSourceFile.cpp``, use::
 
   $ make help | grep SomeSourceFile
 
-Use the returned name (exactly) for the object file and pass it ``make`` as::
+The above will return a target name like::
 
-    $ rm <WHATEVER_WAS_RETURNED_ABOVE> ; make <WHATEVER_WAS_RETURNED_ABOVE>
+  ... SomeSourceFile.o
 
-For this to work, you must be in the subdirectory where the
+To find the name of the actual object file, do::
+
+  $ find . -name "*SomeSourceFile*.o"
+
+that will return something like::
+
+  ./CMakeFiles/<source-dir-path>.dir/SomeSourceFile.cpp.o
+
+(but this file location and name depends on the source directory structure,
+the version of CMake, and other factors).  Use the returned name (exactly) for
+the object file returned in the above find operation to remove the object file
+first, for example, as::
+
+  $ rm ./CMakeFiles/<source-dir-path>.dir/SomeSourceFile.cpp.o
+
+and then build it again, for example, with::
+
+  $ make SomeSourceFile.o
+
+Again, the names of the target and the object file name an location depend on
+the CMake version, the structure of your source directories and other factors
+but the general process of using ``make help | grep <some-file-base-name>`` to
+find the target name and then doing a find ``find . -name
+"*<some-file-base-name>*"`` to find the actual object file path always works.
+
+For this process to work correctly, you must be in the subdirectory where the
 ``TRIBITS_ADD_LIBRARY()`` or ``TRIBITS_ADD_EXECUTABLE()`` command is called
-from its CMakeList.txt file, otherwise the object file targets will not be
+from its ``CMakeList.txt`` file, otherwise the object file targets will not be
 listed by ``make help``.
 
-NOTE: CMake does not seem to correctly address dependencies when building just
-object files so you need to always delete the object file first to make sure
-that it gets rebuilt correctly.
+NOTE: CMake does not seem to not check on dependencies when explicitly
+building object files as shown above so you need to always delete the object
+file first to make sure that it gets rebuilt correctly.
 
 
 Building with verbose output without reconfiguring
@@ -1422,10 +1482,11 @@ Building with verbose output without reconfiguring
 One can get CMake to generate verbose make output at build type by just
 setting the Makefile variable ``VERBOSE=1``, for example, as::
 
-  $ make [<SOME_TARGET>] VERBOSE=1
+  $ make  VERBOSE=1 [<SOME_TARGET>]
 
 Any number of compile or linking problem can be quickly debugged by seeing the
-raw compile and link lines.
+raw compile and link lines.  See `Building a single object file`_ for more
+details.
 
 
 Relink a target without considering dependencies
@@ -1567,13 +1628,31 @@ configure time by setting, for example::
 The default location for the installation of libraries, headers, and
 executables is given by the variables (with defaults)::
 
-  -D <Project>_INSTALL_INCLUDE_DIR:PATH="include" \
-  -D <Project>_INSTALL_LIB_DIR:PATH="lib" \
-  -D <Project>_INSTALL_RUNTIME_DIR:PATH="bin"
+  -D <Project>_INSTALL_INCLUDE_DIR:STRING="include" \
+  -D <Project>_INSTALL_LIB_DIR:STRING="lib" \
+  -D <Project>_INSTALL_RUNTIME_DIR:STRING="bin" \
+  -D <Project>_INSTALL_EXAMPLE_DIR:STRING="example"
 
-If these paths are relative (i.e. don't start with "/") then they are relative
-to ``${CMAKE_INSTALL_PREFIX}``.  Otherwise the paths can be absolute and don't
-have to be under ``${CMAKE_INSTALL_PREFIX}``.
+If these paths are relative (i.e. don't start with "/" and use type
+``STRING``) then they are relative to ``${CMAKE_INSTALL_PREFIX}``.  Otherwise
+the paths can be absolute (use type ``PATH``) and don't have to be under
+``${CMAKE_INSTALL_PREFIX}``.  For example, to install each part in any
+abritrary location use::
+
+  -D <Project>_INSTALL_INCLUDE_DIR:PATH="/usr/trilinos_include" \
+  -D <Project>_INSTALL_LIB_DIR:PATH="/usr/trilinos_lib" \
+  -D <Project>_INSTALL_RUNTIME_DIR:PATH="/usr/trilinos_bin" \
+  -D <Project>_INSTALL_EXAMPLE_DIR:PATH="/usr/share/trilinos/examples"
+
+NOTE: The defaults for the above include paths will be set by the standard
+CMake module ``GNUInstallDirs`` if ``<Project>_USE_GNUINSTALLDIRS=TRUE`` is
+set.  Some projects have this set by default (see the ``CMakeCache.txt`` after
+configuring to see default being used by this project).
+
+WARNING: To overwrite default relative paths, you must use the data type
+``STRING`` for the cache variables.  If you don't, then CMake will use the
+current binary directory for the base path.  Otherwise, if you want to specify
+absolute paths, use the data type ``PATH`` as shown above.
 
 
 Avoiding installing libraries and headers

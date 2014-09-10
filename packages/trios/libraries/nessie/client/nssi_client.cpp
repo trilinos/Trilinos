@@ -991,7 +991,9 @@ cleanup:
              * if it was get, then this is a waste of time.
              * if it was put, then this is required.
              */
+            trios_start_timer(call_time);
             memcpy(req->data, NNTI_BUFFER_C_POINTER(req->bulk_data_hdl), req->data_size);
+            trios_stop_timer("memcpy bq to bulk buf", call_time);
             trios_buffer_queue_push(&rdma_target_bq, req->bulk_data_hdl);
         } else {
             log_debug(debug_level, "Unregister memory for data");
@@ -1061,6 +1063,8 @@ int nssi_waitany(
     NNTI_status_t         status;
 
     log_level debug_level = rpc_debug_level;
+
+    trios_declare_timer(call_time);
 
 
     for (i=0;i<req_count;i++) {
@@ -1169,7 +1173,9 @@ cleanup:
 			 * if it was get, then this is a waste of time.
 			 * if it was put, then this is required.
 			 */
+	        trios_start_timer(call_time);
 			memcpy(req_array[*which].data, NNTI_BUFFER_C_POINTER(req_array[*which].bulk_data_hdl), req_array[*which].data_size);
+	        trios_stop_timer("memcpy bq to target buf", call_time);
 			trios_buffer_queue_push(&rdma_target_bq, req_array[*which].bulk_data_hdl);
 		} else {
 			log_debug(debug_level, "Unregister memory for data");
@@ -1234,6 +1240,8 @@ int nssi_waitall(
     uint32_t which=0;
 
     log_level debug_level = rpc_debug_level;
+
+    trios_declare_timer(call_time);
 
 
     for (i=0;i<req_count;i++) {
@@ -1337,7 +1345,9 @@ int nssi_waitall(
                  * if it was get, then this is a waste of time.
                  * if it was put, then this is required.
                  */
+    	        trios_start_timer(call_time);
                 memcpy(req_array[which].data, NNTI_BUFFER_C_POINTER(req_array[which].bulk_data_hdl), req_array[which].data_size);
+    	        trios_stop_timer("memcpy bq to target buf", call_time);
                 trios_buffer_queue_push(&rdma_target_bq, req_array[which].bulk_data_hdl);
             } else {
                 log_debug(debug_level, "Unregister memory for data");
@@ -1711,7 +1721,9 @@ int nssi_call_rpc(
             assert(request->bulk_data_hdl);
             NNTI_BUFFER_SIZE(request->bulk_data_hdl)=data_size;
             /* copy the user buffer contents into RDMA buffer */
+	        trios_start_timer(call_time);
             memcpy(NNTI_BUFFER_C_POINTER(request->bulk_data_hdl), (char *)data, data_size);
+	        trios_stop_timer("memcpy target buf to bq", call_time);
         } else {
             log_debug(rpc_debug_level, "using user buffer for TARGET buffer");
             log_debug (debug_level, "Registering data buffer (size=%d)", data_size);

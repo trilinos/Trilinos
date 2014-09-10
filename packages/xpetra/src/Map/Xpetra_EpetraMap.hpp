@@ -72,24 +72,34 @@ namespace Xpetra {
   class EpetraMap
     : public virtual Map<int, int>
   {
-
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef Map<int, int>::node_type Node;
 
   public:
+    typedef int local_ordinal_type;
+    typedef int global_ordinal_type;
+    typedef Map<int, int>::node_type node_type;
 
     //! @name Constructors and destructor
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
-    EpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP< Node > &node=KokkosClassic::DefaultNode::getDefaultNode());
+    EpetraMap (global_size_t numGlobalElements,
+               GlobalOrdinal indexBase,
+               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
+               LocalGlobal lg=GloballyDistributed,
+               const Teuchos::RCP< Node > &node = KokkosClassic::Details::getNode<Node> ());
 
     //! Constructor with a user-defined contiguous distribution.
-    EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=KokkosClassic::DefaultNode::getDefaultNode());
+    EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=KokkosClassic::Details::getNode<Node> ());
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-    EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=KokkosClassic::DefaultNode::getDefaultNode());
+    EpetraMap (global_size_t numGlobalElements,
+               const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
+               GlobalOrdinal indexBase,
+               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
+               const Teuchos::RCP< Node > &node = KokkosClassic::Details::getNode<Node> ());
 
     //@}
 

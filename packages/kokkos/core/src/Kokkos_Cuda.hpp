@@ -48,39 +48,9 @@
 
 #include <Kokkos_Macros.hpp>
 
-//----------------------------------------------------------------------------
 // If CUDA execution space is enabled then use this header file.
 
 #if defined( KOKKOS_HAVE_CUDA )
-
-#if defined( __CUDACC__ )
-
-#include <cuda.h>
-
-/*  Compiling with a CUDA compiler.
- *
- *  Include <cuda.h> to pick up the CUDA_VERSION macro defined as:
- *    CUDA_VERSION = ( MAJOR_VERSION * 1000 ) + ( MINOR_VERSION * 10 )
- *
- *  When generating device code the __CUDA_ARCH__ macro is defined as:
- *    __CUDA_ARCH__ = ( MAJOR_CAPABILITY * 100 ) + ( MINOR_CAPABILITY * 10 )
- */
-#if ! defined( CUDA_VERSION )
-#error "#include <cuda.h> did not define CUDA_VERSION"
-#endif
-
-#if ( CUDA_VERSION < 4010 )
-#error "Cuda version 4.1 or greater required"
-#endif
-
-#if defined( __CUDA_ARCH__ ) && ( __CUDA_ARCH__ < 200 )
-/*  Compiling with CUDA compiler for device code. */
-#error "Cuda device capability >= 2.0 is required"
-#endif
-
-#endif /* #if defined( __CUDACC__ ) */
-
-//----------------------------------------------------------------------------
 
 #include <iosfwd>
 #include <vector>
@@ -93,10 +63,10 @@
 #endif
 
 #include <Kokkos_Serial.hpp>
+#include <Kokkos_CudaSpace.hpp>
 
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
-#include <Kokkos_CudaSpace.hpp>
 #include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Tags.hpp>
@@ -114,18 +84,18 @@ class CudaExec ;
 namespace Kokkos {
 
 /// \class Cuda
-/// \brief Kokkos device that uses CUDA to run on GPUs.
+/// \brief Kokkos Execution Space that uses CUDA to run on GPUs.
 ///
-/// A "device" represents a parallel execution model.  It tells Kokkos
+/// An "execution space" represents a parallel execution model.  It tells Kokkos
 /// how to parallelize the execution of kernels in a parallel_for or
-/// parallel_reduce.  For example, the Threads device uses Pthreads or
-/// C++11 threads on a CPU, the OpenMP device uses the OpenMP language
-/// extensions, and the Serial device executes "parallel" kernels
-/// sequentially.  The Cuda device uses NVIDIA's CUDA programming
+/// parallel_reduce.  For example, the Threads execution space uses Pthreads or
+/// C++11 threads on a CPU, the OpenMP execution space uses the OpenMP language
+/// extensions, and the Serial execution space executes "parallel" kernels
+/// sequentially.  The Cuda execution space uses NVIDIA's CUDA programming
 /// model to execute kernels in parallel on GPUs.
 class Cuda {
 public:
-  //! \name Type declarations that all Kokkos devices must provide.
+  //! \name Type declarations that all Kokkos execution spaces must provide.
   //@{
 
   //! The tag (what type of kokkos_object is this).

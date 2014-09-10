@@ -38,9 +38,9 @@ public:
   
   long long reportSize(const long long &, const long long &, const long long &,std::stringstream & ss,long long max_int);
 
-  virtual long long numBlocks(){return inline_bx*inline_by*inline_bz;};
-  virtual long long blockKstride(){return inline_bx*inline_by;};
-  virtual long long GlobalNumElements(){return nelx_tot*nely_tot*nelz_tot;};
+  virtual long long numBlocks(){return inline_b[0]*inline_b[1]*inline_b[2];};
+  virtual long long blockKstride(){return inline_b[0]*inline_b[1];};
+  virtual long long GlobalNumElements(){return nel_tot[0]*nel_tot[1]*nel_tot[2];};
 
   virtual void Display_Class(std::ostream&, const std::string &indent); //called by Class_Display
 
@@ -215,23 +215,13 @@ virtual  void Calc_Parallel_Info(
 
   long long dimension;
   long long trisection_blocks;
-  long long inline_bx;
-  long long inline_by;
-  long long inline_bz;
-  long long inline_nx;
-  long long inline_ny;
-  long long inline_nz;
-  long long * a_inline_nx;//individual block values
-  long long * a_inline_ny;
-  long long * a_inline_nz;
-  long long * c_inline_nx;//cumulative totals
-  long long * c_inline_ny;
-  long long * c_inline_nz;
+  long long inline_b[3];
+  long long inline_n[3];
+  long long * a_inline_n[3];//individual block values
+  long long * c_inline_n[3];//cumulative totals
   long long * cum_block_totals;
   long long * els_in_block;
-  long long nelx_tot;
-  long long nely_tot;
-  long long nelz_tot;
+  long long nel_tot[3];
   long long inc_nels[3];
   bool inc_nocuts[3];
   long long inline_nprocs[3];
@@ -241,12 +231,8 @@ virtual  void Calc_Parallel_Info(
   double ** last_size;
   long long ** interval;
   double inline_offset[3];
-  double inline_gminx;
-  double inline_gminy;
-  double inline_gminz;
-  double inline_gmaxx;
-  double inline_gmaxy;
-  double inline_gmaxz;
+  double inline_gmin[3];
+  double inline_gmax[3];
 
   double transition_radius;
 
@@ -290,7 +276,7 @@ virtual  void Calc_Parallel_Info(
 // protected:
 
 // private:
-  virtual long long Calc_Coord_Vectors(){return 0;}
+  virtual long long Calc_Coord_Vectors();
   virtual void Populate_Coords(double * coords,   
 		       std::vector<long long> & global_node_vector, 
 		       std::map <long long, long long> & global_node_map,
@@ -300,9 +286,8 @@ virtual  void Calc_Parallel_Info(
 
   void Customize_Coords(double * coords,long long num_nodes,long long dim);
 
-  double * Icoors;
-  double * Jcoors;
-  double * Kcoors;
+  double * IJKcoors[3];
+ 
   long long topo_loc_to_exo_face[6];
 
   LoopLimits getLimits( Topo_Loc the_set_location,

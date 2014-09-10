@@ -74,8 +74,8 @@
 
 namespace MueLu {
 
- template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -94,8 +94,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Partition");
   }
@@ -108,8 +108,8 @@ namespace MueLu {
   template<>        class MpiTypeTraits<long long> { public: static MPI_Datatype getType() { return MPI_LONG_LONG; } };
 #endif
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     const Teuchos::ParameterList & pL = GetParameterList();
@@ -554,8 +554,8 @@ namespace MueLu {
     return (a.v > b.v); // descending order
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition,
                                                                                                                GO numPartitions, bool keepProc0) const {
     RCP<const Map> rowMap = A.getRowMap();
 

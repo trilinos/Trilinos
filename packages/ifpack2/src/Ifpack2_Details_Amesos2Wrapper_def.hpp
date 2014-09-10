@@ -312,7 +312,7 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     {
       // The matrix that Amesos2 will build the preconditioner on must be a Tpetra::Crs matrix.
       // If A_local isn't, then we build one.
-      Teuchos::RCP<const MatrixType> A_local_crs = Teuchos::rcp_dynamic_cast<const MatrixType> (A_local);
+      Teuchos::RCP<const crs_matrix_type> A_local_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_local);
 
       if (A_local_crs.is_null()) {
         // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
@@ -360,7 +360,7 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     // solver each time, since Amesos2::Solver has a setA() method.
     // See the implementation of setMatrix().
 
-    amesos2solver_ = Amesos2::create<MatrixType, MV> (SolverName_, A_local_crs_);
+    amesos2solver_ = Amesos2::create<crs_matrix_type, MV> (SolverName_, A_local_crs_);
     // If parameters have been already been cached via setParameters, set them now.
     if (parameterList_ != Teuchos::null) {
       setParameters(*parameterList_);

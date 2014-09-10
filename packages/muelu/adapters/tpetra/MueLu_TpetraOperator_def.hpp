@@ -63,24 +63,25 @@
 
 namespace MueLu {
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
-  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Matrix;
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
+  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
 
   RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
   return Xpetra::toTpetraNonZero(A->getDomainMap());
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
-  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Matrix;
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const {
+  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
 
   RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
   return Xpetra::toTpetraNonZero(A->getRangeMap());
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                                                                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                                                                                Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       TMV;
@@ -101,8 +102,8 @@ void TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(c
   }
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-bool TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::hasTransposeApply() const {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
   return false;
 }
 

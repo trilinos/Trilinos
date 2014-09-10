@@ -72,16 +72,16 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
     if (factoryTable_.count(varName))
       GetOStream(Runtime1) << "FactoryManager::SetFactory(): Changing an already defined factory for '" << varName << "'" << std::endl;
 
     factoryTable_[varName] = factory;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetFactory(const std::string& varName) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetFactory(const std::string& varName) const {
     if (factoryTable_.count(varName)) {
       // Search user provided factories
       return factoryTable_.find(varName)->second;
@@ -91,8 +91,8 @@ namespace MueLu {
     return GetDefaultFactory(varName);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDefaultFactory(const std::string& varName) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDefaultFactory(const std::string& varName) const {
     if (defaultFactoryTable_.count(varName)) {
       // The factory for this name was already created (possibly, for previous level, if we reuse factory manager)
       return defaultFactoryTable_.find(varName)->second;
@@ -160,8 +160,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAndReturnDefaultFactory(const std::string& varName, const RCP<const FactoryBase>& factory) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetAndReturnDefaultFactory(const std::string& varName, const RCP<const FactoryBase>& factory) const {
     TEUCHOS_TEST_FOR_EXCEPTION(factory.is_null(), Exceptions::RuntimeError, "The default factory for building '" << varName << "' is null");
 
     GetOStream(Runtime1) << "Using default factory (" << factory->description() << ") for building '" << varName << "'." << std::endl;
@@ -171,8 +171,8 @@ namespace MueLu {
     return defaultFactoryTable_[varName];
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Print() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Print() const {
     std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
 
     Teuchos::FancyOStream& fancy = GetOStream(Debug);
@@ -187,8 +187,8 @@ namespace MueLu {
   }
 
 #ifdef HAVE_MUELU_DEBUG
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ResetDebugData() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ResetDebugData() const {
     std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
 
     for (it = factoryTable_.begin(); it != factoryTable_.end(); it++)

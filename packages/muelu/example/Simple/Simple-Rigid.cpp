@@ -76,29 +76,29 @@ int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
   // Define default template types
-  typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
-  typedef Tpetra::MultiVector<SC,LO,GO,NO>             MV;
-  typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>           TCRS;
+  typedef Tpetra::Vector<SC,LO,GO,NO>              TVEC;
+  typedef Tpetra::MultiVector<SC,LO,GO,NO>         MV;
+  typedef Tpetra::CrsMatrix<SC,LO,GO,NO>           TCRS;
 
   typedef MueLu::Level                                 Level;
-  typedef MueLu::Hierarchy<SC,LO,GO,NO,LMO>            Hierarchy;
-  typedef MueLu::FactoryManager<SC,LO,GO>              FactoryManager;
-  typedef MueLu::TentativePFactory<SC,LO,GO,NO,LMO>    TPFactory;
-  typedef MueLu::SaPFactory<SC,LO,GO,NO,LMO>           SaPFactory;
-  typedef MueLu::GenericRFactory<SC,LO,GO,NO,LMO>      GRFactory;
-  typedef MueLu::RAPFactory<SC,LO,GO,NO,LMO>           RAPFactory;
-  typedef MueLu::RigidBodyModeFactory<SC,LO,GO,NO,LMO> RBMFactory;
-  typedef MueLu::SmootherPrototype<SC,LO,GO,NO,LMO>    SmootherPrototype;
-  typedef MueLu::Ifpack2Smoother<SC,LO,GO,NO,LMO>      Ifpack2Smoother;
-  typedef MueLu::SmootherFactory<SC,LO,GO,NO,LMO>      SmootherFactory;
-  typedef MueLu::DirectSolver<SC,LO,GO,NO,LMO>         DirectSolver;
+  typedef MueLu::Hierarchy<SC,LO,GO,NO>            Hierarchy;
+  typedef MueLu::FactoryManager<SC,LO,GO>          FactoryManager;
+  typedef MueLu::TentativePFactory<SC,LO,GO,NO>    TPFactory;
+  typedef MueLu::SaPFactory<SC,LO,GO,NO>           SaPFactory;
+  typedef MueLu::GenericRFactory<SC,LO,GO,NO>      GRFactory;
+  typedef MueLu::RAPFactory<SC,LO,GO,NO>           RAPFactory;
+  typedef MueLu::RigidBodyModeFactory<SC,LO,GO,NO> RBMFactory;
+  typedef MueLu::SmootherPrototype<SC,LO,GO,NO>    SmootherPrototype;
+  typedef MueLu::Ifpack2Smoother<SC,LO,GO,NO>      Ifpack2Smoother;
+  typedef MueLu::SmootherFactory<SC,LO,GO,NO>      SmootherFactory;
+  typedef MueLu::DirectSolver<SC,LO,GO,NO>         DirectSolver;
 
-  typedef Belos::OperatorT<MV>                         OP;
-  typedef Belos::OperatorTraits<SC,MV,OP>              OPT;
-  typedef Belos::MultiVecTraits<SC,MV>                 MVT;
-  typedef Belos::LinearProblem<SC,MV,OP>               Problem;
-  typedef Belos::SolverManager<SC,MV,OP>               BelosSolver;
-  typedef Belos::BlockGmresSolMgr<SC,MV,OP>            BelosGMRES;
+  typedef Belos::OperatorT<MV>                     OP;
+  typedef Belos::OperatorTraits<SC,MV,OP>          OPT;
+  typedef Belos::MultiVecTraits<SC,MV>             MVT;
+  typedef Belos::LinearProblem<SC,MV,OP>           Problem;
+  typedef Belos::SolverManager<SC,MV,OP>           BelosSolver;
+  typedef Belos::BlockGmresSolMgr<SC,MV,OP>        BelosGMRES;
 
   // RCPs
   using Teuchos::RCP;
@@ -245,8 +245,8 @@ int main(int argc, char *argv[]) {
   //B->replaceGlobalValue(nTotalDOFs/2, 1.0);
 
   // Define Operator and Preconditioner
-  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO>(mueluA));   // Turns a Xpetra::Matrix object into a Belos operator
-  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H));         // Turns a MueLu::Hierarchy object into a Belos operator
+  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC,LO,GO,NO>(mueluA));   // Turns a Xpetra::Matrix object into a Belos operator
+  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO>(H));         // Turns a MueLu::Hierarchy object into a Belos operator
 
   // Construct a Belos LinearProblem object
   RCP<Problem> belosProblem = rcp(new Problem(belosOp,X,B));

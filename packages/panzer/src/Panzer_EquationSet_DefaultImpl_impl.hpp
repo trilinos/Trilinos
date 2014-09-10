@@ -47,6 +47,7 @@
 #include "Panzer_DOF_PointValues.hpp"
 #include "Panzer_DOFGradient.hpp"
 #include "Panzer_DOFCurl.hpp"
+#include "Panzer_DOFDiv.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_GatherIntegrationCoordinates.hpp"
 #include "Panzer_GatherOrientation.hpp"
@@ -366,6 +367,45 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
       
       RCP< PHX::Evaluator<panzer::Traits> > op = 
         rcp(new panzer::DOFCurl<EvalT,panzer::Traits>(p));
+
+      fm.template registerEvaluator<EvalT>(op);
+    }
+
+  }
+
+  // Div of DOFs: Vector value @ basis --> Scalar value @ IP
+
+  for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
+      itr!=m_provided_dofs_desc.end();++itr) {
+
+    if(itr->second.basis->supportsDiv()) {
+
+      // is div required for this variable
+      if(!itr->second.div.first) 
+        continue; // its not required, quit the loop
+
+      const std::string dof_name =      itr->first;
+      const std::string dof_div_name = itr->second.div.second;
+
+      ParameterList p;
+      p.set("Name", dof_name);
+      p.set("Div Name", dof_div_name);
+      p.set("Basis", fl.lookupLayout(dof_name)); 
+      p.set("IR", ir);
+
+      // this will help accelerate the DOFDiv evaluator when Jacobians are needed
+      if(globalIndexer!=Teuchos::null) {
+        // build the offsets for this field
+        int fieldNum = globalIndexer->getFieldNum(dof_name);
+        RCP<const std::vector<int> > offsets = 
+            rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
+        p.set("Jacobian Offsets Vector", offsets);
+      }
+      // else default to the slow DOF call
+    
+      
+      RCP< PHX::Evaluator<panzer::Traits> > op = 
+        rcp(new panzer::DOFDiv<EvalT,panzer::Traits>(p));
 
       fm.template registerEvaluator<EvalT>(op);
     }
@@ -807,12 +847,9 @@ addDOFDiv(const std::string & dofName,
   TEUCHOS_ASSERT(desc.dofName==dofName); // safety check
 
   if (divName == "")
-    desc.div = std::make_pair(true,std::string("DOF_")+dofName);
+    desc.div = std::make_pair(true,std::string("DIV_")+dofName);
   else
     desc.div = std::make_pair(true,divName);
-
-  // can't do this yet!
-  TEUCHOS_ASSERT(false);
 }
 
 // ***********************************************************************
@@ -842,7 +879,7 @@ template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 setCoordinateDOFs(const std::vector<std::string> & dofNames)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(m_cell_data.baseCellDimension()!=dofNames.size(),std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(m_cell_data.baseCellDimension()!=Teuchos::as<int>(dofNames.size()),std::invalid_argument,
                              "EquationSet_DefaultImpl::setCoordinateDOFs: Size of vector is not equal to the "
                              "spatial dimension.");
 

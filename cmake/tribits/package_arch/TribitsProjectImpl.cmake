@@ -188,6 +188,13 @@ MACRO(TRIBITS_PROJECT_IMPL)
       " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
   ENDIF() 
  
+
+  #
+  # F2) The compilers are set, the environment is known to CMake.
+  #     Set installation options.
+  #
+  TRIBITS_SETUP_INSTALLATION_PATHS()
+
   #
   # G) Go get the information for all enabled TPLS
   #
@@ -207,8 +214,7 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("")
   
   IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
-    INCLUDE(CTest)
-    TRIBITS_CONFIGURE_CTEST_CUSTOM(${${PROJECT_NAME}_BINARY_DIR})
+    TRIBITS_INCLUDE_CTEST_SUPPORT()
   ELSE()
     MESSAGE("-- Skipping testing support setup due to"
       " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")

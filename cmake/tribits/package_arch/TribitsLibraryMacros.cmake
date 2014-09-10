@@ -97,8 +97,9 @@ ENDFUNCTION()
 #     )
 #
 # which does basic substitution of CMake variables (see documentation for
-# built-in CMake ``CONFIGURE_FILE()`` command for rules on how it performs
-# substitutions).
+# built-in CMake `CONFIGURE_FILE()`_ command for rules on how it performs
+# substitutions).  This command is typically used to configure the package's
+# main `<packageDir>/cmake/<packageName>_config.h.in`_ file.
 #
 # In addition to just calling ``CONFIGURE_FILE()``, this function also aids in
 # creating configured header files adding macros for deprecating code as
@@ -256,11 +257,12 @@ ENDFUNCTION()
 #     that this library is dependent on.  These libraries are passed into
 #     ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
 #     dependency structure of the libraries within the package.  **NOTE:** One
-#     must **not** list libraries in other upstream SE packages or libraries
-#     built externally from this TriBITS CMake project.  The TriBITS system
-#     automatically handles linking to libraries in upstream TriBITS SE
+#     must **not** list libraries in other upstream `TriBITS SE Packages`_ or
+#     libraries built externally from this TriBITS CMake project.  The TriBITS
+#     system automatically handles linking to libraries in upstream TriBITS SE
 #     packages.  External libraries need to be listed in the ``IMPORTEDLIBS``
-#     argument instead.
+#     argument instead if they are not already specified automatically using a
+#     `TriBITS TPL`_.
 #
 #   ``IMPORTEDLIBS <ideplib0> <ideplib1> ...``
 #
@@ -272,9 +274,9 @@ ENDFUNCTION()
 #     will also pick up these libraries and these libraries will show up in
 #     the generated ``Makefile.export.${PACKAGE_NAME}`` and
 #     ``${PACKAGE_NAME}Config.cmake`` files (if they are generated).  However,
-#     not that external libraries are often better handled as `TriBITS TPLs`_.
-#     A well constructed TriBITS package and library should never have to use
-#     this option.
+#     note that external libraries are often better handled as `TriBITS
+#     TPLs`_.  A well constructed TriBITS package and library should never
+#     have to use this option!
 #
 #   ``TESTONLY``
 #
@@ -359,7 +361,11 @@ ENDFUNCTION()
 # affect header files, please use a configured header file (see
 # `TRIBITS_CONFIGURE_FILE()`_).
 #
-FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
+FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
+
+  SET(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
+
+  SET(LIBRARY_NAME ${LIBRARY_NAME_PREFIX}${LIBRARY_NAME_IN})
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nTRIBITS_ADD_LIBRARY: ${LIBRARY_NAME}")
@@ -427,8 +433,13 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
       MESSAGE("-- " "IMPORTEDLIBS = ${PARSE_IMPORTEDLIBS}")
     ENDIF()
 
+    # Prepend DEPLIBS with LIBRARY_NAME_PREFIX.
     IF (PARSE_DEPLIBS)
-      APPEND_SET(LINK_LIBS ${PARSE_DEPLIBS})
+      SET(PREFIXED_DEPLIBS)
+      FOREACH(LIB ${PARSE_DEPLIBS})
+        LIST(APPEND PREFIXED_DEPLIBS "${LIBRARY_NAME_PREFIX}${LIB}")
+      ENDFOREACH()
+      APPEND_SET(LINK_LIBS ${PREFIXED_DEPLIBS})
     ENDIF()
     IF (PARSE_IMPORTEDLIBS)
       APPEND_SET(LINK_LIBS ${PARSE_IMPORTEDLIBS})

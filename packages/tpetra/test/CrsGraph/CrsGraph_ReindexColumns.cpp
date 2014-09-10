@@ -399,7 +399,7 @@ namespace {
         {
           size_t actualNumEnt = 0;
           graph.getLocalRowCopy (lclRowInd, newLclColInds (), actualNumEnt);
-          if (numEnt != actualNumEnt) {
+          if (static_cast<size_t> (numEnt) != actualNumEnt) {
             os << "graph.getLocalRowCopy(...) reported different # entries"
                << endl;
             success = false;
@@ -447,7 +447,7 @@ namespace {
         {
           size_t actualNumEnt = 0;
           graph2->getLocalRowCopy (lclRowInd, origLclColInds (), actualNumEnt);
-          if (numEnt != actualNumEnt) {
+          if (static_cast<size_t> (numEnt) != actualNumEnt) {
             os << "graph2.getLocalRowCopy(...) reported different # entries"
                << endl;
             success = false;

@@ -140,8 +140,8 @@ int main(int argc, char *argv[]) {
   //
 
   // Turns a Epetra_CrsMatrix into a MueLu::Matrix
-  RCP<Xpetra::CrsMatrix<SC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(A)); //TODO: should not be needed
-  RCP<Xpetra::Matrix <SC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<SC, LO, GO, NO, LMO>(mueluA_));
+  RCP<Xpetra::CrsMatrix<SC, LO, GO, NO> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(A)); //TODO: should not be needed
+  RCP<Xpetra::Matrix <SC, LO, GO, NO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<SC, LO, GO, NO>(mueluA_));
 
   // Multigrid Hierarchy
   RCP<Hierarchy> H = rcp(new Hierarchy(mueluA));
@@ -190,8 +190,8 @@ int main(int argc, char *argv[]) {
   typedef Belos::OperatorT<MV> OP;
 
   // Define Operator and Preconditioner
-  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(mueluA)); // Turns a Xpetra::Matrix object into a Belos operator
-  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));       // Turns a MueLu::Hierarchy object into a Belos operator
+  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(mueluA)); // Turns a Xpetra::Matrix object into a Belos operator
+  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));       // Turns a MueLu::Hierarchy object into a Belos operator
 
   // Construct a Belos LinearProblem object
   RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));

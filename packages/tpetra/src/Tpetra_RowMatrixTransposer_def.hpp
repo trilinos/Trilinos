@@ -55,29 +55,26 @@ namespace Tpetra {
 template<class Scalar,
      class LocalOrdinal,
      class GlobalOrdinal,
-     class Node,
-     class SpMatOps>
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
+     class Node>
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix)
   : origMatrix_ (origMatrix) {}
 
 template<class Scalar,
      class LocalOrdinal,
      class GlobalOrdinal,
-     class Node,
-     class SpMatOps>
+     class Node>
 TEUCHOS_DEPRECATED
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 RowMatrixTransposer (const crs_matrix_type& origMatrix)
   : origMatrix_ (Teuchos::rcpFromRef (origMatrix)) {}
 
 template<class Scalar,
      class LocalOrdinal,
      class GlobalOrdinal,
-     class Node,
-     class SpMatOps>
-Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
+     class Node>
+Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 createTranspose()
 {
   using Teuchos::RCP;
@@ -107,10 +104,9 @@ createTranspose()
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
-         class Node,
-         class SpMatOps>
-Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
+         class Node>
+Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 createTransposeLocal ()
 {
   using Teuchos::Array;

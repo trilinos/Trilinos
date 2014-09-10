@@ -69,8 +69,8 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
@@ -90,7 +90,7 @@ namespace MueLu {
     //bool recomputeAggregateSizes=false; // variable not used TODO remove it
 
     for (LO iNode = 0; iNode < nRows; iNode++) {
-      if (aggStat[iNode] == AGGREGATED)
+      if (aggStat[iNode] == AGGREGATED || aggStat[iNode] == IGNORED)
         continue;
 
       ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);

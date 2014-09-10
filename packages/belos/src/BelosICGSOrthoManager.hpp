@@ -531,6 +531,7 @@ namespace Belos {
       return normalize(X,Teuchos::null,B);
     }
 
+  protected:
 
     /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
      *
@@ -573,22 +574,15 @@ namespace Belos {
 
      @return Rank of the basis computed by this method.
     */
-    int projectAndNormalize ( MV &X, Teuchos::RCP<MV> MX,
-                              Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                              Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
-                              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
+    virtual int
+    projectAndNormalizeWithMxImpl (MV &X,
+                                   Teuchos::RCP<MV> MX,
+                                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                                   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                                   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
-    /*! \brief This method calls projectAndNormalize(X,Teuchos::null,C,B,Q); see documentation for that function.
-    */
-    int projectAndNormalize ( MV &X,
-                              Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                              Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
-                              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const {
-      return projectAndNormalize(X,Teuchos::null,C,B,Q);
-    }
-
+  public:
     //@}
-
     //! @name Error methods
     //@{
 
@@ -748,11 +742,13 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Find an Op-orthonormal basis for span(X) - span(W)
   template<class ScalarType, class MV, class OP>
-  int ICGSOrthoManager<ScalarType, MV, OP>::projectAndNormalize(
-                                    MV &X, Teuchos::RCP<MV> MX,
-                                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                                    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
-                                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const
+  int
+  ICGSOrthoManager<ScalarType, MV, OP>::
+  projectAndNormalizeWithMxImpl (MV &X,
+                                 Teuchos::RCP<MV> MX,
+                                 Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                                 Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
     using Teuchos::Array;
     using Teuchos::null;

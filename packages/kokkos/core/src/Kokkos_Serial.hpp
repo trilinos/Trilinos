@@ -139,7 +139,12 @@ public:
   static void initialize( unsigned threads_count = 1 ,
                           unsigned use_numa_count = 0 ,
                           unsigned use_cores_per_numa = 0 ,
-                          bool allow_asynchronous_threadpool = false) {}
+                          bool allow_asynchronous_threadpool = false) {
+    (void) threads_count;
+    (void) use_numa_count;
+    (void) use_cores_per_numa;
+    (void) allow_asynchronous_threadpool;
+  }
 
   static int is_initialized() { return 1 ; }
 
@@ -216,6 +221,11 @@ public:
   KOKKOS_INLINE_FUNCTION int team_size() const { return 1 ; }
 
   KOKKOS_INLINE_FUNCTION void team_barrier() const {}
+
+  template< class JoinOp >
+  typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
+                                         , const JoinOp & ) const
+    { return value ; }
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.

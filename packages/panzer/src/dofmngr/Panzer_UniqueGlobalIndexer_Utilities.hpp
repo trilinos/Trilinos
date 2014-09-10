@@ -204,13 +204,17 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
                                  std::vector<char> & orientation);
 
 /** For a given field pattern compute the offsets that give 
-  * the dimension-0-subcell indices for each face.
+  * the dimension-0-subcell indices for each face. Note that the assumption is
+  * made that the node ordering returned by Shards for each face is counter-clockwise.
+  * This is how the determination of inward or outward facing normals is made.
   *
   * \param[in] pattern Pattern specifying the layout of IDs. Note that
   *                    this pattern must have dimension-0-subcell indices.
   * \param[in,out] faceIndices Empty vector that on exit will have a vector
   *                            containing start and end indices for each
   *                            face in a cell.
+  *
+  * \note This method is only functional for 3D field patterns.
   */
 void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vector<int> > & faceIndices);
 
@@ -218,7 +222,7 @@ void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vec
   * It is most often called in conjunction with <code>computePatternFaceIndices</code>. The
   * general model is to call <code>computePatternFaceIndices</code> once for a given topology
   * field pattern. These face indices are used with the topology vector of GIDs (which is laid out 
-  * using the topology field pattern) for particular to define the orientation for that element.
+  * using the topology field pattern) to define the orientation for that element.
   * The layout of the orientation vector is defined to satisfy yet another field pattern whose
   * structure defines the global unknowns for that element. This function can then be called
   * repeatedly for each element that satisfies the topology used in the 

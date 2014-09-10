@@ -199,7 +199,7 @@ int ex_put_all_var_param_ext ( int   exoid,
       goto error_ret;
   }
 
-  if (vp->num_node > 0 && num_nod_dim > 0) {
+  if (vp->num_node > 0) {
     /*
      * There are two ways to store the nodal variables. The old way *
      * was a blob (#times,#vars,#nodes), but that was exceeding the
@@ -216,33 +216,35 @@ int ex_put_all_var_param_ext ( int   exoid,
     if (define_dimension(exoid, DIM_NUM_NOD_VAR, vp->num_node, "nodal", &dimid) != NC_NOERR)
       goto error_ret;
 
-    if (ex_large_model(exoid) == 0) { /* Old way */
-      dims[0] = time_dim;
-      dims[1] = dimid;
-      dims[2] = num_nod_dim;
-      if ((status = nc_def_var(exoid, VAR_NOD_VAR,
-			       nc_flt_code(exoid), 3, dims, &varid)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"Error: failed to define nodal variables in file id %d",
-		exoid);
-	ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
-	goto error_ret;          /* exit define mode and return */
-      }
-    } else { /* Store new way */
-      for (i = 1; i <= vp->num_node; i++) {
+    if (num_nod_dim > 0) {
+      if (ex_large_model(exoid) == 0) { /* Old way */
 	dims[0] = time_dim;
-	dims[1] = num_nod_dim;
-	if ((status = nc_def_var(exoid, VAR_NOD_VAR_NEW(i),
-				 nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
+	dims[1] = dimid;
+	dims[2] = num_nod_dim;
+	if ((status = nc_def_var(exoid, VAR_NOD_VAR,
+				 nc_flt_code(exoid), 3, dims, &varid)) != NC_NOERR) {
 	  exerrval = status;
 	  sprintf(errmsg,
-		  "Error: failed to define nodal variable %d in file id %d",
-		  i, exoid);
-	  ex_err("ex_put_var_param",errmsg,exerrval);
+		  "Error: failed to define nodal variables in file id %d",
+		  exoid);
+	  ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
 	  goto error_ret;          /* exit define mode and return */
 	}
-	ex_compress_variable(exoid, varid, 2);
+      } else { /* Store new way */
+	for (i = 1; i <= vp->num_node; i++) {
+	  dims[0] = time_dim;
+	  dims[1] = num_nod_dim;
+	  if ((status = nc_def_var(exoid, VAR_NOD_VAR_NEW(i),
+				   nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
+	    exerrval = status;
+	    sprintf(errmsg,
+		    "Error: failed to define nodal variable %d in file id %d",
+		    i, exoid);
+	    ex_err("ex_put_var_param",errmsg,exerrval);
+	    goto error_ret;          /* exit define mode and return */
+	  }
+	  ex_compress_variable(exoid, varid, 2);
+	}
       }
     }
 
@@ -264,7 +266,7 @@ int ex_put_all_var_param_ext ( int   exoid,
       goto error_ret;							\
 									\
     VSTATVAL = ex_safe_free (VSTATVAL);					\
-    VIDS  = ex_safe_free (VIDS);						\
+    VIDS  = ex_safe_free (VIDS);					\
 									\
     /* create a variable array in which to store the STNAME variable truth \
      * table								\

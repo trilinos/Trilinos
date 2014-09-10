@@ -51,7 +51,6 @@
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Traits.hpp>
-#include <impl/Kokkos_MemoryTracking.hpp>
 
 /*--------------------------------------------------------------------------*/
 

@@ -118,6 +118,7 @@ int main(int argc, char *argv[]) {
   std::string mapFile;                               clp.setOption("map",                   &mapFile,          "map data file");
   std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,       "matrix data file");
   std::string coordFile;                             clp.setOption("coords",                &coordFile,        "coordinates data file");
+  std::string nullFile;                              clp.setOption("nullspace",             &nullFile,         "nullspace data file");
   int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,      "#times to rebuild hierarchy");
   int         maxIts            = 200;               clp.setOption("its",                   &maxIts,           "maximum number of solver iterations");
   bool        scaleResidualHistory = true;              clp.setOption("scale", "noscale",  &scaleResidualHistory, "scaled Krylov residual history");
@@ -236,18 +237,24 @@ int main(int argc, char *argv[]) {
       const bool binaryFormat = true;
       A = Utils::Read(matrixFile, lib, comm, binaryFormat);
 
-      RCP<Matrix> newMatrix = MatrixFactory::Build(map, 1);
-      RCP<Import> importer  = ImportFactory::Build(A->getRowMap(), map);
-      newMatrix->doImport(*A, *importer, Xpetra::INSERT);
-      newMatrix->fillComplete();
+      if (!map.is_null()) {
+        RCP<Matrix> newMatrix = MatrixFactory::Build(map, 1);
+        RCP<Import> importer  = ImportFactory::Build(A->getRowMap(), map);
+        newMatrix->doImport(*A, *importer, Xpetra::INSERT);
+        newMatrix->fillComplete();
 
-      A.swap(newMatrix);
+        A.swap(newMatrix);
+      }
     }
+    map = A->getMap();
 
     comm->barrier();
 
     if (!coordFile.empty())
       coordinates = Utils2::ReadMultiVector(coordFile, map);
+
+    if (!nullFile.empty())
+      nullspace = Utils2::ReadMultiVector(nullFile, map);
   }
 
   comm->barrier();
@@ -409,8 +416,8 @@ int main(int argc, char *argv[]) {
         H->IsPreconditioner(true);
 
         // Define Operator and Preconditioner
-        Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
-        Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO, LMO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
+        Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
+        Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
 
         // Construct a Belos LinearProblem object
         RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));

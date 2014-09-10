@@ -68,12 +68,10 @@ namespace Xpetra {
   class EpetraCrsMatrix
     : public CrsMatrix<double, int, int>
   {
-
-    typedef double Scalar;
-    typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-    typedef KokkosClassic::DefaultKernels<void,int,Node>::SparseOps LocalMatOps;
+    typedef CrsMatrix<double, int, int>::scalar_type Scalar;
+    typedef CrsMatrix<double, int, int>::local_ordinal_type LocalOrdinal;
+    typedef CrsMatrix<double, int, int>::global_ordinal_type GlobalOrdinal;
+    typedef CrsMatrix<double, int, int>::node_type Node;
 
   public:
 
@@ -93,7 +91,7 @@ namespace Xpetra {
     EpetraCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
     //! Constructor specifying a previously constructed graph.
-    EpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
+    EpetraCrsMatrix (const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
 
     //! Constructor for a fused import
@@ -179,13 +177,13 @@ namespace Xpetra {
     const RCP< const Comm< int > >  getComm() const { XPETRA_MONITOR("EpetraCrsMatrix::getComm"); return toXpetra(mtx_->Comm()); }
 
     //! Returns the Map that describes the row distribution in this matrix.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getRowMap"); return toXpetra(mtx_->RowMap()); }
+    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getRowMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getRowMap"); return toXpetra(mtx_->RowMap()); }
 
     //! Returns the Map that describes the column distribution in this matrix.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getColMap"); return toXpetra(mtx_->ColMap()); }
+    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getColMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getColMap"); return toXpetra(mtx_->ColMap()); }
 
     //! Returns the CrsGraph associated with this matrix.
-    RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > getCrsGraph() const { XPETRA_MONITOR("EpetraCrsMatrix::getCrsGraph"); return toXpetra(mtx_->Graph()); }
+    RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getCrsGraph() const { XPETRA_MONITOR("EpetraCrsMatrix::getCrsGraph"); return toXpetra(mtx_->Graph()); }
 
     //! Number of global elements in the row map of this matrix.
     global_size_t getGlobalNumRows() const { XPETRA_MONITOR("EpetraCrsMatrix::getGlobalNumRows"); return mtx_->NumGlobalRows(); }

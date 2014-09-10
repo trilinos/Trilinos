@@ -22,8 +22,8 @@
 
 namespace MueLu {
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildPermutations(size_t nDofsPerNode) const {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPermutations(size_t nDofsPerNode) const {
 
     permWidth_ = nDofsPerNode;
 
@@ -47,8 +47,8 @@ namespace MueLu {
     } while (std::next_permutation(cs.begin(),cs.end()));
   }
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const {
 #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT // TODO remove this -> check scalar = std::complex
     size_t nDofsPerNode = 1;
     if (A->IsView("stridedMaps")) {
@@ -226,10 +226,10 @@ namespace MueLu {
     Teuchos::RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false, GetOStream(Statistics2),true,true);
 
     /*
-    MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("A.mat", *A);
-    MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("permP.mat", *permPmatrix);
-    MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("permQt.mat", *permQTmatrix);
-    MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("permPApermQt.mat", *permPApermQt);
+    MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("A.mat", *A);
+    MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("permP.mat", *permPmatrix);
+    MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("permQt.mat", *permQTmatrix);
+    MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("permPApermQt.mat", *permPApermQt);
     */
     // build scaling matrix
     Teuchos::RCP<Vector> diagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
@@ -318,8 +318,8 @@ namespace MueLu {
 #endif // #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
   }
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GlobalOrdinal LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::getGlobalDofId(const Teuchos::RCP<Matrix> & A, LocalOrdinal localNodeId, LocalOrdinal localDof) const {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getGlobalDofId(const Teuchos::RCP<Matrix> & A, LocalOrdinal localNodeId, LocalOrdinal localDof) const {
     size_t nDofsPerNode = 1;
     if (A->IsView("stridedMaps")) {
       Teuchos::RCP<const Map> permRowMapStrided = A->getRowMap("stridedMaps");
@@ -331,8 +331,8 @@ namespace MueLu {
     return A->getRowMap()->getGlobalElement(localDofId);
   }
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GlobalOrdinal LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::globalDofId2globalNodeId( const Teuchos::RCP<Matrix> & A, GlobalOrdinal grid ) const {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::globalDofId2globalNodeId( const Teuchos::RCP<Matrix> & A, GlobalOrdinal grid ) const {
     size_t nDofsPerNode = 1;
     if (A->IsView("stridedMaps")) {
       Teuchos::RCP<const Map> permRowMapStrided = A->getRowMap("stridedMaps");

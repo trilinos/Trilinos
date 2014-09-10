@@ -75,11 +75,10 @@ namespace Xpetra {
   class EpetraMultiVector
     : public virtual MultiVector<double, int, int>
   {
-
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef MultiVector<double, int, int>::node_type Node;
 
   public:
 

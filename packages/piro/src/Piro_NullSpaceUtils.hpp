@@ -51,6 +51,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
 #include "Kokkos_SerialNode.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #else
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h" 
@@ -140,17 +141,10 @@ private:
       mueLuList->set("number of equations", numPDEs);
       
 
-     //IK, 8/18/14: Something in rbms computed her for MueLu doesn't work. 
-     //Need to discuss with MueLu developers.  For now, this flag is set to false
-     //so the rbms calculated here aren't passed to MueLu to prevent Albany tests from 
-     //failing. 
-
-      bool nullSpaceCompute = false; 
       if (numElasticityDim > 0 ) {
+        Teuchos::RCP<Teuchos::FancyOStream> out(Teuchos::VerboseObjectBase::getDefaultOStream());
 
-       std::cout << "Setting rbms in informMueLu..." << std::endl;
-       std::cout << "numPDEs*nNodes: " << numPDEs*(Coordinates->getLocalLength()) << std::endl; 
-       std::cout << "# local elements in soln_map: " << soln_map->getNodeNumElements() << std::endl; 
+        *out << "Setting rbms in informMueLu..." << std::endl;
        
        Teuchos::ArrayRCP<ST> xArray, yArray, zArray; //ArrayRCPs to x, y, and z coordinates
        xArray = Coordinates->getDataNonConst(0); //x 
@@ -174,14 +168,9 @@ private:
         //mueLuList->set("null space: type", "pre-computed");
         //mueLuList->set("null space: dimension", nullSpaceDim);
         //mueLuList->set("null space: add default vectors", false); 
-        if (nullSpaceCompute == true) { 
-          mueLuList->set("Null Space", Rbm);
-          std::cout << "...done setting rbms!" << std::endl; 
-        }
-        else 
-          std::cout << "...not setting rbms...  nullSpaceCompute == false.  Set to true in Piro_NullSpaceUtils.hpp to compute rbms." << std::endl;  
-        //Teuchos::RCP<Teuchos::FancyOStream> out(Teuchos::VerboseObjectBase::getDefaultOStream());
-        //std::cout << "Rbm: ";
+        mueLuList->set("Null Space", Rbm);
+        *out << "...done setting rbms!" << std::endl; 
+        //*out << "Rbm: ";
         //Rbm->describe(*out, Teuchos::VERB_EXTREME); 
 
 

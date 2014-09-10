@@ -59,13 +59,13 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MapTransferFactory(std::string mapName, Teuchos::RCP<const FactoryBase> mapFact)
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MapTransferFactory(std::string mapName, Teuchos::RCP<const FactoryBase> mapFact)
   : mapName_(mapName), mapFact_(mapFact)
   { }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     fineLevel.DeclareInput(mapName_, mapFact_.get(), this);
     Teuchos::RCP<const FactoryBase> tentPFact = GetFactory("P");
     if (tentPFact == Teuchos::null)
@@ -73,8 +73,8 @@ namespace MueLu {
     coarseLevel.DeclareInput("P", tentPFact.get(), this);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     Monitor m(*this, "Contact Map transfer factory");
 
     if (fineLevel.IsAvailable(mapName_, mapFact_.get())==false)

@@ -304,6 +304,17 @@ INCLUDE(PrintVar)
 #     ``<outputFile>``.  By default, the contents of this file will **also**
 #     be printed to STDOUT unless ``NO_ECHO_OUT`` is passed as well.
 #
+#     NOTE: Contrary to CMake documentation for EXECUTE_PROCESS(), STDOUT and
+#     STDERR may not get output in the correct order interleaved correctly,
+#     even in serial without MPI.  Therefore, you can't write any tests that
+#     depend on the order of STDOUT and STDERR output in relation to each
+#     other.  Also note that all of STDOUT and STDERR will be first read into
+#     the CTest executable process main memory before the file
+#     ``<outputFile>`` is written.  Therefore, don't run executables or
+#     commands that generate massive amounts of console output or it may
+#     exhaust main memory.  Instead, have the command or executable write
+#     directly to a file instead of going through STDOUT.
+#
 #   ``NO_ECHO_OUTPUT``
 #
 #     If specified, then the output for the test command will not be echoed to
@@ -430,7 +441,7 @@ INCLUDE(PrintVar)
 #
 # After this function returns, if the test gets added using ``ADD_TEST()``,
 # then additional properties can be set and changed using
-# ``SET_TEST_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
+# ``SET_TESTS_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
 # tests properties that are not directly supported by this function and passed
 # through the argument list to this wrapper function can be set in the outer
 # ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_ADVANCED_TEST()``.
@@ -475,6 +486,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     MESSAGE("\nPACKAGE_ADD_ADVANCED_TEST: ${TEST_NAME_IN}\n")
   ENDIF()
 
+  GLOBAL_SET(TRIBITS_SET_TEST_PROPERTIES_INPUT)
+
   IF (PACKAGE_NAME)
     SET(TEST_NAME ${PACKAGE_NAME}_${TEST_NAME_IN})
   ELSE()
@@ -487,7 +500,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   #
 
   # Allow for a maximum of 20 (0 through 19) test commands
-  SET(MAX_NUM_TEST_CMND_IDX ${PACKAGE_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX})
+  SET(MAX_NUM_TEST_CMND_IDX ${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX})
 
   SET(TEST_IDX_LIST "")
   FOREACH( TEST_CMND_IDX RANGE ${MAX_NUM_TEST_CMND_IDX})
@@ -652,7 +665,11 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
       ENDIF()
 
       IF(ADD_THE_TEST)
-        FIND_PROGRAM(CMND_PATH ${PARSE_CMND})
+        IF (NOT TRIBITS_ADD_TEST_ADD_TEST_UNITTEST)
+          FIND_PROGRAM(CMND_PATH ${PARSE_CMND})
+        ELSE()
+          SET(CMND_PATH ${PARSE_CMND})
+        ENDIF()
         LIST(APPEND TEST_EXE_LIST ${CMND_PATH})
       ENDIF()
 
@@ -672,8 +689,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
       "\n"
       "SET( TEST_${TEST_CMND_IDX}_CMND ${TEST_CMND_STR} )\n"
       )
-    IF (PACKAGE_ADD_ADVANCED_TEST_UNITTEST)
-      GLOBAL_SET(PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX}
+    IF (TRIBITS_ADD_ADVANCED_TEST_UNITTEST)
+      GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX}
         "${TEST_CMND_STR}" )
     ENDIF()
 
@@ -769,8 +786,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     "DRIVE_ADVANCED_TEST()\n"
     )
 
-  IF (PACKAGE_ADD_ADVANCED_TEST_UNITTEST)
-    GLOBAL_SET(PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS ${NUM_CMNDS})
+  IF (TRIBITS_ADD_ADVANCED_TEST_UNITTEST)
+    GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_NUM_CMNDS ${NUM_CMNDS})
   ENDIF()
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -781,7 +798,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
   SET(TEST_SCRIPT_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TEST_NAME}.cmake")
 
-  IF (ADD_THE_TEST AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT)
+  IF (ADD_THE_TEST AND NOT TRIBITS_ADD_ADVANCED_TEST_SKIP_SCRIPT)
 
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       MESSAGE("\nWriting file \"${TEST_SCRIPT_FILE}\" ...")
@@ -796,49 +813,50 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   # F) Set the CTest test to run the new script
   #
 
-  IF (ADD_THE_TEST
-    AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT
-    AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT_ADD_TEST
-    )
+  IF (ADD_THE_TEST)
 
-    # Tell CTest to run our script for this test.  Pass the test-time
-    # configuration name to the script in the TEST_CONFIG variable.
-    ADD_TEST( ${TEST_NAME}
-      ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}"
+    IF(NOT TRIBITS_ADD_TEST_ADD_TEST_UNITTEST)
+      # Tell CTest to run our script for this test.  Pass the test-type
+      # configuration name to the script in the TEST_CONFIG variable.
+      ADD_TEST( ${TEST_NAME}
+        ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}"
         -P "${TEST_SCRIPT_FILE}")
-    LIST(REMOVE_DUPLICATES TEST_EXE_LIST)
-    SET_PROPERTY(TEST ${TEST_NAME} PROPERTY REQUIRED_FILES ${TEST_EXE_LIST})
-
-    IF(PARSE_RUN_SERIAL)
-      SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES RUN_SERIAL ON)
     ENDIF()
+
+    LIST(REMOVE_DUPLICATES TEST_EXE_LIST)
+    TRIBITS_SET_TEST_PROPERTY(${TEST_NAME} PROPERTY REQUIRED_FILES ${TEST_EXE_LIST})
   
+    IF(PARSE_RUN_SERIAL)
+      TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES RUN_SERIAL ON)
+    ENDIF()
+    
     TRIBITS_PRIVATE_ADD_TEST_ADD_LABEL_AND_KEYWORDS(${TEST_NAME})
-  
+    
     #This if clause will set the number of PROCESSORS to reserve during testing
     #to the number requested for the test.
     IF(NUM_PROCS_USED)
-      SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
+      TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
         PROCESSORS "${NUM_PROCS_USED}")
     ENDIF()
-  
+    
     IF (PARSE_FINAL_PASS_REGULAR_EXPRESSION)
-      SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
+      TRIBITS_SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
         PASS_REGULAR_EXPRESSION "${PARSE_FINAL_PASS_REGULAR_EXPRESSION}" )
     ELSEIF (PARSE_FINAL_FAIL_REGULAR_EXPRESSION)
-      SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
+      TRIBITS_SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
         FAIL_REGULAR_EXPRESSION "${PARSE_FINAL_FAIL_REGULAR_EXPRESSION}" )
     ELSE()
-      SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
+      TRIBITS_SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
         PASS_REGULAR_EXPRESSION "OVERALL FINAL RESULT: TEST PASSED" )
     ENDIF()
-  
+    
     IF (PARSE_TIMEOUT)
-      SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES TIMEOUT ${PARSE_TIMEOUT})
+      TRIBITS_SCALE_TIMEOUT(${PARSE_TIMEOUT} TIMEOUT_USED)
+      TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES TIMEOUT ${TIMEOUT_USED})
     ENDIF()
-
+  
     IF (PARSE_ENVIRONMENT)
-      SET_PROPERTY(TEST ${TEST_NAME} PROPERTY ENVIRONMENT ${PARSE_ENVIRONMENT})
+      TRIBITS_SET_TEST_PROPERTY(${TEST_NAME} PROPERTY ENVIRONMENT ${PARSE_ENVIRONMENT})
     ENDIF()
 
   ENDIF()

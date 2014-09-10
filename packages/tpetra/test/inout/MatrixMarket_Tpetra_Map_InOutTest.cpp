@@ -43,19 +43,21 @@
 // only the .cu version of this file is actually compiled
 #include <Tpetra_config.h>
 #ifdef HAVE_TPETRA_KOKKOSCOMPAT
-#include <KokkosCore_config.h>
-#ifdef KOKKOS_USE_CUDA_BUILD
-  #define DO_COMPILATION
+#  include <KokkosCore_config.h>
+#  ifdef KOKKOS_USE_CUDA_BUILD
+#    define DO_COMPILATION
+#  else
+#    ifndef KOKKOS_HAVE_CUDA
+#      define DO_COMPILATION
+#    endif
+#  endif
 #else
-  #ifndef KOKKOS_HAVE_CUDA
-    #define DO_COMPILATION
-  #endif
-#endif
-#else
-  #define DO_COMPILATION
+#  define DO_COMPILATION
 #endif
 
 #ifdef DO_COMPILATION
+
+#include <Tpetra_ETIHelperMacros.h>
 
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
@@ -64,7 +66,6 @@
 
 namespace { // anonymous
 
-using Tpetra::global_size_t;
 using Teuchos::Array;
 using Teuchos::as;
 using Teuchos::Comm;
@@ -76,33 +77,29 @@ using Teuchos::rcp;
 using Teuchos::REDUCE_MAX;
 using Teuchos::REDUCE_MIN;
 using Teuchos::reduceAll;
+using std::cerr;
 using std::endl;
+
+typedef Tpetra::global_size_t GST;
 
 // Whether to print copious debugging output to stderr when doing
 // Matrix Market input and output.  This affects all the tests.
 const bool debug = false;
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase0, LocalOrdinalType, GlobalOrdinalType, NodeType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigUniformIndexBase0, LO, GO )
 {
-  using std::cerr;
-  using std::endl;
-  typedef LocalOrdinalType LO;
-  typedef GlobalOrdinalType GO;
-  typedef NodeType NT;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
-
+  typedef Tpetra::Map<LO, GO> map_type;
   const bool tolerant = false;
   const bool globallyVerbose = true;
 
   RCP<const Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
   const size_t localNumElts = 10;
-  const global_size_t globalNumElts = localNumElts * as<global_size_t> (numProcs);
+  const GST globalNumElts = localNumElts * static_cast<GST> (numProcs);
   const GO indexBase = 0;
 
   if (myRank == 0) {
@@ -119,7 +116,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase0, 
     os << "Proc " << myRank << ": Creating the Map" << endl;
     cerr << os.str ();
   }
-  map_type map (globalNumElts, indexBase, comm, Tpetra::GloballyDistributed, node);
+  map_type map (globalNumElts, indexBase, comm, Tpetra::GloballyDistributed);
 
   // Write to a distinct output stream, so we can read it back in again.
   if (globallyVerbose) {
@@ -129,7 +126,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase0, 
   }
   std::ostringstream mapOutStream;
   // The Scalar type doesn't matter, since we're just writing a Map.
-  typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<double, LO, GO> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
   writer_type::writeMap (mapOutStream, map, false && globallyVerbose);
 
@@ -195,39 +192,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase0, 
   }
 }
 
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase1, LocalOrdinalType, GlobalOrdinalType, NodeType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigUniformIndexBase1, LO, GO )
 {
-  typedef LocalOrdinalType LO;
-  typedef GlobalOrdinalType GO;
-  typedef NodeType NT;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef Tpetra::Map<LO, GO> map_type;
 
   const bool tolerant = false;
   out << "Test: output a contiguous uniform Tpetra::Map (index base 1) "
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
 
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
-  const int myRank = comm->getRank();
-  const int numProcs = comm->getSize();
+  RCP<const Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
   // Forestall compiler warnings about unused variables.
   (void) myRank;
   (void) numProcs;
 
   const size_t localNumElts = 10;
-  const global_size_t globalNumElts = localNumElts * as<global_size_t> (numProcs);
+  const GST globalNumElts = localNumElts * static_cast<GST> (numProcs);
   const GO indexBase = 1;
 
   out << "Creating the Map" << endl;
-  map_type map (globalNumElts, indexBase, comm, Tpetra::GloballyDistributed, node);
+  map_type map (globalNumElts, indexBase, comm, Tpetra::GloballyDistributed);
 
   // Write to a distinct output stream, so we can read it back in again.
   out << "Writing Map to output stream" << endl;
   std::ostringstream mapOutStream;
   // The Scalar type doesn't matter, since we're just writing a Map.
-  typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<double, LO, GO> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
   writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
@@ -247,36 +240,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase1, 
 }
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousNonuniformIndexBase0, LocalOrdinalType, GlobalOrdinalType, NodeType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigNonuniformIndexBase0, LO, GO )
 {
-  typedef LocalOrdinalType LO;
-  typedef GlobalOrdinalType GO;
-  typedef NodeType NT;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef Tpetra::Map<LO, GO> map_type;
 
   const bool tolerant = false;
   out << "Test: output a contiguous nonuniform Tpetra::Map (index base 0) "
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
 
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
+  RCP<const Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   const int myRank = comm->getRank();
   const int numProcs = comm->getSize();
 
   // Proc 0 gets a different number of local elements, so that the Map is nonuniform.
   const size_t localNumElts = (myRank == 0) ? 11 : 10;
-  const global_size_t globalNumElts = 10 * as<global_size_t> (numProcs) + 1;
+  const GST globalNumElts = 10 * static_cast<GST> (numProcs) + 1;
   const GO indexBase = 0;
 
   out << "Creating the Map" << endl;
-  map_type map (globalNumElts, localNumElts, indexBase, comm, node);
+  map_type map (globalNumElts, localNumElts, indexBase, comm);
 
   // Write to a distinct output stream, so we can read it back in again.
   out << "Writing Map to output stream" << endl;
   std::ostringstream mapOutStream;
   // The Scalar type doesn't matter, since we're just writing a Map.
-  typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<double, LO, GO> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
   writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
@@ -295,36 +285,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousNonuniformIndexBase
   TEST_EQUALITY(map.isSameAs (*inMap), true);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousNonuniformIndexBase1, LocalOrdinalType, GlobalOrdinalType, NodeType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigNonuniformIndexBase1, LO, GO )
 {
-  typedef LocalOrdinalType LO;
-  typedef GlobalOrdinalType GO;
-  typedef NodeType NT;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef Tpetra::Map<LO, GO> map_type;
 
   const bool tolerant = false;
   out << "Test: output a contiguous nonuniform Tpetra::Map (index base 1) "
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
 
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
-  const int myRank = comm->getRank();
-  const int numProcs = comm->getSize();
+  RCP<const Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
 
   // Proc 0 gets a different number of local elements, so that the Map is nonuniform.
   const size_t localNumElts = (myRank == 0) ? 11 : 10;
-  const global_size_t globalNumElts = 10 * as<global_size_t> (numProcs) + 1;
+  const GST globalNumElts = 10 * static_cast<GST> (numProcs) + 1;
   const GO indexBase = 1;
 
   out << "Creating the Map" << endl;
-  map_type map (globalNumElts, localNumElts, indexBase, comm, node);
+  map_type map (globalNumElts, localNumElts, indexBase, comm);
 
   // Write to a distinct output stream, so we can read it back in again.
   out << "Writing Map to output stream" << endl;
   std::ostringstream mapOutStream;
   // The Scalar type doesn't matter, since we're just writing a Map.
-  typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<double, LO, GO> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
   writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
@@ -343,17 +330,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousNonuniformIndexBase
   TEST_EQUALITY(map.isSameAs (*inMap), true);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase0, LocalOrdinalType, GlobalOrdinalType, NodeType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigIndexBase0, LO, GO )
 {
-  typedef LocalOrdinalType LO;
-  typedef GlobalOrdinalType GO;
-  typedef NodeType NT;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef Tpetra::Map<LO, GO> map_type;
 
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
-  const int myRank = comm->getRank();
-  const int numProcs = comm->getSize();
+  RCP<const Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
 
   const bool tolerant = false;
   out << "Test: output a noncontiguous Tpetra::Map (index base 0) "
@@ -363,7 +347,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase0, Loca
   // Just to make sure that the Map is really stored noncontiguously,
   // we only have it contain even-numbered GIDs.
   const size_t localNumElts = 10;
-  const global_size_t globalNumElts = 10 * as<global_size_t> (numProcs);
+  const GST globalNumElts = 10 * static_cast<GST> (numProcs);
   Array<GO> localGids (localNumElts);
   const GO indexBase = 0;
 
@@ -372,13 +356,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase0, Loca
     localGids[k] = localStartGid + as<GO> (2*k);
   }
   out << "Creating the Map" << endl;
-  map_type map (globalNumElts, localGids (), indexBase, comm, node);
+  map_type map (globalNumElts, localGids (), indexBase, comm);
 
   // Write to a distinct output stream, so we can read it back in again.
   out << "Writing Map to output stream" << endl;
   std::ostringstream mapOutStream;
   // The Scalar type doesn't matter, since we're just writing a Map.
-  typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<double, LO, GO> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
   writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
@@ -397,17 +381,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase0, Loca
   TEST_EQUALITY(map.isSameAs (*inMap), true);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase1, LocalOrdinalType, GlobalOrdinalType, NodeType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigIndexBase1, LO, GO )
 {
-  typedef LocalOrdinalType LO;
-  typedef GlobalOrdinalType GO;
-  typedef NodeType NT;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef Tpetra::Map<LO, GO> map_type;
 
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
-  const int myRank = comm->getRank();
-  const int numProcs = comm->getSize();
+  RCP<const Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
 
   const bool tolerant = false;
   out << "Test: output a noncontiguous Tpetra::Map (index base 1) "
@@ -417,7 +398,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase1, Loca
   // Just to make sure that the Map is really stored noncontiguously,
   // we only have it contain even-numbered GIDs.
   const size_t localNumElts = 10;
-  const global_size_t globalNumElts = 10 * as<global_size_t> (numProcs);
+  const GST globalNumElts = 10 * static_cast<GST> (numProcs);
   Array<GO> localGids (localNumElts);
   const GO indexBase = 1;
 
@@ -426,13 +407,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase1, Loca
     localGids[k] = localStartGid + as<GO> (2*k);
   }
   out << "Creating the Map" << endl;
-  map_type map (globalNumElts, localGids (), indexBase, comm, node);
+  map_type map (globalNumElts, localGids (), indexBase, comm);
 
   // Write to a distinct output stream, so we can read it back in again.
   out << "Writing Map to output stream" << endl;
   std::ostringstream mapOutStream;
   // The Scalar type doesn't matter, since we're just writing a Map.
-  typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<double, LO, GO> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
   writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
@@ -452,18 +433,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase1, Loca
 }
 
 // Noncontiguous, overlapping Map with index base 0.
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontigOvrlpngIndBase0, LocalOrdinalType, GlobalOrdinalType, NodeType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigOvrlpngIndBase0, LO, GO )
 {
-  typedef LocalOrdinalType LO;
-  typedef GlobalOrdinalType GO;
-  typedef NodeType NT;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
-  typedef Tpetra::global_size_t GST;
-
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
-  const int myRank = comm->getRank();
-  const int numProcs = comm->getSize();
+  typedef Tpetra::Map<LO, GO> map_type;
+  RCP<const Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
 
   const bool tolerant = false;
   out << "Test: output a noncontiguous, overlapping Tpetra::Map "
@@ -487,13 +463,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontigOvrlpngIndBase0, Loc
   }
 
   out << "Creating the Map" << endl;
-  map_type map (globalNumElts, localGids (), indexBase, comm, node);
+  map_type map (globalNumElts, localGids (), indexBase, comm);
 
   // Write to a distinct output stream, so we can read it back in again.
   out << "Writing Map to output stream" << endl;
   std::ostringstream mapOutStream;
   // The Scalar type doesn't matter, since we're just writing a Map.
-  typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<double, LO, GO> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
   writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
@@ -512,48 +488,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontigOvrlpngIndBase0, Loc
   TEST_EQUALITY(map.isSameAs (*inMap), true);
 }
 
-} // namespace (anonymous)
-
-
-// Unit test macro isn't smart enough to deal with namespace qualifications.
-typedef KokkosClassic::DefaultNode::DefaultNodeType the_node_type;
 
 // We instantiate tests for all combinations of the following parameters:
-// - indexBase = {0, 1}
-// - GO = {int, long}
-// - {contiguous uniform, contiguous nonuniform, noncontiguous} Map
-//
-// We should really use the Tpetra ETI system to control which GO we
-// test here, but int and long are the two most important cases.
+//   - All enabled (LO, GO) type combinations
+//   - indexBase = {0, 1}
+//   - {contiguous uniform, contiguous nonuniform, noncontiguous} Map
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, ContiguousUniformIndexBase0, int, int, the_node_type )
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, ContiguousUniformIndexBase1, int, int, the_node_type )
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, ContiguousNonuniformIndexBase0, int, int, the_node_type )
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, ContiguousNonuniformIndexBase1, int, int, the_node_type )
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, NoncontiguousIndexBase0, int, int, the_node_type )
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, NoncontiguousIndexBase1, int, int, the_node_type )
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, NoncontigOvrlpngIndBase0, int, int, the_node_type )
+#define UNIT_TEST_GROUP( LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MapOutputInput, ContigUniformIndexBase0, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MapOutputInput, ContigUniformIndexBase1, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MapOutputInput, ContigNonuniformIndexBase0, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MapOutputInput, ContigNonuniformIndexBase1, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MapOutputInput, NoncontigIndexBase0, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MapOutputInput, NoncontigIndexBase1, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MapOutputInput, NoncontigOvrlpngIndBase0, LO, GO )
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, ContiguousUniformIndexBase0, int, long, the_node_type )
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, ContiguousUniformIndexBase1, int, long, the_node_type )
+TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP )
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, ContiguousNonuniformIndexBase0, int, long, the_node_type )
+// mfh 05 Sep 2014: Must close namespace here for some reason, not
+// above the instantiations.
+} // namespace (anonymous)
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, ContiguousNonuniformIndexBase1, int, long, the_node_type )
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, NoncontiguousIndexBase0, int, long, the_node_type )
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, NoncontiguousIndexBase1, int, long, the_node_type )
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MapOutputInput, NoncontigOvrlpngIndBase0, int, long, the_node_type )
 
 #endif  //DO_COMPILATION
 

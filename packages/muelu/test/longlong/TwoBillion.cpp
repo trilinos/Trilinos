@@ -90,8 +90,7 @@ typedef double                               Scalar;
 typedef int                                  LocalOrdinal;
 typedef long long                            GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-typedef KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps LocalMatOps;
-//
+
 using Xpetra::global_size_t;
 
 int main(int argc, char *argv[]) {
@@ -139,6 +138,11 @@ int main(int argc, char *argv[]) {
 
   for(int i=0; i<num_per_proc; i++)
     mygids[i] = FIRST_GID + MyPID*num_per_proc + i;
+
+  for (int i=0; i<NumProcs; ++i) {
+    if (i==MyPID)
+      std::cout << "pid " <<  i << " : 1st GID = " << mygids[0] << std::endl;
+  }
 
   //for(int i=0;i<num_per_proc;i++)
   //  printf("[%d] mygids[%d] = %lld\n",MyPID,i,mygids[i]);
@@ -236,8 +240,8 @@ int main(int argc, char *argv[]) {
   H->IsPreconditioner(true);
 
   // Define Operator and Preconditioner
-  Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Operator object into a Belos operator
-  Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
+  Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Operator object into a Belos operator
+  Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
 
   // Construct a Belos LinearProblem object
   RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));

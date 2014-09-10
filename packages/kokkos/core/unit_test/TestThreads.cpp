@@ -47,7 +47,7 @@
 
 #if defined( KOKKOS_HAVE_PTHREAD )
 
-#include <Kokkos_Threads.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_hwloc.hpp>
 
 #include <Kokkos_View.hpp>
@@ -265,10 +265,7 @@ TEST_F( threads , scan_small )
 
 TEST_F( threads , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::Threads >( 10 );
-    TestScan< Kokkos::Threads >( 10000 );
-  }
+  TestScan< Kokkos::Threads >::test_range( 1 , 1000 );
   TestScan< Kokkos::Threads >( 1000000 );
   TestScan< Kokkos::Threads >( 10000000 );
   Kokkos::Threads::fence();

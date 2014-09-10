@@ -135,6 +135,52 @@ ENDFUNCTION()
 
 
 #
+# @FUNCTION: UNITTEST_HAS_SUBSTR_CONST()
+#
+# Check that a given string var contains the given substring and update
+# overall test statistics
+#
+# Usage::
+#
+#   UNITTEST_HAS_SUBSTR_CONST(<varName> <substr>)
+#
+# If ``${<varName>}`` contains the substring ``<substr>``, then the check
+# passes, otherwise it fails.  This prints the variable name and values and
+# shows the test result.
+#
+# This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
+# ``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used
+# by the unit test harness system to assess overall pass/fail.
+#
+FUNCTION(UNITTEST_HAS_SUBSTR_CONST VAR_NAME SUBSTR_VAL)
+
+  MATH( EXPR NUMRUN ${UNITTEST_OVERALL_NUMRUN}+1 )
+  GLOBAL_SET(UNITTEST_OVERALL_NUMRUN ${NUMRUN})
+
+  MESSAGE(
+    "\nCheck:\n"
+    "    ${VAR_NAME} =\n"
+    "    [${${VAR_NAME}}]\n"
+    "  Contains:\n"
+    "    [${SUBSTR_VAL}]"
+    )
+
+  STRING(FIND "${${VAR_NAME}}" "${SUBSTR_VAL}" SUBSTR_START_IDX)
+  #PRINT_VAR(SUBSTR_START_IDX)
+
+  IF (${SUBSTR_START_IDX} GREATER -1)
+    MESSAGE("  [PASSED]\n")
+    MATH( EXPR NUMPASSED ${UNITTEST_OVERALL_NUMPASSED}+1 )
+    GLOBAL_SET(UNITTEST_OVERALL_NUMPASSED ${NUMPASSED})
+  ELSE()
+    MESSAGE("  [FAILED]\n")
+    GLOBAL_SET(UNITTEST_OVERALL_PASS FALSE)
+  ENDIF()
+
+ENDFUNCTION()
+
+
+#
 # @FUNCTION: UNITTEST_FILE_REGEX()
 #
 # Perform a series regexes of given strings and update overall test statistics.

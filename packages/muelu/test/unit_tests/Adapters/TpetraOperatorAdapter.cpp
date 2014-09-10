@@ -70,8 +70,8 @@ namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
-  typedef MueLu::Utils<SC,LO,GO,NO,LMO> Utils;
-  typedef MueLu::TpetraOperator<SC,LO,GO,NO,LMO> TpetraOperator;
+  typedef MueLu::Utils<SC,LO,GO,NO> Utils;
+  typedef MueLu::TpetraOperator<SC,LO,GO,NO> TpetraOperator;
 
 TEUCHOS_UNIT_TEST(TpetraOperator, Apply)
 {
@@ -82,7 +82,7 @@ TEUCHOS_UNIT_TEST(TpetraOperator, Apply)
   {
     //matrix
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
+    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
     RCP<const Map > map = Op->getRowMap();
 
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST(TpetraOperator, Apply)
 
 
     // ------------- test Tpetra Operator wrapping MueLu hierarchy ------------
-    RCP<MueLu::TpetraOperator<SC,LO,GO,NO,LMO> > tH = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO,LMO>(H));
+    RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
 
     RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
     RCP<MultiVector> X1   = MultiVectorFactory::Build(Op->getRowMap(), 1);

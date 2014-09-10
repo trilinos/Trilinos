@@ -90,9 +90,14 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
+  template <class Scalar =
+              Tpetra::Operator<>::scalar_type,
+            class LocalOrdinal =
+              typename Tpetra::Operator<Scalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class RefMaxwell : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
 #undef MUELU_REFMAXWELL_SHORT
@@ -141,13 +146,13 @@ namespace MueLu {
 
     //! Constructor with matrices
     RefMaxwell(Teuchos::RCP<TCRS> SM_Matrix,
-	       Teuchos::RCP<TCRS> D0_Matrix,
-	       Teuchos::RCP<TCRS> M0inv_Matrix,
-	       Teuchos::RCP<TCRS> M1_Matrix,
-	       Teuchos::RCP<TMV>  Nullspace,
-	       Teuchos::RCP<TMV>  Coords,
-	       Teuchos::ParameterList& List,
-	       bool ComputePrec = true) :
+               Teuchos::RCP<TCRS> D0_Matrix,
+               Teuchos::RCP<TCRS> M0inv_Matrix,
+               Teuchos::RCP<TCRS> M1_Matrix,
+               Teuchos::RCP<TMV>  Nullspace,
+               Teuchos::RCP<TMV>  Coords,
+               Teuchos::ParameterList& List,
+               bool ComputePrec = true) :
       Hierarchy11_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
       parameterList_(List),
@@ -172,9 +177,9 @@ namespace MueLu {
       M1_Matrix_ = Teuchos::rcp( new XCrsWrap(M1_tmp) );
       // convert Tpetra MultiVector to Xpetra
       if(Coords != Teuchos::null)
-	Coords_ = Xpetra::toXpetra(Coords);
+        Coords_ = Xpetra::toXpetra(Coords);
       if(Nullspace != Teuchos::null)
-	Nullspace_ = Xpetra::toXpetra(Nullspace);
+        Nullspace_ = Xpetra::toXpetra(Nullspace);
       // compute preconditioner
       compute();
     }
@@ -229,20 +234,20 @@ namespace MueLu {
     //! \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
     //! \param[out] Y - Tpetra::MultiVector of dimension NumVectors containing result.
     void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-	       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-	       Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	       Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-	       Scalar beta  = Teuchos::ScalarTraits<Scalar>::one()) const;
+               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+               Teuchos::ETransp mode = Teuchos::NO_TRANS,
+               Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+               Scalar beta  = Teuchos::ScalarTraits<Scalar>::one()) const;
 
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
 
-    template <class NewNode, class NewLocalMatOps>
-    Teuchos::RCP< RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, NewNode, NewLocalMatOps> >
-    clone(const RCP<NewNode>& new_node) const {
-      return Teuchos::rcp(new RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, NewNode, NewLocalMatOps>
-			  (Hierarchy11_->template clone<NewNode,NewLocalMatOps>(new_node),
-			   Hierarchy22_->template clone<NewNode,NewLocalMatOps>(new_node)));
+    template <class NewNode>
+    Teuchos::RCP< RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
+    clone (const RCP<NewNode>& new_node) const {
+      return Teuchos::rcp (new RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, NewNode>
+                           (Hierarchy11_->template clone<NewNode> (new_node),
+                            Hierarchy22_->template clone<NewNode> (new_node)));
     }
 
   private:

@@ -16,6 +16,12 @@ ASSERT_DEFINED(Tpetra_ETI_SCALARS)
 SET(Ifpack2_ETI_SCALARS "double")
 SET(Ifpack2_ETI_GORDS   "int")
 SET(Ifpack2_ETI_LORDS   "int")
+
+IF(Tpetra_INST_INT_LONG_LONG) 
+  LIST(APPEND Ifpack2_ETI_GORDS   "long long")
+ENDIF()
+
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Trilinos
   HAVE_${PACKAGE_NAME}_Trilinos

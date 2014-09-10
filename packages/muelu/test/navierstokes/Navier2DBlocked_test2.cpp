@@ -344,11 +344,11 @@ int main(int argc, char *argv[]) {
   rebAmalgFact11->SetFactory("A", rebA11Fact);
   rebAmalgFact11->setDefaultVerbLevel(Teuchos::VERB_EXTREME);
 
-  RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface1 = rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
+  RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface1 = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
   isoInterface1->SetFactory("A", rebA11Fact);
   isoInterface1->SetFactory("UnAmalgamationInfo", rebAmalgFact11);
 
-  RCP<MueLu::RepartitionInterface<LO, GO, NO, LMO> > repInterface1 = rcp(new MueLu::RepartitionInterface<LO, GO, NO, LMO>());
+  RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface1 = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
   repInterface1->SetFactory("A", rebA11Fact);
   repInterface1->SetFactory("AmalgamatedPartition", isoInterface1);
 
@@ -372,7 +372,7 @@ int main(int argc, char *argv[]) {
   rebAmalgFact22->SetFactory("A", rebA22Fact);
   rebAmalgFact22->setDefaultVerbLevel(Teuchos::VERB_EXTREME);
 
-  RCP<MueLu::RepartitionInterface<LO, GO, NO, LMO> > repInterface2 = rcp(new MueLu::RepartitionInterface<LO, GO, NO, LMO>());
+  RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface2 = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
   repInterface2->SetFactory("A", rebA22Fact);
   repInterface2->SetFactory("AmalgamatedPartition", isoInterface1);
 

@@ -106,19 +106,19 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(Teuchos::ParameterList & paramList, std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList), blksize_(1) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MLParameterListInterpreter(Teuchos::ParameterList & paramList, std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList), blksize_(1) {
     SetParameterList(paramList);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(const std::string & xmlFileName, std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList), blksize_(1) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MLParameterListInterpreter(const std::string & xmlFileName, std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList), blksize_(1) {
     Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
     SetParameterList(*paramList);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList & paramList_in) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const Teuchos::ParameterList & paramList_in) {
     Teuchos::ParameterList paramList = paramList_in;
 
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); // TODO: use internal out (GetOStream())
@@ -294,7 +294,7 @@ namespace MueLu {
       MUELU_READ_PARAM(paramList, "repartition: min per proc",                int,                 512,       minperproc);
 
       // create "Partition"
-      Teuchos::RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface = Teuchos::rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
+      Teuchos::RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = Teuchos::rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
       isoInterface->SetFactory("A", AcFact);
 
       // Repartitioning (creates "Importer" from "Partition")
@@ -432,8 +432,8 @@ namespace MueLu {
 
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupHierarchy(Hierarchy & H) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy & H) const {
 
     // if nullspace_ has already been extracted from ML parameter list
     if (nullspace_ != NULL) {
@@ -456,8 +456,12 @@ namespace MueLu {
   }
 
   // TODO: code factorization with MueLu_ParameterListInterpreter.
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetSmootherFactory(const Teuchos::ParameterList & paramList, const RCP<FactoryBase> & AFact) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  GetSmootherFactory (const Teuchos::ParameterList & paramList,
+                      const RCP<FactoryBase> & AFact)
+  {
     std::string type = "symmetric Gauss-Seidel"; // default
 
     //
@@ -528,7 +532,10 @@ namespace MueLu {
         MUELU_COPY_PARAM(paramList, "smoother: ifpack overlap",       int, 2,  smootherParamList, "partitioner: overlap");
 
         // TODO change to TrilinosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
-        smooProto = MueLu::GetIfpackSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(ifpackType, smootherParamList, paramList.get<int>("smoother: ifpack overlap"));
+        smooProto =
+          MueLu::GetIfpackSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node> (ifpackType,
+                                                                               smootherParamList,
+                                                                               paramList.get<int> ("smoother: ifpack overlap"));
         smooProto->SetFactory("A", AFact);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");
@@ -581,20 +588,20 @@ namespace MueLu {
     return SmooFact;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddTransferFactory(const RCP<FactoryBase>& factory) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddTransferFactory(const RCP<FactoryBase>& factory) {
     // check if it's a TwoLevelFactoryBase based transfer factory
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast, "Transfer factory is not derived from TwoLevelFactoryBase. Since transfer factories will be handled by the RAPFactory they have to be derived from TwoLevelFactoryBase!");
     TransferFacts_.push_back(factory);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NumTransferFactories() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NumTransferFactories() const {
     return TransferFacts_.size();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupMatrix(Matrix & Op) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupMatrix(Matrix & Op) const {
     Op.SetFixedBlockSize(blksize_);
   }
 

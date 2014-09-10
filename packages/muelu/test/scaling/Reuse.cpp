@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
     setup_times[i-first_matrix][i-first_matrix] = timer->stop();
     timer = Teuchos::null;
 
-    Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
+    Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
     tm = Teuchos::null;
 
     // Loop over all future matrices
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
       X->putScalar(0.0);
 
       // Define Operator and Preconditioner
-      Teuchos::RCP<OP> belosOp = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(Amatvec)); // Turns a Xpetra::Matrix object into a Belos operator
+      Teuchos::RCP<OP> belosOp = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(Amatvec)); // Turns a Xpetra::Matrix object into a Belos operator
 
       // Construct a Belos LinearProblem object
       RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, rhs));

@@ -364,33 +364,71 @@ void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceI
                                  std::vector<char> & orientation)
 {
    // LOCAL element orientations are always set so that they flow in the positive
-   // direction away from the cell. As a result if the GID of
-   // node 0 is larger then node 1 then the GLOBAL orientation is -1 (and positive
-   // otherwise). The local definition of the face direction is defined by 
-   // the shards cell topology.
+   // direction away from the cell (counter clockwise rotation of the face). To determine
+   // the face orientation we use the fact that Shards (and thus the field pattern) always
+   // locally orders faces in a counter clockwise direction. A local rule for each element
+   // will take advantage of this ensuring both elements agree on the orientation. This rule
+   // is to first find the smallest node GID on the face. Then look at the GIDs of the nodes
+   // immediately preceding and following that one. If the node following has smaller GID than
+   // the preceding node then the face is oriented counter clockwise and thus the orientation
+   // is +1. If the node preceding is larger, then the orientation is clockwise and the set to
+   // a value of -1.
+
+   // this only works for 3D field patterns
+   TEUCHOS_ASSERT(fieldPattern.getDimension()==3);
 
    TEUCHOS_ASSERT(orientation.size()==std::size_t(fieldPattern.numberIds()));
 
-   int faceDim = fieldPattern.getDimension()==2 ? 1 : 2;
-
-   TEUCHOS_ASSERT(faceDim<2);
+   int faceDim = 2; 
 
    for(std::size_t f=0;f<topFaceIndices.size();f++) {
       // grab topological nodes
       const std::vector<int> & nodes = topFaceIndices[f]; 
+      std::vector<GlobalOrdinalT> globals(nodes.size());
+      for(std::size_t n=0;n<nodes.size();n++)
+         globals[n] = topology[nodes[n]]; 
+
+      typename std::vector<GlobalOrdinalT>::const_iterator itr 
+          = std::min_element(globals.begin(),globals.end()); 
+
+      TEUCHOS_TEST_FOR_EXCEPTION(itr==globals.end(),std::out_of_range,
+                                 "panzer::orientation_helpers::computeCellFaceOrientations: A face index array "
+                                 "was empty.");
 
       // extract global values of topological nodes
-      GlobalOrdinalT v0 = topology[nodes[0]];
-      GlobalOrdinalT v1 = topology[nodes[1]];
+      // The face nodes go in counter clockwise order, let v_min be the
+      // value with the minimum element then
+      //         vbefore => itr => vafter
+      // note that the nonsense with the beginning and end has to do with
+      // if this iterator was the first or last in the array
+      GlobalOrdinalT vbefore = itr==globals.begin() ? *(globals.end()-1) : *(itr-1);
+      GlobalOrdinalT vafter = (itr+1)==globals.end() ? *globals.begin() : *(itr+1);
 
-      // using simple rule make a decision about orientation
+/*
+      // sanity check in debug mode (uncomment these lines)
+      TEUCHOS_ASSERT(std::find(globals.begin(),globals.end(),vbefore)!=globals.end());
+      TEUCHOS_ASSERT(std::find(globals.begin(),globals.end(),vafter)!=globals.end());
+
+      // print out information about the found nodes and also what 
+      // order they were in originally
+      std::cout << "\nFace Order = ";
+      for(std::size_t l=0;l<globals.size();l++)
+         std::cout << globals[l] << " ";
+      std::cout << std::endl;
+      std::cout << "(before,min,after) " << f << ": " << vbefore << " => " << *itr << " => " << vafter << std::endl;
+*/
+
+      // note by assumption
+      // vbefore < *itr  and *itr < vafter
+
+      // Based on the next lowest global id starting from the minimum
       char faceOrientation = 1; 
-      if(v1>v0)
-         faceOrientation = 1; 
-      else if(v0>v1)
+      if(vafter>vbefore) // means smaller in clockwise direction
          faceOrientation = -1; 
+      else if(vbefore>vafter) // means smaller in counter clockwise direction
+         faceOrientation = 1; 
       else
-      { TEUCHOS_ASSERT(false); }
+      { TEUCHOS_ASSERT(false); } // we got an equality somehow!
       
       // grab faceIndices to be set to compute orientation
       const std::vector<int> & faceIndices = fieldPattern.getSubcellIndices(faceDim,f);

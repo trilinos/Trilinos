@@ -48,7 +48,7 @@
 //#define KOKKOS_ATOMICS_USE_OMP31
 #include <Kokkos_Atomic.hpp>
 
-#include <Kokkos_OpenMP.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_hwloc.hpp>
 
 #include <Kokkos_View.hpp>
@@ -231,10 +231,7 @@ TEST_F( openmp , view_aggregate )
 
 TEST_F( openmp , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::OpenMP >( 10 );
-    TestScan< Kokkos::OpenMP >( 10000 );
-  }
+  TestScan< Kokkos::OpenMP >::test_range( 1 , 1000 );
   TestScan< Kokkos::OpenMP >( 1000000 );
   TestScan< Kokkos::OpenMP >( 10000000 );
   Kokkos::OpenMP::fence();

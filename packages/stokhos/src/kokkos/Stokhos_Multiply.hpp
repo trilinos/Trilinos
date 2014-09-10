@@ -44,6 +44,7 @@
 
 #include "Kokkos_Pair.hpp"
 #include "Kokkos_Cuda.hpp"
+#include <vector> // for std::vector (needed below)
 
 namespace Stokhos {
 

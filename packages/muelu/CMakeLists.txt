@@ -89,7 +89,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
 # Explicit instantiation options:
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # - MueLu_INST_DOUBLE_INT_INT         (= ON by default)
-# - MueLu_INST_DOUBLE_INT_LONGLONGINT (= OFF by default. Only works if N by default if Tpetra_ENABLE_EXPLICIT_INSTANTIATION=OFF). Previously, was ON by default if TEUCHOS_ENABLE_LONG_LONG_INT enabled but it does not work if Tpetra_ENABLE_EXPLICIT_INSTANTIATION=ON as Tpetra does not explicitly instantiate on long long int
+# - MueLu_INST_DOUBLE_INT_LONGLONGINT (= ON by default if TEUCHOS_ENABLE_LONG_LONG_INT enabled)
 # - MueLu_INST_COMPLEX_INT_INT        (= ON by default if TEUCHOS_ENABLE_COMPLEX enabled)       TODO: we also need to check Tpetra_COMPLEX if EI of Tpetra=ON
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
@@ -108,11 +108,11 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 
   # <double, int, long long int>
-#  IF(Teuchos_ENABLE_LONG_LONG_INT)
-#    SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT_DEFAULT ON)
-#  ELSE()
+  IF(Teuchos_ENABLE_LONG_LONG_INT)
+    SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT_DEFAULT ON)
+  ELSE()
     SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT_DEFAULT OFF)
-#  ENDIF()
+  ENDIF()
   TRIBITS_ADD_OPTION_AND_DEFINE(
     ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT
     HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGLONGINT
@@ -121,18 +121,22 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     )
 
   # <complex, int, int>
-# Teuchos_ENABLE_COMPLEX is ON by default (in release mode or when SS is enabled) but we don't want MueLu to be instantiated explicitly with complex by default as it is not frequently used.
-#  IF(Teuchos_ENABLE_COMPLEX)
-#    SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT ON)
-#  ELSE()
+  # Teuchos_ENABLE_COMPLEX is ON by default (in release mode or when SS is enabled) but we don't want MueLu to be instantiated explicitly with complex by default as it is not frequently used.
+  #  IF(Teuchos_ENABLE_COMPLEX)
+  #    SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT ON)
+  #  ELSE()
     SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT OFF)
-#  ENDIF()
+  #  ENDIF()
   TRIBITS_ADD_OPTION_AND_DEFINE(
     ${PACKAGE_NAME}_INST_COMPLEX_INT_INT
     HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT
     "Enable the use of explicit template instantiation with <complex, int, int>."
     ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT}
     )
+  MESSAGE(STATUS "${PACKAGE_NAME} ETI support enabled")
+  MESSAGE(STATUS "<double,  int, int>       : ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT}")
+  MESSAGE(STATUS "<double,  int, long long> : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT}")
+  MESSAGE(STATUS "<complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
 
 ENDIF()
 

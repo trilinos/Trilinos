@@ -66,15 +66,15 @@
 
 namespace MueLu {
 
- template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Zoltan2Interface() {
+ template <class LocalOrdinal, class GlobalOrdinal, class Node>
+ Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node>::Zoltan2Interface() {
     defaultZoltan2Params = rcp(new ParameterList());
     defaultZoltan2Params->set("algorithm",             "multijagged");
     defaultZoltan2Params->set("partitioning_approach", "partition");
  }
 
- template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+ template <class LocalOrdinal, class GlobalOrdinal, class Node>
+ RCP<const ParameterList> Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >   ("A",                      Teuchos::null, "Factory of the matrix A");
@@ -86,14 +86,14 @@ namespace MueLu {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& level) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");

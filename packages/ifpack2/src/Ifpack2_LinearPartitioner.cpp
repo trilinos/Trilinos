@@ -53,8 +53,7 @@ namespace Ifpack2 {
 
   #define LCLINST(LO,GO) \
           IFPACK2_INST_GRAPH(LinearPartitioner,LO,GO) \
-          template class LinearPartitioner< Tpetra::RowGraph<LO,GO,     \
-               KokkosClassic::DefaultNode::DefaultNodeType > >;
+          template class LinearPartitioner<Tpetra::RowGraph<LO,GO> >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 

@@ -41,4 +41,4 @@
 //@HEADER
 */
 
-#include "TestDefaultDeviceType.cpp"
+//#include "TestDefaultDeviceType.cpp"

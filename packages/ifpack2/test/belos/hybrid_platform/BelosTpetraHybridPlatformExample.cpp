@@ -245,8 +245,8 @@ int main(int argc, char*argv[])
 namespace Ifpack2 {
 
   // use the Tpetra macros, because they are node-aware
-  #define LCLINST(S,LO,GO,N) \
-          template class Diagonal<Tpetra::CrsMatrix<S,LO,GO,N,KokkosClassic::DefaultKernels<S,LO,N>::SparseOps> >;
+#define LCLINST(S,LO,GO,N) \
+  template class Diagonal<Tpetra::CrsMatrix<S,LO,GO,N> >;
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

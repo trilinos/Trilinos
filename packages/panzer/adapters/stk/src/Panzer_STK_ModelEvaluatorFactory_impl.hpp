@@ -179,6 +179,7 @@ namespace panzer_stk_classic {
 	p.set<bool>("Use DOFManager FEI",false);
 	p.set<bool>("Load Balance DOFs",false);
 	p.set<bool>("Use Tpetra",false);
+	p.set<bool>("Lump Explicit Mass",false);
 	p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
@@ -1013,8 +1014,11 @@ namespace panzer_stk_classic {
       // if you are using explicit RK, make sure to wrap the ME in an explicit model evaluator decorator
       Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > rythmos_me = thyra_me;
       const std::string stepper_type = piro_params->sublist("Rythmos").get<std::string>("Stepper Type");
-      if(stepper_type=="Explicit RK" || stepper_type=="Forward Euler")
-        rythmos_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,false)); 
+      if(stepper_type=="Explicit RK" || stepper_type=="Forward Euler") {
+        const Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
+        bool lumpExplicitMass = assembly_params.get<bool>("Lump Explicit Mass");
+        rythmos_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,lumpExplicitMass)); 
+      }
 
       piro_rythmos->initialize(piro_params, rythmos_me, rythmos_observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory));
 
@@ -1177,8 +1181,11 @@ namespace panzer_stk_classic {
       thyra_me->getNominalValues() = nomVals;
   
       // build an explicit model evaluator
-      if(is_explicit)
-        thyra_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,false)); 
+      if(is_explicit) {
+        const Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
+        bool lumpExplicitMass = assembly_params.get<bool>("Lump Explicit Mass");
+        thyra_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,lumpExplicitMass)); 
+      }
   
       return thyra_me;
     }

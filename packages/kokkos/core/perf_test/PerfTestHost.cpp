@@ -43,7 +43,7 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_View.hpp>
 #include <Kokkos_hwloc.hpp>
 

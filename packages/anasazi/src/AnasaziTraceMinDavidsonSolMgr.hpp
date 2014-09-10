@@ -176,7 +176,7 @@ TraceMinDavidsonSolMgr<ScalarType,MV,OP>::TraceMinDavidsonSolMgr( const Teuchos:
   TEUCHOS_TEST_FOR_EXCEPTION(this->blockSize_ <= 0, std::invalid_argument,
          "Anasazi::TraceMinDavidsonSolMgr::constructor(): \"Block Size\" must be strictly positive.");
 
-  this->numRestartBlocks_ = std::ceil(this->problem_->getNEV() / this->blockSize_);
+  this->numRestartBlocks_ = (int)std::ceil(this->problem_->getNEV() / this->blockSize_);
   this->numRestartBlocks_ = pl.get("Num Restart Blocks", this->numRestartBlocks_);
   TEUCHOS_TEST_FOR_EXCEPTION(this->numRestartBlocks_ <= 0, std::invalid_argument,
          "Anasazi::TraceMinDavidsonSolMgr::constructor(): \"Num Restart Blocks\" must be strictly positive.");

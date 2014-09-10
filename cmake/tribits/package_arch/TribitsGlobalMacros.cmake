@@ -46,6 +46,7 @@ INCLUDE(TribitsAdjustPackageEnables)
 INCLUDE(TribitsSetupMPI)
 INCLUDE(TribitsTestCategories)
 INCLUDE(TribitsGeneralMacros)
+INCLUDE(TribitsAddTestHelpers)
 
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(AdvancedOption)
@@ -92,6 +93,7 @@ MACRO(TRIBITS_ASSERT_AND_SETUP_PROJECT_AND_STATIC_SYSTEM_VARS)
   SET(PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
   PRINT_VAR(PROJECT_SOURCE_DIR)
   PRINT_VAR(PROJECT_BINARY_DIR)
+  PRINT_VAR(${PROJECT_NAME}_TRIBITS_DIR)
   # Above, we put these in the cache so we can grep them out of the cache file
   
   #
@@ -112,7 +114,7 @@ ENDMACRO()
 MACRO(TRIBITS_SETUP_BASIC_SYSTEM_VARS)
 
   # CMAKE_HOST_SYSTEM_NAME is provided by CMake automatically but can actually
-  # be overridded in the cache.
+  # be overridden in the cache.
   PRINT_VAR(CMAKE_HOST_SYSTEM_NAME)
   
   SITE_NAME(${PROJECT_NAME}_HOSTNAME)
@@ -300,27 +302,22 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   IF ("${CMAKE_VERSION}" VERSION_GREATER "2.8.4")
     #MESSAGE("This is CMake 2.8.5!")
     ADVANCED_SET(${PROJECT_NAME}_LINK_SEARCH_START_STATIC OFF CACHE BOOL
-      "If on, then the properter LINK_SEARCH_START_STATIC will be added to all executables." )
+      "If on, then the property LINK_SEARCH_START_STATIC will be added to all executables." )
   ENDIF()
 
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
-    CACHE PATH
-    "Location where the headers will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'include'"
+  ADVANCED_SET(${PROJECT_NAME}_LIBRARY_NAME_PREFIX ""
+    CACHE STRING
+    "Prefix for all ${PROJECT_NAME} library names. If set to, for example, 'prefix_',
+    libraries will be named and installed as 'prefix_<libname>.*'.  Default is '' (no prefix)."
     )
 
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIB_DIR "lib"
-    CACHE PATH
-    "Location where the libraries will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'lib'"
-    )
-
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR "bin"
-    CACHE PATH
-    "Location where the runtime DLLs and designated programs will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
-    )
-
-  ADVANCED_SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR "example"
-    CACHE PATH
-    "Location where assorted examples will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'example'"
+  IF ("${${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT FALSE)  # Maintain backward compatibility
+  ENDIF()
+  ADVANCED_SET( ${PROJECT_NAME}_USE_GNUINSTALLDIRS
+    ${${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT}
+    CACHE BOOL
+    "If set to TRUE, then CMake GNUInstallDris modules is used to pick standard install paths by default."
     )
 
   IF ("${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}" STREQUAL "")
@@ -333,7 +330,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     CACHE BOOL
     "Install libraries and headers (default is ${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}).  NOTE: Shared libraries are always installed since they are needed by executables."
     )
-  
+
   IF ("${${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT}" STREQUAL "")
     IF(WIN32 AND NOT CYGWIN)
       SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
@@ -373,12 +370,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ENDIF()
   ADVANCED_SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES
      ${${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT} CACHE BOOL
-    "Generate packages dependency data-structures needed for depenency export files." )
+    "Generate packages dependency data-structures needed for dependency export files." )
 
   # ${PROJECT_NAME}_ELEVATE_SS_TO_PS is depreciated!
   IF (${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT)
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("-- " "WARNING: ${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT is depricated."
+      MESSAGE("-- " "WARNING: ${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT is deprecated."
         "  Use ${PROJECT_NAME}_ELEVATE_ST_TO_PT_DEFAULT instead!")
     ENDIF()
     SET(${PROJECT_NAME}_ELEVATE_ST_TO_PT_DEFAULT ON)
@@ -398,7 +395,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_CPACK_PACKAGING
      ${${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT}
      CACHE BOOL
-    "Eanble support for creating a distribution using CPack" )
+    "Enable support for creating a distribution using CPack" )
 
   IF ("${${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT TRUE)
@@ -423,6 +420,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
 
   ADVANCED_SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE OFF CACHE BOOL
     "Generate a <ProjectName>RepoVersion.txt file.")
+  
+  ADVANCED_SET(${PROJECT_NAME}_SCALE_TEST_TIMEOUT 1.0 CACHE STRING
+    "Scale factor for global DART_TESTING_TIMEOUT and individual test TIMEOUT (default 1.0)."
+    )
+  # NOTE: This value is 1.0, *NOT* 1!  This is used in TRIBITS_SCALE_TIMEOUT()
+  # and there are unit tests that rely on this default!
 
   ADVANCED_SET(${PROJECT_NAME}_REL_CPU_SPEED 1.0 CACHE STRING
     "Relative CPU speed of the computer used to scale performance tests (default 1.0)."
@@ -536,13 +539,13 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ADVANCED_SET(${PROJECT_NAME}_EXTRAREPOS_FILE
     "${${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT}"
     CACHE FILENAME
-    "File contining the list of extra repositories containing add-on packages to process")
+    "File containing the list of extra repositories containing add-on packages to process")
   #PRINT_VAR(${PROJECT_NAME}_EXTRAREPOS_FILE)
 
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
     ""
     CACHE STRING
-    "Type of testing to pull in extra respositories (Continuous, or Nightly)" )
+    "Type of testing to pull in extra repositories (Continuous, or Nightly)" )
 
   ADVANCED_SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES
     FALSE CACHE BOOL
@@ -584,11 +587,11 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     )
   
   ADVANCED_OPTION(${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
-    "Shortcircut after dependency handling is complete"
+    "Short-circuit after dependency handling is complete"
     OFF )
   
   ADVANCED_OPTION(${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY
-    "Only trace dependnecy handling.  Don't configure to build anything!"
+    "Only trace dependency handling.  Don't configure to build anything!"
     OFF )
 
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING
@@ -602,6 +605,71 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   MARK_AS_ADVANCED(LIBRARY_OUTPUT_PATH)
   MARK_AS_ADVANCED(CMAKE_OSX_ARCHITECTURES)
   MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
+
+ENDMACRO()
+
+
+MACRO(TRIBITS_SETUP_INSTALLATION_PATHS)
+
+  #
+  # A) Determine if we are going to be using default paths from GNUInstallDirs module
+  #
+
+  SET(TRIBITS_USE_GNUINSTALLDIRS TRUE)
+
+  IF (CMAKE_VERSION VERSION_LESS "2.8.5")
+    SET(TRIBITS_USE_GNUINSTALLDIRS FALSE)
+  ENDIF()
+
+  IF (NOT ${PROJECT_NAME}_USE_GNUINSTALLDIRS)
+    # For backward compatibility and unit testing
+    SET(TRIBITS_USE_GNUINSTALLDIRS FALSE)
+  ENDIF()
+
+  #
+  # B) Pick the defaults for the install dirs
+  #
+
+  IF (TRIBITS_USE_GNUINSTALLDIRS)
+    INCLUDE(GNUInstallDirs)
+    SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR_DEFAULT ${CMAKE_INSTALL_INCLUDEDIR})
+    SET(${PROJECT_NAME}_INSTALL_LIB_DIR_DEFAULT ${CMAKE_INSTALL_LIBDIR})
+    SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR_DEFAULT ${CMAKE_INSTALL_BINDIR})
+    SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR_DEFAULT "example")
+  ELSE()
+    SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR_DEFAULT "include")
+    SET(${PROJECT_NAME}_INSTALL_LIB_DIR_DEFAULT "lib")
+    SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR_DEFAULT "bin")
+    SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR_DEFAULT "example")
+  ENDIF()
+
+  #
+  # C) Set the cache varibles for the install dirs
+  #
+
+  ADVANCED_SET( ${PROJECT_NAME}_INSTALL_INCLUDE_DIR
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR_DEFAULT}
+    CACHE PATH
+    "Location where the headers will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'include'"
+    )
+
+  ADVANCED_SET( ${PROJECT_NAME}_INSTALL_LIB_DIR
+    ${${PROJECT_NAME}_INSTALL_LIB_DIR_DEFAULT}
+    CACHE PATH
+    "Location where the libraries will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'lib'"
+    )
+
+  ADVANCED_SET( ${PROJECT_NAME}_INSTALL_RUNTIME_DIR
+    ${${PROJECT_NAME}_INSTALL_RUNTIME_DIR_DEFAULT}
+    CACHE PATH
+    "Location where the runtime DLLs and designated programs will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
+    )
+
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR
+    ${${PROJECT_NAME}_INSTALL_EXAMPLE_DIR_DEFAULT}
+    CACHE PATH
+    "Location where assorted examples will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'example'"
+    )
 
 ENDMACRO()
 
@@ -1775,6 +1843,24 @@ ENDMACRO()
 
 
 #
+# Macro to turn on CTest support
+#
+
+MACRO(TRIBITS_INCLUDE_CTEST_SUPPORT)
+  IF (DART_TESTING_TIMEOUT)
+    SET(DART_TESTING_TIMEOUT_IN ${DART_TESTING_TIMEOUT})
+    TRIBITS_SCALE_TIMEOUT(${DART_TESTING_TIMEOUT} DART_TESTING_TIMEOUT)
+    IF (NOT DART_TESTING_TIMEOUT STREQUAL DART_TESTING_TIMEOUT_IN)
+     MESSAGE("-- DART_TESTING_TIMEOUT=${DART_TESTING_TIMEOUT_IN} being scaled by ${PROJECT_NAME}_SCALE_TEST_TIMEOUT=${${PROJECT_NAME}_SCALE_TEST_TIMEOUT} to ${DART_TESTING_TIMEOUT}")
+    ENDIF()
+  ENDIF()
+  INCLUDE(CTest)
+  TRIBITS_CONFIGURE_CTEST_CUSTOM(${${PROJECT_NAME}_BINARY_DIR})
+ENDMACRO()
+
+
+
+#
 # Function that determines if a package should be processed
 #
 
@@ -1887,13 +1973,15 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
       SET(INSTALL_HEADERS OFF)
     ENDIF()
 
-    IF (INSTALL_HEADERS)
+    IF (INSTALL_HEADERS AND NOT ${REPOSITORY_NAME}_INSTALLED_REPO_VERSION_HEADER_FILE)
       # Install version header file
       INSTALL(
         FILES ${OUTPUT_VERSION_HEADER_FILE}
         DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
         COMPONENT ${PROJECT_NAME}
         )
+      SET(${REPOSITORY_NAME}_INSTALLED_REPO_VERSION_HEADER_FILE TRUE
+        CACHE INTERNAL "" FORCE )
     ENDIF()
 
   ENDIF()
@@ -1912,6 +2000,8 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES)
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       MESSAGE("Considering configuring version file for '${REPO_NAME}'")
     ENDIF()
+    SET(${REPOSITORY_NAME}_INSTALLED_REPO_VERSION_HEADER_FILE FALSE
+      CACHE INTERNAL "" FORCE )
     TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE( ${REPO_NAME} ${REPO_DIR}
       "${${PROJECT_NAME}_BINARY_DIR}/${REPO_DIR}/${REPO_NAME}_version.h")
   ENDFOREACH()

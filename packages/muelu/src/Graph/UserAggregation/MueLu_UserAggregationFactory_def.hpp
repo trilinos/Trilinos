@@ -61,8 +61,8 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     // input parameters
@@ -72,8 +72,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const { }
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const { }
 
   /**
    * The function reads aggregate information from a file.
@@ -81,8 +81,8 @@ namespace MueLu {
    *  * line 1 : <number of aggregates>
    *  * line 2+: <aggregate size> <node 1 (root node) GID> <node 2 GID> ... <node last GID>
    */
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& currentLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     const ParameterList& pL = GetParameterList();

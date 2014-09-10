@@ -95,13 +95,13 @@ namespace Kokkos {
  *
  * Template argument permutations:
  *   - View< DataType , void         , void         , void >
- *   - View< DataType , Device       , void         , void >
- *   - View< DataType , Device       , MemoryTraits , void >
- *   - View< DataType , Device       , void         , MemoryTraits >
+ *   - View< DataType , Space        , void         , void >
+ *   - View< DataType , Space        , MemoryTraits , void >
+ *   - View< DataType , Space        , void         , MemoryTraits >
  *   - View< DataType , ArrayLayout  , void         , void >
- *   - View< DataType , ArrayLayout  , Device       , void >
+ *   - View< DataType , ArrayLayout  , Space        , void >
  *   - View< DataType , ArrayLayout  , MemoryTraits , void   >
- *   - View< DataType , ArrayLayout  , Device       , MemoryTraits >
+ *   - View< DataType , ArrayLayout  , Space        , MemoryTraits >
  *   - View< DataType , MemoryTraits , void         , void  >
  */
 
@@ -112,9 +112,9 @@ template< class DataType ,
 class ViewTraits {
 private:
 
-  // Layout, Device, and MemoryTraits are optional
+  // Layout, Space, and MemoryTraits are optional
   // but need to appear in that order. That means Layout
-  // can only be Arg1, Device can be Arg1 or Arg2, and
+  // can only be Arg1, Space can be Arg1 or Arg2, and
   // MemoryTraits can be Arg1, Arg2 or Arg3
 
   enum { Arg1IsLayout = Impl::is_layout<Arg1>::value };
@@ -378,11 +378,11 @@ const ViewWithoutManaging view_without_managing = ViewWithoutManaging();
  * they may occur.
  *
  * Valid ways in which template arguments may be specified:
- *   - View< DataType , Device >
- *   - View< DataType , Device ,        MemoryTraits >
- *   - View< DataType , Device , void , MemoryTraits >
- *   - View< DataType , Layout , Device >
- *   - View< DataType , Layout , Device , MemoryTraits >
+ *   - View< DataType , Space >
+ *   - View< DataType , Space  ,         MemoryTraits >
+ *   - View< DataType , Space  , void  , MemoryTraits >
+ *   - View< DataType , Layout , Space >
+ *   - View< DataType , Layout , Space , MemoryTraits >
  *
  * \tparam DataType (required) This indicates both the type of each
  *   entry of the array, and the combination of compile-time and
@@ -394,14 +394,14 @@ const ViewWithoutManaging view_without_managing = ViewWithoutManaging();
  *   first, followed by zero or more compile-time dimensions.  For
  *   more examples, please refer to the tutorial materials.
  *
- * \tparam Device (required) The execution model for parallel
+ * \tparam Space (required) The execution model for parallel
  *   operations.  Examples include Threads, OpenMP, Cuda, and Serial.
  *
  * \tparam Layout (optional) The array's layout in memory.  For
  *   example, LayoutLeft indicates a column-major (Fortran style)
  *   layout, and LayoutRight a row-major (C style) layout.  If not
  *   specified, this defaults to the preferred layout for the
- *   <tt>Device</tt>.
+ *   <tt>Space</tt>.
  *
  * \tparam MemoryTraits (optional) Assertion of the user's intended
  *   access behavior.  For example, RandomAccess indicates read-only
@@ -411,10 +411,10 @@ const ViewWithoutManaging view_without_managing = ViewWithoutManaging();
  *
  * \section Kokkos_View_MT MemoryTraits discussion
  *
- * \subsection Kokkos_View_MT_Interp MemoryTraits interpretation depends on Device
+ * \subsection Kokkos_View_MT_Interp MemoryTraits interpretation depends on Space
  *
  * Some \c MemoryTraits options may have different interpretations for
- * different \c Device types.  For example, with the Cuda device,
+ * different \c Space types.  For example, with the Cuda device,
  * \c RandomAccess tells Kokkos to fetch the data through the texture
  * cache, whereas the non-GPU devices have no such hardware construct.
  *
@@ -441,8 +441,8 @@ const ViewWithoutManaging view_without_managing = ViewWithoutManaging();
  * \endcode
  */
 template< class DataType ,
-          class Arg1Type = void , /* ArrayLayout, DeviceType or MemoryTraits*/
-          class Arg2Type = void , /* DeviceType or MemoryTraits */
+          class Arg1Type = void , /* ArrayLayout, SpaceType or MemoryTraits*/
+          class Arg2Type = void , /* SpaceType or MemoryTraits */
           class Arg3Type = void , /* MemoryTraits */
           class Specialize =
             typename ViewTraits<DataType,Arg1Type,Arg2Type,Arg3Type>::specialize >
@@ -759,7 +759,7 @@ public:
     }
 
   //------------------------------------
-  // Assign unmanaged View to portion of Device shared memory
+  // Assign unmanaged View to portion of execution space's shared memory
 
   typedef Impl::if_c< ! traits::is_managed ,
                       const typename traits::device_type::scratch_memory_space & ,

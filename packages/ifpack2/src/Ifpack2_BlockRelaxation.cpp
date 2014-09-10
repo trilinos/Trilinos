@@ -54,7 +54,7 @@
 // NOTE (mfh 24 May 2014) For some reason unbeknownst to me, all of
 // these explicit instantiations must be put on one line.  Otherwise,
 // the compiler silently ignores them and generates no symbols.
-#define LCLINST( S, LO, GO ) template class BlockRelaxation<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType>, SparseContainer<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType>, ILUT<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > > >; template class BlockRelaxation<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType>, DenseContainer<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType>, S > >;
+#define LCLINST( S, LO, GO ) template class BlockRelaxation<Tpetra::CrsMatrix<S, LO, GO>, SparseContainer<Tpetra::CrsMatrix<S, LO, GO>, ILUT<Tpetra::CrsMatrix<S, LO, GO> > > >; template class BlockRelaxation<Tpetra::CrsMatrix<S, LO, GO>, DenseContainer<Tpetra::CrsMatrix<S, LO, GO>, S > >; template class BlockRelaxation<Tpetra::RowMatrix<S, LO, GO>, SparseContainer<Tpetra::RowMatrix<S, LO, GO>, ILUT<Tpetra::RowMatrix<S, LO, GO> > > >; template class BlockRelaxation<Tpetra::RowMatrix<S, LO, GO>, DenseContainer<Tpetra::RowMatrix<S, LO, GO>, S > >;
 
 namespace Ifpack2 {
 
@@ -70,6 +70,10 @@ namespace Ifpack2 {
   template class BlockRelaxation<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, SparseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > > >;
 
   template class BlockRelaxation<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, DenseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, double > >;
+
+  template class BlockRelaxation<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, SparseContainer<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, ILUT<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> > > >;
+
+  template class BlockRelaxation<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, DenseContainer<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, double > >;
 
 #  endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
 

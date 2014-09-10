@@ -65,7 +65,6 @@ ASSERT_DEFINED(
   )
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
   APPEND_SET(SOURCES Adapters/TpetraOperatorAdapter.cpp)
-  APPEND_SET(SOURCES Adapters/CreatePreconditioner.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
@@ -132,6 +131,8 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
   ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+
+    APPEND_SET(SOURCES Adapters/CreatePreconditioner.cpp)
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTpetra_cp
       SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters

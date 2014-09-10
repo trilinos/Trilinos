@@ -68,8 +68,8 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for coordinates");
@@ -81,8 +81,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
   }
@@ -131,8 +131,8 @@ namespace MueLu {
   //   - Break the link between maps in TentativePFactory, allowing any maps in Aggregates
   //   - Allow Aggregates to construct their own maps, if necessary, OR
   //   - construct aggregates based on row map
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     const ParameterList& pL = GetParameterList();
@@ -256,8 +256,8 @@ namespace MueLu {
     GetOStream(Statistics0) << aggregates->description() << std::endl;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<MultiVector>& coords, const RCP<const Map>& map) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<MultiVector>& coords, const RCP<const Map>& map) const {
     nDim_ = coords->getNumVectors();
 
     x_    = coords->getData(0);
@@ -286,8 +286,12 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<typename BrickAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::container> BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const Scalar>& x) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<typename BrickAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::container>
+  BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Construct1DMap (const RCP<const Teuchos::Comm<int> >& comm,
+                  const ArrayRCP<const Scalar>& x) const
+  {
     int n = x.size();
 
     // Step 1: Create a local vector with unique coordinate points
@@ -333,8 +337,8 @@ namespace MueLu {
     return gMap;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::isRoot(LocalOrdinal LID) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isRoot(LocalOrdinal LID) const {
     int i = (*xMap_)[x_[LID]];
     int j = (*yMap_)[y_[LID]];
     int k = 0;
@@ -344,8 +348,8 @@ namespace MueLu {
     return (k*ny_*nx_ + j*nx_ + i) == getRoot(LID);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::getRoot(LocalOrdinal LID) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRoot(LocalOrdinal LID) const {
     int i = ((*xMap_)[x_[LID]]/bx_)*bx_ + (bx_-1)/2;
     int j = ((*yMap_)[y_[LID]]/by_)*by_ + (by_-1)/2;
     int k = 0;
@@ -360,8 +364,8 @@ namespace MueLu {
     return k*ny_*nx_ + j*nx_ + i;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::getAggGID(LocalOrdinal LID) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getAggGID(LocalOrdinal LID) const {
     int naggx = nx_/bx_ + (nx_ % bx_ ? 1 : 0), i = (*xMap_)[x_[LID]]/bx_;
     int naggy = ny_/by_ + (ny_ % by_ ? 1 : 0), j = (*yMap_)[y_[LID]]/by_;
     int                                        k = 0;

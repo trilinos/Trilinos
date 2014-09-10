@@ -47,23 +47,26 @@
 #define XPETRA_MAPFACTORY_HPP
 
 #include "Xpetra_ConfigDefs.hpp"
-
 #include "Xpetra_Map.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
-#include "Xpetra_TpetraMap.hpp"
+#  include "Xpetra_TpetraMap.hpp"
 #endif
 #ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraMap.hpp"
+#  include "Xpetra_EpetraMap.hpp"
 #endif
 
 #include "Xpetra_Exceptions.hpp"
 
-// This factory creates Xpetra::Map. User have to specify the exact class of object that he want to create (ie: a Xpetra::TpetraMap or a Xpetra::EpetraMap).
-
 namespace Xpetra {
-
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  /// \class MapFactory
+  /// \brief Create an Xpetra::Map instance.
+  ///
+  /// Users must specify the exact class of the object that they want
+  /// to create (either an Xpetra::TpetraMap or an Xpetra::EpetraMap).
+  template <class LocalOrdinal = Map<>::local_ordinal_type,
+            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
+            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
   class MapFactory {
 
   private:
@@ -71,18 +74,26 @@ namespace Xpetra {
     MapFactory() {}
 
   public:
-
     static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
+      // Workaround function for a deferred visual studio bug
+      //
+      // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
+      //
+      // Use this function for default arguments rather than calling
+      // what is the return value below.  Also helps in reducing
+      // duplication in various constructors.
+      return KokkosClassic::Details::getNode<Node>();
     }
 
     //! Map constructor with Xpetra-defined contiguous uniform distribution.
-    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalGlobal lg=Xpetra::GloballyDistributed, const Teuchos::RCP<Node> &node = defaultArgNode()) {
+    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
+    Build (UnderlyingLib lib,
+           global_size_t numGlobalElements,
+           GlobalOrdinal indexBase,
+           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+           LocalGlobal lg = Xpetra::GloballyDistributed,
+           const Teuchos::RCP<Node> &node = defaultArgNode ())
+    {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -95,7 +106,14 @@ namespace Xpetra {
     }
 
     //! Map constructor with a user-defined contiguous distribution.
-    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = defaultArgNode()) {
+    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
+    Build (UnderlyingLib lib,
+           global_size_t numGlobalElements,
+           size_t numLocalElements,
+           GlobalOrdinal indexBase,
+           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+           const Teuchos::RCP<Node> &node = defaultArgNode ())
+    {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -108,7 +126,14 @@ namespace Xpetra {
     }
 
     //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
-    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = defaultArgNode()) {
+    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
+    Build (UnderlyingLib lib,
+           global_size_t numGlobalElements,
+           const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
+           GlobalOrdinal indexBase,
+           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+           const Teuchos::RCP<Node> &node = defaultArgNode ())
+    {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -121,7 +146,10 @@ namespace Xpetra {
     }
 
     //! Map constructor transforming degrees of freedom
-    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map, LocalOrdinal numDofPerNode) {
+    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
+    Build (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+           LocalOrdinal numDofPerNode)
+    {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -141,7 +169,10 @@ namespace Xpetra {
 
     //! Create a locally replicated Map with the default node.
     static Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal, Node> >
-    createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+    createLocalMap (UnderlyingLib lib,
+                    size_t numElements,
+                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
+    {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -155,8 +186,12 @@ namespace Xpetra {
 
     //! Create a locally replicated Map with a specified node.
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
-    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
-       XPETRA_MONITOR("MapFactory::Build");
+    createLocalMapWithNode (UnderlyingLib lib,
+                            size_t numElements,
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
+                            const Teuchos::RCP< Node > &node)
+    {
+      XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -169,9 +204,12 @@ namespace Xpetra {
 
     //! Create a uniform, contiguous Map with a user-specified node.
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
-    createUniformContigMapWithNode(UnderlyingLib lib, global_size_t numElements,
-                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
-       XPETRA_MONITOR("MapFactory::Build");
+    createUniformContigMapWithNode (UnderlyingLib lib,
+                                    global_size_t numElements,
+                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
+                                    const Teuchos::RCP< Node > &node)
+    {
+      XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -184,8 +222,11 @@ namespace Xpetra {
 
     //! Create a uniform, contiguous Map with the default node.
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node> >
-    createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
-       XPETRA_MONITOR("MapFactory::Build");
+    createUniformContigMap (UnderlyingLib lib,
+                            global_size_t numElements,
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
+    {
+      XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -198,8 +239,12 @@ namespace Xpetra {
 
     //! Create a (potentially) non-uniform, contiguous Map with the default node.
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
-    createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
-       XPETRA_MONITOR("MapFactory::Build");
+    createContigMap (UnderlyingLib lib,
+                     global_size_t numElements,
+                     size_t localNumElements,
+                     const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
+    {
+      XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -212,9 +257,13 @@ namespace Xpetra {
 
     //! Create a (potentially) non-uniform, contiguous Map with a user-specified node.
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
-    createContigMapWithNode(UnderlyingLib lib, global_size_t numElements, size_t localNumElements,
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
-       XPETRA_MONITOR("MapFactory::Build");
+    createContigMapWithNode (UnderlyingLib lib,
+                             global_size_t numElements,
+                             size_t localNumElements,
+                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
+                             const Teuchos::RCP< Node > &node)
+    {
+      XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
@@ -224,15 +273,13 @@ namespace Xpetra {
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
       XPETRA_FACTORY_END;
     }
-
   };
 
   template <>
   class MapFactory<int, int> {
-
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef Map<int, int>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -240,16 +287,24 @@ namespace Xpetra {
 
   public:
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
+    static Teuchos::RCP<Node> defaultArgNode () {
+      // Workaround function for a deferred visual studio bug
+      //
+      // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
+      //
+      // Use this function for default arguments rather than calling
+      // what is the return value below.  Also helps in reducing
+      // duplication in various constructors.
+      return KokkosClassic::Details::getNode<Node>();
     }
 
-    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node = defaultArgNode()) {
+    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
+    Build (UnderlyingLib lib,
+           global_size_t numGlobalElements,
+           int indexBase,
+           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+           LocalGlobal lg=GloballyDistributed,
+           const Teuchos::RCP<Node>& node = defaultArgNode ()) {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -265,7 +320,14 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
-    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node = defaultArgNode()) {
+    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
+    Build (UnderlyingLib lib,
+           global_size_t numGlobalElements,
+           size_t numLocalElements,
+           int indexBase,
+           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+           const Teuchos::RCP<Node>& node = defaultArgNode())
+    {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -281,7 +343,7 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
-    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node = defaultArgNode()) {
+    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node>& node = defaultArgNode ()) {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -332,19 +394,20 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
-        return MapFactory<int, int, KokkosClassic::DefaultNode::DefaultNodeType>::createLocalMapWithNode(lib, numElements, comm, KokkosClassic::DefaultNode::getDefaultNode());
+        return MapFactory<int, int>::createLocalMapWithNode (lib, numElements, comm,
+                                                             KokkosClassic::Details::getNode<Node> ());
 #endif
 
       XPETRA_FACTORY_END;
     }
 
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
-    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node) {
+    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> &node) {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int,int,KokkosClassic::DefaultNode::DefaultNodeType>(numElements, comm, node)));
+        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int, int, Node> (numElements, comm, node)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -363,13 +426,15 @@ namespace Xpetra {
     }
 
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
-    createUniformContigMapWithNode(UnderlyingLib lib, global_size_t numElements,
-                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node) {
+    createUniformContigMapWithNode (UnderlyingLib lib, global_size_t numElements,
+                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
+                                    const Teuchos::RCP<Node>& node)
+    {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,int,KokkosClassic::DefaultNode::DefaultNodeType>(numElements, comm, node)));
+        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,int,Node> (numElements, comm, node)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -398,7 +463,8 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
-        return MapFactory<int, int, KokkosClassic::DefaultNode::DefaultNodeType>::createUniformContigMapWithNode(lib, numElements, comm, KokkosClassic::DefaultNode::getDefaultNode());
+        return MapFactory<int, int, Node>::createUniformContigMapWithNode (lib, numElements, comm,
+                                                                           KokkosClassic::Details::getNode<Node> ());
 #endif
 
       XPETRA_FACTORY_END;
@@ -415,7 +481,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
-        return MapFactory<int, int, KokkosClassic::DefaultNode::DefaultNodeType>::createContigMapWithNode(lib, numElements, localNumElements, comm, KokkosClassic::DefaultNode::getDefaultNode() );
+        return MapFactory<int, int, Node>::createContigMapWithNode(lib, numElements, localNumElements, comm, KokkosClassic::Details::getNode<Node> () );
 #endif
 
       XPETRA_FACTORY_END;
@@ -423,12 +489,12 @@ namespace Xpetra {
 
     static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createContigMapWithNode(UnderlyingLib lib, global_size_t numElements, size_t localNumElements,
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node) {
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> &node) {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,int,KokkosClassic::DefaultNode::DefaultNodeType>(numElements, localNumElements, comm, node)));
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,int,Node>(numElements, localNumElements, comm, node)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA

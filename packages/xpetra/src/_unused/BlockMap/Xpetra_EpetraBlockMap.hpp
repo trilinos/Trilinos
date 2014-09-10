@@ -68,12 +68,10 @@ namespace Xpetra {
   BlockMap doesn't inherit Xpetra::Map
 */
 class EpetraBlockMap : public Xpetra::BlockMap<int,int> {
-
-    typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-
- public:
+public:
+  typedef int LocalOrdinal;
+  typedef int GlobalOrdinal;
+  typedef BlockMap<int, int>::node_type Node;
 
   //! @name Constructor/Destructor Methods
   //@{
@@ -84,7 +82,10 @@ class EpetraBlockMap : public Xpetra::BlockMap<int,int> {
                  int blockSize,
                  int indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                 const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node = KokkosClassic::DefaultNode::getDefaultNode()) : map_(rcp(new Epetra_BlockMap(numGlobalBlocks, blockSize, indexBase, *Teuchos2Epetra_Comm(comm)))) {  }
+                 const Teuchos::RCP<Node>& node = KokkosClassic::Details::getNode<Node> ()) :
+    map_ (rcp (new Epetra_BlockMap (numGlobalBlocks, blockSize, indexBase,
+                                    *Teuchos2Epetra_Comm (comm))))
+  {}
 
   //TODO
   //CATCH_EPETRA_EXCEPTION_AND_THROW_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos2Epetra_Comm(comm))))););
@@ -96,7 +97,10 @@ class EpetraBlockMap : public Xpetra::BlockMap<int,int> {
                  int blockSize,
                  int indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                 const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node = KokkosClassic::DefaultNode::getDefaultNode()) : map_(rcp(new Epetra_BlockMap(numGlobalBlocks, numLocalBlocks, blockSize, indexBase, *Teuchos2Epetra_Comm(comm)))) {  }
+                 const Teuchos::RCP<Node>& node = KokkosClassic::Details::getNode<Node> ()) :
+    map_ (rcp (new Epetra_BlockMap (numGlobalBlocks, numLocalBlocks, blockSize,
+                                    indexBase, *Teuchos2Epetra_Comm(comm))))
+  {}
 
   /*! \brief EpetraBlockMap constructor specifying numGlobalBlocks and lists of local blocks first-global-point-in-blocks, and blockSizes.
    */
@@ -106,7 +110,7 @@ class EpetraBlockMap : public Xpetra::BlockMap<int,int> {
 //                  const Teuchos::ArrayView<const int>& myBlockSizes,
 //                  int indexBase,
 //                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-//                  const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node = KokkosClassic::DefaultNode::getDefaultNode()) {
+//                  const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node> ()) {
 //
 //     map_ = rcp(new Epetra_BlockMap(numGlobalBlocks, myGlobalBlockIDs, myFirstGlobalPointInBlocks, myBlockSizes, indexBase, *Teuchos2Epetra_Comm(comm)));
 //   }
@@ -120,7 +124,7 @@ class EpetraBlockMap : public Xpetra::BlockMap<int,int> {
 //   EpetraBlockMap(const Teuchos::RCP<const Map<int,int> >& pointMap,
 //                  const Teuchos::ArrayView<const int>& myGlobalBlockIDs,
 //                  const Teuchos::ArrayView<const int>& myBlockSizes,
-//                  const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node = KokkosClassic::DefaultNode::getDefaultNode()) {
+//                  const Teuchos::RCP<Node>& node = KokkosClassic::Details::getNode<Node> ()) {
 //
 //     map_ = rcp(new Epetra_BlockMap(pointMap, myGlobalBlockIDs, myBlockSizes));
 //   }

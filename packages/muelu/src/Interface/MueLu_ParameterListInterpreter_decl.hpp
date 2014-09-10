@@ -79,8 +79,9 @@
 
 namespace MueLu {
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class ParameterListInterpreter :
+    public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_PARAMETERLISTINTERPRETER_SHORT
 #include "MueLu_UseShortNames.hpp"
 

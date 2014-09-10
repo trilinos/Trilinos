@@ -142,7 +142,6 @@ void MueLuPreconditionerFactory::initializePrec(
   using Teuchos::implicit_cast;
 
   typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
-  typedef KokkosClassic::DefaultKernels<double,int,NO>::SparseOps LMO;
 
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
@@ -217,7 +216,7 @@ void MueLuPreconditionerFactory::initializePrec(
 //        );
   }
 
-  MueLu::ParameterListInterpreter<double, int, int, NO, LMO> mueluFactory(*paramList_);
+  MueLu::ParameterListInterpreter<double, int, int, NO> mueluFactory(*paramList_);
 
   //
   // Perform initialization if needed
@@ -233,10 +232,10 @@ void MueLuPreconditionerFactory::initializePrec(
     // Turns a Epetra_CrsMatrix into a Xpetra::Matrix
     RCP<Epetra_CrsMatrix> epetraFwdCrsMatNonConst = rcp_const_cast<Epetra_CrsMatrix>(epetraFwdCrsMat); // !! TODO: MueLu interface should accept const matrix as input.
 
-    RCP<Xpetra::CrsMatrix<double, int, int, NO, LMO> > mueluAcrs = rcp(new Xpetra::EpetraCrsMatrix(epetraFwdCrsMatNonConst)); //TODO: should not be needed
-    RCP<Xpetra::Matrix <double, int, int, NO, LMO> >   mueluA    = rcp(new Xpetra::CrsMatrixWrap<double, int, int, NO, LMO>(mueluAcrs));
+    RCP<Xpetra::CrsMatrix<double, int, int, NO> > mueluAcrs = rcp(new Xpetra::EpetraCrsMatrix(epetraFwdCrsMatNonConst)); //TODO: should not be needed
+    RCP<Xpetra::Matrix <double, int, int, NO> >   mueluA    = rcp(new Xpetra::CrsMatrixWrap<double, int, int, NO>(mueluAcrs));
 
-    const RCP<MueLu::Hierarchy<double,int, int, NO, LMO > > muelu_hierarchy = mueluFactory.CreateHierarchy();
+    const RCP<MueLu::Hierarchy<double,int, int, NO > > muelu_hierarchy = mueluFactory.CreateHierarchy();
     muelu_hierarchy->GetLevel(0)->Set("A", mueluA);
     muelu_precOp = rcp(new MueLu::EpetraOperator(muelu_hierarchy));
 

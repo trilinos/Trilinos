@@ -43,7 +43,7 @@
 
 #include <gtest/gtest.h>
 
-#include <KokkosCore_config.h>
+#include <Kokkos_Core.hpp>
 
 // To force use of OMP atomics instead of intrinsics
 // #define KOKKOS_ATOMICS_USE_OMP31

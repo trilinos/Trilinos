@@ -20,6 +20,7 @@
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities, etc
+#include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank, etc
 #include <stk_util/util/tokenize.hpp>   // for tokenize
@@ -1311,9 +1312,8 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
     io_cs->property_add(Ioss::Property(internal_selector_name, select, false));
 
     // Update global node and element count...
-    stk::mesh::Selector allEntities = meta.universal_part();
-    std::vector<unsigned> entityCounts;
-    stk::mesh::count_entities(allEntities, bulk, entityCounts);
+    std::vector<size_t> entityCounts;
+    stk::mesh::comm_mesh_counts(bulk, entityCounts);
     
     io_region.property_add(Ioss::Property("global_node_count",    (int64_t)entityCounts[stk::topology::NODE_RANK]));
     io_region.property_add(Ioss::Property("global_element_count", (int64_t)entityCounts[stk::topology::ELEMENT_RANK]));

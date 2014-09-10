@@ -51,7 +51,7 @@ namespace Kokkos {
 // and doesn't do what it claims to do) because we don't actually use
 // this function unless we are on a suitable GPU, with a suitable
 // Scalar type.  (For example, in the mat-vec, the "ThreadsPerRow"
-// internal parameter depends both on the Device and the Scalar type,
+// internal parameter depends both on the ExecutionSpace and the Scalar type,
 // and it controls whether shfl_down() gets called.)
 template<typename Scalar>
 KOKKOS_INLINE_FUNCTION
@@ -168,7 +168,7 @@ struct Vectorization<Cuda,N> {
 
 #ifdef __CUDA_ARCH__
   KOKKOS_FORCEINLINE_FUNCTION
-  static int begin() { return threadIdx.x%N;}
+  static int begin() { return threadIdx.y%N;}
 #else
   KOKKOS_FORCEINLINE_FUNCTION
   static int begin() { return 0;}
@@ -205,8 +205,8 @@ struct Vectorization<Cuda,N> {
     #ifdef __CUDA_ARCH__
     __shared__ Scalar result[256];
     Scalar myresult;
-    for(int k=0;k<blockDim.x;k+=256) {
-      const int tid = threadIdx.x - k;
+    for(int k=0;k<blockDim.y;k+=256) {
+      const int tid = threadIdx.y - k;
       if(tid > 0 && tid<256) {
         result[tid] = val;
         if ( (N > 1) && (tid%2==0) )
@@ -221,7 +221,7 @@ struct Vectorization<Cuda,N> {
           result[tid] += result[tid+16];
         myresult = result[tid];
       }
-      if(blockDim.x>256)
+      if(blockDim.y>256)
         __syncthreads();
     }
     return myresult;

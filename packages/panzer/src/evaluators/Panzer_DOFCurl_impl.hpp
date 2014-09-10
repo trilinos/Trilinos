@@ -151,40 +151,6 @@ template<typename EvalT, typename Traits>
 void DOFCurl<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-/*
-  if(workset.num_cells>0) {
-    // evaluate at quadrature points
-    if(basis_dimension==3) {
-      const Intrepid::FieldContainer<double> & curl_basis = workset.bases[basis_index]->curl_basis;
-
-      int numCells  = workset.num_cells;
-      int numFields = curl_basis.dimension(1);
-      int numPoints = curl_basis.dimension(2);
-      int spaceDim  = curl_basis.dimension(3);
-
-      for (int cell=0; cell<numCells; cell++) {
-        for (int pt=0; pt<numPoints; pt++) {
-          for (int d=0; d<spaceDim; d++) {
-            // first initialize to the right thing (prevents over writing with 0)
-            // then loop over one less basis function
-            ScalarT & curl = dof_curl(cell,pt,d);
-            curl = dof_value(cell, 0) * curl_basis(cell, 0, pt, d);
-            for (int bf=1; bf<numFields; bf++)
-              curl += dof_value(cell, bf) * curl_basis(cell, bf, pt, d);
-          }
-        }
-      }
-
-    }
-    else {
-      // Zero out arrays
-      for (int i = 0; i < dof_curl.size(); ++i)
-        dof_curl[i] = 0.0;
-
-      Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_curl,dof_value,workset.bases[basis_index]->curl_basis);
-    }
-  }
-*/
   evaluateCurl_withSens<ScalarT>(workset.num_cells,basis_dimension,dof_curl,dof_value,workset.bases[basis_index]->curl_basis);
 }
 
@@ -271,13 +237,17 @@ evaluateFields(typename Traits::EvalData workset)
       int numPoints = curl_basis.dimension(2);
       int spaceDim  = curl_basis.dimension(3);
 
+      int fadSize = dof_value(0,0).size(); // this is supposed to be fast
+                                           // so assume that everything is the
+                                           // same size!
+
       for (int cell=0; cell<numCells; cell++) {
         for (int pt=0; pt<numPoints; pt++) {
           for (int d=0; d<spaceDim; d++) {
             // first initialize to the right thing (prevents over writing with 0)
             // then loop over one less basis function
             ScalarT & curl = dof_curl(cell,pt,d);
-            curl = ScalarT(numFields, dof_value(cell, 0).val() * curl_basis(cell, 0, pt, d));
+            curl = ScalarT(fadSize, dof_value(cell, 0).val() * curl_basis(cell, 0, pt, d));
             curl.fastAccessDx(offsets[0]) = dof_value(cell, 0).fastAccessDx(offsets[0]) * curl_basis(cell, 0, pt, d);
             for (int bf=1; bf<numFields; bf++) {
               curl.val() += dof_value(cell, bf).val() * curl_basis(cell, bf, pt, d);

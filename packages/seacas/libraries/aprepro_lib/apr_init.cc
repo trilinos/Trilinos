@@ -150,6 +150,15 @@ struct str_c_init string_c_fncts[] =
   {"exodus_info",    do_exodus_info, "exodus_info(ex_fn)","Parses the info records extracted from the exodus file 'ex_fn'"},
   {"exodus_meta",    do_exodus_meta, "exodus_meta(ex_fn)","Creates several variables related to the exodusII metadata in the specified file. Experimental."},
 #endif
+  {"delete",         do_delete,      "delete(var_name)", "Delete the variable with name 'var_name'."},
+  {"if",             do_str_if,      "if(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"If",             do_str_if,      "If(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"elseif",         do_str_elseif,  "elseif(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"Elseif",         do_str_elseif,  "Elseif(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"ifdef",          do_str_if,      "ifdef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"Ifdef",          do_str_if,      "Ifdef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"ifndef",         do_str_notif,   "ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"Ifndef",         do_str_notif,   "Ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
   {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
 };
   

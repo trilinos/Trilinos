@@ -45,6 +45,7 @@
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Range1D.hpp>
 #include "Tpetra_ConfigDefs.hpp"
+#include <Tpetra_Map_decl.hpp>
 #if TPETRA_USE_KOKKOS_DISTOBJECT
 #include "Tpetra_DistObjectKA.hpp"
 #else
@@ -67,9 +68,6 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Vector, needed to prevent circular inclusions
   template<class S, class LO, class GO, class N> class Vector;
-
-  // forward declaration of Map
-  template<class LO, class GO, class N> class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
@@ -328,10 +326,10 @@ namespace Tpetra {
   ///   That is, if some but not all rows are shared by more than one
   ///   process in the communicator, then inner products and norms may
   ///   be wrong.  This behavior may change in future releases.
-  template<class Scalar=double,
-           class LocalOrdinal=int,
-           class GlobalOrdinal=LocalOrdinal,
-           class Node=KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class Scalar = double,
+           class LocalOrdinal = Map<>::local_ordinal_type,
+           class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
+           class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
   class MultiVector :
 #if TPETRA_USE_KOKKOS_DISTOBJECT
     public DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node>

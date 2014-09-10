@@ -66,7 +66,7 @@
 #include <Epetra_CrsMatrix.h>
 
 // I/O for Harwell-Boeing files
-#include <Galeri_iohb.h>
+#include <Trilinos_Util_iohb.h>
 
 #include <algorithm>
 #include <iostream>

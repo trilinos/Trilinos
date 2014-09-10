@@ -61,9 +61,10 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal = Export<>::local_ordinal_type,
+            class GlobalOrdinal = typename Export<LocalOrdinal>::global_ordinal_type,
+            class Node = typename Export<LocalOrdinal, GlobalOrdinal>::node_type>
   class ExportFactory {
-
   private:
     //! Private constructor. This is a static class.
     ExportFactory() {}
@@ -91,7 +92,7 @@ namespace Xpetra {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef Export<int, int>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
