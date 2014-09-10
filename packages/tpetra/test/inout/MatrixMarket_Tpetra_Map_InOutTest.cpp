@@ -436,8 +436,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigIndexBase1, LO, GO )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigOvrlpngIndBase0, LO, GO )
 {
   typedef Tpetra::Map<LO, GO> map_type;
-  typedef Tpetra::global_size_t GST;
-
   RCP<const Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   const int myRank = comm->getRank ();
