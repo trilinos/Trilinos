@@ -47,6 +47,7 @@ APPEND_SET(HEADERS
   function/ROL_Objective.hpp
   function/ROL_ObjectiveDef.hpp
   function/ROL_Objective_SimOpt.hpp
+  function/ROL_Reduced_Objective_SimOpt.hpp
   function/ROL_Constraints.hpp
   function/ROL_EqualityConstraint.hpp
   function/ROL_EqualityConstraintDef.hpp
