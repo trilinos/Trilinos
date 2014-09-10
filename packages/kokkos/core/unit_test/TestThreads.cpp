@@ -66,6 +66,7 @@
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
+#include <TestRange.hpp>
 #include <TestTeam.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
@@ -137,6 +138,13 @@ TEST_F( threads, view_api) {
 
 TEST_F( threads, view_aggregate ) {
   TestViewAggregate< Kokkos::Threads >();
+}
+
+TEST_F( threads , range_tag )
+{
+  TestRange< Kokkos::Threads >::test_for(1000);
+  TestRange< Kokkos::Threads >::test_reduce(1000);
+  TestRange< Kokkos::Threads >::test_scan(1000);
 }
 
 TEST_F( threads, long_reduce) {

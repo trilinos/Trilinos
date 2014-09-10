@@ -502,6 +502,9 @@ public:
 
 } /* namespace Kokkos */
 
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
 namespace Kokkos {
 namespace Impl {
 
@@ -514,12 +517,33 @@ class ParallelFor< FunctorType
 public:
   typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
 
-  ParallelFor( const FunctorType & functor
-             , const Policy      & policy )
+  // work tag is void
+  template< class PType >
+  inline
+  ParallelFor( typename Impl::enable_if<
+                 ( Impl::is_same< PType , Policy >::value &&
+                   Impl::is_same< typename PType::work_tag , void >::value
+                 ), const FunctorType & >::type functor
+             , const PType & policy )
     {
-      const typename Policy::member_type e = policy.end();
-      for ( typename Policy::member_type i = policy.begin() ; i < e ; ++i ) {
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i );
+      }
+    }
+
+  // work tag is non-void
+  template< class PType >
+  inline
+  ParallelFor( typename Impl::enable_if<
+                 ( Impl::is_same< PType , Policy >::value &&
+                   ! Impl::is_same< typename PType::work_tag , void >::value
+                 ), const FunctorType & >::type functor
+             , const PType & policy )
+    {
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
+        functor( typename PType::work_tag() , i );
       }
     }
 };
@@ -536,14 +560,16 @@ public:
   typedef ReduceAdapter< FunctorType >  Reduce ;
   typedef typename Reduce::pointer_type pointer_type ;
 
-  template< class ViewType >
-  ParallelReduce( const FunctorType  & functor
-                , const Policy       & policy
-                , const ViewType     & result
-                , const typename enable_if<
-                   ( is_view< ViewType >::value &&
-                     is_same< typename ViewType::memory_space , HostSpace >::value
-                   )>::type * = 0
+  // Work tag is void
+  template< class ViewType , class PType >
+  ParallelReduce( typename Impl::enable_if<
+                    ( Impl::is_view< ViewType >::value &&
+                      Impl::is_same< typename ViewType::memory_space , HostSpace >::value &&
+                      Impl::is_same< PType , Policy >::value &&
+                      Impl::is_same< typename PType::work_tag , void >::value
+                    ), const FunctorType & >::type functor
+                , const PType     & policy
+                , const ViewType  & result
                 )
     {
       pointer_type result_ptr = result.ptr_on_device();
@@ -555,9 +581,38 @@ public:
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
-      const typename Policy::member_type e = policy.end();
-      for ( typename Policy::member_type i = policy.begin() ; i < e ; ++i ) {
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i , update );
+      }
+
+      Reduce::final( functor , result_ptr );
+    }
+
+  // Work tag is non-void
+  template< class ViewType , class PType >
+  ParallelReduce( typename Impl::enable_if<
+                    ( Impl::is_view< ViewType >::value &&
+                      Impl::is_same< typename ViewType::memory_space , HostSpace >::value &&
+                      Impl::is_same< PType , Policy >::value &&
+                      ! Impl::is_same< typename PType::work_tag , void >::value
+                    ), const FunctorType & >::type functor
+                , const PType     & policy
+                , const ViewType  & result
+                )
+    {
+      pointer_type result_ptr = result.ptr_on_device();
+
+      if ( ! result_ptr ) {
+        result_ptr = (pointer_type)
+          Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
+      }
+
+      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
+        functor( typename PType::work_tag() , i , update );
       }
 
       Reduce::final( functor , result_ptr );
@@ -576,25 +631,59 @@ public:
   typedef ReduceAdapter< FunctorType >  Reduce ;
   typedef typename Reduce::pointer_type pointer_type ;
 
-  ParallelScan( const FunctorType  & functor
-               , const Policy      & policy
-               )
+  // work tag is void
+  template< class PType >
+  inline
+  ParallelScan( typename Impl::enable_if<
+                 ( Impl::is_same< PType , Policy >::value &&
+                   Impl::is_same< typename PType::work_tag , void >::value
+                 ), const FunctorType & >::type functor
+             , const PType & policy )
     {
       pointer_type result_ptr = (pointer_type)
         Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
-      const typename Policy::member_type e = policy.end();
-      for ( typename Policy::member_type i = policy.begin() ; i < e ; ++i ) {
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i , update , true );
+      }
+
+      Reduce::final( functor , result_ptr );
+    }
+
+  // work tag is non-void
+  template< class PType >
+  inline
+  ParallelScan( typename Impl::enable_if<
+                 ( Impl::is_same< PType , Policy >::value &&
+                   ! Impl::is_same< typename PType::work_tag , void >::value
+                 ), const FunctorType & >::type functor
+             , const PType & policy )
+    {
+      pointer_type result_ptr = (pointer_type)
+        Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
+
+      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
+        functor( typename PType::work_tag() , i , update , true );
       }
 
       Reduce::final( functor , result_ptr );
     }
 };
 
-//----------------------------------------------------------------------------
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
 
 template< class FunctorType >
 class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Serial , void > , Kokkos::Serial >

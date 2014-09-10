@@ -64,6 +64,7 @@
 #include <TestViewAPI.hpp>
 
 #include <TestCrsArray.hpp>
+#include <TestRange.hpp>
 #include <TestTeam.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
@@ -108,6 +109,12 @@ TEST_F( openmp, view_api) {
   TestViewAPI< double , Kokkos::OpenMP >();
 }
 
+TEST_F( openmp , range_tag )
+{
+  TestRange< Kokkos::OpenMP >::test_for(1000);
+  TestRange< Kokkos::OpenMP >::test_reduce(1000);
+  TestRange< Kokkos::OpenMP >::test_scan(1000);
+}
 
 TEST_F( openmp, crsarray) {
   TestCrsArray< Kokkos::OpenMP >();

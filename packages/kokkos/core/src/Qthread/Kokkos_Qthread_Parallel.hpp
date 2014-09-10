@@ -59,14 +59,14 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >
+                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                  , Kokkos::Qthread
                  >
 {
 public:
-  typedef Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >  Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >  Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
@@ -99,9 +99,9 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >
+                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                     , Kokkos::Qthread
                     >
 {
@@ -109,7 +109,7 @@ public:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
-  typedef Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >  Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >  Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
@@ -215,9 +215,9 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >
+                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                   , Kokkos::Qthread
                   >
 {
@@ -225,7 +225,7 @@ public:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
-  typedef Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;

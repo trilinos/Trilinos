@@ -46,6 +46,7 @@
 
 #include <Kokkos_Macros.hpp>
 #include <impl/Kokkos_Traits.hpp>
+#include <impl/Kokkos_StaticAssert.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
 //----------------------------------------------------------------------------
@@ -73,15 +74,13 @@ namespace Kokkos {
  *
  *  Blocking is the granularity of partitioning the range among threads.
  */
-template< class Arg0 = void
-        , class Arg1 = void
-        , class Arg2 = void
-        >
+template< class Arg0 = void , class Arg1 = void , class Arg2 = void >
 class RangePolicy {
 private:
 
   // Default integral type and blocking factor:
-  typedef Impl::integral_constant< int , 8 > DefaultIntConstType ;
+  typedef int DefaultIntType ;
+  enum { DefaultIntValue = 8 };
 
   enum { Arg0_Void = Impl::is_same< Arg0 , void >::value };
   enum { Arg1_Void = Impl::is_same< Arg1 , void >::value };
@@ -122,29 +121,27 @@ private:
   typedef typename Impl::if_c< Arg0_WorkTag , Arg0 ,
           typename Impl::if_c< Arg1_WorkTag , Arg1 , void
           >::type >::type
-    WorkArgTag ;
+    WorkTag ;
 
-  // The integral constant is
-  //   Arg0 with no execution space and work arg tag
-  //   Arg1 with Arg0 == execution space or  Arg0 == work arg tag
-  //   Arg2 with Arg0 == execution space and Arg1 == work arg tag
-  typedef typename Impl::if_c< Arg0_IntConst , Arg0 ,
-          typename Impl::if_c< Arg1_IntConst , Arg1 ,
-          typename Impl::if_c< Arg2_IntConst , Arg2 ,
-          typename Impl::if_c< Arg0_IntType , Impl::integral_constant< Arg0 , DefaultIntConstType::value > ,
-          typename Impl::if_c< Arg1_IntType , Impl::integral_constant< Arg1 , DefaultIntConstType::value > ,
-          typename Impl::if_c< Arg2_IntType , Impl::integral_constant< Arg2 , DefaultIntConstType::value > ,
-                                              DefaultIntConstType
-          >::type >::type >::type
-          >::type >::type >::type
-    IntConstType ;
+  enum { Granularity = Arg0_IntConst ? unsigned(Impl::is_integral_constant<Arg0>::integral_value) : (
+                       Arg1_IntConst ? unsigned(Impl::is_integral_constant<Arg1>::integral_value) : (
+                       Arg2_IntConst ? unsigned(Impl::is_integral_constant<Arg2>::integral_value) : (
+                                       unsigned(DefaultIntValue) ))) };
 
   // Only accept the integral type if the blocking is a power of two
-  typedef typename Impl::enable_if< Impl::is_power_of_two< IntConstType::value >::value
-                                  , typename IntConstType::value_type >::type
+  typedef typename Impl::enable_if< Impl::is_power_of_two< Granularity >::value ,
+            typename Impl::if_c< Arg0_IntType , Arg0 ,
+            typename Impl::if_c< Arg1_IntType , Arg1 ,
+            typename Impl::if_c< Arg2_IntType , Arg2 ,
+            typename Impl::if_c< Arg0_IntConst , typename Impl::is_integral_constant<Arg0>::integral_type ,
+            typename Impl::if_c< Arg1_IntConst , typename Impl::is_integral_constant<Arg1>::integral_type ,
+            typename Impl::if_c< Arg2_IntConst , typename Impl::is_integral_constant<Arg2>::integral_type ,
+                                                 DefaultIntType
+            >::type >::type >::type
+            >::type >::type >::type
+          >::type
     IntType ;
 
-  enum { Granularity     = IntConstType::value };
   enum { GranularityMask = IntType(Granularity) - 1 };
 
   IntType m_begin ;
@@ -156,6 +153,7 @@ public:
   typedef ExecSpace                  execution_space ;
   typedef RangePolicy                execution_policy ;
   typedef IntType                    member_type ;
+  typedef WorkTag                    work_tag ;
 
   KOKKOS_INLINE_FUNCTION member_type begin() const { return m_begin ; }
   KOKKOS_INLINE_FUNCTION member_type end()   const { return m_end ; }
@@ -211,17 +209,39 @@ namespace Kokkos {
  *  The team's threads have access to team shared scratch memory and
  *  team collective operations.
  *
- *  If the WorkArgTag is non-void then the first calling argument of the
- *  work functor's parentheses operator is 'const WorkArgTag &'.
+ *  If the WorkTag is non-void then the first calling argument of the
+ *  work functor's parentheses operator is 'const WorkTag &'.
  *  This allows a functor to have multiple work member functions.
+ *
+ *  template argument option with specified execution space:
+ *    < ExecSpace , WorkTag >
+ *    < ExecSpace , void >
+ *
+ *  template argument option with default execution space:
+ *    < WorkTag , void >
+ *    < void , void >
  */
-template< class ExecSpace  = DefaultExecutionSpace
-        , class WorkArgTag = void >
+template< class Arg0 = void , class Arg1 = void >
 class TeamPolicy {
+private:
+
+  enum { Arg0_ExecSpace = Impl::is_execution_space< Arg0 >::value };
+  enum { Arg0_Void      = Impl::is_same< Arg0 , void >::value };
+  enum { Arg1_Void      = Impl::is_same< Arg1 , void >::value };
+
+  enum { ArgOption_OK = Impl::StaticAssert< ( Arg0_ExecSpace || Arg1_Void ) >::value };
+
+  typedef typename Impl::if_c< Arg0_ExecSpace , Arg0 , Kokkos::DefaultExecutionSpace >::type
+    ExecSpace ;
+
+  typedef typename Impl::if_c< Arg0_ExecSpace , Arg1 , Arg0 >::type
+    WorkTag ;
+
 public:
 
   typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
   typedef ExecSpace                  execution_space ; ///< Execution space
+  typedef WorkTag                    work_tag ;
 
   /** \brief  Query maximum team size for a given functor.
    *

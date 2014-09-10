@@ -694,15 +694,15 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P >
+                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                  , Kokkos::Cuda >
 {
 public:
 
   typedef FunctorType                                              Functor ;
-  typedef Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
 
 private:
 
@@ -878,9 +878,9 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelReduce< FunctorType 
-                    , Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P >
+                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                     , Kokkos::Cuda
                     >
 {
@@ -888,8 +888,8 @@ public:
   typedef ReduceAdapter< FunctorType >        Reduce ;
   typedef typename Reduce::pointer_type       pointer_type ;
   typedef typename Reduce::reference_type     reference_type ;
-  typedef Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P > Policy ;
   typedef FunctorType                         Functor ;
+  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2> Policy ;
   typedef Cuda::size_type                     size_type ;
 
   // Algorithmic constraints: blockSize is a power of two AND blockDim.y == blockDim.z == 1
@@ -1119,9 +1119,9 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , typename IntType , unsigned P >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P >
+                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                   , Kokkos::Cuda
                   >
 {
@@ -1129,8 +1129,8 @@ public:
   typedef ReduceAdapter< FunctorType >        Reduce ;
   typedef typename Reduce::pointer_type       pointer_type ;
   typedef typename Reduce::reference_type     reference_type ;
-  typedef Kokkos::RangePolicy< Kokkos::Cuda , void , IntType , P > Policy ;
   typedef FunctorType                         Functor ;
+  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2> Policy ;
   typedef Cuda::size_type                     size_type ;
 
   // Algorithmic constraints:

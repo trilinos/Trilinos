@@ -60,6 +60,7 @@
 #include <TestViewAPI.hpp>
 #include <TestAtomic.hpp>
 #include <TestTile.hpp>
+#include <TestRange.hpp>
 #include <TestTeam.hpp>
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
@@ -90,6 +91,12 @@ TEST_F( serial, view_api) {
   TestViewAPI< double , Kokkos::Serial >();
 }
 
+TEST_F( serial , range_tag )
+{
+  TestRange< Kokkos::Serial >::test_for(1000);
+  TestRange< Kokkos::Serial >::test_reduce(1000);
+  TestRange< Kokkos::Serial >::test_scan(1000);
+}
 
 TEST_F( serial, crsarray) {
   TestCrsArray< Kokkos::Serial >();
