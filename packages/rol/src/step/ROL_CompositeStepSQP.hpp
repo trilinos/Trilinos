@@ -120,7 +120,7 @@ public:
     iterCG_ = 0;
 
     maxiterCG_ = 20;
-    tolCG_ = 1e-4;
+    tolCG_ = 1e-2;
 
     Real nominal_tol = parlist.get("Nominal SQP Optimality Solver Tolerance", 1e-3);
     lmhtol_  = nominal_tol;
@@ -258,6 +258,9 @@ public:
     // Determine if the step gives sufficient reduction in the merit function,
     // update the trust-region radius.
     ratio = ared_/pred_;
+    if ((std::abs(ared_) < 1e-12) && std::abs(pred_) < 1e-12) {
+      ratio = 1.0;
+    }
     if (ratio >= eta_) {
       x.plus(s);
       if (ratio >= 0.9) {
@@ -724,6 +727,7 @@ public:
             Tm1(i,i) = Tm1(i,i) - 1.0;
           }
           if (Tm1.normOne() > S_max) {
+            flagCG_ = 4;
             if (infoTS_) {
               std::stringstream hist;
               hist << "  large nonorthogonality in W(R)'*R detected \n";
@@ -762,7 +766,7 @@ public:
         if ((std::abs(rp) >= rptol*normp*normr) && (sgn(rp) == 1)) {
           pdesc->scale(-one); // -p is the descent direction
         }
-	flagCG_ = 1;
+	flagCG_ = 2;
         Real a = pdesc->dot(*pdesc);
         Real b = pdesc->dot(t);
         Real c = t.dot(t) - delta*delta;
@@ -785,7 +789,7 @@ public:
 
       // Want to enforce nonzero alpha's.
       if (std::abs(rp) < rptol*normp*normr) {
-        flagCG_ = 4;
+        flagCG_ = 5;
         if (infoTS_) {
           std::stringstream hist;
           hist << "  Zero alpha due to inexactness. \n";
@@ -809,7 +813,6 @@ public:
         if (sgn(rp) == 1) {
           pdesc->scale(-one); // -p is the descent direction
         }
-	flagCG_ = 1;
         Real a = pdesc->dot(*pdesc);
         Real b = pdesc->dot(*tprev);
         Real c = tprev->dot(*tprev) - delta*delta;
@@ -819,11 +822,11 @@ public:
         vtemp->scale(theta);
         t.set(*tprev);
         t.plus(*vtemp);
-        flagCG_ = 2;
         // Store as tangential Cauchy point if terminating in first iteration.
         if (iterCG_ == 1) {
           tCP.set(t);
         }
+	flagCG_ = 3;
 	if (infoTS_) {
            std::stringstream hist;
            hist << "  trust-region condition active \n";
@@ -845,7 +848,7 @@ public:
 
     } // while (iterCG_ < maxiterCG_)
 
-    flagCG_ = 3;
+    flagCG_ = 1;
     if (infoTS_) {
       std::stringstream hist;
       hist << "  maximum number of iterations reached \n";
@@ -1079,8 +1082,8 @@ public:
     fdiff = f - f_new;
     // Heuristic 1: If fdiff is very small compared to f, set it to 0,
     // in order to prevent machine precision issues.
-    if (std::abs(fdiff / f) < tol_fdiff) {
-      fdiff = zero;
+    if (std::abs(fdiff / (f+1e-24)) < tol_fdiff) {
+      fdiff = 1e-14;
     }
     ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(c.dot(c) - c_new.dot(c_new));
 

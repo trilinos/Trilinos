@@ -165,7 +165,7 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   // Initialization.
   Real zero = 0.0;
   Real one  = 1.0;
-  int m = 10;
+  int m = 20;
   Real zerotol = zero;
   //int iter = 0;
   //int flag = 0;
@@ -174,7 +174,7 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   Real temp = zero;
   Real resnrm = zero;
 
-  tol = 1e-10;
+  tol = std::sqrt(b1.dot(b1)+b2.dot(b2))*1e-4;
 
   Teuchos::RCP<Vector<Real> > r1 = v1.clone();
   Teuchos::RCP<Vector<Real> > r2 = v2.clone();
@@ -304,6 +304,7 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
     applyJacobian(*r2, *v1trial, x, zerotol);
     r2->scale(-one); r2->plus(b2);
     resnrm = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
+    //std::cout<< "true res = " << resnrm << "\n";
 
     // Evaluate special stopping condition.
     tol = tol;
@@ -318,9 +319,9 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   } // for (int i=0; i++; i<m)
 
   res.resize(i+2);
-  for (unsigned j=0; j<res.size(); j++) {
-    std::cout << "res(" << j << ")" << res[j] << "\n";
-  }
+  //for (unsigned j=0; j<res.size(); j++) {
+  //  std::cout << "res(" << j << ")" << res[j] << "\n";
+  //}
 
 }
 

@@ -183,10 +183,10 @@ public:
              \f$c_u(u,z)^{-1} \in L(\mathcal{C}, \mathcal{U})\f$,
              to the vector \f$v\f$.
 
-             @param[out]      ijv is the result of applying the inverse constraint Jacobian to @b v at @b \f$(u,z)\f$; an optimization-space vector
+             @param[out]      ijv is the result of applying the inverse constraint Jacobian to @b v at @b \f$(u,z)\f$; an optimization-space vector, component 1
              @param[in]       v   is a constraint-space vector
-             @param[in]       u   is the constraint argument; an optimization-space vector
-             @param[in]       z   is the constraint argument; an optimization-space vector
+             @param[in]       u   is the constraint argument; an optimization-space vector, component 1
+             @param[in]       z   is the constraint argument; an optimization-space vector, component 2
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
              On return, \f$\mathsf{ijv} = c_u(u,z)^{-1}v\f$, where
@@ -198,7 +198,9 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) = 0;
+                                      Real &tol) {
+    ijv.zero();
+  }
 
 
   /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
@@ -250,9 +252,9 @@ public:
              to the vector \f$v\f$.
 
              @param[out]      iajv is the result of applying the inverse adjoint of the constraint Jacobian to @b v at @b (u,z); a dual constraint-space vector
-             @param[in]       v   is a dual optimization-space vector
-             @param[in]       u   is the constraint argument; an optimization-space vector
-             @param[in]       z   is the constraint argument; an optimization-space vector
+             @param[in]       v   is a dual optimization-space vector, component 1
+             @param[in]       u   is the constraint argument; an optimization-space vector, component 1
+             @param[in]       z   is the constraint argument; an optimization-space vector, component 2
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
              On return, \f$\mathsf{iajv} = c_u(u,z)^{-*}v\f$, where
@@ -434,7 +436,13 @@ public:
   virtual void applyPreconditioner(Vector<Real> &pv,
                                    const Vector<Real> &v,
                                    const Vector<Real> &x,
-                                   Real &tol) {}
+                                   Real &tol) {
+    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
+      Teuchos::dyn_cast<const Vector<Real> >(x));
+    Teuchos::RCP<ROL::Vector<Real> > ijv = (xs.get_1())->clone();
+    applyInverseJacobian_1(*ijv, v, *(xs.get_1()), *(xs.get_2()), tol);
+    applyInverseAdjointJacobian_1(pv, *ijv, *(xs.get_1()), *(xs.get_2()), tol);
+  }
 
 
   EqualityConstraint_SimOpt(void) : EqualityConstraint<Real>() {}

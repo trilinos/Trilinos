@@ -45,6 +45,7 @@
 #define ROL_OBJECTIVE_SIMOPT_H
 
 #include "ROL_Objective.hpp"
+#include "ROL_Vector_SimOpt.hpp"
 
 /** @ingroup func_group
     \class ROL::Objective_SimOpt
@@ -65,20 +66,24 @@ public:
                 iter is the outer algorithm iterations count.
   */
   virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
     this->update(*(xs.get_1()),*(xs.get_2()),flag,iter);
   }
 
+
   /** \brief Compute value.
   */
   virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+
   Real value( const Vector<Real> &x, Real &tol ) {
     const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
     return this->value(*(xs.get_1()),*(xs.get_2()),tol);
   }
+
 
   /** \brief Compute gradient with respect to first component.
   */
@@ -86,6 +91,7 @@ public:
   /** \brief Compute gradient with respect to second component.
   */
   virtual void gradient_2( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     ROL::Vector_SimOpt<Real> &gs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<ROL::Vector<Real> >(g));
@@ -99,6 +105,7 @@ public:
     gs.set_2(*g2);
   }
 
+
   /** \brief Apply Hessian approximation to vector.
   */
   virtual void hessVec_11( Vector<Real> &hv, const Vector<Real> &v, 
@@ -109,6 +116,7 @@ public:
                            const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
   virtual void hessVec_22( Vector<Real> &hv, const Vector<Real> &v, 
                            const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     ROL::Vector_SimOpt<Real> &hvs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<ROL::Vector<Real> >(hv));

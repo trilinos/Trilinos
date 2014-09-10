@@ -141,7 +141,7 @@ public:
 
     // Initialize Current Lagrange Multiplier Container 
     if ( this->state_->lagmultVec == Teuchos::null ) {
-      this->state_->lagmultVec = x.clone();
+      this->state_->lagmultVec = l.clone();
       this->state_->lagmultVec->set(l);
     }
 
