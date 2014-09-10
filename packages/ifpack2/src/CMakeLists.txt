@@ -73,6 +73,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     BorderedOperator
     Chebyshev
     DenseContainer
+    TriDiContainer
     Diagonal
     DiagonalFilter
     Factory

@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -40,37 +40,48 @@
 //@HEADER
 */
 
-#include "Ifpack2_TriDiContainer_decl.hpp"
+#include "Ifpack2_ConfigDefs.hpp"
+#include "Ifpack2_Details_TriDiSolver_decl.hpp"
 
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#include "Ifpack2_TriDiContainer_def.hpp"
+#include "Ifpack2_Details_TriDiSolver_def.hpp"
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
 
-
-// Explicit instantiation macro for TriDiContainer.
-// Only instantiate in the Ifpack2 namespace.
-
-#define LCLINST(S, LO, GO) template class TriDiContainer<Tpetra::CrsMatrix< S , LO , GO>, S >;template class TriDiContainer<Tpetra::RowMatrix< S , LO , GO >, S >;
-
 namespace Ifpack2 {
+namespace Details {
+
+// mfh 15 Nov 2013: Since we defined a stub implementation for
+// unsupported Scalar (S) types, we don't have to go through any
+// trouble to exclude unsupported Scalar types here.
+//
+// mfh 12 Dec 2013: For some reason, this all has to be on one line,
+// otherwise the macro definition includes the whole rest of the file.
+#define IFPACK2_INST_DETAILS_TRIDI_SOLVER(S,LO,GO) template class TriDiSolver<Tpetra::CrsMatrix< S , LO , GO > >; template class TriDiSolver<Tpetra::RowMatrix< S , LO , GO > >;
+
+  // FIXME (mfh 17,21 Jul 2014) Work-arounds for Ifpack2's incomplete
+  // ETI implementation.  It doesn't work if you write "template<>
+  // class ...", for some reason I don't fully understand.
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template class TriDiSolver<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+  template class TriDiSolver<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+#endif
+
+  // FIXME (mfh 17,21 Jul 2014) Work-arounds for Ifpack2's incomplete
+  // ETI implementation.  It doesn't work if you write "template<>
+  // class ...", for some reason I don't fully understand.
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template class TriDiSolver<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
+  template class TriDiSolver<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
+#endif
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_INSTANTIATE_SLG(LCLINST)
+  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_DETAILS_TRIDI_SOLVER)
 
-  // FIXME (mfh 24 May 2014) This will result in a duplicate symbol if
-  // the default Node type is TPINode.  See the definition of LCLINST
-  // above.
-#  if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+} // namespace Details
+} // namespace Ifpack2
 
-  template class TriDiContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, double >;
-  template class TriDiContainer<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, double >;
-
-#  endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
-
-}
-
-#endif
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 

@@ -52,7 +52,6 @@
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Assert.hpp"
-//#include "Teuchos_SerialSymTriDiMatrix.hpp"
 
 /*! 	\class Teuchos::SerialTriDiMatrix
 	\brief This class creates and provides basic support for TriDi matrix of templated type.
@@ -62,11 +61,10 @@
 */
 
 
-namespace Teuchos {  
+namespace Teuchos {
 
 template<typename OrdinalType, typename ScalarType>
-class SerialTriDiMatrix : public CompObject, public Object, public BLAS<OrdinalType, ScalarType>
-{
+class SerialTriDiMatrix : public CompObject, public Object, public BLAS<OrdinalType, ScalarType > {
 public:
 
   //! Typedef for ordinal type
@@ -205,7 +203,7 @@ public:
   /*! Returns the element in the ith row and jth column if A(i,j) is specified, the
     expression A[j][i] will return the same element.
 
-  	\return Element from the specified \c rowIndex row and \c colIndex column.
+    \return Element from the specified \c rowIndex row and \c colIndex column.
     \warning The validity of \c rowIndex and \c colIndex will only be checked if Teuchos is
     configured with --enable-teuchos-abc.
   */
@@ -215,7 +213,7 @@ public:
   /*! Returns the element in the ith row and jth column if A(i,j) is specified, the expression
     A[j][i] will return the same element.
 
-  	\return Element from the specified \c rowIndex row and \c colIndex column.
+    \return Element from the specified \c rowIndex row and \c colIndex column.
     \warning The validity of \c rowIndex and \c colIndex will only be checked if Teuchos is
     configured with --enable-teuchos-abc.
   */
@@ -245,10 +243,10 @@ public:
   /*! \return Pointer to the ScalarType data array contained in the object. */
   ScalarType* values() const { return(values_); }
 
-  ScalarType D() const { return D_;}
-  ScalarType DL() const { return DL_;}
-  ScalarType DU() const { return DU_;}
-  ScalarType DU2() const { return DU2_;}
+  ScalarType* D() const { return D_;}
+  ScalarType* DL() const { return DL_;}
+  ScalarType* DU() const { return DU_;}
+  ScalarType* DU2() const { return DU2_;}
 
   //@}
 
@@ -375,9 +373,8 @@ public:
 
   //@}
 protected:
-  void copyMat(ScalarType* inputMatrix,
-	       OrdinalType numRows, ScalarType* outputMatrix,
-	       OrdinalType startRow, OrdinalType startCol,
+  void copyMat(SerialTriDiMatrix<OrdinalType, ScalarType> matrix,
+	       OrdinalType startCol,
 	       ScalarType alpha = ScalarTraits<ScalarType>::zero() );
   void deleteArrays();
   void checkIndex( OrdinalType rowIndex, OrdinalType colIndex = 0 ) const;
@@ -385,6 +382,10 @@ protected:
 
   bool valuesCopied_;
   ScalarType* values_;
+  ScalarType* DL_;
+  ScalarType* D_;
+  ScalarType* DU_;
+  ScalarType* DU2_;
 
 }; // class Teuchos_SerialTriDiMatrix
 
@@ -398,13 +399,11 @@ SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix()
 {}
   
 template<typename OrdinalType, typename ScalarType>
-SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(
-  OrdinalType numRowsCols_in, OrdinalType numCols_in, bool zeroOut
-  )
-  : CompObject(), Object("Teuchos::SerialTriDiMatrix"), numRowsCols_(numRowsCols_in)
-{
+SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix( OrdinalType numRowsCols_in, OrdinalType numCols_in, bool zeroOut)
+  : CompObject(), Object("Teuchos::SerialTriDiMatrix"), numRowsCols_(numRowsCols_in) {
+
   OrdinalType numvals = (numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
-  values = new ScalarType[numvals];
+  values_ = new ScalarType [numvals];
   DL_  = values_;
   D_   = DL_  + (numRowsCols_-1);
   DU_  = D_   +  numRowsCols_;
@@ -416,109 +415,101 @@ SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(
 }
 
 template<typename OrdinalType, typename ScalarType>
-SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(
-  DataAccess CV, ScalarType* values_in, OrdinalType numRowsCols_in
-  )
+SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(DataAccess CV, ScalarType* values_in, OrdinalType numRowsCols_in  )
   : CompObject(), Object("Teuchos::SerialTriDiMatrix"), numRowsCols_(numRowsCols_in),
-    valuesCopied_(false), values_(values_in)
+    valuesCopied_(false), values_(values_in) 
 {
-  if(CV == Copy)
-  {
+  if(CV == Copy) {
     const OrdinalType numvals = (numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
     values_ = new ScalarType[numvals];
     DL_ = values_;
     D_  = DL_    + (numRowsCols_-1);
     DU_ = D_     + numRowsCols_;
     DU2_ = DU_   + (numRowsCols_-1);
-   
-    copyMat(values_in, numRowsCols_, values_, 0, 0);
     valuesCopied_ = true;
+
+    for(OrdinalType i = 0 ; i < numRowsCols_ ; ++i ) 
+      values_[i] = values_in[i];
   }
 }
   
 template<typename OrdinalType, typename ScalarType>
-SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(const SerialTriDiMatrix<OrdinalType, ScalarType> &Source, ETransp trans) : CompObject(), Object("Teuchos::SerialTriDiMatrix"), BLAS<OrdinalType,ScalarType>(), numRowsCols_(0), valuesCopied_(true), values_(0)
+SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(const SerialTriDiMatrix<OrdinalType, ScalarType> &Source, ETransp trans) : CompObject(), Object("Teuchos::SerialTriDiMatrix"), BLAS<OrdinalType,ScalarType>(), numRowsCols_(0), valuesCopied_(true), values_(0) 
 {
-  if ( trans == Teuchos::NO_TRANS ) 
-  {
+  if ( trans == Teuchos::NO_TRANS )  {
     numRowsCols_ = Source.numRowsCols_;
-    stride_ = numRowsCols_;
 
-    const OrdnalType numvals = (numRowsCols_ == 1) ? 1 : 4*(numRowsCols_-1);
+    const OrdinalType numvals = (numRowsCols_ == 1) ? 1 : 4*(numRowsCols_-1);
     values_ = new ScalarType[numvals];
     DL_ = values_;
     D_  = DL_+ (numRowsCols_-1);
     DU_ = D_ + numRowsCols_;
     DU2_ = DU_ + (numRowsCols_-1);
 
-    copyMat(Source.values_, numRowsCols_, values_, stride_, 0, 0);
+    copyMat(Source, 0, 0);
   } 
   else if ( trans == Teuchos::CONJ_TRANS && ScalarTraits<ScalarType>::isComplex ) 
-  {	  
-    numRowsCols_ = Source.numRowsCols_;
-    const OrdinalType numvals = (numRowsCols == 1) ? 1 :  4*(numRowsCols_-1);
-    values_ = new ScalarType[numvals];
-    DL_ = values_;
-    D_  = DL_+(numRowsCols_-1);
-    DU_ = D_ + numRowsCols_;
-    DU2_ = DU_ + (numRowsCols_-1);
+    {	  
+      numRowsCols_ = Source.numRowsCols_;
+      const OrdinalType numvals = (numRowsCols == 1) ? 1 :  4*(numRowsCols_-1);
+      values_ = new ScalarType[numvals];
+      DL_ = values_;
+      D_  = DL_+(numRowsCols_-1);
+      DU_ = D_ + numRowsCols_;
+      DU2_ = DU_ + (numRowsCols_-1);
 
-    OrdinalType min = numRowCols_;
-    if(min > Source.numRowsCols) min = Source.numRowsCols;
+      OrdinalType min = numRowsCols_;
+      if(min > Source.numRowsCols_) min = Source.numRowsCols_;
 
-    for(OrdinalType i = 0 ; i< min ; ++i) {
-      D_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.D_[i]);
-      if(i < (min-1)) {
-	DL_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DL_[i]);
-	DU_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DU_[i]);
+      for(OrdinalType i = 0 ; i< min ; ++i) {
+	D_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.D_[i]);
+	if(i < (min-1)) {
+	  DL_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DL_[i]);
+	  DU_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DU_[i]);
+	}
+	if(i < (min-2)) {
+	  DU2_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DU2_[i]);
+	}
       }
-      if(i < (min-2)) {
-	DU2_ = Teuchos::ScalarTraits<ScalarType>::conjugate(Source.DU2_[i]);
-      }
-    }
-  } 
+    } 
   else 
-  {
-    numRowsCols_ = Source.numCols_;
-    numCols_ = Source.numRowsCols_;
-
-    const OrdinalType numvals = (numRowsCols_  == 1) ? 1 : 4*(numRowsCols_-1);
-    values_ = new ScalarType[numvals];
-    OrdinalType min = numRowCols_;
-    if(min > Source.numRowsCols) min = Source.numRowsCols;
-    for(OrdinalType i = 0 ; i< min ; ++i) {
-      D_ = Source.D_[i];
-      if(i < (min-1)) {
-	DL_ = Source.DL_[i];
-	DU_ = Source.DU_[i];
-      }
-      if(i < (min-2)) {
-	DU2_ = Source.DU2_[i];
+    {
+      numRowsCols_ = Source.numCols_;
+      const OrdinalType numvals = (numRowsCols_  == 1) ? 1 : 4*(numRowsCols_-1);
+      values_ = new ScalarType[numvals];
+      OrdinalType min = numRowsCols_;
+      if(min > Source.numRowsCols) min = Source.numRowsCols;
+      for(OrdinalType i = 0 ; i< min ; ++i) {
+	D_ = Source.D_[i];
+	if(i < (min-1)) {
+	  DL_ = Source.DL_[i];
+	  DU_ = Source.DU_[i];
+	}
+	if(i < (min-2)) {
+	  DU2_ = Source.DU2_[i];
+	}
       }
     }
-  }
 }
   
 template<typename OrdinalType, typename ScalarType>
 SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(
   DataAccess CV, const SerialTriDiMatrix<OrdinalType, ScalarType> &Source,
-  OrdinalType numRowsCols_in, OrdinalType startRow
-  )
+  OrdinalType numRowsCols_in, OrdinalType startRow )
   : CompObject(), Object("Teuchos::SerialTriDiMatrix"), numRowsCols_(numRowsCols_in), 
-    valuesCopied_(false), values_(Source.values_)
-{
+    valuesCopied_(false), values_(Source.values_) {
   if(CV == Copy)
-  {
-    const OrdinalType numvals = (numRowsCols_ == 1) ? 1 : 4*(numRowsCols_-1);
-    values_ = new ScalarType[numvals];
-    copyMat(Source.values_, numRowsCols_in, values_, startRow);
-    valuesCopied_ = true;
-  }
+    {
+      const OrdinalType numvals = (numRowsCols_ == 1) ? 1 : 4*(numRowsCols_-1);
+      values_ = new ScalarType[numvals];
+      copyMat(Source, startRow);
+      valuesCopied_ = true;
+    }
   else // CV == View
-  {
-    // \todo ??? WTF
-    //    values_ = values_ + (stride_ * startCol) + startRow;
-  }
+    {
+      // \todo ???
+      //    values_ = values_ + (stride_ * startCol) + startRow;
+    }
 }
     
 template<typename OrdinalType, typename ScalarType>
@@ -532,13 +523,11 @@ SerialTriDiMatrix<OrdinalType, ScalarType>::~SerialTriDiMatrix()
 //----------------------------------------------------------------------------------------------------
 
 template<typename OrdinalType, typename ScalarType>
-int SerialTriDiMatrix<OrdinalType, ScalarType>::shape(
-  OrdinalType numRowsCols_in
-  )
+int SerialTriDiMatrix<OrdinalType, ScalarType>::shape( OrdinalType numRowsCols_in  ) 
 {
   deleteArrays(); // Get rid of anything that might be already allocated
   numRowsCols_ = numRowsCols_in;
-  const OrdinalType numvals = ( numRowsCols_1 == 1) ? 1 :  4*(numRowsCols_-1);
+  const OrdinalType numvals = ( numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
   values_ = new ScalarType[numvals];
 
   putScalar();
@@ -547,37 +536,41 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::shape(
 }
 
 template<typename OrdinalType, typename ScalarType>
-int SerialTriDiMatrix<OrdinalType, ScalarType>::shapeUninitialized(
-  OrdinalType numRowsCols_in
-  )
+int SerialTriDiMatrix<OrdinalType, ScalarType>::shapeUninitialized(  OrdinalType numRowsCols_in  ) 
 {
   deleteArrays(); // Get rid of anything that might be already allocated
   numRowsCols_ = numRowsCols_in;
-  const OrdinalType numvals = ( numRowsCols_1 == 1) ? 1 :  4*(numRowsCols_-1);
+  const OrdinalType numvals = ( numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
   values_ = new ScalarType[numvals];
   valuesCopied_ = true;
   return(0);
 }
   
 template<typename OrdinalType, typename ScalarType>
-int SerialTriDiMatrix<OrdinalType, ScalarType>::reshape(
-  OrdinalType numRowsCols_in, OrdinalType numCols_in
-  )
+int SerialTriDiMatrix<OrdinalType, ScalarType>::reshape(  OrdinalType numRowsCols_in  ) 
 {
-  // Allocate space for new matrix
-  ScalarType* values_tmp = new ScalarType[numRowsCols_in * numCols_in];
+  // Allocate space for new matrix 
+  const OrdinalType numvals = ( numRowsCols_in == 1) ? 1 :  4*(numRowsCols_in - 1);
+  ScalarType* values_tmp = new ScalarType[numvals];
   ScalarType zero = ScalarTraits<ScalarType>::zero();
-  const OrdinalType numvals = ( numRowsCols_1 == 1) ? 1 :  4*(numRowsCols_-1);
-  for(OrdnalType i= 0; i<numvals ; ++i)
+  for(OrdinalType i= 0; i<numvals ; ++i)
     values_tmp[i] = zero;
+  
+  OrdinalType min = TEUCHOS_MIN(numRowsCols_, numRowsCols_in);
+  ScalarType* dl = values_tmp;
+  ScalarType* d = values_tmp + (numRowsCols_in-1);
+  ScalarType* du = d+(numRowsCols_in);
+  ScalarType* du2 = du+(numRowsCols_in - 1);
 
-  OrdinalType numRowsCols_tmp = TEUCHOS_MIN(numRowsCols_, numRowsCols_in);
-
-  if(values_ != 0)
-  {
-    copyMat(values_, numRowsCols_tmp, values_tmp,
-      numRowsCols_in, 0); // Copy principal submatrix of A to new A
+  if(values_ != 0) {
+    for(OrdinalType i = 0 ; i< min ; ++i) {
+      dl[i] = DL_[i];
+      d[i]  = D_[i];
+      du[i] = DU_[i];
+      du2[i] = DU2_[i];
+    }
   }
+
   deleteArrays(); // Get rid of anything that might be already allocated
   numRowsCols_ = numRowsCols_in;
 
@@ -591,15 +584,14 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::reshape(
 //----------------------------------------------------------------------------------------------------
 
 template<typename OrdinalType, typename ScalarType>
-int SerialTriDiMatrix<OrdinalType, ScalarType>::putScalar( const ScalarType value_in )
-{
+int SerialTriDiMatrix<OrdinalType, ScalarType>::putScalar( const ScalarType value_in ) {
   // Set each value of the TriDi matrix to "value".
-  const OrdnalType numvals = (numRowsCols_ == 1) ? 1 : 4*(numRowsCols_-1);
+  const OrdinalType numvals = (numRowsCols_ == 1) ? 1 : 4*(numRowsCols_-1);
 
   for(OrdinalType i = 0; i<numvals ; ++i) 
-  {
-    values_[i] = value_in;
-  }
+    {
+      values_[i] = value_in;
+    }
   return 0;
 }    
     
@@ -619,9 +611,7 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::putScalar( const ScalarType valu
 
 template<typename OrdinalType, typename ScalarType>
 SerialTriDiMatrix<OrdinalType,ScalarType>&
-SerialTriDiMatrix<OrdinalType, ScalarType>::operator=(
-  const SerialTriDiMatrix<OrdinalType,ScalarType>& Source
-  )
+SerialTriDiMatrix<OrdinalType, ScalarType>::operator=(const SerialTriDiMatrix<OrdinalType,ScalarType>& Source ) 
 {
   if(this == &Source)
     return(*this); // Special case of source same as target
@@ -635,19 +625,14 @@ SerialTriDiMatrix<OrdinalType, ScalarType>::operator=(
       deleteArrays();
     }
     numRowsCols_ = Source.numRowsCols_; 
-    stride_ = Source.stride_;
     values_ = Source.values_;
   }
   else {
     // If we were a view, we will now be a copy.
     if(!valuesCopied_) {
       numRowsCols_ = Source.numRowsCols_;
-      stride_ = Source.numRowsCols_;
-      OrdnalType numvals = 1;
-      if(numRowsCols_>1) numvals = 4*(numRowsCols_-1);
-
-      //      const OrdinalType newsize = stride_ * numCols_;
-      if(newsize > 0) {
+      const OrdinalType numvals = ( Source.numRowsCols_ == 1) ? 1 :  4*(Source.numRowsCols_ - 1);
+      if(numvals > 0) {
         values_ = new ScalarType[numvals];
         valuesCopied_ = true;
       }
@@ -657,53 +642,68 @@ SerialTriDiMatrix<OrdinalType, ScalarType>::operator=(
     }
     // If we were a copy, we will stay a copy.
     else {
-      if((Source.numRowsCols_ <= stride_) ) { // we don't need to reallocate
-        numRowsCols_ = Source.numRowsCols_;
-      }
-      else { // we need to allocate more space (or less space)
-        deleteArrays();
-        numRowsCols_ = Source.numRowsCols_;
-        stride_ = Source.numRowsCols_;
-	OrdnalType numvals = 1;
-	if(numRowsCols_>1) numvals = 4*(numRowsCols_-1);
-	//        const OrdinalType newsize = stride_ * numCols_;
-        if(newsize > 0) {
-          values_ = new ScalarType[numvals];
-          valuesCopied_ = true;
-        }
+      // we need to allocate more space (or less space)
+      deleteArrays();
+      numRowsCols_ = Source.numRowsCols_;
+      const OrdinalType numvals = ( Source.numRowsCols_ == 1) ? 1 :  4*(Source.numRowsCols_ - 1);
+      if(numvals > 0) {
+	values_ = new ScalarType[numvals];
+	valuesCopied_ = true;
       }
     }
-    copyMat(Source.values_, Source.stride_, numRowsCols_, values_, stride_, 0, 0);
+    DL_ = values_;
+    if(values_ != 0) {
+      D_  = DL_    + (numRowsCols_-1);
+      DU_ = D_     +  numRowsCols_;
+      DU2_ = DU_   + (numRowsCols_-1);
+      
+      OrdinalType min = TEUCHOS_MIN(numRowsCols_, Source.numRowsCols_);
+      for(OrdinalType i = 0 ; i < min ; ++i ) {
+	D_[i] = Source.D()[i];
+	if(i< (min-1 ) )
+	  {
+	    DL_[i] = Source.DL()[i];
+	    DU_[i] = Source.DU()[i];
+	  }
+	if(i< (min-2))
+	  DU2_[i] = Source.DU2()[i];
+      }
+
+    }
+    else {
+      D_ = DU_ = DU2_ = 0;
+    }
   } 
   return(*this);
 }
 
 template<typename OrdinalType, typename ScalarType>
-SerialTriDiMatrix<OrdinalType, ScalarType>& SerialTriDiMatrix<OrdinalType, ScalarType>::operator+= (const SerialTriDiMatrix<OrdinalType,ScalarType>& Source )
+SerialTriDiMatrix<OrdinalType, ScalarType>& SerialTriDiMatrix<OrdinalType, ScalarType>::operator+= (const SerialTriDiMatrix<OrdinalType,ScalarType>& Source ) 
 {
   // Check for compatible dimensions
   if ((numRowsCols_ != Source.numRowsCols_) )
-  {
-    TEUCHOS_CHK_REF(*this); // Return *this without altering it.
-  }
-  copyMat(Source.values_, Source.stride_, numRowsCols_, values_, stride_, 0, 0, ScalarTraits<ScalarType>::one());
+    {
+      TEUCHOS_CHK_REF(*this); // Return *this without altering it.
+    }
+  copyMat(Source, 0, ScalarTraits<ScalarType>::one());
   return(*this);
 }
 
 template<typename OrdinalType, typename ScalarType>
-SerialTriDiMatrix<OrdinalType, ScalarType>& SerialTriDiMatrix<OrdinalType, ScalarType>::operator-= (const SerialTriDiMatrix<OrdinalType,ScalarType>& Source )
+SerialTriDiMatrix<OrdinalType, ScalarType>& SerialTriDiMatrix<OrdinalType, ScalarType>::operator-= (const SerialTriDiMatrix<OrdinalType,ScalarType>& Source ) 
 {
   // Check for compatible dimensions
-  if ((numRowsCols_ != Source.numRowsCols_) || (numCols_ != Source.numCols_))
-  {
-    TEUCHOS_CHK_REF(*this); // Return *this without altering it.
-  }
-  copyMat(Source.values_, Source.stride_, numRowsCols_, values_, stride_, 0, 0, -ScalarTraits<ScalarType>::one());
+  if ((numRowsCols_ != Source.numRowsCols_) )
+    {
+      TEUCHOS_CHK_REF(*this); // Return *this without altering it.
+    }
+  copyMat(Source, 0, -ScalarTraits<ScalarType>::one());
   return(*this);
 }
 
-template<typename OrdinalType, typename ScalarType>
-SerialTriDiMatrix<OrdinalType,ScalarType>& SerialTriDiMatrix<OrdinalType, ScalarType>::assign (const SerialTriDiMatrix<OrdinalType,ScalarType>& Source) {
+template<typename OrdinalType,typename ScalarType>
+SerialTriDiMatrix<OrdinalType,ScalarType> & SerialTriDiMatrix<OrdinalType,ScalarType>::assign(const SerialTriDiMatrix<OrdinalType,ScalarType> & Source)
+{
   if(this == &Source)
     return(*this); // Special case of source same as target
   if((!valuesCopied_) && (!Source.valuesCopied_) && (values_ == Source.values_))
@@ -711,10 +711,10 @@ SerialTriDiMatrix<OrdinalType,ScalarType>& SerialTriDiMatrix<OrdinalType, Scalar
 
   // Check for compatible dimensions
   if ((numRowsCols_ != Source.numRowsCols_) )
-  {
-    TEUCHOS_CHK_REF(*this); // Return *this without altering it.
-  }
-  copyMat(Source.values_, Source.stride_, numRowsCols_, values_, stride_, 0, 0);
+    {
+      TEUCHOS_CHK_REF(*this); // Return *this without altering it.
+    }
+  copyMat(Source,  0, 0);
   return(*this);
 }
 
@@ -722,161 +722,119 @@ SerialTriDiMatrix<OrdinalType,ScalarType>& SerialTriDiMatrix<OrdinalType, Scalar
 //   Accessor methods 
 //----------------------------------------------------------------------------------------------------
 
-template<typename OrdinalType, typename ScalarType>
-inline ScalarType& SerialTriDiMatrix<OrdinalType, ScalarType>::operator () (OrdinalType rowIndex, OrdinalType colIndex)
+template<typename OrdinalType,typename ScalarType>
+inline const ScalarType& SerialTriDiMatrix<OrdinalType,ScalarType>::operator () (OrdinalType rowIndex, OrdinalType colIndex) const 
+{
+  OrdinalType diff = colIndex - rowIndex;
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  checkIndex( rowIndex, colIndex );
+#endif
+  switch (diff) {
+  case -1:
+    return DL_[colIndex];
+    break;
+  case 0:
+    return D_[colIndex];
+    break;
+  case 1:
+    return DU_[rowIndex];
+    break;
+  case 2:
+    return DU2_[rowIndex];
+    break;
+  default: ;
+  }   
+  //  TEUCHOS_CHK_ERR(-1);
+  return (ScalarType) 0.0; 
+}
+
+template<typename OrdinalType,typename ScalarType>
+inline ScalarType& Teuchos::SerialTriDiMatrix<OrdinalType,ScalarType>::operator () (OrdinalType rowIndex, OrdinalType colIndex)
 { 
-
-  OrdnalType diff = ColIndex - RowIndex;
-
+  OrdinalType diff = colIndex - rowIndex;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  //  checkIndex( rowIndex, colIndex );
-  if (colIndex >= numRowCols__ || colIndex < 0)
-		throw ReportError("Column index = " +toString(colIndex) +
-				  " Out of Range 0 - " + toString(numRowCols_-1),-2);
- if (rowIndex >= numRowCols_ || rowIndex < 0)
-		throw ReportError("Row index = " +toString(rowIndex) +
-				  " Out of Range 0 - " + toString(numRowCols_-1),-2);
-
- if ( diff > 2 || diff < -1 )
-   throw ReportError("Row index = " +toString(rowIndex) + " differs from Col_Index " + toString(colIndex) +
-		     " Out of Range -1 to 2");
+  checkIndex( rowIndex, colIndex );
 #endif
- switch (diff) {
- case -1:
-   // DL
-   return DL_[colIndex];
-   break;
- case 0:
-   return D_[colIndex];
-   break;
- case 1:
-   return DU_[rowIndex];
-   break;
- case 2:
-   return DU2_[rowIndex];
-   break;
- default:
-  throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) +
-		    " Out of Range -1 to 2");
- }
- return (ScalarType) 0.0; // ultimate badness \todo Fix This. 
+  switch (diff) {
+  case -1:
+    return DL_[colIndex];
+    break;
+  case 0:
+    return D_[colIndex];
+    break;
+  case 1:
+    return DU_[rowIndex];
+    break;
+  case 2:
+    return DU2_[rowIndex];
+    break;
+  default: ;
+  }
+  //  TEUCHOS_CHK_ERR(-1);
+  return D_[0]; 
 }
-  
-template<typename OrdinalType, typename ScalarType>
-inline const ScalarType& SerialTriDiMatrix<OrdinalType, ScalarType>::operator () (OrdinalType rowIndex, OrdinalType colIndex) const
-{
-OrdnalType diff = colIndex - rowIndex;
-
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  //  checkIndex( rowIndex, colIndex );
-  if (colIndex >= numRowCols__ || colIndex < 0)
-		throw ReportError("Column index = " +toString(colIndex) +
-				  " Out of Range 0 - " + toString(numRowCols_-1),-2);
- if (rowIndex >= numRowCols_ || rowIndex < 0)
-		throw ReportError("Row index = " +toString(rowIndex) +
-				  " Out of Range 0 - " + toString(numRowCols_-1),-2);
-
- if ( diff > 2 || diff < -1 )
-   throw ReportError("Row index = " +toString(rowIndex) + " differs from Col_Index " + toString(colIndex) +
-		     " Out of Range -1 to 2");
-#endif
- switch (diff) {
- case -1:
-   // DL
-   return DL_[colIndex];
-   break;
- case 0:
-   return D_[colIndex];
-   break;
- case 1:
-   return DU_[rowIndex];
-   break;
- case 2:
-   return DU2_[rowIndex];
-   break;
- default:
-  throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) +
-		    " Out of Range -1 to 2");
- }
- return (ScalarType) 0.0; // ultimate badness \todo Fix This. 
-}
-  
-template<typename OrdinalType, typename ScalarType>
-inline const ScalarType* SerialTriDiMatrix<OrdinalType, ScalarType>::operator [] (OrdinalType colIndex) const
-{
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  checkIndex( 0, colIndex );
-#endif
-  return(values_ + colIndex * stride_);
-}
-  
-// template<typename OrdinalType, typename ScalarType>
-// inline ScalarType* SerialTriDiMatrix<OrdinalType, ScalarType>::operator [] (OrdinalType colIndex)
-// {
-// #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-//   checkIndex( 0, colIndex );
-// #endif
-//   return(values_ + colIndex * stride_);
-// }
 
 //----------------------------------------------------------------------------------------------------
 //   Norm methods 
 //----------------------------------------------------------------------------------------------------
   
-template<typename OrdinalType, typename ScalarType>
-typename ScalarTraits<ScalarType>::magnitudeType SerialTriDiMatrix<OrdinalType, ScalarType>::normOne() const
+template<typename OrdinalType,typename ScalarType>
+typename ScalarTraits<ScalarType>::magnitudeType SerialTriDiMatrix<OrdinalType,ScalarType>::normOne() const 
 {
   OrdinalType i, j;
   typename ScalarTraits<ScalarType>::magnitudeType anorm = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::zero());
   typename ScalarTraits<ScalarType>::magnitudeType absSum = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::zero());
   ScalarType* ptr;
-  for(j = 0; j < numCols_; j++)
-  {
-    ScalarType sum = 0;
-    ptr = values_ + j * stride_;
-    for(i = 0; i < numRowsCols_; i++)
-	  {
-	    sum += ScalarTraits<ScalarType>::magnitude(*ptr++);
-	  }
-    absSum = ScalarTraits<ScalarType>::magnitude(sum);
-    if(absSum > anorm)
-	  {
-	    anorm = absSum;
-	  }
-  }
-  updateFlops(numRowsCols_ * numCols_);
+
+  // Fix this for Tri DI
+
+  for(j = 0; j < numRowsCols_; j++)
+    {
+      ScalarType sum = 0;
+      if(j-1>=0) sum +=  ScalarTraits<ScalarType>::magnitude((*this)(j-1,j));
+      sum+= ScalarTraits<ScalarType>::magnitude((*this)(j,j));
+      if(j+1<numRowsCols_) sum+= ScalarTraits<ScalarType>::magnitude((*this)(j+1,j));
+      absSum = ScalarTraits<ScalarType>::magnitude(sum);
+      if(absSum > anorm)
+	{
+	  anorm = absSum;
+	}
+    }
+  updateFlops(numRowsCols_ * numRowsCols_);
   return(anorm);
 }
-  
+
 template<typename OrdinalType, typename ScalarType>
-typename ScalarTraits<ScalarType>::magnitudeType SerialTriDiMatrix<OrdinalType, ScalarType>::normInf() const
+typename ScalarTraits<ScalarType>::magnitudeType SerialTriDiMatrix<OrdinalType, ScalarType>::normInf() const 
 {
-  OrdinalType i, j;
+  OrdinalType i,j;
   typename ScalarTraits<ScalarType>::magnitudeType sum, anorm = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::zero());
     
   for (i = 0; i < numRowsCols_; i++) {
     sum = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::zero());
-    for (j=0; j< numCols_; j++) {
-      sum += ScalarTraits<ScalarType>::magnitude(*(values_+i+j*stride_));
+    for (j=i-1; j<= i+1; j++) {
+      if(j >= 0 && j < numRowsCols_) sum += ScalarTraits<ScalarType>::magnitude((*this)(i,j));
     }
     anorm = TEUCHOS_MAX( anorm, sum );
   }
-  updateFlops(numRowsCols_ * numCols_);
+  updateFlops(numRowsCols_ * numRowsCols_);
   return(anorm);
 }
   
 template<typename OrdinalType, typename ScalarType>
-typename ScalarTraits<ScalarType>::magnitudeType SerialTriDiMatrix<OrdinalType, ScalarType>::normFrobenius() const
+typename ScalarTraits<ScalarType>::magnitudeType SerialTriDiMatrix<OrdinalType, ScalarType>::normFrobenius() const 
 {
+  // \todo fix this
   OrdinalType i, j;
   typename ScalarTraits<ScalarType>::magnitudeType anorm = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::zero());
-  for (j = 0; j < numCols_; j++) {
-    for (i = 0; i < numRowsCols_; i++) {
-      anorm += ScalarTraits<ScalarType>::magnitude(values_[i+j*stride_]*values_[i+j*stride_]);
+  for (j = 0; j < numRowsCols_; j++) {
+    for (i = j-1; i <= j+1; i++) {
+      if(i >= 0 && i < numRowsCols_ ) anorm += ScalarTraits<ScalarType>::magnitude((*this)(i,j));
     }
   }
   anorm = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::squareroot(anorm));
-  updateFlops(numRowsCols_ * numCols_);
+  updateFlops( (numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1) );
   return(anorm);
 }
   
@@ -885,26 +843,26 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialTriDiMatrix<OrdinalType, 
 //----------------------------------------------------------------------------------------------------
   
 template<typename OrdinalType, typename ScalarType>
-bool SerialTriDiMatrix<OrdinalType, ScalarType>::operator== (const SerialTriDiMatrix<OrdinalType, ScalarType> &Operand) const
+bool SerialTriDiMatrix<OrdinalType, ScalarType>::operator== (const SerialTriDiMatrix<OrdinalType, ScalarType> &Operand) const 
 {
+  bool allmatch = true; 
   bool result = 1;
   if((numRowsCols_ != Operand.numRowsCols_) )
-  {
-    result = 0;
-  }
+    {
+      result = 0;
+    }
   else
-  {
-    OrdinalType numvals = (numRowCols_ == 1)? 1 : 4*(numRowCols_ -1 );
-    bool allmatch = true; 
-    for(OrdinalType i = 0; i< numvals; ++i) 
-      allmatch &= (Operand.values_[i] == values_[i]);
-  }
+    {
+      OrdinalType numvals = (numRowsCols_ == 1)? 1 : 4*(numRowsCols_ -1 );
+  
+      for(OrdinalType i = 0; i< numvals; ++i) 
+	allmatch &= (Operand.values_[i] == values_[i]);
+    }
   return allmatch;
 }
   
 template<typename OrdinalType, typename ScalarType>
-bool SerialTriDiMatrix<OrdinalType, ScalarType>::operator!= (const SerialTriDiMatrix<OrdinalType, ScalarType> &Operand) const
-{
+bool SerialTriDiMatrix<OrdinalType, ScalarType>::operator!= (const SerialTriDiMatrix<OrdinalType, ScalarType> &Operand) const {
   return !((*this) == Operand);
 }
   
@@ -923,7 +881,7 @@ template<typename OrdinalType, typename ScalarType>
 int SerialTriDiMatrix<OrdinalType, ScalarType>::scale( const ScalarType alpha )
 {
   OrdinalType i;
-  OrdinalType numvals = (numRowCols_ == 1)? 1 : 4*(numRowCols_ -1 );
+  OrdinalType numvals = (numRowsCols_ == 1)? 1 : 4*(numRowsCols_ -1 );
   for (i=0; i < numvals ; ++i ) {
     values_[i] *= alpha;
   }
@@ -931,16 +889,16 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::scale( const ScalarType alpha )
 }
 
 template<typename OrdinalType, typename ScalarType>
-int SerialTriDiMatrix<OrdinalType, ScalarType>::scale( const SerialTriDiMatrix<OrdinalType,ScalarType>& A )
+int SerialTriDiMatrix<OrdinalType, ScalarType>::scale( const SerialTriDiMatrix<OrdinalType,ScalarType>& A ) 
 {
   OrdinalType j;
     
   // Check for compatible dimensions
   if ((numRowsCols_ != A.numRowsCols_) )
-  {
-    TEUCHOS_CHK_ERR(-1); // Return error
-  }
-  OrdinalType numvals = (numRowCols_ == 1)? 1 : 4*(numRowCols_ -1 );
+    {
+      TEUCHOS_CHK_ERR(-1); // Return error
+    }
+  OrdinalType numvals = (numRowsCols_ == 1)? 1 : 4*(numRowsCols_ -1 );
   for (j=0; j<numvals; j++) {
     values_[j] = A.values_ * values_[j];
   }
@@ -997,26 +955,35 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::scale( const SerialTriDiMatrix<O
 // }
 
 template<typename OrdinalType, typename ScalarType>
-void SerialTriDiMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
+void SerialTriDiMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const 
 {
   os << std::endl;
   if(valuesCopied_)
-    os << "Values_copied : yes" << std::endl;
+    os << "A_Copied: yes" << std::endl;
   else
-    os << "Values_copied : no" << std::endl;
-  os << "Rows : " << numRowsCols_ << std::endl;
-  os << "Columns : " << numCols_ << std::endl;
-  os << "LDA : " << stride_ << std::endl;
-  if(numRowsCols_ == 0 || numCols_ == 0) {
+    os << "A_Copied: no" << std::endl;
+  os << "Rows and Columns: " << numRowsCols_ << std::endl;
+  if(numRowsCols_ == 0)
     os << "(matrix is empty, no values to display)" << std::endl;
-  } else {
-    for(OrdinalType i = 0; i < numRowsCols_; i++) {
-      for(OrdinalType j = 0; j < numCols_; j++){
-        os << (*this)(i,j) << " ";
-      }
+  else
+    {
+      os << "DL: "<<std::endl;
+      for(int i=0;i<numRowsCols_-1;++i) 
+	os << DL_[i]<<" ";	    
+      os << std::endl;
+      os << "D: "<<std::endl;
+      for(int i=0;i<numRowsCols_;++i) 
+	os << D_[i]<<" ";	    
+      os << std::endl;
+      os << "DU: "<<std::endl;
+      for(int i=0;i<numRowsCols_-1;++i) 
+	os << DU_[i]<<" ";	    
+      os << std::endl;
+      os << "DU2: "<<std::endl;
+      for(int i=0;i<numRowsCols_-2;++i) 
+	os << DU2_[i]<<" ";	    
       os << std::endl;
     }
-  }
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -1024,57 +991,70 @@ void SerialTriDiMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
 //----------------------------------------------------------------------------------------------------  
 
 template<typename OrdinalType, typename ScalarType>
-inline void SerialTriDiMatrix<OrdinalType, ScalarType>::checkIndex( OrdinalType rowIndex, OrdinalType colIndex ) const {
-  OrdnalType diff = colIndex - rowIndex;
+inline void SerialTriDiMatrix<OrdinalType, ScalarType>::checkIndex( OrdinalType rowIndex, OrdinalType colIndex ) const 
+{
+  OrdinalType diff = colIndex - rowIndex;
   TEUCHOS_TEST_FOR_EXCEPTION(rowIndex < 0 || rowIndex >= numRowsCols_, std::out_of_range,
-    "SerialTriDiMatrix<T>::checkIndex: "
-    "Row index " << rowIndex << " out of range [0, "<< numRowsCols_ << ")");
-  TEUCHOS_TEST_FOR_EXCEPTION(colIndex < 0 || colIndex >= numRowsCols_, std::out_of_range,
-    "SerialTriDiMatrix<T>::checkIndex: "
-    "Col index " << colIndex << " out of range [0, "<< numRowsCols_ << ")");
-   TEUCHOS_TEST_FOR_EXCEPTION(diff > 2 || diff < -1 , std::out_of_range,
-			      "SerialTriDiMatrix<T>::checkIndex: ", "index difference " << diff << " out of range [-1, 2]");
+			     "SerialTriDiMatrix<T>::checkIndex: "
+			     "Row index " << rowIndex << " out of range [0, "<< numRowsCols_ << "]");
+  TEUCHOS_TEST_FOR_EXCEPTION(colIndex < 0 || colIndex >= numRowsCols_,
+			     std::out_of_range,
+			     "SerialTriDiMatrix<T>::checkIndex: "
+			     "Col index " << colIndex << " out of range [0, "<< numRowsCols_ << "]");
+  TEUCHOS_TEST_FOR_EXCEPTION(diff > 2 || diff < -1 , std::out_of_range,
+			     "SerialTriDiMatrix<T>::checkIndex: "
+			     "index difference " << diff << " out of range [-1, 2]");
 }
 
 template<typename OrdinalType, typename ScalarType>
-void SerialTriDiMatrix<OrdinalType, ScalarType>::deleteArrays(void)
+void SerialTriDiMatrix<OrdinalType, ScalarType>::deleteArrays(void) 
 {
   if (valuesCopied_)
-  {
-    delete [] values_;
-    values_ = 0;
-    valuesCopied_ = false;
-  }
+    {
+      delete [] values_;
+      values_ = 0;
+      valuesCopied_ = false;
+    }
 }
   
 template<typename OrdinalType, typename ScalarType>
-void SerialTriDiMatrix<OrdinalType, ScalarType>::copyMat(
-  ScalarType* inputMatrix, OrdinalType strideInput, OrdinalType numRowsCols_in,
-  ScalarType* outputMatrix, OrdinalType strideOutput,
-  OrdinalType startRow, ScalarType alpha
-  )
+void SerialTriDiMatrix<OrdinalType, ScalarType>::copyMat(SerialTriDiMatrix<OrdinalType, ScalarType> inputMatrix, 
+							 OrdinalType startRowCol, 
+							 ScalarType alpha ) 
 {
-  OrdinalType i, j;
-  ScalarType* ptr1 = 0;
-  ScalarType* ptr2 = 0;
-  for(j = 0; j < numCols_in; j++) {
-    ptr1 = outputMatrix + (j * strideOutput);
-    ptr2 = inputMatrix + (j + startCol) * strideInput + startRow;
-    if (alpha != Teuchos::ScalarTraits<ScalarType>::zero() ) {
-      for(i = 0; i < numRowsCols_in; i++)
-	    {
-	      *ptr1++ += alpha*(*ptr2++);
-	    }
-    } else {
-      for(i = 0; i < numRowsCols_in; i++)
-	    {
-	      *ptr1++ = *ptr2++;
-	    }
+  OrdinalType i;
+  OrdinalType max = inputMatrix.numRowsCols_;
+  if(max > numRowsCols_ ) max = numRowsCols_;
+  if(startRowCol > max ) return; // 
+
+  for(i = startRowCol ; i < max ; ++i) {
+
+    if (alpha != Teuchos::ScalarTraits<ScalarType>::zero() ) {    
+      // diagonal 
+      D()[i] += inputMatrix.D()[i];
+      if(i<(max-1) && (i-1) >= startRowCol) {
+	DL()[i] += inputMatrix.DL()[i];
+	DU()[i] += inputMatrix.DU()[i];
+      }
+      if(i<(max-2) && (i-2) >= startRowCol) {
+	DU2()[i] += inputMatrix.DU2()[i];
+      }
     }
-  }
+    else {
+      // diagonal 
+      D()[i] = inputMatrix.D()[i];
+      if(i<(max-1) && (i-1) >= startRowCol) {
+	DL()[i] = inputMatrix.DL()[i];
+	DU()[i] = inputMatrix.DU()[i];
+      }
+      if(i<(max-2) && (i-2) >= startRowCol) {
+	DU2()[i] = inputMatrix.DU2()[i];
+      }
+    }
+  } 
 }
-  
-} // namespace Teuchos
+
+}
 
 
 #endif /* _TEUCHOS_SERIALTRIDIMATRIX_HPP_ */

@@ -51,6 +51,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_SerialTriDiMatrix.hpp"
 
 namespace Ifpack2 {
 
@@ -259,7 +260,7 @@ private:
   size_t numRows_;
 
   //! The local diagonal block, which compute() extracts.
-  Teuchos::SerialDenseVector<int, local_scalar_type> diagBlock_;
+  Teuchos::SerialTriDiMatrix<int, local_scalar_type> diagBlock_;
 
   //! Permutation array from LAPACK (GETRF).
   Teuchos::Array<int> ipiv_;

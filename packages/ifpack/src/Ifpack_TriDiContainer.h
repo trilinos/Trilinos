@@ -353,9 +353,9 @@ private:
   Ifpack_SerialTriDiMatrix NonFactoredMatrix_;
   //! TriDi matrix.
   Ifpack_SerialTriDiMatrix Matrix_;
-  //! TriDi vector representing the LHS.
+  //! SerialDense vector representing the LHS.
   Epetra_SerialDenseMatrix LHS_;
-  //! TriDi vector representing the RHS.
+  //! SerialDense vector representing the RHS.
   Epetra_SerialDenseMatrix RHS_;
   //! TriDi solver (solution will be get using LAPACK).
   Ifpack_SerialTriDiSolver Solver_;

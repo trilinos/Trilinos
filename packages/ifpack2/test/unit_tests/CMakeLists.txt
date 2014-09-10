@@ -27,6 +27,7 @@ Ifpack2_UnitTestChebyshev.cpp
 Ifpack2_UnitTestContainer.cpp
 Ifpack2_UnitTestCreateOverlapGraph.cpp
 Ifpack2_UnitTestDenseSolver.cpp
+Ifpack2_UnitTestTriDiSolver.cpp
 Ifpack2_UnitTestDiagonal.cpp
 Ifpack2_UnitTestFactory.cpp
 Ifpack2_UnitTestFiltering.cpp
