@@ -53,6 +53,17 @@ namespace Kokkos {
 // Scalar type.  (For example, in the mat-vec, the "ThreadsPerRow"
 // internal parameter depends both on the ExecutionSpace and the Scalar type,
 // and it controls whether shfl_down() gets called.)
+namespace Impl {
+  template< typename Scalar>
+  union shfl_union {
+    KOKKOS_INLINE_FUNCTION
+    shfl_union() {
+      val = Scalar();
+    }
+    Scalar val;
+    float fval[sizeof(Scalar)/4];
+  };
+}
 
 template<typename Scalar>
 KOKKOS_INLINE_FUNCTION
@@ -61,6 +72,10 @@ Scalar shfl(const Scalar &val, const int& srcLane, const int& width, void*);
 template<typename Scalar>
 KOKKOS_INLINE_FUNCTION
 Scalar shfl_down(const Scalar &val, const int& delta, const int& width, void*);
+
+template<typename Scalar>
+KOKKOS_INLINE_FUNCTION
+Scalar shfl_up(const Scalar &val, const int& delta, const int& width, void*);
 
 #ifdef __CUDA_ARCH__
   #if (__CUDA_ARCH__ >= 300)
@@ -109,6 +124,19 @@ Scalar shfl_down(const Scalar &val, const int& delta, const int& width, void*);
       return *(reinterpret_cast<const Scalar*>(&tmp));
     }
 
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl(const Scalar &val, const int& srcLane, const int& width
+        , typename Impl::enable_if< (sizeof(Scalar) > 8) >::type * = 0) {
+      Impl::shfl_union<Scalar> s_val;
+      Impl::shfl_union<Scalar> r_val;
+      s_val.val = val;
+
+      for(int i = 0; i<sizeof(Scalar)/4; i++)
+        r_val.fval[i] = __shfl(s_val.fval[i],srcLane,width);
+      return r_val.val;
+    }
+
     template<>
     KOKKOS_INLINE_FUNCTION
     int shfl_down<int>(const int &val, const int& delta, const int& width, void* ) {
@@ -153,6 +181,76 @@ Scalar shfl_down(const Scalar &val, const int& delta, const int& width, void*);
       return *(reinterpret_cast<const Scalar*>(&tmp));
     }
 
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl_down(const Scalar &val, const int& delta, const int& width
+        , typename Impl::enable_if< (sizeof(Scalar) > 8) >::type * = 0) {
+      Impl::shfl_union<Scalar> s_val;
+      Impl::shfl_union<Scalar> r_val;
+      s_val.val = val;
+
+      for(int i = 0; i<sizeof(Scalar)/4; i++)
+        r_val.fval[i] = __shfl_down(s_val.fval[i],delta,width);
+      return r_val.val;
+    }
+
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    int shfl_up<int>(const int &val, const int& delta, const int& width, void* ) {
+      return __shfl_up(val,delta,width);
+    }
+
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    float shfl_up<float>(const float &val, const int& delta, const int& width, void* ) {
+      return __shfl_up(val,delta,width);
+    }
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl_up(const Scalar &val, const int& delta, const int& width
+        , typename Impl::enable_if< (sizeof(Scalar) == 4) >::type * = 0) {
+      Scalar tmp1 = val;
+      float tmp = *reinterpret_cast<float*>(&tmp1);
+      tmp = __shfl_up(tmp,delta,width);
+      return *reinterpret_cast<Scalar*>(&tmp);
+    }
+
+    template<>
+    KOKKOS_INLINE_FUNCTION
+    double shfl_up(const double &val, const int& delta, const int& width, void*) {
+      int lo = __double2loint(val);
+      int hi = __double2hiint(val);
+      lo = __shfl_up(lo,delta,width);
+      hi = __shfl_up(hi,delta,width);
+      return __hiloint2double(hi,lo);
+    }
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl_up(const Scalar &val, const int& delta, const int& width
+        , typename Impl::enable_if< (sizeof(Scalar) == 8) >::type * = 0) {
+      int lo = __double2loint(*reinterpret_cast<const double*>(&val));
+      int hi = __double2hiint(*reinterpret_cast<const double*>(&val));
+      lo = __shfl_up(lo,delta,width);
+      hi = __shfl_up(hi,delta,width);
+      const double tmp = __hiloint2double(hi,lo);
+      return *(reinterpret_cast<const Scalar*>(&tmp));
+    }
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl_up(const Scalar &val, const int& delta, const int& width
+        , typename Impl::enable_if< (sizeof(Scalar) > 8) >::type * = 0) {
+      Impl::shfl_union<Scalar> s_val;
+      Impl::shfl_union<Scalar> r_val;
+      s_val.val = val;
+
+      for(int i = 0; i<sizeof(Scalar)/4; i++)
+        r_val.fval[i] = __shfl_up(s_val.fval[i],delta,width);
+      return r_val.val;
+    }
+
   #else
     template<typename Scalar>
     KOKKOS_INLINE_FUNCTION
@@ -164,6 +262,13 @@ Scalar shfl_down(const Scalar &val, const int& delta, const int& width, void*);
     template<typename Scalar>
     KOKKOS_INLINE_FUNCTION
     Scalar shfl_down(const Scalar &val, const int& delta, const int& width, void*) {
+      if(width > 1) cuda_abort("Error: calling shfl_down from a device with CC<3.0.")
+      return val;
+    }
+
+    template<typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    Scalar shfl_up(const Scalar &val, const int& delta, const int& width, void*) {
       if(width > 1) cuda_abort("Error: calling shfl_down from a device with CC<3.0.")
       return val;
     }

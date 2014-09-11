@@ -141,6 +141,50 @@ public:
   inline ~ParallelFor() { wait(); }
 };
 
+template< unsigned int VectorLength, class FunctorType >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Threads , void > , Kokkos::Threads >
+{
+public:
+
+  typedef TeamVectorPolicy< VectorLength , Kokkos::Threads , void >  Policy ;
+
+  const FunctorType  m_func ;
+  const Policy       m_policy ;
+  const int          m_shared ;
+
+  static void execute( ThreadsExec & exec , const void * arg )
+  {
+    const ParallelFor & self = * ((const ParallelFor *) arg );
+
+    // TODO: Add thread pool queries to ThreadExec.
+    // TODO: Move all of the team state out of ThreadsExec and into the Policy.
+
+    typename Policy::member_type member( exec , self.m_policy , self.m_shared );
+
+    for ( ; member.valid() ; member.next() ) {
+      self.m_func( member );
+    }
+
+    exec.fan_in();
+  }
+
+  ParallelFor( const FunctorType & functor
+              , const Policy      & policy )
+    : m_func( functor )
+    , m_policy( policy )
+    , m_shared( FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() ) )
+    {
+      ThreadsExec::resize_scratch( 0 , Policy::member_type::team_reduce_size() + m_shared );
+
+      ThreadsExec::start( & ParallelFor::execute , this );
+
+      ThreadsExec::fence();
+    }
+
+  inline void wait() {}
+
+  inline ~ParallelFor() { wait(); }
+};
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

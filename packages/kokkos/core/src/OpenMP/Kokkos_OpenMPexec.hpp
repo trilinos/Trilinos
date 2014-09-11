@@ -373,6 +373,312 @@ public:
   static inline int team_reduce_size() { return TEAM_REDUCE_SIZE ; }
 };
 
+template<unsigned VectorLength>
+class OpenMPexecTeamVectorMember {
+private:
+
+  enum { TEAM_REDUCE_SIZE = 16 };
+
+  /** \brief  Thread states for team synchronization */
+  enum { Active = 0 , Rendezvous = 1 };
+
+  typedef Kokkos::OpenMP                         execution_space ;
+  typedef execution_space::scratch_memory_space  scratch_memory_space ;
+
+  Impl::OpenMPexec    & m_exec ;
+  scratch_memory_space  m_team_shared ;
+  int                   m_team_shmem ;
+  int                   m_team_base_rev ;
+  int                   m_team_rank_rev ;
+  int                   m_team_rank ;
+  int                   m_team_size ;
+  int                   m_league_rank ;
+  int                   m_league_end ;
+  int                   m_league_size ;
+
+  // Fan-in team threads, root of the fan-in which does not block returns true
+  inline
+  bool team_fan_in() const
+    {
+      for ( int n = 1 , j ; ( ( j = m_team_rank_rev + n ) < m_team_size ) && ! ( m_team_rank_rev & n ) ; n <<= 1 ) {
+        m_exec.pool_rev( m_team_base_rev + j )->state_wait( Active );
+      }
+
+      if ( m_team_rank_rev ) {
+        m_exec.state_set( Rendezvous );
+        m_exec.state_wait( Rendezvous );
+      }
+
+      return 0 == m_team_rank_rev ;
+    }
+
+  inline
+  void team_fan_out() const
+    {
+      for ( int n = 1 , j ; ( ( j = m_team_rank_rev + n ) < m_team_size ) && ! ( m_team_rank_rev & n ) ; n <<= 1 ) {
+        m_exec.pool_rev( m_team_base_rev + j )->state_set( Active );
+      }
+    }
+
+public:
+
+  inline
+  const execution_space::scratch_memory_space & team_shmem() const
+    { return m_team_shared ; }
+
+  KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
+  KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
+  KOKKOS_INLINE_FUNCTION int team_rank() const { return m_team_rank ; }
+  KOKKOS_INLINE_FUNCTION int team_size() const { return m_team_size ; }
+
+  inline void team_barrier() const
+    {
+      if ( 1 < m_team_size ) {
+        team_fan_in();
+        team_fan_out();
+      }
+    }
+
+  template< class JoinOp >
+  inline typename JoinOp::value_type
+    team_reduce( const typename JoinOp::value_type & value
+               , const JoinOp & op ) const
+    {
+      // Make sure there is enough scratch space:
+      typedef typename if_c< sizeof(typename JoinOp::value_type) < TEAM_REDUCE_SIZE
+                           , typename JoinOp::value_type , void >::type type ;
+
+      type * const local_value = ((type*) m_exec.scratch_thread());
+
+      // Set this thread's contribution
+      *local_value = value ;
+
+      // Fence to make sure the base team member has access:
+      memory_fence();
+
+      if ( team_fan_in() ) {
+        // The last thread to synchronize returns true, all other threads wait for team_fan_out()
+        type * const team_value  = ((type*) m_exec.pool_rev( m_team_base_rev )->scratch_thread());
+
+        // Join to the team value:
+        for ( int i = 1 ; i < m_team_size ; ++i ) {
+          op.join( *team_value , *((type*) m_exec.pool_rev( m_team_base_rev + i )->scratch_thread()) );
+        }
+
+        // The base team member may "lap" the other team members,
+        // copy to their local value before proceeding.
+        for ( int i = 1 ; i < m_team_size ; ++i ) {
+          *((type*) m_exec.pool_rev( m_team_base_rev + i )->scratch_thread()) = *team_value ;
+        }
+
+        // Fence to make sure all team members have access
+        memory_fence();
+      }
+
+      team_fan_out();
+
+      return *((type volatile const *)local_value);
+    }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename ArgType >
+  inline ArgType team_scan( const ArgType & value , ArgType * const global_accum ) const
+    {
+      // Make sure there is enough scratch space:
+      typedef typename if_c< sizeof(ArgType) < TEAM_REDUCE_SIZE , ArgType , void >::type type ;
+
+      volatile type * const work_value  = ((type*) m_exec.scratch_thread());
+
+      *work_value = value ;
+
+      memory_fence();
+
+      if ( team_fan_in() ) {
+        // The last thread to synchronize returns true, all other threads wait for team_fan_out()
+        // m_team_base[0]                 == highest ranking team member
+        // m_team_base[ m_team_size - 1 ] == lowest ranking team member
+        //
+        // 1) copy from lower to higher rank, initialize lowest rank to zero
+        // 2) prefix sum from lowest to highest rank, skipping lowest rank
+
+        type accum = 0 ;
+
+        if ( global_accum ) {
+          for ( int i = m_team_size ; i-- ; ) {
+            type & val = *((type*) m_exec.pool_rev( m_team_base_rev + i )->scratch_thread());
+            accum += val ;
+          }
+          accum = atomic_fetch_add( global_accum , accum );
+        }
+
+        for ( int i = m_team_size ; i-- ; ) {
+          type & val = *((type*) m_exec.pool_rev( m_team_base_rev + i )->scratch_thread());
+          const type offset = accum ;
+          accum += val ;
+          val = offset ;
+        }
+
+        memory_fence();
+      }
+
+      team_fan_out();
+
+      return *work_value ;
+    }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  inline Type team_scan( const Type & value ) const
+    { return this-> template team_scan<Type>( value , 0 ); }
+
+#ifdef KOKKOS_HAVE_CXX11
+
+  /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
+  template< class Operation >
+  KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op) const {
+    op();
+  }
+
+  /** \brief  Intra-thread vector parallel for. Executes op(iType i) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation, typename ValueType >
+  KOKKOS_INLINE_FUNCTION void vector_par_for(const iType n, const Operation & op) const {
+    #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+    #pragma ivdep
+    #endif
+    for(int i=0; i<n ; i++) {
+      op(i);
+    }
+  }
+
+  /** \brief  Intra-thread vector parallel reduce. Executes op(iType i, ValueType & val) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a summation of
+   * val is performed and put into result. This functionality requires C++11 support.*/
+  template< typename iType, class Operation, typename ValueType >
+  KOKKOS_INLINE_FUNCTION void vector_par_reduce(const iType n, const Operation & op, ValueType& result) const {
+
+    result = ValueType();
+
+    for(int i=0; i<n ; i++) {
+      ValueType tmp = ValueType();
+      op(i,tmp);
+      result+=tmp;
+    }
+  }
+
+  /** \brief  Intra-thread vector parallel reduce. Executes op(iType i, ValueType & val) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a reduction of
+   * val is performed using JoinType(ValueType& val, const ValueType& update) and put into init_result.
+   * The input value of init_result is used as initializer for temporary variables of ValueType. Therefore
+   * the input value should be the neutral element with respect to the join operation (e.g. '0 for +-' or
+   * '1 for *'). This functionality requires C++11 support.*/
+  template< typename iType, class Operation, typename ValueType, class JoinType >
+  KOKKOS_INLINE_FUNCTION void vector_par_reduce(const iType n, const Operation & op, ValueType& init_result, const JoinType & join) const {
+
+    ValueType result = init_result;
+
+
+    for(int i=0; i<n ; i++) {
+      ValueType tmp = init_result;
+      op(i,tmp);
+      join(result,tmp);
+    }
+    init_result = result;
+  }
+
+
+  /** \brief  Intra-thread vector parallel exclusive prefix sum. Executes op(iType i, ValueType & val, bool final)
+   *          for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all vector lanes in the thread and a scan operation is performed.
+   * Depending on the target execution space the operator might be called twice: once with final=false
+   * and once with final=true. When final==true val contains the prefix sum value. The contribution of this
+   * "i" needs to be added to val no matter whether final==true or not. In a serial execution
+   * (i.e. team_size==1) the operator is only called once with final==true. Scan_val will be set
+   * to the final sum value over all vector lanes.
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation, typename ValueType >
+  KOKKOS_INLINE_FUNCTION  void vector_par_scan(const iType n, const Operation & op, ValueType& scan_val) const {
+
+    scan_val = ValueType();
+
+    for(int i=0; i<n ; i++) {
+      op(i,scan_val,true);
+    }
+  }
+#endif
+  //----------------------------------------
+  // Private for the driver
+
+private:
+
+  typedef execution_space::scratch_memory_space space ;
+
+public:
+
+  template< class WorkArgTag >
+  inline
+  OpenMPexecTeamVectorMember( Impl::OpenMPexec & exec
+                      , const TeamVectorPolicy< VectorLength, execution_space , WorkArgTag > & team
+                      , const int shmem_size
+                      )
+    : m_exec( exec )
+    , m_team_shared(0,0)
+    , m_team_shmem( shmem_size )
+    , m_team_base_rev(0)
+    , m_team_rank_rev(0)
+    , m_team_rank(0)
+    , m_team_size( team.team_size() )
+    , m_league_rank(0)
+    , m_league_end(0)
+    , m_league_size( team.league_size() )
+    {
+      const int pool_rank_rev        = m_exec.pool_rank_rev();
+      const int pool_team_rank_rev   = pool_rank_rev % team.team_alloc();
+      const int pool_league_rank_rev = pool_rank_rev / team.team_alloc();
+      const int league_iter_end      = team.league_size() - pool_league_rank_rev * team.team_iter();
+
+      if ( pool_team_rank_rev < m_team_size && 0 < league_iter_end ) {
+        m_team_base_rev  = team.team_alloc() * pool_league_rank_rev ;
+        m_team_rank_rev  = pool_team_rank_rev ;
+        m_team_rank      = m_team_size - ( m_team_rank_rev + 1 );
+        m_league_end     = league_iter_end ;
+        m_league_rank    = league_iter_end > team.team_iter() ? league_iter_end - team.team_iter() : 0 ;
+        new( (void*) &m_team_shared ) space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
+      }
+    }
+
+  bool valid() const
+    { return m_league_rank < m_league_end ; }
+
+  void next()
+    {
+      if ( ++m_league_rank < m_league_end ) {
+        team_barrier();
+        new( (void*) &m_team_shared ) space( ( (char*) m_exec.pool_rev(m_team_base_rev)->scratch_thread() ) + TEAM_REDUCE_SIZE , m_team_shmem );
+      }
+    }
+
+  static inline int team_reduce_size() { return TEAM_REDUCE_SIZE ; }
+};
+
+
 } // namespace Impl
 } // namespace Kokkos
 
@@ -436,6 +742,66 @@ public:
   inline int team_iter()  const { return m_team_iter ; }
 
   typedef Impl::OpenMPexecTeamMember member_type ;
+};
+
+template < unsigned VectorLength, class WorkArgTag >
+class TeamVectorPolicy< VectorLength, Kokkos::OpenMP , WorkArgTag > {
+public:
+
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
+  typedef Kokkos::OpenMP             execution_space ; ///< Execution space
+
+private:
+
+  int m_league_size ;
+  int m_team_size ;
+  int m_team_alloc ;
+  int m_team_iter ;
+
+  inline void init( const int league_size_request
+                  , const int team_size_request )
+    {
+      const int pool_size  = execution_space::thread_pool_size(0);
+      const int team_max   = execution_space::thread_pool_size(1);
+      const int team_grain = execution_space::thread_pool_size(2);
+
+      m_league_size = league_size_request ;
+
+      m_team_size = team_size_request < team_max ?
+                    team_size_request : team_max ;
+
+      // Round team size up to a multiple of 'team_gain'
+      const int team_size_grain = team_grain * ( ( m_team_size + team_grain - 1 ) / team_grain );
+      const int team_count      = pool_size / team_size_grain ;
+
+      // Constraint : pool_size = m_team_alloc * team_count
+      m_team_alloc = pool_size / team_count ;
+
+      // Maxumum number of iterations each team will take:
+      m_team_iter  = ( m_league_size + team_count - 1 ) / team_count ;
+    }
+
+public:
+
+  inline int team_size()   const { return m_team_size ; }
+  inline int league_size() const { return m_league_size ; }
+
+  /** \brief  Specify league size, request team size */
+  TeamVectorPolicy( execution_space & , int league_size_request , int team_size_request )
+    { init( league_size_request , team_size_request ); }
+
+  TeamVectorPolicy( int league_size_request , int team_size_request )
+    { init( league_size_request , team_size_request ); }
+
+  template< class FunctorType >
+  inline static
+  int team_size_max( const FunctorType & )
+    { return execution_space::thread_pool_size(1); }
+
+  inline int team_alloc() const { return m_team_alloc ; }
+  inline int team_iter()  const { return m_team_iter ; }
+
+  typedef Impl::OpenMPexecTeamVectorMember<VectorLength> member_type ;
 };
 
 } // namespace Kokkos
