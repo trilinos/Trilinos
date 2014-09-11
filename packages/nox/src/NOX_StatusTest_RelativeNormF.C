@@ -63,7 +63,8 @@ RelativeNormF(double in_tolerance, bool in_scale_norms_by_vector_length,
   tolerance(in_tolerance),
   normF_0(0.0),
   normF(0.0),
-  scale_norms_by_vector_length(in_scale_norms_by_vector_length)
+  scale_norms_by_vector_length(in_scale_norms_by_vector_length),
+  status(NOX::StatusTest::Unevaluated)
 {
   if (u != NULL)
     utils = *u;
