@@ -6,6 +6,7 @@
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>TriBITS Developers Guide and Reference</title>
 <meta name="author" content="Roscoe A. Bartlett (bartlettra&#64;ornl.gov)" />
+<meta name="date" content="2014-09-10" />
 <style type="text/css">
 
 /*
@@ -313,12 +314,20 @@ ul.auto-toc {
 <tbody valign="top">
 <tr><th class="docinfo-name">Author:</th>
 <td>Roscoe A. Bartlett (<a class="reference external" href="mailto:bartlettra&#64;ornl.gov">bartlettra&#64;ornl.gov</a>)</td></tr>
+<tr><th class="docinfo-name">Date:</th>
+<td>2014-09-10</td></tr>
+<tr><th class="docinfo-name">Version:</th>
+<td>TriBITS Development at 2014-09-10</td></tr>
 </tbody>
 </table>
-<div class="abstract topic">
-<p class="topic-title first">Abstract</p>
-<p>This document describes the usage of TriBITS to build, test, and deploy complex software.  The primary audience are those individuals who develop on a software project which uses TriBITS.  The overall structure of a TriBITS project is described including all of the various project- and package-specific files that TriBITS requires or can use and how and what order these files are processed.  It also contains detailed reference information on all of the various TriBITS macros and functions directly used in TriBITS project CMake files.  Many other topics of interest to a TriBITS project developer and architect are discussed as well.</p>
-</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Abstract:</th><td class="field-body">This document describes the usage of TriBITS to build, test, and deploy complex software.  The primary audience are those individuals who develop on a software project which uses TriBITS.  The overall structure of a TriBITS project is described including all of the various project- and package-specific files that TriBITS requires or can use and how and what order these files are processed.  It also contains detailed reference information on all of the various TriBITS macros and functions directly used in TriBITS project CMake files.  Many other topics of interest to a TriBITS project developer and architect are discussed as well.</td>
+</tr>
+</tbody>
+</table>
 <!-- Above, the depth of the TOC is set to just 2 because I don't want the -->
 <!-- TriBITS function/macro names to have section numbers appearing before them. -->
 <!-- Also, some of them are long and I don't want them to go off the page of the -->
@@ -1697,7 +1706,7 @@ TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(WrapExternal Windows)
 <a class="reference internal" href="#tribits-disable-package-on-platforms">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a>.  Also, if the binary directory for
 any package <tt class="docutils literal">&lt;packageName&gt;</tt> needs to be changed from the default, then the
 variable <tt class="docutils literal">&lt;packageName&gt;_SPECIFIED_BINARY_DIR</tt> can be set.  One can see an
-example of this in the file <tt class="docutils literal">tribits/PackageList.cmake</tt> which shows</p>
+example of this in the file <tt class="docutils literal">TriBITS/PackageList.cmake</tt> which shows</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TriBITS  .    PT
@@ -1750,7 +1759,7 @@ configure the repository's version header file (see <a class="reference internal
 Versioning and Release Mode</a>).  Even if a repository version header file is
 not produced, it is a good idea for every TriBITS repository to define this
 file, just for legal purposes.  For a good open-source license, one should
-consider copying the <tt class="docutils literal">tribits/Copyright.txt</tt> file which is a simple 3-clause
+consider copying the <tt class="docutils literal">TriBITS/Copyright.txt</tt> file which is a simple 3-clause
 BSD-like license like:</p>
 <pre class="literal-block">
 # &#64;HEADER
@@ -2992,29 +3001,30 @@ into the same base source directory.  However, in this case, the TriBITS
 Project name and the TriBITS Package name cannot be the same and some
 modifications and tricks are needed to allow this to work.  One example of
 this is the <tt class="docutils literal">TriBITSProj</tt> project and <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test Package</a>
-themselves, which are both rooted in the base <tt class="docutils literal">tribits</tt> source directory.
-There are a few restrictions and modifications needed to get this to work:</p>
+themselves, which are both rooted in the base <tt class="docutils literal">TriBITS</tt> source directory of
+the stand-alone TriBITS repository.  There are a few restrictions and
+modifications needed to get this to work:</p>
 <ul class="simple">
 <li>The Project and Package names cannot be the same.  In the case of the
 TriBITS project, the project name is <tt class="docutils literal">TriBITSProj</tt> (as defined in
-<tt class="docutils literal">tribits/ProjectName.cmake</tt>) and the package name is <tt class="docutils literal">TriBITS</tt> (as
-defined in <tt class="docutils literal">tribits/PackagesList.cmake</tt>).</li>
+<tt class="docutils literal">TriBITS/ProjectName.cmake</tt>) and the package name is <tt class="docutils literal">TriBITS</tt> (as
+defined in <tt class="docutils literal">TriBITS/PackagesList.cmake</tt>).</li>
 <li>The base <tt class="docutils literal">CMakeLists.txt</tt> file must be modified to allow it to be
 processed both as the base project <tt class="docutils literal">CMakeLists.txt</tt> file and as the
 package's base <tt class="docutils literal">CMakeLists.txt</tt> file.  In the case of
-<tt class="docutils literal">tribits/CMakeLists.txt</tt>, a big if statement is used.</li>
+<tt class="docutils literal">TriBITS/CMakeLists.txt</tt>, a big if statement is used.</li>
 <li>An extra subdirectory must be created for TriBITS package's binary
 directory.  Because of directory-level targets like <tt class="docutils literal">${PROJECT_NAME}_libs</tt>
 and <tt class="docutils literal">${PACKAGE_NAME}_libs</tt>, a subdirectory for the package's binary
 directory must be created.  This is simply done by overriding the binary
 directory name <tt class="docutils literal">${PACKAGE_NAME}_SPECIFIED_BINARY_DIR</tt>.  In the case of
-TriBITS, this is set to <tt class="docutils literal">tribits</tt> in the <tt class="docutils literal">tribits/PackagesList.cmake</tt>
+TriBITS, this is set to <tt class="docutils literal">tribits</tt> in the <tt class="docutils literal">TriBITS/PackagesList.cmake</tt>
 file.</li>
 </ul>
 <p>Other than those modifications, a TriBITS project, repository, and package can
 all be rooted in the same source directory.  However, as one can see above, to
 do so is a little messy and is not recommended.  It was only done this way
-with the base TriBITS directory <tt class="docutils literal">tribits</tt> in order to maintain backward
+with the base TriBITS directory <tt class="docutils literal">TriBITS</tt> in order to maintain backward
 compatibility for the usage of TriBITS in existing TriBITS projects.</p>
 <p>However, one possible use case for collapsing a project, repository, and
 package into a single base source directory would be to support the
@@ -7189,34 +7199,38 @@ package in one or more CTest tests.</p>
 </div>
 <div class="section" id="tribits-directory-snapshotting">
 <h2><a class="toc-backref" href="#id96">10.13&nbsp;&nbsp;&nbsp;TriBITS directory snapshotting</a></h2>
-<p>Some TriBITS projects choose to snapshot the <tt class="docutils literal">tribits</tt> directory source tree
+<p>Some TriBITS projects choose to snapshot the <tt class="docutils literal">TriBITS</tt> directory source tree
 into their project's source tree, typically under
-<a class="reference internal" href="#projectdir-cmake-tribits">&lt;projectDir&gt;/cmake/tribits/</a>.  The <tt class="docutils literal">tribits</tt> git source tree contains a
-symbolic link to the the tool <a class="reference internal" href="#snapshot-dir-py">snapshot-dir.py</a> that allows one to update the
-snapshot of the TriBITS source tree as simply as:</p>
+<a class="reference internal" href="#projectdir-cmake-tribits">&lt;projectDir&gt;/cmake/tribits/</a>.  The independent <tt class="docutils literal">TriBITS</tt> source tree
+contains a symbolic link to the the tool <a class="reference internal" href="#snapshot-dir-py">snapshot-dir.py</a> that allows one to
+update the snapshot of the TriBITS source tree as simply as:</p>
 <pre class="literal-block">
 $ cd &lt;projectDir&gt;/cmake/tribits/
-$ &lt;some-base-dir&gt;/tribits/snapshot-dir.py
+$ &lt;some-base-dir&gt;/TriBITS/snapshot-dir.py
 </pre>
 <p>This will create a git commit in the local <tt class="docutils literal">&lt;projectDir&gt;/</tt> git repo that
 looks like:</p>
 <pre class="literal-block">
-Automatic snapshot commit
+Automatic snapshot commit from TriBITS at 983d4f4
 
-origin: '&lt;some-url-base&gt;/tribits'
+Origin repo remote tracking branch: 'origin/master'
+Origin repo remote repo URL: 'origin = git&#64;github.com:TriBITSPub/TriBITS'
 
 At commit:
 
-a2e0ab8 Removing bad global cache var messing up multiple configures
-Author: Roscoe A. Bartlett &lt;some-email-address&gt;
-Date: Wed Mar 26 18:22:08 2014 -0400
+983d4f4 Adding all checkin-test.py defaults to config file and removing checkin-test.py (Trilinos #6218)
+Author: Roscoe A. Bartlett &lt;bartlettra&#64;ornl.gov&gt;
+Date: Tue Sep 9 11:31:02 2014 -0400
 </pre>
 <p>This, of course, assumes that <tt class="docutils literal">&lt;projectDir&gt;/</tt> is a local git repo (or is in
 local git repo).  If that is not the case, then one cannot use the script
-<tt class="docutils literal"><span class="pre">snapshot-dir.py</span></tt>.</p>
+<tt class="docutils literal"><span class="pre">snapshot-dir.py</span></tt> or must use it with the <tt class="docutils literal"><span class="pre">--skip-commit</span></tt> option.</p>
 <p>See <a class="reference internal" href="#snapshot-dir-py-help">snapshot-dir.py --help</a> for more details.  Note the guidance on using a
 different branch for the snapshot sync followed by a merge.  This allows for
-one to maintain local changes to TriBITS and use git to manage the merges.</p>
+one to maintain local changes to TriBITS and use git to manage the merges.
+However, this will increase the changes of merge conflicts so one should
+consider just directly snapshottting into the master branch to avoid merge
+conflicts.</p>
 </div>
 <div class="section" id="tribits-development-toolset">
 <h2><a class="toc-backref" href="#id97">10.14&nbsp;&nbsp;&nbsp;TriBITS Development Toolset</a></h2>
@@ -11605,7 +11619,16 @@ Options:
   -h, --help            show this help message and exit
   --project-configuration=PROJECTCONFIGURATION
                         Custom file to provide configuration defaults for the
-                        project.
+                        project.  By default, the file project-checkin-test-
+                        config.py is looked for in &lt;checkin-test-path&gt;/../..
+                        (assuming default &lt;projectDir&gt;/cmake/tribits/
+                        directory structure and second is looked for in
+                        &lt;checkin-test-path&gt;/ (which is common practice to
+                        symlink the checkin-test.py script into the project's
+                        base directory).  If this file is set to a location
+                        that is not in the project's base directory, then
+                        --src-dir must be set to point to the project's base
+                        directory.
   --show-defaults       Show the default option values and do nothing at all.
   --project-name=PROJECTNAME
                         Set the project's name. This is used to locate various
@@ -11616,11 +11639,9 @@ Options:
   --no-eg-git-version-check
                         Do not check the versions of eg and git, just trust
                         they are okay.
-  --src-dir=SRCDIR      The source base directory for code to be tested.
-                        Default assumes is &lt;tribitsDir&gt;/../..
-  --trilinos-src-dir=SRCDIR
-                        [DEPRECATED] Use --src-dir instead. This argument is
-                        for backwards compatibility only.
+  --src-dir=SRCDIR      The source base directory for code to be tested.  The
+                        default is determined by the location of the found
+                        project-checkin-test-config.py file.
   --default-builds=DEFAULTBUILDS
                         Comma separated list of builds that should always be
                         run by default.
@@ -12160,6 +12181,10 @@ Options:
                         Check that dest-dir is committed and clean. [default]
   --allow-dirty-dest-dir
                         Skip clean check of dest-dir.
+  --do-rsync            Actually do the rsync. [default]
+  --skip-rsync          Skip the rsync (testing only?).
+  --do-commit           Actually do the commit. [default]
+  --skip-commit         Skip the commit.
 
 </pre>
 <!-- *** -->

@@ -2842,38 +2842,38 @@ Usage::
 The arguments are:
 
   ``PACKAGE_NAME <pakageName>``
- 
+
     Gives the name of the TriBITS package for which the export files should
     be created.
- 
+
   ``EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>``
- 
+
     If specified, then all of the variables in the generated export files
     will be prefixed with ``<exportFileVarPrefix>_`` instead of
     ``<pakageName>_``.
- 
+
   ``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
- 
+
     If specified, then the package's (``<packageName>``) cmake configure
     export file for use by external CMake client projects will be created as
     the file ``<cmakeConfigFileFullPath>``.  NOTE: the argument should be
     the full path!
- 
+
   ``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
- 
+
     If specified, then the package's (``<packageName>``) export makefile for
     use by external Makefile client projects will be created in the file
     <exportMakefileFileFullPath>.  NOTE: the argument should be the full
     path!
- 
+
   ``WRITE_INSTALL_CMAKE_CONFIG_FILE``
- 
+
     If specified, then the package's (``<packageName>``) install cmake
     configured export file will be installed in to the install tree as well.
     The name and location of this file is hard-coded.
- 
+
   ``WRITE_INSTALL_EXPORT_MAKLEFILE``
- 
+
     If specified, then the package's (``<packageName>``) install export
     makefile to be installed into the install tree as well.  The name and
     location of this file is hard-coded.

@@ -3,6 +3,10 @@ TriBITS Developers Guide and Reference
 =======================================
 
 :Author: Roscoe A. Bartlett (bartlettra@ornl.gov)
+:Date: |date|
+:Version: TriBITS Development at |date|
+
+.. |date| date::
 
 :Abstract: This document describes the usage of TriBITS to build, test, and deploy complex software.  The primary audience are those individuals who develop on a software project which uses TriBITS.  The overall structure of a TriBITS project is described including all of the various project- and package-specific files that TriBITS requires or can use and how and what order these files are processed.  It also contains detailed reference information on all of the various TriBITS macros and functions directly used in TriBITS project CMake files.  Many other topics of interest to a TriBITS project developer and architect are discussed as well.
 
@@ -1174,7 +1178,7 @@ Other commands that are appropriate to use in this file include
 `TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.  Also, if the binary directory for
 any package ``<packageName>`` needs to be changed from the default, then the
 variable ``<packageName>_SPECIFIED_BINARY_DIR`` can be set.  One can see an
-example of this in the file ``tribits/PackageList.cmake`` which shows
+example of this in the file ``TriBITS/PackageList.cmake`` which shows
 
 .. include:: ../../PackagesList.cmake
    :literal:
@@ -1223,7 +1227,7 @@ configure the repository's version header file (see `Project and Repository
 Versioning and Release Mode`_).  Even if a repository version header file is
 not produced, it is a good idea for every TriBITS repository to define this
 file, just for legal purposes.  For a good open-source license, one should
-consider copying the ``tribits/Copyright.txt`` file which is a simple 3-clause
+consider copying the ``TriBITS/Copyright.txt`` file which is a simple 3-clause
 BSD-like license like:
 
 .. include:: ../../Copyright.txt
@@ -2369,29 +2373,30 @@ into the same base source directory.  However, in this case, the TriBITS
 Project name and the TriBITS Package name cannot be the same and some
 modifications and tricks are needed to allow this to work.  One example of
 this is the ``TriBITSProj`` project and `The TriBITS Test Package`_
-themselves, which are both rooted in the base ``tribits`` source directory.
-There are a few restrictions and modifications needed to get this to work:
+themselves, which are both rooted in the base ``TriBITS`` source directory of
+the stand-alone TriBITS repository.  There are a few restrictions and
+modifications needed to get this to work:
 
 * The Project and Package names cannot be the same.  In the case of the
   TriBITS project, the project name is ``TriBITSProj`` (as defined in
-  ``tribits/ProjectName.cmake``) and the package name is ``TriBITS`` (as
-  defined in ``tribits/PackagesList.cmake``).
+  ``TriBITS/ProjectName.cmake``) and the package name is ``TriBITS`` (as
+  defined in ``TriBITS/PackagesList.cmake``).
 * The base ``CMakeLists.txt`` file must be modified to allow it to be
   processed both as the base project ``CMakeLists.txt`` file and as the
   package's base ``CMakeLists.txt`` file.  In the case of
-  ``tribits/CMakeLists.txt``, a big if statement is used.
+  ``TriBITS/CMakeLists.txt``, a big if statement is used.
 * An extra subdirectory must be created for TriBITS package's binary
   directory.  Because of directory-level targets like ``${PROJECT_NAME}_libs``
   and ``${PACKAGE_NAME}_libs``, a subdirectory for the package's binary
   directory must be created.  This is simply done by overriding the binary
   directory name ``${PACKAGE_NAME}_SPECIFIED_BINARY_DIR``.  In the case of
-  TriBITS, this is set to ``tribits`` in the ``tribits/PackagesList.cmake``
+  TriBITS, this is set to ``tribits`` in the ``TriBITS/PackagesList.cmake``
   file.
 
 Other than those modifications, a TriBITS project, repository, and package can
 all be rooted in the same source directory.  However, as one can see above, to
 do so is a little messy and is not recommended.  It was only done this way
-with the base TriBITS directory ``tribits`` in order to maintain backward
+with the base TriBITS directory ``TriBITS`` in order to maintain backward
 compatibility for the usage of TriBITS in existing TriBITS projects.
 
 However, one possible use case for collapsing a project, repository, and
@@ -6516,35 +6521,39 @@ package in one or more CTest tests.
 TriBITS directory snapshotting
 ------------------------------
 
-Some TriBITS projects choose to snapshot the ``tribits`` directory source tree
+Some TriBITS projects choose to snapshot the ``TriBITS`` directory source tree
 into their project's source tree, typically under
-`<projectDir>/cmake/tribits/`_.  The ``tribits`` git source tree contains a
-symbolic link to the the tool `snapshot-dir.py`_ that allows one to update the
-snapshot of the TriBITS source tree as simply as::
+`<projectDir>/cmake/tribits/`_.  The independent ``TriBITS`` source tree
+contains a symbolic link to the the tool `snapshot-dir.py`_ that allows one to
+update the snapshot of the TriBITS source tree as simply as::
 
   $ cd <projectDir>/cmake/tribits/
-  $ <some-base-dir>/tribits/snapshot-dir.py
+  $ <some-base-dir>/TriBITS/snapshot-dir.py
 
 This will create a git commit in the local ``<projectDir>/`` git repo that
 looks like::
 
-    Automatic snapshot commit
+    Automatic snapshot commit from TriBITS at 983d4f4
     
-    origin: '<some-url-base>/tribits'
+    Origin repo remote tracking branch: 'origin/master'
+    Origin repo remote repo URL: 'origin = git@github.com:TriBITSPub/TriBITS'
     
     At commit:
     
-    a2e0ab8 Removing bad global cache var messing up multiple configures
-    Author: Roscoe A. Bartlett <some-email-address>
-    Date: Wed Mar 26 18:22:08 2014 -0400
+    983d4f4 Adding all checkin-test.py defaults to config file and removing checkin-test.py (Trilinos #6218)
+    Author: Roscoe A. Bartlett <bartlettra@ornl.gov>
+    Date: Tue Sep 9 11:31:02 2014 -0400
 
 This, of course, assumes that ``<projectDir>/`` is a local git repo (or is in
 local git repo).  If that is not the case, then one cannot use the script
-``snapshot-dir.py``.
+``snapshot-dir.py`` or must use it with the ``--skip-commit`` option.
 
 See `snapshot-dir.py --help`_ for more details.  Note the guidance on using a
 different branch for the snapshot sync followed by a merge.  This allows for
 one to maintain local changes to TriBITS and use git to manage the merges.
+However, this will increase the changes of merge conflicts so one should
+consider just directly snapshottting into the master branch to avoid merge
+conflicts.
 
 
 TriBITS Development Toolset

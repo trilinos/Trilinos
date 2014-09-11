@@ -596,7 +596,16 @@ Options:
   -h, --help            show this help message and exit
   --project-configuration=PROJECTCONFIGURATION
                         Custom file to provide configuration defaults for the
-                        project.
+                        project.  By default, the file project-checkin-test-
+                        config.py is looked for in <checkin-test-path>/../..
+                        (assuming default <projectDir>/cmake/tribits/
+                        directory structure and second is looked for in
+                        <checkin-test-path>/ (which is common practice to
+                        symlink the checkin-test.py script into the project's
+                        base directory).  If this file is set to a location
+                        that is not in the project's base directory, then
+                        --src-dir must be set to point to the project's base
+                        directory.
   --show-defaults       Show the default option values and do nothing at all.
   --project-name=PROJECTNAME
                         Set the project's name. This is used to locate various
@@ -607,11 +616,9 @@ Options:
   --no-eg-git-version-check
                         Do not check the versions of eg and git, just trust
                         they are okay.
-  --src-dir=SRCDIR      The source base directory for code to be tested.
-                        Default assumes is <tribitsDir>/../..
-  --trilinos-src-dir=SRCDIR
-                        [DEPRECATED] Use --src-dir instead. This argument is
-                        for backwards compatibility only.
+  --src-dir=SRCDIR      The source base directory for code to be tested.  The
+                        default is determined by the location of the found
+                        project-checkin-test-config.py file.
   --default-builds=DEFAULTBUILDS
                         Comma separated list of builds that should always be
                         run by default.
