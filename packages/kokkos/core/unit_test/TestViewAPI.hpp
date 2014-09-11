@@ -907,40 +907,23 @@ public:
 
   TestViewAPI()
   {
-    std::cout << "A\n";
     run_test_mirror();
-    std::cout << "B\n";
     run_test();
-    std::cout << "C\n";
     run_test_scalar();
-    std::cout << "D\n";
     run_test_const();
-    std::cout << "E\n";
     run_test_subview();
-    std::cout << "F\n";
     run_test_subview_strided();
-    std::cout << "G\n";
     run_test_vector();
-    std::cout << "H\n";
 
     TestViewOperator< T , device >::apply();
-    std::cout << "G\n";
     TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2][3] , device >::apply();
-    std::cout << "I\n";
     TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2] , device >::apply();
-    std::cout << "J\n";
     TestViewOperator_LeftAndRight< int[2][3][4][2][3][4] , device >::apply();
-    std::cout << "K\n";
     TestViewOperator_LeftAndRight< int[2][3][4][2][3] , device >::apply();
-    std::cout << "L\n";
     TestViewOperator_LeftAndRight< int[2][3][4][2] , device >::apply();
-    std::cout << "M\n";
     TestViewOperator_LeftAndRight< int[2][3][4] , device >::apply();
-    std::cout << "N\n";
     TestViewOperator_LeftAndRight< int[2][3] , device >::apply();
-    std::cout << "O\n";
     TestViewOperator_LeftAndRight< int[2] , device >::apply();
-    std::cout << "P\n";
   }
 
   enum { N0 = 1000 ,
