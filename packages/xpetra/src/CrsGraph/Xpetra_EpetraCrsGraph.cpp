@@ -167,8 +167,8 @@ namespace Xpetra {
 
   // TODO: use toEpetra()
   template<class EpetraGlobalOrdinal>
-  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doImport(const DistObject<GlobalOrdinal, int, GlobalOrdinal> &source,
-                                 const Import<int, GlobalOrdinal> &importer, CombineMode CM) {
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+                                 const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doImport");
 
     XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
@@ -180,8 +180,8 @@ namespace Xpetra {
   }
 
   template<class EpetraGlobalOrdinal>
-  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doExport(const DistObject<GlobalOrdinal, int, GlobalOrdinal> &dest,
-                                 const Import<int, GlobalOrdinal>& importer, CombineMode CM) {
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doExport");
 
     XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
@@ -193,8 +193,8 @@ namespace Xpetra {
   }
 
   template<class EpetraGlobalOrdinal>
-  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doImport(const DistObject<GlobalOrdinal, int, GlobalOrdinal> &source,
-                                 const Export<int, GlobalOrdinal>& exporter, CombineMode CM) {
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+                                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doImport");
 
     XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
@@ -207,8 +207,8 @@ namespace Xpetra {
   }
 
   template<class EpetraGlobalOrdinal>
-  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doExport(const DistObject<GlobalOrdinal, int, GlobalOrdinal> &dest,
-                                 const Export<int, GlobalOrdinal>& exporter, CombineMode CM) {
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
     XPETRA_MONITOR("EpetraCrsGraphT::doExport");
 
     XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");

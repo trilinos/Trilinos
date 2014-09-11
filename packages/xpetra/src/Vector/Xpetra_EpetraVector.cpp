@@ -64,9 +64,8 @@ namespace Xpetra {
   template<class EpetraGlobalOrdinal>
   void EpetraVectorT<EpetraGlobalOrdinal>::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraVectorT::sumIntoLocalValue");this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->SumIntoMyValue(myRow, 0, value); }
 
-<<<<<<< HEAD
   template<class EpetraGlobalOrdinal>
-  double EpetraVectorT<EpetraGlobalOrdinal>::dot(const Vector<double,int,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType>& a) const {
+  double EpetraVectorT<EpetraGlobalOrdinal>::dot(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &a) const {
     XPETRA_MONITOR("EpetraVectorT::dot");
 
     XPETRA_DYNAMIC_CAST(const EpetraVectorT, a, tA, "This Xpetra::EpetraVectorT method only accept Xpetra::EpetraVectorT as input arguments.");
@@ -137,13 +136,13 @@ namespace Xpetra {
 
   // TODO: move that elsewhere
   template<class GlobalOrdinal>
-  Epetra_Vector & toEpetra(Vector<double, int, GlobalOrdinal, KokkosClassic::DefaultNode::DefaultNodeType> &x) {
+  Epetra_Vector & toEpetra(Vector<double, int, GlobalOrdinal> &x) {
     XPETRA_DYNAMIC_CAST(      EpetraVectorT<GlobalOrdinal>, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }
 
   template<class GlobalOrdinal>
-  const Epetra_Vector & toEpetra(const Vector<double, int, GlobalOrdinal, KokkosClassic::DefaultNode::DefaultNodeType> &x) {
+  const Epetra_Vector & toEpetra(const Vector<double, int, GlobalOrdinal> &x) {
     XPETRA_DYNAMIC_CAST(const EpetraVectorT<GlobalOrdinal>, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }

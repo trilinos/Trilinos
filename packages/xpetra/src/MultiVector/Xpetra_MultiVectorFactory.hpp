@@ -114,7 +114,7 @@ namespace Xpetra {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef GlobalOrdinalArg GlobalOrdinal;
-    typedef MultiVector<double, int, GlobalOrdinal>::node_type Node;
+    typedef typename MultiVector<double, int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.

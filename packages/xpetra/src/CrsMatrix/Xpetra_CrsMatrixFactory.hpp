@@ -186,7 +186,7 @@ namespace Xpetra {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef GlobalOrdinalArg GlobalOrdinal;
-    typedef CrsMatrix<double, int, GlobalOrdinal>::node_type Node;
+    typedef typename CrsMatrix<double, int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.

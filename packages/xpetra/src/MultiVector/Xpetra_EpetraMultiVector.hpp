@@ -82,7 +82,7 @@ namespace Xpetra {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef EpetraGlobalOrdinal GlobalOrdinal;
-    typedef MultiVector<double, int, GlobalOrdinal>::node_type Node;
+    typedef typename MultiVector<double, int, GlobalOrdinal>::node_type Node;
 
   public:
 

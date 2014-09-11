@@ -70,10 +70,9 @@ namespace Xpetra {
     : public CrsMatrix<double, int, EpetraGlobalOrdinal>
   {
     typedef EpetraGlobalOrdinal GlobalOrdinal;
-    typedef CrsMatrix<double, int, GlobalOrdinal>::scalar_type Scalar;
-    typedef CrsMatrix<double, int, GlobalOrdinal>::local_ordinal_type LocalOrdinal;
-    typedef CrsMatrix<double, int, GlobalOrdinal>::global_ordinal_type GlobalOrdinal;
-    typedef CrsMatrix<double, int, GlobalOrdinal>::node_type Node;
+    typedef typename CrsMatrix<double, int, GlobalOrdinal>::scalar_type Scalar;
+    typedef typename CrsMatrix<double, int, GlobalOrdinal>::local_ordinal_type LocalOrdinal;
+    typedef typename CrsMatrix<double, int, GlobalOrdinal>::node_type Node;
 
   public:
 
@@ -233,7 +232,7 @@ namespace Xpetra {
     bool isFillActive() const;
 
     //! Returns the Frobenius norm of the matrix.
-    ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { XPETRA_MONITOR("EpetraCrsMatrixT::getFrobeniusNorm"); return mtx_->NormFrobenius(); }
+    typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { XPETRA_MONITOR("EpetraCrsMatrixT::getFrobeniusNorm"); return mtx_->NormFrobenius(); }
 
     //! Returns true if getLocalRowView() and getGlobalRowView() are valid for this class.
     bool supportsRowViews() const;

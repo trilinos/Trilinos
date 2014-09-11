@@ -97,7 +97,7 @@ namespace Xpetra {
     typedef double                              Scalar;
     typedef int                                 LocalOrdinal;
     typedef GlobalOrdinalArg                    GlobalOrdinal;
-    typedef Vector<double, int, GlobalOrdinal>::node_type Node;
+    typedef typename Vector<double, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -132,7 +132,7 @@ namespace Xpetra {
     typedef int                              Scalar;
     typedef int                              LocalOrdinal;
     typedef GlobalOrdinalArg                            GlobalOrdinal;
-    typedef Vector<int, int, GlobalOrdinal>::node_type Node;
+    typedef typename Vector<int, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 

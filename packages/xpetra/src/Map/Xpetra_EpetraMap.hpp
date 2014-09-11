@@ -79,7 +79,7 @@ namespace Xpetra {
   {
     typedef int LocalOrdinal;
     typedef EpetraGlobalOrdinal GlobalOrdinal;
-    typedef Map<int, GlobalOrdinal>::node_type Node;
+    typedef typename Map<int, GlobalOrdinal>::node_type Node;
 
   public:
     typedef int local_ordinal_type;

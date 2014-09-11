@@ -591,10 +591,10 @@ inline void JacobiT(
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 inline void Jacobi(
   double omega,
-  const Xpetra::Vector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & Dinv,
-  const Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & A,
-  const Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & B,
-  Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> &C,
+  const Xpetra::Vector<double,int,int> & Dinv,
+  const Xpetra::Matrix<double,int,int> & A,
+  const Xpetra::Matrix<double,int,int> & B,
+  Xpetra::Matrix<double,int,int> &C,
   bool call_FillComplete_on_result,
   bool doOptimizeStorage) {
   JacobiT<int>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage);
@@ -604,10 +604,10 @@ inline void Jacobi(
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 inline void Jacobi(
   double omega,
-  const Xpetra::Vector<double,int,long long,KokkosClassic::DefaultNode::DefaultNodeType> & Dinv,
-  const Xpetra::Matrix<double,int,long long,KokkosClassic::DefaultNode::DefaultNodeType> & A,
-  const Xpetra::Matrix<double,int,long long,KokkosClassic::DefaultNode::DefaultNodeType> & B,
-  Xpetra::Matrix<double,int,long long,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> &C,
+  const Xpetra::Vector<double,int,long long> & Dinv,
+  const Xpetra::Matrix<double,int,long long> & A,
+  const Xpetra::Matrix<double,int,long long> & B,
+  Xpetra::Matrix<double,int,long long> &C,
   bool call_FillComplete_on_result,
   bool doOptimizeStorage) {
   JacobiT<long long>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage);

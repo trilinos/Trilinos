@@ -280,7 +280,7 @@ namespace Xpetra {
 
     typedef int LocalOrdinal;
     typedef GlobalOrdinalArg GlobalOrdinal;
-    typedef Map<int, GlobalOrdinal>::node_type Node;
+    typedef typename Map<int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.

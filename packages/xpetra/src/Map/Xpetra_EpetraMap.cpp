@@ -245,8 +245,8 @@ namespace Xpetra {
 #endif
 
   template<class EpetraGlobalOrdinal>
-  Teuchos::RCP<typename EpetraMapT<EpetraGlobalOrdinal>::node_type>
-  T<EpetraGlobalOrdinal>::getNode () const
+  Teuchos::RCP<typename EpetraMapT<EpetraGlobalOrdinal>::Node>
+  EpetraMapT<EpetraGlobalOrdinal>::getNode () const
   {
     XPETRA_MONITOR("EpetraMapT<EpetraGlobalOrdinal>::getNode");
     return KokkosClassic::DefaultNode::getDefaultNode();

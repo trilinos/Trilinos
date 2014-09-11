@@ -76,7 +76,7 @@ namespace Xpetra {
   {
     typedef int LocalOrdinal;
     typedef EpetraGlobalOrdinal GlobalOrdinal;
-    typedef CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type Node;
+    typedef typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type Node;
     //! The specialization of Map used by this class.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 

@@ -198,7 +198,7 @@ namespace Xpetra {
     typedef double                                        Scalar;
     typedef int                                           LocalOrdinal;
     typedef GlobalOrdinalArg                              GlobalOrdinal;
-    typedef Matrix<double, int, GlobalOrdinal>::node_type Node;
+    typedef typename Matrix<double, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
 

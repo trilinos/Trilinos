@@ -89,12 +89,12 @@ namespace Xpetra {
   void EpetraIntVectorT<EpetraGlobalOrdinal>::setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionnality not available in Epetra"); }
 
   template<class EpetraGlobalOrdinal>
-  Teuchos::RCP< const Vector< int,int,EpetraGlobalOrdinal > > EpetraIntVectorT<EpetraGlobalOrdinal>::getVector(size_t j) const {
+  Teuchos::RCP< const Vector< int,int,EpetraGlobalOrdinal, typename EpetraIntVectorT<EpetraGlobalOrdinal>::Node > > EpetraIntVectorT<EpetraGlobalOrdinal>::getVector(size_t j) const {
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
   template<class EpetraGlobalOrdinal>
-  Teuchos::RCP< Vector< int,int,EpetraGlobalOrdinal > > EpetraIntVectorT<EpetraGlobalOrdinal>::getVectorNonConst(size_t j) {
+  Teuchos::RCP< Vector< int,int,EpetraGlobalOrdinal, typename EpetraIntVectorT<EpetraGlobalOrdinal>::Node > > EpetraIntVectorT<EpetraGlobalOrdinal>::getVectorNonConst(size_t j) {
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
@@ -244,8 +244,8 @@ namespace Xpetra {
   }
 
   template<class EpetraGlobalOrdinal>
-  void EpetraIntVectorT<EpetraGlobalOrdinal>::doImport(const DistObject<int, int, GlobalOrdinal, Node> &source,
-                                 const Import<int, GlobalOrdinal, Node> &importer, CombineMode CM) {
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::doImport(const DistObject<int, int, GlobalOrdinal> &source,
+                                 const Import<int, GlobalOrdinal> &importer, CombineMode CM) {
     XPETRA_MONITOR("EpetraIntVectorT::doImport");
 
     XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
@@ -257,8 +257,8 @@ namespace Xpetra {
   }
 
   template<class EpetraGlobalOrdinal>
-  void EpetraIntVectorT<EpetraGlobalOrdinal>::doExport(const DistObject<int, LocalOrdinal, GlobalOrdinal, Node> &dest,
-                                 const Import<int, GlobalOrdinal, Node>& importer, CombineMode CM) {
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::doExport(const DistObject<int, LocalOrdinal, GlobalOrdinal> &dest,
+                                 const Import<int, GlobalOrdinal>& importer, CombineMode CM) {
     XPETRA_MONITOR("EpetraIntVectorT::doExport");
 
     XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
@@ -270,8 +270,8 @@ namespace Xpetra {
   }
 
   template<class EpetraGlobalOrdinal>
-  void EpetraIntVectorT<EpetraGlobalOrdinal>::doImport(const DistObject<int, LocalOrdinal, GlobalOrdinal, Node> &source,
-                                 const Export<int, GlobalOrdinal, Node>& exporter, CombineMode CM) {
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::doImport(const DistObject<int, LocalOrdinal, GlobalOrdinal> &source,
+                                 const Export<int, GlobalOrdinal>& exporter, CombineMode CM) {
     XPETRA_MONITOR("EpetraIntVectorT::doImport");
 
     XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
@@ -283,8 +283,8 @@ namespace Xpetra {
   }
 
   template<class EpetraGlobalOrdinal>
-  void EpetraIntVectorT<EpetraGlobalOrdinal>::doExport(const DistObject<int, LocalOrdinal, GlobalOrdinal, Node> &dest,
-                                 const Export<int, GlobalOrdinal, Node>& exporter, CombineMode CM) {
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::doExport(const DistObject<int, LocalOrdinal, GlobalOrdinal> &dest,
+                                 const Export<int, GlobalOrdinal>& exporter, CombineMode CM) {
     XPETRA_MONITOR("EpetraIntVectorT::doExport");
 
     XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");

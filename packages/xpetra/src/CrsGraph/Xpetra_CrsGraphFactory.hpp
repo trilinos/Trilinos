@@ -94,7 +94,7 @@ namespace Xpetra {
 
     typedef int LocalOrdinal;
     typedef GlobalOrdinalArg GlobalOrdinal;
-    typedef CrsGraph<int, GlobalOrdinal>::node_type Node;
+    typedef typename CrsGraph<int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
