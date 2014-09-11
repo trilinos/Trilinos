@@ -2470,14 +2470,10 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
     const stk::mesh::EntityId element_id_0 = 1000;
     const stk::mesh::EntityId element_id_1 = 1001;
 
-// #define TRY_ADD_SHARING
-
     const stk::mesh::EntityId filler_node_id = 123456;
     stk::mesh::Entity filler_node = bulk.declare_entity(stk::topology::NODE_RANK, filler_node_id);
 
-#ifdef TRY_ADD_SHARING
     bulk.add_node_sharing(filler_node, (myRank == 1 ? 0 : 1));
-#endif
 
     if (myRank == 0)
     {
