@@ -63,6 +63,7 @@
 
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
+#include <TestRange.hpp>
 #include <TestTeam.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
@@ -100,6 +101,13 @@ void test_device_cuda_view_api()
   // y[0] = 10 ;
   // y(0) = 10 ;
 #endif
+}
+
+void test_device_cuda_range_tag()
+{
+  TestRange< Kokkos::Cuda >::test_for(1000);
+  TestRange< Kokkos::Cuda >::test_reduce(1000);
+  TestRange< Kokkos::Cuda >::test_scan(1000);
 }
 
 void test_device_cuda_crsarray() {

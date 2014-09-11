@@ -713,22 +713,40 @@ private:
   ParallelFor();
   ParallelFor & operator = ( const ParallelFor & );
 
+  template< class Tag >
+  inline static
+  __device__
+  void driver( const FunctorType & functor
+             , typename Impl::enable_if< Impl::is_same< Tag , void >::value
+               , typename Policy::member_type const & >::type iwork
+             )
+    { functor( iwork ); }
+
+  template< class Tag >
+  inline static
+  __device__
+  void driver( const FunctorType & functor
+             , typename Impl::enable_if< ! Impl::is_same< Tag , void >::value
+               , typename Policy::member_type const & >::type iwork
+             )
+    { functor( Tag() , iwork ); }
+
 public:
 
   inline
   __device__
   void operator()(void) const
-  {
-    const typename Policy::member_type work_stride = blockDim.y * gridDim.x ;
-    const typename Policy::member_type work_end    = m_policy.end();
+    {
+      const typename Policy::member_type work_stride = blockDim.y * gridDim.x ;
+      const typename Policy::member_type work_end    = m_policy.end();
 
-    for ( typename Policy::member_type
-            iwork =  m_policy.begin() + threadIdx.y + blockDim.y * blockIdx.x ;
-            iwork <  work_end ;
-            iwork += work_stride ) {
-      m_functor( iwork );
+      for ( typename Policy::member_type
+              iwork =  m_policy.begin() + threadIdx.y + blockDim.y * blockIdx.x ;
+              iwork <  work_end ;
+              iwork += work_stride ) {
+        ParallelFor::template driver< typename Policy::work_tag >( m_functor, iwork );
+      }
     }
-  }
 
   ParallelFor( const FunctorType  & functor ,
                const Policy       & policy )
@@ -909,6 +927,24 @@ public:
       return n ;
     }
 
+  template< class Tag >
+  inline static
+  __device__
+  void driver( const FunctorType & functor
+             , typename Impl::enable_if< Impl::is_same< Tag , void >::value
+               , typename Policy::member_type const & >::type iwork
+             , reference_type value )
+    { functor( iwork , value ); }
+
+  template< class Tag >
+  inline static
+  __device__
+  void driver( const FunctorType & functor
+             , typename Impl::enable_if< ! Impl::is_same< Tag , void >::value
+               , typename Policy::member_type const & >::type iwork
+             , reference_type value )
+    { functor( Tag() , iwork , value ); }
+
   __device__ inline
   void operator()(void) const
   {
@@ -928,7 +964,7 @@ public:
 
       for ( typename Policy::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
             iwork < iwork_end ; iwork += blockDim.y ) {
-        m_functor( iwork , value );
+        ParallelReduce::template driver< typename Policy::work_tag >( m_functor , iwork , value );
       }
     }
 
@@ -1159,6 +1195,26 @@ public:
   size_type *       m_scratch_flags ;
         size_type   m_final ;
   
+  template< class Tag >
+  inline static
+  __device__
+  void driver( const FunctorType & functor
+             , typename Impl::enable_if< Impl::is_same< Tag , void >::value
+               , typename Policy::member_type const & >::type iwork
+             , reference_type value 
+             , const bool     final )
+    { functor( iwork , value , final ); }
+
+  template< class Tag >
+  inline static
+  __device__
+  void driver( const FunctorType & functor
+             , typename Impl::enable_if< ! Impl::is_same< Tag , void >::value
+               , typename Policy::member_type const & >::type iwork
+             , reference_type value
+             , const bool     final )
+    { functor( Tag() , iwork , value , final ); }
+
   //----------------------------------------
 
   __device__ inline
@@ -1180,7 +1236,8 @@ public:
 
     for ( typename Policy::member_type iwork = range.begin() + threadIdx.y , iwork_end = range.end() ;
           iwork < iwork_end ; iwork += blockDim.y ) {
-      m_functor( iwork , Reduce::reference( shared_value ) , false );
+      ParallelScan::template driver< typename Policy::work_tag >
+        ( m_functor , iwork , Reduce::reference( shared_value ) , false );
     }
 
     // Reduce and scan, writing out scan of blocks' totals and block-groups' totals.
@@ -1229,7 +1286,10 @@ public:
       if ( CudaTraits::WarpSize < word_count.value ) { __syncthreads(); } // Protect against large scan values.
 
       // Call functor to accumulate inclusive scan value for this work item
-      if ( iwork < range.end() ) { m_functor( iwork , Reduce::reference( shared_prefix + word_count.value ) , false ); }
+      if ( iwork < range.end() ) {
+        ParallelScan::template driver< typename Policy::work_tag >
+          ( m_functor , iwork , Reduce::reference( shared_prefix + word_count.value ) , false );
+      }
 
       // Scan block values into locations shared_data[1..blockDim.y]
       cuda_intra_block_reduce_scan<true>( m_functor , Reduce::pointer_type(shared_data+word_count.value) );
@@ -1240,7 +1300,10 @@ public:
       }
 
       // Call functor with exclusive scan value
-      if ( iwork < range.end() ) { m_functor( iwork , Reduce::reference( shared_prefix ) , true ); }
+      if ( iwork < range.end() ) {
+        ParallelScan::template driver< typename Policy::work_tag >
+          ( m_functor , iwork , Reduce::reference( shared_prefix ) , true );
+      }
     }
   }
 
