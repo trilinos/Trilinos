@@ -31,7 +31,7 @@ namespace {
   typedef MV::global_ordinal_type GO;
   typedef Anasazi::MultiVecTraits<scalar_type, MV> MVT;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
-  typedef typename STS::magnitudeType norm_type;
+  typedef STS::magnitudeType norm_type;
   typedef Teuchos::ScalarTraits<norm_type> STN;
 
   //
