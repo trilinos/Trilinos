@@ -1,3 +1,4 @@
+#include "Pamgen_config.h"
 #include "LineRTC.hh"
 #include "RegistrarRTC.hh"
 #include "ArrayVarRTC.hh"
@@ -7,6 +8,11 @@
 #include <iostream>
 #include <math.h>
 #include <cstdlib>
+
+#ifdef HAVE_PAMGEN_BOOST
+#include <boost/math/special_functions/ellint_rj.hpp>
+#include <boost/math/special_functions/ellint_rf.hpp>
+#endif
 
 using namespace std;
 using namespace PG_RuntimeCompiler;
@@ -246,7 +252,7 @@ void Registrar::setupStandardFunctions()
     static Erfc      f26; FUNCTIONS[f26.name()] = &f26;
     static Gamma     f27; FUNCTIONS[f27.name()] = &f27;
     static Print     f28; FUNCTIONS[f28.name()] = &f28;
-
+    static GeneralizedCompleteEllipticIntegral      f29; FUNCTIONS[f29.name()] = &f29;
     ISINIT = true;
   }
 }
@@ -500,3 +506,18 @@ double Erfc::execute(Value** args)
 #endif
 }
 
+/*****************************************************************************/
+double GeneralizedCompleteEllipticIntegral::execute(Value** args) 
+/*****************************************************************************/
+{
+#ifdef HAVE_PAMGEN_BOOST
+  // Generalized complete elliptic integral, implemented using Carlson's functions
+  // See Derby and Olbert, "Cylindrical magnets and ideal solenoids," Am. J. Phys. 78, pp. 229-235, 2010.
+  // C(kc,p,c,s) = c *R_F(0,kc^2,1) + 1/3 * (s-p*c) * R_J(0,kc^2,1,p)
+  double kc2 = args[0]->getValue() * args[0]->getValue();
+  return args[2]->getValue() * boost::math::ellint_rf<double,double,double>(0.0,kc2,1.0) + 
+    (1.0/3.0)*(args[3]->getValue() - args[1]->getValue()*args[2]->getValue())* boost::math::ellint_rj<double,double,double,double>(0.0,kc2,1.0,args[1]->getValue());
+#else
+  return 0;
+#endif
+}

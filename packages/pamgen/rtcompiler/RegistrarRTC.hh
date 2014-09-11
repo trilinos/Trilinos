@@ -365,6 +365,13 @@ class Erfc : public RTBoundFunc
   double execute(Value**);
 };
 
+class GeneralizedCompleteEllipticIntegral : public RTBoundFunc
+{
+ public:
+  GeneralizedCompleteEllipticIntegral () : RTBoundFunc("gcei", 4) {}
+
+  double execute(Value**);
+};
 
 }
 #endif
