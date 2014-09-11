@@ -70,6 +70,7 @@
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
+#include <TestTeamVector.hpp>
 
 namespace Test {
 
@@ -300,6 +301,14 @@ TEST_F( threads , cxx11 )
 }
 #endif
 
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( threads , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(3) ) );
+}
+#endif
 } // namespace Test
 
 #endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */

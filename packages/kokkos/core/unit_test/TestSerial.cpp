@@ -68,6 +68,7 @@
 #include <TestCompilerMacros.hpp>
 #include <TestTaskPolicy.hpp>
 #include <TestCXX11.hpp>
+#include <TestTeamVector.hpp>
 
 namespace Test {
 
@@ -314,5 +315,13 @@ TEST_F( serial , cxx11 )
 }
 #endif
 
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( serial , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(3) ) );
+}
+#endif
 } // namespace test
 

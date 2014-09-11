@@ -60,6 +60,7 @@
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
+#include <TestTeamVector.hpp>
 
 namespace Test {
 
@@ -221,6 +222,15 @@ TEST_F( defaultdevicetype , cxx11 )
   ASSERT_TRUE( ( TestCXX11::Test< Kokkos::DefaultExecutionSpace >(2) ) );
   ASSERT_TRUE( ( TestCXX11::Test< Kokkos::DefaultExecutionSpace >(3) ) );
   ASSERT_TRUE( ( TestCXX11::Test< Kokkos::DefaultExecutionSpace >(4) ) );
+}
+#endif
+
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( defaultdevicetype , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(3) ) );
 }
 #endif
 } // namespace test
