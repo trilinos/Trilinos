@@ -170,10 +170,15 @@ namespace {
     const size_t numCols = 3;
     const GO indexBase = 1; // just for a change
 
+    out << "Test SetBlock with Range1D: Y(:, [1,2]) := X(:, [0,1])"
+        << endl;
+
     RCP<const Comm<int> > comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
     RCP<const Map<> > map (new Map<> (INV, numLclRows, indexBase, comm));
     const GST numGblRows = map->getGlobalNumElements ();
+
+    out << "Creating and filling MultiVector X" << endl;
 
     // Create a MultiVector X, and fill it such that each entry has a
     // globally unique value.  This will help us test SetBlock both
@@ -217,6 +222,8 @@ namespace {
       TEST_ASSERT( norms[j] == X_norms[j] );
     }
 
+    out << "Create MultiVector Y" << endl;
+
     // Create a MultiVector Y, and make it a deep copy of X.
     MV Y (map, numCols);
     Tpetra::deep_copy (Y, X);
@@ -227,16 +234,22 @@ namespace {
       TEST_ASSERT( norms[j] == X_norms[j] );
     }
 
+    out << "Call SetBlock(X, Range1D(1, 2), Y)" << endl;
+
     // Repeat TpetraSetBlock1, but use Teuchos::Range1D instead of an
     // index vector: Y(:, [1,2]) := X(:, [0,1])
     Teuchos::Range1D colRng (1, 2); // inclusive range
     MVT::SetBlock (X, colRng, Y);
+
+    out << "Test that the norms of the columns of X have not changed" << endl;
 
     // Test that the norms of the columns of X have not changed.
     X.norm1 (norms);
     for (size_t j = 0; j < numCols; ++j) {
       TEST_ASSERT( norms[j] == X_norms[j] );
     }
+
+    out << "Test the norms of the columns of Y" << endl;
 
     // Test that the norm of the first column of Y has not changed.
     Y.norm1 (norms);
@@ -250,13 +263,34 @@ namespace {
     // Test that after calling SetBlock, Y(:,1:2) == X(:,0:1) (where
     // 0:1 means [0, 1] (inclusive range) and 1:2 means [1, 2]).
     MV Z (map, static_cast<size_t> (2));
-    RCP<const MV> X_view = X.subView (Teuchos::Range1D (0, 1));
-    RCP<const MV> Y_view = Y.subView (Teuchos::Range1D (1, 2));
-    // Z := X(:, 0:1) - Y(: 1:2)
-    Z.update (STS::one (), *X_view, -STS::one (), *Y_view, STS::zero ());
-    Z.norm1 (norms);
+    RCP<const MV> X_view, Y_view;
+    try {
+      X_view = X.subView (Teuchos::Range1D (0, 1));
+    } catch (std::exception& e) {
+      out << "*** Yikes!  X.subView(Range1D(0,1)) raised an exception!  "
+          << e.what ();
+    }
+    try {
+      Y_view = Y.subView (Teuchos::Range1D (1, 2));
+    } catch (std::exception& e) {
+      out << "*** Yikes!  Y.subView(Range1D(1,2)) raised an exception!  "
+          << e.what ();
+    }
+    try {
+      // Z := X(:, 0:1) - Y(: 1:2)
+      Z.update (STS::one (), *X_view, -STS::one (), *Y_view, STS::zero ());
+    } catch (std::exception& e) {
+      out << "*** Yikes!  Z.update raised an exception!  " << e.what ();
+    }
+    try {
+      Z.norm1 (norms (0, 2));
+    } catch (std::exception& e) {
+      out << "*** Yikes!  Z.norm1 raised an exception!  " << e.what ();
+    }
     TEST_ASSERT( norms[0] == STN::zero () );
     TEST_ASSERT( norms[1] == STN::zero () );
+
+    out << "Test that overwriting X doesn't affect the new values of Y" << endl;
 
     // Test that overwriting X doesn't affect the new values of Y.
     X.putScalar (STS::zero ());
