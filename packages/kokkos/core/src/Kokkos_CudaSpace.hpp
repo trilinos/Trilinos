@@ -46,39 +46,6 @@
 
 #if defined( KOKKOS_HAVE_CUDA )
 
-//----------------------------------------------------------------------------
-
-#if defined( __CUDACC__ )
-
-/*  Compiling with a CUDA compiler.
- *
- *  Include <cuda.h> to pick up the CUDA_VERSION macro defined as:
- *    CUDA_VERSION = ( MAJOR_VERSION * 1000 ) + ( MINOR_VERSION * 10 )
- *
- *  When generating device code the __CUDA_ARCH__ macro is defined as:
- *    __CUDA_ARCH__ = ( MAJOR_CAPABILITY * 100 ) + ( MINOR_CAPABILITY * 10 )
- */
-
-#include <cuda_runtime.h>
-#include <cuda.h>
-
-#if ! defined( CUDA_VERSION )
-#error "#include <cuda.h> did not define CUDA_VERSION"
-#endif
-
-#if ( CUDA_VERSION < 4010 )
-#error "Cuda version 4.1 or greater required"
-#endif
-
-#if defined( __CUDA_ARCH__ ) && ( __CUDA_ARCH__ < 200 )
-/*  Compiling with CUDA compiler for device code. */
-#error "Cuda device capability >= 2.0 is required"
-#endif
-
-#endif /* #if defined( __CUDACC__ ) */
-
-//----------------------------------------------------------------------------
-
 #include <iosfwd>
 #include <typeinfo>
 #include <string>
