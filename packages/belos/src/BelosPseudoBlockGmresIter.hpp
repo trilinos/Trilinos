@@ -234,7 +234,7 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in 
      * the solver, the data is not copied.
      */
-    void initialize(PseudoBlockGmresIterState<ScalarType,MV> newstate);
+    void initialize(const PseudoBlockGmresIterState<ScalarType,MV> & newstate);
     
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
@@ -526,7 +526,7 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void 
   PseudoBlockGmresIter<ScalarType,MV,OP>::
-  initialize (PseudoBlockGmresIterState<ScalarType,MV> newstate)
+  initialize (const PseudoBlockGmresIterState<ScalarType,MV> & newstate)
   {
     using Teuchos::RCP;
 
