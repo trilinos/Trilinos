@@ -7,6 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_mesh/fixtures/QuadFixture.hpp>
+#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
 #include <algorithm>                    // for sort, unique
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element, etc
@@ -77,6 +78,11 @@ void QuadFixture::generate_mesh()
   const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned num_elems = m_nx * m_ny;
 
+  m_nodes_to_procs.clear();
+  for (unsigned proc_rank = 0; proc_rank < p_size; ++proc_rank) {
+    fill_node_map(proc_rank);
+  }
+
   const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
   const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
 
@@ -121,6 +127,7 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
       stk::mesh::declare_element( m_bulk_data, m_quad_part, elem_id( ix , iy ) , elem_nodes);
       for (unsigned i = 0; i<4; ++i) {
         stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , elem_nodes[i] );
+        DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, elem_nodes[i], node);
 
         ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");
@@ -140,6 +147,43 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
   m_bulk_data.modification_end();
 }
 
+void QuadFixture::fill_node_map(int p_rank)
+{
+
+  std::vector<EntityId> element_ids_on_this_processor;
+
+  const size_t p_size = m_bulk_data.parallel_size();
+  const size_t num_elems = m_nx * m_ny;
+
+  const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
+  const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
+
+  for ( EntityId i = beg_elem; i != end_elem; ++i) {
+    element_ids_on_this_processor.push_back(i);
+  }
+
+  {
+
+    std::vector<EntityId>::const_iterator ib = element_ids_on_this_processor.begin();
+    const std::vector<EntityId>::const_iterator ie = element_ids_on_this_processor.end();
+    for (; ib != ie; ++ib) {
+      EntityId entity_id = *ib;
+      unsigned ix = 0, iy = 0;
+      elem_x_y(entity_id, ix, iy);
+
+      stk::mesh::EntityId elem_nodes[4] ;
+
+      elem_nodes[0] = node_id( ix   , iy );
+      elem_nodes[1] = node_id( ix+1 , iy );
+      elem_nodes[2] = node_id( ix+1 , iy+1 );
+      elem_nodes[3] = node_id( ix   , iy+1 );
+
+      for (unsigned i = 0; i<4; ++i) {
+        AddToNodeProcsMMap(m_nodes_to_procs, elem_nodes[i] , p_rank);
+      }
+    }
+  }
+}
 
 } // fixtures
 } // mesh

@@ -914,7 +914,9 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
 
   if (p_rank < 2) {
     // We're just going to add everything to the universal part
-    stk::mesh::PartVector empty_parts, elem_parts;
+    stk::mesh::PartVector node_parts, elem_parts;
+    stk::mesh::Part &node_part = meta_data.get_topology_root_part(stk::topology::NODE);
+    node_parts.push_back(&node_part);
     stk::mesh::Part &quad4_part = meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
     elem_parts.push_back(&quad4_part);
 
@@ -927,7 +929,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
     // Create nodes
     const unsigned starting_node_id = p_rank * nodes_per_side + 1;
     for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-      nodes.push_back(mesh.declare_entity(NODE_RANK, id, empty_parts));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, id, node_parts));
     }
 
     // Add relations to nodes
@@ -1194,6 +1196,14 @@ TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   const unsigned starting_node_id = p_rank * nodes_per_side + 1;
   for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
     nodes.push_back(mesh.declare_entity(NODE_RANK, id, empty_parts));
+  }
+  if (p_rank > 0) {
+    mesh.add_node_sharing(nodes[0], p_rank - 1);
+    mesh.add_node_sharing(nodes[1], p_rank - 1);
+  }
+  if (p_rank < (p_size - 1)) {
+    mesh.add_node_sharing(nodes[2], p_rank + 1);
+    mesh.add_node_sharing(nodes[3], p_rank + 1);
   }
 
   // Add relations to nodes

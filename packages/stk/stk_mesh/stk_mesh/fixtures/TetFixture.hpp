@@ -117,9 +117,15 @@ class TetFixture
 
  private:
 
+  typedef std::multimap<EntityId, int> NodeToProcsMMap;
+
+  NodeToProcsMMap m_nodes_to_procs;
+
   TetFixture();
   TetFixture( const TetFixture &);
   TetFixture & operator = (const TetFixture &);
+
+  void fill_node_map( int proc_rank);
 };
 
 

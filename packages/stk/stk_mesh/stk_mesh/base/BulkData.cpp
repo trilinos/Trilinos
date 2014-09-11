@@ -5024,7 +5024,10 @@ void BulkData::internal_update_distributed_index(
     // Update the sharing and ownership information in the comm maps for
     // locally-created or modified entities through queries to DistributedIndex.
     //
+
     std::vector<EntityKey> entity_keys;  // List of shared and modified entities
+#define UPDATE_DIST_IDX_USE_QUERY_TO_USAGE 1
+#ifdef    UPDATE_DIST_IDX_USE_QUERY_TO_USAGE
     if (parallel_size() > 1)
     {
         // Retrieve data regarding which processes use the local_created_or_modified
@@ -5066,6 +5069,7 @@ void BulkData::internal_update_distributed_index(
             }
         }
     }
+#endif
 
     update_shared_entities_global_ids( *this, shared_edges );
     update_shared_entities_global_ids( *this, shared_faces );

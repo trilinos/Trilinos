@@ -57,11 +57,18 @@ class RingFixture {
    */
   void fixup_node_ownership();
 
+ protected:
+
+  typedef std::multimap<EntityId, int> NodeToProcsMMap;
+  NodeToProcsMMap m_nodes_to_procs;
+
  private:
 
    RingFixture();
    RingFixture( const RingFixture & );
    RingFixture & operator = ( const RingFixture & );
+
+   void fill_node_map(int proc_rank);
 };
 
 }

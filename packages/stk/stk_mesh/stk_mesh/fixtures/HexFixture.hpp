@@ -16,6 +16,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
 #include <stk_mesh/fixtures/CoordinateMapping.hpp>
+#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <vector>                       // for vector
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -114,6 +115,10 @@ class HexFixture
 
   void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor, const CoordinateMapping & coordMap = CartesianCoordinateMapping());
 
+  void fill_node_map( int proc_rank);
+
+  void fill_node_map(const std::map<int,std::vector<EntityId> > &parallel_distribution);
+
   // When creating entities, you can tell HexFixture what parts to add
   // elements and nodes.
 
@@ -132,6 +137,8 @@ class HexFixture
   }
 
  private:
+
+  NodeToProcsMMap m_nodes_to_procs;
 
   HexFixture();
   HexFixture( const HexFixture &);

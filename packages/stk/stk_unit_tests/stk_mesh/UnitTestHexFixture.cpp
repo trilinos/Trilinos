@@ -153,6 +153,7 @@ TEST( UnitTestHexFixture, trivial_parallel_2 )
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_meta.commit();
   if (p_rank <= 1) {
+    hf.fill_node_map(parallel_distribution);
     hf.generate_mesh(parallel_distribution[p_rank]);
   }
   else {
@@ -202,6 +203,7 @@ TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
   // Create the fixture
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_meta.commit();
+  hf.fill_node_map(parallel_distribution);
   hf.generate_mesh(parallel_distribution[p_rank]);
   stk::mesh::BulkData & mesh = hf.m_bulk_data;
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
@@ -271,6 +273,7 @@ TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_meta.commit();
   if (p_rank <= 1) {
+    hf.fill_node_map(parallel_distribution);
     hf.generate_mesh(parallel_distribution[p_rank]);
   }
   else {
@@ -373,6 +376,7 @@ TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_meta.commit();
   if (p_rank <= 1) {
+    hf.fill_node_map(parallel_distribution);
     hf.generate_mesh(parallel_distribution[p_rank]);
   }
   else {

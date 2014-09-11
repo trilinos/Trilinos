@@ -10,6 +10,7 @@
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
 #include <gtest/gtest.h>
 #include <string>                       // for string, char_traits
 #include <vector>                       // for vector
@@ -119,6 +120,16 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
 
   if (p_size != 3) return;
 
+  // Build map for node sharing
+  stk::mesh::fixtures::NodeToProcsMMap nodes_to_procs;
+  {
+    for (unsigned ielem=0; ielem < nelems; ielem++) {
+      int e_owner = static_cast<int>(elems_0[ielem][3]);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][2], e_owner);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][1], e_owner);
+    }
+  }
+
   //
   // Begin modification cycle so we can create the entities and relations
   //
@@ -144,6 +155,9 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
           mesh.declare_relation( elem, nodes[0], 0 );
           mesh.declare_relation( elem, nodes[1], 1 );
 
+          // Node sharing
+          stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[0]), nodes[0]);
+          stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[1]), nodes[1]);
         }
     }
 

@@ -17,7 +17,7 @@
 #include <vector>                       // for vector
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
-
+#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
 
 namespace stk {
 namespace mesh {
@@ -69,6 +69,8 @@ protected:
   int m_comm_rank;
   int m_comm_size;
 
+  NodeToProcsMMap m_nodes_to_procs;
+
   Part &m_elem_part;
   stk::topology m_elem_topology;
 
@@ -86,6 +88,9 @@ private:
   BoxFixture();
   BoxFixture( const BoxFixture & );
   BoxFixture & operator = ( const BoxFixture & );
+
+  void fill_node_map(int proc_rank, const BOX root_box);
+
 };
 
 } // namespace fixtures

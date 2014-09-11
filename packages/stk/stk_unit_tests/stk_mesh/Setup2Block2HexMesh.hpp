@@ -73,6 +73,20 @@ void setup2Block2HexMesh(stk::mesh::BulkData& bulk)
     elemId = 2;
     stk::mesh::declare_element(bulk, block_2, elemId, elem2_nodes);
   }
+  if(bulk.parallel_rank() == 0 && bulk.parallel_size() == 2)
+  {
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK , 2), 1);
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK , 3), 1);
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK , 6), 1);
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK , 7), 1);
+  }
+  if(bulk.parallel_rank() == 1 && bulk.parallel_size() == 2)
+  {
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK , 2), 0);
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK , 3), 0);
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK , 6), 0);
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK , 7), 0);
+  }
 
   bulk.modification_end();
 }

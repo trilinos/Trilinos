@@ -1159,6 +1159,16 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
 
   if (p_size != 3) return;
 
+  // Build map for node sharing
+  stk::mesh::fixtures::NodeToProcsMMap nodes_to_procs;
+  {
+    for (unsigned ielem=0; ielem < nelems; ielem++) {
+      int e_owner = static_cast<int>(elems_0[ielem][3]);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][2], e_owner);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][1], e_owner);
+    }
+  }
+
   //
   // Begin modification cycle so we can create the entities and relations
   //
@@ -1182,6 +1192,10 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
         // Add relations to nodes
         mesh.declare_relation( elem, nodes[0], 0 );
         mesh.declare_relation( elem, nodes[1], 1 );
+
+        // Node sharing
+        stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[0]), nodes[0]);
+        stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[1]), nodes[1]);
       }
     }
 
