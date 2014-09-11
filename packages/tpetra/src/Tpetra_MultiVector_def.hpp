@@ -1280,7 +1280,7 @@ namespace Tpetra {
         dots[j] = MVT::Dot((const KMV&)v,(const KMV &)a);
       }
     }
-    if (this->isDistributed()) {
+    if (this->isDistributed ()) {
       Array<Scalar> ldots(dots);
       Teuchos::reduceAll (* (this->getMap ()->getComm ()), Teuchos::REDUCE_SUM,
                           static_cast<int> (numVecs), ldots.getRawPtr (),
@@ -1297,39 +1297,49 @@ namespace Tpetra {
     using Teuchos::arcp_const_cast;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
+    using Teuchos::Comm;
+    using Teuchos::null;
+    using Teuchos::RCP;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
-    using Teuchos::ScalarTraits;
-    typedef typename ScalarTraits<Scalar>::magnitudeType MT;
-    typedef ScalarTraits<MT> STM;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    typedef Teuchos::ScalarTraits<MT> STM;
 
-    const size_t numVecs = this->getNumVectors();
-    TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(norms.size()) != numVecs,
-      std::runtime_error,
-      "Tpetra::MultiVector::norm2(norms): norms.size() must be as large as the number of vectors in *this.");
+    const size_t numNorms = static_cast<size_t> (norms.size ());
+    const size_t numVecs = this->getNumVectors ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numNorms < numVecs, std::runtime_error, "Tpetra::MultiVector::norm2: "
+      "'norms' must have at least as many entries as the number of vectors in "
+      "*this.  norms.size() = " << numNorms << " < this->getNumVectors() = "
+      << numVecs << ".");
+
     if (isConstantStride ()) {
-      MVT::Norm2Squared (lclMV_,norms);
+      MVT::Norm2Squared (lclMV_, norms);
     }
     else {
       KMV v (MVT::getNode (lclMV_));
       ArrayRCP<Scalar> vi;
-      for (size_t i=0; i < numVecs; ++i) {
-        vi = arcp_const_cast<Scalar> (MVT::getValues (lclMV_, whichVectors_[i]));
-        MVT::initializeValues (v, MVT::getNumRows (lclMV_), 1, vi, MVT::getStride (lclMV_));
-        norms[i] = MVT::Norm2Squared (v);
+      for (size_t j = 0; j < numVecs; ++j) {
+        vi = arcp_const_cast<Scalar> (MVT::getValues (lclMV_, whichVectors_[j]));
+        MVT::initializeValues (v, MVT::getNumRows (lclMV_), 1, vi,
+                               MVT::getStride (lclMV_));
+        norms[j] = MVT::Norm2Squared (v);
       }
     }
     if (this->isDistributed ()) {
-      Array<MT> lnorms (norms);
-      // FIXME (mfh 25 Apr 2012) Somebody explain to me why we're
-      // calling Teuchos::reduceAll when MultiVector has a perfectly
-      // good reduce() function.
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
-                 static_cast<int> (numVecs), lnorms.getRawPtr (),
-                 norms.getRawPtr ());
+      RCP<const Comm<int> > comm = this->getMap ().is_null () ? null :
+        this->getMap ()->getComm ();
+      // The calling process only participates in the collective if
+      // both the Map and its Comm on that process are nonnull.
+      if (! comm.is_null ()) {
+        Array<MT> lnorms (norms);
+        reduceAll<int, MT> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
+                            lnorms.getRawPtr (), norms.getRawPtr ());
+      }
     }
-    for (typename ArrayView<MT>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
+
+    for (typename Teuchos::ArrayView<MT>::iterator n = norms.begin ();
+         n != norms.begin () + numVecs; ++n) {
       (*n) = STM::squareroot (*n);
     }
   }
@@ -1417,32 +1427,44 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
-    using Teuchos::reduceAll;
+    using Teuchos::Comm;
+    using Teuchos::null;
+    using Teuchos::RCP;
     using Teuchos::REDUCE_SUM;
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+    using Teuchos::reduceAll;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 
-    const size_t numVecs = this->getNumVectors();
+    const size_t numNorms = static_cast<size_t> (norms.size ());
+    const size_t numVecs = this->getNumVectors ();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t>(norms.size()) != numVecs, std::runtime_error,
-      "Tpetra::MultiVector::norm1(norms): norms.size() must be as large "
-      "as the number of vectors in *this.");
-    if (isConstantStride()) {
-      MVT::Norm1(lclMV_,norms);
+      numNorms < numVecs, std::runtime_error, "Tpetra::MultiVector::norm1: "
+      "'norms' must have at least as many entries as the number of vectors in "
+      "*this.  norms.size() = " << numNorms << " < this->getNumVectors() = "
+      << numVecs << ".");
+
+    if (isConstantStride ()) {
+      MVT::Norm1 (lclMV_, norms);
     }
     else {
-      KMV v(MVT::getNode(lclMV_));
+      KMV v (MVT::getNode (lclMV_));
       ArrayRCP<Scalar> vj;
-      for (size_t j=0; j < numVecs; ++j) {
-        vj = arcp_const_cast<Scalar> (MVT::getValues(lclMV_,whichVectors_[j]) );
-        MVT::initializeValues (v, MVT::getNumRows(lclMV_), 1, vj, MVT::getStride (lclMV_));
-        norms[j] = MVT::Norm1 ((const KMV&)v);
+      for (size_t j = 0; j < numVecs; ++j) {
+        vj = arcp_const_cast<Scalar> (MVT::getValues (lclMV_, whichVectors_[j]));
+        MVT::initializeValues (v, MVT::getNumRows (lclMV_), 1, vj,
+                               MVT::getStride (lclMV_));
+        norms[j] = MVT::Norm1 (v);
       }
     }
     if (this->isDistributed ()) {
-      Array<Mag> lnorms (norms);
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
-                 static_cast<int> (numVecs), lnorms.getRawPtr (),
-                 norms.getRawPtr ());
+      RCP<const Comm<int> > comm = this->getMap ().is_null () ? null :
+        this->getMap ()->getComm ();
+      // The calling process only participates in the collective if
+      // both the Map and its Comm on that process are nonnull.
+      if (! comm.is_null ()) {
+        Array<MT> lnorms (norms);
+        reduceAll<int, MT> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
+                            lnorms.getRawPtr (), norms.getRawPtr ());
+      }
     }
   }
 
@@ -1455,9 +1477,12 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
+    using Teuchos::Comm;
+    using Teuchos::null;
+    using Teuchos::RCP;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_MAX;
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(norms.size()) != numVecs, std::runtime_error,
@@ -1466,19 +1491,25 @@ namespace Tpetra {
       MVT::NormInf(lclMV_,norms);
     }
     else {
-      KMV v(MVT::getNode(lclMV_));
+      KMV v (MVT::getNode (lclMV_));
       ArrayRCP<Scalar> vj;
-      for (size_t j=0; j < numVecs; ++j) {
-        vj = Teuchos::arcp_const_cast<Scalar>( MVT::getValues(lclMV_,whichVectors_[j]) );
-        MVT::initializeValues(v,MVT::getNumRows(lclMV_), 1, vj, MVT::getStride(lclMV_));
-        norms[j] = MVT::NormInf((const KMV&)v);
+      for (size_t j = 0; j < numVecs; ++j) {
+        vj = arcp_const_cast<Scalar> (MVT::getValues (lclMV_, whichVectors_[j]));
+        MVT::initializeValues (v, MVT::getNumRows (lclMV_), 1, vj,
+                               MVT::getStride (lclMV_));
+        norms[j] = MVT::NormInf (v);
       }
     }
-    if (this->isDistributed()) {
-      Array<Mag> lnorms(norms);
-      reduceAll (*this->getMap ()->getComm (), REDUCE_MAX,
-                 static_cast<int> (numVecs), lnorms.getRawPtr (),
-                 norms.getRawPtr ());
+    if (this->isDistributed ()) {
+      RCP<const Comm<int> > comm = this->getMap ().is_null () ? null :
+        this->getMap ()->getComm ();
+      // The calling process only participates in the collective if
+      // both the Map and its Comm on that process are nonnull.
+      if (! comm.is_null ()) {
+        Array<MT> lnorms (norms);
+        reduceAll<int, MT> (*comm, REDUCE_MAX, static_cast<int> (numVecs),
+                            lnorms.getRawPtr (), norms.getRawPtr ());
+      }
     }
   }
 
@@ -1513,7 +1544,7 @@ namespace Tpetra {
         means[j] = MVT::Sum((const KMV &)v);
       }
     }
-    if (this->isDistributed()) {
+    if (this->isDistributed ()) {
       Array<Scalar> lmeans(means);
       // only combine if we are a distributed MV
       reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
@@ -2754,24 +2785,31 @@ namespace Tpetra {
       << ", A is " << A_nrows << " x " << A_ncols
       << ", and B is " << B_nrows << " x " << B_ncols << ".");
 
-    bool A_is_local = !A.isDistributed();
-    bool B_is_local = !B.isDistributed();
-    bool C_is_local = !this->isDistributed();
-    bool Case1 = ( C_is_local &&  A_is_local &&  B_is_local);                                           // Case 1: C(local) = A^X(local) * B^X(local)
-    bool Case2 = ( C_is_local && !A_is_local && !B_is_local && transA==CONJ_TRANS && transB==NO_TRANS); // Case 2: C(local) = A^T(distr) * B  (distr)
-    bool Case3 = (!C_is_local && !A_is_local &&  B_is_local && transA==NO_TRANS  );                     // Case 3: C(distr) = A  (distr) * B^X(local)
+    bool A_is_local = ! A.isDistributed ();
+    bool B_is_local = ! B.isDistributed ();
+    bool C_is_local = ! this->isDistributed ();
+    // Case 1: C(local) = A^X(local) * B^X(local)
+    bool Case1 = (C_is_local &&  A_is_local && B_is_local);
+    // Case 2: C(local) = A^T(distr) * B  (distr)
+    bool Case2 = (C_is_local && ! A_is_local && ! B_is_local &&
+                  transA == CONJ_TRANS && transB == NO_TRANS);
+    // Case 3: C(distr) = A  (distr) * B^X(local)
+    bool Case3 = (! C_is_local && ! A_is_local && B_is_local &&
+                  transA == NO_TRANS);
 
     // Test that we are considering a meaningful cases
-    TEUCHOS_TEST_FOR_EXCEPTION( !Case1 && !Case2 && !Case3, std::runtime_error,
-        errPrefix << "multiplication of op(A) and op(B) into *this is not a supported use case.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! Case1 && ! Case2 && ! Case3, std::runtime_error,
+      errPrefix << "multiplication of op(A) and op(B) into *this is not a "
+      "supported use case.");
 
-    if (beta != ScalarTraits<Scalar>::zero() && Case2)
-    {
-      // if Case2, then C is local and contributions must be summed across all nodes
-      // however, if beta != 0, then accumulate beta*C into the sum
-      // when summing across all nodes, we only want to accumulate this once, so
-      // set beta == 0 on all nodes except node 0
-      int MyPID = this->getMap()->getComm()->getRank();
+    if (beta != ScalarTraits<Scalar>::zero() && Case2) {
+      // If Case2, then C is local and contributions must be summed
+      // across all processes.  However, if beta != 0, then accumulate
+      // beta*C into the sum.  When summing across all processes, we
+      // only want to accumulate this once, so set beta == 0 on all
+      // processes except Process 0.
+      const int MyPID = this->getMap ()->getComm ()->getRank ();
       if (MyPID!=0) beta_local = ScalarTraits<Scalar>::zero();
     }
 
