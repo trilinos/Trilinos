@@ -2681,11 +2681,15 @@ namespace { // (anonymous)
     using Teuchos::Array;
     using Teuchos::rcp;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
+    const char prefix[] = "Tpetra::MultiVector::subView(Range1D): ";
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      colRng.size() == 0, std::runtime_error,
-      "Tpetra::MultiVector::subView(Range1D): "
-      "range must include at least one vector.");
+      colRng.size() == 0, std::runtime_error, prefix << "Range must include "
+      "at least one vector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (colRng.size ()) > this->getNumVectors (),
+      std::runtime_error, prefix << "colRng.size() = " << colRng.size ()
+      << " > this->getNumVectors() = " << this->getNumVectors () << ".");
 
     // resulting MultiVector is constant stride only if *this is
     if (isConstantStride ()) {
@@ -2739,8 +2743,10 @@ namespace { // (anonymous)
       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > V;
 
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( vectorIndexOutOfRange(j), std::runtime_error,
-        "Tpetra::MultiVector::getVector(NonConst): index j (== " << j << ") exceeds valid column range for this multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      vectorIndexOutOfRange(j), std::runtime_error, "Tpetra::MultiVector::"
+      "getVector(NonConst): index j (== " << j << ") exceeds valid column "
+      "range for this multivector.");
 #endif // HAVE_TPETRA_DEBUG
 
     // FIXME (mfh 10 May 2014) Why can't Kokkos take size_t instead of
