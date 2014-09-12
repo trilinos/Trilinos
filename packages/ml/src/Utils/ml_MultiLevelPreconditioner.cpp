@@ -1149,7 +1149,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if(List_.get("ML validate parameter list",true)
      && !ValidateMLPParameters(List_,depth))
   {
-    if (Comm_->MyPID() == 0)
+    if (Comm_->MyPID() == 0) {
       std::cout<<"ERROR: ML's Teuchos::ParameterList contains incorrect parameter!\n"<<std::endl;
       std::cout << std::endl << "** IMPORTANT **" << std::endl << std::endl;
       std::cout << "ML copies your parameter list and modifies copy:" << std::endl
@@ -1160,6 +1160,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
            << "   3) In \"coarse: list\", any option that started with \"coarse:\" now starts" << std::endl
            << "      with \"smoother:\"."
            << std::endl << std::endl;
+    }
 #   ifdef HAVE_MPI
     MPI_Finalize();
 #   endif

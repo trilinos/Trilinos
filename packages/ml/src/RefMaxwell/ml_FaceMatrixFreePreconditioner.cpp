@@ -218,7 +218,13 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildNullspace(Epetra_MultiVector *
     int Ni,*indices;
     double *values;
     FaceNode_Matrix_->ExtractMyRowView(i,Ni,values,indices);
-    if(Ni != 4){printf("ERROR: Face %d has only %d nodes\n",i,Ni); ML_CHK_ERR(-1);}
+    if(Ni != 4){
+      printf("ERROR: Face %d has only %d nodes\n",i,Ni);
+      ML_free(a);
+      ML_free(b);
+      ML_free(c);
+      ML_CHK_ERR(-1);
+    }
 
     a[0] = (*n_coords)[0][indices[1]] - (*n_coords)[0][indices[0]];
     a[1] = (*n_coords)[1][indices[1]] - (*n_coords)[1][indices[0]];
