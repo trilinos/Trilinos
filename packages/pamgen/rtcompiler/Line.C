@@ -46,11 +46,8 @@ Line::~Line()
   set<Object*>::iterator itr = _objsToDelete.begin();
   if (_objsToDelete.size() != 0) {
     while(itr != _objsToDelete.end()) {
-      if (!isVariable((*itr)->getObjectType()) && 
-          (*itr)->getObjectType() != OperatorOT) {
         delete (*itr);
-      }
-      ++itr;
+        ++itr;
     }
   }
   if (_tempHolder != NULL)
@@ -306,6 +303,7 @@ void Line::process_number(Tokenizer& tokens)
     ptr = new ScalarNumber<char>(CharT, value);
   }
   addNewObject(ptr); 
+  _objsToDelete.insert(ptr);
 }
 
 /*****************************************************************************/

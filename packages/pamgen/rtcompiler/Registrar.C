@@ -124,13 +124,12 @@ VariableArgFunctionCall::~VariableArgFunctionCall()
 /*****************************************************************************/
 {
   if (_argExpressionList.size() > 0) {
-    assert(_argValues != NULL);
     
     list<Line*>::iterator itr = _argExpressionList.begin();
     for ( ; itr != _argExpressionList.end(); ++itr) 
       delete (*itr);
-    
-    delete[] _argValues;
+    if(_argValues != 0) 
+      delete[] _argValues;
   }
 }
 
