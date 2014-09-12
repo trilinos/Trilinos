@@ -294,15 +294,15 @@ namespace Tpetra {
   createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal,
                            Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src)
   {
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> V;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> NT;
 
-    V dst (src.getMap ());
-    deep_copy ((MV&) (dst), (const MV&) (src));
+    // The 2-argument copy constructor with second argument =
+    // Teuchos::Copy does a deep copy of its input.
+    Vector<Scalar, LocalOrdinal, GlobalOrdinal, NT> dst (src, Teuchos::Copy);
 
-    // Vector now has view semantics, so returning the Vector
-    // directly, rather than through RCP, only does a shallow copy.
+    // The Kokkos refactor version of Vector has view semantics, so
+    // returning the Vector directly, rather than through RCP, only
+    // does a shallow copy.
     return dst;
   }
 

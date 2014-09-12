@@ -3267,9 +3267,12 @@ namespace Tpetra {
 
   template <class ST, class LO, class GO, class NT>
   MultiVector<ST, LO, GO, NT>
-  createCopy (const MultiVector<ST, LO, GO, NT>& src) {
-    // This always creates a deep copy.
+  createCopy (const MultiVector<ST, LO, GO, NT>& src)
+  {
+    // The 2-argument copy constructor with second argument =
+    // Teuchos::Copy does a deep copy of its input.
     MultiVector<ST, LO, GO, NT> dst (src, Teuchos::Copy);
+
     // Returning by value will invoke the copy constructor, so we need
     // to set the result to have view semantics, so that the copy
     // constructor only does a shallow copy.
