@@ -156,7 +156,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   RCP<MueLu::Level> Finest = H.GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
-  Finest->Set("NullSpace", nullSpace);
+  Finest->Set("Nullspace", nullSpace);
   Finest->Set("A", Op);
 
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
