@@ -60,10 +60,11 @@ if(NOT CTEST_EXE)
     set(ctest_filename "ctest")
   endif()
 
-  message("globbing for '${ctest_filename}' of type '${ctest_type}'...")
+  message("Selecting '${ctest_filename}' of type '${ctest_type}'...")
 
-  file(GLOB_RECURSE CTEST_EXE
-    "${TD_BASE_DIR}/tools/cmake-${ctest_type}/${ctest_filename}")
+  set(CTEST_EXE 
+    "${TD_BASE_DIR}/tools/cmake-${ctest_type}/bin/${ctest_filename}")
+
 endif()
 
 if(NOT CTEST_EXE)
