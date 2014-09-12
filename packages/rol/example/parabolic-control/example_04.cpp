@@ -267,7 +267,7 @@ public:
     std::vector<Real> uold(u0_);
     std::vector<Real> unew(u0_);
     // Time Step Using Implicit Euler
-    for ( int t = 0; t < nt_; t++ ) {
+    for ( unsigned t = 0; t < nt_; t++ ) {
       run_newton(unew,uold,(*zp)[t]);
       for(unsigned n = 0; n < nx_; n++) {
         (*up)[t*nx_+n] = unew[n];
