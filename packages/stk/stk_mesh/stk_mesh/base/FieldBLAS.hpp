@@ -17,8 +17,6 @@
 #include <stk_util/util/Fortran.hpp> // For SIERRA_FORTRAN
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <Slib_Exception.h>
-#include <Slib_ExceptionReport.h>
 
 #include <complex>
 #include <string>
@@ -747,18 +745,14 @@ void INTERNAL_field_copy(
         const Bucket::size_type length = b.size();
         const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
 
-#ifndef NDEBUG
-        if(fieldSize != field_scalars_per_entity(yFieldBase, b)) {
-          sierra::RuntimeError x;
-          x << "In INTERNAL_field_copy: found incomptaible field sizes.  "<<std::endl;
-          x <<"  First field name: "<<xFieldBase.name()<<std::endl;
-          x <<"  First field size: "<<field_scalars_per_entity(xFieldBase, b)<<std::endl;
-          x <<"  Second field name: "<<yFieldBase.name()<<std::endl;
-          x <<"  Second field size: "<<field_scalars_per_entity(yFieldBase, b)<<std::endl;
-          throw x;
-        }
-#endif
-
+        
+        ThrowAssertMsg(fieldSize != field_scalars_per_entity(yFieldBase, b), 
+          "In INTERNAL_field_copy: found incomptaible field sizes.  "<<std::endl
+          <<"  First field name: "<<xFieldBase.name()<<std::endl
+          <<"  First field size: "<<field_scalars_per_entity(xFieldBase, b)<<std::endl
+          <<"  Second field name: "<<yFieldBase.name()<<std::endl
+          <<"  Second field size: "<<field_scalars_per_entity(yFieldBase, b)<<std::endl);
+        
         const int kmax = length * fieldSize;
         const Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
         Scalar * y = static_cast<Scalar*>(field_data(yFieldBase, b));
