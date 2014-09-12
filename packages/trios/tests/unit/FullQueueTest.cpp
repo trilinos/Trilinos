@@ -65,6 +65,8 @@
 #define SYNC_WITH_BARRIER
 
 
+#define QUEUE_SIZE 10
+
 
 NNTI_transport_t trans_hdl;
 NNTI_peer_t      server_hdl;
@@ -80,7 +82,8 @@ NNTI_buffer_t       server_ack_mr;
 NNTI_work_request_t server_ack_wr;
 
 NNTI_buffer_t       send_mr; /* contiguous registered memory regions */
-NNTI_work_request_t send_wr; /* work requests */
+NNTI_work_request_t send_wr[QUEUE_SIZE]; /* work requests */
+NNTI_work_request_t *send_wr_list[QUEUE_SIZE]; /* work requests */
 
 #define WR_COUNT 2
 NNTI_work_request_t *mr_wr_list[WR_COUNT];
@@ -90,11 +93,10 @@ int one_mb=1024*1024;
 
 log_level fullqueue_debug_level = LOG_UNDEFINED;
 
-#define QUEUE_SIZE 10
-
 int sent_count   =0;
 int success_count=0;
 int dropped_count=0;
+int timeout_count=0;
 int fill_count   =0;
 
 static int buffer_pack(void *input, void **output, int32_t *output_size, xdrproc_t pack_func)
@@ -130,9 +132,10 @@ static int buffer_unpack(void *input, int32_t input_size, void *output, xdrproc_
 }
 
 void client(void) {
-    NNTI_result_t rc=NNTI_OK;
-    NNTI_status_t send_status;
-    NNTI_status_t client_ack_status;
+    NNTI_result_t  rc=NNTI_OK;
+    NNTI_status_t  send_status[QUEUE_SIZE];
+    NNTI_status_t *send_status_list[QUEUE_SIZE];
+    NNTI_status_t  client_ack_status;
     char *c_ptr;
     void    *packed=NULL;
     int32_t  packed_size=0;
@@ -164,14 +167,14 @@ void client(void) {
 
     buffer_pack_free(packed, packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
 
-    rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr);
+    rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr[0]);
     if (rc == NNTI_OK) {
         sent_count++;
     } else {
         log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
-    rc=NNTI_wait(&send_wr, 1000, &send_status);
+    rc=NNTI_wait(&send_wr[0], 1000, &send_status[0]);
     if (rc == NNTI_OK) {
         success_count++;
     } else {
@@ -195,12 +198,12 @@ void client(void) {
     MPI_Barrier(MPI_COMM_WORLD);
 #else
     // send an ACK so the server knows to proceed
-    rc=NNTI_send(&server_hdl, &send_mr, &server_ack_mr, &send_wr);
+    rc=NNTI_send(&server_hdl, &send_mr, &server_ack_mr, &send_wr[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
-    rc=NNTI_wait(&send_wr, 1000, &send_status);
+    rc=NNTI_wait(&send_wr[0], 1000, &send_status[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
@@ -214,14 +217,14 @@ void client(void) {
      */
     // the server's queue has QUEUE_SIZE slots available, so these NNTI_send() operations should all succeed.
     for (int i=0;i<QUEUE_SIZE;i++) {
-        rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr);
+        rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr[0]);
         if (rc == NNTI_OK) {
             sent_count++;
         } else {
             log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
-        rc=NNTI_wait(&send_wr, 1000, &send_status);
+        rc=NNTI_wait(&send_wr[0], 1000, &send_status[0]);
         if (rc == NNTI_OK) {
             success_count++;
             fill_count++;
@@ -240,12 +243,12 @@ void client(void) {
     *(int*)c_ptr=fill_count;
 
     // send an ACK so the server knows to proceed
-    rc=NNTI_send(&server_hdl, &send_mr, &server_ack_mr, &send_wr);
+    rc=NNTI_send(&server_hdl, &send_mr, &server_ack_mr, &send_wr[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
-    rc=NNTI_wait(&send_wr, 1000, &send_status);
+    rc=NNTI_wait(&send_wr[0], 1000, &send_status[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
@@ -256,42 +259,33 @@ void client(void) {
     /*
      * Phase 3 - send to a full queue
      */
-    // the server's queue should be full, so these NNTI_send() operations should fail with NNTI_EDROPPED.
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // the server's queue should be full, so these NNTI_send() operations should fail with NNTI_ETIMEDOUT.
     for (int i=0;i<QUEUE_SIZE;i++) {
-        rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr);
+        rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr[i]);
         if (rc == NNTI_OK) {
             sent_count++;
         } else {
             log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
-        rc=NNTI_wait(&send_wr, 10000, &send_status);
-        if (rc == NNTI_EDROPPED) {
-            dropped_count++;
+        send_wr_list[i]=&send_wr[i];
+        send_status_list[i]=&send_status[i];
+    }
+    for (int i=0;i<QUEUE_SIZE;i++) {
+        rc=NNTI_wait(&send_wr[1], 1000, &send_status[0]);
+        if (rc == NNTI_ETIMEDOUT) {
+            timeout_count++;
         } else {
-            log_error(fullqueue_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
-//            MPI_Abort(MPI_COMM_WORLD, rc);
+            log_error(fullqueue_debug_level, "NNTI_wait() did not return NNTI_ETIMEDOUT: %d", rc);
         }
     }
 
-#ifdef SYNC_WITH_BARRIER
     MPI_Barrier(MPI_COMM_WORLD);
-#else
-    // send an ACK so the server knows to proceed
-    rc=NNTI_send(&server_hdl, &send_mr, &server_ack_mr, &send_wr);
-    if (rc != NNTI_OK) {
-        log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
-        MPI_Abort(MPI_COMM_WORLD, rc);
-    }
-    rc=NNTI_wait(&send_wr, 1000, &send_status);
-    if (rc != NNTI_OK) {
-        log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
-        MPI_Abort(MPI_COMM_WORLD, rc);
-    }
-#endif
 
 
-    log_debug(LOG_ALL, "Client Begin Phase #4 - the server drains the queue (fill_count=%d)", fill_count);
+    log_debug(LOG_ALL, "Client Begin Phase #4 - the server drains the queue (requests sent to empty queue) (fill_count=%d)", fill_count);
     /*
      * Phase 4 - the server drains the queue
      */
@@ -304,29 +298,51 @@ void client(void) {
     NNTI_destroy_work_request(&client_ack_wr);
 #endif
 
+    rc=NNTI_waitall(&send_wr_list[0], QUEUE_SIZE, 10000, &send_status_list[0]);
+    if (rc == NNTI_OK) {
+        success_count+=QUEUE_SIZE;
+    } else {
+        log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
+        MPI_Abort(MPI_COMM_WORLD, rc);
+    }
 
-    log_debug(LOG_ALL, "Client Begin Phase #5 - the client fills the queue again");
+
+    log_debug(LOG_ALL, "Client Begin Phase #5 - the server drains the queue (requests blocked by full queue)");
     /*
-     * Phase 5 - fill the server's queue again
+     * Phase 5 - the server drains the queue
+     */
+#ifdef SYNC_WITH_BARRIER
+    MPI_Barrier(MPI_COMM_WORLD);
+#else
+    // wait for the server to drain the queue
+    NNTI_create_work_request(&client_ack_mr, &client_ack_wr);
+    NNTI_wait(&client_ack_wr, -1, &client_ack_status);
+    NNTI_destroy_work_request(&client_ack_wr);
+#endif
+
+
+    log_debug(LOG_ALL, "Client Begin Phase #6 - the client fills the queue again");
+    /*
+     * Phase 6 - fill the server's queue again
      */
     fill_count=0;
     // the server's queue is empty again, so these NNTI_send() operations should all succeed.
     for (int i=0;i<QUEUE_SIZE;i++) {
-        rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr);
+        rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr[0]);
         if (rc == NNTI_OK) {
             sent_count++;
         } else {
             log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
-        rc=NNTI_wait(&send_wr, 10000, &send_status);
+        rc=NNTI_wait(&send_wr[0], 10000, &send_status[0]);
         if (rc == NNTI_OK) {
             success_count++;
             fill_count++;
         } else if (rc == NNTI_EDROPPED) {
         	break;
         } else {
-            log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
+            log_error(fullqueue_debug_level, "NNTI_wait(i=%d) returned an error: %d", i, rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -335,20 +351,20 @@ void client(void) {
     *(int*)c_ptr=fill_count;
 
     // send an ACK so the server knows to proceed
-    rc=NNTI_send(&server_hdl, &send_mr, &server_ack_mr, &send_wr);
+    rc=NNTI_send(&server_hdl, &send_mr, &server_ack_mr, &send_wr[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
-    rc=NNTI_wait(&send_wr, 1000, &send_status);
+    rc=NNTI_wait(&send_wr[0], 1000, &send_status[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
 
-    log_debug(LOG_ALL, "Client Begin Phase #6 - the server drains the queue again (fill_count=%d)", fill_count);
+    log_debug(LOG_ALL, "Client Begin Phase #7 - the server drains the queue again (fill_count=%d)", fill_count);
     /*
-     * Phase 6 - the server drains the queue again
+     * Phase 7 - the server drains the queue again
      */
 #ifdef SYNC_WITH_BARRIER
     MPI_Barrier(MPI_COMM_WORLD);
@@ -369,7 +385,7 @@ void server(void)
 {
     NNTI_result_t rc=NNTI_OK;
     NNTI_status_t queue_status;
-    NNTI_status_t send_status;
+    NNTI_status_t send_status[QUEUE_SIZE];
     NNTI_status_t server_ack_status;
     char *c_ptr;
     void    *packed=NULL;
@@ -409,12 +425,12 @@ void server(void)
 
     buffer_pack_free(packed, packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
 
-    rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr, &send_wr);
+    rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr, &send_wr[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
-    rc=NNTI_wait(&send_wr, -1, &send_status);
+    rc=NNTI_wait(&send_wr[0], -1, &send_status[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
@@ -446,16 +462,12 @@ void server(void)
     /*
      * Phase 3 - the client sends to the full queue
      */
-#ifdef SYNC_WITH_BARRIER
     MPI_Barrier(MPI_COMM_WORLD);
-#else
-    NNTI_create_work_request(&server_ack_mr, &server_ack_wr);
-    NNTI_wait(&server_ack_wr, -1, &server_ack_status);
-    NNTI_destroy_work_request(&server_ack_wr);
-#endif
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
 
-    log_debug(LOG_ALL, "Server Begin Phase #4 - the server drains the queue (fill_count=%d)", fill_count);
+    log_debug(LOG_ALL, "Server Begin Phase #4 - the server drains the queue (requests sent to empty queue) (fill_count=%d)", fill_count);
     /*
      * Phase 4 - drain the queue
      */
@@ -472,12 +484,12 @@ void server(void)
 #ifdef SYNC_WITH_BARRIER
     MPI_Barrier(MPI_COMM_WORLD);
 #else
-    rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr, &send_wr);
+    rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr, &send_wr[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
-    rc=NNTI_wait(&send_wr, -1, &send_status);
+    rc=NNTI_wait(&send_wr[0], -1, &send_status[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
@@ -485,20 +497,9 @@ void server(void)
 #endif
 
 
-    log_debug(LOG_ALL, "Server Begin Phase #5 - the client fills the queue again");
+    log_debug(LOG_ALL, "Server Begin Phase #5 - the server drains the queue  (requests blocked by full queue)");
     /*
-     * Phase 5 - the client fills the queue again
-     */
-    NNTI_create_work_request(&server_ack_mr, &server_ack_wr);
-    NNTI_wait(&server_ack_wr, -1, &server_ack_status);
-    NNTI_destroy_work_request(&server_ack_wr);
-
-    fill_count=*(int*)((char*)server_ack_status.start+server_ack_status.offset);
-
-
-    log_debug(LOG_ALL, "Server Begin Phase #6 - the server drains the queue again (fill_count=%d)", fill_count);
-    /*
-     * Phase 6 - drain the queue again
+     * Phase 5 - drain the queue
      */
     for (int i=0;i<fill_count;i++) {
         NNTI_create_work_request(&queue_mr, &queue_wr);
@@ -513,12 +514,53 @@ void server(void)
 #ifdef SYNC_WITH_BARRIER
     MPI_Barrier(MPI_COMM_WORLD);
 #else
-    rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr, &send_wr);
+    rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr, &send_wr[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
-    rc=NNTI_wait(&send_wr, -1, &send_status);
+    rc=NNTI_wait(&send_wr[0], -1, &send_status[0]);
+    if (rc != NNTI_OK) {
+        log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
+        MPI_Abort(MPI_COMM_WORLD, rc);
+    }
+#endif
+
+
+    log_debug(LOG_ALL, "Server Begin Phase #6 - the client fills the queue again");
+    /*
+     * Phase 6 - the client fills the queue again
+     */
+    NNTI_create_work_request(&server_ack_mr, &server_ack_wr);
+    NNTI_wait(&server_ack_wr, -1, &server_ack_status);
+    NNTI_destroy_work_request(&server_ack_wr);
+
+    fill_count=*(int*)((char*)server_ack_status.start+server_ack_status.offset);
+
+
+    log_debug(LOG_ALL, "Server Begin Phase #7 - the server drains the queue again (fill_count=%d)", fill_count);
+    /*
+     * Phase 7 - drain the queue again
+     */
+    for (int i=0;i<fill_count;i++) {
+        NNTI_create_work_request(&queue_mr, &queue_wr);
+        rc=NNTI_wait(&queue_wr, 1000, &queue_status);
+        NNTI_destroy_work_request(&queue_wr);
+        if (rc != NNTI_OK) {
+            log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
+            MPI_Abort(MPI_COMM_WORLD, rc);
+        }
+    }
+
+#ifdef SYNC_WITH_BARRIER
+    MPI_Barrier(MPI_COMM_WORLD);
+#else
+    rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr, &send_wr[0]);
+    if (rc != NNTI_OK) {
+        log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
+        MPI_Abort(MPI_COMM_WORLD, rc);
+    }
+    rc=NNTI_wait(&send_wr[0], -1, &send_status[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
@@ -570,9 +612,14 @@ int main(int argc, char *argv[])
     } else {
         client();
 
-        log_debug(fullqueue_debug_level, "sent_count=%d, success_count=%d, fill_count=%d, dropped_count=%d", sent_count, success_count, fill_count, dropped_count);
+        log_debug(fullqueue_debug_level, "sent_count=%d, success_count=%d, fill_count=%d, dropped_count=%d, timeout_count=%d",
+                sent_count, success_count, fill_count, dropped_count, timeout_count);
 
-        if (sent_count != (success_count+dropped_count)) {
+        if (sent_count != success_count) {
+            success=false;
+        }
+
+        if (timeout_count != QUEUE_SIZE) {
             success=false;
         }
 
