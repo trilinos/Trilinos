@@ -318,12 +318,17 @@ namespace Tpetra {
 
     /// \brief Type of an inner ("dot") product result.
     ///
-    /// This is usually the same as \c scalar_type, but may differ if
-    /// \c Scalar is e.g., an uncertainty quantification type from the
-    /// Stokhos package.
+    /// This is usually the same as <tt>scalar_type</tt>, but may
+    /// differ if <tt>scalar_type</tt> is e.g., an uncertainty
+    /// quantification type from the Stokhos package.
     typedef typename Kokkos::Details::InnerProductSpaceTraits<Scalar>::dot_type dot_type;
 
-    //! Type of the magnitude (absolute value) of a \c scalar_type value.
+    /// \brief Type of a norm result.
+    ///
+    /// This is usually the same as the type of the magnitude
+    /// (absolute value) of <tt>scalar_type</tt>, but may differ if
+    /// <tt>scalar_type</tt> is e.g., an uncertainty quantification
+    /// type from the Stokhos package.
     typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type mag_type;
 
     //! Type of the (new) Kokkos Device which implements parallel operations.
