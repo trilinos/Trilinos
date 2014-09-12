@@ -3265,48 +3265,68 @@ namespace Tpetra {
     replaceMap (newMap);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
-  createCopy (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src) {
-    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-
-    if (src.getCopyOrView () == Teuchos::View) {
-      // If src has view semantics, then neither the one-argument copy
-      // constructor nor operator= will do a deep copy.  However, we
-      // want the result to inherit the view semantics of src.  Thus, we
-      // use the two-argument copy constructor to do a deep copy, then
-      // set the result to have view semantics, and return it.
-      MV dst (src, Teuchos::Copy); // This always creates a deep copy.
-      dst.setCopyOrView (Teuchos::View);
-      return dst;
-    }
-    else {
-      return src; // copy ctor and op= both do a deep copy in this case.
-    }
+  template <class ST, class LO, class GO, class NT>
+  MultiVector<ST, LO, GO, NT>
+  createCopy (const MultiVector<ST, LO, GO, NT>& src) {
+    // This always creates a deep copy.
+    MultiVector<ST, LO, GO, NT> dst (src, Teuchos::Copy);
+    // Returning by value will invoke the copy constructor, so we need
+    // to set the result to have view semantics, so that the copy
+    // constructor only does a shallow copy.
+    dst.setCopyOrView (Teuchos::View);
+    return dst;
   }
 
-  template <class DS, class DL, class DG, class DN, class SS, class SL, class SG, class SN>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  deep_copy (MultiVector<DS,DL,DG,DN>& dst, const MultiVector<SS,SL,SG,SN>& src)
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src)
   {
-    if (src.getCopyOrView () == Teuchos::Copy) {
-      dst = src; // op= does a deep copy in this case.
-    }
-    else {
-      // Remember the original semantics of dst.
-      const Teuchos::DataAccess origMode = dst.getCopyOrView ();
+    const char prefix[] = "Tpetra::MultiVector::assign (called by deep_copy): ";
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getGlobalLength () != src.getGlobalLength (), std::invalid_argument,
+      prefix << "this->getGlobalLength() = " << this->getGlobalLength ()
+      << " != src.getGlobalLength() = " << src.getGlobalLength () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getNumVectors () != src.getNumVectors(), std::invalid_argument,
+      prefix << "this->getNumVectors() = " << this->getNumVectors () << " != "
+      "src.getNumVectors() = " << src.getNumVectors () << ".");
+    // FIXME (mfh 11 Sep 2014) This may cause deadlock on error.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getMap ().is_null () || src.getMap ().is_null (), std::runtime_error,
+      prefix << "You may not call this method if either the source or target "
+      "(this) MultiVector's Map is null.  That means that the calling process "
+      "is not participating in the operation.")
+    // FIXME (mfh 11 Sep 2014) This may cause deadlock on error.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getLocalLength () != src.getLocalLength (), std::invalid_argument,
+      prefix << "this->getLocalLength() = " << this->getLocalLength () << " != "
+      "src.getLocalLength() = " << src.getLocalLength () << ".");
 
-      MultiVector<DS,DL,DG,DN> dst_temp (src, Teuchos::Copy); // deep copy
-      dst_temp.setCopyOrView (Teuchos::View);
-      dst = dst_temp; // shallow copy of dst_temp, thus a deep copy of src
-
-      // Restore the original semantics of dst.
-      dst.setCopyOrView (origMode);
+    if (this != &src) {
+      if (this->isConstantStride ()) {
+        if (src.isConstantStride ()) {
+          MVT::Assign (this->lclMV_, src.lclMV_);
+        }
+        else { // src is not constant stride
+          MVT::Assign (lclMV_, src.lclMV_, src.whichVectors_);
+        }
+      }
+      else { // we have to copy the columns one at a time
+        Teuchos::RCP<Node> node = MVT::getNode (this->lclMV_);
+        const size_t lclNumRows = this->getLocalLength ();
+        const size_t numVecs = this->getNumVectors ();
+        for (size_t j = 0; j < numVecs; ++j) {
+          node->template copyBuffers<Scalar> (lclNumRows,
+                                              src.getSubArrayRCP (MVT::getValues (src.lclMV_), j),
+                                              this->getSubArrayRCP (MVT::getValuesNonConst (lclMV_), j));
+        }
+      }
     }
   }
 } // namespace Tpetra
 
-// Include KokkosRefactor partial specialisation if enabled
+// Include KokkosRefactor partial specialization if enabled
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Tpetra_KokkosRefactor_MultiVector_def.hpp"
 #endif
@@ -3321,7 +3341,7 @@ namespace Tpetra {
   \
   template class MultiVector< SCALAR , LO , GO , NODE >; \
   template MultiVector< SCALAR , LO , GO , NODE > createCopy( const MultiVector< SCALAR , LO , GO , NODE >& src); \
-  template void deep_copy (MultiVector< SCALAR , LO , GO , NODE >& dst, const MultiVector< SCALAR , LO , GO , NODE >& src); \
+
 
 
 #endif // TPETRA_MULTIVECTOR_DEF_HPP
