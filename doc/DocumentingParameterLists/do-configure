@@ -1,24 +1,105 @@
 #! /usr/bin/env python
+"""
+Invoke the cmake command to enable Trilinos packages that need to build
+executables to support the documentation system.  The most common cases are
+packages that support executables that write XML files with validated
+ParameterLists.  The list of packages that meet this requirement is maintained
+in Trilinos/doc/DocumentingParameterLists/Packages.txt.  This script will
+configure Trilinos with all of these packages enabled plus all of their optional
+packages.  Note that if no Trilinos source directory is provided, it is assumed
+that the parent directory is the Trilinos source directory.
+"""
 
+# Define the base cmake command.  This will be modified by appending more
+# arguments to it and then be passed to the Python subprocess.call() function.
+# If you need more options passed to 'cmake' to get it to work on your system,
+# you may either add them to this list of strings, or add them to the command
+# line when you invoke this script.  N.B.: each string in the following list
+# should be free of spaces (subprocess will interpret a string with a space as a
+# filename with a space and quote it so that the shell will interpret it that
+# way, which is not what you want here).
+cmakeCommand = ['cmake',
+                '-DTrilinos_ENABLE_Fortran:BOOL=OFF',
+		'-DTPL_ENABLE_MPI:BOOL=ON',
+  		'-DTrilinos_ENABLE_TESTS:BOOL=OFF',
+  		'-DTrilinos_ENABLE_EXAMPLES:BOOL=OFF',
+                '-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF',
+                '-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON'
+                ]
+
+# Import built-in modules
 import sys
 import os
 import subprocess
 
-trilinosDir = sys.argv[1]
-packagesFile = os.path.join(trilinosDir, 'doc', 'DocumentingParameterLists',
-	       'Packages.txt')
-packages = open(packagesFile).readlines()
+def main():
+    # Pull off any options and arguments from the command line.  I use optparse
+    # here so that it will be compatible with Python versions back to 2.4.
+    from optparse import OptionParser
+    usage = '%prog [-D <var>:<type>=<value> [ ... ]] [Trilinos-src-dir]'
+    parser = OptionParser(usage=usage, description=__doc__)
+    parser.add_option('-D', type='string', action='append', dest='extraArgs',
+                      help='a <var>:<type>=<value> entry to be passed to cmake')
+    (options, args) = parser.parse_args()
 
-cmakeCommand = ['cmake',
-		'-D TPL_ENABLE_MPI:BOOL=TRUE',
-  		'-D Trilinos_ENABLE_TESTS:BOOL=OFF',
-  		'-D Trilinos_ENABLE_EXAMPLES:BOOL=OFF']
+    # Determine the Trilinos source directory.  If provided on the command line,
+    # use it.  If not, the default Trilinos source directory is '..' (which may
+    # not be true, but if you use the default, you get what you get...)
+    if len(args) > 0:
+        trilinosDir = args[0]
+    else:
+        trilinosDir = '..'
+    trilinosDir = os.path.abspath(trilinosDir)
 
-for package in packages:
-    cmakeCommand.append('-D Trilinos_ENABLE_%s:BOOL=ON' % package)
-    cmakeCommand.append('-D %s_ENABLE_TESTS:BOOL=ON' % package)
+    # Transfer extra cmake options from the command line to the cmake command
+    for extraArg in options.extraArgs:
+        cmakeCommand.append('-D' + extraArg)
 
-cmakeCommand.append(trilinosDir)
+    # Obtain the list of packages to build.  These package names are stored in
+    # the file Trilinos/doc/DocumentingParameterLists/Packages.txt.  Read them,
+    # strip the trailing newlines and store them in a list named 'packages'.
+    packagesFileName = os.path.join(trilinosDir,
+                                    'doc',
+                                    'DocumentingParameterLists',
+                                    'Packages.txt')
+    packagesFile = open(packagesFileName)
+    packages = []
+    for package in packagesFile:
+        packages.append(package.strip())
+    packagesFile.close()
 
-subprocess.call(cmakeCommand)
+    # Append the cmake command with additional options for each package in the
+    # list of packages.
+    for package in packages:
+        cmakeCommand.append('-DTrilinos_ENABLE_%s:BOOL=ON' % package)
+        cmakeCommand.append('-D%s_ENABLE_TESTS:BOOL=ON'    % package)
 
+    # The final command line argument for the cmake command is the Trilinos
+    # source directory.
+    cmakeCommand.append(trilinosDir)
+
+    # If 'CMakeCache.txt' exists, delete it and echo the command
+    cmakeCacheFileName = 'CMakeCache.txt'
+    if os.path.isfile(cmakeCacheFileName):
+        print 'rm', cmakeCacheFileName
+        os.remove(cmakeCacheFileName)
+
+    # If 'CMakeFiles' directory exists, delete it recursively and echo the
+    # command.  Note that to get the recursive remove, we have to use
+    # subprocess.call()
+    cmakeFilesDir = 'CMakeFiles'
+    if os.path.isdir(cmakeFilesDir):
+        print 'rm -r', cmakeFilesDir
+        subprocess.call(['rm', '-r', cmakeFilesDir])
+
+    # Pretty print the cmake command and then call it.  Note that 'join' is a
+    # string method that takes a list of strings and joins them together using
+    # the parent string as the separator.  We choose a separator string that
+    # gives us a space and continuation character, a newline, and indentation.
+    print " \\\n    ".join(cmakeCommand)
+    subprocess.call(cmakeCommand)
+
+################################################################################
+
+if __name__ == '__main__':
+    main()
