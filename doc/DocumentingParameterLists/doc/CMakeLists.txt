@@ -1,5 +1,10 @@
-FILE( COPY ${Trilinos_SOURCE_DIR}/packages/${PACKAGE_NAME}/doc/parameterList
-      DESTINATION ${Trilinos_BINARY_DIR}/packages/${PACKAGE_NAME}/doc)
+# -*- cmake -*-
+
+FILE( COPY
+      ${CMAKE_CURRENT_SOURCE_DIR}/parameterList
+      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    )
+
 #
 # Add the Parameter List documentation
 TRIBITS_ADD_TEST_DIRECTORIES(parameterList)
