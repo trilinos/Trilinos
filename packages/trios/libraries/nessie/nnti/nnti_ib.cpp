@@ -1897,6 +1897,7 @@ NNTI_result_t NNTI_ib_send (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
+    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
     trios_start_timer(call_time);
     if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -2079,6 +2080,7 @@ NNTI_result_t NNTI_ib_put (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
+    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
     trios_start_timer(call_time);
     if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -2283,6 +2285,7 @@ NNTI_result_t NNTI_ib_get (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
+    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
     trios_start_timer(call_time);
     if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -2466,6 +2469,7 @@ NNTI_result_t NNTI_ib_atomic_fop (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
+    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
     trios_start_timer(call_time);
     if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -2571,6 +2575,7 @@ NNTI_result_t NNTI_ib_atomic_cswap (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
+    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
     trios_start_timer(call_time);
     if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -4245,6 +4250,7 @@ static NNTI_result_t post_recv_work_request(
     log_debug(nnti_debug_level, "sge_count=%d, sge_list=%p", ib_wr->sge_count, ib_wr->sge_list);
 
     if ((ib_wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4256,6 +4262,7 @@ static NNTI_result_t post_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((ib_wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4344,6 +4351,7 @@ static NNTI_result_t post_ack_recv_work_request(
     ib_wr->rq_wr.num_sge=1;
 
     if ((ib_wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4355,6 +4363,7 @@ static NNTI_result_t post_ack_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((ib_wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4401,8 +4410,20 @@ static NNTI_result_t repost_recv_work_request(
     ib_mem_hdl=IB_MEM_HDL(wr->reg_buf);
     assert(ib_mem_hdl);
 
+    nthread_lock(&nnti_wrmap_lock);
+    wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
+    if (m_victim != wrmap.end()) {
+        log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lx) from the wrmap", ib_wr, ib_wr->key);
+        wrmap.erase(m_victim);
+    }
+
     ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
     ib_wr->rq_wr.wr_id=(uint64_t)ib_wr->key;
+
+    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
+    assert(wrmap.find(ib_wr->key) == wrmap.end());
+    wrmap[ib_wr->key] = ib_wr;
+    nthread_unlock(&nnti_wrmap_lock);
 
     ib_wr->state=NNTI_IB_WR_STATE_POSTED;
 
@@ -4421,6 +4442,7 @@ static NNTI_result_t repost_recv_work_request(
     }
 
     if ((ib_wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4432,6 +4454,7 @@ static NNTI_result_t repost_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((ib_wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4442,18 +4465,6 @@ static NNTI_result_t repost_recv_work_request(
         transport_global_data.req_srq_count++;
         log_debug(nnti_debug_level, "transport_global_data.req_srq_count==%ld", transport_global_data.req_srq_count);
     }
-
-    nthread_lock(&nnti_wrmap_lock);
-    wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
-    if (m_victim != wrmap.end()) {
-        log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lx) from the wrmap", ib_wr, ib_wr->key);
-        wrmap.erase(m_victim);
-    }
-//    ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
-    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
-    assert(wrmap.find(ib_wr->key) == wrmap.end());
-    wrmap[ib_wr->key] = ib_wr;
-    nthread_unlock(&nnti_wrmap_lock);
 
     log_debug(nnti_debug_level, "exit (wr=%p)", wr);
 
@@ -4495,6 +4506,7 @@ static NNTI_result_t repost_ack_recv_work_request(
     }
 
     if ((ib_wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4506,6 +4518,7 @@ static NNTI_result_t repost_ack_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((ib_wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
