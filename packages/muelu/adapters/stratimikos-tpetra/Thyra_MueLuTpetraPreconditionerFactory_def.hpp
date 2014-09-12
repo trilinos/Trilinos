@@ -179,9 +179,9 @@ void MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::i
   }
 
   Teuchos::RCP<MV> null_space;
-  if (paramList.isType<Teuchos::RCP<MV> >("Null Space")) {
-    null_space = paramList.get<Teuchos::RCP<MV> >("Null Space");
-    paramList.remove("Null Space");
+  if (paramList.isType<Teuchos::RCP<MV> >("Nullspace")) {
+    null_space = paramList.get<Teuchos::RCP<MV> >("Nullspace");
+    paramList.remove("Nullspace");
   }
 
   typedef MueLu::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> MueLuOperator;
