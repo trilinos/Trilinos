@@ -903,7 +903,7 @@ makeRangeMapVectorConst (const Teuchos::RCP<const V>& D) const
       return D; // Row Map and range Map are the same; no need to Export.
     }
     else { // Row Map and range Map are _not_ the same; must Export.
-      RCP<V> D_out = rcp (new V (*D));
+      RCP<V> D_out = rcp (new V (*D, Teuchos::Copy));
       D_out->doExport (*D, *exporter, Tpetra::ADD);
       return Teuchos::rcp_const_cast<const V> (D_out);
     }

@@ -838,7 +838,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     // when computing the output.  Otherwise, alias X_temp to X.
     RCP<const MV> X_temp;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      X_temp = rcp (new MV (createCopy(X)));
+      X_temp = rcp (new MV (X, Teuchos::Copy));
     } else {
       X_temp = rcpFromRef (X);
     }

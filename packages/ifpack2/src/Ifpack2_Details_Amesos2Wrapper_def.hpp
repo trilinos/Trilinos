@@ -80,20 +80,32 @@ template <class MatrixType>
 void Amesos2Wrapper<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 {
   using Teuchos::ParameterList;
+  using Teuchos::RCP;
   using Teuchos::rcp;
-  //Extract the list called "Amesos2" that contains the Amesos2 solver's options.
-  Teuchos::RCP<ParameterList> theList;
-  if ( params.name() == "Amesos2" ) {
-    theList = rcp(new ParameterList(params) );
-  } else if ( params.isSublist("Amesos2") ) {
-    ParameterList subpl = params.sublist("Amesos2");
-    theList = rcp(new ParameterList(subpl) );
-    theList->setName("Amesos2"); //FIXME hack until Teuchos sublist name bug is fixed
-    if (params.isParameter("Amesos2 solver name"))
+
+  // FIXME (mfh 12 Sep 2014) Why does this code make a deep copy of
+  // the input ParameterList?  Does Amesos2 want a deep copy?
+
+  // Extract the list called "Amesos2" that contains the Amesos2
+  // solver's options.
+  RCP<ParameterList> theList;
+  if (params.name () == "Amesos2") {
+
+    theList = rcp (new ParameterList (params));
+  } else if (params.isSublist ("Amesos2")) {
+    // FIXME (mfh 12 Sep 2014) This code actually makes _two_ deep copies.
+    ParameterList subpl = params.sublist ("Amesos2");
+    theList = rcp (new ParameterList (subpl));
+    theList->setName ("Amesos2"); //FIXME hack until Teuchos sublist name bug is fixed
+    if (params.isParameter ("Amesos2 solver name")) {
       SolverName_ = params.get<std::string>("Amesos2 solver name");
+    }
   } else {
-    //Amesos2 silently ignores any list not called "Amesos2".  We'll throw an exception.
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "The ParameterList passed to Amesos2 must be called \"Amesos2\".");
+    // Amesos2 silently ignores any list not called "Amesos2".  We'll
+    // throw an exception.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error, "The ParameterList passed to Amesos2 must be "
+      "called \"Amesos2\".");
   }
 
   // If amesos2solver_ hasn't been allocated yet, cache the parameters and set them
@@ -218,6 +230,7 @@ void Amesos2Wrapper<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_
   // factorization.
   IsInitialized_ = false;
   IsComputed_ = false;
+  Condest_ = -STM::one ();
 
   if (A.is_null ()) {
     A_ = Teuchos::null;
@@ -281,8 +294,13 @@ template<class MatrixType>
 void Amesos2Wrapper<MatrixType>::initialize ()
 {
   using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcp_dynamic_cast;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
+  typedef Tpetra::Import<local_ordinal_type,
+    global_ordinal_type, node_type> import_type;
 
   const std::string timerName ("Ifpack2::Amesos2Wrapper::initialize");
   RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
@@ -313,27 +331,27 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     {
       // The matrix that Amesos2 will build the preconditioner on must be a Tpetra::Crs matrix.
       // If A_local isn't, then we build one.
-      Teuchos::RCP<const crs_matrix_type> A_local_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_local);
+      RCP<const crs_matrix_type> A_local_crs =
+        rcp_dynamic_cast<const crs_matrix_type> (A_local);
 
-      if (A_local_crs.is_null()) {
+      if (A_local_crs.is_null ()) {
         // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
         // number of elements in each row of A_local, so that we can
         // create A_local_crs_nc using static profile.  The code below is
         // correct but potentially slow.
-        RCP<crs_matrix_type> A_local_crs_nc = Teuchos::rcp (new crs_matrix_type (A_local->getRowMap (),
-                                                                        A_local->getColMap (), 0));
+        RCP<crs_matrix_type> A_local_crs_nc =
+          rcp (new crs_matrix_type (A_local->getRowMap (),
+                                    A_local->getColMap (), 0));
         // FIXME (mfh 24 Jan 2014) This Import approach will only work
         // if A_ has a one-to-one row Map.  This is generally the case
         // with matrices given to Ifpack2.
         //
         // Source and destination Maps are the same in this case.
         // That way, the Import just implements a copy.
-        typedef Tpetra::Import<local_ordinal_type, global_ordinal_type,
-          node_type> import_type;
         import_type import (A_local->getRowMap (), A_local->getRowMap ());
         A_local_crs_nc->doImport (*A_local, import, Tpetra::REPLACE);
         A_local_crs_nc->fillComplete (A_local->getDomainMap (), A_local->getRangeMap ());
-        A_local_crs = Teuchos::rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
       A_local_crs_ = A_local_crs;
     }
@@ -351,10 +369,14 @@ void Amesos2Wrapper<MatrixType>::initialize ()
         SolverName_ = "superludist";
       else if (Amesos2::query("cholmod"))
         SolverName_ = "cholmod";
-      else
-        // FIXME (9 May 2014) JJH Amesos2 does not yet expose KLU2, its internal direct solver.
-        // This means there's no fallback option, thus we throw an exception here.
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Amesos2 has not been configured with any direct solver support.");
+      else {
+        // FIXME (9 May 2014) JJH Amesos2 does not yet expose KLU2,
+        // its internal direct solver.  This means there's no fallback
+        // option, thus we throw an exception here.
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::invalid_argument, "Amesos2 has not been configured with "
+          "any direct solver support.");
+      }
     }
 
     // FIXME (10 Dec 2013) It shouldn't be necessary to recreate the
@@ -386,13 +408,7 @@ void Amesos2Wrapper<MatrixType>::initialize ()
 template<class MatrixType>
 void Amesos2Wrapper<MatrixType>::compute ()
 {
-  using Teuchos::Array;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
-  using Teuchos::as;
-  using Teuchos::rcp;
   using Teuchos::RCP;
-  using Teuchos::reduceAll;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
 
@@ -477,7 +493,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     // when computing the output.  Otherwise, alias X_temp to X.
     RCP<const MV> X_temp;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      X_temp = rcp (new MV (createCopy(X)));
+      X_temp = rcp (new MV (X, Teuchos::Copy));
     } else {
       X_temp = rcpFromRef (X);
     }
@@ -490,11 +506,8 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       // Interpret X and Y as "local" multivectors, that is, in the
       // local filter's domain resp. range Maps.  "Interpret" means that
       // we create views with different Maps; we don't have to copy.
-      //std::cout << "Ifpack2::Details::Amesos2Solver::apply() : "
-      //          << "found multiple procs, creating new view w/ different map" << std::endl;
       X_local = X_temp->offsetView (A_local_crs_->getDomainMap (), 0);
       Y_local = Y_temp->offsetViewNonConst (A_local_crs_->getRangeMap (), 0);
-      //if (A_->getRowMap ()->getComm ()->getRank ())  sleep(2);
     }
     else { // only one process in A_'s communicator
       // X and Y are already "local"; no need to set up local views.
@@ -502,20 +515,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       Y_local = Y_temp;
     }
 
-
-    //RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    //fos->setOutputToRootOnly(-1);
-    //*fos << "=========== X_local [RHS] (Ifpack2::Details::DenseSolver::apply()) ============" << std::endl;
-    //X_local->describe(*fos,Teuchos::VERB_EXTREME);
-    //*fos << "=========== end of X_local [RHS] (Ifpack2::Details::DenseSolver::apply()) ============" << std::endl;
-
-    //*fos << "=========== Y_local (Ifpack2::Details::DenseSolver::apply()) ============" << std::endl;
-    //Y_local->describe(*fos,Teuchos::VERB_EXTREME);
-    //*fos << "=========== end of Y_local (Ifpack2::Details::DenseSolver::apply()) ============" << std::endl;
-
     // Use the precomputed factorization to solve.
-    //amesos2solver_->setX (Y_temp);
-    //amesos2solver_->setB (X_temp);
     amesos2solver_->setX (Y_local);
     amesos2solver_->setB (X_local);
     amesos2solver_->solve ();

@@ -749,7 +749,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     // whether one is a noncontiguous view of the other.
     //
     // X and Y alias one another, so we have to copy X.
-    MV X_copy = Tpetra::createCopy (X);
+    MV X_copy (X, Teuchos::Copy);
     applyNonAliased (X_copy, Y, mode, alpha, beta);
   } else {
     applyNonAliased (X, Y, mode, alpha, beta);

@@ -529,7 +529,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         // for its Import object?  Of course a general RowMatrix might
         // not necessarily have one.
         DistributedImporter_ =
-          rcp (new import_type (Matrix_->getRowMap (), Matrix_->getDomainMap ()));
+          rcp (new import_type (Matrix_->getRowMap (),
+                                Matrix_->getDomainMap ()));
       }
       globalOverlappingX->doImport (X, *DistributedImporter_, Tpetra::INSERT);
     }
@@ -546,8 +547,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Inverse_->apply (ReducedX, ReducedY);
       }
       else {
-        MV ReorderedX (ReducedX);
-        MV ReorderedY (ReducedY);
+        MV ReorderedX (ReducedX, Teuchos::Copy);
+        MV ReorderedY (ReducedY, Teuchos::Copy);
         ReorderedLocalizedMatrix_->permuteOriginalToReordered (ReducedX, ReorderedX);
         Inverse_->apply (ReorderedX, ReorderedY);
         ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, ReducedY);
@@ -563,8 +564,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Inverse_->apply (*OverlappingX, *OverlappingY);
       }
       else {
-        MV ReorderedX = createCopy(*OverlappingX);
-        MV ReorderedY = createCopy(*OverlappingY);
+        MV ReorderedX (*OverlappingX, Teuchos::Copy);
+        MV ReorderedY (*OverlappingY, Teuchos::Copy);
         ReorderedLocalizedMatrix_->permuteOriginalToReordered (*OverlappingX, ReorderedX);
         Inverse_->apply (ReorderedX, ReorderedY);
         ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, *OverlappingY);

@@ -275,15 +275,15 @@ applyImpl (const local_mv_type& X,
   else { // alpha != 0; must solve the linear system
     Teuchos::LAPACK<int, local_scalar_type> lapack;
     // If beta is nonzero or Y is not constant stride, we have to use
-    // a temporary output multivector.  It gets a copy of X, since
-    // GETRS overwrites its (multi)vector input with its output.
+    // a temporary output multivector.  It gets a (deep) copy of X,
+    // since GETRS overwrites its (multi)vector input with its output.
     RCP<local_mv_type> Y_tmp;
     if (beta == STS::zero () ){
-      Y = X;
+      Tpetra::deep_copy (Y, X);
       Y_tmp = rcpFromRef (Y);
     }
     else {
-      Y_tmp = rcp (new local_mv_type (X)); // constructor copies X
+      Y_tmp = rcp (new local_mv_type (X, Teuchos::Copy));
     }
     const int Y_stride = static_cast<int> (Y_tmp->getStride ());
     ArrayRCP<local_scalar_type> Y_view = Y_tmp->get1dViewNonConst ();
@@ -304,7 +304,7 @@ applyImpl (const local_mv_type& X,
       Y.update (alpha, *Y_tmp, beta);
     }
     else if (! Y.isConstantStride ()) {
-      Y = *Y_tmp;
+      Tpetra::deep_copy (Y, *Y_tmp);
     }
   }
 }
@@ -573,12 +573,13 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-std::ostream& DenseContainer<MatrixType,LocalScalarType>::print(std::ostream& os) const
+std::ostream& DenseContainer<MatrixType,LocalScalarType>::
+print (std::ostream& os) const
 {
-  Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
-  fos.setOutputToRootOnly(0);
-  describe(fos);
-  return(os);
+  Teuchos::FancyOStream fos (Teuchos::rcpFromRef (os));
+  fos.setOutputToRootOnly (0);
+  this->describe (fos);
+  return os;
 }
 
 //==============================================================================
