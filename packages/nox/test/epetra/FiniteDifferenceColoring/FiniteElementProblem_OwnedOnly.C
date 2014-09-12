@@ -176,7 +176,7 @@ evaluate(FillType f,
   u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
-  int i,j,ierr;
+  int i, j, ierr;
   int OverlapNumMyElements = OverlapMap->NumMyElements();
 
   int OverlapMinMyGID;
@@ -198,8 +198,14 @@ evaluate(FillType f,
   }
 
   // Zero out the objects that will be filled
-  if ((flag == MATRIX_ONLY) || (flag == ALL)) i=A->PutScalar(0.0);
-  if ((flag == F_ONLY)    || (flag == ALL)) i=rhs->PutScalar(0.0);
+  if ((flag == MATRIX_ONLY) || (flag == ALL)) {
+    i = A->PutScalar(0.0);
+    assert(i == 0);
+  }
+  if ((flag == F_ONLY)    || (flag == ALL)) {
+    i = rhs->PutScalar(0.0);
+    assert(i == 0);
+  }
 
 
 /* Solves the nonlinear equation:
@@ -245,12 +251,13 @@ evaluate(FillType f,
       if ((flag == MATRIX_ONLY) || (flag == ALL)) {
         for(j=0;j < 2; j++) {
           if (StandardMap->MyGID(row)) {
-        column=OverlapMap->GID(ne+j);
-        jac=basis.wt*basis.dx*((1.0/(basis.dx*basis.dx))*
-                       basis.dphide[j]*basis.dphide[i]
-                       +factor*basis.phi[j]*
-                       basis.phi[i]);
-        ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
+            column=OverlapMap->GID(ne+j);
+            jac=basis.wt*basis.dx*((1.0/(basis.dx*basis.dx))*
+                basis.dphide[j]*basis.dphide[i]
+                +factor*basis.phi[j]*
+                basis.phi[i]);
+            ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
+            assert(ierr == 0);
           }
         }
       }
@@ -260,21 +267,22 @@ evaluate(FillType f,
       if (StandardMap->MyGID(row)) {
         if ((flag == F_ONLY)    || (flag == ALL)) {
           (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
-        +basis.wt*basis.dx
-        *((1.0/(basis.dx*basis.dx))*basis.duu*
-          basis.dphide[i]+factor*basis.uu*basis.uu*basis.phi[i]);
+            +basis.wt*basis.dx
+            *((1.0/(basis.dx*basis.dx))*basis.duu*
+                basis.dphide[i]+factor*basis.uu*basis.uu*basis.phi[i]);
         }
       }
       // Loop over Trial Functions
       if ((flag == MATRIX_ONLY) || (flag == ALL)) {
         for(j=0;j < 2; j++) {
           if (StandardMap->MyGID(row)) {
-        column=OverlapMap->GID(ne+j);
-        jac=basis.wt*basis.dx*((1.0/(basis.dx*basis.dx))*
-                       basis.dphide[j]*basis.dphide[i]
-                       +2.0*factor*basis.uu*basis.phi[j]*
-                       basis.phi[i]);
-        ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
+            column=OverlapMap->GID(ne+j);
+            jac=basis.wt*basis.dx*((1.0/(basis.dx*basis.dx))*
+                basis.dphide[j]*basis.dphide[i]
+                +2.0*factor*basis.uu*basis.phi[j]*
+                basis.phi[i]);
+            ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
+            assert(ierr == 0);
           }
         }
       }
@@ -330,9 +338,6 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
   int i,j;
   int row, column;
   int OverlapNumMyElements = OverlapMap->NumMyElements();
-  int OverlapMinMyGID;
-  if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
-  else OverlapMinMyGID = StandardMap->MinMyGID()-1;
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {

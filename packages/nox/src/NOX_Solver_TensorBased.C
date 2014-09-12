@@ -851,6 +851,7 @@ NOX::Solver::TensorBased::implementGlobalStrategy(NOX::Abstract::Group& newGrp,
     if (fprime < 0)
     {
       ok = performLinesearch(newGrp, in_stepSize, searchDirection, s);
+      assert(ok);
       fTensor = 0.5 * newGrp.getNormF() * newGrp.getNormF();
       tensorStep = in_stepSize;
       isTensorDescent = true;
