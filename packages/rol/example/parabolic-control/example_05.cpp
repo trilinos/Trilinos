@@ -41,9 +41,26 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_04.cpp
-    \brief Shows how to solve a control problem governed by a nonlinear parabolic equation
-           with bound constraints.
+/*! \file  example_05.cpp
+    \brief Shows how to solve a control problem governed by a semilinear 
+           parabolic equation.  The nonlinearity is of Cahn-Hilliard-type.  
+           The control problem is 
+           \f[
+              \min_{u,z} \;\frac{1}{2} \int_0^1 (u(T,x)-\bar{u}(x))^2\,\mathrm{d}x
+                         \frac{\alpha}{2} \int_0^T z(t)^2\,\mathrm{d}t
+           \f]
+           subject to 
+           \f[
+               u_t(t,x) - u_{xx}(t,x) + u(t,x)^3 - u(t,x) = 0 \quad t\in (0,T], \; x\in (0,1)
+           \f]
+           with boundary conditions
+           \f[
+               u_x(t,0) = 0, \; u_x(t,1) = z(t)
+           \f]
+           and initial condition
+           \f[
+               u(0,x) = 0.
+           \f]
 */
 
 #include "ROL_Algorithm.hpp"
