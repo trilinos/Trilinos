@@ -59,10 +59,10 @@
 #   Latest available build for vdir "vCVS" -- detected automatically
 #
 
-cmake_version_min = "2.8.0" # manual_update
+cmake_version_min = "2.8.11" # manual_update
 
-cmake_version_release = "2.8.8" # manual_update
+cmake_version_release = "2.8.11" # manual_update
 
-cmake_version_rc = "2.8.10.2" # auto_update v2.8
+cmake_version_rc = "2.8.12.2" # auto_update v2.8
 
-cmake_version_dev = "2.8.10.20130226-gd10c2" # auto_update vCVS
+cmake_version_dev = "3.0.20140910-g9c6cf" # auto_update vCVS
