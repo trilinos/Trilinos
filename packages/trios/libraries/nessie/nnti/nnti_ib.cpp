@@ -119,6 +119,8 @@ typedef struct {
     bool     use_mlock;
     bool     use_memset;
 
+    bool     drop_if_full_queue;
+
 } nnti_ib_config;
 
 
@@ -4865,14 +4867,22 @@ static void transition_connection_to_ready(
 
     /* bring the two QPs up to RTR */
     trios_start_timer(callTime);
+
     min_rnr_timer=1;  /* means 0.01ms delay before sending RNR NAK */
     ack_timeout  =17; /* time to wait for ACK/NAK before retransmitting.  4.096us * 2^17 == 0.536s */
-    retry_count  =1;  /* number of retries if no answer on primary path or if remote sends RNR NAK */
+    if (config.drop_if_full_queue) {
+        retry_count=1;  /* number of retries if no answer on primary path or if remote sends RNR NAK */
+    } else {
+        retry_count=7;   /* number of retries if no answer on primary path or if remote sends RNR NAK.  7 has special meaning of infinite retries. */
+    }
     transition_qp_from_reset_to_ready(conn->req_qp.qp, conn->peer_req_qpn, conn->peer_lid, min_rnr_timer, ack_timeout, retry_count);
+
+
     min_rnr_timer=31;  /* means 491.52ms delay before sending RNR NAK */
     ack_timeout  =17;  /* time to wait for ACK/NAK before retransmitting.  4.096us * 2^17 == 0.536s */
     retry_count  =7;   /* number of retries if no answer on primary path or if remote sends RNR NAK.  7 has special meaning of infinite retries. */
     transition_qp_from_reset_to_ready(conn->data_qp.qp, conn->data_qp.peer_qpn, conn->peer_lid, min_rnr_timer, ack_timeout, retry_count);
+
     trios_stop_timer("transition_qp_from_reset_to_ready", callTime);
 
     trios_start_timer(callTime);
@@ -6386,7 +6396,12 @@ static NNTI_result_t progress(
                     ib_work_request *ib_wr=decode_work_request(&wc);
                     int min_rnr_timer=1;  /* means 0.01ms delay before sending RNR NAK */
                     int ack_timeout  =17; /* time to wait for ACK/NAK before retransmitting.  4.096us * 2^17 == 0.536ss */
-                    int retry_count  =1;  /* number of retries if no answer on primary path or if remote sends RNR NAK */
+                    int retry_count;
+                    if (config.drop_if_full_queue) {
+                        retry_count=1; /* number of retries if no answer on primary path or if remote sends RNR NAK */
+                    } else {
+                        retry_count=7; /* number of retries if no answer on primary path or if remote sends RNR NAK.  7 has special meaning of infinite retries. */
+                    }
                     transition_qp_from_error_to_ready(
                             ib_wr->conn->req_qp.qp,
                             ib_wr->conn->peer_req_qpn,
@@ -6523,6 +6538,7 @@ static void config_init(nnti_ib_config *c)
     c->use_rdma_target_ack = false;
     c->use_mlock           = true;
     c->use_memset          = true;
+    c->drop_if_full_queue  = false;
 }
 
 static void config_get_from_env(nnti_ib_config *c)
