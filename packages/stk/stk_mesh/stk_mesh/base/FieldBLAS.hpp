@@ -746,7 +746,7 @@ void INTERNAL_field_copy(
         const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
 
         
-        ThrowAssertMsg(fieldSize != field_scalars_per_entity(yFieldBase, b), 
+        ThrowAssertMsg(fieldSize == field_scalars_per_entity(yFieldBase, b), 
           "In INTERNAL_field_copy: found incomptaible field sizes.  "<<std::endl
           <<"  First field name: "<<xFieldBase.name()<<std::endl
           <<"  First field size: "<<field_scalars_per_entity(xFieldBase, b)<<std::endl
