@@ -352,7 +352,7 @@ private:
 public:
 
   EqualityConstraint_ParabolicControl(Real eps = 1.0, int nx = 128, int nt = 100, Real T = 1) 
-    : eps1_(eps), eps2_(1.0), nx_((unsigned)nx), nt_((unsigned)nt), T_(T) {
+    : eps1_(eps*eps), eps2_(1.0), nx_((unsigned)nx), nt_((unsigned)nt), T_(T) {
     u0_.resize(nx_,0.0);
     dx_ = 1.0/((Real)nx-1.0);
     dt_ = T/((Real)nt-1.0);
@@ -847,8 +847,8 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    int nx      = 32;   // Set spatial discretization.
-    int nt      = 10;   // Set temporal discretization.
+    int nx      = 256;   // Set spatial discretization.
+    int nt      = 100;   // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
     RealT alpha = 1.e-3; // Set penalty parameter.
     RealT eps   = 5.e-1; // Set conductivity 
@@ -888,7 +888,7 @@ int main(int argc, char *argv[]) {
     obj.checkGradient(x,y,true);
     obj.checkHessVec(x,y,true);
     con.checkApplyJacobian(x,y,jv,true);
-    con.checkApplyAdjointJacobian(x,yu,true);
+    //con.checkApplyAdjointJacobian(x,yu,true);
     con.checkApplyAdjointHessian(x,yu,y,true);
     robj.checkGradient(xz,yz,true);
     robj.checkHessVec(xz,yz,true);
