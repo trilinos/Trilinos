@@ -255,10 +255,10 @@ createMultiVector(const NOX::Abstract::Vector* const* vecs,
     Teuchos::RCP< ::Thyra::VectorBase<double> > v = mv->col(0);
     ::Thyra::copy(*thyraVec, v.ptr());
     for (int i=0; i<numVecs; i++) {
-      const NOX::Thyra::Vector* tv =
-    dynamic_cast<const NOX::Thyra::Vector*>(vecs[i]);
+      const NOX::Thyra::Vector & tv =
+        dynamic_cast<const NOX::Thyra::Vector&>(*vecs[i]);
       v = mv->col(i+1);
-      ::Thyra::copy(*(tv->thyraVec), v.ptr());
+      ::Thyra::copy(*(tv.thyraVec), v.ptr());
     }
   }
 
