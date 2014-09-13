@@ -18,10 +18,10 @@
 
 // Include headers for Tpetra
 #include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_Version.hpp"        
-#include "Tpetra_Map.hpp"            
-#include "Tpetra_MultiVector.hpp" 
-#include "Tpetra_Operator.hpp" 
+#include "Tpetra_Version.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Operator.hpp"
 
 // Include header for Teuchos serial dense matrix
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -42,22 +42,20 @@
 
   //
   // Specify types used in this example
-  // Instead of constantly typing Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>, 
+  // Instead of constantly typing Tpetra::MultiVector<Scalar, ...>,
   // we can type MV.
-  //                                   
-  typedef double                                                       Scalar;
-  typedef Teuchos::ScalarTraits<Scalar>                                SCT;
-  typedef SCT::magnitudeType                                           Magnitude;
-  typedef int                                                          LocalOrdinal;  
-  typedef long                                                         GlobalOrdinal;  
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType                 Platform; 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType       Node;     
-  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>               Map;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  MV;
-  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>     OP;
-  typedef Anasazi::MultiVecTraits<Scalar, MV>                          MVT;
-  typedef Anasazi::OperatorTraits<Scalar, MV, OP>                      OPT;
-  typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>              Import;
+  //
+  typedef double                                                 Scalar;
+  typedef Teuchos::ScalarTraits<Scalar>                          SCT;
+  typedef SCT::magnitudeType                                     Magnitude;
+  typedef int                                                    LocalOrdinal;
+  typedef long                                                   GlobalOrdinal;
+  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal>               Map;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> MV;
+  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal>    OP;
+  typedef Anasazi::MultiVecTraits<Scalar, MV>                    MVT;
+  typedef Anasazi::OperatorTraits<Scalar, MV, OP>                OPT;
+  typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal>             Import;
 
 
 
@@ -74,7 +72,7 @@
 // to perform the operations of your matvec.
 //
 // For instance, when performing a matvec with a tridiagonal matrix (with a block
-// row distribution), each process needs to know the last element owned by the 
+// row distribution), each process needs to know the last element owned by the
 // previous process and the first element owned by the next process.
 //
 // If you are only interested in running the code sequentially, you can safely
@@ -85,11 +83,11 @@ public:
   //
   // Constructor
   //
-  MyOp(const GlobalOrdinal n, const RCP< const Teuchos::Comm<int> > comm) 
-  { 
+  MyOp(const GlobalOrdinal n, const RCP< const Teuchos::Comm<int> > comm)
+  {
     //
     // Construct a map for our block row distribution
-    // 
+    //
     opMap_ = rcp( new Map(n, 0, comm) );
 
     //
@@ -109,7 +107,7 @@ public:
     // When you define this for your own operator, it is helpful to draw pictures
     // on a sheet of paper to keep track of who needs to receive which elements.
     // Here, each process needs to receive one element from each of its neighbors.
-    // 
+    //
 
     // All processes but the first will receive one element from the previous process
     if(myRank_ > 0) nlocal++;
@@ -202,7 +200,7 @@ public:
     for(int c=0; c<numVecs; c++)
     {
       // Get a view of the desired column
-      Teuchos::ArrayRCP<Scalar> colView = redistData->getDataNonConst(c); 
+      Teuchos::ArrayRCP<Scalar> colView = redistData->getDataNonConst(c);
 
       int offset;
       // Y[0,c] = -colView[0] + 2*colView[1] - colView[2] (using local indices)
@@ -217,7 +215,7 @@ public:
         Y.replaceLocalValue(0, c, 2*colView[0] - colView[1]);
         offset = 1;
       }
-      
+
       // Y[r,c] = -colView[r-offset] + 2*colView[r+1-offset] - colView[r+2-offset]
       for(LocalOrdinal r=1; r<nlocRows-1; r++)
       {
@@ -252,28 +250,29 @@ int main(int argc, char *argv[]) {
   // Initialize the MPI session
   //
   Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
 
-  // 
-  // Get the default communicator and node
-  //                                      
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();          
-  RCP<Node>                      node = platform.getNode();          
-  const int myRank = comm->getRank();  
+  //
+  // Get the default communicator
+  //
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int myRank = comm->getRank ();
 
   //
   // Get parameters from command-line processor
-  // 
+  //
   Scalar tol = 1e-5;
   GlobalOrdinal n = 50;
   int nev = 4;
   bool verbose = true;
   std::string saddleSolType = "Projected Krylov";
   std::string which = "SM";
-  Teuchos::CommandLineProcessor cmdp(false,true); 
+  Teuchos::CommandLineProcessor cmdp (false, true);
   cmdp.setOption("which",&which, "Which eigenpairs we seek. Options: SM, LM.");
-  cmdp.setOption("saddleSolType", &saddleSolType, "Saddle Solver Type. Options: Projected Krylov, Schur Complement, Block Diagonal Preconditioned Minres.");
+  cmdp.setOption ("saddleSolType", &saddleSolType, "Saddle Solver Type. "
+                  "Options: Projected Krylov, Schur Complement, Block Diagonal "
+                  "Preconditioned Minres.");
   if(cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -284,7 +283,7 @@ int main(int argc, char *argv[]) {
   // Here, we are using our user-defined operator.
   //
   RCP<MyOp> K = rcp(new MyOp(n, comm));
-  
+
   //
   // ************************************
   // Start the TraceMin-Davidson iteration
@@ -307,7 +306,7 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Convergence Tolerance", tol);             // How small do the residuals have to be?
   MyPL.set("Which", which);
   MyPL.set("When To Shift", "Never");
-  
+
   //
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
@@ -319,19 +318,19 @@ int main(int argc, char *argv[]) {
   //
   // Create the eigenproblem
   //
-  RCP<Anasazi::BasicEigenproblem<Scalar,MV,OP> > MyProblem = 
+  RCP<Anasazi::BasicEigenproblem<Scalar,MV,OP> > MyProblem =
       rcp( new Anasazi::BasicEigenproblem<Scalar,MV,OP>(K, ivec) );
-  
+
   //
   // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
   //
   MyProblem->setHermitian(true);
-  
+
   //
-  // Set the number of eigenvalues requested 
+  // Set the number of eigenvalues requested
   //
   MyProblem->setNEV( nev );
-  
+
   //
   // Inform the eigenproblem that you are finished passing it information
   //
@@ -349,7 +348,7 @@ int main(int argc, char *argv[]) {
   // Initialize the TraceMin-Davidson solver
   //
   Anasazi::Experimental::TraceMinSolMgr<Scalar, MV, OP> MySolverMgr(MyProblem, MyPL);
- 
+
   //
   // Solve the problem to the specified tolerances
   //
@@ -361,7 +360,7 @@ int main(int argc, char *argv[]) {
   }
   else if (myRank == 0)
     cout << "Anasazi::EigensolverMgr::solve() returned converged." << endl;
-  
+
   //
   // Get the eigenvalues and eigenvectors from the eigenproblem
   //
@@ -369,58 +368,55 @@ int main(int argc, char *argv[]) {
   std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
   RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
-  
+
   //
   // Compute the residual, just as a precaution
   //
   if (numev > 0) {
-    
     Teuchos::SerialDenseMatrix<int,Scalar> T(numev,numev);
-    for(size_t i=0; i<numev; i++)
+    for (int i = 0; i < numev; ++i) {
       T(i,i) = evals[i].realpart;
+    }
     MV tempvec(K->getDomainMap(), MVT::GetNumberVecs( *evecs ));
     std::vector<Scalar> normR(numev);
     MV Kvec( K->getRangeMap(), MVT::GetNumberVecs( *evecs ) );
 
-    OPT::Apply( *K, *evecs, Kvec ); 
+    OPT::Apply( *K, *evecs, Kvec );
     MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, Kvec );
     MVT::MvNorm( Kvec, normR );
 
-    std::vector<Scalar> true_eigs(numev);
-    const double PI  =3.141592653589793238463;
-    if(which == "LM")
-    {
-      for(size_t i=n+1-numev; i<=n; i++)
-      {
+    std::vector<Scalar> true_eigs (numev);
+    const double PI = 3.141592653589793238463;
+    if (which == "LM") {
+      for (size_t i = static_cast<size_t> (n + 1 - numev);
+           i <= static_cast<size_t> (n); ++i) {
         Scalar omega = i*PI/(2*n+2);
         true_eigs[i-(n+1-numev)] = 4*sin(omega)*sin(omega);
       }
     }
-    else
-    {
-      for(size_t i=1; i<=numev; i++)
-      {
+    else {
+      for (int i = 1; i <= numev; ++i) {
         Scalar omega = i*PI/(2*n+2);
         true_eigs[i-1] = 4*sin(omega)*sin(omega);
       }
     }
-    for(int i=0; i<numev; i++)
-    {
-      if(normR[i]/T(i,i) > tol)
-      {
+    for (int i = 0; i<numev; ++i) {
+      if (normR[i]/T(i,i) > tol) {
         testFailed = true;
         if(myRank == 0)
-          cout << "Test is about to fail because " << normR[i]/T(i,i) << " > " << tol << endl;
+          cout << "Test is about to fail because "
+               << normR[i]/T(i,i) << " > " << tol << endl;
       }
 
-      if(std::abs(T(i,i)-true_eigs[i]) > tol)
-      {
+      if (std::abs(T(i,i)-true_eigs[i]) > tol) {
         testFailed = true;
-        if(myRank == 0)
-          cout << "Test is about to fail because " << std::abs(T(i,i)-true_eigs[i]) << " > " << tol << endl;
+        if (myRank == 0) {
+          cout << "Test is about to fail because "
+               << std::abs (T(i,i) - true_eigs[i]) << " > " << tol << endl;
+        }
       }
     }
-  
+
     if (myRank == 0) {
       cout.setf(std::ios_base::right, std::ios_base::adjustfield);
       cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
@@ -435,7 +431,7 @@ int main(int argc, char *argv[]) {
       }
       cout<<"------------------------------------------------------"<<endl;
     }
-  } 
+  }
 
   if(testFailed) {
     cout << myRank << ": TEST FAILED\n";
