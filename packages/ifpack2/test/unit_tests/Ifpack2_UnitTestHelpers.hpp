@@ -455,7 +455,6 @@ Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,Glob
 
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& meshRowMap = *bcrsmatrix->getRowMap();
 
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude;
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar two = one+one;
@@ -493,7 +492,6 @@ Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,Glob
   Teuchos::Array<GlobalOrdinal> col(1);
   Teuchos::Array<Scalar> coef(1);
 
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude;
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar two = one+one;
