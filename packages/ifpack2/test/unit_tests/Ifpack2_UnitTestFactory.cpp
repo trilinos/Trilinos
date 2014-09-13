@@ -42,29 +42,29 @@
 */
 
 // ***********************************************************************
-// 
+//
 //      Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 
 
@@ -179,15 +179,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal
 //Teuchos::FancyOStream& out, bool& success
   typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  // typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
+  // typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
 
   const int num_rows_per_proc = 5;
   const int blockSize = 3;
-  
+
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_diagonal_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
@@ -195,7 +195,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal
   Teuchos::RCP<block_crs_matrix_type> bcrsmatrix =
     Teuchos::rcp_const_cast<block_crs_matrix_type,const block_crs_matrix_type>(tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsgraph, blockSize));
   bcrsmatrix->computeDiagonalGraph();
-  
+
   Teuchos::RCP<const row_matrix_type> rowmatrix = bcrsmatrix;
 
   Ifpack2::Factory factory;
@@ -213,7 +213,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Factory, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal,GlobalOrdinal) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 #ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION

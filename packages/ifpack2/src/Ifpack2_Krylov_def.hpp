@@ -107,6 +107,9 @@ void Krylov<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
 
+  // FIXME (mfh 12 Sep 2014) Don't rewrite Belos::SolverFactory!!! Use
+  // that instead.
+
   ParameterList params = plist;
 
   // Get the current parameters' values.  We don't assign to the
@@ -466,7 +469,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      Xcopy = rcp (new MV (createCopy(X)));
+      Xcopy = rcp (new MV (X, Teuchos::Copy));
     } else {
       Xcopy = rcpFromRef (X);
     }

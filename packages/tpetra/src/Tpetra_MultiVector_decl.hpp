@@ -349,12 +349,21 @@ namespace Tpetra {
     typedef GlobalOrdinal global_ordinal_type;
     //! The Kokkos Node type.
     typedef Node node_type;
-    //! The type for inner product (dot) products
-    /*!
-     * This is not used and exists here purely for backwards-compatibility
-     * with Kokkos-Refactor.
-     */
-    typedef Scalar dot_type;
+
+    /// \brief Type of an inner ("dot") product result.
+    ///
+    /// This is usually the same as <tt>scalar_type</tt>, but may
+    /// differ if <tt>scalar_type</tt> is e.g., an uncertainty
+    /// quantification type from the Stokhos package.
+    typedef scalar_type dot_type;
+
+    /// \brief Type of a norm result.
+    ///
+    /// This is usually the same as the type of the magnitude
+    /// (absolute value) of <tt>scalar_type</tt>, but may differ if
+    /// <tt>scalar_type</tt> is e.g., an uncertainty quantification
+    /// type from the Stokhos package.
+    typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType mag_type;
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
     typedef DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
@@ -370,12 +379,18 @@ namespace Tpetra {
     //! Default constructor: makes a MultiVector with no rows or columns.
     MultiVector ();
 
-    /// \brief Basic constuctor.
+    /// \brief Basic constructor.
     ///
-    /// \param map [in] Map describing the distribution of rows.
-    /// \param NumVectors [in] Number of vectors (columns).
-    /// \param zeroOut [in] Whether to initialize all the entries of
-    ///   the MultiVector to zero.
+    /// \param map [in] The MultiVector's Map.  The Map describes the
+    ///   distribution of rows over process(es) in the Map's
+    ///   communicator.
+    ///
+    /// \param NumVectors [in] Number of columns in the MultiVector.
+    ///
+    /// \param zeroOut [in] If true (the default), require that all the
+    ///   Vector's entries be zero on return.  If false, the Vector's
+    ///   entries have undefined values on return, and must be set
+    ///   explicitly.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  size_t NumVectors,
                  bool zeroOut=true);

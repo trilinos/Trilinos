@@ -59,8 +59,7 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   if (A.getRawPtr () != A_.getRawPtr ()) { // it's a different matrix
     IsInitialized_ = false;
     IsComputed_ = false;
-
-    Condest_ = 0;
+    Condest_ = -STM::one ();
 
     Partitioner_ = Teuchos::null;
     Importer_ = Teuchos::null;
@@ -93,7 +92,7 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   IsParallel_ (false),
   ZeroStartingSolution_ (true),
   DoBackwardGS_ (false),
-  Condest_ (STS::real(-STS::one ())),
+  Condest_ (-STM::one ()),
   IsInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -341,8 +340,8 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
   // If X and Y are pointing to the same memory location,
   // we need to create an auxiliary vector, Xcopy
   Teuchos::RCP<const MV> X_copy;
-  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-    X_copy = Teuchos::rcp (new MV (createCopy(X)));
+  if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
+    X_copy = Teuchos::rcp (new MV (X, Teuchos::Copy));
   } else {
     X_copy = Teuchos::rcpFromRef (X);
   }
@@ -449,8 +448,10 @@ template<class MatrixType,class ContainerType>
 void BlockRelaxation<MatrixType,ContainerType>::compute()
 {
   using Teuchos::rcp;
-  typedef Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> vector_type;
-  typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+  typedef Tpetra::Vector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type> vector_type;
+  typedef Tpetra::Import<local_ordinal_type,
+    global_ordinal_type, node_type> import_type;
 
   // We should have checked for this in setParameters(), so it's a
   // logic_error, not an invalid_argument or runtime_error.
@@ -464,7 +465,7 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
 
   // reset values
   IsComputed_ = false;
-  Condest_ = STS::real(-STS::one ());
+  Condest_ = -STM::one ();
 
   // Extract the submatrices
   ExtractSubmatrices ();
@@ -479,6 +480,8 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
 
     for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; ++i) {
       for (size_t j = 0 ; j < Partitioner_->numRowsInPart(i) ; ++j) {
+        // FIXME (mfh 12 Sep 2014) Should this really be int?
+        // Perhaps it should be local_ordinal_type instead.
         int LID = (*Partitioner_)(i,j);
         w_ptr[LID]+= STS::one();
       }
@@ -545,7 +548,7 @@ void BlockRelaxation<MatrixType,ContainerType>::ApplyInverseJacobi (const MV& X,
   // Initial matvec not needed
   int starting_iteration = 0;
   if (ZeroStartingSolution_) {
-    DoJacobi(X,Y);
+    DoJacobi (X, Y);
     starting_iteration = 1;
   }
 
@@ -566,8 +569,8 @@ void BlockRelaxation<MatrixType,ContainerType>::ApplyInverseJacobi (const MV& X,
 template<class MatrixType,class ContainerType>
 void BlockRelaxation<MatrixType,ContainerType>::DoJacobi(const MV& X, MV& Y) const
 {
-  const size_t NumVectors = X.getNumVectors();
-  const scalar_type one = STS::one();
+  const size_t NumVectors = X.getNumVectors ();
+  const scalar_type one = STS::one ();
   // Note: Flop counts copied naively from Ifpack.
 
   if (OverlapLevel_ == 0) {
@@ -606,11 +609,11 @@ template<class MatrixType,class ContainerType>
 void BlockRelaxation<MatrixType,ContainerType>::
 ApplyInverseGS (const MV& X, MV& Y) const
 {
-  MV Xcopy (X);
-  for (int j = 0; j < NumSweeps_ ; j++) {
+  MV Xcopy (X, Teuchos::Copy);
+  for (int j = 0; j < NumSweeps_; ++j) {
     DoGaussSeidel (Xcopy, Y);
     if (j != NumSweeps_ - 1) {
-      Xcopy = X;
+      Tpetra::deep_copy (Xcopy, X);
     }
   }
 }
@@ -630,20 +633,20 @@ DoGaussSeidel (MV& X, MV& Y) const
 
   // Note: Flop counts copied naively from Ifpack.
 
-  const scalar_type    one =  STS::one ();
-  int Length = A_->getNodeMaxNumRowEntries();
+  const scalar_type one = STS::one ();
+  const size_t Length = A_->getNodeMaxNumRowEntries();
   const size_t NumVectors = X.getNumVectors();
-  Array<scalar_type>         Values;
-  Array<local_ordinal_type>   Indices;
-  Values.resize(Length);
-  Indices.resize(Length);
+  Array<scalar_type> Values;
+  Array<local_ordinal_type> Indices;
+  Values.resize (Length);
+  Indices.resize (Length);
 
   // an additonal vector is needed by parallel computations
   // (note that applications through Ifpack2_AdditiveSchwarz
   // are always seen are serial)
   RCP<MV> Y2;
   if (IsParallel_) {
-    Y2 = rcp (new MV (Importer_->getTargetMap(), NumVectors));
+    Y2 = rcp (new MV (Importer_->getTargetMap (), NumVectors));
   } else {
     Y2 = rcpFromRef (Y);
   }
@@ -652,7 +655,7 @@ DoGaussSeidel (MV& X, MV& Y) const
   // One to store the sum of the corrections (initialized to zero)
   // One to store the temporary residual (doesn't matter if it is zeroed or not)
   // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
-  MV Residual(X.getMap(),NumVectors,false);
+  MV Residual (X.getMap (), NumVectors, false);
 
   ArrayRCP<ArrayRCP<scalar_type> >           x_ptr = X.get2dViewNonConst();
   ArrayRCP<ArrayRCP<scalar_type> >           y_ptr = Y.get2dViewNonConst();
@@ -705,8 +708,8 @@ DoGaussSeidel (MV& X, MV& Y) const
   // of Y2 and Y will always work (tough for ML it should be ok)
   if (IsParallel_) {
     for (size_t m = 0; m < NumVectors; ++m) {
-      ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-      ArrayView<scalar_type>      y_local  = (y_ptr())[m]();
+      ArrayView<scalar_type> y2_local = (y2_ptr())[m]();
+      ArrayView<scalar_type> y_local = (y_ptr())[m]();
       for (size_t i = 0; i < NumMyRows_; ++i) {
         y_local[i] = y2_local[i];
       }
@@ -720,11 +723,11 @@ void
 BlockRelaxation<MatrixType,ContainerType>::
 ApplyInverseSGS (const MV& X, MV& Y) const
 {
-  MV Xcopy (X);
+  MV Xcopy (X, Teuchos::Copy);
   for (int j = 0; j < NumSweeps_; ++j) {
     DoSGS (Xcopy, Y);
     if (j != NumSweeps_ - 1) {
-      Xcopy = X;
+      Tpetra::deep_copy (Xcopy, X);
     }
   }
 }
@@ -741,11 +744,11 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
 
-  const scalar_type    one =  STS::one ();
-  int Length = A_->getNodeMaxNumRowEntries();
+  const scalar_type one = STS::one ();
+  const size_t Length = A_->getNodeMaxNumRowEntries();
   const size_t NumVectors = X.getNumVectors();
-  Array<scalar_type>         Values;
-  Array<local_ordinal_type>   Indices;
+  Array<scalar_type> Values;
+  Array<local_ordinal_type> Indices;
   Values.resize(Length);
   Indices.resize(Length);
 
@@ -763,7 +766,7 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
   // One to store the sum of the corrections (initialized to zero)
   // One to store the temporary residual (doesn't matter if it is zeroed or not)
   // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
-  MV Residual(X.getMap(),NumVectors,false);
+  MV Residual (X.getMap (), NumVectors, false);
 
   ArrayRCP<ArrayRCP<scalar_type> >     x_ptr       = X.get2dViewNonConst();
   ArrayRCP<ArrayRCP<scalar_type> >     y_ptr       = Y.get2dViewNonConst();

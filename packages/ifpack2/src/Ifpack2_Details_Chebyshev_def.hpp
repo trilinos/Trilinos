@@ -229,7 +229,6 @@ setParameters (Teuchos::ParameterList& plist)
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
-  using Teuchos::rcpFromRef;
 
   // Note to developers: The logic for this method is complicated,
   // because we want to accept Ifpack and ML parameters whenever
@@ -262,7 +261,7 @@ setParameters (Teuchos::ParameterList& plist)
   // from the ParameterList.  That way, if any of the ParameterList
   // reads fail (e.g., due to the wrong parameter type), we will not
   // have left the instance data in a half-changed state.
-  RCP<const V> userInvDiag;
+  RCP<const V> userInvDiagCopy; // if nonnull: deep copy of user's Vector
   ST lambdaMax = defaultLambdaMax;
   ST lambdaMin = defaultLambdaMin;
   ST eigRatio = defaultEigRatio;
@@ -283,33 +282,32 @@ setParameters (Teuchos::ParameterList& plist)
   //
   // Check for a raw pointer (const V* or V*), for Ifpack
   // compatibility, as well as for RCP<const V>, RCP<V>, const V, or
-  // V.  We'll copy the vector anyway, so it doesn't matter whether
-  // it's const or nonconst.
+  // V.  We'll make a deep copy of the vector at the end of this
+  // method anyway, so its const-ness doesn't matter.  We handle the
+  // latter two cases ("const V" or "V") specially (copy them into
+  // userInvDiagCopy first, which is otherwise null at the end of the
+  // long if-then chain) to avoid an extra copy.
   if (plist.isParameter ("chebyshev: operator inv diagonal")) {
+    // Pointer to the user's Vector, if provided.
+    RCP<const V> userInvDiag;
+
     try { // Could the type be const V*?
       const V* rawUserInvDiag =
         plist.get<const V*> ("chebyshev: operator inv diagonal");
-      // If it's a raw pointer, then we have to copy it, since we
-      // can't otherwise ensure that the user won't deallocate the
-      // Vector before we use it.
-      userInvDiag = rcp (new V (*rawUserInvDiag));
+      // Nonowning reference (we'll make a deep copy below)
+      userInvDiag = rcp (rawUserInvDiag, false);
     } catch (Teuchos::Exceptions::InvalidParameterType&) {
     }
     if (userInvDiag.is_null ()) {
       try { // Could the type be V*?
         V* rawUserInvDiag = plist.get<V*> ("chebyshev: operator inv diagonal");
-        // If it's a raw pointer, then we have to copy it, since we
-        // can't otherwise ensure that the user won't deallocate the
-        // Vector before we use it.
-        userInvDiag = rcp (new V (*rawUserInvDiag));
+        // Nonowning reference (we'll make a deep copy below)
+        userInvDiag = rcp (const_cast<const V*> (rawUserInvDiag), false);
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
     }
     if (userInvDiag.is_null ()) {
       try { // Could the type be RCP<const V>?
-        // If the type is RCP<const V>, then the user has promised
-        // that they won't change the Vector.  Thus, it's safe just to
-        // keep the RCP; we don't have to make a copy.
         userInvDiag =
           plist.get<RCP<const V> > ("chebyshev: operator inv diagonal");
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
@@ -317,20 +315,26 @@ setParameters (Teuchos::ParameterList& plist)
     }
     if (userInvDiag.is_null ()) {
       try { // Could the type be RCP<V>?
-        RCP<V> userInvDiagNonconst =
+        RCP<V> userInvDiagNonConst =
           plist.get<RCP<V> > ("chebyshev: operator inv diagonal");
-        // If the type is RCP<V>, the user could still change the
-        // Vector.  That means we have to make a deep copy.
-        userInvDiag = rcp (new V (*userInvDiagNonconst));
+        userInvDiag = rcp_const_cast<const V> (userInvDiagNonConst);
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
     }
     if (userInvDiag.is_null ()) {
 #ifndef _MSC_VER
       try { // Could the type be const V?
-        // The line below does a deep copy (V::operator=).
-        userInvDiag =
-          rcp (new V (plist.get<const V> ("chebyshev: operator inv diagonal")));
+        // ParameterList::get() returns by reference.  Thus, we don't
+        // have to invoke Vector's copy constructor here.  It's good
+        // practice not to make an RCP to this reference, even though
+        // it should be valid as long as the ParameterList that holds
+        // it is valid.  Thus, we make our deep copy here, rather than
+        // waiting to do it below.
+        const V& userInvDiagRef =
+          plist.get<const V> ("chebyshev: operator inv diagonal");
+        userInvDiagCopy = rcp (new V (userInvDiagRef, Teuchos::Copy));
+        // Tell the if-chain below not to keep trying.
+        userInvDiag = userInvDiagCopy;
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
 #else
@@ -345,9 +349,18 @@ setParameters (Teuchos::ParameterList& plist)
     if (userInvDiag.is_null ()) {
 #ifndef _MSC_VER
       try { // Could the type be V?
-        // The line below does a deep copy (V::operator=).
-        userInvDiag =
-          rcp (new V (plist.get<V> ("chebyshev: operator inv diagonal")));
+        // ParameterList::get() returns by reference.  Thus, we don't
+        // have to invoke Vector's copy constructor here.  It's good
+        // practice not to make an RCP to this reference, even though
+        // it should be valid as long as the ParameterList that holds
+        // it is valid.  Thus, we make our deep copy here, rather than
+        // waiting to do it below.
+        V& userInvDiagNonConstRef =
+          plist.get<V> ("chebyshev: operator inv diagonal");
+        const V& userInvDiagRef = const_cast<const V&> (userInvDiagNonConstRef);
+        userInvDiagCopy = rcp (new V (userInvDiagRef, Teuchos::Copy));
+        // Tell the if-chain below not to keep trying.
+        userInvDiag = userInvDiagCopy;
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
 #else
@@ -359,8 +372,22 @@ setParameters (Teuchos::ParameterList& plist)
       "in case someone builds there.");
 #endif
     }
-    // We don't necessarily have a range Map yet.  compute() is the
-    // proper place to compute the range Map version of userInvDiag.
+
+    // NOTE: If the user's parameter has some strange type that we
+    // didn't test above, userInvDiag might still be null.  You may
+    // want to add an error test for this condition.  Currently, we
+    // just say in this case that the user didn't give us a Vector.
+
+    // If we have userInvDiag but don't have a deep copy yet, make a
+    // deep copy now.
+    if (! userInvDiag.is_null () && userInvDiagCopy.is_null ()) {
+      userInvDiagCopy = rcp (new V (*userInvDiag, Teuchos::Copy));
+    }
+
+    // NOTE: userInvDiag, if provided, is a row Map version of the
+    // Vector.  We don't necessarily have a range Map yet.  compute()
+    // would be the proper place to compute the range Map version of
+    // userInvDiag.
   }
 
   // Don't fill in defaults for the max or min eigenvalue, because
@@ -503,7 +530,7 @@ setParameters (Teuchos::ParameterList& plist)
   }
 
   // We've validated all the parameters, so it's safe now to "commit" them.
-  userInvDiag_ = userInvDiag;
+  userInvDiag_ = userInvDiagCopy;
   userLambdaMax_ = lambdaMax;
   userLambdaMin_ = lambdaMin;
   userEigRatio_ = eigRatio;
@@ -876,7 +903,7 @@ makeRangeMapVectorConst (const Teuchos::RCP<const V>& D) const
       return D; // Row Map and range Map are the same; no need to Export.
     }
     else { // Row Map and range Map are _not_ the same; must Export.
-      RCP<V> D_out = rcp (new V (*D));
+      RCP<V> D_out = rcp (new V (*D, Teuchos::Copy));
       D_out->doExport (*D, *exporter, Tpetra::ADD);
       return Teuchos::rcp_const_cast<const V> (D_out);
     }
