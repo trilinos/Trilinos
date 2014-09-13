@@ -209,6 +209,21 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableTeuchosRTOp_DisableRTOp
+  ARGS Trilinos_PACKAGES="Teuchos,RTOp" Trilinos_EXCLUDE_PACKAGES=RTOp
+  PASS_REGULAR_EXPRESSION_ALL
+    "Disabling excluded package RTOp ..."
+    "Enabling explicitly set package Teuchos ..."
+    "NOT enabling explicitly set package RTOp since it was explicitly excluded"
+    "Explicitly enabled packages on input .by user.:  Teuchos 1"
+    "Final set of enabled packages:  Teuchos 1"
+    "Trilinos_NUM_ENABLED_PACKAGES=1:  Configuring packages!"
+  )
+# NOTE: The above test ensures that disabled packages turn off explicitly
+#  enabled downstream packages.
+
+
+CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableTeuchos_DisableTPLBLAS
   ARGS Trilinos_PACKAGES=Teuchos Trilinos_EXCLUDE_TPLS=BLAS
   PASS_REGULAR_EXPRESSION_ALL
@@ -276,7 +291,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAll_EnableStokhos
   ARGS Trilinos_ADDITIONAL_PACKAGES=Stokhos
   PASS_REGULAR_EXPRESSION_ALL
-    "Enabling explicitly set package Stokhos"
+    "Enabling explicitly set package Stokhos which was default or otherwise disabed!"
     "Explicitly enabled packages on input .*  Stokhos 1"
     "Explicitly disabled packages on input .*  0"
     "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
