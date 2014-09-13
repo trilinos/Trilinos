@@ -110,8 +110,8 @@ Each of the aforementioned steps require a more detailed explanation.
   \texttt{Teuchos::ParameterListAcceptor} and implement the virtual
   method \texttt{getValidParameters()}.  Good subclasses of this base
   class follow the ``separate construction and just-in-time
-  initialization'' idioms.  This allows a user to construct an
-  instance of your class, obtain a default, validated
+  initialization'' idioms~\cite{TeuchosMemMgt}.  This allows a user to
+  construct an instance of your class, obtain a default, validated
   \texttt{Teuchos::RCP< const Teuchos::ParameterList >}, copy and
   modify that \texttt{ParameterList}, and then use the modified
   \texttt{ParameterList} to initialize the instance.
@@ -186,7 +186,7 @@ Each of the aforementioned steps require a more detailed explanation.
   \texttt{TRIBITS\_ADD\_EXECUTABLE()} macro call and multiple
   \texttt{TRIBITS\_ADD\_TEST()} macro calls.
 
-  By convention, each executables must have the string
+  By convention, each executable must have the string
   ``\texttt{ValidParam}'' in its name.  This is because the
   documentation build system will run
 
@@ -251,7 +251,8 @@ Each of the aforementioned steps require a more detailed explanation.
     % Main text of memo ends here
     % ---------------------------------------------------------------------- %
 
-
+\bibliographystyle{plain}
+\bibliography{SMemo_PListDoc}
 
     % ---------------------------------------------------------------------- %
     % Initials, enclosures, and keywords, if necessary

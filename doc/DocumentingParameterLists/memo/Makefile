@@ -10,18 +10,18 @@ pdf:	$(addsuffix .pdf, $(FILES))
 
 ps:	$(addsuffix .ps, $(FILES))
 
-%.pdf:	%.tex smemo.cls
+%.pdf:	%.tex smemo.cls SMemo_PListDoc.bib
 	pdflatex $<
-	#bibtex $(basename $<)
+	bibtex $(basename $<)
 	pdflatex $<
 	pdflatex $<
 
 %.ps:	%.dvi
 	dvips -Ppdf -o $@ $<
 
-%.dvi:	%.tex smemo.cls
+%.dvi:	%.tex smemo.cls SMemo_PListDoc.bib
 	latex $<
-	#bibtex $(basename $<)
+	bibtex $(basename $<)
 	latex $<
 	latex $<
 
