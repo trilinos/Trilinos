@@ -1,9 +1,8 @@
 #
-# Makefile for the SAND report Example files
-# $Id: Makefile,v 1.11 2008-03-01 16:52:02 rolf Exp $
+# Makefile for the SMemo_PListDoc memo
 #
 
-FILES	= smemo_example
+FILES	= SMemo_PListDoc
 
 all:	pdf ps
 
@@ -11,30 +10,28 @@ pdf:	$(addsuffix .pdf, $(FILES))
 
 ps:	$(addsuffix .ps, $(FILES))
 
-%.pdf:	%.tex SANDExample.bib SANDreport.cls
+%.pdf:	%.tex smemo.cls
 	pdflatex $<
-	bibtex $(basename $<)
+	#bibtex $(basename $<)
 	pdflatex $<
 	pdflatex $<
 
 %.ps:	%.dvi
 	dvips -Ppdf -o $@ $<
 
-%.dvi:	%.tex SANDExample.bib SANDreport.cls
+%.dvi:	%.tex smemo.cls
 	latex $<
-	bibtex $(basename $<)
+	#bibtex $(basename $<)
 	latex $<
 	latex $<
 
 clean:
-	@rm -f $(addsuffix .aux, $(FILES) $(PFILES)) $(addsuffix .bbl, $(FILES) $(PFILES))
-	@rm -f $(addsuffix .blg, $(FILES) $(PFILES)) $(addsuffix .lof, $(FILES) $(PFILES))
-	@rm -f $(addsuffix .log, $(FILES) $(PFILES)) $(addsuffix .lot, $(FILES) $(PFILES))
-	@rm -f $(addsuffix .toc, $(FILES) $(PFILES))
+	@rm -f $(addsuffix .aux, $(FILES)) $(addsuffix .bbl, $(FILES))
+	@rm -f $(addsuffix .blg, $(FILES)) $(addsuffix .lof, $(FILES))
+	@rm -f $(addsuffix .log, $(FILES)) $(addsuffix .lot, $(FILES))
+	@rm -f $(addsuffix .toc, $(FILES))
 	@rm -f texput.log
-	@rm -f Mark*.aux
-	@rm -f SANDdistribution.aux
 
-realclean:	clean
-	@rm -f $(addsuffix .pdf, $(FILES) $(PFILES)) $(addsuffix .ps, $(FILES) $(PFILES))
-	@rm -f $(addsuffix .dvi, $(FILES) $(PFILES)) $(addsuffix .out, $(FILES) $(PFILES))
+realclean: clean
+	@rm -f $(addsuffix .pdf, $(FILES)) $(addsuffix .ps , $(FILES))
+	@rm -f $(addsuffix .dvi, $(FILES)) $(addsuffix .out, $(FILES))
