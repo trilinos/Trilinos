@@ -50,6 +50,16 @@
 
 namespace panzer {
     
+/** Build a constant Phalanx field using a specified data layout
+  
+    \verbatim
+    <ParameterList>
+       <Parameter name="Name" type="string" value=(required)/>
+       <Parameter name="Value" type="double" value="(required)"/>
+       <Parameter name="Data Layout" type="RCP<PHX::DataLayout>" value=(required)/>
+    </ParameterList>
+    \endverbatim
+  */
 PHX_EVALUATOR_CLASS(Constant)
   
   ScalarT value;
