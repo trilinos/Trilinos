@@ -65,7 +65,8 @@ class ParallelFor< FunctorType
                  , Kokkos::Qthread
                  >
 {
-public:
+private:
+
   typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >  Policy ;
 
   const FunctorType  m_func ;
@@ -87,6 +88,8 @@ public:
     exec.exec_all_barrier();
   }
 
+public:
+
   ParallelFor( const FunctorType & functor
              , const Policy      & policy
              )
@@ -105,7 +108,7 @@ class ParallelReduce< FunctorType
                     , Kokkos::Qthread
                     >
 {
-public:
+private:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
@@ -129,6 +132,8 @@ public:
 
     exec.exec_all_reduce( self.m_func );
   }
+
+public:
 
   template< class HostViewType >
   ParallelReduce( const FunctorType  & functor
@@ -157,7 +162,7 @@ public:
 template< class FunctorType >
 class ParallelReduce< FunctorType , TeamPolicy< Kokkos::Qthread > , Kokkos::Qthread >
 {
-public:
+private:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
@@ -185,6 +190,8 @@ public:
 
     exec.exec_all_reduce( self.m_func );
   }
+
+public:
 
   template< class ViewType >
   ParallelReduce( const FunctorType & functor ,
@@ -221,7 +228,7 @@ class ParallelScan< FunctorType
                   , Kokkos::Qthread
                   >
 {
-public:
+private:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
@@ -251,6 +258,8 @@ public:
 
     exec.exec_all_barrier();
   }
+
+public:
 
   ParallelScan( const FunctorType & functor
               , const Policy      & policy

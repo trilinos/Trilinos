@@ -699,13 +699,9 @@ class ParallelFor< FunctorType
                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
                  , Kokkos::Cuda >
 {
-public:
-
-  typedef FunctorType                                              Functor ;
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
-
 private:
 
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
 
   const FunctorType  m_functor ;
   const Policy       m_policy ;  
@@ -732,6 +728,8 @@ private:
     { functor( Tag() , iwork ); }
 
 public:
+
+  typedef FunctorType functor_type ;
 
   inline
   __device__
@@ -765,12 +763,14 @@ public:
 template< class FunctorType >
 class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Cuda , void > , Kokkos::Cuda >
 {
-public:
-  typedef Kokkos::TeamPolicy< Kokkos::Cuda , void >   Policy ;
-  typedef FunctorType                                 Functor ;
+private:
 
-  typedef typename Policy::member_type                team_member ;
-  typedef Cuda::size_type                             size_type ;
+  typedef Kokkos::TeamPolicy< Kokkos::Cuda , void >   Policy ;
+
+public:
+  typedef FunctorType                   functor_type ;
+  typedef typename Policy::member_type  team_member ;
+  typedef Cuda::size_type               size_type ;
 
   // Algorithmic constraints: blockDim.y is a power of two AND blockDim.y == blockDim.z == 1
   // shared memory utilization:
@@ -827,13 +827,15 @@ public:
 template< unsigned VectorLength, class FunctorType>
 class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy<VectorLength,Kokkos::Cuda,void> ,Kokkos::Cuda >
 {
+private:
+
+  typedef TeamVectorPolicy<VectorLength,Kokkos::Cuda,void>  Policy ;
 
 public:
-  typedef TeamVectorPolicy<VectorLength,Kokkos::Cuda,void>  Policy ;
-  typedef FunctorType  Functor ;
 
-  typedef typename Policy::member_type                team_member ;
-  typedef Cuda::size_type                             size_type ;
+  typedef FunctorType                   functor_type ;
+  typedef typename Policy::member_type  team_member ;
+  typedef Cuda::size_type               size_type ;
 
   // Algorithmic constraints: blockDim.y is a power of two AND blockDim.y == blockDim.z == 1
   // shared memory utilization:
@@ -902,12 +904,16 @@ class ParallelReduce< FunctorType
                     , Kokkos::Cuda
                     >
 {
-public:
+private:
+
+  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2> Policy ;
   typedef ReduceAdapter< FunctorType >        Reduce ;
+
+public:
+
   typedef typename Reduce::pointer_type       pointer_type ;
   typedef typename Reduce::reference_type     reference_type ;
-  typedef FunctorType                         Functor ;
-  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2> Policy ;
+  typedef FunctorType                         functor_type ;
   typedef Cuda::size_type                     size_type ;
 
   // Algorithmic constraints: blockSize is a power of two AND blockDim.y == blockDim.z == 1
@@ -1030,11 +1036,15 @@ public:
 template< class FunctorType >
 class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::Cuda , void > , Kokkos::Cuda >
 {
-public:
+private:
+
   typedef Kokkos::TeamPolicy< Kokkos::Cuda , void >   Policy ;
-  typedef FunctorType                                 Functor ;
-  typedef typename Policy::member_type                team_member ;
   typedef ReduceAdapter< FunctorType >                Reduce ;
+
+public:
+
+  typedef FunctorType                                 functor_type ;
+  typedef typename Policy::member_type                team_member ;
   typedef typename Reduce::pointer_type               pointer_type ;
   typedef typename Reduce::reference_type             reference_type ;
   typedef Cuda::size_type                             size_type ;
@@ -1161,12 +1171,15 @@ class ParallelScan< FunctorType
                   , Kokkos::Cuda
                   >
 {
-public:
+private:
+
+  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2> Policy ;
   typedef ReduceAdapter< FunctorType >        Reduce ;
+
+public:
   typedef typename Reduce::pointer_type       pointer_type ;
   typedef typename Reduce::reference_type     reference_type ;
-  typedef FunctorType                         Functor ;
-  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2> Policy ;
+  typedef FunctorType                         functor_type ;
   typedef Cuda::size_type                     size_type ;
 
   // Algorithmic constraints:

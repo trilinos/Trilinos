@@ -514,9 +514,11 @@ class ParallelFor< FunctorType
                  , Kokkos::Serial
                  >
 {
-public:
+private:
+
   typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
 
+public:
   // work tag is void
   template< class PType >
   inline
@@ -625,10 +627,13 @@ class ParallelScan< FunctorType
                   , Kokkos::Serial
                   >
 {
-public:
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+private:
 
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
   typedef ReduceAdapter< FunctorType >  Reduce ;
+
+public:
+
   typedef typename Reduce::pointer_type pointer_type ;
 
   // work tag is void
@@ -688,8 +693,9 @@ namespace Impl {
 template< class FunctorType >
 class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Serial , void > , Kokkos::Serial >
 {
-public:
+private:
   typedef Kokkos::TeamPolicy< Kokkos::Serial , void > Policy ;
+public:
 
   ParallelFor( const FunctorType & functor
              , const Policy      & policy )
@@ -707,8 +713,9 @@ public:
 template< unsigned int VectorLength, class FunctorType >
 class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Serial , void > , Kokkos::Serial >
 {
-public:
+private:
   typedef Kokkos::TeamVectorPolicy< VectorLength,Kokkos::Serial , void > Policy ;
+public:
 
   ParallelFor( const FunctorType & functor
              , const Policy      & policy )
@@ -725,10 +732,10 @@ public:
 
 template< class FunctorType >
 class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::Serial , void > , Kokkos::Serial > {
-public:
-
+private:
   typedef Kokkos::TeamPolicy< Kokkos::Serial , void > Policy ;
   typedef ReduceAdapter< FunctorType >  Reduce ;
+public:
   typedef typename Reduce::pointer_type pointer_type ;
 
   template< class ViewType >

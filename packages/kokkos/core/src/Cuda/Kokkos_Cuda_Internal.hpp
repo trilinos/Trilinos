@@ -58,7 +58,7 @@ void cuda_internal_safe_call( cudaError e , const char * name, const char * file
 }
 
 template<class DriverType>
-int cuda_get_max_block_size(const typename DriverType::Functor& f) {
+int cuda_get_max_block_size(const typename DriverType::functor_type & f) {
 #if ( CUDA_VERSION < 6050 )
   return 256;
 #else
@@ -67,7 +67,7 @@ int cuda_get_max_block_size(const typename DriverType::Functor& f) {
   int numBlocks;
   if(Large) {
     int blockSize=32;
-    int sharedmem = FunctorTeamShmemSize< typename DriverType::Functor >::value( f , blockSize );
+    int sharedmem = FunctorTeamShmemSize< typename DriverType::functor_type  >::value( f , blockSize );
     cudaOccupancyMaxActiveBlocksPerMultiprocessor(
         &numBlocks,
         cuda_parallel_launch_constant_memory<DriverType>,
@@ -76,7 +76,7 @@ int cuda_get_max_block_size(const typename DriverType::Functor& f) {
 
     while (blockSize<1024 && numBlocks>0) {
       blockSize*=2;
-      sharedmem = FunctorTeamShmemSize< typename DriverType::Functor >::value( f , blockSize );
+      sharedmem = FunctorTeamShmemSize< typename DriverType::functor_type  >::value( f , blockSize );
 
       cudaOccupancyMaxActiveBlocksPerMultiprocessor(
           &numBlocks,
@@ -88,7 +88,7 @@ int cuda_get_max_block_size(const typename DriverType::Functor& f) {
     else return blockSize/2;
   } else {
     int blockSize=32;
-    int sharedmem = FunctorTeamShmemSize< typename DriverType::Functor >::value( f , blockSize );
+    int sharedmem = FunctorTeamShmemSize< typename DriverType::functor_type  >::value( f , blockSize );
     cudaOccupancyMaxActiveBlocksPerMultiprocessor(
         &numBlocks,
         cuda_parallel_launch_local_memory<DriverType>,
@@ -97,7 +97,7 @@ int cuda_get_max_block_size(const typename DriverType::Functor& f) {
 
     while (blockSize<1024 && numBlocks>0) {
       blockSize*=2;
-      sharedmem = FunctorTeamShmemSize< typename DriverType::Functor >::value( f , blockSize );
+      sharedmem = FunctorTeamShmemSize< typename DriverType::functor_type  >::value( f , blockSize );
 
       cudaOccupancyMaxActiveBlocksPerMultiprocessor(
           &numBlocks,
@@ -112,7 +112,7 @@ int cuda_get_max_block_size(const typename DriverType::Functor& f) {
 }
 
 template<class DriverType>
-int cuda_get_opt_block_size(const typename DriverType::Functor& f) {
+int cuda_get_opt_block_size(const typename DriverType::functor_type & f) {
 #if ( CUDA_VERSION < 6050 )
   return 256;
 #else
@@ -130,7 +130,7 @@ int cuda_get_opt_block_size(const typename DriverType::Functor& f) {
       blockSize*=2;
 
       //calculate the occupancy with that optBlockSize and check whether its larger than the largest one found so far
-      sharedmem = FunctorTeamShmemSize< typename DriverType::Functor >::value( f , blockSize );
+      sharedmem = FunctorTeamShmemSize< typename DriverType::functor_type  >::value( f , blockSize );
       cudaOccupancyMaxActiveBlocksPerMultiprocessor(
               &numBlocks,
               cuda_parallel_launch_constant_memory<DriverType>,
@@ -144,7 +144,7 @@ int cuda_get_opt_block_size(const typename DriverType::Functor& f) {
   } else {
     while(blockSize<1024) {
       blockSize*=2;
-      sharedmem = FunctorTeamShmemSize< typename DriverType::Functor >::value( f , blockSize );
+      sharedmem = FunctorTeamShmemSize< typename DriverType::functor_type  >::value( f , blockSize );
 
       cudaOccupancyMaxActiveBlocksPerMultiprocessor(
               &numBlocks,

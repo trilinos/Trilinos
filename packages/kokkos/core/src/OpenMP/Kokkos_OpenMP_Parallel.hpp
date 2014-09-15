@@ -324,8 +324,11 @@ namespace Impl {
 template< class FunctorType >
 class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::OpenMP , void > , Kokkos::OpenMP >
 {
-public:
+private:
+
   typedef Kokkos::TeamPolicy< Kokkos::OpenMP , void > Policy ;
+
+public:
 
   inline
   ParallelFor( const FunctorType & functor ,
@@ -356,8 +359,10 @@ public:
 template< unsigned VectorLength, class FunctorType >
 class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::OpenMP , void > , Kokkos::OpenMP >
 {
-public:
+private:
   typedef Kokkos::TeamVectorPolicy< VectorLength, Kokkos::OpenMP , void > Policy ;
+
+public:
 
   inline
   ParallelFor( const FunctorType & functor ,
@@ -388,9 +393,12 @@ public:
 template< class FunctorType >
 class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::OpenMP , void > , Kokkos::OpenMP >
 {
-public:
+private:
   typedef Kokkos::TeamPolicy< Kokkos::OpenMP , void > Policy ;
   typedef ReduceAdapter< FunctorType >   Reduce ;
+
+public:
+
   typedef typename Reduce::pointer_type  pointer_type ;
 
   inline

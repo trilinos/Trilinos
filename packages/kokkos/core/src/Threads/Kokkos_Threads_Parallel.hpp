@@ -167,7 +167,7 @@ public:
 template< unsigned int VectorLength, class FunctorType >
 class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Threads , void > , Kokkos::Threads >
 {
-public:
+private:
 
   typedef TeamVectorPolicy< VectorLength , Kokkos::Threads , void >  Policy ;
 
@@ -190,6 +190,8 @@ public:
 
     exec.fan_in();
   }
+
+public:
 
   ParallelFor( const FunctorType & functor
               , const Policy      & policy )
@@ -295,7 +297,7 @@ public:
 template< class FunctorType >
 class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::Threads , void > , Kokkos::Threads >
 {
-public:
+private:
 
   typedef TeamPolicy< Kokkos::Threads , void >  Policy ;
   typedef ReduceAdapter< FunctorType >          Reduce ;
@@ -319,6 +321,8 @@ public:
 
     exec.fan_in_reduce( self.m_func );
   }
+
+public:
 
   ParallelReduce( const FunctorType & functor
                 , const Policy      & policy )
