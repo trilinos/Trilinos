@@ -215,46 +215,46 @@ namespace MueLuTests {
         if (lib == Xpetra::NotSpecified)
           lib = TestHelpers::Parameters::getLib();
 
-	// This only works for Tpetra
-	if(lib!=Xpetra::UseTpetra) return Op;
+        // This only works for Tpetra
+        if(lib!=Xpetra::UseTpetra) return Op;
 
-	// Make the graph
-	RCP<Matrix> FirstMatrix = BuildMatrix(matrixList,lib);
-	RCP<const Xpetra::CrsGraph<LO,GO,NO> > Graph = FirstMatrix->getCrsGraph();
+        // Make the graph
+        RCP<Matrix> FirstMatrix = BuildMatrix(matrixList,lib);
+        RCP<const Xpetra::CrsGraph<LO,GO,NO> > Graph = FirstMatrix->getCrsGraph();
 
 #if defined(HAVE_MUELU_TPETRA)
-	// Thanks for the code, Travis!
-	int blocksize = 5;
-	RCP<const Xpetra::TpetraCrsGraph<LO,GO,NO> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LO,GO,NO> >(Graph);
-	RCP<const Tpetra::CrsGraph<LO,GO,NO> > TTGraph = TGraph->getTpetra_CrsGraph();
+        // Thanks for the code, Travis!
+        int blocksize = 5;
+        RCP<const Xpetra::TpetraCrsGraph<LO,GO,NO> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LO,GO,NO> >(Graph);
+        RCP<const Tpetra::CrsGraph<LO,GO,NO> > TTGraph = TGraph->getTpetra_CrsGraph();
 
-	RCP<Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,NO> > bcrsmatrix = rcp(new Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,NO> (*TTGraph, blocksize));
+        RCP<Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,NO> > bcrsmatrix = rcp(new Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,NO> (*TTGraph, blocksize));
 
-	const Tpetra::Map<LO,GO,NO>& meshRowMap = *bcrsmatrix->getRowMap();
-	const Scalar zero = Teuchos::ScalarTraits<SC>::zero();
-	const Scalar one = Teuchos::ScalarTraits<SC>::one();
-	const Scalar two = one+one;
-	const Scalar three = two+one;
+        const Tpetra::Map<LO,GO,NO>& meshRowMap = *bcrsmatrix->getRowMap();
+        const Scalar zero   = Teuchos::ScalarTraits<SC>::zero();
+        const Scalar one   = Teuchos::ScalarTraits<SC>::one();
+        const Scalar two   = one+one;
+        const Scalar three = two+one;
 
-	Teuchos::Array<SC> basematrix(blocksize*blocksize, zero);
-	basematrix[0] = two;
-	basematrix[2] = three;
-	basematrix[3] = three;
-	basematrix[4] = two;
-	basematrix[7] = three;
-	basematrix[8] = two;
-	Teuchos::Array<LO> lclColInds(1);
-	for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
-	  lclColInds[0] = lclRowInd;
-	  bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
-	}
-	bcrsmatrix->computeDiagonalGraph(); // Needs to get done to smooth for some reason
+        Teuchos::Array<SC> basematrix(blocksize*blocksize, zero);
+        basematrix[0] = two;
+        basematrix[2] = three;
+        basematrix[3] = three;
+        basematrix[4] = two;
+        basematrix[7] = three;
+        basematrix[8] = two;
+        Teuchos::Array<LO> lclColInds(1);
+        for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
+          lclColInds[0] = lclRowInd;
+          bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
+        }
+        bcrsmatrix->computeDiagonalGraph(); // Needs to get done to smooth for some reason
 
-	RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsmatrix));
-	Op = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
+        RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsmatrix));
+        Op = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
 #endif
-	  return Op;
-      } // BuildMatrix()
+        return Op;
+     } // BuildMatrix()
 
 
       // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
