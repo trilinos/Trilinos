@@ -140,10 +140,6 @@ APPEND_SET(SOURCES Piro_PerformAnalysis.cpp)
 APPEND_SET(HEADERS Piro_Epetra_PerformAnalysis.hpp)
 APPEND_SET(SOURCES Piro_Epetra_PerformAnalysis.cpp)
 
-## DEPRECATED Thyra Namespace in Piro: REMOVE THESE FOR TRILINOS 11.0)
-APPEND_SET(HEADERS Piro_Thyra_PerformAnalysis.hpp) 
-APPEND_SET(SOURCES Piro_Thyra_PerformAnalysis.cpp)
-
 IF (Piro_ENABLE_TriKota AND Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX)
   APPEND_SET(HEADERS TriKota_MPDirectApplicInterface.hpp) 
   APPEND_SET(SOURCES TriKota_MPDirectApplicInterface.cpp)
