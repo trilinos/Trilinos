@@ -33,6 +33,14 @@ import os
 import subprocess
 
 def main():
+    # Make sure that 'cmake' is in the user's path
+    try:
+        cmake = subprocess.check_output(['which','cmake'])
+        cmakeCommand[0] = cmake.strip()
+    except subprocess.CalledProcessError:
+        print "Error: cannot find 'cmake'"
+        sys.exit(1)
+
     # Pull off any options and arguments from the command line.  I use optparse
     # here so that it will be compatible with Python versions back to 2.4.
     from optparse import OptionParser
