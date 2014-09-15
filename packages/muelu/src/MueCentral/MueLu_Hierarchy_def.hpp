@@ -294,8 +294,8 @@ namespace MueLu {
       const double maxCoarse2FineRatio = 0.8;
       if (Ac.is_null() || Ac->getGlobalNumRows() > maxCoarse2FineRatio*A->getGlobalNumRows()) {
         // Aggregation stagnated, aborting
-        GetOStream(Warnings0) << "Aggregation stagnated, aborting hierarchy construction.\n"
-            << "Please check your matrix and/or adjust your configuration file. Possible fixes:\n"
+        GetOStream(Warnings0) << "Aggregation stagnated. Please check your matrix and/or adjust your configuration file."
+            << "Possible fixes:\n"
             << "  - reduce the maximum number of levels\n"
             << "  - enable repartitioning\n"
             << "  - increase the minimum coarse size." << std::endl;
@@ -308,6 +308,7 @@ namespace MueLu {
         //     hierarchy construction will abort due to the stagnation check.
         //   - if the matrix is small enough, we could move it to one processor.
 
+        // GetOStream(Warnings0) << "Aborting hierarchy construction.\n"
         // isLastLevel = true;
       }
     }
