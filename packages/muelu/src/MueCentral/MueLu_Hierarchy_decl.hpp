@@ -206,7 +206,7 @@ namespace MueLu {
     void Setup(const FactoryManagerBase& manager = FactoryManager(), int startLevel = 0, int numDesiredLevels = GetDefaultMaxLevels());
 
     //! Clear impermanent data from previous setup
-    void Clear();
+    void Clear(int startLevel = 0);
     void ExpertClear();
 
     CycleType GetCycle()                 const { return Cycle_;  }

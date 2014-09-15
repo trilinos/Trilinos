@@ -386,7 +386,7 @@ namespace MueLu {
     GetOStream(Runtime0) << "Setup loop: startLevel = " << startLevel << ", lastLevel = " << lastLevel
         << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() < " << maxCoarseSize_ << ")" << std::endl;
 
-    Clear();
+    Clear(startLevel);
 
     // Setup multigrid levels
     int iLevel = 0;
@@ -421,11 +421,11 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Clear() {
-    if (GetNumberOfLevels())
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Clear(int startLevel) {
+    if (startLevel < GetNumberOfLevels())
       GetOStream(Runtime0) << "Clearing old data (if any)" << std::endl;
 
-    for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
+    for (int iLevel = startLevel; iLevel < GetNumberOfLevels(); iLevel++)
       Levels_[iLevel]->Clear();
   }
 
