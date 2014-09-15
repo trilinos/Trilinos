@@ -791,7 +791,7 @@ int main(int argc, char *argv[]) {
               << " seconds.\n";
 
     // SQP.
-    RealT ctol = 1.e-14;
+    RealT ctol = 1.e-12;
     ROL::StatusTestSQP<RealT> status_sqp(gtol,ctol,stol,maxit);
     ROL::CompositeStepSQP<RealT> step_sqp(*parlist_tr);
     ROL::DefaultAlgorithm<RealT> algo_sqp(step_sqp,status_sqp,false);

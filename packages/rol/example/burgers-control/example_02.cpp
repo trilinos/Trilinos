@@ -41,9 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_04.cpp
-    \brief Shows how to solve a Burgers' optimal control problem using
-           full-space methods.
+/*! \file  example_02.cpp
+    \brief Shows how to solve an optimal control problem constrained by 
+           steady Burgers' equation with the SimOpt interface.
 */
 
 #include "ROL_Algorithm.hpp"
@@ -427,8 +427,8 @@ public:
     ahwv.zero();
   }
 
-//  void solveAugmentedSystem(ROL::Vector<Real> &v1, ROL::Vector<Real> &v2, const ROL::Vector<Real> &b1,
-//                            const ROL::Vector<Real> &b2, const ROL::Vector<Real> &x, Real &tol) {}
+  //void solveAugmentedSystem(ROL::Vector<Real> &v1, ROL::Vector<Real> &v2, const ROL::Vector<Real> &b1,
+  //                          const ROL::Vector<Real> &b2, const ROL::Vector<Real> &x, Real &tol) {}
 };
 
 template<class Real>
@@ -629,12 +629,12 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize full objective function.
-    int nx      = 256;  // Set spatial discretization.
+    int nx      = 256;   // Set spatial discretization.
     RealT alpha = 1.e-3; // Set penalty parameter.
-    RealT nu = 1e-2; // Viscosity parameter.
+    RealT nu = 1.e-2; // Set viscosity parameter.
     Objective_BurgersControl<RealT> obj(alpha,nx);
     // Initialize equality constraints
-    EqualityConstraint_BurgersControl<RealT> con(nx,nu);
+    EqualityConstraint_BurgersControl<RealT> con(nx, nu);
     // Initialize iteration vectors.
     Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
     Teuchos::RCP<std::vector<RealT> > yz_rcp = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
@@ -671,32 +671,33 @@ int main(int argc, char *argv[]) {
     con.checkApplyAdjointJacobian(x,yu,true);
     con.checkApplyAdjointHessian(x,yu,y,true);*/
 
+    // Initialize reduced objective function.
+    Teuchos::RCP<std::vector<RealT> > p_rcp  = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
+    ROL::StdVector<RealT> p(p_rcp);
+    Teuchos::RCP<ROL::Vector<RealT> > pp  = Teuchos::rcp(&p,false);
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
+    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,pp);
+    // Check derivatives.
+    /*robj.checkGradient(z,yz,true);
+    robj.checkHessVec(z,yz,true);*/
     // Optimization 
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist_tr) );
     // Define status test.
-    RealT gtol  = 1e-14;  // norm of gradient of Lagrangian tolerance
-    RealT ctol  = 1e-14;  // norm of constraint tolerance
+    RealT gtol  = 1e-14;  // norm of gradient tolerance
     RealT stol  = 1e-16;  // norm of step tolerance
-    int   maxit = 100;   // maximum number of iterations
-    ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
+    int   maxit = 1000;   // maximum number of iterations
+    ROL::StatusTest<RealT> status(gtol, stol, maxit);    
     // Define step.
-    ROL::CompositeStepSQP<RealT> step(*parlist_tr);
+    ROL::TrustRegionStep<RealT> stepr(*parlist_tr);
     // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+    ROL::DefaultAlgorithm<RealT> algo(stepr,status,false);
     // Run Algorithm
-    RealT zerotol = 0.0;
+    //z.zero();
     z.scale(50.0);
-    con.solve(u,z,zerotol);
-    //u_rcp->assign(u_rcp->size(),z.norm()/u_rcp->size());
-    //u_rcp->assign(u_rcp->size(),1.0);
-    //u.zero();
-    jv.zero();
-    std::vector<std::string> output = algo.run(x, jv, obj, con, true);
-    //for ( unsigned i = 0; i < output.size(); i++ ) {
-    //  std::cout << output[i];
-    //}
+    algo.run(z,robj,true);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

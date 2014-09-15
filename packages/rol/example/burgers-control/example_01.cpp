@@ -41,9 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_02.cpp
-    \brief Shows how to solve a linear-quadratic parabolic control problem 
-           with bound constraints.
+/*! \file  example_01.cpp
+    \brief Shows how to solve an optimal control problem constrained by 
+           steady Burgers' equation with bound constraints.
 */
 
 #include "ROL_PrimalDualActiveSetStep.hpp"
