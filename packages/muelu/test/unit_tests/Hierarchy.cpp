@@ -767,7 +767,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, BlockCrs)
   Xpetra::UnderlyingLib lib      = rangeMap->lib();
 
   // Construct our own point operators for level 1
-  matrixList.set("nx", matrixList.get<int>("nx")*5);
+  matrixList.set("nx", matrixList.get<int>("nx")*3);
   matrixList.set("ny", matrixList.get<int>("ny"));
   RCP<Matrix> A_point = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixList, lib);;
 

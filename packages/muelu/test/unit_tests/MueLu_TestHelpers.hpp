@@ -224,7 +224,7 @@ namespace MueLuTests {
 
 #if defined(HAVE_MUELU_TPETRA)
         // Thanks for the code, Travis!
-        int blocksize = 5;
+        int blocksize = 3;
         RCP<const Xpetra::TpetraCrsGraph<LO,GO,NO> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LO,GO,NO> >(Graph);
         RCP<const Tpetra::CrsGraph<LO,GO,NO> > TTGraph = TGraph->getTpetra_CrsGraph();
 
