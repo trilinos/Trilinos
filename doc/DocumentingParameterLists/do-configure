@@ -52,8 +52,9 @@ def main():
     trilinosDir = os.path.abspath(trilinosDir)
 
     # Transfer extra cmake options from the command line to the cmake command
-    for extraArg in options.extraArgs:
-        cmakeCommand.append('-D' + extraArg)
+    if options.extraArgs:
+        for extraArg in options.extraArgs:
+            cmakeCommand.append('-D' + extraArg)
 
     # Obtain the list of packages to build.  These package names are stored in
     # the file Trilinos/doc/DocumentingParameterLists/Packages.txt.  Read them,
