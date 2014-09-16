@@ -581,9 +581,9 @@ public:
   //----------------------------------------
   // Private for the driver
 
-  template< class WorkArgTag >
+  template< class Arg0 , class Arg1 >
   ThreadsExecTeamMember( Impl::ThreadsExec & exec
-                       , const TeamPolicy< execution_space , WorkArgTag > & team 
+                       , const TeamPolicy< Arg0 , Arg1 , Kokkos::Threads > & team 
                        , const int shared_size )
     : m_exec( exec )
     , m_team_shared(0,0)
@@ -1028,8 +1028,9 @@ inline void Threads::fence()
 
 namespace Kokkos {
 
-template < class WorkArgTag >
-class TeamPolicy< Kokkos::Threads , WorkArgTag > {
+template< class Arg0 , class Arg1 >
+class TeamPolicy< Arg0 , Arg1 , Kokkos::Threads >
+{
 private:
 
   int m_league_size ;
@@ -1060,8 +1061,13 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::Threads            execution_space ; ///< Execution space
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef Kokkos::Threads            execution_space ;  ///< Execution space
+  typedef TeamPolicy                 execution_policy ; 
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Threads , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 
   inline int team_size() const { return m_team_size ; }
   inline int team_alloc() const { return m_team_alloc ; }

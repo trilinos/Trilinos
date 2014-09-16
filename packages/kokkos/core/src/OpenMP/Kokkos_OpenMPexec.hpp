@@ -327,10 +327,10 @@ private:
 
 public:
 
-  template< class WorkArgTag >
+  template< class Arg0 , class Arg1 >
   inline
   OpenMPexecTeamMember( Impl::OpenMPexec & exec
-                      , const TeamPolicy< execution_space , WorkArgTag > & team
+                      , const TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > & team
                       , const int shmem_size
                       )
     : m_exec( exec )
@@ -684,12 +684,19 @@ public:
 
 namespace Kokkos {
 
-template < class WorkArgTag >
-class TeamPolicy< Kokkos::OpenMP , WorkArgTag > {
+template< class Arg0 , class Arg1 >
+class TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP >
+{
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::OpenMP             execution_space ; ///< Execution space
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef Kokkos::OpenMP             execution_space ;  ///< Execution space
+  typedef TeamPolicy                 execution_policy ;
+
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::OpenMP , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 
 private:
 
@@ -743,6 +750,13 @@ public:
 
   typedef Impl::OpenMPexecTeamMember member_type ;
 };
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
 
 template < unsigned VectorLength, class WorkArgTag >
 class TeamVectorPolicy< VectorLength, Kokkos::OpenMP , WorkArgTag > {

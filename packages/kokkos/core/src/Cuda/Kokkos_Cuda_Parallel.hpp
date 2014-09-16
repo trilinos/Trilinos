@@ -577,8 +577,9 @@ public:
 
 namespace Kokkos {
 
-template< class WorkArgTag >
-class TeamPolicy< Kokkos::Cuda , WorkArgTag > {
+template< class Arg0 , class Arg1 >
+class TeamPolicy< Arg0 , Arg1 , Kokkos::Cuda >
+{
 private:
 
   enum { MAX_WARP = 8 };
@@ -588,8 +589,14 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::Cuda               execution_space ; ///< Execution space
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef Kokkos::Cuda               execution_space ;  ///< Execution space
+  typedef TeamPolicy                 execution_policy ;
+
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Cuda , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 
   inline int team_size()   const { return m_team_size ; }
   inline int league_size() const { return m_league_size ; }
@@ -696,12 +703,12 @@ namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
+                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Cuda >
                  , Kokkos::Cuda >
 {
 private:
 
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Cuda > Policy ;
 
   const FunctorType  m_functor ;
   const Policy       m_policy ;  
@@ -760,12 +767,12 @@ public:
     }
 };
 
-template< class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Cuda , void > , Kokkos::Cuda >
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Cuda > , Kokkos::Cuda >
 {
 private:
 
-  typedef Kokkos::TeamPolicy< Kokkos::Cuda , void >   Policy ;
+  typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Cuda >   Policy ;
 
 public:
   typedef FunctorType                   functor_type ;
@@ -900,13 +907,13 @@ namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelReduce< FunctorType 
-                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
+                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Cuda >
                     , Kokkos::Cuda
                     >
 {
 private:
 
-  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2> Policy ;
+  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda > Policy ;
   typedef ReduceAdapter< FunctorType >        Reduce ;
 
 public:
@@ -1033,13 +1040,13 @@ public:
   }
 };
 
-template< class FunctorType >
-class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::Cuda , void > , Kokkos::Cuda >
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Cuda > , Kokkos::Cuda >
 {
 private:
 
-  typedef Kokkos::TeamPolicy< Kokkos::Cuda , void >   Policy ;
-  typedef ReduceAdapter< FunctorType >                Reduce ;
+  typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Cuda >   Policy ;
+  typedef ReduceAdapter< FunctorType >               Reduce ;
 
 public:
 
@@ -1167,13 +1174,13 @@ namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
 class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
+                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Cuda >
                   , Kokkos::Cuda
                   >
 {
 private:
 
-  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2> Policy ;
+  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda > Policy ;
   typedef ReduceAdapter< FunctorType >        Reduce ;
 
 public:
