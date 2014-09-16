@@ -55,6 +55,12 @@ namespace Teuchos
   /**
    * \ingroup Containers
    * \brief Utilities for generating hashcodes.
+   * This is not a true hash ! For all ints and types less than ints
+   * it returns the i/p typecasted as an int. For every type more than the
+   * size of int it is only slightly more smarter where it adds the bits
+   * into int size chunks and calls that an hash. Used with a capacity
+   * limited array this will lead to one of the simplest hashes.
+   * Ideally this should be deprecated and not used at all.
    */
 
   class TEUCHOSCORE_LIB_DLL_EXPORT HashUtils
@@ -94,7 +100,8 @@ namespace Teuchos
   */
   template <> inline int hashCode(const double& x)
     {
-      return (int) x;
+      return getHashCode(
+        reinterpret_cast<const unsigned char *>(&x), sizeof(double));
     }
 
   /** \relates HashUtils  
@@ -110,7 +117,8 @@ namespace Teuchos
   */
   template <> inline int hashCode(const long long& x)
     {
-      return (int) x;
+      return getHashCode(
+        reinterpret_cast<const unsigned char *>(&x), sizeof(long long));
     }
 
   /** \relates HashUtils  
@@ -118,7 +126,8 @@ namespace Teuchos
   */
   template <> inline int hashCode(const long& x)
     {
-      return (int) x;
+      return getHashCode(
+        reinterpret_cast<const unsigned char *>(&x), sizeof(long));
     }
 
   /** \relates HashUtils 
@@ -126,6 +135,9 @@ namespace Teuchos
   */
   template <> inline int hashCode(const std::string& x)
     {
+      /* This specialization could use the getHashCode as well,
+       * but they are both true hashes anyway, so leaving it !
+       * */
       const char* str = x.c_str();
       int len = x.length();
       int step = len/4 + 1;
@@ -140,10 +152,45 @@ namespace Teuchos
           base *= 128;
         }
 
+      if (rtn < 0)
+      {
+          /* Convert the largest -ve int to zero and -1 to
+           * std::numeric_limits<int>::max()
+           * */
+          size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+          maxIntBeforeWrap ++;
+          rtn += maxIntBeforeWrap;
+      }
       return rtn;
     }
 
-
+    /** helper to hash values larger than int to an int.
+     * This is similar to the version in Zoltan2, not a true hash,
+     * but this is an improvement over what was done before which was
+     * typecasting everything to ints and returning -ve hash codes which was
+     * in turn used to index arrays.
+     */
+    int getHashCode(const unsigned char *a, size_t len)
+    {
+      int total=0;
+      unsigned char *to = reinterpret_cast<unsigned char *>(&total);
+      int c=0;
+      for (size_t i=0; i < len; i++){
+        to[c++] += a[i];
+        if (c == sizeof(int))
+          c = 0;
+      }
+      if (total < 0)
+      {
+          /* Convert the largest -ve int to zero and -1 to
+           * std::numeric_limits<int>::max()
+           * */
+          size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+          maxIntBeforeWrap ++;
+          total += maxIntBeforeWrap;
+      }
+      return total;
+    }
 
 }
 #endif // TEUCHOS_HASHUTILS_H
