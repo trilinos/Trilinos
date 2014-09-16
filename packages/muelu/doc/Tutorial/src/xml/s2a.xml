@@ -1,0 +1,138 @@
+<ParameterList name="MueLu">
+
+  <!-- Configuration of the Xpetra operator (fine level) -->
+  <ParameterList name="Matrix">
+    <Parameter name="number of equations"                   type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
+  </ParameterList>
+
+  <!-- Factory collection -->
+  <ParameterList name="Factories">
+
+    <!-- Note that ParameterLists must be defined prior to being used -->
+
+    <ParameterList name="myCoalesceDropFact">
+      <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
+      <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
+      <!--
+      <Parameter name="aggregation: drop tol"               type="double" value="0.02"/>
+      -->
+    </ParameterList>
+
+    <ParameterList name="UncoupledAggregationFact">
+      <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
+      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
+      <Parameter name="aggregation: ordering"                            type="string" value="graph"/>
+      <Parameter name="aggregation: max selected neighbors"             type="int"    value="0"/>
+      <Parameter name="aggregation: min agg size"           type="int"    value="9"/>
+    </ParameterList>
+
+    <ParameterList name="CoupledAggregationFact">
+      <Parameter name="factory"                             type="string" value="CoupledAggregationFactory"/>
+      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
+      <Parameter name="aggregation: ordering"                            type="string" value="graph"/>
+      <Parameter name="aggregation: max selected neighbors"             type="int"    value="0"/>
+      <Parameter name="aggregation: min agg size"           type="int"    value="3"/>
+    </ParameterList>
+
+    <ParameterList name="myTentativePFact">
+      <Parameter name="factory"                             type="string" value="TentativePFactory"/>
+    </ParameterList>
+
+    <ParameterList name="myProlongatorFact">
+      <Parameter name="factory"                             type="string" value="SaPFactory"/>
+      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
+      <!-- <Parameter name="sa: damping factor"                  type="double" value="1.333"/> -->
+    </ParameterList>
+
+    <ParameterList name="myRestrictorFact">
+      <Parameter name="factory"                             type="string" value="TransPFactory"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRAPFact">
+      <Parameter name="factory"                             type="string" value="RAPFactory"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
+    </ParameterList>
+
+    <!-- =======================  SMOOTHERS  ======================= -->
+
+    <ParameterList name="Chebyshev">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="CHEBYSHEV"/>
+
+      <ParameterList name="ParameterList">
+        <Parameter name="chebyshev: degree"                 type="int"     value="2"/>>
+        <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="20"/>
+        <Parameter name="chebyshev: min eigenvalue"         type="double"  value="1.0"/>
+        <Parameter name="chebyshev: zero starting solution" type="bool"    value="true"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="myJacobi">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string" value="Jacobi"/>
+        <Parameter name="relaxation: sweeps"                type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor"        type="double" value="0.9"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="SymGaussSeidel">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps"                type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor"        type="double" value="1.0"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="ForwardGaussSeidel">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string"  value="RELAXATION"/>
+
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string"  value="Gauss-Seidel"/>
+        <Parameter name="relaxation: backward mode"         type="bool"    value="false"/>
+        <Parameter name="relaxation: sweeps"                type="int"     value="2"/>
+        <Parameter name="relaxation: damping factor"        type="double"  value="1"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="BackwardGaussSeidel">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string"  value="RELAXATION"/>
+
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string"  value="Gauss-Seidel"/>
+        <Parameter name="relaxation: backward mode"         type="bool"    value="true"/>
+        <Parameter name="relaxation: sweeps"                type="int"     value="2"/>
+        <Parameter name="relaxation: damping factor"        type="double"  value="1"/>
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"                            type="int"      value="3"/> <!-- Max number of levels -->
+    <Parameter name="coarse: max size"                      type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="verbosity"                             type="string"   value="Low"/>
+
+    <ParameterList name="All">
+      <Parameter name="Smoother"                            type="string"   value="myJacobi"/>
+      <Parameter name="Aggregates"                          type="string"   value="CoupledAggregationFact"/>
+      <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
+      <Parameter name="A"                                   type="string"   value="myRAPFact"/>
+      <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
+      <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="myTentativePFact"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
+    </ParameterList>
+
+  </ParameterList>
+</ParameterList>

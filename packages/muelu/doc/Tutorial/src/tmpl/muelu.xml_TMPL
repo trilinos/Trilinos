@@ -1,0 +1,205 @@
+<ParameterList name="MueLu">
+
+  <!-- Configuration of the Xpetra operator (fine level) -->
+  <ParameterList name="Matrix">
+    <Parameter name="number of equations"                   type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
+  </ParameterList>
+
+  <!-- Factory collection -->
+  <ParameterList name="Factories">
+
+    <!-- Note that ParameterLists must be defined prior to being used -->
+
+    <ParameterList name="myCoalesceDropFact">
+      <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
+      <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
+      <Parameter name="aggregation: drop tol"               type="double" value="$DROPTOL"/>
+    </ParameterList>
+
+    <ParameterList name="UncoupledAggregationFact">
+      <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
+      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
+      <Parameter name="aggregation: ordering"               type="string" value="natural"/>
+      <Parameter name="aggregation: min agg size"           type="int"    value="$MINAGGS"/>
+      <Parameter name="aggregation: max agg size"           type="int"    value="$MAXAGGS"/>
+    </ParameterList>
+
+
+    <ParameterList name="PA-AMG">
+      <Parameter name="factory"                             type="string" value="TentativePFactory"/>
+    </ParameterList>
+
+    <ParameterList name="PG-AMG">
+      <Parameter name="factory"                             type="string" value="PgPFactory"/>
+      <Parameter name="P"                                   type="string" value="PA-AMG"/>
+    </ParameterList>
+
+    <ParameterList name="SA-AMG">
+      <Parameter name="factory"                             type="string" value="SaPFactory"/>
+      <Parameter name="P"                                   type="string" value="PA-AMG"/>
+      <Parameter name="sa: damping factor"                  type="double" value="$SADAMPING"/>
+    </ParameterList>
+
+    <ParameterList name="myPatternFact">
+      <Parameter name="factory"                             type="string" value="PatternFactory"/>
+      <Parameter name="P"                                   type="string" value="PA-AMG"/>
+      <Parameter name="emin: pattern order"                 type="int"    value="1"/>
+    </ParameterList>
+
+    <ParameterList name="myConstraintFact">
+      <Parameter name="factory"                             type="string" value="ConstraintFactory"/>
+      <Parameter name="Ppattern"                            type="string" value="myPatternFact"/>
+      <!-- <Parameter name="FineNullspace"                  type="string" value="myNullspaceFact"/> -->
+      <!-- not sure about this -->
+      <Parameter name="CoarseNullspace"                     type="string" value="PA-AMG"/>
+    </ParameterList>
+
+    <ParameterList name="Emin">
+      <Parameter name="factory"                             type="string" value="EminPFactory"/>
+      <Parameter name="P"                                   type="string" value="PA-AMG"/>
+      <Parameter name="Constraint"                          type="string" value="myConstraintFact"/>
+      <Parameter name="emin: num iterations"                type="int" value="2"/>
+    </ParameterList>
+
+    <ParameterList name="myRestrictorFact">
+      <Parameter name="factory"                             type="string" value="$RESTRICTOR"/>
+      <Parameter name="P"                                   type="string" value="$PROLONGATOR"/>
+    </ParameterList>
+
+    <ParameterList name="myAggExportFact">
+      <Parameter name="factory"                             type="string" value="AggregationExportFactory"/>
+      <!--<Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>-->
+      <Parameter name="Output filename"                     type="string" value="aggs_level%LEVELID_proc%PROCID.txt"/>
+    </ParameterList>
+
+    <ParameterList name="myRAPFact">
+      <Parameter name="factory"                             type="string" value="RAPFactory"/>
+      <Parameter name="P"                                   type="string" value="$PROLONGATOR"/>
+      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
+      <ParameterList name="TransferFactories">
+        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
+     </ParameterList>
+    </ParameterList>
+
+	<!-- =======================  REPARTITIONING  ======================= -->
+
+	<!-- amalgamation of coarse level matrix -->
+    <ParameterList name="myRebAmalgFact">
+      <Parameter name="factory"                             type="string" value="AmalgamationFactory"/>
+      <Parameter name="A"                                   type="string" value="myRAPFact"/>
+    </ParameterList>
+
+    <ParameterList name="myIsorropiaInterface">
+      <Parameter name="factory"                             type="string" value="IsorropiaInterface"/>
+      <Parameter name="A"                                   type="string" value="myRAPFact"/>
+      <Parameter name="UnAmalgamationInfo"                  type="string" value="myRebAmalgFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRepartitionInterface">
+      <Parameter name="factory"                             type="string" value="RepartitionInterface"/>
+      <Parameter name="A"                                   type="string" value="myRAPFact"/>
+      <Parameter name="AmalgamatedPartition"                type="string" value="myIsorropiaInterface"/>
+    </ParameterList>
+
+
+    <ParameterList name="myRepartitionFact">
+      <Parameter name="factory"                             type="string" value="RepartitionFactory"/>
+      <Parameter name="A"                                   type="string" value="myRAPFact"/>
+      <Parameter name="Partition"                           type="string" value="myRepartitionInterface"/>
+      <Parameter name="repartition: min rows per proc"      type="int"    value="800"/>
+      <Parameter name="repartition: max imbalance"          type="double" value="1.1"/>
+      <Parameter name="repartition: start level"            type="int"    value="1"/>
+      <Parameter name="repartition: remap parts"            type="bool"   value="false"/>
+    </ParameterList>
+
+    <ParameterList name="myRebalanceProlongatorFact">
+      <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
+      <Parameter name="type"                                type="string" value="Interpolation"/>
+      <Parameter name="P"                                   type="string" value="$PROLONGATOR"/>
+      <Parameter name="Nullspace"                           type="string" value="PA-AMG"/>
+    </ParameterList>
+
+    <ParameterList name="myRebalanceRestrictionFact">
+      <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
+      <Parameter name="type"                                type="string" value="Restriction"/>
+      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
+      <!--<Parameter name="Nullspace"                       type="string" value="PA-AMG"/>-->
+    </ParameterList>
+
+    <ParameterList name="myRebalanceAFact">
+      <Parameter name="factory"                             type="string" value="RebalanceAcFactory"/>
+      <Parameter name="A"                                   type="string" value="myRAPFact"/>
+    </ParameterList>
+
+    <!-- =======================  SMOOTHERS  ======================= -->
+
+    <!-- not supported yet -->
+    <ParameterList name="Chebyshev">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="CHEBYSHEV"/>
+
+      <ParameterList name="ParameterList">
+        <Parameter name="chebyshev: degree"                 type="int"     value="3"/>>
+        <!-- 7 in 2D, 20 in 3D -->
+        <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="7"/>
+        <Parameter name="chebyshev: min eigenvalue"         type="double"  value="1.0"/>
+        <Parameter name="chebyshev: zero starting solution" type="bool"    value="true"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Jacobi">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string" value="Jacobi"/>
+        <Parameter name="relaxation: sweeps"                type="int"    value="$SMOO_SWEEPS"/>
+        <Parameter name="relaxation: damping factor"        type="double" value="$SMOO_DAMP"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Gauss-Seidel">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string" value="Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps"                type="int"    value="$SMOO_SWEEPS"/>
+        <Parameter name="relaxation: damping factor"        type="double" value="$SMOO_DAMP"/>
+      </ParameterList>
+    </ParameterList>
+
+
+    <ParameterList name="Sym.Gauss-Seidel">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps"                type="int"    value="$SMOO_SWEEPS"/>
+        <Parameter name="relaxation: damping factor"        type="double" value="$SMOO_DAMP"/>
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"                            type="int"      value="$MAXLEVELS"/> <!-- Max number of levels -->
+    <Parameter name="coarse: max size"                      type="int"      value="$MAXCOARSESIZE"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="verbosity"                             type="string"   value="High"/>
+
+    <ParameterList name="AllLevel">
+      <Parameter name="Smoother"                            type="string"   value="$SMOOTHER"/>
+      <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="$MANAGER_NULLSPACE"/>
+      <!--<Parameter name="Ptent"                               type="string"   value="PA-AMG"/>-->
+      <Parameter name="P"                                   type="string"   value="$MANAGER_PROLONGATOR"/>
+      <Parameter name="R"                                   type="string"   value="$MANAGER_RESTRICTOR"/>
+      <Parameter name="A"                                   type="string"   value="$MANAGER_RAP"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
+      <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
+      <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
+    </ParameterList>
+
+  </ParameterList>
+</ParameterList>

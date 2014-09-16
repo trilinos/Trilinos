@@ -1,0 +1,107 @@
+ 
+\documentclass{article}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\title{A MueLu hands-on tutorial}
+\author{Tobias Wiesner  \\
+	Technische Universit\"at M\"unchen  \\
+	Boltzmannstr. 15 \\
+	85747 Garching \\
+	\and 
+  Jonathan Hu
+  \and
+  Andrey Prokopenko
+	}
+
+\date{\today}
+% Hinweis: \title{um was auch immer es geht}, \author{wer es auch immer 
+% geschrieben hat} und  \date{wann auch immer das war} k\"onnen vor 
+% oder nach dem  Kommando \begin{document} stehen 
+% Aber der \maketitle Befehl mu\ss{} nach dem \begin{document} Kommando stehen! 
+\begin{document}
+
+\maketitle
+
+
+\begin{abstract}
+This is a MueLu tutorial.
+\end{abstract}
+
+\section{Introduction}
+Ziel der Arbeit ist es m\"oglichsten vielen oder wenn m\"oglichen es allen 
+zu erm\"oglichen, Dokumente mit \LaTeX{} zu erstellen!
+
+
+\section{Minimal example}
+
+Generate an input file containing the following solver parameters: 
+\small
+\lstinputlisting{../src/xml/s1_easy.xml}
+\normalsize
+
+The parameters are self-explaining and for an overview of all options the reader may refer to the MueLu user guide where an extensive list of all options and parameter choices is given.
+Beside the multigrid parameter the user can choose different types of multigrid algorithms. For a symmetric problem a smoothed aggregation multigrid method is the proper choice (\texttt{multigrid algorithm = sa}). Furthermore, one can define the level smoother. In above case a damped Jacobi smoother is used. Last but not least, some basic aggregation parameters can be chosen by the user. 
+
+Assuming that above xml parameters are stored in the xml file \texttt{s1\_easy.xml} one can run the test program using
+\begin{center}
+\texttt{MueLu\_tutorial\_laplace2d.exe ----xml=s1\_easy.xml}.
+\end{center}
+This should produce the following output on screen.
+
+\small
+\lstinputlisting{s1_easy.txt_3.fragment_1.fragment}
+\normalsize
+
+It helps to learn about the setup process and gives basic information about aggregation and level smoothers. In the end an overview of the multigrid setup is printed
+
+\small
+\lstinputlisting{s1_easy.txt_3.fragment_3.fragment}
+\normalsize
+
+The multigrid overview just gives some basic information about the different multigrid levels. One can see that a three level multigrid method is used with a direct solver on the coarsest level and Jacobi level smoothers on the fine and intermedium level. Furthermore some basic information is printed such as the operator complexity.
+
+In the end the CG convergence is printed when applying the generated multigrid method as preconditioner within a CG solver from the Aztec package in Trilinos.
+The numbers give the relative residual after the corresponding number of iterations as well as the solution time in seconds.
+\small
+\lstinputlisting{s1_easy.txt_5.fragment}
+\normalsize
+
+
+\section{Dokumentenklassen} \label{documentclasses}
+
+\begin{itemize}
+\item article
+\item book 
+\item report 
+\item letter 
+\end{itemize}
+
+
+\begin{enumerate}
+\item article
+\item book 
+\item report 
+\item letter 
+\end{enumerate}
+
+\begin{description}
+\item[article\label{article}]{Article ist \ldots}
+\item[book\label{book}]{Die book Klasse ist \ldots}
+\item[report\label{report}]{Die Klasse report erm\"oglicht es  \ldots}
+\item[letter\label{letter}]{Wenn man einen Breif schreiben sollte man eine 
+	andere Klasse nutzen, da diese f\"ur ein anderes als das deutsche 
+	Briefformat ausgelegt ist.}
+\end{description}
+
+
+\section{Fazit}\label{conclusions}
+Nach langer Suche hat sich herausgestellt, dass es kein l\"angeres 
+\LaTeX{} Beispiel, als das von \cite{doe} geschriebene gibt. 
+
+\begin{thebibliography}{9}
+\bibitem[Doe]{doe} \emph{Erstes und letztes \LaTeX{} Beispiel.},
+John Doe 50 v.Chr.  
+\end{thebibliography}
+
+\end{document}
