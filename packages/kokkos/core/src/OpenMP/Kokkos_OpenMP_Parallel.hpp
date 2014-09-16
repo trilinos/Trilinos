@@ -56,10 +56,7 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP >
-                 , Kokkos::OpenMP
-                 >
+class ParallelFor< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP > >
 {
 private:
 
@@ -117,10 +114,7 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP >
-                    , Kokkos::OpenMP
-                    >
+class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP > >
 {
 private:
 
@@ -211,10 +205,7 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP >
-                  , Kokkos::OpenMP
-                  >
+class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP > >
 {
 private:
 
@@ -322,7 +313,7 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 >
-class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > , Kokkos::OpenMP >
+class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > >
 {
 private:
 
@@ -357,7 +348,7 @@ public:
 };
 
 template< unsigned VectorLength, class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::OpenMP , void > , Kokkos::OpenMP >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::OpenMP , void > >
 {
 private:
   typedef Kokkos::TeamVectorPolicy< VectorLength, Kokkos::OpenMP , void > Policy ;
@@ -391,7 +382,7 @@ public:
 };
 
 template< class FunctorType , class Arg0 , class Arg1 >
-class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > , Kokkos::OpenMP >
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > >
 {
 private:
   typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > Policy ;

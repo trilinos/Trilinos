@@ -527,10 +527,7 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial >
-                 , Kokkos::Serial
-                 >
+class ParallelFor< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > >
 {
 private:
 
@@ -569,10 +566,7 @@ public:
 };
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial >
-                    , Kokkos::Serial
-                    >
+class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > >
 {
 public:
   typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > Policy ;
@@ -640,10 +634,7 @@ public:
 };
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial >
-                  , Kokkos::Serial
-                  >
+class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > >
 {
 private:
 
@@ -709,7 +700,7 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 >
-class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > , Kokkos::Serial >
+class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > >
 {
 private:
 
@@ -731,7 +722,7 @@ public:
 };
 
 template< unsigned int VectorLength, class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Serial , void > , Kokkos::Serial >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Serial , void > >
 {
 private:
   typedef Kokkos::TeamVectorPolicy< VectorLength,Kokkos::Serial , void > Policy ;
@@ -751,7 +742,8 @@ public:
 };
 
 template< class FunctorType , class Arg0 , class Arg1 >
-class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > , Kokkos::Serial > {
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > > 
+{
 private:
   typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > Policy ;
   typedef ReduceAdapter< FunctorType >  Reduce ;

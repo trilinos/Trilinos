@@ -60,10 +60,7 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread >
-                 , Kokkos::Qthread
-                 >
+class ParallelFor< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread > >
 {
 private:
 
@@ -103,10 +100,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread >
-                    , Kokkos::Qthread
-                    >
+class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread > >
 {
 private:
 
@@ -160,7 +154,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 >
-class ParallelReduce< FunctorType , TeamPolicy< Arg0 , Arg1 , Kokkos::Qthread > , Kokkos::Qthread >
+class ParallelReduce< FunctorType , TeamPolicy< Arg0 , Arg1 , Kokkos::Qthread > >
 {
 private:
 
@@ -223,10 +217,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread >
-                  , Kokkos::Qthread
-                  >
+class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread > >
 {
 private:
 

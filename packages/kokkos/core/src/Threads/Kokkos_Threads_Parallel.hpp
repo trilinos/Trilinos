@@ -59,10 +59,7 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads >
-                 , Kokkos::Threads
-                 >
+class ParallelFor< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads > >
 {
 private:
 
@@ -120,7 +117,7 @@ public:
 };
 
 template< class FunctorType , class Arg0 , class Arg1 >
-class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Threads > , Kokkos::Threads >
+class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Threads > >
 {
 public:
 
@@ -162,7 +159,7 @@ public:
 };
 
 template< unsigned int VectorLength, class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Threads , void > , Kokkos::Threads >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Threads , void > >
 {
 private:
 
@@ -211,10 +208,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads >
-                    , Kokkos::Threads
-                    >
+class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads > >
 {
 private:
 
@@ -292,7 +286,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 >
-class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Threads > , Kokkos::Threads >
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Threads > >
 {
 private:
 
@@ -363,10 +357,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads >
-                  , Kokkos::Threads
-                  >
+class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads > >
 {
 private:
 
