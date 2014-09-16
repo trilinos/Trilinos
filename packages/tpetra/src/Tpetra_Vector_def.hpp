@@ -160,7 +160,6 @@ namespace Tpetra {
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   norm1 () const
   {
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType mag_type;
     mag_type norm;
     this->norm1 (Teuchos::arrayView (&norm, 1));
     return norm;
@@ -170,7 +169,6 @@ namespace Tpetra {
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2 () const
   {
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType mag_type;
     mag_type norm;
     this->norm2 (Teuchos::arrayView (&norm, 1));
     return norm;
@@ -180,7 +178,6 @@ namespace Tpetra {
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf () const
   {
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType mag_type;
     mag_type norm;
     this->normInf (Teuchos::arrayView (&norm, 1));
     return norm;
@@ -191,7 +188,6 @@ namespace Tpetra {
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   normWeighted (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& weights) const
   {
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType mag_type;
     mag_type norm;
     this->normWeighted (weights, Teuchos::arrayView (&norm, 1));
     return norm;
