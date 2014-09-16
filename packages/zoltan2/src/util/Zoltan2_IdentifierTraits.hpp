@@ -360,6 +360,14 @@ struct IdentifierTraits {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
+/* The specializations of the hashCode is not a true hash.
+ * For types that can fit in an int it is just a typecast to int. 
+ * This can be used with a modulo capacity of table/array to find the basic
+ * hash. For types larger than that can fit in an int, it tries to be a
+ * little smarter by adding all the bytes into an int. It also ensures it is
+ * positive so you can use it as an index.
+ * */
+
 template<>
 struct IdentifierTraits<char> {
   typedef char T;
@@ -644,8 +652,12 @@ struct IdentifierTraits<std::pair<T1, T2> > {
                 IdentifierTraits<T2>::hashCode(p.second);
     if (total < 0)
     {
-        int maxNegativeInt = 1<<31;
-        total += maxNegativeInt;
+        /* Convert the largest -ve int to zero and -1 to
+         * std::numeric_limits<int>::max()
+         * */
+        size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+        maxIntBeforeWrap ++;
+        total += maxIntBeforeWrap;
     }
     return total;
   }
