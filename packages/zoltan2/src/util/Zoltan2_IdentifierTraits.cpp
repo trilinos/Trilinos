@@ -82,8 +82,12 @@ int getHashCode(const unsigned char *a, size_t len)
   }
   if (total < 0)
   {
-      int maxNegativeInt = 1<<31;
-      total += maxNegativeInt;
+      /* Convert the largest -ve int to zero and -1 to
+       * std::numeric_limits<int>::max()
+       * */
+      size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+      maxIntBeforeWrap ++;
+      total += maxIntBeforeWrap;
   }
   return total;
 }
