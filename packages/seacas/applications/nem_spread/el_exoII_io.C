@@ -541,16 +541,16 @@ void NemSpread<T,INT>::load_mesh()
 
   /* Generate the parallel exodus II file name */
   /* See if any '/' in the name.  IF present, isolate the basename of the file */
-  if (strrchr(PIO_Info.Scalar_Exo_File_Name, '/') != NULL) {
+  if (strrchr(PIO_Info.Scalar_LB_File_Name, '/') != NULL) {
 
     /* There is a path separator.  Get the portion after the
      * separator
      */
-    strcpy(cTemp, strrchr(PIO_Info.Scalar_Exo_File_Name, '/')+1);
+    strcpy(cTemp, strrchr(PIO_Info.Scalar_LB_File_Name, '/')+1);
   } else {
 
     /* No separator; this is already just the basename... */
-    strcpy(cTemp, PIO_Info.Scalar_Exo_File_Name);
+    strcpy(cTemp, PIO_Info.Scalar_LB_File_Name);
   }
 
   if (strlen(PIO_Info.Exo_Extension) == 0)

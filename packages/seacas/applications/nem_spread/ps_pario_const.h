@@ -77,6 +77,9 @@ struct Parallel_IO
   /* The subdirectory to write files to */
   char    Par_Dsk_SubDirec[MAX_FNL+1];
 
+  /* The name of the scalar load-balance file */
+  char    Scalar_LB_File_Name[MAX_FNL+1];
+
   /* The name of the scalar mesh file. */
   char    Scalar_Exo_File_Name[MAX_FNL+1];
 

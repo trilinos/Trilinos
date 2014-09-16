@@ -129,9 +129,9 @@ function execute_loadbalance {
     input=$6
     LAUNCH=$7
 
-    output=$basename.$suffix_mesh.decomp.out
-    error=$basename.$suffix_mesh.decomp.err
-    nemesis=$basename.$suffix_mesh.nem
+    output=$basename.decomp.out
+    error=$basename.decomp.err
+    nemesis=$basename.nem
     genesis=$basename.$suffix_mesh
 
     # Check for valid executable...
@@ -186,12 +186,12 @@ function execute_spread {
     numproc=$4
     NEM_SPREAD=$5
 
-    output=$basename.$suffix_mesh.decomp.out
-    error=$basename.$suffix_mesh.decomp.err
-    nemesis=$basename.$suffix_mesh.nem
+    output=$basename.decomp.out
+    error=$basename.decomp.err
+    nemesis=$basename.nem
     genesis=$basename.$suffix_mesh
 
-    pexsh=$basename.$suffix_mesh.pex
+    pexsh=$basename.pex
 
     # Check for valid executable...
     if [ ! -x $NEM_SPREAD ]
