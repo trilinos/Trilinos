@@ -134,6 +134,23 @@ public:
     u.zero();
   }
 
+  virtual Real checkSolve(const ROL::Vector<Real> &u, 
+                          const ROL::Vector<Real> &z, 
+                          const bool printToScreen = true) {
+    // Solve equality constraint for u. 
+    Real tol = ROL_EPSILON;
+    Teuchos::RCP<ROL::Vector<Real> > s = u.clone();
+    solve(*s,z,tol);
+    // Evaluate equality constraint residual at (u,z).
+    Teuchos::RCP<ROL::Vector<Real> > c = u.clone();
+    value(*c,*s,z,tol);
+    // Output norm of residual.
+    Real cnorm = c->norm();
+    if ( printToScreen ) {
+      std::cout << "\nTest SimOpt equality constraint solve: \n  ||c(u,z)|| = " << cnorm << "\n\n";
+    }
+    return cnorm;
+  }
 
   /** \brief Apply the partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_u(u,z) \in L(\mathcal{U}, \mathcal{C})\f$,
