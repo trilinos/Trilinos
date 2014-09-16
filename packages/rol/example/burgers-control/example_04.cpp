@@ -368,19 +368,63 @@ private:
     }
   }
 
-  void linear_solve(std::vector<Real> &u, std::vector<Real> &dl, std::vector<Real> &d, std::vector<Real> &du, 
+  void linear_solve(std::vector<Real> &u, 
+              const std::vector<Real> &dl, const std::vector<Real> &d, const std::vector<Real> &du, 
               const std::vector<Real> &r, const bool transpose = false) {
-    u.assign(r.begin(),r.end());
-    // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
-    std::vector<Real> du2(nx_-2,0.0);
-    std::vector<int> ipiv(nx_,0);
-    int info;
-    int ldb  = nx_;
-    int nhrs = 1;
-    lp.GTTRF(nx_,&dl[0],&d[0],&du[0],&du2[0],&ipiv[0],&info);
-    char trans = ((transpose == true) ? 'T' : 'N');
-    lp.GTTRS(trans,nx_,nhrs,&dl[0],&d[0],&du[0],&du2[0],&ipiv[0],&u[0],ldb,&info);
+    bool useLAPACK = false;
+    if ( useLAPACK ) { // DIRECT SOLVE: USE LAPACK
+      u.assign(r.begin(),r.end());
+      // Store matrix diagonal & off-diagonals.
+      std::vector<Real> Dl(dl);
+      std::vector<Real> Du(du);
+      std::vector<Real> D(d);
+      // Perform LDL factorization
+      Teuchos::LAPACK<int,Real> lp;
+      std::vector<Real> Du2(nx_-2,0.0);
+      std::vector<int> ipiv(nx_,0);
+      int info;
+      int ldb  = nx_;
+      int nhrs = 1;
+      lp.GTTRF(nx_,&Dl[0],&D[0],&Du[0],&Du2[0],&ipiv[0],&info);
+      char trans = ((transpose == true) ? 'T' : 'N');
+      lp.GTTRS(trans,nx_,nhrs,&Dl[0],&D[0],&Du[0],&Du2[0],&ipiv[0],&u[0],ldb,&info);
+    }
+    else { // ITERATIVE SOLVE: USE GAUSS-SEIDEL
+      u.clear();
+      u.resize(nx_,0.0);
+      unsigned maxit = 100;
+      Real rtol  = std::min(1.e-12,1.e-4*std::sqrt(dot(r,r)));
+      Real resid = 0.0;
+      Real rnorm = 10.0*rtol;
+      for (unsigned i = 0; i < maxit; i++) {
+        for (unsigned n = 0; n < nx_; n++) {
+          u[n] = r[n]/d[n];
+          if ( n < nx_-1 ) {
+            u[n] -= ((transpose == false) ? du[n] : dl[n])*u[n+1]/d[n];
+          }
+          if ( n > 0 ) {
+            u[n] -= ((transpose == false) ? dl[n-1] : du[n-1])*u[n-1]/d[n];
+          }
+        }
+        // Compute Residual
+        rnorm = 0.0;
+        for (unsigned n = 0; n < nx_; n++) {
+          resid = r[n] - d[n]*u[n];
+          if ( n < nx_-1 ) {
+            resid -= ((transpose == false) ? du[n] : dl[n])*u[n+1];
+          }
+          if ( n > 0 ) {
+            resid -= ((transpose == false) ? dl[n-1] : du[n-1])*u[n-1];
+          }
+          rnorm += resid*resid;
+        }
+        rnorm = std::sqrt(rnorm);
+        if ( rnorm < rtol ) {
+          //std::cout << "\ni = " << i+1 << "  rnorm = " << rnorm << "\n";
+          break;
+        }
+      }
+    }
   }
 
 public:
@@ -947,7 +991,7 @@ int main(int argc, char *argv[]) {
     obj.checkGradient(x,y,true);
     obj.checkHessVec(x,y,true);
     con.checkApplyJacobian(x,y,jv,true);
-    con.checkApplyAdjointJacobian(x,yu,true);
+    //con.checkApplyAdjointJacobian(x,yu,true);
     con.checkApplyAdjointHessian(x,yu,y,true);
     // Check Jacobians and adjoint Jacobians.
     con.checkJacobian_1(jv,yu,u,z,true);
@@ -975,7 +1019,7 @@ int main(int argc, char *argv[]) {
     // Trust Region Newton.
     RealT gtol  = 1e-14;  // norm of gradient tolerance
     RealT stol  = 1e-16;  // norm of step tolerance
-    int   maxit = 1000;   // maximum number of iterations
+    int   maxit = 100;    // maximum number of iterations
     ROL::StatusTest<RealT> status_tr(gtol, stol, maxit);    
     ROL::TrustRegionStep<RealT> step_tr(*parlist_tr);
     ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status_tr,false);
