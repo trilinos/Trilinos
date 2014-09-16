@@ -68,6 +68,7 @@ namespace Teuchos
     public:
       /* Get the next prime in a sequence of hashtable sizes */
       static int nextPrime(int newCapacity);
+      static int getHashCode(const unsigned char *a, size_t len);
 
     private:
 
@@ -81,6 +82,7 @@ namespace Teuchos
         1695781, 2627993, 4067599, 6290467, 9718019,
         15000607, 23133937, 35650091};*/
     };
+
 
   /** \relates HashUtils 
       \brief Standard interface for getting the hash code of an object 
@@ -100,7 +102,7 @@ namespace Teuchos
   */
   template <> inline int hashCode(const double& x)
     {
-      return getHashCode(
+      return HashUtils::getHashCode(
         reinterpret_cast<const unsigned char *>(&x), sizeof(double));
     }
 
@@ -117,7 +119,7 @@ namespace Teuchos
   */
   template <> inline int hashCode(const long long& x)
     {
-      return getHashCode(
+      return HashUtils::getHashCode(
         reinterpret_cast<const unsigned char *>(&x), sizeof(long long));
     }
 
@@ -126,7 +128,7 @@ namespace Teuchos
   */
   template <> inline int hashCode(const long& x)
     {
-      return getHashCode(
+      return HashUtils::getHashCode(
         reinterpret_cast<const unsigned char *>(&x), sizeof(long));
     }
 
@@ -135,7 +137,7 @@ namespace Teuchos
   */
   template <> inline int hashCode(const std::string& x)
     {
-      /* This specialization could use the getHashCode as well,
+      /* This specialization could use the HashUtils::getHashCode as well,
        * but they are both true hashes anyway, so leaving it !
        * */
       const char* str = x.c_str();
@@ -162,34 +164,6 @@ namespace Teuchos
           rtn += maxIntBeforeWrap;
       }
       return rtn;
-    }
-
-    /** helper to hash values larger than int to an int.
-     * This is similar to the version in Zoltan2, not a true hash,
-     * but this is an improvement over what was done before which was
-     * typecasting everything to ints and returning -ve hash codes which was
-     * in turn used to index arrays.
-     */
-    int getHashCode(const unsigned char *a, size_t len)
-    {
-      int total=0;
-      unsigned char *to = reinterpret_cast<unsigned char *>(&total);
-      int c=0;
-      for (size_t i=0; i < len; i++){
-        to[c++] += a[i];
-        if (c == sizeof(int))
-          c = 0;
-      }
-      if (total < 0)
-      {
-          /* Convert the largest -ve int to zero and -1 to
-           * std::numeric_limits<int>::max()
-           * */
-          size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
-          maxIntBeforeWrap ++;
-          total += maxIntBeforeWrap;
-      }
-      return total;
     }
 
 }
