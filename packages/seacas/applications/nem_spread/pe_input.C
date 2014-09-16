@@ -152,12 +152,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
       }
       /****** The parallel results ExodusII file name ******/
       else if (token_compare(cptr, "parallel results file base name")) {
-        if(strlen(Par_Nem_File_Name) == 0)
-        {
-          cptr = strtok(NULL, "\t=");
-          strip_string(cptr, " \t\n");
-          strcpy(Par_Nem_File_Name, cptr);
-        }
+	; /* Do nothing */
       }
       /****** The Number of Processors ******/
       else if (token_compare(cptr, "number of processors")) {
