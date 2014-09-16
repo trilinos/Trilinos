@@ -261,6 +261,25 @@ public:
                                       const Vector<Real> &z,
                                       Real &tol) = 0;
 
+  virtual Real checkJacobian_1(const Vector<Real> &w, 
+                               const Vector<Real> &v, 
+                               const Vector<Real> &u,
+                               const Vector<Real> &z,
+                               const bool printToScreen = true) {
+    Real tol = ROL_EPSILON;
+    Teuchos::RCP<Vector<Real> > Jv = w.clone();
+    applyJacobian_1(*Jv,v,u,z,tol);
+    Real wJv = w.dot(*Jv);
+    Teuchos::RCP<Vector<Real> > Jw = v.clone();
+    applyAdjointJacobian_1(*Jw,w,u,z,tol);
+    Real vJw = v.dot(*Jw);
+    Real diff = std::abs(wJv-vJw);
+    if ( printToScreen ) {
+      std::cout << "\nTest SimOpt equality constraint Jacobian_1: \n  |<w,Jv> - <adj(J)w,v>| = " 
+                << diff << "\n";
+    }
+    return diff;
+  }
 
   /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_z(u,z)^* \in L(\mathcal{C}^*, \mathcal{Z}^*)\f$,
@@ -283,6 +302,25 @@ public:
                                       const Vector<Real> &z,
                                       Real &tol) = 0;
 
+  virtual Real checkJacobian_2(const Vector<Real> &w, 
+                               const Vector<Real> &v, 
+                               const Vector<Real> &u,
+                               const Vector<Real> &z,
+                               const bool printToScreen = true) {
+    Real tol = ROL_EPSILON;
+    Teuchos::RCP<Vector<Real> > Jv = w.clone();
+    applyJacobian_2(*Jv,v,u,z,tol);
+    Real wJv = w.dot(*Jv);
+    Teuchos::RCP<Vector<Real> > Jw = v.clone();
+    applyAdjointJacobian_2(*Jw,w,u,z,tol);
+    Real vJw = v.dot(*Jw);
+    Real diff = std::abs(wJv-vJw);
+    if ( printToScreen ) {
+      std::cout << "\nTest SimOpt equality constraint Jacobian_2: \n  |<w,Jv> - <adj(J)w,v>| = " 
+                << diff << "\n";
+    }
+    return diff;
+  }
 
   /** \brief Apply the inverse of the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_u(u,z)^{-*} \in L(\mathcal{U}^*, \mathcal{C}^*)\f$,
