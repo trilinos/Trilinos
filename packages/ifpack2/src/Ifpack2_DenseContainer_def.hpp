@@ -771,7 +771,13 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 
 } // namespace Ifpack2
 
+// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
+// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// preconditioners can and should do dynamic casts if they need a type
+// more specific than RowMatrix.
+
 #define IFPACK2_DENSECONTAINER_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::DenseContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >; \
   template class Ifpack2::DenseContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >;
 
 #endif // IFPACK2_SPARSECONTAINER_HPP

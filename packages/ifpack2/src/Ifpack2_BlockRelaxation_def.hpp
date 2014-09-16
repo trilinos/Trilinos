@@ -1001,7 +1001,24 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
 #include "Ifpack2_SparseContainer_decl.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
 
+// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
+// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// preconditioners can and should do dynamic casts if they need a type
+// more specific than RowMatrix.
+
 #define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>, \
+    Ifpack2::SparseContainer<       \
+      Tpetra::RowMatrix<S, LO, GO, N>, \
+      Ifpack2::ILUT< ::Tpetra::RowMatrix<S,LO,GO,N> > > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>, \
+    Ifpack2::DenseContainer<        \
+      Tpetra::RowMatrix<S, LO, GO, N>, \
+      S > >; \
   template \
   class Ifpack2::BlockRelaxation<      \
     Tpetra::CrsMatrix<S, LO, GO, N>, \
@@ -1014,6 +1031,8 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
     Ifpack2::DenseContainer<        \
       Tpetra::CrsMatrix<S, LO, GO, N>, \
       S > >;
+
+
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
