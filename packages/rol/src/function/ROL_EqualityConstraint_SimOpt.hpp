@@ -147,7 +147,7 @@ public:
     // Output norm of residual.
     Real cnorm = c->norm();
     if ( printToScreen ) {
-      std::cout << "\nTest SimOpt equality constraint solve: \n  ||c(u,z)|| = " << cnorm << "\n\n";
+      std::cout << "\nTest SimOpt equality constraint solve: \n  ||c(u,z)|| = " << cnorm << "\n";
     }
     return cnorm;
   }
@@ -219,6 +219,26 @@ public:
     ijv.zero();
   }
 
+  virtual Real checkInverseJacobian_1(const Vector<Real> &jv, 
+                                      const Vector<Real> &v, 
+                                      const Vector<Real> &u, 
+                                      const Vector<Real> &z, 
+                                      const bool printToScreen = true) {
+    Real tol = ROL_EPSILON;
+    Teuchos::RCP<Vector<Real> > Jv = jv.clone();
+    applyJacobian_1(*Jv,v,u,z,tol);
+    Teuchos::RCP<Vector<Real> > iJJv = u.clone();
+    applyInverseJacobian_1(*iJJv,*Jv,u,z,tol);
+    Teuchos::RCP<Vector<Real> > diff = v.clone();
+    diff->set(v);
+    diff->axpy(-1.0,*iJJv);
+    Real dnorm = diff->norm();
+    if ( printToScreen ) {
+      std::cout << "\nTest SimOpt equality constraint inverseJacobian_1: \n  ||v-inv(J)Jv|| = " 
+                << dnorm << "\n";
+    }
+    return dnorm;
+  }
 
   /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_u(u,z)^* \in L(\mathcal{C}^*, \mathcal{U}^*)\f$,
@@ -286,6 +306,28 @@ public:
                                              Real &tol) {
     iajv.zero();
   };
+
+  virtual Real checkInverseAdjointJacobian_1(const Vector<Real> &jv, 
+                                             const Vector<Real> &v, 
+                                             const Vector<Real> &u, 
+                                             const Vector<Real> &z, 
+                                             const bool printToScreen = true) {
+    Real tol = ROL_EPSILON;
+    Teuchos::RCP<Vector<Real> > Jv = jv.clone();
+    applyAdjointJacobian_1(*Jv,v,u,z,tol);
+    Teuchos::RCP<Vector<Real> > iJJv = u.clone();
+    applyInverseAdjointJacobian_1(*iJJv,*Jv,u,z,tol);
+    Teuchos::RCP<Vector<Real> > diff = v.clone();
+    diff->set(v);
+    diff->axpy(-1.0,*iJJv);
+    Real dnorm = diff->norm();
+    if ( printToScreen ) {
+      std::cout << "\nTest SimOpt equality constraint inverseAdjointJacobian_1: \n"
+                << "  ||v-inv(adj(J))adj(J)v|| = " 
+                << dnorm << "\n";
+    }
+    return dnorm;
+  }
 
 
   /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
