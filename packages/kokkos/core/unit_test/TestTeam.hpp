@@ -51,6 +51,61 @@
 /*--------------------------------------------------------------------------*/
 
 namespace Test {
+namespace {
+
+template< class ExecSpace >
+struct TestTeamPolicy {
+
+  typedef typename Kokkos::TeamPolicy< ExecSpace >::member_type team_member ;
+  typedef Kokkos::View<int**,typename ExecSpace::memory_space> view_type ;
+
+  view_type m_flags ;
+
+  TestTeamPolicy( const size_t league_size )
+    : m_flags( Kokkos::allocate_without_initializing , "flags"
+             , Kokkos::TeamPolicy< ExecSpace >::team_size_max( *this )
+             , league_size )
+    {}
+
+  struct VerifyInitTag {};
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const team_member & member ) const
+    {
+      const int tid = member.team_rank() + member.team_size() * member.league_rank();
+
+      m_flags( member.team_rank() , member.league_rank() ) = tid ;
+    }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const VerifyInitTag & , const team_member & member ) const
+    {
+      const int tid = member.team_rank() + member.team_size() * member.league_rank();
+
+      if ( tid != m_flags( member.team_rank() , member.league_rank() ) ) {
+        printf("TestTeamPolicy member(%d,%d) error %d != %d\n"
+              , member.league_rank() , member.team_rank()
+              , tid , m_flags( member.team_rank() , member.league_rank() ) );
+      }
+    }
+
+  static void test_for( const size_t league_size )
+    {
+      TestTeamPolicy functor( league_size );
+
+      const int team_size = Kokkos::TeamPolicy< ExecSpace >::team_size_max( functor );
+
+      Kokkos::parallel_for( Kokkos::TeamPolicy< ExecSpace >( league_size , team_size ) , functor );
+      Kokkos::parallel_for( Kokkos::TeamPolicy< ExecSpace , VerifyInitTag >( league_size , team_size ) , functor );
+    }
+};
+
+}
+}
+
+/*--------------------------------------------------------------------------*/
+
+namespace Test {
 
 template< typename ScalarType , class DeviceType >
 class ReduceTeamFunctor

@@ -98,6 +98,11 @@ TEST_F( serial , range_tag )
   TestRange< Kokkos::Serial >::test_scan(1000);
 }
 
+TEST_F( serial , team_tag )
+{
+  TestTeamPolicy< Kokkos::Serial >::test_for( 1000 );
+}
+
 TEST_F( serial, crsarray) {
   TestCrsArray< Kokkos::Serial >();
 }

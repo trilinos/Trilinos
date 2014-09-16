@@ -773,9 +773,11 @@ private:
   typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Cuda >   Policy ;
 
 public:
-  typedef FunctorType                   functor_type ;
-  typedef typename Policy::member_type  team_member ;
-  typedef Cuda::size_type               size_type ;
+
+  typedef FunctorType      functor_type ;
+  typedef Cuda::size_type  size_type ;
+
+private:
 
   // Algorithmic constraints: blockDim.y is a power of two AND blockDim.y == blockDim.z == 1
   // shared memory utilization:
@@ -789,19 +791,32 @@ public:
   size_type         m_shmem_size ;
   size_type         m_league_size ;
 
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type  member ) const
+    { m_functor( TagType() , member ); }
+
+public:
+
   __device__ inline
   void operator()(void) const
   {
     // Iterate this block through the league
     for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += gridDim.x ) {
 
-      const team_member member( kokkos_impl_cuda_shared_memory<void>()
-                              , m_shmem_begin
-                              , m_shmem_size
-                              , league_rank
-                              , m_league_size );
-
-      m_functor( member );
+      ParallelFor::template driver< typename Policy::work_tag >(
+        typename Policy::member_type( kokkos_impl_cuda_shared_memory<void>()
+                                    , m_shmem_begin
+                                    , m_shmem_size
+                                    , league_rank
+                                    , m_league_size ) );
     }
   }
 
@@ -1040,16 +1055,17 @@ class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Cu
 {
 private:
 
-  typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Cuda >   Policy ;
-  typedef ReduceAdapter< FunctorType >               Reduce ;
+  typedef Kokkos::TeamPolicy<Arg0,Arg1,Kokkos::Cuda>  Policy ;
+  typedef ReduceAdapter< FunctorType >                Reduce ;
+  typedef typename Reduce::pointer_type               pointer_type ;
+  typedef typename Reduce::reference_type             reference_type ;
 
 public:
 
-  typedef FunctorType                                 functor_type ;
-  typedef typename Policy::member_type                team_member ;
-  typedef typename Reduce::pointer_type               pointer_type ;
-  typedef typename Reduce::reference_type             reference_type ;
-  typedef Cuda::size_type                             size_type ;
+  typedef FunctorType      functor_type ;
+  typedef Cuda::size_type  size_type ;
+
+private:
 
   // Algorithmic constraints: blockDim.y is a power of two AND blockDim.y == blockDim.z == 1
   // shared memory utilization:
@@ -1068,6 +1084,21 @@ public:
   size_type         m_shmem_size ;
   size_type         m_league_size ;
 
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type  member 
+             , reference_type update ) const
+    { m_functor( member , update ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type  member 
+             , reference_type update ) const
+    { m_functor( TagType() , member , update ); }
+
+public:
 
   __device__ inline
   void operator()(void) const
@@ -1081,13 +1112,13 @@ public:
     // Iterate this block through the league
     for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += gridDim.x ) {
 
-      const team_member member( kokkos_impl_cuda_shared_memory<char>() + m_team_begin
-                              , m_shmem_begin
-                              , m_shmem_size
-                              , league_rank
-                              , m_league_size );
-
-      m_functor( member , value );
+      ParallelReduce::template driver< typename Policy::work_tag >
+        ( typename Policy::member_type( kokkos_impl_cuda_shared_memory<char>() + m_team_begin
+                                        , m_shmem_begin
+                                        , m_shmem_size
+                                        , league_rank
+                                        , m_league_size )
+        , value );
     }
 
     // Reduce with final value at blockDim.y - 1 location.

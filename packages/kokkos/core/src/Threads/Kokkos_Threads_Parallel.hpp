@@ -119,13 +119,25 @@ public:
 template< class FunctorType , class Arg0 , class Arg1 >
 class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Threads > >
 {
-public:
+private:
 
   typedef TeamPolicy< Arg0 , Arg1 , Kokkos::Threads >  Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
   const int          m_shared ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_func( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_func( TagType() , member ); }
 
   static void execute( ThreadsExec & exec , const void * arg )
   {
@@ -134,11 +146,13 @@ public:
     typename Policy::member_type member( exec , self.m_policy , self.m_shared );
 
     for ( ; member.valid() ; member.next() ) {
-      self.m_func( member );
+      self.ParallelFor::template driver< typename Policy::work_tag >( member );
     }
 
     exec.fan_in();
   }
+
+public:
 
   ParallelFor( const FunctorType & functor
               , const Policy      & policy )
@@ -152,10 +166,6 @@ public:
 
       ThreadsExec::fence();
     }
-
-  inline void wait() {}
-
-  inline ~ParallelFor() { wait(); }
 };
 
 template< unsigned int VectorLength, class FunctorType >
@@ -199,11 +209,8 @@ public:
 
       ThreadsExec::fence();
     }
-
-  inline void wait() {}
-
-  inline ~ParallelFor() { wait(); }
 };
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -298,6 +305,20 @@ private:
   const Policy       m_policy ;
   const int          m_shared ;
 
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member
+             , typename Reduce::reference_type update ) const
+    { m_func( member , update ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member
+             , typename Reduce::reference_type update ) const
+    { m_func( TagType() , member , update ); }
+
   static void execute( ThreadsExec & exec , const void * arg )
   {
     const ParallelReduce & self = * ((const ParallelReduce *) arg );
@@ -307,7 +328,7 @@ private:
 
     typename Policy::member_type member( exec , self.m_policy , self.m_shared );
     for ( ; member.valid() ; member.next() ) {
-      self.m_func( member , update );
+      self.ParallelReduce::template driver< typename Policy::work_tag >( member , update );
     }
 
     exec.fan_in_reduce( self.m_func );
@@ -347,10 +368,6 @@ public:
       const unsigned n = Reduce::value_count( m_func );
       for ( unsigned i = 0 ; i < n ; ++i ) { result.ptr_on_device()[i] = data[i]; }
     }
-
-  inline void wait() {}
-
-  inline ~ParallelReduce() { wait(); }
 };
 
 //----------------------------------------------------------------------------

@@ -319,6 +319,20 @@ private:
 
   typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > Policy ;
 
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member )
+    { functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member )
+    { functor( TagType() , member ); }
+
 public:
 
   inline
@@ -338,7 +352,7 @@ public:
       typename Policy::member_type member( * OpenMPexec::get_thread_omp() , policy , team_shmem_size );
 
       for ( ; member.valid() ; member.next() ) {
-        functor( member );
+        ParallelFor::template driver< typename Policy::work_tag >( functor , member );
       }
     }
 /* END #pragma omp parallel */
@@ -385,8 +399,26 @@ template< class FunctorType , class Arg0 , class Arg1 >
 class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > >
 {
 private:
+
   typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > Policy ;
   typedef ReduceAdapter< FunctorType >   Reduce ;
+
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member
+             ,       typename Reduce::reference_type update )
+    { functor( member , update ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member
+             ,       typename Reduce::reference_type update )
+    { functor( TagType() , member , update ); }
 
 public:
 
@@ -410,7 +442,7 @@ public:
       typename Reduce::reference_type update = Reduce::init( functor , exec.scratch_reduce() );
 
       for ( typename Policy::member_type member( exec , policy , team_shmem_size ); member.valid() ; member.next() ) {
-        functor( member , update );
+        ParallelReduce::template driver< typename Policy::work_tag >( functor , member , update );
       }
     }
 /* END #pragma omp parallel */

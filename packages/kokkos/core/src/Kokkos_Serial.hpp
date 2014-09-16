@@ -706,6 +706,20 @@ private:
 
   typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > Policy ;
 
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( TagType() , member ); }
+
 public:
 
   ParallelFor( const FunctorType & functor
@@ -716,7 +730,9 @@ public:
       Kokkos::Serial::scratch_memory_resize( 0 , shared_size );
 
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
-        functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) );
+        ParallelFor::template driver< typename Policy::work_tag >
+          ( functor , typename Policy::member_type(ileague,policy.league_size(),shared_size) );
+        // functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) );
       }
     }
 };
@@ -745,9 +761,28 @@ template< class FunctorType , class Arg0 , class Arg1 >
 class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > > 
 {
 private:
+
   typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > Policy ;
   typedef ReduceAdapter< FunctorType >  Reduce ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member
+             ,       typename Reduce::reference_type update )
+    { functor( member , update ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member 
+             ,       typename Reduce::reference_type update )
+    { functor( TagType() , member , update ); }
+
 public:
+
   typedef typename Reduce::pointer_type pointer_type ;
 
   template< class ViewType >
@@ -767,7 +802,8 @@ public:
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
-        functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) , update );
+        ParallelReduce::template driver< typename Policy::work_tag >
+          ( functor , typename Policy::member_type(ileague,policy.league_size(),shared_size) , update );
       }
 
       Reduce::final( functor , result_ptr );
