@@ -1,21 +1,3 @@
-verbosity = test
-coarse: max size = 2000   [default]
-max levels = 10   [default]
-debug: graph level = -1   [default]
-number of equations = 1   [default]
-transpose: use implicit = 0   [default]
-smoother: pre or post = both   [default]
-smoother: type = RELAXATION   [default]
-aggregation: type = uncoupled   [default]
-multigrid algorithm = sa   [default]
-problem: symmetric = 1   [default]
-aggregation: export visualization data = 0   [default]
-repartition: enable = 0   [default]
-smoother: pre params ->
- relaxation: sweeps = 3   [unused]
-smoother: post params ->
- relaxation: sweeps = 0   [unused]
-
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
@@ -93,7 +75,7 @@ Level 1
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -175,7 +157,7 @@ Level 2
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -207,3 +189,4 @@ Level 2
 
  Smoother (level 2) pre  : SuperLU solver interface, direct solve
  Smoother (level 2) post : no smoother
+

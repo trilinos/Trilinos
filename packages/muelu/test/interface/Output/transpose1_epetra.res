@@ -1,15 +1,3 @@
-transpose: use implicit = 1
-verbosity = test
-coarse: max size = 2000   [default]
-max levels = 10   [default]
-debug: graph level = -1   [default]
-number of equations = 1   [default]
-smoother: pre or post = both   [default]
-aggregation: type = uncoupled   [default]
-multigrid algorithm = sa   [default]
-aggregation: export visualization data = 0   [default]
-repartition: enable = 0   [default]
-
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: type = symmetric Gauss-Seidel   [unused]
@@ -149,3 +137,4 @@ Level 2
 
  Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
  Smoother (level 2) post : no smoother
+

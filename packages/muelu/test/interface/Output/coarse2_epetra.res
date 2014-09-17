@@ -1,17 +1,3 @@
-coarse: max size = 100
-coarse: type = none
-verbosity = test
-max levels = 10   [default]
-debug: graph level = -1   [default]
-number of equations = 1   [default]
-transpose: use implicit = 0   [default]
-smoother: pre or post = both   [default]
-aggregation: type = uncoupled   [default]
-multigrid algorithm = sa   [default]
-problem: symmetric = 1   [default]
-aggregation: export visualization data = 0   [default]
-repartition: enable = 0   [default]
-
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: type = symmetric Gauss-Seidel   [unused]
@@ -67,7 +53,7 @@ Level 1
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -127,7 +113,7 @@ Level 2
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -187,7 +173,7 @@ Level 3
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -247,7 +233,7 @@ Level 4
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -307,7 +293,7 @@ Level 5
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -342,3 +328,4 @@ Level 5
 
  Smoother (level 5) pre  : no smoother
  Smoother (level 5) post : no smoother
+

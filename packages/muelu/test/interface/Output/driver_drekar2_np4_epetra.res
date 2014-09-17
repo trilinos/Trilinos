@@ -1,36 +1,3 @@
-verbosity = test
-number of equations = 1
-coarse: max size = 1000
-sa: use filtered matrix = 1
-filtered matrix: use lumping = 1
-smoother: type = CHEBYSHEV
-aggregation: drop scheme = distance laplacian
-aggregation: drop tol = 0.02
-repartition: enable = 1
-repartition: min rows per proc = 2000
-repartition: max imbalance = 1.327
-repartition: start level = 1
-repartition: remap parts = 1
-repartition: keep proc 0 = 1
-repartition: partitioner = zoltan2
-max levels = 10   [default]
-debug: graph level = -1   [default]
-repartition: rebalance P and R = 1   [default]
-transpose: use implicit = 0   [default]
-smoother: pre or post = both   [default]
-aggregation: type = uncoupled   [default]
-multigrid algorithm = sa   [default]
-problem: symmetric = 1   [default]
-aggregation: export visualization data = 0   [default]
-smoother: params ->
- chebyshev: degree = 2   [unused]
- chebyshev: ratio eigenvalue = 20   [unused]
- chebyshev: min eigenvalue = 1   [unused]
- chebyshev: zero starting solution = 1   [unused]
- chebyshev: eigenvalue max iterations = 10   [unused]
-repartition: params ->
- algorithm = multijagged   [unused]
-
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: degree = 2
@@ -99,7 +66,7 @@ Level 1
    write start = -1   [default]
    write end = -1   [default]
 
-   transpose: use implicit = 0
+   transpose: use implicit = 0   [default]
    Keep AP Pattern = 0   [default]
    Keep RAP Pattern = 0   [default]
    CheckMainDiagonal = 0   [default]
@@ -198,7 +165,7 @@ Level 2
    write start = -1   [default]
    write end = -1   [default]
 
-   transpose: use implicit = 0
+   transpose: use implicit = 0   [default]
    Keep AP Pattern = 0   [default]
    Keep RAP Pattern = 0   [default]
    CheckMainDiagonal = 0   [default]
@@ -297,7 +264,7 @@ Level 3
    write start = -1   [default]
    write end = -1   [default]
 
-   transpose: use implicit = 0
+   transpose: use implicit = 0   [default]
    Keep AP Pattern = 0   [default]
    Keep RAP Pattern = 0   [default]
    CheckMainDiagonal = 0   [default]
@@ -356,3 +323,4 @@ Level 3
 
  Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Superlu}
  Smoother (level 3) post : no smoother
+

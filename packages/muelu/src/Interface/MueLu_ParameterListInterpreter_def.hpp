@@ -125,7 +125,7 @@ namespace MueLu {
   varType varName; \
   if      (paramList.isParameter(paramStr))   varName = paramList.get<varType>(paramStr); \
   else if (defaultList.isParameter(paramStr)) varName = defaultList.get<varType>(paramStr); \
-  else                                        varName = paramList.get<varType>(paramStr, defaultValue);
+  else                                        varName = defaultValue;
 
   // This macro check whether the variable is in the list.
   // If it is, it copies its value to the second list, possibly with a new name
@@ -142,6 +142,10 @@ namespace MueLu {
     } \
   } \
   else if (defaultList.isParameter(varName)) listWrite.set(varName, defaultList.get<T>(varName));
+
+#define MUELU_TEST_AND_SET_VAR(var, varName, paramList, T) \
+  if (paramList.isParameter(varName)) \
+    var = paramList.get<T>(varName);
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetEasyParameterList(const Teuchos::ParameterList& constParamList) {
@@ -162,8 +166,9 @@ namespace MueLu {
 
     this->maxCoarseSize_    = paramList.get<int> ("coarse: max size",    MasterList::getDefault<int>("coarse: max size"));
     this->numDesiredLevel_  = paramList.get<int> ("max levels",          MasterList::getDefault<int>("max levels"));
-    this->graphOutputLevel_ = paramList.get<int> ("debug: graph level", -1);
     blockSize_              = paramList.get<int> ("number of equations", 1);
+
+    MUELU_TEST_AND_SET_VAR(this->graphOutputLevel_, "debug: graph level", paramList, int);
 
     // Save level data
     if (paramList.isSublist("export data")) {
@@ -222,9 +227,10 @@ namespace MueLu {
 
     // Detect if we do implicit P and R rebalance
     if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
-      this->doPRrebalance_ = paramList.get<bool>("repartition: rebalance P and R", MasterList::getDefault<bool>("repartition: rebalance P and R"));
+      MUELU_TEST_AND_SET_VAR(this->doPRrebalance_, "repartition: rebalance P and R", paramList, bool);
 
-    this->implicitTranspose_ = paramList.get<bool>("transpose: use implicit", MasterList::getDefault<bool>("transpose: use implicit"));
+    // Detect if we use implicit transpose
+    MUELU_TEST_AND_SET_VAR(this->implicitTranspose_, "transpose: use implicit", paramList, bool);
 
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
@@ -576,7 +582,7 @@ namespace MueLu {
     // === RAP ===
     RCP<RAPFactory> RAP = rcp(new RAPFactory());
     ParameterList RAPparams;
-    RAPparams.set("transpose: use implicit", this->implicitTranspose_);
+    MUELU_TEST_AND_SET_PARAM(RAPparams, "transpose: use implicit", paramList, defaultList, bool);
     RAP->SetParameterList(RAPparams);
     RAP->SetFactory("P", manager.GetFactory("P"));
     if (!this->implicitTranspose_)

@@ -1,27 +1,3 @@
-coarse: max size = 100
-smoother: type = CHEBYSHEV
-verbosity = test
-max levels = 10   [default]
-debug: graph level = -1   [default]
-number of equations = 1   [default]
-transpose: use implicit = 0   [default]
-smoother: pre or post = both   [default]
-aggregation: type = uncoupled   [default]
-multigrid algorithm = sa   [default]
-problem: symmetric = 1   [default]
-aggregation: export visualization data = 0   [default]
-repartition: enable = 0   [default]
-smoother: params ->
- chebyshev: ratio eigenvalue = 2   [unused]
-level 1 ->
- smoother: type = CHEBYSHEV
- smoother: params ->
-  chebyshev: ratio eigenvalue = 5   [unused]
-level 2 ->
- smoother: type = CHEBYSHEV
- smoother: params ->
-  chebyshev: ratio eigenvalue = 4   [unused]
-
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: ratio eigenvalue = 2
@@ -75,7 +51,7 @@ Level 1
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -133,7 +109,7 @@ Level 2
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -191,7 +167,7 @@ Level 3
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -249,7 +225,7 @@ Level 4
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -307,7 +283,7 @@ Level 5
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
@@ -346,3 +322,4 @@ Level 5
 
  Smoother (level 5) pre  : MueLu::AmesosSmoother{type = Superlu}
  Smoother (level 5) post : no smoother
+
