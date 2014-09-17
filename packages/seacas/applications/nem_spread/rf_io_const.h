@@ -42,8 +42,8 @@
 
 #define MAX_INPUT_STR_LN 4096   /* maximum string length for read_string()  */
 
-/* Maximum length of a filename */
-#define MAX_FNL		2048
+/* Maximum length of a filename including terminating nul */
+#define MAX_FNL		8192
 
 /* Restart structure */
 template <typename T>

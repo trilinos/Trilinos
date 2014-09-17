@@ -72,13 +72,13 @@ struct Parallel_IO
   int     NoSubdirectory;
 
   /* The root location of the parallel disks */
-  char    Par_Dsk_Root[MAX_FNL+1];
+  char    Par_Dsk_Root[MAX_FNL];
 
   /* The subdirectory to write files to */
-  char    Par_Dsk_SubDirec[MAX_FNL+1];
+  char    Par_Dsk_SubDirec[MAX_FNL];
 
   /* The filename extension for the parallel files */
-  char    Exo_Extension[MAX_FNL+1];
+  char    Exo_Extension[MAX_FNL];
   
   char    Staged_Writes[5];
 

@@ -566,7 +566,7 @@ void NemSpread<T,INT>::load_mesh()
   }
     
   for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
-    char Parallel_File_Name[MAX_FNL+1];
+    char Parallel_File_Name[MAX_FNL];
     gen_par_filename(cTemp, Parallel_File_Name, Proc_Ids[iproc],Proc_Info[0]);
 
     /* Create the parallel Exodus II file for writing */

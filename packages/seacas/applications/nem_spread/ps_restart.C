@@ -418,7 +418,7 @@ void NemSpread<T,INT>::read_restart_data ()
   if (open_file_count >Proc_Info[5]) {
     printf("All output files opened simultaneously.\n");
     for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
-      char Parallel_File_Name[MAX_FNL+1];
+      char Parallel_File_Name[MAX_FNL];
       gen_par_filename(cTemp, Parallel_File_Name, Proc_Ids[iproc],
 		       Proc_Info[0]);
       
@@ -458,7 +458,7 @@ void NemSpread<T,INT>::read_restart_data ()
     for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
 
       if (open_file_count <Proc_Info[5]) {
-	char Parallel_File_Name[MAX_FNL+1];
+	char Parallel_File_Name[MAX_FNL];
 	gen_par_filename(cTemp, Parallel_File_Name, Proc_Ids[iproc],
 			 Proc_Info[0]);
 	  
