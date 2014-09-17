@@ -262,10 +262,10 @@ namespace MueLu {
     // FIXME: parameters passed to packages, like Ifpack2, are not touched by us, resulting in "[unused]" flag
     // being displayed. On the other hand, we don't want to simply iterate through them touching. I don't know
     // what a good solution looks like
-    if (!(paramList.isParameter("print initial parameters") && paramList.get<bool>("print initial parameters") == false))
-      this->GetOStream(static_cast<MsgType>(Runtime1 | Test), 0) << paramList << std::endl;
+    if (!paramList.isParameter("print initial parameters") || paramList.get<bool>("print initial parameters") == true)
+      this->GetOStream(static_cast<MsgType>(Runtime1), 0) << paramList << std::endl;
 
-    if (!(paramList.isParameter("print unused parameters") && paramList.get<bool>("print unused parameters") == false)) {
+    if (!paramList.isParameter("print unused parameters") || paramList.get<bool>("print unused parameters") == true) {
       // Check unused parameters
       ParameterList unusedParamList;
 
