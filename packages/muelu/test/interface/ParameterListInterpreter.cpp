@@ -139,6 +139,13 @@ int main(int argc, char *argv[]) {
       }
       baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
 
+      std::string cmd;
+      if (k > 0) {
+        // Restore res file
+        cmd = "mv -f " + baseFile + ".resorig " + baseFile + ".res";
+        system(cmd.c_str());
+      }
+
       std::filebuf buffer;
       std::streambuf* oldbuffer = NULL;
       if (myRank == 0) {
@@ -247,14 +254,10 @@ int main(int argc, char *argv[]) {
 #endif
 
         // Run comparison
-        std::string cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".res " + baseFile + ".out";
+        cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".res " + baseFile + ".out";
         int ret = system(cmd.c_str());
         if (ret)
           failed = true;
-
-        // Restore res file
-        cmd = "mv -f " + baseFile + ".resorig " + baseFile + ".res";
-        system(cmd.c_str());
 
         std::cout << xmlFile << ": " << (ret ? "failed" : "passed") << std::endl;
       }
