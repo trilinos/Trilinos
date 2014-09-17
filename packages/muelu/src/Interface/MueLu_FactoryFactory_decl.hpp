@@ -424,7 +424,7 @@ namespace MueLu {
 
     RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       if (paramList.begin() == paramList.end())
-        return rcp(new SmootherFactory(rcp(new DirectSolver())));
+        return rcp(new SmootherFactory(rcp(new DirectSolver()), Teuchos::null));
 
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "DirectSolver", Exceptions::RuntimeError, "");
 
@@ -432,7 +432,7 @@ namespace MueLu {
       // std::string verbose;        if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
       Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
-      return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));
+      return rcp(new SmootherFactory(rcp(new DirectSolver(type, params)), Teuchos::null));
     }
 
     template <class T> // T must implement the Factory interface

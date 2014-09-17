@@ -441,7 +441,7 @@ namespace MueLu {
       else
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
 
-      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
+      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother, Teuchos::null)));
     }
 
     // === Aggregation ===

@@ -136,7 +136,8 @@ Level 2
  RepairMainDiagonal = 0   [default]
 
  Setup Smoother (MueLu::Ifpack2Smoother{type = ILUT})
- [empty list]
+ presmoother ->
+  [empty list]
 
 
  --------------------------------------------------------------------------------
