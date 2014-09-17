@@ -130,12 +130,20 @@ namespace MueLu {
     // Therefore, there is not need to test if a parameter is present before getting it.
     virtual const Teuchos::ParameterList& GetParameterList() const {
       if (paramList_.numParams() == 0) {
-        // If paramList_ is empty, set paramList_ to the default list.
-        // If paramList_ is not empty, we are sure that the list has all the valid parameters defined
-        // because the parameter list validation process adds the default values to the user list.
+        // Set paramList_ to the default list
         RCP<const ParameterList> validParamList = GetValidParameterList();
-        if (validParamList != Teuchos::null)
-          paramList_ = *validParamList;
+        if (validParamList != Teuchos::null) {
+          // Instead of simply doing
+          //   paramList_ = *validParamList;
+          // we use more complicated Teuchos calls, because we would like to
+          // have [default] values in the beginning
+          paramList_.validateParametersAndSetDefaults(*validParamList);
+        }
+
+      } else {
+        // We are sure that the list has all the valid parameters defined
+        // because the parameter list validation process adds the default
+        // values to the user list
       }
 
       return paramList_;
