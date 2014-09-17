@@ -247,8 +247,6 @@ int nem_spread(NemSpread<T,INT> &spreader, const char *salsa_cmd_file, int subcy
       exit(1);
     }
 
-  strcpy(PIO_Info.Scalar_Exo_File_Name, ExoFile);
-
   /* If debug is on the turn on netCDF/Exodus information as well */
   if(Debug_Flag > 0)
      ex_opts(EX_VERBOSE | EX_DEBUG);

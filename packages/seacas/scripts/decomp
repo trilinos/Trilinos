@@ -222,6 +222,7 @@ function execute_spread {
     
     echo "Input FEM file                   = $genesis"                  >  $pexsh
     echo "LB file                          = $nemesis"                  >> $pexsh
+    echo "Parallel Results File Base Name  = $basename"                 >> $pexsh
     echo "File Extension for Spread Files  = .$suffix_spread"           >> $pexsh
     echo "Number of Processors             = $numproc "                 >> $pexsh
     echo "------------------------------------------------------------" >> $pexsh

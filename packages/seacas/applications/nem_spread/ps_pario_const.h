@@ -77,12 +77,6 @@ struct Parallel_IO
   /* The subdirectory to write files to */
   char    Par_Dsk_SubDirec[MAX_FNL+1];
 
-  /* The name of the scalar mesh file. */
-  char    Scalar_Exo_File_Name[MAX_FNL+1];
-
-  /* The base name of the parallel results file. */
-  char    Par_Exo_Res_File_Name[MAX_FNL+1];
-
   /* The filename extension for the parallel files */
   char    Exo_Extension[MAX_FNL+1];
   

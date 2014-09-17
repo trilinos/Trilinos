@@ -99,6 +99,8 @@ struct Restart_Description {
 extern
 char ExoFile[];		  /* Exodus II File containing problem definition.   */
                           /* This name is the root name.                     */
+extern
+char Output_File_Base_Name[]; /* Base name of output file. If it has a suffix, it will be stripped */
 
 extern
 char Exo_LB_File[];
