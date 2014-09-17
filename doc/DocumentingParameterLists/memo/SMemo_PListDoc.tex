@@ -226,22 +226,23 @@ Each of the aforementioned steps require a more detailed explanation.
   argument, is documented. The final Doxygen comment should look
   something like this:
 
+ \footnotesize
  \begin{verbatim}
-   /** \brief Constructor with ParameterList
-    * 
-    * \param plist [in] ParameterList with construction information
-    *        \htmlonly
-    *        <iframe src="<basename>.xml" width="100%"
-    *         scrolling="no" frameborder="0">
-    *        </iframe>
-    *        <hr />
-    *        \endhtmlonly
-    */
+    /** \brief Constructor with ParameterList
+     * 
+     * \param plist [in] ParameterList with construction information
+     *   \htmlonly
+     *   <iframe src="<base>.xml" width="100%" scrolling="no" frameborder="0">
+     *   </iframe>
+     *   <hr />
+     *   \endhtmlonly
+     */
  \end{verbatim}
+ \normalsize
 
-  where \texttt{<basename>} is the base name of the appropriate XML
-  file.  This may be the package name or something more specific to
-  the class being documented.
+ where \texttt{<base>} is the base name of the appropriate XML file.
+ This may be the package name or something more specific to the class
+ being documented.
 
 \end{enumerate}
 
