@@ -1784,11 +1784,8 @@ namespace Tpetra {
     }
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const Scalar>
+  Teuchos::ArrayView<const Scalar>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   getView (RowInfo rowinfo) const
   {
@@ -1799,15 +1796,12 @@ namespace Tpetra {
       return values2D_[rowinfo.localRow]();
     }
     else {
-      return ArrayView<Scalar> ();
+      return Teuchos::ArrayView<Scalar> ();
     }
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<Scalar>
+  Teuchos::ArrayView<Scalar>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   getViewNonConst (RowInfo rowinfo)
   {
@@ -1818,19 +1812,16 @@ namespace Tpetra {
       return values2D_[rowinfo.localRow]();
     }
     else {
-      return ArrayView<Scalar> ();
+      return Teuchos::ArrayView<Scalar> ();
     }
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalRowCopy(
-                                LocalOrdinal localRow,
-                                const ArrayView<LocalOrdinal> &indices,
-                                const ArrayView<Scalar>       &values,
-                                size_t& numEntries) const
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  getLocalRowCopy (LocalOrdinal localRow,
+                   const Teuchos::ArrayView<LocalOrdinal>& indices,
+                   const Teuchos::ArrayView<Scalar>& values,
+                   size_t& numEntries) const
   {
     using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
@@ -2482,9 +2473,6 @@ namespace Tpetra {
     return frobNorm;
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
@@ -2500,27 +2488,51 @@ namespace Tpetra {
     myGraph_->replaceColMap (newColMap);
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  reindexColumns (crs_graph_type* const graph,
+                  const Teuchos::RCP<const map_type>& newColMap,
+                  const Teuchos::RCP<const import_type>& newImport,
+                  const bool sortEachRow)
+  {
+    const char tfecfFuncName[] = "reindexColumns: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      graph == NULL && myGraph_.is_null (), std::invalid_argument,
+      "The input graph is NULL, but the matrix does not own its graph.");
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
+    crs_graph_type& theGraph = (graph == NULL) ? *myGraph_ : *graph;
+    const bool sortGraph = false; // we'll sort graph & matrix together below
+    theGraph.reindexColumns (newColMap, newImport, sortGraph);
+    if (sortEachRow && theGraph.isLocallyIndexed () && ! theGraph.isSorted ()) {
+      // We can't just call sortEntries() here, because that fails if
+      // the matrix has a const graph.  We want to use the given graph
+      // in that case.
+      const size_t lclNumRows = theGraph.getNodeNumRows ();
+      for (size_t row = 0; row < lclNumRows; ++row) {
+        RowInfo rowInfo = theGraph.getRowInfo (row);
+        theGraph.template sortRowIndicesAndValues<Scalar> (rowInfo, this->getViewNonConst (rowInfo));
+      }
+      theGraph.indicesAreSorted_ = true;
+    }
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                Teuchos::RCP<const import_type>& newImporter)
   {
-    const char tfecfFuncName[] = "replaceDomainMapAndImporter";
+    const char tfecfFuncName[] = "replaceDomainMapAndImporter: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       myGraph_.is_null (), std::runtime_error,
-      ": This method does not work if the matrix has a const graph.  The whole "
+      "This method does not work if the matrix has a const graph.  The whole "
       "idea of a const graph is that you are not allowed to change it, but this"
       " method necessarily must modify the graph, since the graph owns the "
       "matrix's domain Map and Import objects.");
     myGraph_->replaceDomainMapAndImporter (newDomainMap, newImporter);
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -2547,8 +2559,6 @@ namespace Tpetra {
     }
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::globalAssemble()
   {

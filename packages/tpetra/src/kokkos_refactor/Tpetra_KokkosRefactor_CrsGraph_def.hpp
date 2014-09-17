@@ -3913,7 +3913,8 @@ namespace Tpetra {
     LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   reindexColumns (const Teuchos::RCP<const map_type>& newColMap,
-                  const Teuchos::RCP<const import_type>& newImport)
+                  const Teuchos::RCP<const import_type>& newImport,
+                  const bool sortIndicesInEachRow)
   {
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
@@ -4133,6 +4134,22 @@ namespace Tpetra {
         k_lclInds1D_ = newLclInds1D;
       } else { // dynamic profile
         lclInds2D_ = newLclInds2D;
+      }
+      // We've reindexed, so we don't know if the indices are sorted.
+      //
+      // FIXME (mfh 17 Sep 2014) It could make sense to check this,
+      // since we're already going through all the indices above.  We
+      // could also sort each row in place; that way, we would only
+      // have to make one pass over the rows.
+      indicesAreSorted_ = false;
+      if (sortIndicesInEachRow) {
+        // NOTE (mfh 17 Sep 2014) The graph must be locally indexed in
+        // order to call this method.
+        //
+        // FIXME (mfh 17 Sep 2014) This violates the strong exception
+        // guarantee.  It would be better to sort the new index arrays
+        // before committing them.
+        sortAllIndices ();
       }
     }
     colMap_ = newColMap;
