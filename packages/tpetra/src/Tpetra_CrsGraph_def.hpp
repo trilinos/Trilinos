@@ -1291,11 +1291,13 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::mergeRowIndices(RowInfo rowinfo)
   {
-    const char tfecfFuncName[] = "mergRowIndices()";
+    using Teuchos::ArrayView;
+    const char tfecfFuncName[] = "mergeRowIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStorageOptimized() == true, std::logic_error,
-      ": The graph is already storage optimized, so we shouldn't be merging any indices."
-      " Please report this bug to the Tpetra developers.");
+      isStorageOptimized (), std::logic_error, "The graph is already storage "
+      "optimized, so we shouldn't be merging any indices.  "
+      "Please report this bug to the Tpetra developers.");
+
     ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
     typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
     beg = inds_view.begin();
@@ -1303,7 +1305,8 @@ namespace Tpetra {
     newend = std::unique(beg,end);
     const size_t mergedEntries = newend - beg;
 #ifdef HAVE_TPETRA_DEBUG
-    // merge should not have eliminated any entries; if so, the assignment below will destory the packed structure
+    // merge should not have eliminated any entries; if so, the
+    // assignment below will destroy the packed structure
     TEUCHOS_TEST_FOR_EXCEPT( isStorageOptimized() && mergedEntries != rowinfo.numEntries );
 #endif
     numRowEntries_[rowinfo.localRow] = mergedEntries;

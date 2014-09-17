@@ -1809,11 +1809,12 @@ namespace Tpetra {
   mergeRowIndices (RowInfo rowinfo)
   {
     using Teuchos::ArrayView;
-    const char tfecfFuncName[] = "mergRowIndices: ";
+    const char tfecfFuncName[] = "mergeRowIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isStorageOptimized (), std::logic_error, "The graph is already storage "
       "optimized, so we shouldn't be merging any indices.  "
       "Please report this bug to the Tpetra developers.");
+
     ArrayView<LocalOrdinal> inds_view = this->getLocalViewNonConst (rowinfo);
     typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
     beg = inds_view.begin();
