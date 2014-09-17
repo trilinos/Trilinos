@@ -104,6 +104,22 @@ using Teuchos::ArrayView;
   if (is_new$argnum) Py_DECREF(npArray$argnum);
 }
 
+%typemap(in) Teuchos::ArrayView< const TYPE > const &
+(int is_new = 0,
+ PyArrayObject * npArray = NULL,
+ Teuchos::ArrayView< const TYPE > temp)
+{
+  npArray = obj_to_array_contiguous_allow_conversion($input, TYPECODE, &is_new);
+  if (!npArray) SWIG_fail;
+  temp = Teuchos::arrayView( (TYPE*) array_data(npArray), array_size(npArray, 0));
+  $1 = &temp;
+}
+
+%typemap(freearg) Teuchos::ArrayView< const TYPE > const &
+{
+  if (is_new$argnum) Py_DECREF(npArray$argnum);
+}
+
 // If an ArrayView argument has a non-const TYPE, then the default
 // behavior is to assume that the array is input/output.  Therefore
 // the input python argument must be a NumPy array.
