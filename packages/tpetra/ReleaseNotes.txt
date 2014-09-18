@@ -5,6 +5,64 @@ Release Notes for Trilinos Package Tpetra
 Development version (11.11):
 ----------------------------
 
+* How to enable the Kokkos refactor version of Tpetra
+
+The Kokkos refactor version of Tpetra lives in src/kokkos_refactor.
+It works by partial specialization on the Node template parameter.
+Here is a suggested set of CMake options:
+
+# Enable OpenMP, and enable Kokkos' OpenMP backend
+-D Trilinos_ENABLE_OpenMP:BOOL=ON
+
+# Set Tpetra's default Node type to use new Kokkos with OpenMP.
+# You could also use KokkosThreadsWrapperNode or even 
+# KokkosSerialWrapperNode here.  
+-D KokkosClassic_DefaultNode:STRING="Kokkos::Compat::KokkosOpenMPWrapperNode"
+
+# Enable the Kokkos refactor version of Tpetra.
+-D Tpetra_ENABLE_Kokkos_Refactor:BOOL=ON
+
+In a debug build, you might like to enable Kokkos' run-time bounds
+checking.  Here's how you do that.  These are _optional_ parameters
+and their default values are both OFF (not enabled).
+
+-D Kokkos_ENABLE_BOUNDS_CHECK:BOOL=ON
+-D Kokkos_ENABLE_DEBUG:BOOL=ON
+
+The following options may reduce build times if ETI is enabled:
+
+# Disable KokkosClassic::OpenMPNode
+-D KokkosClassic_ENABLE_OpenMP:BOOL=OFF
+# Disable KokkosClassic::TPINode
+-D KokkosClassic_ENABLE_ThreadPool:BOOL=OFF
+# Shut off Kokkos' Pthreads back-end in favor of OpenMP
+-D Kokkos_ENABLE_Pthread:BOOL=OFF
+
+You must also enable the following subpackages explicitly, since they
+are not Primary Tested at the moment:
+
+  - KokkosCore
+  - KokkosCompat
+  - KokkosContainers
+  - KokkosLinAlg
+  - KokkosAlgorithms
+  - KokkosMpiComm
+
+If Tpetra_ENABLE_Kokkos_Refactor is ON but any of those subpackages
+are not enabled, CMake will stop with an error message that tells you
+what subpackages to enable.
+
+Fun fact: there are three relevant combinations of (new Kokkos
+enabled?, Kokkos refactor enabled?), and we test them all!  You can
+use the new Kokkos Node types with "classic" Tpetra, or you can use
+them with "Kokkos refactor" Tpetra.
+
+Most Tpetra tests exercise all enabled Node types, or just use the
+default Node type.  Ifpack2 tests only use the default Node type
+currently.  That's why the above build configuration changes the
+default Node type.  That way, all packages that depend on Tpetra will
+use the Kokkos refactor version of Tpetra in _their_ tests by default.
+
 * Full set of default values of template parameters
 
 Usability improvement!  Most Tpetra classes now come with a full set
