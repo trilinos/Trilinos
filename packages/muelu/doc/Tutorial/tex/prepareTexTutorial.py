@@ -130,3 +130,7 @@ if __name__ == '__main__':
       
   else:
     print bcolors.FAIL+"Cannot generate pdf file due to missing data."+bcolors.ENDC
+    
+    
+  # extra stuff for user guide
+  splitfileintofragments('../src/ScalingTest.cpp','// USER GUIDE ')   

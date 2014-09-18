@@ -52,4 +52,8 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
     NUM_MPI_PROCS 2
     COMM mpi serial
     )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(userguide_srcfiles_cp
+    SOURCE_FILES ScalingTest.cpp
+    )
 ENDIF()
