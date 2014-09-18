@@ -74,7 +74,7 @@ class ProblemHandler():
   
   def __init__(self):
     self.problem    = "Laplace 2D"
-    self.executable = "MueLu_laplace2d.exe"
+    self.executable = "MueLu_tutorial_laplace2d.exe"
     self.meshx      = 50
     self.meshy      = 50
     self.mgsweeps   = 1
@@ -106,28 +106,28 @@ class ProblemHandler():
 
   def doLaplace2Dn(self):
     self.problem    = "Laplace 2D"
-    self.executable = "MueLu_laplace2d.exe"
+    self.executable = "MueLu_tutorial_laplace2d.exe"
     self.meshx      = raw_input("Mesh: Elements in x direction = ")
     self.meshy      = raw_input("Mesh: Elements in y direction = ")
     self.runLaplaceProblem()
     
   def doLaplace2D50(self):
     self.problem    = "Laplace 2D"
-    self.executable = "MueLu_laplace2d.exe"
+    self.executable = "MueLu_tutorial_laplace2d.exe"
     self.meshx      = 50
     self.meshy      = 50 
     self.runLaplaceProblem()
     
   def doRecirc2Dn(self):
     self.problem    = "Recirc 2D"
-    self.executable = "MueLu_recirc2d.exe"
+    self.executable = "MueLu_tutorial_recirc2d.exe"
     self.meshx      = raw_input("Mesh: Elements in x direction = ")
     self.meshy      = raw_input("Mesh: Elements in y direction = ")
     self.runLaplaceProblem() # we can use the same routine as for Laplace...
     
   def doRecirc2D50(self):
     self.problem    = "Recirc 2D"
-    self.executable = "MueLu_recirc2d.exe"
+    self.executable = "MueLu_tutorial_recirc2d.exe"
     self.meshx      = 50
     self.meshy      = 50 
     self.runLaplaceProblem() # we can use the same routine as for Laplace...    

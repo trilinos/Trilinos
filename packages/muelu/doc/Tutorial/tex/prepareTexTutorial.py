@@ -80,8 +80,14 @@ def splitfileintofragments(inputfile,splittingtxt):
   file = open( inputfile )
   lines=file.read().split(splittingtxt)
 
+  bLeadingLines = True
+  
   for i in range(0,len( lines ) ):
-    print_part_output( i+1 , filenameformat, lines[i] )
+    line = lines[i]
+    if not line.strip():
+      continue
+    else:     
+      print_part_output( i+1 , filenameformat, line )
     
   # move fragment files to this folder
   runCommand("mv ../src/*.fragment .")
@@ -89,10 +95,15 @@ def splitfileintofragments(inputfile,splittingtxt):
 ################################# MAIN routine
 if __name__ == '__main__':
 
-
   bAllDataPrepared = True  # set to false if something is missing to generate pdf file
 
-  # split cpp file
+  # create version file
+  cmd = "rm version.txt"
+  runCommand(cmd)
+  cmd = "git log --pretty=format:'%h' -n 1 > version.txt"
+  runCommand(cmd)
+
+  # split cpp file for first example
   splitfileintofragments('../src/laplace2d.cpp','// TUTORIALSPLIT ===========================================================')
   
   # run simple easy input xml deck test

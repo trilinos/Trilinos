@@ -99,10 +99,6 @@ int main(int argc, char *argv[]) {
   using Teuchos::TimeMonitor;
 
   // TUTORIALSPLIT ===========================================================
-  
-  // =========================================================================
-  // MPI initialization using Teuchos
-  // =========================================================================
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int MyPID   = comm->getRank();
@@ -111,10 +107,9 @@ int main(int argc, char *argv[]) {
   const Teuchos::RCP<Epetra_Comm> epComm = Teuchos::rcp_const_cast<Epetra_Comm>(Xpetra::toEpetra(comm));
 
   // TUTORIALSPLIT ===========================================================
-  
-  // =========================================================================
+  // ================================
   // Convenient definitions
-  // =========================================================================
+  // ================================
   //SC zero = Teuchos::ScalarTraits<SC>::zero();
   SC one = Teuchos::ScalarTraits<SC>::one();
 
@@ -125,9 +120,9 @@ int main(int argc, char *argv[]) {
 
 
 
-  // =========================================================================
+  // ================================
   // Parameters initialization
-  // =========================================================================
+  // ================================
   Teuchos::CommandLineProcessor clp(false);
   GO nx                    = 100;           clp.setOption("nx",                       &nx, "mesh size in x direction");
   GO ny                    = 100;           clp.setOption("ny",                       &ny, "mesh size in y direction");
@@ -144,9 +139,9 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
-  // =========================================================================
+  // ================================
   // Problem construction
-  // =========================================================================
+  // ================================
   RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time"))), tm;
 
   comm->barrier();
@@ -195,7 +190,6 @@ int main(int argc, char *argv[]) {
   }
 
   // TUTORIALSPLIT ===========================================================
-  
   // Epetra -> Xpetra
   Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
   Teuchos::RCP<CrsMatrixWrap> exAWrap = Teuchos::rcp(new CrsMatrixWrap(exA));
@@ -204,7 +198,6 @@ int main(int argc, char *argv[]) {
   A->SetFixedBlockSize(1);
 
   // TUTORIALSPLIT ===========================================================
-  
   // set rhs and solution vector
   RCP<Epetra_Vector> B = Teuchos::rcp(new Epetra_Vector(*epMap));
   RCP<Epetra_Vector> X = Teuchos::rcp(new Epetra_Vector(*epMap));
@@ -219,32 +212,31 @@ int main(int argc, char *argv[]) {
   xX->randomize();
 
   // TUTORIALSPLIT ===========================================================
-  
   // build null space vector
   RCP<const Map> map = A->getRowMap();
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
   nullspace->putScalar(one);
 
   // TUTORIALSPLIT ===========================================================
-  
   comm->barrier();
   tm = Teuchos::null;
 
   fancyout << "========================================================\nGaleri complete.\n========================================================" << std::endl;
 
-  // =========================================================================
+  // ================================
   // Preconditioner construction
-  // =========================================================================
+  // ================================
   comm->barrier();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
+  // TUTORIALSPLIT ===========================================================
   ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
+  // TUTORIALSPLIT ===========================================================
   comm->barrier();
   tm = Teuchos::null;
 
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
   // TUTORIALSPLIT ===========================================================
-  
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
 
   H->GetLevel(0)->Set("A",           A);
@@ -253,13 +245,12 @@ int main(int argc, char *argv[]) {
   mueLuFactory.SetupHierarchy(*H);
 
   // TUTORIALSPLIT ===========================================================
-  
   comm->barrier();
   tm = Teuchos::null;
 
-  // =========================================================================
+  // ================================
   // System solution (Ax = b)
-  // =========================================================================
+  // ================================
 
     //
     // generate exact solution using a direct solver
