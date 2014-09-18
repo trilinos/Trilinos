@@ -1,15 +1,14 @@
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
+ chebyshev: ratio eigenvalue = 20
+ chebyshev: min diagonal value = 2.22045e-16   [default]
+ chebyshev: degree = 1   [default]
+ chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: zero starting solution = 1   [default]
+ chebyshev: assume matrix does not change = 0   [default]
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = RILUK})
- presmoother ->
-  chebyshev: ratio eigenvalue = 20
-  chebyshev: min diagonal value = 2.22045e-16   [default]
-  chebyshev: degree = 1   [default]
-  chebyshev: eigenvalue max iterations = 10   [default]
-  chebyshev: zero starting solution = 1   [default]
-  chebyshev: assume matrix does not change = 0   [default]
- postsmoother ->
-  [empty list]
+ [empty list]
 
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -67,16 +66,15 @@ Level 1
  RepairMainDiagonal = 0   [default]
 
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
+ chebyshev: ratio eigenvalue = 20
+ chebyshev: min diagonal value = 2.22045e-16   [default]
+ chebyshev: degree = 1   [default]
+ chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: zero starting solution = 1   [default]
+ chebyshev: assume matrix does not change = 0   [default]
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = RILUK})
- presmoother ->
-  chebyshev: ratio eigenvalue = 20
-  chebyshev: min diagonal value = 2.22045e-16   [default]
-  chebyshev: degree = 1   [default]
-  chebyshev: eigenvalue max iterations = 10   [default]
-  chebyshev: zero starting solution = 1   [default]
-  chebyshev: assume matrix does not change = 0   [default]
- postsmoother ->
-  [empty list]
+ [empty list]
 
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)

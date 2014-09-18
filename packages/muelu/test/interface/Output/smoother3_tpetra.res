@@ -1,17 +1,16 @@
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
- postsmoother ->
-  relaxation: type = Symmetric Gauss-Seidel
-  relaxation: sweeps = 1
-  relaxation: damping factor = 1
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: min diagonal value = 0   [default]
-  relaxation: fix tiny diagonal entries = 0   [default]
-  relaxation: check diagonal entries = 0   [default]
-  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+ relaxation: type = Symmetric Gauss-Seidel
+ relaxation: sweeps = 1
+ relaxation: damping factor = 1
+ relaxation: zero starting solution = 1   [default]
+ relaxation: backward mode = 0   [default]
+ relaxation: use l1 = 0   [default]
+ relaxation: l1 eta = 1.5   [default]
+ relaxation: min diagonal value = 0   [default]
+ relaxation: fix tiny diagonal entries = 0   [default]
+ relaxation: check diagonal entries = 0   [default]
+ relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
 
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -69,18 +68,17 @@ Level 1
  RepairMainDiagonal = 0   [default]
 
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
- postsmoother ->
-  relaxation: type = Symmetric Gauss-Seidel
-  relaxation: sweeps = 1
-  relaxation: damping factor = 1
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: min diagonal value = 0   [default]
-  relaxation: fix tiny diagonal entries = 0   [default]
-  relaxation: check diagonal entries = 0   [default]
-  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+ relaxation: type = Symmetric Gauss-Seidel
+ relaxation: sweeps = 1
+ relaxation: damping factor = 1
+ relaxation: zero starting solution = 1   [default]
+ relaxation: backward mode = 0   [default]
+ relaxation: use l1 = 0   [default]
+ relaxation: l1 eta = 1.5   [default]
+ relaxation: min diagonal value = 0   [default]
+ relaxation: fix tiny diagonal entries = 0   [default]
+ relaxation: check diagonal entries = 0   [default]
+ relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
 
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)

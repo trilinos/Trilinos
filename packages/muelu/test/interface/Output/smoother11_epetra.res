@@ -1,10 +1,9 @@
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: sweeps = 3   [unused]
+
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
- presmoother ->
-  relaxation: sweeps = 3   [unused]
- postsmoother ->
-  relaxation: sweeps = 0   [unused]
+ relaxation: sweeps = 0   [unused]
 
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -62,11 +61,10 @@ Level 1
  RepairMainDiagonal = 0   [default]
 
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
+ relaxation: sweeps = 3   [unused]
+
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
- presmoother ->
-  relaxation: sweeps = 3   [unused]
- postsmoother ->
-  relaxation: sweeps = 0   [unused]
+ relaxation: sweeps = 0   [unused]
 
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)

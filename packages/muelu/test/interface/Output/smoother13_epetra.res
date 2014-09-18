@@ -1,10 +1,9 @@
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
+ chebyshev: ratio eigenvalue = 20   [unused]
+
  Setup Smoother (MueLu::IfpackSmoother{type = ILU})
- presmoother ->
-  chebyshev: ratio eigenvalue = 20   [unused]
- postsmoother ->
-  [empty list]
+ [empty list]
 
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -62,11 +61,10 @@ Level 1
  RepairMainDiagonal = 0   [default]
 
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
+ chebyshev: ratio eigenvalue = 20   [unused]
+
  Setup Smoother (MueLu::IfpackSmoother{type = ILU})
- presmoother ->
-  chebyshev: ratio eigenvalue = 20   [unused]
- postsmoother ->
-  [empty list]
+ [empty list]
 
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)

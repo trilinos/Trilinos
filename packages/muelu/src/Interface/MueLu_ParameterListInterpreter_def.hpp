@@ -350,9 +350,9 @@ namespace MueLu {
       defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
       defaultSmootherParams.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
 
-      RCP<SmootherPrototype> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
-      std::string            preSmootherType,             postSmootherType;
-      ParameterList          preSmootherParams,           postSmootherParams;
+      RCP<SmootherFactory> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
+      std::string          preSmootherType,             postSmootherType;
+      ParameterList        preSmootherParams,           postSmootherParams;
 
       if (paramList.isParameter("smoother: overlap"))
         overlap = paramList.get<int>("smoother: overlap");
@@ -376,7 +376,7 @@ namespace MueLu {
         else if (preSmootherType == "RELAXATION")
           preSmootherParams = defaultSmootherParams;
 
-        preSmoother = rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap));
+        preSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap))));
       }
 
       if (PreOrPost == "post" || PreOrPost == "both") {
@@ -401,10 +401,16 @@ namespace MueLu {
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
         else
-          postSmoother = rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap));
+          postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
       }
 
-      manager.SetFactory("Smoother", rcp(new SmootherFactory(preSmoother, postSmoother)));
+      if (preSmoother == postSmoother)
+        manager.SetFactory("Smoother",     preSmoother);
+      else {
+        manager.SetFactory("PreSmoother",  preSmoother);
+        manager.SetFactory("PostSmoother", postSmoother);
+      }
+
     }
 
     // === Coarse solver ===
