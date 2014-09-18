@@ -144,8 +144,7 @@ namespace MueLu {
   else if (defaultList.isParameter(varName)) listWrite.set(varName, defaultList.get<T>(varName));
 
 #define MUELU_TEST_AND_SET_VAR(var, varName, paramList, T) \
-  if (paramList.isParameter(varName)) \
-    var = paramList.get<T>(varName);
+  (paramList.isParameter(varName) ? var = paramList.get<T>(varName), true : false)
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetEasyParameterList(const Teuchos::ParameterList& constParamList) {
@@ -168,7 +167,7 @@ namespace MueLu {
     this->numDesiredLevel_  = paramList.get<int> ("max levels",          MasterList::getDefault<int>("max levels"));
     blockSize_              = paramList.get<int> ("number of equations", 1);
 
-    MUELU_TEST_AND_SET_VAR(this->graphOutputLevel_, "debug: graph level", paramList, int);
+    (void)MUELU_TEST_AND_SET_VAR(this->graphOutputLevel_, "debug: graph level", paramList, int);
 
     // Save level data
     if (paramList.isSublist("export data")) {
@@ -226,11 +225,12 @@ namespace MueLu {
     }
 
     // Detect if we do implicit P and R rebalance
+    changedPRrebalance_ = false;
     if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
-      MUELU_TEST_AND_SET_VAR(this->doPRrebalance_, "repartition: rebalance P and R", paramList, bool);
+      changedPRrebalance_ = MUELU_TEST_AND_SET_VAR(this->doPRrebalance_, "repartition: rebalance P and R", paramList, bool);
 
     // Detect if we use implicit transpose
-    MUELU_TEST_AND_SET_VAR(this->implicitTranspose_, "transpose: use implicit", paramList, bool);
+    changedImplicitTranspose_ = MUELU_TEST_AND_SET_VAR(this->implicitTranspose_, "transpose: use implicit", paramList, bool);
 
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
@@ -661,7 +661,8 @@ namespace MueLu {
       RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
       ParameterList newPparams;
       newPparams.set("type",                           "Interpolation");
-      newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+      if (changedPRrebalance_)
+        newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
@@ -674,8 +675,10 @@ namespace MueLu {
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
       newRparams.set("type",                           "Restriction");
-      newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
-      newRparams.set("transpose: use implicit",        this->implicitTranspose_);
+      if (changedPRrebalance_)
+        newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+      if (changedImplicitTranspose_)
+        newRparams.set("transpose: use implicit",        this->implicitTranspose_);
       newR->  SetParameterList(newRparams);
       newR->  SetFactory("Importer",       manager.GetFactory("Importer"));
       if (!this->implicitTranspose_) {

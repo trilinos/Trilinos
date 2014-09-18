@@ -91,7 +91,7 @@ Level 1
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
  repartition: rebalance P and R = 0
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -191,7 +191,7 @@ Level 2
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
  repartition: rebalance P and R = 0
- transpose: use implicit = 0
+ transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
