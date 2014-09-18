@@ -275,11 +275,12 @@ namespace Xpetra {
     }
   };
 
-  template <>
-  class MapFactory<int, int> {
+  template <class GlobalOrdinalArg>
+  class MapFactory<int, GlobalOrdinalArg> {
+
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef Map<int, int>::node_type Node;
+    typedef GlobalOrdinalArg GlobalOrdinal;
+    typedef typename Map<int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -314,7 +315,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
-        return rcp( new EpetraMap(numGlobalElements, indexBase, comm, lg, node) );
+        return rcp( new EpetraMapT<GlobalOrdinal>(numGlobalElements, indexBase, comm, lg, node) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -337,13 +338,13 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
-        return rcp( new EpetraMap(numGlobalElements, numLocalElements, indexBase, comm, node) );
+        return rcp( new EpetraMapT<GlobalOrdinal>(numGlobalElements, numLocalElements, indexBase, comm, node) );
 #endif
 
       XPETRA_FACTORY_END;
     }
 
-    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node>& node = defaultArgNode ()) {
+    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node>& node = defaultArgNode ()) {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -353,7 +354,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
-        return rcp( new EpetraMap(numGlobalElements, elementList, indexBase, comm, node) );
+        return rcp( new EpetraMapT<GlobalOrdinal>(numGlobalElements, elementList, indexBase, comm, node) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -377,7 +378,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMap(map->getGlobalNumElements()*numDofPerNode, newElements, map->getIndexBase(), map->getComm(), map->getNode()) );
+        return rcp( new EpetraMapT<GlobalOrdinal>(map->getGlobalNumElements()*numDofPerNode, newElements, map->getIndexBase(), map->getComm(), map->getNode()) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -394,7 +395,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
-        return MapFactory<int, int>::createLocalMapWithNode (lib, numElements, comm,
+        return MapFactory<int, GlobalOrdinal>::createLocalMapWithNode (lib, numElements, comm,
                                                              KokkosClassic::Details::getNode<Node> ());
 #endif
 
@@ -407,15 +408,15 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int, int, Node> (numElements, comm, node)));
+        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int, GlobalOrdinal, Node> (numElements, comm, node)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
         {
 
-          Teuchos::RCP< EpetraMap > map;
-          map = Teuchos::rcp( new EpetraMap((Xpetra::global_size_t)numElements, // num elements, global and local
+          Teuchos::RCP< EpetraMapT<GlobalOrdinal> > map;
+          map = Teuchos::rcp( new EpetraMapT<GlobalOrdinal>((Xpetra::global_size_t)numElements, // num elements, global and local
                                             0,                                   // index base is zero
                                             comm, LocallyReplicated, node));
           return map.getConst();
@@ -434,15 +435,15 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,int,Node> (numElements, comm, node)));
+        return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,GlobalOrdinal,Node> (numElements, comm, node)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
         {
 
-          Teuchos::RCP< EpetraMap > map;
-          map = Teuchos::rcp( new EpetraMap(numElements,        // num elements, global and local
+          Teuchos::RCP< EpetraMapT<GlobalOrdinal> > map;
+          map = Teuchos::rcp( new EpetraMapT<GlobalOrdinal>(numElements,        // num elements, global and local
                                             0,                  //index base is zero
                                             comm, GloballyDistributed, node));
           return map.getConst();
@@ -463,7 +464,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
-        return MapFactory<int, int, Node>::createUniformContigMapWithNode (lib, numElements, comm,
+        return MapFactory<int, GlobalOrdinal, Node>::createUniformContigMapWithNode (lib, numElements, comm,
                                                                            KokkosClassic::Details::getNode<Node> ());
 #endif
 
@@ -476,12 +477,12 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMap<int,int>(numElements, localNumElements, comm)));
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMap<int,GlobalOrdinal>(numElements, localNumElements, comm)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
-        return MapFactory<int, int, Node>::createContigMapWithNode(lib, numElements, localNumElements, comm, KokkosClassic::Details::getNode<Node> () );
+        return MapFactory<int, GlobalOrdinal, Node>::createContigMapWithNode(lib, numElements, localNumElements, comm, KokkosClassic::Details::getNode<Node> () );
 #endif
 
       XPETRA_FACTORY_END;
@@ -494,15 +495,15 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,int,Node>(numElements, localNumElements, comm, node)));
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
         {
 
-          Teuchos::RCP< EpetraMap > map;
-          map = Teuchos::rcp( new EpetraMap(numElements,localNumElements,
+          Teuchos::RCP< EpetraMapT<GlobalOrdinal> > map;
+          map = Teuchos::rcp( new EpetraMapT<GlobalOrdinal>(numElements,localNumElements,
                                             0,  // index base is zero
                                             comm, node) );
           return map.getConst();

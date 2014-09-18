@@ -59,8 +59,8 @@ LOCA::PhaseTransition::ExtendedGroup::ExtendedGroup(
   LOCA::Extended::MultiAbstractGroup(),
   LOCA::MultiContinuation::AbstractGroup(),
   grp(grp_), // Underlying group for regular system of size n
-  globalData(gD),
-  normF(0)
+  normF(0.0),
+  globalData(gD)
 {
   const char *func = "LOCA::PhaseTransition::ExtendedGroup()";
 
@@ -101,7 +101,12 @@ LOCA::PhaseTransition::ExtendedGroup::ExtendedGroup(
   xVector(Teuchos::rcp(new LOCA::PhaseTransition::ExtendedVector(*source.xVector, type))),
   fVector(Teuchos::rcp(new LOCA::PhaseTransition::ExtendedVector(*source.fVector, type))),
   newtonVector(Teuchos::rcp(new LOCA::PhaseTransition::ExtendedVector(*source.newtonVector, type))),
-  globalData(source.globalData)
+  isValidF(false),
+  isValidJacobian(false),
+  isValidNewton(false),
+  normF(0.0),
+  globalData(source.globalData),
+  bifParamID(0)
 {
 
   switch (type) {
@@ -517,7 +522,7 @@ LOCA::PhaseTransition::ExtendedGroup::computeDfDpMulti(
 {
    std::string callingFunction =
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDpMulti()";
-  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  // NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   return  NOX::Abstract::Group::BadDependency;
 }
 

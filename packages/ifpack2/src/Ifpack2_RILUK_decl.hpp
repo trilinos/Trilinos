@@ -668,7 +668,7 @@ private:
 
 //Set necessary local solve parameters when using ThrustGPU node
 namespace detail {
-  template<class MatrixType, class NodeType, class MatSolveType>
+  template<class MatrixType, class NodeType>
   struct setLocalSolveParams{
     static Teuchos::RCP<Teuchos::ParameterList>
     setParams (const Teuchos::RCP<Teuchos::ParameterList>& param) {
@@ -677,9 +677,7 @@ namespace detail {
   };
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
   template<class MatrixType, class Scalar>
-  struct setLocalSolveParams<MatrixType,
-                             KokkosClassic::ThrustGPUNode,
-                             KokkosClassic::CUSPARSEOps<Scalar, KokkosClassic::ThrustGPUNode> >
+  struct setLocalSolveParams<MatrixType, KokkosClassic::ThrustGPUNode>
   {
     static Teuchos::RCP<Teuchos::ParameterList>
     setParams (const Teuchos::RCP<Teuchos::ParameterList>& param) {
@@ -700,14 +698,12 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef typename NewMatrixType::node_type new_node_type;
-  typedef typename NewMatrixType::mat_solve_type mat_solve_type;
   typedef RILUK<NewMatrixType> new_riluk_type;
 
   RCP<new_riluk_type> new_riluk = rcp (new new_riluk_type (A_newnode));
 
   RCP<ParameterList> plClone = Teuchos::parameterList ();
-  plClone = detail::setLocalSolveParams<NewMatrixType,
-    new_node_type, mat_solve_type>::setParams (plClone);
+  plClone = detail::setLocalSolveParams<NewMatrixType, new_node_type>::setParams (plClone);
 
   RCP<new_node_type> new_node = A_newnode->getNode ();
   new_riluk->L_ = L_->clone (new_node, plClone);

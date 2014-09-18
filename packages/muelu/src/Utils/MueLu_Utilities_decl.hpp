@@ -68,9 +68,7 @@
 #include <Xpetra_ExportFactory.hpp>
 
 #ifdef HAVE_MUELU_EPETRA
-namespace Xpetra {
-  class EpetraCrsMatrix; // TODO: replace by include of _fwd.hpp
-}
+#include <Xpetra_EpetraCrsMatrix_fwd.hpp>
 
 // needed because of inlined function
 //TODO: remove inline function?
@@ -164,6 +162,10 @@ namespace MueLu {
 
     static const Tpetra::CrsMatrix<SC,LO,GO,NO>&        Op2TpetraCrs(const Matrix& Op);
     static       Tpetra::CrsMatrix<SC,LO,GO,NO>&        Op2NonConstTpetraCrs(Matrix& Op);
+
+    static RCP<const Tpetra::RowMatrix<SC,LO,GO,NO> >   Op2TpetraRow(RCP<const Matrix> Op);
+    static RCP<      Tpetra::RowMatrix<SC,LO,GO,NO> >   Op2NonConstTpetraRow(RCP<Matrix> Op);
+
 
     static const RCP<const Tpetra::Map<LO, GO, NO> >        Map2TpetraMap(const Map& map);
 #endif

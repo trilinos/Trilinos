@@ -49,23 +49,25 @@
 
 namespace Ifpack2 {
 
-//! A class for diagonal preconditioning.
-/**
-Ifpack2::Diagonal wraps a vector as a diagonal preconditioner.
-The preconditioner is simply defined by
-\f[
-z_i = D_i r_i,
-\f]
-where \f$r,z\f$ are the vector to be preconditioned and the preconditioned vector, and \f$D_i\f$ is the i-th element of the scaling vector.
-
-When Ifpack2::Diagonal is constructed with a matrix, \f$D\f$ contains the inverted diagonal elements from the matrix.
-
-When Ifpack2::Diagonal is constructed with a vector, \f$D\f$ is the caller-supplied vector.
-
-\author Michael Heroux, ETHZ/D-INFK
-
-\date Ifpack2 conversion (from Ifpack code) 31-Mar-2010
- */
+/// \class Diagonal
+/// \brief Diagonal preconditioner.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
+///   We prefer that you use Tpetra::RowMatrix here, and not
+///   Tpetra::CrsMatrix, though the latter may still work.
+///
+/// This class wraps a Tpetra::Vector as a diagonal preconditioner.
+/// The preconditioner is defined as
+/// \f[
+/// z_i = D_i r_i,
+/// \f]
+/// where \f$r\f$ is the Vector to be preconditioned, \f$z\f$ is the
+/// Vector result of applying the preconditioner to \f$r\f$, and
+/// \f$D_i\f$ is the i-th element of the scaling vector.
+///
+/// When Diagonal is constructed with a matrix, \f$D\f$ contains the
+/// inverted diagonal elements from the matrix.  When Diagonal is
+/// constructed with a Tpetra::Vector, \f$D\f$ is the caller-supplied
+/// vector.
 template<class MatrixType>
 class Diagonal :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -78,17 +80,17 @@ class Diagonal :
                                                                        typename MatrixType::node_type> >
 {
 public:
-  typedef TEUCHOS_DEPRECATED typename MatrixType::scalar_type Scalar;
-  typedef TEUCHOS_DEPRECATED typename MatrixType::local_ordinal_type LocalOrdinal;
-  typedef TEUCHOS_DEPRECATED typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef TEUCHOS_DEPRECATED typename MatrixType::node_type Node;
-  typedef TEUCHOS_DEPRECATED typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType magnitudeType;
-
   typedef typename MatrixType::scalar_type scalar_type;
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   typedef typename MatrixType::node_type node_type;
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+
+  typedef TEUCHOS_DEPRECATED typename MatrixType::scalar_type Scalar;
+  typedef TEUCHOS_DEPRECATED typename MatrixType::local_ordinal_type LocalOrdinal;
+  typedef TEUCHOS_DEPRECATED typename MatrixType::global_ordinal_type GlobalOrdinal;
+  typedef TEUCHOS_DEPRECATED typename MatrixType::node_type Node;
+  typedef TEUCHOS_DEPRECATED typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   //! Tpetra::RowMatrix specialization used by this class.
   typedef Tpetra::RowMatrix<scalar_type,
@@ -138,7 +140,7 @@ public:
   Diagonal (const Teuchos::RCP<const vector_type>& diag);
 
   //! Destructor
-  virtual ~Diagonal();
+  virtual ~Diagonal ();
 
   //! Sets parameters on this object.
   /**
@@ -147,19 +149,19 @@ public:
   void setParameters (const Teuchos::ParameterList& params);
 
   //! Initialize
-  void initialize();
+  void initialize ();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
-  inline bool isInitialized() const {
+  bool isInitialized () const {
     return isInitialized_;
   }
 
   //! Compute the preconditioner.
-  void compute();
+  void compute ();
 
   //! Return true if compute() has been called.
-  inline bool isComputed() const {
-    return(isComputed_);
+  bool isComputed () const {
+    return isComputed_;
   }
 
   //@}
@@ -230,7 +232,7 @@ public:
   computeCondEst (CondestType CT = Cheap,
                   local_ordinal_type MaxIters = 1550,
                   magnitude_type Tol = 1e-9,
-                  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
+                  const Teuchos::Ptr<const row_matrix_type>& matrix = Teuchos::null);
 
   //@}
   //! \name Attribute accessor methods
@@ -323,25 +325,27 @@ private:
   bool isComputed_;
 };
 
-/** Function to construct a Diagonal preconditioner with vector input.
-* The input vector is assumed to contain the equivalent of the inverted
-* diagonal of a matrix.
+/** Function to construct a Diagonal preconditioner with Vector input.
+* This is just a nonmember function version of Diagonal's constructor.
 *
-* Example usage:<br>
-* typedef Tpetra::CrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TCrsMatrix;<br>
-* typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TVector;<br>
-* typedef Tpetra::Preconditioner<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TPrec;
+* Example usage:
 *
-* Teuchos::RCP<TVector> myvec = ...
+* \code
+* using Teuchos::RCP;
+* typedef Tpetra::RowMatrix<> row_matrix_type;
+* typedef Tpetra::Vector<> vec_type;
+* typedef Tpetra::Preconditioner<> prec_type;
 *
-* Teuchos::RCP<TPrec> prec = Ifpack2::createDiagonalPreconditioner<TCrsMatrix,TVector>(myvec);
-*
+* RCP<vec_type> D = ...
+* RCP<prec_type> P =
+*   Ifpack2::createDiagonalPreconditioner<row_matrix_type, vec_type> (D);
+* \endcode
 */
-template<class MatrixType,class VectorType>
+template<class MatrixType, class VectorType>
 Teuchos::RCP<Ifpack2::Diagonal<MatrixType> >
-createDiagonalPreconditioner(const Teuchos::RCP<const VectorType>& invdiag)
+createDiagonalPreconditioner (const Teuchos::RCP<const VectorType>& invdiag)
 {
-  return Teuchos::rcp(new Ifpack2::Diagonal<MatrixType>(invdiag));
+  return Teuchos::rcp (new Ifpack2::Diagonal<MatrixType> (invdiag));
 }
 
 }//namespace Ifpack2

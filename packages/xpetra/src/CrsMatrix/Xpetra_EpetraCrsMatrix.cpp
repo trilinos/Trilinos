@@ -48,42 +48,49 @@
 
 namespace Xpetra {
 
-  EpetraCrsMatrix::EpetraCrsMatrix(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
+  template<class EpetraGlobalOrdinal>
+  EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
     : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))), isFillResumed_(false) { }
 
-  EpetraCrsMatrix::EpetraCrsMatrix(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
+  template<class EpetraGlobalOrdinal>
+  EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
     : isFillResumed_(false)
   {
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
     mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), numEntriesPerRowToAlloc.getRawPtr(), toEpetra(pftype)));
   }
 
-  EpetraCrsMatrix::EpetraCrsMatrix(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
+  template<class EpetraGlobalOrdinal>
+  EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
     : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), toEpetra(colMap), maxNumEntriesPerRow, toEpetra(pftype)))), isFillResumed_(false) { }
 
-  EpetraCrsMatrix::EpetraCrsMatrix(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
+  template<class EpetraGlobalOrdinal>
+  EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
     : isFillResumed_(false)
   {
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
     mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), toEpetra(colMap), numEntriesPerRowToAlloc.getRawPtr(), toEpetra(pftype)));
   }
 
-  EpetraCrsMatrix::EpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &plist)
+  template<class EpetraGlobalOrdinal>
+  EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &plist)
     : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(graph)))), isFillResumed_(false) { }
 
-  EpetraCrsMatrix::EpetraCrsMatrix(const EpetraCrsMatrix& matrix)
+  template<class EpetraGlobalOrdinal>
+  EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const EpetraCrsMatrixT& matrix)
     : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(*(matrix.mtx_)))), isFillResumed_(false) { }
 
 
-  EpetraCrsMatrix::EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+  template<class EpetraGlobalOrdinal>
+  EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                                    const Import<LocalOrdinal,GlobalOrdinal,Node> &importer,
                                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
                                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
                                    const Teuchos::RCP<Teuchos::ParameterList>& params):
     isFillResumed_(false)
   {
-    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraCrsMatrix as an input argument.");
-    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraImport as an input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal>, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraCrsMatrixT as an input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal>, importer, tImporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraImportT as an input argument.");
 
     const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra(domainMap): 0;
     const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra(rangeMap) : 0;
@@ -96,15 +103,16 @@ namespace Xpetra {
       mtx_=Teuchos::null;
   }
 
-  EpetraCrsMatrix::EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+  template<class EpetraGlobalOrdinal>
+  EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                                    const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter,
                                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
                                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
                                    const Teuchos::RCP<Teuchos::ParameterList>& params):
     isFillResumed_(false)
   {
-    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraCrsMatrix as an input argument.");
-    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraExport as an input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal>, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraCrsMatrixT as an input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal>, exporter, tExporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraExportT as an input argument.");
 
     const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra(domainMap): 0;
     const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra(rangeMap) : 0;
@@ -118,18 +126,21 @@ namespace Xpetra {
 
 
 
-  void EpetraCrsMatrix::insertGlobalValues(int globalRow, const ArrayView<const int> &cols, const ArrayView<const double> &vals) {
-    XPETRA_MONITOR("EpetraCrsMatrix::insertGlobalValues");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::insertGlobalValues");
     XPETRA_ERR_CHECK(mtx_->InsertGlobalValues(globalRow, vals.size(), vals.getRawPtr(), cols.getRawPtr()));
   }
 
-  void EpetraCrsMatrix::insertLocalValues(int localRow, const ArrayView<const int> &cols, const ArrayView<const double> &vals) {
-    XPETRA_MONITOR("EpetraCrsMatrix::insertLocalValues");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::insertLocalValues");
     XPETRA_ERR_CHECK(mtx_->InsertMyValues(localRow, vals.size(), vals.getRawPtr(), cols.getRawPtr()));
   }
 
-  void EpetraCrsMatrix::replaceGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &indices, const ArrayView< const Scalar > &values) {
-    XPETRA_MONITOR("EpetraCrsMatrix::replaceGlobalValues");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::replaceGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &indices, const ArrayView< const Scalar > &values) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::replaceGlobalValues");
 
     {
       const std::string tfecfFuncName("replaceGlobalValues");
@@ -146,8 +157,9 @@ namespace Xpetra {
 
   }
 
-  void EpetraCrsMatrix::replaceLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices, const ArrayView< const Scalar > &values) {
-    XPETRA_MONITOR("EpetraCrsMatrix::replaceLocalValues");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::replaceLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices, const ArrayView< const Scalar > &values) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::replaceLocalValues");
 
     {
       const std::string tfecfFuncName("replaceLocalValues");
@@ -164,8 +176,9 @@ namespace Xpetra {
 
   }
 
-  void EpetraCrsMatrix::allocateAllValues(size_t numNonZeros, ArrayRCP<size_t>& rowptr, ArrayRCP<int>& colind, ArrayRCP<double>& values) {
-     XPETRA_MONITOR("EpetraCrsMatrix::allocateAllValues");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::allocateAllValues(size_t numNonZeros, ArrayRCP<size_t>& rowptr, ArrayRCP<LocalOrdinal>& colind, ArrayRCP<Scalar>& values) {
+     XPETRA_MONITOR("EpetraCrsMatrixT::allocateAllValues");
 
     // Row offsets
     // Unfortunately, we cannot do this in the same manner as column indices
@@ -191,8 +204,9 @@ namespace Xpetra {
     values = Teuchos::arcp(myValues,lowerOffset,numNonZeros,ownMemory);
   }
 
-  void EpetraCrsMatrix::setAllValues(const ArrayRCP<size_t>& rowptr, const ArrayRCP<int>& colind, const ArrayRCP<double>& values) {
-    XPETRA_MONITOR("EpetraCrsMatrix::setAllValues");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::setAllValues(const ArrayRCP<size_t>& rowptr, const ArrayRCP<LocalOrdinal>& colind, const ArrayRCP<Scalar>& values) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::setAllValues");
 
     // Check sizes
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(rowptr.size()) != getNodeNumRows()+1, Xpetra::Exceptions::RuntimeError,
@@ -218,8 +232,9 @@ namespace Xpetra {
       myRowptr[i] = Teuchos::as<int>(rowptr[i]);
   }
 
-  void EpetraCrsMatrix::getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const {
-    XPETRA_MONITOR("EpetraCrsMatrix::getAllValues");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const {
+    XPETRA_MONITOR("EpetraCrsMatrixT::getAllValues");
 
     int  lowerOffset = 0;
     bool ownMemory   = false;
@@ -241,52 +256,60 @@ namespace Xpetra {
     values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
   }
 
-  void EpetraCrsMatrix::resumeFill(const RCP< ParameterList > &params) {
-    XPETRA_MONITOR("EpetraCrsMatrix::resumeFill");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::resumeFill(const RCP< ParameterList > &params) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::resumeFill");
 
     // According to Tpetra documentation, resumeFill() may be called repeatedly.
     isFillResumed_ = true;
   }
 
-  bool EpetraCrsMatrix::isFillComplete() const { XPETRA_MONITOR("EpetraCrsMatrix::isFillComplete"); if (isFillResumed_) return false; else return mtx_->Filled(); }
+  template<class EpetraGlobalOrdinal>
+  bool EpetraCrsMatrixT<EpetraGlobalOrdinal>::isFillComplete() const { XPETRA_MONITOR("EpetraCrsMatrixT::isFillComplete"); if (isFillResumed_) return false; else return mtx_->Filled(); }
 
-  bool EpetraCrsMatrix::isFillActive() const { XPETRA_MONITOR("EpetraCrsMatrix::isFillActive"); return !isFillComplete(); }
+  template<class EpetraGlobalOrdinal>
+  bool EpetraCrsMatrixT<EpetraGlobalOrdinal>::isFillActive() const { XPETRA_MONITOR("EpetraCrsMatrixT::isFillActive"); return !isFillComplete(); }
 
-  bool EpetraCrsMatrix::supportsRowViews() const { XPETRA_MONITOR("EpetraCrsMatrix::supportsRowViews"); return true; }
+  template<class EpetraGlobalOrdinal>
+  bool EpetraCrsMatrixT<EpetraGlobalOrdinal>::supportsRowViews() const { XPETRA_MONITOR("EpetraCrsMatrixT::supportsRowViews"); return true; }
 
   //TODO: throw same exception as Tpetra
-  void EpetraCrsMatrix::getLocalRowCopy(int LocalRow, const ArrayView<int> &Indices, const ArrayView<double> &Values, size_t &NumEntries) const {
-    XPETRA_MONITOR("EpetraCrsMatrix::getLocalRowCopy");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView<LocalOrdinal> &Indices, const ArrayView<Scalar> &Values, size_t &NumEntries) const {
+    XPETRA_MONITOR("EpetraCrsMatrixT::getLocalRowCopy");
 
     int numEntries = -1;
     XPETRA_ERR_CHECK(mtx_->ExtractMyRowCopy(LocalRow, Indices.size(), numEntries, Values.getRawPtr(), Indices.getRawPtr()));
     NumEntries = numEntries;
   }
 
-  void EpetraCrsMatrix::getGlobalRowCopy(int GlobalRow, const ArrayView<int> &Indices, const ArrayView<double> &Values, size_t &NumEntries) const {
-    XPETRA_MONITOR("EpetraCrsMatrix::getGlobalRowCopy");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::getGlobalRowCopy(GlobalOrdinal GlobalRow, const ArrayView<GlobalOrdinal> &Indices, const ArrayView<Scalar> &Values, size_t &NumEntries) const {
+    XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalRowCopy");
 
     int numEntries = -1;
     XPETRA_ERR_CHECK(mtx_->ExtractGlobalRowCopy(GlobalRow, Indices.size(), numEntries, Values.getRawPtr(), Indices.getRawPtr()));
     NumEntries = numEntries;
   }
 
-  void EpetraCrsMatrix::getGlobalRowView(int GlobalRow, ArrayView<const int> &indices, ArrayView<const double> &values) const {
-    XPETRA_MONITOR("EpetraCrsMatrix::getGlobalRowView");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const {
+    XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalRowView");
 
     int      numEntries;
     double * eValues;
-    int    * eIndices;
+    GlobalOrdinal * eIndices;
 
     XPETRA_ERR_CHECK(mtx_->ExtractGlobalRowView(GlobalRow, numEntries, eValues, eIndices));
     if (numEntries == 0) { eValues = NULL; eIndices = NULL; } // Cf. TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
 
-    indices = ArrayView<const int>(eIndices, numEntries);
+    indices = ArrayView<const GlobalOrdinal>(eIndices, numEntries);
     values  = ArrayView<const double>(eValues, numEntries);
   }
 
-  void EpetraCrsMatrix::getLocalRowView(int LocalRow, ArrayView<const int> &indices, ArrayView<const double> &values) const {
-    XPETRA_MONITOR("EpetraCrsMatrix::getLocalRowView");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const {
+    XPETRA_MONITOR("EpetraCrsMatrixT::getLocalRowView");
 
     int      numEntries;
     double * eValues;
@@ -299,19 +322,20 @@ namespace Xpetra {
     values  = ArrayView<const double>(eValues, numEntries);
   }
 
-  void EpetraCrsMatrix::apply(const MultiVector<double,int,int> & X, MultiVector<double,int,int> &Y, Teuchos::ETransp mode, double alpha, double beta) const {
-    XPETRA_MONITOR("EpetraCrsMatrix::apply");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
+    XPETRA_MONITOR("EpetraCrsMatrixT::apply");
 
-    //TEUCHOS_TEST_FOR_EXCEPTION((alpha != 1) || (beta != 0), Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix.multiply() only accept alpha==1 and beta==0");
+    //TEUCHOS_TEST_FOR_EXCEPTION((alpha != 1) || (beta != 0), Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.multiply() only accept alpha==1 and beta==0");
 
-    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, X, eX, "Xpetra::EpetraCrsMatrix->apply() only accept Xpetra::EpetraMultiVector as input arguments.");
-    XPETRA_DYNAMIC_CAST(      EpetraMultiVector, Y, eY, "Xpetra::EpetraCrsMatrix->apply() only accept Xpetra::EpetraMultiVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT<GlobalOrdinal>, X, eX, "Xpetra::EpetraCrsMatrixT->apply() only accept Xpetra::EpetraMultiVectorT as input arguments.");
+    XPETRA_DYNAMIC_CAST(      EpetraMultiVectorT<GlobalOrdinal>, Y, eY, "Xpetra::EpetraCrsMatrixT->apply() only accept Xpetra::EpetraMultiVectorT as input arguments.");
 
-    TEUCHOS_TEST_FOR_EXCEPTION((mode != Teuchos::NO_TRANS) && (mode != Teuchos::TRANS), Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix->apply() only accept mode == NO_TRANS or mode == TRANS");
+    TEUCHOS_TEST_FOR_EXCEPTION((mode != Teuchos::NO_TRANS) && (mode != Teuchos::TRANS), Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT->apply() only accept mode == NO_TRANS or mode == TRANS");
     bool eTrans = toEpetra(mode);
 
     // /!\ UseTranspose value
-    TEUCHOS_TEST_FOR_EXCEPTION(mtx_->UseTranspose(), Xpetra::Exceptions::NotImplemented, "An exception is throw to let you know that Xpetra::EpetraCrsMatrix->apply() do not take into account the UseTranspose() parameter of Epetra_CrsMatrix.");
+    TEUCHOS_TEST_FOR_EXCEPTION(mtx_->UseTranspose(), Xpetra::Exceptions::NotImplemented, "An exception is throw to let you know that Xpetra::EpetraCrsMatrixT->apply() do not take into account the UseTranspose() parameter of Epetra_CrsMatrix.");
 
     RCP<Epetra_MultiVector> epY = eY.getEpetra_MultiVector();
 
@@ -324,8 +348,9 @@ namespace Xpetra {
     XPETRA_ERR_CHECK(eY.getEpetra_MultiVector()->Update(alpha,*tmp,beta));
   }
 
-  std::string EpetraCrsMatrix::description() const {
-    XPETRA_MONITOR("EpetraCrsMatrix::description");
+  template<class EpetraGlobalOrdinal>
+  std::string EpetraCrsMatrixT<EpetraGlobalOrdinal>::description() const {
+    XPETRA_MONITOR("EpetraCrsMatrixT::description");
 
     // This implementation come from Tpetra_CrsMatrix_def.hpp (without modification)
     std::ostringstream oss;
@@ -346,8 +371,9 @@ namespace Xpetra {
 
   }
 
-  void EpetraCrsMatrix::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
-    XPETRA_MONITOR("EpetraCrsMatrix::describe");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+    XPETRA_MONITOR("EpetraCrsMatrixT::describe");
 
     // This implementation come from Tpetra_CrsMatrix_def.hpp (without modification)
     using std::endl;
@@ -503,36 +529,39 @@ namespace Xpetra {
   }
 
   // TODO: use toEpetra()
-  void EpetraCrsMatrix::doImport(const DistObject<char, int, int> &source,
-                                 const Import<int, int> &importer, CombineMode CM) {
-    XPETRA_MONITOR("EpetraCrsMatrix::doImport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source,
+                                 const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::doImport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal>, source, tSource, "Xpetra::EpetraCrsMatrixT::doImport only accept Xpetra::EpetraCrsMatrixT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal>, importer, tImporter, "Xpetra::EpetraCrsMatrixT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsMatrix> v = tSource.getEpetra_CrsMatrix();
     int err = mtx_->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-  void EpetraCrsMatrix::doExport(const DistObject<char, int, int> &dest,
-                                 const Import<int, int>& importer, CombineMode CM) {
-    XPETRA_MONITOR("EpetraCrsMatrix::doExport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::doExport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal>, dest, tDest, "Xpetra::EpetraCrsMatrixT::doImport only accept Xpetra::EpetraCrsMatrixT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal>, importer, tImporter, "Xpetra::EpetraCrsMatrixT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsMatrix> v = tDest.getEpetra_CrsMatrix();
     int err = mtx_->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-  void EpetraCrsMatrix::doImport(const DistObject<char, int, int> &source,
-                                 const Export<int, int>& exporter, CombineMode CM) {
-    XPETRA_MONITOR("EpetraCrsMatrix::doImport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source,
+                                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::doImport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal>, source, tSource, "Xpetra::EpetraCrsMatrixT::doImport only accept Xpetra::EpetraCrsMatrixT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal>, exporter, tExporter, "Xpetra::EpetraCrsMatrixT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsMatrix> v = tSource.getEpetra_CrsMatrix();
     int err = mtx_->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
@@ -540,22 +569,24 @@ namespace Xpetra {
 
   }
 
-  void EpetraCrsMatrix::doExport(const DistObject<char, int, int> &dest,
-                                 const Export<int, int>& exporter, CombineMode CM) {
-    XPETRA_MONITOR("EpetraCrsMatrix::doExport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::doExport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal>, dest, tDest, "Xpetra::EpetraCrsMatrixT::doImport only accept Xpetra::EpetraCrsMatrixT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal>, exporter, tExporter, "Xpetra::EpetraCrsMatrixT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsMatrix> v = tDest.getEpetra_CrsMatrix();
     int err = mtx_->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-    void EpetraCrsMatrix::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap,
+    template<class EpetraGlobalOrdinal>
+    void EpetraCrsMatrixT<EpetraGlobalOrdinal>::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap,
                                        const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap,
                                        const RCP< ParameterList > &params) {
-      XPETRA_MONITOR("EpetraCrsMatrix::fillComplete");
+      XPETRA_MONITOR("EpetraCrsMatrixT::fillComplete");
 
       // For Epetra matrices, resumeFill() is a fictive operation. There is no need for a fillComplete after some resumeFill() operations.
       if (isFillResumed_ == true) { isFillResumed_ = false; return; }
@@ -565,8 +596,9 @@ namespace Xpetra {
       mtx_->FillComplete(toEpetra(domainMap), toEpetra(rangeMap), doOptimizeStorage);
     }
 
-    void EpetraCrsMatrix::fillComplete(const RCP< ParameterList > &params) {
-      XPETRA_MONITOR("EpetraCrsMatrix::fillComplete");
+    template<class EpetraGlobalOrdinal>
+    void EpetraCrsMatrixT<EpetraGlobalOrdinal>::fillComplete(const RCP< ParameterList > &params) {
+      XPETRA_MONITOR("EpetraCrsMatrixT::fillComplete");
 
       // For Epetra matrices, resumeFill() is a fictive operation. There is no need for a fillComplete after some resumeFill() operations.
       if (isFillResumed_ == true) { isFillResumed_ = false; return; }
@@ -577,9 +609,10 @@ namespace Xpetra {
     }
 
 
-  void EpetraCrsMatrix::replaceDomainMapAndImporter(const Teuchos::RCP< const  Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter) {
-      XPETRA_MONITOR("EpetraCrsMatrix::replaceDomainMapAndImporter");
-      XPETRA_DYNAMIC_CAST(const EpetraImport, *newImporter, eImporter, "Xpetra::EpetraCrsMatrix::replaceDomainMapAndImporter only accepts Xpetra::EpetraImport.");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::replaceDomainMapAndImporter(const Teuchos::RCP< const  Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter) {
+      XPETRA_MONITOR("EpetraCrsMatrixT::replaceDomainMapAndImporter");
+      XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal>, *newImporter, eImporter, "Xpetra::EpetraCrsMatrixT::replaceDomainMapAndImporter only accepts Xpetra::EpetraImportT.");
 
       const RCP<const Epetra_Import> & myImport = eImporter.getEpetra_Import();
       int rv=0;
@@ -587,31 +620,41 @@ namespace Xpetra {
         rv=mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),0);
       else
         rv=mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),&*myImport);
-      TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrix::replaceDomainMapAndImporter FAILED!");
+      TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrixT::replaceDomainMapAndImporter FAILED!");
   }
 
 
-  void EpetraCrsMatrix::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsMatrixT<EpetraGlobalOrdinal>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
                                                  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
                                                  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
                                                  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
                                                  const RCP<ParameterList> & params) {
-    XPETRA_MONITOR("EpetraCrsMatrix::expertStaticFillComplete");
+    XPETRA_MONITOR("EpetraCrsMatrixT::expertStaticFillComplete");
     int rv=0;
     const Epetra_Import * myimport =0;
     const Epetra_Export * myexport =0;
 
     if(!importer.is_null()) {
-      XPETRA_DYNAMIC_CAST(const EpetraImport, *importer, eImporter, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::EpetraImport.");
+      XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal>, *importer, eImporter, "Xpetra::EpetraCrsMatrixT::expertStaticFillComplete only accepts Xpetra::EpetraImportT.");
       myimport = eImporter.getEpetra_Import().getRawPtr();
     }
     if(!exporter.is_null()) {
-      XPETRA_DYNAMIC_CAST(const EpetraExport, *exporter, eExporter, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::EpetraImport.");
+      XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal>, *exporter, eExporter, "Xpetra::EpetraCrsMatrixT::expertStaticFillComplete only accepts Xpetra::EpetraImportT.");
       myexport = eExporter.getEpetra_Export().getRawPtr();
     }
 
     rv=mtx_->ExpertStaticFillComplete(toEpetra(domainMap), toEpetra(rangeMap), myimport, myexport);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete FAILED!");
+    TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrixT::expertStaticFillComplete FAILED!");
   }
+
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+template class EpetraCrsMatrixT<int>;
+#endif
+
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+template class EpetraCrsMatrixT<long long>;
+#endif
+
 }

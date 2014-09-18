@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -82,21 +82,20 @@ void CRSTiming(const Teuchos::RCP<const Tpetra::CrsMatrix<double,int,int,Node> >
 //     typedef typename MAT::ScalarType        Scalar;
 //     typedef typename MAT::OrdinalType       Ordinal;
 //     typedef typename MAT::NodeType          Node;
-//     typedef typename MAT::LocalMatOpsType   SparseOps;
 //     typedef MultiVector<Scalar,Node>                                 MV;
 //     typedef Teuchos::ScalarTraits<Scalar>                            ST;
-//     
-// 
-//     out << "Testing " << Teuchos::TypeNameTraits<GRPH>::name() << std::endl 
+//
+//
+//     out << "Testing " << Teuchos::TypeNameTraits<GRPH>::name() << std::endl
 //         << "    and " << Teuchos::TypeNameTraits<MAT>::name()  << std::endl;
-// 
+//
 //     RCP<Node> node = getNode<Node>();
-// 
+//
 //     GRPH G(Test::numRows,node);
 //     MAT  A(G);
-//     // 
+//     //
 //     // allocate buffers and fill the graph and matrix
-//     // 
+//     //
 //     {
 //       const size_t totalNNZ = 3*Test::numRows - 2;
 //       ArrayRCP<size_t> offsets(Test::numRows+1);
@@ -126,15 +125,15 @@ void CRSTiming(const Teuchos::RCP<const Tpetra::CrsMatrix<double,int,int,Node> >
 //       vals    = Teuchos::null;
 //       A.finalize(true);
 //     }
-//     // 
+//     //
 //     // fill the matvec
-//     // 
+//     //
 //     typename SparseOps::template rebind<Scalar>::other matvec(node);
 //     matvec.initializeStructure(G);
 //     matvec.initializeValues(A);
-//     // 
+//     //
 //     // time the matvec
-//     // 
+//     //
 //     MV X(node), Y(node);
 //     X.initializeValues( Test::numRows,1, node->template allocBuffer<Scalar>(Test::numRows), Test::numRows);
 //     Y.initializeValues( Test::numRows,1, node->template allocBuffer<Scalar>(Test::numRows), Test::numRows);

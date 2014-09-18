@@ -131,10 +131,11 @@ namespace MueLu {
     //! When this prototype is cloned using Copy(), the clone is an Ifpack or an Ifpack2 smoother.
     RCP<SmootherPrototype> Copy() const;
 
-
+#ifndef _MSC_VER
     //! Friend declaration required for clone() functionality
     template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2>
     friend class TrilinosSmoother;
+#endif
 
     template<typename Node2>
     RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const;

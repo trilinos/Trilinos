@@ -209,6 +209,21 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableTeuchosRTOp_DisableRTOp
+  ARGS Trilinos_PACKAGES="Teuchos,RTOp" Trilinos_EXCLUDE_PACKAGES=RTOp
+  PASS_REGULAR_EXPRESSION_ALL
+    "Disabling excluded package RTOp ..."
+    "Enabling explicitly set package Teuchos ..."
+    "NOT enabling explicitly set package RTOp since it was explicitly excluded"
+    "Explicitly enabled packages on input .by user.:  Teuchos 1"
+    "Final set of enabled packages:  Teuchos 1"
+    "Trilinos_NUM_ENABLED_PACKAGES=1:  Configuring packages!"
+  )
+# NOTE: The above test ensures that disabled packages turn off explicitly
+#  enabled downstream packages.
+
+
+CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableTeuchos_DisableTPLBLAS
   ARGS Trilinos_PACKAGES=Teuchos Trilinos_EXCLUDE_TPLS=BLAS
   PASS_REGULAR_EXPRESSION_ALL
@@ -276,7 +291,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAll_EnableStokhos
   ARGS Trilinos_ADDITIONAL_PACKAGES=Stokhos
   PASS_REGULAR_EXPRESSION_ALL
-    "Enabling explicitly set package Stokhos"
+    "Enabling explicitly set package Stokhos which was default or otherwise disabed!"
     "Explicitly enabled packages on input .*  Stokhos 1"
     "Explicitly disabled packages on input .*  0"
     "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
@@ -332,12 +347,12 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     Trilinos_ADDITIONAL_PACKAGES=Stalix
   PASS_REGULAR_EXPRESSION_ALL
     "preCopyrightTrilinos: Doing GIT update from URL 'url1:/git/preCopyrightTrilinos' to dir '.*/MockTrilinos/preCopyrightTrilinos'"
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.reset.--hard.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.reset.out."
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.clean.-df.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.clean.out."
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.pull.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.update.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.reset.--hard.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.reset.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.clean.-df.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.clean.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.pull.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.update.out."
     "EXECUTE_PROCESS.COMMAND;/somebasedir/git.log.--pretty=format:.*.-C.HEAD..ORIG_HEAD.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY;.*/package_arch/UnitTests/MockTrilinos/preCopyrightTrilinos."
     "Dakota: Doing initial SVN clone/checkout from URL 'url3/somedirpath/trunk' to dir 'packages/TriKota/Dakota'"
-    "EXECUTE_PROCESS.COMMAND./someotherbasedir/svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/MockTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/Dakota.update.out."
+    "EXECUTE_PROCESS.COMMAND./someotherbasedir/svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/MockTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/Dakota.update.out."
     "EXECUTE_PROCESS.echo.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY.*/package_arch/UnitTests/MockTrilinos/packages/TriKota/Dakota."
     ".... preCopyrightTrilinos updates."
     "... Dakota cloned version."

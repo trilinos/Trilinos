@@ -1013,6 +1013,21 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  NativeRepositoriesList1_EnableAllPackages_ST
+  ARGS -DTrilinos_NATIVE_REPO_FILE_OVERRRIDE=cmake/NativeRepositoriesList1.cmake
+    -DTrilinos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON
+    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Reading the list of packages from .*/MockTrilinos/PackagesList.cmake"
+    "Reading the list of packages from .*/MockTrilinos/preCopyrightTrilinos/PackagesList.cmake"
+    "Reading the list of packages from .*/MockTrilinos/extraTrilinosRepo/PackagesList.cmake"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko ExtraPack 24"
+    "Configuring done"
+    "Generating done"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   extraTrilinosRepo_EnableExtraPack
   ARGS "-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos,extraTrilinosRepo"
     -DTrilinos_ENABLE_ExtraPack=ON

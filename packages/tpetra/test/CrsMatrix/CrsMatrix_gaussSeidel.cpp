@@ -146,7 +146,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
 
   // CrsGraph specialization corresponding to crs_matrix_type (the
   // CrsMatrix specialization).
-  typedef Tpetra::CrsGraph<LO, GO, NT, typename crs_matrix_type::mat_solve_type> crs_graph_type;
+  typedef Tpetra::CrsGraph<LO, GO, NT> crs_graph_type;
 
   // MultiVector specialization corresponding to crs_matrix_type.
   typedef Tpetra::MultiVector<ST, LO, GO, NT> multivector_type;
@@ -527,7 +527,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
 
   // CrsGraph specialization corresponding to crs_matrix_type (the
   // CrsMatrix specialization).
-  typedef Tpetra::CrsGraph<LO, GO, NT, typename crs_matrix_type::mat_solve_type> crs_graph_type;
+  typedef Tpetra::CrsGraph<LO, GO, NT> crs_graph_type;
 
   // MultiVector specialization corresponding to crs_matrix_type.
   typedef Tpetra::MultiVector<ST, LO, GO, NT> multivector_type;

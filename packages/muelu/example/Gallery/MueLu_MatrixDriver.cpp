@@ -46,10 +46,6 @@
 #include <iostream>
 #include <unistd.h>
 
-#ifdef _MSC_VER
-#include <windows.h> // for Sleep
-#endif
-
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
@@ -65,6 +61,11 @@
 
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
+
+#ifdef _MSC_VER
+#include <windows.h> // for Sleep
+#endif
+
 
 /*
   This driver simply generates a Tpetra matrix, prints it to screen, and exits.

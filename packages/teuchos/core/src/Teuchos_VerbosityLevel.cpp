@@ -63,23 +63,38 @@ const Teuchos::Array<Teuchos::EVerbosityLevel> verbLevelArray =
 
 std::string Teuchos::toString(const EVerbosityLevel verbLevel)
 {
-  switch(verbLevel) {
-    case VERB_DEFAULT:
-      return "VERB_DEFAULT";
-    case VERB_NONE:
-      return "VERB_NONE";
-    case VERB_LOW:
-      return "VERB_LOW";
-    case VERB_MEDIUM:
-      return "VERB_MEDIUM";
-    case VERB_HIGH:
-      return "VERB_HIGH";
-    case VERB_EXTREME:
-      return "VERB_EXTREME";
-    default:
-      TEUCHOS_TEST_FOR_EXCEPT("Should never get here!");
+  switch (verbLevel) {
+  case VERB_DEFAULT:
+    return "VERB_DEFAULT";
+  case VERB_NONE:
+    return "VERB_NONE";
+  case VERB_LOW:
+    return "VERB_LOW";
+  case VERB_MEDIUM:
+    return "VERB_MEDIUM";
+  case VERB_HIGH:
+    return "VERB_HIGH";
+  case VERB_EXTREME:
+    return "VERB_EXTREME";
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(
+       true, std::invalid_argument, "Teuchos::toString(const Teuchos::"
+       "EVerbosityLevel): Input argument " << verbLevel << " has an invalid "
+       "value.  Valid values are VERB_DEFAULT=" << VERB_DEFAULT << ", VERB_NONE"
+       "=" << VERB_NONE << ", VERB_LOW=" << VERB_LOW << ", VERB_MEDIUM="
+       << VERB_MEDIUM << ", VERB_HIGH=" << VERB_HIGH << ", AND VERB_EXTREME="
+       << VERB_EXTREME << ".");
   }
-  return ""; // Never get here!
+
+  // NOTE (mfh 15 Sep 2014): Most compilers have figured out that the
+  // return statement below is unreachable.  Some older compilers
+  // might not realize this.  That's why the return statement was put
+  // there, so that those compilers don't warn that this function
+  // doesn't return a value.  If it's a choice between one warning and
+  // another, I would prefer the choice that produces less code and
+  // doesn't have unreachable code (which never gets tested).
+
+  //return ""; // Never get here!
 }
 
 

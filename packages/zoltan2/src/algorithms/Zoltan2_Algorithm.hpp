@@ -55,12 +55,11 @@
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
-
 #define Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM \
   { \
     std::ostringstream emsg; \
     emsg << __FILE__ << "," << __LINE__ \
-         << " error:  " <<  __func__ \
+         << " error:  " <<  __func__zoltan2__ \
          << " is not implement in selected algorithm " \
          << std::endl; \
     throw std::runtime_error(emsg.str()); \

@@ -1,6 +1,9 @@
 /* define if we want to include experimental code */
 #define INCLUDE_ZOLTAN2_EXPERIMENTAL
 
+/* define if we want to include wolf experimental code */
+/* #undef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF */
+
 /* define if we have MPI */
 #define HAVE_ZOLTAN2_MPI
 

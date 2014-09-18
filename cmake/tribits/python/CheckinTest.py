@@ -1231,7 +1231,7 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
 
   if inOptions.disablePackages:
     if verbose:
-      print "\nAdding hard disaled for specified packages '"+inOptions.disablePackages+"' ...\n"
+      print "\nAdding hard disables for specified packages '"+inOptions.disablePackages+"' ...\n"
     disablePackagesList = inOptions.disablePackages.split(',')
     for pkg in disablePackagesList:
       cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_"+pkg+":BOOL", "OFF"))

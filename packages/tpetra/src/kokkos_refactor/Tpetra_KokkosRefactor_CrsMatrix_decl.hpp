@@ -92,13 +92,6 @@ namespace Tpetra {
     /// for backwards compatibility.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
-    //! Backwards compatibility typedef.
-    typedef void LocalMatOps;
-    //! Backwards compatibility typedef.
-    typedef void mat_vec_type;
-    //! Backwards compatibility typedef.
-    typedef void mat_solve_type;
-
     //! The Map specialization suitable for this CrsMatrix specialization.
     typedef Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
 
@@ -247,7 +240,8 @@ namespace Tpetra {
     explicit CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying column Map and arrays containing the matrix in sorted, local ids.
+    /// \brief Constructor specifying column Map and arrays containing
+    ///   the matrix in sorted local indices.
     ///
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
@@ -332,7 +326,7 @@ namespace Tpetra {
 
 
     // This friend declaration makes the clone() method work.
-    template <class S2, class LO2, class GO2, class N2, class LMO2>
+    template <class S2, class LO2, class GO2, class N2>
     friend class CrsMatrix;
 
     /// \brief Create a deep copy of this CrsMatrix, where the copy
@@ -990,6 +984,39 @@ namespace Tpetra {
     ///   (a.k.a. "static") CrsGraph.
     void
     replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
+
+    /// \brief Reindex the column indices in place, and replace the
+    ///   column Map.  Optionally, replace the Import object as well.
+    ///
+    /// \pre On every calling process, every index owned by the
+    ///   current column Map must also be owned by the new column Map.
+    ///
+    /// \pre If the new Import object is provided, the new Import
+    ///   object's source Map must be the same as the current domain
+    ///   Map, and the new Import's target Map must be the same as the
+    ///   new column Map.
+    ///
+    /// \param graph [in] The matrix's graph.  If you don't provide
+    ///   this (i.e., if <tt>graph == NULL</tt>), then the matrix must
+    ///   own its graph, which will be modified in place.  (That is,
+    ///   you must <i>not</i> have created the matrix with a constant
+    ///   graph.)  If you <i>do</i> provide this, then the method will
+    ///   assume that it is the same graph as the matrix's graph, and
+    ///   the provided graph will be modified in place.
+    ///
+    /// \param newColMap [in] New column Map.  Must be nonnull.
+    ///
+    /// \param newImport [in] New Import object.  Optional; computed
+    ///   if not provided or if null.  Computing an Import is
+    ///   expensive, so it is worth providing this if you can.
+    ///
+    /// \param sortEachRow [in] If true, sort the indices (and their
+    ///   corresponding values) in each row after reindexing.
+    void
+    reindexColumns (crs_graph_type* const graph,
+                    const Teuchos::RCP<const map_type>& newColMap,
+                    const Teuchos::RCP<const import_type>& newImport = Teuchos::null,
+                    const bool sortEachRow = true);
 
     /// \brief Replace the current domain Map and Import with the given objects.
     ///

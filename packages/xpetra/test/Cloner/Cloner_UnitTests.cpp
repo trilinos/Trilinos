@@ -268,8 +268,13 @@ namespace {
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
 #endif
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, int, NodeType )
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, int, NodeType )
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
+	typedef int GO;
+#else
+	typedef long long GO;
+#endif
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, GO, NodeType )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, GO, NodeType )
 
   // FIXME (mfh 28 Sep 2013) I disabled this test.  Please uncomment
   // the line below if you want to reenable the test.

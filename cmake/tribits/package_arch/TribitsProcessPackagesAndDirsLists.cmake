@@ -43,6 +43,7 @@ INCLUDE(MultilineSet)
 INCLUDE(AdvancedOption)
 INCLUDE(AssertDefined)
 INCLUDE(PrintVar)
+INCLUDE(MessageWrapper)
 INCLUDE(TribitsListHelpers)
 
 
@@ -108,6 +109,12 @@ INCLUDE(TribitsListHelpers)
 # package in this list (or in upstream TriBITS repositories).  This avoids an
 # expensive package sorting algorithm and makes it easy to flag packages with
 # circular dependencies or misspelling of package names.
+#
+# NOTE: For some rare use cases, the package directory ``<pkgi_dir>`` is
+# allowed to be specified as an absolute directory but this absolute directory
+# must be a subdirectory of the project source base directory given by
+# `PROJECT_SOURCE_DIR`_.  If not, ``MESSAGE(FATAL_ERROR ...)`` is called and
+# processing stops immediately.
 #
 # NOTE: This macro just sets the variable::
 #
@@ -407,6 +414,7 @@ MACRO(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
     FOREACH(PACKAGE_IDX RANGE ${${REPOSITORY_NAME}_LAST_PACKAGE_IDX})
   
       IF (TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE)
+        MESSAGE("")
         PRINT_VAR(${PROJECT_NAME}_PACKAGES)
       ENDIF()
   
@@ -438,18 +446,63 @@ MACRO(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
 
       TRIBITS_UPDATE_PS_PT_SS_ST(Package ${TRIBITS_PACKAGE} PACKAGE_TESTGROUP)
   
-      IF ("${REPOSITORY_DIR}" STREQUAL ".")
-        SET(REPOSITORY_AND_PACKAGE_DIR "${PACKAGE_DIR}")
-      ELSEIF("${PACKAGE_DIR}" STREQUAL ".")
-        SET(REPOSITORY_AND_PACKAGE_DIR "${REPOSITORY_DIR}")
+      IF (IS_ABSOLUTE "${PACKAGE_DIR}")
+
+        SET(PACKAGE_ABS_DIR "${PACKAGE_DIR}")
+
+        STRING(LENGTH "${PROJECT_SOURCE_DIR}" PROJECT_SOURCE_DIR_LEN)
+        STRING(LENGTH "${PACKAGE_ABS_DIR}" PACKAGE_ABS_DIR_LEN)
+
+        # See if the package dir is under the project dir
+
+        SET(PACKAGE_ABS_DIR_UNDER_PROJECT_SOURCE_DIR TRUE)
+
+        IF (PACKAGE_ABS_DIR_UNDER_PROJECT_SOURCE_DIR)
+          # Determine package abs dir is too short to be under project
+          IF (PACKAGE_ABS_DIR_LEN LESS PROJECT_SOURCE_DIR_LEN)
+            SET(PACKAGE_ABS_DIR_UNDER_PROJECT_SOURCE_DIR FALSE)
+          ENDIF()
+        ENDIF()
+
+        IF (PACKAGE_ABS_DIR_UNDER_PROJECT_SOURCE_DIR)
+          # Determine if the package abs base dir base is the project dir
+          STRING(SUBSTRING "${PACKAGE_ABS_DIR}" 0 ${PROJECT_SOURCE_DIR_LEN}
+            PROJECT_SOURCE_DIR_BASE_MATCH)
+          PRINT_VAR(PROJECT_SOURCE_DIR_BASE_MATCH)
+          IF (NOT PROJECT_SOURCE_DIR_BASE_MATCH STREQUAL "${PROJECT_SOURCE_DIR}")
+            SET(PACKAGE_ABS_DIR_UNDER_PROJECT_SOURCE_DIR FALSE)
+          ENDIF()
+        ENDIF()
+    
+        IF (PACKAGE_ABS_DIR_UNDER_PROJECT_SOURCE_DIR)
+          # Get the path of the package dir under the project dir
+          MATH(EXPR PACKAGE_REL_DIR_BEGIN "${PROJECT_SOURCE_DIR_LEN}+1")
+          STRING(SUBSTRING "${PACKAGE_ABS_DIR}" ${PACKAGE_REL_DIR_BEGIN} -1
+            REPOSITORY_AND_PACKAGE_DIR)
+        ELSE()
+          MESSAGE_WRAPPER(FATAL_ERROR "Error: The pacakge '${TRIBITS_PACKAGE}' was given an absolute directory '${PACKAGE_ABS_DIR}' which is *not* under the project's soruce directory '${PROJECT_SOURCE_DIR}/'!")
+          SET(REPOSITORY_AND_PACKAGE_DIR "ERROR-BAD-PACKAGE-ABS-DIR")
+          # ToDo: We could just put in a relative path but that requries
+          # knowing the common path between the two directory paths but CMake
+          # does not give an easy way to determine that.  I would have to
+          # write that function myself.
+        ENDIF()
+
       ELSE()
-        SET(REPOSITORY_AND_PACKAGE_DIR "${REPOSITORY_DIR}/${PACKAGE_DIR}")
-      ENDIF()
-      IF (TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE)
-        PRINT_VAR(REPOSITORY_AND_PACKAGE_DIR)
+
+         # PACKAGE_DIR is a relative path
+
+        IF ("${REPOSITORY_DIR}" STREQUAL ".")
+          SET(REPOSITORY_AND_PACKAGE_DIR "${PACKAGE_DIR}")
+        ELSEIF("${PACKAGE_DIR}" STREQUAL ".")
+          SET(REPOSITORY_AND_PACKAGE_DIR "${REPOSITORY_DIR}")
+        ELSE()
+          SET(REPOSITORY_AND_PACKAGE_DIR "${REPOSITORY_DIR}/${PACKAGE_DIR}")
+        ENDIF()
+        SET(PACKAGE_ABS_DIR "${PROJECT_SOURCE_DIR}/${REPOSITORY_AND_PACKAGE_DIR}")
+
       ENDIF()
   
-      SET(PACKAGE_ABS_DIR "${PROJECT_SOURCE_DIR}/${REPOSITORY_AND_PACKAGE_DIR}")
       IF (TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE)
         PRINT_VAR(PROJECT_SOURCE_DIR)
         PRINT_VAR(REPOSITORY_AND_PACKAGE_DIR)

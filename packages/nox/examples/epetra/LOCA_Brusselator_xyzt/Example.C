@@ -103,6 +103,7 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 // Added to allow timings
 #include "Epetra_Time.h"
@@ -138,6 +139,9 @@ int main(int argc, char *argv[])
   // Initialize MPI
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
+  bool verbose = true;
+  bool success = false;
+  try {
   // Get the number of elements from the command line
   int NumGlobalNodes = 100 + 1;
 
@@ -548,5 +552,9 @@ int main(int argc, char *argv[])
 
   LOCA::destroyGlobalData(globalData);
 
-return 0 ;
+  success = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

@@ -54,7 +54,9 @@
 namespace Ifpack2 {
 namespace Details {
 
-#define LCLINST(S,LO,GO) IFPACK2_INST(Amesos2Wrapper,S,LO,GO)
+#define LCLINST(S,LO,GO) \
+  template class Ifpack2::Details::Amesos2Wrapper< Tpetra::CrsMatrix<S, LO, GO> >; \
+  template class Ifpack2::Details::Amesos2Wrapper< Tpetra::RowMatrix<S, LO, GO> >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
@@ -62,10 +64,12 @@ namespace Details {
 
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class Amesos2Wrapper< Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+  template class Amesos2Wrapper< Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
 #endif
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class Amesos2Wrapper< Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
+  template class Amesos2Wrapper< Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
 #endif
 
 } // namespace Details

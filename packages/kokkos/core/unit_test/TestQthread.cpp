@@ -231,6 +231,15 @@ TEST_F( qthread , team_scan )
   TestScanTeam< Kokkos::Qthread >( 10000 );
 }
 
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( qthread , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(3) ) );
+}
+#endif
+
 //----------------------------------------------------------------------------
 
 TEST_F( qthread , task_policy )

@@ -58,13 +58,17 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager)
-    : PFact_(parentFactoryManager->GetFactory("P")), RFact_(parentFactoryManager->GetFactory("R")), AcFact_(parentFactoryManager->GetFactory("A"))
+  TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager) :
+    PFact_ (parentFactoryManager->GetFactory("P")),
+    RFact_ (parentFactoryManager->GetFactory("R")),
+    AcFact_(parentFactoryManager->GetFactory("A"))
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManagerFine, RCP<const FactoryManagerBase> parentFactoryManagerCoarse)
-    : PFact_(parentFactoryManagerCoarse->GetFactory("P")), RFact_(parentFactoryManagerCoarse->GetFactory("R")), AcFact_(parentFactoryManagerCoarse->GetFactory("A"))
+  TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManagerFine, RCP<const FactoryManagerBase> parentFactoryManagerCoarse) :
+    PFact_ (parentFactoryManagerCoarse->GetFactory("P")),
+    RFact_ (parentFactoryManagerCoarse->GetFactory("R")),
+    AcFact_(parentFactoryManagerCoarse->GetFactory("A"))
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -134,11 +138,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & level) const {
-    // TODO: get rid of these
-    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node> SmootherBase2_type;
-    typedef MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> SmootherFactory_type;
-    typedef MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> SmootherPrototype_type;
-
     if (preSmootherFact_.is_null() && postSmootherFact_.is_null())
       return;
 
@@ -153,9 +152,9 @@ namespace MueLu {
     if (!preSmootherFact_.is_null()) {
       // Checking for null is not sufficient, as SmootherFactory(null, something) does not generate "PreSmoother"
       bool isAble = true;
-      RCP<const SmootherFactory_type> s = rcp_dynamic_cast<const SmootherFactory_type>(preSmootherFact_);
+      RCP<const SmootherFactory> s = rcp_dynamic_cast<const SmootherFactory>(preSmootherFact_);
       if (!s.is_null()) {
-        RCP<SmootherPrototype_type> pre, post;
+        RCP<SmootherPrototype> pre, post;
         s->GetSmootherPrototypes(pre, post);
         if (pre.is_null())
           isAble = false;
@@ -164,7 +163,7 @@ namespace MueLu {
       }
 
       if (isAble) {
-        RCP<SmootherBase2_type> Pre  = level.Get<RCP<SmootherBase2_type> >("PreSmoother", preSmootherFact_.get());
+        RCP<SmootherBase> Pre  = level.Get<RCP<SmootherBase> >("PreSmoother", preSmootherFact_.get());
 
         level.Set           ("PreSmoother", Pre, NoFactory::get());
 
@@ -176,9 +175,9 @@ namespace MueLu {
     if (!postSmootherFact_.is_null()) {
       // Checking for null is not sufficient, as SmootherFactory(something, null) does not generate "PostSmoother"
       bool isAble = true;
-      RCP<const SmootherFactory_type> s = rcp_dynamic_cast<const SmootherFactory_type>(postSmootherFact_);
+      RCP<const SmootherFactory> s = rcp_dynamic_cast<const SmootherFactory>(postSmootherFact_);
       if (!s.is_null()) {
-        RCP<SmootherPrototype_type> pre, post;
+        RCP<SmootherPrototype> pre, post;
         s->GetSmootherPrototypes(pre, post);
         if (post.is_null())
           isAble = false;
@@ -187,7 +186,7 @@ namespace MueLu {
       }
 
       if (isAble) {
-        RCP<SmootherBase2_type> Post = level.Get<RCP<SmootherBase2_type> >("PostSmoother", postSmootherFact_.get());
+        RCP<SmootherBase> Post = level.Get<RCP<SmootherBase> >("PostSmoother", postSmootherFact_.get());
 
         level.Set           ("PostSmoother", Post, NoFactory::get());
 

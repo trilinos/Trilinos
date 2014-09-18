@@ -127,38 +127,38 @@ ENDFUNCTION()
 # The arguments are:
 #
 #   ``PACKAGE_NAME <pakageName>``
-#  
+#
 #     Gives the name of the TriBITS package for which the export files should
 #     be created.
-#  
+#
 #   ``EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>``
-#  
+#
 #     If specified, then all of the variables in the generated export files
 #     will be prefixed with ``<exportFileVarPrefix>_`` instead of
 #     ``<pakageName>_``.
-#  
+#
 #   ``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
-#  
+#
 #     If specified, then the package's (``<packageName>``) cmake configure
 #     export file for use by external CMake client projects will be created as
 #     the file ``<cmakeConfigFileFullPath>``.  NOTE: the argument should be
 #     the full path!
-#  
+#
 #   ``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
-#  
+#
 #     If specified, then the package's (``<packageName>``) export makefile for
 #     use by external Makefile client projects will be created in the file
 #     <exportMakefileFileFullPath>.  NOTE: the argument should be the full
 #     path!
-#  
+#
 #   ``WRITE_INSTALL_CMAKE_CONFIG_FILE``
-#  
+#
 #     If specified, then the package's (``<packageName>``) install cmake
 #     configured export file will be installed in to the install tree as well.
 #     The name and location of this file is hard-coded.
-#  
+#
 #   ``WRITE_INSTALL_EXPORT_MAKLEFILE``
-#  
+#
 #     If specified, then the package's (``<packageName>``) install export
 #     makefile to be installed into the install tree as well.  The name and
 #     location of this file is hard-coded.
@@ -355,7 +355,7 @@ FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
   #We will use the complete list of supported tpls for the project
   #to help us create a properly ordered list of tpls.
   IF (FULL_TPL_SET)
-    SET(ORDERED_FULL_TPL_SET ${FULL_TPL_SET}) 
+    SET(ORDERED_FULL_TPL_SET ${FULL_TPL_SET})
     TRIBITS_SORT_LIST_ACCORDING_TO_MASTER_LIST("${${PROJECT_NAME}_REVERSE_TPLS}"
       ORDERED_FULL_TPL_SET)
   ENDIF()
@@ -407,7 +407,7 @@ FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
 
     # Custom code in configuration file.
     SET(PACKAGE_CONFIG_CODE "")
-  
+
     # Import build tree targets into applications.
     IF(FULL_LIBRARY_SET)
       SET(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
@@ -434,7 +434,7 @@ ENDIF()
 
   #
   # G) Create the export makefile for the build tree
-  # 
+  #
   # This is the equivalent of the cmake version only slightly changed so that
   # it can be directly imported into a Makefile.
   #
@@ -490,6 +490,9 @@ ENDIF()
   #     <install dir>/<lib path>/cmake/<package name>/.
   # The relative path to the installation dir is hence k*(../) + ../../, where
   # k is the number of components in <lib path>. Extract those here.
+  # This doesn't work if ${${PROJECT_NAME}_INSTALL_LIB_DIR} contains "./" or
+  # "../" components, but really, it never did. All of this should actually be
+  # handled by CMake's CONFIGURE_PACKAGE_CONFIG_FILE().
   STRING(REPLACE "/" ";" PATH_LIST ${${PROJECT_NAME}_INSTALL_LIB_DIR})
   SET(RELATIVE_PATH "../..")
   FOREACH(PATH ${PATH_LIST})
@@ -558,7 +561,7 @@ ENDFUNCTION()
 #
 # The INSTALL() commands must be in a different subroutine or CMake will not
 # allow you to call the rountine, even if you if() it out!
-# 
+#
 
 FUNCTION(TRIBITS_WRITE_PROJECT_CLIENT_EXPORT_FILES_INSTALL_TARGETS PACKAGE_NAME)
 
@@ -790,8 +793,20 @@ ENDIF()
   # directories using the installed config file. This is to deal with
   # installers that allow relocation of the install tree at *install*
   # time.
-  SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
-  SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS "\${CMAKE_CURRENT_LIST_DIR}/../../../${${PROJECT_NAME}_INSTALL_LIB_DIR}")
+  # The export files are typically installed in
+  #     <install dir>/<lib path>/cmake/<package name>/.
+  # The relative path to the installation dir is hence k*(../) + ../../, where
+  # k is the number of components in <lib path>. Extract those here.
+  # This doesn't work if ${${PROJECT_NAME}_INSTALL_LIB_DIR} contains "./" or
+  # "../" components, but really, it never did. All of this should actually be
+  # handled by CMake's CONFIGURE_PACKAGE_CONFIG_FILE().
+  STRING(REPLACE "/" ";" PATH_LIST ${${PROJECT_NAME}_INSTALL_LIB_DIR})
+  SET(RELATIVE_PATH "../..")
+  FOREACH(PATH ${PATH_LIST})
+    SET(RELATIVE_PATH "${RELATIVE_PATH}/..")
+  ENDFOREACH()
+  SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
+  SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_LIB_DIR}")
 
   # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries.
   IF(BUILD_SHARED_LIBS)

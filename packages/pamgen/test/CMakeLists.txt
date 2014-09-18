@@ -141,6 +141,7 @@ PAMGEN_ADD_TEST( 44 ARGS -f ur.txt -r 0 -n 1 -d 3)
 PAMGEN_ADD_TEST( 45 ARGS -f two_meshes.txt -r 0 -n 1 -d 3)
 PAMGEN_ADD_TEST( 46 ARGS -f double_ss_ns.txt -r 0 -n 1 -d 3)
 PAMGEN_ADD_TEST( 47 ARGS -f 360tri.txt -r 0 -n 1 -d 3)
+PAMGEN_ADD_TEST( 48 ARGS -f dual_tube.txt -r 0 -n 1 -d 3)
 
 
 # 2009/05/28: rabartl: Above, the test 17 timing out at 600s on gabriel and
@@ -158,6 +159,6 @@ report9.txt report10.txt report7.txt report8.txt report6.txt report4.txt
 report5.txt report3.txt report2.txt report1.txt geom_warp.txt ui2d.txt ui.txt
 mesh.txt lbrick.txt brick.txt tri.txt tri_proc.txt 2dtri.txt 2dtribis.txt
 hbrick.txt 3dbj.txt trisect_multi_theta.txt trisect_multi_theta_2d.txt
-double_ss_ns.txt 360tri.txt ${RES_FILES}
+double_ss_ns.txt 360tri.txt dual_tube.txt ${RES_FILES}
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_files
   )

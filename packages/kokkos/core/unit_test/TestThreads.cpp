@@ -66,10 +66,12 @@
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
+#include <TestRange.hpp>
 #include <TestTeam.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
+#include <TestTeamVector.hpp>
 
 namespace Test {
 
@@ -136,6 +138,13 @@ TEST_F( threads, view_api) {
 
 TEST_F( threads, view_aggregate ) {
   TestViewAggregate< Kokkos::Threads >();
+}
+
+TEST_F( threads , range_tag )
+{
+  TestRange< Kokkos::Threads >::test_for(1000);
+  TestRange< Kokkos::Threads >::test_reduce(1000);
+  TestRange< Kokkos::Threads >::test_scan(1000);
 }
 
 TEST_F( threads, long_reduce) {
@@ -300,6 +309,14 @@ TEST_F( threads , cxx11 )
 }
 #endif
 
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( threads , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(3) ) );
+}
+#endif
 } // namespace Test
 
 #endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */

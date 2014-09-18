@@ -69,38 +69,111 @@ template<class Scalar = MultiVector<>::scalar_type,
          class LocalOrdinal = typename MultiVector<Scalar>::local_ordinal_type,
          class GlobalOrdinal = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
          class Node = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
-  // need this so that MultiVector::operator() can call Vector's private view constructor
+class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+{
+private:
+  typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> base_type;
+  // need this so that MultiVector::operator() can call Vector's
+  // private view constructor
   friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
-
 public:
-  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type dot_type;
-
-  //! @name Constructor/Destructor Methods
+  //! \name Typedefs to facilitate template metaprogramming
   //@{
 
-  //! Sets all vector entries to zero.
-  explicit Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true);
+  //! The type of each entry in the Vector.
+  typedef Scalar scalar_type;
+  //! The type of local indices.
+  typedef LocalOrdinal local_ordinal_type;
+  //! The type of global indices.
+  typedef GlobalOrdinal global_ordinal_type;
+  //! The Kokkos Node type.
+  typedef Node node_type;
 
-  //! Vector copy constructor.
-  Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
+  /// \brief Type of an inner ("dot") product result.
+  ///
+  /// This is usually the same as <tt>scalar_type</tt>, but may differ
+  /// if <tt>scalar_type</tt> is e.g., an uncertainty quantification
+  /// type from the Stokhos package.
+  typedef typename base_type::dot_type dot_type;
+
+  /// \brief Type of a norm result.
+  ///
+  /// This is usually the same as the type of the magnitude (absolute
+  /// value) of <tt>scalar_type</tt>, but may differ if
+  /// <tt>scalar_type</tt> is e.g., an uncertainty quantification type
+  /// from the Stokhos package.
+  typedef typename base_type::mag_type mag_type;
+
+  //! The type of the Map specialization used by this class.
+  typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+
+  //@}
+  //! \name Constructors and destructor
+  //@{
+
+  /// \brief Basic constructor.
+  ///
+  /// \param map [in] The Vector's Map.  The Map describes the
+  ///   distribution of rows over process(es) in the Map's
+  ///   communicator.
+  //
+  /// \param zeroOut [in] If true (the default), require that all the
+  ///   Vector's entries be zero on return.  If false, the Vector's
+  ///   entries have undefined values on return, and must be set
+  ///   explicitly.
+  explicit Vector (const Teuchos::RCP<const map_type>& map,
+                   const bool zeroOut = true);
+
+  /// \brief Copy constructor.
+  ///
+  /// Whether this does a deep copy or a shallow copy depends on
+  /// whether \c source has "view semantics."  See discussion in the
+  /// documentation of the two-argument copy constructor below.
+  Vector (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source);
+
+  /// \brief Copy constructor, with option to do shallow copy and mark
+  ///   the result as having "view semantics."
+  ///
+  /// If copyOrView is Teuchos::View, this constructor marks the
+  /// result as having "view semantics."  This means that copy
+  /// construction or assignment (operator=) with the resulting
+  /// object will always do a shallow copy, and will transmit view
+  /// semantics to the result of the shallow copy.  If copyOrView is
+  /// Teuchos::Copy, this constructor <i>always</i> does a deep copy
+  /// and marks the result as not having view semantics, whether or
+  /// not \c source has view semantics.
+  ///
+  /// View semantics are a "forwards compatibility" measure for
+  /// porting to the Kokkos refactor version of Tpetra.  The latter
+  /// only ever has view semantics.  The "classic" version of Tpetra
+  /// does not currently have view semantics by default, but this
+  /// will change.
+  Vector (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source,
+          const Teuchos::DataAccess copyOrView);
 
   //! \brief Set vector values from an existing array (copy)
-  Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayView<const Scalar> &A);
+  Vector (const Teuchos::RCP<const map_type>& map,
+          const Teuchos::ArrayView<const Scalar>& A);
 
   //! Destructor.
-  virtual ~Vector();
+  virtual ~Vector ();
+
+  //@}
+  //! \name Clone method
+  //@{
+
+  /// \brief Return a deep copy of <tt>*this</tt> with a different Node type.
+  /// \tparam Node2 The returned Vector's Node type.
+  ///
+  /// \param node2 [in] The returned Vector's Kokkos Node instance.
+  template <class Node2>
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  clone (const Teuchos::RCP<Node2>& node2);
 
   //@}
   //! @name Post-construction modification routines
   //@{
-
-  //!Create a cloned Vector for a different node type
-  template <class Node2>
-  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-  clone(const RCP<Node2> &node2);
-
 
   //! Replace current value at the specified location with specified value.
   /** \pre \c globalRow must be a valid global element on this node, according to the row map.
@@ -129,11 +202,13 @@ public:
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy; // overloading, not hiding
   //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
-  void get1dCopy(ArrayView<Scalar> A) const;
+  void get1dCopy (Teuchos::ArrayView<Scalar> A) const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDataNonConst; // overloading, not hiding
   //! View of the local values of this vector.
-  Teuchos::ArrayRCP<Scalar> getDataNonConst()     { return getDataNonConst(0); }
+  Teuchos::ArrayRCP<Scalar> getDataNonConst () {
+    return this->getDataNonConst (0);
+  }
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getData; // overloading, not hiding
   //! Const view of the local values of this vector.

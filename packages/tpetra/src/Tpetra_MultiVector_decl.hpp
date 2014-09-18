@@ -349,12 +349,21 @@ namespace Tpetra {
     typedef GlobalOrdinal global_ordinal_type;
     //! The Kokkos Node type.
     typedef Node node_type;
-    //! The type for inner product (dot) products
-    /*!
-     * This is not used and exists here purely for backwards-compatibility
-     * with Kokkos-Refactor.
-     */
-    typedef Scalar dot_type;
+
+    /// \brief Type of an inner ("dot") product result.
+    ///
+    /// This is usually the same as <tt>scalar_type</tt>, but may
+    /// differ if <tt>scalar_type</tt> is e.g., an uncertainty
+    /// quantification type from the Stokhos package.
+    typedef scalar_type dot_type;
+
+    /// \brief Type of a norm result.
+    ///
+    /// This is usually the same as the type of the magnitude
+    /// (absolute value) of <tt>scalar_type</tt>, but may differ if
+    /// <tt>scalar_type</tt> is e.g., an uncertainty quantification
+    /// type from the Stokhos package.
+    typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType mag_type;
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
     typedef DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
@@ -370,12 +379,18 @@ namespace Tpetra {
     //! Default constructor: makes a MultiVector with no rows or columns.
     MultiVector ();
 
-    /// \brief Basic constuctor.
+    /// \brief Basic constructor.
     ///
-    /// \param map [in] Map describing the distribution of rows.
-    /// \param NumVectors [in] Number of vectors (columns).
-    /// \param zeroOut [in] Whether to initialize all the entries of
-    ///   the MultiVector to zero.
+    /// \param map [in] The MultiVector's Map.  The Map describes the
+    ///   distribution of rows over process(es) in the Map's
+    ///   communicator.
+    ///
+    /// \param NumVectors [in] Number of columns in the MultiVector.
+    ///
+    /// \param zeroOut [in] If true (the default), require that all the
+    ///   Vector's entries be zero on return.  If false, the Vector's
+    ///   entries have undefined values on return, and must be set
+    ///   explicitly.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  size_t NumVectors,
                  bool zeroOut=true);
@@ -1100,11 +1115,24 @@ namespace Tpetra {
       return hasViewSemantics_ ? Teuchos::View : Teuchos::Copy;
     }
 
-  protected:
-    // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    // friend MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
-    // createCopy (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src);
+    /// \brief Copy the contents of \c src into \c *this (deep copy).
+    ///
+    /// \param src [in] Source MultiVector (input of the deep copy).
+    ///
+    /// \pre <tt> ! src.getMap ().is_null () && ! this->getMap ().is_null () </tt>
+    /// \pre <tt> src.getMap ()->isCompatible (* (this->getMap ()) </tt>
+    ///
+    /// \post Any outstanding views of \c src or \c *this remain valid.
+    ///
+    /// \note To implementers: The postcondition implies that the
+    ///   implementation must not reallocate any memory of \c *this,
+    ///   or otherwise change its dimensions.  This is <i>not</i> an
+    ///   assignment operator; it does not change anything in \c *this
+    ///   other than the contents of storage.
+    void
+    assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
 
+  protected:
     typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
     typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 
@@ -1310,31 +1338,6 @@ namespace Tpetra {
 #endif
   };
 
-
-  /// \brief Return a deep copy of the MultiVector \c src.
-  /// \relatesalso MultiVector
-  ///
-  /// Regarding Copy or View semantics: The returned MultiVector is
-  /// always a deep copy of \c src, but always has the same semantics
-  /// as \c src.  That is, if \c src has View semantics, then the
-  /// returned MultiVector has View semantics, and if \c src has Copy
-  /// semantics, then the returned MultiVector has Copy semantics.
-  ///
-  /// You may call <tt>src.getCopyOrView ()</tt> to test the semantics
-  /// of the input MultiVector \c src.  For example, the following
-  /// will never trigger an assert:
-  /// \code
-  /// MultiVector<double> dst = createCopy (src);
-  /// assert (dst.getCopyOrView () == src.getCopyOrView ());
-  /// \endcode
-  ///
-  /// In the Kokkos refactor version of Tpetra, MultiVector always has
-  /// View semantics.  However, the above remarks still apply.
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
-  createCopy (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
-
-
   /// \brief Copy the contents of the MultiVector \c src into \c dst.
   /// \relatesalso MultiVector
   ///
@@ -1360,6 +1363,36 @@ namespace Tpetra {
   void
   deep_copy (MultiVector<DS,DL,DG,DN>& dst,
              const MultiVector<SS,SL,SG,SN>& src);
+  // {
+  //   TEUCHOS_TEST_FOR_EXCEPTION(
+  //     true, std::logic_error, "The fully generic version of Tpetra::deep_copy "
+  //     "is not implemented.");
+  // }
+
+  template <class SS, class SL, class SG, class SN>
+  void
+  deep_copy (MultiVector<SS,SL,SG,SN>& dst, const MultiVector<SS,SL,SG,SN>& src)
+  {
+    // NOTE (mfh 11 Sep 2014) We can't implement deep_copy with
+    // shallow-copy operator=, because that would invalidate existing
+    // views of dst!
+    dst.assign (src);
+  }
+
+  /// \brief Return a deep copy of the MultiVector \c src.
+  /// \relatesalso MultiVector
+  ///
+  /// Regarding Copy or View semantics: The returned MultiVector is
+  /// always a deep copy of \c src, and <i>always</i> has view
+  /// semantics.  This is because createCopy returns by value, and
+  /// therefore it assumes that you want to pass MultiVector objects
+  /// around by value, not by Teuchos::RCP.
+  ///
+  /// In the Kokkos refactor version of Tpetra, MultiVector always has
+  /// View semantics.  However, the above remarks still apply.
+  template <class ST, class LO, class GO, class NT>
+  MultiVector<ST, LO, GO, NT>
+  createCopy (const MultiVector<ST, LO, GO, NT>& src);
 
   namespace Details {
     /// \brief Implementation of ::Tpetra::MultiVector::clone().
@@ -1496,7 +1529,6 @@ namespace Tpetra {
     return cloner_type::clone (*this, node2);
   }
 
-
   /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.
   /// \relatesalso MultiVector
   /// \relatesalso Vector
@@ -1510,11 +1542,8 @@ namespace Tpetra {
   createMultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                      const size_t numVectors)
   {
-    using Teuchos::rcp;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-
-    const bool initToZero = true;
-    return rcp (new MV (map, numVectors, initToZero));
+    return Teuchos::rcp (new MV (map, numVectors));
   }
 
 } // namespace Tpetra

@@ -83,6 +83,7 @@ int main(int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using namespace MueLuExamples;
 
   Teuchos::oblackholestream blackhole;

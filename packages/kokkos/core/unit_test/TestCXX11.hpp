@@ -294,6 +294,7 @@ double TestVariantFunctor(int test) {
 template<class DeviceType>
 bool Test(int test) {
 
+#ifdef KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA
   double res_functor = TestVariantFunctor<DeviceType>(test);
   double res_lambda = TestVariantLambda<DeviceType>(test);
 
@@ -313,6 +314,9 @@ bool Test(int test) {
   }
 
   return passed ;
+#else
+  return true;
+#endif
 }
 
 }

@@ -56,7 +56,7 @@ Array<std::string> StrUtils::readFile(std::istream& is, char comment)
     if (line.length() > 0) rtn.append(before(line, comment));
     line="";
   }
-	
+
   return rtn;
 }
 
@@ -87,7 +87,7 @@ Array<Array<std::string> > StrUtils::tokenizeFile(std::istream& is, char comment
   Array<Array<std::string> > rtn(0);
   Array<std::string> lines = readFile(is, comment);
   rtn.reserve(lines.length());
-	
+
   int count = 0;
   for (int i=0; i<lines.length(); i++)
   {
@@ -97,7 +97,7 @@ Array<Array<std::string> > StrUtils::tokenizeFile(std::istream& is, char comment
     rtn.append(tokens);
     count++;
   }
-	
+
   return rtn;
 }
 
@@ -106,21 +106,21 @@ bool StrUtils::readLine(std::istream& is, std::string& line)
 {
   char c[500];
   if (line.length() > 0) line[0] = '\0';
-	
+
   if (is.eof()) return false;
   if (is.getline(c, 499))
   {
     line = std::string(c);
   }
-	
+
   return true;
 }
-	
+
 
 Array<std::string> StrUtils::getTokensPlusWhitespace(const std::string& str){
   Array<std::string> rtn(0);
   unsigned int start = 0;
-	
+
   while(start < str.length())
   {
     unsigned int wordStart =  findNextNonWhitespace(str, start);
@@ -144,7 +144,7 @@ Array<std::string> StrUtils::getTokensPlusWhitespace(const std::string& str){
 Array<std::string> StrUtils::stringTokenizer(const std::string& str){
   Array<std::string> rtn(0);
   unsigned int start = 0;
-	
+
   while(start < str.length())
   {
     start =  findNextNonWhitespace(str, start);
@@ -163,7 +163,7 @@ std::string StrUtils::reassembleFromTokens(const Array<std::string>& tokens,
 {
   std::string rtn;
 
-  for (int i=iStart; i<tokens.length(); i++) 
+  for (int i=iStart; i<tokens.length(); i++)
   {
     rtn += tokens[i];
     if (i < (tokens.length()-1)) rtn += " ";
@@ -172,29 +172,29 @@ std::string StrUtils::reassembleFromTokens(const Array<std::string>& tokens,
 }
 
 
-void StrUtils::splitList(const std::string& big, Array<std::string>& list) 
+void StrUtils::splitList(const std::string& big, Array<std::string>& list)
 {
-  if (subString(big, 0,1)!="[") 
+  if (subString(big, 0,1)!="[")
   {
     list.resize(1);
     list[0] = big;
     return;
   }
-	
+
   int parenDepth = 0;
   int localCount = 0;
   std::string tmp(big);
   list.resize(0);
 
   // start at 1 to ignore '[';
-	
+
   for (unsigned int i=1; i<big.length(); i++)
   {
     if (big[i]=='(') parenDepth++;
     if (big[i]==')') parenDepth--;
-    if (big[i]==']') 
+    if (big[i]==']')
     {
-      tmp[localCount]='\0'; 
+      tmp[localCount]='\0';
       list.append(tmp);
       break;
     }
@@ -210,9 +210,9 @@ void StrUtils::splitList(const std::string& big, Array<std::string>& list)
     localCount++;
   }
 }
-							
 
-// return the position of the next whitespace in a std::string. 
+
+// return the position of the next whitespace in a std::string.
 // If no whitespace, return -1;
 
 int StrUtils::findNextWhitespace(const std::string& str, int offset)
@@ -248,7 +248,7 @@ std::string StrUtils::varTableSubstitute(const std::string& rawLine,
   TEUCHOS_TEST_FOR_EXCEPTION(varNames.length() != varValues.length(),
     std::runtime_error,
     "mismatched variable tables in varTableSubstitute");
-                     
+
   std::string line = rawLine;
   for (int i=0; i<varNames.length(); i++)
   {
@@ -258,12 +258,12 @@ std::string StrUtils::varTableSubstitute(const std::string& rawLine,
 }
 
 
-std::string StrUtils::varSubstitute(const std::string& rawLine, 
-  const std::string& varName, 
+std::string StrUtils::varSubstitute(const std::string& rawLine,
+  const std::string& varName,
   const std::string& varValue)
 {
   std::string line = rawLine;
-  
+
   // iterate because there might be more than one occurance on this line
   while (find(line, varName) >= 0)
   {
@@ -340,7 +340,7 @@ std::string StrUtils::fixUnprintableCharacters(const std::string& str)
   for (unsigned int i=0; i<rtn.length(); i++)
   {
     unsigned char c = rtn[i];
-    if (c < 33 || c > 126) 
+    if (c < 33 || c > 126)
     {
       if (c != '\t' && c != '\n'&& c != '\r' && c != '\f' && c != ' ')
       {
@@ -371,10 +371,18 @@ std::string StrUtils::subString(const std::string& str, int begin, int end)
 
 std::string StrUtils::readFromStream(std::istream& is)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
     "StrUtils::readFromStream isn't implemented yet");
 
-	return "";
+  // NOTE (mfh 15 Sep 2014): Most compilers have figured out that the
+  // return statement below is unreachable.  Some older compilers
+  // might not realize this.  That's why the return statement was put
+  // there, so that those compilers don't warn that this function
+  // doesn't return a value.  If it's a choice between one warning and
+  // another, I would prefer the choice that produces less code and
+  // doesn't have unreachable code (which never gets tested).
+
+  //return "";
 }
 
 
@@ -391,13 +399,13 @@ std::string StrUtils::allCaps(const std::string& s)
 
 double StrUtils::atof(const std::string& s)
 {
-	return std::atof(s.c_str());
+        return std::atof(s.c_str());
 }
 
 
 int StrUtils::atoi(const std::string& s)
 {
-	return std::atoi(s.c_str());
+        return std::atoi(s.c_str());
 }
 
 
@@ -434,5 +442,5 @@ std::string StrUtils::removeAllSpaces(std::string stringToClean)
   return stringToClean;
 }
 
-  
+
 } // namespace Teuchos

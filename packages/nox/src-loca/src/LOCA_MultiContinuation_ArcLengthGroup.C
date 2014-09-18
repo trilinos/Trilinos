@@ -153,7 +153,6 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
 {
   double dpdsOld, dpdsNew;
   double thetaOld, thetaNew;
-  LOCA::MultiContinuation::ExtendedVector *v, *sv;
 
   scaledTangentMultiVec = tangentMultiVec;
 
@@ -161,19 +160,19 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
   if (predictor->isTangentScalable()) {
 
     for (int i=0; i<numParams; i++) {
-      v =
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&tangentMultiVec[i]);
-      sv =
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&scaledTangentMultiVec[i]);
-      grpPtr->scaleVector(*(sv->getXVec()));
-      grpPtr->scaleVector(*(sv->getXVec()));
+      LOCA::MultiContinuation::ExtendedVector & v =
+        dynamic_cast<LOCA::MultiContinuation::ExtendedVector&>(tangentMultiVec[i]);
+      LOCA::MultiContinuation::ExtendedVector & sv =
+        dynamic_cast<LOCA::MultiContinuation::ExtendedVector&>(scaledTangentMultiVec[i]);
+      grpPtr->scaleVector(*(sv.getXVec()));
+      grpPtr->scaleVector(*(sv.getXVec()));
 
       if (doArcLengthScaling) {
 
     // Estimate dpds
     thetaOld = theta[i];
-    sv->getScalars()->scale(thetaOld*thetaOld);
-    dpdsOld = 1.0/sqrt(sv->innerProduct(*v));
+    sv.getScalars()->scale(thetaOld*thetaOld);
+    dpdsOld = 1.0/sqrt(sv.innerProduct(v));
 
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
       globalData->locaUtils->out() <<
@@ -192,10 +191,10 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
     // Recompute scale factor
     recalculateScaleFactor(dpdsOld, thetaOld, thetaNew);
 
-    sv->getScalars()->scale(thetaNew*thetaNew / (thetaOld*thetaOld));
+    sv.getScalars()->scale(thetaNew*thetaNew / (thetaOld*thetaOld));
 
     // Calculate new dpds using new scale factor
-    dpdsNew = 1.0/sqrt(sv->innerProduct(*v));
+    dpdsNew = 1.0/sqrt(sv.innerProduct(v));
 
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
       globalData->locaUtils->out() << std::endl << "\t" <<
@@ -209,8 +208,8 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
     }
 
     // Rescale predictor vector
-    v->scale(dpdsNew);
-    sv->scale(dpdsNew);
+    v.scale(dpdsNew);
+    sv.scale(dpdsNew);
 
     theta[i] = thetaNew;
 

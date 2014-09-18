@@ -75,6 +75,7 @@
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
+#include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #endif
 
 #ifdef HAVE_MUELU_EPETRA
@@ -293,6 +294,47 @@ namespace MueLu {
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
     }
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraRow(RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op) {
+    RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
+    if (crsOp == Teuchos::null)
+      throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+
+    RCP<const CrsMatrix> crsMat = crsOp->getCrsMatrix();
+    const RCP<const TpetraCrsMatrix> tmp_Crs = rcp_dynamic_cast<const TpetraCrsMatrix>(crsMat);
+    RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmp_BlockCrs;    
+    if(!tmp_Crs.is_null()) {
+      return tmp_Crs->getTpetra_CrsMatrixNonConst();
+    }
+    else { 
+      tmp_BlockCrs= rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(crsMat);
+      if (tmp_BlockCrs.is_null())
+	throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
+      return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraRow(RCP<Matrix> Op) {
+    RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
+    if (crsOp == Teuchos::null)
+      throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+
+    RCP<const CrsMatrix> crsMat = crsOp->getCrsMatrix();
+    const RCP<const TpetraCrsMatrix> tmp_Crs = rcp_dynamic_cast<const TpetraCrsMatrix>(crsMat);
+    RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmp_BlockCrs;    
+    if(!tmp_Crs.is_null()) {
+      return tmp_Crs->getTpetra_CrsMatrixNonConst();
+    }
+    else { 
+      tmp_BlockCrs= rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(crsMat);
+      if (tmp_BlockCrs.is_null())
+	throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
+      return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
+    }
+  }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2TpetraMap(const Map& map) {
@@ -1141,6 +1183,7 @@ namespace MueLu {
 
   } //Write
 
+#ifndef _WIN32
 #include <unistd.h>
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1167,6 +1210,13 @@ namespace MueLu {
     }
     comm->barrier();
   } //PauseForDebugger
+#else
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PauseForDebugger() {
+      throw(Exceptions::RuntimeError("MueLu Utils: PauseForDebugger not implemented on Windows."));
+  }
+
+#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Scalar Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PowerMethod(const Matrix& A, bool scaleByDiag,
@@ -1578,8 +1628,9 @@ namespace MueLu {
 
         return AAAA;
 
-      } catch (...) {
-        throw Exceptions::RuntimeError("Utils::Transpose: Can only transpose Crs matrices");
+      } catch (std::exception& e) {
+        std::cout << "threw exception '" << e.what() << "'" << std::endl;
+        throw Exceptions::RuntimeError("Utils::Transpose failed, perhaps because matrix is not a Crs matrix");
       }
     } //if
 #endif

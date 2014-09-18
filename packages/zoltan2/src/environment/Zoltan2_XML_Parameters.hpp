@@ -451,4 +451,9 @@
     </Validators> \
   </ParameterList>"
 
+#ifdef _MSC_VER
+#undef ZOLTAN2_XML_PARAMETER_STRING
+#define ZOLTAN2_XML_PARAMETER_STRING "ZOLTAN2_XML_PARAMETER_STRING not available due to compiler error C2026: string too big, trailing characters truncated"
+#endif
+
 #endif  //ZOLTAN2_PARAMETER_DEFINITION_HEADER

@@ -61,18 +61,14 @@ namespace Tpetra {
 ///
 /// These contents may be a mixture of local and remote rows of the
 /// actual matrix.
-template <class Scalar = CrsMatrix<>::scalar_type,
-          class LocalOrdinal = typename CrsMatrix<Scalar>::local_ordinal_type,
-          class GlobalOrdinal =
-            typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
-          class Node =
-            typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-          class SpMatOps =
-            typename CrsMatrixSparseOpsSelector<Scalar, LocalOrdinal, Node>::sparse_ops_type>
+  template <class Scalar = CrsMatrix<>::scalar_type,
+            class LocalOrdinal = typename CrsMatrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
 class CrsMatrixStruct {
 public:
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_matrix_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
 
   CrsMatrixStruct ();
 
@@ -91,16 +87,16 @@ public:
   /** \brief Colmap garnered as a result of the import */
   Teuchos::RCP<const map_type > importColMap;
   /** \brief The imported matrix */
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >  importMatrix;
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  importMatrix;
   /** \brief The original matrix */
-  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >  origMatrix;
+  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  origMatrix;
 
 };
 
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int
-dumpCrsMatrixStruct (const CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps >& M);
+dumpCrsMatrixStruct (const CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node >& M);
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -124,17 +120,13 @@ public:
 
 template <class Scalar = CrsMatrix<>::scalar_type,
           class LocalOrdinal = typename CrsMatrix<Scalar>::local_ordinal_type,
-          class GlobalOrdinal =
-            typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
-          class Node =
-            typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-          class SpMatOps =
-            typename CrsMatrixSparseOpsSelector<Scalar, LocalOrdinal, Node>::sparse_ops_type>
+          class GlobalOrdinal = typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
+          class Node = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
 class CrsWrapper_CrsMatrix :
     public CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 public:
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_matrix_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
 
   CrsWrapper_CrsMatrix (crs_matrix_type& crsmatrix);
   virtual ~CrsWrapper_CrsMatrix ();
@@ -195,10 +187,10 @@ public:
   global_size_t max_row_length_;
 };
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 insert_matrix_locations (CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>& graphbuilder,
-                         CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C);
+                         CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
 
 } // namespace Tpetra
 #endif // TPETRA_MMHELPERS_DECL_HPP

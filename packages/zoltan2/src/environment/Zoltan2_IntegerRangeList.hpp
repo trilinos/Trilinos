@@ -59,6 +59,11 @@
 #include <Teuchos_DummyObjectGetter.hpp>
 #include <Teuchos_StrUtils.hpp>
 
+#ifdef _MSC_VER
+// for isspace(int), else one gets isspace(_Elem _Ch, const locale& _Loc) from <locale>
+#include <cctype>
+#endif
+
 // Had to redefine this type from Teuchos_ParameterEntryValidator.hpp.
 // Compiler stumbled on it.
 typedef Teuchos::RCP<const Teuchos::Array<std::string> > ValidStringsList;

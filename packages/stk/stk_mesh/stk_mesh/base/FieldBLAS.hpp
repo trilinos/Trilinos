@@ -529,7 +529,7 @@ void field_axpy(
         const Scalar alpha,
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(&xFieldBase.get_mesh()==&yFieldBase.get_mesh());
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
@@ -573,7 +573,7 @@ void field_axpy(
         const Scalar alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(&xField.get_mesh()==&yField.get_mesh());
     ThrowAssert(xField.entity_rank() == yField.entity_rank());
@@ -615,7 +615,7 @@ void INTERNAL_field_product(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
         const FieldBase & zFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
 
@@ -643,7 +643,7 @@ void field_product(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
         const FieldBase & zFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
     ThrowAssert(yFieldBase.entity_rank() == zFieldBase.entity_rank());
@@ -685,7 +685,7 @@ void field_product(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & zField,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xField.entity_rank() == yField.entity_rank());
     ThrowAssert(yField.entity_rank() == zField.entity_rank());
@@ -730,7 +730,7 @@ inline
 void INTERNAL_field_copy(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
 
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
@@ -757,7 +757,7 @@ inline
 void field_copy(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
     ThrowAssert(&xFieldBase.get_mesh() == &yFieldBase.get_mesh());
@@ -794,7 +794,7 @@ inline
 void field_copy(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
-        const Selector selector)
+        const Selector& selector)
 {
 
     ThrowAssert(xField.entity_rank() == yField.entity_rank());
@@ -834,7 +834,7 @@ inline
 Scalar field_dot(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
 
@@ -862,9 +862,7 @@ Scalar field_dot(
     }
 
     Scalar glob_result = local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     return glob_result;
 }
 
@@ -873,7 +871,7 @@ inline
 std::complex<Scalar>  field_dot(
         const Field<std::complex<Scalar> ,T1,T2,T3,T4,T5,T6,T7>& xField,
         const Field<std::complex<Scalar> ,T1,T2,T3,T4,T5,T6,T7>& yField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm) {
 
     ThrowAssert(xField.entity_rank() == yField.entity_rank());
@@ -905,9 +903,7 @@ std::complex<Scalar>  field_dot(
 
     Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
     Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
-#endif
     return std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
 }
 
@@ -916,7 +912,7 @@ inline
 Scalar field_dot(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
-        const Selector selector)
+        const Selector& selector)
 {
     const MPI_Comm comm = xField.get_mesh().parallel();
     return field_dot(xField,yField,selector,comm);
@@ -938,7 +934,7 @@ void field_dot(
         std::complex<Scalar> & global_result,
         const FieldBase & xFieldBase, //CR LAST COMMENT LOCATION
         const FieldBase & yFieldBase,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
@@ -972,9 +968,7 @@ void field_dot(
 
     Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
     Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
-#endif
     global_result = std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
 }
 
@@ -984,7 +978,7 @@ void field_dot(
         Scalar & glob_result,
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
@@ -1014,9 +1008,7 @@ void field_dot(
     }
 
     glob_result = local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
 }
 
 template<class Scalar>
@@ -1025,7 +1017,7 @@ void field_dot(
         Scalar & result,
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     const MPI_Comm comm = xFieldBase.get_mesh().parallel();
     field_dot(result,xFieldBase,yFieldBase,selector,comm);
@@ -1047,7 +1039,7 @@ inline
 void field_scale(
         const Scalar alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector)
+        const Selector& selector)
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
@@ -1081,7 +1073,7 @@ inline
 void field_scale(
         const Scalar alpha,
         const FieldBase & xFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
 
@@ -1117,7 +1109,7 @@ inline
 void field_fill(
         const Scalar alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector)
+        const Selector& selector)
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
@@ -1151,7 +1143,7 @@ inline
 void field_fill_component(
         const Scalar* alpha,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector)
+        const Selector& selector)
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
@@ -1186,7 +1178,7 @@ inline
 void field_fill_component(
         const Scalar* alpha,
         const FieldBase & xFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
 
@@ -1223,7 +1215,7 @@ inline
 void field_fill(
         const Scalar alpha,
         const FieldBase & xFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
 
@@ -1259,7 +1251,7 @@ inline
 void field_swap(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xField.entity_rank() == yField.entity_rank());
     ThrowAssert(&xField.get_mesh() == &yField.get_mesh());
@@ -1298,7 +1290,7 @@ inline
 void INTERNAL_field_swap(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
 
@@ -1323,7 +1315,7 @@ inline
 void field_swap(
         const FieldBase & xFieldBase,
         const FieldBase & yFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     ThrowAssert(xFieldBase.entity_rank() == yFieldBase.entity_rank());
     ThrowAssert(&xFieldBase.get_mesh() == &yFieldBase.get_mesh());
@@ -1359,7 +1351,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 Scalar field_nrm2(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
@@ -1382,9 +1374,7 @@ Scalar field_nrm2(
     }
 
     Scalar glob_result=local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     return sqrt(glob_result);
 }
 
@@ -1392,7 +1382,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 std::complex<Scalar> field_nrm2(
         const Field< std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm) {
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
@@ -1415,9 +1405,7 @@ std::complex<Scalar> field_nrm2(
     }
 
     Scalar glob_result=local_result_r;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
-#endif
     return std::complex<Scalar>(sqrt(glob_result),0.0);
 }
 
@@ -1425,7 +1413,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 Scalar field_nrm2(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector)
+        const Selector& selector)
 {
     const MPI_Comm comm = xField.get_mesh().parallel();
     return field_nrm2(xField,selector,comm);
@@ -1446,7 +1434,7 @@ inline
 void field_nrm2(
         Scalar & glob_result,
         const FieldBase & xFieldBase,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     ThrowAssert(xFieldBase.data_traits().type_info == typeid(Scalar));
@@ -1471,9 +1459,7 @@ void field_nrm2(
     }
 
     glob_result=local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     glob_result=sqrt(glob_result);
 }
 
@@ -1482,7 +1468,7 @@ inline
 void field_nrm2(
         std::complex<Scalar> & result,
         const FieldBase & xFieldBase,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     ThrowAssert(xFieldBase.data_traits().type_info == typeid(std::complex<Scalar>));
@@ -1507,9 +1493,7 @@ void field_nrm2(
     }
 
     Scalar glob_result=local_result_r;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
-#endif
     result=std::complex<Scalar>(sqrt(glob_result),0.0);
 }
 
@@ -1518,7 +1502,7 @@ inline
 void field_nrm2(
         Scalar & result,
         const FieldBase & xFieldBase,
-        const Selector selector)
+        const Selector& selector)
 {
     const MPI_Comm comm = xFieldBase.get_mesh().parallel();
     field_nrm2(result,xFieldBase,selector,comm);
@@ -1538,7 +1522,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 Scalar field_asum(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm)
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
@@ -1561,9 +1545,7 @@ Scalar field_asum(
     }
 
     Scalar glob_result=local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     return glob_result;
 }
 
@@ -1571,7 +1553,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 std::complex<Scalar> field_asum(
         const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector,
+        const Selector& selector,
         const MPI_Comm comm) {
 
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
@@ -1594,9 +1576,7 @@ std::complex<Scalar> field_asum(
     }
 
     Scalar glob_result = local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     return std::complex<Scalar>(glob_result,0.0);
 }
 
@@ -1604,7 +1584,7 @@ template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,clas
 inline
 Scalar field_asum(
         const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField,
-        const Selector selector)
+        const Selector& selector)
 {
     const MPI_Comm comm = xField.get_mesh().parallel();
     return field_asum(xField,selector,comm);
@@ -1649,9 +1629,7 @@ void field_asum(
     }
 
     glob_result=local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
 }
 
 template<class Scalar>
@@ -1684,9 +1662,7 @@ void field_asum(
     }
 
     Scalar glob_result=local_result;
-#ifdef STK_HAS_MPI
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-#endif
     result=std::complex<Scalar>(glob_result,0.0);
 }
 
@@ -1764,9 +1740,7 @@ Entity field_eamax(
     EntityId local_EntityId = xField.get_mesh().identifier(local_result);
     EntityId  glob_EntityId = local_EntityId;
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_maxloc(xField.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
-#endif
     if (glob_EntityId==local_EntityId)
     {
         local_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
@@ -1829,9 +1803,7 @@ Entity field_eamax(
     EntityId     local_EntityId = xField.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     Scalar global_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_maxloc(xField.get_mesh().parallel(),&local_amax,&local_EntityId,&global_amax,&glob_EntityId,1u);
-#endif
     if (glob_EntityId==local_EntityId)
     {
         local_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
@@ -1882,9 +1854,7 @@ Scalar field_amax(
     }
 
     Scalar global_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_max(comm,&local_amax,&global_amax,1u);
-#endif
     return global_amax;
 }
 
@@ -1920,9 +1890,7 @@ std::complex<Scalar> field_amax(
     }
 
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-#endif
     return std::complex<Scalar>(glob_amax,0.0);
 }
 
@@ -1997,9 +1965,7 @@ Entity INTERNAL_field_eamax_complex(
     EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
     EntityId  glob_EntityId = local_EntityId;
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_maxloc(xFieldBase.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
-#endif
     if (glob_EntityId == local_EntityId) {
         local_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
     } else {
@@ -2061,9 +2027,7 @@ Entity INTERNAL_field_eamax(
     EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_maxloc(xFieldBase.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
-#endif
     if (glob_EntityId==local_EntityId)
     {
         local_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
@@ -2139,9 +2103,7 @@ void field_amax(
     }
 
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-#endif
     result = std::complex<Scalar>(glob_amax,0.0);
 }
 
@@ -2180,9 +2142,7 @@ void field_amax(
     }
 
     Scalar glob_amax = local_amax;
-#ifdef STK_HAS_MPI
     stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-#endif
     result = glob_amax;
 }
 
@@ -2260,9 +2220,7 @@ Entity field_eamin(
     EntityId local_EntityId = xField.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-#endif
     if (glob_EntityId == local_EntityId) {
         glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
     } else {
@@ -2324,9 +2282,7 @@ Entity field_eamin(
     EntityId local_EntityId = xField.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&glob_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-#endif
+    stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
     if (glob_EntityId == local_EntityId) {
         glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
     } else {
@@ -2376,9 +2332,7 @@ std::complex<Scalar> field_amin(
     }
 
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-#endif
     return sqrt(glob_amin);
 }
 
@@ -2414,9 +2368,7 @@ Scalar field_amin(
     }
 
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-#endif
     return glob_amin;
 }
 
@@ -2491,9 +2443,7 @@ Entity INTERNAL_field_eamin_complex(
     EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     double glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_minloc(xFieldBase.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-#endif
     if (glob_EntityId == local_EntityId) {
         glob_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
     } else {
@@ -2555,10 +2505,8 @@ Entity INTERNAL_field_eamin(
     EntityId local_EntityId = xFieldBase.get_mesh().identifier(local_result);
     EntityId glob_EntityId = local_EntityId;
     double glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_minloc(xFieldBase.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-#endif
-    if (glob_EntityId == local_EntityId) {
+   if (glob_EntityId == local_EntityId) {
         glob_result = xFieldBase.get_mesh().get_entity(xFieldBase.entity_rank(),glob_EntityId);
     } else {
         glob_result = Entity();
@@ -2633,9 +2581,7 @@ void field_amin(
     }
 
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-#endif
     result=std::complex<Scalar>(glob_amin,0.0);
 }
 
@@ -2674,9 +2620,7 @@ void field_amin(
         }
     }
     Scalar glob_amin = local_amin;
-#ifdef STK_HAS_MPI
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-#endif
     result=glob_amin;
 }
 

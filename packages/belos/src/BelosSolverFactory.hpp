@@ -339,29 +339,24 @@ private:
 
   //! List of supported aliases (to canonical solver names).
   Teuchos::Array<std::string> solverNameAliases () const;
-};
 
+  //! Print the given array of strings, in YAML format, to \c out.
+  static void
+  printStringArray (std::ostream& out,
+                    const Teuchos::ArrayView<const std::string>& array)
+  {
+    typedef Teuchos::ArrayView<std::string>::const_iterator iter_type;
 
-namespace { // anonymous
-
-//! Print the given array of strings, in YAML format, to \c out.
-void
-printStringArray (std::ostream& out,
-                  const Teuchos::ArrayView<const std::string>& array)
-{
-  typedef Teuchos::ArrayView<std::string>::const_iterator iter_type;
-
-  out << "[";
-  for (iter_type iter = array.begin(); iter != array.end(); ++iter) {
-    out << "\"" << *iter << "\"";
-    if (iter + 1 != array.end()) {
-      out << ", ";
+    out << "[";
+    for (iter_type iter = array.begin(); iter != array.end(); ++iter) {
+      out << "\"" << *iter << "\"";
+      if (iter + 1 != array.end()) {
+        out << ", ";
+      }
     }
+    out << "]";
   }
-  out << "]";
-}
-
-} // namespace (anonymous)
+};
 
 
 namespace details {

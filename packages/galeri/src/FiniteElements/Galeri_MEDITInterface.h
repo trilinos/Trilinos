@@ -44,6 +44,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <limits>
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Import.h"
@@ -89,8 +90,16 @@ public:
     }
 
     int n = 0;
-    if (Field.Comm().MyPID() == 0)
-      n = RowMap.NumGlobalElements();
+    if (Field.Comm().MyPID() == 0) {
+      long long LLn = RowMap.NumGlobalElements64();
+      if(LLn > std::numeric_limits<int>::max())
+      {
+        cerr << "LLn out of int bound" << endl;
+        cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+        throw(-1);
+      }
+      n = (int) LLn;
+    }
     Epetra_Map SingleProcMap(-1, n, 0, Field.Comm());
     Epetra_MultiVector SingleProcCoord(SingleProcMap, 3);
     Epetra_MultiVector SingleProcField(SingleProcMap, 1);
@@ -163,7 +172,7 @@ public:
         for (int i = 0 ; i < data.NumMyElements() ; ++i) {
           data.ElementVertices(i, &vertices[0]);
           for (int j = 0 ; j < data.NumVerticesPerElement() ; ++j)
-            medit << data.VertexMap().GID(vertices[j]) + 1 << " ";
+            medit << data.VertexMap().GID64(vertices[j]) + 1 << " ";
           medit << Comm().MyPID() << endl;
         }
 

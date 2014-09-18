@@ -83,10 +83,11 @@ EpetraRowMatrix<TpetraMatrixType>::EpetraRowMatrix(
  : Epetra_BasicRowMatrix(comm),
    tpetra_matrix_(mat)
 {
-  int globalNumRows = tpetra_matrix_->getRowMap()->getGlobalNumElements();
-  int globalNumCols = tpetra_matrix_->getColMap()->getGlobalNumElements();
-  Teuchos::ArrayView<const int> row_elem_list = tpetra_matrix_->getRowMap()->getNodeElementList();
-  Teuchos::ArrayView<const int> col_elem_list = tpetra_matrix_->getColMap()->getNodeElementList();
+  typedef typename TpetraMatrixType::global_ordinal_type GO;
+  GO globalNumRows = tpetra_matrix_->getRowMap()->getGlobalNumElements();
+  GO globalNumCols = tpetra_matrix_->getColMap()->getGlobalNumElements();
+  Teuchos::ArrayView<const GO> row_elem_list = tpetra_matrix_->getRowMap()->getNodeElementList();
+  Teuchos::ArrayView<const GO> col_elem_list = tpetra_matrix_->getColMap()->getNodeElementList();
   Epetra_Map rowmap(globalNumRows, row_elem_list.size(), row_elem_list.getRawPtr(), 0, comm);
   Epetra_Map colmap(globalNumCols, col_elem_list.size(), col_elem_list.getRawPtr(), 0, comm);
   SetMaps(rowmap, colmap);

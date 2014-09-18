@@ -60,8 +60,9 @@
 #include "Thyra_EpetraLinearOp.hpp"
 
 RosenbrockModelEvaluator::
-RosenbrockModelEvaluator(const Teuchos::RCP<const Epetra_Comm>& comm)
-  : epetra_comm_(comm)
+RosenbrockModelEvaluator(const Teuchos::RCP<const Epetra_Comm>& comm):
+  d_(0.0),
+  epetra_comm_(comm)
 {
   using Teuchos::rcp;
 

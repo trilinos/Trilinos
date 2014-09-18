@@ -12,12 +12,15 @@
 
 #include <stdint.h>
 
+#if defined(_MSC_VER)
+#define FORCE_INLINE	__forceinline
+#else
 #if __GNUC__ && __GNUC_STDC_INLINE__
 #define FORCE_INLINE inline __attribute__((always_inline))
 #else
 #define FORCE_INLINE __attribute__((always_inline))
 #endif
-
+#endif
 /* KDDKDD
 inline uint32_t rotl32 ( uint32_t x, int8_t r )
 {

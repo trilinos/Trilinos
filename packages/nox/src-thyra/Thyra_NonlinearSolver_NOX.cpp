@@ -57,7 +57,9 @@
 
 // ****************************************************************
 // ****************************************************************
-Thyra::NOXNonlinearSolver::NOXNonlinearSolver()
+Thyra::NOXNonlinearSolver::NOXNonlinearSolver():
+  do_row_sum_scaling_(false),
+  when_to_update_(NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfSolve)
 {
   param_list_ = Teuchos::rcp(new Teuchos::ParameterList);
   valid_param_list_ = Teuchos::rcp(new Teuchos::ParameterList);

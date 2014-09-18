@@ -1129,11 +1129,10 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar,
             class LocalOrdinal,
-            class GlobalOrdinal, class DeviceType>
+            class GlobalOrdinal,
+            class DeviceType>
   void
   CrsMatrix<
     Scalar, LocalOrdinal, GlobalOrdinal,
@@ -1375,7 +1374,9 @@ namespace Tpetra {
     // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" sublist is now ignored.
   }
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal,
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
            class DeviceType>
   void
   CrsMatrix<
@@ -1387,7 +1388,6 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
-    using Teuchos::as;
     using Teuchos::toString;
     using std::endl;
     const char tfecfFuncName[] = "insertLocalValues";
@@ -1604,7 +1604,6 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
-    using Teuchos::as;
     using Teuchos::toString;
     using std::endl;
     typedef LocalOrdinal LO;
@@ -3020,7 +3019,6 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   getFrobeniusNorm () const
   {
-    using Teuchos::as;
     using Teuchos::outArg;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
@@ -3077,9 +3075,6 @@ namespace Tpetra {
     return frobNorm;
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   CrsMatrix<
@@ -3102,9 +3097,39 @@ namespace Tpetra {
     myGraph_->replaceColMap (newColMap);
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void
+  CrsMatrix<
+    Scalar,
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  reindexColumns (crs_graph_type* const graph,
+                  const Teuchos::RCP<const map_type>& newColMap,
+                  const Teuchos::RCP<const import_type>& newImport,
+                  const bool sortEachRow)
+  {
+    const char tfecfFuncName[] = "reindexColumns: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      graph == NULL && myGraph_.is_null (), std::invalid_argument,
+      "The input graph is NULL, but the matrix does not own its graph.");
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
+    crs_graph_type& theGraph = (graph == NULL) ? *myGraph_ : *graph;
+    const bool sortGraph = false; // we'll sort graph & matrix together below
+    theGraph.reindexColumns (newColMap, newImport, sortGraph);
+    if (sortEachRow && theGraph.isLocallyIndexed () && ! theGraph.isSorted ()) {
+      // We can't just call sortEntries() here, because that fails if
+      // the matrix has a const graph.  We want to use the given graph
+      // in that case.
+      const size_t lclNumRows = theGraph.getNodeNumRows ();
+      for (size_t row = 0; row < lclNumRows; ++row) {
+        RowInfo rowInfo = theGraph.getRowInfo (row);
+        theGraph.template sortRowIndicesAndValues<Scalar> (rowInfo, this->getViewNonConst (rowInfo));
+      }
+      theGraph.indicesAreSorted_ = true;
+    }
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   CrsMatrix<
@@ -3115,18 +3140,16 @@ namespace Tpetra {
   replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                Teuchos::RCP<const import_type>& newImporter)
   {
-    const char tfecfFuncName[] = "replaceDomainMapAndImporter";
+    const char tfecfFuncName[] = "replaceDomainMapAndImporter: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       myGraph_.is_null (), std::runtime_error,
-      ": This method does not work if the matrix has a const graph.  The whole "
+      "This method does not work if the matrix has a const graph.  The whole "
       "idea of a const graph is that you are not allowed to change it, but this"
       " method necessarily must modify the graph, since the graph owns the "
       "matrix's domain Map and Import objects.");
     myGraph_->replaceDomainMapAndImporter (newDomainMap, newImporter);
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   CrsMatrix<Scalar,
@@ -3156,8 +3179,6 @@ namespace Tpetra {
     }
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,
@@ -3344,7 +3365,7 @@ namespace Tpetra {
       numSends++; // one last increment, to make it a count instead of an index
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      Teuchos::as<size_type> (numSends) != sendIDs.size(),
+      static_cast<size_type> (numSends) != sendIDs.size(),
       std::logic_error, ": internal logic error. Contact Tpetra team.");
 
     // don't need this data anymore
@@ -5038,7 +5059,6 @@ namespace Tpetra {
   convert () const
   {
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, node_type> out_mat_type;
@@ -5261,7 +5281,6 @@ namespace Tpetra {
   {
     using std::endl;
     using std::setw;
-    using Teuchos::as;
     using Teuchos::Comm;
     using Teuchos::RCP;
     using Teuchos::TypeNameTraits;
@@ -5287,7 +5306,7 @@ namespace Tpetra {
     for (size_t dec=10; dec<getGlobalNumRows(); dec *= 10) {
       ++width;
     }
-    width = std::max<size_t> (width, as<size_t> (11)) + 2;
+    width = std::max<size_t> (width, static_cast<size_t> (11)) + 2;
 
     //    none: print nothing
     //     low: print O(1) info from node 0
@@ -5522,7 +5541,6 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
-    using Teuchos::as;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef node_type NT;
@@ -5547,7 +5565,7 @@ namespace Tpetra {
     const map_type& srcRowMap = * (srcMat.getRowMap ());
     Array<GO> rowInds;
     Array<Scalar> rowVals;
-    const LO numSameIDs_as_LID = as<LO> (numSameIDs);
+    const LO numSameIDs_as_LID = static_cast<LO> (numSameIDs);
     for (LO sourceLID = 0; sourceLID < numSameIDs_as_LID; ++sourceLID) {
       // Global ID for the current row index in the source matrix.
       // The first numSameIDs GIDs in the two input lists are the
@@ -5561,7 +5579,7 @@ namespace Tpetra {
 
       if (sourceIsLocallyIndexed) {
         const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
-        if (rowLength > as<size_t> (rowInds.size())) {
+        if (rowLength > static_cast<size_t> (rowInds.size())) {
           rowInds.resize (rowLength);
           rowVals.resize (rowLength);
         }
@@ -5610,7 +5628,7 @@ namespace Tpetra {
     // Permute the remaining rows.
     //
     const map_type& tgtRowMap = * (this->getRowMap ());
-    const size_t numPermuteToLIDs = as<size_t> (permuteToLIDs.size ());
+    const size_t numPermuteToLIDs = static_cast<size_t> (permuteToLIDs.size ());
     for (size_t p = 0; p < numPermuteToLIDs; ++p) {
       const GO sourceGID = srcRowMap.getGlobalElement (permuteFromLIDs[p]);
       const GO targetGID = tgtRowMap.getGlobalElement (permuteToLIDs[p]);
@@ -5621,7 +5639,7 @@ namespace Tpetra {
 
       if (sourceIsLocallyIndexed) {
         const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
-        if (rowLength > as<size_t> (rowInds.size ())) {
+        if (rowLength > static_cast<size_t> (rowInds.size ())) {
           rowInds.resize (rowLength);
           rowVals.resize (rowLength);
         }
@@ -5683,7 +5701,6 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
-    using Teuchos::as;
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -5740,7 +5757,6 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
-    using Teuchos::as;
     using Teuchos::av_reinterpret_cast;
     using Teuchos::RCP;
     typedef LocalOrdinal LO;
@@ -5840,7 +5856,7 @@ namespace Tpetra {
         // correct, but it's inefficient to convert LIDs to GIDs and
         // then back again on receipt.  Furthermore, GIDs might be
         // larger than LIDs, thus costing more bandwidth.
-        Array<GO> gids (as<size_type> (maxRowLength));
+        Array<GO> gids (static_cast<size_type> (maxRowLength));
 
         const size_type numExportLIDs = exportLIDs.size ();
         for (size_type i = 0; i < numExportLIDs; ++i) {
@@ -5860,19 +5876,19 @@ namespace Tpetra {
           // viewing is really an array of char.
           ArrayView<char> gidsViewOutChar =
             exports (curOffsetInBytes,
-                     as<size_t> (curNumEntries) * sizeof (GO));
+                     static_cast<size_t> (curNumEntries) * sizeof (GO));
           ArrayView<char> valsViewOutChar =
-            exports (curOffsetInBytes + as<size_t> (curNumEntries) * sizeof (GO),
-                     as<size_t> (curNumEntries) * sizeof (Scalar));
+            exports (curOffsetInBytes + static_cast<size_t> (curNumEntries) * sizeof (GO),
+                     static_cast<size_t> (curNumEntries) * sizeof (Scalar));
           ArrayView<GO> gidsViewOut = av_reinterpret_cast<GO> (gidsViewOutChar);
           ArrayView<Scalar> valsViewOut = av_reinterpret_cast<Scalar> (valsViewOutChar);
 
           // Copy the row's data into the views of the exports array.
           std::copy (gidsView.begin (),
-                     gidsView.begin () + as<size_type> (curNumEntries),
+                     gidsView.begin () + static_cast<size_type> (curNumEntries),
                      gidsViewOut.begin ());
           std::copy (valsView.begin (),
-                     valsView.begin () + as<size_type> (curNumEntries),
+                     valsView.begin () + static_cast<size_type> (curNumEntries),
                      valsViewOut.begin ());
           // Keep track of how many bytes we packed.
           curOffsetInBytes += sizeOfOrdValPair * curNumEntries;
@@ -5886,7 +5902,7 @@ namespace Tpetra {
         for (size_type i = 0; i < numExportLIDs; ++i) {
           // Get a view of the current row's data.
           this->getGlobalRowView (exportGIDs[i], gidsView, valsView);
-          const size_t curNumEntries = as<size_t> (gidsView.size ());
+          const size_t curNumEntries = static_cast<size_t> (gidsView.size ());
           // Get views of the spots in the exports array in which to
           // put the indices resp. values.  See notes and FIXME above.
 
@@ -6396,7 +6412,7 @@ namespace Tpetra {
     // sum of the two entry counts in each row.  If we choose this as
     // the actual per-row upper bound, we can use static profile.
     if (A_rowMap->isSameAs (*B_rowMap)) {
-      const LO localNumRows = as<LO> (A_rowMap->getNodeNumElements ());
+      const LO localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
       ArrayRCP<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
 
       // Get the number of entries in each row of A.
@@ -6449,11 +6465,11 @@ namespace Tpetra {
     Array<Scalar> val;
 
     if (alpha != STS::zero ()) {
-      const LO A_localNumRows = as<LO> (A_rowMap->getNodeNumElements ());
+      const LO A_localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
       for (LO localRow = 0; localRow < A_localNumRows; ++localRow) {
         size_t A_numEntries = A.getNumEntriesInLocalRow (localRow);
         const GO globalRow = A_rowMap->getGlobalElement (localRow);
-        if (A_numEntries > as<size_t> (ind.size ())) {
+        if (A_numEntries > static_cast<size_t> (ind.size ())) {
           ind.resize (A_numEntries);
           val.resize (A_numEntries);
         }
@@ -6471,11 +6487,11 @@ namespace Tpetra {
     }
 
     if (beta != STS::zero ()) {
-      const LO B_localNumRows = as<LO> (B_rowMap->getNodeNumElements ());
+      const LO B_localNumRows = static_cast<LO> (B_rowMap->getNodeNumElements ());
       for (LO localRow = 0; localRow < B_localNumRows; ++localRow) {
         size_t B_numEntries = B.getNumEntriesInLocalRow (localRow);
         const GO globalRow = B_rowMap->getGlobalElement (localRow);
-        if (B_numEntries > as<size_t> (ind.size ())) {
+        if (B_numEntries > static_cast<size_t> (ind.size ())) {
           ind.resize (B_numEntries);
           val.resize (B_numEntries);
         }

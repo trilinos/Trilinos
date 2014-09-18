@@ -91,13 +91,13 @@ namespace Xpetra {
   };
 #define XPETRA_VECTORFACTORY_SHORT
 
-  template <>
-  class VectorFactory<double, int, int> {
+  template <class GlobalOrdinalArg>
+  class VectorFactory<double, int, GlobalOrdinalArg> {
 
     typedef double                              Scalar;
     typedef int                                 LocalOrdinal;
-    typedef int                                 GlobalOrdinal;
-    typedef Vector<double, int, int>::node_type Node;
+    typedef GlobalOrdinalArg                    GlobalOrdinal;
+    typedef typename Vector<double, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -117,7 +117,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraVector(map, zeroOut) );
+        return rcp( new EpetraVectorT<GlobalOrdinal>(map, zeroOut) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -126,13 +126,13 @@ namespace Xpetra {
   };
 #define XPETRA_VECTORFACTORY_SHORT
 
-  template <>
-  class VectorFactory<int, int, int> {
+  template <class GlobalOrdinalArg>
+  class VectorFactory<int, int, GlobalOrdinalArg> {
 
     typedef int                              Scalar;
     typedef int                              LocalOrdinal;
-    typedef int                              GlobalOrdinal;
-    typedef Vector<int, int, int>::node_type Node;
+    typedef GlobalOrdinalArg                            GlobalOrdinal;
+    typedef typename Vector<int, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -152,7 +152,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraIntVector(map, zeroOut) );
+        return rcp( new EpetraIntVectorT<GlobalOrdinal>(map, zeroOut) );
 #endif
 
       XPETRA_FACTORY_END;

@@ -2330,13 +2330,11 @@ namespace Experimental {
   template<class Scalar, class LO, class GO, class Node>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getFrobeniusNorm() const
+  getFrobeniusNorm () const
   {
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getFrobeniusNorm: "
       "not implemented.");
-    return Teuchos::ScalarTraits<Mag>::zero();
   }
 
 

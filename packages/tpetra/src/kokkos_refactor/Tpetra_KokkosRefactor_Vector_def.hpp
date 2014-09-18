@@ -56,64 +56,71 @@
 
 namespace Tpetra {
 
-//namespace KokkosRefactor {
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-          bool zeroOut)
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (map, 1, zeroOut)
+  Vector (const Teuchos::RCP<const map_type>& map,
+          const bool zeroOut)
+    : base_type (map, 1, zeroOut)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &source)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(source)
+  Vector (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& source)
+    : base_type (source)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-          const ArrayView<const Scalar> &values)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(map,values,values.size(),1) {
-  }
+  Vector (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& source,
+          const Teuchos::DataAccess copyOrView)
+    : base_type (source, copyOrView)
+  {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  Vector (const Teuchos::RCP<const map_type>& map,
+          const Teuchos::ArrayView<const Scalar> &values)
+    : base_type (map, values, values.size (), 1)
+  {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Vector (const Teuchos::RCP<const map_type>& map,
           const dual_view_type& view)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (map, view)
+    : base_type (map, view)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  Vector (const Teuchos::RCP<const map_type>& map,
           const dual_view_type& view,
           const dual_view_type& origView)
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (map, view, origView)
+    : base_type (map, view, origView)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::~Vector() {}
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  ~Vector ()
+  {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::replaceGlobalValue(globalRow,0,value);
+    this->base_type::replaceGlobalValue(globalRow,0,value);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::sumIntoGlobalValue(globalRow,0,value);
+    this->base_type::sumIntoGlobalValue(globalRow,0,value);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::replaceLocalValue(myRow,0,value);
+    this->base_type::replaceLocalValue(myRow,0,value);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::sumIntoLocalValue(myRow,0,value);
+    this->base_type::sumIntoLocalValue(myRow,0,value);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -151,105 +158,52 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::meanValue() const {
-    /*
-    using Teuchos::as;
-    using Teuchos::outArg;
-    typedef Teuchos::ScalarTraits<Scalar> SCT;
-
-    Scalar sum = MVT::Sum(this->lclMV_);
-    if (this->isDistributed()) {
-      Scalar lsum = sum;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lsum,outArg(sum));
-    }
-    // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
-    // to the magnitude type, since operator/ (std::complex<T>, int)
-    // isn't necessarily defined.
-    return sum / as<typename SCT::magnitudeType> (this->getGlobalLength ());
-    */
+  Scalar
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  meanValue () const
+  {
     Scalar mean;
-    this->meanValue( Teuchos::arrayView(&mean,1) );
+    this->meanValue (Teuchos::arrayView (&mean, 1));
     return mean;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-   typename Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::mag_type
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::norm1() const {
-    /*
-    using Teuchos::outArg;
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
-    Mag norm = MVT::Norm1(this->lclMV_);
-    if (this->isDistributed()) {
-      Mag lnorm = norm;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,outArg(norm));
-    }
-    */
+  typename Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::mag_type
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  norm1 () const
+  {
     mag_type norm;
-    this->norm1( Teuchos::arrayView(&norm,1) );
+    this->norm1 (Teuchos::arrayView (&norm, 1));
     return norm;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::mag_type
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::norm2() const {
-    /*
-    using Teuchos::ScalarTraits;
-    using Teuchos::outArg;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    Mag norm = MVT::Norm2Squared(this->lclMV_);
-    if (this->isDistributed()) {
-      Mag lnorm = norm;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,outArg(norm));
-    }
-    return ScalarTraits<Mag>::squareroot(norm);
-    */
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  norm2 () const
+  {
     mag_type norm;
-    this->norm2( Teuchos::arrayView(&norm,1) );
+    this->norm2 (Teuchos::arrayView (&norm, 1));
     return norm;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::mag_type
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::normInf() const {
-    /*
-    using Teuchos::outArg;
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
-    Mag norm = MVT::NormInf(this->lclMV_);
-    if (this->isDistributed()) {
-      Mag lnorm = norm;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_MAX,lnorm,outArg(norm));
-    }
-    */
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  normInf () const
+  {
     mag_type norm;
-    this->normInf( Teuchos::arrayView(&norm,1) );
+    this->normInf (Teuchos::arrayView (&norm, 1));
     return norm;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::mag_type
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &weights) const {
-    /*
-    using Teuchos::ScalarTraits;
-    using Teuchos::outArg;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*weights.getMap()), std::runtime_error,
-        "Tpetra::Vector::normWeighted(): Vectors do not have compatible Maps:" << std::endl
-        << "this->getMap(): " << std::endl << *this->getMap()
-        << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION( this->getLocalLength() != weights.getLocalLength(), std::runtime_error,
-        "Tpetra::Vector::normWeighted(): Vectors do not have the same local length.");
-#endif
-    Mag norm = MVT::WeightedNorm(this->lclMV_,weights.lclMV_);
-    if (this->isDistributed()) {
-      Mag lnorm = norm;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,outArg(norm));
-    }
-    return ScalarTraits<Mag>::squareroot(norm / this->getGlobalLength());
-    */
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  normWeighted (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& weights) const
+  {
     mag_type norm;
-    this->normWeighted( weights, Teuchos::arrayView(&norm,1) );
+    this->normWeighted (weights, Teuchos::arrayView (&norm, 1));
     return norm;
   }
 
@@ -340,15 +294,15 @@ namespace Tpetra {
   createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal,
                            Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src)
   {
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> V;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> NT;
 
-    V dst (src.getMap ());
-    deep_copy ((MV&) (dst), (const MV&) (src));
+    // The 2-argument copy constructor with second argument =
+    // Teuchos::Copy does a deep copy of its input.
+    Vector<Scalar, LocalOrdinal, GlobalOrdinal, NT> dst (src, Teuchos::Copy);
 
-    // Vector now has view semantics, so returning the Vector
-    // directly, rather than through RCP, only does a shallow copy.
+    // The Kokkos refactor version of Vector has view semantics, so
+    // returning the Vector directly, rather than through RCP, only
+    // does a shallow copy.
     return dst;
   }
 

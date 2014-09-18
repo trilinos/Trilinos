@@ -529,7 +529,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         // for its Import object?  Of course a general RowMatrix might
         // not necessarily have one.
         DistributedImporter_ =
-          rcp (new import_type (Matrix_->getRowMap (), Matrix_->getDomainMap ()));
+          rcp (new import_type (Matrix_->getRowMap (),
+                                Matrix_->getDomainMap ()));
       }
       globalOverlappingX->doImport (X, *DistributedImporter_, Tpetra::INSERT);
     }
@@ -546,8 +547,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Inverse_->apply (ReducedX, ReducedY);
       }
       else {
-        MV ReorderedX (ReducedX);
-        MV ReorderedY (ReducedY);
+        MV ReorderedX (ReducedX, Teuchos::Copy);
+        MV ReorderedY (ReducedY, Teuchos::Copy);
         ReorderedLocalizedMatrix_->permuteOriginalToReordered (ReducedX, ReorderedX);
         Inverse_->apply (ReorderedX, ReorderedY);
         ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, ReducedY);
@@ -563,8 +564,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Inverse_->apply (*OverlappingX, *OverlappingY);
       }
       else {
-        MV ReorderedX = createCopy(*OverlappingX);
-        MV ReorderedY = createCopy(*OverlappingY);
+        MV ReorderedX (*OverlappingX, Teuchos::Copy);
+        MV ReorderedY (*OverlappingY, Teuchos::Copy);
         ReorderedLocalizedMatrix_->permuteOriginalToReordered (*OverlappingX, ReorderedX);
         Inverse_->apply (ReorderedX, ReorderedY);
         ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, *OverlappingY);
@@ -1498,9 +1499,17 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 
 } // namespace Ifpack2
 
+// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
+// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// preconditioners can and should do dynamic casts if they need a type
+// more specific than RowMatrix.
 #define IFPACK2_ADDITIVESCHWARZ_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::AdditiveSchwarz< Tpetra::RowMatrix<S, LO, GO, N> >; \
   template class Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::AdditiveSchwarz< Tpetra::RowMatrix<S, LO, GO, N>, \
+                                           Ifpack2::ILUT<Tpetra::RowMatrix< S, LO, GO, N > > >; \
   template class Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<S, LO, GO, N>, \
-                                  Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO, N > > >;
+                                           Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO, N > > >;
+
 
 #endif // IFPACK2_ADDITIVESCHWARZ_DECL_HPP

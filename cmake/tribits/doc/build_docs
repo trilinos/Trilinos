@@ -13,15 +13,6 @@ _BASE_DIR=$PWD
 
 echo
 echo "***"
-echo "*** Generating index.html ..."
-echo "***"
-echo
-
-cd $_BASE_DIR
-./generate-index.sh
-
-echo
-echo "***"
 echo "*** Generating TribitsDevelopersGuide.[rst,html,pdf] ..."
 echo "***"
 echo

@@ -46,6 +46,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 #ifdef PIRO_HAS_TPETRA
 #include "Tpetra_MultiVector.hpp"
@@ -168,7 +169,7 @@ private:
         //mueLuList->set("null space: type", "pre-computed");
         //mueLuList->set("null space: dimension", nullSpaceDim);
         //mueLuList->set("null space: add default vectors", false); 
-        mueLuList->set("Null Space", Rbm);
+        mueLuList->set("Nullspace", Rbm);
         *out << "...done setting rbms!" << std::endl; 
         //*out << "Rbm: ";
         //Rbm->describe(*out, Teuchos::VERB_EXTREME); 

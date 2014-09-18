@@ -59,8 +59,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
             size_t maxNumEntriesPerRow,
             ProfileType pftype,
@@ -94,8 +94,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
             const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
             size_t maxNumEntriesPerRow,
@@ -131,8 +131,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
             ProfileType pftype,
@@ -174,8 +174,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
             const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
@@ -219,8 +219,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
             const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
             const ArrayRCP<size_t> & rowPointers,
@@ -252,13 +252,13 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::~CrsGraph()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::~CrsGraph()
   {}
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   getValidParameters () const
   {
     RCP<ParameterList> params = parameterList ("Tpetra::CrsGraph");
@@ -288,9 +288,9 @@ namespace Tpetra {
     return params;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   setParameterList (const RCP<ParameterList>& params)
   {
     RCP<const ParameterList> validParams = getValidParameters ();
@@ -298,14 +298,14 @@ namespace Tpetra {
     this->setMyParamList (params);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalNumRows() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumRows() const
   {
     return rowMap_->getGlobalNumElements();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalNumCols() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumCols() const
   {
     const char tfecfFuncName[] = "getGlobalNumCols()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -315,14 +315,14 @@ namespace Tpetra {
     return getDomainMap()->getGlobalNumElements();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodeNumRows() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumRows() const
   {
     return rowMap_->getNodeNumElements();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodeNumCols() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumCols() const
   {
     const char tfecfFuncName[] = "getNodeNumCols()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -332,75 +332,75 @@ namespace Tpetra {
     return colMap_->getNodeNumElements();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodeNumDiags() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumDiags() const
   {
     return nodeNumDiags_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalNumDiags() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumDiags() const
   {
     return globalNumDiags_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Node>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNode() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNode() const
   {
     return rowMap_->getNode();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRowMap() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getRowMap() const
   {
     return rowMap_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getColMap() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getColMap() const
   {
     return colMap_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const
   {
     return domainMap_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const
   {
     return rangeMap_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getImporter() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getImporter() const
   {
     return importer_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getExporter() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getExporter() const
   {
     return exporter_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::hasColMap() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::hasColMap() const
   {
     return (colMap_ != null);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isStorageOptimized() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isStorageOptimized() const
   {
     bool isOpt = indicesAreAllocated_ && (numRowEntries_ == null) && (getNodeNumRows() > 0);
 #ifdef HAVE_TPETRA_DEBUG
@@ -411,93 +411,93 @@ namespace Tpetra {
     return isOpt;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ProfileType CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getProfileType() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  ProfileType CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getProfileType() const
   {
     return pftype_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalNumEntries() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumEntries() const
   {
     return globalNumEntries_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodeNumEntries() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumEntries() const
   {
     return nodeNumEntries_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalMaxNumRowEntries() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getGlobalMaxNumRowEntries() const
   {
     return globalMaxNumRowEntries_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodeMaxNumRowEntries() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeMaxNumRowEntries() const
   {
     return nodeMaxNumRowEntries_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isFillComplete() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isFillComplete() const
   {
     return fillComplete_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isFillActive() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isFillActive() const
   {
     return !fillComplete_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isUpperTriangular() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isUpperTriangular() const
   {
     return upperTriangular_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isLowerTriangular() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isLowerTriangular() const
   {
     return lowerTriangular_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isLocallyIndexed() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isLocallyIndexed() const
   {
     return indicesAreLocal_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isGloballyIndexed() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isGloballyIndexed() const
   {
     return indicesAreGlobal_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodeAllocationSize() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeAllocationSize() const
   {
     return nodeNumAllocated_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Comm<int> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getComm() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getComm() const
   {
     return rowMap_->getComm();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GlobalOrdinal CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getIndexBase() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getIndexBase() const
   {
     return rowMap_->getIndexBase();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::indicesAreAllocated() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::indicesAreAllocated() const
   {
     return indicesAreAllocated_;
   }
@@ -514,8 +514,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isSorted() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isSorted() const
   {
     return indicesAreSorted_;
   }
@@ -523,16 +523,16 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isMerged() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isMerged() const
   {
     return noRedundancies_;
   }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocallyModified ()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::setLocallyModified ()
   {
     // FIXME (mfh 07 May 2013) How do we know that the change
     // introduced a redundancy, or even that it invalidated the sorted
@@ -549,9 +549,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   allocateIndices (ELocalGlobal lg)
   {
     // This is a protected function, only callable by us.  If it was
@@ -594,12 +594,12 @@ namespace Tpetra {
       // that we have for both the local and global indices cases.
       // Furthermore, first-touch allocation ensures that we don't
       // take up too much memory in any one NUMA affinity region.
-      rowPtrs_ = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numAllocPerRow_() );
+      rowPtrs_ = sparse_ops_type::allocRowPtrs( getRowMap()->getNode(), numAllocPerRow_() );
       if (lg == LocalIndices) {
-        lclInds1D_ = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
+        lclInds1D_ = sparse_ops_type::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
       }
       else {
-        gblInds1D_ = LocalMatOps::template allocStorage<GlobalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
+        gblInds1D_ = sparse_ops_type::template allocStorage<GlobalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
       }
       nodeNumAllocated_ = rowPtrs_[numRows];
     }
@@ -642,9 +642,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class T>
-  ArrayRCP<T> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::allocateValues1D() const
+  ArrayRCP<T> CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::allocateValues1D() const
   {
     const char tfecfFuncName[] = "allocateValues()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -656,17 +656,17 @@ namespace Tpetra {
         std::runtime_error, ": graph indices must be allocated in a static profile."
     );
     ArrayRCP<T> values1D;
-    values1D = LocalMatOps::template allocStorage<T>( getRowMap()->getNode(), rowPtrs_() );
+    values1D = sparse_ops_type::template allocStorage<T>( getRowMap()->getNode(), rowPtrs_() );
     return values1D;
   }
 
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class T>
   ArrayRCP<Array<T> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::allocateValues2D() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::allocateValues2D() const
   {
     const char tfecfFuncName[] = "allocateValues2D()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -697,10 +697,10 @@ namespace Tpetra {
 
 //   /////////////////////////////////////////////////////////////////////////////
 //   /////////////////////////////////////////////////////////////////////////////
-//   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+//   template <class LocalOrdinal, class GlobalOrdinal, class Node>
 //   template <ELocalGlobal lg, class T>
 //   RowInfo
-//   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+//   CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
 //   updateAllocAndValues (RowInfo rowinfo,
 //                         size_t newAllocSize,
 //                         Array<T>& rowVals)
@@ -729,9 +729,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ArrayView<const LocalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   getLocalView (RowInfo rowinfo) const
   {
     ArrayView<const LocalOrdinal> view;
@@ -749,9 +749,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ArrayView<LocalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   getLocalViewNonConst (RowInfo rowinfo)
   {
     ArrayView<LocalOrdinal> view;
@@ -769,9 +769,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ArrayView<const GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   getGlobalView (RowInfo rowinfo) const
   {
     ArrayView<const GlobalOrdinal> view;
@@ -789,9 +789,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ArrayView<GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   getGlobalViewNonConst (RowInfo rowinfo)
   {
     ArrayView<GlobalOrdinal> view;
@@ -809,8 +809,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RowInfo CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRowInfo(size_t myRow) const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RowInfo CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getRowInfo(size_t myRow) const
   {
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getRowInfo";
@@ -881,8 +881,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::staticAssertions() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::staticAssertions() const
   {
     // Assumption: sizeof(GlobalOrdinal) >= sizeof(LocalOrdinal):
     //     This is so that we can store local indices in the memory
@@ -905,9 +905,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <ELocalGlobal lg>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::filterIndices(const SLocalGlobalNCViews &inds) const
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::filterIndices(const SLocalGlobalNCViews &inds) const
   {
     const map_type& cmap = *colMap_;
     Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg;
@@ -955,9 +955,9 @@ namespace Tpetra {
 
 //   /////////////////////////////////////////////////////////////////////////////
 //   /////////////////////////////////////////////////////////////////////////////
-//   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+//   template <class LocalOrdinal, class GlobalOrdinal, class Node>
 //   template <class T>
-//   size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+//   size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
 //   filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds,
 //                                 const ArrayView<T>& vals) const
 //   {
@@ -995,10 +995,10 @@ namespace Tpetra {
 
 //   /////////////////////////////////////////////////////////////////////////////
 //   /////////////////////////////////////////////////////////////////////////////
-//   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+//   template <class LocalOrdinal, class GlobalOrdinal, class Node>
 //   template <class T>
 //   size_t
-//   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+//   CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
 //   filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
 //                                const ArrayView<T>& vals) const
 //   {
@@ -1036,9 +1036,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   insertIndices (const RowInfo& rowinfo,
                  const SLocalGlobalViews &newInds,
                  const ELocalGlobal lg,
@@ -1092,8 +1092,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   insertGlobalIndicesImpl (const LocalOrdinal myRow,
                            const ArrayView<const GlobalOrdinal> &indices)
   {
@@ -1138,8 +1138,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   insertLocalIndicesImpl (const LocalOrdinal myRow,
                           const ArrayView<const LocalOrdinal> &indices)
   {
@@ -1183,9 +1183,9 @@ namespace Tpetra {
 
   // /////////////////////////////////////////////////////////////////////////////
   // /////////////////////////////////////////////////////////////////////////////
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
   // template <class Scalar>
-  // void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  // void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   // insertIndicesAndValues (const RowInfo& rowInfo,
   //                         const SLocalGlobalViews& newInds,
   //                         const ArrayView<Scalar>& oldRowVals,
@@ -1202,10 +1202,10 @@ namespace Tpetra {
 
   // /////////////////////////////////////////////////////////////////////////////
   // /////////////////////////////////////////////////////////////////////////////
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
   // template <class Scalar, class BinaryFunction>
   // void
-  // CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  // CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   // transformLocalValues (RowInfo rowInfo,
   //                       const Teuchos::ArrayView<Scalar>& rowVals,
   //                       const Teuchos::ArrayView<const LocalOrdinal>& inds,
@@ -1232,10 +1232,10 @@ namespace Tpetra {
 
   // /////////////////////////////////////////////////////////////////////////////
   // /////////////////////////////////////////////////////////////////////////////
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
   // template <class Scalar, class BinaryFunction>
   // void
-  // CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  // CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   // transformGlobalValues (RowInfo rowInfo,
   //                        const Teuchos::ArrayView<Scalar>& rowVals,
   //                        const Teuchos::ArrayView<const GlobalOrdinal>& inds,
@@ -1255,47 +1255,43 @@ namespace Tpetra {
   //   }
   // }
 
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sortRowIndices(RowInfo rowinfo)
-  {
-    if (rowinfo.numEntries > 0) {
-      ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
-      std::sort(inds_view.begin(), inds_view.begin() + rowinfo.numEntries);
-    }
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  // in the future, perhaps this could use std::sort with a boost::zip_iterator
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <class Scalar>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  sortRowIndicesAndValues (const RowInfo rowinfo, const Teuchos::ArrayView<Scalar>& values)
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
+  sortRowIndices (RowInfo rowinfo)
   {
     if (rowinfo.numEntries > 0) {
       Teuchos::ArrayView<LocalOrdinal> inds_view =
         this->getLocalViewNonConst (rowinfo);
-      sort2 (inds_view.begin (), inds_view.begin () + rowinfo.numEntries,
+      std::sort (inds_view.begin (), inds_view.begin () + rowinfo.numEntries);
+    }
+  }
+
+  // in the future, perhaps this could use std::sort with a boost::zip_iterator
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Scalar>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
+  sortRowIndicesAndValues (const RowInfo rowinfo,
+                           const Teuchos::ArrayView<Scalar>& values)
+  {
+    if (rowinfo.numEntries > 0) {
+      Teuchos::ArrayView<LocalOrdinal> indsView =
+        this->getLocalViewNonConst (rowinfo);
+      sort2 (indsView.begin (), indsView.begin () + rowinfo.numEntries,
              values.begin ());
     }
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::mergeRowIndices(RowInfo rowinfo)
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
+  mergeRowIndices (RowInfo rowinfo)
   {
-    const char tfecfFuncName[] = "mergRowIndices()";
+    using Teuchos::ArrayView;
+    const char tfecfFuncName[] = "mergeRowIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStorageOptimized() == true, std::logic_error,
-      ": The graph is already storage optimized, so we shouldn't be merging any indices."
-      " Please report this bug to the Tpetra developers.");
+      isStorageOptimized (), std::logic_error, "The graph is already storage "
+      "optimized, so we shouldn't be merging any indices.  "
+      "Please report this bug to the Tpetra developers.");
+
     ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
     typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
     beg = inds_view.begin();
@@ -1303,20 +1299,18 @@ namespace Tpetra {
     newend = std::unique(beg,end);
     const size_t mergedEntries = newend - beg;
 #ifdef HAVE_TPETRA_DEBUG
-    // merge should not have eliminated any entries; if so, the assignment below will destory the packed structure
+    // merge should not have eliminated any entries; if so, the
+    // assignment below will destroy the packed structure
     TEUCHOS_TEST_FOR_EXCEPT( isStorageOptimized() && mergedEntries != rowinfo.numEntries );
 #endif
     numRowEntries_[rowinfo.localRow] = mergedEntries;
     nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   // in the future, this could use std::unique with a boost::zip_iterator
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template<class Scalar>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   mergeRowIndicesAndValues (RowInfo rowinfo, const ArrayView<Scalar>& rowValues)
   {
     const char tfecfFuncName[] = "mergeRowIndicesAndValues";
@@ -1374,8 +1368,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   setDomainRangeMaps (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
                       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap)
   {
@@ -1393,9 +1387,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   findLocalIndex (RowInfo rowinfo, LocalOrdinal ind, size_t hint) const
   {
     ArrayView<const LocalOrdinal> colInds = getLocalView (rowinfo);
@@ -1407,10 +1401,9 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal,
             class GlobalOrdinal,
-            class Node,
-            class LocalMatOps>
+            class Node>
   size_t
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   findLocalIndex (RowInfo rowinfo,
                   LocalOrdinal ind,
                   ArrayView<const LocalOrdinal> colInds,
@@ -1461,9 +1454,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint) const
   {
     using Teuchos::ArrayView;
@@ -1505,8 +1498,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::clearGlobalConstants()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::clearGlobalConstants()
   {
     globalNumEntries_       = OrdinalTraits<global_size_t>::invalid();
     globalNumDiags_         = OrdinalTraits<global_size_t>::invalid();
@@ -1517,8 +1510,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   checkInternalState () const
   {
 #ifdef HAVE_TPETRA_DEBUG
@@ -1630,8 +1623,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const
   {
     const LocalOrdinal lrow = rowMap_->getLocalElement(globalRow);
     size_t ret = OrdinalTraits<size_t>::invalid();
@@ -1646,8 +1639,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNumEntriesInLocalRow(LocalOrdinal localRow) const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNumEntriesInLocalRow(LocalOrdinal localRow) const
   {
     size_t ret = OrdinalTraits<size_t>::invalid();
     if (hasRowInfo() && rowMap_->isNodeLocalElement(localRow)) {
@@ -1660,8 +1653,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNumAllocatedEntriesInGlobalRow(GlobalOrdinal globalRow) const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNumAllocatedEntriesInGlobalRow(GlobalOrdinal globalRow) const
   {
     const LocalOrdinal lrow = rowMap_->getLocalElement(globalRow);
     size_t ret = OrdinalTraits<size_t>::invalid();
@@ -1676,8 +1669,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const
   {
     size_t ret = OrdinalTraits<size_t>::invalid();
     if (hasRowInfo() && rowMap_->isNodeLocalElement(localRow)) {
@@ -1690,8 +1683,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayRCP<const size_t> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodeRowPtrs() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  ArrayRCP<const size_t> CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeRowPtrs() const
   {
     return rowPtrs_;
   }
@@ -1699,8 +1692,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayRCP<const LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodePackedIndices() const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  ArrayRCP<const LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodePackedIndices() const
   {
     return lclInds1D_;
   }
@@ -1708,9 +1701,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   getLocalRowCopy (LocalOrdinal localRow,
                    const ArrayView<LocalOrdinal>& indices,
                    size_t& numEntries) const
@@ -1775,9 +1768,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   getGlobalRowCopy (GlobalOrdinal globalRow,
                     const ArrayView<GlobalOrdinal>& indices,
                     size_t& NumIndices) const
@@ -1822,9 +1815,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   getLocalRowView (LocalOrdinal localRow, ArrayView<const LocalOrdinal> &indices) const
   {
     const char tfecfFuncName[] = "getLocalRowView";
@@ -1859,9 +1852,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   getGlobalRowView (GlobalOrdinal globalRow,
                     ArrayView<const GlobalOrdinal>& indices) const
   {
@@ -1904,9 +1897,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   insertLocalIndices (const LocalOrdinal localRow,
                       const ArrayView<const LocalOrdinal> &indices)
   {
@@ -1980,9 +1973,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   insertLocalIndicesFiltered (const LocalOrdinal localRow,
                               const ArrayView<const LocalOrdinal> &indices)
   {
@@ -2033,9 +2026,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   insertGlobalIndices (const GlobalOrdinal grow,
                        const ArrayView<const GlobalOrdinal> &indices)
   {
@@ -2116,9 +2109,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   insertGlobalIndicesFiltered (const GlobalOrdinal grow,
                                const ArrayView<const GlobalOrdinal> &indices)
   {
@@ -2178,8 +2171,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::removeLocalIndices(LocalOrdinal lrow)
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::removeLocalIndices(LocalOrdinal lrow)
   {
     const char tfecfFuncName[] = "removeLocalIndices()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false,                    std::runtime_error, ": requires that fill is active.");
@@ -2204,8 +2197,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllIndices(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices)
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::setAllIndices(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices)
   {
     const char tfecfFuncName[] = "setAllIndices()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false, std::runtime_error, ": requires a ColMap.");
@@ -2226,9 +2219,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   getNumEntriesPerLocalRowUpperBound (Teuchos::ArrayRCP<const size_t>& boundPerLocalRow,
                                       size_t& boundForAllLocalRows,
                                       bool& boundSameForAllLocalRows) const
@@ -2319,8 +2312,8 @@ namespace Tpetra {
   // TODO: in the future, globalAssemble() should use import/export functionality
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::globalAssemble()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::globalAssemble()
   {
     using Teuchos::Array;
     using Teuchos::as;
@@ -2603,9 +2596,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   resumeFill (const RCP<ParameterList> &params)
   {
     const char tfecfFuncName[] = "resumeFill";
@@ -2637,8 +2630,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     // FIXME (mfh 19 Aug 2014) If fillComplete has already been called
@@ -2650,9 +2643,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   fillComplete (const Teuchos::RCP<const map_type>& domainMap,
                 const Teuchos::RCP<const map_type>& rangeMap,
                 const Teuchos::RCP<Teuchos::ParameterList>& params)
@@ -2769,8 +2762,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
                                                                                        const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
                                                                                        const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
                                                                                        const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
@@ -2847,8 +2840,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalGraph(const RCP<ParameterList> &params)
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::fillLocalGraph(const RCP<ParameterList> &params)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::null;
@@ -2869,8 +2862,8 @@ namespace Tpetra {
     if (getProfileType () == DynamicProfile) {
       // Storage is currently in 2-D ("array of arrays") format.
       // Pack into 1-D packed storage.
-      ptrs = LocalMatOps::allocRowPtrs (node, numRowEntries_ ());
-      inds = LocalMatOps::template allocStorage<LocalOrdinal> (node, ptrs ());
+      ptrs = sparse_ops_type::allocRowPtrs (node, numRowEntries_ ());
+      inds = sparse_ops_type::template allocStorage<LocalOrdinal> (node, ptrs ());
       for (size_t row = 0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries_[row];
         std::copy (lclInds2D_[row].begin (),
@@ -2881,8 +2874,8 @@ namespace Tpetra {
     else if (getProfileType () == StaticProfile) {
       // We already have 1-D storage, but it might not yet be packed.
       if (nodeNumEntries_ != nodeNumAllocated_) { // need to pack storage
-        ptrs = LocalMatOps::allocRowPtrs (node, numRowEntries_ ());
-        inds = LocalMatOps::template allocStorage<LocalOrdinal> (node, ptrs ());
+        ptrs = sparse_ops_type::allocRowPtrs (node, numRowEntries_ ());
+        inds = sparse_ops_type::template allocStorage<LocalOrdinal> (node, ptrs ());
         for (size_t row = 0; row < numRows; ++row) {
           const size_t numentrs = numRowEntries_[row];
           std::copy (lclInds1D_ + rowPtrs_[row],
@@ -2926,13 +2919,13 @@ namespace Tpetra {
     else if (isLowerTriangular ()) {
       uplo = Teuchos::LOWER_TRI;
     }
-    LocalMatOps::finalizeGraph (uplo, diag, *lclGraph_, params);
+    sparse_ops_type::finalizeGraph (uplo, diag, *lclGraph_, params);
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   replaceColMap (const Teuchos::RCP<const map_type>& newColMap)
   {
     // NOTE: This safety check matches the code, but not the documentation of Crsgraph
@@ -2948,11 +2941,12 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   reindexColumns (const Teuchos::RCP<const map_type>& newColMap,
-                  const Teuchos::RCP<const import_type>& newImport)
+                  const Teuchos::RCP<const import_type>& newImport,
+                  const bool sortIndicesInEachRow)
   {
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
@@ -3024,7 +3018,7 @@ namespace Tpetra {
             // Allocate storage for the new local indices.
             RCP<Node> node = getRowMap ()->getNode ();
             newLclInds1D =
-              LocalMatOps::template allocStorage<LO> (node, rowPtrs_ ());
+              sparse_ops_type::template allocStorage<LO> (node, rowPtrs_ ());
 
             // Attempt to convert the new indices locally.
             for (size_t lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -3170,6 +3164,22 @@ namespace Tpetra {
       } else { // dynamic profile
         lclInds2D_ = newLclInds2D;
       }
+      // We've reindexed, so we don't know if the indices are sorted.
+      //
+      // FIXME (mfh 17 Sep 2014) It could make sense to check this,
+      // since we're already going through all the indices above.  We
+      // could also sort each row in place; that way, we would only
+      // have to make one pass over the rows.
+      indicesAreSorted_ = false;
+      if (sortIndicesInEachRow) {
+        // NOTE (mfh 17 Sep 2014) The graph must be locally indexed in
+        // order to call this method.
+        //
+        // FIXME (mfh 17 Sep 2014) This violates the strong exception
+        // guarantee.  It would be better to sort the new index arrays
+        // before committing them.
+        sortAllIndices ();
+      }
     }
     colMap_ = newColMap;
 
@@ -3197,9 +3207,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                const Teuchos::RCP<const import_type>& newImporter)
   {
@@ -3242,11 +3252,11 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const Teuchos::RCP<
     const typename CrsGraph<
-      LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::local_graph_type>
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+      LocalOrdinal, GlobalOrdinal, Node>::local_graph_type>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalGraph () const
   {
     return lclGraph_;
@@ -3255,11 +3265,11 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const Teuchos::RCP<
     typename CrsGraph<
-      LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::local_graph_type>
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+      LocalOrdinal, GlobalOrdinal, Node>::local_graph_type>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalGraphNonConst ()
   {
     return lclGraph_;
@@ -3268,8 +3278,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::computeGlobalConstants()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::computeGlobalConstants()
   {
     using Teuchos::as;
     using Teuchos::outArg;
@@ -3389,9 +3399,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeIndicesLocal ()
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::makeIndicesLocal ()
   {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -3411,7 +3421,7 @@ namespace Tpetra {
           lclInds1D_ = arcp_reinterpret_cast<LO> (gblInds1D_).persistingView (0, nodeNumAllocated_);
         }
         else {
-          lclInds1D_ = LocalMatOps::template allocStorage<LO> (getRowMap ()->getNode (), rowPtrs_ ());
+          lclInds1D_ = sparse_ops_type::template allocStorage<LO> (getRowMap ()->getNode (), rowPtrs_ ());
         }
         for (size_t r = 0; r < nlrs; ++r) {
           const size_t offset   = rowPtrs_[r];
@@ -3471,8 +3481,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sortAllIndices()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::sortAllIndices()
   {
     TEUCHOS_TEST_FOR_EXCEPT(isGloballyIndexed()==true);   // this should be called only after makeIndicesLocal()
     if (isSorted() == false) {
@@ -3488,8 +3498,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeColMap ()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::makeColMap ()
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -3817,8 +3827,8 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::mergeAllIndices()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::mergeAllIndices()
   {
     TEUCHOS_TEST_FOR_EXCEPT( isGloballyIndexed() ); // call only after makeIndicesLocal()
     TEUCHOS_TEST_FOR_EXCEPT( ! isSorted() ); // call only after sortIndices()
@@ -3833,9 +3843,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeImportExport()
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::makeImportExport()
   {
     TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap (), std::logic_error, "Tpetra::"
       "CrsGraph: It's not allowed to call makeImportExport() unless the graph "
@@ -3878,9 +3888,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::description() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::description() const
   {
     std::ostringstream oss;
     oss << DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::description();
@@ -3900,9 +3910,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
@@ -4023,9 +4033,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   checkSizes (const SrcDistObject& source)
   {
     (void) source; // forestall "unused variable" compiler warnings
@@ -4037,9 +4047,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   copyAndPermute (const SrcDistObject& source,
                   size_t numSameIDs,
                   const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
@@ -4050,7 +4060,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "copyAndPermute";
-    typedef CrsGraph<LO, GO, Node, LocalMatOps> this_type;
+    typedef CrsGraph<LO, GO, Node> this_type;
     typedef RowGraph<LO, GO, Node> row_graph_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -4137,9 +4147,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   packAndPrepare (const SrcDistObject& source,
                   const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
                   Teuchos::Array<GlobalOrdinal> &exports,
@@ -4166,9 +4176,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
         Teuchos::Array<GlobalOrdinal>& exports,
         const Teuchos::ArrayView<size_t>& numPacketsPerLID,
@@ -4224,9 +4234,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
                     const Teuchos::ArrayView<const GlobalOrdinal> &imports,
                     const Teuchos::ArrayView<size_t> &numPacketsPerLID,
@@ -4274,9 +4284,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
   {
     using Teuchos::Comm;
@@ -4373,9 +4383,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   hasRowInfo () const
   {
 #ifdef HAVE_TPETRA_DEBUG

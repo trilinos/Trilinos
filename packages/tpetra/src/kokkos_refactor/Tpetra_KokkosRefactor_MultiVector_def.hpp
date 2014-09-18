@@ -55,66 +55,6 @@
 
 namespace Tpetra {
 
-namespace { // (anonymous)
-  template<class DstType, class SrcType, class IndexType, class DeviceType,
-           const bool DstConstStride, const bool SrcConstStride>
-  struct DeepCopySelectedVectors {
-    typedef DeviceType device_type;
-    DstType dst_;
-    SrcType src_;
-    Kokkos::View<const IndexType*, DeviceType> whichVectorDst_;
-    Kokkos::View<const IndexType*, DeviceType> whichVectorSrc_;
-    const IndexType numVecs_;
-
-    DeepCopySelectedVectors (DstType dst,
-                             SrcType src,
-                             const Kokkos::View<const IndexType*, DeviceType>& whichVectorDst,
-                             const Kokkos::View<const IndexType*, DeviceType>& whichVectorSrc) :
-      dst_ (dst),
-      src_ (src),
-      whichVectorDst_ (whichVectorDst),
-      whichVectorSrc_ (whichVectorSrc),
-      numVecs_ (whichVectorSrc_.dimension_0 ())
-    {}
-
-    DeepCopySelectedVectors (DstType dst, SrcType src) :
-      dst_ (dst),
-      src_ (src),
-      numVecs_ (dst.dimension_1 ())
-    {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! DstConstStride || ! SrcConstStride, std::logic_error,
-        "Tpetra::DeepCopySelectedVectors: You may not use the constant-stride "
-        "constructor if either of the Boolean template parameters is false.");
-    }
-
-    void KOKKOS_INLINE_FUNCTION operator () (const IndexType i) const {
-      if (DstConstStride) {
-        if (SrcConstStride) {
-          for (IndexType j = 0; j < numVecs_; ++j) {
-            dst_(i,j) = src_(i,j);
-          }
-        } else {
-          for (IndexType j = 0; j < numVecs_; ++j) {
-            dst_(i,j) = src_(i,whichVectorSrc_(j));
-          }
-        }
-      } else {
-        if (SrcConstStride) {
-          for (IndexType j = 0; j < numVecs_; ++j) {
-            dst_(i,whichVectorDst_(j)) = src_(i,j);
-          }
-        } else {
-          for (IndexType j = 0; j < numVecs_; ++j) {
-            dst_(i,whichVectorDst_(j)) = src_(i,whichVectorSrc_(j));
-          }
-        }
-      }
-    }
-  };
-} // namespace (anonymous)
-
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   bool
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
@@ -1161,6 +1101,9 @@ namespace { // (anonymous)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
+    using Teuchos::Comm;
+    using Teuchos::null;
+    using Teuchos::RCP;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
     // View of a MultiVector's local data (all columns).
@@ -1176,6 +1119,10 @@ namespace { // (anonymous)
     typedef Kokkos::View<mag_type, device_type> norm_view_type;
     const char tfecfFuncName[] = "Tpetra::MultiVector::norm2";
 
+    const size_t numVecs = getNumVectors ();
+    const size_t lclNumRows = getLocalLength ();
+    const size_t numNorms = static_cast<size_t> (norms.dimension_0 ());
+
     // FIXME (mfh 11 Jul 2014) These exception tests may not
     // necessarily be thrown on all processes consistently.  We should
     // instead pass along error state with the inner product.  We
@@ -1184,29 +1131,24 @@ namespace { // (anonymous)
     // final sum should be
     // Kokkos::Details::ArithTraits<mag_type>::zero() if not error.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      norms.dimension_0 () != getNumVectors (), std::runtime_error, ": "
-      "norms.dimension_0() must be at least as large as the number of "
-      "columns (vectors) in *this.");
+      numNorms < numVecs, std::runtime_error, "Tpetra::MultiVector::norm2: "
+      "'norms' must have at least as many entries as the number of vectors in "
+      "*this.  norms.dimension_0() = " << numVecs << " < this->getNumVectors()"
+      " = " << numVecs << ".");
 
     // We're computing using the device's data, so we need to make
     // sure first that the device is in sync with the host.
     view_.template sync<DeviceType> ();
 
-    // All the "min"s here ensure that incorrect input won't segfault.
-    const size_t numVecs = getNumVectors ();
-    const size_t lclNumRows = getLocalLength ();
-    const size_t numNorms =
-      std::min (static_cast<size_t> (norms.dimension_0 ()), numVecs);
-
     // In case the input dimensions don't match, make sure that we
     // don't overwrite memory that doesn't belong to us, by using
     // subset views with the minimum dimensions over all input.
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-    const std::pair<size_t, size_t> colRng (0, numNorms);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
     norms_view_type theNorms = subview<norms_view_type> (norms, colRng);
     mv_view_type X = subview<mv_view_type> (view_.d_view, rowRng, colRng);
 
-    if (numNorms == 1) {
+    if (numVecs == 1) {
       // Special case 1: The MultiVector only has a single column.
       // The single-vector norm kernel may be more efficient.
       const size_t ZERO = static_cast<size_t> (0);
@@ -1225,7 +1167,7 @@ namespace { // (anonymous)
       // column.  It might be better to have a kernel that does the
       // work all at once.  On the other hand, we don't prioritize
       // performance of MultiVector views of noncontiguous columns.
-      for (size_t k = 0; k < numNorms; ++k) {
+      for (size_t k = 0; k < numVecs; ++k) {
         const size_t X_col = isConstantStride () ? k : whichVectors_[k];
         vec_view_type X_k = subview<vec_view_type> (X, ALL (), X_col);
         norm_view_type norm_k = subview<norm_view_type> (theNorms, k);
@@ -1246,16 +1188,21 @@ namespace { // (anonymous)
     // in collective operations; those probably don't make any sense,
     // but it doesn't hurt to do them, since it's illegal to call
     // norm2() on those processes anyway.
-    if (! this->getMap ().is_null () && this->isDistributed ()) {
-      // MPI doesn't allow aliasing of arguments, so we have to make a
-      // copy of the local sum.
-      norms_view_type lclNorms ("MV::norm2 lcl", numNorms);
-      Kokkos::deep_copy (lclNorms, theNorms);
-      const Teuchos::Comm<int>& comm = * (this->getMap ()->getComm ());
-      const mag_type* const lclSum = lclNorms.ptr_on_device ();
-      mag_type* const gblSum = theNorms.ptr_on_device ();
-      reduceAll<int, mag_type> (comm, REDUCE_SUM, static_cast<int> (numNorms),
-                                lclSum, gblSum);
+    if (this->isDistributed ()) {
+      RCP<const Comm<int> > comm = this->getMap ().is_null () ? null :
+        this->getMap ()->getComm ();
+      // The calling process only participates in the collective if
+      // both the Map and its Comm on that process are nonnull.
+      if (! comm.is_null ()) {
+        // MPI doesn't allow aliasing of arguments, so we have to make
+        // a copy of the local sum.
+        norms_view_type lclNorms ("MV::norm2 lcl", numNorms);
+        Kokkos::deep_copy (lclNorms, theNorms);
+        const mag_type* const lclSum = lclNorms.ptr_on_device ();
+        mag_type* const gblSum = theNorms.ptr_on_device ();
+        reduceAll<int, mag_type> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
+                                  lclSum, gblSum);
+      }
     }
 
     // Replace the norm-squared results with their square roots in
@@ -1267,7 +1214,7 @@ namespace { // (anonymous)
     const bool inHostMemory = Kokkos::Impl::is_same<typename device_type::memory_space,
       typename host_mirror_device_type::memory_space>::value;
     if (inHostMemory) {
-      for (size_t j = 0; j < numNorms; ++j) {
+      for (size_t j = 0; j < numVecs; ++j) {
         theNorms(j) = Kokkos::Details::ArithTraits<mag_type>::sqrt (theNorms(j));
       }
     }
@@ -1277,7 +1224,7 @@ namespace { // (anonymous)
       // results on the device, thus avoiding a copy to the host and
       // back again.
       Kokkos::SquareRootFunctor<norms_view_type> f (theNorms);
-      Kokkos::parallel_for (numNorms, f);
+      Kokkos::parallel_for (numVecs, f);
     }
   }
 
@@ -1394,8 +1341,12 @@ namespace { // (anonymous)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
+    using Teuchos::Comm;
+    using Teuchos::null;
+    using Teuchos::RCP;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
+
     // View of a MultiVector's local data (all columns).
     typedef typename dual_view_type::t_dev mv_view_type;
     // View of a single column of a MultiVector's local data.
@@ -1407,7 +1358,10 @@ namespace { // (anonymous)
     typedef Kokkos::View<mag_type*, device_type> norms_view_type;
     // Scalar view; view of a single norm result.
     typedef Kokkos::View<mag_type, device_type> norm_view_type;
-    const char tfecfFuncName[] = "Tpetra::MultiVector::norm1";
+
+    const size_t numVecs = this->getNumVectors ();
+    const size_t lclNumRows = this->getLocalLength ();
+    const size_t numNorms = static_cast<size_t> (norms.dimension_0 ());
 
     // FIXME (mfh 11 Jul 2014) These exception tests may not
     // necessarily be thrown on all processes consistently.  We should
@@ -1416,30 +1370,25 @@ namespace { // (anonymous)
     // Kokkos::Details::ArithTraits<mag_type>::one() on error.  The
     // final sum should be
     // Kokkos::Details::ArithTraits<mag_type>::zero() if not error.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      norms.dimension_0 () < getNumVectors (), std::runtime_error, ": "
-      "norms.dimension_0() must be at least as large as the number of "
-      "columns (vectors) in *this.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numNorms < numVecs, std::runtime_error, "Tpetra::MultiVector::norm1: "
+      "'norms' must have at least as many entries as the number of vectors in "
+      "*this.  norms.dimension_0() = " << numVecs << " < this->getNumVectors()"
+      " = " << numVecs << ".");
 
     // We're computing using the device's data, so we need to make
     // sure first that the device is in sync with the host.
     view_.template sync<DeviceType> ();
 
-    // All the "min"s here ensure that incorrect input won't segfault.
-    const size_t numVecs = getNumVectors ();
-    const size_t lclNumRows = getLocalLength ();
-    const size_t numNorms =
-      std::min (static_cast<size_t> (norms.dimension_0 ()), numVecs);
-
     // In case the input dimensions don't match, make sure that we
     // don't overwrite memory that doesn't belong to us, by using
     // subset views with the minimum dimensions over all input.
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-    const std::pair<size_t, size_t> colRng (0, numNorms);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
     norms_view_type theNorms = subview<norms_view_type> (norms, colRng);
     mv_view_type X = subview<mv_view_type> (view_.d_view, rowRng, colRng);
 
-    if (numNorms == 1) {
+    if (numVecs == 1) {
       // Special case 1: The MultiVector only has a single column.
       // The single-vector norm kernel may be more efficient.
       const size_t ZERO = static_cast<size_t> (0);
@@ -1458,7 +1407,7 @@ namespace { // (anonymous)
       // column.  It might be better to have a kernel that does the
       // work all at once.  On the other hand, we don't prioritize
       // performance of MultiVector views of noncontiguous columns.
-      for (size_t k = 0; k < numNorms; ++k) {
+      for (size_t k = 0; k < numVecs; ++k) {
         const size_t X_col = isConstantStride () ? k : whichVectors_[k];
         vec_view_type X_k = subview<vec_view_type> (X, ALL (), X_col);
         norm_view_type norm_k = subview<norm_view_type> (theNorms, k);
@@ -1479,16 +1428,21 @@ namespace { // (anonymous)
     // in collective operations; those probably don't make any sense,
     // but it doesn't hurt to do them, since it's illegal to call
     // norm1() on those processes anyway.
-    if (! this->getMap ().is_null () && this->isDistributed ()) {
-      // MPI doesn't allow aliasing of arguments, so we have to make a
-      // copy of the local sum.
-      norms_view_type lclNorms ("MV::norm1 lcl", numNorms);
-      Kokkos::deep_copy (lclNorms, theNorms);
-      const Teuchos::Comm<int>& comm = * (this->getMap ()->getComm ());
-      const mag_type* const lclSum = lclNorms.ptr_on_device ();
-      mag_type* const gblSum = theNorms.ptr_on_device ();
-      reduceAll<int, mag_type> (comm, REDUCE_SUM, static_cast<int> (numNorms),
-                                lclSum, gblSum);
+    if (this->isDistributed ()) {
+      RCP<const Comm<int> > comm = this->getMap ().is_null () ? null :
+        this->getMap ()->getComm ();
+      // The calling process only participates in the collective if
+      // both the Map and its Comm on that process are nonnull.
+      if (! comm.is_null ()) {
+        // MPI doesn't allow aliasing of arguments, so we have to make
+        // a copy of the local sum.
+        norms_view_type lclNorms ("MV::norm1 lcl", numNorms);
+        Kokkos::deep_copy (lclNorms, theNorms);
+        const mag_type* const lclSum = lclNorms.ptr_on_device ();
+        mag_type* const gblSum = theNorms.ptr_on_device ();
+        reduceAll<int, mag_type> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
+                                  lclSum, gblSum);
+      }
     }
   }
 
@@ -1517,6 +1471,9 @@ namespace { // (anonymous)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
+    using Teuchos::Comm;
+    using Teuchos::null;
+    using Teuchos::RCP;
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
     // View of a MultiVector's local data (all columns).
@@ -1530,7 +1487,10 @@ namespace { // (anonymous)
     typedef Kokkos::View<mag_type*, device_type> norms_view_type;
     // Scalar view; view of a single norm result.
     typedef Kokkos::View<mag_type, device_type> norm_view_type;
-    const char tfecfFuncName[] = "Tpetra::MultiVector::normInf";
+
+    const size_t numVecs = this->getNumVectors ();
+    const size_t lclNumRows = this->getLocalLength ();
+    const size_t numNorms = static_cast<size_t> (norms.dimension_0 ());
 
     // FIXME (mfh 11 Jul 2014) These exception tests may not
     // necessarily be thrown on all processes consistently.  We should
@@ -1539,33 +1499,25 @@ namespace { // (anonymous)
     // Kokkos::Details::ArithTraits<mag_type>::one() on error.  The
     // final sum should be
     // Kokkos::Details::ArithTraits<mag_type>::zero() if not error.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      norms.dimension_0 () < getNumVectors (), std::runtime_error, ": "
-      "norms.dimension_0() must be at least as large as the number of "
-      "columns (vectors) in *this.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numNorms < numVecs, std::runtime_error, "Tpetra::MultiVector::normInf: "
+      "'norms' must have at least as many entries as the number of vectors in "
+      "*this.  norms.dimension_0() = " << numVecs << " < this->getNumVectors()"
+      " = " << numVecs << ".");
 
     // We're computing using the device's data, so we need to make
     // sure first that the device is in sync with the host.
     view_.template sync<DeviceType> ();
 
-    // All the "min"s here ensure that incorrect input won't segfault.
-    const size_t numVecs = getNumVectors ();
-    const size_t lclNumRows = getLocalLength ();
-    const size_t numNorms =
-      std::min (static_cast<size_t> (norms.dimension_0 ()), numVecs);
-
     // In case the input dimensions don't match, make sure that we
     // don't overwrite memory that doesn't belong to us, by using
     // subset views with the minimum dimensions over all input.
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-    const std::pair<size_t, size_t> colRng (0, numNorms);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
     norms_view_type theNorms = subview<norms_view_type> (norms, colRng);
     mv_view_type X = subview<mv_view_type> (view_.d_view, rowRng, colRng);
 
-    // All of the functors set the local infinity-norm to zero if the
-    // MultiVector has zero rows.  Thus, any MPI processes with zero
-    // rows don't contribute to the global maximum.
-    if (numNorms == 1) {
+    if (numVecs == 1) {
       // Special case 1: The MultiVector only has a single column.
       // The single-vector norm kernel may be more efficient.
       const size_t ZERO = static_cast<size_t> (0);
@@ -1584,7 +1536,7 @@ namespace { // (anonymous)
       // column.  It might be better to have a kernel that does the
       // work all at once.  On the other hand, we don't prioritize
       // performance of MultiVector views of noncontiguous columns.
-      for (size_t k = 0; k < numNorms; ++k) {
+      for (size_t k = 0; k < numVecs; ++k) {
         const size_t X_col = isConstantStride () ? k : whichVectors_[k];
         vec_view_type X_k = subview<vec_view_type> (X, ALL (), X_col);
         norm_view_type norm_k = subview<norm_view_type> (theNorms, k);
@@ -1606,16 +1558,21 @@ namespace { // (anonymous)
     // in collective operations; those probably don't make any sense,
     // but it doesn't hurt to do them, since it's illegal to call
     // normInf() on those processes anyway.
-    if (! this->getMap ().is_null () && this->isDistributed ()) {
-      // MPI doesn't allow aliasing of arguments, so we have to make a
-      // copy of the local sum.
-      norms_view_type lclNorms ("MV::normInf lcl", numNorms);
-      Kokkos::deep_copy (lclNorms, theNorms);
-      const Teuchos::Comm<int>& comm = * (this->getMap ()->getComm ());
-      const mag_type* const lclSum = lclNorms.ptr_on_device ();
-      mag_type* const gblSum = theNorms.ptr_on_device ();
-      reduceAll<int, mag_type> (comm, REDUCE_MAX, static_cast<int> (numNorms),
-                                lclSum, gblSum);
+    if (this->isDistributed ()) {
+      RCP<const Comm<int> > comm = this->getMap ().is_null () ? null :
+        this->getMap ()->getComm ();
+      // The calling process only participates in the collective if
+      // both the Map and its Comm on that process are nonnull.
+      if (! comm.is_null ()) {
+        // MPI doesn't allow aliasing of arguments, so we have to make
+        // a copy of the local sum.
+        norms_view_type lclNorms ("MV::normInf lcl", numNorms);
+        Kokkos::deep_copy (lclNorms, theNorms);
+        const mag_type* const lclSum = lclNorms.ptr_on_device ();
+        mag_type* const gblSum = theNorms.ptr_on_device ();
+        reduceAll<int, mag_type> (*comm, REDUCE_MAX, static_cast<int> (numVecs),
+                                  lclSum, gblSum);
+      }
     }
   }
 
@@ -2664,11 +2621,15 @@ namespace { // (anonymous)
     using Teuchos::Array;
     using Teuchos::rcp;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
+    const char prefix[] = "Tpetra::MultiVector::subView(Range1D): ";
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      colRng.size() == 0, std::runtime_error,
-      "Tpetra::MultiVector::subView(Range1D): "
-      "range must include at least one vector.");
+      colRng.size() == 0, std::runtime_error, prefix << "Range must include "
+      "at least one vector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (colRng.size ()) > this->getNumVectors (),
+      std::runtime_error, prefix << "colRng.size() = " << colRng.size ()
+      << " > this->getNumVectors() = " << this->getNumVectors () << ".");
 
     // resulting MultiVector is constant stride only if *this is
     if (isConstantStride ()) {
@@ -2722,8 +2683,10 @@ namespace { // (anonymous)
       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > V;
 
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( vectorIndexOutOfRange(j), std::runtime_error,
-        "Tpetra::MultiVector::getVector(NonConst): index j (== " << j << ") exceeds valid column range for this multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      vectorIndexOutOfRange(j), std::runtime_error, "Tpetra::MultiVector::"
+      "getVector(NonConst): index j (== " << j << ") exceeds valid column "
+      "range for this multivector.");
 #endif // HAVE_TPETRA_DEBUG
 
     // FIXME (mfh 10 May 2014) Why can't Kokkos take size_t instead of
@@ -3592,6 +3555,226 @@ namespace { // (anonymous)
     replaceMap (newMap);
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src)
+  {
+    using Kokkos::parallel_for;
+    typedef LocalOrdinal LO;
+    typedef DeviceType DT;
+    typedef typename DT::host_mirror_device_type HMDT;
+    typedef typename dual_view_type::t_host host_view_type;
+    typedef typename dual_view_type::t_dev dev_view_type;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getGlobalLength () != src.getGlobalLength () ||
+      this->getNumVectors () != src.getNumVectors (), std::invalid_argument,
+      "Tpetra::deep_copy: Global dimensions of the two Tpetra::MultiVector "
+      "objects do not match.  src has dimensions [" << src.getGlobalLength ()
+      << "," << src.getNumVectors () << "], and *this has dimensions ["
+      << this->getGlobalLength () << "," << this->getNumVectors () << "].");
+    // FIXME (mfh 28 Jul 2014) Don't throw; just set a local error flag.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getLocalLength () != src.getLocalLength (), std::invalid_argument,
+      "Tpetra::deep_copy: The local row counts of the two Tpetra::MultiVector "
+      "objects do not match.  src has " << src.getLocalLength () << " row(s) "
+      << " and *this has " << this->getLocalLength () << " row(s).");
+
+    if (src.isConstantStride () && this->isConstantStride ()) {
+      Kokkos::deep_copy (this->getDualView (), src.getDualView ());
+    }
+    else {
+      if (this->isConstantStride ()) {
+        const LO numWhichVecs = static_cast<LO> (src.whichVectors_.size ());
+        const std::string whichVecsLabel ("MV::deep_copy::whichVecs");
+
+        // We can't sync src, since it is only an input argument.
+        // Thus, we have to use the most recently modified version of
+        // src, device or host.
+        if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+          // Copy from the device version of src.
+          //
+          // whichVecs tells the kernel which vectors (columns) of src
+          // to copy.  Fill whichVecs on the host, and sync to device.
+          typedef Kokkos::DualView<LO*, DT> whichvecs_type;
+          whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
+          whichVecs.template modify<HMDT> ();
+          for (LO i = 0; i < numWhichVecs; ++i) {
+            whichVecs.h_view(i) = static_cast<LO> (src.whichVectors_[i]);
+          }
+          // Sync the host version of whichVecs to the device.
+          whichVecs.template sync<DT> ();
+
+          // Mark the device version of dst's DualView as modified.
+          this->template modify<DT> ();
+          // Copy from the selected vectors of src to dst, on the
+          // device.  The functor ignores its 3rd arg in this case.
+          typedef DeepCopySelectedVectors<dev_view_type, dev_view_type,
+            LO, DT, true, false> functor_type;
+          functor_type f (this->getDualView ().template view<DT> (),
+                          src.getDualView ().template view<DT> (),
+                          whichVecs.d_view, whichVecs.d_view);
+          Kokkos::parallel_for (src.getLocalLength (), f);
+          // Sync *this' DualView to the host.  This is cheaper than
+          // repeating the above copy from src to *this on the host.
+          this->template sync<HMDT> ();
+        }
+        else { // host version of src was the most recently modified
+          // Copy from the host version of src.
+          //
+          // whichVecs tells the kernel which vectors (columns) of src
+          // to copy.  Fill whichVecs on the host, and use it there.
+          typedef Kokkos::View<LO*, HMDT> whichvecs_type;
+          whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
+          for (LO i = 0; i < numWhichVecs; ++i) {
+            whichVecs(i) = static_cast<LO> (src.whichVectors_[i]);
+          }
+          // Copy from the selected vectors of src to dst, on the host.
+          // The functor ignores its 3rd arg in this case.
+          typedef DeepCopySelectedVectors<host_view_type, host_view_type,
+            LO, HMDT, true, false> functor_type;
+          functor_type f (this->getDualView ().template view<HMDT> (),
+                          src.getDualView ().template view<HMDT> (),
+                          whichVecs, whichVecs);
+          Kokkos::parallel_for (src.getLocalLength (), f);
+          // Sync dst back to the device, since we only copied on the host.
+          this->template sync<DT> ();
+        }
+      }
+      else { // dst is NOT constant stride
+        if (src.isConstantStride ()) {
+          if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+            // Copy from the device version of src.
+            //
+            // whichVecs tells the kernel which vectors (columns) of dst
+            // to copy.  Fill whichVecs on the host, and sync to device.
+            typedef Kokkos::DualView<LO*, DT> whichvecs_type;
+            const std::string whichVecsLabel ("MV::deep_copy::whichVecs");
+            const LO numWhichVecs = static_cast<LO> (this->whichVectors_.size ());
+            whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
+            whichVecs.template modify<HMDT> ();
+            for (LO i = 0; i < numWhichVecs; ++i) {
+              whichVecs.h_view(i) = this->whichVectors_[i];
+            }
+            // Sync the host version of whichVecs to the device.
+            whichVecs.template sync<DT> ();
+
+            // Copy src to the selected vectors of dst, on the device.
+            // The functor ignores its 4th arg in this case.
+            typedef DeepCopySelectedVectors<dev_view_type, dev_view_type,
+              LO, DT, false, true> functor_type;
+            functor_type f (this->getDualView ().template view<DT> (),
+                            src.getDualView ().template view<DT> (),
+                            whichVecs.d_view, whichVecs.d_view);
+            Kokkos::parallel_for (src.getLocalLength (), f);
+            // We can't sync src and repeat the above copy on the
+            // host, so sync dst back to the host.
+            //
+            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
+            // don't actually belong to dst's view.
+            this->template sync<HMDT> ();
+          }
+          else { // host version of src was the most recently modified
+            // Copy from the host version of src.
+            //
+            // whichVecs tells the kernel which vectors (columns) of src
+            // to copy.  Fill whichVecs on the host, and use it there.
+            typedef Kokkos::View<LO*, HMDT> whichvecs_type;
+            const LO numWhichVecs = static_cast<LO> (this->whichVectors_.size ());
+            whichvecs_type whichVecs ("MV::deep_copy::whichVecs", numWhichVecs);
+            for (LO i = 0; i < numWhichVecs; ++i) {
+              whichVecs(i) = static_cast<LO> (this->whichVectors_[i]);
+            }
+            // Copy from src to the selected vectors of dst, on the
+            // host.  The functor ignores its 4th arg in this case.
+            typedef DeepCopySelectedVectors<host_view_type, host_view_type,
+              LO, HMDT, false, true> functor_type;
+            functor_type f (this->getDualView ().template view<HMDT> (),
+                            src.getDualView ().template view<HMDT> (),
+                            whichVecs, whichVecs);
+            Kokkos::parallel_for (src.getLocalLength (), f);
+            // Sync dst back to the device, since we only copied on the host.
+            //
+            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
+            // don't actually belong to dst's view.
+            this->template sync<DT> ();
+          }
+        }
+        else { // neither src nor dst have constant stride
+          if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
+            // Copy from the device version of src.
+            //
+            // whichVectorsDst tells the kernel which vectors
+            // (columns) of dst to copy.  Fill it on the host, and
+            // sync to device.
+            const LO dstNumWhichVecs = static_cast<LO> (this->whichVectors_.size ());
+            Kokkos::DualView<LO*, DT> whichVecsDst ("MV::deep_copy::whichVecsDst",
+                                                    dstNumWhichVecs);
+            whichVecsDst.template modify<HMDT> ();
+            for (LO i = 0; i < dstNumWhichVecs; ++i) {
+              whichVecsDst.h_view(i) = static_cast<LO> (this->whichVectors_[i]);
+            }
+            // Sync the host version of whichVecsDst to the device.
+            whichVecsDst.template sync<DT> ();
+
+            // whichVectorsSrc tells the kernel which vectors
+            // (columns) of src to copy.  Fill it on the host, and
+            // sync to device.  Use the destination MultiVector's
+            // LocalOrdinal type here.
+            const LO srcNumWhichVecs = static_cast<LO> (src.whichVectors_.size ());
+            Kokkos::DualView<LO*, DT> whichVecsSrc ("MV::deep_copy::whichVecsSrc",
+                                                    srcNumWhichVecs);
+            whichVecsSrc.template modify<HMDT> ();
+            for (LO i = 0; i < srcNumWhichVecs; ++i) {
+              whichVecsSrc.h_view(i) = static_cast<LO> (src.whichVectors_[i]);
+            }
+            // Sync the host version of whichVecsSrc to the device.
+            whichVecsSrc.template sync<DT> ();
+
+            // Copy from the selected vectors of src to the selected
+            // vectors of dst, on the device.
+            typedef DeepCopySelectedVectors<dev_view_type, dev_view_type,
+              LO, DT, false, false> functor_type;
+            functor_type f (this->getDualView ().template view<DT> (),
+                            src.getDualView ().template view<DT> (),
+                            whichVecsDst.d_view, whichVecsSrc.d_view);
+            Kokkos::parallel_for (src.getLocalLength (), f);
+          }
+          else {
+            const LO dstNumWhichVecs = static_cast<LO> (this->whichVectors_.size ());
+            Kokkos::View<LO*, HMDT> whichVectorsDst ("dstWhichVecs", dstNumWhichVecs);
+            for (LO i = 0; i < dstNumWhichVecs; ++i) {
+              whichVectorsDst(i) = this->whichVectors_[i];
+            }
+
+            // Use the destination MultiVector's LocalOrdinal type here.
+            const LO srcNumWhichVecs = static_cast<LO> (src.whichVectors_.size ());
+            Kokkos::View<LO*, HMDT> whichVectorsSrc ("srcWhichVecs", srcNumWhichVecs);
+            for (LO i = 0; i < srcNumWhichVecs; ++i) {
+              whichVectorsSrc(i) = src.whichVectors_[i];
+            }
+
+            typedef DeepCopySelectedVectors<host_view_type, host_view_type,
+              LO, HMDT, false, false> functor_type;
+            functor_type f (this->getDualView ().template view<HMDT> (),
+                            src.getDualView ().template view<HMDT> (),
+                            whichVectorsDst, whichVectorsSrc);
+            Kokkos::parallel_for (src.getLocalLength (), f);
+
+            // We can't sync src and repeat the above copy on the
+            // host, so sync dst back to the host.
+            //
+            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
+            // don't actually belong to dst's view.
+            this->template sync<HMDT> ();
+          }
+        }
+      }
+    }
+  }
+
+
   template <class Scalar, class LO, class GO, class DeviceType>
   Teuchos::RCP<MultiVector<Scalar, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
   createMultiVector (const Teuchos::RCP<const Map<LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& map,
@@ -3644,13 +3827,12 @@ namespace { // (anonymous)
       "Not implemented for Node = KokkosDeviceWrapperNode.");
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
-  createCopy (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src)
+  template <class ST, class LO, class GO, class DeviceType>
+  MultiVector<ST, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+  createCopy (const MultiVector<ST, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src)
   {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
-    typedef LocalOrdinal LO;
+    typedef MultiVector<ST, LO, GO, node_type> MV;
 
     MV cpy (src.getMap (), src.getNumVectors ());
     if (src.isConstantStride ()) {
@@ -3693,230 +3875,6 @@ namespace { // (anonymous)
     return cpy;
   }
 
-  template <class DS, class DL, class DG, class DD, class SS, class SL, class SG, class SD>
-  void
-  deep_copy (MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
-             const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src)
-  {
-    using Kokkos::parallel_for;
-    typedef MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> > MVD;
-    typedef const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> > MVS;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      dst.getGlobalLength () != src.getGlobalLength () ||
-      dst.getNumVectors () != src.getNumVectors (), std::invalid_argument,
-      "Tpetra::deep_copy: Global dimensions of the two Tpetra::MultiVector "
-      "objects do not match.  src has dimensions [" << src.getGlobalLength ()
-      << "," << src.getNumVectors () << "], and dst has dimensions ["
-      << dst.getGlobalLength () << "," << dst.getNumVectors () << "].");
-
-    // FIXME (mfh 28 Jul 2014) Don't throw; just set a local error flag.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      dst.getLocalLength () != src.getLocalLength (), std::invalid_argument,
-      "Tpetra::deep_copy: The local row counts of the two Tpetra::MultiVector "
-      "objects do not match.  src has " << src.getLocalLength () << " row(s) "
-      << " and dst has " << dst.getLocalLength () << " row(s).");
-
-    if (src.isConstantStride () && dst.isConstantStride ()) {
-      Kokkos::deep_copy (dst.getDualView (), src.getDualView ());
-    }
-    else {
-      if (dst.isConstantStride ()) {
-        const SL numWhichVecs = static_cast<SL> (src.whichVectors_.size ());
-        const std::string whichVecsLabel ("MV::deep_copy::whichVecs");
-
-        // We can't sync src, since it is only an input argument.
-        // Thus, we have to use the most recently modified version of
-        // src, device or host.
-        if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
-          // Copy from the device version of src.
-          //
-          // whichVecs tells the kernel which vectors (columns) of src
-          // to copy.  Fill whichVecs on the host, and sync to device.
-          typedef Kokkos::DualView<SL*, DD> whichvecs_type;
-          whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
-          whichVecs.template modify<typename DD::host_mirror_device_type> ();
-          for (SL i = 0; i < numWhichVecs; ++i) {
-            whichVecs.h_view(i) = static_cast<SL> (src.whichVectors_[i]);
-          }
-          // Sync the host version of whichVecs to the device.
-          whichVecs.template sync<DD> ();
-
-          // Mark the device version of dst's DualView as modified.
-          dst.template modify<DD> ();
-          // Copy from the selected vectors of src to dst, on the
-          // device.  The functor ignores its 3rd arg in this case.
-          typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_dev,
-            typename MVS::dual_view_type::t_dev, SL, DD, true, false> functor_type;
-          functor_type f (dst.getDualView ().template view<DD> (),
-                          src.getDualView ().template view<DD> (),
-                          whichVecs.d_view, whichVecs.d_view);
-          Kokkos::parallel_for (src.getLocalLength (), f);
-          // Sync dst's DualView to the host.  This is cheaper than
-          // repeating the above copy from src to dst on the host.
-          dst.template sync<typename DD::host_mirror_device_type> ();
-        }
-        else { // host version of src was the most recently modified
-          // Copy from the host version of src.
-          //
-          // whichVecs tells the kernel which vectors (columns) of src
-          // to copy.  Fill whichVecs on the host, and use it there.
-          typedef typename DD::host_mirror_device_type host_dev_type;
-          typedef Kokkos::View<SL*, host_dev_type> whichvecs_type;
-          whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
-          for (SL i = 0; i < numWhichVecs; ++i) {
-            whichVecs(i) = static_cast<SL> (src.whichVectors_[i]);
-          }
-          // Copy from the selected vectors of src to dst, on the host.
-          // The functor ignores its 3rd arg in this case.
-          typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_host,
-            typename MVS::dual_view_type::t_host, SL, host_dev_type,
-            true, false> functor_type;
-          functor_type f (dst.getDualView ().template view<host_dev_type> (),
-                          src.getDualView ().template view<host_dev_type> (),
-                          whichVecs, whichVecs);
-          Kokkos::parallel_for (src.getLocalLength (), f);
-          // Sync dst back to the device, since we only copied on the host.
-          dst.template sync<DD> ();
-        }
-      }
-      else { // dst is NOT constant stride
-        if (src.isConstantStride ()) {
-          if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
-            // Copy from the device version of src.
-            //
-            // whichVecs tells the kernel which vectors (columns) of dst
-            // to copy.  Fill whichVecs on the host, and sync to device.
-            typedef Kokkos::DualView<DL*, DD> whichvecs_type;
-            const std::string whichVecsLabel ("MV::deep_copy::whichVecs");
-            const DL numWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
-            whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
-            whichVecs.template modify<typename DD::host_mirror_device_type> ();
-            for (DL i = 0; i < numWhichVecs; ++i) {
-              whichVecs.h_view(i) = dst.whichVectors_[i];
-            }
-            // Sync the host version of whichVecs to the device.
-            whichVecs.template sync<DD> ();
-
-            // Copy src to the selected vectors of dst, on the device.
-            // The functor ignores its 4th arg in this case.
-            typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_dev,
-              typename MVS::dual_view_type::t_dev, DL, DD, false, true> functor_type;
-            functor_type f (dst.getDualView ().template view<DD> (),
-                            src.getDualView ().template view<DD> (),
-                            whichVecs.d_view, whichVecs.d_view);
-            Kokkos::parallel_for (src.getLocalLength (), f);
-            // We can't sync src and repeat the above copy on the
-            // host, so sync dst back to the host.
-            //
-            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
-            // don't actually belong to dst's view.
-            dst.template sync<typename DD::host_mirror_device_type> ();
-          }
-          else { // host version of src was the most recently modified
-            // Copy from the host version of src.
-            //
-            // whichVecs tells the kernel which vectors (columns) of src
-            // to copy.  Fill whichVecs on the host, and use it there.
-            typedef typename DD::host_mirror_device_type host_dev_type;
-            typedef Kokkos::View<DL*, host_dev_type> whichvecs_type;
-            const DL numWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
-            whichvecs_type whichVecs ("MV::deep_copy::whichVecs", numWhichVecs);
-            for (DL i = 0; i < numWhichVecs; ++i) {
-              whichVecs(i) = static_cast<DL> (dst.whichVectors_[i]);
-            }
-            // Copy from src to the selected vectors of dst, on the
-            // host.  The functor ignores its 4th arg in this case.
-            typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_host,
-              typename MVS::dual_view_type::t_host, DL, host_dev_type,
-              false, true> functor_type;
-            functor_type f (dst.getDualView ().template view<host_dev_type> (),
-                            src.getDualView ().template view<host_dev_type> (),
-                            whichVecs, whichVecs);
-            Kokkos::parallel_for (src.getLocalLength (), f);
-            // Sync dst back to the device, since we only copied on the host.
-            //
-            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
-            // don't actually belong to dst's view.
-            dst.template sync<DD> ();
-          }
-        }
-        else { // neither src nor dst have constant stride
-          if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
-            // Copy from the device version of src.
-            //
-            // whichVectorsDst tells the kernel which vectors
-            // (columns) of dst to copy.  Fill it on the host, and
-            // sync to device.
-            const DL dstNumWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
-            Kokkos::DualView<DL*, DD> whichVecsDst ("MV::deep_copy::whichVecsDst",
-                                                    dstNumWhichVecs);
-            whichVecsDst.template modify<typename DD::host_mirror_device_type> ();
-            for (DL i = 0; i < dstNumWhichVecs; ++i) {
-              whichVecsDst.h_view(i) = static_cast<DL> (dst.whichVectors_[i]);
-            }
-            // Sync the host version of whichVecsDst to the device.
-            whichVecsDst.template sync<DD> ();
-
-            // whichVectorsSrc tells the kernel which vectors
-            // (columns) of src to copy.  Fill it on the host, and
-            // sync to device.  Use the destination MultiVector's
-            // LocalOrdinal type here.
-            const DL srcNumWhichVecs = static_cast<DL> (src.whichVectors_.size ());
-            Kokkos::DualView<DL*, DD> whichVecsSrc ("MV::deep_copy::whichVecsSrc",
-                                                    srcNumWhichVecs);
-            whichVecsSrc.template modify<typename DD::host_mirror_device_type> ();
-            for (DL i = 0; i < srcNumWhichVecs; ++i) {
-              whichVecsSrc.h_view(i) = static_cast<DL> (src.whichVectors_[i]);
-            }
-            // Sync the host version of whichVecsSrc to the device.
-            whichVecsSrc.template sync<DD> ();
-
-            // Copy from the selected vectors of src to the selected
-            // vectors of dst, on the device.
-            typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_dev,
-              typename MVS::dual_view_type::t_dev, DL, DD, false, false>
-              functor_type;
-            functor_type f (dst.getDualView ().template view<DD> (),
-                            src.getDualView ().template view<DD> (),
-                            whichVecsDst.d_view, whichVecsSrc.d_view);
-            Kokkos::parallel_for (src.getLocalLength (), f);
-          }
-          else {
-            typedef typename DD::host_mirror_device_type host_dev_type;
-
-            const DL dstNumWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
-            Kokkos::View<DL*, host_dev_type> whichVectorsDst ("dstWhichVecs", dstNumWhichVecs);
-            for (DL i = 0; i < dstNumWhichVecs; ++i) {
-              whichVectorsDst(i) = dst.whichVectors_[i];
-            }
-
-            // Use the destination MultiVector's LocalOrdinal type here.
-            const DL srcNumWhichVecs = static_cast<DL> (src.whichVectors_.size ());
-            Kokkos::View<DL*, host_dev_type> whichVectorsSrc ("srcWhichVecs", srcNumWhichVecs);
-            for (DL i = 0; i < srcNumWhichVecs; ++i) {
-              whichVectorsSrc(i) = src.whichVectors_[i];
-            }
-
-            typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_host,
-              typename MVS::dual_view_type::t_host,
-              DL, host_dev_type, false, false> functor_type;
-            functor_type f (dst.getDualView ().template view<host_dev_type> (),
-                            src.getDualView ().template view<host_dev_type> (),
-                            whichVectorsDst, whichVectorsSrc);
-            Kokkos::parallel_for (src.getLocalLength (), f);
-
-            // We can't sync src and repeat the above copy on the
-            // host, so sync dst back to the host.
-            //
-            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
-            // don't actually belong to dst's view.
-            dst.template sync<typename DD::host_mirror_device_type> ();
-          }
-        }
-      }
-    }
-  }
 } // namespace Tpetra
 
 

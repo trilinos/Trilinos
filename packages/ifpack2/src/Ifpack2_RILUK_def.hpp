@@ -535,7 +535,7 @@ initAllValues (const row_matrix_type& A)
       break;
     }
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(gidsAreConsistentlyOrdered==false, std::runtime_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(gidsAreConsistentlyOrdered==false, std::runtime_error,
                              "The ordering of the local GIDs in the row and column maps is not the same"
                              << std::endl << "at index " << indexOfInconsistentGID
                              << ".  Consistency is required, as all calculations are done with"
@@ -942,7 +942,7 @@ multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordina
     // just with D_ itself.
     Y.elementWiseMultiply (one, *D_, Y, zero); // y = D*y (D_ has inverse of diagonal)
 
-    MV Y_tmp (Y); // Need a temp copy of Y
+    MV Y_tmp (Y, Teuchos::Copy); // Need a temp copy of Y
     L_->apply (Y_tmp, Y, mode);
     Y.update (one, Y_tmp, one); // (account for implicit unit diagonal)
   }
@@ -950,7 +950,7 @@ multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordina
     L_->apply (X, Y, mode);
     Y.update (one, X, one); // Y = Y + X (account for implicit unit diagonal)
     Y.elementWiseMultiply (one, *D_, Y, zero); // y = D*y (D_ has inverse of diagonal)
-    MV Y_tmp (Y); // Need a temp copy of Y1
+    MV Y_tmp (Y, Teuchos::Copy); // Need a temp copy of Y1
     U_->apply (Y_tmp, Y, mode);
     Y.update (one, Y_tmp, one); // (account for implicit unit diagonal)
   }

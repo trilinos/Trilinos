@@ -263,11 +263,12 @@ Other miscellaneous arguments for each ``TEST_<idx>`` block include:
     ``<outputFile>``.  By default, the contents of this file will **also**
     be printed to STDOUT unless ``NO_ECHO_OUT`` is passed as well.
 
-    NOTE: Contrary to CMake documentation for EXECUTE_PROCESS(), STDERR
-    output will get included after all STDOUT output.  Therefore, you can't
-    write any tests that depend on the order of STDOUT and STDERR output in
-    relation to each other.  Also note that all of STDOUT and STDERR will be
-    first read into the CTest executable process main memory before the file
+    NOTE: Contrary to CMake documentation for EXECUTE_PROCESS(), STDOUT and
+    STDERR may not get output in the correct order interleaved correctly,
+    even in serial without MPI.  Therefore, you can't write any tests that
+    depend on the order of STDOUT and STDERR output in relation to each
+    other.  Also note that all of STDOUT and STDERR will be first read into
+    the CTest executable process main memory before the file
     ``<outputFile>`` is written.  Therefore, don't run executables or
     commands that generate massive amounts of console output or it may
     exhaust main memory.  Instead, have the command or executable write
@@ -2559,6 +2560,12 @@ package in this list (or in upstream TriBITS repositories).  This avoids an
 expensive package sorting algorithm and makes it easy to flag packages with
 circular dependencies or misspelling of package names.
 
+NOTE: For some rare use cases, the package directory ``<pkgi_dir>`` is
+allowed to be specified as an absolute directory but this absolute directory
+must be a subdirectory of the project source base directory given by
+`PROJECT_SOURCE_DIR`_.  If not, ``MESSAGE(FATAL_ERROR ...)`` is called and
+processing stops immediately.
+
 NOTE: This macro just sets the variable::
 
   ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
@@ -2835,38 +2842,38 @@ Usage::
 The arguments are:
 
   ``PACKAGE_NAME <pakageName>``
- 
+
     Gives the name of the TriBITS package for which the export files should
     be created.
- 
+
   ``EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>``
- 
+
     If specified, then all of the variables in the generated export files
     will be prefixed with ``<exportFileVarPrefix>_`` instead of
     ``<pakageName>_``.
- 
+
   ``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
- 
+
     If specified, then the package's (``<packageName>``) cmake configure
     export file for use by external CMake client projects will be created as
     the file ``<cmakeConfigFileFullPath>``.  NOTE: the argument should be
     the full path!
- 
+
   ``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
- 
+
     If specified, then the package's (``<packageName>``) export makefile for
     use by external Makefile client projects will be created in the file
     <exportMakefileFileFullPath>.  NOTE: the argument should be the full
     path!
- 
+
   ``WRITE_INSTALL_CMAKE_CONFIG_FILE``
- 
+
     If specified, then the package's (``<packageName>``) install cmake
     configured export file will be installed in to the install tree as well.
     The name and location of this file is hard-coded.
- 
+
   ``WRITE_INSTALL_EXPORT_MAKLEFILE``
- 
+
     If specified, then the package's (``<packageName>``) install export
     makefile to be installed into the install tree as well.  The name and
     location of this file is hard-coded.

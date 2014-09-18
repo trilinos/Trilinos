@@ -88,12 +88,12 @@ namespace Xpetra {
 
   };
 
-  template <>
-  class ImportFactory<int, int> {
+  template <class GlobalOrdinalArg>
+  class ImportFactory<int, GlobalOrdinalArg> {
 
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef Import<int, int>::node_type Node;
+    typedef GlobalOrdinalArg GlobalOrdinal;
+    typedef typename Import<int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -112,7 +112,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (source->lib() == UseEpetra)
-        return rcp( new EpetraImport(source, target));
+        return rcp( new EpetraImportT<GlobalOrdinal>(source, target));
 #endif
 
       XPETRA_FACTORY_END;

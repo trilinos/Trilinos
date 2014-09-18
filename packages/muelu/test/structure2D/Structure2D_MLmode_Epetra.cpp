@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
 
   // Epetra_Map -> Xpetra::Map
-  const RCP< const Map> map = Xpetra::toXpetra(emap);
+  const RCP< const Map> map = Xpetra::toXpetra<int>(emap);
 
   Teuchos::ParameterList mlParams;
   FillMLParameterList(mlParams); // fill ML parameter list (without nullspace)

@@ -2,8 +2,89 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Dev version (11.9):
--------------------
+Development version (11.11):
+----------------------------
+
+* Full set of default values of template parameters
+
+Usability improvement!  Most Tpetra classes now come with a full set
+of default values of template parameters.  In many cases, you need no
+longer specify _any_ template parameters' values, if you only intend
+to use their defaults.  For example, you may now write the following:
+
+  // All default template parameters!
+  Tpetra::Map<> map (...);
+
+  // No "typename" because Map<> is a concrete type.
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+
+  for (LO i_lcl = map.getMinLocalIndex (); 
+       i_lcl <= map.getMaxLocalIndex (); ++i_lcl) {
+    const GO i_gbl = map.getGlobalElement (i_lcl);
+    // ...
+  }
+
+  // All default template parameters!
+  // Scalar defaults to double.
+  // LocalOrdinal, GlobalOrdinal, and Node default
+  // to the same values as those of Map<> above.
+  Tpetra::MultiVector<> X (...);
+
+Also, if you need to specify (say) GlobalOrdinal explicitly, you don't
+have to specify Node explicitly.  For example:
+
+  // Don't need to specify Node; it takes its default value.
+  Tpetra::Map<int, long long> map (...);
+  Tpetra::MultiVector<double, int, long long> X (...);
+
+You may specify the default value of Node at Trilinos configure time
+(that is, when running CMake).  The current default is
+KokkosClassic::SerialNode (no threads; MPI only).  This will change,
+but it will always have a reasonable value for conventional multicore
+processors.
+
+Please, _please_ prefer default values of template parameters!  This
+will make your code shorter, allow more flexibility at configure time,
+and might even make builds a bit faster.  All Tpetra classes come with
+public typedefs, so you can pick up scalar_type (if applicable),
+local_ordinal_type, global_ordinal_type, and node_type from Tpetra
+directly, rather than specifying them explicitly.
+
+* Removed the LocalMatOps template parameter
+
+CrsGraph, CrsMatrix, VbrMatrix, and other classes used to have a
+LocalMatOps template parameter.  This was the fourth template
+parameter of CrsGraph and the fifth template parameter of CrsMatrix.
+It was always optional.  Chris Baker intended it as an extension point
+for users or third-party vendors to insert their own sparse
+matrix-vector multiply or triangular solve routines.  However, no one
+ever used it for this purpose as far as we know.  When it started to
+hinder the Kokkos refactor effort (see release notes for Trilinos
+11.10 below), we removed it.  This should speed up compilation times.
+
+Lesson: It's always easier to _add_ a template parameter (at the end,
+if it's optional) than it is to remove one.
+
+Getting rid of LocalMatOps does amount to a backwards incompatible
+interface change.  However, we deemed it a harmless change, for the
+following reasons:
+
+  1. LocalMatOps has a reasonable default value.
+  2. As far as I know, no one other than Chris Baker and myself ever
+     wrote or used alternate implementations of LocalMatOps.
+  3. Trilinos packages or applications which bothered to specify
+     LocalMatOps never used anything other than the default value.
+
+Thus, it never even crossed my mind that applications would bother to
+specify this thing.  Unfortunately, some applications may still
+LocalMatOps explicitly.  This typedef is unnecessary.  You do not need
+to specify this template parameter.  The default value was always
+perfectly fine and has been for years.
+
+
+Trilinos 11.10:
+---------------
 
 * Continued work on the Kokkos refactor version of Tpetra
 

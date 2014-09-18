@@ -1,0 +1,10 @@
+language: c++
+before_install:
+  - sudo apt-get install gfortran
+install:
+  - mkdir build
+  - cd build/
+  - cmake ../
+  - make
+script:
+  - ctest

@@ -487,6 +487,21 @@ class SerializationTraits<Ordinal, ptrdiff_t>
 
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
+#ifdef HAVE_TEUCHOS___INT64
+
+template<typename Ordinal>
+class SerializationTraits<Ordinal, __int64>
+  : public DirectSerializationTraits<Ordinal, __int64>
+{};
+
+template<typename Ordinal>
+class SerializationTraits<Ordinal, unsigned __int64>
+  : public DirectSerializationTraits<Ordinal, unsigned __int64>
+{};
+
+#endif // HAVE_TEUCHOS___INT64
+
+
 } // namespace Teuchos
 
 #endif // TEUCHOS_SERIALIZATION_TRAITS_HPP

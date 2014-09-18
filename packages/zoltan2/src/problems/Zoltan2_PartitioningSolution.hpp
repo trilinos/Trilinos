@@ -1827,6 +1827,9 @@ template <typename Adapter>
     bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
     int numLocalParts, int numGlobalParts)
 {
+#ifdef _MSC_VER
+	typedef SSIZE_T ssize_t;
+#endif
   int nprocs = comm_->getSize();
   ssize_t reducevals[4];
   ssize_t sumHaveGlobal=0, sumHaveLocal=0;

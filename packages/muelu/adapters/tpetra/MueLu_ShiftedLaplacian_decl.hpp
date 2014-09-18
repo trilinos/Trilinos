@@ -81,10 +81,11 @@ namespace MueLu {
     An AMG-Shifted Laplacian is used as a preconditioner for Krylov iterative
     solvers in Belos.
   */
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Scalar        = Xpetra::Matrix<>::scalar_type,
+            class LocalOrdinal  = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node          = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class ShiftedLaplacian : public BaseClass {
-
 #undef MUELU_SHIFTEDLAPLACIAN_SHORT
 #include "MueLu_UseShortNames.hpp"
 

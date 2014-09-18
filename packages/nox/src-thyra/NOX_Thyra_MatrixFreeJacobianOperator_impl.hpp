@@ -56,7 +56,13 @@ template<typename Scalar>
 MatrixFreeJacobianOperator<Scalar>::
 MatrixFreeJacobianOperator(Teuchos::ParameterList& printParams) :
   setup_called_(false),
-  utils_(printParams)
+  utils_(printParams),
+  difference_type_(Forward),
+  perturbation_type_(SalingerLOCA),
+  base_evaluation_type_(RawThyra),
+  lambda_(0.0),
+  delta_(0.0),
+  user_defined_delta_(0.0)
 { }
 
 template<typename Scalar>

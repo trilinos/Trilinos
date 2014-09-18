@@ -44,6 +44,7 @@ ModelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
   num_global_elements_(num_global_elements),
   z_min_(z_min),
   z_max_(z_max),
+  k_(0.0),
   showGetInvalidArg_(false)
 {
   using Teuchos::RCP;

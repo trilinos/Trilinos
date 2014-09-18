@@ -59,14 +59,12 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType , typename IntType , unsigned P >
-class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >
-                 , Kokkos::Qthread
-                 >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
+class ParallelFor< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread > >
 {
-public:
-  typedef Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >  Policy ;
+private:
+
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread >  Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
@@ -87,6 +85,8 @@ public:
     exec.exec_all_barrier();
   }
 
+public:
+
   ParallelFor( const FunctorType & functor
              , const Policy      & policy
              )
@@ -99,17 +99,14 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType , typename IntType , unsigned P >
-class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >
-                    , Kokkos::Qthread
-                    >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
+class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread > >
 {
-public:
+private:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
-  typedef Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >  Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread >  Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
@@ -129,6 +126,8 @@ public:
 
     exec.exec_all_reduce( self.m_func );
   }
+
+public:
 
   template< class HostViewType >
   ParallelReduce( const FunctorType  & functor
@@ -154,17 +153,87 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType >
-class ParallelReduce< FunctorType , TeamPolicy< Kokkos::Qthread > , Kokkos::Qthread >
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , TeamPolicy< Arg0 , Arg1 , Kokkos::Qthread > >
 {
-public:
+private:
 
-  typedef ReduceAdapter< FunctorType >   Reduce ;
-  typedef typename Reduce::pointer_type  pointer_type ;
-  typedef TeamPolicy< Kokkos::Qthread >  policy_team ;
+  typedef TeamPolicy< Arg0 , Arg1 , Kokkos::Qthread >  Policy ;
 
   const FunctorType  m_func ;
-  const policy_team  m_team ;
+  const Policy       m_team ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_func( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_func( TagType() , member ); }
+
+  static void execute( QthreadExec & exec , const void * arg )
+  {
+    const ParallelFor & self = * ((const ParallelFor *) arg );
+
+    typename Policy::member_type team_index( exec , self.m_team );
+
+    while ( team_index ) {
+      // Reset shared memory offset to beginning of reduction range.
+      exec.shared_reset();
+      self.ParallelFor::template driver< typename Policy::work_tag >( team_index );
+      team_index.team_barrier();
+      team_index.next_team();
+    }
+
+    exec.exec_all_barrier();
+  }
+
+public:
+
+  ParallelFor( const FunctorType & functor ,
+               const Policy      & policy )
+    : m_func( functor )
+    , m_team( policy )
+    {
+      QthreadExec::resize_worker_scratch
+        ( /* reduction   memory */ 0
+        , /* team shared memory */ FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() ) );
+
+      Impl::QthreadExec::exec_all( Qthread::instance() , & ParallelFor::execute , this );
+    }
+};
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelReduce< FunctorType , TeamPolicy< Arg0 , Arg1 , Kokkos::Qthread > >
+{
+private:
+
+  typedef ReduceAdapter< FunctorType >      Reduce ;
+  typedef typename Reduce::pointer_type     pointer_type ;
+  typedef TeamPolicy< Arg0 , Arg1 , Kokkos::Qthread >  Policy ;
+
+  const FunctorType  m_func ;
+  const Policy       m_team ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member
+             , typename Reduce::reference_type update ) const
+    { m_func( member , update ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member
+             , typename Reduce::reference_type update ) const
+    { m_func( TagType() , member , update ); }
 
   static void execute( QthreadExec & exec , const void * arg )
   {
@@ -173,12 +242,12 @@ public:
     // Initialize thread-local value
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.exec_all_reduce_value() );
 
-    typename policy_team::member_type team_index( exec , self.m_team );
+    typename Policy::member_type team_index( exec , self.m_team );
 
     while ( team_index ) {
       // Reset shared memory offset to beginning of reduction range.
       exec.shared_reset();
-      self.m_func( team_index , update );
+      self.ParallelReduce::template driver< typename Policy::work_tag >( team_index , update );
       team_index.team_barrier();
       team_index.next_team();
     }
@@ -186,16 +255,18 @@ public:
     exec.exec_all_reduce( self.m_func );
   }
 
+public:
+
   template< class ViewType >
   ParallelReduce( const FunctorType & functor ,
-                  const policy_team & policy ,
+                  const Policy      & policy ,
                   const ViewType    & result )
     : m_func( functor )
     , m_team( policy )
     {
       QthreadExec::resize_worker_scratch
         ( /* reduction   memory */ Reduce::value_size( functor )
-        , /* team shared memory */ FunctorTeamShmemSize< FunctorType >::value( functor ) , policy.team_size() );
+        , /* team shared memory */ FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() ) );
 
       Impl::QthreadExec::exec_all( Qthread::instance() , & ParallelReduce::execute , this );
 
@@ -215,17 +286,14 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class FunctorType , typename IntType , unsigned P >
-class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >
-                  , Kokkos::Qthread
-                  >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
+class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread > >
 {
-public:
+private:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
-  typedef Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Qthread > Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
@@ -251,6 +319,8 @@ public:
 
     exec.exec_all_barrier();
   }
+
+public:
 
   ParallelScan( const FunctorType & functor
               , const Policy      & policy

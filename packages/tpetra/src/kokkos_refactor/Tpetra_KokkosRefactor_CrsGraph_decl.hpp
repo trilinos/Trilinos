@@ -50,7 +50,7 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration (needed for "friend" inside CrsGraph)
-  template <class S, class LO, class GO, class N, class SpMatOps>
+  template <class S, class LO, class GO, class N>
   class CrsMatrix;
 
   namespace Experimental {
@@ -130,9 +130,9 @@ namespace Tpetra {
         Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
         public Teuchos::ParameterListAcceptorDefaultBase
   {
-    template <class S, class LO, class GO, class N, class SpMatOps>
+    template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
-    template <class LO2, class GO2, class N2, class SpMatOps2>
+    template <class LO2, class GO2, class N2>
     friend class CrsGraph;
     template <class S, class LO, class GO, class N>
     friend class ::Tpetra::Experimental::BlockCrsMatrix;
@@ -731,10 +731,13 @@ namespace Tpetra {
     //! Returns \c true if resumeFill() has been called and the graph is in edit mode.
     bool isFillActive() const;
 
-    //! Indicates whether the graph indices in all rows are known to be sorted.
-    /** A fill-complete graph is always sorted, as is a newly constructed graph. A graph is sorted immediately after
-        calling resumeFill(), but any changes to the graph may result in the sorting status becoming unknown (and therefore, presumed unsorted.)
-    */
+    /// \brief Whether graph indices in all rows are known to be sorted.
+    ///
+    /// A fill-complete graph is always sorted, as is a newly
+    /// constructed graph. A graph is sorted immediately after calling
+    /// resumeFill(), but any changes to the graph may result in the
+    /// sorting status becoming unknown (and therefore, presumed
+    /// unsorted).
     bool isSorted() const;
 
     //! \brief Returns \c true if storage has been optimized.
@@ -926,14 +929,26 @@ namespace Tpetra {
     /// \brief Reindex the column indices in place, and replace the
     ///   column Map.  Optionally, replace the Import object as well.
     ///
+    /// \pre On every calling process, every index owned by the
+    ///   current column Map must also be owned by the new column Map.
+    ///
+    /// \pre If the new Import object is provided, the new Import
+    ///   object's source Map must be the same as the current domain
+    ///   Map, and the new Import's target Map must be the same as the
+    ///   new column Map.
+    ///
     /// \param newColMap [in] New column Map.  Must be nonnull.
     ///
     /// \param newImport [in] New Import object.  Optional; computed
     ///   if not provided or if null.  Computing an Import is
     ///   expensive, so it is worth providing this if you can.
+    ///
+    /// \param sortIndicesInEachRow [in] If true, sort the indices in
+    ///   each row after reindexing.
     void
     reindexColumns (const Teuchos::RCP<const map_type>& newColMap,
-                    const Teuchos::RCP<const import_type>& newImport = Teuchos::null);
+                    const Teuchos::RCP<const import_type>& newImport = Teuchos::null,
+                    const bool sortIndicesInEachRow = true);
 
     /// \brief Replace the current domain Map and Import with the given parameters.
     ///

@@ -86,13 +86,13 @@ namespace Xpetra {
     try {
       const Epetra_MpiComm& mpiComm = dynamic_cast<const Epetra_MpiComm&>(comm);
       return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm.Comm())));
-    } catch (std::bad_cast & b) {}
+    } catch (std::bad_cast & /*b*/) {}
 #endif
     try {
       const Epetra_SerialComm& serialComm = dynamic_cast<const Epetra_SerialComm&>(comm);
       serialComm.NumProc(); // avoid compilation warning
       return Teuchos::rcp(new Teuchos::SerialComm<int>());
-    } catch (std::bad_cast & b) {
+    } catch (std::bad_cast & /*b*/) {
       TEUCHOS_TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"Cannot convert an Epetra_Comm to a Teuchos::Comm: The exact type of the Epetra_Comm object is unknown");
     }
   }

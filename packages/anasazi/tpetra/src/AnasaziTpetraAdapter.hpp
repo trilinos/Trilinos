@@ -107,7 +107,9 @@ namespace Anasazi {
     /// (distribution over one or more parallel processes) as \c X.
     /// Its entries are not initialized and have undefined values.
     static Teuchos::RCP<MV> Clone (const MV& X, const int numVecs) {
-      return Teuchos::rcp (new MV (X.getMap (), numVecs, false));
+      Teuchos::RCP<MV> Y (new MV (X.getMap (), numVecs, false));
+      Y->setCopyOrView (Teuchos::View);
+      return Y;
     }
 
     //! Create and return a deep copy of X.
@@ -230,18 +232,7 @@ namespace Anasazi {
       // continuous column index range in
       // MultiVector::subViewNonConst, so we don't have to check here.
       Teuchos::RCP<MV> X_view = mv.subViewNonConst (columns ());
-      // FIXME (mfh 14 Aug 2014) For some reason I currently don't
-      // understand, the Belos MVOpTester and/or OrthoManager tests
-      // fail if I uncomment the line below.  This is true for both
-      // the "classic" and Kokkos refactor versions of Tpetra.  I
-      // don't know why this is the case.  Belos shouldn't care
-      // whether Tpetra uses copy or view semantics, and the Kokkos
-      // refactor version of Tpetra _always_ uses view semantics.
-      // Nevertheless, the tests fail, so I will leave the following
-      // line commented out for now.  This is true for both CloneView
-      // overloads as well as both CloneViewNonConst overloads.
-
-      //X_view->setCopyOrView (Teuchos::View);
+      X_view->setCopyOrView (Teuchos::View);
       return X_view;
     }
 
@@ -274,18 +265,7 @@ namespace Anasazi {
           os.str() << "Should never get here!");
       }
       Teuchos::RCP<MV> X_view = mv.subViewNonConst (index);
-      // FIXME (mfh 14 Aug 2014) For some reason I currently don't
-      // understand, the Belos MVOpTester and/or OrthoManager tests
-      // fail if I uncomment the line below.  This is true for both
-      // the "classic" and Kokkos refactor versions of Tpetra.  I
-      // don't know why this is the case.  Belos shouldn't care
-      // whether Tpetra uses copy or view semantics, and the Kokkos
-      // refactor version of Tpetra _always_ uses view semantics.
-      // Nevertheless, the tests fail, so I will leave the following
-      // line commented out for now.  This is true for both CloneView
-      // overloads as well as both CloneViewNonConst overloads.
-
-      //X_view->setCopyOrView (Teuchos::View);
+      X_view->setCopyOrView (Teuchos::View);
       return X_view;
     }
 
@@ -316,18 +296,7 @@ namespace Anasazi {
       // continuous column index range in MultiVector::subView, so we
       // don't have to check here.
       Teuchos::RCP<const MV> X_view = mv.subView (columns);
-      // FIXME (mfh 14 Aug 2014) For some reason I currently don't
-      // understand, the Belos MVOpTester and/or OrthoManager tests
-      // fail if I uncomment the line below.  This is true for both
-      // the "classic" and Kokkos refactor versions of Tpetra.  I
-      // don't know why this is the case.  Belos shouldn't care
-      // whether Tpetra uses copy or view semantics, and the Kokkos
-      // refactor version of Tpetra _always_ uses view semantics.
-      // Nevertheless, the tests fail, so I will leave the following
-      // line commented out for now.  This is true for both CloneView
-      // overloads as well as both CloneViewNonConst overloads.
-
-      //Teuchos::rcp_const_cast<MV> (X_view)->setCopyOrView (Teuchos::View);
+      Teuchos::rcp_const_cast<MV> (X_view)->setCopyOrView (Teuchos::View);
       return X_view;
     }
 
@@ -357,18 +326,7 @@ namespace Anasazi {
           os.str() << "Should never get here!");
       }
       Teuchos::RCP<const MV> X_view = mv.subView (index);
-      // FIXME (mfh 14 Aug 2014) For some reason I currently don't
-      // understand, the Belos MVOpTester and/or OrthoManager tests
-      // fail if I uncomment the line below.  This is true for both
-      // the "classic" and Kokkos refactor versions of Tpetra.  I
-      // don't know why this is the case.  Belos shouldn't care
-      // whether Tpetra uses copy or view semantics, and the Kokkos
-      // refactor version of Tpetra _always_ uses view semantics.
-      // Nevertheless, the tests fail, so I will leave the following
-      // line commented out for now.  This is true for both CloneView
-      // overloads as well as both CloneViewNonConst overloads.
-
-      //Teuchos::rcp_const_cast<MV> (X_view)->setCopyOrView (Teuchos::View);
+      Teuchos::rcp_const_cast<MV> (X_view)->setCopyOrView (Teuchos::View);
       return X_view;
     }
 

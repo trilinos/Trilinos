@@ -68,7 +68,11 @@
 
 namespace {
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
   typedef Xpetra::EpetraMap EpetraMap;
+#else
+  typedef Xpetra::EpetraMap64 EpetraMap;
+#endif
 #endif
   using Teuchos::Array;
   using Teuchos::as;
@@ -432,11 +436,21 @@ namespace {
 
     // UNIT_TEST_GROUP_ORDINAL(char , int)
 
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
 #ifdef HAVE_XPETRA_EPETRA
       UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , int)
 #endif
 #ifdef HAVE_XPETRA_TPETRA
       UNIT_TEST_GROUP_ORDINAL(int , int)
+#endif
+#else
+    typedef long long LongLongInt;
+#ifdef HAVE_XPETRA_EPETRA
+      UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , LongLongInt)
+#endif
+#ifdef HAVE_XPETRA_TPETRA
+      UNIT_TEST_GROUP_ORDINAL(int , LongLongInt)
+#endif
 #endif
 
     // typedef short int ShortInt;

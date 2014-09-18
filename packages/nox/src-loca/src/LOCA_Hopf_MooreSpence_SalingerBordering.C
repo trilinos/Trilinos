@@ -70,7 +70,8 @@ LOCA::Hopf::MooreSpence::SalingerBordering::SalingerBordering(
   dCedpReal(),
   dCedpImag(),
   ByVector(),
-  minusBzVector()
+  minusBzVector(),
+  w(0.0)
 {
 }
 

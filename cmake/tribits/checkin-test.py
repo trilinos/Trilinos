@@ -53,14 +53,17 @@ if os.environ.get("TRIBITS_CHECKIN_TEST_DEBUG_DUMP", "") == "ON":
 else:
   debugDump = False
 
+if debugDump:
+  print "NOTE: TRIBITS_CHECKIN_TEST_DEBUG_DUMP=ON set in env, doing debug dump ..."
+
 thisFilePath = __file__
-if debugDump: print "thisFilePath =", thisFilePath
+if debugDump: print "\nthisFilePath =", thisFilePath
 
 thisFileRealAbsBasePath = os.path.dirname(os.path.abspath(os.path.realpath(thisFilePath)))
-if debugDump: print "thisFileRealAbsBasePath = '"+thisFileRealAbsBasePath+"'"
+if debugDump: print "\nthisFileRealAbsBasePath = '"+thisFileRealAbsBasePath+"'"
 
-sys.path.append(os.path.join(thisFileRealAbsBasePath, 'python'))
-if debugDump: print "sys.path =", sys.path
+sys.path = [os.path.join(thisFileRealAbsBasePath, 'python')] + sys.path
+if debugDump: print "\nsys.path =", sys.path
 
 from CheckinTest import *
 from GeneralScriptSupport import *
@@ -673,9 +676,16 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   clp = ConfigurableOptionParser(configuration.get('defaults', {}), usage=usageHelp)
 
   clp.add_option(
-    "--project-configuration", dest="projectConfiguration", type="string",
-    help="Custom file to provide configuration defaults for the project.",
-    default={})
+    "--project-configuration", dest="projectConfiguration", type="string", default="",
+    help="Custom file to provide configuration defaults for the project." \
+      + "  By default, the file project-checkin-test-config.py is looked for" \
+      + " in <checkin-test-path>/../.. (assuming default <projectDir>/cmake/tribits/" \
+      + " directory structure and second is looked for in <checkin-test-path>/ (which" \
+      + " is common practice to symlink the checkin-test.py script into the project's" \
+      + " base directory).  If this file is set to a location that is not in the" \
+      + " project's base directory, then --src-dir must be set to point to the" \
+      + " project's base directory."
+    )
   
   clp.add_option(
     "--show-defaults", dest="showDefaults", action="store_true",
@@ -695,16 +705,10 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     help="Do not check the versions of eg and git, just trust they are okay.",
     default=True )
 
-  srcDirDefault = '/'.join(getCompleteFileDirname(__file__).split("/")[0:-2]) 
   clp.add_option(
-    '--src-dir', dest="srcDir", type="string",
-    default=srcDirDefault,
-    help="The source base directory for code to be tested.  Default assumes is <tribitsDir>/../.." )
-
-  clp.add_option(
-    '--trilinos-src-dir', dest="srcDir", type="string",
-    default=srcDirDefault,
-    help="[DEPRECATED] Use --src-dir instead. This argument is for backwards compatibility only.")
+    '--src-dir', dest="srcDir", type="string", default="",
+    help="The source base directory for code to be tested.  The default is determined" \
+     +" by the location of the found project-checkin-test-config.py file." )
 
   configuredBuilds = [build for build, unused in
                       configuration.get('cmake', {}).get('default-builds', [])]
@@ -1216,9 +1220,6 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     return True
 
 
-
-
-
 def getConfigurationSearchPaths():
   """
   Gets a list of paths to search for the configuration. If this file
@@ -1226,30 +1227,45 @@ def getConfigurationSearchPaths():
   symlink. The returned list will always contain at least one element.
   """
   result = []
-  if os.path.islink(__file__):
-    # Don't use realpath here!
-    result.append(os.path.dirname(os.path.abspath(__file__)))
-  # Always append the default tribits directory structure where this file lives in
-  # <project-root>/cmake/tribits
+
+  # Always look for the configuration file assuming the checkin-test.py script
+  # is run out of the standared snapshotted tribits directory
+  # <project-root>/cmake/tribits/.
   result.append(os.path.join(thisFileRealAbsBasePath, '..', '..'))
+
+  # Lastly, look for the checkin-test.py file's base directory path. It is
+  # common practice to symbolically link the checkin-test.py script into the
+  # project's base source directory.  NOTE: Don't use realpath here!  We don't
+  # want to follow symbolic links!
+  result.append(os.path.dirname(os.path.abspath(__file__)))
+
   return result
 
 
 def loadConfigurationFile(filepath):
-  if debugDump: print "Loading project configuration from %s..." % filepath
   if os.path.exists(filepath):
+    sys_path_old = sys.path
     try:
       modulePath = os.path.dirname(filepath)
       moduleFile = os.path.basename(filepath)
       moduleName, extension = os.path.splitext(moduleFile)
-      sys.path.append(modulePath)
+      sys.path = [modulePath] + sys_path_old
       try:
-        return __import__(moduleName).configuration
+        if debugDump:
+          print "\nLoading project configuration from %s..." % filepath
+          print "\nsys.path =", sys.path
+        configuration = __import__(moduleName).configuration
+        if debugDump:
+          print "\nSetting the default --src-dir='"+modulePath+"'"
+        configuration.get("defaults").update({"--src-dir" : modulePath})
+        return configuration
       except Exception, e:
         print e
         raise e
     finally:
-      sys.path.pop()
+      sys.path = sys_path_old
+      if debugDump:
+        print "\nsys.path =", sys.path
   else:
     raise Exception('The file %s does not exist.' % filepath)
 
@@ -1264,7 +1280,7 @@ def locateAndLoadConfiguration(path_hints = []):
   """
   for path in path_hints:
     candidate = os.path.join(path, "project-checkin-test-config.py")
-    if debugDump: print "Looking for candidate configuration file '%s'" % candidate
+    if debugDump: print "\nLooking for candidate configuration file '%s'" % candidate
     if os.path.exists(candidate):
       return loadConfigurationFile(candidate)
   return {}
@@ -1307,6 +1323,8 @@ def main(cmndLineArgs):
           configuration = locateAndLoadConfiguration([arg.split('=')[1]])
       if not configuration:
         configuration = locateAndLoadConfiguration(getConfigurationSearchPaths())
+      if debugDump:
+        print "\nConfiguration loaded from configuration file =", configuration 
       success = runProjectTestsWithCommandLineArgs(cmndLineArgs, configuration)
     except SystemExit, e:
       # In Python 2.4, SystemExit inherits Exception, but for proper exit

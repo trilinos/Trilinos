@@ -54,22 +54,22 @@
 namespace Tpetra {
 
   template <class OpScalar, class MatScalar, class LocalOrdinal,
-            class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+            class GlobalOrdinal, class Node>
+  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   CrsMatrixSolveOp (const Teuchos::RCP<const crs_matrix_type>& A)
     : matrix_ (A)
   {}
 
   template <class OpScalar, class MatScalar, class LocalOrdinal,
-            class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+            class GlobalOrdinal, class Node>
+  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   ~CrsMatrixSolveOp ()
   {}
 
   template <class OpScalar, class MatScalar, class LocalOrdinal,
-            class GlobalOrdinal, class Node, class LocalMatOps>
+            class GlobalOrdinal, class Node>
   void
-  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   apply (const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
          MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
          Teuchos::ETransp mode,
@@ -110,9 +110,9 @@ namespace Tpetra {
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal,
-            class GlobalOrdinal, class Node, class LocalMatOps>
+            class GlobalOrdinal, class Node>
   void
-  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   applyNonTranspose (const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in,
                      MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & Y_in) const
   {
@@ -202,9 +202,9 @@ namespace Tpetra {
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal,
-            class GlobalOrdinal, class Node, class LocalMatOps>
+            class GlobalOrdinal, class Node>
   void
-  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   applyTranspose (const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in,
                   MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &Y_in,
                   const Teuchos::ETransp mode) const
@@ -296,30 +296,30 @@ namespace Tpetra {
     }
   }
 
-  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
-  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::hasTransposeApply() const {
+  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
     return true;
   }
 
-  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
+  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
     return matrix_->getRangeMap();
   }
 
-  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
+  CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const {
     return matrix_->getDomainMap();
   }
 
 } // end of namespace Tpetra
 
-template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-Teuchos::RCP< Tpetra::CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
-Tpetra::createCrsMatrixSolveOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A) {
-  return Teuchos::rcp(new Tpetra::CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(A) );
+template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP< Tpetra::CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node> >
+Tpetra::createCrsMatrixSolveOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node> > &A) {
+  return Teuchos::rcp(new Tpetra::CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>(A) );
 }
 
 //

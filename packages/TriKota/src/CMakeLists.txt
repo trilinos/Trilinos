@@ -1,17 +1,28 @@
 INCLUDE(TribitsLibraryMacros)
 
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+
+#
+# Create a TriKota Version library first to trigger the regular TriBITS
+# library initializations
+#
+
+TRIBITS_ADD_LIBRARY(
+  trikotaversion
+  HEADERS
+    ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+    TriKota_ConfigDefs.hpp
+    TriKota_Version.hpp
+  SOURCES
+    TriKota_Version.cpp
+  )
+
 #
 # Build the TriKota library
 #
 
-TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
 SET(HEADERS "")
 SET(SOURCES "")
-
-SET(HEADERS ${HEADERS}
-  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
-  )
 
 INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_BINARY_DIR}
@@ -20,18 +31,15 @@ INCLUDE_DIRECTORIES(
   )
 
 APPEND_SET(HEADERS
-    TriKota_ConfigDefs.hpp
     TriKota_DirectApplicInterface.hpp
     TriKota_ThyraDirectApplicInterface.hpp
     TriKota_Driver.hpp
-    TriKota_Version.hpp
   ) 
 
 APPEND_SET(SOURCES
     TriKota_DirectApplicInterface.cpp
     TriKota_ThyraDirectApplicInterface.cpp
     TriKota_Driver.cpp
-    TriKota_Version.cpp
   )
 
 # Assume Dakota built with CMake
@@ -42,6 +50,11 @@ IF(DEFINED Dakota_LINK_DIRS)
   LINK_DIRECTORIES(${Dakota_LINK_DIRS})
 ENDIF()
 
+# Do what TRIBITS_ADD_LIBRARY() would have done
+PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
+PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES ${Dakota_LIBRARIES})
+PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
+
 # The DEPLIBS part is to tell CMake that trikota depends on the specified
 # Dakota libraries.  The IMPORTEDLIBS part is to get the TRIBITS_ADD_LIBRARY
 # macro to put the Dakota libraries TriKota_LIBRARIES when writing
@@ -51,6 +64,6 @@ TRIBITS_ADD_LIBRARY(
   trikota
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS ${Dakota_EXTRA_LIBRARIES}
-  IMPORTEDLIBS ${Dakota_LIBRARIES}
+  DEPLIBS trikotaversion ${Dakota_LIBRARIES}
+  IMPORTEDLIBS  ${Dakota_EXTRA_LIBRARIES}
   )

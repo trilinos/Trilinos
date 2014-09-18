@@ -103,6 +103,7 @@ namespace Xpetra {
 
   private:
 
+	typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory_t;
 #undef XPETRA_STRIDEDMAP_SHORT
 #include "Xpetra_UseShortNamesOrdinal.hpp"
 
@@ -168,7 +169,7 @@ namespace Xpetra {
         global_size_t numGlobalNodes = numGlobalElements / blkSize;
 
         // build an equally distributed node map
-        RCP<Map> nodeMap = MapFactory::Build(xlib, numGlobalNodes, indexBase, comm, lg, node);
+        RCP<Map> nodeMap = MapFactory_t::Build(xlib, numGlobalNodes, indexBase, comm, lg, node);
         global_size_t numLocalNodes = nodeMap->getNodeNumElements();
 
         // translate local node ids to local dofs
@@ -191,7 +192,7 @@ namespace Xpetra {
             dofgids[i*nDofsPerNode + j] = indexBase_ + offset_ + (nodeGID - indexBase_)*Teuchos::as<GlobalOrdinal>(blkSize) + Teuchos::as<GlobalOrdinal>(nStridedOffset + j);
         }
 
-        map_ = MapFactory::Build(xlib, numGlobalElements, dofgids, indexBase, comm, node);
+        map_ = MapFactory_t::Build(xlib, numGlobalElements, dofgids, indexBase, comm, node);
 
         if (stridedBlockId == -1) {
           TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsPerNode), Exceptions::RuntimeError,
@@ -207,7 +208,7 @@ namespace Xpetra {
                                      "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
         }
       } else {
-        map_ = MapFactory::Build(xlib, numGlobalElements, indexBase, comm, lg, node);
+        map_ = MapFactory_t::Build(xlib, numGlobalElements, indexBase, comm, lg, node);
       }
 
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");
@@ -268,7 +269,7 @@ namespace Xpetra {
         global_size_t numLocalNodes = numLocalElements / blkSize;
 
         // build an equally distributed node map
-        RCP<Map> nodeMap = MapFactory::Build(xlib, numGlobalNodes, numLocalNodes, indexBase, comm, node);
+        RCP<Map> nodeMap = MapFactory_t::Build(xlib, numGlobalNodes, numLocalNodes, indexBase, comm, node);
 
         // translate local node ids to local dofs
         size_t nStridedOffset = 0;
@@ -290,7 +291,7 @@ namespace Xpetra {
             dofgids[i*nDofsPerNode + j] = indexBase_ + offset_ + (nodeGID - indexBase_)*Teuchos::as<GlobalOrdinal>(blkSize) + Teuchos::as<GlobalOrdinal>(nStridedOffset + j);
         }
 
-        map_ = MapFactory::Build(xlib, numGlobalElements, dofgids, indexBase, comm, node);
+        map_ = MapFactory_t::Build(xlib, numGlobalElements, dofgids, indexBase, comm, node);
 
         if (stridedBlockId == -1) {
           TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsPerNode), Exceptions::RuntimeError,
@@ -307,7 +308,7 @@ namespace Xpetra {
         }
 
       } else {
-        map_ = MapFactory::Build(xlib, numGlobalElements, numLocalElements, indexBase, comm, node);
+        map_ = MapFactory_t::Build(xlib, numGlobalElements, numLocalElements, indexBase, comm, node);
       }
 
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");
@@ -362,7 +363,7 @@ namespace Xpetra {
                                    "StridedMap::StridedMap: stridingInfo not valid: stridingBlockInfo[stridedBlockId] is not an integer multiple of elementList.size().");
       }
 
-      map_ = MapFactory::Build(xlib, numGlobalElements, elementList, indexBase, comm, node);
+      map_ = MapFactory_t::Build(xlib, numGlobalElements, elementList, indexBase, comm, node);
 
       // calculate offset_
 

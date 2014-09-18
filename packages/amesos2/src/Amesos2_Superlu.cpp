@@ -54,19 +54,19 @@ namespace Amesos2 {
 #endif
 
 #ifdef HAVE_TPETRA_INST_FLOAT
-  AMESOS2_SOLVER_TPETRA_INST(Superlu,float,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,float,int,int)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,int)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<float>,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<float>,int,int)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,int)
 #endif
 #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,long long);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,long long)
 #endif
 }
 

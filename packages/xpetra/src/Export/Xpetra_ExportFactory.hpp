@@ -87,12 +87,12 @@ namespace Xpetra {
 
   };
 
-  template <>
-  class ExportFactory<int, int> {
+  template <class GlobalOrdinalArg>
+  class ExportFactory<int, GlobalOrdinalArg> {
 
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef Export<int, int>::node_type Node;
+    typedef GlobalOrdinalArg GlobalOrdinal;
+    typedef typename Export<int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -112,7 +112,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (source->lib() == UseEpetra)
-        return rcp( new EpetraExport(source, target));
+        return rcp( new EpetraExportT<GlobalOrdinalArg>(source, target));
 #endif
 
       XPETRA_FACTORY_END;

@@ -1485,7 +1485,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, PackAndPrepareWithOwningPIDs, Or
   RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
   typedef Tpetra::CrsMatrix<double,Ordinal,Ordinal> CrsMatrixType;
-  typedef typename Tpetra::CrsMatrix<double,Ordinal,Ordinal>::mat_vec_type LocalOps;
   using Teuchos::av_reinterpret_cast;
 
   RCP<CrsMatrixType> A;
@@ -1518,7 +1517,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, PackAndPrepareWithOwningPIDs, Or
     Tpetra::Import_Util::getPids<Ordinal,Ordinal,Node>(*Importer,pids,false);
     constantNumPackets2=0;
     numPackets2.resize(Importer->getExportLIDs().size());
-    Tpetra::Import_Util::packAndPrepareWithOwningPIDs<double,Ordinal,Ordinal,Node,LocalOps>(*A,Importer->getExportLIDs(),exports2,numPackets2(),constantNumPackets2,Importer->getDistributor(),pids());
+    Tpetra::Import_Util::packAndPrepareWithOwningPIDs<double,Ordinal,Ordinal,Node>(*A,Importer->getExportLIDs(),exports2,numPackets2(),constantNumPackets2,Importer->getDistributor(),pids());
 
     // Loop through the parts that should be the same
     const size_t numExportLIDs = Importer->getExportLIDs().size();
@@ -1566,7 +1565,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   typedef Tpetra::Map<Ordinal,Ordinal> MapType;
   typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
   typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal> CrsMatrixType;
-  typedef typename Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal>::mat_vec_type LocalOps;
   typedef typename Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal>::packet_type PacketType;
   using Teuchos::av_reinterpret_cast;
 
@@ -1609,7 +1607,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     numExportPackets.resize(Importer->getExportLIDs().size());
     numImportPackets.resize(Importer->getRemoteLIDs().size());
 
-    Tpetra::Import_Util::packAndPrepareWithOwningPIDs<Scalar,Ordinal,Ordinal,Node,LocalOps>(*A,Importer->getExportLIDs(),exports,numExportPackets(),constantNumPackets,distor,SourcePids());
+    Tpetra::Import_Util::packAndPrepareWithOwningPIDs<Scalar,Ordinal,Ordinal,Node>(*A,Importer->getExportLIDs(),exports,numExportPackets(),constantNumPackets,distor,SourcePids());
 
     // Do the moral equivalent of doTransfer
     distor.doPostsAndWaits<size_t>(numExportPackets().getConst(), 1,numImportPackets());
@@ -1621,7 +1619,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     distor.doPostsAndWaits<PacketType>(exports(),numExportPackets(),imports(),numImportPackets());
 
     // Run the count... which should get the same NNZ as the traditional import
-    size_t nnz2=Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount<Scalar,Ordinal,Ordinal,Node,LocalOps>(*A,Importer->getRemoteLIDs(),imports(),numImportPackets(),
+    size_t nnz2=Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount<Scalar,Ordinal,Ordinal,Node>(*A,Importer->getRemoteLIDs(),imports(),numImportPackets(),
                                                                                                                constantNumPackets, distor,Tpetra::INSERT,Importer->getNumSameIDs(),
                                                                                                                Importer->getPermuteToLIDs(),Importer->getPermuteFromLIDs());
     if(nnz1!=nnz2) test_err++;
@@ -1635,7 +1633,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     Teuchos::Array<Scalar>  vals(nnz2);
     Teuchos::Array<int>     TargetPids;
 
-    Tpetra::Import_Util::unpackAndCombineIntoCrsArrays<Scalar,Ordinal,Ordinal,Node,LocalOps>(*A,Importer->getRemoteLIDs(),imports(),numImportPackets(),constantNumPackets,
+    Tpetra::Import_Util::unpackAndCombineIntoCrsArrays<Scalar,Ordinal,Ordinal,Node>(*A,Importer->getRemoteLIDs(),imports(),numImportPackets(),constantNumPackets,
                                                                                              distor,Tpetra::INSERT,Importer->getNumSameIDs(),Importer->getPermuteToLIDs(),
                                                                                              Importer->getPermuteFromLIDs(),MapTarget->getNodeNumElements(),nnz2,MyPID,rowptr(),
                                                                                              colind(),vals(),SourcePids(),TargetPids);

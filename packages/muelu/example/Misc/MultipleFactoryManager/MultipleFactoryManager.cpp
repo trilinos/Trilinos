@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP; // reference count pointers
+  using Teuchos::rcp;
 
   //
   // MPI initialization using Teuchos

@@ -89,11 +89,12 @@ namespace Xpetra {
     }
   };
 
-  template <>
-  class CrsGraphFactory<int, int> {
+  template <class GlobalOrdinalArg>
+  class CrsGraphFactory<int, GlobalOrdinalArg> {
+
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef CrsGraph<int, int>::node_type Node;
+    typedef GlobalOrdinalArg GlobalOrdinal;
+    typedef typename CrsGraph<int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -112,7 +113,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraCrsGraph(map, NumVectors, pftype) );
+        return rcp( new EpetraCrsGraphT<GlobalOrdinal>(map, NumVectors, pftype) );
 #endif
 
       XPETRA_FACTORY_END;

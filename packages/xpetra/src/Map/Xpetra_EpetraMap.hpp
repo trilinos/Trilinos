@@ -63,18 +63,23 @@
 namespace Xpetra {
 
   // TODO: move that elsewhere
-  const Epetra_Map & toEpetra(const Map<int,int> &);
-  const Epetra_Map & toEpetra(const RCP< const Map<int, int> > &);
-  //const RCP< const Map<int, int> > toXpetra(const RCP< const Epetra_Map > &);
-  const RCP< const Map<int, int> > toXpetra(const Epetra_BlockMap &);
+  template<class GlobalOrdinal>
+  const Epetra_Map & toEpetra(const Map<int,GlobalOrdinal> &);
+  template<class GlobalOrdinal>
+  const Epetra_Map & toEpetra(const RCP< const Map<int, GlobalOrdinal> > &);
+  //template<class GlobalOrdinal>
+  //const RCP< const Map<int, GlobalOrdinal> > toXpetra(const RCP< const Epetra_Map > &);
+  template<class GlobalOrdinal>
+  const RCP< const Map<int, GlobalOrdinal> > toXpetra(const Epetra_BlockMap &);
   //
 
-  class EpetraMap
-    : public virtual Map<int, int>
+  template<class EpetraGlobalOrdinal>
+  class EpetraMapT
+    : public virtual Map<int, EpetraGlobalOrdinal>
   {
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef Map<int, int>::node_type Node;
+    typedef EpetraGlobalOrdinal GlobalOrdinal;
+    typedef typename Map<int, GlobalOrdinal>::node_type Node;
 
   public:
     typedef int local_ordinal_type;
@@ -85,17 +90,17 @@ namespace Xpetra {
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
-    EpetraMap (global_size_t numGlobalElements,
+    EpetraMapT(global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
                const Teuchos::RCP< Node > &node = KokkosClassic::Details::getNode<Node> ());
 
     //! Constructor with a user-defined contiguous distribution.
-    EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=KokkosClassic::Details::getNode<Node> ());
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=KokkosClassic::Details::getNode<Node> ());
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-    EpetraMap (global_size_t numGlobalElements,
+    EpetraMapT(global_size_t numGlobalElements,
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
@@ -107,34 +112,34 @@ namespace Xpetra {
     //@{
 
     //! The number of elements in this Map.
-    global_size_t getGlobalNumElements() const { XPETRA_MONITOR("EpetraMap::getGlobalNumElements"); return map_->NumGlobalElements(); }
+    global_size_t getGlobalNumElements() const { XPETRA_MONITOR("EpetraMapT::getGlobalNumElements"); return map_->NumGlobalElements64(); }
 
     //! The number of elements belonging to the calling process.
-    size_t getNodeNumElements() const { XPETRA_MONITOR("EpetraMap::getNodeNumElements"); return map_->NumMyElements(); }
+    size_t getNodeNumElements() const { XPETRA_MONITOR("EpetraMapT::getNodeNumElements"); return map_->NumMyElements(); }
 
     //! The index base for this Map.
-    GlobalOrdinal getIndexBase() const { XPETRA_MONITOR("EpetraMap::getIndexBase"); return map_->IndexBase(); }
+    GlobalOrdinal getIndexBase() const { XPETRA_MONITOR("EpetraMapT::getIndexBase"); return (GlobalOrdinal) map_->IndexBase64(); }
 
     //! The minimum local index.
-    LocalOrdinal getMinLocalIndex() const { XPETRA_MONITOR("EpetraMap::getMinLocalIndex"); return map_->MinLID(); }
+    LocalOrdinal getMinLocalIndex() const { XPETRA_MONITOR("EpetraMapT::getMinLocalIndex"); return map_->MinLID(); }
 
     //! The maximum local index on the calling process.
-    LocalOrdinal getMaxLocalIndex() const { XPETRA_MONITOR("EpetraMap::getMaxLocalIndex"); return map_->MaxLID(); }
+    LocalOrdinal getMaxLocalIndex() const { XPETRA_MONITOR("EpetraMapT::getMaxLocalIndex"); return map_->MaxLID(); }
 
     //! The minimum global index owned by the calling process.
-    GlobalOrdinal getMinGlobalIndex() const { XPETRA_MONITOR("EpetraMap::getMinGlobalIndex"); return map_->MinMyGID(); }
+    GlobalOrdinal getMinGlobalIndex() const { XPETRA_MONITOR("EpetraMapT::getMinGlobalIndex"); return (GlobalOrdinal) map_->MinMyGID64(); }
 
     //! The maximum global index owned by the calling process.
-    GlobalOrdinal getMaxGlobalIndex() const { XPETRA_MONITOR("EpetraMap::getMaxGlobalIndex"); return map_->MaxMyGID(); }
+    GlobalOrdinal getMaxGlobalIndex() const { XPETRA_MONITOR("EpetraMapT::getMaxGlobalIndex"); return (GlobalOrdinal) map_->MaxMyGID64(); }
 
     //! The minimum global index over all processes in the communicator.
-    GlobalOrdinal getMinAllGlobalIndex() const { XPETRA_MONITOR("EpetraMap::getMinAllGlobalIndex"); return map_->MinAllGID(); }
+    GlobalOrdinal getMinAllGlobalIndex() const { XPETRA_MONITOR("EpetraMapT::getMinAllGlobalIndex"); return (GlobalOrdinal) map_->MinAllGID64(); }
 
     //! The maximum global index over all processes in the communicator.
-    GlobalOrdinal getMaxAllGlobalIndex() const { XPETRA_MONITOR("EpetraMap::getMaxAllGlobalIndex"); return map_->MaxAllGID(); }
+    GlobalOrdinal getMaxAllGlobalIndex() const { XPETRA_MONITOR("EpetraMapT::getMaxAllGlobalIndex"); return (GlobalOrdinal) map_->MaxAllGID64(); }
 
     //! The local index corresponding to the given global index.
-    LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { XPETRA_MONITOR("EpetraMap::getLocalElement"); return map_->LID(globalIndex); }
+    LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { XPETRA_MONITOR("EpetraMapT::getLocalElement"); return map_->LID(globalIndex); }
 
     //! Return the process ranks and corresponding local indices for the given global indices.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const;
@@ -151,22 +156,22 @@ namespace Xpetra {
     //@{
 
     //! Whether the given local index is valid for this Map on this process.
-    bool isNodeLocalElement(LocalOrdinal localIndex) const { XPETRA_MONITOR("EpetraMap::isNodeLocalElement"); return map_->MyLID(localIndex); }
+    bool isNodeLocalElement(LocalOrdinal localIndex) const { XPETRA_MONITOR("EpetraMapT::isNodeLocalElement"); return map_->MyLID(localIndex); }
 
     //! Whether the given global index is valid for this Map on this process.
-    bool isNodeGlobalElement(GlobalOrdinal globalIndex) const { XPETRA_MONITOR("EpetraMap::isNodeGlobalElement"); return map_->MyGID(globalIndex); }
+    bool isNodeGlobalElement(GlobalOrdinal globalIndex) const { XPETRA_MONITOR("EpetraMapT::isNodeGlobalElement"); return map_->MyGID(globalIndex); }
 
     //! True if this Map is distributed contiguously, else false.
-    bool isContiguous() const { XPETRA_MONITOR("EpetraMap::isContiguous"); return map_->LinearMap(); }
+    bool isContiguous() const { XPETRA_MONITOR("EpetraMapT::isContiguous"); return map_->LinearMap(); }
 
     //! Whether this Map is globally distributed or locally replicated.
-    bool isDistributed() const { XPETRA_MONITOR("EpetraMap::isDistributed"); return map_->DistributedGlobal(); }
+    bool isDistributed() const { XPETRA_MONITOR("EpetraMapT::isDistributed"); return map_->DistributedGlobal(); }
 
     //! True if and only if map is compatible with this Map.
-    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { XPETRA_MONITOR("EpetraMap::isCompatible"); return map_->PointSameAs(toEpetra(map)); }
+    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { XPETRA_MONITOR("EpetraMapT::isCompatible"); return map_->PointSameAs(toEpetra(map)); }
 
     //! True if and only if map is identical to this Map.
-    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { XPETRA_MONITOR("EpetraMap::isSameAs"); return map_->SameAs(toEpetra(map)); }
+    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { XPETRA_MONITOR("EpetraMapT::isSameAs"); return map_->SameAs(toEpetra(map)); }
 
     //@}
 
@@ -174,7 +179,7 @@ namespace Xpetra {
     //@{
 
     //! Get this Map's Comm object.
-    Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { XPETRA_MONITOR("EpetraMap::getComm"); return toXpetra(map_->Comm()); }
+    Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { XPETRA_MONITOR("EpetraMapT::getComm"); return toXpetra(map_->Comm()); }
 
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const;
@@ -196,31 +201,33 @@ namespace Xpetra {
     //@{
 
     //! Return a new Map with processes with zero elements removed.
-    RCP<const Map<int,int> > removeEmptyProcesses() const;
+    RCP<const Map<int,GlobalOrdinal> > removeEmptyProcesses() const;
 
     //! Replace this Map's communicator with a subset communicator.
-    RCP<const Map<int,int> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const;
+    RCP<const Map<int,GlobalOrdinal> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const;
 
     //@}
 
     //! Return the global index for a given local index.  Note that this returns -1 if not found on this processor.  (This is different than Epetra's behavior!)
     GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const {
-      XPETRA_MONITOR("EpetraMap::getGlobalElement");
+      XPETRA_MONITOR("EpetraMapT::getGlobalElement");
 
-      GlobalOrdinal gid = map_->GID(localIndex);
-      if (gid == map_->IndexBase()-1) return (-1);
-      else                            return (gid);
+      GlobalOrdinal gid = (GlobalOrdinal) map_->GID64(localIndex);
+      if (gid == map_->IndexBase64()-1) return (-1);
+      else                              return (gid);
      }
 
     //! @name Xpetra specific
     //@{
 
     //! Destructor.
-    virtual ~EpetraMap() { } // virtual because EpetraMap used as a base class of EpetraStridedMap
+    virtual ~EpetraMapT() { } // virtual because EpetraMapT used as a base class of EpetraStridedMap
 
-    //! EpetraMap constructor to wrap a Epetra_Map object
-    EpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map)
-      : map_(map) { }
+    //! EpetraMapT constructor to wrap a Epetra_Map object
+    EpetraMapT(const Teuchos::RCP<const Epetra_BlockMap> &map)
+      : map_(map) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!map->GlobalIndicesIsType<GlobalOrdinal>(), std::runtime_error, "Xpetra::EpetraMapT: GlobalOrdinal mismatch.");
+    }
 
     //! Get the library used by this object (Epetra or Epetra?)
     UnderlyingLib lib() const { return Xpetra::UseEpetra; }
@@ -238,7 +245,15 @@ namespace Xpetra {
     //const RCP< const Epetra_BlockMap > map_;
     //const RCP< const Epetra::Map< LocalOrdinal, GlobalOrdinal, Node > > map_;
 
-  }; // EpetraMap class
+  }; // EpetraMapT class
+
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+  typedef EpetraMapT<int> EpetraMap;
+#endif
+
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+  typedef EpetraMapT<long long> EpetraMap64;
+#endif
 
 } // Xpetra namespace
 

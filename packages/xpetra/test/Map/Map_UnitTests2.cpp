@@ -143,8 +143,14 @@ namespace {
 #endif // HAVE_XPETRA_TPETRA
 
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
     typedef Xpetra::EpetraMap EpetraMap;
   UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , int)
+#else
+    typedef long long LongLongInt;
+    typedef Xpetra::EpetraMap64 EpetraMap;
+  UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , LongLongInt)
+#endif
 #endif // HAVE_XPETRA_EPETRA
 
 }

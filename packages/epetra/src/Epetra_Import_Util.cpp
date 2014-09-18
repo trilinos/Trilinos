@@ -131,7 +131,7 @@ int TPackAndPrepareWithOwningPIDs(const Epetra_CrsMatrix & A,
       intptr[0] = FromRow;
       values    = valptr;
       Indices   = intptr + 2;
-      EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumEntries, NumEntries, values, &MyIndices[0]));
+      EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumEntries, NumEntries, values, MyIndices.size() ? &MyIndices[0] : 0));
       for (j=0; j<NumEntries; j++) {
 	Indices[2*j]   = (int_type) colMap.GID64(MyIndices[j]);   // convert to GIDs
 	Indices[2*j+1] = pids[MyIndices[j]];                      // PID owning the entry.
@@ -633,7 +633,7 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 
   if(NumLocalColGIDs == domainMap.NumMyElements()) {
     if(NumLocalColGIDs > 0) {
-      domainMap.MyGlobalElements(&ColIndices[0]); // Load Global Indices into first numMyBlockCols elements column GID list
+      domainMap.MyGlobalElements(ColIndices.size() ? &ColIndices[0] : 0); // Load Global Indices into first numMyBlockCols elements column GID list
     }
   }
   else {

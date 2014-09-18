@@ -2106,7 +2106,11 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
      }
    }
 
-   if ( matrix->getrow == NULL) return(1);
+   if ( matrix->getrow == NULL) {
+     ML_free(global_row_ordering);
+     ML_free(global_col_ordering);
+     return(1);
+   }
 
    MyPID = comm->ML_mypid;
    NumProc = comm->ML_nprocs;

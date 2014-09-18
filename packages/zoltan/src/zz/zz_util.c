@@ -331,6 +331,10 @@ MPI_Datatype Zoltan_mpi_gno_type()
   #endif
 #endif
 
+#ifdef _MSC_VER
+#define ssize_t SSIZE_T
+#endif
+
   if (sizeof(ssize_t) == size_short){
     zz_mpi_gno_type = MPI_SHORT;
     zz_mpi_gno_name=zz_mpi_datatype_names[0];
@@ -372,6 +376,7 @@ char *Zoltan_mpi_gno_name()
   return zz_mpi_gno_name;
 }
 
+#ifndef _WIN32
 /* On a linux node, find the total memory currently allocated
  * to this process.
  * Return the number of kilobytes allocated to this process.
@@ -540,6 +545,7 @@ char buf[2048],label[64],value[64],units[64];
     *result = c;
   }
 }
+#endif
 
 int Zoltan_get_global_id_type(char **name)
 {

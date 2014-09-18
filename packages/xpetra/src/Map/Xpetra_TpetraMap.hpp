@@ -235,7 +235,7 @@ namespace Xpetra {
       : map_(map) { }
 
     //! Get the library used by this object (Tpetra or Epetra?)
-    UnderlyingLib lib() const { return Xpetra::UseTpetra; }
+    UnderlyingLib lib() const { return UseTpetra; }
 
     //! Get the underlying Tpetra map
     const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > & getTpetra_Map() const { return map_; }

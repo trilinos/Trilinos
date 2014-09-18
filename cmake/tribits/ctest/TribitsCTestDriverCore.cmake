@@ -384,10 +384,18 @@ MACRO(TRIBITS_SETUP_PACKAGES)
   SET(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
   SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
   SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
-  SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
-     "${PROJECT_BINARY_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}")
-  SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
-    "${PROJECT_BINARY_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
+  IF (CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE)
+    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
+       "${PROJECT_BINARY_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}")
+  ELSE()
+    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+  ENDIF()
+  IF (CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE)
+    SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
+      "${PROJECT_BINARY_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
+  ELSE()
+    SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE)
+  ENDIF()
   SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE)
 
   # Don't ignore missing repos.  This will allow processing to continue but this outer
@@ -410,6 +418,24 @@ MACRO(TRIBITS_SETUP_PACKAGES)
 ENDMACRO()
 
 
+MACRO(ENABLE_PACKAGE_IF_NOT_EXPLICITLY_EXCLUDED  TRIBITS_PACKAGE)
+  IF ("${${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}}" STREQUAL "")
+    MESSAGE("Enabling explicitly set package ${TRIBITS_PACKAGE} ...")
+    SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
+  ELSEIF(NOT ${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
+    IF (${TRIBITS_PACKAGE}_EXPLICITY_EXCLUDED)
+      MESSAGE("NOT enabling explicitly set package ${TRIBITS_PACKAGE} since it was explicitly excluded!")
+    ELSE()
+       MESSAGE("Enabling explicitly set package ${TRIBITS_PACKAGE} which was default or otherwise disabed!")
+      SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
+    ENDIF()
+  ELSE()
+    MESSAGE("Explicitly set package ${TRIBITS_PACKAGE} is already enabled?")
+  ENDIF()
+ENDMACRO()
+
+
+
 #
 # Select packages set by the input
 #
@@ -423,16 +449,14 @@ MACRO(ENABLE_USER_SELECTED_PACKAGES)
     SET(${PROJECT_NAME}_ENABLE_ALL_PACKAGES ON)
   ELSE()
     FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES_USER_SELECTED})
-      MESSAGE("Enabling explicitly set package ${TRIBITS_PACKAGE} ...")
-      SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
+      ENABLE_PACKAGE_IF_NOT_EXPLICITLY_EXCLUDED(${TRIBITS_PACKAGE})
     ENDFOREACH()
   ENDIF()
 
   # 2) Set extra package enables from ${PROJECT_NAME}_ADDITIONAL_PACKAGES
 
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_ADDITIONAL_PACKAGES})
-    MESSAGE("Enabling explicitly set package ${TRIBITS_PACKAGE} ...")
-    SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
+    ENABLE_PACKAGE_IF_NOT_EXPLICITLY_EXCLUDED(${TRIBITS_PACKAGE})
   ENDFOREACH()
 
 ENDMACRO()
@@ -595,6 +619,7 @@ MACRO(DISABLE_EXCLUDED_PACKAGES)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
     MESSAGE("Disabling excluded package ${TRIBITS_PACKAGE} ...")
     SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} OFF)
+    SET(${TRIBITS_PACKAGE}_EXPLICITY_EXCLUDED TRUE)
   ENDFOREACH()
 ENDMACRO()
 
@@ -855,7 +880,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Do the Git updates or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_UPDATES TRUE )
  
-  # Generate the XML dependency output files or not
+  # Generate the XML dependency output files or not in the inner CMake
+  # configure.  There is really no reason to do this.  This option is
+  # maintained for backward compatibility.
   SET_DEFAULT_AND_FROM_ENV( CTEST_GENERATE_DEPS_XML_OUTPUT_FILE FALSE )
 
   # Flags used on git when doing a Git update
@@ -899,7 +926,18 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # Command used to perform the memory testing (i.e. valgrind)
   SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND "" )
-  
+ 
+  # Generate the basic package dependencies XML file in the outer CTest
+  # program.  This XML file is used to match up modified files with with
+  # changed TriBITS packages.  This file only needs to be generated in CI
+  # iterations and is not needed in Nightly testing.  Turning off its
+  # generation can also speed up local manual testing for large projects with
+  # lots of TriBITS packges.
+  SET_DEFAULT_AND_FROM_ENV( CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE TRUE )
+
+  # Generate and submit the CDash subprojects XML file
+  SET_DEFAULT_AND_FROM_ENV( CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE TRUE )
+   
   # Submit the results to the dashboard or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
 
@@ -935,14 +973,18 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
        "${${PROJECT_NAME}_REPOSITORY_LOCATION_DEFAULT}")
   ENDIF()
 
-  # Selct the ${PROJECT_NAME} packages to enable (empty means to select all available)
+  # Select the ${PROJECT_NAME} packages to enable (empty means to select all
+  # available).  This will override any disabled packages but not those
+  # disabled by ${PROJECT_NAME}_EXCLUDE_PACKAGES.
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_PACKAGES "" )
   SET(${PROJECT_NAME}_PACKAGES_USER_SELECTED ${${PROJECT_NAME}_PACKAGES})
+  SPLIT("${${PROJECT_NAME}_PACKAGES_USER_SELECTED}" ","
+    ${PROJECT_NAME}_PACKAGES_USER_SELECTED) 
   SET(${PROJECT_NAME}_PACKAGES "")
   # Note: above, we have to keep the name ${PROJECT_NAME}_PACKAGES to maintain
   # backward compatibility of this CTest script but we want to let
   # ${PROJECT_NAME}_PACKAGES always be the full set of packages as defined by
-  # the basic readin process
+  # the basic readin process.
 
   # Set the file that the extra repos will be read from
   #
@@ -1101,16 +1143,15 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   #
 
   IF (CTEST_START_WITH_EMPTY_BINARY_DIRECTORY)
-    MESSAGE("Cleaning out binary directory '${CTEST_BINARY_DIRECTORY}' ...")
+    MESSAGE("\nCleaning out binary directory '${CTEST_BINARY_DIRECTORY}' ...")
     CTEST_EMPTY_BINARY_DIRECTORY("${CTEST_BINARY_DIRECTORY}")
-  ELSEIF (CTEST_WIPE_CACHE)
-    SET(CACHE_FILE_NAME "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
-    IF (EXISTS "${CACHE_FILE_NAME}")
-      MESSAGE("Removing existing cache file '${CACHE_FILE_NAME}' ...")
-      FILE(REMOVE "${CACHE_FILE_NAME}")
-    ENDIF()
   ENDIF()
-
+  # NOTE: The above command will *not* delete the build directory unless there
+  # is a CMakeLists.txt file in this directory.  I think Kitware put in this
+  # check to avoid accidentally deleting the wrong directory by accident.
+  # Also note that you have to delete the build directory before any commands
+  # are run that would write files to them (and many of the steps in this
+  # process do write files to the binary directory other than just CMake).
 
   MESSAGE(
     "\n***"
@@ -1234,12 +1275,17 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "${CTEST_BINARY_DIRECTORY}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}")
   PRINT_VAR(CDASH_SUBPROJECT_XML_FILE)
 
+  MESSAGE(
+    "\n***"
+    "\n*** Disabling packages based on what was set in ${PROJECT_NAME}_EXCLUDE_PACKAGES ..."
+    "\n***\n")
+
   DISABLE_EXCLUDED_PACKAGES()
 
   IF (NOT CTEST_ENABLE_MODIFIED_PACKAGES_ONLY)
     MESSAGE(
       "\n***"
-      "\n*** Determining what packages to enable based what was set in the input ..."
+      "\n*** Determining what packages to enable based what was set in ${PROJECT_NAME}_PACKAGES ..."
       "\n***\n")
     ENABLE_USER_SELECTED_PACKAGES()
   ELSE()
@@ -1310,7 +1356,32 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     RETURN()
   ENDIF()
 
-  
+  #
+  # Delete the CMakeCache.txt file and the CMakeFiles directory for a clean
+  # reconfigure. 
+  #
+
+  IF (CTEST_WIPE_CACHE)
+    SET(CACHE_FILE_NAME "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
+    IF (EXISTS "${CACHE_FILE_NAME}")
+      MESSAGE("Removing existing cache file '${CACHE_FILE_NAME}' ...")
+      FILE(REMOVE "${CACHE_FILE_NAME}")
+    ENDIF()
+    SET(CMAKE_FILES_DIR "${CTEST_BINARY_DIRECTORY}/CMakeFiles/")
+    IF (EXISTS "${CMAKE_FILES_DIR}")
+      MESSAGE("Removing existing '${CMAKE_FILES_DIR}' ...")
+      FILE(REMOVE_RECURSE "${CMAKE_FILES_DIR}")
+    ENDIF()
+  ENDIF()
+  # NOTE: Above, we have to delete the CMakeCache.txt file only after we are
+  # sure we are going to be configuring packages.  There must be a
+  # CMakeCache.txt file present in the binary directory or the
+  # CTEST_EMPTY_BINARY_DIRECTORY() command will *not* actually delete the
+  # build directory!  Also, with updated versions of CMake (2.8.10 and above)
+  # you have to delete the CMakeFiles directory in addition to the
+  # CMakeCache.txt file or it will not configure correctly (due to Fortran/C
+  # linkage tests for one).
+
   MESSAGE(
     "\n***"
     "\n*** Uploading update, notes, and the subproject dependencies XML files ..."

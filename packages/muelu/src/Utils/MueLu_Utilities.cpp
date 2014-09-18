@@ -92,8 +92,9 @@ namespace MueLu {
 
         return AAAA;
       }
-      catch (...) {
-        throw Exceptions::RuntimeError("Utils::Transpose: Can only transpose Crs matrices");
+      catch (std::exception& e) {
+        std::cout << "threw exception '" << e.what() << "'" << std::endl;
+        throw Exceptions::RuntimeError("Utils::Transpose failed, perhaps because matrix is not a Crs matrix");
       }
     } //if
 #endif
@@ -317,7 +318,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
       Epetra_MultiVector * MV;
       EpetraExt::MatrixMarketFileToMultiVector(fileName.c_str(), toEpetra(map), MV);
-      return Xpetra::toXpetra(rcp(MV));
+      return Xpetra::toXpetra<int>(rcp(MV));
 #else
       throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
 #endif
@@ -351,7 +352,7 @@ namespace MueLu {
           throw Exceptions::RuntimeError("Error reading matrix with EpetraExt::MatrixMarketToMap (returned " + toString(rv) + ")");
 
         RCP<Epetra_Map> eMap1 = rcp(new Epetra_Map(*eMap));
-        return Xpetra::toXpetra(*eMap1);
+        return Xpetra::toXpetra<int>(*eMap1);
 #else
         throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
 #endif

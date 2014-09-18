@@ -193,12 +193,12 @@ namespace Xpetra {
   };
 #define XPETRA_MATRIXFACTORY2_SHORT
 
-  template<>
-  class MatrixFactory2<double,int,int> {
-    typedef double                              Scalar;
-    typedef int                                 LocalOrdinal;
-    typedef int                                 GlobalOrdinal;
-    typedef Matrix<double, int, int>::node_type Node;
+  template<class GlobalOrdinalArg>
+  class MatrixFactory2<double,int,GlobalOrdinalArg> {
+    typedef double                                        Scalar;
+    typedef int                                           LocalOrdinal;
+    typedef GlobalOrdinalArg                              GlobalOrdinal;
+    typedef typename Matrix<double, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
 

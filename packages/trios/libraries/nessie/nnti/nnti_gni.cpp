@@ -235,6 +235,8 @@ typedef enum {
 #define GNI_OP_SEND_BUFFER    6
 #define GNI_OP_NEW_REQUEST    7
 #define GNI_OP_RECEIVE        8
+#define GNI_OP_FETCH_ADD      9
+#define GNI_OP_COMPARE_SWAP  10
 
 
 typedef enum {
@@ -316,6 +318,9 @@ typedef struct {
 
     nnti_gni_client_queue_t     queue_local_attrs;
     nnti_gni_recv_queue_attrs_t queue_remote_attrs;
+
+    uint64_t         atomics_addr;
+    gni_mem_handle_t atomics_mem_hdl;
 
     gni_cdm_handle_t     cdm_hdl;  /* a client creates this comm domain with params from the server */
     gni_nic_handle_t     nic_hdl;
@@ -415,6 +420,10 @@ typedef struct {
     uint32_t         listen_addr;  /* in NBO */
     uint16_t         listen_port;  /* in NBO */
 
+    int64_t         *atomics;
+    gni_mem_handle_t atomics_mem_hdl;
+    nthread_lock_t   atomics_lock;
+
     nnti_gni_request_queue_handle_t req_queue;
 } nnti_gni_transport_global_t;
 
@@ -427,6 +436,9 @@ static nthread_lock_t nnti_progress_lock;
 static nthread_cond_t nnti_progress_cond;
 
 
+static void *aligned_malloc(
+        size_t size);
+static NNTI_result_t setup_atomics(void);
 static gni_mem_handle_t register_memory_segment(
 		nnti_gni_buffer_type_t type,
 		void *buf,
@@ -868,6 +880,8 @@ NNTI_result_t NNTI_gni_init (
 
         nthread_lock_init(&nnti_wr_pool_lock);
 
+        nthread_lock_init(&transport_global_data.atomics_lock);
+
         config_init(&config);
         config_get_from_env(&config);
 
@@ -1045,6 +1059,8 @@ NNTI_result_t NNTI_gni_init (
                 goto cleanup;
             }
         }
+
+        setup_atomics();
 
         trios_start_timer(call_time);
         init_server_listen_socket();
@@ -1426,7 +1442,7 @@ NNTI_result_t NNTI_gni_alloc (
     assert(ops>0);
     assert(reg_buf);
 
-    char *buf=(char *)malloc((element_size+transport_extra)*num_elements);
+    char *buf=(char *)aligned_malloc((element_size+transport_extra)*num_elements);
     assert(buf);
 
     nnti_rc=register_memory(
@@ -2652,7 +2668,11 @@ NNTI_result_t NNTI_gni_atomic_read (
 		const uint64_t          local_atomic,
 		int64_t                *value)
 {
-    return NNTI_ENOTSUP;
+    nthread_lock(&transport_global_data.atomics_lock);
+    *value = transport_global_data.atomics[local_atomic];
+    nthread_unlock(&transport_global_data.atomics_lock);
+
+    return NNTI_OK;
 }
 
 
@@ -2665,7 +2685,81 @@ NNTI_result_t NNTI_gni_atomic_fop (
 		const NNTI_atomic_op_t  op,
 		NNTI_work_request_t    *wr)
 {
-    return NNTI_ENOTSUP;
+    int rc=0;
+    trios_declare_timer(call_time);
+
+    nnti_gni_work_request_t *gni_wr=NULL;
+
+    log_level debug_level=nnti_debug_level;
+
+    log_debug(nnti_ee_debug_level, "enter");
+
+    if (config.use_wr_pool) {
+        gni_wr=wr_pool_initiator_pop();
+    } else {
+        gni_wr=(nnti_gni_work_request_t *)malloc(sizeof(nnti_gni_work_request_t));
+        memset(gni_wr, 0, sizeof(nnti_gni_work_request_t));
+        nthread_lock_init(&gni_wr->lock);
+    }
+    assert(gni_wr);
+
+    gni_wr->reg_buf = NULL;
+
+    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
+    assert(conn);
+
+    gni_wr->last_op  =GNI_OP_FETCH_ADD;
+    gni_wr->peer_instance=peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id;
+    log_debug(nnti_event_debug_level, "gni_wr->peer_instance==%lu", gni_wr->peer_instance);
+
+    gni_wr->sge_count=1;
+    gni_wr->sge_list =&gni_wr->sge;
+
+    memset(&gni_wr->sge_list[0].post_desc, 0, sizeof(gni_post_descriptor_t));
+
+    gni_wr->sge_list[0].post_desc.src_cq_hndl=transport_global_data.ep_cq_hdl;
+
+    gni_wr->sge_list[0].post_desc.type   =GNI_POST_AMO;
+    gni_wr->sge_list[0].post_desc.cq_mode=GNI_CQMODE_GLOBAL_EVENT;
+
+    set_dlvr_mode(&gni_wr->sge_list[0].post_desc);
+    set_rdma_mode(&gni_wr->sge_list[0].post_desc);
+
+    gni_wr->sge_list[0].post_desc.local_addr     =(uint64_t)transport_global_data.atomics+(result_atomic*sizeof(int64_t));
+    gni_wr->sge_list[0].post_desc.local_mem_hndl =transport_global_data.atomics_mem_hdl;
+    gni_wr->sge_list[0].post_desc.remote_addr    =conn->atomics_addr+(target_atomic*sizeof(int64_t));
+    gni_wr->sge_list[0].post_desc.remote_mem_hndl=conn->atomics_mem_hdl;
+    gni_wr->sge_list[0].post_desc.length         =sizeof(int64_t);
+    gni_wr->sge_list[0].post_desc.amo_cmd        =GNI_FMA_ATOMIC_FADD;
+    gni_wr->sge_list[0].post_desc.first_operand  =operand;
+    gni_wr->sge_list[0].post_desc.second_operand =0;
+
+    gni_wr->sge_list[0].state=NNTI_GNI_SGE_STATE_STARTED;
+    gni_wr->sge_list[0].gni_wr=gni_wr;
+
+    gni_wr->nnti_wr = wr;
+
+    wr->transport_id     =trans_hdl->id;
+    wr->reg_buf          =(NNTI_buffer_t*)NULL;
+    wr->ops              =NNTI_ATOMICS;
+    wr->result           =NNTI_OK;
+    wr->transport_private=(uint64_t)gni_wr;
+
+    insert_sge_sgehash(&gni_wr->sge_list[0]);
+
+    log_debug(debug_level, "calling PostFma(atomics fop - ep_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
+            conn->ep_hdl, gni_wr->sge_list[0].post_desc.local_addr, (uint64_t)gni_wr->sge_list[0].post_desc.remote_addr);
+
+    nthread_lock(&nnti_gni_lock);
+    GNI_EpSetEventData(
+            conn->ep_hdl,
+            hash6432shift((uint64_t)&gni_wr->sge_list[0]),
+            0);
+    rc=GNI_PostFma(conn->ep_hdl, &gni_wr->sge_list[0].post_desc);
+    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "PostFma(atomics fop) failed: %d", rc);
+    nthread_unlock(&nnti_gni_lock);
+
+    return(NNTI_OK);
 }
 
 
@@ -2678,7 +2772,81 @@ NNTI_result_t NNTI_gni_atomic_cswap (
 		const int64_t           swap_operand,
 		NNTI_work_request_t    *wr)
 {
-    return NNTI_ENOTSUP;
+    int rc=0;
+    trios_declare_timer(call_time);
+
+    nnti_gni_work_request_t *gni_wr=NULL;
+
+    log_level debug_level=nnti_debug_level;
+
+    log_debug(nnti_ee_debug_level, "enter");
+
+    if (config.use_wr_pool) {
+        gni_wr=wr_pool_initiator_pop();
+    } else {
+        gni_wr=(nnti_gni_work_request_t *)malloc(sizeof(nnti_gni_work_request_t));
+        memset(gni_wr, 0, sizeof(nnti_gni_work_request_t));
+        nthread_lock_init(&gni_wr->lock);
+    }
+    assert(gni_wr);
+
+    gni_wr->reg_buf = NULL;
+
+    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
+    assert(conn);
+
+    gni_wr->last_op  =GNI_OP_FETCH_ADD;
+    gni_wr->peer_instance=peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id;
+    log_debug(nnti_event_debug_level, "gni_wr->peer_instance==%lu", gni_wr->peer_instance);
+
+    gni_wr->sge_count=1;
+    gni_wr->sge_list =&gni_wr->sge;
+
+    memset(&gni_wr->sge_list[0].post_desc, 0, sizeof(gni_post_descriptor_t));
+
+    gni_wr->sge_list[0].post_desc.src_cq_hndl=transport_global_data.ep_cq_hdl;
+
+    gni_wr->sge_list[0].post_desc.type   =GNI_POST_AMO;
+    gni_wr->sge_list[0].post_desc.cq_mode=GNI_CQMODE_GLOBAL_EVENT;
+
+    set_dlvr_mode(&gni_wr->sge_list[0].post_desc);
+    set_rdma_mode(&gni_wr->sge_list[0].post_desc);
+
+    gni_wr->sge_list[0].post_desc.local_addr     =(uint64_t)transport_global_data.atomics+(result_atomic*sizeof(int64_t));
+    gni_wr->sge_list[0].post_desc.local_mem_hndl =transport_global_data.atomics_mem_hdl;
+    gni_wr->sge_list[0].post_desc.remote_addr    =conn->atomics_addr+(target_atomic*sizeof(int64_t));
+    gni_wr->sge_list[0].post_desc.remote_mem_hndl=conn->atomics_mem_hdl;
+    gni_wr->sge_list[0].post_desc.length         =sizeof(int64_t);
+    gni_wr->sge_list[0].post_desc.amo_cmd        =GNI_FMA_ATOMIC_CSWAP;
+    gni_wr->sge_list[0].post_desc.first_operand  =compare_operand;
+    gni_wr->sge_list[0].post_desc.second_operand =swap_operand;
+
+    gni_wr->sge_list[0].state=NNTI_GNI_SGE_STATE_STARTED;
+    gni_wr->sge_list[0].gni_wr=gni_wr;
+
+    gni_wr->nnti_wr = wr;
+
+    wr->transport_id     =trans_hdl->id;
+    wr->reg_buf          =(NNTI_buffer_t*)NULL;
+    wr->ops              =NNTI_ATOMICS;
+    wr->result           =NNTI_OK;
+    wr->transport_private=(uint64_t)gni_wr;
+
+    insert_sge_sgehash(&gni_wr->sge_list[0]);
+
+    log_debug(debug_level, "calling PostFma(atomics cswap - ep_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
+            conn->ep_hdl, gni_wr->sge_list[0].post_desc.local_addr, (uint64_t)gni_wr->sge_list[0].post_desc.remote_addr);
+
+    nthread_lock(&nnti_gni_lock);
+    GNI_EpSetEventData(
+            conn->ep_hdl,
+            hash6432shift((uint64_t)&gni_wr->sge_list[0]),
+            0);
+    rc=GNI_PostFma(conn->ep_hdl, &gni_wr->sge_list[0].post_desc);
+    if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "PostFma(atomics cswap) failed: %d", rc);
+    nthread_unlock(&nnti_gni_lock);
+
+    return(NNTI_OK);
 }
 
 
@@ -3040,8 +3208,6 @@ NNTI_result_t NNTI_gni_wait (
                 "start of NNTI_gni_wait", wr->reg_buf);
     }
 
-    gni_mem_hdl=GNI_MEM_HDL(wr->reg_buf);
-    assert(gni_mem_hdl);
     gni_wr=GNI_WORK_REQUEST(wr);
     assert(gni_wr);
 
@@ -3130,58 +3296,77 @@ NNTI_result_t NNTI_gni_wait (
 
         gni_wr->state=NNTI_GNI_WR_STATE_WAIT_COMPLETE;
 
-        switch (gni_mem_hdl->type) {
-            case REQUEST_BUFFER:
-            case RECEIVE_BUFFER:
-            	// defer cleanup to NNTI_gni_destroy_work_request()
-                break;
-            case GET_SRC_BUFFER:
-            case PUT_DST_BUFFER:
-            case RDMA_TARGET_BUFFER:
-                if (config.use_rdma_target_ack) {
+        if (gni_wr->nnti_wr->ops == NNTI_ATOMICS) {
+            del_sge_sgehash(&gni_wr->sge_list[0]);
+
+            if (config.use_wr_pool) {
+                wr_pool_initiator_push(gni_wr);
+            } else {
+                log_debug(nnti_debug_level, "free(gni_wr) (wr=%p, gni_wr=%p)", wr, gni_wr);
+                free(gni_wr);
+            }
+            /*
+             * This work request (wr) has reached a completed (final) state.  wr is reset here.
+             */
+            wr->transport_private=(uint64_t)NULL;
+
+        } else {
+            gni_mem_hdl=GNI_MEM_HDL(wr->reg_buf);
+            assert(gni_mem_hdl);
+
+            switch (gni_mem_hdl->type) {
+                case REQUEST_BUFFER:
+                case RECEIVE_BUFFER:
+                    // defer cleanup to NNTI_gni_destroy_work_request()
+                    break;
+                case GET_SRC_BUFFER:
+                case PUT_DST_BUFFER:
+                case RDMA_TARGET_BUFFER:
+                    if (config.use_rdma_target_ack) {
+                        nthread_lock(&gni_mem_hdl->wr_queue_lock);
+                        q_victim=find(gni_mem_hdl->wr_queue->begin(), gni_mem_hdl->wr_queue->end(), gni_wr);
+                        if (q_victim != gni_mem_hdl->wr_queue->end()) {
+                            log_debug(nnti_debug_level, "erasing gni_wr=%p from the wr_queue", gni_wr);
+                            gni_mem_hdl->wr_queue->erase(q_victim);
+                        }
+                        repost_recv_work_request(wr->reg_buf, gni_wr);
+                        nthread_unlock(&gni_mem_hdl->wr_queue_lock);
+                    }
+                    break;
+                case SEND_BUFFER:
+                case GET_DST_BUFFER:
+                case PUT_SRC_BUFFER:
                     nthread_lock(&gni_mem_hdl->wr_queue_lock);
                     q_victim=find(gni_mem_hdl->wr_queue->begin(), gni_mem_hdl->wr_queue->end(), gni_wr);
                     if (q_victim != gni_mem_hdl->wr_queue->end()) {
                         log_debug(nnti_debug_level, "erasing gni_wr=%p from the wr_queue", gni_wr);
                         gni_mem_hdl->wr_queue->erase(q_victim);
                     }
-                    repost_recv_work_request(wr->reg_buf, gni_wr);
                     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
-                }
-                break;
-            case SEND_BUFFER:
-            case GET_DST_BUFFER:
-            case PUT_SRC_BUFFER:
-                nthread_lock(&gni_mem_hdl->wr_queue_lock);
-                q_victim=find(gni_mem_hdl->wr_queue->begin(), gni_mem_hdl->wr_queue->end(), gni_wr);
-                if (q_victim != gni_mem_hdl->wr_queue->end()) {
-                    log_debug(nnti_debug_level, "erasing gni_wr=%p from the wr_queue", gni_wr);
-                    gni_mem_hdl->wr_queue->erase(q_victim);
-                }
-                nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
-                for (int j=0;j<gni_wr->sge_count;j++) {
-                	del_sge_sgehash(&gni_wr->sge_list[j]);
-                }
-                if (gni_wr->sge_count > 1) {
-                	free(gni_wr->sge_list);
-                }
-                del_wr_wrhash(gni_wr);
-                if (config.use_wr_pool) {
-                    wr_pool_initiator_push(gni_wr);
-                } else {
-                    log_debug(nnti_debug_level, "free(gni_wr) (wr=%p, gni_wr=%p)", wr, gni_wr);
-                    free(gni_wr);
-                }
-                /*
-                 * This work request (wr) has reached a completed (final) state.  wr is reset here.
-                 */
-                wr->transport_private=(uint64_t)NULL;
-                break;
-            case UNKNOWN_BUFFER:
-            default:
-                log_error(nnti_debug_level, "unknown buffer type(%llu).", gni_mem_hdl->type);
-                break;
+                    for (int j=0;j<gni_wr->sge_count;j++) {
+                        del_sge_sgehash(&gni_wr->sge_list[j]);
+                    }
+                    if (gni_wr->sge_count > 1) {
+                        free(gni_wr->sge_list);
+                    }
+                    del_wr_wrhash(gni_wr);
+                    if (config.use_wr_pool) {
+                        wr_pool_initiator_push(gni_wr);
+                    } else {
+                        log_debug(nnti_debug_level, "free(gni_wr) (wr=%p, gni_wr=%p)", wr, gni_wr);
+                        free(gni_wr);
+                    }
+                    /*
+                     * This work request (wr) has reached a completed (final) state.  wr is reset here.
+                     */
+                    wr->transport_private=(uint64_t)NULL;
+                    break;
+                case UNKNOWN_BUFFER:
+                default:
+                    log_error(nnti_debug_level, "unknown buffer type(%llu).", gni_mem_hdl->type);
+                    break;
+            }
         }
     }
 
@@ -3656,11 +3841,72 @@ NNTI_result_t NNTI_gni_fini (
     nthread_lock_fini(&nnti_buf_bufhash_lock);
     nthread_lock_fini(&nnti_wr_pool_lock);
 
+    nthread_lock_fini(&transport_global_data.atomics_lock);
+
     gni_initialized = false;
 
     log_debug(nnti_ee_debug_level, "exit");
 
     return(NNTI_OK);
+}
+
+static NNTI_result_t setup_atomics(void)
+{
+    NNTI_result_t rc=NNTI_OK; /* return code */
+    int gni_rc=GNI_RC_SUCCESS; /* return code */
+
+    trios_declare_timer(call_time);
+
+    uint32_t atomics_bytes;
+
+    log_debug(nnti_debug_level, "enter");
+
+    atomics_bytes=config.min_atomics_vars * sizeof(int64_t);
+    trios_start_timer(call_time);
+    transport_global_data.atomics=(int64_t*)aligned_malloc(atomics_bytes);
+    if (transport_global_data.atomics == NULL) {
+        return(NNTI_ENOMEM);
+    }
+    memset(transport_global_data.atomics, 0, atomics_bytes);
+    trios_stop_timer("malloc and memset", call_time);
+
+    trios_start_timer(call_time);
+    gni_rc=GNI_MemRegister (transport_global_data.nic_hdl,
+            (uint64_t)transport_global_data.atomics,
+            atomics_bytes,
+            NULL,
+            GNI_MEM_READWRITE,
+            (uint32_t)-1,
+            &transport_global_data.atomics_mem_hdl);
+    if (gni_rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "MemRegister(atomics_mem_hdl) failed: gni_rc=%d, %s", gni_rc, strerror(errno));
+        rc=NNTI_EIO;
+    }
+    trios_stop_timer("atomics register", call_time);
+
+    log_debug(nnti_debug_level, "exit (atomics==%p)...", transport_global_data.atomics);
+
+    return(rc);
+}
+
+static void *aligned_malloc(
+        size_t size)
+{
+    int rc = 0;
+    void * ptr = NULL;
+
+#ifdef NO_MEMALIGN
+      ptr = malloc( size );
+#else
+      rc = posix_memalign( &ptr , 128 , size );
+#endif
+
+    if (rc!=0) {
+        log_error(nnti_debug_level, "posix_memalign() failed: rc=%d (%s)", rc, strerror(errno));
+        ptr=NULL;
+    }
+
+    return ptr;
 }
 
 static gni_mem_handle_t register_memory_segment(nnti_gni_buffer_type_t type, void *buf, uint64_t len, uint64_t extra)
@@ -4168,6 +4414,17 @@ static int process_event(
         return NNTI_EIO;
     }
 
+    assert(gni_sge);
+
+    gni_wr=gni_sge->gni_wr;
+    assert(gni_wr);
+
+    if ((gni_wr->nnti_wr) && (gni_wr->nnti_wr->ops == NNTI_ATOMICS)) {
+        gni_wr->state=NNTI_GNI_WR_STATE_RDMA_COMPLETE;
+        gni_wr->nnti_wr->result=NNTI_OK;
+        return NNTI_OK;
+    }
+
     log_debug(debug_level, "ev_data.inst_id==%llu, reg_buf.buf.hash==%llu",
             (uint64_t)gni_cq_get_inst_id(*ev_data),
             (uint64_t)hash6432shift(reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.buf));
@@ -4175,11 +4432,6 @@ static int process_event(
     event_buf=reg_buf;
     gni_mem_hdl=(nnti_gni_memory_handle_t *)event_buf->transport_private;
     assert(gni_mem_hdl);
-
-    assert(gni_sge);
-
-    gni_wr=gni_sge->gni_wr;
-    assert(gni_wr);
 
     log_debug(debug_level, "event_buf=%p; gni_sge=%p; gni_wr=%p; gni_wr->last_op=%lld; gni_wr.hash==%llu",
     		event_buf, gni_sge, gni_wr, (int64_t)gni_wr->last_op, (uint64_t)hash6432shift((uint64_t)gni_wr));
@@ -4764,14 +5016,13 @@ static int8_t is_all_wr_complete(
 //}
 
 static void create_status(
-        NNTI_work_request_t *wr,
-        nnti_gni_work_request_t    *gni_wr,
-        NNTI_result_t        nnti_rc,
-        gni_cq_entry_t      *ev_data,
-        NNTI_status_t       *status)
+        NNTI_work_request_t     *wr,
+        nnti_gni_work_request_t *gni_wr,
+        NNTI_result_t            nnti_rc,
+        gni_cq_entry_t          *ev_data,
+        NNTI_status_t           *status)
 {
     nnti_gni_connection_t    *conn       =NULL;
-    nnti_gni_memory_handle_t *gni_mem_hdl=NULL;
 
     memset(status, 0, sizeof(NNTI_status_t));
     status->op = wr->ops;
@@ -4781,9 +5032,6 @@ static void create_status(
         status->result = nnti_rc;
     }
     if (status->result==NNTI_OK) {
-        gni_mem_hdl=GNI_MEM_HDL(gni_wr->reg_buf);
-        assert(gni_mem_hdl);
-
         if (gni_wr->peer_instance) {
         	conn = get_conn_instance(gni_wr->peer_instance);
         } else {
@@ -4791,9 +5039,11 @@ static void create_status(
         }
         assert(conn);
 
-        status->start  = (uint64_t)gni_wr->reg_buf->payload;
-        status->offset = gni_wr->wc->byte_offset;
-        status->length = gni_wr->wc->byte_len;
+        if (gni_wr->nnti_wr->ops != NNTI_ATOMICS) {
+            status->start  = (uint64_t)gni_wr->reg_buf->payload;
+            status->offset = gni_wr->wc->byte_offset;
+            status->length = gni_wr->wc->byte_len;
+        }
         switch (gni_wr->last_op) {
             case GNI_OP_PUT_INITIATOR:
             case GNI_OP_GET_TARGET:
@@ -5655,6 +5905,9 @@ static int new_client_connection(
         NNTI_instance_id instance;
         alpsAppGni_t     alps_info;
 
+        uint64_t         atomics_addr;
+        gni_mem_handle_t atomics_mem_hdl;
+
         uint32_t         client_has_recv_queue;
     } instance_in, instance_out;
     struct {
@@ -5674,6 +5927,10 @@ static int new_client_connection(
     instance_out.port      = htonl((uint32_t)transport_global_data.listen_port);
     instance_out.instance  = htonl(transport_global_data.instance);
     instance_out.alps_info = transport_global_data.alps_info;
+
+    instance_out.atomics_addr   =(uint64_t)transport_global_data.atomics;
+    instance_out.atomics_mem_hdl=transport_global_data.atomics_mem_hdl;
+
     if ((transport_global_data.req_queue.req_size  > 0) &&
         (transport_global_data.req_queue.req_count > 0)) {
         instance_out.client_has_recv_queue = 1;
@@ -5691,11 +5948,13 @@ static int new_client_connection(
     /*
      * Record the server's parameters
      */
-    c->peer_name      = strdup(instance_in.name);
-    c->peer_addr      = ntohl(instance_in.addr);
-    c->peer_port      = ntohl(instance_in.port);
-    c->peer_instance  = ntohl(instance_in.instance);
-    c->peer_alps_info = instance_in.alps_info;
+    c->peer_name       = strdup(instance_in.name);
+    c->peer_addr       = ntohl(instance_in.addr);
+    c->peer_port       = ntohl(instance_in.port);
+    c->peer_instance   = ntohl(instance_in.instance);
+    c->peer_alps_info  = instance_in.alps_info;
+    c->atomics_addr    = instance_in.atomics_addr;
+    c->atomics_mem_hdl = instance_in.atomics_mem_hdl;
 
     /*
      * Read the receive queue attributes from the server
@@ -5763,6 +6022,8 @@ static int new_client_connection(
         goto out;
     }
 
+    log_debug(nnti_debug_level, "new connection ep_hdl(%llu)", c->ep_hdl);
+
 out:
     return rc;
 }
@@ -5782,6 +6043,9 @@ static int new_server_connection(
         uint32_t         port;
         NNTI_instance_id instance;
         alpsAppGni_t     alps_info;
+
+        uint64_t         atomics_addr;
+        gni_mem_handle_t atomics_mem_hdl;
 
         uint32_t         client_has_recv_queue;
     } instance_in, instance_out;
@@ -5808,6 +6072,9 @@ static int new_server_connection(
     instance_out.instance  = htonl(transport_global_data.instance);
     instance_out.alps_info = transport_global_data.alps_info;
 
+    instance_out.atomics_addr   =(uint64_t)transport_global_data.atomics;
+    instance_out.atomics_mem_hdl=transport_global_data.atomics_mem_hdl;
+
     /*
      * Exchange TCP and ALPS parameters with the client
      */
@@ -5820,13 +6087,16 @@ static int new_server_connection(
     /*
      * Record the client's parameters
      */
-    c->peer_name      = strdup(instance_in.name);
-    c->peer_addr      = ntohl(instance_in.addr);
-    c->peer_port      = ntohl(instance_in.port);
-    c->peer_instance  = ntohl(instance_in.instance);
-    c->peer_alps_info = instance_in.alps_info;
-    c->peer_ptag      = instance_in.alps_info.ptag;
-    c->peer_cookie    = instance_in.alps_info.cookie;
+    c->peer_name       = strdup(instance_in.name);
+    c->peer_addr       = ntohl(instance_in.addr);
+    c->peer_port       = ntohl(instance_in.port);
+    c->peer_instance   = ntohl(instance_in.instance);
+    c->peer_alps_info  = instance_in.alps_info;
+    c->peer_ptag       = instance_in.alps_info.ptag;
+    c->peer_cookie     = instance_in.alps_info.cookie;
+    c->atomics_addr    = instance_in.atomics_addr;
+    c->atomics_mem_hdl = instance_in.atomics_mem_hdl;
+
     c->cdm_hdl = transport_global_data.cdm_hdl;
     c->nic_hdl = transport_global_data.nic_hdl;
 
@@ -5892,6 +6162,9 @@ static int new_server_connection(
         log_error(nnti_debug_level, "EpBind(c->ep_hdl) failed: %d", rc);
         goto out;
     }
+
+    log_debug(nnti_debug_level, "new connection ep_hdl(%llu)", c->ep_hdl);
+
 out:
     return rc;
 }
@@ -7448,18 +7721,19 @@ static NNTI_result_t get_ipaddr(
 
 static void config_init(nnti_gni_config_t *c)
 {
-    c->use_alps_ptag                    =true;
-    c->use_wr_pool                      =false;
-    c->wr_pool_initial_size             =50;
-    c->wr_pool_max_size                 =1000;
-    c->wr_pool_create_if_empty          =false;
-    c->use_rdma_target_ack              =false;
-    c->use_rdma_events                  =false;
-    c->use_rdma_fence                   =false;
-    c->pi_ordering                      =PI_ORDERING_DEFAULT; /* DEFAULT, STRICT, RELAXED */
-    c->rdma_mode                        =RDMA_MIXED;          /* FMA, BTE, MIXED, CROSSOVER */
-    c->fma_bte_crossover_size           =4096;
-    c->max_timeout_ms                   =-1;
+    c->min_atomics_vars       =512;
+    c->use_alps_ptag          =true;
+    c->use_wr_pool            =false;
+    c->wr_pool_initial_size   =50;
+    c->wr_pool_max_size       =1000;
+    c->wr_pool_create_if_empty=false;
+    c->use_rdma_target_ack    =false;
+    c->use_rdma_events        =false;
+    c->use_rdma_fence         =false;
+    c->pi_ordering            =PI_ORDERING_DEFAULT; /* DEFAULT, STRICT, RELAXED */
+    c->rdma_mode              =RDMA_MIXED;          /* FMA, BTE, MIXED, CROSSOVER */
+    c->fma_bte_crossover_size =4096;
+    c->max_timeout_ms         =-1;
 }
 
 static void config_get_from_env(nnti_gni_config_t *c)

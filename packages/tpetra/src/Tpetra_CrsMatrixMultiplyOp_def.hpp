@@ -59,8 +59,8 @@
 namespace Tpetra {
 
   template <class OpScalar, class MatScalar, class LocalOrdinal,
-            class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsMatrixMultiplyOp<OpScalar, MatScalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+            class GlobalOrdinal, class Node>
+  CrsMatrixMultiplyOp<OpScalar, MatScalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrixMultiplyOp (const Teuchos::RCP<const crs_matrix_type>& A)
     : matrix_ (A)
   {
@@ -73,15 +73,15 @@ namespace Tpetra {
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal,
-            class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+            class GlobalOrdinal, class Node>
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   ~CrsMatrixMultiplyOp ()
   {}
 
   template <class OpScalar, class MatScalar, class LocalOrdinal,
-            class GlobalOrdinal, class Node, class LocalMatOps>
+            class GlobalOrdinal, class Node>
   void
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   apply (const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node>& X_in,
          MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node>& Y_in,
          Teuchos::ETransp mode, OpScalar alpha, OpScalar beta) const
@@ -102,9 +102,9 @@ namespace Tpetra {
 
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   gaussSeidel (const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
                MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &D,
@@ -338,10 +338,9 @@ namespace Tpetra {
             class MatScalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node,
-            class LocalMatOps>
+            class Node>
   void
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   gaussSeidelCopy (MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                    const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &B,
                    const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &D,
@@ -551,9 +550,9 @@ namespace Tpetra {
 
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   applyNonTranspose (const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in,
                      MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & Y_in,
                      OpScalar alpha,
@@ -732,9 +731,9 @@ namespace Tpetra {
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyTranspose(
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::applyTranspose(
                const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in,
                      MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & Y_in,
                Teuchos::ETransp mode,
@@ -867,21 +866,21 @@ namespace Tpetra {
     }
   }
 
-  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::hasTransposeApply() const {
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
     return true;
   }
 
-  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
     return matrix_->getDomainMap();
   }
 
-  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const {
     return matrix_->getRangeMap();
   }
 
@@ -889,10 +888,9 @@ namespace Tpetra {
             class MatScalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node,
-            class LocalMatOps>
+            class Node>
   Teuchos::RCP<MultiVector<OpScalar, LocalOrdinal, GlobalOrdinal, Node> >
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   getColumnMapMultiVector (const MultiVector<OpScalar, LocalOrdinal, GlobalOrdinal, Node>& X_domainMap,
                            const bool force) const
   {
@@ -941,10 +939,9 @@ namespace Tpetra {
             class MatScalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node,
-            class LocalMatOps>
+            class Node>
   Teuchos::RCP<MultiVector<OpScalar, LocalOrdinal, GlobalOrdinal, Node> >
-  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>::
   getRowMapMultiVector (const MultiVector<OpScalar, LocalOrdinal, GlobalOrdinal, Node>& Y_rangeMap,
                         const bool force) const
   {
@@ -982,13 +979,19 @@ namespace Tpetra {
     return Y_rowMap;
   }
 
-} // namespace Tpetra
+  template <class OpScalar,
+            class MatScalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
+  Teuchos::RCP<CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node> >
+  createCrsMatrixMultiplyOp (const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
+  {
+    typedef CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node> op_type;
+    return Teuchos::rcp (new op_type (A));
+  }
 
-template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-Teuchos::RCP< Tpetra::CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
-Tpetra::createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A) {
-  return Teuchos::rcp(new Tpetra::CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(A) );
-}
+} // namespace Tpetra
 
 //
 // Explicit instantiation macro

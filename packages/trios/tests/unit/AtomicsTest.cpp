@@ -90,7 +90,7 @@ int fetchadd_test(const nssi_service *svc)
 
     log_debug(atomics_debug_level, "enter");
 
-    for (int varid=0;varid<1;varid++) {
+    for (int varid=0;varid<10;varid++) {
     	for (int i=0;i<10;i++) {
     		rc=NNTI_atomic_fop(
     				&transports[svc->transport_id],
@@ -168,7 +168,7 @@ int cswap_test(const nssi_service *svc)
 
     log_debug(atomics_debug_level, "enter");
 
-    for (int varid=0;varid<1;varid++) {
+    for (int varid=0;varid<10;varid++) {
     	for (int i=0;i<10;i++) {
     		rc=NNTI_atomic_fop(
     				&transports[svc->transport_id],
@@ -179,7 +179,7 @@ int cswap_test(const nssi_service *svc)
     				NNTI_ATOMIC_FADD,
     				&wr);
     		/* wait for completion */
-    		NNTI_wait(&wr, timeout, &status);
+    		rc=NNTI_wait(&wr, timeout, &status);
     		if (rc != NSSI_OK) {
     			log_error(atomics_debug_level, "remote method failed: %s",
     					nssi_err_str(rc));
@@ -206,7 +206,7 @@ int cswap_test(const nssi_service *svc)
     				0,
     				&wr);
     		/* wait for completion */
-    		NNTI_wait(&wr, timeout, &status);
+    		rc=NNTI_wait(&wr, timeout, &status);
     		if (rc != NSSI_OK) {
     			log_error(atomics_debug_level, "remote method failed: %s",
     					nssi_err_str(rc));
@@ -243,6 +243,7 @@ int cswap_test(const nssi_service *svc)
 
 int main(int argc, char *argv[])
 {
+    int test_result=0;
 	int rc=0;
 	int success=0;
     int nprocs, rank;
@@ -304,8 +305,10 @@ int main(int argc, char *argv[])
             }
         }
 
-        fetchadd_test(&svc);
-        cswap_test(&svc);
+        test_result=fetchadd_test(&svc);
+        if (test_result==NNTI_OK) {
+            test_result=cswap_test(&svc);
+        }
 
         // shutdown the service
         rc = nssi_kill(&svc, 0, 5000);
@@ -316,7 +319,11 @@ int main(int argc, char *argv[])
         // finalize the client
         nssi_fini(NSSI_DEFAULT_TRANSPORT);
 
-        success=1;
+        if (test_result == NNTI_OK) {
+            success=1;
+        } else {
+            success=0;
+        }
     }
 
     // finalize the NSSI library

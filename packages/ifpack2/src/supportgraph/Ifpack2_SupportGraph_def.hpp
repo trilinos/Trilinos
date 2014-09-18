@@ -308,7 +308,7 @@ SupportGraph<MatrixType>::findSupport ()
   typedef Tpetra::Vector<scalar_type, local_ordinal_type,
                          global_ordinal_type, node_type> vec_type;
 
-  
+
 
   const scalar_type zero = STS::zero();
   const scalar_type one = STS::one();
@@ -319,7 +319,7 @@ SupportGraph<MatrixType>::findSupport ()
   size_t num_edges
     = (A_local_->getNodeNumEntries() - A_local_->getNodeNumDiags())/2;
 
-  
+
   // Create data structures for the BGL code
   // and temp data structures for extraction
   lemon::ListGraph graph;
@@ -351,18 +351,18 @@ SupportGraph<MatrixType>::findSupport ()
 
       if((row < Teuchos::as<size_t>(indices[colIndex]))
          && (values[colIndex] < zero)) {
-        lemon::ListGraph::Edge edge 
+        lemon::ListGraph::Edge edge
           = graph.addEdge(graph.nodeFromId(row),
                           graph.nodeFromId(Teuchos::as<size_t>
                                            (indices[colIndex])));
         edgeWeights[edge] = values[colIndex];
-        
+
         if (Randomize_) {
           // Add small random pertubation.
-          edgeWeights[edge] *= one + 
+          edgeWeights[edge] *= one +
             STS::magnitude(STS::rmin() * STS::random());
         }
-        
+
         offDiagCount++;
       }
     }
@@ -668,22 +668,21 @@ apply (const Tpetra::MultiVector<scalar_type,
     // If X and Y are pointing to the same memory location,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
-    if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-      Xcopy = rcp (new MV(X));
+    if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
+      Xcopy = rcp (new MV (X, Teuchos::Copy));
     }
     else {
-      Xcopy = rcpFromRef(X);
+      Xcopy = rcpFromRef (X);
     }
 
-    if (alpha != STS::one()) {
-      Y.scale(alpha);
+    if (alpha != STS::one ()) {
+      Y.scale (alpha);
     }
 
-    RCP<MV> Ycopy = rcpFromRef(Y);
+    RCP<MV> Ycopy = rcpFromRef (Y);
 
-    solver_->setB(Xcopy);
-    solver_->setX(Ycopy);
-
+    solver_->setB (Xcopy);
+    solver_->setX (Ycopy);
     solver_->solve ();
   } // Stop timing here.
 

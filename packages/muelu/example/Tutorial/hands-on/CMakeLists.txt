@@ -27,7 +27,7 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(laplace2d_cp
-    SOURCE_FILES hands-on.sh hands-on.py MueLu_Agg2VTK.py
+    SOURCE_FILES hands-on.sh hands-on.py hands-on.py-expert MueLu_Agg2VTK.py
     tmpl/MueLu_Agg2VTK.py_TMPL tmpl/muelu.xml_TMPL tmpl/muelu_easy.xml_TMPL
     xml/s2a.xml xml/s2b.xml xml/s4a.xml xml/s4b.xml xml/s4c.xml xml/s5a.xml
     xml/s2_easy.xml xml/s3a_easy.xml xml/s3b_easy.xml xml/s3c_easy.xml

@@ -59,7 +59,7 @@ std::string Radial_Trisection_Inline_Mesh_Desc::Calc_Intervals()
      if((first_size[axis][i] > 0.) && (last_size[axis][i] > 0.)){
        Real xave = (first_size[axis][i]+last_size[axis][i])/2.;
        Real xdist = block_dist[axis][i];
-       if(i == 0)xdist -= transition_radius;
+       if(i == 0 && axis == 0)xdist -= transition_radius;
        Real k = a_lot_positive + (xdist/xave);
        long long ktil =(long long)k;
        if(ktil < 1)ktil = 1;

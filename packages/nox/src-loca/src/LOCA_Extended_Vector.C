@@ -150,16 +150,15 @@ LOCA::Extended::Vector::createMultiVector(
   Teuchos::RCP<LOCA::Extended::MultiVector> mvec =
     generateMultiVector(numVecs+1, vectorPtrs.size(), numScalars);
 
-  const LOCA::Extended::Vector *evec;
-
   // Create sub multivectors
   for (unsigned int i=0; i<vectorPtrs.size(); i++) {
 
     // Get the ith abstract vector from each column
     subvecs[0] = vectorPtrs[i].get();
     for (int j=0; j<numVecs; j++) {
-      evec = dynamic_cast<const LOCA::Extended::Vector*>(vecs[j]);
-      subvecs[j+1] = evec->vectorPtrs[i].get();
+      const LOCA::Extended::Vector & evec =
+        dynamic_cast<const LOCA::Extended::Vector&>(*vecs[j]);
+      subvecs[j+1] = evec.vectorPtrs[i].get();
     }
 
     // Create multivector for the ith row
@@ -174,9 +173,10 @@ LOCA::Extended::Vector::createMultiVector(
   for (int i=0; i<numScalars; i++)
     mvec->getScalar(i,0) = (*scalarsPtr)(i,0);
   for (int j=0; j<numVecs; j++) {
-    evec = dynamic_cast<const LOCA::Extended::Vector*>(vecs[j]);
+    const LOCA::Extended::Vector & evec =
+      dynamic_cast<const LOCA::Extended::Vector&>(*vecs[j]);
     for (int i=0; i<numScalars; i++)
-      mvec->getScalar(i,j+1) = (*evec->scalarsPtr)(i,0);
+      mvec->getScalar(i,j+1) = (*evec.scalarsPtr)(i,0);
   }
 
   delete [] subvecs;

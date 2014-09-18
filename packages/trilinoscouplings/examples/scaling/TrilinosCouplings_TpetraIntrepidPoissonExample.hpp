@@ -93,7 +93,6 @@ typedef Tpetra::CrsMatrix<ST, LO, GO, Node>    sparse_matrix_type;
 typedef Tpetra::Operator<ST, LO, GO, Node>     operator_type;
 typedef Tpetra::MultiVector<ST, LO, GO, Node>  multivector_type;
 typedef Tpetra::Vector<ST, LO, GO, Node>       vector_type;
-typedef KokkosClassic::DefaultKernels<ST,LO,Node>::SparseOps sparse_ops;
 
 /// \brief Create the mesh and build the linear system to solve.
 ///

@@ -243,6 +243,22 @@ def snapshotDirMainDriver(cmndLineArgs, defaultOptionsIn = None, stdout = None):
       "--allow-dirty-dest-dir", dest="assertCleanDestDir", action="store_false",
       default=True,
       help="Skip clean check of dest-dir." )
+
+    clp.add_option(
+      "--do-rsync", dest="doRsync", action="store_true",
+      help="Actually do the rsync. [default]" )
+    clp.add_option(
+      "--skip-rsync", dest="doRsync", action="store_false",
+      default=True,
+      help="Skip the rsync (testing only?)." )
+
+    clp.add_option(
+      "--do-commit", dest="doCommit", action="store_true",
+      help="Actually do the commit. [default]" )
+    clp.add_option(
+      "--skip-commit", dest="doCommit", action="store_false",
+      default=True,
+      help="Skip the commit." )
     
     (options, args) = clp.parse_args(cmndLineArgs)
   
@@ -264,7 +280,14 @@ def snapshotDirMainDriver(cmndLineArgs, defaultOptionsIn = None, stdout = None):
       print "  --assert-clean-dest-dir \\"
     else:
       print "  --allow-dirty-dest-dir \\"
-      
+    if options.doCommit:
+      print "  --do-commit \\"
+    else:
+      print "  --skip-commit \\"
+    if options.doRsync:
+      print "  --do-rsync \\"
+    else:
+      print "  --skip-rsync \\"
   
     if options.showDefaults:
       return  # All done!
@@ -311,8 +334,11 @@ def snapshotDir(inOptions):
   #
 
   # Get the repo for origin
-  originRepoUrl = getGitRepoUrl(inOptions.origDir, "origin")
-  print "origin URL = '"+originRepoUrl+"'"
+  (remoteRepoName, remoteBranch, remoteRepoUrl) = \
+     getGitRepoUrl(inOptions.origDir)
+  print "origin remote name = '"+remoteRepoName+"'"
+  print "origin remote branch = '"+remoteBranch+"'"
+  print "origin remote URL = '"+remoteRepoUrl+"'"
 
   # Get the last commit message
   originLastCommitMsg = getLastCommitMsg(inOptions.origDir)
@@ -322,45 +348,66 @@ def snapshotDir(inOptions):
   print "\nD) Run rsync to add and remove files and dirs between two directories\n"
   #
 
-  excludes = r"""--exclude=\.git"""
-  # Note that when syncing one git repo to another, we want to sync the
-  # .gitingore and other hidden files as well.
+  if inOptions.doRsync:
 
-  # When we support syncing from hg repos, add these excludes as well:
-  #    --exclude=\.hg --exclude=.hgignore --exclude=.hgtags
+    excludes = r"""--exclude=\.git"""
+    # Note that when syncing one git repo to another, we want to sync the
+    # .gitingore and other hidden files as well.
+  
+    # When we support syncing from hg repos, add these excludes as well:
+    #    --exclude=\.hg --exclude=.hgignore --exclude=.hgtags
+  
+    rtn = echoRunSysCmnd(
+      r"rsync -av --delete "+excludes+" "+inOptions.origDir+" "+inOptions.destDir,
+      throwExcept=False,
+      timeCmnd=True
+      )
+  
+    if rtn != 0:
+      "Rsync failed, aborting!"
+      return False
 
-  rtn = echoRunSysCmnd(
-    r"rsync -av --delete "+excludes+" "+inOptions.origDir+" "+inOptions.destDir,
-    throwExcept=False,
-    timeCmnd=True
-    )
+  else:
 
-  if rtn != 0:
-    "Rsync failed, aborting!"
-    return False
+    print "\nSkipping rsync on request!"
 
   #
   print "\nE) Create a new commit in destination directory [optional]"
   #
 
-  echoRunSysCmnd(
-    "git add .",
-    workingDir=inOptions.destDir
-    )
+  origDirLast = inOptions.origDir.split("/")[-2]
+  origSha1 = getCommitSha1(inOptions.origDir)
 
   commitMessage = \
-    "Automatic snapshot commit\n"+\
+    "Automatic snapshot commit from "+origDirLast+" at "+origSha1+"\n"+\
     "\n"+\
-    "origin: '"+originRepoUrl+"'\n"+\
+    "Origin repo remote tracking branch: '"+remoteRepoName+"/"+remoteBranch+"'\n"+\
+    "Origin repo remote repo URL: '"+remoteRepoName+" = "+remoteRepoUrl+"'\n"+\
     "\n"+\
     "At commit:\n"+\
     "\n"+\
     originLastCommitMsg
 
-  echoRunSysCmnd(
-    "git commit -m \""+commitMessage+"\" -- .",
-    workingDir=inOptions.destDir
-    )
+  print "\nGeneratting commit with commit message:\n"
+  print "---------------------------------------"
+  print commitMessage
+  print "---------------------------------------"
+
+  if inOptions.doCommit:
+
+    echoRunSysCmnd(
+      "git add .",
+      workingDir=inOptions.destDir
+      )
+  
+    echoRunSysCmnd(
+      "git commit -m \""+commitMessage+"\" -- .",
+      workingDir=inOptions.destDir
+      )
+
+  else:
+
+    print "\nSkipping commit on request!\n"
 
   #
   # F) Success! (if you get this far)
@@ -395,16 +442,27 @@ def assertCleanGitDir(dirPath, dirName, explanation):
   # not a huge risk for the use cases that I am concerned with.
 
 
+def getCommitSha1(gitDir):
+  return getCmndOutput("git log -1 --pretty=format:'%h'", workingDir=gitDir).strip()
 
-def getGitRepoUrl(gitDir, repoRemoteName):
 
+def getGitRepoUrl(gitDir):
+
+  remoteRepoName = ""
+  remoteBranch = ""
   remoteRepoUrl = ""
+
+  # Get the remote tracking branch
+  trackingBranchStr = getCmndOutput(
+     "git rev-parse --abbrev-ref --symbolic-full-name @{u}", workingDir=gitDir)
+
+  (remoteRepoName, remoteBranch) = trackingBranchStr.strip().split("/")
 
   # Get the list of remote repos
   remoteReposListStr = getCmndOutput("git remote -v", workingDir=gitDir)
   #print "remoteReposListStr =", remoteReposListStr
 
-  # Loop through looking for repoRemoteName
+  # Loop through looking for remoteRepoName
   for remoteRepo in remoteReposListStr.split("\n"):
 
     #print "remoteRepo = '"+remoteRepo+"'"
@@ -428,13 +486,13 @@ def getGitRepoUrl(gitDir, repoRemoteName):
     #print "repoUrl = '"+repoUrl+"'"
 
     # Grab the URL if the remote name matches
-    if repoName == 'origin':
+    if repoName == remoteRepoName:
       remoteRepoUrl = repoUrl
       break
 
   # end for
 
-  return remoteRepoUrl
+  return (remoteRepoName, remoteBranch, remoteRepoUrl)
 
 
 def getLastCommitMsg(gitDir):

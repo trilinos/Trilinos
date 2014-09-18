@@ -53,53 +53,62 @@
 namespace Xpetra {
 
   // TODO: move that elsewhere
-  const Epetra_CrsGraph & toEpetra(const RCP< const CrsGraph<int, int> > &graph) {
-    XPETRA_RCP_DYNAMIC_CAST(const EpetraCrsGraph, graph, epetraGraph, "toEpetra");
+  template<class GlobalOrdinal>
+  const Epetra_CrsGraph & toEpetra(const RCP< const CrsGraph<int, GlobalOrdinal> > &graph) {
+    XPETRA_RCP_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal>, graph, epetraGraph, "toEpetra");
     return *(epetraGraph->getEpetra_CrsGraph());
   }
 
-  EpetraCrsGraph::EpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
+  template<class EpetraGlobalOrdinal>
+  EpetraCrsGraphT<EpetraGlobalOrdinal>::EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
     : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
 
   // TODO: convert array size_t to int
-  //   EpetraCrsGraph::EpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype)
+  //   template<class EpetraGlobalOrdinal>
+  //   EpetraCrsGraphT<EpetraGlobalOrdinal>::EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype)
   //     : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra(rowMap), NumEntriesPerRowToAlloc.getRawPtr(), toEpetra(pftype)))) { }
 
-  EpetraCrsGraph::EpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
+  template<class EpetraGlobalOrdinal>
+  EpetraCrsGraphT<EpetraGlobalOrdinal>::EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
     : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra(rowMap), toEpetra(colMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
 
   // TODO: convert array size_t to int
-  //   EpetraCrsGraph::EpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype)
+  //   template<class EpetraGlobalOrdinal>
+  //   EpetraCrsGraphT<EpetraGlobalOrdinal>::EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype)
   //     : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra(rowMap), toEpetra(colMap), NumEntriesPerRowToAlloc.getRawPtr(), toEpetra(pftype)))) { }
 
-  void EpetraCrsGraph::insertGlobalIndices(int globalRow, const ArrayView<const int> &indices) {
-    XPETRA_MONITOR("EpetraCrsGraph::insertGlobalIndices");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &indices) {
+    XPETRA_MONITOR("EpetraCrsGraphT::insertGlobalIndices");
 
-    int* indices_rawPtr = const_cast<int*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
+    GlobalOrdinal* indices_rawPtr = const_cast<GlobalOrdinal*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
     XPETRA_ERR_CHECK(graph_->InsertGlobalIndices(globalRow, indices.size(), indices_rawPtr));
   }
 
-  void EpetraCrsGraph::insertLocalIndices(int localRow, const ArrayView<const int> &indices) {
-    XPETRA_MONITOR("EpetraCrsGraph::insertLocalIndices");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::insertLocalIndices(int localRow, const ArrayView<const int> &indices) {
+    XPETRA_MONITOR("EpetraCrsGraphT::insertLocalIndices");
 
     int* indices_rawPtr = const_cast<int*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
     XPETRA_ERR_CHECK(graph_->InsertMyIndices(localRow, indices.size(), indices_rawPtr));
   }
 
-  void EpetraCrsGraph::getGlobalRowView(int GlobalRow, ArrayView<const int> &Indices) const {
-    XPETRA_MONITOR("EpetraCrsGraph::getGlobalRowView");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &Indices) const {
+    XPETRA_MONITOR("EpetraCrsGraphT::getGlobalRowView");
 
     int      numEntries;
-    int    * eIndices;
+    GlobalOrdinal    * eIndices;
 
     XPETRA_ERR_CHECK(graph_->ExtractGlobalRowView(GlobalRow, numEntries, eIndices));
     if (numEntries == 0) { eIndices = NULL; } // Cf. TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
 
-    Indices = ArrayView<const int>(eIndices, numEntries);
+    Indices = ArrayView<const GlobalOrdinal>(eIndices, numEntries);
   }
 
-  void EpetraCrsGraph::getLocalRowView(int LocalRow, ArrayView<const int> &indices) const {
-    XPETRA_MONITOR("EpetraCrsGraph::getLocalRowView");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::getLocalRowView(int LocalRow, ArrayView<const int> &indices) const {
+    XPETRA_MONITOR("EpetraCrsGraphT::getLocalRowView");
 
     int      numEntries;
     int    * eIndices;
@@ -110,8 +119,9 @@ namespace Xpetra {
     indices = ArrayView<const int>(eIndices, numEntries);
   }
 
-  void EpetraCrsGraph::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params){
-    XPETRA_MONITOR("EpetraCrsGraph::fillComplete");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params){
+    XPETRA_MONITOR("EpetraCrsGraphT::fillComplete");
 
     graph_->FillComplete(toEpetra(domainMap), toEpetra(rangeMap));
     bool doOptimizeStorage = true;
@@ -119,8 +129,9 @@ namespace Xpetra {
     if (doOptimizeStorage) graph_->OptimizeStorage();
   }
 
-  void EpetraCrsGraph::fillComplete(const RCP< ParameterList > &params) {
-    XPETRA_MONITOR("EpetraCrsGraph::fillComplete");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::fillComplete(const RCP< ParameterList > &params) {
+    XPETRA_MONITOR("EpetraCrsGraphT::fillComplete");
 
     graph_->FillComplete();
     bool doOptimizeStorage = true;
@@ -128,60 +139,66 @@ namespace Xpetra {
     if (doOptimizeStorage) graph_->OptimizeStorage();
   }
 
-  std::string EpetraCrsGraph::description() const { XPETRA_MONITOR("EpetraCrsGraph::description"); return "NotImplemented"; }
+  template<class EpetraGlobalOrdinal>
+  std::string EpetraCrsGraphT<EpetraGlobalOrdinal>::description() const { XPETRA_MONITOR("EpetraCrsGraphT::description"); return "NotImplemented"; }
 
-  void EpetraCrsGraph::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
-    XPETRA_MONITOR("EpetraCrsGraph::describe");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+    XPETRA_MONITOR("EpetraCrsGraphT::describe");
 
-    out << "EpetraCrsGraph::describe : Warning, verbosity level is ignored by this method." << std::endl;
+    out << "EpetraCrsGraphT::describe : Warning, verbosity level is ignored by this method." << std::endl;
     const Epetra_BlockMap rowmap = graph_->RowMap();
-    if (rowmap.Comm().MyPID() == 0) out << "** EpetraCrsGraph **\n\nrowmap" << std::endl;
+    if (rowmap.Comm().MyPID() == 0) out << "** EpetraCrsGraphT **\n\nrowmap" << std::endl;
     rowmap.Print(out);
     graph_->Print(out);
   }
 
   // TODO: move that elsewhere
-  RCP<const CrsGraph<int, int> >
+  template<class GlobalOrdinal>
+  RCP<const CrsGraph<int, GlobalOrdinal> >
   toXpetra (const Epetra_CrsGraph &g)
   {
     RCP<const Epetra_CrsGraph> const_graph = rcp (new Epetra_CrsGraph (g));
     RCP<Epetra_CrsGraph> graph =
       Teuchos::rcp_const_cast<Epetra_CrsGraph> (const_graph);
-    return rcp (new Xpetra::EpetraCrsGraph (graph));
+    return rcp (new Xpetra::EpetraCrsGraphT<GlobalOrdinal>(graph));
   }
   //
 
   // TODO: use toEpetra()
-  void EpetraCrsGraph::doImport(const DistObject<int, int, int> &source,
-                                 const Import<int, int> &importer, CombineMode CM) {
-    XPETRA_MONITOR("EpetraCrsGraph::doImport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+                                 const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doImport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, source, tSource, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
     int err = graph_->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-  void EpetraCrsGraph::doExport(const DistObject<int, int, int> &dest,
-                                 const Import<int, int>& importer, CombineMode CM) {
-    XPETRA_MONITOR("EpetraCrsGraph::doExport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doExport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, dest, tDest, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
     int err = graph_->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-  void EpetraCrsGraph::doImport(const DistObject<int, int, int> &source,
-                                 const Export<int, int>& exporter, CombineMode CM) {
-    XPETRA_MONITOR("EpetraCrsGraph::doImport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+                                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doImport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, source, tSource, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
     int err = graph_->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
@@ -189,16 +206,29 @@ namespace Xpetra {
 
   }
 
-  void EpetraCrsGraph::doExport(const DistObject<int, int, int> &dest,
-                                 const Export<int, int>& exporter, CombineMode CM) {
-    XPETRA_MONITOR("EpetraCrsGraph::doExport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraCrsGraphT<EpetraGlobalOrdinal>::doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doExport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, dest, tDest, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
     int err = graph_->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
+
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+template class EpetraCrsGraphT<int>;
+template RCP< const CrsGraph<int, int> > toXpetra<int>(const Epetra_CrsGraph &g);
+template const Epetra_CrsGraph & toEpetra<int>(const RCP< const CrsGraph<int, int> > &graph);
+#endif
+
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+template class EpetraCrsGraphT<long long>;
+template RCP< const CrsGraph<int, long long> > toXpetra<long long>(const Epetra_CrsGraph &g);
+template const Epetra_CrsGraph & toEpetra<long long>(const RCP< const CrsGraph<int, long long> > &graph);
+#endif
 
 } // namespace Xpetra

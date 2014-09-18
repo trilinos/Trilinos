@@ -1527,6 +1527,15 @@ int Teuchos::hashCode(const Array<T>& array)
   {
     rtn += hashCode(array[i]);
   }
+  if (rtn < 0)
+  {
+    /* Convert the largest -ve int to zero and -1 to
+    * std::numeric_limits<int>::max()
+    * */
+    size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+    maxIntBeforeWrap ++;
+    rtn += maxIntBeforeWrap;
+  }
   return rtn;
 }
 

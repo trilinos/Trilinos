@@ -60,7 +60,7 @@
  * ssize_t is needed for the definition of ZOLTAN_GNO_TYPE.
  */
 
-#ifndef _WIN32
+#ifndef _MSC_VER
 
 #include <stdint.h>                 /* for int64_t and intptr_t */
 #define ZOLTAN_NOT_FOUND INTPTR_MAX /* safe to say never a valid pointer? */
@@ -68,8 +68,8 @@
 #else
 
 #include <BaseTsd.h>              /* for ssize_t, int64, int_ptr */
-typedef int64 int64_t;
-typedef int_ptr intptr_t;
+typedef INT64 int64_t;
+typedef INT_PTR intptr_t;
 #define ZOLTAN_NOT_FOUND LONG_MAX  /* safe to say never a valid pointer? */
 
 #endif
@@ -192,7 +192,12 @@ typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
  * The MPI_Datatype for ZOLTAN_GNO_TYPE is returned by Zoltan_mpi_gno_type().
  */
 
+#ifdef _MSC_VER
+#define ZOLTAN_GNO_TYPE      SSIZE_T
+#else
 #define ZOLTAN_GNO_TYPE      ssize_t
+#endif
+
 #define zoltan_gno_datatype_name "ssize_t"
 
 /*
