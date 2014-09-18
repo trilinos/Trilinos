@@ -1,7 +1,6 @@
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
- presmoother ->
-  [empty list]
+ [empty list]
 
 
  --------------------------------------------------------------------------------
