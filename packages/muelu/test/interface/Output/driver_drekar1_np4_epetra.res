@@ -13,10 +13,10 @@ Level 1
     Prolongator smoothing (MueLu::SaPFactory)
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
-      lightweight wrap = 1
-      aggregation: drop scheme = distance laplacian
       aggregation: drop tol = 0   [default]
       aggregation: Dirichlet threshold = 0   [default]
+      aggregation: drop scheme = distance laplacian
+      lightweight wrap = 1
 
      filtered matrix: use lumping = 1   [unused]
      filtered matrix: reuse graph = 1   [default]
@@ -76,22 +76,22 @@ Level 1
   repartition: min rows per proc = 2000
   repartition: max imbalance = 1.327
   repartition: keep proc 0 = 1
-  repartition: remap parts = 1
   repartition: print partition distribution = 0   [default]
+  repartition: remap parts = 1
   repartition: remap num values = 4   [default]
 
- type = Interpolation
  repartition: rebalance P and R = 1   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
+ type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
 
  Build (MueLu::RebalanceTransferFactory)
- type = Restriction
  repartition: rebalance P and R = 1   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
+ type = Restriction
  write start = -1   [default]
  write end = -1   [default]
 
@@ -112,10 +112,10 @@ Level 2
     Prolongator smoothing (MueLu::SaPFactory)
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
-      lightweight wrap = 1
-      aggregation: drop scheme = distance laplacian
       aggregation: drop tol = 0   [default]
       aggregation: Dirichlet threshold = 0   [default]
+      aggregation: drop scheme = distance laplacian
+      lightweight wrap = 1
 
      filtered matrix: use lumping = 1   [unused]
      filtered matrix: reuse graph = 1   [default]
@@ -175,22 +175,22 @@ Level 2
   repartition: min rows per proc = 2000
   repartition: max imbalance = 1.327
   repartition: keep proc 0 = 1
-  repartition: remap parts = 1
   repartition: print partition distribution = 0   [default]
+  repartition: remap parts = 1
   repartition: remap num values = 4   [default]
 
- type = Interpolation
  repartition: rebalance P and R = 1   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
+ type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
 
  Build (MueLu::RebalanceTransferFactory)
- type = Restriction
  repartition: rebalance P and R = 1   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
+ type = Restriction
  write start = -1   [default]
  write end = -1   [default]
 
@@ -211,10 +211,10 @@ Level 3
     Prolongator smoothing (MueLu::SaPFactory)
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
-      lightweight wrap = 1
-      aggregation: drop scheme = distance laplacian
       aggregation: drop tol = 0   [default]
       aggregation: Dirichlet threshold = 0   [default]
+      aggregation: drop scheme = distance laplacian
+      lightweight wrap = 1
 
      filtered matrix: use lumping = 1   [unused]
      filtered matrix: reuse graph = 1   [default]
@@ -274,22 +274,22 @@ Level 3
   repartition: min rows per proc = 2000
   repartition: max imbalance = 1.327
   repartition: keep proc 0 = 1
-  repartition: remap parts = 1
   repartition: print partition distribution = 0   [default]
+  repartition: remap parts = 1
   repartition: remap num values = 4   [default]
 
- type = Interpolation
  repartition: rebalance P and R = 1   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
+ type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
 
  Build (MueLu::RebalanceTransferFactory)
- type = Restriction
  repartition: rebalance P and R = 1   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
+ type = Restriction
  write start = -1   [default]
  write end = -1   [default]
 

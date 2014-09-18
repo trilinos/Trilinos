@@ -17,10 +17,10 @@ Level 1
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    lightweight wrap = 1
 
    aggregation: mode = old   [default]
    aggregation: max agg size = 2147483647   [default]
@@ -60,8 +60,8 @@ Level 1
   [empty list]
 
  emin: num iterations = 4
- emin: iterative method = sd
  emin: num reuse iterations = 1   [default]
+ emin: iterative method = sd
  P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, KokkosClassic::SerialNode> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep P0 = 0   [default]
  Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, KokkosClassic::SerialNode> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -95,10 +95,10 @@ Level 2
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    lightweight wrap = 1
 
    aggregation: mode = old   [default]
    aggregation: max agg size = 2147483647   [default]
@@ -138,8 +138,8 @@ Level 2
   [empty list]
 
  emin: num iterations = 4
- emin: iterative method = sd
  emin: num reuse iterations = 1   [default]
+ emin: iterative method = sd
  P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, KokkosClassic::SerialNode> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep P0 = 0   [default]
  Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, KokkosClassic::SerialNode> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]

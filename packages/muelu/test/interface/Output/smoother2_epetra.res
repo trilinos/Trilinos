@@ -10,10 +10,10 @@ Level 1
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    lightweight wrap = 1
 
    aggregation: mode = old   [default]
    aggregation: max agg size = 2147483647   [default]
@@ -71,10 +71,10 @@ Level 2
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    lightweight wrap = 1
 
    aggregation: mode = old   [default]
    aggregation: max agg size = 2147483647   [default]
