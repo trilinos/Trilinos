@@ -297,10 +297,10 @@ fi
 ########################################################################
 # decomp options:
 if [ $OLDGETOPT -eq 1 ] ; then
-   TEMP=`getopt Hhn:i:o:p:j:r:R:S:sl: $*`
+   TEMP=`getopt Hhn:i:o:p:j:r:R:S:sl:v $*`
 else
-   TEMP=`getopt -o Hhn:i:o:p:j:r:R:S:sl: -a \
-       --long input:,help,nem_slice_flag,processors:,rootdir:,subdir:,spheres_linear,nolaunch \
+   TEMP=`getopt -o Hhn:i:o:p:j:r:R:S:sl:v -a \
+       --long input:,help,nem_slice_flag,processors:,rootdir:,subdir:,spheres_linear,nolaunch,verbose \
        --long multikl,rcb,rcb_ignore_z,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
        -n 'decomp' -- "$@"`
 fi
@@ -315,6 +315,8 @@ while true ; do
 	      usage ; shift ;;
 	    -H|--help)
 	      usage_new ; shift ;;
+	    -v|--verbose)
+	      set -x ; shift ;;
 	    -n|--nem_slice_flag)
 	      nem_slice_flag="$2" ; shift 2 ;;
 	    -i|--input)
