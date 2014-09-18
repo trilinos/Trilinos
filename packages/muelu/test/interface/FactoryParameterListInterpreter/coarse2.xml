@@ -1,0 +1,26 @@
+<ParameterList name="MueLu">
+
+  <ParameterList name="Factories">
+
+    <ParameterList name="myCoalesceDropFact">
+      <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
+      <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
+    </ParameterList>
+
+  </ParameterList>
+
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="coarse: max size"                      type="int"      value="100"/>
+
+    <ParameterList name="All">
+      <Parameter name="startLevel"                          type="int"      value="0"/>
+
+      <Parameter name="DofsPerNode"                         type="string"   value="myCoalesceDropFact"/>
+      <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="NoFactory"/>
+    </ParameterList>
+
+  </ParameterList>
+
+</ParameterList>
