@@ -69,17 +69,38 @@ private:
   const FunctorType  m_func ;
   const Policy       m_policy ;
 
+  template< class PType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if<
+                 ( Impl::is_same< typename PType::work_tag , void >::value )
+                 , const FunctorType & >::type functor
+             , const PType & range )
+    {
+      const typename PType::member_type e = range.end();
+      for ( typename PType::member_type i = range.begin() ; i < e ; ++i ) {
+        functor( i );
+      }
+    }
+
+  template< class PType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if<
+                 ( ! Impl::is_same< typename PType::work_tag , void >::value )
+                 , const FunctorType & >::type functor
+             , const PType & range )
+    {
+      const typename PType::member_type e = range.end();
+      for ( typename PType::member_type i = range.begin() ; i < e ; ++i ) {
+        functor( typename PType::work_tag() , i );
+      }
+    }
+
   // Function is called once by every concurrent thread.
   static void execute( QthreadExec & exec , const void * arg )
   {
-
     const ParallelFor & self = * ((const ParallelFor *) arg );
-    const Policy range( self.m_policy , exec.worker_rank() , exec.worker_size() );
 
-    const typename Policy::member_type work_end = range.end();
-    for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
-      self.m_func( iwork );
-    }
+    driver( self.m_func , Policy( self.m_policy , exec.worker_rank() , exec.worker_size() ) );
 
     // All threads wait for completion.
     exec.exec_all_barrier();
@@ -111,18 +132,42 @@ private:
   const FunctorType  m_func ;
   const Policy       m_policy ;
 
+  template< class PType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if<
+                 ( Impl::is_same< typename PType::work_tag , void >::value )
+                 , const FunctorType & >::type functor
+             , typename Reduce::reference_type update
+             , const PType & range )
+    {
+      const typename PType::member_type e = range.end();
+      for ( typename PType::member_type i = range.begin() ; i < e ; ++i ) {
+        functor( i , update );
+      }
+    }
+
+  template< class PType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if<
+                 ( ! Impl::is_same< typename PType::work_tag , void >::value )
+                 , const FunctorType & >::type functor
+             , typename Reduce::reference_type update
+             , const PType & range )
+    {
+      const typename PType::member_type e = range.end();
+      for ( typename PType::member_type i = range.begin() ; i < e ; ++i ) {
+        functor( typename PType::work_tag() , i , update );
+      }
+    }
+
   static void execute( QthreadExec & exec , const void * arg )
   {
     const ParallelReduce & self = * ((const ParallelReduce *) arg );
-    const Policy range( self.m_policy , exec.worker_rank() , exec.worker_size() );
 
-    // Initialize thread-local value
-    typename Reduce::reference_type update = Reduce::init( self.m_func , exec.exec_all_reduce_value() );
-
-    const typename Policy::member_type work_end = range.end();
-    for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
-      self.m_func( iwork , update );
-    }
+    driver( self.m_func
+          , Reduce::init( self.m_func , exec.exec_all_reduce_value() )
+          , Policy( self.m_policy , exec.worker_rank() , exec.worker_size() )
+          );
 
     exec.exec_all_reduce( self.m_func );
   }
@@ -277,10 +322,6 @@ public:
       const unsigned n = Reduce::value_count( m_func );
       for ( unsigned i = 0 ; i < n ; ++i ) { result.ptr_on_device()[i] = data[i]; }
     }
-
-  inline void wait() {}
-
-  inline ~ParallelReduce() { wait(); }
 };
 
 //----------------------------------------------------------------------------
@@ -298,24 +339,50 @@ private:
   const FunctorType  m_func ;
   const Policy       m_policy ;
 
+  template< class PType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if<
+                 ( Impl::is_same< typename PType::work_tag , void >::value )
+                 , const FunctorType & >::type functor
+             , typename Reduce::reference_type update
+             , const bool    final
+             , const PType & range )
+    {
+      const typename PType::member_type e = range.end();
+      for ( typename PType::member_type i = range.begin() ; i < e ; ++i ) {
+        functor( i , update , final );
+      }
+    }
+
+  template< class PType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if<
+                 ( ! Impl::is_same< typename PType::work_tag , void >::value )
+                 , const FunctorType & >::type functor
+             , typename Reduce::reference_type update
+             , const bool    final
+             , const PType & range )
+    {
+      const typename PType::member_type e = range.end();
+      for ( typename PType::member_type i = range.begin() ; i < e ; ++i ) {
+        functor( typename PType::work_tag() , i , update , final );
+      }
+    }
+
   static void execute( QthreadExec & exec , const void * arg )
   {
     const ParallelScan & self = * ((const ParallelScan *) arg );
+
     const Policy range( self.m_policy , exec.worker_rank() , exec.worker_size() );
 
     // Initialize thread-local value
     typename Reduce::reference_type update = Reduce::init( self.m_func , exec.exec_all_reduce_value() );
 
-    const typename Policy::member_type work_end = range.end();
-    for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
-      self.m_func( iwork , update , false );
-    }
+    driver( self.m_func , update , false , range );
 
     exec.exec_all_scan( self.m_func );
 
-    for ( typename Policy::member_type iwork = range.begin() ; iwork < work_end ; ++iwork ) {
-      self.m_func( iwork , update , true );
-    }
+    driver( self.m_func , update , true , range );
 
     exec.exec_all_barrier();
   }
