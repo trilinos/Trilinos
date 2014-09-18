@@ -225,6 +225,10 @@ function execute_spread {
     echo "Parallel Results File Base Name  = $basename"                 >> $pexsh
     echo "File Extension for Spread Files  = .$suffix_spread"           >> $pexsh
     echo "Number of Processors             = $numproc "                 >> $pexsh
+    if [ "$debug_level" != "0" ]
+    then
+    echo "Debug                            = $debug_level"              >> $pexsh
+    fi
     echo "------------------------------------------------------------" >> $pexsh
     echo "                Parallel I/O section"                         >> $pexsh
     echo "------------------------------------------------------------" >> $pexsh
@@ -258,6 +262,7 @@ txtrst=$(tput sgr0)       # Text reset
 
 basename=''
 processors=''
+debug_level='0'
 decomp_method="-l inertial"
 nem_slice_flag="-c"
 rootdir="`pwd`/"
@@ -297,10 +302,10 @@ fi
 ########################################################################
 # decomp options:
 if [ $OLDGETOPT -eq 1 ] ; then
-   TEMP=`getopt Hhn:i:o:p:j:r:R:S:sl:v $*`
+   TEMP=`getopt Hhn:i:o:p:j:r:R:S:sl:vd: $*`
 else
-   TEMP=`getopt -o Hhn:i:o:p:j:r:R:S:sl:v -a \
-       --long input:,help,nem_slice_flag,processors:,rootdir:,subdir:,spheres_linear,nolaunch,verbose \
+   TEMP=`getopt -o Hhn:i:o:p:j:r:R:S:sl:vd: -a \
+       --long input:,help,nem_slice_flag,processors:,rootdir:,subdir:,spheres_linear,nolaunch,verbose,debug: \
        --long multikl,rcb,rcb_ignore_z,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
        -n 'decomp' -- "$@"`
 fi
@@ -317,6 +322,8 @@ while true ; do
 	      usage_new ; shift ;;
 	    -v|--verbose)
 	      set -x ; shift ;;
+	    -d|--debug)
+	      debug_level="$2" ; shift 2 ;;
 	    -n|--nem_slice_flag)
 	      nem_slice_flag="$2" ; shift 2 ;;
 	    -i|--input)
