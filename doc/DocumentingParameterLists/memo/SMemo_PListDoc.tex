@@ -21,7 +21,7 @@
     % if to one person, put their name here
     % e.g. \to{H. S. Granger, Org. 0001, MS-9999}
     % otherwise use \to{Distribution} and include distribution list at end
-    \to{Trilinos package and application developers}
+    \to{Distribution}
 
     % For running head, if heading on following pages is not Addressee
     %\headtext{}
@@ -248,6 +248,60 @@ Each of the aforementioned steps require a more detailed explanation.
 
 \section{Testing the \texttt{ParameterList} Documentation}
 
+ If you want to test the documentation of your package, without
+ building the entire Trilinos Doxygen hierarchy, you will have to
+ perform a couple extra steps to get your collapsible
+ \texttt{Teuchos::ParameterList} documentation to show.  The
+ steps are
+
+ \begin{enumerate}
+    \item \textbf{Build a minimal Trilinos configuration with your package and
+       its optional packages.}  A seasoned Trilinos developer can do
+     this using any appropriate configuration he or she wishes.  An
+     alternative would be to copy
+\begin{verbatim}
+    Trilinos/doc/DocumentingParameterLists/do-configure
+\end{verbatim}
+     to your build directory.  This script takes the path to the
+     Trilinos source directory as its argument (using \texttt{..} as
+     the default).  Use \texttt{--help} for a more detailed
+     description of the script.  This script will configure Trilinos
+     to build all packages that support collapsible ParameterList
+     documentation, plus all of those packages' optional packages.
+
+    \item \textbf{Run the executable(s) that generate the
+        \texttt{Teuchos::ParameterList} XML files.}  The easiest way to
+      do this is to run
+\begin{verbatim}
+    $ ctest -R ValidParam
+\end{verbatim}
+      from within the build directory.
+
+    \item \textbf{Run \texttt{build\_docs} in your
+        \texttt{<package-name>/doc} directory.}  Doxygen documentation
+      continues to be built within the source directory.  All this
+      requires is
+\begin{verbatim}
+    $ cd Trilinos/packages/<package-name>/doc
+    $ ./build_docs
+\end{verbatim}
+      where \texttt{<package-name>} is your package name.  This will create
+      an \texttt{html} directory with the HTML version of the Doxygen
+      documentation within it.
+
+    \item \textbf{Copy the XML files from your \texttt{<package>/doc}
+        directory.}  This can be done automatically by running the
+      script \texttt{copy\_xml\_to\_src\_html.py}, which was copied to
+      your \texttt{doc} directory in step 2 of sections 2 and 3.  This
+      script takes the path to your build directory as its argument.
+
+ \end{enumerate}
+
+ You are now ready to test your \texttt{Teuchos::ParameterList}
+ documentation.  Simply open \texttt{html/index.html} in your browser
+ and navigate to where your \texttt{Teuchos::ParameterList}
+ documentation is located.
+
     %
     % Main text of memo ends here
     % ---------------------------------------------------------------------- %
@@ -275,12 +329,14 @@ Each of the aforementioned steps require a more detailed explanation.
     \clearpage
     \begin{distribution}{External Distribution:}
 	\normalfont
-	% Put your external distribution names and addresses here
+        External Trilinos package developers \\
+        External Trilinos application developers
     \end{distribution}
 
     \begin{distribution}{Internal Distribution:}
 	\normalfont
-	% Put your internal distribution names and addresses here
+        Internal Trilinos package developers \\
+        Internal Trilinos application developers
     \end{distribution}
 
     \end{memo}
