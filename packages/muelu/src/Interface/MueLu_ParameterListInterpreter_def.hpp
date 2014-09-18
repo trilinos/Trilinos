@@ -826,6 +826,11 @@ namespace MueLu {
         hieraList.remove("repartition: rebalance P and R");
       }
 
+      if (hieraList.isParameter("transpose: use implicit")) {
+        this->implicitTranspose_ = hieraList.get<bool>("transpose: use implicit");
+        hieraList.remove("transpose: use implicit");
+      }
+
       //TODO Move this its own class or MueLu::Utils?
       std::map<std::string,MsgType> verbMap;
       //for developers
