@@ -11,7 +11,7 @@ Level 1
     Build (MueLu::CoalesceDropFactory)
     aggregation: drop tol = 0.02
     aggregation: Dirichlet threshold = 0   [default]
-    aggregation: drop scheme = original
+    aggregation: drop scheme = classical
     lightweight wrap = 1
 
    aggregation: mode = old   [default]
@@ -71,7 +71,7 @@ Level 2
     Build (MueLu::CoalesceDropFactory)
     aggregation: drop tol = 0.02
     aggregation: Dirichlet threshold = 0   [default]
-    aggregation: drop scheme = original
+    aggregation: drop scheme = classical
     lightweight wrap = 1
 
    aggregation: mode = old   [default]

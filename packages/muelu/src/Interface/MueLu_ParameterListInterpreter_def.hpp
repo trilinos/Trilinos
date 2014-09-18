@@ -457,8 +457,7 @@ namespace MueLu {
     dropParams.set("lightweight wrap", true);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop scheme",         paramList, defaultList, std::string);
     // Rename classical to original
-    if (dropParams.isParameter("aggregation: drop scheme") && dropParams.get<std::string>("aggregation: drop scheme") == "classical")
-      dropParams.set("aggregation: drop scheme", "original");
+    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop scheme",         paramList, defaultList, std::string);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop tol",            paramList, defaultList, double);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: Dirichlet threshold", paramList, defaultList, double);
 
