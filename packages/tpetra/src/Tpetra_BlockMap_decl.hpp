@@ -85,7 +85,7 @@ class BlockMap : public Teuchos::Describable {
            LocalOrdinal blockSize,
            GlobalOrdinal indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<node_type> ());
+           const Teuchos::RCP<Node> &node = defaultArgNode<node_type> ());
 
   /*! \brief BlockMap constructor specifying num global and local blocks, and constant blockSize.
    */
@@ -94,7 +94,7 @@ class BlockMap : public Teuchos::Describable {
            LocalOrdinal blockSize,
            GlobalOrdinal indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<node_type> ());
+           const Teuchos::RCP<Node> &node = defaultArgNode<node_type> ());
 
   /*! \brief BlockMap constructor specifying numGlobalBlocks and lists of local blocks first-global-point-in-blocks, and blockSizes.
    */
@@ -104,7 +104,7 @@ class BlockMap : public Teuchos::Describable {
       const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
       GlobalOrdinal indexBase,
       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-      const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<node_type> ());
+      const Teuchos::RCP<Node> &node = defaultArgNode<node_type> ());
 
   /*! \brief BlockMap constructor which takes a point-entry Map.
    * The arrays myGlobalBlockIDs and myBlockSizes must be the same length, and
@@ -115,7 +115,7 @@ class BlockMap : public Teuchos::Describable {
   BlockMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointMap,
            const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
            const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
-           const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<node_type> ());
+           const Teuchos::RCP<Node> &node = defaultArgNode<node_type> ());
 
   //! BlockMap destructor.
   ~BlockMap(){}
