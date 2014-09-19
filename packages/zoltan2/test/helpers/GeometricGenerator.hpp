@@ -68,6 +68,11 @@
 #include <zoltan.h>
 #endif
 
+#ifdef _MSC_VER
+#define NOMINMAX
+#include <windows.h>
+#endif
+
 using Teuchos::CommandLineProcessor;
 
 namespace GeometricGen{
@@ -1955,6 +1960,9 @@ public:
   //then distributes the points of the overloaded parts to underloaded parts.
   void blockPartition(int *coordinate_grid_parts){
 
+#ifdef _MSC_VER
+	typedef SSIZE_T ssize_t;
+#endif
 
 	  //############################################################//
 	  ///getting minimum and maximum coordinates for each dimension///

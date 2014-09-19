@@ -59,6 +59,11 @@
 #include <vector>
 #include <limits>
 
+#ifdef _MSC_VER
+#define NOMINMAX
+#include <windows.h>
+#endif
+
 namespace Teuchos{
 
 /*! \brief Zoltan2_BoxBoundaries is a reduction operation
