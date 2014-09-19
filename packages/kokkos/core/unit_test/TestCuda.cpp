@@ -69,6 +69,7 @@ extern void test_device_cuda_tile();
 extern void test_device_cuda_view_impl();
 extern void test_device_cuda_view_api();
 extern void test_device_cuda_range_tag();
+extern void test_device_cuda_team_tag();
 extern void test_device_cuda_crsarray();
 extern void test_device_cuda_reduce();
 extern void test_device_cuda_reduce_team();
@@ -94,6 +95,11 @@ TEST_F( cuda, view_api )
 TEST_F( cuda, range_tag )
 {
   test_device_cuda_range_tag();
+}
+
+TEST_F( cuda, team_tag )
+{
+  test_device_cuda_team_tag();
 }
 
 TEST_F( cuda, crsarray )

@@ -98,11 +98,12 @@ int main(int argc, char *argv[]) {
 
   const int numLists = 2;
 
-  std::string dirList[numLists];
+  Teuchos::ArrayRCP<std::string> fileLists[numLists];
+  std::string                    dirList  [numLists], outDir;
   dirList[0] = "EasyParameterListInterpreter/";
   dirList[1] = "FactoryParameterListInterpreter/";
+  outDir     = "Output/";
 
-  Teuchos::ArrayRCP<std::string> fileLists[numLists];
   if (numProc == 1) {
     // Run all xml configs in serial/single mpi mode
     fileLists[0] = MueLuTests::TestHelpers::GetFileList(dirList[0], std::string(".xml"));
@@ -125,7 +126,8 @@ int main(int argc, char *argv[]) {
       A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 
       std::string xmlFile  = dirList[k] + fileList[i];
-      std::string baseFile = xmlFile.substr(0, xmlFile.find_last_of('.'));
+      std::string outFile  = outDir     + fileList[i];
+      std::string baseFile = outFile.substr(0, outFile.find_last_of('.'));
       std::size_t found = baseFile.find("_np");
       if (numProc == 1 && found != std::string::npos) {
 #ifdef HAVE_MPI
@@ -136,6 +138,13 @@ int main(int argc, char *argv[]) {
 #endif
       }
       baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
+
+      std::string cmd;
+      if (k > 0) {
+        // Restore res file
+        cmd = "mv -f " + baseFile + ".resorig " + baseFile + ".res";
+        system(cmd.c_str());
+      }
 
       std::filebuf buffer;
       std::streambuf* oldbuffer = NULL;
@@ -149,7 +158,14 @@ int main(int argc, char *argv[]) {
       // first to include "test" verbosity
       Teuchos::ParameterList paramList;
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-      paramList.set("verbosity", "test");
+      if (k == 0) {
+        // easy
+        paramList.set("verbosity", "test");
+      } else {
+        // factory
+        ParameterList& hierList = paramList.sublist("Hierarchy");
+        hierList.set("verbosity", "Test");
+      }
 
       try {
         ParameterListInterpreter mueluFactory(paramList);
@@ -238,7 +254,7 @@ int main(int argc, char *argv[]) {
 #endif
 
         // Run comparison
-        std::string cmd = "diff -w -I\"^\\s*$\" " + baseFile + ".res " + baseFile + ".out";
+        cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".res " + baseFile + ".out";
         int ret = system(cmd.c_str());
         if (ret)
           failed = true;

@@ -116,6 +116,12 @@ TEST_F( openmp , range_tag )
   TestRange< Kokkos::OpenMP >::test_scan(1000);
 }
 
+TEST_F( openmp , team_tag )
+{
+  TestTeamPolicy< Kokkos::OpenMP >::test_for(1000);
+  TestTeamPolicy< Kokkos::OpenMP >::test_reduce(1000);
+}
+
 TEST_F( openmp, crsarray) {
   TestCrsArray< Kokkos::OpenMP >();
 }

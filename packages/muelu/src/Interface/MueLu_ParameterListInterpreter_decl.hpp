@@ -116,6 +116,10 @@ namespace MueLu {
 
     //! Easy interpreter stuff
     //@{
+    // These two variables are only needed to print out proper [default]
+    bool changedPRrebalance_;
+    bool changedImplicitTranspose_;
+
     void SetEasyParameterList(const Teuchos::ParameterList& paramList);
     void Validate(const Teuchos::ParameterList& paramList) const;
 

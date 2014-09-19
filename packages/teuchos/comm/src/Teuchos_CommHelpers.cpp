@@ -551,7 +551,15 @@ ireceiveImpl (const Comm<int>& comm,
     std::logic_error,
     "ireceiveImpl: Not implemented for a serial communicator.");
 
-  return null; // Guard to avoid compiler warning about not returning a value.
+  // NOTE (mfh 15 Sep 2014): Most compilers have figured out that the
+  // return statement below is unreachable.  Some older compilers
+  // might not realize this.  That's why the return statement was put
+  // there, so that those compilers don't warn that this function
+  // doesn't return a value.  If it's a choice between one warning and
+  // another, I would prefer the choice that produces less code and
+  // doesn't have unreachable code (which never gets tested).
+
+  //return null; // Guard to avoid compiler warning about not returning a value.
 #endif // HAVE_MPI
 }
 

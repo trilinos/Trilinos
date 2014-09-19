@@ -228,7 +228,7 @@ gaussSeidel (const LocalOrdinal numRows,
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
@@ -373,7 +373,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
     if (direction == Kokkos::Forward) {
       for (LO ii = 0; ii < numRowInds; ++ii) {
         LO i = rowInd[ii];
-        for (size_t c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
@@ -393,13 +393,13 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
       // work nevertheless.
       for (LO ii = numRowInds - 1; ii != 0; --ii) {
         LO i = rowInd[ii];
-        for (size_t c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
@@ -410,7 +410,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
       { // last loop iteration
         const LO ii = 0;
         LO i = rowInd[ii];
-        for (size_t c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {

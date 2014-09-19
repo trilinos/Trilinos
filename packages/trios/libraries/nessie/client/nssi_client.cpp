@@ -2001,3 +2001,90 @@ int nssi_multicast_rpc_sync(
 
     return rc;
 }
+
+int nssi_atomic_increment(
+        const nssi_service *svc,
+        const uint64_t      remote_atomic,
+        const uint64_t      local_atomic)
+{
+    int rc=NSSI_OK;  /* return code */
+
+    NNTI_work_request_t wr;
+    NNTI_status_t       status;
+
+    rc=NNTI_atomic_fop(&transports[svc->transport_id],
+                       &svc->svc_host,
+                       remote_atomic,
+                       local_atomic,
+                       1,
+                       NNTI_ATOMIC_FADD,
+                       &wr);
+    if (rc != NNTI_OK) {
+        log_error(rpc_debug_level, "remote method failed: %s",
+                nnti_err_str(rc));
+        return rc;
+    }
+    rc=NNTI_wait(&wr, -1, &status);
+    if (rc != NNTI_OK) {
+        log_error(rpc_debug_level, "remote method failed: %s",
+                nnti_err_str(rc));
+        return rc;
+    }
+
+    return(rc);
+}
+
+int nssi_atomic_decrement(
+        const nssi_service *svc,
+        const uint64_t      remote_atomic,
+        const uint64_t      local_atomic)
+{
+    int rc=NSSI_OK;  /* return code */
+
+    NNTI_work_request_t wr;
+    NNTI_status_t       status;
+
+    rc=NNTI_atomic_fop(&transports[svc->transport_id],
+                       &svc->svc_host,
+                       remote_atomic,
+                       local_atomic,
+                       -1,
+                       NNTI_ATOMIC_FADD,
+                       &wr);
+    if (rc != NNTI_OK) {
+        log_error(rpc_debug_level, "remote method failed: %s",
+                nnti_err_str(rc));
+        return rc;
+    }
+    rc=NNTI_wait(&wr, -1, &status);
+    if (rc != NNTI_OK) {
+        log_error(rpc_debug_level, "remote method failed: %s",
+                nnti_err_str(rc));
+        return rc;
+    }
+
+    return(rc);
+}
+
+int nssi_atomic_read(
+        const nssi_service *svc,
+        const uint64_t      local_atomic,
+        int64_t            *value)
+{
+    int rc=NSSI_OK;  /* return code */
+
+    NNTI_work_request_t wr;
+    NNTI_status_t       status;
+
+    rc=NNTI_atomic_read(
+            &transports[svc->transport_id],
+            local_atomic,
+            value);
+    if (rc != NNTI_OK) {
+        log_error(rpc_debug_level, "atomic read failed: %s",
+                nnti_err_str(rc));
+        return rc;
+    }
+
+    return(rc);
+}

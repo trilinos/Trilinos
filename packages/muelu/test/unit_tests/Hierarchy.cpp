@@ -48,21 +48,22 @@
 #include "MueLu_Version.hpp"
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
+#include "MueLu_AmesosSmoother.hpp"
+#include "MueLu_AmesosSmoother.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Hierarchy.hpp"
+#include "MueLu_HierarchyManager.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-#include "MueLu_AmesosSmoother.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
+#include "MueLu_SaPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
-#include "MueLu_AmesosSmoother.hpp"
+#include "MueLu_TransPFactory.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
-#include "Xpetra_VectorFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 
@@ -724,6 +725,8 @@ TEUCHOS_UNIT_TEST(Hierarchy, Write)
   Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   out << "random status: " << rand() << std::endl;
+  std::srand(595343843);
+  std::rand();
   std::string infile = "A_0.m";
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
   RCP<Matrix> Ain = Utils::Read(infile, lib, comm);
@@ -753,54 +756,98 @@ TEUCHOS_UNIT_TEST(Hierarchy, BlockCrs)
 #if defined(HAVE_MUELU_TPETRA)
   MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
+  out << "===== Generating matrices =====" << std::endl;
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   Teuchos::ParameterList matrixList;
-  matrixList.set("nx", 100);
-  matrixList.set("ny", 100);
-  matrixList.set("matrixType","Laplace2D");
-  RCP<Matrix> A= TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrix(matrixList);
-  if(A.is_null()) TEST_EQUALITY(TestHelpers::Parameters::getLib(),Xpetra::UseEpetra); // Don't run test for Epetra
-  
+  matrixList.set("nx",          100);
+  matrixList.set("ny",          100);
+  matrixList.set("matrixType",  "Laplace2D");
 
-  Hierarchy H(A);
-  H.SetMaxCoarseSize(2*A->getGlobalNumRows()); // set max coarse size to fit problem size (-> 1 level method)
-  H.setVerbLevel(Teuchos::VERB_HIGH);
+  // Construct block matrix
+  RCP<Matrix>           A        = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrix(matrixList);
+  RCP<const Map>        rangeMap = A->getRangeMap();
+  Xpetra::UnderlyingLib lib      = rangeMap->lib();
 
-  // Build a CoarseSolver Factory to do SGS
+  // Construct our own point operators for level 1
+  matrixList.set("nx", matrixList.get<int>("nx")*3);
+  matrixList.set("ny", matrixList.get<int>("ny"));
+  RCP<Matrix> A_point = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixList, lib);;
+
+  out << "===== Setting up helper hierarchy =====" << std::endl;
+
+  // Setup helper hierarchy
+  Hierarchy Haux(A_point);
+  Haux.SetMaxCoarseSize(1);
+  Haux.SetDefaultVerbLevel(MueLu::None);
+
+  FactoryManager Maux;
+  const FactoryBase* nullFactory = Maux.GetFactory("Nullspace").get();
+
+  Haux.Keep("Nullspace", nullFactory);
+
+  // Level 1 nullspace is only constructed/requested by level 2 factories. So
+  // we need at least three level hierarchy here, unless we somehow call
+  // NullspaceFactory::Build after hierarchy setup
+  Haux.Setup(Maux, 0, 3);
+  TEST_EQUALITY(Haux.GetNumLevels(), 3);
+
+  // Build block SGS smoother
   std::string ifpack2Type;
-  Teuchos::ParameterList ifpack2List;
+  ParameterList ifpack2List;
   ifpack2Type = "RELAXATION";
-  ifpack2List.set("relaxation: sweeps", (LO) 2);
-  ifpack2List.set("relaxation: damping factor", 1.0); 
-  ifpack2List.set("relaxation: type", "Symmetric Gauss-Seidel");
+  ifpack2List.set("relaxation: sweeps",         (LO) 2);
+  ifpack2List.set("relaxation: damping factor", 1.0);
+  ifpack2List.set("relaxation: type",           "Symmetric Gauss-Seidel");
   RCP<SmootherPrototype> smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type,ifpack2List) );
-  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
+  RCP<SmootherFactory>   SmooFact  = rcp( new SmootherFactory(smooProto) );
 
-  // Multigrid setup phase (using default parameters)
-  FactoryManager M0; // how to build aggregates and smoother of the first level
-  M0.SetFactory("CoarseSolver", SmooFact);
+  // Setup hierarchy managers
+  // We need three managers due to restriction in HierarchyHelpers: they
+  // request R, A, and P for coarse level even if User provides them The quick
+  // fix proposed here is to simply set corresponding fatories to NoFactory, so
+  // they would fetch user data.
+  FactoryManager M0, M1, M2;
+  M0.SetFactory("Smoother", SmooFact);
+  M1.SetFactory("A",        MueLu::NoFactory::getRCP());
+  M1.SetFactory("P",        MueLu::NoFactory::getRCP());
+  M1.SetFactory("R",        MueLu::NoFactory::getRCP());
 
-  bool r = H.Setup(0, Teuchos::null,  ptrInArg(M0), Teuchos::null); 
-  TEST_EQUALITY(r, true);
+  out << "===== Setting up mixed hierarchy =====" << std::endl;
+
+  // Setup mixed hierarchy
+  HierarchyManager mueluManager;
+  mueluManager.AddFactoryManager(0, 1, Teuchos::rcpFromRef(M0));
+  mueluManager.AddFactoryManager(1, 1, Teuchos::rcpFromRef(M1));
+  mueluManager.AddFactoryManager(2, 1, Teuchos::rcpFromRef(M2));
+
+  RCP<Hierarchy> Hrcp = mueluManager.CreateHierarchy();
+  Hierarchy&     H    = *Hrcp;
+  H.SetDefaultVerbLevel(MueLu::Low | MueLu::Debug);
 
   RCP<Level> l0 = H.GetLevel(0);
+  l0->Set("A",          A);
+  H.AddNewLevel();
+  RCP<Level> l1     = H   .GetLevel(1);
+  RCP<Level> l1_aux = Haux.GetLevel(1);
+  l1->Set("P",          l1_aux->Get<RCP<Matrix> >     ("P"));
+  l1->Set("R",          l1_aux->Get<RCP<Matrix> >     ("R"));
+  l1->Set("A",          l1_aux->Get<RCP<Matrix> >     ("A"));
+  l1->Set("Nullspace",  l1_aux->Get<RCP<MultiVector> >("Nullspace", nullFactory));
 
-  TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
-  TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  mueluManager.SetupHierarchy(H);
 
-  TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
-  TEST_EQUALITY(l0->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
-  //TEST_EQUALITY(l0->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final); // direct solve
+  out << "===== Solving =====" << std::endl;
 
   RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRangeMap(), 1);
   RCP<MultiVector> X   = MultiVectorFactory::Build(A->getDomainMap(), 1);
   RHS->setSeed(846930886);
   RHS->randomize();
-  X->putScalar( (SC) 0.0);
+  X->putScalar( Teuchos::ScalarTraits<SC>::zero());
 
-  int iterations=10;
+  int iterations = 10;
+  H.IsPreconditioner(false);
   H.Iterate(*RHS, *X, iterations);
+
   }
 #endif
   TEST_EQUALITY(0,0);

@@ -440,16 +440,27 @@ public:
 
 namespace Kokkos {
 
-template < class WorkArgTag >
-class TeamPolicy< Kokkos::Serial , WorkArgTag > {
+/* 
+ * < Kokkos::Serial , WorkArgTag >
+ * < WorkArgTag , Impl::enable_if< Impl::is_same< Kokkos::Serial , Kokkos::DefaultExecutionSpace >::value >::type >
+ *
+ */
+template< class Arg0 , class Arg1 >
+class TeamPolicy< Arg0 , Arg1 , Kokkos::Serial >
+{
 private:
 
   const int m_league_size ;
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::Serial             execution_space ; ///< Execution space
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef TeamPolicy                 execution_policy ; ///< Execution policy
+  typedef Kokkos::Serial             execution_space ;  ///< Execution space
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Serial , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 
   inline int team_size() const { return 1 ; }
   inline int league_size() const { return m_league_size ; }
@@ -464,11 +475,18 @@ public:
     { }
 
   template< class FunctorType >
-  inline static
+  static
   int team_size_max( const FunctorType & ) { return 1 ; }
 
   typedef Impl::SerialTeamMember  member_type ;
 };
+
+} /* namespace Kokkos */
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
 
 template < unsigned int VectorLength, class WorkArgTag >
 class TeamVectorPolicy< VectorLength, Kokkos::Serial , WorkArgTag > {
@@ -494,7 +512,7 @@ public:
     { }
 
   template< class FunctorType >
-  inline static
+  static
   int team_size_max( const FunctorType & ) { return 1 ; }
 
   typedef Impl::SerialTeamVectorMember<VectorLength>  member_type ;
@@ -509,14 +527,11 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                 , Kokkos::Serial
-                 >
+class ParallelFor< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > >
 {
 private:
 
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > Policy ;
 
 public:
   // work tag is void
@@ -551,13 +566,10 @@ public:
 };
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                    , Kokkos::Serial
-                    >
+class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > >
 {
 public:
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > Policy ;
 
   typedef ReduceAdapter< FunctorType >  Reduce ;
   typedef typename Reduce::pointer_type pointer_type ;
@@ -622,14 +634,11 @@ public:
 };
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                  , Kokkos::Serial
-                  >
+class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > >
 {
 private:
 
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > Policy ;
   typedef ReduceAdapter< FunctorType >  Reduce ;
 
 public:
@@ -690,11 +699,27 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Serial , void > , Kokkos::Serial >
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > >
 {
 private:
-  typedef Kokkos::TeamPolicy< Kokkos::Serial , void > Policy ;
+
+  typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > Policy ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( TagType() , member ); }
+
 public:
 
   ParallelFor( const FunctorType & functor
@@ -705,13 +730,15 @@ public:
       Kokkos::Serial::scratch_memory_resize( 0 , shared_size );
 
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
-        functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) );
+        ParallelFor::template driver< typename Policy::work_tag >
+          ( functor , typename Policy::member_type(ileague,policy.league_size(),shared_size) );
+        // functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) );
       }
     }
 };
 
 template< unsigned int VectorLength, class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Serial , void > , Kokkos::Serial >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Serial , void > >
 {
 private:
   typedef Kokkos::TeamVectorPolicy< VectorLength,Kokkos::Serial , void > Policy ;
@@ -730,12 +757,32 @@ public:
     }
 };
 
-template< class FunctorType >
-class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::Serial , void > , Kokkos::Serial > {
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > > 
+{
 private:
-  typedef Kokkos::TeamPolicy< Kokkos::Serial , void > Policy ;
+
+  typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > Policy ;
   typedef ReduceAdapter< FunctorType >  Reduce ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member
+             ,       typename Reduce::reference_type update )
+    { functor( member , update ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member 
+             ,       typename Reduce::reference_type update )
+    { functor( TagType() , member , update ); }
+
 public:
+
   typedef typename Reduce::pointer_type pointer_type ;
 
   template< class ViewType >
@@ -755,7 +802,8 @@ public:
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
-        functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) , update );
+        ParallelReduce::template driver< typename Policy::work_tag >
+          ( functor , typename Policy::member_type(ileague,policy.league_size(),shared_size) , update );
       }
 
       Reduce::final( functor , result_ptr );

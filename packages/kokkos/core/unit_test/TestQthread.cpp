@@ -60,6 +60,7 @@
 
 #include <TestCrsArray.hpp>
 #include <TestTeam.hpp>
+#include <TestRange.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
@@ -96,6 +97,18 @@ TEST_F( qthread, view_api) {
   TestViewAPI< double , Kokkos::Qthread >();
 }
 
+TEST_F( qthread , range_tag )
+{
+  TestRange< Kokkos::Qthread >::test_for(1000);
+  TestRange< Kokkos::Qthread >::test_reduce(1000);
+  TestRange< Kokkos::Qthread >::test_scan(1000);
+}
+
+TEST_F( qthread , team_tag )
+{
+  TestTeamPolicy< Kokkos::Qthread >::test_for( 1000 );
+  TestTeamPolicy< Kokkos::Qthread >::test_reduce( 1000 );
+}
 
 TEST_F( qthread, crsarray) {
   TestCrsArray< Kokkos::Qthread >();

@@ -2,7 +2,7 @@
 
   <ParameterList name="CoalesceDrop">
     <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
-    <Parameter name="aggregation: drop scheme"            type="string" value="original"/>
+    <Parameter name="aggregation: drop scheme"            type="string" value="classical"/>
     <Parameter name="aggregation: drop tol"               type="double" value="0.02"/>
   </ParameterList>
 

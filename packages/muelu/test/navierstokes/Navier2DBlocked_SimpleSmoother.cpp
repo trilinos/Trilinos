@@ -254,7 +254,6 @@ int main(int argc, char *argv[]) {
   bOp->fillComplete();
   //////////////////////////////////////////////////////// finest Level
   RCP<MueLu::Level> Finest = rcp(new Level());
-  Finest->setlib(lib);
   Finest->setDefaultVerbLevel(Teuchos::VERB_NONE);
   Finest->Set("A",Teuchos::rcp_dynamic_cast<Matrix>(bOp));
 

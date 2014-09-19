@@ -177,9 +177,6 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError, "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) must be built before calling this function.");
 
     Level& level = *Levels_[coarseLevelID];
-    level.setlib(lib_);
-
-    CheckLevel(level, coarseLevelID);
 
     bool isFinestLevel = false;
     bool isLastLevel   = false;
@@ -197,7 +194,18 @@ namespace MueLu {
       // Record the communicator on the level (used for timers sync)
       level.SetComm(comm);
 #endif
+
+      // Set the Hierarchy library to match that of the finest level matrix,
+      // even if it was already set
+      lib_ = A->getRowMap()->lib();
+      level.setlib(lib_);
+
+    } else {
+      // Permeate library to a coarser level
+      level.setlib(lib_);
     }
+
+    CheckLevel(level, coarseLevelID);
 
     // Attach FactoryManager to the fine level
     RCP<SetFactoryManager> SFMFine;
@@ -294,8 +302,8 @@ namespace MueLu {
       const double maxCoarse2FineRatio = 0.8;
       if (Ac.is_null() || Ac->getGlobalNumRows() > maxCoarse2FineRatio*A->getGlobalNumRows()) {
         // Aggregation stagnated, aborting
-        GetOStream(Warnings0) << "Aggregation stagnated, aborting hierarchy construction.\n"
-            << "Please check your matrix and/or adjust your configuration file. Possible fixes:\n"
+        GetOStream(Warnings0) << "Aggregation stagnated. Please check your matrix and/or adjust your configuration file."
+            << "Possible fixes:\n"
             << "  - reduce the maximum number of levels\n"
             << "  - enable repartitioning\n"
             << "  - increase the minimum coarse size." << std::endl;
@@ -308,6 +316,7 @@ namespace MueLu {
         //     hierarchy construction will abort due to the stagnation check.
         //   - if the matrix is small enough, we could move it to one processor.
 
+        // GetOStream(Warnings0) << "Aborting hierarchy construction.\n"
         // isLastLevel = true;
       }
     }
@@ -386,7 +395,7 @@ namespace MueLu {
     GetOStream(Runtime0) << "Setup loop: startLevel = " << startLevel << ", lastLevel = " << lastLevel
         << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() < " << maxCoarseSize_ << ")" << std::endl;
 
-    Clear();
+    Clear(startLevel);
 
     // Setup multigrid levels
     int iLevel = 0;
@@ -421,11 +430,11 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Clear() {
-    if (GetNumberOfLevels())
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Clear(int startLevel) {
+    if (startLevel < GetNumberOfLevels())
       GetOStream(Runtime0) << "Clearing old data (if any)" << std::endl;
 
-    for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
+    for (int iLevel = startLevel; iLevel < GetNumberOfLevels(); iLevel++)
       Levels_[iLevel]->Clear();
   }
 

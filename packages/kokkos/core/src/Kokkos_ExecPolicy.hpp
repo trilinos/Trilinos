@@ -57,7 +57,7 @@ namespace Kokkos {
  *
  * Valid template argument options:
  *
- *  With a specificed execution space:
+ *  With a specified execution space:
  *    < ExecSpace , WorkTag , { IntConst | IntType } >
  *    < ExecSpace , WorkTag , void >
  *    < ExecSpace , { IntConst | IntType } , void >
@@ -74,7 +74,13 @@ namespace Kokkos {
  *
  *  Blocking is the granularity of partitioning the range among threads.
  */
-template< class Arg0 = void , class Arg1 = void , class Arg2 = void >
+template< class Arg0 = void , class Arg1 = void , class Arg2 = void 
+        , class ExecSpace =
+          // The first argument is the execution space,
+          // otherwise use the default execution space.
+          typename Impl::if_c< Impl::is_execution_space< Arg0 >::value , Arg0
+                             , Kokkos::DefaultExecutionSpace >::type
+        >
 class RangePolicy {
 private:
 
@@ -99,7 +105,6 @@ private:
   enum { Arg0_WorkTag = ! Arg0_ExecSpace && ! Arg0_IntConst && ! Arg0_IntType && ! Arg0_Void };
   enum { Arg1_WorkTag =   Arg0_ExecSpace && ! Arg1_IntConst && ! Arg1_IntType && ! Arg1_Void };
 
-
   enum { ArgOption_OK = Impl::StaticAssert< (
     ( Arg0_ExecSpace && Arg1_WorkTag && ( Arg2_IntConst || Arg2_IntType ) ) ||
     ( Arg0_ExecSpace && Arg1_WorkTag && Arg2_Void ) ||
@@ -110,12 +115,6 @@ private:
     ( ( Arg0_IntConst || Arg0_IntType ) && Arg1_Void && Arg2_Void ) ||
     ( Arg0_Void && Arg1_Void && Arg2_Void )
     ) >::value };
-
-  // The first argument is the execution space, otherwise the default execution space
-  typedef typename Impl::if_c< Arg0_ExecSpace , Arg0 ,
-          Kokkos::DefaultExecutionSpace
-          >::type
-    ExecSpace ;
 
   // The work argument tag is the first or second argument
   typedef typename Impl::if_c< Arg0_WorkTag , Arg0 ,
@@ -198,6 +197,7 @@ public:
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
 
@@ -221,26 +221,28 @@ namespace Kokkos {
  *    < WorkTag , void >
  *    < void , void >
  */
-template< class Arg0 = void , class Arg1 = void >
+template< class Arg0 = void
+        , class Arg1 = void
+        , class ExecSpace =
+          // If the first argument is not an execution
+          // then use the default execution space.
+          typename Impl::if_c< Impl::is_execution_space< Arg0 >::value , Arg0
+                             , Kokkos::DefaultExecutionSpace >::type
+        >
 class TeamPolicy {
 private:
 
   enum { Arg0_ExecSpace = Impl::is_execution_space< Arg0 >::value };
-  enum { Arg0_Void      = Impl::is_same< Arg0 , void >::value };
   enum { Arg1_Void      = Impl::is_same< Arg1 , void >::value };
+  enum { ArgOption_OK   = Impl::StaticAssert< ( Arg0_ExecSpace || Arg1_Void ) >::value };
 
-  enum { ArgOption_OK = Impl::StaticAssert< ( Arg0_ExecSpace || Arg1_Void ) >::value };
-
-  typedef typename Impl::if_c< Arg0_ExecSpace , Arg0 , Kokkos::DefaultExecutionSpace >::type
-    ExecSpace ;
-
-  typedef typename Impl::if_c< Arg0_ExecSpace , Arg1 , Arg0 >::type
-    WorkTag ;
+  typedef typename Impl::if_c< Arg0_ExecSpace , Arg1 , Arg0 >::type WorkTag ;
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef ExecSpace                  execution_space ; ///< Execution space
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef ExecSpace                  execution_space ;  ///< Execution space
+  typedef TeamPolicy                 execution_policy ;
   typedef WorkTag                    work_tag ;
 
   /** \brief  Query maximum team size for a given functor.
@@ -326,6 +328,7 @@ public:
 
 } // namespace Kokkos
 
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace Kokkos {

@@ -187,11 +187,12 @@ public:
 
 namespace Kokkos {
 
-template< class Policy = Kokkos::DefaultExecutionSpace >
+/** \brief  If the argument is an execution space then a serial task in that space */
+template< class Arg0 = Kokkos::DefaultExecutionSpace >
 class TaskPolicy {
 public:
 
-  typedef typename Policy::execution_space  execution_space ;
+  typedef typename Arg0::execution_space  execution_space ;
 
   template< class A1 , class A2 >
   void wait( const Future<A1,A2> & ) const ;
@@ -224,19 +225,19 @@ public:
 // spawn( M.depends(n,d).foreach(K) , functor );
 // M.depends(n,d).foreach(K).spawn( functor );
 
-template< class PolicyType , class FunctorType >
+template< class Arg0 , class FunctorType >
 Future< typename FunctorType::value_type
-      , typename PolicyType::execution_space >
+      , typename Arg0::execution_space >
 inline
-spawn( const TaskPolicy< PolicyType > & policy
-     , const FunctorType              & functor )
+spawn( const TaskPolicy< Arg0 > & policy
+     , const FunctorType        & functor )
 { return policy.spawn( functor ); }
 
-template< class PolicyType , class A1 , class A2 >
-void wait( const TaskPolicy< PolicyType > & policy 
-         , const Future<A1,A2>            & future
+template< class Arg0 , class A1 , class A2 >
+void wait( const TaskPolicy< Arg0 > & policy 
+         , const Future<A1,A2>      & future
          , typename Impl::enable_if<
-             Impl::is_same< typename PolicyType::execution_space
+             Impl::is_same< typename Arg0::execution_space
                           , typename Future<A1,A2>::execution_space >::value
           >::type * = 0 )
 { policy.wait( future ); }

@@ -72,15 +72,21 @@
 // parameters, only for the commonly used case of ILUT as the
 // subdomain solver's type.
 
+// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
+// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// preconditioners can and should do dynamic casts if they need a type
+// more specific than RowMatrix.
+
 #define IFPACK2_INST_ADDITIVE_SCHWARZ(S,LO,GO) \
-  template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO > >; \
-  template class AdditiveSchwarz<Tpetra::RowMatrix< S, LO, GO > >; 
+  template class AdditiveSchwarz<Tpetra::RowMatrix< S, LO, GO > >; \
+  template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO > >;
 
 #define IFPACK2_INST_ADDITIVE_SCHWARZ_ILUT(S,LO,GO) \
-  template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO >, \
-                                 Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO > > >; \
   template class AdditiveSchwarz<Tpetra::RowMatrix< S, LO, GO >, \
-                                 Ifpack2::ILUT<Tpetra::RowMatrix< S, LO, GO > > >;
+                                 Ifpack2::ILUT<Tpetra::RowMatrix< S, LO, GO > > >; \
+  template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO >, \
+                                 Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO > > >;
+
 
 namespace Ifpack2 {
 

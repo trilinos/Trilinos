@@ -558,7 +558,18 @@ describe (Teuchos::FancyOStream &out,
 
 } // namespace Ifpack2
 
+// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
+// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// preconditioners can and should do dynamic casts if they need a type
+// more specific than RowMatrix.
+//
+// In fact, Krylov really doesn't _need_ the RowMatrix methods; it
+// could very well just rely on the Operator interface.  initialize()
+// need only check whether the domain and range Maps have changed
+// (which would necessitate reinitializing the Krylov solver).
+
 #define IFPACK2_KRYLOV_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::Krylov< Tpetra::RowMatrix<S, LO, GO, N> >; \
   template class Ifpack2::Krylov< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
 #endif /* IFPACK2_KRYLOV_DEF_HPP */

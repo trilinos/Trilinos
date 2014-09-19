@@ -260,8 +260,6 @@ int main(int argc, char *argv[]) {
   RCP<MueLu::Level> Finest = rcp(new Level());
   Finest->setDefaultVerbLevel(VERB_NONE);
   Finest->Set("A",rcp_dynamic_cast<Matrix>(bOp));
-  Finest->setlib(Xpetra::UseEpetra);
-
 
   ///////////////////////////////////
   // Test Braess Sarazin Smoother as a solver
