@@ -63,6 +63,7 @@
 #include <Galeri_XpetraProblemFactory.hpp>
 
 #ifdef _MSC_VER
+#define NOMINMAX
 #include <windows.h> // for Sleep
 #endif
 
