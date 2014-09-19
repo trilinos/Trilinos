@@ -112,7 +112,7 @@ namespace Belos {
   /// for more information.
   template<class Scalar, class LO, class GO, class Node>
   class MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > {
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    typedef ::Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
   public:
     /// \brief Create a new MultiVector with \c numVecs columns.
     ///
@@ -749,7 +749,7 @@ namespace Belos {
 #ifdef HAVE_BELOS_TSQR
     /// \typedef tsqr_adaptor_type
     /// \brief TsqrAdaptor specialization for Tpetra::MultiVector
-    typedef Tpetra::TsqrAdaptor<Tpetra::MultiVector<Scalar, LO, GO, Node> > tsqr_adaptor_type;
+    typedef ::Tpetra::TsqrAdaptor< ::Tpetra::MultiVector<Scalar, LO, GO, Node> > tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
   };
 
@@ -761,9 +761,9 @@ namespace Belos {
   {
   public:
     static void
-    Apply (const Tpetra::Operator<Scalar,LO,GO,Node>& Op,
-           const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
-           Tpetra::MultiVector<Scalar,LO,GO,Node>& Y,
+    Apply (const ::Tpetra::Operator<Scalar,LO,GO,Node>& Op,
+           const ::Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
+           ::Tpetra::MultiVector<Scalar,LO,GO,Node>& Y,
            const ETrans trans = NOTRANS)
     {
       Teuchos::ETransp teuchosTrans = Teuchos::NO_TRANS;
@@ -783,7 +783,7 @@ namespace Belos {
     }
 
     static bool
-    HasApplyTranspose (const Tpetra::Operator<Scalar,LO,GO,Node>& Op)
+    HasApplyTranspose (const ::Tpetra::Operator<Scalar,LO,GO,Node>& Op)
     {
       return Op.hasTransposeApply ();
     }
@@ -793,7 +793,7 @@ namespace Belos {
   template<class Scalar, class LO, class GO, class Node>
   class MultiVecTraitsExt<Scalar, Tpetra::MultiVector<Scalar, LO, GO, Node> > {
   public:
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    typedef ::Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
     static ptrdiff_t GetGlobalLength (const MV& mv) {
       return static_cast<ptrdiff_t> (mv.getGlobalLength ());
     }
