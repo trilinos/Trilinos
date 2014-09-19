@@ -54,12 +54,17 @@ using Teuchos::ArrayView;
 // typemaps needed to handle that TYPE array.
 %define %teuchos_array_typemaps(TYPE, TYPECODE)
 
-// If an ArrayView argument has a const TYPE, then we know that the
-// argument is input only.  Therefore we allow any type of sequence to
-// be converted to a PyArrayObject and then extract the resulting data
-// pointer to construct the ArrayView.  If the conversion creates a
-// new PyArrayObject, then we have to be sure to decrement its
-// reference count once the ArrayView has been used.
+// If an ArrayView argument has a template parameter argument that is
+// a const TYPE, then we know that the argument is input only.
+// Therefore we allow any type of sequence to be converted to a
+// PyArrayObject and then extract the resulting data pointer to
+// construct the ArrayView.  If the conversion creates a new
+// PyArrayObject, then we have to be sure to decrement its reference
+// count once the ArrayView has been used.
+
+//////////////////////////////////////
+// Teuchos::ArrayView< const TYPE > //
+//////////////////////////////////////
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY,
            fragment="NumPy_Macros")
   (Teuchos::ArrayView< const TYPE >)
@@ -81,27 +86,21 @@ using Teuchos::ArrayView;
   if (is_new$argnum) Py_DECREF(npArray$argnum);
 }
 
+%typemap(out) Teuchos::ArrayView< const TYPE >
+{
+  npy_intp dims[1] = { $1.size() };
+  $result = PyArray_SimpleNewFromData(1, dims, TYPECODE, (void*) $1.getRawPtr());
+  if (!$result) SWIG_fail;
+}
+
+//////////////////////////////////////////////
+// Teuchos::ArrayView< const TYPE > const & //
+//////////////////////////////////////////////
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY,
            fragment="NumPy_Macros")
-  (Teuchos::ArrayView< TYPE > const &)
+  (Teuchos::ArrayView< const TYPE > const &)
 {
   $1 = is_array($input) || PySequence_Check($input);
-}
-
-%typemap(in) Teuchos::ArrayView< TYPE > const &
-(int is_new = 0,
- PyArrayObject * npArray = NULL,
- Teuchos::ArrayView< TYPE > temp)
-{
-  npArray = obj_to_array_contiguous_allow_conversion($input, TYPECODE, &is_new);
-  if (!npArray) SWIG_fail;
-  temp = Teuchos::arrayView( (TYPE*) array_data(npArray), array_size(npArray, 0));
-  $1 = &temp;
-}
-
-%typemap(freearg) Teuchos::ArrayView< TYPE > const &
-{
-  if (is_new$argnum) Py_DECREF(npArray$argnum);
 }
 
 %typemap(in) Teuchos::ArrayView< const TYPE > const &
@@ -120,9 +119,14 @@ using Teuchos::ArrayView;
   if (is_new$argnum) Py_DECREF(npArray$argnum);
 }
 
-// If an ArrayView argument has a non-const TYPE, then the default
-// behavior is to assume that the array is input/output.  Therefore
-// the input python argument must be a NumPy array.
+// If an ArrayView argument has template parameter argument that is a
+// non-const TYPE, then the default behavior is to assume that the
+// array is input/output.  Therefore the input python argument must be
+// a NumPy array.
+
+////////////////////////////////
+// Teuchos::ArrayView< TYPE > //
+////////////////////////////////
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY,
            fragment="NumPy_Macros")
   (Teuchos::ArrayView< TYPE >)
@@ -137,16 +141,6 @@ using Teuchos::ArrayView;
   $1 = Teuchos::arrayView( (TYPE*) array_data(npArray), array_size(npArray, 0));
 }
 
-// If an Array or ArrayView is output, with either a const or
-// non-const TYPE, convert the underlying data to a NumPy array of
-// correct type.
-%typemap(out) Teuchos::Array< TYPE >
-{
-  npy_intp dims[1] = { $1.size() };
-  $result = PyArray_SimpleNewFromData(1, dims, TYPECODE, (void*) $1.getRawPtr());
-  if (!$result) SWIG_fail;
-}
-
 %typemap(out) Teuchos::ArrayView< TYPE >
 {
   npy_intp dims[1] = { $1.size() };
@@ -154,11 +148,23 @@ using Teuchos::ArrayView;
   if (!$result) SWIG_fail;
 }
 
-%typemap(out) Teuchos::Array< TYPE > const &
+////////////////////////////////////////
+// Teuchos::ArrayView< TYPE > const & //
+////////////////////////////////////////
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY,
+           fragment="NumPy_Macros")
+  (Teuchos::ArrayView< TYPE > const &)
 {
-  npy_intp dims[1] = { $1->size() };
-  $result = PyArray_SimpleNewFromData(1, dims, TYPECODE, (void*) $1->getRawPtr());
-  if (!$result) SWIG_fail;
+  $1 = is_array($input);
+}
+
+%typemap(in) Teuchos::ArrayView< TYPE > const &
+(Teuchos::ArrayView< TYPE > temp)
+{
+  PyArrayObject * npArray = obj_to_array_no_conversion($input, TYPECODE);
+  if (!npArray) SWIG_fail;
+  temp = Teuchos::arrayView( (TYPE*) array_data(npArray), array_size(npArray, 0));
+  $1 = &temp;
 }
 
 %typemap(out) Teuchos::ArrayView< TYPE > const &
@@ -168,14 +174,30 @@ using Teuchos::ArrayView;
   if (!$result) SWIG_fail;
 }
 
-%typemap(out) Teuchos::Array< const TYPE >
+////////////////////////////
+// Teuchos::Array< TYPE > //
+////////////////////////////
+%typemap(out) Teuchos::Array< TYPE >
 {
   npy_intp dims[1] = { $1.size() };
   $result = PyArray_SimpleNewFromData(1, dims, TYPECODE, (void*) $1.getRawPtr());
   if (!$result) SWIG_fail;
 }
 
-%typemap(out) Teuchos::ArrayView< const TYPE >
+////////////////////////////////////
+// Teuchos::Array< TYPE > const & //
+////////////////////////////////////
+%typemap(out) Teuchos::Array< TYPE > const &
+{
+  npy_intp dims[1] = { $1->size() };
+  $result = PyArray_SimpleNewFromData(1, dims, TYPECODE, (void*) $1->getRawPtr());
+  if (!$result) SWIG_fail;
+}
+
+//////////////////////////////////
+// Teuchos::Array< const TYPE > //
+//////////////////////////////////
+%typemap(out) Teuchos::Array< const TYPE >
 {
   npy_intp dims[1] = { $1.size() };
   $result = PyArray_SimpleNewFromData(1, dims, TYPECODE, (void*) $1.getRawPtr());
