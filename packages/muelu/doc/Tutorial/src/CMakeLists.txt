@@ -54,6 +54,6 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(userguide_srcfiles_cp
-    SOURCE_FILES ScalingTest.cpp ScalingTestParamList.cpp
+    SOURCE_FILES ScalingTest.cpp
     )
 ENDIF()
