@@ -4016,14 +4016,14 @@ static int process_event(
                 ib_wr->last_op=IB_OP_NEW_REQUEST;
                 ib_wr->state=NNTI_IB_WR_STATE_RDMA_COMPLETE;
 
-                if (transport_global_data.req_queue.req_received == transport_global_data.srq_count) {
-                    log_debug(debug_level, "resetting req_queue.req_received to 0");
-                    transport_global_data.req_queue.req_received=0;
-                }
-                if (transport_global_data.req_queue.req_received != (ib_wr->offset/ib_wr->length)) {
-                    log_warn(debug_level, "req_queue.req_received(%llu) != (ib_wr->offset(%llu)/ib_wr->length(%llu))",
-                            transport_global_data.req_queue.req_received, ib_wr->offset, ib_wr->length);
-                }
+//                if (transport_global_data.req_queue.req_received == transport_global_data.srq_count) {
+//                    log_debug(debug_level, "resetting req_queue.req_received to 0");
+//                    transport_global_data.req_queue.req_received=0;
+//                }
+//                if (transport_global_data.req_queue.req_received != (ib_wr->offset/ib_wr->length)) {
+//                    log_warn(debug_level, "req_queue.req_received(%llu) != (ib_wr->offset(%llu)/ib_wr->length(%llu))",
+//                            transport_global_data.req_queue.req_received, ib_wr->offset, ib_wr->length);
+//                }
                 transport_global_data.req_queue.req_received++;
 
                 if (ib_wr->cq == transport_global_data.req_cq) {
