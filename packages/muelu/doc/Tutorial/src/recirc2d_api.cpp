@@ -203,12 +203,10 @@ int main(int argc, char *argv[]) {
   RCP<Hierarchy> H = rcp ( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   H->SetMaxCoarseSize(maxCoarseSize);
-  H->setlib(Xpetra::UseEpetra);
 
   // build finest Level
   RCP<MueLu::Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->setlib(Xpetra::UseEpetra);
   Finest->Set("A",A);
   Finest->Set("Nullspace",nullspace);
 

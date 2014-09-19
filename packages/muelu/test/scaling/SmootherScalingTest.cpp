@@ -190,7 +190,10 @@ int main(int argc, char *argv[]) {
       level.SetFactoryManager(fm);
       level.SetLevelID(0);
       level.Set("A", A);
-      level.setlib(xpetraParameters.GetLib());
+
+      // We need an actual call to setlib, as at no point we call any of
+      // Hierarchy::Setup() functions
+      level.setlib(A->getRowMap()->lib());
     }
 
     TimeMonitor tm(*TimeMonitor::getNewTimer("SmootherScalingTest: 2 - Smoother Setup"));
