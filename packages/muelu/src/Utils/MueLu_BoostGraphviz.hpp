@@ -7,7 +7,7 @@
 //       pragma push/pop available since gcc 4.6
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_BOOST) and defined(HAVE_MUELU_BOOST_FOR_REAL)
+#if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL)
 
 #ifdef __GNUC__
 # if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
