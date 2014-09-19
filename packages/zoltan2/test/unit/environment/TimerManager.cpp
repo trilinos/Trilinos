@@ -52,7 +52,14 @@
 #include <Zoltan2_TimerManager.hpp>
 
 #include <Teuchos_DefaultComm.hpp>
+
+#ifdef _MSC_VER
+#define NOMINMAX
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
+
 
 using Zoltan2::TimerManager;
 using Zoltan2::MACRO_TIMERS;
@@ -62,22 +69,31 @@ using Zoltan2::BOTH_TIMERS;
 typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> myTypes_t;
 typedef Zoltan2::BasicIdentifierAdapter<myTypes_t> inputAdapter_t;
 
+static void sleep_wrap(unsigned int seconds)
+{
+#ifdef _MSC_VER
+	Sleep(1000*seconds);
+#else
+	sleep(seconds);
+#endif
+}
+
 void goToSleep(const RCP<const Zoltan2::Environment> &env)
 {
   env->timerStart(MICRO_TIMERS, string("sleep for 5 seconds"));
-  sleep(5);
+  sleep_wrap(5);
   env->timerStop(MICRO_TIMERS, string("sleep for 5 seconds"));
 
   env->timerStart(MICRO_TIMERS, string("sleep for 3 seconds (twice)"));
-  sleep(3);
+  sleep_wrap(3);
   env->timerStop(MICRO_TIMERS, string("sleep for 3 seconds (twice)"));
 
   env->timerStart(MICRO_TIMERS, string("sleep for 2 seconds"));
-  sleep(2);
+  sleep_wrap(2);
   env->timerStop(MICRO_TIMERS, string("sleep for 2 seconds"));
 
   env->timerStart(MICRO_TIMERS, string("sleep for 3 seconds (twice)"));
-  sleep(3);
+  sleep_wrap(3);
   env->timerStop(MICRO_TIMERS, string("sleep for 3 seconds (twice)"));
 }
 
