@@ -412,7 +412,14 @@ Time Scheduler::adjust_dt(Time dt, Time time)
   if (delta <= 0.0)
     return dt;
 
-  double steps = ceil(delta / dt);
+  TolerancedTime delta_range = get_toleranced_time_range(delta);
+  double steps;
+  if (dt >= delta_range.min && dt <= delta_range.max) {
+    steps = 1.0;
+  }
+  else {
+    steps = ceil(delta / dt);
+  }
   assert(steps > 0);
 
   // If 'steps' is less than 'lookAhead', then calculate
@@ -426,7 +433,8 @@ Time Scheduler::adjust_dt(Time dt, Time time)
     if (proj_time < next) {
       new_dt *= (1.0 + DBL_EPSILON);
     }
-    return new_dt;
+    std::cerr << "SCHEDULER: " << steps << "\t" << delta << "\t" << dt << "\t" << delta-dt << "\t" << tolerance_ << "\n" ;
+   return new_dt;
   }
   return dt;
 }
