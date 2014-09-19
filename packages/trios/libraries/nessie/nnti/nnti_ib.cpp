@@ -1296,6 +1296,8 @@ NNTI_result_t NNTI_ib_alloc (
 {
     NNTI_result_t nnti_rc=NNTI_OK;
 
+    trios_declare_timer(callTime);
+
     log_debug(nnti_debug_level, "enter");
 
     assert(trans_hdl);
@@ -1318,6 +1320,12 @@ NNTI_result_t NNTI_ib_alloc (
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_buffer(logger_get_file(), "reg_buf",
                 "end of NNTI_ib_alloc", reg_buf);
+    }
+
+    if (config.use_memset) {
+        trios_start_timer(callTime);
+        memset(buf, 0, element_size*num_elements);
+        trios_stop_timer("memset", callTime);
     }
 
     log_debug(nnti_debug_level, "exit");
@@ -3675,11 +3683,6 @@ static struct ibv_mr *register_memory_segment(
 
     log_debug(nnti_debug_level, "enter buffer(%p) len(%d)", buf, len);
 
-    if (config.use_memset) {
-        trios_start_timer(callTime);
-        memset(buf, 0, len);
-        trios_stop_timer("memset", callTime);
-    }
     if (config.use_mlock) {
         trios_start_timer(callTime);
         mlock(buf, len);
