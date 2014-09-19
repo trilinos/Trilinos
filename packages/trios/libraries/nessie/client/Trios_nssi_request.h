@@ -121,6 +121,9 @@ extern "C" {
                 /** @brief The opcode of the remote function. */
                 int opcode;
 
+                /** @brief Points to the memory reserved for the args. */
+                void *args;
+
                 /** @brief Points to the memory reserved for the result. */
                 void *result;
 
@@ -154,20 +157,27 @@ extern "C" {
 
                 int use_long_args;
 
+                /** @brief Handle for the buffer where the short request will be put.  */
+                NNTI_buffer_t      *short_request_hdl;
+                NNTI_buffer_t       short_request;
+                /** @brief Work request to track the short request transfer.  */
+                NNTI_work_request_t short_request_wr;
+
                 /** @brief Handle for the buffer where the long arguments reside.  */
-                NNTI_buffer_t       long_args_hdl;
+                NNTI_buffer_t      *long_args_hdl;
+                NNTI_buffer_t       long_args;
                 /** @brief Work request to track the long arguments transfer.  */
                 NNTI_work_request_t long_args_wr;
 
                 /** @brief Handle for the buffer where the data reside.  */
-                NNTI_buffer_t *bulk_data_hdl;
-                NNTI_buffer_t bulk_data;
+                NNTI_buffer_t      *bulk_data_hdl;
+                NNTI_buffer_t       bulk_data;
                 /** @brief Work request to track the bulk data transfer.  */
                 NNTI_work_request_t bulk_data_wr;
 
                 /** @brief Handle for the buffer where the short result will be put.  */
-                NNTI_buffer_t *short_result_hdl;
-                NNTI_buffer_t short_result;
+                NNTI_buffer_t      *short_result_hdl;
+                NNTI_buffer_t       short_result;
                 /** @brief Work request to track the short result transfer.  */
                 NNTI_work_request_t short_result_wr;
 
