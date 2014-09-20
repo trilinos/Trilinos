@@ -213,6 +213,7 @@ public:
 #endif
             , ConnectivityMap const* arg_connectivity_map = NULL
             , FieldDataManager *field_dataManager = NULL
+            , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
             );
 
   //------------------------------------

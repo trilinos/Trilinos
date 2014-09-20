@@ -36,12 +36,21 @@ class BucketRepository
   typedef tracking_allocator<Bucket, BucketTag> bucket_allocator;
 
 public:
-  ~BucketRepository();
+  //------------------------------------
+  /** \brief  Query the upper bound on the number of mesh entities
+    *         that may be associated with a single bucket.
+    */
+  static const unsigned max_bucket_capacity = 1024;
+  static const unsigned default_bucket_capacity = 512;
+
   BucketRepository(
       BulkData & mesh,
       unsigned entity_rank_count,
-      const ConnectivityMap & connectivity_map
+      const ConnectivityMap & connectivity_map,
+      unsigned bucket_capacity = default_bucket_capacity
       );
+
+  ~BucketRepository();
 
   /** \brief  Query to get all buckets of a given entity rank.
    *
@@ -58,13 +67,6 @@ public:
 
     return m_buckets[ rank ];
   }
-
-  //------------------------------------
-  /** \brief  Query the upper bound on the number of mesh entities
-    *         that may be associated with a single bucket.
-    */
-  static const unsigned max_bucket_capacity = 1024;
-  static const unsigned default_bucket_capacity = 512;
 
   BulkData& mesh() const { return m_mesh; }
 
@@ -110,6 +112,8 @@ public:
 
   bool being_destroyed() const { return m_being_destroyed; }
 
+  unsigned get_bucket_capacity() const { return m_bucket_capacity; }
+
 private:
 
   BucketRepository();
@@ -132,6 +136,8 @@ private:
   std::vector<bool> m_need_sync_from_partitions;
 
   ConnectivityMap m_connectivity_map;
+
+  unsigned m_bucket_capacity;
 
   bool m_being_destroyed;
 };

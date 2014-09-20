@@ -378,6 +378,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 #endif
                     , ConnectivityMap const* arg_connectivity_map
                     , FieldDataManager *field_data_manager
+                    , unsigned bucket_capacity
                     )
   : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
     m_entity_repo(*this),
@@ -432,9 +433,9 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
         *this,
         mesh_meta_data.entity_rank_count(),
         arg_connectivity_map != NULL ? *arg_connectivity_map :
-           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::default_map_2d() : ConnectivityMap::default_map())
+        (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::default_map_2d() : ConnectivityMap::default_map()),
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
-                        )
+        bucket_capacity)
 #ifdef STK_MESH_MODIFICATION_COUNTERS
 ,
     m_modification_counters()
@@ -2250,7 +2251,6 @@ void BulkData::get_entities(EntityRank rank, Selector const& selector, EntityVec
      }
   }
 }
-
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

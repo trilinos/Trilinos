@@ -1244,3 +1244,27 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
   }
 }
 
+TEST ( UnitTestBulkData_new , testCustomBucketCapacity )
+{
+  const int spatial_dimension = 3;
+
+  MetaData meta(spatial_dimension);
+
+  Part  & universal = meta.universal_part ();
+
+  meta.commit();
+
+  PartVector    create_vector;
+  create_vector.push_back ( &universal );
+
+  const unsigned non_standard_bucket_capacity = 42;
+  BulkData bulk ( meta , MPI_COMM_WORLD , true, NULL, NULL, non_standard_bucket_capacity);
+
+  bulk.modification_begin();
+
+  EntityId elemID = bulk.parallel_rank()+1;
+  Entity elem = bulk.declare_entity ( stk::topology::ELEMENT_RANK , elemID, create_vector );
+  bulk.modification_end();
+
+  EXPECT_EQ( bulk.bucket(elem).capacity(), non_standard_bucket_capacity );
+}

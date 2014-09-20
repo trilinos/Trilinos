@@ -503,7 +503,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     partition_key[ partition_key[0] ] = 0;
     Bucket *bucket = m_repository->allocate_bucket(m_rank, partition_key,
-                                                   m_repository->default_bucket_capacity);
+                                                   m_repository->get_bucket_capacity());
     bucket->m_partition = this;
     bucket->set_first_bucket_in_partition(bucket);
     m_buckets.push_back(bucket);
@@ -518,7 +518,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     partition_key[ partition_key[0] ] = m_buckets.size();
     bucket = m_repository->allocate_bucket(m_rank, partition_key,
-                                           m_repository->default_bucket_capacity);
+                                           m_repository->get_bucket_capacity());
     bucket->m_partition = this;
     bucket->set_first_bucket_in_partition(m_buckets[0]);
     m_buckets[0]->set_last_bucket_in_partition(bucket);

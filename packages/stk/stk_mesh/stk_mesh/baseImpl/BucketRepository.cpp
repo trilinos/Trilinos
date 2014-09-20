@@ -30,12 +30,14 @@ namespace impl {
 
 BucketRepository::BucketRepository(BulkData & mesh,
                                    unsigned entity_rank_count,
-                                   const ConnectivityMap& connectivity_map)
+                                   const ConnectivityMap& connectivity_map,
+                                   unsigned bucket_capacity)
   : m_mesh(mesh),
     m_buckets(entity_rank_count),
     m_partitions(entity_rank_count),
     m_need_sync_from_partitions(entity_rank_count, false),
     m_connectivity_map(connectivity_map),
+    m_bucket_capacity(bucket_capacity),
     m_being_destroyed(false)
 {
   // Nada.
