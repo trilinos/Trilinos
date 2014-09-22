@@ -41,7 +41,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace {
-
+//-BEGIN
 TEST(stkMeshHowTo, useConnectivityMap)
 {
     const unsigned spatialDimension = 2;
@@ -107,6 +107,6 @@ TEST(stkMeshHowTo, useConnectivityMap)
     EXPECT_EQ(2u, numEdges);
     EXPECT_EQ(numEdges, connected_edges.size());
 }
-
+//-END
 }
 

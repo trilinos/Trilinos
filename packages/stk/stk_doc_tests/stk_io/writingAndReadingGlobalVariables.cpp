@@ -44,6 +44,7 @@
 
 namespace
 {
+//-BEGIN
 TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
 {
     const std::string restartFileName = "OneGlobalDouble.restart";
@@ -104,4 +105,5 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
 
     unlink(restartFileName.c_str());
 }
+//-END
 }

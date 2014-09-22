@@ -41,6 +41,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace {
+//-BEGIN
 TEST(stkMeshHowTo, useCustomConnectivityMap)
 {
     const unsigned spatialDimension = 2;
@@ -100,4 +101,6 @@ TEST(stkMeshHowTo, useCustomConnectivityMap)
     unsigned expectedNumEdgesPerNode = 0;//this would be 2 if we didn't disable
     EXPECT_EQ(expectedNumElemsPerEdge, mesh.num_elements(elemEdges[0]));
     EXPECT_EQ(expectedNumEdgesPerNode, mesh.num_edges(elemNodes[0]));
-} }
+}
+//-END
+}

@@ -41,6 +41,7 @@
 namespace stk { namespace mesh { class Part; } }
 
 namespace {
+//-BEGIN
 TEST(stkMeshHowTo, setAndGetTopology)
 {
     const unsigned spatialDimension = 3;
@@ -85,4 +86,5 @@ TEST(stkMeshHowTo, setAndGetTopology)
     EXPECT_EQ(stk::topology::TET_4, elem1_topology);
     EXPECT_EQ(stk::topology::HEX_8, elem2_topology);
 }
+//-END
 }

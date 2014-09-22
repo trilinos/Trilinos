@@ -30,6 +30,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+//-BEGIN
 
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
@@ -95,3 +96,4 @@ void assertPairInResults(Id a, Id b, const std::vector<std::pair<Id, Id> > &sear
     ASSERT_TRUE(foundExpectedPairInResults);
 }
 }
+//-END

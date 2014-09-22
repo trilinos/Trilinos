@@ -35,6 +35,7 @@
 #include <stk_topology/topology.hpp>
 
 namespace {
+//-BEGIN
 TEST(stk_topology_how_to, runtime_vs_compiletime_topology )
 {
     stk::topology runtime_hex8 = stk::topology::HEX_8;
@@ -49,5 +50,6 @@ TEST(stk_topology_how_to, runtime_vs_compiletime_topology )
     double compile_time_sized_array[compiletime_num_nodes];
     EXPECT_EQ(sizeof(compile_time_sized_array), sizeof(double)*compiletime_num_nodes);
 }
+//-END
 }
 

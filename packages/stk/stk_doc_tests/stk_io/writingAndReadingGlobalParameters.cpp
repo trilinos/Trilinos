@@ -45,6 +45,7 @@
 
 namespace
 {
+  //-BEGIN
   TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParameters)
   {
     // ============================================================
@@ -148,4 +149,5 @@ namespace
     // CLEAN UP
     unlink(file_name.c_str());
   }
+  //-END
 }

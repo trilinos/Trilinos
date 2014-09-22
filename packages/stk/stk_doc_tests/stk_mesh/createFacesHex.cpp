@@ -45,7 +45,7 @@ namespace stk { namespace mesh { class BulkData; } }
 
 namespace
 {
-
+//-BEGIN
   TEST(StkMeshHowTo, CreateFacesHex)
   {
     // ============================================================
@@ -74,4 +74,5 @@ namespace
     // Edges are not generated, only faces.
     EXPECT_EQ(0u,   entityCounts[stk::topology::EDGE_RANK]);
   }
+//-END
 }
