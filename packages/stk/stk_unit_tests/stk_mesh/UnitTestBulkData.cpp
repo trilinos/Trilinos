@@ -2510,7 +2510,7 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
 
     EXPECT_NO_THROW( bulk.modification_end() );
     {
-       stk::mesh::Bucket & nodeABucket = bulk.bucket(sharedNodeA);
+       // stk::mesh::Bucket & nodeABkt = bulk.bucket(sharedNodeA);
        EXPECT_TRUE( nodeABucket.member(partA) );
        EXPECT_TRUE( nodeABucket.member(partB) );
        EXPECT_EQ( 4u, bulk.num_elements(sharedNodeA));
