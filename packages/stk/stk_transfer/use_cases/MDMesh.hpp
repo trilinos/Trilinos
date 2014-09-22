@@ -31,7 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-
 #include <boost/shared_ptr.hpp>
 
 #include <stk_mesh/base/Entity.hpp>

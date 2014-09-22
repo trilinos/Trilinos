@@ -1,3 +1,4 @@
+
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Governement retains certain rights in this software.
@@ -30,7 +31,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-//-BEGIN
+
 #include <gtest/gtest.h>
 #include <stk_util/environment/Scheduler.hpp>
 

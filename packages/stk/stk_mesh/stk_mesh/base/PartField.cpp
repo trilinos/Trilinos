@@ -31,7 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-
 #include <stk_mesh/base/PartField.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 

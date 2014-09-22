@@ -31,7 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-
 #include <stk_io/InputFile.hpp>
 #include <math.h>                       // for fmod
 #include <stddef.h>                     // for NULL, size_t

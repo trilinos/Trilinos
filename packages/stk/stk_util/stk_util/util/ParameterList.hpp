@@ -31,13 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-/*
- * IOParameterList.h
- *
- *  Created on: Oct 2, 2013
- *      Author: swbova
- */
-
 #ifndef PARAMETERLIST_H_
 #define PARAMETERLIST_H_
 

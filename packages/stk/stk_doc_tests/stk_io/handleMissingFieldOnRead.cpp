@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, etc
+#include <gtest/gtest.h>
 #include <stddef.h>                     // for size_t
 #include <unistd.h>                     // for unlink
 #include <iomanip>                      // for operator<<

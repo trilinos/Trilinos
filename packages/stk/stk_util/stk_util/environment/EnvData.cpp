@@ -31,7 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/EnvData.hpp>
 #if defined( STK_HAS_MPI)

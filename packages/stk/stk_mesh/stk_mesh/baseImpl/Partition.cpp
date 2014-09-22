@@ -31,10 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-/*
- * Partition.cpp
- *
- */
 #include <stk_mesh/baseImpl/Partition.hpp>
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData
