@@ -109,19 +109,19 @@ int main(int argc, char *argv[]) {
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName       = "scalingTest.xml"; clp.setOption("xml",                   &xmlFileName,      "read parameters from a file [default = 'scalingTest.xml']");
-  bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
-  int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
-  std::string dsolveType        = "cg", solveType;   clp.setOption("solver",                &dsolveType,       "solve type: (none | cg | gmres | standalone)");
-  double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,             "solver convergence tolerance");
+  std::string xmlFileName       = "scaling.xml";     clp.setOption("xml",                   &xmlFileName,       "read parameters from a file");
+  bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
+  int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT,  "write matrices to file (-1 means all; i>=0 means level i)");
+  std::string dsolveType        = "cg", solveType;   clp.setOption("solver",                &dsolveType,        "solve type: (none | cg | gmres | standalone)");
+  double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
 
-  std::string mapFile;                               clp.setOption("map",                   &mapFile,          "map data file");
-  std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,       "matrix data file");
-  std::string coordFile;                             clp.setOption("coords",                &coordFile,        "coordinates data file");
-  std::string nullFile;                              clp.setOption("nullspace",             &nullFile,         "nullspace data file");
-  int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,      "#times to rebuild hierarchy");
-  int         maxIts            = 200;               clp.setOption("its",                   &maxIts,           "maximum number of solver iterations");
-  bool        scaleResidualHistory = true;              clp.setOption("scale", "noscale",  &scaleResidualHistory, "scaled Krylov residual history");
+  std::string mapFile;                               clp.setOption("map",                   &mapFile,           "map data file");
+  std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,        "matrix data file");
+  std::string coordFile;                             clp.setOption("coords",                &coordFile,         "coordinates data file");
+  std::string nullFile;                              clp.setOption("nullspace",             &nullFile,          "nullspace data file");
+  int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
+  int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
+  bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -228,13 +228,12 @@ int main(int argc, char *argv[]) {
       map = Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm);
     comm->barrier();
 
-    if (lib == Xpetra::UseEpetra) {
+    const bool binaryFormat = false;
+
+    if (!binaryFormat && !map.is_null()) {
       A = Utils::Read(matrixFile, map);
 
     } else {
-      // Tpetra matrix reader is still broken, so instead we read in
-      // a matrix in a binary format and then redistribute it
-      const bool binaryFormat = true;
       A = Utils::Read(matrixFile, lib, comm, binaryFormat);
 
       if (!map.is_null()) {
@@ -250,8 +249,11 @@ int main(int argc, char *argv[]) {
 
     comm->barrier();
 
-    if (!coordFile.empty())
+    if (!coordFile.empty()) {
+      // NOTE: currently we only allow reading scalar matrices, thus coordinate
+      // map is same as matrix map
       coordinates = Utils2::ReadMultiVector(coordFile, map);
+    }
 
     if (!nullFile.empty())
       nullspace = Utils2::ReadMultiVector(nullFile, map);
@@ -436,7 +438,7 @@ int main(int argc, char *argv[]) {
         belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
         belosList.set("Output Frequency",      1);
         belosList.set("Output Style",          Belos::Brief);
-        if (!scaleResidualHistory) 
+        if (!scaleResidualHist)
           belosList.set("Implicit Residual Scaling", "None");
 
         // Create an iterative solver manager
@@ -455,14 +457,11 @@ int main(int argc, char *argv[]) {
           // Get the number of iterations for this solve.
           out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
 
-        }
-        catch(const std::exception& ex)
-        {
+        } catch(const std::exception& ex) {
           out << std::endl << "ERROR:  Belos threw an error!  The exception message is:" << std::endl;
           std::cout << ex.what() << std::endl;
-        }
-        
-        catch(...) {
+
+        } catch(...) {
           out << std::endl << "ERROR:  Belos threw an unknown error! " << std::endl;
         }
 
