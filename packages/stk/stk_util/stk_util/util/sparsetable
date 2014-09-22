@@ -1,3 +1,4 @@
+// STATIC COPYRIGHT NOTICE
 // Copyright (c) 2005, Google Inc.
 // All rights reserved.
 //
