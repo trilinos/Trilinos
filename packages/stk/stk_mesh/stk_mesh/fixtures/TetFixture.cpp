@@ -193,8 +193,8 @@ void TetFixture::fill_node_map(int p_rank)
         {1, 6, 2, 0}};
 
     // Declare the elements that belong on this process
-    std::vector<size_t>::iterator ib = element_ids_on_this_processor.begin();
-    const std::vector<size_t>::iterator ie = element_ids_on_this_processor.end();
+    std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
+    const std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
     for (; ib != ie; ++ib) {
       size_t hex_id = *ib;
       size_t ix = 0, iy = 0, iz = 0;
