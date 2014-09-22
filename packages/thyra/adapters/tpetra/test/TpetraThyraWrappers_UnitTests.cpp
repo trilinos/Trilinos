@@ -48,6 +48,8 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_TestingTools.hpp"
+#include "Thyra_RowStatLinearOpBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -732,6 +734,63 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_EpetraRow
 {
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_RowStatLinearOpBase,
+  Scalar )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  using Teuchos::as;
+
+  const RCP<Tpetra::Operator<Scalar,int> > tpetraOp =
+    createTriDiagonalTpetraOperator<Scalar>(g_localDim);
+  out << "tpetraOp = " << Teuchos::describe(*tpetraOp, Teuchos::VERB_HIGH) << std::endl;
+  TEST_ASSERT(nonnull(tpetraOp));
+
+  const RCP<Tpetra::CrsMatrix<Scalar,int> > tpetraCrsMatrix = 
+    Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,int> >(tpetraOp,true);
+
+  // tpetraCrsMatrix->resumeFill();
+  // tpetraCrsMatrix->setAllToScalar(Scalar(2.0));
+  // tpetraCrsMatrix->fillComplete();
+
+  const RCP<const VectorSpaceBase<Scalar> > rangeSpace =
+    Thyra::createVectorSpace<Scalar>(tpetraOp->getRangeMap());
+  const RCP<const VectorSpaceBase<Scalar> > domainSpace =
+    Thyra::createVectorSpace<Scalar>(tpetraOp->getDomainMap());
+  const RCP<LinearOpBase<Scalar> > thyraLinearOp =
+    Thyra::tpetraLinearOp(rangeSpace, domainSpace, tpetraOp);
+  TEST_ASSERT(nonnull(thyraLinearOp));
+
+  const Teuchos::RCP<Thyra::RowStatLinearOpBase<Scalar> > rowStatOp =
+    Teuchos::rcp_dynamic_cast<Thyra::RowStatLinearOpBase<Scalar> >(thyraLinearOp, true);
+
+  // Get the inverse row sums
+
+  const RCP<VectorBase<Scalar> > inv_row_sums =
+    createMember<Scalar>(thyraLinearOp->range());
+  const RCP<VectorBase<Scalar> > row_sums =
+    createMember<Scalar>(thyraLinearOp->range());
+
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
+    inv_row_sums.ptr());
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,
+    row_sums.ptr());
+
+  out << "inv_row_sums = " << *inv_row_sums;
+  out << "row_sums = " << *row_sums;
+
+  TEST_FLOATING_EQUALITY(
+    Thyra::sum<Scalar>(*row_sums),
+    Teuchos::as<Scalar>(4.0 * thyraLinearOp->domain()->dim() - 2.0),
+    Teuchos::as<Scalar>(10.0 * Teuchos::ScalarTraits<Scalar>::eps())
+    );
+
+  TEST_FLOATING_EQUALITY(
+    Thyra::sum<Scalar>(*inv_row_sums),
+    Teuchos::as<Scalar>( 1.0 / 4.0 * (thyraLinearOp->domain()->dim() - 2) + 2.0 / 3.0 ),
+    Teuchos::as<Scalar>(10.0 * Teuchos::ScalarTraits<Scalar>::eps())
+    );
+}
+
 #endif // HAVE_THYRA_TPETRA_EPETRA
 
 
@@ -782,6 +841,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_EpetraRow
    \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
     TpetraLinearOp_EpetraRowMatrix, SCALAR ) \
+   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
+    TpetraLinearOp_RowStatLinearOpBase, SCALAR ) \
   
 
 // We can currently only explicitly instantiate with double support because
