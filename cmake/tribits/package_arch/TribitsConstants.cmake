@@ -38,7 +38,7 @@
 # @HEADER
 
 # Define the TriBITS minimum required CMake version
-SET(TRIBITS_CMAKE_MINIMUM_REQUIRED 2.7)
+SET(TRIBITS_CMAKE_MINIMUM_REQUIRED 2.8.11)
 
 # File names for TriBITS system
 

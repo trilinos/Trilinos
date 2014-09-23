@@ -85,7 +85,7 @@ By default, if you just type:
 
 then the directory """+baseDirName+""" will be created in the local working directory
 and it will contain a tarball for """+productName+""" and the build files. NOTE: This
-requires that you not run as root your userid on the download computer
+requires that you not run as root or your userid on the download computer
 will not be correct.  If you want to install as root, see below.
 
 You can control various parts of the process with various options (see below).

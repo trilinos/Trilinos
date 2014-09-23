@@ -6,7 +6,7 @@
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>TriBITS Developers Guide and Reference</title>
 <meta name="author" content="Roscoe A. Bartlett (bartlettra&#64;ornl.gov)" />
-<meta name="date" content="2014-09-10" />
+<meta name="date" content="2014-09-17" />
 <style type="text/css">
 
 /*
@@ -315,9 +315,9 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Author:</th>
 <td>Roscoe A. Bartlett (<a class="reference external" href="mailto:bartlettra&#64;ornl.gov">bartlettra&#64;ornl.gov</a>)</td></tr>
 <tr><th class="docinfo-name">Date:</th>
-<td>2014-09-10</td></tr>
+<td>2014-09-17</td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>TriBITS Development at 2014-09-10</td></tr>
+<td>TriBITS Development at 2014-09-17</td></tr>
 </tbody>
 </table>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1059,7 +1059,7 @@ etc.</li>
 <ul class="simple" id="tribits-meta-projects">
 <span id="tribits-meta-project"></span><li><strong>TriBITS Meta-Project</strong>: A <a class="reference internal" href="#tribits-project">TriBITS Project</a> that contains no native
 <a class="reference internal" href="#tribits-packages">TriBITS packages</a> or <a class="reference internal" href="#tribits-tpls">TriBITS TPLs</a> but is composed out packages from
-other other <a class="reference internal" href="#tribits-repositories">TriBITS Repositories</a>.</li>
+other <a class="reference internal" href="#tribits-repositories">TriBITS Repositories</a>.</li>
 </ul>
 <p>In this document, dependencies are described as either being <em>upstream</em> or
 <em>downstream/forward</em> defined as:</p>
@@ -1973,6 +1973,33 @@ name like <tt class="docutils literal">RepoX_SOURCE_DIR</tt>.  This makes such C
 where the various TriBITS repos are in relation to each other or the
 Project.</blockquote>
 </blockquote>
+<p>The following project-level local varaibles can be defined by the project or
+the user to help define the what packages from the repository
+<tt class="docutils literal">${REPOSITORY_NAME}</tt> contribute to the primary meta-project packages (PMPP):</p>
+<blockquote>
+<p id="repository-name-no-primary-meta-project-packages"><tt class="docutils literal">${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES</tt></p>
+<blockquote>
+If set to <tt class="docutils literal">TRUE</tt>, then the package's in the the TriBITS repository are
+not considered to be part of the primary meta-project packages.  This
+affects what packages get enabled by default when enabling all packages
+with setting <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON</tt> and what tests and
+examples get enabled by default when setting
+<tt class="docutils literal">${PROJECT_NAME}_ENABLE_TESTS=ON</tt>.  See <a class="reference internal" href="#tribits-dependency-handling-behaviors">TriBITS Dependency Handling
+Behaviors</a> for more details.</blockquote>
+<p id="repository-name-no-primary-meta-project-packages-except"><tt class="docutils literal">${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES_EXCEPT</tt></p>
+<blockquote>
+When the above variable is set to <tt class="docutils literal">TRUE</tt>, this variable is read by
+TriBITS to find the list of TriBITS packages selected packages in the
+repository <tt class="docutils literal">${REPOSITORY_NAME}</tt> which are considered to be part of the
+set of the project's primary meta-project package when the above variable
+is set to <tt class="docutils literal">ON</tt>.  NOTE: It is not necessary to list all of the
+subpackages in a given parent package.  Only the parent package need be
+listed and it will be equivalent to listing all of the subpackages.  See
+<a class="reference internal" href="#tribits-dependency-handling-behaviors">TriBITS Dependency Handling Behaviors</a> for more details.</blockquote>
+</blockquote>
+<p>The above primary meta-project variables should be set in the meta-project's
+<a class="reference internal" href="#projectdir-projectname-cmake">&lt;projectDir&gt;/ProjectName.cmake</a> file so that they will be set in all
+situations.</p>
 </div>
 </div>
 <div class="section" id="tribits-package">
@@ -4075,13 +4102,24 @@ enables (and test and example enables) for the SE packages <tt class="docutils l
 example, see <a class="reference internal" href="#explicit-enable-of-a-package-and-downstream-packages-and-tests">Explicit enable of a package and downstream packages and
 tests</a>.</li>
 </ol>
-<ol class="arabic simple" id="project-enable-all-packages-enables-all-pt-cond-st-se-packages" start="18">
-<li><strong>&lt;Project&gt;_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages</strong>:
+<ol class="arabic" id="project-enable-all-packages-enables-all-pt-cond-st-se-packages" start="18">
+<li><p class="first"><strong>&lt;Project&gt;_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages</strong>:
 Setting the user cache-variable <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON</tt>
 will result in the enable of all <tt class="docutils literal">PT</tt> SE packages when
 <tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF</tt> and all <tt class="docutils literal">PT</tt> and <tt class="docutils literal">ST</tt> SE
 packages when <tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON</tt>.  For an
-example, see <a class="reference internal" href="#enable-all-packages">Enable all packages</a>.</li>
+example, see <a class="reference internal" href="#enable-all-packages">Enable all packages</a>.  When the project is a meta-project,
+this will only enable the project's primary meta-project packages (PMPP).
+That is, a package will only be enabled due to
+<tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON</tt> when its parent repository does
+not have <a class="reference internal" href="#repository-name-no-primary-meta-project-packages">${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES</a> set to
+<tt class="docutils literal">TRUE</tt>.  However, if:</p>
+<pre class="literal-block">
+${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES=TRUE
+</pre>
+<p>then the SE package may be enabled if it (or its parent package) is listed
+in <a class="reference internal" href="#repository-name-no-primary-meta-project-packages-except">${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES_EXCEPT</a>.</p>
+</li>
 </ol>
 <ol class="arabic simple" id="project-enable-tests-only-enables-explicitly-enabled-se-package-tests" start="19">
 <li><strong>&lt;Project&gt;_ENABLE_TESTS only enables explicitly enabled SE package
@@ -4091,7 +4129,11 @@ configuring with <tt class="docutils literal">Trilinos_ENABLE_RTOp=ON</tt> and
 <tt class="docutils literal">Trilinos_ENABLE_TESTS=ON</tt> will only result in the enable of tests for
 <tt class="docutils literal">RTOp</tt>, not <tt class="docutils literal">Teuchos</tt> (even through TriBITS will enable <tt class="docutils literal">Teuchos</tt>
 because it is a required dependency of <tt class="docutils literal">RTOp</tt>).  See an example, see
-<a class="reference internal" href="#explicit-enable-of-a-package-and-its-tests">Explicit enable of a package and its tests</a>.</li>
+<a class="reference internal" href="#explicit-enable-of-a-package-and-its-tests">Explicit enable of a package and its tests</a>.  When the project is a
+meta-project, this will only enable tests for the project's primary
+meta-project packages (PMPP).  The uses the same logic as for
+<tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_PACKAGES</tt>, see
+<a class="reference internal" href="#project-enable-all-packages-enables-all-pt-cond-st-se-packages">&lt;Project&gt;_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages</a>.</li>
 </ol>
 <ol class="arabic simple" id="if-no-se-packages-are-enabled-nothing-will-get-built" start="20">
 <li><strong>If no SE packages are enabled, nothing will get built</strong>: Most TriBITS

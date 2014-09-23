@@ -291,13 +291,13 @@ automatically be written out with typical CMake cache variables (commented
 out) that you would need to set out.  Any CMake cache variables listed in
 these files will be read into and passed on the configure line to 'cmake'.
 
-WARNING: Please do not add any CMake cache variables than what are needed to
-get the Primary Tested (PT) --default-builds builds to work.  Adding other
-enables/disables will make the builds non-standard and break these PT builds.
-The goal of these configuration files is to allow you to specify the minimum
-environment to find MPI, your compilers, and the required TPLs (e.g. BLAS,
-LAPACK, etc.).  If you need to fudge what packages are enabled, please use the
-script arguments --enable-packages, --disable-packages,
+WARNING: Please do not add any extra CMake cache variables than what are
+needed to get the Primary Tested (PT) --default-builds builds to work.  Adding
+other enables/disables will make the builds non-standard and can break these
+PT builds.  The goal of these configuration files is to allow you to specify
+the minimum environment to find MPI, your compilers, and the required TPLs
+(e.g. BLAS, LAPACK, etc.).  If you need to fudge what packages are enabled,
+please use the script arguments --enable-packages, --disable-packages,
 --no-enable-fwd-packages, and/or --enable-all-packages to control this, not
 the *.config files!
 
@@ -348,6 +348,11 @@ Common Use Cases (examples):
 (*) Basic full testing with integrating with local repo and push:
 
   ../checkin-test.py --do-all --push
+
+  NOTE: By default this will rebase your local commits and ammend the last
+  commit with a short summary of test results.  This is appropriate for
+  pushing commits that only exist in your local repo and are not shared with
+  any remote repo.
 
 (*) Push to global repo after a completed set of tests have finished:
 
@@ -404,7 +409,9 @@ Common Use Cases (examples):
     --do-all
   
   NOTE: This will override all logic in the script about which packages will
-  be enabled and only the given packages will be enabled.
+  be enabled based on file changes and only the given packages will be
+  enabled.  When there are tens of thousands of changed files and hundreds of
+  defined packages, this auto-detection algorithm can be very expensive!
 
   NOTE: You might also want to pass in --enable-all-packages=off in case the
   script wants to enable all the packages (see the output in the
@@ -480,10 +487,10 @@ Common Use Cases (examples):
 
 (*) Avoid changing any of the local commit SHA1s:
 
-  If you are pushing commits from a shared branch, it is critical that you
-  don't not change any of the SHA1s of the commits.  To change the SHA1s for
-  any of the commits will mess up various multi-repo, multi-branch workflows.
-  To avoid changing any of the SHA1s of the local commits, one must run with:
+  If you are pushing commits from a shared branch, it is critical that you do
+  not change any of the SHA1s of the commits.  Changing the SHA1s for any of
+  the commits will mess up various multi-repo, multi-branch workflows.  To
+  avoid changing any of the SHA1s of the local commits, one must run with:
 
     ../checkin-test.py --no-rebase --no-append-test-results [options]
 
@@ -763,7 +770,9 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     help="List of comma separated packages to test changes for" \
     +" (example, 'Teuchos,Epetra').  If this list of packages is empty, then" \
     +" the list of packages to enable will be determined automatically by examining" \
-    +" the set of modified files from the version control update log." )
+    +" the set of modified files from the version control update log.  Note that"\
+    +" this will skip the auto-detection of changed packages based on changed"\
+    +" files." )
 
   clp.add_option(
     "--disable-packages", dest="disablePackages", type="string", default="",
@@ -777,13 +786,17 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   addOptionParserChoiceOption(
     "--enable-all-packages", "enableAllPackages", ('auto', 'on', 'off'), 0,
-    "Determine if all packages are enabled 'on', or 'off', or let" \
-    +" other logic decide 'auto'.  Setting to 'off' is appropriate when" \
+    "Determine if all packages are enabled 'on', or 'off', or 'auto'" \
+    +" (let other logic decide).  Setting to 'off' is appropriate when" \
     +" the logic in this script determines that a global build file has changed" \
-    +" but you know that you don't need to rebuild every package for" \
+    +" but you know that you don't need to rebuild and test every package for" \
     +" a reasonable test.  Setting --enable-packages effectively disables this" \
-    +" option.  NOTE: Setting this to 'off' does *not* stop the forward enabling" \
-    +" of downstream packages for packages that are modified or set by --enable-packages.",
+    +" option.  Setting this to 'off' does *not* stop the forward enabling" \
+    +" of downstream packages for packages that are modified or set by --enable-packages."\
+    +" Setting this to 'on' will skip the automatic detection of changed packages"\
+    +" based on changed files.  It can be helpful to stop the auto-detection changed"\
+    +" packages when there are thousands of changed files and hundreds of defined"\
+    +" packages." ,
     clp )
 
   clp.add_option(
