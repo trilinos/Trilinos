@@ -1977,7 +1977,8 @@ void ML_BreakForDebugger(ML_Comm *comm)
       printf("** You may now attach debugger to the processes listed above.\n");
       printf( "**\n");
       printf( "** Enter a character to continue > "); fflush(stdout);
-	  scanf("%c",&go);
+      if (EOF == scanf("%c",&go))
+         pr_error("Error: I/O error.\n");
     }
   }
 }
@@ -1992,7 +1993,8 @@ void ML_Pause(ML_Comm *comm)
 
   if (comm->ML_mypid == 0) {
       printf( "** Press enter to continue > "); fflush(stdout);
-      scanf("%c",&go);
+      if (EOF == scanf("%c",&go))
+         pr_error("Error: I/O error.\n");
   }
   ML_Comm_Barrier(comm);
 }
