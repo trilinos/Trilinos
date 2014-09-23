@@ -44,7 +44,6 @@
 
 #include "Thyra_LinearOpDefaultBase.hpp"
 #include "Thyra_TpetraVectorSpace_decl.hpp"
-#include "Thyra_RowStatLinearOpBase.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
@@ -70,8 +69,7 @@ namespace Thyra {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal,
   class Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class TpetraLinearOp
-  : virtual public Thyra::LinearOpDefaultBase<Scalar>,
-    virtual public Thyra::RowStatLinearOpBase<Scalar>
+  : virtual public Thyra::LinearOpDefaultBase<Scalar>
 #ifdef HAVE_THYRA_TPETRA_EPETRA
   , virtual public EpetraLinearOpBase
 #endif
@@ -159,20 +157,6 @@ protected:
     const Scalar alpha,
     const Scalar beta
     ) const;
-
-  //@}
-
-  /** \name Protected member functions overridden from RowStatLinearOpBase. */
-  //@{
-
-  /** \brief . */
-  virtual bool rowStatIsSupportedImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
-
-  /** \brief . */
-  virtual void getRowStatImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat,
-    const Ptr<VectorBase<double> > &rowStatVec) const;
 
   //@}
 
