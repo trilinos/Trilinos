@@ -399,11 +399,11 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
       "WrapExternal_run_external_func${TEST_MPI_1_SUFFIX} .* Passed"
       "100% tests passed, 0 tests failed out of 1"
 
-  TEST_4 CMND touch
+  TEST_4 CMND sleep ARGS 1s 
+     MESSAGE "Sleep for 1 sec for systems were time stamps are only accurate to 1 sec"
+  TEST_5 CMND touch
      ARGS TribitsExampleProject/packages/simple_cxx/src/SimpleCxx_HelloWorld.cpp
      MESSAGE "Test that changing upstream source will trigger rebuild"
-  TEST_5 CMND sleep ARGS 0.5s 
-     MESSAGE "Sleep for slow file systems so the time stamps are up-to-date"
   TEST_6 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
      MESSAGE "Recofigure with changed upstream source"
     PASS_REGULAR_EXPRESSION_ALL
@@ -430,11 +430,11 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
       "Generating external_func/libexternal_func.a"
       "Linking CXX executable WrapExternal_run_external_func.exe"
 
-  TEST_10 CMND touch
+  TEST_10 CMND sleep ARGS 1s 
+     MESSAGE "Sleep for 1 sec for systems were time stamps are only accurate to 1 sec"
+  TEST_11 CMND touch
      ARGS TribitsExampleProject/packages/wrap_external/external_func/configure.py
      MESSAGE "Test that changing the external file will trigger rebuild"
-  TEST_11 CMND sleep ARGS 0.5s 
-     MESSAGE "Sleep for slow file systems so the time stamps are up-to-date"
   TEST_12 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
      MESSAGE "Recofigure with changes external file"
     PASS_REGULAR_EXPRESSION_ALL
