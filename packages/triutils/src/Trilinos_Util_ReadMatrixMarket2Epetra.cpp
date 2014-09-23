@@ -90,11 +90,14 @@ int Trilinos_Util_ReadMatrixMarket2Epetra_internal(
 
     iptrs = ptrs ; //  Current pointers into inds and vals for each row
 
-    fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string
-    bool symmetric = false ;
+    // Pick symmetry info off of this string
+    if (NULL == fgets( buffer, BUFSIZE, in_file ))
+      throw "Triutils: Trilinos_Util_ReadMatrixMarket2Epetra_internal: I/O error";
     std::string headerline1 = buffer;
-    if ( headerline1.find("symmetric") != std::string::npos) symmetric = true;
-    fgets( buffer, BUFSIZE, in_file ) ;
+    bool symmetric = (headerline1.find("symmetric") != std::string::npos);
+
+    if (NULL == fgets( buffer, BUFSIZE, in_file ))
+      throw "Triutils: Trilinos_Util_ReadMatrixMarket2Epetra_internal: I/O error";
 
     while ( fgets( buffer, BUFSIZE, in_file ) ) {
       int_type i, j;

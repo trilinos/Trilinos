@@ -87,13 +87,12 @@ void Trilinos_Util_CountTriples_internal(
 
     in_file = fopen( data_file, "r");
     if (in_file == NULL)
-    {
-      printf("Error: Cannot open file: %s\n",data_file);
-      exit(1);
-    }
+      throw "Trilinos_Util_CountTriples_internal: I/O error.";
 
     if ( TimDavisHeader ) {
-      fgets( buffer, BUFSIZE, in_file );
+      if (NULL == fgets( buffer, BUFSIZE, in_file ))
+        throw "Trilinos_Util_CountTriples_internal: I/O error.";
+
       if(sizeof(int) == sizeof(int_type))
         sscanf( buffer, "%d %d %d %d", &num_rows, &num_cols, &num_nz, &hdr_type ) ;
       else if(sizeof(long long) == sizeof(int_type))

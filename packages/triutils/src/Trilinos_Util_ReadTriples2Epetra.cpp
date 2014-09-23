@@ -129,7 +129,8 @@ int Trilinos_Util_ReadTriples2Epetra_internal(
 
     // Throw away the Tim Davis Header Line
     if ( TimDavisHeader )
-      fgets( buffer, BUFSIZE, in_file );
+      if (NULL == fgets( buffer, BUFSIZE, in_file ))
+        throw "Triutils: Trilinos_Util_ReadTriples2Epetra_internal: I/O error";
 
     while ( fgets( buffer, BUFSIZE, in_file ) ) {
       int_type i, j;

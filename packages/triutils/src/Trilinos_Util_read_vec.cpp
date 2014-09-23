@@ -56,7 +56,10 @@ void Trilinos_Util_read_vec(
   }
 
   for (i=0; i< n_equations; i++)
-    fscanf(in_file, "%lf", x+i) ;
+    if (EOF == fscanf(in_file, "%lf", x+i)) {
+      fprintf(stderr,"Error: I/O error in file %s\n",filename);
+      return;
+    }
 
   fclose(in_file);
 

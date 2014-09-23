@@ -78,16 +78,17 @@ void TTrilinos_Util_CountMatrixMarket(
     /* argument list:                                                       */
 
     in_file = fopen( data_file, "r");
-    if (in_file == NULL) {
-      printf("Error: Cannot open file: %s\n",data_file);
-      exit(1);
-    }
+    if (in_file == NULL)
+      throw "TTrilinos_Util_CountMatrixMarket: I/O error.";
 
-    fgets( buffer, BUFSIZE, in_file ) ;
-    bool symmetric = false ;
+    if (NULL == fgets( buffer, BUFSIZE, in_file ))
+      throw "TTrilinos_Util_CountMatrixMarket: I/O error.";
     std::string headerline1 = buffer;
-    if ( headerline1.find("symmetric") != std::string::npos) symmetric = true;
-    fgets( buffer, BUFSIZE, in_file ) ;
+    bool symmetric = (headerline1.find("symmetric") != std::string::npos);
+
+    if (NULL == fgets( buffer, BUFSIZE, in_file ))
+      throw "TTrilinos_Util_CountMatrixMarket: I/O error.";
+
     while ( fgets( buffer, BUFSIZE, in_file ) ) {
       int_type i, j;
       float val ;
