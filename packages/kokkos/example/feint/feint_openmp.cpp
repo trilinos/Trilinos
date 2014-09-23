@@ -44,6 +44,7 @@
 #include <Kokkos_Core.hpp>
 
 #ifdef KOKKOS_HAVE_OPENMP
+
 #include <feint.hpp>
 
 namespace Kokkos {
@@ -61,4 +62,6 @@ template void feint<Kokkos::OpenMP,true>(
 
 } /* namespace Example */
 } /* namespace Kokkos */
+
 #endif
+

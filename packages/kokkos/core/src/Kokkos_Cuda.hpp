@@ -46,7 +46,7 @@
 #ifndef KOKKOS_CUDA_HPP
 #define KOKKOS_CUDA_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
 // If CUDA execution space is enabled then use this header file.
 

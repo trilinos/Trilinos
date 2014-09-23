@@ -45,11 +45,7 @@
 #include <new>
 #include <cstring>
 
-#include "KokkosCore_config.h"
-#if defined(KOKKOS_HAVE_CUDA)
-#include "Kokkos_Cuda.hpp"
-#endif
-#include "Kokkos_Macros.hpp"
+#include "Kokkos_Core_fwd.hpp"
 
 namespace Stokhos {
 

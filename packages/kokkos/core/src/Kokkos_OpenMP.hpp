@@ -46,7 +46,7 @@
 #ifndef KOKKOS_OPENMP_HPP
 #define KOKKOS_OPENMP_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
 #if defined( KOKKOS_HAVE_OPENMP ) && defined( _OPENMP )
 

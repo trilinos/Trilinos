@@ -50,7 +50,7 @@
 #ifndef KOKKOS_UNORDERED_MAP_HPP
 #define KOKKOS_UNORDERED_MAP_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_Functional.hpp>
 #include <Kokkos_View.hpp>
 #include <Kokkos_Atomic.hpp>

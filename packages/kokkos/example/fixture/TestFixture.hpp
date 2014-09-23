@@ -47,12 +47,7 @@
 #include <utility>
 #include <iostream>
 
-#include <Kokkos_Macros.hpp>
-#include <HostExecSpace.hpp>
-
-#if defined( KOKKOS_HAVE_CUDA )
-#include <Kokkos_Cuda.hpp>
-#endif
+#include <Kokkos_Core.hpp>
 
 #include <BoxElemPart.hpp>
 #include <BoxElemFixture.hpp>

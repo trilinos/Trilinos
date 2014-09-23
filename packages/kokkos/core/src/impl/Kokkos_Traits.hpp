@@ -45,8 +45,8 @@
 #define KOKKOSTRAITS_HPP
 
 #include <stddef.h>
-#include <Kokkos_Macros.hpp>
 #include <stdint.h>
+#include <Kokkos_Macros.hpp>
 
 namespace Kokkos {
 namespace Impl {

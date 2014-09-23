@@ -48,7 +48,7 @@
 #define KOKKOS_PARALLEL_HPP
 
 #include <cstddef>
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_View.hpp>
 #include <Kokkos_ExecPolicy.hpp>
 #include <impl/Kokkos_Traits.hpp>
@@ -638,7 +638,7 @@ public:
   typedef typename ReduceAdapterFunctorOperatorArgType< function_pointer_type >::type type ;
 };
 
-#endif
+#endif /* #if defined( KOKKOS_HAVE_CXX11 ) */
 
 template< class FunctorType , class ScalarType >
 struct ReduceAdapter

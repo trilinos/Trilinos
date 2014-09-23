@@ -46,8 +46,7 @@
 
 #include <typeinfo>
 #include <utility>
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_Layout.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 
@@ -75,9 +74,6 @@ template< unsigned ScalarSize ,
           unsigned s6  = 1 ,
           unsigned s7  = 1 >
 struct Shape ;
-
-template< class ShapeType , class Layout >
-struct ShapeMap ;
 
 //----------------------------------------------------------------------------
 /** \brief  Shape equality if the value type, layout, and dimensions
