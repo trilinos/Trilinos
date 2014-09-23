@@ -13,8 +13,6 @@ INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
-SET(HEADERS  argparse.inc add_to_log.h SL_tokenize.h GetLongOpt.h smart_assert.h to_string.h adler.h)
-
 SET(SOURCES
 	abrstr.f    copint.f    dbpini.f    ffaddv.f    ffrrng.f    indexi.f    intadd.f    logerr.f    numeql.f    prterr.f    wrapup.f
 	addv.f      cpuifc.f    dbpqa.f     ffchar.f    ffvrng.f    indexn.f    intstr.f    lowstr.f    numstr.f    ran1.f      
@@ -29,7 +27,7 @@ SET(SOURCES
 
 TRIBITS_ADD_LIBRARY(
 	suplib
-	HEADERS	${HEADERS}
+	NOINSTALLHEADERS
 	SOURCES ${SOURCES}
 	DEPLIBS supes
 )

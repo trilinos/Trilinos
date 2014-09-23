@@ -86,7 +86,7 @@ namespace Ioex {
   // Used for persistent entity IDs
   // The set contains a pair of <ex_entity_type, int>.
   // The ex_entity_type is the exodus entity type defined in
-  // exodus's exodusII_int.h. A couple examples are:
+  // exodus's exodusII.h. A couple examples are:
   // EX_ELEM_BLOCK element block and EX_NODE_SET nodeset.
   //
   // The 'int' is the entity id.  The set is used for output databases
