@@ -176,6 +176,9 @@ protected:
   //! Updates QR factors by deletion of a column
   void qrDelete();
 
+  //! Reorthogonalized columns of Q and updates factorization
+  void reorthogonalize();
+
 protected:
 
   //! Pointer to the global data object.
@@ -234,6 +237,9 @@ protected:
 
   //! Number of nonlinear iterations.
   int nIter;
+
+  //! Frequency for reorthogonalization of QR factors. If nonpositive, we never reorthogonalize
+  int orthoFrequency;
 
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;

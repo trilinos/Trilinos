@@ -98,8 +98,9 @@ void NOX::Solver::AndersonAcceleration::init()
     validParams.set("Storage Depth", 2, "max number of previous iterates for which data stored");
     validParams.set("Disable Storage Depth Check for Unit Testing", false, "If set to true, the check on the storage depth size is disabled so that we can generate some corner cases for unit testing.  WARNING: users should never set this to true!");
     validParams.set("Mixing Parameter", 1.0, "damping factor applied to residuals");
+    validParams.set("Reorthogonalization Frequency", 0, "Least-squares problem solved by updating previous QR factorization. Number of iterations between reorthogonalizing columns of Q. Never reorthogonalize if less than 1.");
     validParams.sublist("Preconditioning").set("Precondition", false, "flag for preconditioning");
-    validParams.sublist("Preconditioning").set("Recompute Jacobian", false, "set true if preconditioner requires Jacobian");
+    validParams.sublist("Preconditioning").set("Recompute Jacobian", false, "set true if preconditioner requires computation of Jacobian");
     validParams.set("Adjust Matrix for Condition Number", false, "If true, the QR matrix will be resized if the condiiton number is greater than the dropTolerance");
     validParams.set("Condition Number Drop Tolerance", 1.0e+12, "If adjusting for condition number, this is the condition number value above which the QR matrix will be resized.");
     validParams.set("Acceleration Start Iteration",1,"The nonlinear iteration where Anderson Acceleration will start. Normally AA starts from the first iteration, but it can be advantageous to delay the start and allow normal picard iteration to get a better initial guess for the AA history.");
@@ -124,6 +125,7 @@ void NOX::Solver::AndersonAcceleration::init()
       << "Mixing parameter must be in [-1,0)U(0,1]" << std::endl;
     throw "NOX Error";
   }
+  orthoFrequency = paramsPtr->sublist("Anderson Parameters").get<int>("Reorthogonalization Frequency");
   precond = paramsPtr->sublist("Anderson Parameters").sublist("Preconditioning").get<bool>("Precondition");
   recomputeJacobian = paramsPtr->sublist("Anderson Parameters").sublist("Preconditioning").get<bool>("Recompute Jacobian");
   adjustForConditionNumber = paramsPtr->sublist("Anderson Parameters").get<bool>("Adjust Matrix for Condition Number");
@@ -286,6 +288,11 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     qrAdd(*oldPrecF);
   }
 
+  // Reorthogonalize 
+  if ( (nStore > 1) && (orthoFrequency > 0) )
+    if (nIter % orthoFrequency == 0)
+      reorthogonalize();
+
   // Copy current soln to the old soln.
   *oldSolnPtr = *solnPtr;
   *oldPrecF = *precF;
@@ -399,11 +406,19 @@ void NOX::Solver::AndersonAcceleration::qrAdd(NOX::Abstract::Vector& newCol)
   qMat.push_back(solnPtr->getX().clone(NOX::ShapeCopy));
   rMat.reshape(N+1,N+1);
   // Update QR factors
+  // Orthogonalize against previous columns once
   for (int ii = 0; ii<N; ii++){
     rMat(ii,N) = qMat[ii]->innerProduct(newCol);
     newCol.update(-rMat(ii,N),*(qMat[ii]),1.0);
   }
+  // Reorthogonalize
+  for (int ii = 0; ii<N; ii++){
+    double Alpha = qMat[ii]->innerProduct(newCol);
+    newCol.update(-Alpha,*(qMat[ii]),1.0);
+    rMat(ii,N) += Alpha;
+  }
   rMat(N,N) = newCol.norm();
+  TEUCHOS_TEST_FOR_EXCEPTION((rMat(N,N) < 1.0e-16),std::logic_error,"Error - R factor is singular to machine precision!");
   *(qMat[N]) = newCol.scale(1.0/rMat(N,N));
 }
 
@@ -434,6 +449,29 @@ void NOX::Solver::AndersonAcceleration::qrDelete()
       rMat(ii,jj) = rMat(ii,jj+1);
   }
   rMat.reshape(N-1,N-1);
+}
+
+void NOX::Solver::AndersonAcceleration::reorthogonalize()
+{
+  int N = qMat.size();
+  // Probably not necessary for fairly small N, but definitely not needed if N=1
+  if (N > 1) {
+    Teuchos::SerialDenseMatrix<int,double> R(N,N);
+    // Reorthogonalize the columns of Q with a modified Gram Schmidt sweep
+    for (int ii = 0; ii < N; ii++) {
+      for (int jj = 0; jj < ii; jj++) {
+        R(jj,ii) = qMat[jj]->innerProduct( *(qMat[ii]) );
+        qMat[ii]->update(-R(jj,ii),*(qMat[jj]),1.0);
+      }
+      R(ii,ii) = qMat[ii]->norm();
+      TEUCHOS_TEST_FOR_EXCEPTION((R(ii,ii) < 1.0e-16),std::logic_error,"Error - R factor is singular to machine precision!");
+      qMat[ii]->scale(1.0/R(ii,ii));
+    }
+
+    // Update the R factor
+    Teuchos::SerialDenseMatrix<int,double> rMatCopy(rMat);
+    rMat.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0,R,rMatCopy,0.0);
+  }
 }
 
 const NOX::Abstract::Group&
