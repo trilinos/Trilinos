@@ -107,7 +107,7 @@ template< typename Scalar = void ,
   class Field ;
 
 /** \brief Maximum
- *  \ref shards::Array "multi-dimenaional array" dimension of a
+ *  \ref "multi-dimensional array" dimension of a
  *  \ref stk::mesh::Field "field"
  */
 enum { MaximumFieldDimension = 7 };
@@ -133,8 +133,6 @@ enum EntityState { Unchanged = 0 ,
                    Modified = 2 ,
                    Deleted  = 3 };
 
-template< class FieldType > struct EntityArray ;
-template< class FieldType > struct BucketArray ;
 template< class FieldType > struct FieldTraits ;
 
 //MeshIndex describes an Entity's location in the mesh, specifying which bucket,

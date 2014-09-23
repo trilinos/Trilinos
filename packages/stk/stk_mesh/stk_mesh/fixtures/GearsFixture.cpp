@@ -33,7 +33,6 @@
 
 #include <stk_util/stk_config.h>
 #include <stk_mesh/fixtures/GearsFixture.hpp>
-#include <Shards_BasicTopologies.hpp>   // for Hexahedron, Wedge
 #include <algorithm>                    // for min
 #include <cmath>                        // for fabs, floor
 #include <iostream>                     // for ostringstream, etc
@@ -61,9 +60,6 @@ namespace {
 
 const unsigned ONE_STATE = 1;
 const unsigned TWO_STATE = 2;
-
-typedef shards::Hexahedron<8> Hex8 ;
-typedef shards::Wedge<6>      Wedge6 ;
 
 } // namespace
 
