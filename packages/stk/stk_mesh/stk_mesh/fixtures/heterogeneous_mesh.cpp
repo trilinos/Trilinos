@@ -32,7 +32,6 @@
 // 
 
 #include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
-#include <Shards_BasicTopologies.hpp>   // for Hexahedron, Pyramid, etc
 #include <sstream>                      // for ostringstream, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
@@ -40,7 +39,6 @@
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include "Shards_CellTopologyTraits.hpp"
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase::Restriction, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityId
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -134,6 +132,13 @@ enum { number_shell_tri = 3 };
 
 namespace {
 
+typedef stk::topology::topology_type<stk::topology::HEX_8> Hex8;
+typedef stk::topology::topology_type<stk::topology::WEDGE_6> Wedge6;
+typedef stk::topology::topology_type<stk::topology::TET_4> Tet4;
+typedef stk::topology::topology_type<stk::topology::PYRAMID_5> Pyramid5;
+typedef stk::topology::topology_type<stk::topology::SHELL_QUAD_4> ShellQuad4;
+typedef stk::topology::topology_type<stk::topology::SHELL_TRI_3> ShellTri3;
+
 static const double node_coord_data[ node_count ][ SpatialDim ] = {
   { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 2 , 0 , 0 } , { 3 , 0 , 0 } ,
   { 0 , 1 , 0 } , { 1 , 1 , 0 } , { 2 , 1 , 0 } , { 3 , 1 , 0 } ,
@@ -143,31 +148,31 @@ static const double node_coord_data[ node_count ][ SpatialDim ] = {
   { 0 , 2 , -1 } , { 1 , 2 , -1 } ,
   { 1 , 1 , -2 } };
 
-static const stk::mesh::EntityId hex_node_ids[number_hex][ shards::Hexahedron<8> ::node_count ] = {
+static const stk::mesh::EntityId hex_node_ids[number_hex][ Hex8::num_nodes ] = {
   { 1 , 2 , 12 , 11 , 5 , 6 , 16 , 15 } ,
   { 2 , 3 , 13 , 12 , 6 , 7 , 17 , 16 } ,
   { 3 , 4 , 14 , 13 , 7 , 8 , 18 , 17 } };
 
-static const stk::mesh::EntityId wedge_node_ids[number_wedge][ shards::Wedge<6> ::node_count ] = {
+static const stk::mesh::EntityId wedge_node_ids[number_wedge][ Wedge6::num_nodes ] = {
   { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
   { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
   { 16 , 17 , 20 ,  6 ,  7 , 10 } };
 
-static const stk::mesh::EntityId tetra_node_ids[number_tetra][ shards::Tetrahedron<4> ::node_count ] = {
+static const stk::mesh::EntityId tetra_node_ids[number_tetra][ Tet4::num_nodes ] = {
   { 15 , 19 , 16 , 21 } ,
   { 19 , 20 , 16 , 21 } ,
   { 16 , 20 , 17 , 21 } };
 
-static const stk::mesh::EntityId pyramid_node_ids[number_pyramid][ shards::Pyramid<5> ::node_count ] = {
+static const stk::mesh::EntityId pyramid_node_ids[number_pyramid][ Pyramid5::num_nodes ] = {
   { 11 , 15 , 16 , 12 , 21 } ,
   { 12 , 16 , 17 , 13 , 21 } };
 
-static const stk::mesh::EntityId shell_quad_node_ids[number_shell_quad][ shards::ShellQuadrilateral<4> ::node_count ]={
+static const stk::mesh::EntityId shell_quad_node_ids[number_shell_quad][ ShellQuad4::num_nodes ]={
   { 9 , 6 , 16 , 19 } ,
   { 6 , 7 , 17 , 16 } ,
   { 7 , 8 , 18 , 17 } };
 
-static const stk::mesh::EntityId shell_tri_node_ids[number_shell_tri][ shards::ShellTriangle<3> ::node_count ] ={
+static const stk::mesh::EntityId shell_tri_node_ids[number_shell_tri][ ShellTri3::num_nodes ] ={
   { 19 , 16 , 21 } ,
   { 16 , 17 , 21 } ,
   { 17 , 13 , 21 } };

@@ -32,7 +32,6 @@
 // 
 
 #include <stk_mesh/fixtures/degenerate_mesh.hpp>
-#include <Shards_BasicTopologies.hpp>   // for Hexahedron
 #include <sstream>                      // for ostringstream, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
@@ -40,7 +39,6 @@
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include "Shards_CellTopologyTraits.hpp"
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase::Restriction, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityId
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -123,7 +121,8 @@ namespace stk {
 	  { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 2, 0, 0} , {0, 1, 0}, {2, 1, 0}, 
 	  { 0 , 0 ,-1 } , { 1 , 0 ,-1 } , { 2, 0,-1} , {0, 1,-1}, {2, 1,-1}};
 
-	static const stk::mesh::EntityId hex_node_ids[number_hex][ shards::Hexahedron<8> ::node_count ] = {
+	typedef stk::topology::topology_type<stk::topology::HEX_8> Hex8;
+	static const stk::mesh::EntityId hex_node_ids[number_hex][ Hex8::num_nodes ] = {
 	  { 1, 2, 7, 6, 4, 2,  7, 9}, 
 	  { 2, 3, 8, 7, 2, 5, 10, 7}};
 
