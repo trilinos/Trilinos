@@ -1,8 +1,8 @@
 #ifndef _ARRAYNUMBERRTC_H
 #define _ARRAYNUMBERRTC_H
 
-#include "ValueRTC.hh"
-#include "commonRTC.hh"
+#include "RTC_ValueRTC.hh"
+#include "RTC_commonRTC.hh"
 
 #include <iostream>
 #include <cassert>

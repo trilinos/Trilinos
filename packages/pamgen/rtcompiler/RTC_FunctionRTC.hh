@@ -1,10 +1,10 @@
 #ifndef _FUNCTIONRTC_H
 #define _FUNCTIONRTC_H
 
-#include "commonRTC.hh"
-#include "BlockRTC.hh"
-#include "VariableRTC.hh"
-#include "ExecutableRTC.hh"
+#include "RTC_commonRTC.hh"
+#include "RTC_BlockRTC.hh"
+#include "RTC_VariableRTC.hh"
+#include "RTC_ExecutableRTC.hh"
 
 #include <string>
 #include <typeinfo>

@@ -1,9 +1,9 @@
 #ifndef _BLOCKRTC_H
 #define _BLOCKRTC_H
 
-#include "ExecutableRTC.hh"
-#include "TokenizerRTC.hh"
-#include "VariableRTC.hh"
+#include "RTC_ExecutableRTC.hh"
+#include "RTC_TokenizerRTC.hh"
+#include "RTC_VariableRTC.hh"
 
 #include <string>
 #include <map>

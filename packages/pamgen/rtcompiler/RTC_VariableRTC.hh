@@ -1,8 +1,8 @@
 #ifndef _VARIABLERTC_H
 #define _VARIABLERTC_H
 
-#include "commonRTC.hh"
-#include "ValueRTC.hh"
+#include "RTC_commonRTC.hh"
+#include "RTC_ValueRTC.hh"
 
 #include <cassert>
 #include <string>

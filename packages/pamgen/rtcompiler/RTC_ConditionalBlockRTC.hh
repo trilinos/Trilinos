@@ -1,10 +1,10 @@
 #ifndef _CONDITIONALBLOCKRTC_H
 #define _CONDITIONALBLOCKRTC_H
 
-#include "BlockRTC.hh"
-#include "LineRTC.hh"
-#include "VariableRTC.hh"
-#include "TokenizerRTC.hh"
+#include "RTC_BlockRTC.hh"
+#include "RTC_LineRTC.hh"
+#include "RTC_VariableRTC.hh"
+#include "RTC_TokenizerRTC.hh"
 
 #include <string>
 #include <map>

@@ -1,8 +1,8 @@
 #ifndef _NORMALBLOCKRTC_H
 #define _NORMALBLOCKRTC_H
 
-#include "BlockRTC.hh"
-#include "TokenizerRTC.hh"
+#include "RTC_BlockRTC.hh"
+#include "RTC_TokenizerRTC.hh"
 
 #include <string>
 #include <map>

@@ -1,10 +1,10 @@
 #ifndef _WHILEBLOCKRTC_H
 #define _WHILEBLOCKRTC_H
 
-#include "LineRTC.hh"
-#include "BlockRTC.hh"
-#include "ObjectRTC.hh"
-#include "TokenizerRTC.hh"
+#include "RTC_LineRTC.hh"
+#include "RTC_BlockRTC.hh"
+#include "RTC_ObjectRTC.hh"
+#include "RTC_TokenizerRTC.hh"
 
 #include <string>
 #include <map>

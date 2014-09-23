@@ -1,7 +1,7 @@
 #ifndef _TOKENIZER_H
 #define _TOKENIZER_H
 
-#include "commonRTC.hh"
+#include "RTC_commonRTC.hh"
 
 #include <string>
 #include <vector>

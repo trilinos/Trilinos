@@ -1,13 +1,13 @@
 #ifndef _LINERTC_H
 #define _LINERTC_H
 
-#include "BlockRTC.hh"
-#include "ObjectRTC.hh"
-#include "commonRTC.hh"
-#include "ExecutableRTC.hh"
-#include "TokenizerRTC.hh"
-#include "ScalarNumberRTC.hh"
-#include "OperatorRTC.hh"
+#include "RTC_BlockRTC.hh"
+#include "RTC_ObjectRTC.hh"
+#include "RTC_commonRTC.hh"
+#include "RTC_ExecutableRTC.hh"
+#include "RTC_TokenizerRTC.hh"
+#include "RTC_ScalarNumberRTC.hh"
+#include "RTC_OperatorRTC.hh"
 
 #include <string>
 #include <list>

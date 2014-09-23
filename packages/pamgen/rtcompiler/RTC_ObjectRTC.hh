@@ -1,7 +1,7 @@
 #ifndef _OBJECTRTC_H
 #define _OBJECTRTC_H
 
-#include "commonRTC.hh"
+#include "RTC_commonRTC.hh"
 
 #include <iostream>
 

@@ -1,9 +1,9 @@
 #ifndef _REGISTRAR_H
 #define _REGISTRAR_H
 
-#include "ValueRTC.hh"
-#include "ObjectRTC.hh"
-#include "LineRTC.hh"
+#include "RTC_ValueRTC.hh"
+#include "RTC_ObjectRTC.hh"
+#include "RTC_LineRTC.hh"
 
 #include <map>
 #include <list>

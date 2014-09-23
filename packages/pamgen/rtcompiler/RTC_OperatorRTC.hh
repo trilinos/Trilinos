@@ -1,9 +1,9 @@
 #ifndef _OPERATORRTC_H
 #define _OPERATORRTC_H
 
-#include "commonRTC.hh"
-#include "ObjectRTC.hh"
-#include "ScalarNumberRTC.hh"
+#include "RTC_commonRTC.hh"
+#include "RTC_ObjectRTC.hh"
+#include "RTC_ScalarNumberRTC.hh"
 
 #include <string>
 #include <map>

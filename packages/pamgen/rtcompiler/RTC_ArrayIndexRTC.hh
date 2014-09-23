@@ -1,10 +1,10 @@
 #ifndef _ARRAYINDEXRTC_H
 #define _ARRAYINDEXRTC_H
 
-#include "VariableRTC.hh"
-#include "commonRTC.hh"
-#include "ExecutableRTC.hh"
-#include "ValueRTC.hh"
+#include "RTC_VariableRTC.hh"
+#include "RTC_commonRTC.hh"
+#include "RTC_ExecutableRTC.hh"
+#include "RTC_ValueRTC.hh"
 
 #include <iostream>
 #include <cassert>

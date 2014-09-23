@@ -1,8 +1,8 @@
 #ifndef _VALUERTC_H
 #define _VALUERTC_H
 
-#include "ObjectRTC.hh"
-#include "commonRTC.hh"
+#include "RTC_ObjectRTC.hh"
+#include "RTC_commonRTC.hh"
 
 #include <string>
 #include <cassert>

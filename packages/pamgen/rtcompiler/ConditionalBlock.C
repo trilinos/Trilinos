@@ -1,8 +1,8 @@
-#include "BlockRTC.hh"
-#include "LineRTC.hh"
-#include "commonRTC.hh"
-#include "VariableRTC.hh"
-#include "ConditionalBlockRTC.hh"
+#include "RTC_BlockRTC.hh"
+#include "RTC_LineRTC.hh"
+#include "RTC_commonRTC.hh"
+#include "RTC_VariableRTC.hh"
+#include "RTC_ConditionalBlockRTC.hh"
 
 #include <string>
 #include <map>

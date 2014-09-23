@@ -1,9 +1,9 @@
 #ifndef _ARRAYRTC_H
 #define _ARRAYRTC_H
 
-#include "VariableRTC.hh"
-#include "commonRTC.hh"
-#include "ExecutableRTC.hh"
+#include "RTC_VariableRTC.hh"
+#include "RTC_commonRTC.hh"
+#include "RTC_ExecutableRTC.hh"
 
 #include <string>
 #include <iostream>
