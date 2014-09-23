@@ -131,7 +131,7 @@ getGlobalBlockEntryViewNonConst (VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbr
     blk.numPtCols = numPtCols;
     size_t blockSize = numPtRows*numPtCols;
     blk.blkEntry = Teuchos::arcp(new Scalar[blockSize], 0, blockSize);
-    std::fill(blk.blkEntry.begin(), blk.blkEntry.end(), 0);
+    std::fill(blk.blkEntry.begin(), blk.blkEntry.end(), (Scalar) 0);
     blkrow.insert(iter, std::make_pair(globalBlockCol, blk));
     blockEntry = blk.blkEntry;
   }

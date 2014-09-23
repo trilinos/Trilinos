@@ -104,11 +104,11 @@ namespace Stokhos {
   // If flat_domain_map and/or flat_range_map are null, they will be computed,
   // otherwise they will be used as-is.
   template <typename LocalOrdinal, typename GlobalOrdinal, typename Device,
-            typename LMO, typename CijkValue>
+            typename CijkValue>
   Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,
                                  Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
   create_flat_pce_graph(
-    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device>,LMO>& graph,
+    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& graph,
     const CrsProductTensor<CijkValue,Device>& cijk,
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_domain_map,
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_range_map,
@@ -409,13 +409,13 @@ namespace Stokhos {
   // Create a flattened matrix by unrolling the UQ::PCE scalar type.  The
   // returned matrix is NOT a view of the original (and can't be)
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Device, typename LMO, typename CijkValue>
+            typename Device, typename CijkValue>
   Teuchos::RCP< Tpetra::CrsMatrix<typename Storage::value_type,
                                   LocalOrdinal,GlobalOrdinal,
                                   Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
   create_flat_matrix(
     const Tpetra::CrsMatrix<Sacado::UQ::PCE<Storage>,
-                            LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device>,LMO>& mat,
+                            LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& mat,
     const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_graph,
     const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& cijk_graph,
     const CrsProductTensor<CijkValue,Device>& cijk) {

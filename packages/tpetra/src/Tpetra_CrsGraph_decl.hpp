@@ -296,8 +296,8 @@ namespace Tpetra {
               ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
-    /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
-    ///
+    /// \brief Constructor specifying column Map and arrays containing
+    ///   the graph in sorted local indices.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -712,11 +712,14 @@ namespace Tpetra {
     /// </ol>
     bool isFillActive() const;
 
-    //! Indicates whether the graph indices in all rows are known to be sorted.
-    /** A fill-complete graph is always sorted, as is a newly constructed graph. A graph is sorted immediately after
-        calling resumeFill(), but any changes to the graph may result in the sorting status becoming unknown (and therefore, presumed unsorted.)
-    */
-    bool isSorted() const;
+    /// \brief Whether graph indices in all rows are known to be sorted.
+    ///
+    /// A fill-complete graph is always sorted, as is a newly
+    /// constructed graph. A graph is sorted immediately after calling
+    /// resumeFill(), but any changes to the graph may result in the
+    /// sorting status becoming unknown (and therefore, presumed
+    /// unsorted).
+    bool isSorted () const;
 
     //! \brief Returns \c true if storage has been optimized.
     /**
@@ -995,14 +998,26 @@ namespace Tpetra {
     /// \brief Reindex the column indices in place, and replace the
     ///   column Map.  Optionally, replace the Import object as well.
     ///
+    /// \pre On every calling process, every index owned by the
+    ///   current column Map must also be owned by the new column Map.
+    ///
+    /// \pre If the new Import object is provided, the new Import
+    ///   object's source Map must be the same as the current domain
+    ///   Map, and the new Import's target Map must be the same as the
+    ///   new column Map.
+    ///
     /// \param newColMap [in] New column Map.  Must be nonnull.
     ///
     /// \param newImport [in] New Import object.  Optional; computed
     ///   if not provided or if null.  Computing an Import is
     ///   expensive, so it is worth providing this if you can.
+    ///
+    /// \param sortIndicesInEachRow [in] If true, sort the indices in
+    ///   each row after reindexing.
     void
     reindexColumns (const Teuchos::RCP<const map_type>& newColMap,
-                    const Teuchos::RCP<const import_type>& newImport = Teuchos::null);
+                    const Teuchos::RCP<const import_type>& newImport = Teuchos::null,
+                    const bool sortIndicesInEachRow = true);
 
     /// \brief Replace the current domain Map and Import with the given parameters.
     ///

@@ -92,13 +92,6 @@ namespace MueLu {
   }; //class ParameterListAcceptor
 
   // Partial implementation of ParameterListAcceptor that stores the object parameters in an internal parameterList
-  //
-  // Another possibility is to copy the parameters to internal variables (as Ifpack) ?
-  // => I don't think it's a good solution because:
-  //      - we need to rebuild a parameter list for getParameterList()
-  //      - we will read all the parameters even if they are unused (wrong "[used]"/["unused"] flag)
-  // double paramA_;
-  // double paramB_;
   class ParameterListAcceptorImpl: public ParameterListAcceptor {
 
   public:
@@ -107,12 +100,20 @@ namespace MueLu {
 
     virtual ~ParameterListAcceptorImpl() {
       bool warnings = false; //TODO
-      if (warnings) {
+      if (warnings)
         paramList_.unused(std::cout);
-      }
     }
 
     virtual void SetParameterList(const ParameterList& paramList) {
+      // This call is only for cosmetic reasons.
+      // If one calls SetParameterList before GetParameterList, that would mean
+      // that paramList_ has not been initialized yet. Therefore, the parameter
+      // would be put in it in the order user provided, and not in the order of
+      // valid parameter list. We'd like to have consistency in the order, so
+      // we do this extra call, which is no-op if paramList_ has already been
+      // initialized.
+      paramList_ = GetParameterList();
+
       paramList_.setParameters(paramList);
 
       // Validate and add defaults parameters.
@@ -130,12 +131,20 @@ namespace MueLu {
     // Therefore, there is not need to test if a parameter is present before getting it.
     virtual const Teuchos::ParameterList& GetParameterList() const {
       if (paramList_.numParams() == 0) {
-        // If paramList_ is empty, set paramList_ to the default list.
-        // If paramList_ is not empty, we are sure that the list has all the valid parameters defined
-        // because the parameter list validation process adds the default values to the user list.
+        // Set paramList_ to the default list
         RCP<const ParameterList> validParamList = GetValidParameterList();
-        if (validParamList != Teuchos::null)
-          paramList_ = *validParamList;
+        if (validParamList != Teuchos::null) {
+          // Instead of simply doing
+          //   paramList_ = *validParamList;
+          // we use more complicated Teuchos calls, because we would like to
+          // have [default] values in the beginning
+          paramList_.validateParametersAndSetDefaults(*validParamList);
+        }
+
+      } else {
+        // We are sure that the list has all the valid parameters defined
+        // because the parameter list validation process adds the default
+        // values to the user list
       }
 
       return paramList_;

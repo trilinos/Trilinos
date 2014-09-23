@@ -479,8 +479,8 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class Arg1 , class Arg2 >
-class TaskPolicy< Impl::TaskForEach< Kokkos::RangePolicy< Kokkos::Serial , Arg1 , Arg2 >  >  >
+template< class Arg0 , class Arg1 , class Arg2 >
+class TaskPolicy< Impl::TaskForEach< Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > > >
 {
 public:
 
@@ -488,7 +488,7 @@ public:
 
 private:
 
-  typedef RangePolicy< execution_space , Arg1 , Arg2 > range_policy ;
+  typedef RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial >     range_policy ;
   typedef Impl::TaskManager< execution_space >  task_manager ;
   typedef Impl::TaskMember<  execution_space >  task_root_type ;
 
@@ -559,8 +559,8 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class Arg1 , class Arg2 >
-class TaskPolicy< Impl::TaskReduce< Kokkos::RangePolicy< Kokkos::Serial , Arg1 , Arg2 >  >  >
+template< class Arg0 , class Arg1 , class Arg2 >
+class TaskPolicy< Impl::TaskReduce< Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > > >
 {
 public:
 
@@ -568,7 +568,7 @@ public:
 
 private:
 
-  typedef RangePolicy< execution_space , Arg1 , Arg2 >  range_policy ;
+  typedef RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial >  range_policy ;
   typedef Impl::TaskManager< execution_space >  task_manager ;
   typedef Impl::TaskMember<  execution_space >  task_root_type ;
 

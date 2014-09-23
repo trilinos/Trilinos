@@ -50,6 +50,7 @@ class TopologyHelpersTestingFixture
   Part & element_wedge_part;
   Part & generic_face_part;
   Part & another_generic_face_part;
+  Part & face_tri_part;
   Part & face_quad_part;
   Part & another_generic_element_part;
 
@@ -80,6 +81,7 @@ TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
   , element_wedge_part( meta.declare_part_with_topology( "block_left_2", stk::topology::WEDGE_15 ) )
   , generic_face_part( meta.declare_part_with_topology( "A_1", stk::topology::QUAD_4 ) )
   , another_generic_face_part( meta.declare_part("A_2", side_rank ) )
+  , face_tri_part( meta.declare_part_with_topology("A_3_0", stk::topology::TRI_3))
   , face_quad_part( meta.declare_part("A_3", side_rank ) )
   , another_generic_element_part( meta.declare_part("B_3", element_rank ) )
   , entity_id(0u)
@@ -96,6 +98,12 @@ TEST( testTopologyHelpers, get_cell_topology_based_on_part)
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
   fix.bulk.modification_begin();
   Entity elem1  = fix.create_entity( fix.side_rank, fix.generic_face_part );
+
+  std::vector<Entity> elem_node(4);
+  for (int i = 0; i < 4; ++i) {
+    elem_node[i] = fix.bulk.declare_entity(stk::topology::NODE_RANK, 100 + i);
+    fix.bulk.declare_relation(elem1, elem_node[i], i);
+  }
 
   PartVector tmp(1);
   tmp[0] = & fix.face_quad_part;
@@ -122,7 +130,7 @@ TEST( testTopologyHelpers, declare_element_side_no_topology )
     stk::mesh::declare_element_side( fix.bulk, fix.element_rank, elem4, fix.nextEntityId(), &fix.element_wedge_part ),
     std::runtime_error
       );
-  fix.bulk.modification_end();
+  //fix.bulk.modification_end();
 
 
   {
@@ -131,7 +139,7 @@ TEST( testTopologyHelpers, declare_element_side_no_topology )
     elem_node[1] = 2;
     elem_node[2] = 3;
     elem_node[3] = 4;
-    fix.bulk.modification_begin();
+    //fix.bulk.modification_begin();
     // Cannot declare an element without a topology defined
     ASSERT_THROW(
       stk::mesh::declare_element(fix.bulk, fix.generic_element_part, fix.nextEntityId(), elem_node),
@@ -189,7 +197,8 @@ TEST( testTopologyHelpers, declare_element_side_full )
   Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
 
   const EntityId zero_side_count = 0;
-  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
+  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count,
+                                                  &fix.face_tri_part);
   fix.bulk.modification_end();
 
   stk::mesh::Entity const *rel2_nodes = fix.bulk.begin_nodes(face2);
@@ -211,7 +220,8 @@ TEST( testTopologyHelpers, element_side_polarity_valid )
   fix.bulk.modification_begin();
   Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
   const EntityId zero_side_count = 0;
-  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
+  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count,
+                                                  &fix.face_tri_part);
   fix.bulk.modification_end();
 
   const int local_side_id = 0;
@@ -233,7 +243,8 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_1 )
     fix.bulk.modification_begin();
     Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
     const EntityId zero_side_count = 0;
-    Entity face = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
+    Entity face = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count,
+                                                   &fix.face_tri_part);
     fix.bulk.modification_end();
 
     const unsigned invalid_local_side_id = static_cast<unsigned>(-1);
@@ -266,17 +277,22 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
   ASSERT_TRUE( stk::mesh::get_cell_topology( fix.bulk.bucket(element_with_top) ).getCellTopologyData() != NULL );
 
   const EntityId zero_side_count = 0;
-  Entity face_with_top = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element_with_top, zero_side_count);
-
-  fix.bulk.modification_end();
-
+  Entity face_with_top = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element_with_top, zero_side_count,
+                                                          &fix.face_tri_part);
   const int valid_local_side_id = 0;
-  // Hits "Element has no defined topology" error condition:
-  ASSERT_TRUE( stk::mesh::get_cell_topology( fix.bulk.bucket(element) ).getCellTopologyData() == NULL );
   ASSERT_THROW(
       fix.bulk.element_side_polarity( element, face_with_top, valid_local_side_id),
       std::runtime_error
       );
+
+  //modification_end is not called due to difference in expected behavior for release and debug builds - debug should throw, release should not
+  //difference occurs within check_for_connected_nodes method
+  //ASSERT_THROW(fix.bulk.modification_end(), std::logic_error);
+
+  // Hits "Element has no defined topology" error condition:
+  //ASSERT_TRUE( stk::mesh::get_cell_topology( fix.bulk.bucket(element) ).getCellTopologyData() == NULL );
+
+
 
 }
 

@@ -493,6 +493,23 @@ extern "C" {
             void *results,
             nssi_size result_size);
 
+
+    extern int nssi_atomic_increment(
+            const nssi_service *svc,
+            const uint64_t      remote_atomic,
+            const uint64_t      local_atomic);
+
+    extern int nssi_atomic_decrement(
+            const nssi_service *svc,
+            const uint64_t      remote_atomic,
+            const uint64_t      local_atomic);
+
+    extern int nssi_atomic_read(
+            const nssi_service *svc,
+            const uint64_t      local_atomic,
+            int64_t            *value);
+
+
 #else /* K&R C */
 #endif
 

@@ -52,6 +52,7 @@
 #include "Trios_nssi_fprint_types.h"
 
 #include "Trios_nnti.h"
+#include "Trios_nnti_fprint_types.h"
 
 #include <unistd.h>
 #include <memory.h>
@@ -80,7 +81,7 @@ log_level atomics_debug_level = LOG_UNDEFINED;
 
 int fetchadd_test(const nssi_service *svc)
 {
-    int rc      = NSSI_OK;
+    int rc      = NNTI_OK;
     int timeout = 5000;
 
     NNTI_work_request_t wr;
@@ -91,63 +92,63 @@ int fetchadd_test(const nssi_service *svc)
     log_debug(atomics_debug_level, "enter");
 
     for (int varid=0;varid<10;varid++) {
-    	for (int i=0;i<10;i++) {
-    		rc=NNTI_atomic_fop(
-    				&transports[svc->transport_id],
-    				&svc->svc_host,
-    				varid,
-    				varid,
-    				1,
-    				NNTI_ATOMIC_FADD,
-    				&wr);
-    		/* wait for completion */
-    		NNTI_wait(&wr, timeout, &status);
-    		if (rc != NSSI_OK) {
-    			log_error(atomics_debug_level, "remote method failed: %s",
-    					nssi_err_str(rc));
-    			return rc;
-    		}
+        for (int i=0;i<10;i++) {
+            rc=NNTI_atomic_fop(
+                    &transports[svc->transport_id],
+                    &svc->svc_host,
+                    varid,
+                    varid,
+                    1,
+                    NNTI_ATOMIC_FADD,
+                    &wr);
+            /* wait for completion */
+            NNTI_wait(&wr, timeout, &status);
+            if (rc != NNTI_OK) {
+                log_error(atomics_debug_level, "remote method failed: %s",
+                        nnti_err_str(rc));
+                return rc;
+            }
 
-    		rc=NNTI_atomic_read(
-    				&transports[svc->transport_id],
-    				varid,
-    				&value);
+            rc=NNTI_atomic_read(
+                    &transports[svc->transport_id],
+                    varid,
+                    &value);
 
-    		if (value != i) {
-    			log_error(atomics_debug_level, "actual=%d, expected=%d", value, i);
-    		}
+            if (value != i) {
+                log_error(atomics_debug_level, "actual=%d, expected=%d", value, i);
+            }
 
-    		log_debug(LOG_ALL, "varid=%03d  value=%lld", varid, value);
-    	}
+            log_debug(atomics_debug_level, "varid=%03d  value=%lld", varid, value);
+        }
 
-    	for (int i=10;i>0;i--) {
-    		rc=NNTI_atomic_fop(
-    				&transports[svc->transport_id],
-    				&svc->svc_host,
-    				varid,
-    				varid,
-    				-1,
-    				NNTI_ATOMIC_FADD,
-    				&wr);
-    		/* wait for completion */
-    		NNTI_wait(&wr, timeout, &status);
-    		if (rc != NSSI_OK) {
-    			log_error(atomics_debug_level, "remote method failed: %s",
-    					nssi_err_str(rc));
-    			return rc;
-    		}
+        for (int i=10;i>0;i--) {
+            rc=NNTI_atomic_fop(
+                    &transports[svc->transport_id],
+                    &svc->svc_host,
+                    varid,
+                    varid,
+                    -1,
+                    NNTI_ATOMIC_FADD,
+                    &wr);
+            /* wait for completion */
+            NNTI_wait(&wr, timeout, &status);
+            if (rc != NNTI_OK) {
+                log_error(atomics_debug_level, "remote method failed: %s",
+                        nnti_err_str(rc));
+                return rc;
+            }
 
-    		rc=NNTI_atomic_read(
-    				&transports[svc->transport_id],
-    				varid,
-    				&value);
+            rc=NNTI_atomic_read(
+                    &transports[svc->transport_id],
+                    varid,
+                    &value);
 
-    		if (value != i) {
-    			log_error(atomics_debug_level, "actual=%d, expected=%d", value, i);
-    		}
+            if (value != i) {
+                log_error(atomics_debug_level, "actual=%d, expected=%d", value, i);
+            }
 
-    		log_debug(LOG_ALL, "varid=%03d  value=%lld", varid, value);
-    	}
+            log_debug(atomics_debug_level, "varid=%03d  value=%lld", varid, value);
+        }
     }
 
     log_debug(atomics_debug_level, "exit");
@@ -157,7 +158,7 @@ int fetchadd_test(const nssi_service *svc)
 
 int cswap_test(const nssi_service *svc)
 {
-    int rc      = NSSI_OK;
+    int rc      = NNTI_OK;
     int timeout = 5000;
 
     NNTI_work_request_t wr;
@@ -169,70 +170,125 @@ int cswap_test(const nssi_service *svc)
     log_debug(atomics_debug_level, "enter");
 
     for (int varid=0;varid<10;varid++) {
-    	for (int i=0;i<10;i++) {
-    		rc=NNTI_atomic_fop(
-    				&transports[svc->transport_id],
-    				&svc->svc_host,
-    				varid,
-    				varid,
-    				1,
-    				NNTI_ATOMIC_FADD,
-    				&wr);
-    		/* wait for completion */
-    		rc=NNTI_wait(&wr, timeout, &status);
-    		if (rc != NSSI_OK) {
-    			log_error(atomics_debug_level, "remote method failed: %s",
-    					nssi_err_str(rc));
-    			return rc;
-    		}
+        for (int i=0;i<10;i++) {
+            rc=NNTI_atomic_fop(
+                    &transports[svc->transport_id],
+                    &svc->svc_host,
+                    varid,
+                    varid,
+                    1,
+                    NNTI_ATOMIC_FADD,
+                    &wr);
+            /* wait for completion */
+            rc=NNTI_wait(&wr, timeout, &status);
+            if (rc != NNTI_OK) {
+                log_error(atomics_debug_level, "remote method failed: %s",
+                        nnti_err_str(rc));
+                return rc;
+            }
 
-    		rc=NNTI_atomic_read(
-    				&transports[svc->transport_id],
-    				varid,
-    				&value);
+            rc=NNTI_atomic_read(
+                    &transports[svc->transport_id],
+                    varid,
+                    &value);
 
-    		log_debug(LOG_ALL, "after fetch-add varid=%03d  value=%lld", varid, value);
+            log_debug(atomics_debug_level, "after fetch-add varid=%03d  value=%lld", varid, value);
 
-    		if (value != (i%cmp_target)) {
-    			log_error(atomics_debug_level, "actual=%d, expected=%d", value, (i%cmp_target));
-    		}
+            if (value != (i%cmp_target)) {
+                log_error(atomics_debug_level, "actual=%d, expected=%d", value, (i%cmp_target));
+            }
 
-    		rc=NNTI_atomic_cswap(
-    				&transports[svc->transport_id],
-    				&svc->svc_host,
-    				varid,
-    				varid,
-    				cmp_target,
-    				0,
-    				&wr);
-    		/* wait for completion */
-    		rc=NNTI_wait(&wr, timeout, &status);
-    		if (rc != NSSI_OK) {
-    			log_error(atomics_debug_level, "remote method failed: %s",
-    					nssi_err_str(rc));
-    			return rc;
-    		}
+            rc=NNTI_atomic_cswap(
+                    &transports[svc->transport_id],
+                    &svc->svc_host,
+                    varid,
+                    varid,
+                    cmp_target,
+                    0,
+                    &wr);
+            /* wait for completion */
+            rc=NNTI_wait(&wr, timeout, &status);
+            if (rc != NNTI_OK) {
+                log_error(atomics_debug_level, "remote method failed: %s",
+                        nnti_err_str(rc));
+                return rc;
+            }
 
-    		rc=NNTI_atomic_read(
-    				&transports[svc->transport_id],
-    				varid,
-    				&value);
+            rc=NNTI_atomic_read(
+                    &transports[svc->transport_id],
+                    varid,
+                    &value);
 
-    		log_debug(LOG_ALL, "after compare-swap varid=%03d  value=%lld", varid, value);
+            log_debug(atomics_debug_level, "after compare-swap varid=%03d  value=%lld", varid, value);
 
-    		int64_t actual=value;
-    		int64_t expected=(i+1)%cmp_target;
+            int64_t actual=value;
+            int64_t expected=(i+1)%cmp_target;
 
-    		if (i%cmp_target == cmp_target-1) {
-    			if (actual != cmp_target) {
-    				log_error(atomics_debug_level, "actual=%d, expected=%d", actual, expected);
-    			}
-    		} else {
-    			if (actual != expected) {
-    				log_error(atomics_debug_level, "actual=%d, expected=%d", actual, expected);
-    			}
-    		}
-    	}
+            if (i%cmp_target == cmp_target-1) {
+                if (actual != cmp_target) {
+                    log_error(atomics_debug_level, "actual=%d, expected=%d", actual, expected);
+                }
+            } else {
+                if (actual != expected) {
+                    log_error(atomics_debug_level, "actual=%d, expected=%d", actual, expected);
+                }
+            }
+        }
+    }
+
+    log_debug(atomics_debug_level, "exit");
+
+    return rc;
+}
+
+int nssi_atomics_test(const nssi_service *svc)
+{
+    int rc      = NNTI_OK;
+    int timeout = 5000;
+
+    NNTI_work_request_t wr;
+    NNTI_status_t       status;
+
+    int64_t value=-1;
+
+    log_debug(atomics_debug_level, "enter");
+
+    for (int varid=0;varid<10;varid++) {
+        for (int i=0;i<10;i++) {
+            rc=nssi_atomic_increment(
+                    svc,
+                    varid,
+                    varid);
+
+            rc=nssi_atomic_read(
+                    svc,
+                    varid,
+                    &value);
+
+            if (value != i) {
+                log_error(atomics_debug_level, "actual=%d, expected=%d", value, i);
+            }
+
+            log_debug(atomics_debug_level, "varid=%03d  value=%lld", varid, value);
+        }
+
+        for (int i=10;i>0;i--) {
+            rc=nssi_atomic_decrement(
+                    svc,
+                    varid,
+                    varid);
+
+            rc=nssi_atomic_read(
+                    svc,
+                    varid,
+                    &value);
+
+            if (value != i) {
+                log_error(atomics_debug_level, "actual=%d, expected=%d", value, i);
+            }
+
+            log_debug(atomics_debug_level, "varid=%03d  value=%lld", varid, value);
+        }
     }
 
     log_debug(atomics_debug_level, "exit");
@@ -244,8 +300,8 @@ int cswap_test(const nssi_service *svc)
 int main(int argc, char *argv[])
 {
     int test_result=0;
-	int rc=0;
-	int success=0;
+    int rc=0;
+    int success=0;
     int nprocs, rank;
 
     char logname[1024];
@@ -309,6 +365,9 @@ int main(int argc, char *argv[])
         if (test_result==NNTI_OK) {
             test_result=cswap_test(&svc);
         }
+        if (test_result==NNTI_OK) {
+            test_result=nssi_atomics_test(&svc);
+        }
 
         // shutdown the service
         rc = nssi_kill(&svc, 0, 5000);
@@ -339,10 +398,10 @@ int main(int argc, char *argv[])
     logger_fini();
 
     if (rank == 1) {
-		if (success==TRUE)
-			fprintf(stdout, "\nEnd Result: TEST PASSED\n");
-		else
-			fprintf(stdout, "\nEnd Result: TEST FAILED\n");
+        if (success==TRUE)
+            fprintf(stdout, "\nEnd Result: TEST PASSED\n");
+        else
+            fprintf(stdout, "\nEnd Result: TEST FAILED\n");
     }
 
     return (success==TRUE ? 0 : 1 );

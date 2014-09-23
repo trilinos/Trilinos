@@ -541,16 +541,16 @@ void NemSpread<T,INT>::load_mesh()
 
   /* Generate the parallel exodus II file name */
   /* See if any '/' in the name.  IF present, isolate the basename of the file */
-  if (strrchr(PIO_Info.Scalar_LB_File_Name, '/') != NULL) {
+  if (strrchr(Output_File_Base_Name, '/') != NULL) {
 
     /* There is a path separator.  Get the portion after the
      * separator
      */
-    strcpy(cTemp, strrchr(PIO_Info.Scalar_LB_File_Name, '/')+1);
+    strcpy(cTemp, strrchr(Output_File_Base_Name, '/')+1);
   } else {
 
     /* No separator; this is already just the basename... */
-    strcpy(cTemp, PIO_Info.Scalar_LB_File_Name);
+    strcpy(cTemp, Output_File_Base_Name);
   }
 
   if (strlen(PIO_Info.Exo_Extension) == 0)
@@ -566,11 +566,12 @@ void NemSpread<T,INT>::load_mesh()
   }
     
   for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
-    gen_par_filename(cTemp, Par_Nem_File_Name, Proc_Ids[iproc],Proc_Info[0]);
+    char Parallel_File_Name[MAX_FNL];
+    gen_par_filename(cTemp, Parallel_File_Name, Proc_Ids[iproc],Proc_Info[0]);
 
     /* Create the parallel Exodus II file for writing */
     if (Debug_Flag >= 7)
-      printf("%sParallel mesh file name is %s\n", yo, Par_Nem_File_Name);
+      printf("%sParallel mesh file name is %s\n", yo, Parallel_File_Name);
     else {
       if (iproc%10 == 0 || iproc ==Proc_Info[2]-1)
 	printf("%d", iproc);
@@ -581,10 +582,10 @@ void NemSpread<T,INT>::load_mesh()
     int mode = EX_CLOBBER;
     mode |= int64api;
     mode |= db_mode;
-    if ((mesh_exoid=ex_create(Par_Nem_File_Name, mode, &cpu_ws, &io_ws)) == -1) {
+    if ((mesh_exoid=ex_create(Parallel_File_Name, mode, &cpu_ws, &io_ws)) == -1) {
 
       fprintf(stderr,"[%s] Could not create parallel Exodus II file:\n\t%s\n",
-	      yo, Par_Nem_File_Name);
+	      yo, Parallel_File_Name);
       exit(1);
     }
 

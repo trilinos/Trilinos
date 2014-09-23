@@ -14,6 +14,18 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 # B) Set up package-specific options
 #
 
+IF (Trilinos_ENABLE_KokkosCore)
+  SET(HAVE_STK_KokkosCore ON)
+ENDIF()
+
+IF (Trilinos_ENABLE_STKIO)
+  SET(HAVE_STKIO ON)
+ENDIF()
+
+IF (TPL_ENABLE_CUDA)
+  SET(HAVE_STK_CUDA ON)
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Trilinos
   HAVE_STK_Trilinos

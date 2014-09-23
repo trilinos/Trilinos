@@ -744,7 +744,15 @@ void INTERNAL_field_copy(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
-        ThrowAssert(fieldSize == field_scalars_per_entity(yFieldBase, b));
+
+        
+        ThrowAssertMsg(fieldSize == field_scalars_per_entity(yFieldBase, b), 
+          "In INTERNAL_field_copy: found incomptaible field sizes.  "<<std::endl
+          <<"  First field name: "<<xFieldBase.name()<<std::endl
+          <<"  First field size: "<<field_scalars_per_entity(xFieldBase, b)<<std::endl
+          <<"  Second field name: "<<yFieldBase.name()<<std::endl
+          <<"  Second field size: "<<field_scalars_per_entity(yFieldBase, b)<<std::endl);
+        
         const int kmax = length * fieldSize;
         const Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
         Scalar * y = static_cast<Scalar*>(field_data(yFieldBase, b));

@@ -47,12 +47,15 @@
 #define MUELU_HIERARCHYHELPERS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_HierarchyHelpers_fwd.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 
+#include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_HierarchyHelpers_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_SmootherBase_fwd.hpp"
+#include "MueLu_SmootherFactory_fwd.hpp"
+#include "MueLu_SmootherPrototype_fwd.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 
 // Warning: on TopRAPFactory and TopSmootherFactory constructors, Teuchos::null doesn't mean "default factory" but "no build"
 

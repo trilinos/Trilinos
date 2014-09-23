@@ -474,8 +474,8 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename IntType , unsigned P >
-class TaskPolicy< Impl::TaskForEach< Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >  >  >
+template< class Arg0 , class Arg1 , class Arg2 >
+class TaskPolicy< Impl::TaskForEach< Kokkos::RangePolicy<Arg0,Arg1,Arg2,Kokkos::Qthread> > >
 {
 public:
 
@@ -483,7 +483,7 @@ public:
 
 private:
 
-  typedef RangePolicy< execution_space , void , IntType , P > range_policy ;
+  typedef RangePolicy<Arg0,Arg1,Arg2,Kokkos::Qthread>           range_policy ;
   typedef Impl::TaskManager< execution_space >  task_manager ;
   typedef Impl::TaskMember<  execution_space >  task_root_type ;
 
@@ -507,8 +507,8 @@ private:
         FunctorType        & f  = * static_cast< FunctorType * >( static_cast< task_base_type * >( t ) );
         FunctorType  const & cf = f ;
 
-        const IntType e = r.end();
-        for ( IntType i = r.begin() ; i < e ; ++i ) { cf(i); }
+        const typename range_policy::member_type e = r.end();
+        for ( typename range_policy::member_type i = r.begin() ; i < e ; ++i ) { cf(i); }
         f.apply();
       }
 
@@ -554,8 +554,8 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename IntType , unsigned P >
-class TaskPolicy< Impl::TaskReduce< Kokkos::RangePolicy< Kokkos::Qthread , void , IntType , P >  >  >
+template< class Arg0 , class Arg1 , class Arg2 >
+class TaskPolicy< Impl::TaskReduce< Kokkos::RangePolicy<Arg0,Arg1,Arg2,Kokkos::Qthread> > >
 {
 public:
 
@@ -563,7 +563,7 @@ public:
 
 private:
 
-  typedef RangePolicy< execution_space , void , IntType , P >  range_policy ;
+  typedef RangePolicy<Arg0,Arg1,Arg2,Kokkos::Qthread>           range_policy ;
   typedef Impl::TaskManager< execution_space >  task_manager ;
   typedef Impl::TaskMember<  execution_space >  task_root_type ;
 
@@ -591,8 +591,8 @@ private:
         FunctorType  const & cf = f ;
 
         cf.init( b.m_result );
-        const IntType e = r.end();
-        for ( IntType i = r.begin() ; i < e ; ++i ) { cf(i,b.m_result); }
+        const typename range_policy::member_type e = r.end();
+        for ( typename range_policy::member_type i = r.begin() ; i < e ; ++i ) { cf(i,b.m_result); }
         f.apply( b.m_result );
       }
 

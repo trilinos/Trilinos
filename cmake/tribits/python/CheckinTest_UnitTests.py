@@ -3051,7 +3051,11 @@ class test_checkin_test(unittest.TestCase):
       "--enable-all-packages=on",
       "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n",
       modifiedFilesStr = "M\tdummy.txt", # Will not trigger any enables!
-      extraPassRegexStr="Enabling all packages on request\n",
+      extraPassRegexStr=\
+        "Enabling all packages on request since --enable-all-packages=on\n"\
+        +"Skipping detection of changed packages since --enable-all-packages=on\n"\
+        +"cmakePkgOptions: ..-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON., .-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON., .-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON..\n"\
+        ,
       )
 
 

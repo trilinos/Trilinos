@@ -41,6 +41,7 @@ TEST( UnitTestChangeEntityId, change_id_small )
 
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
+  Part &quad4_part = meta_data.declare_part_with_topology("quad4_Part", stk::topology::QUAD_4);
   meta_data.commit();
 
   BulkData mesh(meta_data, pm);
@@ -51,14 +52,19 @@ TEST( UnitTestChangeEntityId, change_id_small )
     return;
   }
 
+  stk::mesh::PartVector elem_parts;
+  elem_parts.push_back(&quad4_part);
+
   mesh.modification_begin();
 
-  Entity elem                 = mesh.declare_entity(stk::topology::ELEMENT_RANK, p_rank + 1 /*id*/);
+  Entity elem                 = mesh.declare_entity(stk::topology::ELEMENT_RANK, p_rank + 1 /*id*/, elem_parts);
 
+  Entity node0                = mesh.declare_entity(stk::topology::NODE_RANK, p_rank*3 + 5000 /*id*/);
   Entity node1_local_chg_id   = mesh.declare_entity(stk::topology::NODE_RANK, p_rank*3 + 1 /*id*/);
   Entity node2_shared_chg_id  = mesh.declare_entity(stk::topology::NODE_RANK,            2 /*id*/);
   Entity node3                = mesh.declare_entity(stk::topology::NODE_RANK, p_rank*3 + 3 /*id*/);
 
+  mesh.declare_relation(elem, node0              , 0 /*relation ordinal*/);
   mesh.declare_relation(elem, node1_local_chg_id , 1 /*relation ordinal*/);
   mesh.declare_relation(elem, node2_shared_chg_id, 2 /*relation ordinal*/);
   mesh.declare_relation(elem, node3              , 3 /*relation ordinal*/);

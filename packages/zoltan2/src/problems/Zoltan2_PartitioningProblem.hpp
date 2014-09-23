@@ -64,6 +64,7 @@
 #include <unistd.h>
 #else
 #include <process.h>
+#define NOMINMAX
 #include <windows.h>
 #endif
 

@@ -56,14 +56,11 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                 , Kokkos::OpenMP
-                 >
+class ParallelFor< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP > >
 {
 private:
 
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP > Policy ;
 
   template< class PType >
   KOKKOS_FORCEINLINE_FUNCTION static
@@ -117,16 +114,13 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                    , Kokkos::OpenMP
-                    >
+class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP > >
 {
 private:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP > Policy ;
 
   template< class PType >
   KOKKOS_FORCEINLINE_FUNCTION static
@@ -211,16 +205,13 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                  , Kokkos::OpenMP
-                  >
+class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP > >
 {
 private:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::OpenMP > Policy ;
 
   template< class PType >
   KOKKOS_FORCEINLINE_FUNCTION static
@@ -321,12 +312,26 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::OpenMP , void > , Kokkos::OpenMP >
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > >
 {
 private:
 
-  typedef Kokkos::TeamPolicy< Kokkos::OpenMP , void > Policy ;
+  typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > Policy ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member )
+    { functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member )
+    { functor( TagType() , member ); }
 
 public:
 
@@ -347,7 +352,7 @@ public:
       typename Policy::member_type member( * OpenMPexec::get_thread_omp() , policy , team_shmem_size );
 
       for ( ; member.valid() ; member.next() ) {
-        functor( member );
+        ParallelFor::template driver< typename Policy::work_tag >( functor , member );
       }
     }
 /* END #pragma omp parallel */
@@ -357,7 +362,7 @@ public:
 };
 
 template< unsigned VectorLength, class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::OpenMP , void > , Kokkos::OpenMP >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::OpenMP , void > >
 {
 private:
   typedef Kokkos::TeamVectorPolicy< VectorLength, Kokkos::OpenMP , void > Policy ;
@@ -390,12 +395,30 @@ public:
   void wait() {}
 };
 
-template< class FunctorType >
-class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::OpenMP , void > , Kokkos::OpenMP >
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > >
 {
 private:
-  typedef Kokkos::TeamPolicy< Kokkos::OpenMP , void > Policy ;
+
+  typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::OpenMP > Policy ;
   typedef ReduceAdapter< FunctorType >   Reduce ;
+
+
+  template< class PType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< typename PType::work_tag , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename PType::member_type  & member
+             ,       typename Reduce::reference_type update )
+    { functor( member , update ); }
+
+  template< class PType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< typename PType::work_tag , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename PType::member_type  & member
+             ,       typename Reduce::reference_type update )
+    { functor( typename PType::work_tag() , member , update ); }
 
 public:
 
@@ -419,7 +442,7 @@ public:
       typename Reduce::reference_type update = Reduce::init( functor , exec.scratch_reduce() );
 
       for ( typename Policy::member_type member( exec , policy , team_shmem_size ); member.valid() ; member.next() ) {
-        functor( member , update );
+        ParallelReduce::template driver< Policy >( functor , member , update );
       }
     }
 /* END #pragma omp parallel */
@@ -455,7 +478,7 @@ public:
       typename Reduce::reference_type update = Reduce::init( functor , exec.scratch_reduce() );
 
       for ( typename Policy::member_type member( exec , policy , team_shmem_size ); member.valid() ; member.next() ) {
-        functor( member , update );
+        ParallelReduce::template driver< Policy >( functor , member , update );
       }
     }
 /* END #pragma omp parallel */

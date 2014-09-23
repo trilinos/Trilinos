@@ -725,6 +725,8 @@ TEUCHOS_UNIT_TEST(Hierarchy, Write)
   Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   out << "random status: " << rand() << std::endl;
+  std::srand(595343843);
+  std::rand();
   std::string infile = "A_0.m";
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
   RCP<Matrix> Ain = Utils::Read(infile, lib, comm);

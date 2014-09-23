@@ -351,7 +351,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
   //       the #proc is a power of two.  The 256 below is the bin size of the Distributed Index.
   static size_t next_edge = (static_cast<size_t>(mesh.parallel_rank()+1) << 32) + 256 * mesh.parallel_rank();
 
-  mesh.modification_begin();
+  bool i_started = mesh.modification_begin();
 
   {
     {
@@ -446,7 +446,10 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
     }
   }
 
-  mesh.modification_end_for_edge_creation( BulkData::MOD_END_COMPRESS_AND_SORT );
+  if(i_started)
+  {
+    mesh.modification_end_for_entity_creation( stk::topology::EDGE_RANK, BulkData::MOD_END_COMPRESS_AND_SORT );
+  }
 }
 
 }

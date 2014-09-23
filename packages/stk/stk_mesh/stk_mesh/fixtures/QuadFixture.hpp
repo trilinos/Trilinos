@@ -107,9 +107,15 @@ class QuadFixture
   void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
  private:
 
+  typedef std::multimap<EntityId, int> NodeToProcsMMap;
+
+  NodeToProcsMMap m_nodes_to_procs;
+
   QuadFixture();
   QuadFixture( const QuadFixture & );
   QuadFixture & operator = ( const QuadFixture & );
+
+  void fill_node_map( int proc_rank);
 };
 
 } // fixtures

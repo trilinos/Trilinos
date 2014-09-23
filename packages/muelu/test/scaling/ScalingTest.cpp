@@ -124,7 +124,9 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
+  // USER GUIDE // define communicator
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  // USER GUIDE // create fancy output stream
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
@@ -249,16 +251,20 @@ int main(int argc, char *argv[]) {
     Utils::Write(fileName, *A);
   }
 
+  // USER GUIDE // define near null space
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
   nullspace->putScalar( (SC) 1.0);
+  // USER GUIDE // 
   Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   nullspace->norm1(norms);
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;
 
+  // USER GUIDE // create new hierarchy
   RCP<MueLu::Hierarchy<SC, LO, GO, NO> > H;
-
+  // USER GUIDE //
+  
   //
   //
   // SETUP
@@ -272,25 +278,31 @@ int main(int argc, char *argv[]) {
     // Hierarchy
     //
 
+    // USER GUIDE // instantiate new Hierarchy object
     H = rcp(new Hierarchy());
     H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     H->SetMaxCoarseSize((GO) optMaxCoarseSize);
-
+    // USER GUIDE //
+    
     //
     // Finest level
     //
 
+    // USER GUIDE // create a fine level object
     RCP<Level> Finest = H->GetLevel();
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A",           A);
     Finest->Set("Nullspace",   nullspace);
     Finest->Set("Coordinates", coordinates); //FIXME: XCoordinates, YCoordinates, ..
-
+    // USER GUIDE //
+    
     //
     // FactoryManager
     //
 
+    // USER GUIDE // define a factory manager
     FactoryManager M;
+    // USER GUIDE //
 
     //
     //
@@ -327,6 +339,7 @@ int main(int argc, char *argv[]) {
       // Non rebalanced factories
       //
 
+      // USER GUIDE // declare some factories (potentially overwrite default factories)
       RCP<SaPFactory> PFact = rcp(new SaPFactory());
       PFact->SetDampingFactor(optSaDamping);
 
@@ -334,6 +347,8 @@ int main(int argc, char *argv[]) {
 
       RCP<RAPFactory> AFact = rcp(new RAPFactory());
       AFact->setVerbLevel(Teuchos::VERB_HIGH);
+      // USER GUIDE //
+      
       if (!optExplicitR) {
         H->SetImplicitTranspose(true);
         ParameterList Aclist = *(AFact->GetValidParameterList());
@@ -349,10 +364,11 @@ int main(int argc, char *argv[]) {
       if (optRepartition == 0) {
         // No repartitioning
 
-        // Configure FactoryManager
+        // USER GUIDE // configure factory manager
         M.SetFactory("P", PFact);
         M.SetFactory("R", RFact);
         M.SetFactory("A", AFact);
+	// USER GUIDE //
 
       } else {
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
@@ -441,6 +457,7 @@ int main(int argc, char *argv[]) {
     //
 
     {
+      // USER GUIDE // define smoother object
       std::string ifpackType;
       Teuchos::ParameterList ifpackList;
       ifpackList.set("relaxation: sweeps", (LO) optSweeps);
@@ -449,6 +466,7 @@ int main(int argc, char *argv[]) {
         ifpackType = "RELAXATION";
         ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
       }
+      // USER GUIDE // 
       else if (optSmooType == "l1-sgs") {
         ifpackType = "RELAXATION";
         ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
@@ -470,17 +488,20 @@ int main(int argc, char *argv[]) {
         // ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
       }
 
+      // USER GUIDE // create smoother factory
       RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(ifpackType, ifpackList));
       M.SetFactory("Smoother", rcp(new SmootherFactory(smootherPrototype)));
+      // USER GUIDE //
     }
 
     //
     // Setup preconditioner
     //
 
+    // USER GUIDE // setup multigrid hierarchy
     int startLevel = 0;
-    //      std::cout << startLevel << " " << optMaxLevels << std::endl;
     H->Setup(M, startLevel, optMaxLevels);
+    // USER GUIDE //
 
   } // end of Setup TimeMonitor
 
@@ -500,7 +521,7 @@ int main(int argc, char *argv[]) {
   //
   //
 
-  // Define X, B
+  // USER GUIDE // Define X, B
   RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
   RCP<MultiVector> B = MultiVectorFactory::Build(map, 1);
 
@@ -509,7 +530,8 @@ int main(int argc, char *argv[]) {
   A->apply(*X, *B, Teuchos::NO_TRANS, (SC)1.0, (SC)0.0);
   B->norm2(norms);
   B->scale(1.0/norms[0]);
-
+  // USER GUIDE //
+  
   //
   // Use AMG directly as an iterative method
   //
@@ -535,7 +557,8 @@ int main(int argc, char *argv[]) {
 
     RCP<TimeMonitor> tm;
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
-    // Operator and Multivector type that will be used with Belos
+    
+    // USER GUIDE // Operator and Multivector type that will be used with Belos
     typedef MultiVector          MV;
     typedef Belos::OperatorT<MV> OP;
     H->IsPreconditioner(true);
@@ -554,8 +577,9 @@ int main(int argc, char *argv[]) {
         std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
       return EXIT_FAILURE;
     }
+    // USER GUIDE //
 
-    // Belos parameter list
+    // USER GUIDE // Belos parameter list
     int maxIts = 100;
     Teuchos::ParameterList belosList;
     belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
@@ -567,13 +591,16 @@ int main(int argc, char *argv[]) {
 
     // Create an iterative solver manager
     RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-
+    // USER GUIDE //
+    
     // Perform solve
     Belos::ReturnType ret = Belos::Unconverged;
     try {
       {
         TimeMonitor tm2(*TimeMonitor::getNewTimer("ScalingTest: 5bis - Belos Internal Solve"));
+	// USER GUIDE // solve linear system
         ret = solver->solve();
+	// USER GUIDE // 
       } // end of TimeMonitor
 
       // Get the number of iterations for this solve.
@@ -607,12 +634,13 @@ int main(int argc, char *argv[]) {
         std::cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
     }
 
-    // Check convergence
+    // USER GUIDE // Check convergence
     if (ret != Belos::Converged) {
       if (comm->getRank() == 0) std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
     } else {
       if (comm->getRank() == 0) std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
     }
+    // USER GUIDE // 
     tm = Teuchos::null;
 
   } //if (optPrecond)

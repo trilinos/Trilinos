@@ -782,6 +782,9 @@ TEST(CoarseSearch, RotationalPeriodicBC)
   check_rotation_matrix(pbc_search, rotationAngle);
 }
 
+#if defined (__INTEL_COMPILER) && (__INTEL_COMPILER == 1400)
+#pragma GCC optimization_level 0
+#endif
 
 TEST(CoarseSearch, OffsetRotationalPeriodicBC)
 {

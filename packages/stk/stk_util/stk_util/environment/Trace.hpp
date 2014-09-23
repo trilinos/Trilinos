@@ -362,6 +362,9 @@ public:
     }
 
     ~TraceList() {
+      for(size_t i=0; i<size(); ++i) {
+        delete [] operator[](i);
+      }
       s_traceListExists = false;
     }
   };

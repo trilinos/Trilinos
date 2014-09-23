@@ -55,6 +55,12 @@ namespace Teuchos
   /**
    * \ingroup Containers
    * \brief Utilities for generating hashcodes.
+   * This is not a true hash ! For all ints and types less than ints
+   * it returns the i/p typecasted as an int. For every type more than the
+   * size of int it is only slightly more smarter where it adds the bits
+   * into int size chunks and calls that an hash. Used with a capacity
+   * limited array this will lead to one of the simplest hashes.
+   * Ideally this should be deprecated and not used at all.
    */
 
   class TEUCHOSCORE_LIB_DLL_EXPORT HashUtils
@@ -62,6 +68,7 @@ namespace Teuchos
     public:
       /* Get the next prime in a sequence of hashtable sizes */
       static int nextPrime(int newCapacity);
+      static int getHashCode(const unsigned char *a, size_t len);
 
     private:
 
@@ -75,6 +82,7 @@ namespace Teuchos
         1695781, 2627993, 4067599, 6290467, 9718019,
         15000607, 23133937, 35650091};*/
     };
+
 
   /** \relates HashUtils 
       \brief Standard interface for getting the hash code of an object 
@@ -94,7 +102,8 @@ namespace Teuchos
   */
   template <> inline int hashCode(const double& x)
     {
-      return (int) x;
+      return HashUtils::getHashCode(
+        reinterpret_cast<const unsigned char *>(&x), sizeof(double));
     }
 
   /** \relates HashUtils  
@@ -110,7 +119,8 @@ namespace Teuchos
   */
   template <> inline int hashCode(const long long& x)
     {
-      return (int) x;
+      return HashUtils::getHashCode(
+        reinterpret_cast<const unsigned char *>(&x), sizeof(long long));
     }
 
   /** \relates HashUtils  
@@ -118,7 +128,8 @@ namespace Teuchos
   */
   template <> inline int hashCode(const long& x)
     {
-      return (int) x;
+      return HashUtils::getHashCode(
+        reinterpret_cast<const unsigned char *>(&x), sizeof(long));
     }
 
   /** \relates HashUtils 
@@ -126,6 +137,9 @@ namespace Teuchos
   */
   template <> inline int hashCode(const std::string& x)
     {
+      /* This specialization could use the HashUtils::getHashCode as well,
+       * but they are both true hashes anyway, so leaving it !
+       * */
       const char* str = x.c_str();
       int len = x.length();
       int step = len/4 + 1;
@@ -140,10 +154,17 @@ namespace Teuchos
           base *= 128;
         }
 
+      if (rtn < 0)
+      {
+          /* Convert the largest -ve int to zero and -1 to
+           * std::numeric_limits<int>::max()
+           * */
+          size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+          maxIntBeforeWrap ++;
+          rtn += maxIntBeforeWrap;
+      }
       return rtn;
     }
-
-
 
 }
 #endif // TEUCHOS_HASHUTILS_H

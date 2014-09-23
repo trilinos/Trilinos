@@ -577,8 +577,9 @@ public:
 
 namespace Kokkos {
 
-template< class WorkArgTag >
-class TeamPolicy< Kokkos::Cuda , WorkArgTag > {
+template< class Arg0 , class Arg1 >
+class TeamPolicy< Arg0 , Arg1 , Kokkos::Cuda >
+{
 private:
 
   enum { MAX_WARP = 8 };
@@ -588,8 +589,14 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::Cuda               execution_space ; ///< Execution space
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef Kokkos::Cuda               execution_space ;  ///< Execution space
+  typedef TeamPolicy                 execution_policy ;
+
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Cuda , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 
   inline int team_size()   const { return m_team_size ; }
   inline int league_size() const { return m_league_size ; }
@@ -677,9 +684,9 @@ public:
   int team_size_recommended( const FunctorType & functor, int reduce_flag = 1 )
     {
       if(reduce_flag)
-        return Impl::cuda_get_opt_block_size< Impl::ParallelReduce<FunctorType,TeamVectorPolicy,Cuda> >(functor);
+        return Impl::cuda_get_opt_block_size< Impl::ParallelReduce<FunctorType,TeamVectorPolicy> >(functor);
       else
-        return Impl::cuda_get_opt_block_size< Impl::ParallelFor<FunctorType,TeamVectorPolicy,Cuda> >(functor);
+        return Impl::cuda_get_opt_block_size< Impl::ParallelFor<FunctorType,TeamVectorPolicy> >(functor);
     }
 
   typedef Kokkos::Impl::CudaTeamVectorMember<VectorLength> member_type ;
@@ -695,13 +702,11 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                 , Kokkos::Cuda >
+class ParallelFor< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Cuda > >
 {
 private:
 
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Cuda > Policy ;
 
   const FunctorType  m_functor ;
   const Policy       m_policy ;  
@@ -760,17 +765,19 @@ public:
     }
 };
 
-template< class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Cuda , void > , Kokkos::Cuda >
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Cuda > >
 {
 private:
 
-  typedef Kokkos::TeamPolicy< Kokkos::Cuda , void >   Policy ;
+  typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Cuda >   Policy ;
 
 public:
-  typedef FunctorType                   functor_type ;
-  typedef typename Policy::member_type  team_member ;
-  typedef Cuda::size_type               size_type ;
+
+  typedef FunctorType      functor_type ;
+  typedef Cuda::size_type  size_type ;
+
+private:
 
   // Algorithmic constraints: blockDim.y is a power of two AND blockDim.y == blockDim.z == 1
   // shared memory utilization:
@@ -784,19 +791,32 @@ public:
   size_type         m_shmem_size ;
   size_type         m_league_size ;
 
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type  member ) const
+    { m_functor( TagType() , member ); }
+
+public:
+
   __device__ inline
   void operator()(void) const
   {
     // Iterate this block through the league
     for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += gridDim.x ) {
 
-      const team_member member( kokkos_impl_cuda_shared_memory<void>()
-                              , m_shmem_begin
-                              , m_shmem_size
-                              , league_rank
-                              , m_league_size );
-
-      m_functor( member );
+      ParallelFor::template driver< typename Policy::work_tag >(
+        typename Policy::member_type( kokkos_impl_cuda_shared_memory<void>()
+                                    , m_shmem_begin
+                                    , m_shmem_size
+                                    , league_rank
+                                    , m_league_size ) );
     }
   }
 
@@ -825,7 +845,7 @@ public:
 };
 
 template< unsigned VectorLength, class FunctorType>
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy<VectorLength,Kokkos::Cuda,void> ,Kokkos::Cuda >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy<VectorLength,Kokkos::Cuda,void> >
 {
 private:
 
@@ -899,14 +919,11 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelReduce< FunctorType 
-                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                    , Kokkos::Cuda
-                    >
+class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Cuda > >
 {
 private:
 
-  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2> Policy ;
+  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda > Policy ;
   typedef ReduceAdapter< FunctorType >        Reduce ;
 
 public:
@@ -1033,21 +1050,22 @@ public:
   }
 };
 
-template< class FunctorType >
-class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::Cuda , void > , Kokkos::Cuda >
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Cuda > >
 {
 private:
 
-  typedef Kokkos::TeamPolicy< Kokkos::Cuda , void >   Policy ;
+  typedef Kokkos::TeamPolicy<Arg0,Arg1,Kokkos::Cuda>  Policy ;
   typedef ReduceAdapter< FunctorType >                Reduce ;
+  typedef typename Reduce::pointer_type               pointer_type ;
+  typedef typename Reduce::reference_type             reference_type ;
 
 public:
 
-  typedef FunctorType                                 functor_type ;
-  typedef typename Policy::member_type                team_member ;
-  typedef typename Reduce::pointer_type               pointer_type ;
-  typedef typename Reduce::reference_type             reference_type ;
-  typedef Cuda::size_type                             size_type ;
+  typedef FunctorType      functor_type ;
+  typedef Cuda::size_type  size_type ;
+
+private:
 
   // Algorithmic constraints: blockDim.y is a power of two AND blockDim.y == blockDim.z == 1
   // shared memory utilization:
@@ -1066,6 +1084,21 @@ public:
   size_type         m_shmem_size ;
   size_type         m_league_size ;
 
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type  member 
+             , reference_type update ) const
+    { m_functor( member , update ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type  member 
+             , reference_type update ) const
+    { m_functor( TagType() , member , update ); }
+
+public:
 
   __device__ inline
   void operator()(void) const
@@ -1079,13 +1112,13 @@ public:
     // Iterate this block through the league
     for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += gridDim.x ) {
 
-      const team_member member( kokkos_impl_cuda_shared_memory<char>() + m_team_begin
-                              , m_shmem_begin
-                              , m_shmem_size
-                              , league_rank
-                              , m_league_size );
-
-      m_functor( member , value );
+      ParallelReduce::template driver< typename Policy::work_tag >
+        ( typename Policy::member_type( kokkos_impl_cuda_shared_memory<char>() + m_team_begin
+                                        , m_shmem_begin
+                                        , m_shmem_size
+                                        , league_rank
+                                        , m_league_size )
+        , value );
     }
 
     // Reduce with final value at blockDim.y - 1 location.
@@ -1166,14 +1199,11 @@ namespace Kokkos {
 namespace Impl {
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                  , Kokkos::Cuda
-                  >
+class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Cuda > >
 {
 private:
 
-  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2> Policy ;
+  typedef Kokkos::RangePolicy<Arg0,Arg1,Arg2, Kokkos::Cuda > Policy ;
   typedef ReduceAdapter< FunctorType >        Reduce ;
 
 public:

@@ -41,9 +41,12 @@ namespace {
                                                                         \
   MetaData meta_data(spatial_dim);                                      \
   Part& unranked_part = meta_data.declare_part("unranked_part");        \
-  Part& element_rank_part = meta_data.declare_part("element_rank_part", stk::topology::ELEMENT_RANK); \
-  Part& element_rank_superset_part = meta_data.declare_part("element_rank_superset_part", stk::topology::ELEMENT_RANK); \
-  Part& side_rank_part = meta_data.declare_part("side_rank_part", meta_data.side_rank()); \
+  Part& element_rank_part =                                             \
+     meta_data.declare_part_with_topology("element_rank_part", stk::topology::TRI_3);        \
+  Part& element_rank_superset_part =                                    \
+    meta_data.declare_part("element_rank_superset_part", stk::topology::ELEMENT_RANK); \
+  Part& side_rank_part =                                                \
+    meta_data.declare_part_with_topology("side_rank_part", stk::topology::LINE_2); \
   Part& unranked_superset_part = meta_data.declare_part("unranked_superset_part"); \
   meta_data.declare_part_subset(unranked_superset_part, element_rank_part); \
   meta_data.declare_part_subset(element_rank_superset_part, element_rank_part); \
@@ -64,13 +67,19 @@ namespace {
   Entity side2 = mesh.declare_entity(meta_data.side_rank(), 2 /*id*/, parts); \
                                                                         \
   parts.clear();                                                        \
-  Entity node = mesh.declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);      \
+  Entity node  = mesh.declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);      \
+  Entity node2 = mesh.declare_entity(stk::topology::NODE_RANK, 2 /*id*/, parts);      \
+  Entity node3 = mesh.declare_entity(stk::topology::NODE_RANK, 3 /*id*/, parts);      \
                                                                         \
   mesh.declare_relation(elem, side1,  0 /*rel id*/);                    \
-  mesh.declare_relation(elem, node,  0 /*rel id*/);                    \
+  mesh.declare_relation(elem, node,   0 /*rel id*/);                    \
+  mesh.declare_relation(elem, node2,  1 /*rel id*/);                    \
+  mesh.declare_relation(elem, node3,  2 /*rel id*/);                    \
   mesh.declare_relation(elem, side2,  1 /*rel id*/);                    \
   mesh.declare_relation(side1, node,  0 /*rel id*/);                    \
-  mesh.declare_relation(side2, node,  0 /*rel id*/);
+  mesh.declare_relation(side1, node2,  1 /*rel id*/);                   \
+  mesh.declare_relation(side2, node,  0 /*rel id*/);                    \
+  mesh.declare_relation(side2, node3,  1 /*rel id*/);
 
 TEST ( UnitTestInducedPart , verifyBasicInducedPart )
 {

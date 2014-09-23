@@ -177,9 +177,6 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError, "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) must be built before calling this function.");
 
     Level& level = *Levels_[coarseLevelID];
-    level.setlib(lib_);
-
-    CheckLevel(level, coarseLevelID);
 
     bool isFinestLevel = false;
     bool isLastLevel   = false;
@@ -197,7 +194,18 @@ namespace MueLu {
       // Record the communicator on the level (used for timers sync)
       level.SetComm(comm);
 #endif
+
+      // Set the Hierarchy library to match that of the finest level matrix,
+      // even if it was already set
+      lib_ = A->getRowMap()->lib();
+      level.setlib(lib_);
+
+    } else {
+      // Permeate library to a coarser level
+      level.setlib(lib_);
     }
+
+    CheckLevel(level, coarseLevelID);
 
     // Attach FactoryManager to the fine level
     RCP<SetFactoryManager> SFMFine;

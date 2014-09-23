@@ -1211,8 +1211,8 @@ namespace MueLu {
     comm->barrier();
   } //PauseForDebugger
 #else
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PauseForDebugger() {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PauseForDebugger() {
       throw(Exceptions::RuntimeError("MueLu Utils: PauseForDebugger not implemented on Windows."));
   }
 

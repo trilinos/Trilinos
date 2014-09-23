@@ -17,7 +17,7 @@
 #include <vector>                       // for vector
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
-
+#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
 
 namespace stk {
 namespace mesh {
@@ -40,6 +40,10 @@ public:
 
   int  comm_size() const { return m_comm_size; }
   int  comm_rank() const { return m_comm_rank; }
+
+  Part &get_elem_part() const { return m_elem_part; }
+
+  stk::topology get_elem_topology() const { return m_elem_topology; }
 
   typedef int BOX[3][2];
 
@@ -65,6 +69,11 @@ protected:
   int m_comm_rank;
   int m_comm_size;
 
+  NodeToProcsMMap m_nodes_to_procs;
+
+  Part &m_elem_part;
+  stk::topology m_elem_topology;
+
   BulkData::BulkDataSyncState m_previous_state;
 
   /**
@@ -79,6 +88,9 @@ private:
   BoxFixture();
   BoxFixture( const BoxFixture & );
   BoxFixture & operator = ( const BoxFixture & );
+
+  void fill_node_map(int proc_rank, const BOX root_box);
+
 };
 
 } // namespace fixtures

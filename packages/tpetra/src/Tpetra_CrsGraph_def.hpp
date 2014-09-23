@@ -1255,47 +1255,43 @@ namespace Tpetra {
   //   }
   // }
 
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::sortRowIndices(RowInfo rowinfo)
-  {
-    if (rowinfo.numEntries > 0) {
-      ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
-      std::sort(inds_view.begin(), inds_view.begin() + rowinfo.numEntries);
-    }
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  // in the future, perhaps this could use std::sort with a boost::zip_iterator
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  template <class Scalar>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
-  sortRowIndicesAndValues (const RowInfo rowinfo, const Teuchos::ArrayView<Scalar>& values)
+  sortRowIndices (RowInfo rowinfo)
   {
     if (rowinfo.numEntries > 0) {
       Teuchos::ArrayView<LocalOrdinal> inds_view =
         this->getLocalViewNonConst (rowinfo);
-      sort2 (inds_view.begin (), inds_view.begin () + rowinfo.numEntries,
+      std::sort (inds_view.begin (), inds_view.begin () + rowinfo.numEntries);
+    }
+  }
+
+  // in the future, perhaps this could use std::sort with a boost::zip_iterator
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Scalar>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
+  sortRowIndicesAndValues (const RowInfo rowinfo,
+                           const Teuchos::ArrayView<Scalar>& values)
+  {
+    if (rowinfo.numEntries > 0) {
+      Teuchos::ArrayView<LocalOrdinal> indsView =
+        this->getLocalViewNonConst (rowinfo);
+      sort2 (indsView.begin (), indsView.begin () + rowinfo.numEntries,
              values.begin ());
     }
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::mergeRowIndices(RowInfo rowinfo)
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
+  mergeRowIndices (RowInfo rowinfo)
   {
-    const char tfecfFuncName[] = "mergRowIndices()";
+    using Teuchos::ArrayView;
+    const char tfecfFuncName[] = "mergeRowIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStorageOptimized() == true, std::logic_error,
-      ": The graph is already storage optimized, so we shouldn't be merging any indices."
-      " Please report this bug to the Tpetra developers.");
+      isStorageOptimized (), std::logic_error, "The graph is already storage "
+      "optimized, so we shouldn't be merging any indices.  "
+      "Please report this bug to the Tpetra developers.");
+
     ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
     typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
     beg = inds_view.begin();
@@ -1303,16 +1299,14 @@ namespace Tpetra {
     newend = std::unique(beg,end);
     const size_t mergedEntries = newend - beg;
 #ifdef HAVE_TPETRA_DEBUG
-    // merge should not have eliminated any entries; if so, the assignment below will destory the packed structure
+    // merge should not have eliminated any entries; if so, the
+    // assignment below will destroy the packed structure
     TEUCHOS_TEST_FOR_EXCEPT( isStorageOptimized() && mergedEntries != rowinfo.numEntries );
 #endif
     numRowEntries_[rowinfo.localRow] = mergedEntries;
     nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   // in the future, this could use std::unique with a boost::zip_iterator
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template<class Scalar>
@@ -2951,7 +2945,8 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   reindexColumns (const Teuchos::RCP<const map_type>& newColMap,
-                  const Teuchos::RCP<const import_type>& newImport)
+                  const Teuchos::RCP<const import_type>& newImport,
+                  const bool sortIndicesInEachRow)
   {
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
@@ -3168,6 +3163,22 @@ namespace Tpetra {
         lclInds1D_ = newLclInds1D;
       } else { // dynamic profile
         lclInds2D_ = newLclInds2D;
+      }
+      // We've reindexed, so we don't know if the indices are sorted.
+      //
+      // FIXME (mfh 17 Sep 2014) It could make sense to check this,
+      // since we're already going through all the indices above.  We
+      // could also sort each row in place; that way, we would only
+      // have to make one pass over the rows.
+      indicesAreSorted_ = false;
+      if (sortIndicesInEachRow) {
+        // NOTE (mfh 17 Sep 2014) The graph must be locally indexed in
+        // order to call this method.
+        //
+        // FIXME (mfh 17 Sep 2014) This violates the strong exception
+        // guarantee.  It would be better to sort the new index arrays
+        // before committing them.
+        sortAllIndices ();
       }
     }
     colMap_ = newColMap;

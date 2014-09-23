@@ -38,6 +38,7 @@ class RingFixture {
   Part &                m_element_part_extra ;
   const size_t          m_num_element_per_proc ;
   std::vector<EntityId> m_node_ids , m_element_ids ;
+  Part &                m_beam_2_part;
 
   RingFixture( stk::ParallelMachine pm ,
                unsigned num_element_per_proc = 10 ,
@@ -56,11 +57,18 @@ class RingFixture {
    */
   void fixup_node_ownership();
 
+ protected:
+
+  typedef std::multimap<EntityId, int> NodeToProcsMMap;
+  NodeToProcsMMap m_nodes_to_procs;
+
  private:
 
    RingFixture();
    RingFixture( const RingFixture & );
    RingFixture & operator = ( const RingFixture & );
+
+   void fill_node_map(int proc_rank);
 };
 
 }

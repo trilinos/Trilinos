@@ -91,13 +91,13 @@ namespace Xpetra {
   };
 #define XPETRA_VECTORFACTORY_SHORT
 
-  template <class GlobalOrdinalArg>
-  class VectorFactory<double, int, GlobalOrdinalArg> {
+  template <>
+  class VectorFactory<double, int, int> {
 
     typedef double                              Scalar;
     typedef int                                 LocalOrdinal;
-    typedef GlobalOrdinalArg                    GlobalOrdinal;
-    typedef typename Vector<double, int, GlobalOrdinal>::node_type Node;
+    typedef int                                 GlobalOrdinal;
+    typedef Vector<double, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -116,23 +116,64 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraVectorT<GlobalOrdinal>(map, zeroOut) );
+        return rcp( new EpetraVectorT<int>(map, zeroOut) );
+#endif
 #endif
 
       XPETRA_FACTORY_END;
     }
 
   };
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template <>
+  class VectorFactory<double, int, long long> {
+
+    typedef double                              Scalar;
+    typedef int                                 LocalOrdinal;
+    typedef long long                           GlobalOrdinal;
+    typedef Vector<double, int, GlobalOrdinal>::node_type Node;
+#undef XPETRA_VECTORFACTORY_SHORT
+#include "Xpetra_UseShortNames.hpp"
+
+  private:
+    //! Private constructor. This is a static class.
+    VectorFactory() {}
+
+  public:
+
+    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
+      XPETRA_MONITOR("VectorFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra)
+        return rcp( new TpetraVector(map, zeroOut) );
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+      if (map->lib() == UseEpetra)
+        return rcp( new EpetraVectorT<long long>(map, zeroOut) );
+#endif
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+  };
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
 #define XPETRA_VECTORFACTORY_SHORT
 
-  template <class GlobalOrdinalArg>
-  class VectorFactory<int, int, GlobalOrdinalArg> {
+  template <>
+  class VectorFactory<int, int, int> {
 
     typedef int                              Scalar;
     typedef int                              LocalOrdinal;
-    typedef GlobalOrdinalArg                            GlobalOrdinal;
-    typedef typename Vector<int, int, GlobalOrdinal>::node_type Node;
+    typedef int                              GlobalOrdinal;
+    typedef Vector<int, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -151,14 +192,54 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraIntVectorT<GlobalOrdinal>(map, zeroOut) );
+        return rcp( new EpetraIntVectorT<int>(map, zeroOut) );
+#endif
 #endif
 
       XPETRA_FACTORY_END;
     }
 
   };
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template <>
+  class VectorFactory<int, int, long long> {
+
+    typedef int                              Scalar;
+    typedef int                              LocalOrdinal;
+    typedef long long                        GlobalOrdinal;
+    typedef Vector<int, int, GlobalOrdinal>::node_type Node;
+#undef XPETRA_VECTORFACTORY_SHORT
+#include "Xpetra_UseShortNames.hpp"
+
+  private:
+    //! Private constructor. This is a static class.
+    VectorFactory() {}
+
+  public:
+
+    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
+      XPETRA_MONITOR("VectorFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra)
+        return rcp( new TpetraVector(map, zeroOut) );
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+      if (map->lib() == UseEpetra)
+        return rcp( new EpetraIntVectorT<long long>(map, zeroOut) );
+#endif
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+  };
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 }
 

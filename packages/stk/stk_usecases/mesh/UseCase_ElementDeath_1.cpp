@@ -183,6 +183,9 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
   bool passed = true;
 
   stk::mesh::EntityRank mesh_rank = element_rank;
+  stk::mesh::Part &line2_part = fem_meta.get_topology_root_part(stk::topology::LINE_2);
+  stk::mesh::PartVector add_line2_parts, empty_parts;
+  add_line2_parts.push_back(&line2_part);
 
   for (int iteration = 0; iteration <NUM_ITERATIONS; ++iteration) {
     //find the entities to kill in this iteration
@@ -244,6 +247,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
       stk::mesh::Entity entity = skin[i].entity;
       const unsigned side_ordinal  = skin[i].side_ordinal;
       stk::mesh::Entity side   = requested_entities[i];
+      mesh.change_entity_parts(side, add_line2_parts, empty_parts);
 
       stk::mesh::declare_element_side(mesh, entity, side, side_ordinal);
     }

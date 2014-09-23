@@ -59,14 +59,11 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                 , Kokkos::Threads
-                 >
+class ParallelFor< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads > >
 {
 private:
 
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads > Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
@@ -119,32 +116,43 @@ public:
     }
 };
 
-template< class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Threads , void > , Kokkos::Threads >
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Threads > >
 {
-public:
+private:
 
-  typedef TeamPolicy< Kokkos::Threads , void >  Policy ;
+  typedef TeamPolicy< Arg0 , Arg1 , Kokkos::Threads >  Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
   const int          m_shared ;
 
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_func( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_func( TagType() , member ); }
+
   static void execute( ThreadsExec & exec , const void * arg )
   {
     const ParallelFor & self = * ((const ParallelFor *) arg );
 
-    // TODO: Add thread pool queries to ThreadExec.
-    // TODO: Move all of the team state out of ThreadsExec and into the Policy.
-
     typename Policy::member_type member( exec , self.m_policy , self.m_shared );
 
     for ( ; member.valid() ; member.next() ) {
-      self.m_func( member );
+      self.ParallelFor::template driver< typename Policy::work_tag >( member );
     }
 
     exec.fan_in();
   }
+
+public:
 
   ParallelFor( const FunctorType & functor
               , const Policy      & policy )
@@ -158,14 +166,10 @@ public:
 
       ThreadsExec::fence();
     }
-
-  inline void wait() {}
-
-  inline ~ParallelFor() { wait(); }
 };
 
 template< unsigned int VectorLength, class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Threads , void > , Kokkos::Threads >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Threads , void > >
 {
 private:
 
@@ -205,25 +209,19 @@ public:
 
       ThreadsExec::fence();
     }
-
-  inline void wait() {}
-
-  inline ~ParallelFor() { wait(); }
 };
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                    , Kokkos::Threads
-                    >
+class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads > >
 {
 private:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads > Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
@@ -294,18 +292,32 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType >
-class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::Threads , void > , Kokkos::Threads >
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Threads > >
 {
 private:
 
-  typedef TeamPolicy< Kokkos::Threads , void >  Policy ;
-  typedef ReduceAdapter< FunctorType >          Reduce ;
-  typedef typename Reduce::pointer_type         pointer_type ;
+  typedef TeamPolicy< Arg0 , Arg1 , Kokkos::Threads >  Policy ;
+  typedef ReduceAdapter< FunctorType >      Reduce ;
+  typedef typename Reduce::pointer_type     pointer_type ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
   const int          m_shared ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member
+             , typename Reduce::reference_type update ) const
+    { m_func( member , update ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member
+             , typename Reduce::reference_type update ) const
+    { m_func( TagType() , member , update ); }
 
   static void execute( ThreadsExec & exec , const void * arg )
   {
@@ -316,7 +328,7 @@ private:
 
     typename Policy::member_type member( exec , self.m_policy , self.m_shared );
     for ( ; member.valid() ; member.next() ) {
-      self.m_func( member , update );
+      self.ParallelReduce::template driver< typename Policy::work_tag >( member , update );
     }
 
     exec.fan_in_reduce( self.m_func );
@@ -356,26 +368,19 @@ public:
       const unsigned n = Reduce::value_count( m_func );
       for ( unsigned i = 0 ; i < n ; ++i ) { result.ptr_on_device()[i] = data[i]; }
     }
-
-  inline void wait() {}
-
-  inline ~ParallelReduce() { wait(); }
 };
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
-class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 >
-                  , Kokkos::Threads
-                  >
+class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads > >
 {
 private:
 
   typedef ReduceAdapter< FunctorType > Reduce ;
   typedef typename Reduce::pointer_type pointer_type ;
-  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Threads > Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;

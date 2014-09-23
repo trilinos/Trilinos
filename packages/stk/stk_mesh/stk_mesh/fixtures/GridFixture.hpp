@@ -12,6 +12,8 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
+
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
@@ -39,6 +41,11 @@ public:
   BulkData  m_bulk_data;
   Part &    m_quad_part;
   Part &    m_dead_part;
+
+private:
+  NodeToProcsMMap m_nodes_to_procs;
+
+  void fill_node_map(unsigned num_nodes, unsigned num_quad_faces, int p_rank);
 };
 
 } // fixtures

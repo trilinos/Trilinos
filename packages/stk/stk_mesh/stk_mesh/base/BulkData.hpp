@@ -289,7 +289,7 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
   bool modification_end( modification_optimization opt = MOD_END_SORT );
-  bool modification_end_for_edge_creation( modification_optimization opt = MOD_END_SORT);
+  bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT);
 
 
   /** If field-data was set to not stay in sync with buckets as the mesh was populated,
@@ -815,6 +815,11 @@ public:
       return static_cast<entitySharing>(m_mark_entity[entity.local_offset()]);
   }
 
+  bool addNodeSharingCalled() const
+  {
+    return m_add_node_sharing_called;
+  }
+
   Bucket & bucket(Entity entity) const
   {
     entity_getter_debug_check(entity);
@@ -1251,6 +1256,7 @@ private:
   std::vector<EntityKey>   m_entity_keys;
   std::vector<uint16_t>    m_entity_states;
   std::vector<int>         m_mark_entity;
+  bool                     m_add_node_sharing_called;
 protected:
   std::vector<uint16_t>    m_closure_count;
 private:
@@ -1400,7 +1406,7 @@ private:
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
-  bool internal_modification_end_for_edge_creation( bool regenerate_aura, modification_optimization opt );
+  bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
 
 protected:
   void internal_resolve_shared_modify_delete();

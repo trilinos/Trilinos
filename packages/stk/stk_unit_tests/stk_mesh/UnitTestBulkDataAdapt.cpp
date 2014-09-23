@@ -10,6 +10,7 @@
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
 #include <gtest/gtest.h>
 #include <string>                       // for string, char_traits
 #include <vector>                       // for vector
@@ -102,28 +103,36 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
-  const unsigned spatial_dim = 2;
+  const unsigned spatial_dim = 1;
 
   std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
   entity_rank_names.push_back("FAMILY_TREE");
 
   MetaData meta_data(spatial_dim, entity_rank_names);
-  //Part & part_tmp = meta_data.declare_part( "temp");
+ Part & elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::LINE_2_1D);
+ Part & node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
+
 
   meta_data.commit();
   BulkData mesh(meta_data, pm);
-  //BulkData mesh(MetaData::get_meta_data(meta_data), pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
 
   if (p_size != 3) return;
 
+  // Build map for node sharing
+  stk::mesh::fixtures::NodeToProcsMMap nodes_to_procs;
+  {
+    for (unsigned ielem=0; ielem < nelems; ielem++) {
+      int e_owner = static_cast<int>(elems_0[ielem][3]);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][2], e_owner);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][1], e_owner);
+    }
+  }
+
   //
   // Begin modification cycle so we can create the entities and relations
   //
-
-  // We're just going to add everything to the universal part
-  stk::mesh::PartVector empty_parts;
 
   // Create elements
   const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
@@ -135,17 +144,20 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
     {
       if (static_cast<int>(elems_0[ielem][3]) == p_rank)
         {
-          elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], empty_parts);
+          elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], elem_part);
 
           EntityVector nodes;
           // Create node on all procs
-          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][2], empty_parts) );
-          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][1], empty_parts) );
+          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][2], node_part) );
+          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][1], node_part) );
 
           // Add relations to nodes
           mesh.declare_relation( elem, nodes[0], 0 );
           mesh.declare_relation( elem, nodes[1], 1 );
 
+          // Node sharing
+          stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[0]), nodes[0]);
+          stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[1]), nodes[1]);
         }
     }
 

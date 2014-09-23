@@ -315,6 +315,8 @@ TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
 
 TEST(UnitTestingOfBulkData, testCreateMore)
 {
+  std::cout << "testCreateMore needs to be replaced with corresponding test that makes use of node sharing API enforcement" << std::endl;
+  /*
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
@@ -399,6 +401,7 @@ TEST(UnitTestingOfBulkData, testCreateMore)
 
     ASSERT_THROW( bulk.modification_end() , std::runtime_error );
   }
+  */
 }
 
 //----------------------------------------------------------------------
@@ -911,18 +914,22 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
 
   if (p_rank < 2) {
     // We're just going to add everything to the universal part
-    stk::mesh::PartVector empty_parts;
+    stk::mesh::PartVector node_parts, elem_parts;
+    stk::mesh::Part &node_part = meta_data.get_topology_root_part(stk::topology::NODE);
+    node_parts.push_back(&node_part);
+    stk::mesh::Part &quad4_part = meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
+    elem_parts.push_back(&quad4_part);
 
     // Create element
     const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
     Entity elem = mesh.declare_entity(elem_rank,
                                         p_rank+1, //elem_id
-                                        empty_parts);
+                                        elem_parts);
 
     // Create nodes
     const unsigned starting_node_id = p_rank * nodes_per_side + 1;
     for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-      nodes.push_back(mesh.declare_entity(NODE_RANK, id, empty_parts));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, id, node_parts));
     }
 
     // Add relations to nodes
@@ -987,6 +994,9 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
+  Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
+  Part& edge_part = meta_data.declare_part_with_topology("edge_part", stk::topology::LINE_2);
+  Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
   meta_data.commit();
   BulkData mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
@@ -1006,13 +1016,10 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   EntityKey elem_key_chg_own(elem_rank, p_size - 1 /*id*/);
   EntityKey edge_key_chg_own(edge_rank, 1 /*id*/);
 
-  // We're just going to add everything to the universal part
-  stk::mesh::PartVector empty_parts;
-
   // Create element
   Entity elem = mesh.declare_entity(elem_rank,
                                       p_rank+1, //elem_id
-                                      empty_parts);
+                                      elem_part);
 
   // If it is 2nd to last element, it is the one changing
   if (p_rank == p_size - 2) {
@@ -1023,7 +1030,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   EntityVector nodes;
   const unsigned starting_node_id = p_rank * nodes_per_side + 1;
   for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-    nodes.push_back(mesh.declare_entity(NODE_RANK, id, empty_parts));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, id, node_part));
   }
 
   // Add relations to nodes
@@ -1037,7 +1044,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   if (p_rank >= p_size - 2) {
     Entity edge = mesh.declare_entity(edge_rank,
                                        1, // id
-                                       empty_parts);
+                                       edge_part);
     ASSERT_TRUE(mesh.entity_key(edge) == edge_key_chg_own);
 
     // Add relation from elem to edge
@@ -1154,6 +1161,8 @@ TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   entity_rank_names.push_back("FAMILY_TREE");
 
   MetaData meta_data(spatial_dim, entity_rank_names);
+  const unsigned nodes_per_elem = 4, nodes_per_side = 2;
+  Part &elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4 );
   meta_data.commit();
   BulkData mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
@@ -1169,23 +1178,32 @@ TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   mesh.modification_begin();
 
   EntityVector nodes;
-  const unsigned nodes_per_elem = 4, nodes_per_side = 2;
   const EntityRank family_tree_rank = static_cast<EntityRank>(stk::topology::ELEMENT_RANK + 1);
   const EntityId my_family_tree_id = p_rank+1;
 
   // We're just going to add everything to the universal part
   stk::mesh::PartVector empty_parts;
+  stk::mesh::PartVector elem_parts;
+  elem_parts.push_back(&elem_part);
 
   // Create element
   const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
   Entity elem = mesh.declare_entity(elem_rank,
                                     p_rank+1, //elem_id
-                                    empty_parts);
+                                    elem_parts);
 
   // Create nodes
   const unsigned starting_node_id = p_rank * nodes_per_side + 1;
   for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
     nodes.push_back(mesh.declare_entity(NODE_RANK, id, empty_parts));
+  }
+  if (p_rank > 0) {
+    mesh.add_node_sharing(nodes[0], p_rank - 1);
+    mesh.add_node_sharing(nodes[1], p_rank - 1);
+  }
+  if (p_rank < (p_size - 1)) {
+    mesh.add_node_sharing(nodes[2], p_rank + 1);
+    mesh.add_node_sharing(nodes[3], p_rank + 1);
   }
 
   // Add relations to nodes
@@ -1236,92 +1254,6 @@ TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   }
 }
 
-TEST(UnitTestingOfBulkData, test_other_ghosting)
-{
-  //
-  // 1---3---5---7
-  // | 1 | 2 | 3 | ...
-  // 2---4---6---8
-  //
-  // To test this, we use the mesh above, with each elem going on a separate
-  // proc, one elem per proc.
-
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-
-  // Set up meta and bulk data
-  const unsigned spatial_dim = 2;
-
-  std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
-  //entity_rank_names.push_back("FAMILY_TREE");
-
-  MetaData meta_data(spatial_dim, entity_rank_names);
-  meta_data.commit();
-  BulkData mesh(meta_data, pm);
-  int p_rank = mesh.parallel_rank();
-  int p_size = mesh.parallel_size();
-
-  if (p_size != 3) return;
-
-  //Part& owned  = meta_data.locally_owned_part();
-  //Part& shared = meta_data.globally_shared_part();
-
-  //
-  // Begin modification cycle so we can create the entities and relations
-  //
-
-  mesh.modification_begin();
-
-  EntityVector nodes;
-  const unsigned nodes_per_elem = 4, nodes_per_side = 2;
-
-  // We're just going to add everything to the universal part
-  stk::mesh::PartVector empty_parts;
-
-  // Create element
-  const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
-  Entity elem = mesh.declare_entity(elem_rank,
-                                      p_rank+1, //elem_id
-                                      empty_parts);
-
-  // Create nodes
-  const unsigned starting_node_id = p_rank * nodes_per_side + 1;
-  for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-    nodes.push_back(mesh.declare_entity(NODE_RANK, id, empty_parts));
-  }
-
-  // Add relations to nodes
-  unsigned rel_id = 0;
-  for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
-    mesh.declare_relation( elem, *itr, rel_id );
-  }
-
-  if (1 && p_rank == 2)
-    {
-       Entity node = mesh.declare_entity(NODE_RANK,
-                                          4,
-                                          empty_parts);
-       //Entity node = mesh.get_entity(NODE_RANK,
-       //4);
-
-      mesh.declare_relation(elem, node, 4);
-    }
-
-  mesh.modification_end();
-
-  mesh.modification_begin();
-  if (p_rank == 1)
-    {
-      Entity this_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 2);
-      if (!mesh.destroy_entity(this_elem)) exit(2);
-    }
-  if (p_rank == 2)
-    {
-      Entity this_elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 3);
-      if (!mesh.destroy_entity(this_elem)) exit(2);
-    }
-  mesh.modification_end();
-}
-
 TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
 {
   //
@@ -1365,12 +1297,14 @@ TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
     EntityKey node_key_to_move(node_rank, 3 /*id*/);
 
     // We're just going to add everything to the universal part
-    stk::mesh::PartVector empty_parts;
+    stk::mesh::PartVector empty_parts, elem_parts;
+    stk::mesh::Part &quad4_part = meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
+    elem_parts.push_back(&quad4_part);
 
     // Create element
     Entity elem = mesh.declare_entity(elem_rank,
                                         p_rank+1, //elem_id
-                                        empty_parts);
+                                        elem_parts);
 
     // Create nodes
     EntityVector nodes;
@@ -1447,6 +1381,9 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
   const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank = stk::topology::EDGE_RANK;
 
+  stk::mesh::Part& side_part = meta_data.declare_part_with_topology("side_part", stk::topology::LINE_2);
+  stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4);
+
   meta_data.commit();
 
   BulkData mesh(meta_data, pm);
@@ -1477,11 +1414,13 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
 
     // Create element
     const EntityId elem_id = p_rank+1;
-    Entity elem = mesh.declare_entity(elem_rank, elem_id, empty_parts);
+    //Entity elem = mesh.declare_entity(elem_rank, elem_id, empty_parts);
+    Entity elem = mesh.declare_entity(elem_rank, elem_id, elem_part);
 
     // Create local version of side (with different, artificial id on each processor)
     const EntityId tmp_side_id = p_rank+51;
-    Entity side = mesh.declare_entity(side_rank, tmp_side_id, empty_parts);
+    //Entity side = mesh.declare_entity(side_rank, tmp_side_id, empty_parts);
+    Entity side = mesh.declare_entity(side_rank, tmp_side_id, side_part);
 
     // Add element relations to nodes
     unsigned elem_rel_id = 0;
@@ -1519,7 +1458,7 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
     EXPECT_TRUE(successfully_destroyed);
 
     const EntityId side_id = 1;
-    side = mesh.declare_entity(side_rank, side_id, empty_parts);
+    side = mesh.declare_entity(side_rank, side_id, side_part);
 
     // Add side relations to nodes and element
     side_rel_id = 0;
@@ -2251,6 +2190,11 @@ TEST(DocTestBulkData, onlyKeepTheOwnersParts)
     stkMeshIoBroker.populate_bulk_data();
     stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
+    stk::topology elem_topo = (stkMeshMetaData.spatial_dimension() == 2 ? stk::topology::QUAD_4_2D : stk::topology::HEX_8);
+    stk::mesh::Part &elem_part = stkMeshMetaData.get_topology_root_part(elem_topo);
+    stk::mesh::PartVector elem_parts;
+    elem_parts.push_back(&elem_part);
+
     stk::mesh::EntityKey node0Key;
     const stk::mesh::EntityId node_id = 2000;
     stkMeshBulkData.modification_begin();
@@ -2258,19 +2202,23 @@ TEST(DocTestBulkData, onlyKeepTheOwnersParts)
     const stk::mesh::EntityId element_id_1 = 1001;
     if (myRank == 0)
     {
-       stk::mesh::Entity element0 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id_0);
+       stk::mesh::Entity element0 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id_0, elem_parts);
        stk::mesh::Entity node0 = stkMeshBulkData.declare_entity(stk::topology::NODE_RANK, node_id, partA);
        node0Key = stkMeshBulkData.entity_key(node0);
-       stk::mesh::RelationIdentifier node_rel_id = 0;
-       stkMeshBulkData.declare_relation(element0,node0,node_rel_id);
+       for (stk::mesh::RelationIdentifier node_rel_id = 0; node_rel_id < elem_topo.num_nodes(); ++node_rel_id)
+       {
+         stkMeshBulkData.declare_relation(element0,node0,node_rel_id);
+       }
     }
     else  // myRank == 1
     {
-       stk::mesh::Entity element1 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id_1);
+       stk::mesh::Entity element1 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id_1, elem_parts);
        stk::mesh::Entity node0 = stkMeshBulkData.declare_entity(stk::topology::NODE_RANK, node_id, partB);
        node0Key = stkMeshBulkData.entity_key(node0);
-       const stk::mesh::RelationIdentifier node_rel_id = 0;
-       stkMeshBulkData.declare_relation(element1,node0,node_rel_id);
+       for (stk::mesh::RelationIdentifier node_rel_id = 0; node_rel_id < elem_topo.num_nodes(); ++node_rel_id)
+       {
+         stkMeshBulkData.declare_relation(element1,node0,node_rel_id);
+       }
     }
     stkMeshBulkData.modification_end();
 
@@ -2286,8 +2234,8 @@ TEST(DocTestBulkData, onlyKeepTheOwnersParts)
     EXPECT_TRUE( stk::mesh::has_superset(nodeBucket,partA) );
     EXPECT_FALSE( stk::mesh::has_superset(nodeBucket,partB) );
 
-    stk::mesh::Entity element0 = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, element_id_0 );
-    stk::mesh::Entity element1 = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, element_id_1 );
+    stk::mesh::Entity element0 = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, element_id_0);
+    stk::mesh::Entity element1 = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, element_id_1);
     const int element0Owner = 0;
     const int element1Owner = 1;
     EXPECT_EQ( element0Owner, stkMeshBulkData.parallel_owner_rank(element0) );
@@ -2307,6 +2255,12 @@ TEST(DocTestBulkData, newSharedNodeGetMergedPartsFromElements)
     stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+
+    stk::topology elem_topo = (stkMeshMetaData.spatial_dimension() == 2 ? stk::topology::QUAD_4_2D : stk::topology::HEX_8);
+    stk::mesh::Part &elem_part = stkMeshMetaData.get_topology_root_part(elem_topo);
+    stk::mesh::PartVector elem_parts, empty_parts;
+    elem_parts.push_back(&elem_part);
+
     const int myRank = stk::parallel_machine_rank(communicator);
     stk::mesh::Part & partA = stkMeshMetaData.declare_part("PartA",stk::topology::ELEMENT_RANK);
     stk::mesh::Part & partB = stkMeshMetaData.declare_part("PartB",stk::topology::ELEMENT_RANK);
@@ -2322,8 +2276,11 @@ TEST(DocTestBulkData, newSharedNodeGetMergedPartsFromElements)
        stk::mesh::Entity element0 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id, partA);
        stk::mesh::Entity node0 = stkMeshBulkData.declare_entity(stk::topology::NODE_RANK, node_id);
        node0Key = stkMeshBulkData.entity_key(node0);
-       stk::mesh::RelationIdentifier node_rel_id = 0;
-       stkMeshBulkData.declare_relation(element0,node0,node_rel_id);
+       stkMeshBulkData.change_entity_parts(element0, elem_parts, empty_parts);
+       for (stk::mesh::RelationIdentifier node_rel_id = 0; node_rel_id < elem_topo.num_nodes(); ++node_rel_id)
+       {
+         stkMeshBulkData.declare_relation(element0,node0,node_rel_id);
+       }
     }
     else  // myRank == 1
     {
@@ -2331,8 +2288,11 @@ TEST(DocTestBulkData, newSharedNodeGetMergedPartsFromElements)
        stk::mesh::Entity element1 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id, partB);
        stk::mesh::Entity node0 = stkMeshBulkData.declare_entity(stk::topology::NODE_RANK, node_id);
        node0Key = stkMeshBulkData.entity_key(node0);
-       const stk::mesh::RelationIdentifier node_rel_id = 0;
-       stkMeshBulkData.declare_relation(element1,node0,node_rel_id);
+       stkMeshBulkData.change_entity_parts(element1, elem_parts, empty_parts);
+       for (stk::mesh::RelationIdentifier node_rel_id = 0; node_rel_id < elem_topo.num_nodes(); ++node_rel_id)
+       {
+         stkMeshBulkData.declare_relation(element1,node0,node_rel_id);
+       }
     }
     stkMeshBulkData.modification_end();
 
@@ -2368,6 +2328,11 @@ TEST(DocTestBulkData, mayCreateRelationsToNodesDifferently)
     stkMeshIoBroker.populate_bulk_data();
     stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
+    stk::topology elem_topo = (stkMeshMetaData.spatial_dimension() == 2 ? stk::topology::QUAD_4_2D : stk::topology::HEX_8);
+    stk::mesh::Part &elem_part = stkMeshMetaData.get_topology_root_part(elem_topo);
+    stk::mesh::PartVector elem_parts, empty_parts;
+    elem_parts.push_back(&elem_part);
+
     stk::mesh::Selector allSharedSelector = stkMeshMetaData.globally_shared_part();
     std::vector<stk::mesh::Entity> allSharedNodes;
     stk::mesh::get_selected_entities(allSharedSelector, stkMeshBulkData.buckets(stk::topology::NODE_RANK), allSharedNodes);
@@ -2379,17 +2344,28 @@ TEST(DocTestBulkData, mayCreateRelationsToNodesDifferently)
     stkMeshBulkData.modification_begin();
     const stk::mesh::EntityId element_id_0 = 1000;
     const stk::mesh::EntityId element_id_1 = 1001;
+    stk::mesh::Entity filler_node = stkMeshBulkData.declare_entity(stk::topology::NODE_RANK, 123456);
     if (myRank == 0)
     {
        stk::mesh::Entity element0 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id_0, partA);
+       stkMeshBulkData.change_entity_parts(element0, elem_parts, empty_parts);
        stk::mesh::RelationIdentifier node_rel_id = 0;
        stkMeshBulkData.declare_relation(element0,sharedNode0,node_rel_id);
+       for (stk::mesh::RelationIdentifier filler_rel_id = node_rel_id + 1; filler_rel_id < elem_topo.num_nodes(); ++filler_rel_id)
+       {
+         stkMeshBulkData.declare_relation(element0,filler_node,filler_rel_id);
+       }
     }
     else  // myRank == 1
     {
        stk::mesh::Entity element1 = stkMeshBulkData.declare_entity(stk::topology::ELEMENT_RANK, element_id_1, partB);
+       stkMeshBulkData.change_entity_parts(element1, elem_parts, empty_parts);
        const stk::mesh::RelationIdentifier node_rel_id = 0;
        stkMeshBulkData.declare_relation(element1,sharedNode0,node_rel_id);
+       for (stk::mesh::RelationIdentifier filler_rel_id = node_rel_id + 1; filler_rel_id < elem_topo.num_nodes(); ++filler_rel_id)
+       {
+         stkMeshBulkData.declare_relation(element1,filler_node,filler_rel_id);
+       }
     }
     EXPECT_NO_THROW( stkMeshBulkData.modification_end() );
     {
@@ -2445,6 +2421,27 @@ stk::mesh::EntityVector getSortedNodes(stk::mesh::BulkData& bulk, stk::mesh::Sel
     return nodes;
 }
 
+bool no_aura_declare_relation( stk::mesh::BulkData &bulk,
+                               stk::mesh::Entity e_from ,
+                               stk::mesh::Entity e_to ,
+                               const stk::mesh::RelationIdentifier local_id)
+{
+  stk::mesh::Bucket const *b_from       = bulk.bucket_ptr(e_from);
+  stk::mesh::Bucket const *b_to         = bulk.bucket_ptr(e_to);
+  const bool ownership_ok    = (b_from && b_to && !b_from->in_aura() && b_to->in_aura());
+
+  if (ownership_ok)
+  {
+    bulk.declare_relation(e_from, e_to, local_id);
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+
 TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntities)
 {
     stk::ParallelMachine communicator = MPI_COMM_WORLD;
@@ -2462,27 +2459,55 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
     stk::mesh::MetaData &meta = stkMeshIoBroker.meta_data();
     stk::mesh::BulkData &bulk = stkMeshIoBroker.bulk_data();
 
+    stk::topology elem_topo = (meta.spatial_dimension() == 2 ? stk::topology::QUAD_4_2D : stk::topology::HEX_8);
+    stk::mesh::Part &elem_part = meta.get_topology_root_part(elem_topo);
+    stk::mesh::PartVector elem_parts, empty_parts;
+    elem_parts.push_back(&elem_part);
+
     stk::mesh::EntityVector ev = getSortedNodes(bulk, stk::mesh::Selector(meta.globally_shared_part()));
     ASSERT_TRUE( ev.size() >= 2 );
     stk::mesh::Entity sharedNodeA( ev[0] );
     stk::mesh::Entity sharedNodeB( ev[1] );
 
+    stk::mesh::Bucket & nodeABucket = bulk.bucket(sharedNodeA);
+    EXPECT_FALSE( nodeABucket.member(partA) );
+    EXPECT_FALSE( nodeABucket.member(partB) );
+    EXPECT_EQ( 2u, bulk.num_elements(sharedNodeA));
+    EXPECT_EQ( 2u, bulk.num_elements(sharedNodeB));
+
     // First we create off processor elements
     bulk.modification_begin();
     const stk::mesh::EntityId element_id_0 = 1000;
     const stk::mesh::EntityId element_id_1 = 1001;
+
+    const stk::mesh::EntityId filler_node_id = 123456;
+    stk::mesh::Entity filler_node = bulk.declare_entity(stk::topology::NODE_RANK, filler_node_id);
+
+    bulk.add_node_sharing(filler_node, (myRank == 1 ? 0 : 1));
+
     if (myRank == 0)
     {
        const stk::mesh::RelationIdentifier node_rel_id = 0;
        stk::mesh::Entity element = bulk.declare_entity(stk::topology::ELEMENT_RANK, element_id_0, partA);
+       bulk.change_entity_parts(element, elem_parts, empty_parts);
        bulk.declare_relation(element,sharedNodeA,node_rel_id);
+       for (stk::mesh::RelationIdentifier filler_rel_id = node_rel_id + 1; filler_rel_id < elem_topo.num_nodes(); ++filler_rel_id)
+       {
+         bulk.declare_relation(element,filler_node,filler_rel_id);
+       }
     }
     else  // myRank == 1
     {
        const stk::mesh::RelationIdentifier node_rel_id = 0;
        stk::mesh::Entity element = bulk.declare_entity(stk::topology::ELEMENT_RANK, element_id_1, partB);
+       bulk.change_entity_parts(element, elem_parts, empty_parts);
        bulk.declare_relation(element,sharedNodeA,node_rel_id);
+       for (stk::mesh::RelationIdentifier filler_rel_id = node_rel_id + 1; filler_rel_id < elem_topo.num_nodes(); ++filler_rel_id)
+       {
+         bulk.declare_relation(element,filler_node,filler_rel_id);
+       }
     }
+
     EXPECT_NO_THROW( bulk.modification_end() );
     {
        stk::mesh::Bucket & nodeABucket = bulk.bucket(sharedNodeA);
@@ -2494,162 +2519,107 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
     stk::mesh::Entity element0 = bulk.get_entity(stk::topology::ELEMENT_RANK, element_id_0 );
     stk::mesh::Entity element1 = bulk.get_entity(stk::topology::ELEMENT_RANK, element_id_1 );
 
-    // Then we create relations from ghost element to shared node B.
-    bulk.modification_begin();
+    stk::mesh::Part &locally_owned_part = meta.locally_owned_part();
+    stk::mesh::Bucket &element0_bucket = bulk.bucket(element0);
+    stk::mesh::Bucket &element1_bucket = bulk.bucket(element1);
+
     if (myRank == 0)
     {
-        const stk::mesh::RelationIdentifier node_rel_id = 1;
-        bulk.declare_relation(element1, sharedNodeB, node_rel_id);
+        EXPECT_TRUE(element0_bucket.member(locally_owned_part));
+        EXPECT_FALSE(element1_bucket.member(locally_owned_part));
     }
     else // myRank == 1
     {
-        const stk::mesh::RelationIdentifier node_rel_id = 1;
-        bulk.declare_relation(element0, sharedNodeB, node_rel_id);
+        EXPECT_FALSE(element0_bucket.member(locally_owned_part));
+        EXPECT_TRUE(element1_bucket.member(locally_owned_part));
+    }
+
+    // Disallowing declaring relations to/from an entity in the aura can make it
+    // easier to keep the mesh consistent.
+    bulk.modification_begin();
+    if (myRank == 0)
+    {
+      const stk::mesh::RelationIdentifier node_rel_id = 1;
+      EXPECT_FALSE(no_aura_declare_relation(bulk, element1, sharedNodeB, node_rel_id) );
+    }
+    else // myRank == 1
+    {
+      const stk::mesh::RelationIdentifier node_rel_id = 1;
+      EXPECT_FALSE(no_aura_declare_relation(bulk, element0, sharedNodeB, node_rel_id) );
     }
     EXPECT_NO_THROW( bulk.modification_end() );
 
-    stk::mesh::Bucket & nodeBBucket = bulk.bucket(sharedNodeB);
-    EXPECT_FALSE( nodeBBucket.member(partA) );
-    EXPECT_FALSE( nodeBBucket.member(partB) );
-    EXPECT_EQ( 3u, bulk.num_elements(sharedNodeB));
-
-    const int element0Owner = 0;
-    EXPECT_EQ( element0Owner, bulk.parallel_owner_rank(element0) );
-    const int element1Owner = 1;
-    EXPECT_EQ( element1Owner, bulk.parallel_owner_rank(element1) );
-    // This is very strange.
-    // By creating a relation to a ghosted element, we get different relations on different processors
-    if (myRank == 0)
     {
-        ASSERT_EQ( 1u, bulk.num_nodes(element0) );
+      stk::mesh::Bucket & nodeBBucket = bulk.bucket(sharedNodeB);
+      EXPECT_FALSE( nodeBBucket.member(partA) );
+      EXPECT_FALSE( nodeBBucket.member(partB) );
+      EXPECT_EQ( 2u, bulk.num_elements(sharedNodeB));
+
+      const int element0Owner = 0;
+      EXPECT_EQ( element0Owner, bulk.parallel_owner_rank(element0) );
+      const int element1Owner = 1;
+      EXPECT_EQ( element1Owner, bulk.parallel_owner_rank(element1) );
+
+      if (myRank == 0)
+      {
         EXPECT_TRUE( sharedNodeA == bulk.begin_nodes(element0)[0]);
 
-        ASSERT_EQ( 2u, bulk.num_nodes(element1) );
         EXPECT_TRUE( sharedNodeA == bulk.begin_nodes(element1)[0]);
-        EXPECT_TRUE( sharedNodeB == bulk.begin_nodes(element1)[1]);
+        EXPECT_TRUE( filler_node == bulk.begin_nodes(element1)[1]);
+      }
+      else // myRank == 1
+      {
+        EXPECT_TRUE( sharedNodeA == bulk.begin_nodes(element0)[0]);
+        EXPECT_TRUE( filler_node == bulk.begin_nodes(element0)[1]);
+
+        EXPECT_TRUE( sharedNodeA == bulk.begin_nodes(element1)[0]);
+      }
+    }
+
+    // Again we try to create relations from ghost element to shared node B.
+    // BulkData::declare_relation(..) will do this, but the owner relations
+    // will reset the ghost's relations in modification_end().
+    //
+    // Thus, more work needs to be done to enforce the relationship reciprocity
+    // aspect of mesh consistency.
+    bulk.modification_begin();
+    if (myRank == 0)
+    {
+      const stk::mesh::RelationIdentifier node_rel_id = 1;
+      bulk.declare_relation(element1, sharedNodeB, node_rel_id);
+      EXPECT_TRUE( sharedNodeB == bulk.begin_nodes(element1)[1]);
     }
     else // myRank == 1
     {
-        ASSERT_EQ( 2u, bulk.num_nodes(element0) );
+      const stk::mesh::RelationIdentifier node_rel_id = 1;
+      bulk.declare_relation(element0, sharedNodeB, node_rel_id);
+      EXPECT_TRUE( sharedNodeB == bulk.begin_nodes(element0)[1]);
+    }
+    EXPECT_NO_THROW( bulk.modification_end() );
+
+    {
+      stk::mesh::Bucket & nodeBBucket = bulk.bucket(sharedNodeB);
+      EXPECT_FALSE( nodeBBucket.member(partA) );
+      EXPECT_FALSE( nodeBBucket.member(partB) );
+      EXPECT_EQ( 3u, bulk.num_elements(sharedNodeB));
+
+      if (myRank == 0)
+      {
         EXPECT_TRUE( sharedNodeA == bulk.begin_nodes(element0)[0]);
-        EXPECT_TRUE( sharedNodeB == bulk.begin_nodes(element0)[1]);
 
-        ASSERT_EQ( 1u, bulk.num_nodes(element1) );
         EXPECT_TRUE( sharedNodeA == bulk.begin_nodes(element1)[0]);
+        EXPECT_TRUE( filler_node == bulk.begin_nodes(element1)[1]);
+      }
+      else // myRank == 1
+      {
+        EXPECT_TRUE( sharedNodeA == bulk.begin_nodes(element0)[0]);
+        EXPECT_TRUE( filler_node == bulk.begin_nodes(element0)[1]);
+
+        EXPECT_TRUE( sharedNodeA == bulk.begin_nodes(element1)[0]);
+      }
     }
 }
 
-TEST(DocTestBulkData, ownerDeletesSharedNodes)
-{
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(communicator);
-    if (numProcs != 2) {
-        return;
-    }
-    const int myRank = stk::parallel_machine_rank(communicator);
-
-    stk::io::StkMeshIoBroker io(communicator);
-    const std::string generatedMeshSpecification = "generated:1x1x2";
-    io.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    io.create_input_mesh();
-    io.populate_bulk_data();
-
-    stk::mesh::MetaData & meta = io.meta_data();
-    stk::mesh::BulkData & bulk = io.bulk_data();
-    stk::mesh::EntityVector ev = getSortedNodes(bulk, stk::mesh::Selector(meta.globally_shared_part()));
-    std::vector<stk::mesh::EntityKey> ekv;
-    for (size_t i=0 ; i<ev.size() ; ++i)
-    {
-        ekv.push_back(bulk.entity_key(ev[i]));
-    }
-    const int proc0 = 0;
-    for (size_t i=0 ; i<ev.size() ; ++i)
-    {
-        EXPECT_EQ( proc0, bulk.parallel_owner_rank(ev[i]));
-    }
-    bulk.modification_begin();
-    if (myRank == 0)
-    {
-        for (size_t node_i=0 ; node_i<ev.size() ; ++node_i)
-        {
-            stk::mesh::Entity node = ev[node_i];
-            const stk::mesh::Entity * elem_it = bulk.begin_elements(node);
-            const stk::mesh::ConnectivityOrdinal * elem_ord_it = bulk.begin_ordinals(node,stk::topology::ELEMENT_RANK);
-            const int num_elems = bulk.num_elements(node);
-            for (int elem_j=0 ; elem_j<num_elems ; ++elem_j)
-            {
-                EXPECT_TRUE( bulk.destroy_relation(elem_it[elem_j],node,elem_ord_it[elem_j]) );
-            }
-            EXPECT_TRUE( bulk.destroy_entity(node) );
-        }
-    }
-    EXPECT_NO_THROW(bulk.modification_end());
-
-    if (myRank == 1)
-    {
-        for (size_t i=0 ; i<ev.size() ; ++i)
-        {
-            stk::mesh::Entity e = bulk.get_entity(ekv[i]);
-            EXPECT_EQ( myRank, bulk.parallel_owner_rank( e ) );
-        }
-    }
-}
-
-TEST(DocTestBulkData, sharerDeletesSharedNodes)
-{
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(communicator);
-    if (numProcs != 2) {
-        return;
-    }
-    const int myRank = stk::parallel_machine_rank(communicator);
-
-    stk::io::StkMeshIoBroker io(communicator);
-    const std::string generatedMeshSpecification = "generated:1x1x2";
-    io.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    io.create_input_mesh();
-    io.populate_bulk_data();
-
-    stk::mesh::MetaData & meta = io.meta_data();
-    stk::mesh::BulkData & bulk = io.bulk_data();
-    stk::mesh::EntityVector ev = getSortedNodes(bulk, stk::mesh::Selector(meta.globally_shared_part()));
-    std::vector<stk::mesh::EntityKey> ekv;
-    for (size_t i=0 ; i<ev.size() ; ++i)
-    {
-        ekv.push_back(bulk.entity_key(ev[i]));
-    }
-    const int proc0 = 0;
-    for (size_t i=0 ; i<ev.size() ; ++i)
-    {
-        EXPECT_EQ( proc0, bulk.parallel_owner_rank(ev[i]));
-    }
-    bulk.modification_begin();
-    if (myRank == 1)
-    {
-        for (size_t node_i=0 ; node_i<ev.size() ; ++node_i)
-        {
-            stk::mesh::Entity node = ev[node_i];
-            const stk::mesh::Entity * elem_it = bulk.begin_elements(node);
-            const stk::mesh::ConnectivityOrdinal * elem_ord_it = bulk.begin_ordinals(node,stk::topology::ELEMENT_RANK);
-            const int num_elems = bulk.num_elements(node);
-            for (int elem_j=0 ; elem_j<num_elems ; ++elem_j)
-            {
-                EXPECT_TRUE( bulk.destroy_relation(elem_it[elem_j],node,elem_ord_it[elem_j]) );
-            }
-            EXPECT_TRUE( bulk.destroy_entity(node) );
-        }
-    }
-    EXPECT_NO_THROW(bulk.modification_end());
-
-    if (myRank == 0)
-    {
-        for (size_t i=0 ; i<ev.size() ; ++i)
-        {
-            stk::mesh::Entity e = bulk.get_entity(ekv[i]);
-            EXPECT_EQ( myRank, bulk.parallel_owner_rank( e ) );
-        }
-    }
-}
 
 } // empty namespace
 

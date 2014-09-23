@@ -6,7 +6,7 @@
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>Generic TriBITS Project, Build, Test, and Install Quick Reference Guide</title>
 <meta name="author" content="Roscoe A. Bartlett" />
-<meta name="date" content="2014-09-10" />
+<meta name="date" content="2014-09-17" />
 <style type="text/css">
 
 /*
@@ -317,9 +317,9 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference external" href="mailto:bartlett.roscoe&#64;gmail.com">bartlett.roscoe&#64;gmail.com</a></td></tr>
 <tr><th class="docinfo-name">Date:</th>
-<td>2014-09-10</td></tr>
+<td>2014-09-17</td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>TriBITS Development at 2014-09-10</td></tr>
+<td>TriBITS Development at 2014-09-17</td></tr>
 </tbody>
 </table>
 <table class="docutils field-list" frame="void" rules="none">
@@ -599,7 +599,7 @@ in the GUI.</blockquote>
 <h2><a class="toc-backref" href="#id11">4.3&nbsp;&nbsp;&nbsp;Selecting the list of packages to enable</a></h2>
 <p>The &lt;Project&gt; project is broken up into a set of packages that can be enabled
 (or disbled).  For details and generic examples, see <a class="reference external" href="../developers_guide/TribitsDevelopersGuide.html#package-dependencies-and-enable-disable-logic">Package Dependencies and
-Enable/Disable Logic</a>.</p>
+Enable/Disable Logic</a> and <a class="reference external" href="../developers_guide/TribitsDevelopersGuide.html#tribits-dependency-handling-behaviors">TriBITS Dependency Handling Behaviors</a>.</p>
 <p>See the following use cases:</p>
 <ul class="simple">
 <li><a class="reference internal" href="#determine-the-list-of-packages-that-can-be-enabled">Determine the list of packages that can be enabled</a></li>
@@ -677,11 +677,16 @@ the configure options:</p>
 <p>Specific packages can be disabled with
 <tt class="docutils literal"><span class="pre">&lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=OFF</span></tt>.  This will also disable all
 packages that depend on <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt>.</p>
-<p>All examples are enabled by default when setting
+<p>All examples are also enabled by default when setting
 <tt class="docutils literal">&lt;Project&gt;_ENABLE_TESTS:BOOL=ON</tt>.</p>
 <p>By default, setting <tt class="docutils literal">&lt;Project&gt;_ENABLE_ALL_PACKAGES=ON</tt> only enables primary
 tested (PT) code.  To have this also enable all secondary tested (ST) code,
 one must also set <tt class="docutils literal">&lt;Project&gt;_ENABLE_SECONDARY_TESTED_CODE=ON</tt>.</p>
+<p>NOTE: If the project is a &quot;meta-project&quot;, then
+<tt class="docutils literal">&lt;Project&gt;_ENABLE_ALL_PACKAGES:BOOL=ON</tt> may not enable <em>all</em> the SE packages
+but only the project's primary meta-project packages.  See <a class="reference external" href="../developers_guide/TribitsDevelopersGuide.html#package-dependencies-and-enable-disable-logic">Package
+Dependencies and Enable/Disable Logic</a> and <a class="reference external" href="../developers_guide/TribitsDevelopersGuide.html#tribits-dependency-handling-behaviors">TriBITS Dependency Handling
+Behaviors</a> for details.</p>
 </div>
 <div class="section" id="disable-a-package-and-all-its-dependencies">
 <h3><a class="toc-backref" href="#id16">4.3.5&nbsp;&nbsp;&nbsp;Disable a package and all its dependencies</a></h3>

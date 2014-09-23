@@ -67,6 +67,11 @@ void HexFixture::generate_mesh(const CoordinateMapping & coordMap)
   const size_t p_rank = m_bulk_data.parallel_rank();
   const size_t num_elems = m_nx * m_ny * m_nz ;
 
+  m_nodes_to_procs.clear();
+  for (int rank = 0; rank < static_cast<int>(p_size); ++rank) {
+    fill_node_map(rank);
+  }
+
   const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
   const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
 
@@ -101,6 +106,90 @@ void HexFixture::elem_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t 
   entity_id /= m_ny;
 
   z = entity_id;
+}
+
+void HexFixture::fill_node_map( int p_rank)
+{
+  std::vector<EntityId> element_ids_on_this_processor;
+
+  const size_t p_size = m_bulk_data.parallel_size();
+  const size_t num_elems = m_nx * m_ny * m_nz ;
+
+  const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
+  const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
+
+  for ( EntityId i = beg_elem; i != end_elem; ++i) {
+    element_ids_on_this_processor.push_back(i);
+  }
+
+  //sort and unique the input elements
+  std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
+  std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
+
+  std::sort( ib, ie);
+  ib = std::unique( ib, ie);
+  element_ids_on_this_processor.erase(ib, ie);
+
+  std::set<EntityId> nodes_on_proc;
+
+  ib = element_ids_on_this_processor.begin();
+  ie = element_ids_on_this_processor.end();
+  for (; ib != ie; ++ib) {
+    EntityId entity_id = *ib;
+    size_t ix = 0, iy = 0, iz = 0;
+    elem_x_y_z(entity_id, ix, iy, iz);
+
+    stk::mesh::EntityId elem_node[8] ;
+
+    elem_node[0] = node_id( ix   , iy   , iz   );
+    elem_node[1] = node_id( ix+1 , iy   , iz   );
+    elem_node[2] = node_id( ix+1 , iy+1 , iz   );
+    elem_node[3] = node_id( ix   , iy+1 , iz   );
+    elem_node[4] = node_id( ix   , iy   , iz+1 );
+    elem_node[5] = node_id( ix+1 , iy   , iz+1 );
+    elem_node[6] = node_id( ix+1 , iy+1 , iz+1 );
+    elem_node[7] = node_id( ix   , iy+1 , iz+1 );
+
+    for (int ien = 0; ien < 8; ++ien) {
+      AddToNodeProcsMMap(m_nodes_to_procs, elem_node[ien], p_rank);
+    }
+  }
+}
+
+void HexFixture::fill_node_map(const std::map<int,std::vector<EntityId> > &parallel_distribution)
+{
+  m_nodes_to_procs.clear();
+
+  std::map<int,std::vector<EntityId> >::const_iterator pd_i, pd_e;
+  pd_i = parallel_distribution.begin();
+  pd_e = parallel_distribution.end();
+  for (; pd_i != pd_e; ++pd_i) {
+    const int proc = pd_i->first;
+    const std::vector<EntityId> &elements = pd_i->second;
+
+    for (size_t e_j = 0; e_j < elements.size(); ++ e_j) {
+
+      EntityId element_id = elements[e_j];
+
+      size_t ix = 0, iy = 0, iz = 0;
+      elem_x_y_z(element_id, ix, iy, iz);
+
+      stk::mesh::EntityId elem_node[8] ;
+
+      elem_node[0] = node_id( ix   , iy   , iz   );
+      elem_node[1] = node_id( ix+1 , iy   , iz   );
+      elem_node[2] = node_id( ix+1 , iy+1 , iz   );
+      elem_node[3] = node_id( ix   , iy+1 , iz   );
+      elem_node[4] = node_id( ix   , iy   , iz+1 );
+      elem_node[5] = node_id( ix+1 , iy   , iz+1 );
+      elem_node[6] = node_id( ix+1 , iy+1 , iz+1 );
+      elem_node[7] = node_id( ix   , iy+1 , iz+1 );
+
+      for (int ien = 0; ien < 8; ++ien) {
+        AddToNodeProcsMMap(m_nodes_to_procs, elem_node[ien], proc);
+      }
+    }
+  }
 }
 
 void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor, const CoordinateMapping & coordMap)
@@ -141,8 +230,11 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
       stk::mesh::declare_element( m_bulk_data, m_elem_parts, elem_id( ix , iy , iz ) , elem_node);
 
       for (size_t i = 0; i<8; ++i) {
-        stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , elem_node[i] );
+        EntityId node_id = elem_node[i];
+        stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , node_id );
         m_bulk_data.change_entity_parts(node, m_node_parts);
+
+        DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, node_id, node);
 
         ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");

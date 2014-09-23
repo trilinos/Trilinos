@@ -71,6 +71,10 @@ void setupKeyholeMesh2D_case1(stk::mesh::BulkData& bulk)
   stk::mesh::EntityId elemId = 1;
   if (bulk.parallel_rank() == 0) {
     stk::mesh::declare_element(bulk, block_1, elemId, elem1_nodes);
+    stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+    stk::mesh::Entity node3 = bulk.get_entity(stk::topology::NODE_RANK, 3);
+    bulk.add_node_sharing(node2, 1);
+    bulk.add_node_sharing(node3, 1);
   }
   else if (bulk.parallel_rank() == 1) {
     elemId = 2;
@@ -79,6 +83,10 @@ void setupKeyholeMesh2D_case1(stk::mesh::BulkData& bulk)
     stk::mesh::declare_element(bulk, block_2, elemId, elem3_nodes);
     elemId = 4;
     stk::mesh::declare_element(bulk, block_3, elemId, elem4_nodes);
+    stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+    stk::mesh::Entity node3 = bulk.get_entity(stk::topology::NODE_RANK, 3);
+    bulk.add_node_sharing(node2, 0);
+    bulk.add_node_sharing(node3, 0);
   }
 
   bulk.modification_end();
@@ -125,6 +133,10 @@ void setupKeyholeMesh2D_case2(stk::mesh::BulkData& bulk)
   stk::mesh::EntityId elemId = 1;
   if (bulk.parallel_rank() == 0) {
     stk::mesh::declare_element(bulk, block_1, elemId, elem1_nodes);
+    stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+    stk::mesh::Entity node3 = bulk.get_entity(stk::topology::NODE_RANK, 3);
+    bulk.add_node_sharing(node2, 1);
+    bulk.add_node_sharing(node3, 1);
   }
   else if (bulk.parallel_rank() == 1) {
     elemId = 2;
@@ -133,6 +145,10 @@ void setupKeyholeMesh2D_case2(stk::mesh::BulkData& bulk)
     stk::mesh::declare_element(bulk, block_3, elemId, elem3_nodes);
     elemId = 4;
     stk::mesh::declare_element(bulk, block_3, elemId, elem4_nodes);
+    stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+    stk::mesh::Entity node3 = bulk.get_entity(stk::topology::NODE_RANK, 3);
+    bulk.add_node_sharing(node2, 0);
+    bulk.add_node_sharing(node3, 0);
   }
 
   bulk.modification_end();

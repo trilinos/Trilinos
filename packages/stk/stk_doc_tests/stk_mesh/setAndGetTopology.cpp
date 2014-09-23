@@ -28,6 +28,20 @@ TEST(stkMeshHowTo, setAndGetTopology)
     stk::mesh::EntityId elem1Id = 1, elem2Id = 2;
     stk::mesh::Entity elem1=mesh.declare_entity(stk::topology::ELEMENT_RANK, elem1Id, tetPart);
     stk::mesh::Entity elem2=mesh.declare_entity(stk::topology::ELEMENT_RANK, elem2Id, hexPart);
+
+    //No common nodes between elements - so topologically disconnected elem1 and elem2
+    for(unsigned node_ord = 0 ; node_ord < 4; ++node_ord)
+    {
+      stk::mesh::Entity new_node = mesh.declare_entity(stk::topology::NODE_RANK, node_ord+100*elem1Id);
+      mesh.declare_relation( elem1 , new_node , node_ord);
+    }
+
+    for(unsigned node_ord = 0 ; node_ord < 8; ++node_ord)
+    {
+      stk::mesh::Entity new_node2 = mesh.declare_entity(stk::topology::NODE_RANK, node_ord+100*elem2Id);
+      mesh.declare_relation( elem2 , new_node2 , node_ord);
+    }
+
     mesh.modification_end();
     //Note: this test is only about setting/getting topology, so we didn't bother to
     //create nodes to connect to the above elements, etc.

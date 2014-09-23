@@ -54,6 +54,20 @@
 
 /*--------------------------------------------------------------------------*/
 
+#if defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
+#include <Kokkos_OpenMP.hpp>
+#elif defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
+#include <Kokkos_Threads.hpp>
+#elif defined( KOKKOS_HAVE_OPENMP )
+#include <Kokkos_OpenMP.hpp>
+#elif defined( KOKKOS_HAVE_PTHREAD )
+#include <Kokkos_Threads.hpp>
+#else
+#include <Kokkos_Serial.hpp>
+#endif
+
+/*--------------------------------------------------------------------------*/
+
 namespace Kokkos {
 namespace Impl {
 class QthreadExec ;
