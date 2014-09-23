@@ -1274,21 +1274,22 @@ TEST ( UnitTestBulkData_new , testCustomBucketCapacity )
 
   MetaData meta(spatial_dimension);
 
-  Part  & universal = meta.universal_part ();
+  Part & node_part = meta.declare_part_with_topology("node_part", stk::topology::NODE);
 
   meta.commit();
 
   PartVector    create_vector;
-  create_vector.push_back ( &universal );
+  create_vector.push_back ( &node_part );
 
   const unsigned non_standard_bucket_capacity = 42;
   BulkData bulk ( meta , MPI_COMM_WORLD , true, NULL, NULL, non_standard_bucket_capacity);
 
   bulk.modification_begin();
 
-  EntityId elemID = bulk.parallel_rank()+1;
-  Entity elem = bulk.declare_entity ( stk::topology::ELEMENT_RANK , elemID, create_vector );
+  EntityId nodeID = bulk.parallel_rank()+1;
+  Entity node = bulk.declare_entity ( stk::topology::NODE_RANK , nodeID, create_vector );
   bulk.modification_end();
 
-  EXPECT_EQ( bulk.bucket(elem).capacity(), non_standard_bucket_capacity );
+  EXPECT_EQ( bulk.bucket(node).capacity(), non_standard_bucket_capacity );
 }
+
