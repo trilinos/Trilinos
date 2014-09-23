@@ -45,6 +45,10 @@
 #include <vector>                       // for vector, vector<>::iterator
 #include "stk_mesh/base/Types.hpp"      // for EntityId, Ordinal, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_io/StkMeshIoBroker.hpp"
+#include "stk_util/parallel/Parallel.hpp"
+#include <stk_mesh/base/FEMHelpers.hpp>
+
 namespace stk { namespace mesh { class Part; } }
 
 
@@ -255,3 +259,94 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   }
 }
 
+TEST(BoundaryAnalysis, get_adjacent_entities)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    if (numProcs > 1)
+    {
+        return;
+    }
+
+    stk::io::StkMeshIoBroker meshReader(comm);
+    std::string mesh_spec("generated:3x3x3");
+    meshReader.add_mesh_database(mesh_spec, stk::io::READ_MESH);
+    meshReader.create_input_mesh();
+    meshReader.populate_bulk_data();
+
+    stk::mesh::BulkData& stkMeshBulkData = meshReader.bulk_data();
+
+//    unsigned file_index = meshReader.create_output_mesh("alan.exo", stk::io::WRITE_RESULTS);
+//    meshReader.write_output_mesh(file_index);
+
+    unsigned numEntitiesToTest = 4;
+    stk::mesh::EntityId ids[] = { 14, 1, 2, 5 };
+    unsigned goldNumConnectedEntities[] = { 6, 3, 4, 5 };
+    stk::mesh::EntityId nodeIdsForFace[][4] = {
+    {22,       23,      39,      38},
+    {23,       27,      43,      39},
+    {27,       26,      42,      43},
+    {22,       38,      42,      26},
+    {22,       26,      27,      23},
+    {38,       39,      43,      42},
+    {1 ,       2 ,      18,      17},
+    {2 ,       6 ,      22,      18},
+    {6 ,       5 ,      21,      22},
+    {1 ,       17,      21,      5 },
+    {1 ,       5 ,      6 ,      2 },
+    {17,       18,      22,      21},
+    {2 ,       3 ,      19,      18},
+    {3 ,       7 ,      23,      19},
+    {7 ,       6 ,      22,      23},
+    {2 ,       18,      22,      6 },
+    {2 ,       6 ,      7 ,      3 },
+    {18,       19,      23,      22},
+    {6 ,       7 ,      23,      22},
+    {7 ,       11,      27,      23},
+    {11,       10,      26,      27},
+    {6 ,       22,      26,      10},
+    {6 ,       10,      11,      7 },
+    {22,       23,      27,      26}
+    };
+
+    unsigned testCounter=0;
+    for (unsigned int i=0;i<numEntitiesToTest;i++)
+    {
+        stk::mesh::Entity element = stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, ids[i]);
+
+        std::vector<stk::mesh::EntitySideComponent> adjacent_entities;
+        stk::topology elemTopology = stkMeshBulkData.bucket(element).topology();
+
+        unsigned numConnectedEntities = 0;
+        for(unsigned faceIndex = 0; faceIndex < elemTopology.num_faces(); ++faceIndex)
+        {
+            stk::mesh::get_adjacent_entities(stkMeshBulkData,
+                                             element,
+                                             stk::topology::FACE_RANK,
+                                             faceIndex,
+                                             adjacent_entities);
+
+            numConnectedEntities += adjacent_entities.size();
+            stk::mesh::EntityVector subcell_nodes;
+            stk::topology mappedStkTopologyFromShards = stk::mesh::get_subcell_nodes(stkMeshBulkData,
+                                                                                     element,
+                                                                                     stk::topology::FACE_RANK,
+                                                                                     faceIndex,
+                                                                                     subcell_nodes);
+
+            for(size_t j = 0; j < subcell_nodes.size(); j++)
+            {
+                EXPECT_EQ(nodeIdsForFace[testCounter][j], stkMeshBulkData.identifier(subcell_nodes[j]));
+            }
+
+            size_t local_subcell_num = stk::mesh::get_entity_subcell_id(stkMeshBulkData,
+                                                                        element,
+                                                                        stk::topology::FACE_RANK,
+                                                                        mappedStkTopologyFromShards,
+                                                                        subcell_nodes);
+            EXPECT_EQ(faceIndex, local_subcell_num);
+            testCounter++;
+        }
+        EXPECT_EQ(goldNumConnectedEntities[i], numConnectedEntities);
+    }
+}
