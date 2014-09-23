@@ -92,8 +92,6 @@ void get_entities_with_given_subcell(const BulkData& mesh,
                                  entities_rank,
                                  entities);
 
-  stk::topology mappedStkTopologyFromShards = stk::mesh::get_topology(stk::mesh::CellTopology(&subcell_topology), 3);
-
   // For all such entities, add id info for the subcell if the subcell
   // nodes compose a valid subcell of the entity
   for (EntityVector::const_iterator eitr = entities.begin();
@@ -101,7 +99,7 @@ void get_entities_with_given_subcell(const BulkData& mesh,
     int local_subcell_num = get_entity_subcell_id(mesh,
       *eitr,
       subcell_rank,
-      mappedStkTopologyFromShards,
+      subcell_topology,
       subcell_nodes);
     if ( local_subcell_num != -1) {
       entities_with_subcell.push_back(EntitySubcellComponent(*eitr, subcell_rank, local_subcell_num));
@@ -152,19 +150,19 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
 
               EntityVector subcell_nodes;
 
-              stk::topology stk_subcell_topology = get_subcell_nodes(mesh,
+              const CellTopologyData* subcell_topology =
+                get_subcell_nodes(mesh,
                     elem,
                     subcell_rank,
                     subcell_id,
                     subcell_nodes
                     );
-              const CellTopology subcell_topology = stk::mesh::get_cell_topology(stk_subcell_topology);
-              ThrowAssert(subcell_topology.getCellTopologyData() != NULL);
+              ThrowAssert(subcell_topology != NULL);
 
               std::vector<EntitySubcellComponent> adjacent_elements;
 
               get_entities_with_given_subcell(mesh,
-                  *subcell_topology.getCellTopologyData(),
+                  *subcell_topology,
                   subcell_rank,
                   subcell_nodes,
                   element_rank,
@@ -174,7 +172,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
               std::reverse( subcell_nodes.begin(), subcell_nodes.end());
 
               get_entities_with_given_subcell(mesh,
-                  *subcell_topology.getCellTopologyData(),
+                  *subcell_topology,
                   subcell_rank,
                   subcell_nodes,
                   element_rank,
@@ -280,19 +278,19 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
 
               EntityVector subcell_nodes;
 
-              stk::topology stk_subcell_topology = get_subcell_nodes(mesh,
+              const CellTopologyData * subcell_topology =
+                get_subcell_nodes(mesh,
                     elem,
                     subcell_rank,
                     subcell_id,
                     subcell_nodes
                     );
-              const CellTopology subcell_topology = stk::mesh::get_cell_topology(stk_subcell_topology);
-              ThrowAssert(subcell_topology.getCellTopologyData() != NULL);
+              ThrowAssert(subcell_topology != NULL);
 
               std::vector<EntitySubcellComponent> adjacent_elements;
 
               get_entities_with_given_subcell(mesh,
-                  *subcell_topology.getCellTopologyData(),
+                  *subcell_topology,
                   subcell_rank,
                   subcell_nodes,
                   element_rank,
@@ -302,7 +300,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
               std::reverse( subcell_nodes.begin(), subcell_nodes.end());
 
               get_entities_with_given_subcell(mesh,
-                  *subcell_topology.getCellTopologyData(),
+                  *subcell_topology,
                   subcell_rank,
                   subcell_nodes,
                   element_rank,
@@ -398,14 +396,14 @@ void complete_connectivity( BulkData & mesh )
 
                 EntityVector subcell_nodes;
 
-                stk::topology stk_subcell_topology = get_subcell_nodes(mesh,
+                const CellTopologyData * subcell_topology =
+                  get_subcell_nodes(mesh,
                       entity,
                       subcell_rank,
                       subcell_id,
                       subcell_nodes
                       );
-                const CellTopology subcell_topology = stk::mesh::get_cell_topology(stk_subcell_topology);
-                ThrowAssert(subcell_topology.getCellTopologyData() != NULL);
+                ThrowAssert(subcell_topology != NULL);
 
                 std::vector<EntitySubcellComponent> adjacent_entities;
 
@@ -414,7 +412,7 @@ void complete_connectivity( BulkData & mesh )
                 // degenerate elements to the correct faces and edges
 
                 get_entities_with_given_subcell(mesh,
-                    *subcell_topology.getCellTopologyData(),
+                    *subcell_topology,
                     subcell_rank,
                     subcell_nodes,
                     subcell_rank,
@@ -424,7 +422,7 @@ void complete_connectivity( BulkData & mesh )
                 std::reverse( subcell_nodes.begin(), subcell_nodes.end());
 
                 get_entities_with_given_subcell(mesh,
-                    *subcell_topology.getCellTopologyData(),
+                    *subcell_topology,
                     subcell_rank,
                     subcell_nodes,
                     subcell_rank,
