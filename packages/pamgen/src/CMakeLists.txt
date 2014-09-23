@@ -105,7 +105,7 @@ APPEND_SET(HEADERS
   ../rtcompiler/ArrayIndexRTC.hh
   ../rtcompiler/ArrayNumberRTC.hh
   ../rtcompiler/ArrayVarRTC.hh
-  ../rtcompiler/Bessel_I.hh
+  ../rtcompiler/Bessel_I_RTC.hh
   ../rtcompiler/BlockRTC.hh
   ../rtcompiler/ConditionalBlockRTC.hh
   ../rtcompiler/ExecutableRTC.hh

@@ -54,7 +54,7 @@ CORE = \
 	$(srcdir)/ArrayNumberRTC.hh \
 	$(srcdir)/ArrayVarRTC.hh \
 	$(srcdir)/Bessel_I.C \
-	$(srcdir)/Bessel_I.hh \
+	$(srcdir)/Bessel_I_RTC.hh \
 	$(srcdir)/Block.C \
 	$(srcdir)/BlockRTC.hh \
 	$(srcdir)/ConditionalBlock.C \

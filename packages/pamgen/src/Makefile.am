@@ -115,7 +115,7 @@ RTCOMPILER = $(srcdir)/../rtcompiler/ArrayIndexRTC.hh \
 	$(srcdir)/../rtcompiler/ArrayNumberRTC.hh \
 	$(srcdir)/../rtcompiler/ArrayVarRTC.hh \
 	$(srcdir)/../rtcompiler/Bessel_I.C \
-	$(srcdir)/../rtcompiler/Bessel_I.hh \
+	$(srcdir)/../rtcompiler/Bessel_I_RTC.hh \
 	$(srcdir)/../rtcompiler/Block.C \
 	$(srcdir)/../rtcompiler/BlockRTC.hh \
 	$(srcdir)/../rtcompiler/ConditionalBlock.C \
