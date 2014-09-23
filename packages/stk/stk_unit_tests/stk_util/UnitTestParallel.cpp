@@ -36,6 +36,7 @@
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_write_string
+#include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <gtest/gtest.h>
 #include <string>                       // for string
 
