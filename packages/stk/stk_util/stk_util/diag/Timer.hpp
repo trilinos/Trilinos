@@ -545,7 +545,7 @@ public:
    * Destroys a <b>TimeBlock</b> instance.  Stops the timer if is has been started.
    *
    */
-  ~TimeBlock() {
+  virtual ~TimeBlock() {
     try {
       if (m_started)
         m_timer.stop();
