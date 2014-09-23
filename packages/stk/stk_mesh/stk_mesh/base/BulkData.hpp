@@ -58,13 +58,11 @@
 #include <string>                       // for char_traits, string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
-#include "Shards_CellTopologyData.h"    // for CellTopologyData, etc
 #include "boost/functional/hash/extensions.hpp"  // for hash
 #include "boost/tuple/detail/tuple_basic.hpp"  // for get
 #include "boost/unordered/unordered_map.hpp"  // for unordered_map
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type, etc
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
-#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
@@ -602,13 +600,13 @@ public:
   {
     // 09/14/10:  TODO:  tscoffe:  Will this work in 1D??
     const bool is_side = entity_rank(side) != stk::topology::EDGE_RANK;
-    const CellTopologyData * const elem_top = get_cell_topology( bucket(elem) ).getCellTopologyData();
+    stk::topology elem_top = bucket(elem).topology();
 
-    const unsigned side_count = ! elem_top ? 0 : (
-        is_side ? elem_top->side_count
-            : elem_top->edge_count );
+    const unsigned side_count = ! elem_top != stk::topology::INVALID_TOPOLOGY ? 0 : (
+        is_side ? elem_top.num_sides()
+            : elem_top.num_edges() );
 
-    ThrowErrorMsgIf( elem_top == NULL,
+    ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
         "For Element[" << identifier(elem) << "], element has no defined topology");
 
     ThrowErrorMsgIf( static_cast<unsigned>(side_count) <= local_side_id,
@@ -617,17 +615,16 @@ public:
         "local_side_id = " << local_side_id <<
         " ; unsupported local_side_id");
 
-    const CellTopologyData * const side_top =
-        is_side ? elem_top->side[ local_side_id ].topology
-            : elem_top->edge[ local_side_id ].topology ;
+    stk::topology side_top =
+        is_side ? elem_top.side_topology( local_side_id )
+            : elem_top.sub_topology( stk::topology::EDGE_RANK, local_side_id );
 
-    const unsigned * const side_map =
-        is_side ? elem_top->side[ local_side_id ].node
-            : elem_top->edge[ local_side_id ].node ;
+    std::vector<unsigned> side_map(side_top.num_nodes());
+    elem_top.side_node_ordinals( local_side_id, side_map.begin());
 
     Entity const *elem_nodes = begin_nodes(elem);
     Entity const *side_nodes = begin_nodes(side);
-    const unsigned n = side_top->node_count;
+    const unsigned n = side_top.num_nodes();
     bool good = false ;
     for ( unsigned i = 0 ; !good && i < n ; ++i ) {
         good = true;
