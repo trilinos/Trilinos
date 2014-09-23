@@ -98,11 +98,11 @@ PARSER = $(srcdir)/../parser/InputBlock.C \
 
 MS_LT = $(srcdir)/../mesh_spec_lt/im_ex_c_interface.C \
 	$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C \
-	$(srcdir)/../mesh_spec_lt/im_exodusII.h \
-	$(srcdir)/../mesh_spec_lt/im_exodusII_ext.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_exodusII.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_exodusII_ext.h \
 	$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C \
-	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_ne_nemesisI.h \
 	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C \
 	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.h \
         $(srcdir)/../mesh_spec_lt/pamgen_code_types.h \
@@ -150,9 +150,9 @@ RTCOMPILER = $(srcdir)/../rtcompiler/ArrayIndexRTC.hh \
 
 
 CORE_H =  $(srcdir)/create_inline_mesh.h \
-	$(srcdir)/../mesh_spec_lt/im_exodusII.h \
-	$(srcdir)/../mesh_spec_lt/im_exodusII_ext.h \
-	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_exodusII.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_exodusII_ext.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_ne_nemesisI.h \
 	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.h \
 	$(srcdir)/../mesh_spec_lt/pamgen_code_types.h \
 	$(srcdir)/../mesh_spec_lt/pamgen_fidges.h \

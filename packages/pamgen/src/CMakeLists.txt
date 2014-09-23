@@ -76,11 +76,11 @@ APPEND_SET(SOURCES
 #
 
 APPEND_SET(HEADERS
-  ../mesh_spec_lt/im_exodusII.h
-  ../mesh_spec_lt/im_exodusII_l.h
-  ../mesh_spec_lt/im_exodusII_ext.h
-  ../mesh_spec_lt/im_ne_nemesisI.h
-  ../mesh_spec_lt/im_ne_nemesisI_l.h
+  ../mesh_spec_lt/pamgen_im_exodusII.h
+  ../mesh_spec_lt/pamgen_im_exodusII_l.h
+  ../mesh_spec_lt/pamgen_im_exodusII_ext.h
+  ../mesh_spec_lt/pamgen_im_ne_nemesisI.h
+  ../mesh_spec_lt/pamgen_im_ne_nemesisI_l.h
   ../mesh_spec_lt/pamgen_mesh_specification.h
   ../mesh_spec_lt/pamgen_fudges.h
   ../mesh_spec_lt/pamgen_element_dictionary.h

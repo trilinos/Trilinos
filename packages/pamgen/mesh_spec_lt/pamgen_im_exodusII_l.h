@@ -258,4 +258,4 @@ extern "C" {
 #define IM_EX_MSG          -1000   /* message print code - no error implied    */
 #define IM_EX_PRTLASTMSG   -1001   /* print last error message msg code        */
 
-#include "im_exodusII_ext.h"
+#include "pamgen_im_exodusII_ext.h"

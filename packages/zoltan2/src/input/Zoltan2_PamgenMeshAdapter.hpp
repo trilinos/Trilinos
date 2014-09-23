@@ -54,8 +54,8 @@
 #include <Zoltan2_StridedData.hpp>
 #include <vector>
 
-#include <im_exodusII.h>
-#include "im_ne_nemesisI.h"
+#include <pamgen_im_exodusII.h>
+#include "pamgen_im_ne_nemesisI.h"
 
 namespace Zoltan2 {
 
