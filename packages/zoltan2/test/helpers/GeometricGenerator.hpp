@@ -1961,7 +1961,7 @@ public:
   void blockPartition(int *coordinate_grid_parts){
 
 #ifdef _MSC_VER
-	typedef SSIZE_T ssize_t;
+	  typedef SSIZE_T ssize_t;
 #endif
 
 	  //############################################################//

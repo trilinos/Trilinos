@@ -72,9 +72,9 @@ typedef Zoltan2::BasicIdentifierAdapter<myTypes_t> inputAdapter_t;
 static void sleep_wrap(unsigned int seconds)
 {
 #ifdef _MSC_VER
-	Sleep(1000*seconds);
+  Sleep(1000*seconds);
 #else
-	sleep(seconds);
+  sleep(seconds);
 #endif
 }
 

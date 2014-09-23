@@ -70,6 +70,7 @@
 #include <BaseTsd.h>              /* for ssize_t, int64, int_ptr */
 typedef INT64 int64_t;
 typedef INT_PTR intptr_t;
+typedef SSIZE_T ssize_t;
 #define ZOLTAN_NOT_FOUND LONG_MAX  /* safe to say never a valid pointer? */
 
 #endif
@@ -192,12 +193,7 @@ typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
  * The MPI_Datatype for ZOLTAN_GNO_TYPE is returned by Zoltan_mpi_gno_type().
  */
 
-#ifdef _MSC_VER
-#define ZOLTAN_GNO_TYPE      SSIZE_T
-#else
 #define ZOLTAN_GNO_TYPE      ssize_t
-#endif
-
 #define zoltan_gno_datatype_name "ssize_t"
 
 /*
