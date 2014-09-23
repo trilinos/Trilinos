@@ -42,11 +42,11 @@
 #ifndef STOKHOS_OPENMP_MKL_CRSMATRIX_HPP
 #define STOKHOS_OPENMP_MKL_CRSMATRIX_HPP
 
-#include "KokkosCore_config.h"
+#include "Kokkos_Macros.h"
 #include "Stokhos_ConfigDefs.h"
 #if defined(KOKKOS_HAVE_OPENMP) && defined(HAVE_STOKHOS_MKL)
 
-#include "Kokkos_OpenMP.hpp"
+#include "Kokkos_Core.hpp"
 #include "Stokhos_CrsMatrix.hpp"
 #include "mkl.h"
 

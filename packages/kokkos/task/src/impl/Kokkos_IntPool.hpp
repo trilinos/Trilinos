@@ -48,8 +48,7 @@
 
 #include <iostream>
 
-#include <Kokkos_View.hpp>
-#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Core.hpp>
 
 //----------------------------------------------------------------------------
 

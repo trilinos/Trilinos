@@ -48,10 +48,7 @@
 #include <TPI.h>
 
 #ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-#  include "KokkosCore_config.h"
-#  ifdef KOKKOS_HAVE_PTHREAD
-#    include "Kokkos_Threads.hpp"
-#  endif
+#  include "Kokkos_Core.hpp"
 #endif
 
 

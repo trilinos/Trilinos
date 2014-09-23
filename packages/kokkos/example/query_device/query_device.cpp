@@ -44,16 +44,13 @@
 #include <iostream>
 #include <sstream>
 
-#include <KokkosCore_config.h>
+#include <Kokkos_Macros.hpp>
 
 #if defined( KOKKOS_HAVE_MPI )
 #include <mpi.h>
 #endif
 
-#include <Kokkos_hwloc.hpp>
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_Cuda.hpp>
-#include <Kokkos_OpenMP.hpp>
+#include <Kokkos_Core.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

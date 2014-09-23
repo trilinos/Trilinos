@@ -1,9 +1,8 @@
-#include <KokkosCore_config.h>
+#include <Kokkos_Macros.hpp>
 #include <ParallelComm.hpp>
 
 #include <sstream>
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <TestImplicit.hpp>
 

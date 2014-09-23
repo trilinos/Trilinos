@@ -45,10 +45,7 @@
 #include <cuda_runtime.h>
 
 #ifdef HAVE_KOKKOSCLASSIC_KOKKOSCORE
-#include "KokkosCore_config.h"
-#ifdef KOKKOS_HAVE_CUDA
-#include "Kokkos_Cuda.hpp"
-#endif
+#include "Kokkos_Core.hpp"
 #endif
 
 namespace KokkosClassic {

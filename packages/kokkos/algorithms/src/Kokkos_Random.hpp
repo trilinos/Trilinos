@@ -46,9 +46,6 @@
 
 
 #include <Kokkos_Core.hpp>
-#ifdef KOKKOS_HAVE_CUDA
-#include <Kokkos_Cuda.hpp>
-#endif
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>

@@ -12,7 +12,6 @@
 #include <iomanip>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_hwloc.hpp>
 
 #include <WrapMPI.hpp>
 #include <fenl.hpp>

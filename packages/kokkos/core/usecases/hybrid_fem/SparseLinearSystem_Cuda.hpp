@@ -47,7 +47,7 @@
 #if defined( BUILD_FROM_CU_FILE )
 
 #include <cusparse_v2.h>
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Kokkos {
 namespace Impl {

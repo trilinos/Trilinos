@@ -53,7 +53,7 @@
 #include "Tpetra_ETIHelperMacros.h"
 #include "Tpetra_Details_MultiVectorDistObjectKernels_def.hpp"
 
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace Tpetra {
 namespace Details {

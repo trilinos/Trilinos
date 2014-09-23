@@ -55,14 +55,6 @@
 #include <iosfwd>
 #include <vector>
 
-#if defined( KOKKOS_HAVE_OPENMP )
-#include <Kokkos_OpenMP.hpp>
-#elif defined( KOKKOS_HAVE_PTHREAD )
-#include <Kokkos_Threads.hpp>
-#else
-#endif
-
-#include <Kokkos_Serial.hpp>
 #include <Kokkos_CudaSpace.hpp>
 
 #include <Kokkos_Parallel.hpp>

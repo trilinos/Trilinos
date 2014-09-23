@@ -42,7 +42,7 @@
 #ifndef STOKHOS_CRSPRODUCTTENSOR_HPP
 #define STOKHOS_CRSPRODUCTTENSOR_HPP
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
@@ -51,8 +51,6 @@
 #include "Stokhos_BlockCrsMatrix.hpp"
 #include "Stokhos_StochasticProductTensor.hpp"
 #include "Stokhos_TinyVec.hpp"
-
-#include "Kokkos_Cuda.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

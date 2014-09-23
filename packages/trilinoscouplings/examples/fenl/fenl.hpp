@@ -53,7 +53,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_CrsMatrix.hpp>
 #include <Kokkos_ArithTraits.hpp>
 

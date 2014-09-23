@@ -44,26 +44,18 @@
 #include <gtest/gtest.h>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_View.hpp>
-#include <Kokkos_hwloc.hpp>
 
 #if defined( KOKKOS_HAVE_PTHREAD )
-
-#include <Kokkos_Threads.hpp>
 
 typedef Kokkos::Threads TestHostDevice ;
 const char TestHostDeviceName[] = "Kokkos::Threads" ;
 
 #elif defined( KOKKOS_HAVE_OPENMP )
 
-#include <Kokkos_OpenMP.hpp>
-
 typedef Kokkos::OpenMP TestHostDevice ;
 const char TestHostDeviceName[] = "Kokkos::OpenMP" ;
 
 #else
-
-#include <Kokkos_Serial.hpp>
 
 typedef Kokkos::Serial TestHostDevice ;
 const char TestHostDeviceName[] = "Kokkos::Serial" ;

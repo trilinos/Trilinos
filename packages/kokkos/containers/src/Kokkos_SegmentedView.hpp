@@ -56,11 +56,13 @@ template<class DataType, class Arg1Type, class Arg2Type, class Arg3Type>
 struct delete_segmented_view;
 
 template<class MemorySpace>
+inline
 void DeviceSetAllocatableMemorySize(size_t size) {
 }
 
 #ifdef KOKKOS_HAVE_CUDA
 template<>
+inline
 void DeviceSetAllocatableMemorySize<Kokkos::CudaSpace>(size_t size) {
 #ifdef __CUDACC__
   size_t size_limit;
@@ -74,6 +76,7 @@ void DeviceSetAllocatableMemorySize<Kokkos::CudaSpace>(size_t size) {
 
 #ifdef KOKKOS_HAVE_CUDA_UVM
 template<>
+inline
 void DeviceSetAllocatableMemorySize<Kokkos::CudaUVMSpace>(size_t size) {
 #ifdef __CUDACC__
   size_t size_limit;
@@ -147,17 +150,22 @@ private:
                 HostSpace ,
                 void > HostMirror ;
 
+  template< bool Accessible >
   KOKKOS_INLINE_FUNCTION
-  typename traits::size_type dimension_0_intern(const int same_space) const {
-    return nviews_() * view_length_ ;
-  }
+  typename Impl::enable_if< Accessible , typename traits::size_type >::type
+  dimension_0_intern() const { return nviews_() * view_length_ ; }
 
+  template< bool Accessible >
   KOKKOS_INLINE_FUNCTION
-  typename traits::size_type dimension_0_intern(const double different_space) const {
-    typename Kokkos::View<int,typename traits::memory_space>::HostMirror h_nviews("h_nviews");
-    Kokkos::deep_copy(h_nviews,nviews_);
-
-    return h_nviews() * view_length_ ;
+  typename Impl::enable_if< ! Accessible , typename traits::size_type >::type
+  dimension_0_intern() const
+  {
+    // In Host space
+    int n = 0 ;
+#if ! defined( __CUDA_ARCH__ )
+    Impl::DeepCopy< HostSpace , typename traits::memory_space >( & n , nviews_.ptr_on_device() , sizeof(int) );
+#endif
+    return n * view_length_ ;
   }
 
 public:
@@ -168,10 +176,12 @@ public:
 
   /* \brief return (current) size of dimension 0 */
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_0() const {
-      return dimension_0_intern(typename Impl::if_c<
-         VerifyExecutionSpaceCanAccessDataSpace< Impl::ActiveExecutionMemorySpace, typename traits::memory_space>::value,
-      int,double>::type(0));
+    enum { Accessible = VerifyExecutionSpaceCanAccessDataSpace<
+             Impl::ActiveExecutionMemorySpace, typename traits::memory_space >::value };
+    int n = SegmentedView::dimension_0_intern< Accessible >();
+    return n ;
   }
+
   /* \brief return size of dimension 1 */
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_1() const { return m_offset_map.N1 ; }
   /* \brief return size of dimension 2 */
@@ -188,25 +198,11 @@ public:
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_7() const { return m_offset_map.N7 ; }
 
   /* \brief return size of dimension 2 */
-  KOKKOS_INLINE_FUNCTION typename traits::size_type size( /*typename Impl::enable_if<
-      Impl::is_same<Impl::ActiveExecutionMemorySpace, typename traits::memory_space>::value,
-      int>::type*/
-    ) const {
-    return nviews_() * view_length_ *
+  KOKKOS_INLINE_FUNCTION typename traits::size_type size() const {
+    return dimension_0() *
         m_offset_map.N1 * m_offset_map.N2 * m_offset_map.N3 * m_offset_map.N4 *
         m_offset_map.N5 * m_offset_map.N6 * m_offset_map.N7 ;
   }
-  /*KOKKOS_INLINE_FUNCTION typename traits::size_type size( typename Impl::enable_if<
-      Impl::is_same<!Impl::ActiveExecutionMemorySpace, typename traits::memory_space>::value,
-      int>::type
-    ) const {
-    typename Kokkos::View<int,typename traits::memory_space>::HostMirror h_nviews("h_nviews");
-    Kokkos::deep_copy(h_nviews,nviews_);
-
-    return h_nviews() * view_length_ *
-        m_offset_map.N1 * m_offset_map.N2 * m_offset_map.N3 * m_offset_map.N4 *
-        m_offset_map.N5 * m_offset_map.N6 * m_offset_map.N7 ;
-  }*/
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION

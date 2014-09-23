@@ -48,9 +48,6 @@
 #if defined( KOKKOS_HAVE_PTHREAD )
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_hwloc.hpp>
-
-#include <Kokkos_View.hpp>
 
 #include <Kokkos_CrsArray.hpp>
 

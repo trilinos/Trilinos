@@ -41,19 +41,7 @@
 //@HEADER
 */
 
-#include <Kokkos_Serial.hpp>
-#include <Kokkos_Threads.hpp>
-
-#ifdef KOKKOS_HAVE_OPENMP
-#include <Kokkos_OpenMP.hpp>
-#endif
-
-#ifdef KOKKOS_HAVE_CUDA
-#include <Kokkos_Cuda.hpp>
-#endif
-
-#include <Kokkos_hwloc.hpp>
-
+#include <Kokkos_Core.hpp>
 
 #include <G2L.hpp>
 

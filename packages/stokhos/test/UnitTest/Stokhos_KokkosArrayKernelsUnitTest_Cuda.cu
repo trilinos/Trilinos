@@ -32,7 +32,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 // Device
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Kernels
 #include "Stokhos_Cuda_CrsMatrix.hpp"

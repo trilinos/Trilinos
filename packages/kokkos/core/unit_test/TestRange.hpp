@@ -43,8 +43,7 @@
 
 #include <stdio.h>
 
-#include <Kokkos_Parallel.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 /*--------------------------------------------------------------------------*/
 

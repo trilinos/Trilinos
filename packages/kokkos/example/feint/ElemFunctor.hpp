@@ -45,8 +45,7 @@
 #define KOKKOS_EXAMPLE_FEINT_FUNCTORS_HPP
 
 #include <stdio.h>
-#include <Kokkos_Serial.hpp>
-#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Core.hpp>
 #include <BoxElemFixture.hpp>
 
 namespace Kokkos {

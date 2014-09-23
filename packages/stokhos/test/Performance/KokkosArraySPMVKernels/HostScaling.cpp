@@ -43,7 +43,7 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "Kokkos_hwloc.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"

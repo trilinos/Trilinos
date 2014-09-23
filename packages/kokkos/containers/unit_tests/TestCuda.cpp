@@ -45,7 +45,7 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <stdint.h>
 
 #include <iomanip>
@@ -127,7 +127,7 @@ TEST_F( cuda, bitset )
 
 #define CUDA_SEGMENTEDVIEW_TEST( size )                             \
   TEST_F( cuda, segmentedview_##size##x) {       \
-      cuda_test_segmented_view<double,Kokkos::Cuda>(size);                     \
+      cuda_test_segmented_view(size);                     \
   }
 
 CUDA_DUALVIEW_COMBINE_TEST( 10 )

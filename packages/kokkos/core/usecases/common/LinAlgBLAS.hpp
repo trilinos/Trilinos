@@ -47,7 +47,7 @@
 #include <cmath>
 #include <utility>
 #include <ParallelComm.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

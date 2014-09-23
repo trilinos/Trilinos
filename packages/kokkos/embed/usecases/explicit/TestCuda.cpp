@@ -6,7 +6,7 @@
 #include <limits>
 #include <utility>
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Array.hpp>
 #include <impl/Kokkos_ArrayAnalyzeShape.hpp>
 #include <impl/Kokkos_ArrayViewDefault.hpp>

@@ -43,7 +43,7 @@
 #include "Belos_TpetraAdapter_UQ_PCE.hpp"
 #include "Stokhos_MueLu_UQ_PCE.hpp"
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <HexElement.hpp>
 #include <fenl_functors_pce.hpp>
 #include <fenl_impl.hpp>

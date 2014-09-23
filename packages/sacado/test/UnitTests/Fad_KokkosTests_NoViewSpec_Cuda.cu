@@ -35,7 +35,7 @@
 
 #include "Fad_KokkosTests.hpp"
 
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Instantiate tests for Cuda device
 using Kokkos::Cuda;

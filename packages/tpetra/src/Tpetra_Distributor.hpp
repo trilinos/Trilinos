@@ -63,7 +63,7 @@
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT || defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "KokkosCompat_View.hpp"
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 #include "Kokkos_TeuchosCommAdapters.hpp"
 #endif
 

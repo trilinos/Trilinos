@@ -45,8 +45,7 @@
 #include <limits>
 #include <iostream>
 #include <vector>
-#include <Kokkos_OpenMP.hpp>
-#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <iostream>
 

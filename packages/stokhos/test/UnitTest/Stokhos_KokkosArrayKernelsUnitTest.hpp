@@ -59,7 +59,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#include "KokkosCore_config.h"
+#include "Kokkos_Macros.hpp"
 
 #include "Stokhos_Update.hpp"
 #include "Stokhos_CrsMatrix.hpp"

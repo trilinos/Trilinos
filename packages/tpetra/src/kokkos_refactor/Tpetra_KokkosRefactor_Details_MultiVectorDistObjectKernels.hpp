@@ -49,9 +49,7 @@
 #ifndef TPETRA_KOKKOS_REFACTOR_DETAILS_MULTI_VECTOR_DIST_OBJECT_KERNELS_HPP
 #define TPETRA_KOKKOS_REFACTOR_DETAILS_MULTI_VECTOR_DIST_OBJECT_KERNELS_HPP
 
-#include "Kokkos_View.hpp"
-#include "Kokkos_Parallel.hpp"
-#include "Kokkos_Atomic.hpp"
+#include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
 namespace Tpetra {

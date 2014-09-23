@@ -45,7 +45,7 @@
 #define KOKKOS_EXPLICITFUNCTORS_HPP
 
 #include <math.h>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <FEMesh.hpp>
 
 namespace Explicit {
