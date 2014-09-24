@@ -511,6 +511,7 @@ void checkUniqueIds(const std::vector<uint64_t> &myIds, const std::vector<uint64
 
 void writeIdsToFile(const std::string &filename, const INTMPI myProcId, const std::vector<uint64_t>& myIds, const std::vector<uint64_t> &uniqueIds)
 {
+#ifdef DEBUG_THIS_
     std::ostringstream os;
     os << "ids_" << myProcId << ".m";
     std::ofstream out(os.str().c_str());
@@ -523,6 +524,7 @@ void writeIdsToFile(const std::string &filename, const INTMPI myProcId, const st
         out << "unique_ids(" << i+1 << ") = " << uniqueIds[i] << ";" << std::endl;
     }
     out.close();
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////
