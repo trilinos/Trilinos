@@ -172,7 +172,7 @@ protected:
   /** \brief . */
   virtual void getRowStatImpl(
     const RowStatLinearOpBaseUtils::ERowStat rowStat,
-    const Ptr<VectorBase<double> > &rowStatVec) const;
+    const Ptr<VectorBase<Scalar> > &rowStatVec) const;
 
   //@}
 

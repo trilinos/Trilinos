@@ -325,7 +325,7 @@ rowStatIsSupportedImpl(
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRowStatImpl(
   const RowStatLinearOpBaseUtils::ERowStat rowStat,
-  const Ptr<VectorBase<double> > &rowStatVec_in
+  const Ptr<VectorBase<Scalar> > &rowStatVec_in
   ) const
 {
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
