@@ -71,7 +71,7 @@ uint64_t getNumIdsPerProc(const uint64_t maxId, const INTMPI numProcs);
 void getIdUsageAcrossAllProcs(std::vector< std::vector<uint64_t> > &idsToComm, std::vector<uint64_t> &idsInUseAcrossAllProcsInMyRange, const MpiInfo& mpiInfo);
 
 void retrieveIds(const INTMPI root, uint64_t id, MPI_Comm comm, uint64_t numIdsToGetPerProc, std::vector<int>& areIdsBeingUsed);
-void receiveIdAndGetIds(const int root, const uint64_t maxId, const std::vector<uint64_t> &idsInUse, MPI_Comm comm);
+void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_t maxId, const std::vector<uint64_t> &idsInUse, MPI_Comm comm);
 
 bool sendIdToCheck(const INTMPI root, uint64_t id, MPI_Comm comm);
 void receiveIdAndCheck(const int root, const std::vector<uint64_t> &idsInUse, MPI_Comm comm);
@@ -122,7 +122,41 @@ void generate_ids(const uint64_t maxId, const std::vector<uint64_t> &idsInUse, s
     std::copy(uniqueIdsFound.begin(), uniqueIdsFound.end(), uniqueIds.begin());
 }
 
-void getAvailableIds(const std::vector<uint64_t> &myIds, uint64_t numIdsNeeded, std::vector<uint64_t> &idsObtained, uint64_t &startId, const uint64_t maxId, const MpiInfo& mpiInfo)
+void getBatchesOfIdsFromOtherProcessorsUntilRequestOnThisProcIsFulfilled(INTMPI root, uint64_t &startingIdToSearchForNewIds, std::vector<uint64_t> &idsObtained, uint64_t numIdsNeeded, int scaleFactorForNumIds,
+        std::vector<uint64_t> &sortedIds, const uint64_t maxId, const MpiInfo& mpiInfo)
+{
+    while ( startingIdToSearchForNewIds < maxId && idsObtained.size() < numIdsNeeded )
+    {
+        int requestNumIds = numIdsNeeded - idsObtained.size();
+        std::vector<int> areIdsBeingUsed(scaleFactorForNumIds*requestNumIds,0);
+        if ( !std::binary_search(sortedIds.begin(), sortedIds.end(), startingIdToSearchForNewIds) )
+        {
+            retrieveIds(root, startingIdToSearchForNewIds, mpiInfo.getMpiComm(), scaleFactorForNumIds*requestNumIds, areIdsBeingUsed);
+            int numIdsChecked=0;
+            for (size_t i=0;i<areIdsBeingUsed.size();i++)
+            {
+                numIdsChecked=i;
+                if ( areIdsBeingUsed[i] == 0 )
+                {
+                    idsObtained.push_back(startingIdToSearchForNewIds+i);
+                    if ( idsObtained.size() == numIdsNeeded ) break;
+                }
+            }
+            startingIdToSearchForNewIds += numIdsChecked+1;
+        }
+        else
+        {
+            startingIdToSearchForNewIds++;
+        }
+    }
+}
+
+void terminateIdRequestForThisProc(INTMPI root, MPI_Comm comm)
+{
+    sendIdToCheck(root, 0, comm); // a zero terminates communication
+}
+
+void getAvailableIds(const std::vector<uint64_t> &myIds, uint64_t numIdsNeeded, std::vector<uint64_t> &idsObtained, uint64_t &startingIdToSearchForNewIds, const uint64_t maxId, const MpiInfo& mpiInfo)
 {
     std::vector<uint64_t> receivedInfo(mpiInfo.getNumProcs(),0);
     MPI_Allgather(&numIdsNeeded, 1, MPI_UINT64_T, &receivedInfo[0], 1, MPI_UINT64_T, mpiInfo.getMpiComm());
@@ -130,42 +164,24 @@ void getAvailableIds(const std::vector<uint64_t> &myIds, uint64_t numIdsNeeded, 
     std::vector<uint64_t> sortedIds(myIds.begin(), myIds.end());
     std::sort(sortedIds.begin(), sortedIds.end());
 
+    int scaleFactorForNumIds = 5;
+
     for (INTMPI procIndex=0;procIndex<mpiInfo.getNumProcs();procIndex++)
     {
         if ( receivedInfo[procIndex] != 0 )
         {
             if ( procIndex == mpiInfo.getProcId() )
             {
-                while ( startId < maxId && idsObtained.size() < numIdsNeeded )
-                {
-                    int requestNumIds = numIdsNeeded - idsObtained.size();
-                    std::vector<int> areIdsBeingUsed(requestNumIds,0);
-                    if ( !std::binary_search(sortedIds.begin(), sortedIds.end(), startId) )
-                    {
-                        retrieveIds(procIndex, startId, mpiInfo.getMpiComm(), requestNumIds, areIdsBeingUsed);
-                        for (size_t i=0;i<areIdsBeingUsed.size();i++)
-                        {
-                            if ( areIdsBeingUsed[i] == 0 )
-                            {
-                                idsObtained.push_back(startId+i);
-                            }
-                        }
-                        startId += areIdsBeingUsed.size();
-                    }
-                    else
-                    {
-                        startId++;
-                    }
-                }
+                getBatchesOfIdsFromOtherProcessorsUntilRequestOnThisProcIsFulfilled(procIndex, startingIdToSearchForNewIds, idsObtained, numIdsNeeded, scaleFactorForNumIds, sortedIds, maxId, mpiInfo);
                 ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
-                sendIdToCheck(procIndex, 0, mpiInfo.getMpiComm()); // a zero terminates communication
+                terminateIdRequestForThisProc(procIndex, mpiInfo.getMpiComm());
             }
             else
             {
-                receiveIdAndGetIds(procIndex, maxId, sortedIds, mpiInfo.getMpiComm());
+                respondToRootProcessorAboutIdsOwnedOnThisProc(procIndex, maxId, sortedIds, mpiInfo.getMpiComm());
             }
             // updated starting id across all procs
-            MPI_Bcast(&startId, 1, MPI_UINT64_T, procIndex, mpiInfo.getMpiComm());
+            MPI_Bcast(&startingIdToSearchForNewIds, 1, MPI_UINT64_T, procIndex, mpiInfo.getMpiComm());
         }
     }
 }
@@ -244,14 +260,14 @@ TEST(GeneratedIds, findUniqueIdAcrossProcs)
     std::vector<uint64_t> myIds(numIdsThisProc,0);
     distributeIds(myIds, mpiInfo);
 
-    uint64_t startId = 1;
+    uint64_t startingIdToSearchForNewIds = 1;
     uint64_t numIdsNeeded = 100;
     std::vector<uint64_t> idsObtained;
     uint64_t maxId = 10000000;
 
     double startTime = stk::wall_time();
 
-    getAvailableIds(myIds, numIdsNeeded, idsObtained, startId, maxId, mpiInfo);
+    getAvailableIds(myIds, numIdsNeeded, idsObtained, startingIdToSearchForNewIds, maxId, mpiInfo);
 
     double endTime = stk::wall_time();
 
@@ -280,14 +296,14 @@ TEST(GeneratedIds, findUniqueIdAcrossProcsVaryingNumIdsInUse)
     std::vector<uint64_t> myIds(numIdsThisProc,0);
     distributeIds(myIds, mpiInfo);
 
-    uint64_t startId = 1;
+    uint64_t startingIdToSearchForNewIds = 1;
     uint64_t numIdsNeeded = 100;
     std::vector<uint64_t> idsObtained;
     uint64_t maxId = 10000000;
 
     double startTime = stk::wall_time();
 
-    getAvailableIds(myIds, numIdsNeeded, idsObtained, startId, maxId, mpiInfo);
+    getAvailableIds(myIds, numIdsNeeded, idsObtained, startingIdToSearchForNewIds, maxId, mpiInfo);
 
     double endTime = stk::wall_time();
 
@@ -498,7 +514,7 @@ void checkUniqueIds(const std::vector<uint64_t> &myIds, const std::vector<uint64
                 EXPECT_FALSE(std::binary_search(myIds.begin(), myIds.end(), uniqueIds[j]));
                 EXPECT_EQ(true, sendIdToCheck(i, uniqueIds[j], mpiInfo.getMpiComm()));
             }
-            sendIdToCheck(i, 0, mpiInfo.getMpiComm());
+            terminateIdRequestForThisProc(i, mpiInfo.getMpiComm());
         }
         else
         {
@@ -588,7 +604,7 @@ void receiveIdAndCheck(const int root, const std::vector<uint64_t> &idsInUse, MP
 ////////////////////////////////////////////////////////////////////
 
 
-void receiveIdAndGetIds(const int root, const uint64_t maxId, const std::vector<uint64_t> &idsInUse, MPI_Comm comm)
+void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_t maxId, const std::vector<uint64_t> &idsInUse, MPI_Comm comm)
 {
     uint64_t id=0;
 
