@@ -34,54 +34,77 @@
 #include <stddef.h>                     // for size_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
-#include <stk_util/parallel/ParallelReduce.hpp>  // for all_write_string
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <gtest/gtest.h>
 #include <string>                       // for string
- 
-TEST(UnitTestParallel, testUnit)
-{
+
+
+class TestStruct {
+public:
+  unsigned int data1;
+  double data2;
+  double data3;
+};
+
+
+TEST(UnitTestParallel, testParallelVectorConcat) {
   int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
   int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
-
-  std::string s;
-  std::ostringstream strout;
-
-  std::cout << "all_write_string " << std::flush;
-  
-//  for (size_t i = 0; i < 250000; ++i) {
-  for (size_t i = 0; i < 100; ++i) {
-    if (mpi_rank == 0 && i%1000 == 0)
-      std::cout << "." << std::flush;
-    
-    stk::all_write_string(MPI_COMM_WORLD, strout, s);
+  //
+  //  Test 1, concat integer lists, each process P creates n-1 copies of P thus on 6 processors the 
+  //  expected concat list is:
+  //
+  //  2 3 3 4 4 4 5 5 5 5
+  //
+  std::vector<int> localIntList;
+  for(int i=0; i<mpi_rank-1; ++i) {
+    localIntList.push_back(mpi_rank);
   }
-  
-  ASSERT_LT(mpi_rank, mpi_size);
-}
-
-TEST(UnitTestParallel, testCommAll)
-{
-  int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
-  ASSERT_LT(mpi_rank, mpi_size);
-
-  stk::CommAll comm_all(MPI_COMM_WORLD);
-
-  ASSERT_EQ(comm_all.parallel_size(), mpi_size);
-  ASSERT_EQ(comm_all.parallel_rank(), mpi_rank);
-
-  for (int p = 0; p<mpi_size; ++p) {
-    if (p - mpi_rank <= 10 || mpi_rank - p <= 10) {
-      stk::CommBuffer& buf = comm_all.send_buffer(p);
-      buf.skip<unsigned long>(1);
+  std::vector<int> globalIntList;
+  int status = stk::parallel_vector_concat(MPI_COMM_WORLD, localIntList, globalIntList);
+  EXPECT_EQ(status, MPI_SUCCESS);
+  std::vector<int> expectedIntList;
+  for(int iproc=0; iproc<mpi_size; ++iproc) {
+    for(int i=0; i<iproc-1; ++i) {
+      expectedIntList.push_back(iproc);
     }
   }
+  for(unsigned int i=0; i<expectedIntList.size(); ++i) {
+    EXPECT_EQ(globalIntList[i], expectedIntList[i]);
+  }
+  //
+  //  Test 2, concat a bit more complex data struct with two reals and an int, same general format
+  //  as before
+  //
+  std::vector<TestStruct> localStructList;
+  std::vector<TestStruct> expectedStructList;
+  for(int iproc=0; iproc<mpi_size; ++iproc) {
+    for(int i=0; i<mpi_size; ++i) {
+      TestStruct ts;
+      ts.data1 = iproc;
+      ts.data2 = 1.23;
+      ts.data3 = 1.0/i;
+      if(iproc == mpi_rank) {
+        localStructList.push_back(ts);
+      }
+      expectedStructList.push_back(ts);
+    }
+  }
+  std::vector<TestStruct> globalStructList;
+  status = stk::parallel_vector_concat(MPI_COMM_WORLD, localStructList, globalStructList);
+  EXPECT_EQ(status, MPI_SUCCESS);
+  for(unsigned int i=0; i<expectedStructList.size(); ++i) {
+    EXPECT_EQ(globalStructList[i].data1, expectedStructList[i].data1);
+    EXPECT_EQ(globalStructList[i].data2, expectedStructList[i].data2);
+    EXPECT_EQ(globalStructList[i].data3, expectedStructList[i].data3);
+  }
+  //
+  //  Test 3, boundary case, check for handling of empty list.
+  //
+  std::vector<char> localCharList;
+  std::vector<char> globalCharList(10, 'a');
+  status = stk::parallel_vector_concat(MPI_COMM_WORLD, localCharList, globalCharList);
+  EXPECT_EQ(status, MPI_SUCCESS);
+  EXPECT_EQ(globalCharList.size(), (unsigned)0);
 
-  bool symmetric = false;
-  bool local_error = false;
-  bool global_bad_input = comm_all.allocate_buffers(mpi_size / 4, symmetric, local_error);
-  ASSERT_EQ(global_bad_input, false);
 }
-
