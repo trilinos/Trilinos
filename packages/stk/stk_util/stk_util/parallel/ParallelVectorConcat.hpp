@@ -55,6 +55,10 @@ namespace stk {
   //    Processor 3: localVec = {500, 600}
   //    Result on all processors: globalVec = {1, 2, 30, 40, 500, 600}
   // 
+  //  Usage Guidelines:
+  //    Generally type T must be a plain data type with no pointers or allocated memory.  For example T could be a 
+  //    gtk::Vec3d by T should not be a vector of reals.
+  //
   template <typename T> int parallel_vector_concat(ParallelMachine comm, std::vector<T>& localVec, std::vector<T>& globalVec ) {
     globalVec.clear();
   
