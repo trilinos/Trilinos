@@ -61,14 +61,15 @@ namespace stk {
   //                          should be 'plain old data' without any pointers or allocated memory.  Finally 
   //                          the orderArray should contain unique keys only.
   //
-  //                          The length of the order array also defines the number of new objects needed 
-  //                          on the current processor.  
+  //                          The length of the order array must be the same as the number of ids needed
+  //                          on the current processor.
   //  newIds       : output : Returns orderArray.size() new ids that match one to one with the passed order
-  //                          keys. 
+  //                          keys. The original length of the newIds array must be the same as the orderArray
   //  maxAllowedId : input  : Max id value allowed to be returned.  If a valid set of ids cannot be found
   //                          below maxAllowedId routine will return a failure code.
   //
-  //  Returns:  Total number of ids created.  Will generally throw if encountering any internal errors.
+  //  Returns:  Total number of ids created.  Will generally throw if encountering any internal errors.  Note, the error
+  //            throws are NOT guaranteed to be parallel consistent and usually unrecoverable.
   //
   //  Assumptions and Usage Guidelines
   //    This algorithm assumes current existingIds are relatively dense packed.  The specific requirement for
@@ -76,15 +77,24 @@ namespace stk {
   //
 
 
-
   template <typename OrderType> 
-  unsigned generate_parallel_consistent_ids(ParallelMachine comm, 
+  unsigned generate_parallel_consistent_ids(unsigned maxAllowedId,
                                             const std::vector<unsigned>& existingIds,
-                                            std::vector<OrderType>& localOrderArray,
+                                            const std::vector<OrderType>& localOrderArray,
                                             std::vector<unsigned>&  newIds,
-                                            unsigned maxAllowedId=~0U) {
+                                            ParallelMachine comm) {
+    //
+    //  Check function restrictions
+    //
+    if(localOrderArray.size() != newIds.size()) {
+      std::runtime_error x;
+      x << "In generate_parallel_consistent_ids, inconsitent sizes passed for localOrderArray and newIds \n";
+      throw x;
+      return 0;     
+    }
+ 
 
-    newIds.clear();
+
     //
     //  Extract global max existing id.  For basic use case just start generating ids starting
     //  at the previous max_id + 1.  
