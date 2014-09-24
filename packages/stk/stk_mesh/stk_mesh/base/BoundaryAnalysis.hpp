@@ -40,10 +40,6 @@
 #include <vector>                       // for vector
 namespace stk { namespace mesh { class BulkData; } }
 
-
-
-struct CellTopologyData;
-
 namespace stk {
 namespace mesh {
 
@@ -76,7 +72,10 @@ void boundary_analysis(const BulkData & bulk_data,
                        EntityRank closure_rank,
                        EntitySideVector& boundary);
 
-
+void get_adjacent_entities( const BulkData& mesh,  const Entity entity ,
+                            EntityRank subcell_rank ,
+                            unsigned subcell_identifier ,
+                            std::vector< EntitySideComponent> & adjacent_entities);
 }
 }
 #endif

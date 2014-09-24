@@ -128,7 +128,7 @@ Entity declare_element_edge( BulkData & mesh ,
  * \param subcell_nodes EntityVector output of the subcell nodes
  * \return CellTopologyData * of the requested subcell
  */
-const CellTopologyData * get_subcell_nodes(const BulkData& mesh,
+stk::topology get_subcell_nodes(const BulkData& mesh,
     const Entity entity ,
     EntityRank         subcell_rank ,
     unsigned           subcell_identifier ,
@@ -141,9 +141,8 @@ const CellTopologyData * get_subcell_nodes(const BulkData& mesh,
  */
 int get_entity_subcell_id( const BulkData& mesh, const Entity entity ,
                            const EntityRank          subcell_rank,
-                           const CellTopologyData  & side_topology,
+                           stk::topology side_topology,
                            const EntityVector      & side_nodes );
-
 
 template< class Traits >
 void get_parts_with_topology(stk::mesh::BulkData& mesh,

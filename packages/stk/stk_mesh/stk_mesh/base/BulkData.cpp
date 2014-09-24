@@ -1887,7 +1887,7 @@ void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_buck
     return;
   }
 
-  const std::vector<FieldBase*>  fields = mesh_meta_data().get_fields();
+  const std::vector<FieldBase*>&  fields = mesh_meta_data().get_fields();
   m_field_data_manager->deallocate_bucket_field_data(rank, bucket_id, capacity, fields);
 }
 

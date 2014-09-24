@@ -55,7 +55,7 @@ public:
     virtual void allocate_bucket_field_data(const EntityRank rank,
             const std::vector< FieldBase * > & field_set, const PartVector& superset_parts, const size_t capacity) = 0;
     virtual void deallocate_bucket_field_data(const EntityRank rank, const unsigned bucket_id, const size_t capacity,
-            const std::vector<FieldBase*>  fields) = 0;
+            const std::vector<FieldBase*>&  fields) = 0;
     virtual void reorder_bucket_field_data(EntityRank rank, const std::vector<FieldBase*> & fields, const std::vector<unsigned>& reorderedBucketIds) = 0;
     virtual void allocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, const std::vector< FieldBase * > & field_set) = 0;
     virtual size_t get_num_bytes_allocated_on_field(const unsigned field_index) const = 0;
@@ -76,7 +76,7 @@ public:
     void allocate_bucket_field_data(const EntityRank rank,
             const std::vector< FieldBase * > & field_set, const PartVector& superset_parts, const size_t capacity);
     void deallocate_bucket_field_data(const EntityRank rank, const unsigned bucket_id, const size_t capacity,
-            const std::vector<FieldBase*>  fields);
+            const std::vector<FieldBase*>&  fields);
     void reorder_bucket_field_data(EntityRank rank, const std::vector<FieldBase*> & fields, const std::vector<unsigned>& reorderedBucketIds);
     void allocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, const std::vector< FieldBase * > & field_set);
     size_t get_num_bytes_allocated_on_field(const unsigned field_index) const { return m_num_bytes_allocated_per_field[field_index]; }
@@ -98,7 +98,7 @@ public:
     void allocate_bucket_field_data(const EntityRank rank,
             const std::vector< FieldBase * > & field_set, const PartVector& superset_parts, const size_t capacity);
     void deallocate_bucket_field_data(const EntityRank rank, const unsigned bucket_id, const size_t capacity,
-            const std::vector<FieldBase*>  fields);
+            const std::vector<FieldBase*>&  fields);
     void reorder_bucket_field_data(EntityRank rank, const std::vector<FieldBase*> & fields, const std::vector<unsigned>& reorderedBucketIds);
     void allocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, const std::vector< FieldBase * > & field_set);
     size_t get_num_bytes_allocated_on_field(const unsigned field_index) const { return m_num_bytes_allocated_per_field[field_index]; }

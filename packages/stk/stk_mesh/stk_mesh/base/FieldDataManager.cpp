@@ -156,7 +156,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
 }
 
 void DefaultFieldDataManager::deallocate_bucket_field_data(const EntityRank rank, const unsigned bucket_id, const size_t capacity,
-        const std::vector<FieldBase*>  fields)
+        const std::vector<FieldBase*>&  fields)
 {
     if(fields.empty())
         return;
@@ -340,7 +340,7 @@ void ContiguousFieldDataManager::clear_bucket_field_data(const EntityRank rm_ran
 
 
 void ContiguousFieldDataManager::deallocate_bucket_field_data(const EntityRank rank, const unsigned bucket_id, const size_t capacity,
-        const std::vector<FieldBase*>  fields)
+        const std::vector<FieldBase*>&  fields)
 {
     if(fields.empty())
         return;

@@ -47,10 +47,10 @@ namespace mesh {
  *
  * Expensive function that should only be called once
  *
- * This is a parallel collective function (it should be called on all
+ * This is a parallel collective function (it must be called on all
  * processors at the same time
  *
- * \param mesh A consisent mesh with Element and node relations
+ * \param mesh A consistent mesh with Element and node relations
  * \param add_parts Newly created entities will be added to the add_parts and
  *                  the root part for the given subcell topology.  Note, no part in the
  *                  'add_parts' vector can have a primary_entity_rank
