@@ -466,8 +466,7 @@ Time Scheduler::adjust_dt(Time dt, Time time)
     if (proj_time < next) {
       new_dt *= (1.0 + DBL_EPSILON);
     }
-    std::cerr << "SCHEDULER: " << steps << "\t" << delta << "\t" << dt << "\t" << delta-dt << "\t" << tolerance_ << "\n" ;
-   return new_dt;
+    return new_dt;
   }
   return dt;
 }
