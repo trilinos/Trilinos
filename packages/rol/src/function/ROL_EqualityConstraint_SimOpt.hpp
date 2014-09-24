@@ -502,13 +502,13 @@ public:
 
              ---
   */
-  virtual void solveAugmentedSystem(Vector<Real> &v1,
-                                    Vector<Real> &v2,
-                                    const Vector<Real> &b1,
-                                    const Vector<Real> &b2,
-                                    const Vector<Real> &x,
-                                    Real &tol) {
-    EqualityConstraint<Real>::solveAugmentedSystem(v1,v2,b1,b2,x,tol);
+  virtual std::vector<Real> solveAugmentedSystem(Vector<Real> &v1,
+                                                 Vector<Real> &v2,
+                                                 const Vector<Real> &b1,
+                                                 const Vector<Real> &b2,
+                                                 const Vector<Real> &x,
+                                                 Real &tol) {
+    return EqualityConstraint<Real>::solveAugmentedSystem(v1,v2,b1,b2,x,tol);
   }
 
 

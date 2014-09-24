@@ -704,7 +704,7 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    int nx      = 256;   // Set spatial discretization.
+    int nx      = 128;   // Set spatial discretization.
     int nt      = 100;   // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
     RealT alpha = 1.e-3; // Set penalty parameter.
@@ -791,7 +791,7 @@ int main(int argc, char *argv[]) {
               << " seconds.\n";
 
     // SQP.
-    RealT ctol = 1.e-12;
+    RealT ctol = 1.e-10;
     ROL::StatusTestSQP<RealT> status_sqp(gtol,ctol,stol,maxit);
     ROL::CompositeStepSQP<RealT> step_sqp(*parlist_tr);
     ROL::DefaultAlgorithm<RealT> algo_sqp(step_sqp,status_sqp,false);

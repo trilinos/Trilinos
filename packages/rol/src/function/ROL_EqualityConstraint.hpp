@@ -211,12 +211,12 @@ public:
 
              ---
   */
-  virtual void solveAugmentedSystem(Vector<Real> &v1,
-                                    Vector<Real> &v2,
-                                    const Vector<Real> &b1,
-                                    const Vector<Real> &b2,
-                                    const Vector<Real> &x,
-                                    Real &tol);
+  virtual std::vector<Real> solveAugmentedSystem(Vector<Real> &v1,
+                                                 Vector<Real> &v2,
+                                                 const Vector<Real> &b1,
+                                                 const Vector<Real> &b2,
+                                                 const Vector<Real> &x,
+                                                 Real &tol);
 
 
   /** \brief Apply a constraint preconditioner at \f$x\f$, \f$P(x) \in L(\mathcal{C}, \mathcal{C})\f$,

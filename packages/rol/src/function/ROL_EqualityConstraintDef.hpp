@@ -155,26 +155,28 @@ void EqualityConstraint<Real>::applyAdjointHessian(Vector<Real> &huv,
 
 
 template <class Real>
-void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
-                                                    Vector<Real> &v2,
-                                                    const Vector<Real> &b1,
-                                                    const Vector<Real> &b2,
-                                                    const Vector<Real> &x,
-                                                    Real &tol) {
+std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
+                                                                 Vector<Real> &v2,
+                                                                 const Vector<Real> &b1,
+                                                                 const Vector<Real> &b2,
+                                                                 const Vector<Real> &x,
+                                                                 Real &tol) {
 
-  // Initialization.
+  /*** Initialization. ***/
   Real zero = 0.0;
   Real one  = 1.0;
-  int m = 20;
+  int m = 50;           // Krylov space size.
   Real zerotol = zero;
-  //int iter = 0;
-  //int flag = 0;
   int i = 0;
   int k = 0;
   Real temp = zero;
   Real resnrm = zero;
 
   tol = std::sqrt(b1.dot(b1)+b2.dot(b2))*1e-4;
+
+  // Set initial guess to zero, for now.
+  v1.zero();
+  v2.zero();
 
   Teuchos::RCP<Vector<Real> > r1 = v1.clone();
   Teuchos::RCP<Vector<Real> > r2 = v2.clone();
@@ -187,7 +189,7 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   Teuchos::RCP<Vector<Real> > w2 = v2.clone();
   Teuchos::RCP<Vector<Real> > w1temp = v1.clone();
   Teuchos::RCP<Vector<Real> > w2temp = v2.clone();
-  std::vector<Real> res(m+1, zero);
+  std::vector<std::vector<Real> > res(2, std::vector<Real>(m+1, zero)); 
   std::vector<Teuchos::RCP<Vector<Real> > > V1;
   std::vector<Teuchos::RCP<Vector<Real> > > V2;
   Teuchos::SerialDenseMatrix<int, Real> H(m+1,m);
@@ -203,13 +205,13 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   r1->scale(-one); r1->axpy(-one, v1); r1->plus(b1);
   applyJacobian(*r2, v1, x, zerotol);
   r2->scale(-one); r2->plus(b2);
-  res[0] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
+  res[0][0] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
+  res[1][0] = res[0][0];
 
   // Check if residual is identically zero.
-  if (res[0] == zero) {
-    //iter = 0;
-    //flag = 0;
-    return;
+  if (res[1][0] == zero) {
+    res[1].resize(0);
+    return res[1];
   }
 
   // Apply left preconditioner to constraint residual.
@@ -217,18 +219,12 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   applyPreconditioner(*r2, *r2temp, x, zerotol);
 
   // Compute norm of preconditioned residual.
-  res[0] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
+  res[0][0] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
 
-  // Evaluate special stopping condition and check convergence.
-  tol = tol;
-  if ( res[0] <= tol ) {
-    return;
-  }
+  V1.push_back(r1->clone()); (V1[0])->set(*r1); (V1[0])->scale(one/res[0][0]);
+  V2.push_back(r2->clone()); (V2[0])->set(*r2); (V2[0])->scale(one/res[0][0]);
 
-  V1.push_back(r1->clone()); (V1[0])->set(*r1); (V1[0])->scale(one/res[0]);
-  V2.push_back(r2->clone()); (V2[0])->set(*r2); (V2[0])->scale(one/res[0]);
-
-  s(0) = res[0];
+  s(0) = res[0][0];
 
   for (i=0; i<m; i++) {
 
@@ -278,7 +274,7 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
     H(i,i)   = cs(i)*H(i,i) + sn(i)*H(i+1,i);
     H(i+1,i) = zero;
     resnrm   = std::abs(s(i+1));
-    res[i+1] = resnrm;
+    res[0][i+1] = resnrm;
 
     // Update solution approximation.
     const char uplo = 'U';
@@ -303,13 +299,12 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
     r1->scale(-one); r1->axpy(-one, *v1trial); r1->plus(b1);
     applyJacobian(*r2, *v1trial, x, zerotol);
     r2->scale(-one); r2->plus(b2);
-    resnrm = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
-    //std::cout<< "true res = " << resnrm << "\n";
+    res[1][i+1] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
 
     // Evaluate special stopping condition.
     tol = tol;
 
-    if (resnrm <= tol) {
+    if (res[1][i+1] <= tol) {
       // Update solution vector.
       v1.plus(*z1);
       v2.plus(*z2);
@@ -318,10 +313,23 @@ void EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
 
   } // for (int i=0; i++; i<m)
 
-  res.resize(i+2);
-  //for (unsigned j=0; j<res.size(); j++) {
-  //  std::cout << "res(" << j << ")" << res[j] << "\n";
-  //}
+  res[0].resize(i+2);
+  res[1].resize(i+2);
+
+  /*
+  std::stringstream hist;
+  hist << std::scientific << std::setprecision(8);
+  hist << "\n    Augmented System Solver:\n";
+  hist << "    Preconditioned" << "      " << "Unpreconditioned\n";
+  hist << "    Iter Residual " << "      " << "True Residual\n";
+  for (unsigned j=0; j<res[0].size(); j++) {
+    hist << "    " << std::left << std::setw(14) << res[0][j] << "      " << res[1][j] << "\n";
+  }
+  hist << "\n";
+  std::cout << hist.str();
+  */
+
+  return res[1];
 
 }
 
