@@ -305,6 +305,7 @@ integer {D}+({E})?
 
 <END_CASE_SKIP>"{case".*"\n"  {
   yyless(0);
+  curr_index = 0;
   BEGIN(INITIAL);
   switch_skip_to_endcase = false;
 }
@@ -459,6 +460,7 @@ integer {D}+({E})?
     } else {
       /* Need to check the elseif condition; push back and parse */
       yyless(0);
+      curr_index = 0;
       BEGIN(INITIAL);
       if_state[if_lvl] = INITIAL;
     }
