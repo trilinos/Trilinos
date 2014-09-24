@@ -48,12 +48,17 @@ namespace stk {
   //  fragments in processor order.
   //
   //  Return Code:  An MPI error code, MPI_SUCESS if correct
+  //
+  //  Example:
+  //    Processor 1: localVec = {1, 2}
+  //    Processor 2: localVec = {30, 40}
+  //    Processor 3: localVec = {500, 600}
+  //    Result on all processors: globalVec = {1, 2, 30, 40, 500, 600}
   // 
   template <typename T> int parallel_vector_concat(ParallelMachine comm, std::vector<T>& localVec, std::vector<T>& globalVec ) {
     globalVec.clear();
   
     const unsigned p_size = parallel_machine_size( comm );
-    //const unsigned p_rank = parallel_machine_rank( comm );
 
     unsigned int sizeT     = sizeof(T);
     unsigned int localSize = sizeT * localVec.size();
