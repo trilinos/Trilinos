@@ -1,11 +1,11 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
+INCLUDE(XpetraAddTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 #
-# Executables
+# Clone example
 #
-
 IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND
 KokkosClassic_ENABLE_Thrust)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

@@ -45,6 +45,16 @@
 // @HEADER
 #include <iostream>
 
+/*
+   Call MueLu via the Stratimikos interface.
+
+   Usage:
+    ./MueLu_Stratimikos.exe : use xml configuration file stratimikos_ParameterList.xml
+
+   Note:
+    The source code is not MueLu specific and can be used with any Stratimikos strategy.
+*/
+
 // Teuchos includes
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_GlobalMPISession.hpp>

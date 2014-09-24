@@ -43,6 +43,10 @@
 // ***********************************************************************
 //
 // @HEADER
+
+// This example demonstrates how to clone a Hierarchy from one type of compute
+// node to another.
+
 #include <iostream>
 
 #include <Xpetra_MultiVectorFactory.hpp>

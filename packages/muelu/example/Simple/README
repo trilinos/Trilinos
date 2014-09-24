@@ -11,15 +11,8 @@ Examples are not using Galeri::Xpetra in a attempt to demonstrate how to use the
 --
 
 Examples:
- Simple           - Create a matrix and solve Ax=b using default parameters of MueLu.
  Simple-LongInt   - Demontrates how to change default template parameters. In this example, GlobalOrdinal = long long int.
  Simple-Templated - In this version, template parameters are explicitly defined.
-
- Simple-Belos     - How to use MueLu as a preconditioner for Belos.
- Simple-Epetra    - How to use MueLu with existing Epetra code.
- Simple-Tpetra    - How to use MueLu with existing Tpetra code.
-
- Simple-AztecOO   - How to use MueLu as a preconditioner for AztecOO.
 
 Usage:
  ./MueLu_Simple.exe

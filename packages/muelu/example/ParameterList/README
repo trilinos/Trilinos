@@ -9,8 +9,6 @@ Use --help to list available options.
 
 Example:
 
-- MueLu ParameterList - Main example
-
 - Stratimikos         - Call MueLu via the stratimikos interface
 
    Usage:
