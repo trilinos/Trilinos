@@ -38,6 +38,7 @@
 #include "stk_util/parallel/Parallel.hpp" 
 #include <vector> 
 #include "mpi.h"  
+#include "stk_util/diag/String.hpp"
 
 namespace stk {
 
@@ -113,7 +114,7 @@ namespace stk {
 
   //------------------------------------------------------------------------
   //
-  //  String specializations for parallel_vector_concat.  As strings are not PODs they need special handling
+  //  std::string specializations for parallel_vector_concat.  As strings are not PODs they need special handling
   //  to concat correctly.  String concatentaion is a common use case particularly for generating
   //  parallel consistent error messages.
   //
@@ -155,6 +156,32 @@ namespace stk {
         nextString.clear();
       }
       curCharIndex++;
+    }
+    return MPI_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------
+  //
+  //  sierra::String specializations for parallel_vector_concat.  Going forward use of std::string is prefered.
+  //  Thus this version just copies to std::strings, and is a bit inefficent.
+  //
+  template<>
+  inline int parallel_vector_concat(ParallelMachine comm, std::vector<sierra::String>& localList, std::vector<sierra::String>& globalList ) {
+    std::vector<std::string> localListStd;
+    std::vector<std::string> globalListStd;
+    localListStd.reserve(localList.size());
+    for(unsigned i=0; i<localList.size(); ++i) {
+      localListStd.push_back(localList[i].c_str());
+    }
+    int mpiResult = stk::parallel_vector_concat(comm, localListStd, globalListStd);
+    if(mpiResult != MPI_SUCCESS) {
+      // Unknown failure, pass error code up the chain
+      return mpiResult;
+    }
+    globalList.clear();
+    globalList.reserve(globalListStd.size());   
+    for(unsigned i=0; i<globalListStd.size(); ++i) {
+      globalList.push_back(globalListStd[i].c_str());
     }
     return MPI_SUCCESS;
   }
