@@ -160,7 +160,7 @@ namespace stk {
       typename std::vector<OrderType>::iterator index = std::lower_bound(globalOrderArray.begin(), globalOrderArray.end(), localOrderArray[i]);
       assert(index != globalOrderArray.end());
       int offset = std::distance(globalOrderArray.begin(), index);
-      newIds.push_back(globalMaxId+1+offset);
+      newIds[i] = globalMaxId+1+offset;
     }
     return globalNumIdsRequested;
   }
