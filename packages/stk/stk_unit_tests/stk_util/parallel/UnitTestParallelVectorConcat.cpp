@@ -56,55 +56,95 @@ TEST(UnitTestParallel, testParallelVectorConcat) {
   //
   //  2 3 3 4 4 4 5 5 5 5
   //
-  std::vector<int> localIntList;
-  for(int i=0; i<mpi_rank-1; ++i) {
-    localIntList.push_back(mpi_rank);
-  }
-  std::vector<int> globalIntList;
-  int status = stk::parallel_vector_concat(MPI_COMM_WORLD, localIntList, globalIntList);
-  EXPECT_EQ(status, MPI_SUCCESS);
-  std::vector<int> expectedIntList;
-  for(int iproc=0; iproc<mpi_size; ++iproc) {
-    for(int i=0; i<iproc-1; ++i) {
-      expectedIntList.push_back(iproc);
+  {
+    std::vector<int> localIntList;
+    for(int i=0; i<mpi_rank-1; ++i) {
+      localIntList.push_back(mpi_rank);
     }
-  }
-  for(unsigned int i=0; i<expectedIntList.size(); ++i) {
-    EXPECT_EQ(globalIntList[i], expectedIntList[i]);
+    std::vector<int> globalIntList;
+    int status = stk::parallel_vector_concat(MPI_COMM_WORLD, localIntList, globalIntList);
+    EXPECT_EQ(status, MPI_SUCCESS);
+    std::vector<int> expectedIntList;
+    for(int iproc=0; iproc<mpi_size; ++iproc) {
+      for(int i=0; i<iproc-1; ++i) {
+        expectedIntList.push_back(iproc);
+      }
+    }
+    for(unsigned int i=0; i<expectedIntList.size(); ++i) {
+      EXPECT_EQ(globalIntList[i], expectedIntList[i]);
+    }
   }
   //
   //  Test 2, concat a bit more complex data struct with two reals and an int, same general format
   //  as before
   //
-  std::vector<TestStruct> localStructList;
-  std::vector<TestStruct> expectedStructList;
-  for(int iproc=0; iproc<mpi_size; ++iproc) {
-    for(int i=0; i<mpi_size; ++i) {
-      TestStruct ts;
-      ts.data1 = iproc;
-      ts.data2 = 1.23;
-      ts.data3 = 1.0/i;
-      if(iproc == mpi_rank) {
-        localStructList.push_back(ts);
+  {
+    std::vector<TestStruct> localStructList;
+    std::vector<TestStruct> expectedStructList;
+    for(int iproc=0; iproc<mpi_size; ++iproc) {
+      for(int i=0; i<mpi_size; ++i) {
+        TestStruct ts;
+        ts.data1 = iproc;
+        ts.data2 = 1.23;
+        ts.data3 = 1.0/i;
+        if(iproc == mpi_rank) {
+          localStructList.push_back(ts);
+        }
+        expectedStructList.push_back(ts);
       }
-      expectedStructList.push_back(ts);
     }
-  }
-  std::vector<TestStruct> globalStructList;
-  status = stk::parallel_vector_concat(MPI_COMM_WORLD, localStructList, globalStructList);
-  EXPECT_EQ(status, MPI_SUCCESS);
-  for(unsigned int i=0; i<expectedStructList.size(); ++i) {
-    EXPECT_EQ(globalStructList[i].data1, expectedStructList[i].data1);
-    EXPECT_EQ(globalStructList[i].data2, expectedStructList[i].data2);
-    EXPECT_EQ(globalStructList[i].data3, expectedStructList[i].data3);
+    std::vector<TestStruct> globalStructList;
+    int status = stk::parallel_vector_concat(MPI_COMM_WORLD, localStructList, globalStructList);
+    EXPECT_EQ(status, MPI_SUCCESS);
+    for(unsigned int i=0; i<expectedStructList.size(); ++i) {
+      EXPECT_EQ(globalStructList[i].data1, expectedStructList[i].data1);
+      EXPECT_EQ(globalStructList[i].data2, expectedStructList[i].data2);
+      EXPECT_EQ(globalStructList[i].data3, expectedStructList[i].data3);
+    }
   }
   //
   //  Test 3, boundary case, check for handling of empty list.
   //
-  std::vector<char> localCharList;
-  std::vector<char> globalCharList(10, 'a');
-  status = stk::parallel_vector_concat(MPI_COMM_WORLD, localCharList, globalCharList);
-  EXPECT_EQ(status, MPI_SUCCESS);
-  EXPECT_EQ(globalCharList.size(), (unsigned)0);
+  {
+    std::vector<char> localCharList;
+    std::vector<char> globalCharList(10, 'a');
+    int status = stk::parallel_vector_concat(MPI_COMM_WORLD, localCharList, globalCharList);
+    EXPECT_EQ(status, MPI_SUCCESS);
+    EXPECT_EQ(globalCharList.size(), (unsigned)0);
+  }
+  //
+  //  Test 4, test string specialization.  Net string should have form:
+  //  0: "PROC |1|"
+  //  1: "PROC |2|"
+  //  2: "PROC |2|"
+  //  3: "PROC |3|"
+  //  4: "PROC |3|"
+  //  5: "PROC |3|"
+  //
+  {
+    std::vector<std::string> localStringList;
+    std::vector<std::string> globalStringList;
+    std::vector<std::string> expectedStringList;
+    for(int iproc=0; iproc<mpi_size; ++iproc) {
+      for(int i=0; i<iproc; ++i) {
+        std::ostringstream os;
+        os <<"PROC |"<<iproc<<"|";
+        if(iproc == mpi_rank) {
+          localStringList.push_back(os.str());
+        }
+        expectedStringList.push_back(os.str());
+      }
+    }
 
+    int status = stk::parallel_vector_concat(MPI_COMM_WORLD, localStringList, globalStringList);
+
+    EXPECT_EQ(status, MPI_SUCCESS);
+  
+    EXPECT_EQ(globalStringList.size(), expectedStringList.size()); 
+
+
+    for(unsigned int i=0; i<expectedStringList.size(); ++i) {
+      EXPECT_EQ(globalStringList[i], expectedStringList[i]);
+    }
+  }
 }

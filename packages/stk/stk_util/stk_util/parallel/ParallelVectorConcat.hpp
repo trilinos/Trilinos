@@ -56,14 +56,29 @@ namespace stk {
   //    Result on all processors: globalVec = {1, 2, 30, 40, 500, 600}
   // 
   //  Usage Guidelines:
-  //    Generally type T must be a plain data type with no pointers or allocated memory.  For example T could be a 
-  //    gtk::Vec3d by T should not be a vector of reals.
+  //    Generally type T must be a plain data type with no pointers or allocated memory.  
+  //    Thus T could be standard types such as int or double or structs or classes that contain only ints
+  //    and double (such as gtk::Vec3d).
+  //    T should NOT be a general structure that contains pointers, strings, or vectors as these structures cannot be
+  //    properly transfered between processors.  
+  //    A handful of specializations are available to handle certain more complex types
   //
-  template <typename T> int parallel_vector_concat(ParallelMachine comm, std::vector<T>& localVec, std::vector<T>& globalVec ) {
-    globalVec.clear();
-  
+  //  Specializations for non-PODs.
+  //    std::string
+  //    sierra::String
+  //
+  template <typename T> inline int parallel_vector_concat(ParallelMachine comm, std::vector<T>& localVec, std::vector<T>& globalVec ) {
+
     const unsigned p_size = parallel_machine_size( comm );
 
+    //  Check for serial simplified early out condition
+    if(p_size == 1) {
+      globalVec = localVec;
+      return MPI_SUCCESS;
+    }
+
+    globalVec.clear();
+  
     unsigned int sizeT     = sizeof(T);
     unsigned int localSize = sizeT * localVec.size();
 
@@ -93,6 +108,55 @@ namespace stk {
     //
     mpiResult = MPI_Allgatherv(&localVec[0], localSize, MPI_CHAR, &globalVec[0], &messageSizes[0], &offsets[0], MPI_CHAR, comm);
     return mpiResult;
+  }
+
+
+  //------------------------------------------------------------------------
+  //
+  //  String specializations for parallel_vector_concat.  As strings are not PODs they need special handling
+  //  to concat correctly.  String concatentaion is a common use case particularly for generating
+  //  parallel consistent error messages.
+  //
+  template<>
+  inline int parallel_vector_concat(ParallelMachine comm, std::vector<std::string>& localList, std::vector<std::string>& globalList ) {
+    //
+    //  Convert the local vector of strings into a single vector of null seperated char bits 
+    //  so that standardized list concact can be used.  
+    //
+    std::vector<char> charLocalList;
+    for(unsigned istring=0; istring<localList.size(); ++istring) {
+      unsigned numChar = localList[istring].size();
+      const char* str = localList[istring].c_str();
+      for(unsigned ichar=0; ichar<numChar; ++ichar) {
+        charLocalList.push_back(str[ichar]);
+      }
+      charLocalList.push_back(0);
+    }
+    //
+    //  Parallel concat the character lists
+    //
+    std::vector<char> charGlobalList;
+    int mpiResult = stk::parallel_vector_concat<char>(comm, charLocalList, charGlobalList);
+    if(mpiResult != MPI_SUCCESS) {
+      // Unknown failure, pass error code up the chain
+      return mpiResult;
+    }
+    //
+    //  Turn the character arrays back into strings for output
+    //
+    unsigned curCharIndex = 0;
+    unsigned charGlobalListLen = charGlobalList.size();
+    std::vector<char> nextString;
+    while(curCharIndex < charGlobalListLen) {
+      char curChar = charGlobalList[curCharIndex];
+      nextString.push_back(curChar);
+      if(curChar == 0) {
+        globalList.push_back(std::string(&nextString[0]));
+        nextString.clear();
+      }
+      curCharIndex++;
+    }
+    return MPI_SUCCESS;
   }
 
 }
