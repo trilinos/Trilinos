@@ -229,14 +229,14 @@ Num total proc 1
 Num proc in file 1
 element block index 0 has id 1 and 96 elements
 element block index 1 has id 2 and 96 elements
-global ss info for ss index 0 id 20 num_elements = 8 num_ss_df = 0
-global ss info for ss index 1 id 1 num_elements = 8 num_ss_df = 0
-global ss info for ss index 2 id 30 num_elements = 16 num_ss_df = 0
-global ss info for ss index 3 id 40 num_elements = 16 num_ss_df = 0
-global ss info for ss index 4 id 21 num_elements = 8 num_ss_df = 0
-global ss info for ss index 5 id 11 num_elements = 8 num_ss_df = 0
-global ss info for ss index 6 id 31 num_elements = 16 num_ss_df = 0
-global ss info for ss index 7 id 41 num_elements = 16 num_ss_df = 0
+global ss info for ss index 0 id 20 num_elements = 12 num_ss_df = 0
+global ss info for ss index 1 id 1 num_elements = 12 num_ss_df = 0
+global ss info for ss index 2 id 30 num_elements = 32 num_ss_df = 0
+global ss info for ss index 3 id 40 num_elements = 32 num_ss_df = 0
+global ss info for ss index 4 id 21 num_elements = 12 num_ss_df = 0
+global ss info for ss index 5 id 11 num_elements = 12 num_ss_df = 0
+global ss info for ss index 6 id 31 num_elements = 32 num_ss_df = 0
+global ss info for ss index 7 id 41 num_elements = 32 num_ss_df = 0
 Loadbal params:
 num_internal_nodes 342
 num_border_nodes0
