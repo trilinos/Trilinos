@@ -1005,9 +1005,15 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   // it will test the changing-of-ownership of a shared edge to a proc that
   // either ghosted it or did not know about it.
   //
-  // 1---3---5---7
-  // | 1 | 2 | 3 | ...
-  // 2---4---6---8
+  //  proc 0 owns element 1
+  //  ...
+  //  proc n owns element n+1
+  //
+  //   1---3---5---7---9---11--13
+  //   | 1 | 2 | 3 | 4 | 5 | 6 | ...
+  //   2---4---6---8---10--12--14
+  //     this edge moves --^
+  //     element 5 moves to proc 0.
   //
   // To test this, we use the mesh above, with each elem going on a separate
   // proc, one elem per proc. We will take the edge shared by the last
@@ -1025,6 +1031,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   BulkData mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
+  const EntityRank node_rank = stk::topology::NODE_RANK;
   const EntityRank edge_rank = stk::topology::EDGE_RANK;
   const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 
@@ -1039,6 +1046,10 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
   EntityKey elem_key_chg_own(elem_rank, p_size - 1 /*id*/);
   EntityKey edge_key_chg_own(edge_rank, 1 /*id*/);
+  EntityKey node_A_key_chg_own(node_rank, p_size*2-1 /*id*/);
+  EntityKey node_B_key_chg_own(node_rank, p_size*2 /*id*/);
+  EntityKey node_C_key(node_rank, p_size*2-1-2 /*id*/);
+  EntityKey node_D_key(node_rank, p_size*2-2 /*id*/);
 
   // Create element
   Entity elem = mesh.declare_entity(elem_rank,
@@ -1047,7 +1058,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
 
   // If it is 2nd to last element, it is the one changing
   if (p_rank == p_size - 2) {
-    ASSERT_TRUE(elem_key_chg_own == mesh.entity_key(elem));
+    EXPECT_TRUE(elem_key_chg_own == mesh.entity_key(elem));
   }
 
   // Create nodes
@@ -1056,8 +1067,11 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
     nodes.push_back(mesh.declare_entity(NODE_RANK, id, node_part));
   }
+  // proc 0:  1,2,3,4
+  // proc 1:  3,4,5,6
+  // proc 2:  5,6,7,8
 
-  // Add relations to nodes
+  // Add element relations to nodes
   unsigned rel_id = 0;
   for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
     mesh.declare_relation( elem, *itr, rel_id );
@@ -1069,12 +1083,12 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     Entity edge = mesh.declare_entity(edge_rank,
                                        1, // id
                                        edge_part);
-    ASSERT_TRUE(mesh.entity_key(edge) == edge_key_chg_own);
+    EXPECT_TRUE(mesh.entity_key(edge) == edge_key_chg_own);
 
-    // Add relation from elem to edge
+    // Add element relation to edge
     mesh.declare_relation( elem, edge, 1 /*rel-id*/);
 
-    // Add relations from edge to nodes
+    // Add edge relations to nodes
     unsigned start_idx = p_rank == p_size - 1 ? 0 : nodes_per_side;
     unsigned end_idx = start_idx + nodes_per_side;
     rel_id = 0;
@@ -1084,6 +1098,20 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
       mesh.declare_relation( edge, nodes[idx], rel_id );
     }
   }
+//  if (p_rank == 0) {
+//      mesh.add_node_sharing(nodes[2],1);
+//      mesh.add_node_sharing(nodes[3],1);
+//  }
+//  else if (p_rank == p_size-1) {
+//      mesh.add_node_sharing(nodes[0],p_rank-1);
+//      mesh.add_node_sharing(nodes[1],p_rank-1);
+//  }
+//  else {
+//      mesh.add_node_sharing(nodes[0],p_rank-1);
+//      mesh.add_node_sharing(nodes[1],p_rank-1);
+//      mesh.add_node_sharing(nodes[2],p_rank+1);
+//      mesh.add_node_sharing(nodes[3],p_rank+1);
+//  }
 
   mesh.modification_end();
 
@@ -1092,23 +1120,35 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     // Get the two entities
     Entity changing_elem = mesh.get_entity(elem_key_chg_own);
     Entity changing_edge = mesh.get_entity(edge_key_chg_own);
+    Entity changing_node_A = mesh.get_entity(node_A_key_chg_own);
+    Entity changing_node_B = mesh.get_entity(node_B_key_chg_own);
+
     if (p_size == 3) {
       // Should be ghosted
       ASSERT_TRUE(mesh.is_valid(changing_elem));
       ASSERT_TRUE(mesh.is_valid(changing_edge));
+      ASSERT_TRUE(mesh.is_valid(changing_node_A));
+      ASSERT_TRUE(mesh.is_valid(changing_node_B));
 
       // Verify that the entities are ghosted
       Part& owned = meta_data.locally_owned_part();
       Part& shared = meta_data.globally_shared_part();
-      ASSERT_TRUE(!(mesh.bucket(changing_elem).member(owned) ||
+      EXPECT_TRUE(!(mesh.bucket(changing_elem).member(owned) ||
                        mesh.bucket(changing_elem).member(shared)));
-      ASSERT_TRUE(!(mesh.bucket(changing_edge).member(owned) ||
+      EXPECT_TRUE(!(mesh.bucket(changing_edge).member(owned) ||
                        mesh.bucket(changing_edge).member(shared)));
+      EXPECT_TRUE(!(mesh.bucket(changing_node_A).member(owned) ||
+                       mesh.bucket(changing_node_A).member(shared)));
+      EXPECT_TRUE(!(mesh.bucket(changing_node_B).member(owned) ||
+                       mesh.bucket(changing_node_B).member(shared)));
+
     }
     else {
       // Should be invalid
-      ASSERT_TRUE(!mesh.is_valid(changing_elem));
-      ASSERT_TRUE(!mesh.is_valid(changing_edge));
+      EXPECT_TRUE(!mesh.is_valid(changing_elem));
+      EXPECT_TRUE(!mesh.is_valid(changing_edge));
+      EXPECT_TRUE(!mesh.is_valid(changing_node_A));
+      EXPECT_TRUE(!mesh.is_valid(changing_node_B));
     }
   }
 
@@ -1120,6 +1160,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     // we own to proc 0.
 
     Entity changing_elem = mesh.get_entity(elem_key_chg_own);
+    ASSERT_TRUE( mesh.is_valid(changing_elem) );
     if (p_rank == p_size - 2) {
       EntityProc eproc(changing_elem, 0 /*new owner*/);
       change.push_back(eproc);
@@ -1142,21 +1183,119 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   }
 
   mesh.change_entity_owner(change);
+  // What state are we in now?
+  if (p_rank == p_size-1) {
+      EXPECT_TRUE( mesh.in_shared(node_A_key_chg_own, p_rank-1) );
+      EXPECT_TRUE( mesh.in_shared(node_B_key_chg_own, p_rank-1) );
+      EXPECT_TRUE( mesh.in_shared(edge_key_chg_own, p_rank-1) );
+  }
+  else if (p_rank == p_size-2 ) {
+      EXPECT_TRUE( mesh.in_shared(node_A_key_chg_own, p_rank+1) );
+      EXPECT_TRUE( mesh.in_shared(node_B_key_chg_own, p_rank+1) );
+      EXPECT_TRUE( mesh.in_shared(edge_key_chg_own, p_rank+1) );
+      EXPECT_TRUE( mesh.in_shared(node_C_key, p_rank-1) );
+      EXPECT_TRUE( mesh.in_shared(node_D_key, p_rank-1) );
+  }
+  else if ( (p_rank == p_size-3) && (p_size>3) ) {
+      EXPECT_TRUE( mesh.in_shared(node_C_key, p_rank+1) );
+      EXPECT_TRUE( mesh.in_shared(node_D_key, p_rank+1) );
+  }
+  else if (p_rank == 0) {
+      if (p_size>3) {
+          EXPECT_FALSE( mesh.in_shared(node_C_key, p_rank-3) );
+          EXPECT_FALSE( mesh.in_shared(node_D_key, p_rank-3) );
+      }
+      EXPECT_FALSE( mesh.in_shared(node_A_key_chg_own, p_size-1) );
+      EXPECT_FALSE( mesh.in_shared(node_B_key_chg_own, p_size-1) );
+      EXPECT_FALSE( mesh.in_shared(edge_key_chg_own, p_size-1) );
+  }
+
+  // mark node sharing
+  if (p_rank == p_size-1) {
+      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_A_key_chg_own)) );
+      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_B_key_chg_own)) );
+//      mesh.add_node_sharing_exp(mesh.get_entity(node_A_key_chg_own), 0);
+//      mesh.add_node_sharing_exp(mesh.get_entity(node_B_key_chg_own), 0);
+//      mesh.remove_node_sharing_exp(node_A_key_chg_own,p_rank-1);
+//      mesh.remove_node_sharing_exp(node_B_key_chg_own,p_rank-1);
+  }
+  else if (p_rank == p_size-2) {
+      EXPECT_FALSE( mesh.is_valid(mesh.get_entity(node_A_key_chg_own)) );
+      EXPECT_FALSE( mesh.is_valid(mesh.get_entity(node_B_key_chg_own)) );
+      EXPECT_FALSE( mesh.is_valid(mesh.get_entity(node_C_key)) );
+      EXPECT_FALSE( mesh.is_valid(mesh.get_entity(node_D_key)) );
+//      mesh.remove_node_sharing_exp(node_A_key_chg_own,p_rank+1);
+//      mesh.remove_node_sharing_exp(node_B_key_chg_own,p_rank+1);
+//      mesh.remove_node_sharing_exp(node_C_key,p_rank-1);
+//      mesh.remove_node_sharing_exp(node_D_key,p_rank-1);
+  }
+  else if ( (p_rank == p_size-3) && (p_size > 3) ) {
+      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_C_key)) );
+      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_D_key)) );
+//      mesh.add_node_sharing_exp(mesh.get_entity(node_C_key),0);
+//      mesh.add_node_sharing_exp(mesh.get_entity(node_D_key),0);
+//      mesh.remove_node_sharing_exp(node_C_key,p_rank+1);
+//      mesh.remove_node_sharing_exp(node_D_key,p_rank+1);
+  }
+  else if (p_rank == 0) {
+      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_A_key_chg_own)) );
+      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_B_key_chg_own)) );
+//      mesh.add_node_sharing_exp(mesh.get_entity(node_A_key_chg_own), p_size-1);
+//      mesh.add_node_sharing_exp(mesh.get_entity(node_B_key_chg_own), p_size-1);
+      if (p_size>3) {
+          EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_C_key)) );
+          EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_D_key)) );
+//          mesh.add_node_sharing_exp(mesh.get_entity(node_C_key), p_size-3);
+//          mesh.add_node_sharing_exp(mesh.get_entity(node_D_key), p_size-3);
+      }
+      else {
+          EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_C_key)) );
+          EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_D_key)) );
+//          mesh.remove_node_sharing_exp(node_C_key, p_rank+1);
+//          mesh.remove_node_sharing_exp(node_D_key, p_rank+1);
+      }
+  }
 
   mesh.modification_end();
+
+  Entity changing_elem = mesh.get_entity(elem_key_chg_own);
+  Entity changing_edge = mesh.get_entity(edge_key_chg_own);
+  Entity changing_node_A = mesh.get_entity(node_A_key_chg_own);
+  Entity changing_node_B = mesh.get_entity(node_B_key_chg_own);
 
   // Changing elem and edge should now be owned by proc 0
   if (p_rank == 0) {
     // Get the two ghosted entities, check that they were found
-    Entity changing_elem = mesh.get_entity(elem_key_chg_own);
-    Entity changing_edge = mesh.get_entity(edge_key_chg_own);
     ASSERT_TRUE(mesh.is_valid(changing_elem));
     ASSERT_TRUE(mesh.is_valid(changing_edge));
+    ASSERT_TRUE(mesh.is_valid(changing_node_A));
+    ASSERT_TRUE(mesh.is_valid(changing_node_B));
 
     // Verify that the entities are ghosted
     Part& owned = meta_data.locally_owned_part();
-    ASSERT_TRUE( mesh.bucket(changing_elem).member(owned) );
-    ASSERT_TRUE( mesh.bucket(changing_edge).member(owned) );
+    EXPECT_TRUE( mesh.bucket(changing_elem).member(owned) );
+    EXPECT_TRUE( mesh.bucket(changing_edge).member(owned) );
+    EXPECT_TRUE( mesh.bucket(changing_node_A).member(owned) );
+    EXPECT_TRUE( mesh.bucket(changing_node_B).member(owned) );
+
+    EXPECT_TRUE( mesh.in_shared( edge_key_chg_own, p_size-1 ) );
+    EXPECT_TRUE( mesh.in_shared( node_A_key_chg_own, p_size-1 ) );
+    EXPECT_TRUE( mesh.in_shared( node_B_key_chg_own, p_size-1 ) );
+  }
+  if ((p_rank == p_size-3) && (p_size > 3)) {
+      EXPECT_TRUE( mesh.in_shared( node_C_key, 0 ) );
+      EXPECT_TRUE( mesh.in_shared( node_D_key, 0 ) );
+  }
+  if (p_rank == p_size-2) {
+      EXPECT_TRUE(!mesh.is_valid(changing_elem));
+      EXPECT_TRUE(!mesh.is_valid(changing_edge));
+      EXPECT_TRUE(!mesh.is_valid(changing_node_A));
+      EXPECT_TRUE(!mesh.is_valid(changing_node_B));
+  }
+  if (p_rank == p_size-1) {
+      EXPECT_TRUE( mesh.in_shared( edge_key_chg_own, 0 ) );
+      EXPECT_TRUE( mesh.in_shared( node_A_key_chg_own, 0 ) );
+      EXPECT_TRUE( mesh.in_shared( node_B_key_chg_own, 0 ) );
   }
 }
 
@@ -2691,6 +2830,11 @@ public:
     {
         m_closure_count[entity.local_offset()] = 0;
     }
+
+    uint16_t closure_count(Entity entity)
+    {
+        return m_closure_count[entity.local_offset()];
+    }
 };
 
 TEST(BulkData, ModificationEnd)
@@ -2769,6 +2913,148 @@ TEST(BulkData, ModificationEnd)
 
         delete stkMeshBulkData;
     }
+}
+
+TEST(BulkData, verify_closure_count_is_correct)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    const int myRank   = stk::parallel_machine_rank(communicator);
+
+    if(numProcs == 2)
+    {
+        const int spatialDim = 3;
+        stk::mesh::MetaData stkMeshMetaData(spatialDim);
+        BulkDataTester *stkMeshBulkData = new BulkDataTester(stkMeshMetaData, communicator);
+
+        std::string exodusFileName = getOption("-i", "generated:1x1x2");
+
+        // STK IO module will be described in separate chapter.
+        // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
+        // The order of the following lines in {} are important
+        {
+          stk::io::StkMeshIoBroker exodusFileReader(communicator);
+
+          // Inform STK IO which STK Mesh objects to populate later
+          exodusFileReader.set_bulk_data(*stkMeshBulkData);
+
+          exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+
+          // Populate the MetaData which has the descriptions of the Parts and Fields.
+          exodusFileReader.create_input_mesh();
+
+          // Populate entities in STK Mesh from Exodus file
+          exodusFileReader.populate_bulk_data();
+        }
+
+        stk::mesh::EntityKey element_1_key(stk::topology::ELEMENT_RANK, 1);
+        stk::mesh::EntityKey element_2_key(stk::topology::ELEMENT_RANK, 2);
+
+        stk::mesh::EntityKey node_1_key(stk::topology::NODE_RANK, 1);
+        stk::mesh::EntityKey node_2_key(stk::topology::NODE_RANK, 2);
+        stk::mesh::EntityKey node_3_key(stk::topology::NODE_RANK, 3);
+        stk::mesh::EntityKey node_4_key(stk::topology::NODE_RANK, 4);
+        stk::mesh::EntityKey node_5_key(stk::topology::NODE_RANK, 5);
+        stk::mesh::EntityKey node_6_key(stk::topology::NODE_RANK, 6);
+        stk::mesh::EntityKey node_7_key(stk::topology::NODE_RANK, 7);
+        stk::mesh::EntityKey node_8_key(stk::topology::NODE_RANK, 8);
+        stk::mesh::EntityKey node_9_key(stk::topology::NODE_RANK, 9);
+        stk::mesh::EntityKey node_10_key(stk::topology::NODE_RANK, 10);
+        stk::mesh::EntityKey node_11_key(stk::topology::NODE_RANK, 11);
+        stk::mesh::EntityKey node_12_key(stk::topology::NODE_RANK, 12);
+
+        if (myRank == 0)
+        {
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(element_1_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(element_2_key)) );
+
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_1_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_2_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_3_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_4_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_5_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_6_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_7_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_8_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_9_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_10_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_11_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_12_key)) );
+        }
+        else // myRank == 1
+        {
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(element_1_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(element_2_key)) );
+
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_1_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_2_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_3_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_4_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_5_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_6_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_7_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_8_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_9_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_10_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_11_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_12_key)) );
+        }
+
+        stkMeshBulkData->modification_begin();
+        std::vector<EntityProc> change_owner_vector;
+        if (myRank == 1)
+        {
+            const int target_processor = 0;
+            stk::mesh::Selector my_entities_selector = stkMeshBulkData->mesh_meta_data().locally_owned_part();
+            std::vector<Entity> nodes;
+            stk::mesh::get_selected_entities(my_entities_selector, stkMeshBulkData->buckets(stk::topology::NODE_RANK), nodes);
+            for (size_t i=0 ; i<nodes.size() ; ++i) {
+                change_owner_vector.push_back(EntityProc(nodes[i],target_processor));
+            }
+        }
+        stkMeshBulkData->change_entity_owner(change_owner_vector);
+        stkMeshBulkData->modification_end();
+
+        if (myRank == 0)
+        {
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(element_1_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(element_2_key)) );
+
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_1_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_2_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_3_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_4_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_5_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_6_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_7_key)) );
+            EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_8_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_9_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_10_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_11_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_12_key)) );
+        }
+        else // myRank == 1
+        {
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(element_1_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(element_2_key)) );
+
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_1_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_2_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_3_key)) );
+            EXPECT_EQ( 0u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_4_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_5_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_6_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_7_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_8_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_9_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_10_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_11_key)) );
+            EXPECT_EQ( 1u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_12_key)) );
+        }
+
+        delete stkMeshBulkData;
+    }
+
 }
 
 }
