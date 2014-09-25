@@ -311,7 +311,7 @@
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="ITR"/>
     <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="Triutils" type="TR"/>
+    <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="LR"/>
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="Xpetra" type="LO"/>
