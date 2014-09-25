@@ -68,7 +68,7 @@ namespace stk {
   //    std::string
   //    sierra::String
   //
-  template <typename T> inline int parallel_vector_concat(ParallelMachine comm, std::vector<T>& localVec, std::vector<T>& globalVec ) {
+  template <typename T> inline int parallel_vector_concat(ParallelMachine comm, const std::vector<T>& localVec, std::vector<T>& globalVec ) {
 
     const unsigned p_size = parallel_machine_size( comm );
 
@@ -106,8 +106,12 @@ namespace stk {
 
     //
     //  Do the all gather to copy the actual array data and propogate to all processors
+    //  Note, localVec should not be modified by the MPI call, but MPI does not guarntee the const in the 
+    //  interface argument.
     //
-    mpiResult = MPI_Allgatherv(&localVec[0], localSize, MPI_CHAR, &globalVec[0], &messageSizes[0], &offsets[0], MPI_CHAR, comm);
+    T* ptrNonConst = const_cast<T*>(&localVec[0]);
+
+    mpiResult = MPI_Allgatherv(ptrNonConst, localSize, MPI_CHAR, &globalVec[0], &messageSizes[0], &offsets[0], MPI_CHAR, comm);
     return mpiResult;
   }
 
@@ -119,7 +123,7 @@ namespace stk {
   //  parallel consistent error messages.
   //
   template<>
-  inline int parallel_vector_concat(ParallelMachine comm, std::vector<std::string>& localList, std::vector<std::string>& globalList ) {
+  inline int parallel_vector_concat(ParallelMachine comm, const std::vector<std::string>& localList, std::vector<std::string>& globalList ) {
     //
     //  Convert the local vector of strings into a single vector of null seperated char bits 
     //  so that standardized list concact can be used.  
@@ -166,7 +170,7 @@ namespace stk {
   //  Thus this version just copies to std::strings, and is a bit inefficent.
   //
   template<>
-  inline int parallel_vector_concat(ParallelMachine comm, std::vector<sierra::String>& localList, std::vector<sierra::String>& globalList ) {
+  inline int parallel_vector_concat(ParallelMachine comm, const std::vector<sierra::String>& localList, std::vector<sierra::String>& globalList ) {
     std::vector<std::string> localListStd;
     std::vector<std::string> globalListStd;
     localListStd.reserve(localList.size());
