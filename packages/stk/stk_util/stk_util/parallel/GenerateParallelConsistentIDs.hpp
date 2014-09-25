@@ -38,7 +38,12 @@
 #include "stk_util/parallel/ParallelVectorConcat.hpp" 
 #include "stk_util/parallel/Parallel.hpp" 
 #include <vector> 
+#include <algorithm> 
+#include <stdexcept>     
+#include <string>                       // for string
+#include <sstream>   
 #include "mpi.h"  
+#include <assert.h>
 
 namespace stk {
 
@@ -80,28 +85,26 @@ namespace stk {
   template <typename OrderType> 
   unsigned generate_parallel_consistent_ids(unsigned maxAllowedId,
                                             const std::vector<unsigned>& existingIds,
-                                            const std::vector<OrderType>& localOrderArray,
+                                            std::vector<OrderType>& localOrderArray,
                                             std::vector<unsigned>&  newIds,
                                             ParallelMachine comm) {
     //
     //  Check function restrictions
     //
     if(localOrderArray.size() != newIds.size()) {
-      std::runtime_error x;
-      x << "In generate_parallel_consistent_ids, inconsitent sizes passed for localOrderArray and newIds \n";
-      throw x;
+      std::string msg;
+      msg.append("In generate_parallel_consistent_ids, inconsitent sizes passed for localOrderArray and newIds \n");
+      throw std::runtime_error(msg);
       return 0;     
     }
  
-
-
     //
     //  Extract global max existing id.  For basic use case just start generating ids starting
     //  at the previous max_id + 1.  
 
     unsigned localMaxId   = 0;
     unsigned globalMaxId;    
-    for(Int i=0; i<existingIds.size(); ++i) {
+    for(unsigned i=0; i<existingIds.size(); ++i) {
       if(existingIds[i] > localMaxId) {
         localMaxId = existingIds[i];
       }
@@ -119,9 +122,10 @@ namespace stk {
     //    Nessecary - YES
     //    
     std::vector<OrderType> globalOrderArray;
-    parallel_vector_concat(comm, localOrderArray, globalOrderArray);
+    stk::parallel_vector_concat(comm, localOrderArray, globalOrderArray);
+
     unsigned globalNumIdsRequested = globalOrderArray.size();
-    if(globalNumIdsRequested) return 0;
+    if(globalNumIdsRequested == 0) return 0;
     //
     //  Check if sufficent extra ids exist to run this algorithm
     //    NKC, for now fail if not, later maybe switch to a more robust but more
@@ -130,30 +134,32 @@ namespace stk {
     //
     unsigned availableIds = maxAllowedId - globalMaxId;
     if(availableIds < globalNumIdsRequested) {
-      std::runtime_error x;
-      x << "In generate_parallel_consistent_ids, insufficent ids available \n";
-      x << "  Max current id:       "<<globalMaxId<<"\n";
-      x << "  Max allowed id:       "<<maxAllowedId<<"\n";
-      x << "  Number ids requested: "<<globalNumIdsRequested<<"\n";
-      throw x;
+      std::ostringstream msg;
+      msg << "In generate_parallel_consistent_ids, insufficent ids available \n";
+      msg << "  Max current id:       "<<globalMaxId<<"\n";
+      msg << "  Max allowed id:       "<<maxAllowedId<<"\n";
+      msg << "  Number ids requested: "<<globalNumIdsRequested<<"\n";
+      throw std::runtime_error(msg.str());
       return 0;
     }
     //
     //  Sort the ordering array and confirm it has no duplicated keys
     //
     std::sort(globalOrderArray.begin(), globalOrderArray.end());
-    for(UInt i=0; i<globalNumIdsRequested-1; ++ilist) {
+    for(unsigned i=0; i<globalNumIdsRequested-1; ++i) {
       if(globalOrderArray[i] == globalOrderArray[i+1]) {
-        std::runtime_error x;
-        x << "In generate_parallel_consistent_ids, an ordering array with non unique keys provided \n";
-        x << "This is not allowed.  \n";
-        throw x;
+        std::ostringstream msg;
+        msg << "In generate_parallel_consistent_ids, an ordering array with non unique keys provided \n";
+        msg << "This is not allowed.  \n";
+        throw std::runtime_error(msg.str());
+        return 0;
       }
     }
-    for(UInt i=0, n=localOrderArray.size(); i<n; ++i) {
-      std::vector<OrderType>::iterator index = std::lower_bound(globalOrderArray.begin(), globalOrderArray.end(), localOrderArray[i]);
+
+    for(unsigned i=0, n=localOrderArray.size(); i<n; ++i) {
+      typename std::vector<OrderType>::iterator index = std::lower_bound(globalOrderArray.begin(), globalOrderArray.end(), localOrderArray[i]);
       assert(index != globalOrderArray.end());
-      Int offset = std::distance(globalOrderArray.begin(), index);
+      int offset = std::distance(globalOrderArray.begin(), index);
       newIds.push_back(globalMaxId+1+offset);
     }
     return globalNumIdsRequested;
