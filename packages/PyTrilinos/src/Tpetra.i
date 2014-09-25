@@ -50,6 +50,7 @@ operators, and dense and sparse matrices.
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_NumPy_Util.hpp"
 
 // Import the numpy interface
 #define NO_IMPORT_ARRAY
@@ -182,13 +183,12 @@ template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
       const Teuchos::RCP< const Teuchos::Comm< int > > & comm)
   {
     int is_new = 0;
+    int type_code = PyTrilinos::NumPy_TypeCode< GlobalOrdinal >();
     PyArrayObject * npArray =
-      obj_to_array_contiguous_allow_conversion(elementList, NPY_LONG, &is_new);
-    if (!npArray)
-    {
-      if (PyErr_Occurred()) throw PyTrilinos::PythonException();
-      std::cout << "*** npArray is NULL, but no Python Exception raised ! ***" << std::endl;
-    }
+      obj_to_array_contiguous_allow_conversion(elementList,
+                                               type_code,
+                                               &is_new);
+    if (!npArray) throw PyTrilinos::PythonException();
     Teuchos::ArrayView< GlobalOrdinal > elementArray =
       Teuchos::arrayView( (GlobalOrdinal*) array_data(npArray),
                           array_size(npArray, 0));
