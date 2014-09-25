@@ -125,6 +125,12 @@ class TpetraMapTestCase(unittest.TestCase):
         self.assert_(self.map2.isOneToOne())
         self.assert_(self.map3.isOneToOne())
 
+    def testGetGlobalNumElements(self):
+        "Test Tpetra.Map getGlobalNumElements method"
+        self.assertEqual(self.map1.getGlobalNumElements(), self.numGlobalElConst)
+        self.assertEqual(self.map2.getGlobalNumElements(), self.numGlobalEl     )
+        self.assertEqual(self.map3.getGlobalNumElements(), self.numGlobalEl     )
+
     # def testRemoteIDList1(self):
     #     "Test Tpetra.Map RemoteIDList method for constant element size"
     #     gidList  = range(self.numGlobalEl)
@@ -235,12 +241,6 @@ class TpetraMapTestCase(unittest.TestCase):
     #     self.assertEqual(self.map1.MaxLID(), self.numMyElConst-1)
     #     self.assertEqual(self.map2.MaxLID(), self.numMyEl-1     )
     #     self.assertEqual(self.map3.MaxLID(), self.numMyEl-1     )
-
-    # def testGetGlobalNumElements(self):
-    #     "Test Tpetra.Map getGlobalNumElements method"
-    #     self.assertEqual(self.map1.getGlobalNumElements(), self.numGlobalElConst)
-    #     self.assertEqual(self.map2.getGlobalNumElements(), self.numGlobalEl     )
-    #     self.assertEqual(self.map3.getGlobalNumElements(), self.numGlobalEl     )
 
     # def testGetMaxLocalIndex(self):
     #     "Test Tpetra.Map getMaxLocalIndex method"
