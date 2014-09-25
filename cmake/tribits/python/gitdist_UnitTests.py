@@ -37,9 +37,9 @@
 # ************************************************************************
 # @HEADER
 
-################################
-# Unit testing code for egdist #
-################################
+#################################
+# Unit testing code for gitdist #
+#################################
 
 from GeneralScriptSupport import *
 import unittest
@@ -52,8 +52,9 @@ tribitsDir = os.path.abspath(getScriptBaseDir()+"/..")
 commonToolsGitDir = tribitsDir+"/common_tools/git"
 #print "commonToolsGitDir = ", commonToolsGitDir
 
-sys.path.append(commonToolsGitDir)
-from egdist import *
+sys.path = [commonToolsGitDir] + sys.path
+print "sys.path =", sys.path
+from gitdist import *
 
 
 #
@@ -82,11 +83,11 @@ sha1_3 [Thu Dec 1 23:34:06 2011 -0500] <author_3@ornl.gov>
 
 
 #
-# Unit tests for functions in egdist
+# Unit tests for functions in gitdist
 #
 
 
-class test_egdist_getRepoVersionDictFromRepoVersionFileString(unittest.TestCase):
+class test_gitdist_getRepoVersionDictFromRepoVersionFileString(unittest.TestCase):
 
 
   def setUp(self):
@@ -121,12 +122,12 @@ class test_egdist_getRepoVersionDictFromRepoVersionFileString(unittest.TestCase)
 
 
 #
-# Test entire script egdist#
+# Test entire script gitdist#
 
 
-egdistPath = commonToolsGitDir+"/egdist"
-egdistPathNoColor = egdistPath+" --dist-no-color"
-egdistPathMock = egdistPathNoColor+" --with-eg-git=mockeg --dist-no-opt"
+gitdistPath = commonToolsGitDir+"/gitdist"
+gitdistPathNoColor = gitdistPath+" --dist-no-color"
+gitdistPathMock = gitdistPathNoColor+" --dist-use-git=mockgit --dist-no-opt"
 
 mockProjectDir = tribitsDir+"/package_arch/UnitTests/MockTrilinos"
 unitTestDataDir = tribitsDir+"/python/UnitTests"
@@ -142,7 +143,7 @@ def getCmndOutputInMockProjectDir(cmnd):
   return cmndOut
 
 
-class test_egdist(unittest.TestCase):
+class test_gitdist(unittest.TestCase):
 
 
   def setUp(self):
@@ -150,188 +151,188 @@ class test_egdist(unittest.TestCase):
 
 
   def test_default(self):
-    cmndOut = getCmndOutput(egdistPathNoColor)
-    cmndOut_expected = "Must specify eg/git command. See 'eg/git --help' for options."
+    cmndOut = getCmndOutput(gitdistPathNoColor)
+    cmndOut_expected = "Must specify git command. See 'git --help' for options."
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_help(self):
-    cmndOut = getCmndOutput(egdistPath+" --help")
+    cmndOut = getCmndOutput(gitdistPath+" --help")
     cmndOutList = cmndOut.split("\n")
     cmndOutFirstLine = cmndOutList[0] 
     cmndOutFirstLineAfterComma = cmndOutFirstLine.split(":")[1].strip() 
-    cmndOutFirstLineAfterComma_expected = "egdist [egdist options] [OPTIONS]"
+    cmndOutFirstLineAfterComma_expected = "gitdist [gitdist options] [OPTIONS]"
     self.assertEqual(cmndOutFirstLineAfterComma, cmndOutFirstLineAfterComma_expected)
 
 
   def test_noEgGit(self):
-    cmndOut = getCmndOutput(egdistPathNoColor+" --with-eg-git= log")
-    cmndOut_expected = "Can't find eg or git, please set --with-eg-dist"
+    cmndOut = getCmndOutput(gitdistPathNoColor+" --dist-use-git= log")
+    cmndOut_expected = "Can't find git, please set --dist-use-git"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_args(self):
-    cmndOut = getCmndOutputInMockProjectDir(egdistPathMock+" log HEAD -1")
+    cmndOut = getCmndOutputInMockProjectDir(gitdistPathMock+" log HEAD -1")
     cmndOut_expected = \
       "\n*** Base Git Repo: MockTrilinos\n" \
-      "['mockeg', 'log', 'HEAD', '-1']\n"
+      "['mockgit', 'log', 'HEAD', '-1']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_args_extra_repo_1(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+" --dist-extra-repos=extraTrilinosRepo log HEAD -1")
+      gitdistPathMock+" --dist-extra-repos=extraTrilinosRepo log HEAD -1")
     cmndOut_expected = \
       "\n*** Base Git Repo: MockTrilinos\n" \
-      "['mockeg', 'log', 'HEAD', '-1']\n\n" \
+      "['mockgit', 'log', 'HEAD', '-1']\n\n" \
       "*** Git Repo: extraTrilinosRepo\n" \
-      "['mockeg', 'log', 'HEAD', '-1']\n"
+      "['mockgit', 'log', 'HEAD', '-1']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_args_extra_repo_2_not_first(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+\
+      gitdistPathMock+\
         " --dist-extra-repos=extraTrilinosRepo,extraRepoOnePackage "+\
         " --dist-not-extra-repos=extraTrilinosRepo "+\
         " log HEAD -1"
       )
     cmndOut_expected = \
       "\n*** Base Git Repo: MockTrilinos\n" \
-      "['mockeg', 'log', 'HEAD', '-1']\n\n" \
+      "['mockgit', 'log', 'HEAD', '-1']\n\n" \
       "*** Git Repo: extraRepoOnePackage\n" \
-      "['mockeg', 'log', 'HEAD', '-1']\n"
+      "['mockgit', 'log', 'HEAD', '-1']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_args_extra_repo_2_not_second(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+\
+      gitdistPathMock+\
         " --dist-extra-repos=extraTrilinosRepo,extraRepoOnePackage "+\
         " --dist-not-extra-repos=extraTrilinosRepo "+\
         " log HEAD -1"
       )
     cmndOut_expected = \
       "\n*** Base Git Repo: MockTrilinos\n" \
-      "['mockeg', 'log', 'HEAD', '-1']\n\n" \
+      "['mockgit', 'log', 'HEAD', '-1']\n\n" \
       "*** Git Repo: extraRepoOnePackage\n" \
-      "['mockeg', 'log', 'HEAD', '-1']\n"
+      "['mockgit', 'log', 'HEAD', '-1']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_args_extra_repo_1_not_base(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+\
+      gitdistPathMock+\
         " --dist-extra-repos=extraTrilinosRepo "+\
         " --dist-not-base-repo "+\
         " log HEAD -1"
       )
     cmndOut_expected = \
       "\n*** Git Repo: extraTrilinosRepo\n" \
-      "['mockeg', 'log', 'HEAD', '-1']\n"
+      "['mockgit', 'log', 'HEAD', '-1']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_version_file(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+ \
+      gitdistPathMock+ \
       " --dist-version-file="+unitTestDataDir+"/versionFile_withSummary_1.txt"+\
       " log _VERSION_ --some -other args")
     cmndOut_expected = \
       "\n*** Base Git Repo: MockTrilinos\n" \
-      "['mockeg', 'log', 'sha1_1', '--some', '-other', 'args']\n"
+      "['mockgit', 'log', 'sha1_1', '--some', '-other', 'args']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_version_file_extra_repo_1(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+ \
+      gitdistPathMock+ \
       " --dist-version-file="+unitTestDataDir+"/versionFile_withSummary_1.txt"+ \
       " --dist-extra-repos=extraTrilinosRepo"+ \
       " log _VERSION_")
     cmndOut_expected = \
       "\n*** Base Git Repo: MockTrilinos\n" \
-      "['mockeg', 'log', 'sha1_1']\n" \
-      "\n*** Git Repo: extraTrilinosRepo\n['mockeg', 'log', 'sha1_2']\n"
+      "['mockgit', 'log', 'sha1_1']\n" \
+      "\n*** Git Repo: extraTrilinosRepo\n['mockgit', 'log', 'sha1_2']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_version_file_extra_repo_2(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+ \
+      gitdistPathMock+ \
       " --dist-version-file="+unitTestDataDir+"/versionFile_withSummary_1.txt"+ \
       " --dist-extra-repos=extraRepoOnePackage,extraTrilinosRepo"+ \
       " log _VERSION_")
     cmndOut_expected = \
       "\n*** Base Git Repo: MockTrilinos\n" \
-      "['mockeg', 'log', 'sha1_1']\n" \
-      "\n*** Git Repo: extraRepoOnePackage\n['mockeg', 'log', 'sha1_3']\n" \
-      "\n*** Git Repo: extraTrilinosRepo\n['mockeg', 'log', 'sha1_2']\n"
+      "['mockgit', 'log', 'sha1_1']\n" \
+      "\n*** Git Repo: extraRepoOnePackage\n['mockgit', 'log', 'sha1_3']\n" \
+      "\n*** Git Repo: extraTrilinosRepo\n['mockgit', 'log', 'sha1_2']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_HEAD_version_file_extra_repo_1(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+ \
+      gitdistPathMock+ \
       " --dist-version-file="+unitTestDataDir+"/versionFile_withSummary_1.txt"+ \
       " --dist-extra-repos=extraTrilinosRepo"+ \
       " log HEAD ^_VERSION_")
     cmndOut_expected = \
       "\n*** Base Git Repo: MockTrilinos\n" \
-      "['mockeg', 'log', 'HEAD', '^sha1_1']\n" \
-      "\n*** Git Repo: extraTrilinosRepo\n['mockeg', 'log', 'HEAD', '^sha1_2']\n"
+      "['mockgit', 'log', 'HEAD', '^sha1_1']\n" \
+      "\n*** Git Repo: extraTrilinosRepo\n['mockgit', 'log', 'HEAD', '^sha1_2']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_version_file_invalid_extra_repo(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+ \
+      gitdistPathMock+ \
       " --dist-version-file="+unitTestDataDir+"/versionFile_withSummary_1.txt"+ \
       " --dist-extra-repos=extraRepoTwoPackages"+ \
       " log _VERSION_")
     cmndOut_expected = \
-      "\n*** Base Git Repo: MockTrilinos\n['mockeg', 'log', 'sha1_1']\n" \
+      "\n*** Base Git Repo: MockTrilinos\n['mockgit', 'log', 'sha1_1']\n" \
       "\n*** Git Repo: extraRepoTwoPackages\nExtra repo 'extraRepoTwoPackages' is not in the list of extra repos ['extraTrilinosRepo', 'extraRepoOnePackage'] read in from version file."
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_not_version_file_2(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+ \
+      gitdistPathMock+ \
       " --dist-version-file="+unitTestDataDir+"/versionFile_withSummary_1.txt"+ \
       " --dist-version-file2="+unitTestDataDir+"/versionFile_withSummary_1_2.txt"+ \
       " log _VERSION_ ^_VERSION2_")
     cmndOut_expected = \
       "\n*** Base Git Repo: MockTrilinos\n" \
-      "['mockeg', 'log', 'sha1_1', '^sha1_1_2']\n"
+      "['mockgit', 'log', 'sha1_1', '^sha1_1_2']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_not_version_file_2_extra_repo_1(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+ \
+      gitdistPathMock+ \
       " --dist-version-file="+unitTestDataDir+"/versionFile_withSummary_1.txt"+ \
       " --dist-version-file2="+unitTestDataDir+"/versionFile_withSummary_1_2.txt"+ \
       " --dist-extra-repos=extraTrilinosRepo"+ \
       " log _VERSION_ ^_VERSION2_")
     cmndOut_expected = \
       "\n*** Base Git Repo: MockTrilinos\n" \
-      "['mockeg', 'log', 'sha1_1', '^sha1_1_2']\n" \
-      "\n*** Git Repo: extraTrilinosRepo\n['mockeg', 'log', 'sha1_2', '^sha1_2_2']\n"
+      "['mockgit', 'log', 'sha1_1', '^sha1_1_2']\n" \
+      "\n*** Git Repo: extraTrilinosRepo\n['mockgit', 'log', 'sha1_2', '^sha1_2_2']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
   def test_log_since_until_version_file_2_extra_repo_1(self):
     cmndOut = getCmndOutputInMockProjectDir(
-      egdistPathMock+ \
+      gitdistPathMock+ \
       " --dist-version-file="+unitTestDataDir+"/versionFile_withSummary_1.txt"+ \
       " --dist-version-file2="+unitTestDataDir+"/versionFile_withSummary_1_2.txt"+ \
       " --dist-extra-repos=extraTrilinosRepo"+ \
       " log _VERSION2_.._VERSION_")
     cmndOut_expected = \
       "\n*** Base Git Repo: MockTrilinos\n" \
-      "['mockeg', 'log', 'sha1_1_2..sha1_1']\n" \
-      "\n*** Git Repo: extraTrilinosRepo\n['mockeg', 'log', 'sha1_2_2..sha1_2']\n"
+      "['mockgit', 'log', 'sha1_1_2..sha1_1']\n" \
+      "\n*** Git Repo: extraTrilinosRepo\n['mockgit', 'log', 'sha1_2_2..sha1_2']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
   # The above test ensures that it repalces the SHA1s for in the same cmndline args
 

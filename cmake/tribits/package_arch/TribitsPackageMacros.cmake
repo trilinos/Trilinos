@@ -551,8 +551,8 @@ MACRO(TRIBITS_PACKAGE_POSTPROCESS_COMMON)
     ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES
     )
     # Create the configure file so external projects can find packages with a
-    # call to find_package(<package_name>)
-    # This also creates the Makefile.export.* files.
+    # call to find_package(<package_name>).  This also creates the
+    # Makefile.export.* files.
     TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES(${PACKAGE_NAME})
   ENDIF()
   
