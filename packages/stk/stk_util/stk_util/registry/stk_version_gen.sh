@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright (c) 2013, Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Governement retains certain rights in this software.
+# the U.S. Government retains certain rights in this software.
 # 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
