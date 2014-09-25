@@ -72,7 +72,7 @@ int SIERRA_FORTRAN(idamax)(const int *n, const double *vect, const int *inc);
 //int SIERRA_FORTRAN(idamin)(const int *n, const double *vect, const int *inc);
 void SIERRA_FORTRAN(saxpy)(const int *n, const float *xscale, const float x[], const int *incx, float y[],const int *incy); // y=y+sscale*x
 void SIERRA_FORTRAN(scopy)(const int* n, const float* s, const int* inc, float* s1, const int* inc1); // s1 = s
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) || !defined(STK_BUILT_IN_SIERRA)
 float SIERRA_FORTRAN(sdot)(const int * n, const float* x, const int * incx, const float* y, const int * incy); // < x , y >
 float SIERRA_FORTRAN(snrm2)(const int * n, const float* x, const int * incx); // || x ||
 float SIERRA_FORTRAN(sasum)(const int * n,const float * x,const int * incx);
