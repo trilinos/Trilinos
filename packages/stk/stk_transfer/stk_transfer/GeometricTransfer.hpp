@@ -63,7 +63,7 @@ typename T::EntityKeyMap::iterator  insert (typename T::EntityKeyMap &map,
 }
 
 template <class ForwardIterator, class Compare>
-bool is_sorted(ForwardIterator first, ForwardIterator last, Compare compare)
+bool local_is_sorted(ForwardIterator first, ForwardIterator last, Compare compare)
 {
   if (first == last) return true;
   ForwardIterator next = first;
@@ -345,9 +345,9 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
   mesha.bounding_boxes(domain_vector);
   meshb.bounding_boxes(range_vector);
 
-  if( !is_sorted( domain_vector.begin(), domain_vector.end(), BoundingBoxCompare<BoundingBoxA>() ) )
+  if( !local_is_sorted( domain_vector.begin(), domain_vector.end(), BoundingBoxCompare<BoundingBoxA>() ) )
     std::sort(domain_vector.begin(),domain_vector.end(),BoundingBoxCompare<BoundingBoxA>());
-  if( !is_sorted( range_vector.begin(), range_vector.end(), BoundingBoxCompare<BoundingBoxB>() ) )
+  if( !local_is_sorted( range_vector.begin(), range_vector.end(), BoundingBoxCompare<BoundingBoxB>() ) )
     std::sort(range_vector.begin(),range_vector.end(),BoundingBoxCompare<BoundingBoxB>());
 
   unsigned range_vector_not_empty = !range_vector.empty();
