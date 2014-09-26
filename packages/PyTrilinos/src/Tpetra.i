@@ -197,8 +197,96 @@ template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
                                                           indexBase,
                                                           comm);
   }
+
+  PyObject * getLocalElement(GlobalOrdinal globalIndex)
+  {
+    LocalOrdinal localIndex = self->getLocalElement(globalIndex);
+    if (localIndex == Teuchos::OrdinalTraits< LocalOrdinal >::invalid())
+      return Py_BuildValue("");
+    return SWIG_From_long(static_cast< long >(localIndex));
+  }
+
+  PyObject * getGlobalElement(LocalOrdinal localIndex)
+  {
+    GlobalOrdinal globalIndex = self->getGlobalElement(localIndex);
+    if (globalIndex == Teuchos::OrdinalTraits< GlobalOrdinal >::invalid())
+      return Py_BuildValue("");
+    return SWIG_From_long(static_cast< long >(globalIndex));
+  }
+
+  PyObject * getRemoteIndexList(PyObject * globalIndexes)
+  {
+    // Variable initialization
+    int is_new = 0;
+    int type_code = PyTrilinos::NumPy_TypeCode< GlobalOrdinal >();
+    npy_intp dims[1];
+    PyObject * globalArray = NULL;
+    PyObject * nodeArray   = NULL;
+    PyObject * localArray  = NULL;
+    PyObject * resultObj   = PyTuple_New(3);
+    Teuchos::ArrayView< const GlobalOrdinal > globalList;
+    Teuchos::ArrayView< int >                 nodeList;
+    Teuchos::ArrayView< LocalOrdinal >        localList;
+    Tpetra::LookupStatus result;
+
+    // Check the input argument
+    if (!(is_array(globalIndexes) || PySequence_Check(globalIndexes)))
+    {
+      PyErr_SetString(PyExc_ValueError,
+                      "Argument to Tpetra.Map.getRemoteIndexList() is "
+                      "not a NumPy array or Python sequence");
+      goto fail;
+    }
+
+    // Convert the input argument
+    globalArray = (PyObject *)
+      obj_to_array_contiguous_allow_conversion(globalIndexes,
+                                               type_code,
+                                               &is_new);
+    if (!globalArray) goto fail;
+    if (!require_dimensions((PyArrayObject *) globalArray,1)) goto fail;
+    
+    // Initialize the output NumPy arrays and tuple
+    dims[0]    = array_size(globalArray, 0);
+    type_code  = PyTrilinos::NumPy_TypeCode< LocalOrdinal >();
+    nodeArray  = PyArray_SimpleNew(1, dims, NPY_INT);
+    localArray = PyArray_SimpleNew(1, dims, type_code);
+    PyTuple_SET_ITEM(resultObj, 0, nodeArray );
+    PyTuple_SET_ITEM(resultObj, 1, localArray);
+
+    // Initialize the Teuchos::ArrayViews
+    globalList = Teuchos::ArrayView< const GlobalOrdinal >
+      ((const GlobalOrdinal*) array_data(globalArray),
+       (Teuchos::ArrayView< GlobalOrdinal >::size_type) dims[0]);
+    nodeList = Teuchos::ArrayView< int >
+      ((int*) array_data(nodeArray),
+       (Teuchos::ArrayView< int >::size_type) dims[0]);
+    localList = Teuchos::ArrayView< LocalOrdinal >
+      ((LocalOrdinal*) array_data(localArray),
+       (Teuchos::ArrayView< LocalOrdinal >::size_type) dims[0]);
+
+    // Call the method
+    result = self->getRemoteIndexList(globalList,
+                                      nodeList,
+                                      localList);
+
+    // Final conversions for output object
+    PyTuple_SET_ITEM(resultObj, 2, SWIG_From_long(static_cast< long >(result)));
+    return resultObj;
+
+    // Error handling
+  fail:
+    if (is_new) Py_XDECREF(globalArray);
+    Py_XDECREF(nodeArray);
+    Py_XDECREF(localArray);
+    Py_XDECREF(resultObj);
+    return NULL;
+  }
 }
 %ignore Tpetra::Map::Map;
+%ignore Tpetra::Map::getLocalElement;
+%ignore Tpetra::Map::getGlobalElement;
+%ignore Tpetra::Map::getRemoteIndexList;
 %include "Tpetra_Map_decl.hpp"
 %teuchos_rcp(Tpetra::Map< long, long >)
 %template(Map_default) Tpetra::Map< long, long >;
