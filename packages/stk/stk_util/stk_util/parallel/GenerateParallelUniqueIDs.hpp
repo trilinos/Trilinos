@@ -129,7 +129,7 @@ namespace stk {
     unsigned myFirstNewId;
     mpiResult = MPI_Scan(&numNewIDsLocal, &myFirstNewId, 1, MPI_UNSIGNED, MPI_SUM, comm);
     myFirstNewId = (myFirstNewId - numNewIDsLocal) + globalMaxId + 1;
-    for(unsigned i=0, i<numNewIDsLocal; ++i) {
+    for(unsigned i=0; i<numNewIDsLocal; ++i) {
       newIds[i] = myFirstNewId+i;
     }
     return globalNumIdsRequested;
