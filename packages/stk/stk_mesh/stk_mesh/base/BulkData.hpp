@@ -602,7 +602,7 @@ public:
     const bool is_side = entity_rank(side) != stk::topology::EDGE_RANK;
     stk::topology elem_top = bucket(elem).topology();
 
-    const unsigned side_count = ! elem_top != stk::topology::INVALID_TOPOLOGY ? 0 : (
+    const unsigned side_count = ! (elem_top != stk::topology::INVALID_TOPOLOGY) ? 0 : (
         is_side ? elem_top.num_sides()
             : elem_top.num_edges() );
 
