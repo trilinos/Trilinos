@@ -126,11 +126,14 @@ TEST(UnitTestParallel, testGenerateParallelConsistentIDs) {
       if(i%100 == 0) {
         //  local order array is the 'source element' which provides a unique repeatable ordering
         localOrderArray1.push_back(currentElemId);
-        newIds1.push_back(0);
       }
     }
-    int returnCount = stk::generate_parallel_consistent_ids(maxAllowableId, existingIds, localOrderArray1, newIds1, MPI_COMM_WORLD);
-    EXPECT_EQ(returnCount, mpi_size*10);
+    newIds1 = stk::generate_parallel_consistent_ids(maxAllowableId, existingIds, localOrderArray1, MPI_COMM_WORLD);
+
+    unsigned localSize = newIds1.size();
+    unsigned globalSize;
+    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(globalSize, (unsigned)mpi_size*10);
     VerifyConsistentIds(maxAllowableId, existingIds, localOrderArray1, newIds1, MPI_COMM_WORLD);
   }
   //
@@ -150,12 +153,15 @@ TEST(UnitTestParallel, testGenerateParallelConsistentIDs) {
         existingIds.push_back(i);
         if(i%100 == 0) {
           localOrderArray2.push_back(i);
-          newIds2.push_back(0);
         }
       }
     }
-    int returnCount = stk::generate_parallel_consistent_ids(maxAllowableId, existingIds, localOrderArray2, newIds2, MPI_COMM_WORLD);
-    EXPECT_EQ(returnCount, mpi_size*10);
+    newIds2 = stk::generate_parallel_consistent_ids(maxAllowableId, existingIds, localOrderArray2, MPI_COMM_WORLD);
+
+    unsigned localSize = newIds2.size();
+    unsigned globalSize;
+    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(globalSize, (unsigned)mpi_size*10);
     VerifyConsistentIds(maxAllowableId, existingIds, localOrderArray2, newIds2, MPI_COMM_WORLD);
   }
   //

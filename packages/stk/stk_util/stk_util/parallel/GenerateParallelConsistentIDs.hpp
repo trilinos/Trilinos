@@ -66,38 +66,28 @@ namespace stk {
   //                          should be 'plain old data' without any pointers or allocated memory.  Finally 
   //                          the orderArray should contain unique keys only.
   //
-  //                          The length of the order array must be the same as the number of ids needed
+  //                          The length of the order array also defines the number of ids needed
   //                          on the current processor.
-  //  newIds       : output : Returns orderArray.size() new ids that match one to one with the passed order
-  //                          keys. The original length of the newIds array must be the same as the orderArray
   //  maxAllowedId : input  : Max id value allowed to be returned.  If a valid set of ids cannot be found
-  //                          below maxAllowedId routine will return a failure code.
+  //                          below maxAllowedId routine will not return any ids and throw a failure.
   //
-  //  Returns:  Total number of ids created.  Will generally throw if encountering any internal errors.  Note, the error
-  //            throws are NOT guaranteed to be parallel consistent and usually unrecoverable.
+  //  Returns:  Array of new ids created.  Returned array will have the same size as the input order array.  
+  //            Will generally throw if encountering any internal errors.  Note, the error
+  //            throws are NOT guaranteed to be parallel consistent and usually are not recoverable.
   //
   //  Assumptions and Usage Guidelines
   //    This algorithm assumes current existingIds are relatively dense packed.  The specific requirement for
-  //    success is 'maxAllowedId - global_max(existingIds) > orderArray.size()'
+  //    success is 'maxAllowedId - global_max(existingIds) > global_sum(localOrderArray.size())'
   //
 
 
   template <typename OrderType> 
-  unsigned generate_parallel_consistent_ids(const unsigned maxAllowedId,
-                                            const std::vector<unsigned>& existingIds,
-                                            const std::vector<OrderType>& localOrderArray,
-                                            std::vector<unsigned>&  newIds,
-                                            const ParallelMachine comm) {
-    //
-    //  Check function restrictions
-    //
-    if(localOrderArray.size() != newIds.size()) {
-      std::string msg;
-      msg.append("In generate_parallel_consistent_ids, inconsitent sizes passed for localOrderArray and newIds \n");
-      throw std::runtime_error(msg);
-      return 0;     
-    }
- 
+  std::vector<unsigned> generate_parallel_consistent_ids(const unsigned maxAllowedId,
+                                                         const std::vector<unsigned>& existingIds,
+                                                         const std::vector<OrderType>& localOrderArray,
+                                                         const ParallelMachine comm) {
+
+    std::vector<unsigned> newIds;
     //
     //  Extract global max existing id.  For basic use case just start generating ids starting
     //  at the previous max_id + 1.  
@@ -114,7 +104,7 @@ namespace stk {
     mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, MPI_UNSIGNED, MPI_MAX, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
-      return 0;
+      return newIds;
     }
     //
     //  Communicate the entire ordering function to every single other processor.
@@ -125,7 +115,7 @@ namespace stk {
     stk::parallel_vector_concat(comm, localOrderArray, globalOrderArray);
 
     unsigned globalNumIdsRequested = globalOrderArray.size();
-    if(globalNumIdsRequested == 0) return 0;
+    if(globalNumIdsRequested == 0) return newIds;
     //
     //  Check if sufficent extra ids exist to run this algorithm
     //    NKC, for now fail if not, later maybe switch to a more robust but more
@@ -140,7 +130,7 @@ namespace stk {
       msg << "  Max allowed id:       "<<maxAllowedId<<"\n";
       msg << "  Number ids requested: "<<globalNumIdsRequested<<"\n";
       throw std::runtime_error(msg.str());
-      return 0;
+      return newIds;
     }
     //
     //  Sort the ordering array and confirm it has no duplicated keys
@@ -152,17 +142,19 @@ namespace stk {
         msg << "In generate_parallel_consistent_ids, an ordering array with non unique keys provided \n";
         msg << "This is not allowed.  \n";
         throw std::runtime_error(msg.str());
-        return 0;
+        return newIds;
       }
     }
+
+    newIds.reserve(localOrderArray.size());
 
     for(unsigned i=0, n=localOrderArray.size(); i<n; ++i) {
       typename std::vector<OrderType>::iterator index = std::lower_bound(globalOrderArray.begin(), globalOrderArray.end(), localOrderArray[i]);
       assert(index != globalOrderArray.end());
       int offset = std::distance(globalOrderArray.begin(), index);
-      newIds[i] = globalMaxId+1+offset;
+      newIds.push_back(globalMaxId+1+offset);
     }
-    return globalNumIdsRequested;
+    return newIds;
   }
 
 }
