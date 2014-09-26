@@ -97,6 +97,7 @@ private:
   bool infoLM_;
   bool infoTS_;
   bool infoAC_;
+  bool infoLS_;
   bool infoALL_;
 
   // Performance summary.
@@ -104,9 +105,25 @@ private:
   int totalProj_;
   int totalNegCurv_;
   int totalRef_;
+  int totalCallLS_;
+  int totalIterLS_;
 
   template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
+  }
+
+  void printInfoLS(std::vector<Real> res) {
+    if (infoLS_) {
+      std::stringstream hist;
+      hist << std::scientific << std::setprecision(8);
+      hist << "\n    Augmented System Solver:\n";
+      hist << "    True Residual\n";
+      for (unsigned j=0; j<res.size(); j++) {
+        hist << "    " << std::left << std::setw(14) << res[j] << "\n";
+      }
+      hist << "\n";
+      std::cout << hist.str();
+    }
   }
 
 public:
@@ -143,16 +160,20 @@ public:
     infoLM_  = false;
     infoTS_  = false;
     infoAC_  = false;
+    infoLS_  = false;
     infoALL_ = false;
     infoQN_  = infoQN_ || infoALL_;
     infoLM_  = infoLM_ || infoALL_;
     infoTS_  = infoTS_ || infoALL_;
     infoAC_  = infoAC_ || infoALL_;
+    infoLS_  = infoLS_ || infoALL_;
 
     totalIterCG_  = 0;
     totalProj_    = 0;
     totalNegCurv_ = 0;
-    totalRef_ = 0;
+    totalRef_     = 0;
+    totalCallLS_  = 0;
+    totalIterLS_  = 0;
   }
 
   /** \brief Initialize step.
@@ -328,9 +349,10 @@ public:
     hist << std::setw(10) << std::left << "tnorm";
     hist << std::setw(8) << std::left << "#fval";
     hist << std::setw(8) << std::left << "#grad";
-    hist << std::setw(8) << std::left << "itrCG";
-    hist << std::setw(8) << std::left << "flgCG";
+    hist << std::setw(8) << std::left << "iterCG";
+    hist << std::setw(8) << std::left << "flagCG";
     hist << std::setw(8) << std::left << "accept";
+    hist << std::setw(8) << std::left << "linsys";
     hist << "\n";
     return hist.str();
   }
@@ -379,7 +401,8 @@ public:
       hist << std::setw(8) << std::left << algo_state.ngrad;              
       hist << std::setw(8) << std::left << iterCG_;
       hist << std::setw(8) << std::left << flagCG_;
-      hist << std::setw(6) << std::left << flagAC_;
+      hist << std::setw(8) << std::left << flagAC_;
+      hist << std::left << totalCallLS_ << "/" << totalIterLS_;
       hist << "\n";
     }
     return hist.str();
@@ -399,6 +422,7 @@ public:
   void computeLagrangeMultiplier(Vector<Real> &l, const Vector<Real> &x, const Vector<Real> &gf, EqualityConstraint<Real> &con) {
 
     Real zerotol = 0.0;
+    std::vector<Real> augiters;
 
     if (infoLM_) {
       std::stringstream hist;
@@ -427,7 +451,10 @@ public:
     Real tol = lmhtol_*b1norm;
 
     /* Solve augmented system. */
-    con.solveAugmentedSystem(*v1, *v2, *b1, *b2, x, tol);
+    augiters = con.solveAugmentedSystem(*v1, *v2, *b1, *b2, x, tol);
+    totalCallLS_++;
+    totalIterLS_ = totalIterLS_ + augiters.size();
+    printInfoLS(augiters);
 
     /* Return updated Lagrange multiplier. */
     // v2 is the multiplier update
@@ -469,6 +496,7 @@ public:
     Real zero    = 0.0;
     Real one     = 1.0;
     Real zerotol = zero;
+    std::vector<Real> augiters;
 
     /* Compute Cauchy step nCP. */
     Teuchos::RCP<Vector<Real> > nCP     = n.clone();
@@ -511,7 +539,11 @@ public:
     Teuchos::RCP<Vector<Real> > dn = n.clone();
     Teuchos::RCP<Vector<Real> > y  = c.clone();
     // Solve augmented system.
-    con.solveAugmentedSystem(*dn, *y, *nCPtemp, *ctemp, x, tol);
+    augiters = con.solveAugmentedSystem(*dn, *y, *nCPtemp, *ctemp, x, tol);
+    totalCallLS_++;
+    totalIterLS_ = totalIterLS_ + augiters.size();
+    printInfoLS(augiters);
+
     nN->set(*dn);
     nN->plus(*nCP);
 
@@ -575,6 +607,7 @@ public:
     Real zero    =  0.0;
     Real one     =  1.0;
     Real zerotol =  zero;
+    std::vector<Real> augiters;
     iterCG_ = 1;
     flagCG_ = 0;
     t.zero();
@@ -639,7 +672,11 @@ public:
       if (iterCG_ == 1) {
         // Solve augmented system.
         Real tol = pgtol_;
-        con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
+        augiters = con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
+        totalCallLS_++;
+        totalIterLS_ = totalIterLS_ + augiters.size();
+        printInfoLS(augiters);
+
         Wg.set(*Wr);
         normWg = Wg.norm();
         if (orthocheck) {
@@ -667,7 +704,11 @@ public:
       else {
         // Solve augmented system.
         Real tol = projtol_;
-        con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
+        augiters = con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
+        totalCallLS_++;
+        totalIterLS_ = totalIterLS_ + augiters.size();
+        printInfoLS(augiters);
+
         if (orthocheck) {
           Wrs.push_back(Wr->clone());
           (Wrs[iterCG_-1])->set(*Wr);
@@ -889,6 +930,7 @@ public:
     Real two       =  2.0;
     Real half      =  one/two;
     Real zerotol   =  zero;
+    std::vector<Real> augiters;
 
     Real pred          = zero;
     Real ared          = zero;
@@ -966,7 +1008,10 @@ public:
         }
         // Solve augmented system.
         Real tol = tangtol;
-        con.solveAugmentedSystem(t, *ltemp, *t_orig, *czero, x, tol);         
+        augiters = con.solveAugmentedSystem(t, *ltemp, *t_orig, *czero, x, tol);
+        totalCallLS_++;
+        totalIterLS_ = totalIterLS_ + augiters.size();
+        printInfoLS(augiters);
         totalProj_++;
 	con.applyJacobian(*rt, t, x, zerotol);
         linc_postproj = rt->norm();

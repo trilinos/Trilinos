@@ -342,7 +342,7 @@ namespace ROL {
 
     } //applyAdjointHessian
 
-    /*void solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2, const Vector<Real> &b1, const Vector<Real> &b2, const Vector<Real> &x, Real &tol) {
+    /*std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2, const Vector<Real> &b1, const Vector<Real> &b2, const Vector<Real> &x, Real &tol) {
       Teuchos::RCP<std::vector<Real> > v1p =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v1)).getVector());    
       Teuchos::RCP<std::vector<Real> > v2p =
@@ -395,6 +395,8 @@ namespace ROL {
       for (i=0; i<3; i++) {
         (*v2p)[i] = lhs(i+5);
       }
+
+      return std::vector<Real>(0);
         
     }*/ //solveAugmentedSystem
 
