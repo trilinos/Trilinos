@@ -172,7 +172,7 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
   Real temp = zero;
   Real resnrm = zero;
 
-  tol = std::sqrt(b1.dot(b1)+b2.dot(b2))*1e-4;
+  tol = std::sqrt(b1.dot(b1)+b2.dot(b2))*1e-8;
 
   // Set initial guess to zero, for now.
   v1.zero();
@@ -181,17 +181,17 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
   Teuchos::RCP<Vector<Real> > r1 = v1.clone();
   Teuchos::RCP<Vector<Real> > r2 = v2.clone();
   Teuchos::RCP<Vector<Real> > r2temp = v2.clone();
-  Teuchos::RCP<Vector<Real> > v1trial = v1.clone();
-  Teuchos::RCP<Vector<Real> > v2trial = v2.clone();
+  Teuchos::RCP<Vector<Real> > v2temp = v2.clone();
   Teuchos::RCP<Vector<Real> > z1 = v1.clone();
   Teuchos::RCP<Vector<Real> > z2 = v2.clone();
   Teuchos::RCP<Vector<Real> > w1 = v1.clone();
   Teuchos::RCP<Vector<Real> > w2 = v2.clone();
   Teuchos::RCP<Vector<Real> > w1temp = v1.clone();
   Teuchos::RCP<Vector<Real> > w2temp = v2.clone();
-  std::vector<std::vector<Real> > res(2, std::vector<Real>(m+1, zero)); 
+  std::vector<Real> res(m+1, zero); 
   std::vector<Teuchos::RCP<Vector<Real> > > V1;
   std::vector<Teuchos::RCP<Vector<Real> > > V2;
+  std::vector<Teuchos::RCP<Vector<Real> > > Z2;
   Teuchos::SerialDenseMatrix<int, Real> H(m+1,m);
   Teuchos::SerialDenseVector<int, Real> cs(m);
   Teuchos::SerialDenseVector<int, Real> sn(m);
@@ -205,33 +205,30 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
   r1->scale(-one); r1->axpy(-one, v1); r1->plus(b1);
   applyJacobian(*r2, v1, x, zerotol);
   r2->scale(-one); r2->plus(b2);
-  res[0][0] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
-  res[1][0] = res[0][0];
+  res[0] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
 
   // Check if residual is identically zero.
-  if (res[1][0] == zero) {
-    res[1].resize(0);
-    return res[1];
+  if (res[0] == zero) {
+    res.resize(0);
+    return res;
   }
 
-  // Apply left preconditioner to constraint residual.
-  r2temp->set(*r2);
-  applyPreconditioner(*r2, *r2temp, x, zerotol);
+  V1.push_back(r1->clone()); (V1[0])->set(*r1); (V1[0])->scale(one/res[0]);
+  V2.push_back(r2->clone()); (V2[0])->set(*r2); (V2[0])->scale(one/res[0]);
 
-  // Compute norm of preconditioned residual.
-  res[0][0] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
-
-  V1.push_back(r1->clone()); (V1[0])->set(*r1); (V1[0])->scale(one/res[0][0]);
-  V2.push_back(r2->clone()); (V2[0])->set(*r2); (V2[0])->scale(one/res[0][0]);
-
-  s(0) = res[0][0];
+  s(0) = res[0];
 
   for (i=0; i<m; i++) {
 
+    // Apply right preconditioner.
+    v2temp->set(*(V2[i]));
+    applyPreconditioner(*w2temp, *v2temp, x, zerotol);
+    Z2.push_back(w2temp->clone()); (Z2[i])->set(*w2temp);
+
+    // Apply operator.
     w1->set(*(V1[i]));
-    applyJacobian(*w2temp, *w1, x, zerotol);
-    applyPreconditioner(*w2, *w2temp, x, zerotol);
-    applyAdjointJacobian(*w1temp, *(V2[i]), x, zerotol);
+    applyJacobian(*w2, *w1, x, zerotol);
+    applyAdjointJacobian(*w1temp, *w2temp, x, zerotol);
     w1->plus(*w1temp);
     
     // Evaluate coefficients and orthogonalize using Gram-Schmidt.
@@ -274,7 +271,7 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
     H(i,i)   = cs(i)*H(i,i) + sn(i)*H(i+1,i);
     H(i+1,i) = zero;
     resnrm   = std::abs(s(i+1));
-    res[0][i+1] = resnrm;
+    res[i+1] = resnrm;
 
     // Update solution approximation.
     const char uplo = 'U';
@@ -289,22 +286,13 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
     z2->zero();
     for (k=0; k<=i; k++) {
       z1->axpy(y(k), *(V1[k]));
-      z2->axpy(y(k), *(V2[k]));
+      z2->axpy(y(k), *(Z2[k]));
     }
-
-    // Compute true residual.
-    v1trial->set(v1); v1trial->plus(*z1);
-    v2trial->set(v2); v2trial->plus(*z2);
-    applyAdjointJacobian(*r1, *v2trial, x, zerotol);
-    r1->scale(-one); r1->axpy(-one, *v1trial); r1->plus(b1);
-    applyJacobian(*r2, *v1trial, x, zerotol);
-    r2->scale(-one); r2->plus(b2);
-    res[1][i+1] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
 
     // Evaluate special stopping condition.
     tol = tol;
 
-    if (res[1][i+1] <= tol) {
+    if (res[i+1] <= tol) {
       // Update solution vector.
       v1.plus(*z1);
       v2.plus(*z2);
@@ -313,23 +301,21 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
 
   } // for (int i=0; i++; i<m)
 
-  res[0].resize(i+2);
-  res[1].resize(i+2);
+  res.resize(i+2);
 
   /*
   std::stringstream hist;
   hist << std::scientific << std::setprecision(8);
   hist << "\n    Augmented System Solver:\n";
-  hist << "    Preconditioned" << "      " << "Unpreconditioned\n";
-  hist << "    Iter Residual " << "      " << "True Residual\n";
-  for (unsigned j=0; j<res[0].size(); j++) {
-    hist << "    " << std::left << std::setw(14) << res[0][j] << "      " << res[1][j] << "\n";
+  hist << "    Iter Residual\n";
+  for (unsigned j=0; j<res.size(); j++) {
+    hist << "    " << std::left << std::setw(14) << res[j] << "\n";
   }
   hist << "\n";
   std::cout << hist.str();
   */
 
-  return res[1];
+  return res;
 
 }
 

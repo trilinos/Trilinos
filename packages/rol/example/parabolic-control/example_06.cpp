@@ -926,7 +926,7 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    int nx      = 256;   // Set spatial discretization.
+    int nx      = 128;   // Set spatial discretization.
     int nt      = 100;   // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
     RealT alpha = 1.e-3; // Set penalty parameter.
