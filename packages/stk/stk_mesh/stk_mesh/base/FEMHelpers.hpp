@@ -35,17 +35,13 @@
 #define stk_mesh_FEMHelpers_hpp
 
 #include <stddef.h>                     // for NULL
-#include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityId, etc
 #include <vector>                       // for vector, etc
-#include "Shards_CellTopologyData.h"    // for CellTopologyData
-#include "Shards_CellTopologyTraits.hpp"  // for getCellTopologyData
+#include <stk_topology/topology.hpp>
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Part; } }
-
-// This is needed for ElementNode class
 
 namespace stk {
 namespace mesh {
@@ -55,7 +51,7 @@ namespace mesh {
  */
 
 //----------------------------------------------------------------------
-/** \brief  Declare an element member of a Part with a CellTopology
+/** \brief  Declare an element member of a Part with a topology
  *          and nodes conformal to that topology.
  */
 Entity declare_element( BulkData & mesh ,
@@ -75,7 +71,7 @@ Entity declare_element( BulkData & mesh ,
 
 /** \brief  Create (or find) an element side.
  *
- *  The element must be a member of a Part with a CellTopology.
+ *  The element must be a member of a Part with a topology.
  */
 Entity declare_element_side( BulkData & mesh ,
                                const stk::mesh::EntityId global_side_id ,
@@ -86,7 +82,7 @@ Entity declare_element_side( BulkData & mesh ,
 
 /** \brief  Create (or find) an element edge.
  *
- *  The element must be a member of a Part with a CellTopology.
+ *  The element must be a member of a Part with a topology.
  */
 Entity declare_element_edge( BulkData & mesh ,
                                const stk::mesh::EntityId global_side_id ,
@@ -97,7 +93,7 @@ Entity declare_element_edge( BulkData & mesh ,
 
 /** \brief  Create (or find) an element side.
  *
- *  The element must be a member of a Part with a CellTopology.
+ *  The element must be a member of a Part with a topology.
  */
 Entity declare_element_side( BulkData & mesh ,
                                Entity elem ,
@@ -109,7 +105,7 @@ Entity declare_element_side( BulkData & mesh ,
 
 /** \brief  Create (or find) an element edge.
  *
- *  The element must be a member of a Part with a CellTopology.
+ *  The element must be a member of a Part with a topology.
  */
 Entity declare_element_edge( BulkData & mesh ,
                                Entity elem ,
@@ -126,7 +122,7 @@ Entity declare_element_edge( BulkData & mesh ,
  * \param subcell_rank
  * \param subcell_identifier
  * \param subcell_nodes EntityVector output of the subcell nodes
- * \return CellTopologyData * of the requested subcell
+ * \return topology of the requested subcell
  */
 stk::topology get_subcell_nodes(const BulkData& mesh,
     const Entity entity ,
@@ -144,8 +140,9 @@ int get_entity_subcell_id( const BulkData& mesh, const Entity entity ,
                            stk::topology side_topology,
                            const EntityVector      & side_nodes );
 
-template< class Traits >
-void get_parts_with_topology(stk::mesh::BulkData& mesh,
+inline
+void get_parts_with_topology(stk::topology topology,
+                             stk::mesh::BulkData& mesh,
                              stk::mesh::PartVector& parts,
                              bool skip_topology_root_parts=false)
 {
@@ -159,12 +156,10 @@ void get_parts_with_topology(stk::mesh::BulkData& mesh,
     iter = all_parts.begin(),
     iter_end = all_parts.end();
 
-  const CellTopologyData* topology = shards::getCellTopologyData<Traits>();
-
   for(; iter!=iter_end; ++iter) {
     stk::mesh::Part* part =  *iter;
-    if (fem_meta.get_cell_topology(*part).getCellTopologyData() == topology) {
-      if (skip_topology_root_parts && stk::mesh::is_cell_topology_root_part(*part)) {
+    if (fem_meta.get_topology(*part) == topology) {
+      if (skip_topology_root_parts && stk::mesh::is_topology_root_part(*part)) {
         continue;
       }
       parts.push_back(part);

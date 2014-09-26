@@ -133,13 +133,13 @@ TEST( testTopologyHelpers, get_cell_topology_based_on_part)
   PartVector tmp(1);
   tmp[0] = & fix.face_quad_part;
   fix.bulk.change_entity_parts ( elem1 , tmp );
-  ASSERT_EQ( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
+  ASSERT_EQ( fix.bulk.bucket(elem1).topology(), stk::topology::QUAD_4 );
   fix.bulk.change_entity_parts ( elem1 , tmp );
-  ASSERT_EQ( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
+  ASSERT_EQ( fix.bulk.bucket(elem1).topology(), stk::topology::QUAD_4 );
   tmp[0] = & fix.another_generic_face_part;
   fix.bulk.change_entity_parts ( elem1 , tmp );
-  ASSERT_EQ( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
-  ASSERT_NE( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData() , shards::getCellTopologyData< shards::Wedge<15> >() );
+  ASSERT_EQ( fix.bulk.bucket(elem1).topology(), stk::topology::QUAD_4 );
+  ASSERT_NE( fix.bulk.bucket(elem1).topology(), stk::topology::WEDGE_15 );
 
   fix.bulk.modification_end();
 }
@@ -197,8 +197,8 @@ TEST( testTopologyHelpers, declare_element_side_no_topology_2 )
   elem_node[2] = 3;
   elem_node[3] = 4;
   Entity element  = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node);
-  const CellTopologyData * const elem_top = stk::mesh::get_cell_topology( fix.bulk.bucket(element) ).getCellTopologyData();
-  const EntityId nSideCount = elem_top->side_count + 10 ;
+  stk::topology elem_top = fix.bulk.bucket(element).topology();
+  const EntityId nSideCount = elem_top.num_sides() + 10 ;
   ASSERT_THROW(
     stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, nSideCount, &fix.element_tet_part ),
     std::runtime_error
@@ -290,16 +290,16 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
   elem_node[2] = 3;
   elem_node[3] = 4;
 
-  // Coverage of element_side_polarity in TopologyHelpers.cpp - NULL = elem_top
+  // Coverage of element_side_polarity in TopologyHelpers.cpp
   fix.bulk.modification_begin();
 
   PartVector part_intersection;
   part_intersection.push_back ( &fix.generic_element_part);
   Entity element = fix.bulk.declare_entity(fix.element_rank, fix.nextEntityId(), part_intersection);
-  ASSERT_TRUE( stk::mesh::get_cell_topology(fix.bulk.bucket(element) ).getCellTopologyData() == NULL );
+  ASSERT_TRUE( fix.bulk.bucket(element).topology() == stk::topology::INVALID_TOPOLOGY );
 
   Entity element_with_top = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
-  ASSERT_TRUE( stk::mesh::get_cell_topology( fix.bulk.bucket(element_with_top) ).getCellTopologyData() != NULL );
+  ASSERT_TRUE( fix.bulk.bucket(element_with_top).topology() != stk::topology::INVALID_TOPOLOGY );
 
   const EntityId zero_side_count = 0;
   Entity face_with_top = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element_with_top, zero_side_count,

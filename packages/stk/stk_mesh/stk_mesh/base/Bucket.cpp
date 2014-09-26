@@ -293,7 +293,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
 {
   ThrowAssertMsg(arg_capacity != 0, "Buckets should never have zero capacity");
 
-  m_topology = get_topology( get_cell_topology(*this), m_mesh.mesh_meta_data().spatial_dimension() );
+  m_topology = get_topology(m_mesh.mesh_meta_data(), arg_entity_rank, superset_part_ordinals());
 
   if (m_topology != stk::topology::END_TOPOLOGY) {
     m_nodes_per_entity = m_topology.num_nodes();

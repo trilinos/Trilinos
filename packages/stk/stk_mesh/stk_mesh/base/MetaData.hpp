@@ -87,7 +87,7 @@ print_entity_key( std::ostream & os, const MetaData & meta_data, const EntityKey
 std::string
 print_entity_key( const MetaData & meta_data, const EntityKey & key );
 
-bool is_cell_topology_root_part(const Part & part);
+bool is_topology_root_part(const Part & part);
 
 /** set a cell_topology on a part */
 void set_cell_topology( Part &part, const CellTopology cell_topology);
@@ -99,9 +99,7 @@ inline void set_cell_topology(Part & part)
   stk::mesh::set_cell_topology(part, CellTopology(shards::getCellTopologyData<Topology>()));
 }
 
-
-/** Get the cell_topology off a bucket */
-CellTopology get_cell_topology(const Bucket &bucket);
+stk::topology get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<const unsigned*, const unsigned*>& supersets);
 
 
 /** set a stk::topology on a part */
@@ -121,15 +119,15 @@ CellTopology get_cell_topology(stk::topology topo);
  *  Mesh meta data must be identical on all processors.
  *
  * The FEM features include the concept of spatial dimension with
- * entity ranks tied to the given spatial dimension, cell topology
- * mapping to parts along with induced cell topology membership
+ * entity ranks tied to the given spatial dimension, topology
+ * mapping to parts along with induced topology membership
  * through part subsetting, and many additional invariants that are
  * enforced.
  *
  * Invariants for MetaData:
- * 1.  Each cell topology has one and only one root cell topology part.  The
- *     root cell topology part for a cell topology is a unique part that can be
- *     subsetted to induce cell topology on the subset part.
+ * 1.  Each topology has one and only one root topology part.  The
+ *     root topology part for a topology is a unique part that can be
+ *     subsetted to induce topology on the subset part.
  *     -> Enforced by register_cell_topology is the only function that modifies
  *     the PartCellTopologyVector private data on MetaData.
  * 2.  Root cell topology parts cannot be subsets of parts with cell topologies

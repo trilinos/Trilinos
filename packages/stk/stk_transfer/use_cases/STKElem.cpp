@@ -53,20 +53,20 @@ unsigned parametric(std::vector<double> &para_coords,
   for (unsigned i=0; i<spatial_dimension; ++i) input_phy_points(0,i) = to[i];
 
   const mesh::Bucket & bucket = bulkData.bucket(element);
-  const CellTopologyData * const bucket_cell_topo_data = mesh::get_cell_topology(bucket).getCellTopologyData();
-  ThrowRequireMsg (bucket_cell_topo_data, __FILE__<<":"<<__LINE__<<" parametric::bogus topology");
+  stk::topology bucket_topo = bucket.topology();
+  ThrowRequireMsg (bucket_topo != stk::topology::INVALID_TOPOLOGY, __FILE__<<":"<<__LINE__<<" parametric::bogus topology");
 
-  shards::CellTopology topo(bucket_cell_topo_data);
-  const unsigned numNodes = topo.getNodeCount();
+  const unsigned numNodes = bucket_topo.num_nodes();
 
   mesh::Entity const* elem_node_rels = bulkData.begin_nodes(element);
   const unsigned num_nodes = bulkData.num_nodes(element);
 
-  ThrowRequireMsg (topo.getDimension() == spatial_dimension,__FILE__<<":"<<__LINE__<<" Wrong spatical spatial_dimension"
-    <<" for topology. Expected "<<spatial_dimension<<" found "<<topo.getDimension());
+  ThrowRequireMsg (bucket_topo.dimension() == spatial_dimension,__FILE__<<":"<<__LINE__<<" Wrong dimension"
+    <<" for topology. Expected "<<spatial_dimension<<" found "<<bucket_topo.dimension());
   ThrowRequireMsg (numNodes == num_nodes ,
     __FILE__<<":"<<__LINE__<<" Expected "<<numNodes<<" nodes but found "<<num_nodes);
 
+  shards::CellTopology topo = stk::mesh::get_cell_topology(bucket_topo);
   /// FIXME -- fill cellWorkset
   MDArray cellWorkset(numCells, numNodes, spatial_dimension);
   for (unsigned iCell = 0; iCell < numCells; iCell++) {
@@ -122,10 +122,10 @@ void parametric(std::vector<std::vector<double> > &val,
   const unsigned num_nodes = bulkData.num_nodes(element);
 
   const mesh::Bucket & elem_bucket = bulkData.bucket(element);
-  const CellTopologyData * const bucket_cell_topo_data = mesh::get_cell_topology(elem_bucket).getCellTopologyData();
-  ThrowRequireMsg (bucket_cell_topo_data, __FILE__<<":"<<__LINE__<<" parametric::bogus topology");
+  stk::topology bucket_topo = elem_bucket.topology();
+  ThrowRequireMsg (bucket_topo!=stk::topology::INVALID_TOPOLOGY, __FILE__<<":"<<__LINE__<<" parametric::bogus topology");
 
-  const shards::CellTopology topo(bucket_cell_topo_data);
+  const shards::CellTopology topo(stk::mesh::get_cell_topology(bucket_topo));
   const unsigned numNodes = topo.getNodeCount();
 
   ThrowRequireMsg (topo.getDimension() == spatial_dimension,__FILE__<<":"<<__LINE__<<" Wrong spatical spatial_dimension"

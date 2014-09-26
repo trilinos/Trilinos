@@ -686,10 +686,6 @@ void Bucket::check_for_invalid_connectivity_request(ConnectivityType const* type
 
 typedef Bucket::iterator BucketIterator;
 
-/** Get the cell_topology off a bucket */
-CellTopology get_cell_topology(const Bucket &bucket);
-
-
 } // namespace mesh
 } // namespace stk
 
