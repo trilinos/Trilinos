@@ -171,7 +171,25 @@ public:
                                const Vector<Real> &v,
                                const Vector<Real> &u,
                                const Vector<Real> &z,
-                               Real &tol) = 0;
+                               Real &tol) {
+    Real ctol = std::sqrt(ROL_EPSILON);
+    // Compute step length
+    Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
+    // Compute current constraint value
+    Teuchos::RCP<Vector<Real> > cold = jv.clone();
+    this->update(u,z);
+    this->value(*cold,u,z,ctol);
+    // Update state vector to u + hv
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    unew->set(u);
+    unew->axpy(h,v);
+    // Compute new constraint value
+    this->update(*unew,z);
+    this->value(jv,*unew,z,ctol);
+    // Compute Newton quotient
+    jv.axpy(-1.0,*cold);
+    jv.scale(1.0/h);
+  }
 
 
   /** \brief Apply the partial constraint Jacobian at \f$(u,z)\f$, 
@@ -193,8 +211,25 @@ public:
                                const Vector<Real> &v,
                                const Vector<Real> &u,
                                const Vector<Real> &z,
-                               Real &tol) = 0; 
-
+                               Real &tol) { 
+    Real ctol = std::sqrt(ROL_EPSILON);
+    // Compute step length
+    Real h    = std::max(z.norm()/v.norm(),1.0)*tol;
+    // Compute current constraint value
+    Teuchos::RCP<Vector<Real> > cold = jv.clone();
+    this->update(u,z);
+    this->value(*cold,u,z,ctol);
+    // Update state vector to u + hv
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    znew->set(z);
+    znew->axpy(h,v);
+    // Compute new constraint value
+    this->update(u,*znew);
+    this->value(jv,u,*znew,ctol);
+    // Compute Newton quotient
+    jv.axpy(-1.0,*cold);
+    jv.scale(1.0/h);
+  }
 
   /** \brief Apply the inverse partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_u(u,z)^{-1} \in L(\mathcal{C}, \mathcal{U})\f$,
@@ -259,7 +294,25 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) = 0;
+                                      Real &tol) {
+    Real ctol = std::sqrt(ROL_EPSILON);
+    Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
+    Teuchos::RCP<Vector<Real> > cold = v.clone();
+    Teuchos::RCP<Vector<Real> > cnew = v.clone();
+    this->update(u,z);
+    this->value(*cold,u,z,ctol);
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    ajv.zero();
+    for (int i = 0; i < u.dimension(); i++) {
+      unew->set(u);
+      unew->axpy(h,*(u.basis(i)));
+      this->update(*unew,z);
+      this->value(*cnew,*unew,z,ctol);
+      cnew->axpy(-1.0,*cold);
+      cnew->scale(1.0/h);
+      ajv.axpy(cnew->dot(v),*(u.basis(i)));
+    }
+  }
 
   virtual Real checkJacobian_1(const Vector<Real> &w, 
                                const Vector<Real> &v, 
@@ -300,7 +353,25 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) = 0;
+                                      Real &tol) {
+    Real ctol = std::sqrt(ROL_EPSILON);
+    Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
+    Teuchos::RCP<Vector<Real> > cold = v.clone();
+    Teuchos::RCP<Vector<Real> > cnew = v.clone();
+    this->update(u,z);
+    this->value(*cold,u,z,ctol);
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    ajv.zero();
+    for (int i = 0; i < z.dimension(); i++) {
+      znew->set(z);
+      znew->axpy(h,*(z.basis(i)));
+      this->update(u,*znew);
+      this->value(*cnew,u,*znew,ctol);
+      cnew->axpy(-1.0,*cold);
+      cnew->scale(1.0/h);
+      ajv.axpy(cnew->dot(v),*(z.basis(i)));
+    }
+  }
 
   virtual Real checkJacobian_2(const Vector<Real> &w, 
                                const Vector<Real> &v, 
@@ -389,7 +460,20 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) = 0;
+                                      Real &tol) {
+    Real jtol = std::sqrt(ROL_EPSILON);
+    Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
+    Teuchos::RCP<Vector<Real> > jv = u.clone();
+    this->update(u,z);
+    this->applyAdjointJacobian_1(*jv,w,u,z,jtol);
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    unew->set(u);
+    unew->axpy(h,v);
+    this->update(*unew,z);
+    this->applyAdjointJacobian_1(ahwv,w,*unew,z,jtol);
+    ahwv.axpy(-1.0,*jv);
+    ahwv.scale(1.0/h);
+  }
 
 
   /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
@@ -413,7 +497,20 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) = 0;
+                                      Real &tol) {
+    Real jtol = std::sqrt(ROL_EPSILON);
+    Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
+    Teuchos::RCP<Vector<Real> > jv = z.clone();
+    this->update(u,z);
+    this->applyAdjointJacobian_2(*jv,w,u,z,jtol);
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    unew->set(u);
+    unew->axpy(h,v);
+    this->update(*unew,z);
+    this->applyAdjointJacobian_2(ahwv,w,*unew,z,jtol);
+    ahwv.axpy(-1.0,*jv);
+    ahwv.scale(1.0/h);
+  }
 
 
   /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
@@ -437,8 +534,20 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) = 0;
-
+                                      Real &tol) {
+    Real jtol = std::sqrt(ROL_EPSILON);
+    Real h    = std::max(z.norm()/v.norm(),1.0)*tol;
+    Teuchos::RCP<Vector<Real> > jv = u.clone();
+    this->update(u,z);
+    this->applyAdjointJacobian_1(*jv,w,u,z,jtol);
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    znew->set(z);
+    znew->axpy(h,v);
+    this->update(u,*znew);
+    this->applyAdjointJacobian_1(ahwv,w,u,*znew,jtol);
+    ahwv.axpy(-1.0,*jv);
+    ahwv.scale(1.0/h);
+  }
 
   /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
              \f$c_{zz}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{Z}^*), \mathcal{Z}^*)\f$,
@@ -461,8 +570,20 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) = 0;
-
+                                      Real &tol) {
+    Real jtol = std::sqrt(ROL_EPSILON);
+    Real h    = std::max(z.norm()/v.norm(),1.0)*tol;
+    Teuchos::RCP<Vector<Real> > jv = z.clone();
+    this->update(u,z);
+    this->applyAdjointJacobian_2(*jv,w,u,z,jtol);
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    znew->set(z);
+    znew->axpy(h,v);
+    this->update(u,*znew);
+    this->applyAdjointJacobian_2(ahwv,w,u,*znew,jtol);
+    ahwv.axpy(-1.0,*jv);
+    ahwv.scale(1.0/h);
+}
 
   /** \brief Approximately solves the <em> augmented system </em>
              \f[

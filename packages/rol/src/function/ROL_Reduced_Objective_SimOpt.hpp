@@ -71,6 +71,8 @@ private:
   bool is_state_computed_;                              ///< Flag whether or not to store the state variable.
   bool is_adjoint_computed_;                            ///< Flag whether or not to store the adjoint variable.
 
+  bool useFDhessVec_;                                   ///< Flag whether or not to use finite difference hessVec.
+
   /** \brief Given \f$z\in\mathcal{Z}\f$, solve the state equation \f$c(u,z) = 0\f$ for 
       \f$u=u(z)\in\mathcal{U}\f$.
   */
@@ -168,8 +170,8 @@ public:
                            Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &con, 
                            Teuchos::RCP<Vector<Real> > &state, 
                            Teuchos::RCP<Vector<Real> > &adjoint,
-                           bool storage = true) 
-    : obj_(obj), con_(con), state_(state), adjoint_(adjoint), storage_(storage) {
+                           bool storage = true, bool useFDhessVec = false) 
+    : obj_(obj), con_(con), state_(state), adjoint_(adjoint), storage_(storage), useFDhessVec_(useFDhessVec) {
     is_state_computed_   = false;
     is_adjoint_computed_ = false;
   }
@@ -218,27 +220,32 @@ public:
              \f$\nabla^2\widehat{J}(z)\f$ in the direction \f$v\in\mathcal{Z}\f$.
   */
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    // Solve state equation
-    this->solve_state_equation(x,tol);
-    // Solve adjoint equation
-    this->solve_adjoint_equation(x,tol);
-    // Solve state sensitivity equation
-    Teuchos::RCP<Vector<Real> > s = (this->state_)->clone();
-    this->solve_state_sensitivity(*s,v,x,tol);
-    // Solve adjoint sensitivity equation
-    Teuchos::RCP<Vector<Real> > p = (this->adjoint_)->clone();
-    this->solve_adjoint_sensitivity(*p,*s,v,x,tol);
-    // Build hessVec
-    (this->con_)->applyAdjointJacobian_2(hv,*p,*(this->state_),x,tol);
-    Teuchos::RCP<Vector<Real> > tmp = x.clone();
-    (this->obj_)->hessVec_21(*tmp,*s,*(this->state_),x,tol);
-    hv.plus(*tmp);
-    (this->obj_)->hessVec_22(*tmp,v,*(this->state_),x,tol);
-    hv.plus(*tmp);
-    (this->con_)->applyAdjointHessian_12(*tmp,*(this->adjoint_),*s,*(this->state_),x,tol);
-    hv.plus(*tmp);
-    (this->con_)->applyAdjointHessian_22(*tmp,*(this->adjoint_),v,*(this->state_),x,tol);
-    hv.plus(*tmp);
+    if ( this->useFDhessVec_ ) {
+      Objective<Real>::hessVec(hv,v,x,tol);
+    }
+    else {
+      // Solve state equation
+      this->solve_state_equation(x,tol);
+      // Solve adjoint equation
+      this->solve_adjoint_equation(x,tol);
+      // Solve state sensitivity equation
+      Teuchos::RCP<Vector<Real> > s = (this->state_)->clone();
+      this->solve_state_sensitivity(*s,v,x,tol);
+      // Solve adjoint sensitivity equation
+      Teuchos::RCP<Vector<Real> > p = (this->adjoint_)->clone();
+      this->solve_adjoint_sensitivity(*p,*s,v,x,tol);
+      // Build hessVec
+      (this->con_)->applyAdjointJacobian_2(hv,*p,*(this->state_),x,tol);
+      Teuchos::RCP<Vector<Real> > tmp = x.clone();
+      (this->obj_)->hessVec_21(*tmp,*s,*(this->state_),x,tol);
+      hv.plus(*tmp);
+      (this->obj_)->hessVec_22(*tmp,v,*(this->state_),x,tol);
+      hv.plus(*tmp);
+      (this->con_)->applyAdjointHessian_12(*tmp,*(this->adjoint_),*s,*(this->state_),x,tol);
+      hv.plus(*tmp);
+      (this->con_)->applyAdjointHessian_22(*tmp,*(this->adjoint_),v,*(this->state_),x,tol);
+      hv.plus(*tmp);
+    }
   }
 
   /** \brief Apply a reduced Hessian preconditioner.
