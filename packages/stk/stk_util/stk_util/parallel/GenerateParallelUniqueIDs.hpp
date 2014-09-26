@@ -59,29 +59,31 @@ namespace stk {
   //  order and in content.
   //
   //  Arguments:
-  //  existingIds  : input  : List of ids already in use.  Note, the id list may be unique to a processor 
-  //                          or different processor lists may overlap
-  //  newIds       : output : This routie ultimately runs returns newIds.size() and places those ids in this output vector.
-  //  maxAllowedId : input  : Max id value allowed to be returned.  If a valid set of ids cannot be found
-  //                          below maxAllowedId routine will return a failure code.
+  //  existingIds    : input  : List of ids already in use.  Note, the id list may be unique to a processor 
+  //                            or different processor lists may overlap
+  //  numNewIdsLocal : input  : Number of new ids requested on this processor
+  //  maxAllowedId   : input  : Max id value allowed to be returned.  If a valid set of ids cannot be found
+  //                            below maxAllowedId routine will return a failure code.
   //
-  //  Returns:  Total number of ids created.  Will generally throw if encountering any internal errors.  Note, the error
-  //            throws are NOT guaranteed to be parallel consistent and are usually unrecoverable.
+  //  Returns:  Vector of ids created for the local processor.  Will generally throw if encountering any internal 
+  //            errors.  Note, the error throws are NOT guaranteed to be parallel consistent and are usually unrecoverable.
   //
   //  Assumptions and Usage Guidelines
   //    This algorithm assumes current existingIds are relatively dense packed.  The specific requirement for
   //    success is 'maxAllowedId - global_max(existingIds) > orderArray.size()'
   //
 
-  unsigned generate_parallel_unique_ids(unsigned maxAllowedId,
-                                        const std::vector<unsigned>& existingIds,
-                                        std::vector<unsigned>&  newIds,
-                                        ParallelMachine comm) {
+  std::vector<unsigned> generate_parallel_unique_ids(const unsigned maxAllowedId,
+                                                     const std::vector<unsigned>& existingIds,
+                                                     unsigned numNewIdsLocal,
+                                                     ParallelMachine comm) {
+    std::vector<unsigned> newIds;
+    newIds.reserve(numNewIdsLocal);
     //
     //  Extract global max existing id.  For basic use case just start generating ids starting
     //  at the previous max_id + 1.  
     //
-    unsigned localMaxId   = 0;
+    unsigned localMaxId = 0;
     unsigned globalMaxId;    
     for(unsigned i=0; i<existingIds.size(); ++i) {
       if(existingIds[i] > localMaxId) {
@@ -93,19 +95,26 @@ namespace stk {
     mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, MPI_UNSIGNED, MPI_MAX, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
-      return 0;
+      return newIds;
     }
     //
     //  Compute the total number of ids requested
     //
-    unsigned numNewIDsLocal = newIds.size();
     unsigned globalNumIdsRequested;
-    mpiResult = MPI_Allreduce(&numNewIDsLocal, &globalNumIdsRequested, 1, MPI_UNSIGNED, MPI_SUM, comm);
+    mpiResult = MPI_Allreduce(&numNewIdsLocal, &globalNumIdsRequested, 1, MPI_UNSIGNED, MPI_SUM, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
-      return 0;
+      return newIds;
     }
-    if(globalNumIdsRequested == 0) return 0;
+    if(globalNumIdsRequested == 0) {
+      return newIds;
+    }
+
+
+    unsigned myFirstNewId;
+    mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, MPI_UNSIGNED, MPI_SUM, comm);
+
+
     //
     //  Check if sufficent extra ids exist to run this algorithm
     //    NKC, for now fail if not, later maybe switch to a more robust but more
@@ -120,19 +129,17 @@ namespace stk {
       msg << "  Max allowed id:       "<<maxAllowedId<<"\n";
       msg << "  Number ids requested: "<<globalNumIdsRequested<<"\n";
       throw std::runtime_error(msg.str());
-      return 0;
+      return newIds;
     }
     //
     //  Create new ids starting at 'globalMaxId+1' and ending at 'globalMaxId+globalNumIdsRequested'
     //  Compute the starting offset for ids in each processor.
     //
-    unsigned myFirstNewId;
-    mpiResult = MPI_Scan(&numNewIDsLocal, &myFirstNewId, 1, MPI_UNSIGNED, MPI_SUM, comm);
-    myFirstNewId = (myFirstNewId - numNewIDsLocal) + globalMaxId + 1;
-    for(unsigned i=0; i<numNewIDsLocal; ++i) {
-      newIds[i] = myFirstNewId+i;
+    myFirstNewId = (myFirstNewId - numNewIdsLocal) + globalMaxId + 1;
+    for(unsigned i=0; i<numNewIdsLocal; ++i) {
+      newIds.push_back(myFirstNewId+i);
     }
-    return globalNumIdsRequested;
+    return newIds;
   }
 
 }

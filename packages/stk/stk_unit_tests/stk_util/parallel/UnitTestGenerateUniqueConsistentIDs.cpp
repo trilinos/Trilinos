@@ -84,27 +84,30 @@ TEST(UnitTestParallel, testGenerateParallelUniqueIDs) {
   //
   unsigned maxAllowableId = ~0U;
 
-  std::vector<unsigned> newIds1;
   {
+    std::vector<unsigned> newIds;
     std::vector<unsigned> existingIds(1000);
     unsigned firstId = mpi_rank*1000;
 
     for(unsigned i=0; i<1000; ++i) {
       unsigned currentElemId = firstId+i;
       existingIds[i] = currentElemId;
-      if(i%100 == 0) {
-        newIds1.push_back(0);
-      }
     }
-    int returnCount = stk::generate_parallel_unique_ids(maxAllowableId, existingIds, newIds1, MPI_COMM_WORLD);
-    EXPECT_EQ(returnCount, mpi_size*10);
-    VerifyUniqueIds(maxAllowableId, existingIds, newIds1, MPI_COMM_WORLD);
+    newIds = stk::generate_parallel_unique_ids(maxAllowableId, existingIds, 10, MPI_COMM_WORLD);
+
+    unsigned localSize = newIds.size();
+    unsigned globalSize;
+    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(globalSize, (unsigned)mpi_size*10);
+ 
+    VerifyUniqueIds(maxAllowableId, existingIds, newIds, MPI_COMM_WORLD);
   }
   //
   //  Test 2, same total source data as case 1, but source data scattered among processors
   //
-  std::vector<unsigned> newIds2;
   {
+    int numRequest=0;
+    std::vector<unsigned> newIds;
     std::vector<unsigned> existingIds;
     unsigned destProc = mpi_size/2;    
     for(int i=0; i<1000*mpi_size; ++i) {
@@ -115,12 +118,17 @@ TEST(UnitTestParallel, testGenerateParallelUniqueIDs) {
       if(destProc == (unsigned)mpi_rank) {
         existingIds.push_back(i);
         if(i%100 == 0) {
-          newIds2.push_back(0);
+          numRequest++;
         }
       }
     }
-    int returnCount = stk::generate_parallel_unique_ids(maxAllowableId, existingIds, newIds2, MPI_COMM_WORLD);
-    EXPECT_EQ(returnCount, mpi_size*10);
-    VerifyUniqueIds(maxAllowableId, existingIds, newIds2, MPI_COMM_WORLD);
+    newIds = stk::generate_parallel_unique_ids(maxAllowableId, existingIds, numRequest, MPI_COMM_WORLD);
+
+    unsigned localSize = newIds.size();
+    unsigned globalSize;
+    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(globalSize, (unsigned)mpi_size*10);
+
+    VerifyUniqueIds(maxAllowableId, existingIds, newIds, MPI_COMM_WORLD);
   }
 }
