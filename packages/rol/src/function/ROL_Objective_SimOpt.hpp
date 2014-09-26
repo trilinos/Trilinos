@@ -87,10 +87,42 @@ public:
 
   /** \brief Compute gradient with respect to first component.
   */
-  virtual void gradient_1( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+  virtual void gradient_1( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
+    Real ftol  = std::sqrt(ROL_EPSILON);
+    Real h     = 0.0;
+    this->update(u,z);
+    Real v     = this->value(u,z,ftol);
+    Real deriv = 0.0;
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    g.zero();
+    for (int i = 0; i < g.dimension(); i++) {
+      h = u.dot(*u.basis(i))*tol;
+      unew->set(u);
+      unew->axpy(h,*(u.basis(i)));
+      this->update(*unew,z);
+      deriv = (this->value(*unew,z,ftol) - v)/h;
+      g.axpy(deriv,*(u.basis(i)));
+    }
+  }
   /** \brief Compute gradient with respect to second component.
   */
-  virtual void gradient_2( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+  virtual void gradient_2( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
+    Real ftol  = std::sqrt(ROL_EPSILON);
+    Real h     = 0.0;
+    this->update(u,z);
+    Real v     = this->value(u,z,ftol);
+    Real deriv = 0.0;
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    g.zero();
+    for (int i = 0; i < g.dimension(); i++) {
+      h = z.dot(*z.basis(i))*tol;
+      znew->set(z);
+      znew->axpy(h,*(z.basis(i)));
+      this->update(u,*znew);
+      deriv = (this->value(u,*znew,ftol) - v)/h;
+      g.axpy(deriv,*(z.basis(i)));
+    }
+  }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     ROL::Vector_SimOpt<Real> &gs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
@@ -109,13 +141,88 @@ public:
   /** \brief Apply Hessian approximation to vector.
   */
   virtual void hessVec_11( Vector<Real> &hv, const Vector<Real> &v, 
-                           const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+                     const Vector<Real> &u,  const Vector<Real> &z, Real &tol ) {
+    Real gtol = std::sqrt(ROL_EPSILON);
+    // Compute step length
+    Real h    = std::max(1.0,u.norm()/v.norm())*tol;
+    // Evaluate gradient of first component at (u,z)
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_1(*g,u,z,gtol);
+    // Evaluate gradient of first component at (u+hv,z)
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    unew->set(u);
+    unew->axpy(h,v);
+    this->update(*unew,z);
+    hv.zero();
+    this->gradient_1(hv,*unew,z,gtol);
+    // Compute Newton quotient
+    hv.axpy(-1.0,*g);
+    hv.scale(1.0/h);
+  }
+
   virtual void hessVec_12( Vector<Real> &hv, const Vector<Real> &v, 
-                           const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+                           const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
+    Real gtol = std::sqrt(ROL_EPSILON);
+    // Compute step length
+    Real h    = std::max(1.0,z.norm()/v.norm())*tol;
+    // Evaluate gradient of first component at (u,z)
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_1(*g,u,z,gtol);
+    // Evaluate gradient of first component at (u,z+hv)
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    znew->set(z);
+    znew->axpy(h,v);
+    this->update(u,*znew);
+    hv.zero();
+    this->gradient_1(hv,u,*znew,gtol);
+    // Compute Newton quotient
+    hv.axpy(-1.0,*g);
+    hv.scale(1.0/h);
+  }
+
   virtual void hessVec_21( Vector<Real> &hv, const Vector<Real> &v, 
-                           const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+                           const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
+    Real gtol = std::sqrt(ROL_EPSILON);
+    // Compute step length
+    Real h    = std::max(1.0,u.norm()/v.norm())*tol;
+    // Evaluate gradient of first component at (u,z)
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_2(*g,u,z,gtol);
+    // Evaluate gradient of first component at (u+hv,z)
+    Teuchos::RCP<Vector<Real> > unew = u.clone();
+    unew->set(u);
+    unew->axpy(h,v);
+    this->update(*unew,z);
+    hv.zero();
+    this->gradient_2(hv,*unew,z,gtol);
+    // Compute Newton quotient
+    hv.axpy(-1.0,*g);
+    hv.scale(1.0/h);
+  }
+
   virtual void hessVec_22( Vector<Real> &hv, const Vector<Real> &v, 
-                           const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+                     const Vector<Real> &u,  const Vector<Real> &z, Real &tol ) {
+    Real gtol = std::sqrt(ROL_EPSILON);
+    // Compute step length
+    Real h    = std::max(1.0,z.norm()/v.norm())*tol;
+    // Evaluate gradient of first component at (u,z)
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_2(*g,u,z,gtol);
+    // Evaluate gradient of first component at (u,z+hv)
+    Teuchos::RCP<Vector<Real> > znew = z.clone();
+    znew->set(z);
+    znew->axpy(h,v);
+    this->update(u,*znew);
+    hv.zero();
+    this->gradient_2(hv,u,*znew,gtol);
+    // Compute Newton quotient
+    hv.axpy(-1.0,*g);
+    hv.scale(1.0/h);
+  }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     ROL::Vector_SimOpt<Real> &hvs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
@@ -138,7 +245,7 @@ public:
     hvs.set_2(*h22);
   }
 
-}; // class Step
+}; // class Objective_SimOpt
 
 } // namespace ROL
 
