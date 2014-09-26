@@ -195,9 +195,11 @@ bool FiniteElementProblem::evaluate(FillType f,
     rhs = tmp_rhs;
   } else if (flag == MATRIX_ONLY) {
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
+    assert(A != NULL);
   } else if (flag == ALL) {
     rhs = tmp_rhs;
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
+    assert(A != NULL);
   } else {
     std::cout << "ERROR: FiniteElementProblem::fillMatrix() - FillType flag is broken" << std::endl;
     throw;
