@@ -83,11 +83,11 @@ namespace stk {
 
 
   template <typename OrderType> 
-  unsigned generate_parallel_consistent_ids(unsigned maxAllowedId,
+  unsigned generate_parallel_consistent_ids(const unsigned maxAllowedId,
                                             const std::vector<unsigned>& existingIds,
-                                            std::vector<OrderType>& localOrderArray,
+                                            const std::vector<OrderType>& localOrderArray,
                                             std::vector<unsigned>&  newIds,
-                                            ParallelMachine comm) {
+                                            const ParallelMachine comm) {
     //
     //  Check function restrictions
     //
