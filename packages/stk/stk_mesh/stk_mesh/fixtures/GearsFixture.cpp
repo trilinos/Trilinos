@@ -275,10 +275,7 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
   }
 
   // Parallel collective call:
-  bulk_data.modification_begin();
   bulk_data.change_entity_owner(elements_to_change_owner);
-  // Parallel collective call:
-  bulk_data.modification_end();
 
   // Print out how many ended up on each processor:
   //{

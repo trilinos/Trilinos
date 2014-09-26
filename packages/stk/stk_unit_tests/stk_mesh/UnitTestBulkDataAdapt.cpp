@@ -191,8 +191,6 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   Entity node1 = Entity();
 
   // change node owners
-  mesh.modification_begin();
-
   std::vector<EntityProc> change;
 
   for (unsigned inode=0; inode < nnodes; inode++)
@@ -207,8 +205,6 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
     }
 
   mesh.change_entity_owner( change );
-
-  mesh.modification_end();
 
   checkBuckets(mesh);
 

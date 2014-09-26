@@ -1228,8 +1228,6 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
 
   // change node owners
   {
-    mesh.modification_begin();
-
     std::vector<EntityProc> change;
 
     for (unsigned inode=0; inode < nnodes; inode++) {
@@ -1242,8 +1240,6 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
     }
 
     mesh.change_entity_owner( change );
-
-    mesh.modification_end();
   }
 
   // The real test is here

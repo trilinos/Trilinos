@@ -90,9 +90,7 @@ class UnitTestStkMeshBulkModification {
     m_ring_mesh.generate_mesh( );
     ThrowRequire(bulk_data.modification_end());
 
-    bulk_data.modification_begin();
     m_ring_mesh.fixup_node_ownership( );
-    ThrowRequire(bulk_data.modification_end());
 
     return bulk_data;
   }

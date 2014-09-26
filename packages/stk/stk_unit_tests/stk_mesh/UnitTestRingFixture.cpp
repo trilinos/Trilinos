@@ -138,10 +138,7 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
   // Test no-op first:
 
   std::vector<EntityProc> change ;
-
-  ASSERT_TRUE( bulk.modification_begin() );
   bulk.change_entity_owner( change );
-  ASSERT_TRUE( bulk.modification_end());
 
   stk::mesh::count_entities( select_used , bulk , local_count );
   ASSERT_EQ( local_count[stk::topology::NODE_RANK] , nLocalNode );
@@ -151,9 +148,7 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
   ASSERT_EQ( local_count[stk::topology::NODE_RANK] , nLocalNode + n_extra );
   ASSERT_EQ( local_count[stk::topology::ELEMENT_RANK] , nLocalElement + n_extra );
 
-  bulk.modification_begin();
   fixture.fixup_node_ownership();
-  ASSERT_TRUE(bulk.modification_end());
 
   // Make sure that element->owner_rank() == element->node[1]->owner_rank()
   if ( 1 < p_size ) {
@@ -238,9 +233,7 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   recv_element_1 = Entity();
   recv_element_2 = Entity();
 
-  ASSERT_TRUE( bulk.modification_begin() );
-  bulk.change_entity_owner( change );
-  ASSERT_TRUE( stk::unit_test::modification_end_wrapper( bulk , generate_aura ) );
+  bulk.change_entity_owner( change, generate_aura, BulkData::MOD_END_COMPRESS_AND_SORT );
 
   send_element_1 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send ] );
   send_element_2 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send + 1 ] );

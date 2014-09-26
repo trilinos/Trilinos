@@ -158,9 +158,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
       }
     }
 
-    m_bulk_data.modification_begin();
     m_bulk_data.change_entity_owner( change );
-    m_bulk_data.modification_end();
 
     change.clear();
 
@@ -183,9 +181,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
       }
     }
 
-    m_bulk_data.modification_begin();
     m_bulk_data.change_entity_owner( change );
-    m_bulk_data.modification_end();
 
     if ( p_size == 3 ) {
       change.clear();
@@ -211,9 +207,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
         }
       }
 
-      m_bulk_data.modification_begin();
       m_bulk_data.change_entity_owner( change );
-      m_bulk_data.modification_end();
     }
 
     // Only P1 has any nodes or elements
@@ -318,9 +312,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
       ep.push_back( stk::mesh::EntityProc( bulk_data.get_entity( element_rank, 9 ), 1 ) );
     }
 
-    bulk_data.modification_begin();
     bulk_data.change_entity_owner( ep );
-    bulk_data.modification_end();
 
     bulk_data.modification_begin();
 
@@ -459,9 +451,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
       ep.push_back( stk::mesh::EntityProc( bulk_data.get_entity( element_rank, 6 ), 2 ) );
     }
 
-    bulk_data.modification_begin();
     bulk_data.change_entity_owner( ep );
-    bulk_data.modification_end();
 
     ep.clear();
 
@@ -491,9 +481,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
       ep.push_back( stk::mesh::EntityProc( bulk_data.get_entity( element_rank, 6 ), 0 ) );
     }
 
-    bulk_data.modification_begin();
     bulk_data.change_entity_owner( ep );
-    bulk_data.modification_end();
   }
 
   return true ;
@@ -587,9 +575,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
       ep.push_back( stk::mesh::EntityProc( bulk_data.get_entity( element_rank, 9 ), 1 ) );
     }
 
-    bulk_data.modification_begin();
     bulk_data.change_entity_owner( ep );
-    bulk_data.modification_end();
 
     // output to debug
 
@@ -617,9 +603,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
       ep.push_back( stk::mesh::EntityProc( bulk_data.get_entity( element_rank, 9 ), 0 ) );
     }
 
-    bulk_data.modification_begin();
     bulk_data.change_entity_owner( ep );
-    bulk_data.modification_end();
   }
 
   return true ;

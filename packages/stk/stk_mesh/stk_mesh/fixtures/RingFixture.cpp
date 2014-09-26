@@ -158,7 +158,7 @@ void RingFixture::fill_node_map(int p_rank)
   }
 }
 
-void RingFixture::fixup_node_ownership()
+void RingFixture::fixup_node_ownership(bool regenerate_aura, BulkData::modification_optimization mod_optimize)
 {
   const int p_rank          = m_bulk_data.parallel_rank();
   const int p_size          = m_bulk_data.parallel_size();
@@ -176,7 +176,7 @@ void RingFixture::fixup_node_ownership()
       entry.second = ( p_rank + p_size - 1 ) % p_size ;
       change.push_back( entry );
     }
-    m_bulk_data.change_entity_owner( change );
+    m_bulk_data.change_entity_owner( change, regenerate_aura, mod_optimize );
   }
 }
 

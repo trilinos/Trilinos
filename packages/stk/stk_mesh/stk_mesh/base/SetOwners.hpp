@@ -80,11 +80,7 @@ void set_owners(BulkData& mesh)
     }
   }
 
-  mesh.modification_begin();
-
   mesh.change_entity_owner( entity_new_owners );
-
-  mesh.modification_end();
 }
 
 }//namespace mesh

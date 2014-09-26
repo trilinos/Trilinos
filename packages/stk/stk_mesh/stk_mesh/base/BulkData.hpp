@@ -340,8 +340,7 @@ public:
 
   /** \brief  Give away ownership of entities to other parallel processes.
    *
-   *  A parallel-synchronous operation while the mesh is in the
-   *  ok-to-modify state.
+   *  A parallel-synchronous operation while the mesh is not being modified
    *
    *  Each owning process inputs a list of entities and the
    *  new owning process.  Upon completion of the call the owning
@@ -350,10 +349,15 @@ public:
    *  entities).  If a previous owner no longer needs a
    *  changed-owner entity to support the closure of a still-owned
    *  entity then the changed-owner entity is deleted from that process.
-   *  All ghosts of all entities effected by the changed ownerships
-   *  deleted.
+   *  All ghosts of all entities affected by the changed ownerships
+   *  are deleted.  This must be called outside a mesh modification cycle
+   *  as it is a self-contained atomic modification operation.  This uses
+   *  enough communication that it will be most efficient to batch up all
+   *  desired changes so that it can be called only once.
    */
-  void change_entity_owner( const EntityProcVec & arg_change);
+  void change_entity_owner( const EntityProcVec & arg_change,
+                            bool regenerate_aura = true,
+                            modification_optimization mod_optimization = MOD_END_SORT );
 
   /** \brief  Rotate the field data of multistate fields.
    *
@@ -1403,7 +1407,9 @@ private:
                                    const PartVector & parts );
   bool internal_destroy_entity( Entity entity, bool was_ghost = false );
 
-  void internal_change_entity_owner( const std::vector<EntityProc> & arg_change );
+  void internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
+                                     bool regenerate_aura = true,
+                                     modification_optimization mod_optimization = MOD_END_SORT );
 
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts

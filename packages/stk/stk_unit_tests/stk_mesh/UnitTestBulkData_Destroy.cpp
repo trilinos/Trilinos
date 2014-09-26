@@ -177,10 +177,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk,
                                                            false /*no aura*/));
 
-    bulk.modification_begin();
-    mesh.fixup_node_ownership();
-    ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk,
-                                                           false /*no aura*/));
+    mesh.fixup_node_ownership(false /* regenerate_aura */, BulkData::MOD_END_COMPRESS_AND_SORT);
 
     // This process' first element in the loop
     // if a parallel mesh has a shared node
@@ -236,9 +233,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     mesh.generate_mesh( );
     ASSERT_TRUE( bulk.modification_end() );
 
-    bulk.modification_begin();
     mesh.fixup_node_ownership();
-    ASSERT_TRUE( bulk.modification_end() );
 
     const unsigned nNotOwned = nPerProc * p_rank ;
 
@@ -297,9 +292,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     mesh.generate_mesh( );
     ASSERT_TRUE( bulk.modification_end() );
 
-    bulk.modification_begin();
     mesh.fixup_node_ownership();
-    ASSERT_TRUE( bulk.modification_end() );
 
     // The owned shared entity:
     const unsigned nOwned = ( nPerProc * ( p_rank + 1 ) ) % mesh.m_node_ids.size();

@@ -643,13 +643,11 @@ void testElementMove(int fromProc, int toProc, int myProc, int elementToMoveId, 
     stk::mesh::Entity elementToMove = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToMoveId);
 
     std::vector<std::pair<stk::mesh::Entity, int> > entityProcPairs;
-    stkMeshBulkData.modification_begin();
     if(myProc == fromProc)
     {
         entityProcPairs.push_back(std::make_pair(elementToMove, toProc));
     }
     stkMeshBulkData.change_entity_owner(entityProcPairs);
-    stkMeshBulkData.modification_end();
     //END_DOC_FOR_ELEMENT_MOVE
 }
 

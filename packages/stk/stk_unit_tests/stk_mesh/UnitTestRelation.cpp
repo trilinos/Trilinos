@@ -122,10 +122,8 @@ TEST(UnitTestingOfRelation, testRelationNoGhosting)
   mesh.generate_mesh( );
   ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk,
                                                           aura_flag));
-  ring_bulk.modification_begin();
-  mesh.fixup_node_ownership( );
-  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk,
-                                                          aura_flag));
+
+  mesh.fixup_node_ownership(aura_flag, BulkData::MOD_END_COMPRESS_AND_SORT);
 
   // This process' first element in the loop
   // if a parallel mesh has a shared node
@@ -165,9 +163,7 @@ TEST(UnitTestingOfRelation, testRelationWithGhosting)
     mesh.generate_mesh();
     ASSERT_TRUE(bulk.modification_end());
 
-    bulk.modification_begin();
     mesh.fixup_node_ownership();
-    ASSERT_TRUE(bulk.modification_end());
 
     const unsigned nNotOwned = nPerProc * p_rank ;
 

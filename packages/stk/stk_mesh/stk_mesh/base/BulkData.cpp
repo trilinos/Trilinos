@@ -3739,18 +3739,25 @@ void generate_parallel_change( const BulkData & mesh ,
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
+void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change,
+                                    bool regenerate_aura,
+                                    modification_optimization mod_optimization )
 {
     INCREMENT_MODIFICATION_COUNTER(PUBLIC, CHANGE_ENTITY_OWNER);
-    internal_change_entity_owner(arg_change);
+    internal_change_entity_owner(arg_change, regenerate_aura, mod_optimization);
 }
 
-void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg_change )
+void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
+                                             bool regenerate_aura,
+                                             modification_optimization mod_optimization )
 {
-    INCREMENT_MODIFICATION_COUNTER(INTERNAL, CHANGE_ENTITY_OWNER);
+  INCREMENT_MODIFICATION_COUNTER(INTERNAL, CHANGE_ENTITY_OWNER);
 
   Trace_("stk::mesh::BulkData::change_entity_owner");
   DiagIf(LOG_ENTITY, "arg_change: " << arg_change);
+
+  const bool modStatus = modification_begin("change_entity_owner");
+  ThrowRequireMsg(modStatus, "BulkData::change_entity_owner() must not be called from within a modification cycle.");
 
   require_ok_to_modify();
 
@@ -3974,6 +3981,8 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 
     send_closure.clear(); // Has been invalidated
   }
+
+  internal_modification_end(regenerate_aura, mod_optimization);
 }
 
 //----------------------------------------------------------------------

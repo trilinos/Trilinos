@@ -162,9 +162,7 @@ void donate_one_element( BulkData & mesh , bool aura )
     }
   }
 
-  ASSERT_TRUE( mesh.modification_begin() );
-  mesh.change_entity_owner( change );
-  ASSERT_TRUE( stk::unit_test::modification_end_wrapper( mesh , aura ) );
+  mesh.change_entity_owner( change, aura, BulkData::MOD_END_COMPRESS_AND_SORT );
 
   count_entities( select_owned , mesh , after_count );
 
@@ -206,9 +204,7 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
     }
   }
 
-  ASSERT_TRUE( mesh.modification_begin() );
-  mesh.change_entity_owner( change );
-  ASSERT_TRUE( stk::unit_test::modification_end_wrapper( mesh , aura ) );
+  mesh.change_entity_owner( change, aura, BulkData::MOD_END_COMPRESS_AND_SORT );
 
   count_entities( select_used , mesh , after_count );
 
@@ -276,9 +272,7 @@ TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
 
   std::vector<EntityProc> change ;
 
-  ASSERT_TRUE( bulk.modification_begin() );
   bulk.change_entity_owner( change );
-  ASSERT_TRUE( bulk.modification_end() );
 
   for ( unsigned i = 0 ; i < id_total ; ++i ) {
     Entity e = bulk.get_entity( stk::topology::NODE_RANK , ids[ i ] );
@@ -311,9 +305,7 @@ TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
     change[1].first = bulk.get_entity( stk::topology::NODE_RANK , ids[id_give+1] );
     change[1].second = p_give ;
 
-    ASSERT_TRUE( bulk.modification_begin() );
     bulk.change_entity_owner( change );
-    ASSERT_TRUE( bulk.modification_end() );
 
     ASSERT_TRUE( bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get] )) );
     ASSERT_TRUE( bulk.is_valid(bulk.get_entity( stk::topology::NODE_RANK , ids[id_get+1] )) );
@@ -525,9 +517,7 @@ TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     ring_mesh.generate_mesh( );
     ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk, aura));
 
-    bulk.modification_begin();
-    ring_mesh.fixup_node_ownership( );
-    ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk, aura));
+    ring_mesh.fixup_node_ownership(aura, BulkData::MOD_END_COMPRESS_AND_SORT);
 
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
                                  ring_mesh.m_meta_data.globally_shared_part() ;
@@ -567,9 +557,7 @@ TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     ring_mesh.generate_mesh( );
     ASSERT_TRUE(bulk.modification_end());
 
-    bulk.modification_begin();
     ring_mesh.fixup_node_ownership( );
-    ASSERT_TRUE(bulk.modification_end());
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
@@ -613,9 +601,7 @@ TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     ring_mesh.generate_mesh( );
     ASSERT_TRUE(bulk.modification_end());
 
-    bulk.modification_begin();
     ring_mesh.fixup_node_ownership( );
-    ASSERT_TRUE(bulk.modification_end());
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
@@ -659,9 +645,7 @@ TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     ring_mesh.generate_mesh( );
     ASSERT_TRUE(bulk.modification_end());
 
-    bulk.modification_begin();
     ring_mesh.fixup_node_ownership( );
-    ASSERT_TRUE(bulk.modification_end());
 
     std::vector<EntityProc> change ;
 
@@ -687,8 +671,6 @@ TEST(UnitTestingOfBulkData, testChangeOwner_ring)
       change[3].second = ( p_rank + 2 ) % p_size ;
     }
 
-    ASSERT_TRUE( ring_mesh.m_bulk_data.modification_begin() );
-
     ASSERT_THROW( ring_mesh.m_bulk_data.change_entity_owner( change ),
                           std::runtime_error );
   }
@@ -704,9 +686,7 @@ TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     ring_mesh.generate_mesh( );
     ASSERT_TRUE(bulk.modification_end());
 
-    bulk.modification_begin();
     ring_mesh.fixup_node_ownership( );
-    ASSERT_TRUE(bulk.modification_end());
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
@@ -723,9 +703,7 @@ TEST(UnitTestingOfBulkData, testChangeOwner_ring)
       change.push_back( entry );
     }
 
-    ASSERT_TRUE( ring_mesh.m_bulk_data.modification_begin() );
-    ring_mesh.m_bulk_data.change_entity_owner( change );
-    ASSERT_TRUE( stk::unit_test::modification_end_wrapper( ring_mesh.m_bulk_data , false ) );
+    ring_mesh.m_bulk_data.change_entity_owner( change, false /* regenerate_aura */, BulkData::MOD_END_COMPRESS_AND_SORT );
 
     count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
     const unsigned n_node = p_rank == 0          ? nPerProc + 1 : (
@@ -874,9 +852,7 @@ TEST(UnitTestingOfBulkData, testModifyPropagation)
   ring_mesh.generate_mesh( );
   ASSERT_TRUE(bulk.modification_end());
 
-  bulk.modification_begin();
   ring_mesh.fixup_node_ownership( );
-  ASSERT_TRUE(bulk.modification_end());
 
   // grab the first element
   EntityVector elements;
@@ -965,8 +941,6 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
 
   mesh.modification_end();
 
-  mesh.modification_begin();
-
   std::vector<EntityProc> change ;
   if (p_rank < 2) {
     // Change ownership of some nodes to the same proc that owns them
@@ -994,8 +968,6 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
   }
 
   mesh.change_entity_owner(change);
-
-  mesh.modification_end();
 }
 
 TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
@@ -1152,7 +1124,6 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     }
   }
 
-  mesh.modification_begin();
 
   std::vector<EntityProc> change ;
   if (p_rank >= p_size - 2) {
@@ -1182,7 +1153,6 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     }
   }
 
-  mesh.change_entity_owner(change);
   // What state are we in now?
   if (p_rank == p_size-1) {
       EXPECT_TRUE( mesh.in_shared(node_A_key_chg_own, p_rank-1) );
@@ -1210,53 +1180,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
       EXPECT_FALSE( mesh.in_shared(edge_key_chg_own, p_size-1) );
   }
 
-  // mark node sharing
-  if (p_rank == p_size-1) {
-      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_A_key_chg_own)) );
-      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_B_key_chg_own)) );
-//      mesh.add_node_sharing_exp(mesh.get_entity(node_A_key_chg_own), 0);
-//      mesh.add_node_sharing_exp(mesh.get_entity(node_B_key_chg_own), 0);
-//      mesh.remove_node_sharing_exp(node_A_key_chg_own,p_rank-1);
-//      mesh.remove_node_sharing_exp(node_B_key_chg_own,p_rank-1);
-  }
-  else if (p_rank == p_size-2) {
-      EXPECT_FALSE( mesh.is_valid(mesh.get_entity(node_A_key_chg_own)) );
-      EXPECT_FALSE( mesh.is_valid(mesh.get_entity(node_B_key_chg_own)) );
-      EXPECT_FALSE( mesh.is_valid(mesh.get_entity(node_C_key)) );
-      EXPECT_FALSE( mesh.is_valid(mesh.get_entity(node_D_key)) );
-//      mesh.remove_node_sharing_exp(node_A_key_chg_own,p_rank+1);
-//      mesh.remove_node_sharing_exp(node_B_key_chg_own,p_rank+1);
-//      mesh.remove_node_sharing_exp(node_C_key,p_rank-1);
-//      mesh.remove_node_sharing_exp(node_D_key,p_rank-1);
-  }
-  else if ( (p_rank == p_size-3) && (p_size > 3) ) {
-      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_C_key)) );
-      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_D_key)) );
-//      mesh.add_node_sharing_exp(mesh.get_entity(node_C_key),0);
-//      mesh.add_node_sharing_exp(mesh.get_entity(node_D_key),0);
-//      mesh.remove_node_sharing_exp(node_C_key,p_rank+1);
-//      mesh.remove_node_sharing_exp(node_D_key,p_rank+1);
-  }
-  else if (p_rank == 0) {
-      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_A_key_chg_own)) );
-      EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_B_key_chg_own)) );
-//      mesh.add_node_sharing_exp(mesh.get_entity(node_A_key_chg_own), p_size-1);
-//      mesh.add_node_sharing_exp(mesh.get_entity(node_B_key_chg_own), p_size-1);
-      if (p_size>3) {
-          EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_C_key)) );
-          EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_D_key)) );
-//          mesh.add_node_sharing_exp(mesh.get_entity(node_C_key), p_size-3);
-//          mesh.add_node_sharing_exp(mesh.get_entity(node_D_key), p_size-3);
-      }
-      else {
-          EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_C_key)) );
-          EXPECT_TRUE( mesh.is_valid(mesh.get_entity(node_D_key)) );
-//          mesh.remove_node_sharing_exp(node_C_key, p_rank+1);
-//          mesh.remove_node_sharing_exp(node_D_key, p_rank+1);
-      }
-  }
-
-  mesh.modification_end();
+  mesh.change_entity_owner(change);
 
   Entity changing_elem = mesh.get_entity(elem_key_chg_own);
   Entity changing_edge = mesh.get_entity(edge_key_chg_own);
@@ -2248,9 +2172,7 @@ TEST(DocTestBulkData, ChangeSharedOwner)
           EXPECT_EQ( 0, num_locally_owned_and_shared_nodes );
       }
   }
-  stkMeshBulkData.modification_begin();
   stkMeshBulkData.change_entity_owner(vec);
-  stkMeshBulkData.modification_end();
 
   {
       const stk::mesh::BucketVector& locally_owned_and_globally_shared_buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, locally_owned_and_globally_shared_selector);
@@ -3000,7 +2922,6 @@ TEST(BulkData, verify_closure_count_is_correct)
             EXPECT_EQ( 2u, stkMeshBulkData->closure_count(stkMeshBulkData->get_entity(node_12_key)) );
         }
 
-        stkMeshBulkData->modification_begin();
         std::vector<EntityProc> change_owner_vector;
         if (myRank == 1)
         {
@@ -3013,7 +2934,6 @@ TEST(BulkData, verify_closure_count_is_correct)
             }
         }
         stkMeshBulkData->change_entity_owner(change_owner_vector);
-        stkMeshBulkData->modification_end();
 
         if (myRank == 0)
         {
