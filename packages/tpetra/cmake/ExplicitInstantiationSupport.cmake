@@ -1,4 +1,32 @@
-include(Join)
+# The file that is produced by this module
+SET(Tpetra_ETI_FILE Tpetra_ETIHelperMacros.h)
+SET(Tpetra_ETI_FILE_PATH ${Tpetra_BINARY_DIR}/src/${Tpetra_ETI_FILE})
+
+
+#
+# A) See if a static pre-created file is provide and us it if it is
+#
+
+ADVANCED_SET(Tpetra_USE_STATIC_ETI_MACROS_HEADER_FILE ""
+  CACHE PATH
+  "If set, gives the path to a static version of the file ${Tpetra_ETI_FILE}.  If not set (default '') then the file is generated automatically (and at great cost)"
+  )
+
+IF(Tpetra_USE_STATIC_ETI_MACROS_HEADER_FILE)
+  MESSAGE("-- NOTE: Skipping generation and using provided static file"
+     " '${Tpetra_USE_STATIC_ETI_MACROS_HEADER_FILE}'")
+  CONFIGURE_FILE(
+    ${Tpetra_USE_STATIC_ETI_MACROS_HEADER_FILE}
+    ${Tpetra_ETI_FILE_PATH}
+    COPYONY
+    )
+  RETURN()
+ENDIF()
+
+
+#
+# B) We must generate the file anew :-(
+#
 
 # Tpetra ETI type fields
 SET(Tpetra_ETI_FIELDS "SIN|SOUT|S|LO|GO|N|CS|DS")
@@ -126,4 +154,7 @@ TRIBITS_ETI_GENERATE_MACROS(
 
 TRIBITS_ETI_GENERATE_TYPEDEF_MACRO(TPETRA_ETI_TYPEDEFS "TPETRA_ETI_MANGLING_TYPEDEFS" "${eti_typedefs}")
 
-CONFIGURE_FILE(${Tpetra_SOURCE_DIR}/cmake/Tpetra_ETIHelperMacros.h.in ${Tpetra_BINARY_DIR}/src/Tpetra_ETIHelperMacros.h)
+CONFIGURE_FILE(
+  ${Tpetra_SOURCE_DIR}/cmake/Tpetra_ETIHelperMacros.h.in
+  ${Tpetra_ETI_FILE_PATH}
+  )
