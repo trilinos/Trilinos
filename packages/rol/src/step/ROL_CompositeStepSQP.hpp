@@ -606,7 +606,7 @@ public:
                              // the null space projector is good
     Real zero    =  0.0;
     Real one     =  1.0;
-    Real zerotol =  zero;
+    Real zerotol =  std::sqrt(ROL_EPSILON);
     std::vector<Real> augiters;
     iterCG_ = 1;
     flagCG_ = 0;
@@ -929,7 +929,7 @@ public:
     Real one       =  1.0;
     Real two       =  2.0;
     Real half      =  one/two;
-    Real zerotol   =  zero;
+    Real zerotol   =  std::sqrt(ROL_EPSILON);
     std::vector<Real> augiters;
 
     Real pred          = zero;
