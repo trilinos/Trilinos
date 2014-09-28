@@ -222,7 +222,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
         }
         A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
       }
-      if (A_Base == 0)
+      if (A_Base == NULL)
       {
         if (Amesos_Matrix->Comm().MyPID() == 0)
         {
@@ -232,14 +232,10 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
                << ") : Now re-building with LAPACK" << std::endl;
         }
         A_Base = A_Factory.Create("Amesos_Lapack", *Amesos_LinearProblem);
-        if (A_Base == 0)
-        {
-          if (Amesos_Matrix->Comm().MyPID() == 0)
-          {
-            std::cerr << "*ML*ERR* no Amesos solver is available!" << std::endl;
-          }
-          exit( EXIT_FAILURE );
-        }
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            A_Base == NULL,
+            "*ML*ERR* no Amesos solver is available!"
+            );
       }
     }
 
@@ -253,7 +249,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
     catch(...) {
       if (Amesos_Matrix->Comm().MyPID() == 0)
         printf("\n*** * ML_Amesos_Gen: exception thrown from Amesos_BaseSolver->NumericFactorization(). * ***\n\n");
-      exit( EXIT_FAILURE );
+      throw;
     }
     double Time2 = Time.ElapsedTime();
 
@@ -389,10 +385,10 @@ void ML_Amesos_Destroy(void *data)
   Amesos_LinearProblem = A_Base->GetProblem();
 # ifdef ML_MPI
   const Epetra_MpiComm *comm = dynamic_cast<const Epetra_MpiComm*>(&(Amesos_LinearProblem->GetOperator()->Comm()));
-  if (comm == 0) {
-    printf("ML_Amesos_Destroy: error getting MPI_Comm object\n");
-    exit(EXIT_FAILURE);
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      comm == NULL,
+      "ML_Amesos_Destroy: error getting MPI_Comm object\n"
+      );
   MPI_Comm subcomm = comm->GetMpiComm();
 # endif
 
@@ -422,21 +418,21 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 		  int MaxProcs, Amesos_Handle_Type *Amesos_Handle)
 {
   puts("You must configure with --with-ml_amesos.");
-  exit( EXIT_FAILURE );
-  return EXIT_FAILURE;
+  throw "You must configure with --with-ml_amesos.";
+  return 1;
 }
 
 int ML_Amesos_Solve(void *Amesos_Handle, double x[], double rhs[] )
 {
   puts("You must configure with --with-ml_amesos.");
-  exit( EXIT_FAILURE );
-  return EXIT_FAILURE;
+  throw "You must configure with --with-ml_amesos.";
+  return 1;
 }
 
 void ML_Amesos_Destroy(Amesos_Handle_Type *Amesos_Handle)
 {
   puts("You must configure with --with-ml_amesos.");
-  exit( EXIT_FAILURE );
+  throw "You must configure with --with-ml_amesos.";
 }
 
 

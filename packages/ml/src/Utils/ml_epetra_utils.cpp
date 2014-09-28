@@ -585,10 +585,10 @@ int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
   if (ierr == 0)
     return(0);
 
-  if (N_requested_rows != 1) {
-    std::cerr << "Only N_requested_rows == 1 currently implemented..." << std::endl;
-    exit(EXIT_FAILURE);
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      N_requested_rows != 1,
+      "Only N_requested_rows == 1 currently implemented..."
+      );
 
   switch (Filter_.Type) {
 
@@ -661,9 +661,7 @@ int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
     break;
 
   default:
-
-    std::cerr << "Error, file " << __FILE__ << ", line " << __LINE__ << std::endl;
-    exit(EXIT_FAILURE);
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error.")
   }
 
   if (Filter_.RThresh != 1.00 && Filter_.AThresh != 0.0) {
@@ -1584,11 +1582,10 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
   int *bindx = NULL;
   double *val = NULL;
   int* global_rows = linrowmap->MyGlobalElements();
-  if (Mat1Mat2->getrow->Nrows != Mat1_epet->RowMap().NumMyElements())
-  {
-    std::cout << "Rowmap of ML_Operator and Epetra_CrsMatrix are different!\n";
-    exit(-1);
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      Mat1Mat2->getrow->Nrows != Mat1_epet->RowMap().NumMyElements(),
+      "Rowmap of ML_Operator and Epetra_CrsMatrix are different!\n"
+      );
   for (int i=0; i<Mat1Mat2->getrow->Nrows; ++i)
   {
     // get the row
@@ -3673,16 +3670,11 @@ void ML_CreateSublists(const ParameterList &List, ParameterList &newList)
             int matched = sscanf(pname.c_str(),"%s %[^(](level %d)", ctype.getRawPtr(), coption.getRawPtr(), &levelID); // use [^(] instead of %s to allow for strings with white-spaces (ex: "ifpack list")
             type = std::string(ctype.getRawPtr());
             option = std::string(coption.getRawPtr()); option.resize(option.size () - 1); // remove final white-space
-
-            if (matched != 3 || (type != "smoother:" && type != "aggregation:")) {
-              std::cout << "ML_CreateSublist(), Line " << __LINE__ << ". "
-                        << "Error in creating level-specific sublists" << std::endl
-                        << "Offending parameter: " << pname << std::endl;
-#          ifdef ML_MPI
-              MPI_Finalize();
-#          endif
-              exit(EXIT_FAILURE);
-            }
+            TEUCHOS_TEST_FOR_EXCEPT_MSG(
+                matched != 3 || (type != "smoother:" && type != "aggregation:"),
+                "ML_CreateSublist(), Line " << __LINE__ << ". "                << "Error in creating level-specific sublists\n"
+                << "Offending parameter: " << pname << "\n"
+                );
           }
 
           // Create/grab the corresponding sublist of newList
