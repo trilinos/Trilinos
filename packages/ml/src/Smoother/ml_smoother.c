@@ -2553,9 +2553,8 @@ int ML_Smoother_VBlockSGS(ML_Smoother *sm, int inlen, double x[],
    }
    ML_free( vals );
    ML_free( cols );
-   if ( Nblocks > 0 ) ML_free( aggr_offset );
-   if ( Nrows > 0 ) ML_free( aggr_group );
-
+   if ( aggr_offset != NULL ) ML_free( aggr_offset );
+   if ( aggr_group != NULL ) ML_free( aggr_group );
    return 0;
 }
 
@@ -2786,8 +2785,8 @@ int ML_Smoother_VBlockSGSSequential(ML_Smoother *sm, int inlen, double x[],
    }
    ML_free( vals );
    ML_free( cols );
-   if ( Nblocks > 0 ) ML_free( aggr_offset );
-   if ( Nrows > 0 ) ML_free( aggr_group );
+   if ( aggr_offset != NULL ) ML_free( aggr_offset );
+   if ( aggr_group != NULL ) ML_free( aggr_group );
 
    return 0;
 }

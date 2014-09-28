@@ -3004,8 +3004,10 @@ bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
         else ok = 0;
      }
      comm.Broadcast(&ok,1,activeproc);
-     if (!ok)
+     if (!ok) {
+        fclose(fp);
         return false;
+     }
      if (activeproc==proc)
      {
         for (int i=0; i<numeq_total; i++)
@@ -3167,6 +3169,7 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
         return false;
      }
      comm.Broadcast(&block_counter,1,activeproc);
+     fclose(fp);
   }
 
   if (nblocks != block_counter)
@@ -3235,6 +3238,8 @@ bool Epetra_ML_writegidviz(char* filename, int label,
        delete [] gvalues;
        gvalues = NULL;
      }
+     if (fin != NULL)
+       fclose(fin);
      return false;
   }
   bool newresfile=true;
@@ -3292,6 +3297,8 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   if (!ok)
   {
      delete [] gvalues;
+     if (foutr != NULL)
+       fclose(foutr);
      return false;
   }
 
