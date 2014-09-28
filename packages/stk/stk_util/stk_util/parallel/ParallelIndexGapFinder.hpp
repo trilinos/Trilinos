@@ -67,7 +67,6 @@ namespace stk {
 
     assert(rangeEnd >= rangeStart);
 
-
     if(numIdsRequested == 0) {
       return 0;
     }
@@ -107,20 +106,23 @@ namespace stk {
     localSubDivCount[numSubdivision-1] = 0;
     subDivStart     [numSubdivision-1] = subdivisionSize*(numSubdivision-1) + rangeStart;
     subDivEnd       [numSubdivision-1] = rangeEnd;
- 
+
     for(std::vector<unsigned>::iterator i=existingIdStart; i != existingIdEnd; ++i) {
       unsigned curId = (*i);
       if(curId < rangeStart || curId > rangeEnd) {
         continue;
       }      
       unsigned curSubdivision = (curId-rangeStart)/subdivisionSize;
+      if(curSubdivision >= numSubdivision) {
+        curSubdivision = numSubdivision-1;
+      }
       assert(curSubdivision < numSubdivision);
       localSubDivCount[curSubdivision]++;
     }
     //
     //  Get a global consistent sum of the subdomain usage
     //
-    unsigned globalSubDivCount[MAX_SUBDIV+1];
+    unsigned globalSubDivCount[MAX_SUBDIV];
     int mpiResult = MPI_Allreduce(localSubDivCount, globalSubDivCount, numSubdivision, MPI_UNSIGNED, MPI_SUM, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
@@ -132,12 +134,15 @@ namespace stk {
     //  of subdivision fill ammount for potential later use.
     //
 
-    static std::vector<std::pair<unsigned, unsigned> > subFill;
-    subFill.clear();
-    subFill.reserve(numSubdivision);
+    unsigned subFillLength = 0;
+    std::pair<unsigned, unsigned> subFill[MAX_SUBDIV];
+
     unsigned numNeededIds = numIdsRequested;    
     unsigned totalIdsAvailable = 0;
+
+
     for(unsigned idiv = 0; idiv<numSubdivision; ++idiv) {
+
       if(globalSubDivCount[idiv] == 0 && numNeededIds > 0) {
         for(unsigned index=subDivStart[idiv]; index<=subDivEnd[idiv]; ++index) {
           if(numNeededIds == 0) break;
@@ -148,7 +153,8 @@ namespace stk {
         unsigned curRangeSize = (subDivEnd[idiv]-subDivStart[idiv])+1;
         if(curRangeSize > globalSubDivCount[idiv]) {  
           unsigned curNumAvail = curRangeSize-globalSubDivCount[idiv];
-          subFill.push_back(std::pair<unsigned, unsigned>(curNumAvail, idiv));
+          subFill[subFillLength] = std::pair<unsigned, unsigned>(curNumAvail, idiv);
+          subFillLength++;
           totalIdsAvailable += curNumAvail;
         }
       }
@@ -165,39 +171,46 @@ namespace stk {
     //
     //  Sufficent ids not found.  Sort subdivisions to find the most promising chunks and then fill those
     //
-    std::sort(subFill.begin(), subFill.end());
+    std::sort(subFill, subFill+subFillLength);
 
     unsigned densityFactor = totalIdsAvailable/numNeededIds;
 
-    for(unsigned  idiv = 0; idiv<numSubdivision; ++idiv) {
+
+    
+
+    for(unsigned  idiv = subFillLength-1; idiv>=0; --idiv) {
+
       unsigned curDiv        = subFill[idiv].second;
+
       unsigned curRangeStart = subDivStart[curDiv];
       unsigned curRangeEnd   = subDivEnd[curDiv];
-      unsigned curRangeSize  = curRangeEnd-curRangeStart;
+
+      unsigned curRangeSize  = (curRangeEnd-curRangeStart)+1;
       unsigned numFree       = curRangeSize-globalSubDivCount[curDiv];
+
       if(numFree > 0) {
         unsigned maxNumToFill;
         if(densityFactor > 5) {  
           //  Sparse fill.  Fill no more than half of each range
-          maxNumToFill = ceil(double(curRangeSize)/2.0);
+          maxNumToFill = ceil(double(numFree)/2.0);
         } else {
           // Dense fill.  Fill entire range
-          maxNumToFill = curRangeSize;
+          maxNumToFill = numFree;
         }
 
         unsigned numToFill = std::min(maxNumToFill, numNeededIds);
-
         //
         //  Extract the existing id range that overlaps this subdivision
         //
         const std::vector<unsigned>::iterator newExistingStart = std::lower_bound(existingIdStart, existingIdEnd, curRangeStart);
         const std::vector<unsigned>::iterator newExistingEnd   = std::upper_bound(existingIdStart, existingIdEnd, curRangeEnd-1);
-        
+
         int returnCode = ParallelFindFreeIdsInRangeGlobal(comm, curRangeStart, curRangeEnd, numToFill, newExistingStart, newExistingEnd, returnIds);
         if(returnCode != 0) {
           return returnCode;
         }
         numNeededIds -= numToFill;
+
         if(numNeededIds == 0) {
           return 0; //SUCCESS
         }
