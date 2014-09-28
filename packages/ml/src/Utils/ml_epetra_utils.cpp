@@ -3211,7 +3211,10 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   }
   comm.SumAll(send,gvalues,numeq_total);
   delete [] send;
-  if (proc) delete [] gvalues;
+  if (proc) {
+    delete [] gvalues;
+    gvalues = NULL;
+  }
 
   // ---------------------------------------------------open all files
   // copy filename not to modify it
@@ -3228,7 +3231,10 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   comm.Broadcast(&ok,1,0);
   if (!ok)
   {
-     delete [] gvalues;
+     if (gvalues != NULL) {
+       delete [] gvalues;
+       gvalues = NULL;
+     }
      return false;
   }
   bool newresfile=true;
@@ -3323,7 +3329,12 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      if (!(strpbrk(buffer,"#")))
      {
         ok = 0;
-        delete [] x; delete [] y; delete [] z;
+        delete [] x;
+        x = NULL;
+        delete [] y;
+        y = NULL;
+        delete [] z;
+        z = NULL;
         delete [] dof[0]; delete [] dof;
      }
      else ok = 1;
@@ -3366,7 +3377,18 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      if (!(strpbrk(buffer,"#")))
      {
         ok = 0;
-        delete [] x; delete [] y; delete [] z;
+        if (x != NULL) {
+          delete [] x;
+          x = NULL;
+        }
+        if (y != NULL) {
+          delete [] y;
+          y = NULL;
+        }
+        if (z != NULL) {
+          delete [] z;
+          z = NULL;
+        }
         delete [] dof[0]; delete [] dof;
         delete [] top[0]; delete [] top;
      }
