@@ -371,7 +371,6 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildProlongator()
   ML_Operator_Destroy(&TMT_ML);
   ML_Operator_Destroy(&P);
 
-  delete R;
   delete nullspace;
   delete Psparse;
   delete [] idx2;

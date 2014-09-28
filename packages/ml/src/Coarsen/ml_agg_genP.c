@@ -3873,7 +3873,7 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
   struct  ML_CSR_MSRdata *csr_data;
   ML_Operator *Pmatrix;
   double *Pvals;
-  int    *Pptr, *Pcols, NVertLines, Nglobal, Ncglobal;
+  int    *Pptr, *Pcols, Nglobal, Ncglobal;
 
   ML_Aggregate * ag = (ML_Aggregate *) data;
 
@@ -3887,7 +3887,7 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
   Amat->num_PDEs    = ag->num_PDE_eqns;
   widget            = (struct SemiCoarsen_Struct *) ag->field_of_values;
 
-  NVertLines = Amat->invec_leng/(ag->num_PDE_eqns*widget->nz);
+  // int NVertLines = Amat->invec_leng/(ag->num_PDE_eqns*widget->nz);
   Ncoarse = MakeSemiCoarsenP(Amat->invec_leng/ag->num_PDE_eqns, widget->nz,
                    widget->CoarsenRate, widget->LayerId, widget->VertLineId,
                    ag->num_PDE_eqns, Amat, &Pptr, &Pcols, &Pvals);

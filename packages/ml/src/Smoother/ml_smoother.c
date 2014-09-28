@@ -8358,7 +8358,8 @@ void ML_Smoother_DestroySubdomainOverlap(void *data)
 int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
                              double rhs[])
 {
-   int            i, k, iter, one=1, *BlkPtr, *block_indices, *blkOffset;
+   int            i, k, iter, one=1;
+   int            *BlkPtr = NULL, *block_indices, *blkOffset;
    int            Nrows, NBlks;
    int            *RowsInBlk;
    double         omega;
@@ -8460,7 +8461,8 @@ int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
 int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
                           int outlen, double rhs[])
 {
-   int            i, j, k, iter, one=1, *BlkPtr, *block_indices, *blkOffset;
+   int            i, j, k, iter, one=1;
+   int            *BlkPtr = NULL, *block_indices, *blkOffset;
    int            Nrows, NBlks, row;
    int            *RowsInBlk;
    ML_CommInfoOP  *getrow_comm;
