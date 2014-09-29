@@ -13,7 +13,8 @@ ADD_SUBDIRECTORY(adapters)
 ADD_SUBDIRECTORY(src)
 
 # Documentation not available in the public repository.
-IF (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc)
+IF (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc
+    AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/doc/CMakeLists.txt)
   ADD_SUBDIRECTORY(doc)
 ENDIF()
 
