@@ -83,7 +83,7 @@ TRIBITS_ADD_ADVANCED_TEST( RawHelloWorld
       "Built target hello_world_lib"
       "Built target hello_world"
       "Built target unit_tests"
-  TEST_2 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
     PASS_REGULAR_EXPRESSION_ALL
       ": test .*  Passed"
       ": unit_test .*  Passed"
@@ -109,7 +109,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
       "Built target hello_world_lib"
       "Built target hello_world"
       "Built target HelloWorld_unit_tests"
-  TEST_2 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
     PASS_REGULAR_EXPRESSION_ALL
       ": HelloWorld_hello_world .*  Passed"
       ": HelloWorld_unit_tests .*  Passed"
@@ -245,7 +245,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
       "Built target pws_a"
       "Built target pws_b"
       "Built target pws_c"
-  TEST_2 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
     MESSAGE "Run all the tests with raw 'ctest'"
     PASS_REGULAR_EXPRESSION_ALL
       "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
@@ -387,7 +387,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         "Built target pws_a"
         "Built target pws_b"
         "Built target pws_c"
-    TEST_2 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
+    TEST_2 CMND ${CMAKE_CTEST_COMMAND}
       MESSAGE "Run all the tests with raw 'ctest'"
       PASS_REGULAR_EXPRESSION_ALL
         "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
@@ -423,7 +423,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_SimpleCxx_DEBUG_int64
     ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target simplecxx"
-  TEST_2 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
     MESSAGE "Run all the tests with raw 'ctest'"
     PASS_REGULAR_EXPRESSION_ALL
       "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
@@ -468,7 +468,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
   TEST_2 CMND make ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target WrapExternal_run_external_func"
-  TEST_3 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
+  TEST_3 CMND ${CMAKE_CTEST_COMMAND}
     PASS_REGULAR_EXPRESSION_ALL
       "WrapExternal_run_external_func${TEST_MPI_1_SUFFIX} .* Passed"
       "100% tests passed, 0 tests failed out of 1"
@@ -493,39 +493,37 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
       "Generating external_func/libexternal_func.a"
       "Linking CXX executable WrapExternal_run_external_func.exe"
 
-  TEST_8 CMND sleep ARGS 1s 
-     MESSAGE "Sleep for 1 sec for systems were time stamps are only accurate to 1 sec"
-  TEST_9 CMND ${CMAKE_COMMAND}
+  TEST_8 CMND ${CMAKE_COMMAND}
      ARGS  -DSimpleCxx_ENABLE_DEBUG=ON  TribitsExampleProject
      MESSAGE "Recofigure changing the debug mode to trigger rebuild"
     PASS_REGULAR_EXPRESSION_ALL
       "The upstream SE package binary file ./src/SimpleCxx_config.h is more recent than this package's binary file ./WrapExternal_run_external_func.exe"
       "Blowing away WrapExternal build dir external_func/ so it will build from scratch"
-  TEST_10 CMND make ARGS ${CTEST_BUILD_FLAGS}
+  TEST_9 CMND make ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Generating external_func/libexternal_func.a"
       "Linking CXX executable WrapExternal_run_external_func.exe"
 
-  TEST_11 CMND sleep ARGS 1s 
+  TEST_10 CMND sleep ARGS 1s 
      MESSAGE "Sleep for 1 sec for systems were time stamps are only accurate to 1 sec"
-  TEST_12 CMND touch
+  TEST_11 CMND touch
      ARGS TribitsExampleProject/packages/wrap_external/external_func/configure.py
      MESSAGE "Test that changing the external file will trigger rebuild"
-  TEST_13 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
+  TEST_12 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
      MESSAGE "Recofigure with changes external file"
     PASS_REGULAR_EXPRESSION_ALL
       "The this package's source file ./external_func/configure.py is more recent than this package's binary file ./WrapExternal_run_external_func.exe"
       "Blowing away WrapExternal build dir external_func/ so it will build from scratch"
-  TEST_14 CMND make ARGS ${CTEST_BUILD_FLAGS}
+  TEST_13 CMND make ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Generating external_func/libexternal_func.a"
       "Linking CXX executable WrapExternal_run_external_func.exe"
 
-  TEST_15 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
+  TEST_14 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
      MESSAGE "Recofigure with no changes that will not do anything"
     PASS_REGULAR_EXPRESSION_ALL
       "This package's most recent binary file ./WrapExternal_run_external_func.exe is more recent than its upstream SE package source or binary files or this package's source files"
-  TEST_16 CMND make ARGS ${CTEST_BUILD_FLAGS}
+  TEST_15 CMND make ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target build_external_func"
       "Built target WrapExternal_run_external_func"
