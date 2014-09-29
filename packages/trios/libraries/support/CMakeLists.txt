@@ -39,11 +39,6 @@
 #  *************************************************************************
 # @HEADER
 
-INCLUDE(TribitsSubPackageMacros)
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddTest)
-INCLUDE(TribitsAddOptionAndDefine)
 
 TRIBITS_SUBPACKAGE(support)
 

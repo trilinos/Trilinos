@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF(${PACKAGE_NAME}_ENABLE_Galeri)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

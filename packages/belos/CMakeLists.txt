@@ -1,5 +1,3 @@
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
 
 ######################################################################
 ## Define the package

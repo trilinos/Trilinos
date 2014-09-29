@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 SET(ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/")
 

@@ -1,6 +1,3 @@
-INCLUDE(TribitsSubPackageMacros)
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsLibraryMacros)
 INCLUDE(CheckIncludeFile)
 
 TRIBITS_SUBPACKAGE(Nemslice)

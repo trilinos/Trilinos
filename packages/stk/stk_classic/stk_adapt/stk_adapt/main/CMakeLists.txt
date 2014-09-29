@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #SET(HEADERS "")
 #SET(SOURCES "")
@@ -17,7 +16,6 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES( .. )
 

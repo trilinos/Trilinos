@@ -1,4 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
 
 CONFIGURE_FILE(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/exodusII_cfg.h.in

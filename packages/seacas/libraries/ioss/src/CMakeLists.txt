@@ -1,4 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
 INCLUDE(CheckIncludeFile)
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)

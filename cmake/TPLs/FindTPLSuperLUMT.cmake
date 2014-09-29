@@ -53,7 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( SuperLUMT
   REQUIRED_HEADERS supermatrix.h slu_mt_util.h pssp_defs.h pdsp_defs.h pcsp_defs.h pzsp_defs.h

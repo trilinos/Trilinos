@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 ADD_SUBDIRECTORY(function)
 ADD_SUBDIRECTORY(fixtures)

@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF (NOT Xpetra_Epetra_NO_32BIT_GLOBAL_INDICES)
 

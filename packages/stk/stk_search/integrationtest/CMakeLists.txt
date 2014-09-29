@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 #INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
 

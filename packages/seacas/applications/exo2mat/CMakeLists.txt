@@ -1,5 +1,3 @@
-INCLUDE(TribitsSubPackageMacros)
-INCLUDE(TribitsAddExecutable)
 
 IF (TPL_ENABLE_Matio)
 TRIBITS_SUBPACKAGE(Exo2mat)

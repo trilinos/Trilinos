@@ -53,7 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( Peano
   REQUIRED_HEADERS SundanceCellInterface.h SundancePeanoInterface2D.h SundancePeanoInterface3D.h SundanceVertexInterface.h

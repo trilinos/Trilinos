@@ -1,4 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 # Function to generate ETI files from a template and list of class names

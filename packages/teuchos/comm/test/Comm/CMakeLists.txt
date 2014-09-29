@@ -1,6 +1,5 @@
 
 # Required modules
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE(
   DefaultMpiComm_UnitTests

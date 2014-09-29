@@ -2,8 +2,6 @@
 # Tests that check correctness of RCB.
 #
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ## This test calls zdrive functions to read
 ## in the same input data and run some of
