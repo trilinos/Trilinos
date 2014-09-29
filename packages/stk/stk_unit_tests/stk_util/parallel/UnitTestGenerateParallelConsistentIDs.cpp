@@ -174,4 +174,39 @@ TEST(UnitTestParallel, testGenerateParallelConsistentIDs) {
     EXPECT_EQ(idOrderPairsGlobal1[i].first,  idOrderPairsGlobal2[i].first);
     EXPECT_EQ(idOrderPairsGlobal1[i].second, idOrderPairsGlobal2[i].second);
   }
+  //
+  //  Test 4, sparse fill
+  //
+  {
+    std::vector<unsigned> newIds;
+    std::vector<unsigned> existingIds(1000);
+    std::vector<unsigned> localOrderArray;
+
+    unsigned firstId = mpi_rank*1000;
+
+    for(unsigned i=0; i<1000; ++i) {
+      unsigned currentElemId = firstId+i;
+      existingIds[i] = currentElemId;
+    }
+
+    if(mpi_rank == 0) {
+      existingIds.push_back(~0U);
+    }
+
+
+    for(int i=0; i<10; ++i) {
+      localOrderArray.push_back(mpi_rank*10 + i);
+    }
+
+
+    newIds = stk::generate_parallel_consistent_ids(maxAllowableId, existingIds, localOrderArray, MPI_COMM_WORLD);
+  
+
+    unsigned localSize = newIds.size();
+    unsigned globalSize;
+    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(globalSize, (unsigned)mpi_size*10);
+    VerifyConsistentIds(maxAllowableId, existingIds, localOrderArray, newIds, MPI_COMM_WORLD);
+  } 
+
 }
