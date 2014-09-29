@@ -79,7 +79,6 @@ namespace Tpetra {
   , noRedundancies_ (true)
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
-  , haveRowInfo_(true)
   , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
@@ -116,7 +115,6 @@ namespace Tpetra {
   , noRedundancies_(true)
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
-  , haveRowInfo_(true)
   , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
@@ -152,7 +150,6 @@ namespace Tpetra {
   , noRedundancies_(true)
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
-  , haveRowInfo_(true)
   , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
@@ -197,7 +194,6 @@ namespace Tpetra {
   , noRedundancies_(true)
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
-  , haveRowInfo_(true)
   , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
@@ -241,7 +237,6 @@ namespace Tpetra {
   , noRedundancies_(true)
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
-  , haveRowInfo_(true)
   , sortGhostsAssociatedWithEachProcessor_(true)
   {
     staticAssertions();
@@ -4388,16 +4383,13 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   hasRowInfo () const
   {
-#ifdef HAVE_TPETRA_DEBUG
-    bool actuallyHasRowInfo = true;
-    if (indicesAreAllocated() && getProfileType() == StaticProfile && rowPtrs_ == null) {
-      actuallyHasRowInfo = false;
+    if (indicesAreAllocated () &&
+        getProfileType () == StaticProfile &&
+        rowPtrs_.is_null ()) {
+      return false;
+    } else {
+      return true;
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      actuallyHasRowInfo != haveRowInfo_,
-      std::logic_error, "Internal logic error. Please contact Tpetra team.");
-#endif // HAVE_TPETRA_DEBUG
-    return haveRowInfo_;
   }
 
 } // namespace Tpetra
