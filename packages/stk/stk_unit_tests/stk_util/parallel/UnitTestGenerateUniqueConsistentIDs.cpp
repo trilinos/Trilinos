@@ -132,6 +132,39 @@ TEST(UnitTestParallel, testGenerateParallelUniqueIDs) {
     VerifyUniqueIds(maxAllowableId, existingIds, newIds, MPI_COMM_WORLD);
   }
   //
+  //  Test 2.5, same as case one, except all new ids to be created on one processor
+  //
+    {
+    int numRequest=0;
+    std::vector<unsigned> newIds;
+    std::vector<unsigned> existingIds;
+    unsigned destProc = mpi_size/2;    
+    for(int i=0; i<1000*mpi_size; ++i) {
+      destProc += i;
+      if(destProc >= (unsigned)mpi_size) {
+        destProc = destProc%mpi_size;
+      }
+      if(destProc == (unsigned)mpi_rank) {
+        existingIds.push_back(i);
+      }
+    }
+
+    if(mpi_rank == mpi_size/2) {
+      numRequest = mpi_size*10;
+    }
+
+
+    newIds = stk::generate_parallel_unique_ids(maxAllowableId, existingIds, numRequest, MPI_COMM_WORLD);
+
+    unsigned localSize = newIds.size();
+    unsigned globalSize;
+    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(globalSize, (unsigned)mpi_size*10);
+
+    VerifyUniqueIds(maxAllowableId, existingIds, newIds, MPI_COMM_WORLD);
+  }
+
+  //
   //  Test 3, sparse fill
   //
 

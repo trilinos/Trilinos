@@ -607,10 +607,13 @@ TEST(GeneratedIds, multiPerf) {
 
 
     std::vector<unsigned> inUse32a;
+    std::vector<unsigned> inUse32c;
     std::vector<uint64_t> inUse64a;
     std::vector<unsigned> new32a;
+    std::vector<unsigned> new32c;
     std::vector<uint64_t> new64a;
     std::vector<unsigned> inUse32b;
+    std::vector<unsigned> order32c;
     std::vector<uint64_t> inUse64b;
     std::vector<unsigned> new32b;
     std::vector<uint64_t> new64b;
@@ -643,19 +646,42 @@ TEST(GeneratedIds, multiPerf) {
 
         if(targetRank == (unsigned)mpi_rank) {
           inUse32b.push_back(firstIndex + i);
+          inUse32c.push_back(firstIndex + i);
           inUse64b.push_back(firstIndex + i);
         }
       }
       numToFill -= curNumToFill;
       firstIndex = firstIndex + (maxAllowableId32 - firstIndex)/1.8;
     }
+    order32c.resize(numNew);
+    for(unsigned i=0; i<numNew; ++i) {
+      order32c[i] = mpi_rank*numNew + i;
+    }
 
 
     double timeGenerateParallelUniqueA = 0.0;
     double timeGenerateA               = 0.0;
     double timeGenerateParallelUniqueB = 0.0;
+    double timeGenerateParallelUniqueC = 0.0;
     double timeGenerateB               = 0.0;
     double timeDI                      = 0.0;
+    double timeRED                         = 0.0;
+
+    {
+      MPI_Barrier(MPI_COMM_WORLD);
+      double startTime = stk::wall_time();
+
+
+    for(int iter=0; iter<512; ++iter) {
+      unsigned globalSubDivCount[16];
+      unsigned localSubDivCount[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+      int mpiResult = MPI_Scan(localSubDivCount, globalSubDivCount, 16, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+    }
+      MPI_Barrier(MPI_COMM_WORLD);
+      double endTime = stk::wall_time();
+      timeRED += (endTime-startTime);
+
+    } 
 
     for(int iter=0; iter<64; ++iter) {
       MPI_Barrier(MPI_COMM_WORLD);
@@ -680,8 +706,31 @@ TEST(GeneratedIds, multiPerf) {
         inUse32b.push_back(new32b[inew]);
       }
     }
+ 
+    for(int iter=0; iter<64; ++iter) {
+      MPI_Barrier(MPI_COMM_WORLD);
+      double startTime = stk::wall_time();
+      new32c = stk::generate_parallel_consistent_ids(maxAllowableId32, inUse32c, order32c, MPI_COMM_WORLD);
+      MPI_Barrier(MPI_COMM_WORLD);
+      double endTime = stk::wall_time();
+      timeGenerateParallelUniqueC += (endTime-startTime);
+      for(unsigned inew=0; inew<new32c.size(); ++inew) {
+        inUse32c.push_back(new32c[inew]);
+        //order32c.push_back(mpi_size*numNew + iter*mpi_size*);
+      }
+    }
 
-
+    if(mpi_rank == 0) {
+      std::cout<<"CASE 1: TIME 32 A: "<<timeGenerateParallelUniqueA<<std::endl;
+      std::cout<<"CASE 1: TIME 64 A: "<<timeGenerateA<<std::endl;
+      std::cout<<"CASE 1: TIME 32 B: "<<timeGenerateParallelUniqueB<<std::endl;
+      std::cout<<"CASE 1: TIME 32 C: "<<timeGenerateParallelUniqueC<<std::endl;
+      std::cout<<"CASE 1: TIME 64 B: "<<timeGenerateB<<std::endl;
+      std::cout<<"CASE 1: TIME DI: "<<timeDI<<std::endl;
+      std::cout<<"CASE 1: TIME RED: "<<timeRED<<std::endl;
+    }
+ 
+    
     for(int iter=0; iter<64; ++iter) {
       new64a.resize(numNew);
       MPI_Barrier(MPI_COMM_WORLD);
@@ -707,10 +756,20 @@ TEST(GeneratedIds, multiPerf) {
       }
     }
 
+
+    if(mpi_rank == 0) {
+      std::cout<<"CASE 1: TIME 32 A: "<<timeGenerateParallelUniqueA<<std::endl;
+      std::cout<<"CASE 1: TIME 64 A: "<<timeGenerateA<<std::endl;
+      std::cout<<"CASE 1: TIME 32 B: "<<timeGenerateParallelUniqueB<<std::endl;
+      std::cout<<"CASE 1: TIME 64 B: "<<timeGenerateB<<std::endl;
+      std::cout<<"CASE 1: TIME DI: "<<timeDI<<std::endl;
+    }
+    
+
     typedef stk::parallel::DistributedIndex PDIndex;
     PDIndex::KeySpanVector partition_spans;
-    enum { test_spans_count = 10 };
-    enum { test_spans_size  = 10000000 };
+    enum { test_spans_count = 100 };
+    enum { test_spans_size  = 1000000 };
 
     partition_spans.resize( test_spans_count );
 
@@ -747,7 +806,7 @@ TEST(GeneratedIds, multiPerf) {
     di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() );
 
     for(int iter=0; iter<64; ++iter) {
-      const size_t gen_count = 100 ;
+      const size_t gen_count = 10 ;
       for ( size_t i = 0 ; i < requests.size() ; ++i ) {
         if ( i % 2 ) {
           requests[i] = gen_count ;
@@ -777,6 +836,7 @@ TEST(GeneratedIds, multiPerf) {
   }
 #endif 
 }
+
 
 ////////////////////////////////////////////////////////////////////
 
