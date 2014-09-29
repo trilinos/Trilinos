@@ -56,12 +56,12 @@ TEST(UnitTestParallel, testParallelIndexGapFinder) {
   
   {
     std::vector<unsigned> localIdsInUse;
-
+    int numLocalIdsRequested = 0;
     int targetRank = 0;
-
     for(unsigned i=0; i < 500; ++i) {
       if(mpi_rank == targetRank) {
         localIdsInUse.push_back(i);
+        numLocalIdsRequested++;
       }
       targetRank++;
       if(targetRank >= mpi_size) {
@@ -69,29 +69,37 @@ TEST(UnitTestParallel, testParallelIndexGapFinder) {
       }
     }
     std::vector<unsigned> returnIds;
-    int returnCode = stk::parallel_index_gap_finder_global(MPI_COMM_WORLD, 0, 1000, localIdsInUse, 500, returnIds);
+    unsigned myFirstNewId;
+    MPI_Scan(&numLocalIdsRequested, &myFirstNewId, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+    myFirstNewId-=numLocalIdsRequested;
+    int returnCode = stk::parallel_index_gap_finder_global(MPI_COMM_WORLD, 0, 1000, localIdsInUse, 
+                                                           numLocalIdsRequested, 500, myFirstNewId, returnIds);
 
-    std::sort(returnIds.begin(), returnIds.end());
+    std::vector<unsigned> globalReturnIds;
+    stk::parallel_vector_concat(MPI_COMM_WORLD, returnIds, globalReturnIds);
+
+
+    std::sort(globalReturnIds.begin(), globalReturnIds.end());
      
     EXPECT_EQ(returnCode, 0);
 
-    EXPECT_EQ(returnIds.size(), (unsigned)500);
+    EXPECT_EQ(globalReturnIds.size(), (unsigned)500);
 
     
     for(int i=0; i<500; ++i) {
-      EXPECT_EQ(returnIds[i], (unsigned)(500+i));
+      EXPECT_EQ(globalReturnIds[i], (unsigned)(500+i));
     }
-    
   }
+  
   
   //
   //  Test 2, dense filling of initial half full space.
   //     Initially all even ids in use.  Note, this is likely the worst case for performance of this routine, but it should
   //     still return correct results.
   //
-  
   {
     std::vector<unsigned> localIdsInUse;
+    unsigned numLocalIdsRequested = 0;
     int targetRank = 0;
     for(unsigned i=0; i < 1000; ++i) {
       if(i%2 != 0) {
@@ -103,25 +111,38 @@ TEST(UnitTestParallel, testParallelIndexGapFinder) {
       }
       if(mpi_rank == targetRank) {
         localIdsInUse.push_back(i);
+        numLocalIdsRequested++;
       }
       targetRank++;
     }
 
-    std::vector<unsigned> returnIds;
-    int returnCode = stk::parallel_index_gap_finder_global(MPI_COMM_WORLD, 0, 1000, localIdsInUse, 500, returnIds);
     
-    EXPECT_EQ(returnCode, 0);
-    EXPECT_EQ(returnIds.size(), (unsigned)500);
 
-    std::sort(returnIds.begin(), returnIds.end());
+    std::vector<unsigned> returnIds;
+
+
+
+
+    unsigned myFirstNewId;
+    MPI_Scan(&numLocalIdsRequested, &myFirstNewId, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+    myFirstNewId-=numLocalIdsRequested;
+    int returnCode = stk::parallel_index_gap_finder_global(MPI_COMM_WORLD, 0, 1000, localIdsInUse, 
+                                                           numLocalIdsRequested, 500, myFirstNewId, returnIds);
+    std::vector<unsigned> globalReturnIds;
+    stk::parallel_vector_concat(MPI_COMM_WORLD, returnIds, globalReturnIds);
+
+    EXPECT_EQ(returnCode, 0);
+    EXPECT_EQ(globalReturnIds.size(), (unsigned)500);
+    std::sort(globalReturnIds.begin(), globalReturnIds.end());
     for(unsigned i=0; i<500; i++) {
-      EXPECT_EQ(returnIds[i], i*2+1);
+      EXPECT_EQ(globalReturnIds[i], i*2+1);
     }
-    
   }  
+  
+  
   //
   //  Test 3,
-  //  Boundary case, same as 3 but only 1 processor has any initial ids
+  //  Boundary case, same as 3 but only 1 processor has any initial ids, only 1 processor will recieve any ids
   //
   {
     std::vector<unsigned> localIdsInUse;
@@ -135,34 +156,50 @@ TEST(UnitTestParallel, testParallelIndexGapFinder) {
       }
     }
     std::vector<unsigned> returnIds;
-    int returnCode = stk::parallel_index_gap_finder_global(MPI_COMM_WORLD, 0, 1000, localIdsInUse, 500, returnIds);
+ 
+    unsigned numLocalIdsRequested;
+    if(mpi_rank == mpi_size/3) {
+      numLocalIdsRequested = 500;
+    } else {
+      numLocalIdsRequested = 0;
+    }
+
+
+
+    unsigned myFirstNewId;
+    MPI_Scan(&numLocalIdsRequested, &myFirstNewId, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+    myFirstNewId-=numLocalIdsRequested;
+    int returnCode = stk::parallel_index_gap_finder_global(MPI_COMM_WORLD, 0, 1000, localIdsInUse, 
+                                                           numLocalIdsRequested, 500, myFirstNewId, returnIds);
+    std::vector<unsigned> globalReturnIds;
+    stk::parallel_vector_concat(MPI_COMM_WORLD, returnIds, globalReturnIds);
+
+    
+    if(mpi_rank == mpi_size/3) {
+      EXPECT_EQ(returnIds.size(), (unsigned)500);
+    } else {
+      EXPECT_EQ(returnIds.size(), (unsigned)0);
+    }
 
     EXPECT_EQ(returnCode, 0);
-    EXPECT_EQ(returnIds.size(), (unsigned)500);
-
-    std::sort(returnIds.begin(), returnIds.end());
+    EXPECT_EQ(globalReturnIds.size(), (unsigned)500);
+    std::sort(globalReturnIds.begin(), globalReturnIds.end());
     for(unsigned i=0; i<500; i++) {
-      EXPECT_EQ(returnIds[i], i*2+1);
+      EXPECT_EQ(globalReturnIds[i], i*2+1);
     }
   }
   
-
+  
   //
   //  Test 4, 
   //    Sparse filling spread id in a logarithm fashion clumped at zero
   //
-  
   {
     int maxId = 1000000;
     int numId = 1024;
-
     int curStart = 0;
-
     int targetRank = mpi_size/2;
-
     std::vector<unsigned> localIdsInUse;
-
-
     while(numId > 0) {
       numId = numId/2;
       for(int i=0; i<numId; ++i) {
@@ -177,39 +214,53 @@ TEST(UnitTestParallel, testParallelIndexGapFinder) {
       curStart = curStart + (maxId-curStart)/2;
     }
 
+
+    unsigned numLocalIdsRequested=0;
+    for(unsigned i=0; i<10000; ++i) {
+      if(i%mpi_size == (unsigned)mpi_rank) {
+        numLocalIdsRequested++;
+      }
+    }
+
+
     //
     //  Successively fill to 10% capacity
     //
     for(int iter=0; iter<10; ++iter) {
       std::vector<unsigned> returnIds;
-      int returnCode = stk::parallel_index_gap_finder_global(MPI_COMM_WORLD, 0, maxId, localIdsInUse, 10000, returnIds);
+
+
+
+
+      unsigned myFirstNewId;
+      MPI_Scan(&numLocalIdsRequested, &myFirstNewId, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+      myFirstNewId-=numLocalIdsRequested;
+      int returnCode = stk::parallel_index_gap_finder_global(MPI_COMM_WORLD, 0, maxId, localIdsInUse,
+                                                      numLocalIdsRequested, 10000, myFirstNewId, returnIds);
+      std::vector<unsigned> globalReturnIds;
+      stk::parallel_vector_concat(MPI_COMM_WORLD, returnIds, globalReturnIds);
+
+
+
+
 
       EXPECT_EQ(returnCode, 0);
-      EXPECT_EQ(returnIds.size(), (unsigned)10000);
-       
-
+      EXPECT_EQ(globalReturnIds.size(), (unsigned)10000);
       std::vector<unsigned> globalInUse;
-
       stk::parallel_vector_concat(MPI_COMM_WORLD, localIdsInUse, globalInUse);
-
-      globalInUse.insert(globalInUse.end(), returnIds.begin(), returnIds.end());
-       
+      globalInUse.insert(globalInUse.end(), globalReturnIds.begin(), globalReturnIds.end());
       std::sort(globalInUse.begin(), globalInUse.end());
-
       for(unsigned i=0; i<globalInUse.size() -1; ++i) {
         EXPECT_NE(globalInUse[i], globalInUse[i+1]);
       }
-      for(unsigned iret=0; iret<returnIds.size(); ++iret) {
+      for(unsigned iret=0; iret<globalReturnIds.size(); ++iret) {
         if(mpi_rank == targetRank) {
-          localIdsInUse.push_back(returnIds[iret]);
+          localIdsInUse.push_back(globalReturnIds[iret]);
         }
         targetRank++;
       }
-
-
-
     }    
   }  
-
+  
 
 }

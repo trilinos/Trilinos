@@ -37,6 +37,9 @@
 #include <algorithm>
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/environment/WallTime.hpp>
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
+#include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
+#include <stk_util/parallel/DistributedIndex.hpp>
 #include <fstream>
 
 #include <stdint.h>
@@ -640,4 +643,121 @@ void retrieveIds(const INTMPI root, uint64_t id, MPI_Comm comm, uint64_t numIdsT
         MPI_Reduce(&zeroids[0], &areIdsBeingUsed[0], numIdsToGetPerProc, MPI_INT, MPI_SUM, root, comm);
     }
 }
+
+
+TEST(GeneratedIds, multiPerf) {
+#ifdef COMMENT_OUT
+  //
+  //  Performance and scalability comparision of a number of id generation routines.
+  //
+  //  16384 ids per processor initially.  
+  //  Add 1000 ids in each of ten steps
+  //
+  //  Case 1:  Ids initially densly packed
+  //  Case 2:  Ids initially spread
+  //
+
+  int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  MpiInfo mpiInfo(MPI_COMM_WORLD);
+
+  unsigned numInit = 32768*mpi_size;
+  unsigned numNew  = 1000;
+
+
+  {
+    srand((unsigned)0);  
+
+
+    std::vector<unsigned> inUse32;
+    std::vector<uint64_t> inUse64;
+    std::vector<unsigned> new32;
+    std::vector<uint64_t> new64;
+
+    unsigned maxAllowableId32 = ~0U;
+    uint64_t maxAllowableId64 = maxAllowableId32;
+
+    for(unsigned i=1; i<numInit+1; ++i) {
+      unsigned targetRank = rand()%mpi_size;
+      if(targetRank == (unsigned)mpi_rank) {
+        inUse32.push_back(i);
+        inUse64.push_back(i);
+      }
+    }
+
+    double timeGenerateParallelUnique = 0.0;
+    double timeGenerate               = 0.0;
+    double timeDI                     = 0.0;
+
+    for(int iter=0; iter<64; ++iter) {
+      MPI_Barrier(MPI_COMM_WORLD);
+      double startTime = stk::wall_time();
+      new32 = stk::generate_parallel_unique_ids(maxAllowableId32, inUse32, numNew, MPI_COMM_WORLD);
+      MPI_Barrier(MPI_COMM_WORLD);
+      double endTime = stk::wall_time();
+      timeGenerateParallelUnique += (endTime-startTime);
+
+      for(unsigned inew=0; inew<new32.size(); ++inew) {
+        inUse32.push_back(new32[inew]);
+      }
+    }
+
+
+    for(int iter=0; iter<64; ++iter) {
+      new64.resize(numNew);
+      MPI_Barrier(MPI_COMM_WORLD);
+      double startTime = stk::wall_time();
+      generate_ids(maxAllowableId64, inUse64, new64, mpiInfo);
+      MPI_Barrier(MPI_COMM_WORLD);
+      double endTime = stk::wall_time();
+      timeGenerate += (endTime-startTime);
+      for(unsigned inew=0; inew<new64.size(); ++inew) {
+        inUse64.push_back(new64[inew]);
+      }
+    }
+    /*
+    stk::parallel::DistributedIndex::KeySpanVector key(numInit/32768);
+    for(int i=0; i<10; ++i) {
+      key[i].first = 1 + 10000 * i * 2;
+      key[i].second = 10000*(i*2+1);
+    }
+    stk::parallel::DistributedIndex di(MPI_COMM_WORLD, key);
+
+    std::vector<size_t> requests;
+    for(unsigned i=0; i<numInit/32768; ++i) {
+      requests.push_back(mpi_rank*32768+i);
+    }
+    std::vector<stk::parallel::DistributedIndex::KeyTypeVector  > generated_keys ;
+
+
+    di.generate_new_keys( requests , generated_keys );
+    */
+    /*
+    for(int iter=0; iter<64; ++iter) {
+
+      requests.clear();
+      for(unsigned i =0; i<numInit; ++i) {
+        requests.push_back(new32.size()+i);
+      }
+
+
+      MPI_Barrier(MPI_COMM_WORLD);
+      double startTime = stk::wall_time();
+
+      di.generate_new_keys( requests , generated_keys );
+      
+      MPI_Barrier(MPI_COMM_WORLD);
+      double endTime = stk::wall_time();
+      timeDI += (endTime-startTime);
+    }
+    */
+    if(mpi_rank == 0) {
+      std::cout<<"CASE 1: TIME 32: "<<timeGenerateParallelUnique<<std::endl;
+      std::cout<<"CASE 1: TIME 64: "<<timeGenerate<<std::endl;
+      std::cout<<"CASE 1: TIME DI: "<<timeDI<<std::endl;
+    }
+  }
+#endif
+}
+
 }

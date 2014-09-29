@@ -131,4 +131,33 @@ TEST(UnitTestParallel, testGenerateParallelUniqueIDs) {
 
     VerifyUniqueIds(maxAllowableId, existingIds, newIds, MPI_COMM_WORLD);
   }
+  //
+  //  Test 3, sparse fill
+  //
+
+  {
+    std::vector<unsigned> newIds;
+    std::vector<unsigned> existingIds(1000);
+    unsigned firstId = mpi_rank*1000;
+
+    for(unsigned i=0; i<1000; ++i) {
+      unsigned currentElemId = firstId+i;
+      existingIds[i] = currentElemId;
+    }
+
+    if(mpi_rank == 0) {
+      existingIds.push_back(~0U);
+    }
+
+    newIds = stk::generate_parallel_unique_ids(maxAllowableId, existingIds, 10, MPI_COMM_WORLD);
+
+    unsigned localSize = newIds.size();
+    unsigned globalSize;
+    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(globalSize, (unsigned)mpi_size*10);
+ 
+    VerifyUniqueIds(maxAllowableId, existingIds, newIds, MPI_COMM_WORLD);
+  }
+
+
 }

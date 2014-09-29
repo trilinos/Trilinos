@@ -37,6 +37,7 @@
 
 #include "stk_util/parallel/ParallelVectorConcat.hpp" 
 #include "stk_util/parallel/Parallel.hpp" 
+#include "stk_util/parallel/ParallelIndexGapFinder.hpp"
 #include <vector> 
 #include <algorithm> 
 #include <stdexcept>     
@@ -73,7 +74,7 @@ namespace stk {
   //    success is 'maxAllowedId - global_max(existingIds) > orderArray.size()'
   //
 
-  std::vector<unsigned> generate_parallel_unique_ids(const unsigned maxAllowedId,
+  inline std::vector<unsigned> generate_parallel_unique_ids(const unsigned maxAllowedId,
                                                      const std::vector<unsigned>& existingIds,
                                                      unsigned numNewIdsLocal,
                                                      ParallelMachine comm) {
@@ -113,31 +114,37 @@ namespace stk {
 
     unsigned myFirstNewId;
     mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, MPI_UNSIGNED, MPI_SUM, comm);
-
+    myFirstNewId -= numNewIdsLocal;
 
     //
     //  Check if sufficent extra ids exist to run this algorithm
-    //    NKC, for now fail if not, later maybe switch to a more robust but more
-    //    expensive algorithm.
+    //
     //  Note, below computations organized to avoid potential overflow
     //
     unsigned availableIds = maxAllowedId - globalMaxId;
     if(availableIds < globalNumIdsRequested) {
-      std::ostringstream msg;
-      msg << "In generate_parallel_unique_ids, insufficent ids available \n";
-      msg << "  Max current id:       "<<globalMaxId<<"\n";
-      msg << "  Max allowed id:       "<<maxAllowedId<<"\n";
-      msg << "  Number ids requested: "<<globalNumIdsRequested<<"\n";
-      throw std::runtime_error(msg.str());
+      //
+      // Run fallback fill algorithm
+      //
+      int returnCode = parallel_index_gap_finder_global(comm, 0, maxAllowedId, 
+                                       existingIds, numNewIdsLocal, globalNumIdsRequested, 
+                                       myFirstNewId, newIds);
+      if(returnCode != 0) {
+        std::ostringstream msg;
+        msg << "In generate_parallel_unique_ids, failure in id allocation \n";
+        throw std::runtime_error(msg.str());
+      }
       return newIds;
-    }
-    //
-    //  Create new ids starting at 'globalMaxId+1' and ending at 'globalMaxId+globalNumIdsRequested'
-    //  Compute the starting offset for ids in each processor.
-    //
-    myFirstNewId = (myFirstNewId - numNewIdsLocal) + globalMaxId + 1;
-    for(unsigned i=0; i<numNewIdsLocal; ++i) {
-      newIds.push_back(myFirstNewId+i);
+    } else {
+      //
+      //  Run basic cheap algorithm.  Start counting new ids at end.
+      //  Create new ids starting at 'globalMaxId+1' and ending at 'globalMaxId+globalNumIdsRequested'
+      //  Compute the starting offset for ids in each processor.
+      //
+      myFirstNewId = (myFirstNewId) + globalMaxId + 1;
+      for(unsigned i=0; i<numNewIdsLocal; ++i) {
+        newIds.push_back(myFirstNewId+i);
+      }
     }
     return newIds;
   }

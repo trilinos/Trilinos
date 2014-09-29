@@ -56,15 +56,16 @@ namespace stk {
   //  Return success(0) or failure code if the ids could not be found.  If sucessful append the found ids to the returnIds vector.
   //  Note, existing ids must be sorted.
   //
-  int ParallelFindFreeIdsInRangeGlobal(const ParallelMachine        comm, 
+  inline int ParallelFindFreeIdsInRangeGlobal(const ParallelMachine        comm, 
                                        const unsigned               rangeStart, 
                                        const unsigned               rangeEnd, 
                                        const unsigned               numIdsRequested,
                                        const std::vector<unsigned>::iterator existingIdStart,
                                        const std::vector<unsigned>::iterator existingIdEnd,
+                                       const unsigned               myProcFirstReturnIndex,
+                                       const unsigned               myProcLastReturnIndex,
+                                       unsigned&                    curReturnIndex,
                                        std::vector<unsigned>&       returnIds) {
-
-
     assert(rangeEnd >= rangeStart);
 
     if(numIdsRequested == 0) {
@@ -144,9 +145,33 @@ namespace stk {
     for(unsigned idiv = 0; idiv<numSubdivision; ++idiv) {
 
       if(globalSubDivCount[idiv] == 0 && numNeededIds > 0) {
+        /*
+        //
+        //  Empty subdivision, Allocate its indexes to needed processors
+        //
+        unsigned rangeSize = (subDivEnd[idiv]-subDivStart[idiv])+1;
+        unsigned numIdsToUse = min(numNeededIDs, rangeSize);
+        //
+        //  Case 1, return range above proc range
+        //
+        if(curReturnIndex >= myProcLastReturnIndex) {
+          numNeededIds -= numIdsToUse;
+          curReturnIndex += numNeededIds;
+        }
+        //
+        //  Case 2, return range below proc range
+        //
+        */
+
         for(unsigned index=subDivStart[idiv]; index<=subDivEnd[idiv]; ++index) {
           if(numNeededIds == 0) break;
-          returnIds.push_back(index);
+
+          
+
+          if(curReturnIndex >= myProcFirstReturnIndex && curReturnIndex < myProcLastReturnIndex) {
+            returnIds.push_back(index);
+          }
+          curReturnIndex++;
           --numNeededIds;
         }
       } else {
@@ -205,7 +230,9 @@ namespace stk {
         const std::vector<unsigned>::iterator newExistingStart = std::lower_bound(existingIdStart, existingIdEnd, curRangeStart);
         const std::vector<unsigned>::iterator newExistingEnd   = std::upper_bound(existingIdStart, existingIdEnd, curRangeEnd-1);
 
-        int returnCode = ParallelFindFreeIdsInRangeGlobal(comm, curRangeStart, curRangeEnd, numToFill, newExistingStart, newExistingEnd, returnIds);
+        int returnCode = ParallelFindFreeIdsInRangeGlobal(comm, curRangeStart, curRangeEnd, numToFill, newExistingStart, newExistingEnd, 
+                                                          myProcFirstReturnIndex, myProcLastReturnIndex, curReturnIndex, returnIds);
+
         if(returnCode != 0) {
           return returnCode;
         }
@@ -239,8 +266,12 @@ namespace stk {
   //
   //  Returns:  An MPI error code, 0 if correct
   //
-  int parallel_index_gap_finder_global(ParallelMachine comm, const unsigned minId, const unsigned maxId, const std::vector<unsigned>& localIdsInUse, 
-                                       const unsigned globalNumIdsNeeded, 
+  inline int parallel_index_gap_finder_global(ParallelMachine comm, const unsigned minId, 
+                                       const unsigned maxId, 
+                                       const std::vector<unsigned>& localIdsInUse, 
+                                       const unsigned localNumIdsNeeded,            
+                                       const unsigned globalNumIdsNeeded,
+                                       const unsigned prefixSumOfLocalIdsNeeded,
                                        std::vector<unsigned>& returnIds ) {
 
     if(minId > maxId) {
@@ -255,7 +286,9 @@ namespace stk {
     //
     std::vector<unsigned> sortedIdsInUse = localIdsInUse;
     std::sort(sortedIdsInUse.begin(), sortedIdsInUse.end());
-    return ParallelFindFreeIdsInRangeGlobal(comm, minId, maxId-1, globalNumIdsNeeded, sortedIdsInUse.begin(), sortedIdsInUse.end(), returnIds);
+    unsigned curIndex = 0;
+    return ParallelFindFreeIdsInRangeGlobal(comm, minId, maxId-1, globalNumIdsNeeded, sortedIdsInUse.begin(), sortedIdsInUse.end(), 
+                                            prefixSumOfLocalIdsNeeded, prefixSumOfLocalIdsNeeded+localNumIdsNeeded, curIndex, returnIds);
   }
 
 
