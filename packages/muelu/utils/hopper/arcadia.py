@@ -55,6 +55,8 @@ def controller():
     options, arguments = p.parse_args()
 
     unified = options.unified
+    if unified == True:
+        raise RuntimeError("Unified interface is buggy, and must be disabled")
 
     if   options.petra == 'epetra': petra = 1
     elif options.petra == 'tpetra': petra = 2
@@ -113,7 +115,6 @@ def controller():
                 datafiles.append(xmlfile)
 
                 if unified == True:
-                    raise RuntimeError("Unified interface is buggy, and must be disabled")
                     if cmds[i] != "--xml=" + xmlfile:
                         print("WARNING: command '" + cmds[i] + "' provides extra (to xml) arguments, "
                               "disabling construction of a single unified xml file")
