@@ -175,10 +175,6 @@ public:
     Real ctol = std::sqrt(ROL_EPSILON);
     // Compute step length
     Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
-    // Compute current constraint value
-    Teuchos::RCP<Vector<Real> > cold = jv.clone();
-    this->update(u,z);
-    this->value(*cold,u,z,ctol);
     // Update state vector to u + hv
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
@@ -186,6 +182,10 @@ public:
     // Compute new constraint value
     this->update(*unew,z);
     this->value(jv,*unew,z,ctol);
+    // Compute current constraint value
+    Teuchos::RCP<Vector<Real> > cold = jv.clone();
+    this->update(u,z);
+    this->value(*cold,u,z,ctol);
     // Compute Newton quotient
     jv.axpy(-1.0,*cold);
     jv.scale(1.0/h);
@@ -215,10 +215,6 @@ public:
     Real ctol = std::sqrt(ROL_EPSILON);
     // Compute step length
     Real h    = std::max(z.norm()/v.norm(),1.0)*tol;
-    // Compute current constraint value
-    Teuchos::RCP<Vector<Real> > cold = jv.clone();
-    this->update(u,z);
-    this->value(*cold,u,z,ctol);
     // Update state vector to u + hv
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);
@@ -226,6 +222,10 @@ public:
     // Compute new constraint value
     this->update(u,*znew);
     this->value(jv,u,*znew,ctol);
+    // Compute current constraint value
+    Teuchos::RCP<Vector<Real> > cold = jv.clone();
+    this->update(u,z);
+    this->value(*cold,u,z,ctol);
     // Compute Newton quotient
     jv.axpy(-1.0,*cold);
     jv.scale(1.0/h);
@@ -312,6 +312,7 @@ public:
       cnew->scale(1.0/h);
       ajv.axpy(cnew->dot(v),*(u.basis(i)));
     }
+    this->update(u,z);
   }
 
   virtual Real checkJacobian_1(const Vector<Real> &w, 
@@ -371,6 +372,7 @@ public:
       cnew->scale(1.0/h);
       ajv.axpy(cnew->dot(v),*(z.basis(i)));
     }
+    this->update(u,z);
   }
 
   virtual Real checkJacobian_2(const Vector<Real> &w, 
@@ -462,15 +464,19 @@ public:
                                       const Vector<Real> &z,
                                       Real &tol) {
     Real jtol = std::sqrt(ROL_EPSILON);
+    // Compute step size
     Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
-    Teuchos::RCP<Vector<Real> > jv = u.clone();
-    this->update(u,z);
-    this->applyAdjointJacobian_1(*jv,w,u,z,jtol);
+    // Evaluate Jacobian at new state
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
     unew->axpy(h,v);
     this->update(*unew,z);
     this->applyAdjointJacobian_1(ahwv,w,*unew,z,jtol);
+    // Evaluate Jacobian at old state
+    Teuchos::RCP<Vector<Real> > jv = u.clone();
+    this->update(u,z);
+    this->applyAdjointJacobian_1(*jv,w,u,z,jtol);
+    // Compute Newton quotient
     ahwv.axpy(-1.0,*jv);
     ahwv.scale(1.0/h);
   }
@@ -499,15 +505,19 @@ public:
                                       const Vector<Real> &z,
                                       Real &tol) {
     Real jtol = std::sqrt(ROL_EPSILON);
+    // Compute step size
     Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
-    Teuchos::RCP<Vector<Real> > jv = z.clone();
-    this->update(u,z);
-    this->applyAdjointJacobian_2(*jv,w,u,z,jtol);
+    // Evaluate Jacobian at new state
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
     unew->axpy(h,v);
     this->update(*unew,z);
     this->applyAdjointJacobian_2(ahwv,w,*unew,z,jtol);
+    // Evaluate Jacobian at old state
+    Teuchos::RCP<Vector<Real> > jv = z.clone();
+    this->update(u,z);
+    this->applyAdjointJacobian_2(*jv,w,u,z,jtol);
+    // Compute Newton quotient
     ahwv.axpy(-1.0,*jv);
     ahwv.scale(1.0/h);
   }
@@ -536,15 +546,19 @@ public:
                                       const Vector<Real> &z,
                                       Real &tol) {
     Real jtol = std::sqrt(ROL_EPSILON);
+    // Compute step size
     Real h    = std::max(z.norm()/v.norm(),1.0)*tol;
-    Teuchos::RCP<Vector<Real> > jv = u.clone();
-    this->update(u,z);
-    this->applyAdjointJacobian_1(*jv,w,u,z,jtol);
+    // Evaluate Jacobian at new control
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);
     znew->axpy(h,v);
     this->update(u,*znew);
     this->applyAdjointJacobian_1(ahwv,w,u,*znew,jtol);
+    // Evaluate Jacobian at old control
+    Teuchos::RCP<Vector<Real> > jv = u.clone();
+    this->update(u,z);
+    this->applyAdjointJacobian_1(*jv,w,u,z,jtol);
+    // Compute Newton quotient
     ahwv.axpy(-1.0,*jv);
     ahwv.scale(1.0/h);
   }
@@ -572,15 +586,19 @@ public:
                                       const Vector<Real> &z,
                                       Real &tol) {
     Real jtol = std::sqrt(ROL_EPSILON);
+    // Compute step size
     Real h    = std::max(z.norm()/v.norm(),1.0)*tol;
-    Teuchos::RCP<Vector<Real> > jv = z.clone();
-    this->update(u,z);
-    this->applyAdjointJacobian_2(*jv,w,u,z,jtol);
+    // Evaluate Jacobian at new control
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);
     znew->axpy(h,v);
     this->update(u,*znew);
     this->applyAdjointJacobian_2(ahwv,w,u,*znew,jtol);
+    // Evaluate Jacobian at old control
+    Teuchos::RCP<Vector<Real> > jv = z.clone();
+    this->update(u,z);
+    this->applyAdjointJacobian_2(*jv,w,u,z,jtol);
+    // Compute Newton quotient
     ahwv.axpy(-1.0,*jv);
     ahwv.scale(1.0/h);
 }

@@ -149,7 +149,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
                 << std::setw(20) << "abs error"
                 << "\n";
       }
-      std::cout << std::scientific << std::setprecision(8) << std::right
+      std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << gCheck[i][0]
                 << std::setw(20) << gCheck[i][1]
                 << std::setw(20) << gCheck[i][2]
@@ -220,7 +220,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
                 << std::setw(20) << "norm(abs error)"
                 << "\n";
       }
-      std::cout << std::scientific << std::setprecision(8) << std::right
+      std::cout << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << hvCheck[i][0]
                 << std::setw(20) << hvCheck[i][1]
                 << std::setw(20) << hvCheck[i][2]
@@ -268,7 +268,7 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
               << std::setw(20) << "<v, H(x)w>"
               << std::setw(20) << "abs error"
               << "\n";
-    std::cout << std::scientific << std::setprecision(8) << std::right
+    std::cout << std::scientific << std::setprecision(11) << std::right
               << std::setw(20) << hsymCheck[0]
               << std::setw(20) << hsymCheck[1]
               << std::setw(20) << hsymCheck[2]

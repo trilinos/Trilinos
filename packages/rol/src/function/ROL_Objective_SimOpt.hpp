@@ -103,6 +103,7 @@ public:
       deriv = (this->value(*unew,z,ftol) - v)/h;
       g.axpy(deriv,*(u.basis(i)));
     }
+    this->update(u,z);
   }
   /** \brief Compute gradient with respect to second component.
   */
@@ -122,6 +123,7 @@ public:
       deriv = (this->value(u,*znew,ftol) - v)/h;
       g.axpy(deriv,*(z.basis(i)));
     }
+    this->update(u,z);
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
@@ -145,10 +147,6 @@ public:
     Real gtol = std::sqrt(ROL_EPSILON);
     // Compute step length
     Real h    = std::max(1.0,u.norm()/v.norm())*tol;
-    // Evaluate gradient of first component at (u,z)
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
-    this->update(u,z);
-    this->gradient_1(*g,u,z,gtol);
     // Evaluate gradient of first component at (u+hv,z)
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
@@ -156,6 +154,10 @@ public:
     this->update(*unew,z);
     hv.zero();
     this->gradient_1(hv,*unew,z,gtol);
+    // Evaluate gradient of first component at (u,z)
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_1(*g,u,z,gtol);
     // Compute Newton quotient
     hv.axpy(-1.0,*g);
     hv.scale(1.0/h);
@@ -166,10 +168,6 @@ public:
     Real gtol = std::sqrt(ROL_EPSILON);
     // Compute step length
     Real h    = std::max(1.0,z.norm()/v.norm())*tol;
-    // Evaluate gradient of first component at (u,z)
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
-    this->update(u,z);
-    this->gradient_1(*g,u,z,gtol);
     // Evaluate gradient of first component at (u,z+hv)
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);
@@ -177,6 +175,10 @@ public:
     this->update(u,*znew);
     hv.zero();
     this->gradient_1(hv,u,*znew,gtol);
+    // Evaluate gradient of first component at (u,z)
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_1(*g,u,z,gtol);
     // Compute Newton quotient
     hv.axpy(-1.0,*g);
     hv.scale(1.0/h);
@@ -187,10 +189,6 @@ public:
     Real gtol = std::sqrt(ROL_EPSILON);
     // Compute step length
     Real h    = std::max(1.0,u.norm()/v.norm())*tol;
-    // Evaluate gradient of first component at (u,z)
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
-    this->update(u,z);
-    this->gradient_2(*g,u,z,gtol);
     // Evaluate gradient of first component at (u+hv,z)
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
@@ -198,6 +196,10 @@ public:
     this->update(*unew,z);
     hv.zero();
     this->gradient_2(hv,*unew,z,gtol);
+    // Evaluate gradient of first component at (u,z)
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_2(*g,u,z,gtol);
     // Compute Newton quotient
     hv.axpy(-1.0,*g);
     hv.scale(1.0/h);
@@ -208,10 +210,6 @@ public:
     Real gtol = std::sqrt(ROL_EPSILON);
     // Compute step length
     Real h    = std::max(1.0,z.norm()/v.norm())*tol;
-    // Evaluate gradient of first component at (u,z)
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
-    this->update(u,z);
-    this->gradient_2(*g,u,z,gtol);
     // Evaluate gradient of first component at (u,z+hv)
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);
@@ -219,6 +217,10 @@ public:
     this->update(u,*znew);
     hv.zero();
     this->gradient_2(hv,u,*znew,gtol);
+    // Evaluate gradient of first component at (u,z)
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->update(u,z);
+    this->gradient_2(*g,u,z,gtol);
     // Compute Newton quotient
     hv.axpy(-1.0,*g);
     hv.scale(1.0/h);
