@@ -448,12 +448,12 @@ public:
     this->TR_ngrad_ = 0;
     Real fold = algo_state.value;
     Real fnew = 0.0;
+    algo_state.iter++;
     this->trustRegion_->update(x,fnew,state->searchSize,this->TR_nfval_,this->TR_ngrad_,this->TRflag_,
-                               s,algo_state.snorm,fold,*(state->gradientVec),pObj);
+                               s,algo_state.snorm,fold,*(state->gradientVec),algo_state.iter,pObj);
     algo_state.value = fnew;
     algo_state.nfval += this->TR_nfval_;
     algo_state.ngrad += this->TR_ngrad_;
-    algo_state.iter++;
 
     // Compute new gradient and update secant storage
     Teuchos::RCP<Vector<Real> > gp;
@@ -471,6 +471,7 @@ public:
         xnew->axpy(-alpha*this->alpha_init_,*gp);
         con.project(*xnew);
         // Compute new objective value
+        obj.update(*xnew,true,algo_state.iter);
         Real ftmp = obj.value(*xnew,tol); // MUST DO SOMETHING HERE WITH TOL
         algo_state.nfval++;
         // Perform smoothing
@@ -480,6 +481,7 @@ public:
           xnew->set(x);
           xnew->axpy(-alpha*this->alpha_init_,*gp);
           con.project(*xnew);
+          obj.update(*xnew,true,algo_state.iter);
           ftmp = obj.value(*xnew,tol); // MUST DO SOMETHING HERE WITH TOL
           algo_state.nfval++;
           if ( cnt >= this->max_fval_ ) {
@@ -500,7 +502,7 @@ public:
       }
 
       // Update objective function and approximate model
-      obj.update(x,true,algo_state.iter);
+      //obj.update(x,true,algo_state.iter);
       this->updateGradient(x,obj,con,algo_state);
 
       // Update secant information

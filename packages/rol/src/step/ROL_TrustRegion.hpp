@@ -136,7 +136,7 @@ public:
                int &nfval, int &ngrad, int &flagTR,
                const Vector<Real> &s, const Real snorm, 
                const Real fold, const Vector<Real> &g, 
-               ProjectedObjective<Real> &pObj ) { 
+               int iter, ProjectedObjective<Real> &pObj ) { 
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Compute New Function Value
@@ -158,12 +158,12 @@ public:
         this->ftol_old_ = ftol;
         fold1 = pObj.value(x,this->ftol_old_);
       }
-      pObj.update(*xnew,true);
+      pObj.update(*xnew,true,iter);
       fnew = pObj.value(*xnew,ftol);
       this->cnt_++;
     }
     else {
-      pObj.update(*xnew,true);
+      pObj.update(*xnew,true,iter);
       fnew = pObj.value(*xnew,tol);
     }
     nfval = 1;   
@@ -223,6 +223,7 @@ public:
     
     // Accept or Reject Step and Update Trust Region
     if ((rho < this->eta0_ && flagTR == 0) || flagTR >= 2 || !decr ) { // Step Rejected 
+      pObj.update(x,true,iter);
       fnew = fold1;
       if (rho < 0.0) { // Negative reduction, interpolate to find new trust-region radius
         Real gs = g.dot(s);
