@@ -80,114 +80,15 @@ bool sendIdToCheck(const INTMPI root, uint64_t id, MPI_Comm comm);
 void receiveIdAndCheck(const int root, const std::vector<uint64_t> &idsInUse, MPI_Comm comm);
 void checkUniqueIds(const std::vector<uint64_t> &myIds, const std::vector<uint64_t> &uniqueIds, const MpiInfo& mpiInfo);
 void writeIdsToFile(const std::string &filename, const INTMPI myProcId, const std::vector<uint64_t>& myIds, const std::vector<uint64_t> &uniqueIds);
-
-
-void generate_ids(const uint64_t maxId, const std::vector<uint64_t> &idsInUse, std::vector<uint64_t> &uniqueIds, const MpiInfo& mpiInfo)
-{
-    std::vector< std::vector<uint64_t> > idsToComm(mpiInfo.getNumProcs());
-
-    for (size_t i=0;i<idsInUse.size();i++)
-    {
-        INTMPI procOwner = whichProcOwnsId(maxId, idsInUse[i], mpiInfo.getNumProcs());
-        ThrowRequireMsg(static_cast<int>(procOwner)<mpiInfo.getNumProcs(), "Id generation error. Please contact sierra-help. procOwner = " << procOwner << ", maxId = " << maxId << ", and id = " << idsInUse[i] << std::endl);
-        idsToComm[procOwner].push_back(idsInUse[i]);
-    }
-
-    std::vector<uint64_t> idsInUseAcrossAllProcsInMyRange;
-    getIdUsageAcrossAllProcs(idsToComm, idsInUseAcrossAllProcsInMyRange, mpiInfo);
-
-    std::vector<uint64_t> uniqueIdsFound;
-
-    uint64_t myIndexStart = getNumIdsPerProc(maxId, mpiInfo.getNumProcs())*mpiInfo.getProcId()+1;
-    uint64_t myIndexEnd = getNumIdsPerProc(maxId, mpiInfo.getNumProcs())*(mpiInfo.getProcId()+1)+1;
-
-    size_t numIdsNeeded = uniqueIds.size();
-    size_t numIdsAvailableThisProc =  getNumIdsPerProc(maxId, mpiInfo.getNumProcs()) - idsInUseAcrossAllProcsInMyRange.size();
-    ThrowRequireMsg(numIdsNeeded <= numIdsAvailableThisProc, "Not enough unique ids available (Id generation error). Plrease contact sierra-help for support. Number of ids needed: "
-            << numIdsNeeded << " and num available ids: " << numIdsAvailableThisProc);
-
-    if ( !uniqueIds.empty() )
-    {
-        for (uint64_t i=myIndexStart;i<myIndexEnd;i++)
-        {
-            if ( !std::binary_search(idsInUseAcrossAllProcsInMyRange.begin(), idsInUseAcrossAllProcsInMyRange.end(), i) )
-            {
-                uniqueIdsFound.push_back(i);
-                if ( uniqueIdsFound.size() == uniqueIds.size() )
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    ThrowRequireMsg(uniqueIdsFound.size() == uniqueIds.size(), "Id generation error. Could not obtain needed ids. Please contact sierra-help for support.");
-    std::copy(uniqueIdsFound.begin(), uniqueIdsFound.end(), uniqueIds.begin());
-}
-
+void generate_ids(const uint64_t maxId, const std::vector<uint64_t> &idsInUse, std::vector<uint64_t> &uniqueIds, const MpiInfo& mpiInfo);
 void getBatchesOfIdsFromOtherProcessorsUntilRequestOnThisProcIsFulfilled(INTMPI root, uint64_t &startingIdToSearchForNewIds, std::vector<uint64_t> &idsObtained, uint64_t numIdsNeeded, int scaleFactorForNumIds,
-        std::vector<uint64_t> &sortedIds, const uint64_t maxId, const MpiInfo& mpiInfo)
-{
-    while ( startingIdToSearchForNewIds < maxId && idsObtained.size() < numIdsNeeded )
-    {
-        int requestNumIds = numIdsNeeded - idsObtained.size();
-        std::vector<int> areIdsBeingUsed(scaleFactorForNumIds*requestNumIds,0);
-        if ( !std::binary_search(sortedIds.begin(), sortedIds.end(), startingIdToSearchForNewIds) )
-        {
-            retrieveIds(root, startingIdToSearchForNewIds, mpiInfo.getMpiComm(), scaleFactorForNumIds*requestNumIds, areIdsBeingUsed);
-            int numIdsChecked=0;
-            for (size_t i=0;i<areIdsBeingUsed.size();i++)
-            {
-                numIdsChecked=i;
-                if ( areIdsBeingUsed[i] == 0 )
-                {
-                    idsObtained.push_back(startingIdToSearchForNewIds+i);
-                    if ( idsObtained.size() == numIdsNeeded ) break;
-                }
-            }
-            startingIdToSearchForNewIds += numIdsChecked+1;
-        }
-        else
-        {
-            startingIdToSearchForNewIds++;
-        }
-    }
-}
+        std::vector<uint64_t> &sortedIds, const uint64_t maxId, const MpiInfo& mpiInfo);
+void terminateIdRequestForThisProc(INTMPI root, MPI_Comm comm);
+void getAvailableIds(const std::vector<uint64_t> &myIds, uint64_t numIdsNeeded, std::vector<uint64_t> &idsObtained, uint64_t &startingIdToSearchForNewIds, const uint64_t maxId, const MpiInfo& mpiInfo);
+void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeeded, std::vector<uint64_t> &idsObtained, uint64_t &startingIdToSearchForNewIds, const uint64_t maxId, const MpiInfo& mpiInfo);
 
-void terminateIdRequestForThisProc(INTMPI root, MPI_Comm comm)
-{
-    sendIdToCheck(root, 0, comm); // a zero terminates communication
-}
+////////////////////////////////////////////////////////////////////
 
-void getAvailableIds(const std::vector<uint64_t> &myIds, uint64_t numIdsNeeded, std::vector<uint64_t> &idsObtained, uint64_t &startingIdToSearchForNewIds, const uint64_t maxId, const MpiInfo& mpiInfo)
-{
-    std::vector<uint64_t> receivedInfo(mpiInfo.getNumProcs(),0);
-    MPI_Allgather(&numIdsNeeded, 1, MPI_UINT64_T, &receivedInfo[0], 1, MPI_UINT64_T, mpiInfo.getMpiComm());
-
-    std::vector<uint64_t> sortedIds(myIds.begin(), myIds.end());
-    std::sort(sortedIds.begin(), sortedIds.end());
-
-    int scaleFactorForNumIds = 5;
-
-    for (INTMPI procIndex=0;procIndex<mpiInfo.getNumProcs();procIndex++)
-    {
-        if ( receivedInfo[procIndex] != 0 )
-        {
-            if ( procIndex == mpiInfo.getProcId() )
-            {
-                getBatchesOfIdsFromOtherProcessorsUntilRequestOnThisProcIsFulfilled(procIndex, startingIdToSearchForNewIds, idsObtained, numIdsNeeded, scaleFactorForNumIds, sortedIds, maxId, mpiInfo);
-                ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
-                terminateIdRequestForThisProc(procIndex, mpiInfo.getMpiComm());
-            }
-            else
-            {
-                respondToRootProcessorAboutIdsOwnedOnThisProc(procIndex, maxId, sortedIds, mpiInfo.getMpiComm());
-            }
-            // updated starting id across all procs
-            MPI_Bcast(&startingIdToSearchForNewIds, 1, MPI_UINT64_T, procIndex, mpiInfo.getMpiComm());
-        }
-    }
-}
 
 TEST(GeneratedIds, whichProcOwnsId)
 {
@@ -289,12 +190,12 @@ TEST(GeneratedIds, findUniqueIdAcrossProcs)
     }
 }
 
-TEST(GeneratedIds, findUniqueIdAcrossProcsVaryingNumIdsInUse)
+TEST(GeneratedIds, findUniqueIdAcrossProcsApproach1)
 {
     MpiInfo mpiInfo(MPI_COMM_WORLD);
 
-    uint64_t totalIdsInUse = 10000*mpiInfo.getNumProcs();
-    uint64_t numIdsThisProc = totalIdsInUse/mpiInfo.getNumProcs();;
+    uint64_t numIdsThisProc = 50000;
+    uint64_t totalIdsInUse = numIdsThisProc*mpiInfo.getNumProcs();
 
     std::vector<uint64_t> myIds(numIdsThisProc,0);
     distributeIds(myIds, mpiInfo);
@@ -302,7 +203,43 @@ TEST(GeneratedIds, findUniqueIdAcrossProcsVaryingNumIdsInUse)
     uint64_t startingIdToSearchForNewIds = 1;
     uint64_t numIdsNeeded = 100;
     std::vector<uint64_t> idsObtained;
-    uint64_t maxId = 10000000;
+    uint64_t maxId = 72057594037927935;
+
+    double startTime = stk::wall_time();
+
+    getAvailableIds_exp(myIds, numIdsNeeded, idsObtained, startingIdToSearchForNewIds, maxId, mpiInfo);
+
+    double endTime = stk::wall_time();
+
+    if ( mpiInfo.getProcId() == 0 )
+    {
+        std::cerr << "Took " << endTime-startTime << " seconds." << std::endl;
+    }
+
+    checkUniqueIds(myIds, idsObtained, mpiInfo);
+    writeIdsToFile("ids_", mpiInfo.getProcId(), myIds, idsObtained);
+
+    for (size_t i=0;i<idsObtained.size();i++)
+    {
+        uint64_t goldId = totalIdsInUse + numIdsNeeded*mpiInfo.getProcId()+1 + i;
+        EXPECT_EQ(goldId, idsObtained[i]);
+    }
+}
+
+TEST(GeneratedIds, findUniqueIdAcrossProcsVaryingNumIdsInUse)
+{
+    MpiInfo mpiInfo(MPI_COMM_WORLD);
+
+    uint64_t numIdsThisProc = 50000;
+    uint64_t totalIdsInUse = numIdsThisProc*mpiInfo.getNumProcs();
+
+    std::vector<uint64_t> myIds(numIdsThisProc,0);
+    distributeIds(myIds, mpiInfo);
+
+    uint64_t startingIdToSearchForNewIds = 1;
+    uint64_t numIdsNeeded = 10000;
+    std::vector<uint64_t> idsObtained;
+    uint64_t maxId = 100000000000;
 
     double startTime = stk::wall_time();
 
@@ -839,6 +776,180 @@ TEST(GeneratedIds, multiPerf) {
     }
   }
 #endif 
+}
+
+////////////////////////////////////////////////////////////////////
+
+void generate_ids(const uint64_t maxId, const std::vector<uint64_t> &idsInUse, std::vector<uint64_t> &uniqueIds, const MpiInfo& mpiInfo)
+{
+    std::vector< std::vector<uint64_t> > idsToComm(mpiInfo.getNumProcs());
+
+    for (size_t i=0;i<idsInUse.size();i++)
+    {
+        INTMPI procOwner = whichProcOwnsId(maxId, idsInUse[i], mpiInfo.getNumProcs());
+        ThrowRequireMsg(static_cast<int>(procOwner)<mpiInfo.getNumProcs(), "Id generation error. Please contact sierra-help. procOwner = " << procOwner << ", maxId = " << maxId << ", and id = " << idsInUse[i] << std::endl);
+        idsToComm[procOwner].push_back(idsInUse[i]);
+    }
+
+    std::vector<uint64_t> idsInUseAcrossAllProcsInMyRange;
+    getIdUsageAcrossAllProcs(idsToComm, idsInUseAcrossAllProcsInMyRange, mpiInfo);
+
+    std::vector<uint64_t> uniqueIdsFound;
+
+    uint64_t myIndexStart = getNumIdsPerProc(maxId, mpiInfo.getNumProcs())*mpiInfo.getProcId()+1;
+    uint64_t myIndexEnd = getNumIdsPerProc(maxId, mpiInfo.getNumProcs())*(mpiInfo.getProcId()+1)+1;
+
+    size_t numIdsNeeded = uniqueIds.size();
+    size_t numIdsAvailableThisProc =  getNumIdsPerProc(maxId, mpiInfo.getNumProcs()) - idsInUseAcrossAllProcsInMyRange.size();
+    ThrowRequireMsg(numIdsNeeded <= numIdsAvailableThisProc, "Not enough unique ids available (Id generation error). Plrease contact sierra-help for support. Number of ids needed: "
+            << numIdsNeeded << " and num available ids: " << numIdsAvailableThisProc);
+
+    if ( !uniqueIds.empty() )
+    {
+        for (uint64_t i=myIndexStart;i<myIndexEnd;i++)
+        {
+            if ( !std::binary_search(idsInUseAcrossAllProcsInMyRange.begin(), idsInUseAcrossAllProcsInMyRange.end(), i) )
+            {
+                uniqueIdsFound.push_back(i);
+                if ( uniqueIdsFound.size() == uniqueIds.size() )
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    ThrowRequireMsg(uniqueIdsFound.size() == uniqueIds.size(), "Id generation error. Could not obtain needed ids. Please contact sierra-help for support.");
+    std::copy(uniqueIdsFound.begin(), uniqueIdsFound.end(), uniqueIds.begin());
+}
+
+////////////////////////////////////////////////////////////////////
+
+void getBatchesOfIdsFromOtherProcessorsUntilRequestOnThisProcIsFulfilled(INTMPI root, uint64_t &startingIdToSearchForNewIds, std::vector<uint64_t> &idsObtained, uint64_t numIdsNeeded, int scaleFactorForNumIds,
+        std::vector<uint64_t> &sortedIds, const uint64_t maxId, const MpiInfo& mpiInfo)
+{
+    while ( startingIdToSearchForNewIds < maxId && idsObtained.size() < numIdsNeeded )
+    {
+        int requestNumIds = numIdsNeeded - idsObtained.size();
+        std::vector<int> areIdsBeingUsed(scaleFactorForNumIds*requestNumIds,0);
+        if ( !std::binary_search(sortedIds.begin(), sortedIds.end(), startingIdToSearchForNewIds) )
+        {
+            retrieveIds(root, startingIdToSearchForNewIds, mpiInfo.getMpiComm(), scaleFactorForNumIds*requestNumIds, areIdsBeingUsed);
+            int numIdsChecked=0;
+            for (size_t i=0;i<areIdsBeingUsed.size();i++)
+            {
+                numIdsChecked=i;
+                if ( areIdsBeingUsed[i] == 0 )
+                {
+                    idsObtained.push_back(startingIdToSearchForNewIds+i);
+                    if ( idsObtained.size() == numIdsNeeded ) break;
+                }
+            }
+            startingIdToSearchForNewIds += numIdsChecked+1;
+        }
+        else
+        {
+            startingIdToSearchForNewIds++;
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////
+
+void terminateIdRequestForThisProc(INTMPI root, MPI_Comm comm)
+{
+    sendIdToCheck(root, 0, comm); // a zero terminates communication
+}
+
+////////////////////////////////////////////////////////////////////
+
+void getAvailableIds(const std::vector<uint64_t> &myIds, uint64_t numIdsNeeded, std::vector<uint64_t> &idsObtained, uint64_t &startingIdToSearchForNewIds, const uint64_t maxId, const MpiInfo& mpiInfo)
+{
+    std::vector<uint64_t> receivedInfo(mpiInfo.getNumProcs(),0);
+    MPI_Allgather(&numIdsNeeded, 1, MPI_UINT64_T, &receivedInfo[0], 1, MPI_UINT64_T, mpiInfo.getMpiComm());
+
+    std::vector<uint64_t> sortedIds(myIds.begin(), myIds.end());
+    std::sort(sortedIds.begin(), sortedIds.end());
+
+    int scaleFactorForNumIds = 10;
+
+    for (INTMPI procIndex=0;procIndex<mpiInfo.getNumProcs();procIndex++)
+    {
+        if ( receivedInfo[procIndex] != 0 )
+        {
+            if ( procIndex == mpiInfo.getProcId() )
+            {
+                getBatchesOfIdsFromOtherProcessorsUntilRequestOnThisProcIsFulfilled(procIndex, startingIdToSearchForNewIds, idsObtained, numIdsNeeded, scaleFactorForNumIds, sortedIds, maxId, mpiInfo);
+                ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
+                terminateIdRequestForThisProc(procIndex, mpiInfo.getMpiComm());
+            }
+            else
+            {
+                respondToRootProcessorAboutIdsOwnedOnThisProc(procIndex, maxId, sortedIds, mpiInfo.getMpiComm());
+            }
+            // updated starting id across all procs
+            MPI_Bcast(&startingIdToSearchForNewIds, 1, MPI_UINT64_T, procIndex, mpiInfo.getMpiComm());
+        }
+    }
+}
+
+void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeeded, std::vector<uint64_t> &idsObtained, uint64_t &startingIdToSearchForNewIds, const uint64_t maxId, const MpiInfo& mpiInfo)
+{
+    INTMPI numprocs = mpiInfo.getNumProcs();
+    std::vector<uint64_t> receivedInfo(numprocs,0);
+    MPI_Allgather(&numIdsNeeded, 1, MPI_UINT64_T, &receivedInfo[0], 1, MPI_UINT64_T, mpiInfo.getMpiComm());
+
+    std::vector<uint64_t> sortedIds(myIds.begin(), myIds.end());
+    std::sort(sortedIds.begin(), sortedIds.end());
+
+    uint64_t largestIdHere = sortedIds.back();
+    uint64_t largestIdEverywhere = 0;
+
+    MPI_Allreduce(&largestIdHere, &largestIdEverywhere, 1, MPI_UINT64_T, MPI_MAX, mpiInfo.getMpiComm());
+
+    uint64_t totalNumberOfIdsNeeded = 0;
+    uint64_t offsetId=0;
+    for (INTMPI i=0;i<numprocs;i++)
+    {
+        totalNumberOfIdsNeeded += receivedInfo[i];
+        if ( i < mpiInfo.getProcId() )
+        {
+            offsetId += receivedInfo[i];
+        }
+    }
+
+    if ( maxId - totalNumberOfIdsNeeded > largestIdHere )
+    {
+        startingIdToSearchForNewIds = largestIdHere;
+        idsObtained.resize(numIdsNeeded);
+        for (size_t i=0;i<idsObtained.size();i++)
+        {
+            idsObtained[i] = largestIdEverywhere + offsetId + i + 1;
+        }
+    }
+    else
+    {
+        int scaleFactorForNumIds = 1;
+
+        for (INTMPI procIndex=0;procIndex<numprocs;procIndex++)
+        {
+            if ( receivedInfo[procIndex] != 0 )
+            {
+                if ( procIndex == mpiInfo.getProcId() )
+                {
+                    getBatchesOfIdsFromOtherProcessorsUntilRequestOnThisProcIsFulfilled(procIndex, startingIdToSearchForNewIds, idsObtained, numIdsNeeded, scaleFactorForNumIds, sortedIds, maxId, mpiInfo);
+                    ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
+                    terminateIdRequestForThisProc(procIndex, mpiInfo.getMpiComm());
+                }
+                else
+                {
+                    respondToRootProcessorAboutIdsOwnedOnThisProc(procIndex, maxId, sortedIds, mpiInfo.getMpiComm());
+                }
+                // updated starting id across all procs
+                MPI_Bcast(&startingIdToSearchForNewIds, 1, MPI_UINT64_T, procIndex, mpiInfo.getMpiComm());
+            }
+        }
+    }
 }
 
 }
