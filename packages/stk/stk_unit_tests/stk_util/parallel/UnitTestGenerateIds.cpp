@@ -669,10 +669,14 @@ TEST(GeneratedIds, multiPerf) {
     srand((unsigned)0);  
 
 
-    std::vector<unsigned> inUse32;
-    std::vector<uint64_t> inUse64;
-    std::vector<unsigned> new32;
-    std::vector<uint64_t> new64;
+    std::vector<unsigned> inUse32a;
+    std::vector<uint64_t> inUse64a;
+    std::vector<unsigned> new32a;
+    std::vector<uint64_t> new64a;
+    std::vector<unsigned> inUse32b;
+    std::vector<uint64_t> inUse64b;
+    std::vector<unsigned> new32b;
+    std::vector<uint64_t> new64b;
 
     unsigned maxAllowableId32 = ~0U;
     uint64_t maxAllowableId64 = maxAllowableId32;
@@ -680,84 +684,161 @@ TEST(GeneratedIds, multiPerf) {
     for(unsigned i=1; i<numInit+1; ++i) {
       unsigned targetRank = rand()%mpi_size;
       if(targetRank == (unsigned)mpi_rank) {
-        inUse32.push_back(i);
-        inUse64.push_back(i);
+        inUse32a.push_back(i);
+        inUse64a.push_back(i);
       }
     }
 
-    double timeGenerateParallelUnique = 0.0;
-    double timeGenerate               = 0.0;
-    double timeDI                     = 0.0;
+    unsigned numToFill = numInit;
+    unsigned firstIndex = 1;
+
+    unsigned maxIndex = 0;
+
+    while(numToFill > 0) {
+      unsigned curNumToFill = numToFill/2;
+      if(curNumToFill == 0) curNumToFill = 1;
+
+      for(unsigned i=0; i<curNumToFill; ++i) {
+
+        unsigned targetRank = rand()%mpi_size;
+
+        maxIndex = std::max(maxIndex, firstIndex+1);
+
+        if(targetRank == (unsigned)mpi_rank) {
+          inUse32b.push_back(firstIndex + i);
+          inUse64b.push_back(firstIndex + i);
+        }
+      }
+      numToFill -= curNumToFill;
+      firstIndex = firstIndex + (maxAllowableId32 - firstIndex)/1.8;
+    }
+
+
+    double timeGenerateParallelUniqueA = 0.0;
+    double timeGenerateA               = 0.0;
+    double timeGenerateParallelUniqueB = 0.0;
+    double timeGenerateB               = 0.0;
+    double timeDI                      = 0.0;
 
     for(int iter=0; iter<64; ++iter) {
       MPI_Barrier(MPI_COMM_WORLD);
       double startTime = stk::wall_time();
-      new32 = stk::generate_parallel_unique_ids(maxAllowableId32, inUse32, numNew, MPI_COMM_WORLD);
+      new32a = stk::generate_parallel_unique_ids(maxAllowableId32, inUse32a, numNew, MPI_COMM_WORLD);
       MPI_Barrier(MPI_COMM_WORLD);
       double endTime = stk::wall_time();
-      timeGenerateParallelUnique += (endTime-startTime);
-
-      for(unsigned inew=0; inew<new32.size(); ++inew) {
-        inUse32.push_back(new32[inew]);
+      timeGenerateParallelUniqueA += (endTime-startTime);
+      for(unsigned inew=0; inew<new32a.size(); ++inew) {
+        inUse32a.push_back(new32a[inew]);
       }
     }
 
-
     for(int iter=0; iter<64; ++iter) {
-      new64.resize(numNew);
       MPI_Barrier(MPI_COMM_WORLD);
       double startTime = stk::wall_time();
-      generate_ids(maxAllowableId64, inUse64, new64, mpiInfo);
+      new32b = stk::generate_parallel_unique_ids(maxAllowableId32, inUse32b, numNew, MPI_COMM_WORLD);
       MPI_Barrier(MPI_COMM_WORLD);
       double endTime = stk::wall_time();
-      timeGenerate += (endTime-startTime);
-      for(unsigned inew=0; inew<new64.size(); ++inew) {
-        inUse64.push_back(new64[inew]);
+      timeGenerateParallelUniqueB += (endTime-startTime);
+      for(unsigned inew=0; inew<new32b.size(); ++inew) {
+        inUse32b.push_back(new32b[inew]);
       }
     }
-    /*
-    stk::parallel::DistributedIndex::KeySpanVector key(numInit/32768);
-    for(int i=0; i<10; ++i) {
-      key[i].first = 1 + 10000 * i * 2;
-      key[i].second = 10000*(i*2+1);
-    }
-    stk::parallel::DistributedIndex di(MPI_COMM_WORLD, key);
-
-    std::vector<size_t> requests;
-    for(unsigned i=0; i<numInit/32768; ++i) {
-      requests.push_back(mpi_rank*32768+i);
-    }
-    std::vector<stk::parallel::DistributedIndex::KeyTypeVector  > generated_keys ;
 
 
-    di.generate_new_keys( requests , generated_keys );
-    */
-    /*
     for(int iter=0; iter<64; ++iter) {
-
-      requests.clear();
-      for(unsigned i =0; i<numInit; ++i) {
-        requests.push_back(new32.size()+i);
+      new64a.resize(numNew);
+      MPI_Barrier(MPI_COMM_WORLD);
+      double startTime = stk::wall_time();
+      generate_ids(maxAllowableId64, inUse64a, new64a, mpiInfo);
+      MPI_Barrier(MPI_COMM_WORLD);
+      double endTime = stk::wall_time();
+      timeGenerateA += (endTime-startTime);
+      for(unsigned inew=0; inew<new64a.size(); ++inew) {
+        inUse64a.push_back(new64a[inew]);
       }
+    }
+    for(int iter=0; iter<64; ++iter) {
+      new64b.resize(numNew);
+      MPI_Barrier(MPI_COMM_WORLD);
+      double startTime = stk::wall_time();
+      generate_ids(maxAllowableId64, inUse64b, new64b, mpiInfo);
+      MPI_Barrier(MPI_COMM_WORLD);
+      double endTime = stk::wall_time();
+      timeGenerateB += (endTime-startTime);
+      for(unsigned inew=0; inew<new64b.size(); ++inew) {
+        inUse64b.push_back(new64b[inew]);
+      }
+    }
 
+    typedef stk::parallel::DistributedIndex PDIndex;
+    PDIndex::KeySpanVector partition_spans;
+    enum { test_spans_count = 10 };
+    enum { test_spans_size  = 10000000 };
 
+    partition_spans.resize( test_spans_count );
+
+    for ( unsigned i = 0 ; i < test_spans_count ; ++i ) {
+      partition_spans[i].first  = 1 + test_spans_size * i * 2 ;
+      partition_spans[i].second = test_spans_size * ( i * 2 + 1 );
+    }
+    PDIndex di( MPI_COMM_WORLD , partition_spans );
+    std::vector<size_t> requests( partition_spans.size() , 0u );
+    std::vector< PDIndex::KeyTypeVector > generated_keys ;
+    PDIndex::KeyProcVector sharing_of_local_keys ;
+
+    PDIndex::KeyTypeVector keys_to_add ;
+    PDIndex::KeyTypeVector keys_to_remove ;
+
+    //------------------------------
+    // Add 32768 odd keys per process
+    // starting at the beginning of the partition.
+
+    const size_t old_size_multiplier = 16 ;
+
+    for ( size_t j = 0 ; j < partition_spans.size() ; ++j ) {
+      PDIndex::KeyType key_first = partition_spans[j].first ;
+      if ( 0 == key_first % 2 ) { ++key_first ; } // Make it odd
+      key_first += old_size_multiplier * mpi_rank ;
+
+      const size_t n = old_size_multiplier * 1024 ;
+      for ( size_t i = 0 ; i < n ; ++i ) {
+        PDIndex::KeyType key = key_first + 2 * i ;
+        keys_to_add.push_back( key );
+      }
+    }
+
+    di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() );
+
+    for(int iter=0; iter<64; ++iter) {
+      const size_t gen_count = 100 ;
+      for ( size_t i = 0 ; i < requests.size() ; ++i ) {
+        if ( i % 2 ) {
+          requests[i] = gen_count ;
+        }
+        else {
+          requests[i] = 0 ;
+        }
+      }
       MPI_Barrier(MPI_COMM_WORLD);
       double startTime = stk::wall_time();
 
       di.generate_new_keys( requests , generated_keys );
-      
+
       MPI_Barrier(MPI_COMM_WORLD);
       double endTime = stk::wall_time();
       timeDI += (endTime-startTime);
     }
-    */
+
+
     if(mpi_rank == 0) {
-      std::cout<<"CASE 1: TIME 32: "<<timeGenerateParallelUnique<<std::endl;
-      std::cout<<"CASE 1: TIME 64: "<<timeGenerate<<std::endl;
+      std::cout<<"CASE 1: TIME 32 A: "<<timeGenerateParallelUniqueA<<std::endl;
+      std::cout<<"CASE 1: TIME 64 A: "<<timeGenerateA<<std::endl;
+      std::cout<<"CASE 1: TIME 32 B: "<<timeGenerateParallelUniqueB<<std::endl;
+      std::cout<<"CASE 1: TIME 64 B: "<<timeGenerateB<<std::endl;
       std::cout<<"CASE 1: TIME DI: "<<timeDI<<std::endl;
     }
   }
-#endif
+#endif 
 }
 
 }
