@@ -31,7 +31,7 @@ def controller():
     p.add_option('-r', '--run',        dest="action", action="store_const", const='run')
 
     # env arguments
-    p.add_option('-e', '--exec',       dest="binary",       default="MueLu_ScalingTestParamList.exe")   # executable
+    p.add_option('-e', '--exec',       dest="binary",       default="MueLu_Driver.exe")                 # executable
     p.add_option('-o', '--output',     dest="output",       default="screen")                           # output files for analysis
     p.add_option('-p', '--petra',      dest="petra",        default="both")                             # petra mode
     p.add_option('-N', '--nnodes',     dest="nnodes",       default="")                                 # custom node numbers
