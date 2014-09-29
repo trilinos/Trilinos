@@ -1,4 +1,3 @@
-
 //@HEADER
 // ************************************************************************
 //
@@ -49,10 +48,6 @@
 Ifpack_SerialTriDiSolver::Ifpack_SerialTriDiSolver()
   : Epetra_CompObject(),
     Epetra_BLAS(),
-    // Equilibrate_(false),
-    // ShouldEquilibrate_(false),
-    // A_Equilibrated_(false),
-    // B_Equilibrated_(false),
     Transpose_(false),
     Factored_(false),
     EstimateSolutionErrors_(false),
@@ -87,8 +82,6 @@ Ifpack_SerialTriDiSolver::Ifpack_SerialTriDiSolver()
     BERR_(0),
     AF_(0),
     WORK_(0),
-    // R_(0),
-    // C_(0),
     B_(0),
     X_(0)
 {
@@ -112,8 +105,6 @@ void Ifpack_SerialTriDiSolver::InitPointers()
   AF_ = 0;
   IPIV_ = 0;
   WORK_ = 0;
-  // R_ = 0;
-  // C_ = 0;
   INFO_ = 0;
   LWORK_ = 0;
 }
@@ -128,9 +119,6 @@ void Ifpack_SerialTriDiSolver::DeleteArrays()
   if (AF_ !=0) AF_ = 0;
   if (IPIV_ != 0)  {delete [] IPIV_;IPIV_ = 0;}
   if (WORK_ != 0)  {delete [] WORK_;WORK_ = 0;}
-  // if (R_ != 0 && R_ != C_)     {delete [] R_;R_ = 0;}
-  // if (R_ != 0) R_ = 0;
-  // if (C_ != 0)     {delete [] C_;C_ = 0;}
   INFO_ = 0;
   LWORK_ = 0;
 }
@@ -141,7 +129,6 @@ void Ifpack_SerialTriDiSolver::ResetMatrix()
   ResetVectors();
   Matrix_ = 0;
   Factor_ = 0;
-  // A_Equilibrated_ = false;
   Factored_ = false;
   Inverted_ = false;
   N_ = 0;
@@ -178,7 +165,6 @@ void Ifpack_SerialTriDiSolver::ResetVectors()
   SolutionRefined_ = false;
   Solved_ = false;
   SolutionErrorsEstimated_ = false;
-  // B_Equilibrated_ = false;
   NRHS_ = 0;
   LDB_ = 0;
   LDX_ = 0;
@@ -237,7 +223,7 @@ int Ifpack_SerialTriDiSolver::Factor(void) {
 
   Factored_ = true;
   double DN = N_;
-  UpdateFlops(2.0*(DN*DN*DN)/3.0);   // \todo This is very likely wrong...
+  UpdateFlops( (N_ == 1)? 1. : 4*(DN-1) );
 
   EPETRA_CHK_ERR(INFO_);
   return(0);
@@ -290,7 +276,7 @@ int Ifpack_SerialTriDiSolver::Solve(void) {
     lapack.GTTRS(TRANS_,N_,NRHS_,DL_,D_,DU_,DU2_,IPIV_,X_,N_,&INFO_);
     
     if (INFO_!=0) EPETRA_CHK_ERR(INFO_);
-    UpdateFlops(2.0*DN*DN*DNRHS);
+    UpdateFlops(2.0*4*DN*DNRHS);
     Solved_ = true;
 
   }
@@ -300,8 +286,6 @@ int Ifpack_SerialTriDiSolver::Solve(void) {
   else
     EPETRA_CHK_ERR(ierr);
 
-  // if (Equilibrate_) ierr1 = UnequilibrateLHS();
-  // EPETRA_CHK_ERR(ierr1);
   return(0);
 }
 //=============================================================================
@@ -309,36 +293,7 @@ int Ifpack_SerialTriDiSolver::Solve(void) {
  {
    std::cout<<" SerialTriDiSolver::ApplyRefinement this function is not supported"<<std::endl;
    EPETRA_CHK_ERR(-102);
-
-//   double DN = N_;
-//   double DNRHS = NRHS_;
-//   if (!Solved()) EPETRA_CHK_ERR(-100); // Must have an existing solution
-//   if (A_==AF_) EPETRA_CHK_ERR(-101); // Cannot apply refine if no original copy of A.
-
-//   if (FERR_ != 0) delete [] FERR_; // Always start with a fresh copy of FERR_, since NRHS_ may change
-//   FERR_ = new double[NRHS_];
-//   if (BERR_ != 0) delete [] BERR_; // Always start with a fresh copy of BERR_, since NRHS_ may change
-//   BERR_ = new double[NRHS_];
-//   AllocateWORK();
-//   AllocateIWORK();
-
-//   LDB_ = LDX_ = N_;
-
-//   std::cout << " ldb ldx "<<LDB_<<" "<<LDX_<<std::endl;
-
-//   lapack.GERFS(TRANS_, N_, NRHS_, A_, LDA_, AF_, LDAF_, IPIV_,
-// 	       B_, LDB_, X_, LDX_, FERR_, BERR_,
-// 	       WORK_, IWORK_, &INFO_);
-
-//   SolutionErrorsEstimated_ = true;
-//   ReciprocalConditionEstimated_ = true;
-//   SolutionRefined_ = true;
-
-//   UpdateFlops(2.0*DN*DN*DNRHS); // Not sure of count
-
-//   EPETRA_CHK_ERR(INFO_);
-//   return(0);
-
+   return(0);
  }
 
 //=============================================================================
@@ -346,19 +301,7 @@ int Ifpack_SerialTriDiSolver::Invert(void)
 {
   if (!Factored()) Factor(); // Need matrix factored.
 
-  /* This section work with LAPACK Version 3.0 only
-  // Setting LWORK = -1 and calling GETRI will return optimal work space size in WORK_TMP
-  int LWORK_TMP = -1;
-  double WORK_TMP;
-  GETRI ( N_, AF_, LDAF_, IPIV_, &WORK_TMP, &LWORK_TMP, &INFO_);
-  LWORK_TMP = WORK_TMP; // Convert to integer
-  if (LWORK_TMP>LWORK_) {
-  if (WORK_!=0) delete [] WORK_;
-  LWORK_ = LWORK_TMP;
-  WORK_ = new double[LWORK_];
-  }
-  */
-  // This section will work with any version of LAPACK
+  // Setting LWORK = -1 and calling GETRI will return optimal work space size in
   AllocateWORK();
 
   lapack.GETRI ( N_, AF_, LDAF_, IPIV_, WORK_, LWORK_, &INFO_);

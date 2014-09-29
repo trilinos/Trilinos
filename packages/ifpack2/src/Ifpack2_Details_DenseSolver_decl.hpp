@@ -55,6 +55,9 @@
 namespace Ifpack2 {
 namespace Details {
 
+#ifndef IFPACK2_LAPACKSUPPORTSSCALAR
+#define IFPACK2_LAPACKSUPPORTSSCALAR
+
 /// \struct LapackSupportsScalar
 /// \brief Trait for whether LAPACK supports the given scalar type.
 /// \tparam ScalarType Scalar type to test.
@@ -90,7 +93,7 @@ struct LapackSupportsScalar<std::complex<double> > {
   static const bool value = true;
 };
 #endif // TEUCHOS_HAVE_COMPLEX
-
+#endif //  IFPACK2_LAPACKSUPPORTSSCALAR
 
 /// \class DenseSolver
 /// \brief "Preconditioner" that uses LAPACK's dense LU.

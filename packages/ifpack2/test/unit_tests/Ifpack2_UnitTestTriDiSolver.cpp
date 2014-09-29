@@ -77,6 +77,7 @@
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_Details_TriDiSolver.hpp>
+#include <Ifpack2_Details_DenseSolver.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Teuchos_LAPACK.hpp>
@@ -104,11 +105,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
   typedef Tpetra::global_size_t GST;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef typename STS::magnitudeType magnitude_type;
+  //  typedef Teuchos::SerialTriDiMatrix<local_ordinal_type, scalar_type> crs_matrix_type;
   typedef Tpetra::CrsMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> crs_matrix_type;
-  typedef Tpetra::RowMatrix<scalar_type,
+ typedef Tpetra::RowMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> row_matrix_type;
@@ -120,8 +122,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
                       global_ordinal_type,
                       node_type> map_type;
 
-  //  typedef Ifpack2::Details::TriDiSolver<row_matrix_type> solver_type;
   typedef Ifpack2::Details::TriDiSolver<row_matrix_type> solver_type;
+    //  typedef Ifpack2::Details::DenseSolver<row_matrix_type> solver_type;
 
   RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
@@ -159,25 +161,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
 
   out << "Filling A_tridi" << endl;
 
-  // [1 2 3;
-  //  4 5 6;
-  //  7 8 10]
   Teuchos::SerialTriDiMatrix<int, scalar_type> A_tridi (3, 3);
-  A_tridi(0, 0) = as<scalar_type> (1);
-  A_tridi(0, 1) = as<scalar_type> (2);
-  A_tridi(0, 2) = as<scalar_type> (3);
-  A_tridi(1, 0) = as<scalar_type> (4);
-  A_tridi(1, 1) = as<scalar_type> (5);
-  A_tridi(1, 2) = as<scalar_type> (6);
-  A_tridi(2, 0) = as<scalar_type> (7);
-  A_tridi(2, 1) = as<scalar_type> (8);
-  A_tridi(2, 2) = as<scalar_type> (10); // not 9, else singular
+  A_tridi(0, 0) = as<scalar_type> (2);
+  A_tridi(0, 1) = as<scalar_type> (-1);
+  //  A_tridi(0, 2) = as<scalar_type> (0);
+  A_tridi(1, 0) = as<scalar_type> (-1);
+  A_tridi(1, 1) = as<scalar_type> (3);
+  A_tridi(1, 2) = as<scalar_type> (-1);
+  // A_tridi(2, 0) = as<scalar_type> (7);
+  A_tridi(2, 1) = as<scalar_type> (-2);
+  A_tridi(2, 2) = as<scalar_type> (1); //
 
-  out << "Filling A (sparse)" << endl;
+  A_tridi.print(out);
+
+  out << "Filling A CRS" << endl;
 
   val[0] = A_tridi(0, 0);
   val[1] = A_tridi(0, 1);
-  val[2] = A_tridi(0, 2);
+  //  val[2] = A_tridi(0, 2);
+  val[2] = 0;
   ind[0] = 0;
   ind[1] = 1;
   ind[2] = 2;
@@ -191,7 +193,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
   ind[2] = 2;
   A->insertLocalValues (1, ind (), val ());
 
-  val[0] = A_tridi(2, 0);
+  //  val[0] = A_tridi(2, 0);
+  val[0] = 0;
   val[1] = A_tridi(2, 1);
   val[2] = A_tridi(2, 2);
   ind[0] = 0;
@@ -278,7 +281,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     relResNorm > 10*STS::eps (), std::logic_error,
-    "TriDiSolver failed to solve the problem to within a small tolerance "
+    "Dense failed to solve the problem to within a small tolerance "
     << 10*STS::eps () << ".  Relative residual norm: " << relResNorm << ".");
 
   // Permutation array for LAPACK's LU factorization.
@@ -290,22 +293,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
   int INFO = 0;
 
   out << "A_tridi before GETRF:" << endl;
-  {
-    OSTab tab1 (rcpFromRef (out));
-    out << "[";
-    for (int i = 0; i < A_tridi.numRowsCols (); ++i) {
-      for (int j = 0; j < A_tridi.numRowsCols (); ++j) {
-        out << A_tridi(i,j);
-        if (j + 1 < A_tridi.numRowsCols ()) {
-          out << ", ";
-        }
-      }
-      if (i + 1 < A_tridi.numRowsCols ()) {
-        out << ";" << endl;
-      }
-    }
-    out << "]" << endl;
-  }
+  A_tridi.print(out);
+
 
   out << "Calling GTTRF (" << A_tridi.numRowsCols () << ", A.DL, A.D, A.DU, A.DU2, IPIV, INFO)" << endl;
 
@@ -318,31 +307,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
                 ipiv.getRawPtr (), &INFO);
 
   out << "A_tridi after GTTRF:" << endl;
-  {
-    OSTab tab1 (rcpFromRef (out));
-    out << "[";
-    for (int i = 0; i < A_tridi.numRowsCols (); ++i) {
-      for (int j = 0; j < A_tridi.numRowsCols (); ++j) {
-        out << A_tridi(i,j);
-        if (j + 1 < A_tridi.numRowsCols ()) {
-          out << ", ";
-        }
-      }
-      if (i + 1 < A_tridi.numRowsCols ()) {
-        out << ";" << endl;
-      }
-    }
-    out << "]" << endl;
-  }
+
+  A_tridi.print(out);
+  out<<std::endl;
+
   out << "ipiv after GETRF: " << toString (ipiv) << endl
       << "INFO: " << INFO << endl;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    INFO < 0, std::logic_error, "Bug in test after calling GETRF: "
+    INFO < 0, std::logic_error, "Bug in test after calling GTTRF: "
     "INFO = " << INFO << " < 0.  "
     "Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    INFO > 0, std::logic_error, "Bug in test after calling GETRF: "
+    INFO > 0, std::logic_error, "Bug in test after calling GTTRF: "
     "INFO = " << INFO << " > 0.  "
     "This means that the U factor of the test matrix is exactly singular, "
     "and therefore that the test's authors need to come up with a different "
@@ -354,7 +331,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
   std::copy (b_view.begin (), b_view.end (), x_lapack.begin ());
 
   const int numRhs = 1;
-  out << "Calling GETRS ('N', " << A_tridi.numRowsCols() << ", " << numRhs
+  out << "Calling GTTRS ('N', " << A_tridi.numRowsCols() << ", " << numRhs
       << ", A.DL, A.D, A.DU, A.DU2, IPIV, X, "
       << static_cast<int> (x_lapack.size ()) << ", INFO)" << endl;
   lapack.GTTRS ('N', A_tridi.numRowsCols (), numRhs,

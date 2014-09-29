@@ -360,7 +360,6 @@ This function performs a variety of matrix-matrix multiply operations.
   double* DU2() { return DU2_;};
   double* DU2() const { return DU2_;};
 
-
   //! Returns the data access mode of the \e this matrix.
   Epetra_DataAccess CV() const {return(CV_);};
   //@}
@@ -470,9 +469,9 @@ inline double& Ifpack_SerialTriDiMatrix::operator () (int RowIndex, int ColIndex
 		throw ReportError("Row index = " +toString(RowIndex) +
 				  " Out of Range 0 - " + toString(N_-1),-2);
 
- if ( diff > 2 || diff < -1 )
+ if ( diff > 1 || diff < -1 )
    throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) +
-		     " Out of Range -1 to 2");
+		     " Out of Range -1 to 1");
 #endif
 
  switch (diff) {
@@ -486,18 +485,11 @@ inline double& Ifpack_SerialTriDiMatrix::operator () (int RowIndex, int ColIndex
  case 1:
    return DU_[RowIndex];
    break;
- case 2:
-   return DU2_[RowIndex];
-   break;
  default:
-#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
-  throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) +
-		    " Out of Range -1 to 2");
-#endif
-  return D_[0]; // ultimate badness, should never get here
+   throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) +" Out of Range -1 to 1",1);
+   return D_[0]; // ultimate badness, should never get here
  }
-  throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) +
-		    " Out of Range -1 to 2");
+ throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) + " Out of Range -1 to 1",1);
  return D_[0]; // ultimat badness, should never get here
 }
 //=========================================================================
@@ -511,9 +503,8 @@ inline const double& Ifpack_SerialTriDiMatrix::operator () (int RowIndex, int Co
  if (RowIndex >= N_ || RowIndex < 0)
 		throw ReportError("Row index = " +toString(RowIndex) +
 				  " Out of Range 0 - " + toString(N_-1),-2);
- if ( diff > 2 || diff < -1 )
-   throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) +
-		     " Out of Range -1 to 2");
+ if ( diff > 1 || diff < -1 )
+   throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) + " Out of Range -1 to 1",-2);
 #endif
  switch (diff) {
  case -1:
@@ -526,14 +517,8 @@ inline const double& Ifpack_SerialTriDiMatrix::operator () (int RowIndex, int Co
  case 1:
    return DU_[RowIndex];
    break;
- case 2:
-   return DU2_[RowIndex];
-   break;
  default:
-#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
-  throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) +
-		    " Out of Range -1 to 2");
-#endif
+   throw ReportError("Row index = " +toString(RowIndex) + " differs from Col_Index " + toString(ColIndex) + " Out of Range -1 to 1",-2);
   return D_[0]; // Ultimate badness, should never get here.
  }
  return D_[0]; // Crime against humanity, should never get here. 

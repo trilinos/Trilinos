@@ -405,6 +405,10 @@ private:
   //! Contains the (block) diagonal elements of \c Matrix.
   mutable std::vector<Teuchos::RCP<ContainerType> > Containers_;
 
+  //  mutable Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Diagonal_;
+
+  Teuchos::ArrayRCP< const scalar_type > DiagRCP;
+
   //! Contains information about non-overlapping partitions.
   Teuchos::RCP<Ifpack2::Partitioner<Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > > Partitioner_;
 

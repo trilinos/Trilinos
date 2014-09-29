@@ -549,6 +549,10 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::shapeUninitialized(  OrdinalType
 template<typename OrdinalType, typename ScalarType>
 int SerialTriDiMatrix<OrdinalType, ScalarType>::reshape(  OrdinalType numRowsCols_in  ) 
 {
+  if(numRowsCols_in <1 ) {
+    deleteArrays();
+    return 0;
+  }
   // Allocate space for new matrix 
   const OrdinalType numvals = ( numRowsCols_in == 1) ? 1 :  4*(numRowsCols_in - 1);
   ScalarType* values_tmp = new ScalarType[numvals];
@@ -560,10 +564,10 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::reshape(  OrdinalType numRowsCol
   ScalarType* dl = values_tmp;
   ScalarType* d = values_tmp + (numRowsCols_in-1);
   ScalarType* du = d+(numRowsCols_in);
-  ScalarType* du2 = du+(numRowsCols_in - 1);
+  ScalarType* du2 = du+(numRowsCols_in - 1); 
 
   if(values_ != 0) {
-    for(OrdinalType i = 0 ; i< min ; ++i) {
+   for(OrdinalType i = 0 ; i< min ; ++i) {
       dl[i] = DL_[i];
       d[i]  = D_[i];
       du[i] = DU_[i];
@@ -575,6 +579,11 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::reshape(  OrdinalType numRowsCol
   numRowsCols_ = numRowsCols_in;
 
   values_ = values_tmp; // Set pointer to new A
+  DL_ = dl;
+  D_  = d;
+  DU_ = du;
+  DU2_ = du2;
+
   valuesCopied_ = true;
   return(0);
 }
@@ -727,9 +736,9 @@ inline const ScalarType& SerialTriDiMatrix<OrdinalType,ScalarType>::operator () 
 {
   OrdinalType diff = colIndex - rowIndex;
 
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  //#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   checkIndex( rowIndex, colIndex );
-#endif
+  //#endif
   switch (diff) {
   case -1:
     return DL_[colIndex];
@@ -743,19 +752,24 @@ inline const ScalarType& SerialTriDiMatrix<OrdinalType,ScalarType>::operator () 
   case 2:
     return DU2_[rowIndex];
     break;
-  default: ;
+  default: 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::out_of_range,
+			       "SerialTriDiMatrix<T>::operator (row,col) "
+			       "Index (" << rowIndex <<","<<colIndex<<") out of range ");
   }   
-  //  TEUCHOS_CHK_ERR(-1);
-  return (ScalarType) 0.0; 
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::out_of_range,
+			     "SerialTriDiMatrix<T>::operator (row,col) "
+			     "Index (" << rowIndex <<","<<colIndex<<") out of range ");
+  return D_[0]; 
 }
 
 template<typename OrdinalType,typename ScalarType>
 inline ScalarType& Teuchos::SerialTriDiMatrix<OrdinalType,ScalarType>::operator () (OrdinalType rowIndex, OrdinalType colIndex)
 { 
   OrdinalType diff = colIndex - rowIndex;
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  //#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   checkIndex( rowIndex, colIndex );
-#endif
+  //#endif
   switch (diff) {
   case -1:
     return DL_[colIndex];
@@ -769,8 +783,14 @@ inline ScalarType& Teuchos::SerialTriDiMatrix<OrdinalType,ScalarType>::operator 
   case 2:
     return DU2_[rowIndex];
     break;
-  default: ;
+  default: 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::out_of_range,
+			       "SerialTriDiMatrix<T>::operator (row,col) "
+			       "Index (" << rowIndex <<","<<colIndex<<") out of range ");
   }
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::out_of_range,
+			     "SerialTriDiMatrix<T>::operator (row,col) "
+			     "Index (" << rowIndex <<","<<colIndex<<") out of range ");
   //  TEUCHOS_CHK_ERR(-1);
   return D_[0]; 
 }
@@ -906,54 +926,6 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::scale( const SerialTriDiMatrix<O
   return(0);
 }
 
-// template<typename OrdinalType, typename ScalarType>
-// int  SerialTriDiMatrix<OrdinalType, ScalarType>::multiply(ETransp transa, ETransp transb, ScalarType alpha, const SerialTriDiMatrix<OrdinalType, ScalarType> &A, const SerialTriDiMatrix<OrdinalType, ScalarType> &B, ScalarType beta)
-// {
-//   // Check for compatible dimensions
-//   OrdinalType A_nrows = (ETranspChar[transa]!='N') ? A.numCols() : A.numRows();
-//   OrdinalType A_ncols = (ETranspChar[transa]!='N') ? A.numRows() : A.numCols();
-//   OrdinalType B_nrows = (ETranspChar[transb]!='N') ? B.numCols() : B.numRows();
-//   OrdinalType B_ncols = (ETranspChar[transb]!='N') ? B.numRows() : B.numCols();
-//   if ((numRowsCols_ != A_nrows) || (A_ncols != B_nrows) || (numCols_ != B_ncols))
-//   {
-//     TEUCHOS_CHK_ERR(-1); // Return error
-//   }
-//   // Call GEMM function
-//   this->GEMM(transa, transb, numRowsCols_, numCols_, A_ncols, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
-//   double nflops = 2 * numRowsCols_;
-//   nflops *= numCols_;
-//   nflops *= A_ncols;
-//   updateFlops(nflops);
-//   return(0);
-// }
-  
-// template<typename OrdinalType, typename ScalarType>
-// int SerialTriDiMatrix<OrdinalType, ScalarType>::multiply (ESide sideA, ScalarType alpha, const SerialSymTriDiMatrix<OrdinalType, ScalarType> &A, const SerialTriDiMatrix<OrdinalType, ScalarType> &B, ScalarType beta)
-// {
-//   // Check for compatible dimensions
-//   OrdinalType A_nrows = A.numRows(), A_ncols = A.numCols();
-//   OrdinalType B_nrows = B.numRows(), B_ncols = B.numCols();
-  
-//   if (ESideChar[sideA]=='L') {
-//     if ((numRowsCols_ != A_nrows) || (A_ncols != B_nrows) || (numCols_ != B_ncols)) {
-//       TEUCHOS_CHK_ERR(-1); // Return error
-//     }
-//   } else {
-//     if ((numRowsCols_ != B_nrows) || (B_ncols != A_nrows) || (numCols_ != A_ncols)) {
-//       TEUCHOS_CHK_ERR(-1); // Return error
-//     }
-//   } 
-  
-//   // Call SYMM function
-//   EUplo uplo = (A.upper() ? Teuchos::UPPER_TRI : Teuchos::LOWER_TRI);
-//   this->SYMM(sideA, uplo, numRowsCols_, numCols_, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
-//   double nflops = 2 * numRowsCols_;
-//   nflops *= numCols_;
-//   nflops *= A_ncols;
-//   updateFlops(nflops);
-//   return(0);
-// }
-
 template<typename OrdinalType, typename ScalarType>
 void SerialTriDiMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const 
 {
@@ -963,8 +935,10 @@ void SerialTriDiMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
   else
     os << "A_Copied: no" << std::endl;
   os << "Rows and Columns: " << numRowsCols_ << std::endl;
-  if(numRowsCols_ == 0)
+  if(numRowsCols_ == 0) {
     os << "(matrix is empty, no values to display)" << std::endl;
+    return;
+  }
   else
     {
       os << "DL: "<<std::endl;
@@ -984,6 +958,19 @@ void SerialTriDiMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
 	os << DU2_[i]<<" ";	    
       os << std::endl;
     }
+ 
+  os <<" square format:"<<std::endl;
+  for(int i=0 ; i < numRowsCols_ ; ++i )  {
+    for(int j=0;j<numRowsCols_;++j)  {
+      if ( j >= i-1  && j <= i+1) {
+	os << (*this)(i,j)<<" ";
+      }
+      else 
+	os <<". ";
+    }
+    os << std::endl;
+  }
+
 }
 
 //----------------------------------------------------------------------------------------------------

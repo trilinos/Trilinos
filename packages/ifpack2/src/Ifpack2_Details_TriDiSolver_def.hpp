@@ -271,7 +271,7 @@ void TriDiSolver<MatrixType, false>::initialize ()
       "initialize: A_local_ is null after it was supposed to have been "
       "initialized.  Please report this bug to the Ifpack2 developers.");
 
-    // Allocate the dense local matrix and the pivot array.
+    // Allocate the TriDi local matrix and the pivot array.
     const size_t numRows = A_local_->getNodeNumRows ();
     const size_t numCols = A_local_->getNodeNumCols ();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -326,7 +326,15 @@ void TriDiSolver<MatrixType, false>::compute ()
       this->initialize ();
     }
     extract (A_local_tridi_, *A_local_); // extract the tridi local matrix
+
+    std::cout << " inside compute, after extract, before factor "<<std::endl;
+
+    A_local_tridi_.print(std::cout);
+
     factor (A_local_tridi_, ipiv_ ()); // factor the tridi local matrix
+
+    std::cout << " inside compute, after factor "<<std::endl;
+    A_local_tridi_.print(std::cout);
 
     isComputed_ = true;
     ++numCompute_;
@@ -513,8 +521,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 
 template<class MatrixType>
-std::string
-TriDiSolver<MatrixType, false>::description () const
+std::string TriDiSolver<MatrixType, false>::description () const
 {
   std::ostringstream out;
 
@@ -544,60 +551,41 @@ TriDiSolver<MatrixType, false>::description () const
 
 
 template<class MatrixType>
-void TriDiSolver<MatrixType, false>::
-describeLocal (Teuchos::FancyOStream& out,
-               const Teuchos::EVerbosityLevel verbLevel) const
-{
-  // using Teuchos::FancyOStream;
-  // using Teuchos::OSTab;
-  // using Teuchos::RCP;
-  // using Teuchos::rcpFromRef;
-  // using std::endl;
+void TriDiSolver<MatrixType, false>::describeLocal (Teuchos::FancyOStream& out, 
+						    const Teuchos::EVerbosityLevel verbLevel) const {
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  using Teuchos::RCP;
+  using Teuchos::rcpFromRef;
+  using std::endl;
 
-  // if (verbLevel == Teuchos::VERB_NONE) {
-  //   return;
-  // }
-  // else {
-  //   RCP<FancyOStream> ptrOut = rcpFromRef (out);
-  //   OSTab tab1 (ptrOut);
-  //   if (this->getObjectLabel () != "") {
-  //     out << "label: " << this->getObjectLabel () << endl;
-  //   }
-  //   out << "initialized: " << (isInitialized_ ? "true" : "false") << endl
-  //       << "computed: " << (isComputed_ ? "true" : "false") << endl
-  //       << "number of initialize calls: " << numInitialize_ << endl
-  //       << "number of compute calls: " << numCompute_ << endl
-  //       << "number of apply calls: " << numApply_ << endl
-  //       << "total time in seconds in initialize: " << initializeTime_ << endl
-  //       << "total time in seconds in compute: " << computeTime_ << endl
-  //       << "total time in seconds in apply: " << applyTime_ << endl;
-  //   if (verbLevel >= Teuchos::VERB_EXTREME) {
-  //     out << "A_local_dense_:" << endl;
-  //     {
-  //       OSTab tab2 (ptrOut);
-  //       out << "[";
-  //       for (int i = 0; i < A_local_dense_.numRows (); ++i) {
-  //         for (int j = 0; j < A_local_dense_.numCols (); ++j) {
-  //           out << A_local_dense_(i,j);
-  //           if (j + 1 < A_local_dense_.numCols ()) {
-  //             out << ", ";
-  //           }
-  //         }
-  //         if (i + 1 < A_local_dense_.numRows ()) {
-  //           out << ";" << endl;
-  //         }
-  //       }
-  //       out << "]" << endl;
-  //     }
-  //     out << "ipiv_: " << Teuchos::toString (ipiv_) << endl;
-  //   }
-  // }
+  if (verbLevel == Teuchos::VERB_NONE) {
+    return;
+  }
+  else {
+    RCP<FancyOStream> ptrOut = rcpFromRef (out);
+    OSTab tab1 (ptrOut);
+    if (this->getObjectLabel () != "") {
+      out << "label: " << this->getObjectLabel () << endl;
+    }
+    out << "initialized: " << (isInitialized_ ? "true" : "false") << endl
+        << "computed: " << (isComputed_ ? "true" : "false") << endl
+        << "number of initialize calls: " << numInitialize_ << endl
+        << "number of compute calls: " << numCompute_ << endl
+        << "number of apply calls: " << numApply_ << endl
+        << "total time in seconds in initialize: " << initializeTime_ << endl
+        << "total time in seconds in compute: " << computeTime_ << endl
+        << "total time in seconds in apply: " << applyTime_ << endl;
+    if (verbLevel >= Teuchos::VERB_EXTREME) {
+      out << "A_local_tridi_:" << endl;
+      A_local_tridi_.print(out);
+      }
+      out << "ipiv_: " << Teuchos::toString (ipiv_) << endl;
+    }
 }
 
-
 template<class MatrixType>
-void TriDiSolver<MatrixType, false>::
-describe (Teuchos::FancyOStream& out,
+void TriDiSolver<MatrixType, false>::describe (Teuchos::FancyOStream& out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
   using Teuchos::FancyOStream;
@@ -640,10 +628,8 @@ describe (Teuchos::FancyOStream& out,
   }
 }
 
-
 template<class MatrixType>
-void TriDiSolver<MatrixType, false>::
-extract (Teuchos::SerialTriDiMatrix<int, scalar_type>& A_local_dense,
+void TriDiSolver<MatrixType, false>::extract (Teuchos::SerialTriDiMatrix<int, scalar_type>& A_local_tridi,
          const row_matrix_type& A_local)
 {
   using Teuchos::Array;
@@ -651,8 +637,8 @@ extract (Teuchos::SerialTriDiMatrix<int, scalar_type>& A_local_dense,
   typedef local_ordinal_type LO;
   typedef typename Teuchos::ArrayView<LO>::size_type size_type;
 
-  // Fill the local dense matrix with zeros.
-  A_local_dense.putScalar (STS::zero ());
+  // Fill the local tridi matrix with zeros.
+  A_local_tridi.putScalar (STS::zero ());
 
   //
   // Map both row and column indices to local indices.  We can use the
@@ -678,7 +664,7 @@ extract (Teuchos::SerialTriDiMatrix<int, scalar_type>& A_local_dense,
     // The LocalFilter automatically excludes "off-process" entries.
     // That means all the column indices in this row belong to the
     // domain Map.  We can, therefore, just use the local row and
-    // column indices to put each entry directly in the dense matrix.
+    // column indices to put each entry directly in the tridi matrix.
     // It's OK if the column Map puts the local indices in a different
     // order; the Import will bring them into the correct order.
     const size_type numEntriesInRow =
@@ -693,7 +679,9 @@ extract (Teuchos::SerialTriDiMatrix<int, scalar_type>& A_local_dense,
       const scalar_type val = values[k];
       // We use += instead of =, in case there are duplicate entries
       // in the row.  There should not be, but why not be general?
-      A_local_dense(localRow, localCol) += val;
+      // NOTE: we only extract the TriDi part of the row matrix. Do not extract DU2
+      if( localCol >= localRow-1 && localCol <= localRow+1 ) 
+	A_local_tridi(localRow, localCol) += val;
     }
   }
 }
@@ -703,8 +691,7 @@ extract (Teuchos::SerialTriDiMatrix<int, scalar_type>& A_local_dense,
 //////////////////////////////////////////////////////////////////////
 
 template<class MatrixType>
-TriDiSolver<MatrixType, true>::
-TriDiSolver (const Teuchos::RCP<const row_matrix_type>& A) {
+TriDiSolver<MatrixType, true>::TriDiSolver (const Teuchos::RCP<const row_matrix_type>& A) {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
@@ -725,8 +712,7 @@ TriDiSolver<MatrixType, true>::getRangeMap () const {
 
 template<class MatrixType>
 void
-TriDiSolver<MatrixType, true>::
-setParameters (const Teuchos::ParameterList& params) {
+TriDiSolver<MatrixType, true>::setParameters (const Teuchos::ParameterList& params) {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
@@ -789,8 +775,7 @@ TriDiSolver<MatrixType, true>::getApplyTime () const {
 
 template<class MatrixType>
 typename TriDiSolver<MatrixType, true>::magnitude_type
-TriDiSolver<MatrixType, true>::
-computeCondEst (CondestType CT,
+TriDiSolver<MatrixType, true>::computeCondEst (CondestType CT,
                 local_ordinal_type MaxIters,
                 magnitude_type Tol,
                 const Teuchos::Ptr<const row_matrix_type>& Matrix)
@@ -814,8 +799,7 @@ TriDiSolver<MatrixType, true>::getMatrix () const {
 
 
 template<class MatrixType>
-void TriDiSolver<MatrixType, true>::
-setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+void TriDiSolver<MatrixType, true>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
@@ -843,8 +827,8 @@ void TriDiSolver<MatrixType, true>::compute ()
 
 
 template<class MatrixType>
-void TriDiSolver<MatrixType, true>::
-apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+void TriDiSolver<MatrixType, true>::apply (
+       const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
        Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
        Teuchos::ETransp mode,
        scalar_type alpha,
@@ -863,15 +847,13 @@ TriDiSolver<MatrixType, true>::description () const
 
 
 template<class MatrixType>
-void TriDiSolver<MatrixType, true>::
-describe (Teuchos::FancyOStream& out,
-          const Teuchos::EVerbosityLevel verbLevel) const
+void TriDiSolver<MatrixType, true>::describe(Teuchos::FancyOStream& out,
+                                              const Teuchos::EVerbosityLevel verbLevel) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
-
-} // namespace Details
+}// namespace Details
 } // namespace Ifpack2
 
 #define IFPACK2_DETAILS_TRIDISOLVER_INSTANT(S,LO,GO,N)                  \

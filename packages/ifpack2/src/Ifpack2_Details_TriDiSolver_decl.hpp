@@ -55,6 +55,9 @@
 namespace Ifpack2 {
 namespace Details {
 
+#ifndef IFPACK2_LAPACKSUPPORTSSCALAR
+#define IFPACK2_LAPACKSUPPORTSSCALAR
+
 /// \struct LapackSupportsScalar
 /// \brief Trait for whether LAPACK supports the given scalar type.
 /// \tparam ScalarType Scalar type to test.
@@ -62,6 +65,7 @@ namespace Details {
 /// This is an implementation detail of TriDiSolver.  It might be
 /// useful to promote this to a commonly used utility, but for now,
 /// I'll leave it here.
+
 template<class ScalarType>
 struct LapackSupportsScalar {
   //! Whether LAPACK supports \c ScalarType.
@@ -90,10 +94,10 @@ struct LapackSupportsScalar<std::complex<double> > {
   static const bool value = true;
 };
 #endif // TEUCHOS_HAVE_COMPLEX
-
+#endif // IFPACK2_LAPACKSUPPORTSSCALAR
 
 /// \class TriDiSolver
-/// \brief "Preconditioner" that uses LAPACK's dense LU.
+/// \brief "Preconditioner" that uses LAPACK's tridi LU.
 /// \tparam MatrixType Specialization of Tpetra::RowMatrix.
 /// \tparam stub Whether this is a stub implementation.  The default
 ///   is false.  If true, then this class does nothing and its
@@ -301,9 +305,9 @@ private:
   //! Reset stored data.
   void reset ();
 
-  /// \brief Extract the local dense matrix from the local sparse matrix.
+  /// \brief Extract the local tridi matrix from the local sparse matrix.
   ///
-  /// \param A_local_tridi [out] The local dense matrix.
+  /// \param A_local_tridi [out] The local tridi matrix.
   /// \param A_local [out] The local sparse matrix; the result of
   ///   applying a LocalFilter to the original input matrix A.
   ///   (If A is already "local," then this need not necessarily
@@ -312,9 +316,9 @@ private:
   extract (Teuchos::SerialTriDiMatrix<int, scalar_type>& A_local_tridi,
            const row_matrix_type& A_local);
 
-  /// \brief Factor the local dense matrix A in place.
+  /// \brief Factor the local tridi matrix A in place.
   ///
-  /// \param A [in/out] On input: The local dense matrix to factor.
+  /// \param A [in/out] On input: The local tridi matrix to factor.
   ///   On output: The resulting LU factorization.
   ///
   /// \param ipiv [out] The pivot array from the LU factorization
@@ -361,7 +365,7 @@ private:
   //! The result of a LocalFilter on A_.
   Teuchos::RCP<const row_matrix_type> A_local_;
 
-  //! The local (dense) matrix, which compute() extracts and factor() factors in place.
+  //! The local (tridi) matrix, which compute() extracts and factor() factors in place.
   Teuchos::SerialTriDiMatrix<int, scalar_type> A_local_tridi_;
 
   //! Permutation array from LAPACK (GETRF).
@@ -555,6 +559,11 @@ public:
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel =
             Teuchos::Describable::verbLevel_default) const;
+  
+  void 
+  describeLocal (Teuchos::FancyOStream& out,
+		      const Teuchos::EVerbosityLevel verbLevel) const;
+
   //@}
 private:
   //! Specialization of Tpetra::MultiVector used in implementation.
@@ -565,4 +574,4 @@ private:
 } // namespace Details
 } // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_DENSESOLVER_DECL_HPP
+#endif // IFPACK2_DETAILS_TRIDISOLVER_DECL_HPP

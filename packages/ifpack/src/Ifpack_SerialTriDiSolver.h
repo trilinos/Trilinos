@@ -229,15 +229,6 @@ class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiSolver :
   //! Returns true if matrix is factored (factor available via AF() and LDAF()).
   bool Factored() {return(Factored_);};
 
-  /* //! Returns true if factor is equilibrated (factor available via AF() and LDAF()). */
-  /* bool A_Equilibrated() {return(A_Equilibrated_);}; */
-
-  /* //! Returns true if RHS is equilibrated (RHS available via B() and LDB()). */
-  /* bool B_Equilibrated() {return(B_Equilibrated_);}; */
-
-  /* //! Returns true if the LAPACK general rules for equilibration suggest you should equilibrate the system. */
-  /* virtual bool ShouldEquilibrate() {ComputeEquilibrateScaling(); return(ShouldEquilibrate_);}; */
-
   //! Returns true if forward and backward error estimated have been computed (available via FERR() and BERR()).
   bool SolutionErrorsEstimated() {return(SolutionErrorsEstimated_);};
 
@@ -343,11 +334,6 @@ class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiSolver :
   void ResetMatrix();
   void ResetVectors();
 
-
-  /* bool Equilibrate_; */
-  /* bool ShouldEquilibrate_; */
-  /* bool A_Equilibrated_; */
-  /* bool B_Equilibrated_; */
   bool Transpose_;
   bool Factored_;
   bool EstimateSolutionErrors_;

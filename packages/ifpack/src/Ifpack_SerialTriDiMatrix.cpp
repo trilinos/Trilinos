@@ -379,114 +379,13 @@ int Ifpack_SerialTriDiMatrix::Multiply (char TransA, char TransB, double ScalarA
 					const Ifpack_SerialTriDiMatrix& A_in,
 					const Ifpack_SerialTriDiMatrix& B,
 					double ScalarThis ) {
-  // // Check for compatible dimensions
-
-  // if (TransA!='T' && TransA!='N') EPETRA_CHK_ERR(-2); // Return error
-  // if (TransB!='T' && TransB!='N') EPETRA_CHK_ERR(-3);
-
-  // // int A_nrows = (TransA=='T') ? A_in.N() : A_in.M();
-  // // int A_ncols = (TransA=='T') ? A_in.M() : A_in.N();
-  // // int B_nrows = (TransB=='T') ? B.N() : B.M();
-  // // int B_ncols = (TransB=='T') ? B.M() : B.N();
-
-  // // if (M_        != A_nrows     ||
-  // //     A_ncols   != B_nrows     ||
-  // //     N_        != B_ncols  ) EPETRA_CHK_ERR(-1); // Return error
-
-
-  // // Call GEMM function
-  // GEMM(TransA, TransB, M_, N_, A_ncols, ScalarAB, A_in.A(), A_in.LDA(),
-  //      B.A(), B.LDA(), ScalarThis, A_, LDA_);
-  // long int nflops = 2*M_;
-  // nflops *= N_;
-  // nflops *= A_ncols;
-  // if (ScalarAB != 1.0) nflops += M_*N_;
-  // if (ScalarThis != 0.0) nflops += M_*N_;
-  // UpdateFlops((double)nflops);
-
-  // return(0);
-
+  throw ReportError("Ifpack_SerialTriDiMatrix::Multiply not implimented ",-2);
   return(-1);
 
 }
 
 //=========================================================================
-// int  Ifpack_SerialTriDiMatrix::Multiply (bool transA,
-//                                          const Ifpack_SerialTriDiMatrix& x,
-//                                          Ifpack_SerialTriDiMatrix& y)
-// {
-//   int A_nrows = M();
-//   int x_nrows = x.M();
-//   int y_nrows = y.M();
-//   int A_ncols = N();
-//   int x_ncols = x.N();
-//   int y_ncols = y.N();
 
-//   if (transA) {
-//     if (x_nrows != A_nrows) EPETRA_CHK_ERR(-1);
-//     if (y_ncols != x_ncols || y_nrows != A_ncols) y.Reshape(A_ncols, x_ncols);
-//   }
-//   else {
-//     if (x_nrows != A_ncols) EPETRA_CHK_ERR(-1);
-//     if (y_ncols != x_ncols || y_nrows != A_nrows) y.Reshape(A_nrows, x_ncols);
-//   }
-
-//   double scalar0 = 0.0;
-//   double scalar1 = 1.0;
-
-//   int err = 0;
-//   if (transA) {
-//     err = y.Multiply('T', 'N', scalar1, *this, x, scalar0);
-//   }
-//   else {
-//     err = y.Multiply('N', 'N', scalar1, *this, x, scalar0);
-//   }
-//   // FIXME (mfh 06 Mar 2013) Why aren't we returning err instead of 0?
-//   // In any case, I'm going to silence the unused value compiler
-//   // warning for now.  I'm not changing the return value because I
-//   // don't want to break any downstream code that depends on this
-//   // method always returning 0.
-//   (void) err;
-
-//   return(0);
-// }
-
-
-//=========================================================================
-void Ifpack_SerialTriDiMatrix::Print(std::ostream& os) const {
-	os << std::endl;
-	if(CV_ == Copy)
-		os << "Data access mode: Copy" << std::endl;
-	else
-		os << "Data access mode: View" << std::endl;
-	if(A_Copied_)
-		os << "A_Copied: yes" << std::endl;
-	else
-		os << "A_Copied: no" << std::endl;
-	os << "Rows and Columns(N): " << N_ << std::endl;
-	if(N_ == 0)
-		os << "(matrix is empty, no values to display)" << std::endl;
-	else
-	  {
-	    os << "DL: "<<std::endl;
-	    for(int i=0;i<N_-1;++i) 
-	      os << DL_[i]<<" ";	    
-	    os << std::endl;
-	    os << "D: "<<std::endl;
-	    for(int i=0;i<N_;++i) 
-	      os << D_[i]<<" ";	    
-	    os << std::endl;
-	    os << "DU: "<<std::endl;
-	    for(int i=0;i<N_-1;++i) 
-	      os << DU_[i]<<" ";	    
-	    os << std::endl;
-	    os << "DU2: "<<std::endl;
-	    for(int i=0;i<N_-2;++i) 
-	      os << DU2_[i]<<" ";	    
-	    os << std::endl;
-	  }
-}
-//=========================================================================
 int Ifpack_SerialTriDiMatrix::Random() {
   
   Epetra_Util util;
@@ -499,8 +398,20 @@ int Ifpack_SerialTriDiMatrix::Random() {
   return(0);
 }
 
-// //=========================================================================
-// int Ifpack_SerialTriDiMatrix::Apply(const Ifpack_SerialTriDiMatrix& X,
-// 				    Ifpack_SerialTriDiMatrix& Y) {
-//   return Multiply(UseTranspose(), X, Y);
-// }
+void Ifpack_SerialTriDiMatrix::Print(std::ostream& os) const {
+    os <<" square format:"<<std::endl;
+    if(! A_ ) {
+      os <<" empty matrix "<<std::endl;
+      return;
+    }
+    for(int i=0 ; i < N_ ; ++i)  {
+    for(int j=0 ; j < N_ ; ++j)  {
+      if ( j >= i-1  && j <= i+1) {
+	os << (*this)(i,j)<<" ";
+      }
+      else 
+	os <<". ";
+    }
+    os << std::endl;
+    }
+ }
