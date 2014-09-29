@@ -48,6 +48,7 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_TestingTools.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
 #include "Thyra_RowStatLinearOpBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -737,7 +738,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_EpetraRow
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_RowStatLinearOpBase,
   Scalar )
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::as;
 
   const RCP<Tpetra::Operator<Scalar,int> > tpetraOp =
@@ -747,10 +747,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_RowStatLi
 
   const RCP<Tpetra::CrsMatrix<Scalar,int> > tpetraCrsMatrix = 
     Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,int> >(tpetraOp,true);
-
-  // tpetraCrsMatrix->resumeFill();
-  // tpetraCrsMatrix->setAllToScalar(Scalar(2.0));
-  // tpetraCrsMatrix->fillComplete();
 
   const RCP<const VectorSpaceBase<Scalar> > rangeSpace =
     Thyra::createVectorSpace<Scalar>(tpetraOp->getRangeMap());
@@ -789,6 +785,71 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_RowStatLi
     Teuchos::as<Scalar>( 1.0 / 4.0 * (thyraLinearOp->domain()->dim() - 2) + 2.0 / 3.0 ),
     Teuchos::as<Scalar>(10.0 * Teuchos::ScalarTraits<Scalar>::eps())
     );
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_ScaledLinearOpBase,
+  Scalar )
+{
+  const RCP<Tpetra::Operator<Scalar,int> > tpetraOp =
+    createTriDiagonalTpetraOperator<Scalar>(g_localDim);
+  out << "tpetraOp = " << Teuchos::describe(*tpetraOp, Teuchos::VERB_HIGH) << std::endl;
+  TEST_ASSERT(nonnull(tpetraOp));
+
+  const RCP<Tpetra::CrsMatrix<Scalar,int> > tpetraCrsMatrix = 
+    Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,int> >(tpetraOp,true);
+
+  const RCP<const VectorSpaceBase<Scalar> > rangeSpace =
+    Thyra::createVectorSpace<Scalar>(tpetraOp->getRangeMap());
+  const RCP<const VectorSpaceBase<Scalar> > domainSpace =
+    Thyra::createVectorSpace<Scalar>(tpetraOp->getDomainMap());
+  const RCP<LinearOpBase<Scalar> > thyraLinearOp =
+    Thyra::tpetraLinearOp(rangeSpace, domainSpace, tpetraOp);
+  TEST_ASSERT(nonnull(thyraLinearOp));
+
+  const Teuchos::RCP<Thyra::RowStatLinearOpBase<Scalar> > rowStatOp =
+    Teuchos::rcp_dynamic_cast<Thyra::RowStatLinearOpBase<Scalar> >(thyraLinearOp, true);
+
+  // Get the inverse row sums
+
+  const RCP<VectorBase<Scalar> > inv_row_sums =
+    createMember<Scalar>(thyraLinearOp->range());
+  const RCP<VectorBase<Scalar> > row_sums =
+    createMember<Scalar>(thyraLinearOp->range());
+
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
+    inv_row_sums.ptr());
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,
+    row_sums.ptr());
+
+  out << "inv_row_sums = " << *inv_row_sums;
+  out << "row_sums = " << *row_sums;
+
+  const Teuchos::RCP<Thyra::ScaledLinearOpBase<Scalar> > scaledOp =
+    Teuchos::rcp_dynamic_cast<Thyra::ScaledLinearOpBase<Scalar> >(thyraLinearOp, true);
+
+  TEUCHOS_ASSERT(scaledOp->supportsScaleLeft());
+
+  scaledOp->scaleLeft(*inv_row_sums);
+
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,
+    row_sums.ptr());
+  
+  out << "row_sums after left scaling by inv_row_sum = " << *row_sums;
+
+  // scaled row sums should be one for each entry
+  TEST_FLOATING_EQUALITY(
+    Scalar(row_sums->space()->dim()),
+    Thyra::sum<Scalar>(*row_sums),
+    as<Scalar>(10.0 * Teuchos::ScalarTraits<Scalar>::eps())
+    );
+
+  // Don't currently check the results of right scaling.  Tpetra tests
+  // already check this.  Once column sums are supported in tpetra
+  // adapters, this can be checked easily.
+  TEUCHOS_ASSERT(scaledOp->supportsScaleRight());
+  scaledOp->scaleRight(*inv_row_sums);
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,row_sums.ptr());  
+  out << "row_sums after right scaling by inv_row_sum = " << *row_sums;
 }
 
 #endif // HAVE_THYRA_TPETRA_EPETRA
@@ -844,6 +905,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_RowStatLi
    \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
     TpetraLinearOp_RowStatLinearOpBase, SCALAR ) \
+   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
+    TpetraLinearOp_ScaledLinearOpBase, SCALAR ) \
   
 
 // We can currently only explicitly instantiate with double support because

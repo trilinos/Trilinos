@@ -299,6 +299,56 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
 
 }
 
+// Protected member functions overridden from ScaledLinearOpBase
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::supportsScaleLeftImpl() const
+{
+  return true;
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::supportsScaleRightImpl() const
+{
+  return true;
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void 
+TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+scaleLeftImpl(const VectorBase<Scalar> &row_scaling_in)
+{
+  using Teuchos::rcpFromRef;
+
+  const RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > row_scaling = 
+    TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector(rcpFromRef(row_scaling_in));
+
+  const RCP<typename Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowMatrix = 
+    Teuchos::rcp_dynamic_cast<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpetraOperator_.getNonconstObj(),true);
+
+  rowMatrix->leftScale(*row_scaling);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void 
+TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+scaleRightImpl(const VectorBase<Scalar> &col_scaling_in)
+{
+  using Teuchos::rcpFromRef;
+
+  const RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > col_scaling = 
+    TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector(rcpFromRef(col_scaling_in));
+
+  const RCP<typename Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowMatrix = 
+    Teuchos::rcp_dynamic_cast<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpetraOperator_.getNonconstObj(),true);
+
+  rowMatrix->rightScale(*col_scaling);
+}
+
 // Protected member functions overridden from RowStatLinearOpBase
 
 
