@@ -32,6 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+//-BEGIN
 #include <gtest/gtest.h>
 #include <stk_util/environment/Scheduler.hpp>
 
