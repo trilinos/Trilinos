@@ -16,6 +16,7 @@
 #include <algorithm>
 
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
 namespace stk_classic {
 namespace mesh {
@@ -113,7 +114,7 @@ SelectedBucketRangeEntityIteratorRange get_selected_entities( const Selector & s
 void count_entities(
   const Selector & selector ,
   const BulkData & mesh ,
-  std::vector< EntityRank > & count )
+  std::vector< size_t > & count )
 {
   const size_t nranks = MetaData::get(mesh).entity_rank_count();
 

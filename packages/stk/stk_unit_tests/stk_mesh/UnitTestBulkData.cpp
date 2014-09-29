@@ -51,6 +51,7 @@
 #include <string>                       // for string, basic_string, etc
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
+#include <unit_tests/Setup8Quad4ProcMesh.hpp>
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
@@ -70,12 +71,6 @@
 #include <stk_mesh/base/Comm.hpp>
 
 namespace stk { namespace mesh { class FieldBase; } }
-
-
-
-
-
-
 
 using stk::mesh::Part;
 using stk::mesh::MetaData;
@@ -968,6 +963,102 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
   }
 
   mesh.change_entity_owner(change);
+}
+
+void add_nodes_to_move(stk::mesh::BulkData& bulk,
+                       stk::mesh::Entity elem, int dest_proc,
+                       std::vector<stk::mesh::EntityProc>& entities_to_move)
+{
+    const stk::mesh::Entity* nodes = bulk.begin_nodes(elem);
+    for(unsigned i=0; i<bulk.num_nodes(elem); ++i) {
+        if (bulk.parallel_owner_rank(nodes[i]) == bulk.parallel_rank()) {
+            entities_to_move.push_back(stk::mesh::EntityProc(nodes[i], dest_proc));
+        }
+    }
+}
+
+TEST(UnitTestingOfBulkData, change_entity_owner_8quads_4procs)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(pm);
+    if (numProcs != 4) {
+        return;
+    }
+
+    unsigned spatialDim = 2;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData bulk(meta, pm);
+
+    setup8Quad4ProcMesh2D(bulk);
+    // setup now, now change
+    //  move 6 from p1 to p3, move 3 from p2 to p0
+    //     p0   p1   p2   p3               p0   /p       /p   p3
+    //  11---12---13---14---15          11---12------13-----14---15
+    //   | 5  | 6  | 7  | 8  |    ->     | 5  | 6/3  | 7/2  | 8  |
+    //   6----7----8----9---10           6----7------8------9---10
+    //   | 1  | 2  | 3  | 4  |           | 1  | 2/1  | 3/0  | 4  |
+    //   1----2----3----4----5           1----2------3------4----5
+    // also moves any owned nodes of elem3 or elem6 along with the element
+    std::vector<stk::mesh::EntityProc> entities_to_move;
+    if (bulk.parallel_rank() == 1) {
+        stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 6);
+        int dest_proc = 3;
+        entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
+        add_nodes_to_move(bulk, elem, dest_proc, entities_to_move);
+    }
+    if (bulk.parallel_rank() == 2) {
+        stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 3);
+        int dest_proc = 0;
+        entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
+        add_nodes_to_move(bulk, elem, dest_proc, entities_to_move);
+    }
+    bulk.change_entity_owner(entities_to_move);
+
+    std::vector<unsigned> counts(meta.entity_rank_count());
+    stk::mesh::Selector owned_or_shared = meta.locally_owned_part() | meta.globally_shared_part();
+    stk::mesh::count_entities(owned_or_shared, bulk, counts);
+
+    unsigned numNodes = counts[stk::topology::NODE_RANK];
+    unsigned numElems = counts[stk::topology::ELEM_RANK];
+
+    unsigned expectedNumNodes = 10;
+    unsigned expectedNumElems = 3;
+    if(bulk.parallel_rank() == 1 || bulk.parallel_rank() == 2) {
+        expectedNumElems = 1;
+        expectedNumNodes = 4;
+    }
+    EXPECT_EQ(expectedNumNodes, numNodes);
+    EXPECT_EQ(expectedNumElems, numElems);
+
+    //center center point
+    stk::mesh::Entity node8 = bulk.get_entity(stk::topology::NODE_RANK, 8);
+    EXPECT_TRUE(bulk.is_valid(node8));
+    int expectedOwner = 3;
+    EXPECT_EQ(expectedOwner, bulk.parallel_owner_rank(node8));
+
+    stk::mesh::PairIterEntityComm sharedNodes = bulk.entity_comm_map_shared(bulk.entity_key(node8));
+    unsigned expectNumShared = 3;
+    EXPECT_EQ(expectNumShared, sharedNodes.size());
+
+    //top center point
+    stk::mesh::Entity node13 = bulk.get_entity(stk::topology::NODE_RANK, 13);
+    if (bulk.parallel_rank() == 3 || bulk.parallel_rank() == 2) {
+        EXPECT_TRUE(bulk.in_shared(bulk.entity_key(node13)));
+    } else {
+        EXPECT_FALSE( bulk.in_shared(bulk.entity_key(node13)) );
+    }
+    expectedOwner = 3;
+    EXPECT_EQ(expectedOwner, bulk.parallel_owner_rank(node13));
+
+    //bottom center point
+    stk::mesh::Entity node3 = bulk.get_entity(stk::topology::NODE_RANK, 3);
+    if (bulk.parallel_rank() == 0 || bulk.parallel_rank() == 1) {
+        EXPECT_TRUE(bulk.in_shared(bulk.entity_key(node3)));
+    } else {
+        EXPECT_FALSE( bulk.in_shared(bulk.entity_key(node3)) );
+    }
+    expectedOwner = 1;
+    EXPECT_EQ(expectedOwner, bulk.parallel_owner_rank(node3));
 }
 
 TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
