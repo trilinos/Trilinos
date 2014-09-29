@@ -88,9 +88,9 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   ../../checkin-test.py --help &> checkin-test-help.txt
 
   echo
-  echo "Generating output for 'gitdist --help' ..."
+  echo "Generating output for 'egdist --help' ..."
   echo
-  ../../common_tools/git/gitdist --help &> gitdist-help.txt
+  ../../common_tools/git/egdist --help &> egdist-help.txt
 
   echo
   echo "Generating output for 'snapshot-dir.py --help' ..."

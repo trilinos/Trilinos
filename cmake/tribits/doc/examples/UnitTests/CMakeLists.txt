@@ -181,7 +181,6 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   CATEGORIES CONTINUOUS
-
   TEST_0 CMND ${CMAKE_COMMAND}
     MESSAGE "Do the initial configure"
     ARGS
@@ -193,9 +192,6 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
       -DTribitsExProj_TRACE_FILE_PROCESSING=ON
       -DTribitsExProj_ENABLE_CPACK_PACKAGING=ON
       -DTribitsExProj_DUMP_CPACK_SOURCE_IGNORE_FILES=ON
-      -DTribitsExProj_ENABLE_EXPORT_MAKEFILES=ON
-      -DTribitsExProj_ENABLE_INSTALL_CMAKE_CONFIG_FILES=ON
-      -DCMAKE_INSTALL_PREFIX=install
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
       "Warning: Setting TribitsExProj_ENABLE_WrapExternal=OFF because "
@@ -238,8 +234,9 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/C/tests/CMakeLists.txt"
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/cmake/CallbackDefineRepositoryPackaging.cmake"
       "-- File Trace: PROJECT    INCLUDE    .*/TribitsExampleProject/cmake/CallbackDefineProjectPackaging.cmake"
-  TEST_1 CMND make ARGS ${CTEST_BUILD_FLAGS}
+  TEST_1 CMND make
     MESSAGE "Build the default 'all' target using raw 'make'"
+    ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target simplecxx"
       "Built target pws_a"
@@ -253,76 +250,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
       "PackageWithSubpackagesSubpackageB_test_of_b .* Passed"
       "PackageWithSubpackagesSubpackageC_test_of_c .* Passed"
       "100% tests passed, 0 tests failed out of 4"
-
-  TEST_3 CMND make ARGS install ${CTEST_BUILD_FLAGS}
-    MESSAGE "Build 'install' target using raw 'make'"
-    PASS_REGULAR_EXPRESSION_ALL
-      "Installing: .+/install/include/TribitsExProj_version.h"
-      "Installing: .+/install/lib/cmake/TribitsExProj/TribitsExProjConfig.cmake"
-      "Installing: .+/install/include/Makefile.export.TribitsExProj"
-      "Installing: .+/install/lib/cmake/TribitsExProj/TribitsExProjConfigVersion.cmake"
-      "Installing: .+/install/include/TribitsExProjConfig.cmake"
-      "Installing: .+/install/lib/cmake/SimpleCxx/SimpleCxxConfig.cmake"
-      "Installing: .+/install/lib/cmake/SimpleCxx/SimpleCxxTargets.cmake"
-      "Installing: .+/install/lib/cmake/SimpleCxx/SimpleCxxTargets-release.cmake"
-      "Installing: .+/install/include/Makefile.export.SimpleCxx"
-      "Installing: .+/install/lib/libsimplecxx.a"
-      "Installing: .+/install/include/SimpleCxx_HelloWorld.hpp"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackages/PackageWithSubpackagesConfig.cmake"
-      "Installing: .+/install/include/Makefile.export.PackageWithSubpackages"
-      "Installing: .+/install/lib/libpws_a.a"
-      "Installing: .+/install/include/A.hpp"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageA/PackageWithSubpackagesSubpackageAConfig.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageA/PackageWithSubpackagesSubpackageATargets.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageA/PackageWithSubpackagesSubpackageATargets-release.cmake"
-      "Installing: .+/install/include/Makefile.export.PackageWithSubpackagesSubpackageA"
-      "Installing: .+/install/lib/libpws_b.a"
-      "Installing: .+/install/include/B.hpp"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageB/PackageWithSubpackagesSubpackageBConfig.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageB/PackageWithSubpackagesSubpackageBTargets.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageB/PackageWithSubpackagesSubpackageBTargets-release.cmake"
-      "Installing: .+/install/include/Makefile.export.PackageWithSubpackagesSubpackageB"
-      "Installing: .+/install/lib/libpws_c.a"
-      "Installing: .+/install/include/C.hpp"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageC/PackageWithSubpackagesSubpackageCConfig.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageC/PackageWithSubpackagesSubpackageCTargets.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageC/PackageWithSubpackagesSubpackageCTargets-release.cmake"
-      "Installing: .+/install/include/Makefile.export.PackageWithSubpackagesSubpackageC"
-
-  TEST_4 CMND ${CMAKE_COMMAND}
-    ARGS
-      -DDUMMY_PROJECT_NAME=DummyProject
-      -DDUMMY_PROJECT_DIR=dummy_client_of_PackageWithSubpackages
-      -DEXPORT_VAR_PREFIX=PackageWithSubpackages
-      -DEXPORT_CONFIG_FILE=../install/lib/cmake/PackageWithSubpackages/PackageWithSubpackagesConfig.cmake
-      -DCMAKE_COMMAND=${CMAKE_COMMAND}
-      -P ${CMAKE_CURRENT_SOURCE_DIR}/RunDummyPackageClientBulid.cmake
-    MESSAGE "Create and configure a dummy project that includes PackageWithSubpackagesConfig.cmake"
-    PASS_REGULAR_EXPRESSION_ALL
-      "PackageWithSubpackages_CXX_FLAGS = '.*'"
-      "PackageWithSubpackages_C_FLAGS = '.*'"
-      "PackageWithSubpackages_FORTRAN_FLAGS = '.*'"
-      "PackageWithSubpackages_EXTRA_LD_FLAGS = '.*'"
-      "PackageWithSubpackages_SHARED_LIB_RPATH_COMMAND = '.*'"
-      "PackageWithSubpackages_BUILD_SHARED_LIBS = '.*'"
-      "PackageWithSubpackages_LINKER = '.+'"
-      "PackageWithSubpackages_AR = '.+'"
-      "PackageWithSubpackages_INCLUDE_DIRS = '.+/install/lib/cmake/PackageWithSubpackages/../../../include'"
-      "PackageWithSubpackages_LIBRARY_DIRS = '.+/install/lib/cmake/PackageWithSubpackages/../../../lib'"
-      "PackageWithSubpackages_LIBRARIES = 'pws_c.pws_b.pws_a.simplecxx'"
-      "PackageWithSubpackages_TPL_INCLUDE_DIRS = ''"
-      "PackageWithSubpackages_TPL_LIBRARY_DIRS = ''"
-      "PackageWithSubpackages_TPL_LIBRARIES = ''"
-      "PackageWithSubpackages_MPI_LIBRARIES = ''"
-      "PackageWithSubpackages_MPI_LIBRARY_DIRS = ''"
-      "PackageWithSubpackages_MPI_INCLUDE_DIRS = ''"
-      "PackageWithSubpackages_MPI_EXEC = '${MPI_EXEC}'"
-      "PackageWithSubpackages_MPI_EXEC_MAX_NUMPROCS = '${MPI_EXEC_MAX_NUMPROCS}'"
-      "PackageWithSubpackages_MPI_EXEC_NUMPROCS_FLAG = '${MPI_EXEC_NUMPROCS_FLAG}'"
-      "PackageWithSubpackages_PACKAGE_LIST = 'PackageWithSubpackagesSubpackageC.PackageWithSubpackagesSubpackageB.PackageWithSubpackagesSubpackageA.SimpleCxx'"
-      "PackageWithSubpackages_TPL_LIST = ''"
-
-  TEST_5 CMND make ARGS package_source
+  TEST_3 CMND make ARGS package_source
     MESSAGE "Create the tarball"
     PASS_REGULAR_EXPRESSION_ALL
       "Run CPack packaging tool for source..."
@@ -336,9 +264,9 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
       "CPack: - Install directory: .*/doc/examples/TribitsExampleProject"
       "CPack: Create package"
       "CPack: - package: .*/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT_NoFortran/tribitsexproj-1.1-Source.tar.bz2 generated."
-  TEST_6 CMND tar ARGS -xzf tribitsexproj-1.1-Source.tar.gz
+  TEST_4 CMND tar ARGS -xzf tribitsexproj-1.1-Source.tar.gz
     MESSAGE "Untar the tarball"
-  TEST_7 CMND diff ARGS -qr ${CMAKE_CURRENT_SOURCE_DIR}/../TribitsExampleProject tribitsexproj-1.1-Source
+  TEST_5 CMND diff ARGS -qr ${CMAKE_CURRENT_SOURCE_DIR}/../TribitsExampleProject tribitsexproj-1.1-Source
     MESSAGE "Make sure right directoires are excluced"
     PASS_REGULAR_EXPRESSION_ALL
       "Only in .*/TribitsExampleProject/cmake: ctest"
@@ -361,8 +289,6 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
         -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
         -DTribitsExProj_ENABLE_TESTS=ON
-        -DTribitsExProj_ENABLE_EXPORT_MAKEFILES=ON
-        -DTribitsExProj_ENABLE_INSTALL_CMAKE_CONFIG_FILES=ON
         ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
       PASS_REGULAR_EXPRESSION_ALL
         "Warning: Setting TribitsExProj_ENABLE_WrapExternal=OFF because "
