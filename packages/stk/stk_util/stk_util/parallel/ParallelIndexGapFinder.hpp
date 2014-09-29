@@ -201,9 +201,8 @@ namespace stk {
     unsigned densityFactor = totalIdsAvailable/numNeededIds;
 
 
-    
-
-    for(unsigned  idiv = subFillLength-1; idiv>=0; --idiv) {
+    unsigned idiv =     subFillLength-1;
+    while(true) {
 
       unsigned curDiv        = subFill[idiv].second;
 
@@ -242,6 +241,10 @@ namespace stk {
           return 0; //SUCCESS
         }
       }
+      if(idiv == 0) {
+        break;
+      }
+      --idiv;
     }
     //  Something bad has happened, if ids where successfully filled should not get here
     return 5;
