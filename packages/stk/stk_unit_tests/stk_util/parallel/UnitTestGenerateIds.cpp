@@ -237,7 +237,7 @@ TEST(GeneratedIds, findUniqueIdAcrossProcsVaryingNumIdsInUse)
     distributeIds(myIds, mpiInfo);
 
     uint64_t startingIdToSearchForNewIds = 1;
-    uint64_t numIdsNeeded = 10000;
+    uint64_t numIdsNeeded = 1000;
     std::vector<uint64_t> idsObtained;
     uint64_t maxId = 100000000000;
 
