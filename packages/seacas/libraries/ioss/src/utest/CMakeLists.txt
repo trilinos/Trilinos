@@ -3,6 +3,7 @@ INCLUDE(TribitsAddExecutableAndTest)
 TRIBITS_ADD_EXECUTABLE(
  Utst_ioel
  SOURCES Utst_ioel.C
+ DEPLIBS Ionit
 )
 
 TRIBITS_ADD_TEST(
@@ -15,6 +16,7 @@ IF (${PACKAGE_NAME}_ENABLE_EXODUS)
 TRIBITS_ADD_EXECUTABLE(
  Utst_superelement
  SOURCES Utst_superelement.C
+ DEPLIBS Ionit
 )
 
 TRIBITS_ADD_TEST(

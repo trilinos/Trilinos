@@ -17,23 +17,27 @@ TRIBITS_ADD_LIBRARY(
 	blotlib
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
+	DEPLIBS supes suplib exodus_for plt
 )
 
 TRIBITS_ADD_EXECUTABLE(blot_x11 NOEXEPREFIX NOEXESUFFIX
 				LINKER_LANGUAGE Fortran
 			        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/blot.f
+			        DEPLIBS blotlib svdi_cgi_x11 
 			        COMM serial mpi)
 install_executable(blot_x11)
 
 TRIBITS_ADD_EXECUTABLE(blot_xcps NOEXEPREFIX NOEXESUFFIX
 				LINKER_LANGUAGE Fortran
 			        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/blot.f
+			        DEPLIBS blotlib vdx11cps vdicps_dual 
 			        COMM serial mpi)
 install_executable(blot_xcps)
 
 TRIBITS_ADD_EXECUTABLE(blot_cps NOEXEPREFIX NOEXESUFFIX
 				LINKER_LANGUAGE Fortran
 			        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/blot.f
+			        DEPLIBS blotlib svdi_cgi_cps
 			        COMM serial mpi)
 install_executable(blot_cps)
 
