@@ -795,6 +795,29 @@ public:
        (value_type_*) space.get_shmem( unsigned( sizeof(value_type_) * m_offset_map.capacity() + unsigned(mask) ) & ~unsigned(mask) ) );
     }
 
+  explicit KOKKOS_INLINE_FUNCTION
+  View( typename if_scratch_memory_constructor::type space ,
+        typename traits::array_layout const & layout)
+    : m_ptr_on_device(0)
+    {
+      typedef typename traits::value_type  value_type_ ;
+
+      typedef Impl::if_c< ! traits::is_managed ,
+                          value_type_ * ,
+                          Impl::ViewError::device_shmem_constructor_requires_unmanaged >
+        if_device_shmem_pointer ;
+
+      m_offset_map.assign( layout );
+      m_tracking = false ;
+
+      enum { align = 8 };
+      enum { mask  = align - 1 };
+
+      // Select the first argument:
+      m_ptr_on_device = if_device_shmem_pointer::select(
+       (value_type_*) space.get_shmem( unsigned( sizeof(value_type_) * m_offset_map.capacity() + unsigned(mask) ) & ~unsigned(mask) ) );
+    }
+
   static inline
   unsigned shmem_size( const unsigned n0 = 0 ,
                        const unsigned n1 = 0 ,
