@@ -58,6 +58,8 @@
 #include "Epetra_Util.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialDenseVector.h"
+#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Trilinos_Util.h"
 #include <string>
 
@@ -71,9 +73,9 @@ const bool Scaling = false;
 
 // ================================================ ====== ==== ==== == =
 Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery(const string name,
-                                                  const Epetra_Comm & comm,
-                                                  bool UseLongLong) :
-comm_(&comm), name_(name), UseLongLong_(UseLongLong)
+    const Epetra_Comm & comm,
+    bool UseLongLong) :
+  comm_(&comm), name_(name), UseLongLong_(UseLongLong)
 {
 #ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(!UseLongLong)
@@ -96,7 +98,7 @@ comm_(&comm), name_(name), UseLongLong_(UseLongLong)
 
 // ================================================ ====== ==== ==== == =
 Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery(const string name,
-                     const Epetra_Map & map ) :
+    const Epetra_Map & map ) :
   comm_(&(map.Comm())), name_(name)
 {
   ZeroOutData();
@@ -119,13 +121,13 @@ Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery(const string name,
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-  if(map_->GlobalIndicesLongLong()) {
-    MyGlobalElements_LL_ = map_->MyGlobalElements64();
-    UseLongLong_ = true;
-  }
-  else
+    if(map_->GlobalIndicesLongLong()) {
+      MyGlobalElements_LL_ = map_->MyGlobalElements64();
+      UseLongLong_ = true;
+    }
+    else
 #endif
-    throw "Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery: Global Indices unknown";
+      throw "Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery: Global Indices unknown";
 }
 
 // ================================================ ====== ==== ==== == =
@@ -166,7 +168,7 @@ int Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const int value
     }
     if( map_ != NULL ) {
       cerr << ErrorMsg << "map object already set. Continuing with\n"
-     << ErrorMsg << "problemSize = " << NumGlobalElements_ << endl;
+        << ErrorMsg << "problemSize = " << NumGlobalElements_ << endl;
       return -2;
     }
     NumGlobalElements_ = value;
@@ -301,10 +303,10 @@ int Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const string va
     if( value == "none" ) verbose_ = false;
     else {
       if( value == "proc 0" ) {
-  if( comm_->MyPID()==0 ) verbose_ = true;
-  else verbose_ = false;
+        if( comm_->MyPID()==0 ) verbose_ = true;
+        else verbose_ = false;
       } else {
-  verbose_ = true;
+        verbose_ = true;
       }
     }
   } else if( parameter == "expand_type" ) {
@@ -378,7 +380,7 @@ int Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const Epetra_Ve
 
   if( value.Map().SameAs(*map_) == false ) {
     cerr << ErrorMsg << "input vector must have the same map used to\n"
-   << ErrorMsg << "create the Trilinos_Util::CrsMatrixGallery object. Continuing\n";
+      << ErrorMsg << "create the Trilinos_Util::CrsMatrixGallery object. Continuing\n";
     return -2;
   }
 
@@ -430,7 +432,7 @@ int Trilinos_Util::CrsMatrixGallery::Set(Trilinos_Util::CommandLineParser & CLP)
 
   for( int i=0 ; i<count ; i++ ) {
     string parameter = "-"+Options[i];
-    if( CLP.Has(parameter) == true ) {
+    if( CLP.Has(parameter) ) {
       string value = CLP.Get(parameter,"not-set");
       Set(Options[i],value);
 
@@ -449,7 +451,7 @@ int Trilinos_Util::CrsMatrixGallery::Set(Trilinos_Util::CommandLineParser & CLP)
 
   for(  int i=0 ; i<8 ; i++ ) {
     string parameter = "-"+Options[i];
-    if( CLP.Has(parameter) == true ) {
+    if( CLP.Has(parameter) ) {
       Set(Options[i],CLP.Get(parameter,(int)1));
     }
   }
@@ -473,7 +475,7 @@ int Trilinos_Util::CrsMatrixGallery::Set(Trilinos_Util::CommandLineParser & CLP)
   for( int i=0 ; i<14 ; i++ ) {
     string parameter = "-"+Options[i];
 
-    if( CLP.Has(parameter) == true ) {
+    if( CLP.Has(parameter) ) {
       Set(Options[i],CLP.Get(parameter,1.0));
     }
 
@@ -588,13 +590,13 @@ void Trilinos_Util::CrsMatrixGallery::ComputeDiffBetweenStartingAndExactSolution
 
 // ================================================ ====== ==== ==== == =
 
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
 {
 
   Epetra_Time Time(*comm_);
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating Map `" << MapType_ << "'...\n";
   }
 
@@ -617,32 +619,34 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
     if( NumGlobalElements_ <= 0 ) {
       if( nx_ > 0 ) NumGlobalElements_ = nx_;
       else {
-  cerr << ErrorMsg << "problem size not correct (" << NumGlobalElements_
-       << ")\n";
-  exit( EXIT_FAILURE );
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            true,
+            ErrorMsg << "problem size not correct (" << NumGlobalElements_ << ")"
+            );
       }
     }
   }
 
   else if( name_ == "laplace_2d" || name_ == "laplace_2d_n"
-     || name_ == "laplace_2d_bc"
-     || name_ == "cross_stencil_2d"
-     || name_ == "laplace_2d_9pt" || name_ == "recirc_2d"
-     || name_ == "uni_flow_2d" || name_ == "recirc_2d_divfree"
-     || name_ == "stretched_2d" ) {
+      || name_ == "laplace_2d_bc"
+      || name_ == "cross_stencil_2d"
+      || name_ == "laplace_2d_9pt" || name_ == "recirc_2d"
+      || name_ == "uni_flow_2d" || name_ == "recirc_2d_divfree"
+      || name_ == "stretched_2d" ) {
 
     if( NumGlobalElements_ <= 0 ) {
       if( nx_ > 0 && ny_ > 0 )
-  NumGlobalElements_ = nx_*ny_;
+        NumGlobalElements_ = nx_*ny_;
       else {
-  cerr << ErrorMsg << "Problem size not correct (" << NumGlobalElements_
-       << ")" << endl;
-  cerr << ErrorMsg << "It should be a perfect square" << endl;
-  exit( EXIT_FAILURE );
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            true,
+            ErrorMsg << "Problem size not correct (" << NumGlobalElements_ << ")\n"
+            << ErrorMsg << "It should be a perfect square"
+            );
       }
     }
 
-    if( verbose_ == true ) {
+    if( verbose_ ) {
       cout << OutputMsg << "nx = " << nx_ << ", ny = " << ny_ << endl;
     }
 
@@ -651,34 +655,34 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
   else if( name_ == "laplace_3d" || name_ == "cross_stencil_3d" ) {
     if( NumGlobalElements_ <= 0 ) {
       if( nx_ > 0 && ny_ > 0 && nz_ > 0 )
-  NumGlobalElements_ = nx_*ny_*nz_;
+        NumGlobalElements_ = nx_*ny_*nz_;
       else {
-  cerr << ErrorMsg << "Problem size not correct (" << NumGlobalElements_
-       << ")" << endl;
-  cerr << ErrorMsg << "It should be a perfect cube" << endl;
-  exit( EXIT_FAILURE );
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            true,
+            ErrorMsg << "Problem size not correct (" << NumGlobalElements_  << ")\n"
+            << ErrorMsg << "It should be a perfect cube"
+            );
       }
     }
 
-    if( verbose_ == true ) {
+    if( verbose_ ) {
       cout << OutputMsg << "nx = " << nx_ << ", ny = " << ny_ << ", nz = " << nz_ << endl;
     }
 
   } else if( name_ == "hb" || name_ == "matrix_market" ||
-       name_ == "triples_sym" || name_ == "triples_nonsym" ) {
+      name_ == "triples_sym" || name_ == "triples_nonsym" ) {
     // The global number of elements has been set in reading matrix
-    if( NumGlobalElements_ <= 0 ) {
-  cerr << ErrorMsg << "Problem size not correct (" << NumGlobalElements_
-       << ")" << endl;
-  exit( EXIT_FAILURE );
-    }
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        NumGlobalElements_ <= 0,
+        ErrorMsg << "Problem size not correct (" << NumGlobalElements_ << ")"
+        );
 
   } else {
-
-    cerr << ErrorMsg << "matrix name is incorrect or not set ("
-   << name_ << ")\n";
-    exit( EXIT_FAILURE );
-
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        true,
+        ErrorMsg << "matrix name is incorrect or not set ("
+        << name_ << ")"
+        );
   }
 
   std::vector<int_type>& MapMap = MapMapRef<int_type>();
@@ -701,7 +705,7 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
     ArrayOfIntPointers[0] =  &sortable_positions[0];
     //    ArrayOfDoublePointers[0] =  &sortable_values[0];
     Utils.Sort( true, NumGlobalElements_*2, &sortable_values[0],
-    0, (double**)0, 1, &ArrayOfIntPointers[0] );
+        0, (double**)0, 1, &ArrayOfIntPointers[0] );
 
     for( int_type i =0 ; i < NumGlobalElements_; i++ ) {
       MapMap[i] = sortable_positions[i];
@@ -709,7 +713,7 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
     //
     //  Make sure that all processes have the same indices in MapMap
     //
-      comm_->Broadcast( &MapMap[0], NumGlobalElements_, 0 ) ;
+    comm_->Broadcast( &MapMap[0], NumGlobalElements_, 0 ) ;
   }
   // check out whether one is using only one proc or not.
   // If yes, creation of map is straightforward. Then return.
@@ -729,37 +733,37 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
 
       map_ = new Epetra_Map ((int_type) NumGlobalElements_,(int_type) 0,*comm_);
       if ( ! ContiguousMap_ ) {
-  //
-  //  map_ gives us NumMyElements and MyFirstElement;
-  //
-  int NumMyElements = map_->NumMyElements();
-  int_type MyFirstElement = map_->MinMyGID64();
-  assert( MyFirstElement+NumMyElements ==  (int_type) map_->MaxMyGID64());
-  delete map_;
-  map_ = new Epetra_Map( NumGlobalElements_, NumMyElements, &MapMap[MyFirstElement], 0, *comm_);
+        //
+        //  map_ gives us NumMyElements and MyFirstElement;
+        //
+        int NumMyElements = map_->NumMyElements();
+        int_type MyFirstElement = map_->MinMyGID64();
+        assert( MyFirstElement+NumMyElements ==  (int_type) map_->MaxMyGID64());
+        delete map_;
+        map_ = new Epetra_Map( NumGlobalElements_, NumMyElements, &MapMap[MyFirstElement], 0, *comm_);
       }
 
     } else if( MapType_ == "box" ) {
 
       if( mx_ == -1 || my_ == -1 ) {
-  mx_ = (int)sqrt((double)(comm_->NumProc()));
-  my_ = mx_;
+        mx_ = (int)sqrt((double)(comm_->NumProc()));
+        my_ = mx_;
 
-  if( mx_ * my_ != comm_->NumProc() ) {
-    cerr << ErrorMsg << "number of processes must be perfect square\n"
-         << ErrorMsg << "otherwise set mx and my\n";
-    exit( EXIT_FAILURE );
-  }
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            mx_ * my_ != comm_->NumProc(),
+            ErrorMsg << "number of processes must be perfect square\n"
+            << ErrorMsg << "otherwise set mx and my\n"
+            );
       } else {
-  if( mx_ * my_ != comm_->NumProc() ) {
-    cerr << ErrorMsg << "mx*my != number of processes ("
-         << mx_ * my_ << " != " << comm_->NumProc()  << ")" << endl;
-    exit( EXIT_FAILURE );
-  }
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            mx_ * my_ != comm_->NumProc(),
+            ErrorMsg << "mx*my != number of processes ("
+            << mx_ * my_ << " != " << comm_->NumProc()  << ")"
+            );
       }
 
-      if( verbose_ == true ) {
-  cout << OutputMsg << "mx = " << mx_ << ", my = " << my_ << endl;
+      if( verbose_ ) {
+        cout << OutputMsg << "mx = " << mx_ << ", my = " << my_ << endl;
       }
 
       SetupCartesianGrid2D();
@@ -785,9 +789,9 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
       int count = 0;
 
       for( int i=startx ; i<endx ; ++i ) {
-  for( int j=starty ; j<endy ; ++j ) {
-    MyGlobalElements[count++] = i+((int_type)j)*nx_;
-  }
+        for( int j=starty ; j<endy ; ++j ) {
+          MyGlobalElements[count++] = i+((int_type)j)*nx_;
+        }
       }
 
       map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,0,*comm_);
@@ -801,26 +805,26 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
     } else if( MapType_ == "cube" ) {
 
       if( mx_ == -1 || my_ == -1 || mz_ == -1 ) {
-  mx_ = (int)pow((double)(comm_->NumProc()),0.333334);
-  my_ = mx_;
-  mz_ = mx_;
+        mx_ = (int)pow((double)(comm_->NumProc()),0.333334);
+        my_ = mx_;
+        mz_ = mx_;
 
-  if( mx_ * my_ * mz_ != comm_->NumProc() ) {
-    cerr << ErrorMsg << "number of processes must be perfect cube\n"
-         << ErrorMsg << "otherwise set mx, my, and mz\n";
-    exit( EXIT_FAILURE );
-  }
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            mx_ * my_ * mz_ != comm_->NumProc(),
+            ErrorMsg << "number of processes must be perfect cube\n"
+            << ErrorMsg << "otherwise set mx, my, and mz"
+            );
       } else {
-  if( mx_ * my_ * mz_ != comm_->NumProc() ) {
-    cerr << ErrorMsg << "mx*my*mz != number of processes ("
-         << mx_ * my_ * mz_ << " != " << comm_->NumProc()
-         << ")\n";
-    exit( EXIT_FAILURE );
-  }
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            mx_ * my_ * mz_ != comm_->NumProc(),
+            ErrorMsg << "mx*my*mz != number of processes ("
+            << mx_ * my_ * mz_ << " != " << comm_->NumProc()
+            << ")"
+            );
       }
 
-      if( verbose_ == true ) {
-  cout << OutputMsg << "mx = " << mx_ << ", my = " << my_ << ", mz = " << mz_ << endl;
+      if( verbose_ ) {
+        cout << OutputMsg << "mx = " << mx_ << ", my = " << my_ << ", mz = " << mz_ << endl;
       }
 
       SetupCartesianGrid3D();
@@ -852,11 +856,11 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
       int count = 0;
 
       for( int i=startx ; i<endx ; ++i ) {
-  for( int j=starty ; j<endy ; ++j ) {
-    for( int k=startz ; k<endz ; ++k ) {
-      MyGlobalElements[count++] = i+((int_type)j)*nx_+((int_type)k)*(((int_type)nx_)*ny_);
-    }
-  }
+        for( int j=starty ; j<endy ; ++j ) {
+          for( int k=startz ; k<endz ; ++k ) {
+            MyGlobalElements[count++] = i+((int_type)j)*nx_+((int_type)k)*(((int_type)nx_)*ny_);
+          }
+        }
       }
 
       map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,0,*comm_);
@@ -884,16 +888,16 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
       int_type * MyGlobalElements = new int_type[NumMyElements];
 
       for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
-  if( i%NumProcs == MyPID )
-    MyGlobalElements[count++] = i;
+        if( i%NumProcs == MyPID )
+          MyGlobalElements[count++] = i;
       }
 
-      if( count != NumMyElements ) {
-  cerr << ErrorMsg << "something went wrong in CreateMap\n";
-  cerr << ErrorMsg << "count = " << count << ", NumMyElements = "
-       << NumMyElements << endl;
-  exit( EXIT_FAILURE);
-      }
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          count != NumMyElements,
+          ErrorMsg << "something went wrong in CreateMap\n"
+          << ErrorMsg << "count = " << count << ", NumMyElements = "
+          << NumMyElements
+          );
 
       map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,0,*comm_);
       delete [] MyGlobalElements;
@@ -909,12 +913,12 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
       int * part = new int[NumGlobalElements_];
 
       if( comm_->MyPID() == 0 ) {
-  Epetra_Util Util;
+        Epetra_Util Util;
 
-  for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
-    unsigned int r = Util.RandomInt();
-    part[i] = r%(comm_->NumProc());
-  }
+        for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
+          unsigned int r = Util.RandomInt();
+          part[i] = r%(comm_->NumProc());
+        }
       }
 
       comm_->Broadcast(part,NumGlobalElements_,0);
@@ -922,26 +926,27 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
       // count the elements assigned to this proc
       int NumMyElements = 0;
       for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
-  if( part[i] == comm_->MyPID() ) NumMyElements++;
+        if( part[i] == comm_->MyPID() ) NumMyElements++;
       }
 
       // get the loc2global list
       int_type * MyGlobalElements = new int_type[NumMyElements];
       int count = 0;
       for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
-  if( part[i] == comm_->MyPID() ) MyGlobalElements[count++] = i;
+        if( part[i] == comm_->MyPID() ) MyGlobalElements[count++] = i;
       }
 
       map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,
-           0,*comm_);
+          0,*comm_);
 
       delete [] MyGlobalElements;
       delete [] part;
 
     } else {
-
-      cerr << ErrorMsg << "MapType has an incorrect value (" << MapType_ << ")\n";
-      exit( EXIT_FAILURE );
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          true,
+          ErrorMsg << "MapType has an incorrect value (" << MapType_ << ")"
+          );
     }
   }
 
@@ -950,9 +955,9 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMap(void)
   // get update list
   map_->MyGlobalElementsPtr(MyGlobalElementsPtr<int_type>());
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Time to create Map: "
-   << Time.ElapsedTime() << " (s)\n";
+      << Time.ElapsedTime() << " (s)\n";
   }
 
   return;
@@ -966,19 +971,19 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
   else
 #endif
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(!UseLongLong_)
-    TCreateMap<int>();
-  else
+    if(!UseLongLong_)
+      TCreateMap<int>();
+    else
 #endif
-  throw "Trilinos_Util::CrsMatrixGallery::CreateMap: failed";
+      throw "Trilinos_Util::CrsMatrixGallery::CreateMap: failed";
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::TCreateMatrix(void)
 {
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating Matrix...\n";
   }
 
@@ -991,9 +996,9 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMatrix(void)
 
     Epetra_Time Time(*comm_);
     TReadMatrix<int_type>();
-    if( verbose_ == true ) {
+    if( verbose_ ) {
       cout << OutputMsg << "Time to create matrix: "
-     << Time.ElapsedTime() << " (s)\n";
+        << Time.ElapsedTime() << " (s)\n";
     }
 
   } else {
@@ -1061,14 +1066,16 @@ void Trilinos_Util::CrsMatrixGallery::TCreateMatrix(void)
     else if( name_ == "vander" ) CreateMatrixVander<int_type>();
 
     else {
-      cerr << ErrorMsg << "matrix name is incorrect or not set ("
-     << name_ << ")\n";
-      exit( EXIT_FAILURE );
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          true,
+          ErrorMsg << "matrix name is incorrect or not set ("
+          << name_ << ")"
+          );
     }
 
-    if( verbose_ == true ) {
+    if( verbose_ ) {
       cout << OutputMsg << "Time to create matrix: "
-     << Time.ElapsedTime() << " (s)\n";
+        << Time.ElapsedTime() << " (s)\n";
     }
   }
 
@@ -1085,21 +1092,21 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrix(void)
   else
 #endif
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(!UseLongLong_)
-    TCreateMatrix<int>();
-  else
+    if(!UseLongLong_)
+      TCreateMatrix<int>();
+    else
 #endif
-  throw "Trilinos_Util::CrsMatrixGallery::CreateMatrix: failed";
+      throw "Trilinos_Util::CrsMatrixGallery::CreateMatrix: failed";
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::TCreateExactSolution(void)
 {
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating exact solution `"
-   << ExactSolutionType_ << "'...\n";
+      << ExactSolutionType_ << "'...\n";
   }
 
   if( map_ == NULL ) CreateMap();
@@ -1127,9 +1134,9 @@ void Trilinos_Util::CrsMatrixGallery::TCreateExactSolution(void)
       // from the matrix
       double hx = lx_/(NumGlobalElements_+1);
       for( int i=0 ; i<NumMyElements_ ; i++ ) {
-  double x = (MyGlobalElements[i]+1)*hx;
-  for (int j = 0 ; j < NumVectors_ ; ++j)
-    (*ExactSolution_)[j][i] = x*(1.-x);
+        double x = (MyGlobalElements[i]+1)*hx;
+        for (int j = 0 ; j < NumVectors_ ; ++j)
+          (*ExactSolution_)[j][i] = x*(1.-x);
       }
 
     } else if( ExactSolutionType_ == "quad_xy" ) {
@@ -1140,28 +1147,28 @@ void Trilinos_Util::CrsMatrixGallery::TCreateExactSolution(void)
       double hy = ly_/(ny_+1);
 
       for( int i=0 ; i<NumMyElements_ ; ++i ) {
-  int ix, iy;
-  ix = (MyGlobalElements[i])%nx_;
-  iy = (MyGlobalElements[i] - ix)/nx_;
-  double x = hx*(ix+1);
-  double y = hy*(iy+1);
-  double u;
-  ExactSolQuadXY(x,y,u);
+        int ix, iy;
+        ix = (MyGlobalElements[i])%nx_;
+        iy = (MyGlobalElements[i] - ix)/nx_;
+        double x = hx*(ix+1);
+        double y = hy*(iy+1);
+        double u;
+        ExactSolQuadXY(x,y,u);
 
-  for (int j = 0 ; j < NumVectors_ ; ++j)
-    (*ExactSolution_)[j][i] = u;
+        for (int j = 0 ; j < NumVectors_ ; ++j)
+          (*ExactSolution_)[j][i] = u;
 
       }
 
 
     } else {
-      if( verbose_ ) {
-  cerr << ErrorMsg << "exact solution type is not correct : "
-       << ExactSolutionType_ << endl;
-  cerr << ErrorMsg << "It should be:\n"
-       << ErrorMsg << "<random> / <constant> / <quad_x> / <quad_xy>" << endl;
-      }
-      exit( EXIT_FAILURE );
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          true,
+          ErrorMsg << "exact solution type is not correct : "
+          << ExactSolutionType_ << "\n"
+          << ErrorMsg << "It should be:\n"
+          << ErrorMsg << "<random> / <constant> / <quad_x> / <quad_xy>"
+          );
     }
   }
 
@@ -1177,20 +1184,19 @@ void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
   else
 #endif
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(!UseLongLong_)
-    TCreateExactSolution<int>();
-  else
+    if(!UseLongLong_)
+      TCreateExactSolution<int>();
+    else
 #endif
-  throw "Trilinos_Util::CrsMatrixGallery::CreateExactSolution: failed";
+      throw "Trilinos_Util::CrsMatrixGallery::CreateExactSolution: failed";
 }
 
 // ================================================ ====== ==== ==== == =
 void Trilinos_Util::CrsMatrixGallery::CreateStartingSolution(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating starting solution `"
-   << StartingSolutionType_ << "'...\n";
+      << StartingSolutionType_ << "'...\n";
   }
 
   if( map_ == NULL ) CreateMap();
@@ -1202,18 +1208,19 @@ void Trilinos_Util::CrsMatrixGallery::CreateStartingSolution(void)
     } else if( StartingSolutionType_ == "zero" ) {
       StartingSolution_->PutScalar(0.0);
     } else {
-      cerr << ErrorMsg << "starting solution type is not correct : "
-     << StartingSolutionType_ << endl;
-      exit( EXIT_FAILURE );
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          true,
+          ErrorMsg << "starting solution type is not correct : "
+          << StartingSolutionType_
+          );
     }
   }
 
   return;
-
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::TCreateRHS(void)
 {
 
@@ -1225,7 +1232,7 @@ void Trilinos_Util::CrsMatrixGallery::TCreateRHS(void)
 
   Epetra_Time Time(*comm_);
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating RHS `" << RhsType_ << "' ...\n";
   }
 
@@ -1258,9 +1265,9 @@ void Trilinos_Util::CrsMatrixGallery::TCreateRHS(void)
       ExactSolQuadXY(x,y,u,ux,uy,uxx,uyy);
 
       for (int j = 0 ; j < NumVectors_ ; ++j) {
-  (*rhs_)[j][i] = -diff_*( uxx + uyy )  // -b_ \nabla u
-    + conv_*cos(alpha_)*ux               // ux
-    + conv_*sin(alpha_)*uy;              // uy
+        (*rhs_)[j][i] = -diff_*( uxx + uyy )  // -b_ \nabla u
+          + conv_*cos(alpha_)*ux               // ux
+          + conv_*sin(alpha_)*uy;              // uy
       }
     }
 
@@ -1285,9 +1292,9 @@ void Trilinos_Util::CrsMatrixGallery::TCreateRHS(void)
       ExactSolQuadXY(x,y,u,ux,uy,uxx,uyy);
 
       for (int j = 0 ; j < NumVectors_ ; ++j) {
-  (*rhs_)[j][i] =  -diff_*( uxx + uyy )        // -b_ \nabla u
-    + conv_*4*x*(x-1.)*(1.-2*y)*ux          // ux
-    - conv_*4*y*(y-1.)*(1.-2*x)*uy;         // uy
+        (*rhs_)[j][i] =  -diff_*( uxx + uyy )        // -b_ \nabla u
+          + conv_*4*x*(x-1.)*(1.-2*y)*ux          // ux
+          - conv_*4*y*(y-1.)*(1.-2*x)*uy;         // uy
       }
     }
 
@@ -1308,26 +1315,25 @@ void Trilinos_Util::CrsMatrixGallery::TCreateRHS(void)
       ExactSolQuadXY(x,y,u,ux,uy,uxx,uyy);
 
       for (int j = 0 ; j < NumVectors_ ; ++j) {
-  for (int j = 0 ; j < NumVectors_ ; ++j) {
-    (*rhs_)[j][i] = uxx+uyy;
-  }
+        for (int j = 0 ; j < NumVectors_ ; ++j) {
+          (*rhs_)[j][i] = uxx+uyy;
+        }
       }
     }
 
   } else {
-
-    cerr << ErrorMsg << "RHS type not correct ("
-   << RhsType_ << ")" << endl;
-    exit( EXIT_FAILURE );
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        true,
+        ErrorMsg << "RHS type not correct (" << RhsType_ << ")"
+        );
   }
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Time to create RHS (matvec): "
-         << Time.ElapsedTime() << " (s)\n";
+      << Time.ElapsedTime() << " (s)\n";
   }
 
   return;
-
 }
 
 void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
@@ -1338,19 +1344,19 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
   else
 #endif
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(!UseLongLong_)
-    TCreateRHS<int>();
-  else
+    if(!UseLongLong_)
+      TCreateRHS<int>();
+    else
 #endif
-  throw "Trilinos_Util::CrsMatrixGallery::CreateRHS: failed";
+      throw "Trilinos_Util::CrsMatrixGallery::CreateRHS: failed";
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateEye(void)
 {
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `eye'...\n";
   }
 
@@ -1360,14 +1366,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateEye(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixDiag(void)
 {
 
   // default value if not otherwise specified
   if( a_ == UNDEF ) a_ = 1;
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `diag'...\n";
     cout << OutputMsg << "Diagonal element = " << a_ << endl;
   }
@@ -1392,16 +1398,15 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixDiag(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixTriDiag(void)
 {
-
   // default value if not otherwise specified
   if( a_ == UNDEF ) a_ = 2;
   if( b_ == UNDEF ) b_ = 1;
   if( c_ == UNDEF ) c_ = 1;
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `tridiag'...\n";
     cout << OutputMsg << "Row is [" << b_ << ", " << a_ << ", " << c_ << "]\n";
   }
@@ -1447,15 +1452,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixTriDiag(void)
   delete [] Indices;
 
   return;
-
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace1d(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `laplace_1d'...\n";
   }
 
@@ -1469,11 +1472,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace1d(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace1dNeumann(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `laplace_1d_n'...\n";
   }
 
@@ -1522,10 +1524,9 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace1dNeumann(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2d(void)
 {
-
   // default values if not otherwise specified
 
   if( a_ == UNDEF ) a_ = 4;
@@ -1534,12 +1535,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2d(void)
   if( d_ == UNDEF ) d_ = 1;
   if( e_ == UNDEF ) e_ = 1;
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `cross_stencil_2d'...\n";
     cout << OutputMsg << "with values: a=" << a_ << ", b=" << b_ << ", c=" << c_
-   << ", d=" << d_ << ", e=" << e_ << endl;
+      << ", d=" << d_ << ", e=" << e_ << endl;
   }
-
 
   SetupCartesianGrid2D();
 
@@ -1560,7 +1560,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2d(void)
   for( int i=0 ; i<NumMyElements_; ++i ) {
     int NumEntries=0;
     GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_,
-             left, right, lower, upper);
+        left, right, lower, upper);
     if( left != -1 ) {
       Indices[NumEntries] = left;
       Values[NumEntries] = b_;
@@ -1583,25 +1583,24 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2d(void)
     }
     // put the off-diagonal entries
     matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries,
-               Values, Indices);
+        Values, Indices);
     // Put in the diagonal entry
     diag = a_;
 
     matrix_->InsertGlobalValues(MyGlobalElements[i], 1,
-               &diag, MyGlobalElements+i);
+        &diag, MyGlobalElements+i);
   }
   matrix_->FillComplete();
 
   return;
-
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2dVector(void)
 {
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `cross_stencil_2d'...\n";
   }
 
@@ -1624,7 +1623,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2dVector(void)
 
     int NumEntries=0;
     GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_,
-             left, right, lower, upper);
+        left, right, lower, upper);
     if( left != -1 ) {
       Indices[NumEntries] = left;
       Values[NumEntries] = (*VectorB_)[i];
@@ -1647,12 +1646,12 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2dVector(void)
     }
     // put the off-diagonal entries
     matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries,
-               Values, Indices);
+        Values, Indices);
     // Put in the diagonal entry
     diag = (*VectorA_)[i];
 
     matrix_->InsertGlobalValues(MyGlobalElements[i], 1,
-               &diag, MyGlobalElements+i);
+        &diag, MyGlobalElements+i);
   }
   matrix_->FillComplete();
 
@@ -1661,11 +1660,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2dVector(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_BC(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `laplace_2d_bc'...\n";
   }
 
@@ -1690,7 +1688,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_BC(void)
 
     //int NumEntries=0;
     GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_,
-             left, right, lower, upper);
+        left, right, lower, upper);
 
     // any border node gets only diagonal entry
     if ((left == -1) || (right == -1) || (lower == -1) || (upper == -1)) {
@@ -1726,11 +1724,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_BC(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2dNeumann(void)
 {
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `laplace_2d_n'...\n";
   }
 
@@ -1755,7 +1753,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2dNeumann(void)
 
     int NumEntries=0;
     GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_,
-             left, right, lower, upper);
+        left, right, lower, upper);
     if( left != -1 ) {
       Indices[NumEntries] = left;
       Values[NumEntries] = -1.0;
@@ -1795,11 +1793,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2dNeumann(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_9pt(void)
 {
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `laplace_2d_9pt'...\n";
   }
 
@@ -1824,7 +1822,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_9pt(void)
   for( int i=0 ; i<NumMyElements_; ++i ) {
     int NumEntries=0;
     GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_,
-             left, right, lower, upper);
+        left, right, lower, upper);
     if( left != -1 ) {
       Indices[NumEntries] = left;
       ++NumEntries;
@@ -1860,10 +1858,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_9pt(void)
 
     // put the off-diagonal entries
     matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries,
-               Values, Indices);
+        Values, Indices);
     // Put in the diagonal entry
     matrix_->InsertGlobalValues(MyGlobalElements[i], 1,
-               &diag, MyGlobalElements+i);
+        &diag, MyGlobalElements+i);
   }
   matrix_->FillComplete();
 
@@ -1871,7 +1869,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_9pt(void)
 
 }
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d(void)
 {
 
@@ -1880,7 +1878,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d(void)
   double hx = lx_/(nx_+1);
   double hy = ly_/(ny_+1);
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `laplace_2d'...\n";
   }
 
@@ -1907,7 +1905,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2d(void)
 {
 
@@ -1916,7 +1914,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2d(void)
   if( conv_ == UNDEF ) conv_ = 1;
   if( diff_ == UNDEF ) diff_ = 1e-5;
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `recirc_2d'...\n";
     cout << OutputMsg << "with convection = " << conv_ << " and diffusion = " << diff_ << endl;
   }
@@ -1995,7 +1993,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2d(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2dDivFree(void)
 {
 
@@ -2004,7 +2002,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2dDivFree(void)
   if( conv_ == UNDEF ) conv_ = 1;
   if( diff_ == UNDEF ) diff_ = 1e-5;
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `recirc_2d_divfree'...\n";
     cout << OutputMsg << "with convection = " << conv_ << " and diffusion = " << diff_ << endl;
   }
@@ -2079,7 +2077,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2dDivFree(void)
 
 // ================================================ ====== ==== ==== == =
 
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixUniFlow2d(void)
 {
 
@@ -2089,7 +2087,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixUniFlow2d(void)
   if( diff_ == UNDEF  ) diff_ = 1e-5;
   if( alpha_ == UNDEF ) alpha_ = 0;
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `uni_flow_2d'...\n";
     cout << OutputMsg << "with convection = " << conv_ << ", diffusion = " << diff_ << endl;
     cout << OutputMsg << "and alpha = " << alpha_ << endl;
@@ -2125,12 +2123,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixUniFlow2d(void)
   double hx = lx_/(nx_+1);
   double hy = ly_/(ny_+1);
 
-  int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+  //int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
 
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
-    int ix, iy;
-    ix = (MyGlobalElements[i])%nx_;
-    iy = (MyGlobalElements[i] - ix)/nx_;
+    //int ix = (MyGlobalElements[i])%nx_;
+    //int iy = (MyGlobalElements[i] - ix)/nx_;
 
     double ConvX = conv_ * cos(alpha_) / hx;
     double ConvY = conv_ * sin(alpha_) / hy;
@@ -2169,11 +2166,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixUniFlow2d(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace3d(void)
 {
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `laplace_3d'...\n";
   }
 
@@ -2191,13 +2188,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace3d(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixStretched2d(void)
 {
 
   if( epsilon_ == UNDEF ) epsilon_ = 1e-5;
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `stretched_2d'...\n";
   }
 
@@ -2219,7 +2216,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixStretched2d(void)
   for( int i=0 ; i<NumMyElements_; ++i ) {
     int NumEntries=0;
     GetNeighboursCartesian2d(  MyGlobalElements[i], nx_, ny_,
-             left, right, lower, upper);
+        left, right, lower, upper);
     if( left != -1 ) {
       Indices[NumEntries] = left;
       Values[NumEntries] = 2.0-epsilon_;
@@ -2263,10 +2260,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixStretched2d(void)
 
     // put the off-diagonal entries
     matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries,
-               Values, Indices);
+        Values, Indices);
     // Put in the diagonal entry
     matrix_->InsertGlobalValues(MyGlobalElements[i], 1,
-               &diag, MyGlobalElements+i);
+        &diag, MyGlobalElements+i);
   }
   matrix_->FillComplete();
 
@@ -2274,7 +2271,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixStretched2d(void)
 
 }
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
 {
 
@@ -2288,11 +2285,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
   if( f_ == UNDEF ) f_ = 1;
   if( g_ == UNDEF ) g_ = 1;
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `cross_stencil_3d'...\n";
     cout << OutputMsg << "with values: a=" << a_ << ", b=" << b_ << ", c=" << c_ << endl
-   << OutputMsg << "d=" << d_ << ", e=" << e_ << ", f=" << f_
-   << ", g=" << g_ << endl;
+      << OutputMsg << "d=" << d_ << ", e=" << e_ << ", f=" << f_
+      << ", g=" << g_ << endl;
   }
 
   // problem size
@@ -2317,7 +2314,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
   for( int i=0 ; i<NumMyElements_; ++i ) {
     int NumEntries=0;
     GetNeighboursCartesian3d(MyGlobalElements[i], nx_, ny_, nz_,
-           left, right, lower, upper, below, above);
+        left, right, lower, upper, below, above);
     if( left != -1 ) {
       Indices[NumEntries] = left;
       Values[NumEntries] = b_;
@@ -2350,12 +2347,12 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
     }
     // put the off-diagonal entries
     matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries,
-               Values, Indices);
+        Values, Indices);
     // Put in the diagonal entry
     diag = a_;
 
     matrix_->InsertGlobalValues(MyGlobalElements[i], 1,
-               &diag, MyGlobalElements+i);
+        &diag, MyGlobalElements+i);
   }
 
   matrix_->FillComplete();
@@ -2364,11 +2361,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3dVector(void)
 {
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `cross_stencil_3d'...\n";
   }
 
@@ -2379,11 +2376,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3dVector(void)
     ny_ = nx_;
     nz_ = nx_;
 
-    if( nx_ * ny_ *nz_ != NumGlobalElements_ ) {
-      cerr << ErrorMsg << "The number of global elements must be a perfect cube\n"
-     << ErrorMsg << "(now is " << NumGlobalElements_ << ")." << endl;
-      exit( EXIT_FAILURE );
-    }
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        nx_ * ny_ *nz_ != NumGlobalElements_,
+        ErrorMsg << "The number of global elements must be a perfect cube\n"
+        << ErrorMsg << "(now is " << NumGlobalElements_ << ")."
+        );
   }
 
   int left, right, lower, upper, below, above;
@@ -2404,7 +2401,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3dVector(void)
   for( int i=0 ; i<NumMyElements_; ++i ) {
     int NumEntries=0;
     GetNeighboursCartesian3d(MyGlobalElements[i], nx_, ny_, nz_,
-           left, right, lower, upper, below, above);
+        left, right, lower, upper, below, above);
     if( left != -1 ) {
       Indices[NumEntries] = left;
       Values[NumEntries] = (*VectorB_)[i];
@@ -2437,24 +2434,22 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3dVector(void)
     }
     // put the off-diagonal entries
     matrix_->InsertGlobalValues(MyGlobalElements[i], NumEntries,
-               Values, Indices);
+        Values, Indices);
     // Put in the diagonal entry
     diag = (*VectorA_)[i];
 
     matrix_->InsertGlobalValues(MyGlobalElements[i], 1,
-               &diag, MyGlobalElements+i);
+        &diag, MyGlobalElements+i);
   }
 
   matrix_->FillComplete();
   return;
-
 }
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixLehmer(void)
 {
-
-    if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `lehmer'...\n";
   }
 
@@ -2487,11 +2482,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLehmer(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixMinij(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `minij'...\n";
   }
 
@@ -2524,11 +2518,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixMinij(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixRis(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `ris'...\n";
   }
 
@@ -2561,11 +2554,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRis(void)
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixHilbert(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `hilbert'...\n";
   }
 
@@ -2598,11 +2590,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixHilbert(void)
 
 // ================================================ ====== ==== ==== == =
 
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixJordblock(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `jordblock'...\n";
   }
 
@@ -2642,11 +2633,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixJordblock(void)
 
 // ================================================ ====== ==== ==== == =
 
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixCauchy(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `cauchy'...\n";
   }
 
@@ -2680,11 +2670,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCauchy(void)
 
 // ================================================ ====== ==== ==== == =
 
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixFiedler(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `fiedler'...\n";
   }
 
@@ -2720,8 +2709,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixFiedler(void)
   template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixHanowa(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `hanowa'...\n";
   }
 
@@ -2730,11 +2718,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixHanowa(void)
   if( a_ == UNDEF ) a_ = -1;
 
   // problem size
-
-  if( NumGlobalElements_ % 2 ) {
-    cerr << ErrorMsg << "`hanowa' matrix requires a even number of points" << endl;
-    exit( EXIT_FAILURE );
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      NumGlobalElements_ % 2 != 0,
+      ErrorMsg << "`hanowa' matrix requires a even number of points"
+      );
 
   int_type half = NumGlobalElements_/2;
 
@@ -2767,11 +2754,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixHanowa(void)
 
 // ================================================ ====== ==== ==== == =
 
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixKMS(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `kms'...\n";
   }
 
@@ -2812,8 +2798,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixKMS(void)
   template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixParter(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `parter'...\n";
   }
 
@@ -2848,14 +2833,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixParter(void)
 
 // ================================================ ====== ==== ==== == =
 
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixPei(void)
 {
 
   // default values if not specified otherwise
   a_ = 1.0;
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `pei'...\n";
     cout << OutputMsg << "with value a=" << a_ << endl;
   }
@@ -2891,14 +2876,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixPei(void)
 
 // ================================================ ====== ==== ==== == =
 
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixOnes(void)
 {
 
   // default values if not specified otherwise
   if( a_ == UNDEF ) a_ = 1.0;
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `ones'...\n";
     cout << OutputMsg << "with value a=" << a_ << endl;
   }
@@ -2933,11 +2918,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixOnes(void)
 
 // ================================================ ====== ==== ==== == =
 
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::CreateMatrixVander(void)
 {
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating matrix `vander'...\n";
   }
 
@@ -2974,13 +2959,12 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixVander(void)
 
 // ================================================ ====== ==== ==== == =
 
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::TReadMatrix(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Reading " << name_ << "  matrix `"
-   << FileName_ << "'...\n";
+      << FileName_ << "'...\n";
   }
 
   Epetra_Map * readMap;
@@ -2994,54 +2978,58 @@ void Trilinos_Util::CrsMatrixGallery::TReadMatrix(void)
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(UseLongLong_ && sizeof(int_type) == sizeof(long long)) {
     if( name_ == "hb" )
-      Trilinos_Util_ReadHb2Epetra64((char*)FileName_.c_str(), *comm_, readMap,
+      Trilinos_Util_ReadHb2Epetra64(FileName_.c_str(), *comm_, readMap,
           readA, readx,
           readb, readxexact);
     else if( name_ == "matrix_market" )
-      Trilinos_Util_ReadMatrixMarket2Epetra64((char*)FileName_.c_str(), *comm_,
-              readMap, readA, readx,
-              readb, readxexact );
+      Trilinos_Util_ReadMatrixMarket2Epetra64(FileName_.c_str(), *comm_,
+          readMap, readA, readx,
+          readb, readxexact );
     else if( name_ == "triples_sym" )
-      Trilinos_Util_ReadTriples2Epetra64((char*)FileName_.c_str(), false, *comm_,
-               readMap, readA, readx,
-               readb, readxexact );
+      Trilinos_Util_ReadTriples2Epetra64(FileName_.c_str(), false, *comm_,
+          readMap, readA, readx,
+          readb, readxexact );
     else if( name_ == "triples_nonsym" )
-      Trilinos_Util_ReadTriples2Epetra64((char*)FileName_.c_str(), true, *comm_,
-               readMap, readA, readx,
-               readb, readxexact );
+      Trilinos_Util_ReadTriples2Epetra64(FileName_.c_str(), true, *comm_,
+          readMap, readA, readx,
+          readb, readxexact );
     else {
-      cerr << ErrorMsg << "problem type not correct (" << name_ << ")\n";
-      exit( EXIT_FAILURE );
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          true,
+          ErrorMsg << "problem type not correct (" << name_ << ")"
+          );
     }
   }
   else
 #endif
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(!UseLongLong_ && sizeof(int_type) == sizeof(int)) {
-    if( name_ == "hb" )
-      Trilinos_Util_ReadHb2Epetra((char*)FileName_.c_str(), *comm_, readMap,
-          readA, readx,
-          readb, readxexact);
-    else if( name_ == "matrix_market" )
-      Trilinos_Util_ReadMatrixMarket2Epetra((char*)FileName_.c_str(), *comm_,
-              readMap, readA, readx,
-              readb, readxexact );
-    else if( name_ == "triples_sym" )
-      Trilinos_Util_ReadTriples2Epetra((char*)FileName_.c_str(), false, *comm_,
-               readMap, readA, readx,
-               readb, readxexact );
-    else if( name_ == "triples_nonsym" )
-      Trilinos_Util_ReadTriples2Epetra((char*)FileName_.c_str(), true, *comm_,
-               readMap, readA, readx,
-               readb, readxexact );
-    else {
-      cerr << ErrorMsg << "problem type not correct (" << name_ << ")\n";
-      exit( EXIT_FAILURE );
+    if(!UseLongLong_ && sizeof(int_type) == sizeof(int)) {
+      if( name_ == "hb" )
+        Trilinos_Util_ReadHb2Epetra(FileName_.c_str(), *comm_, readMap,
+            readA, readx,
+            readb, readxexact);
+      else if( name_ == "matrix_market" )
+        Trilinos_Util_ReadMatrixMarket2Epetra(FileName_.c_str(), *comm_,
+            readMap, readA, readx,
+            readb, readxexact );
+      else if( name_ == "triples_sym" )
+        Trilinos_Util_ReadTriples2Epetra(FileName_.c_str(), false, *comm_,
+            readMap, readA, readx,
+            readb, readxexact );
+      else if( name_ == "triples_nonsym" )
+        Trilinos_Util_ReadTriples2Epetra(FileName_.c_str(), true, *comm_,
+            readMap, readA, readx,
+            readb, readxexact );
+      else {
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(
+            true,
+            ErrorMsg << "problem type not correct (" << name_ << ")"
+            );
+      }
     }
-  }
-  else
+    else
 #endif
-    throw "Trilinos_Util::CrsMatrixGallery::TReadMatrix: Global indices int vs. long long internal error";
+      throw "Trilinos_Util::CrsMatrixGallery::TReadMatrix: Global indices int vs. long long internal error";
 
   NumGlobalElements_ = readMap->NumGlobalElements64();
 
@@ -3070,21 +3058,17 @@ void Trilinos_Util::CrsMatrixGallery::TReadMatrix(void)
       int mod = NumGlobalElements_%NumProcs;
 
       for( int i=0 ; i<NumProcs ; ++i ) {
-  count[i] = 0;
-  ElementsPerDomain[i] = div;
-  if( i<mod ) ElementsPerDomain[i]++;
+        count[i] = 0;
+        ElementsPerDomain[i] = div;
+        if( i<mod ) ElementsPerDomain[i]++;
       }
 
       for( int_type i=0 ; i<NumGlobalElements_ ; ++i ) {
-  part[i] = -1;
+        part[i] = -1;
       }
 
       int MaxNnzPerRow = readA->MaxNumEntries();
-      if( MaxNnzPerRow == 0 ) {
-  cerr << ErrorMsg << "something went wrong in `CreateMatrix'\n"
-       << ErrorMsg << "MaxNnzPerRow == 0 \n";
-  exit( EXIT_FAILURE );
-      }
+      TEUCHOS_ASSERT(MaxNnzPerRow != 0);
 
       int CrsNumEntries;
       int * CrsIndices;
@@ -3097,39 +3081,38 @@ void Trilinos_Util::CrsMatrixGallery::TReadMatrix(void)
 
       bool ok = true;
 
-      while( ok == true ) {
+      while( ok ) {
 
-  readA->ExtractMyRowView(RootNode,CrsNumEntries,
-        CrsValues,CrsIndices);
+        readA->ExtractMyRowView(RootNode,CrsNumEntries,
+            CrsValues,CrsIndices);
 
-  ok = false;
+        ok = false;
 
-  for( int j=0 ; j<CrsNumEntries ; ++j ) {
+        for( int j=0 ; j<CrsNumEntries ; ++j ) {
 
-    if( count[CurrentDomain] == ElementsPerDomain[CurrentDomain] ) {
-      CurrentDomain++;
-    }
+          if( count[CurrentDomain] == ElementsPerDomain[CurrentDomain] )
+            CurrentDomain++;
 
-    if( part[CrsIndices[j]] == -1 ) {
-      part[CrsIndices[j]] = CurrentDomain;
-      if( ok == false ) {
-        ok = true;
-        RootNode = CrsIndices[j];
-      }
-      count[CurrentDomain]++;
-    }
-  }
+          if( part[CrsIndices[j]] == -1 ) {
+            part[CrsIndices[j]] = CurrentDomain;
+            if(!ok) {
+              ok = true;
+              RootNode = CrsIndices[j];
+            }
+            count[CurrentDomain]++;
+          }
+        }
 
-  // check if some -1 nodes are still available
-  if( ok == false ) {
-    for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
-      if( part[j] == -1 ) {
-        RootNode = j;
-        ok = true;
-        break;
-      }
-    }
-  }
+        // check if some -1 nodes are still available
+        if(!ok) {
+          for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
+            if( part[j] == -1 ) {
+              RootNode = j;
+              ok = true;
+              break;
+            }
+          }
+        }
 
       }
 
@@ -3143,7 +3126,7 @@ void Trilinos_Util::CrsMatrixGallery::TReadMatrix(void)
 
     for( int_type j=0 ; j<NumGlobalElements_ ; ++j ) {
       if( part[j] == -1 ) {
-  cerr << ErrorMsg << "part[" << j << "] = -1 \n";
+        cerr << ErrorMsg << "part[" << j << "] = -1 \n";
       }
     }
 
@@ -3161,7 +3144,7 @@ void Trilinos_Util::CrsMatrixGallery::TReadMatrix(void)
     }
 
     map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,
-         0,*comm_);
+        0,*comm_);
 
     delete [] MyGlobalElements;
     delete [] part;
@@ -3195,13 +3178,12 @@ void Trilinos_Util::CrsMatrixGallery::TReadMatrix(void)
   map_->MyGlobalElementsPtr(MyGlobalElementsPtr<int_type>());
 
   return;
-
 }
 
 // ================================================ ====== ==== ==== == =
 void Trilinos_Util::CrsMatrixGallery::GetNeighboursCartesian2d( const int i, const int nx, const int ny,
-                  int & left, int & right,
-                  int & lower, int & upper)
+    int & left, int & right,
+    int & lower, int & upper)
 {
 
   int ix, iy;
@@ -3226,13 +3208,12 @@ void Trilinos_Util::CrsMatrixGallery::GetNeighboursCartesian2d( const int i, con
     upper = i+nx;
 
   return;
-
 }
 
 // ================================================ ====== ==== ==== == =
 void Trilinos_Util::CrsMatrixGallery::GetNeighboursCartesian3d( const int i, const int nx, const int ny, const int nz,
-        int & left, int & right, int & lower, int & upper,
-        int & below, int & above )
+    int & left, int & right, int & lower, int & upper,
+    int & below, int & above )
 {
 
   int ixy, iz;
@@ -3257,7 +3238,6 @@ void Trilinos_Util::CrsMatrixGallery::GetNeighboursCartesian3d( const int i, con
   if( upper != -1 ) upper += iz*(nx*ny);
 
   return;
-
 }
 
 // ================================================ ====== ==== ==== == =
@@ -3317,7 +3297,6 @@ void Trilinos_Util::CrsMatrixGallery::PrintMatrixAndVectors()
 
 void Trilinos_Util::CrsMatrixGallery::PrintMatrixAndVectors(ostream & os)
 {
-
   if( comm_->MyPID() == 0 ) {
     os << "*** MATRIX ***\n";
   }
@@ -3331,49 +3310,48 @@ void Trilinos_Util::CrsMatrixGallery::PrintMatrixAndVectors(ostream & os)
   os << *rhs_;
 
   return;
-
 }
 
 namespace Trilinos_Util {
 
-ostream & operator << (ostream& os,
-                          const Trilinos_Util::CrsMatrixGallery & G )
-{
+  ostream & operator << (ostream& os,
+      const Trilinos_Util::CrsMatrixGallery & G )
+  {
 
-  bool verbose = (G.comm_->MyPID() == 0);
+    bool verbose = (G.comm_->MyPID() == 0);
 
-  if( verbose ) {
+    if( verbose ) {
 
-    os << " * Solving problem " << G.name_ << endl;
-    os << " * Number of global elements : " << G.NumGlobalElements_ << endl;
-    os << " * Type of Map : " << G.MapType_ << endl;
-    os << " * Number of PDEs : " << G.NumPDEEqns_ << endl;
+      os << " * Solving problem " << G.name_ << endl;
+      os << " * Number of global elements : " << G.NumGlobalElements_ << endl;
+      os << " * Type of Map : " << G.MapType_ << endl;
+      os << " * Number of PDEs : " << G.NumPDEEqns_ << endl;
 
-    // CRS stuff
-    if( G.matrix_ != NULL ) {
-      os << " * the matrix has been created " << endl;
-      os << " * Matrix->OperatorDomainMap().NumGlobalElements() = "
-   << G.matrix_->OperatorDomainMap().NumGlobalElements64() << endl;
+      // CRS stuff
+      if( G.matrix_ != NULL ) {
+        os << " * the matrix has been created " << endl;
+        os << " * Matrix->OperatorDomainMap().NumGlobalElements() = "
+          << G.matrix_->OperatorDomainMap().NumGlobalElements64() << endl;
+      }
+      if( G.ExactSolution_ != NULL )
+        os << " * an exact solution (" << G.ExactSolutionType_
+          << ") has been created " << endl;
+      if( G.rhs_ != NULL )
+        os << " * the RHS has been created " << endl;
     }
-    if( G.ExactSolution_ != NULL )
-      os << " * an exact solution (" << G.ExactSolutionType_
-   << ") has been created " << endl;
-    if( G.rhs_ != NULL )
-      os << " * the RHS has been created " << endl;
+
+    //  os << " * On proc " << G.comm_->MyPID() << " there are "
+    //     << G.NumMyElements_ << " elements" << endl;
+
+    return os;
+
   }
-
-  //  os << " * On proc " << G.comm_->MyPID() << " there are "
-  //     << G.NumMyElements_ << " elements" << endl;
-
-  return os;
-
-}
 } //namespace Trilinos_Util
 
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::CrsMatrixGallery::TGetCartesianCoordinates(double * & x,
-               double * & y,
-               double * & z)
+    double * & y,
+    double * & z)
 {
 
   if( map_ == NULL ) CreateMap();
@@ -3406,10 +3384,10 @@ void Trilinos_Util::CrsMatrixGallery::TGetCartesianCoordinates(double * & x,
     }
 
   } else  if( name_ == "laplace_2d" || name_ == "cross_stencil_2d"
-        || name_ == "laplace_2d_bc"
-        || name_ == "laplace_2d_9pt" || name_ == "recirc_2d"
-        || name_ == "laplace_2d_n" || name_ == "uni_flow_2d"
-        || name_ == "stretched_2d" ) {
+      || name_ == "laplace_2d_bc"
+      || name_ == "laplace_2d_9pt" || name_ == "recirc_2d"
+      || name_ == "laplace_2d_n" || name_ == "uni_flow_2d"
+      || name_ == "stretched_2d" ) {
 
     delta_x = lx_/(nx_-1);
     delta_y = ly_/(ny_-1);
@@ -3455,24 +3433,27 @@ void Trilinos_Util::CrsMatrixGallery::TGetCartesianCoordinates(double * & x,
     }
 
   } else {
-
-      cerr << ErrorMsg << "You can build Cartesian coordinates" << endl
-     << ErrorMsg << "only with one of the following problem_type:" << endl
-     << ErrorMsg << "<diag> / <tridiag> / <laplace_1d> / <eye>" << endl
-     << ErrorMsg << "<laplace_2d> / <cross_stencil_2d> / <laplace_2d_9pt> / <recirc_2d>" << endl
-     << ErrorMsg << "<laplace_2d_n> / <uni_flow_n>" << endl
-     << ErrorMsg << "<laplace_3d> / <cross_stencil_3d> / <stretched_2d>" << endl;
-
-      exit( EXIT_FAILURE );
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        true,
+        ErrorMsg << "You can build Cartesian coordinates\n"
+        << ErrorMsg << "only with one of the following problem_type:\n"
+        << ErrorMsg << "<diag> / <tridiag> / <laplace_1d> / <eye>\n"
+        << ErrorMsg << "<laplace_2d> / <cross_stencil_2d> / <laplace_2d_9pt> / <recirc_2d>\n"
+        << ErrorMsg << "<laplace_2d_n> / <uni_flow_n>\n"
+        << ErrorMsg << "<laplace_3d> / <cross_stencil_3d> / <stretched_2d>\n"
+        );
   }
 
   return;
 
 }
 
-void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
-               double * & y,
-               double * & z)
+void Trilinos_Util::CrsMatrixGallery::
+GetCartesianCoordinates(
+    double * & x,
+    double * & y,
+    double * & z
+    )
 {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(UseLongLong_)
@@ -3480,11 +3461,11 @@ void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
   else
 #endif
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(!UseLongLong_)
-    TGetCartesianCoordinates<int>(x,y,z);
-  else
+    if(!UseLongLong_)
+      TGetCartesianCoordinates<int>(x,y,z);
+    else
 #endif
-  throw "Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates: failed";
+      throw "Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates: failed";
 }
 
 
@@ -3547,23 +3528,23 @@ int Trilinos_Util::CrsMatrixGallery::WriteMatrix( const string & FileName, const
       // cycle over all local rows to find out nonzero elements
       for( int MyRow=0 ; MyRow<NumMyRows ; ++MyRow ) {
 
-  GlobalRow = matrix_->GRID64(MyRow);
+        GlobalRow = matrix_->GRID64(MyRow);
 
-  NumNzRow = matrix_->NumMyEntries(MyRow);
-  double *Values = new double[NumNzRow];
-  int *Indices = new int[NumNzRow];
+        NumNzRow = matrix_->NumMyEntries(MyRow);
+        double *Values = new double[NumNzRow];
+        int *Indices = new int[NumNzRow];
 
-  matrix_->ExtractMyRowCopy(MyRow, NumNzRow,
-         NumEntries, Values, Indices);
-  // print out the elements with MATLAB syntax
-  for( int j=0 ; j<NumEntries ; ++j ) {
-    fout << "A(" << GlobalRow  + IndexBase
-         << "," << matrix_->GCID64(Indices[j]) + IndexBase
-         << ") = " << Values[j] << ";\n";
-  }
+        matrix_->ExtractMyRowCopy(MyRow, NumNzRow,
+            NumEntries, Values, Indices);
+        // print out the elements with MATLAB syntax
+        for( int j=0 ; j<NumEntries ; ++j ) {
+          fout << "A(" << GlobalRow  + IndexBase
+            << "," << matrix_->GCID64(Indices[j]) + IndexBase
+            << ") = " << Values[j] << ";\n";
+        }
 
-  delete Values;
-  delete Indices;
+        delete Values;
+        delete Indices;
 
       }
 
@@ -3591,12 +3572,12 @@ void Trilinos_Util::CrsMatrixGallery::SetupCartesianGrid2D()
   if( nx_ == -1 || ny_ == -1 ) {
     nx_ = (int)sqrt((double)NumGlobalElements_);
     ny_ = nx_;
-    if( nx_ * ny_ != NumGlobalElements_ ) {
-      cerr << ErrorMsg << "The number of global elements must be a perfect square\n"
-     << ErrorMsg << "otherwise set nx and ny. " << endl
-     << ErrorMsg << "(now NumGlobalElements = " << NumGlobalElements_ << ")" << endl;
-      exit( EXIT_FAILURE );
-    }
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        nx_ * ny_ != NumGlobalElements_,
+        ErrorMsg << "The number of global elements must be a perfect square\n"
+        << ErrorMsg << "otherwise set nx and ny.\n"
+        << ErrorMsg << "(now NumGlobalElements = " << NumGlobalElements_ << ")\n"
+        );
   }
 }
 
@@ -3609,33 +3590,29 @@ void Trilinos_Util::CrsMatrixGallery::SetupCartesianGrid3D()
     nx_ = (int)pow((double)NumGlobalElements_,0.333334);
     ny_ = nx_;
     nz_ = nx_;
-    if( nx_ * ny_ * nz_ != NumGlobalElements_ ) {
-      cerr << ErrorMsg << "The number of global elements must be a perfect cube\n"
-     << ErrorMsg << "otherwise set nx, ny, and nz. " << endl
-     << ErrorMsg << "(now NumGlobalElements = " << NumGlobalElements_ << ")" << endl;
-      exit( EXIT_FAILURE );
-    }
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+        nx_ * ny_ * nz_ != NumGlobalElements_,
+        ErrorMsg << "The number of global elements must be a perfect cube\n"
+        << ErrorMsg << "otherwise set nx, ny, and nz.\n"
+        << ErrorMsg << "(now NumGlobalElements = " << NumGlobalElements_ << ")\n"
+        );
   }
 }
 
 // ================================================ ====== ==== ==== == =
 void Trilinos_Util::CrsMatrixGallery::ExactSolQuadXY(double x, double y,
-                double & u)
+    double & u)
 {
-
   u = x*(1.-x)*y*(1.-y);
-
   return;
-
 }
 
 // ================================================ ====== ==== ==== == =
 void Trilinos_Util::CrsMatrixGallery::ExactSolQuadXY(double x, double y,
-                double & u,
-                double & ux, double & uy,
-                double & uxx, double & uyy)
+    double & u,
+    double & ux, double & uy,
+    double & uxx, double & uyy)
 {
-
   u = x*(1.-x)*y*(1.-y);
   ux = (1-2*x)*y*(1.-y);
   uy = x*(1.-x)*(1.-2*y);
@@ -3643,14 +3620,13 @@ void Trilinos_Util::CrsMatrixGallery::ExactSolQuadXY(double x, double y,
   uyy = -2*(y-y*y);
 
   return;
-
 }
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // CJ: TODO FIXME for long long
 
 Trilinos_Util::VbrMatrixGallery::~VbrMatrixGallery()
 {
-    // VBR data
+  // VBR data
   if( VbrLinearProblem_ != NULL ) delete VbrLinearProblem_;
   if( VbrMatrix_ != NULL ) delete VbrMatrix_;
   if( VbrExactSolution_ != NULL ) delete VbrExactSolution_;
@@ -3683,7 +3659,6 @@ Epetra_MultiVector * Trilinos_Util::VbrMatrixGallery::GetVbrStartingSolution(voi
 // ================================================ ====== ==== ==== == =
 Epetra_VbrMatrix * Trilinos_Util::VbrMatrixGallery::GetVbrMatrix(const int NumPDEEqns)
 {
-
   if( NumPDEEqns != NumPDEEqns_ ) {
     if( BlockMap_ != NULL ) {
       delete BlockMap_;
@@ -3694,27 +3669,20 @@ Epetra_VbrMatrix * Trilinos_Util::VbrMatrixGallery::GetVbrMatrix(const int NumPD
   }
 
   return( GetVbrMatrix() );
-
 }
 
 // ================================================ ====== ==== ==== == =
 Epetra_VbrMatrix * Trilinos_Util::VbrMatrixGallery::GetVbrMatrix(void)
 {
-
   if( VbrMatrix_ == NULL ) CreateVbrMatrix();
-
   return VbrMatrix_;
-
 }
 
 // ================================================ ====== ==== ==== == =
 Epetra_VbrMatrix & Trilinos_Util::VbrMatrixGallery::GetVbrMatrixRef(void)
 {
-
   if( VbrMatrix_ == NULL ) CreateVbrMatrix();
-
   return *VbrMatrix_;
-
 }
 
 // ================================================ ====== ==== ==== == =
@@ -3735,17 +3703,14 @@ Epetra_LinearProblem * Trilinos_Util::VbrMatrixGallery::GetVbrLinearProblem(void
   VbrLinearProblem_ = new Epetra_LinearProblem(A,StartingSolution,RHS);
 
   return VbrLinearProblem_;
-
 }
 
 // ================================================ ====== ==== ==== == =
 
 void Trilinos_Util::VbrMatrixGallery::CreateVbrExactSolution(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ )
     cout << OutputMsg << "Creating exact solution (VBR)...\n";
-  }
 
   // check if already have one; in this case delete and rebuild
   if( VbrExactSolution_ != NULL ) delete VbrExactSolution_;
@@ -3758,8 +3723,8 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrExactSolution(void)
   for (int k = 0 ; k < NumVectors_ ; ++k)
     for( int j=0 ; j<NumMyElements_ ; j++ )
       for( int i=0 ; i<NumPDEEqns_ ; ++i ) {
-  (*VbrExactSolution_)[k][j*NumPDEEqns_+i] = (*ExactSolution_)[k][j];
-    }
+        (*VbrExactSolution_)[k][j*NumPDEEqns_+i] = (*ExactSolution_)[k][j];
+      }
 
   return;
 }
@@ -3768,10 +3733,8 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrExactSolution(void)
 
 void Trilinos_Util::VbrMatrixGallery::CreateVbrStartingSolution(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ )
     cout << OutputMsg << "Creating Starting Solution (VBR)...\n";
-  }
 
   if( VbrStartingSolution_ != NULL ) {
     delete VbrStartingSolution_;
@@ -3787,21 +3750,18 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrStartingSolution(void)
   for (int k = 0 ; k < NumVectors_ ; ++k)
     for( int j=0 ; j<NumMyElements_ ; j++ )
       for( int i=0 ; i<NumPDEEqns_ ; ++i ) {
-  (*VbrStartingSolution_)[k][j*NumPDEEqns_+i] = (*StartingSolution_)[k][j];
+        (*VbrStartingSolution_)[k][j*NumPDEEqns_+i] = (*StartingSolution_)[k][j];
       }
 
   return;
-
 }
 
 // ================================================ ====== ==== ==== == =
 
 void Trilinos_Util::VbrMatrixGallery::CreateVbrRHS(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ )
     cout << OutputMsg << "Creating RHS (VBR)...\n";
-  }
 
   if( VbrRhs_ != NULL ) {
     delete VbrRhs_;
@@ -3821,27 +3781,24 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrRHS(void)
   VbrMatrix_->Multiply(false,*VbrExactSolution_,*VbrRhs_);
 
   return;
-
 }
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ )
     cout << OutputMsg << "Creating VBR matrix...\n";
-  }
 
   if( matrix_ == NULL ) CreateMatrix();
   if( BlockMap_ == NULL ) CreateBlockMap();
 
   int MaxNnzPerRow = matrix_->MaxNumEntries();
-  if( MaxNnzPerRow == 0 ) {
-    cerr << ErrorMsg << "something went wrong in `CreateMatrix'\n"
-   << ErrorMsg << "MaxNnzPerRow == 0 \n";
-    exit( EXIT_FAILURE );
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      MaxNnzPerRow == 0,
+      ErrorMsg << "something went wrong in `CreateMatrix'\n"
+      << ErrorMsg << "MaxNnzPerRow == 0"
+      );
 
   // create a VBR matrix based on BlockMap
   VbrMatrix_ = new Epetra_VbrMatrix(Copy, *BlockMap_,MaxNnzPerRow);
@@ -3856,7 +3813,6 @@ void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
   int_type * VbrIndices = new int_type[MaxNnzPerRow];
   double * VbrValues = new double[MaxBlockSize];
   int BlockRows = NumPDEEqns_;
-  int ierr;
 
   // cycle over all the local rows.
 
@@ -3865,12 +3821,12 @@ void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
 #endif
 
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
-
-
     // extract Crs row
-
-    ierr = matrix_->ExtractMyRowView(i,CrsNumEntries,
-             CrsValues,CrsIndices);
+    int ierr = matrix_->ExtractMyRowView(
+        i,CrsNumEntries,
+        CrsValues,CrsIndices
+        );
+    TEUCHOS_ASSERT(ierr == 0);
 
     // matrix_ is in local form. Need global indices
     for( int kk=0 ; kk<CrsNumEntries ; ++kk)
@@ -3886,8 +3842,8 @@ void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
     int_type GlobalNode = MyGlobalElements[i];
     VbrMatrix_->BeginInsertGlobalValues(GlobalNode, CrsNumEntries, VbrIndices);
 #else
-  // CJ TODO FIXME: Vbr matrices cannot be 64 bit GID based yet.
-  throw "Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix: No support for BeginInsertGlobalValues";
+    // CJ TODO FIXME: Vbr matrices cannot be 64 bit GID based yet.
+    throw "Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix: No support for BeginInsertGlobalValues";
 #endif
 
     int ExpandTypeInt;
@@ -3895,8 +3851,10 @@ void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
     if( ExpandType_ == "zero_off_diagonal" ) ExpandTypeInt=0;
     else if( ExpandType_ == "random_off_diagonal" ) ExpandTypeInt=1;
     else {
-      cerr << ErrorMsg << "ExpandType not correct (" << ExpandType_ << "\n";
-      exit( EXIT_FAILURE );
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(
+          true,
+          ErrorMsg << "ExpandType not correct (" << ExpandType_ << ")"
+          );
     }
     Epetra_Util Util;
     double r = 0.0;
@@ -3904,24 +3862,24 @@ void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
     for( int i=0 ; i<CrsNumEntries ; ++i ) {
 
       for( int k=0 ; k<BlockRows ; ++k ) { // rows
-  for( int h=0 ; h<BlockRows ; ++h ) { // cols
-    if( k == h ) VbrValues[k+h*BlockRows] = CrsValues[i];
-    else {
-      switch( ExpandTypeInt ) {
-      case 0:
-        r = 0.0;
-        break;
-      case 1:
-        // get a double between -1 and 1
-        r = Util.RandomDouble();
-        // scale it so that the sum of the block off-diagonal
-        // is not greater than the block diangonal
-        r /= (1.5*CrsValues[i]*BlockRows);
-        break;
-      }
-      VbrValues[k+h*BlockRows] = r;
-    }
-  }
+        for( int h=0 ; h<BlockRows ; ++h ) { // cols
+          if( k == h ) VbrValues[k+h*BlockRows] = CrsValues[i];
+          else {
+            switch( ExpandTypeInt ) {
+              case 0:
+                r = 0.0;
+                break;
+              case 1:
+                // get a double between -1 and 1
+                r = Util.RandomDouble();
+                // scale it so that the sum of the block off-diagonal
+                // is not greater than the block diangonal
+                r /= (1.5*CrsValues[i]*BlockRows);
+                break;
+            }
+            VbrValues[k+h*BlockRows] = r;
+          }
+        }
       }
 
       VbrMatrix_->SubmitBlockEntry(VbrValues,BlockRows,BlockRows,BlockRows);
@@ -3947,18 +3905,17 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix(void)
   else
 #endif
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(!UseLongLong_)
-    TCreateVbrMatrix<int>();
-  else
+    if(!UseLongLong_)
+      TCreateVbrMatrix<int>();
+    else
 #endif
-  throw "Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix: failed";
+      throw "Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix: failed";
 }
 
 // ================================================ ====== ==== ==== == =
 
 void Trilinos_Util::VbrMatrixGallery::ComputeResidualVbr(double* residual)
 {
-
   // create solution and rhs if needed (matrix_ and ExactSolution are
   //  created by CreateRHS is necessary)
   if( VbrRhs_ == NULL ) CreateVbrRHS();
@@ -3975,7 +3932,6 @@ void Trilinos_Util::VbrMatrixGallery::ComputeResidualVbr(double* residual)
 
 void Trilinos_Util::VbrMatrixGallery::ComputeDiffBetweenStartingAndExactSolutionsVbr(double* residual)
 {
-
   // create solution and rhs if needed (matrix_ and ExactSolution are
   //  created by CreateRHS is necessary)
   if( VbrRhs_ == NULL ) CreateVbrRHS();
@@ -3992,7 +3948,6 @@ void Trilinos_Util::VbrMatrixGallery::ComputeDiffBetweenStartingAndExactSolution
 
 void Trilinos_Util::VbrMatrixGallery::PrintVbrMatrixAndVectors(ostream & os)
 {
-
   if( comm_->MyPID() == 0 ) {
     os << "*** MATRIX (VBR) ***\n";
   }
@@ -4006,7 +3961,6 @@ void Trilinos_Util::VbrMatrixGallery::PrintVbrMatrixAndVectors(ostream & os)
   os << *VbrRhs_;
 
   return;
-
 }
 
 // ================================================ ====== ==== ==== == =
@@ -4028,17 +3982,15 @@ const Epetra_BlockMap * Trilinos_Util::VbrMatrixGallery::GetBlockMap(void)
 const Epetra_BlockMap & Trilinos_Util::VbrMatrixGallery::GetBlockMapRef(void)
 {
   if( BlockMap_ == NULL ) CreateBlockMap();
-
   return *BlockMap_;
 }
 
 
 // ================================================ ====== ==== ==== == =
-template<typename int_type>
+  template<typename int_type>
 void Trilinos_Util::VbrMatrixGallery::TCreateBlockMap(void)
 {
-
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Creating BlockMap...\n";
   }
 
@@ -4057,16 +4009,15 @@ void Trilinos_Util::VbrMatrixGallery::TCreateBlockMap(void)
   int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
 
   BlockMap_ = new Epetra_BlockMap((int_type) NumGlobalElements_,NumMyElements_,
-          MyGlobalElements,
-          NumPDEEqns_,(int_type) 0,*comm_);
+      MyGlobalElements,
+      NumPDEEqns_,(int_type) 0,*comm_);
 
-  if( verbose_ == true ) {
+  if( verbose_ ) {
     cout << OutputMsg << "Time to create BlockMap: "
-   << Time.ElapsedTime() << " (s)\n";
+      << Time.ElapsedTime() << " (s)\n";
   }
 
   return;
-
 }
 
 void Trilinos_Util::VbrMatrixGallery::CreateBlockMap(void)
@@ -4077,11 +4028,11 @@ void Trilinos_Util::VbrMatrixGallery::CreateBlockMap(void)
   else
 #endif
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(!UseLongLong_)
-    TCreateBlockMap<int>();
-  else
+    if(!UseLongLong_)
+      TCreateBlockMap<int>();
+    else
 #endif
-  throw "Trilinos_Util::VbrMatrixGallery::CreateBlockMap: failed";
+      throw "Trilinos_Util::VbrMatrixGallery::CreateBlockMap: failed";
 }
 
 #endif

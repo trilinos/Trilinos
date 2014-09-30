@@ -57,7 +57,7 @@
 
 template<typename int_type>
 int Trilinos_Util_ReadTriples2Epetra_internal(
-    char *data_file,
+    const char *data_file,
     bool symmetric,
     const Epetra_Comm  &comm,
     Epetra_Map *& map,
@@ -206,7 +206,8 @@ int Trilinos_Util_ReadTriples2Epetra_internal(
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
-int Trilinos_Util_ReadTriples2Epetra( char *data_file,
+int Trilinos_Util_ReadTriples2Epetra(
+    const char *data_file,
     bool symmetric,
     const Epetra_Comm  &comm,
     Epetra_Map *& map,
@@ -216,7 +217,9 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
     Epetra_Vector *&xexact,
     bool NonUniformMap=false,
     bool TimDavisHeader=false,
-    bool ZeroBased=false ) {
+    bool ZeroBased=false
+    )
+{
   return Trilinos_Util_ReadTriples2Epetra_internal<int>(data_file, symmetric, comm, map, A, x, b,
       xexact, NonUniformMap, TimDavisHeader, ZeroBased);
 }
@@ -225,7 +228,8 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 
-int Trilinos_Util_ReadTriples2Epetra64( char *data_file,
+int Trilinos_Util_ReadTriples2Epetra64(
+    const char *data_file,
     bool symmetric,
     const Epetra_Comm  &comm,
     Epetra_Map *& map,
@@ -235,7 +239,9 @@ int Trilinos_Util_ReadTriples2Epetra64( char *data_file,
     Epetra_Vector *&xexact,
     bool NonUniformMap=false,
     bool TimDavisHeader=false,
-    bool ZeroBased=false ) {
+    bool ZeroBased=false
+    )
+{
   return Trilinos_Util_ReadTriples2Epetra_internal<long long>(data_file, symmetric, comm, map, A, x, b,
       xexact, NonUniformMap, TimDavisHeader, ZeroBased);
 }

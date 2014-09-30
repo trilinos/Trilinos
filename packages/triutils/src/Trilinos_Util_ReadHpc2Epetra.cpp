@@ -49,7 +49,7 @@
 
 template<typename int_type>
 void Trilinos_Util_ReadHpc2Epetra_internal(
-    char *data_file,
+    const char *data_file,
     const Epetra_Comm  &comm,
     Epetra_Map *& map,
     Epetra_CrsMatrix *& A,
@@ -204,7 +204,7 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
-void Trilinos_Util_ReadHpc2Epetra(char *data_file,
+void Trilinos_Util_ReadHpc2Epetra(const char *data_file,
     const Epetra_Comm  &comm,
     Epetra_Map *& map,
     Epetra_CrsMatrix *& A,
@@ -218,7 +218,7 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 
-void Trilinos_Util_ReadHpc2Epetra64(char *data_file,
+void Trilinos_Util_ReadHpc2Epetra64(const char *data_file,
     const Epetra_Comm  &comm,
     Epetra_Map *& map,
     Epetra_CrsMatrix *& A,

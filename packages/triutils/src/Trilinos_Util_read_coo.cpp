@@ -41,7 +41,7 @@
 
 #include "Trilinos_Util.h"
 
-void Trilinos_Util_read_coo(char *data_file, int MyPID,
+void Trilinos_Util_read_coo(const char *data_file, int MyPID,
     int *N_global, int *n_nonzeros,
     double **val, int **bindx,
     double **x, double **b, double **xexact)
@@ -59,8 +59,8 @@ void Trilinos_Util_read_coo(char *data_file, int MyPID,
   int kk = 0;
   int max_ii = 0, max_jj = 0;
   double value;
-  int *pntr, *indx1, *pntr1;
-  double *val1;
+  int *pntr = NULL, *indx1 = NULL, *pntr1 = NULL;
+  double *val1 = NULL;
 
   int MAXBLOCKSIZE = 1;
 
