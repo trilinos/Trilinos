@@ -659,7 +659,7 @@
   </Package>
   <Package name="SEACASIoss" dir="packages/seacas/libraries/ioss" type="ST">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="SEACASExodus,Pamgen"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="SEACASExodus,Pamgen,Zoltan"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -1567,11 +1567,25 @@
     </EmailAddresses>
     <ParentPackage value="STK"/>
   </Package>
+  <Package name="STKExp" dir="packages/stk/stk_exp" type="ST">
+    <LIB_REQUIRED_DEP_PACKAGES value="Gtest,Shards,STKTopology,STKUtil,STKMesh"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="STKMesh,STKTopology"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="STKIO,KokkosCore"/>
+    <LIB_REQUIRED_DEP_TPLS value="BoostLib"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="stk-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="STK"/>
+  </Package>
   <Package name="STK" dir="packages/stk" type="ST">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="STKClassic,STKUtil,STKTopology,STKMesh,STKIO,STKSearch,STKSearchUtil,STKTransfer,STKUnit_tests,STKDoc_tests"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="STKClassic,STKUtil,STKTopology,STKMesh,STKIO,STKSearch,STKSearchUtil,STKTransfer,STKUnit_tests,STKDoc_tests,STKExp"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Gtest"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="KokkosCore"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
     <TEST_REQUIRED_DEP_TPLS/>
