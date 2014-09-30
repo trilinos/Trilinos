@@ -3333,7 +3333,25 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
-    fillComplete (rowMap_, rowMap_, params);
+    // If the graph already has domain and range Maps, don't clobber
+    // them.  If it doesn't, use the current row Map for both the
+    // domain and range Maps.
+    //
+    // NOTE (mfh 28 Sep 2014): If the graph was constructed without a
+    // column Map, and column indices are inserted which are not in
+    // the row Map on any process, this will cause troubles.  However,
+    // that is not a common case for most applications that we
+    // encounter, and checking for it might require more
+    // communication.
+    Teuchos::RCP<const map_type> domMap = this->getDomainMap ();
+    if (domMap.is_null ()) {
+      domMap = this->getRowMap ();
+    }
+    Teuchos::RCP<const map_type> ranMap = this->getRangeMap ();
+    if (ranMap.is_null ()) {
+      ranMap = this->getRowMap ();
+    }
+    this->fillComplete (domMap, ranMap, params);
   }
 
 
