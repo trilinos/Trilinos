@@ -278,38 +278,20 @@ class TpetraMapTestCase(unittest.TestCase):
         self.assertEqual(self.map2.locallySameAs(self.map3), False        )
         self.assertEqual(self.map3.locallySameAs(self.map3), True         )
 
-    # def testStr(self):
-    #     "Test Tpetra.Map __str__ method"
-    #     # This does not work under MPI on my MacBook Pro yet...
-    #     if not isinstance(self.comm, Tpetra.SerialComm): return
-    #     lines   = 7 + self.numMyElConst
-    #     if self.myPID == 0: lines += 7
-    #     s = str(self.map1)
-    #     s = s.splitlines()
-    #     self.assertEquals(len(s), lines)
+    def testStr(self):
+        "Test Tpetra.Map __str__ method"
+        self.assertEquals(self.map1.__str__(), self.map1.description())
+        self.assertEquals(self.map2.__str__(), self.map2.description())
+        self.assertEquals(self.map3.__str__(), self.map3.description())
 
-    # def testPrint(self):
-    #     "Test Tpetra.Map Print method"
-    #     # This does not work under MPI on my MacBook Pro yet...
-    #     if not isinstance(self.comm, Tpetra.SerialComm): return
-    #     myPID = self.myPID
-    #     filename = "testMap%d.dat" % myPID
-    #     f = open(filename, "w")
-    #     self.map2.Print(f)
-    #     f.close()
-    #     s = open(filename, "r").readlines()
-    #     lines = 7 + self.numMyEl
-    #     if myPID == 0: lines += 7
-    #     self.assertEquals(len(s), lines)
-
-    # def testComm(self):
-    #     "Test Tpetra.Map Comm method"
-    #     comms = [self.map1.Comm(),
-    #              self.map2.Comm(),
-    #              self.map3.Comm()]
-    #     for comm in comms:
-    #         self.assertEqual(comm.NumProc(),self.comm.NumProc())
-    #         self.assertEqual(comm.MyPID()  ,self.comm.MyPID()  )
+    def testComm(self):
+        "Test Tpetra.Map Comm method"
+        comms = [self.map1.getComm(),
+                 self.map2.getComm(),
+                 self.map3.getComm()]
+        for comm in comms:
+            self.assertEqual(comm.getSize(), self.comm.getSize())
+            self.assertEqual(comm.getRank(), self.comm.getRank())
 
 ##########################################################################
 
