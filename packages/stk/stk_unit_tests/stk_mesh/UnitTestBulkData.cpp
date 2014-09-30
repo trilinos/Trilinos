@@ -1087,12 +1087,14 @@ TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_
     if (bulk.parallel_rank() == 1) {
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 6);
         int dest_proc = 3;
-        std::map<Entity, std::set<int> > owned_node_sharing_map;
-        stk::mesh::internal_get_current_sharing_of_owned_nodes(bulk,stk::mesh::EntityProc(elem, dest_proc),
+        BulkData::NodeToDependentProcessorsMap owned_node_sharing_map;
+        stk::mesh::internal_get_processor_dependencies(bulk,stk::mesh::EntityProc(elem, dest_proc),
                                                     owned_node_sharing_map);
-        std::map<Entity, std::set<int> > expected_map;
-        expected_map[bulk.get_entity(stk::topology::NODE_RANK, 8)].insert(2);
-        expected_map[bulk.get_entity(stk::topology::NODE_RANK, 13)].insert(2);
+        BulkData::NodeToDependentProcessorsMap expected_map;
+        expected_map[EntityKey(stk::topology::NODE_RANK, 8)].insert(2);
+        expected_map[EntityKey(stk::topology::NODE_RANK, 8)].insert(3);
+        expected_map[EntityKey(stk::topology::NODE_RANK, 13)].insert(2);
+        expected_map[EntityKey(stk::topology::NODE_RANK, 13)].insert(3);
 //        typedef std::map<Entity, std::set<int> > map_of_sets;
 //        for (map_of_sets::iterator i=owned_node_sharing_map.begin(); i != owned_node_sharing_map.end(); ++i)
 //        {
@@ -1110,11 +1112,12 @@ TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_
     else if (bulk.parallel_rank() == 2) {
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::NODE_RANK, 4);
         int dest_proc = 0;
-        std::map<Entity, std::set<int> > owned_node_sharing_map;
-        stk::mesh::internal_get_current_sharing_of_owned_nodes(bulk,stk::mesh::EntityProc(elem, dest_proc),
+        BulkData::NodeToDependentProcessorsMap owned_node_sharing_map;
+        stk::mesh::internal_get_processor_dependencies(bulk,stk::mesh::EntityProc(elem, dest_proc),
                                                          owned_node_sharing_map);
-        std::map<Entity, std::set<int> > expected_map;
-        expected_map[bulk.get_entity(stk::topology::NODE_RANK, 4)].insert(3);
+        BulkData::NodeToDependentProcessorsMap expected_map;
+        expected_map[EntityKey(stk::topology::NODE_RANK, 4)].insert(0);
+        expected_map[EntityKey(stk::topology::NODE_RANK, 4)].insert(3);
         bool result = expected_map == owned_node_sharing_map;
         EXPECT_TRUE(result);
     }

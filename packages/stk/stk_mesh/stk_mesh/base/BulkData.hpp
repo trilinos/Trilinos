@@ -1597,10 +1597,16 @@ private:
   std::string convert_label_for_method_type(const std::string &label, enum PublicOrInternalMethod methodType);
 
 public:
-  void internal_update_node_sharing(const std::vector<EntityProc> & local_change,
-                           const std::vector<EntityProc> & shared_change);
+  typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;
+  void internal_calculate_node_sharing(const std::vector<EntityProc> & local_change,
+                           const std::vector<EntityProc> & shared_change,
+                           NodeToDependentProcessorsMap & owned_node_sharing_map);
+  void internal_apply_node_sharing(const NodeToDependentProcessorsMap & owned_node_sharing_map);
   void internal_add_node_sharing( Entity node, int sharing_proc );
   void internal_remove_node_sharing( EntityKey node, int sharing_proc );
+  void internal_compute_proposed_owned_closure_count(const std::vector<EntityProc> & local_change,
+                                                     const std::vector<EntityProc> & shared_change,
+                                                     std::vector<uint16_t> & new_closure_count) const;
 
 };
 
@@ -2196,10 +2202,10 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
                                               std::vector<EntityProc> & shared_change ,
                                               std::vector<EntityProc> & ghosted_change );
 
-void internal_get_current_sharing_of_owned_nodes(
+void internal_get_processor_dependencies(
           const BulkData &mesh,
           const EntityProc                  send_entry ,
-          std::map<Entity,std::set<int> > & owned_node_sharing_map);
+          BulkData::NodeToDependentProcessorsMap & owned_node_sharing_map);
 
 } // namespace mesh
 } // namespace stk
