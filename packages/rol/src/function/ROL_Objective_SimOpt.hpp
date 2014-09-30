@@ -146,7 +146,10 @@ public:
                      const Vector<Real> &u,  const Vector<Real> &z, Real &tol ) {
     Real gtol = std::sqrt(ROL_EPSILON);
     // Compute step length
-    Real h    = std::max(1.0,u.norm()/v.norm())*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     // Evaluate gradient of first component at (u+hv,z)
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
@@ -167,7 +170,10 @@ public:
                            const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
     Real gtol = std::sqrt(ROL_EPSILON);
     // Compute step length
-    Real h    = std::max(1.0,z.norm()/v.norm())*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     // Evaluate gradient of first component at (u,z+hv)
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);
@@ -188,7 +194,10 @@ public:
                            const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
     Real gtol = std::sqrt(ROL_EPSILON);
     // Compute step length
-    Real h    = std::max(1.0,u.norm()/v.norm())*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     // Evaluate gradient of first component at (u+hv,z)
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
@@ -209,7 +218,10 @@ public:
                      const Vector<Real> &u,  const Vector<Real> &z, Real &tol ) {
     Real gtol = std::sqrt(ROL_EPSILON);
     // Compute step length
-    Real h    = std::max(1.0,z.norm()/v.norm())*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     // Evaluate gradient of first component at (u,z+hv)
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);

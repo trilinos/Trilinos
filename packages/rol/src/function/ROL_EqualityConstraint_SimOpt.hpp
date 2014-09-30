@@ -174,7 +174,10 @@ public:
                                Real &tol) {
     Real ctol = std::sqrt(ROL_EPSILON);
     // Compute step length
-    Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     // Update state vector to u + hv
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
@@ -214,7 +217,10 @@ public:
                                Real &tol) { 
     Real ctol = std::sqrt(ROL_EPSILON);
     // Compute step length
-    Real h    = std::max(z.norm()/v.norm(),1.0)*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     // Update state vector to u + hv
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);
@@ -296,7 +302,10 @@ public:
                                       const Vector<Real> &z,
                                       Real &tol) {
     Real ctol = std::sqrt(ROL_EPSILON);
-    Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     Teuchos::RCP<Vector<Real> > cold = v.clone();
     Teuchos::RCP<Vector<Real> > cnew = v.clone();
     this->update(u,z);
@@ -356,7 +365,10 @@ public:
                                       const Vector<Real> &z,
                                       Real &tol) {
     Real ctol = std::sqrt(ROL_EPSILON);
-    Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     Teuchos::RCP<Vector<Real> > cold = v.clone();
     Teuchos::RCP<Vector<Real> > cnew = v.clone();
     this->update(u,z);
@@ -465,7 +477,10 @@ public:
                                       Real &tol) {
     Real jtol = std::sqrt(ROL_EPSILON);
     // Compute step size
-    Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     // Evaluate Jacobian at new state
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
@@ -506,7 +521,10 @@ public:
                                       Real &tol) {
     Real jtol = std::sqrt(ROL_EPSILON);
     // Compute step size
-    Real h    = std::max(u.norm()/v.norm(),1.0)*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     // Evaluate Jacobian at new state
     Teuchos::RCP<Vector<Real> > unew = u.clone();
     unew->set(u);
@@ -547,7 +565,10 @@ public:
                                       Real &tol) {
     Real jtol = std::sqrt(ROL_EPSILON);
     // Compute step size
-    Real h    = std::max(z.norm()/v.norm(),1.0)*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     // Evaluate Jacobian at new control
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);
@@ -587,7 +608,10 @@ public:
                                       Real &tol) {
     Real jtol = std::sqrt(ROL_EPSILON);
     // Compute step size
-    Real h    = std::max(z.norm()/v.norm(),1.0)*tol;
+    Real h = tol;
+    if (v.norm() > std::sqrt(ROL_EPSILON)) {
+      h = std::max(1.0,u.norm()/v.norm())*tol;
+    }
     // Evaluate Jacobian at new control
     Teuchos::RCP<Vector<Real> > znew = z.clone();
     znew->set(z);
