@@ -3783,7 +3783,7 @@ void BulkData::internal_update_node_sharing(const std::vector<EntityProc> & loca
   std::map<Entity,std::set<int> > owned_node_sharing_map;
   for ( std::vector<EntityProc>::const_iterator
         i = local_change.begin() ; i != local_change.end() ; ++i ) {
-    internal_insert_owned_nodes_send(*this, *i , owned_node_sharing_map );
+      internal_get_current_sharing_of_owned_nodes(*this, *i , owned_node_sharing_map );
   }
   // Do I need to add myself to the list of sharing for any of these nodes?
 
@@ -7615,7 +7615,7 @@ void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<Entity
 }
 
 //----------------------------------------------------------------------
-void internal_insert_owned_nodes_send(
+void internal_get_current_sharing_of_owned_nodes(
   const BulkData &mesh,
   const EntityProc                  send_entry ,
   std::map<Entity,std::set<int> > & owned_node_sharing_map)
@@ -7624,10 +7624,8 @@ void internal_insert_owned_nodes_send(
                    "Cannot send destroyed entity");
 
   Entity moving_entity = send_entry.first;
-  int new_owner = send_entry.second;
 
   if (mesh.entity_rank(moving_entity) == stk::topology::NODE_RANK) {
-      owned_node_sharing_map[moving_entity].insert(new_owner);
       PairIterEntityComm shared_procs = mesh.entity_comm_map_shared(mesh.entity_key(moving_entity));
       EntityCommInfoVector::const_iterator shared_proc_it = shared_procs.first;
       for ( ; shared_proc_it != shared_procs.second ; ++shared_proc_it ) {
@@ -7644,7 +7642,6 @@ void internal_insert_owned_nodes_send(
     for (; rels_itr != rels_end; ++rels_itr)
     {
         if (mesh.bucket(*rels_itr).owned()) {
-            owned_node_sharing_map[*rels_itr].insert(new_owner);
             PairIterEntityComm shared_procs = mesh.entity_comm_map_shared(mesh.entity_key(*rels_itr));
             EntityCommInfoVector::const_iterator shared_proc_it = shared_procs.first;
             for ( ; shared_proc_it != shared_procs.second ; ++shared_proc_it ) {

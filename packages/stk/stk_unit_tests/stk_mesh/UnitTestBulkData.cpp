@@ -1061,6 +1061,53 @@ TEST(UnitTestingOfBulkData, change_entity_owner_8quads_4procs)
     EXPECT_EQ(expectedOwner, bulk.parallel_owner_rank(node3));
 }
 
+TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_owned_nodes)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(pm);
+    if (numProcs != 4) {
+        return;
+    }
+
+    unsigned spatialDim = 2;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData bulk(meta, pm);
+
+    setup8Quad4ProcMesh2D(bulk);
+    // setup now, now change
+    //  move 6 from p1 to p3, move 3 from p2 to p0
+    //     p0   p1   p2   p3               p0    /p     p2   p3
+    //  11---12---13---14---15          11---12------13---14---15
+    //   | 5  | 6  | 7  | 8  |    ->     | 5  | 6/3  | 7  | 8  |
+    //   6----7----8----9---10           6----7------8----9---10
+    //   | 1  | 2  | 3  | 4  |           | 1  | 2/1  | 3  | 4  |
+    //   1----2----3----4----5           1----2------3----4----5
+    // also moves any owned nodes of elem3 or elem6 along with the element
+    if (bulk.parallel_rank() == 1) {
+        stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 6);
+        int dest_proc = 3;
+        std::map<Entity, std::set<int> > owned_node_sharing_map;
+        stk::mesh::internal_get_current_sharing_of_owned_nodes(bulk,stk::mesh::EntityProc(elem, dest_proc),
+                                                    owned_node_sharing_map);
+        std::map<Entity, std::set<int> > expected_map;
+        expected_map[bulk.get_entity(stk::topology::NODE_RANK, 8)].insert(2);
+        expected_map[bulk.get_entity(stk::topology::NODE_RANK, 13)].insert(2);
+//        typedef std::map<Entity, std::set<int> > map_of_sets;
+//        for (map_of_sets::iterator i=owned_node_sharing_map.begin(); i != owned_node_sharing_map.end(); ++i)
+//        {
+//            std::cout << "node id=" << bulk.identifier(i->first) << "\n";
+//            std::set<int> & this_set = i->second;
+//            for (std::set<int>::iterator j=this_set.begin() ; j != this_set.end(); ++j)
+//            {
+//                std::cout << "sharing proc=" << *j << "\n";
+//            }
+//        }
+        bool result = expected_map == owned_node_sharing_map;
+        EXPECT_TRUE(result);
+
+    }
+}
+
 TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
 {
   // This unit-test is designed to test the conditions that results that
