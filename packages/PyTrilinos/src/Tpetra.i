@@ -117,7 +117,7 @@ import numpy
 %ignore *::operator--;
 
 // Include Tpetra documentation
-//%include "Tpetra_dox.i"
+%include "Tpetra_dox.i"
 
 ////////////////////////////
 // Tpetra version support //
