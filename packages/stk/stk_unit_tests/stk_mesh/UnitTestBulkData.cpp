@@ -1075,14 +1075,15 @@ TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_
 
     setup8Quad4ProcMesh2D(bulk);
     // setup now, now change
-    //  move 6 from p1 to p3, move 3 from p2 to p0
+    //  move 6 from p1 to p3, move node 4 from p2 to p0 to test other case in function
     //     p0   p1   p2   p3               p0    /p     p2   p3
-    //  11---12---13---14---15          11---12------13---14---15
-    //   | 5  | 6  | 7  | 8  |    ->     | 5  | 6/3  | 7  | 8  |
-    //   6----7----8----9---10           6----7------8----9---10
-    //   | 1  | 2  | 3  | 4  |           | 1  | 2/1  | 3  | 4  |
-    //   1----2----3----4----5           1----2------3----4----5
-    // also moves any owned nodes of elem3 or elem6 along with the element
+    //  11---12---13---14---15          11---12------13---14-----15
+    //   | 5  | 6  | 7  | 8  |    ->     | 5  | 6/3  | 7  |   8  |
+    //   6----7----8----9---10           6----7------8----9-----10
+    //   | 1  | 2  | 3  | 4  |           | 1  | 2/1  | 3  |   4  |
+    //   1----2----3----4----5           1----2------3----4/0----5
+    // also moves any owned nodes of elem3 along with the element
+    // moves element 6 from proc 1 to proc 3. tests moving an element and owned nodes
     if (bulk.parallel_rank() == 1) {
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 6);
         int dest_proc = 3;
@@ -1104,7 +1105,18 @@ TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_
 //        }
         bool result = expected_map == owned_node_sharing_map;
         EXPECT_TRUE(result);
-
+    }
+    // moves node 4 from proc2 to proc0, tests moving a single node
+    else if (bulk.parallel_rank() == 2) {
+        stk::mesh::Entity elem = bulk.get_entity(stk::topology::NODE_RANK, 4);
+        int dest_proc = 0;
+        std::map<Entity, std::set<int> > owned_node_sharing_map;
+        stk::mesh::internal_get_current_sharing_of_owned_nodes(bulk,stk::mesh::EntityProc(elem, dest_proc),
+                                                         owned_node_sharing_map);
+        std::map<Entity, std::set<int> > expected_map;
+        expected_map[bulk.get_entity(stk::topology::NODE_RANK, 4)].insert(3);
+        bool result = expected_map == owned_node_sharing_map;
+        EXPECT_TRUE(result);
     }
 }
 

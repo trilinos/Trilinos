@@ -2195,6 +2195,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
                                               const std::vector<EntityProc> & local_change ,
                                               std::vector<EntityProc> & shared_change ,
                                               std::vector<EntityProc> & ghosted_change );
+
 void internal_get_current_sharing_of_owned_nodes(
           const BulkData &mesh,
           const EntityProc                  send_entry ,
