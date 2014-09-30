@@ -1411,6 +1411,7 @@ private:
                                      bool regenerate_aura = true,
                                      modification_optimization mod_optimization = MOD_END_SORT );
 
+
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
    *  2) Change parts => update forward relations via part relation
@@ -1594,6 +1595,12 @@ private:
   void write_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
   void write_entity_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
   std::string convert_label_for_method_type(const std::string &label, enum PublicOrInternalMethod methodType);
+
+public:
+  void internal_update_node_sharing(const std::vector<EntityProc> & local_change,
+                           const std::vector<EntityProc> & shared_change);
+  void internal_add_node_sharing( Entity node, int sharing_proc );
+  void internal_remove_node_sharing( EntityKey node, int sharing_proc );
 
 };
 
@@ -2183,6 +2190,15 @@ void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mes
 bool comm_mesh_verify_parallel_consistency(BulkData & M , std::ostream & error_log );
 void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
         stk::mesh::Entity edge, std::vector<stk::mesh::Entity> &nodes);
+
+void internal_generate_parallel_change_lists( const BulkData & mesh ,
+                                              const std::vector<EntityProc> & local_change ,
+                                              std::vector<EntityProc> & shared_change ,
+                                              std::vector<EntityProc> & ghosted_change );
+void internal_insert_owned_nodes_send(
+          const BulkData &mesh,
+          const EntityProc                  send_entry ,
+          std::map<Entity,std::set<int> > owned_node_sharing_map);
 
 } // namespace mesh
 } // namespace stk

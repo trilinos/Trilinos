@@ -1161,20 +1161,20 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
       mesh.declare_relation( edge, nodes[idx], rel_id );
     }
   }
-//  if (p_rank == 0) {
-//      mesh.add_node_sharing(nodes[2],1);
-//      mesh.add_node_sharing(nodes[3],1);
-//  }
-//  else if (p_rank == p_size-1) {
-//      mesh.add_node_sharing(nodes[0],p_rank-1);
-//      mesh.add_node_sharing(nodes[1],p_rank-1);
-//  }
-//  else {
-//      mesh.add_node_sharing(nodes[0],p_rank-1);
-//      mesh.add_node_sharing(nodes[1],p_rank-1);
-//      mesh.add_node_sharing(nodes[2],p_rank+1);
-//      mesh.add_node_sharing(nodes[3],p_rank+1);
-//  }
+  if (p_rank == 0) {
+      mesh.add_node_sharing(nodes[2],1);
+      mesh.add_node_sharing(nodes[3],1);
+  }
+  else if (p_rank == p_size-1) {
+      mesh.add_node_sharing(nodes[0],p_rank-1);
+      mesh.add_node_sharing(nodes[1],p_rank-1);
+  }
+  else {
+      mesh.add_node_sharing(nodes[0],p_rank-1);
+      mesh.add_node_sharing(nodes[1],p_rank-1);
+      mesh.add_node_sharing(nodes[2],p_rank+1);
+      mesh.add_node_sharing(nodes[3],p_rank+1);
+  }
 
   mesh.modification_end();
 
@@ -1217,16 +1217,14 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
 
 
   std::vector<EntityProc> change ;
-  if (p_rank >= p_size - 2) {
+  if (p_rank == (p_size-2) ) {
     // Change ownership of changing elem and all entities in it's closure that
     // we own to proc 0.
 
     Entity changing_elem = mesh.get_entity(elem_key_chg_own);
     ASSERT_TRUE( mesh.is_valid(changing_elem) );
-    if (p_rank == p_size - 2) {
-      EntityProc eproc(changing_elem, 0 /*new owner*/);
-      change.push_back(eproc);
-    }
+    EntityProc eproc(changing_elem, 0 /*new owner*/);
+    change.push_back(eproc);
 
     const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(mesh.mesh_meta_data().entity_rank_count());
     for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
