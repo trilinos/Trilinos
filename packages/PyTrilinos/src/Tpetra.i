@@ -245,7 +245,7 @@ template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
                                                &is_new);
     if (!globalArray) goto fail;
     if (!require_dimensions((PyArrayObject *) globalArray,1)) goto fail;
-    
+
     // Initialize the output NumPy arrays and tuple
     dims[0]    = array_size(globalArray, 0);
     type_code  = PyTrilinos::NumPy_TypeCode< LocalOrdinal >();
@@ -281,6 +281,11 @@ template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
     Py_XDECREF(localArray);
     Py_XDECREF(resultObj);
     return NULL;
+  }
+
+  std::string __str__()
+  {
+    return self->description();
   }
 }
 %ignore Tpetra::Map::Map;
