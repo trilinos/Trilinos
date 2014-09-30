@@ -63,7 +63,7 @@ int check(Ifpack_SerialTriDiSolver & solver, double * A1, int LDA,
 	  double * X1, int LDX1,
 	  bool Transpose, bool verbose);
 
-void GenerateHilbert(double *A, int LDA, int N);
+
 
 bool Residual( int N, int NRHS, double * A, int LDA, bool Transpose,
 	       double * X, int LDX, double * B, int LDB, double * resid);
@@ -71,7 +71,6 @@ bool Residual( int N, int NRHS, double * A, int LDA, bool Transpose,
 int matrixCpyCtr(bool verbose, bool debug);
 
 void printHeading(const char* heading);
-double* getRandArray(int length);
 void printMat(const char* name, Ifpack_SerialTriDiMatrix& matrix);
 void printArray(double* array, int length);
 
@@ -79,7 +78,7 @@ int main(int argc, char *argv[])
 {
   int ierr = 0;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
@@ -159,15 +158,18 @@ int main(int argc, char *argv[])
   ed_solver.SetMatrix(*ed_Matrix);
   ed_solver.SetVectors(ed_LHS, ed_RHS);
 
-  ierr = solver.Solve();
-  std::cout << " tridi ierr "<<ierr<<std::endl;
-  
+  ierr = solver.Solve();  
   ierr = ed_solver.Solve();
-  std::cout << " serialdensesolve ierr "<<ierr<<std::endl;
 
   std::cout << " LHS vals are: "<<std::endl;
-  for(int i=0;i<N;++i) 
-    std::cout << "["<<i<<"] "<< LHS(i)<<"  "<<ed_LHS(i)<<std::endl;
+  bool TestPassed=true;
+  for(int i=0;i<N;++i) { 
+    std::cout << "["<<i<<"] "<< LHS(i)<<"  "<<ed_LHS(i)<<" delta "<<LHS(i)-ed_LHS(i)<<std::endl;
+    if( fabs( (LHS(i)- ed_LHS(i))/(LHS(i)+ ed_LHS(i)) ) > 1.0e-12 ) {
+       TestPassed = false;
+       std::cout << " not equal for "<<i<<" delta "<< LHS(i)- ed_LHS(i)<<std::endl;
+    }
+  }
 
   Ifpack_SerialTriDiMatrix * tdfac = solver.FactoredMatrix();
   Epetra_SerialDenseMatrix * sdfac = ed_solver.FactoredMatrix();
@@ -177,44 +179,29 @@ int main(int argc, char *argv[])
   std::cout << " Dense Factored "<<std::endl;
   sdfac->Print(std::cout);
 
-  std::cout << " now 3x3 "<<std::endl;
-  std::cout.flush();
-  
-  Ifpack_SerialTriDiMatrix M2 = Ifpack_SerialTriDiMatrix(3,true);
-  Ifpack_SerialTriDiSolver s2;
-  
-  s2.SolveWithTranspose(Transpose);
-  s2.SolveToRefinedSolution(Refine);
+  delete Matrix;
+  delete ed_Matrix;
+  delete [] X;
+  delete [] ed_X;
+  delete [] B;
+  delete [] ed_B;
 
-  M2(0, 0) = (2);
-  M2(0, 1) = (-1);
-  //
-  M2(1, 0) = (-1);
-  M2(1, 1) = (3);
-  M2(1, 2) = (-1);
-  // 
-  M2(2, 1) = (-2);
-  M2(2, 2) = (1); //
 
-  s2.SolveWithTranspose(Transpose);
-  s2.SolveToRefinedSolution(Refine);
-  s2.SetMatrix(M2);
-  s2.SetVectors(LHS, RHS);
-  s2.Solve();
-  Ifpack_SerialTriDiMatrix * t2fac = s2.FactoredMatrix();
-  std::cout<<" S2 factor "<<std::endl;
-  t2fac->Print(std::cout);
-  std::cout << " Finished "<<std::endl;
-  return 0 ;
+  if (!TestPassed) {
+    cout << "Test `TestRelaxation.exe' failed!" << endl;
+    exit(EXIT_FAILURE);
+  }
+  
+#ifdef HAVE_MPI
+  MPI_Finalize(); 
+#endif
+
+  cout << endl;
+  cout << "Test `TestRelaxation.exe' passed!" << endl;
+  cout << endl;
+  return(EXIT_SUCCESS);
 }
 
-
- void GenerateHilbert(double *A, int LDA, int N) {
-   for (int j=0; j<N; j++)
-     for (int i=0; i<N; i++)
-       A[i+j*LDA] = 1.0/((double)(i+j+1));
-   return;
- }
 
 bool Residual( int N, int NRHS, double * A, int LDA, bool Transpose,
 	       double * X, int LDX, double * B, int LDB, double * resid) {

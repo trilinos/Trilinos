@@ -201,12 +201,14 @@ int Ifpack_SerialTriDiMatrix::Shape(int NumRowCol) {
 //=============================================================================
 Ifpack_SerialTriDiMatrix::~Ifpack_SerialTriDiMatrix()
 {
+
   CleanupData();
+
 }
 //=============================================================================
 void Ifpack_SerialTriDiMatrix::CleanupData()
 {
-  if (A_Copied_)
+  if (A_)
     delete [] A_;
 	A_ = DL_ = D_ = DU_ = DU2_ =  0;
 	A_Copied_ = false;

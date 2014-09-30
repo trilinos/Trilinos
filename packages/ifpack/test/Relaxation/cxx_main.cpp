@@ -687,7 +687,7 @@ int main(int argc, char *argv[])
 
   // size of the global matrix. 
   Teuchos::ParameterList GaleriList;
-  int nx = 300; 
+  int nx = 30; 
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx * Comm.NumProc());
   GaleriList.set("mx", 1);

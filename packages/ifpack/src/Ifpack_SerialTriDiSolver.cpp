@@ -110,15 +110,18 @@ void Ifpack_SerialTriDiSolver::InitPointers()
 }
 //=============================================================================
 void Ifpack_SerialTriDiSolver::DeleteArrays()
-{
-  if (IWORK_ != 0) {delete [] IWORK_; IWORK_ = 0;}
+{ 
+  if (IWORK_ != 0) {delete [] IWORK_;IWORK_ = 0;}
   if (FERR_ != 0)  {delete [] FERR_; FERR_ = 0;}
   if (BERR_ != 0)  {delete [] BERR_; BERR_ = 0;}
   if (Factor_ != Matrix_ && Factor_ != 0)   {delete Factor_; Factor_ = 0;}
   if (Factor_ !=0) Factor_ = 0;
-  if (AF_ !=0) AF_ = 0;
+
   if (IPIV_ != 0)  {delete [] IPIV_;IPIV_ = 0;}
   if (WORK_ != 0)  {delete [] WORK_;WORK_ = 0;}
+
+  if (AF_ !=0) AF_ = 0;
+
   INFO_ = 0;
   LWORK_ = 0;
 }

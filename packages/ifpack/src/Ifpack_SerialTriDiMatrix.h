@@ -113,7 +113,7 @@ class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiMatrix : public Epetra_CompObject,
   /*!
     Ifpack_SerialTriDiMatrix objects defined by the default constructor should be sized with the
     Shape() or Reshape functions.
-    Values should be defined by using the [] or () operators.
+    Values should be defined by using the () operators.
    */
   Ifpack_SerialTriDiMatrix(bool set_object_label=true);
 
