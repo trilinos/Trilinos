@@ -162,9 +162,12 @@ private:
 
 int main(int argc, char **argv)
 {
+    int procId = 0;
+
+#if defined(STK_BUILT_IN_SIERRA) // this means MPI is available
     MPI_Init(&argc, &argv);
-    int procId = -1;
     MPI_Comm_rank(MPI_COMM_WORLD, &procId);
+#endif
 
     testing::InitGoogleTest(&argc, argv);
 
@@ -177,7 +180,9 @@ int main(int argc, char **argv)
 
     int returnVal = RUN_ALL_TESTS();
 
+#if defined(STK_BUILT_IN_SIERRA)
     MPI_Finalize();
+#endif
 
     return returnVal;
 }

@@ -44,6 +44,8 @@
 
 #include <stdint.h>
 
+#if defined(STK_BUILT_IN_SIERRA)  // means that MPI is available
+
 namespace {
 
 typedef int INTMPI;
@@ -1013,3 +1015,6 @@ void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeed
 }
 
 }
+
+#endif
+

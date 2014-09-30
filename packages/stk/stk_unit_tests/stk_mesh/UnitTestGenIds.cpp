@@ -77,6 +77,8 @@ inline std::string getOption(const std::string& option, const std::string defaul
     return returnValue;
 }
 
+#if defined(STK_BUILT_IN_SIERRA)  // this means MPI is available
+
 namespace {
 
 typedef int INTMPI;
@@ -694,3 +696,6 @@ void getAvailableIds_exp(stk::mesh::BulkData &stkMeshBulkData, uint64_t numIdsNe
 }
 
 }
+
+#endif
+
