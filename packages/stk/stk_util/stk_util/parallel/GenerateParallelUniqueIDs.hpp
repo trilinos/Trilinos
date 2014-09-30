@@ -51,7 +51,7 @@ namespace stk {
 //
 //  MPI operation to compute the sum and max of a value simultaneously
 //
-inline void MpiSumMax(unsigned* in, unsigned* inout, int* len, MPI_Datatype * dptr) {
+inline void MpiSumMax(uint64_t* in, uint64_t* inout, int* len, MPI_Datatype * dptr) {
   if(*len != 2) {
     std::ostringstream msg;
     msg << "MpiSumMax MPI operation can only be given two arguements \n";
@@ -88,29 +88,29 @@ inline void MpiSumMax(unsigned* in, unsigned* inout, int* len, MPI_Datatype * dp
   //    success is 'maxAllowedId - global_max(existingIds) > orderArray.size()'
   //
 
-  inline std::vector<unsigned> generate_parallel_unique_ids(const unsigned maxAllowedId,
-                                                     const std::vector<unsigned>& existingIds,
-                                                     unsigned numNewIdsLocal,
+  inline std::vector<uint64_t> generate_parallel_unique_ids(const uint64_t maxAllowedId,
+                                                     const std::vector<uint64_t>& existingIds,
+                                                     uint64_t numNewIdsLocal,
                                                      ParallelMachine comm) {
 
     int mpi_rank = stk::parallel_machine_rank(comm);
 
-    std::vector<unsigned> newIds;
+    std::vector<uint64_t> newIds;
     newIds.reserve(numNewIdsLocal);
     //
     //  Extract global max existing id.  For basic use case just start generating ids starting
     //  at the previous max_id + 1.  
     //
-    unsigned localMaxId = 0;
-    unsigned globalMaxId;    
-    for(unsigned i=0; i<existingIds.size(); ++i) {
+    uint64_t localMaxId = 0;
+    uint64_t globalMaxId;    
+    for(uint64_t i=0; i<existingIds.size(); ++i) {
       if(existingIds[i] > localMaxId) {
         localMaxId = existingIds[i];
       }
     }
 
     int mpiResult = MPI_SUCCESS ;  
-    mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, MPI_UNSIGNED, MPI_MAX, comm);
+    mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, MPI_UNSIGNED_LONG, MPI_MAX, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
       return newIds;
@@ -118,19 +118,19 @@ inline void MpiSumMax(unsigned* in, unsigned* inout, int* len, MPI_Datatype * dp
     //
     //  Compute the total number of ids requested
     //
-    unsigned numLocalReduce[2];
+    uint64_t numLocalReduce[2];
     numLocalReduce[0] = numNewIdsLocal;
     numLocalReduce[1] = numNewIdsLocal;
     
     MPI_Op myOp;
     MPI_Op_create((MPI_User_function *)MpiSumMax, true, &myOp);
 
-    unsigned numGlobalReduce[2];
-    mpiResult = MPI_Allreduce(numLocalReduce, numGlobalReduce, 2, MPI_UNSIGNED, myOp, comm);
+    uint64_t numGlobalReduce[2];
+    mpiResult = MPI_Allreduce(numLocalReduce, numGlobalReduce, 2, MPI_UNSIGNED_LONG, myOp, comm);
     MPI_Op_free(&myOp);
 
-    unsigned globalNumIdsRequested = numGlobalReduce[0];
-    unsigned maxIdsRequested       = numGlobalReduce[1];
+    uint64_t globalNumIdsRequested = numGlobalReduce[0];
+    uint64_t maxIdsRequested       = numGlobalReduce[1];
 
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
@@ -148,14 +148,14 @@ inline void MpiSumMax(unsigned* in, unsigned* inout, int* len, MPI_Datatype * dp
     //
     //  Note, below computations organized to avoid potential overflow
     //
-    unsigned availableIds = maxAllowedId - globalMaxId;
+    uint64_t availableIds = maxAllowedId - globalMaxId;
     if(availableIds < globalNumIdsRequested) {
       //
       // Run fallback sparse fill algorithm
       //
 
-      unsigned myFirstNewId;
-      mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, MPI_UNSIGNED, MPI_SUM, comm);
+      uint64_t myFirstNewId;
+      mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
       myFirstNewId -= numNewIdsLocal;
 
       int returnCode = parallel_index_gap_finder_global(comm, 0, maxAllowedId, 
@@ -169,22 +169,22 @@ inline void MpiSumMax(unsigned* in, unsigned* inout, int* len, MPI_Datatype * dp
       return newIds;
     } else {
       int mpi_size = stk::parallel_machine_size(comm);
-      unsigned wastfullFillSize = maxIdsRequested*mpi_size;
+      uint64_t wastfullFillSize = maxIdsRequested*mpi_size;
       if(availableIds >= wastfullFillSize && wastfullFillSize/4 < globalNumIdsRequested) {
         //
         //  Check if can use the super-cheap algorithm, if space wastage less than 400%, define an equal number of ids per processor
         //  and avoid the scan
         //
-        unsigned myFirstNewId = globalMaxId + mpi_rank*maxIdsRequested + 1;
-        for(unsigned i=0; i<numNewIdsLocal; ++i) {
+        uint64_t myFirstNewId = globalMaxId + mpi_rank*maxIdsRequested + 1;
+        for(uint64_t i=0; i<numNewIdsLocal; ++i) {
           newIds.push_back(myFirstNewId+i);
         }
       } else {
         //
         //  Otherwise still use a very cheap algorithm, densely pack the reultant ids
         //
-        unsigned myFirstNewId;
-        mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, MPI_UNSIGNED, MPI_SUM, comm);
+        uint64_t myFirstNewId;
+        mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
         myFirstNewId -= numNewIdsLocal;
         //
         //  Run basic cheap algorithm.  Start counting new ids at end.
@@ -192,7 +192,7 @@ inline void MpiSumMax(unsigned* in, unsigned* inout, int* len, MPI_Datatype * dp
         //  Compute the starting offset for ids in each processor.
         //
         myFirstNewId = (myFirstNewId) + globalMaxId + 1;
-        for(unsigned i=0; i<numNewIdsLocal; ++i) {
+        for(uint64_t i=0; i<numNewIdsLocal; ++i) {
           newIds.push_back(myFirstNewId+i);
         }
       }

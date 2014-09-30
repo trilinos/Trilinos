@@ -43,7 +43,7 @@
 #include "stk_util/diag/String.hpp"
 #include <stdexcept>            
 #include <math.h>
-
+#include <stdint.h>
 
 
 namespace stk {
@@ -57,15 +57,15 @@ namespace stk {
   //  Note, existing ids must be sorted.
   //
   inline int ParallelFindFreeIdsInRangeGlobal(const ParallelMachine        comm, 
-                                       const unsigned               rangeStart, 
-                                       const unsigned               rangeEnd, 
-                                       const unsigned               numIdsRequested,
-                                       const std::vector<unsigned>::iterator existingIdStart,
-                                       const std::vector<unsigned>::iterator existingIdEnd,
-                                       const unsigned               myProcFirstReturnIndex,
-                                       const unsigned               myProcLastReturnIndex,
-                                       unsigned&                    curReturnIndex,
-                                       std::vector<unsigned>&       returnIds) {
+                                       const uint64_t               rangeStart, 
+                                       const uint64_t               rangeEnd, 
+                                       const uint64_t               numIdsRequested,
+                                       const std::vector<uint64_t>::iterator existingIdStart,
+                                       const std::vector<uint64_t>::iterator existingIdEnd,
+                                       const uint64_t               myProcFirstReturnIndex,
+                                       const uint64_t               myProcLastReturnIndex,
+                                       uint64_t&                    curReturnIndex,
+                                       std::vector<uint64_t>&       returnIds) {
     assert(rangeEnd >= rangeStart);
 
     if(numIdsRequested == 0) {
@@ -75,12 +75,12 @@ namespace stk {
     //  Defines length of arrays used in MPI collectives.  Want to strike a balance where longer message takes somewhat longer to
     //  communicate but more finely subdivides the domain.  Ideally pick this number to be roughly where the mpi collective starts
     //  hitting linear scaling in N.  Try 64 for now.
-    const unsigned MAX_SUBDIV = 64;
+    const uint64_t MAX_SUBDIV = 64;
     //
     //  Check for 'leaf' case where we are effectively checking individual id blocks rather than ranges
     //
-    unsigned numSubdivision;  
-    unsigned rangeSize = (rangeEnd-rangeStart)+1;
+    uint64_t numSubdivision;  
+    uint64_t rangeSize = (rangeEnd-rangeStart)+1;
     if(rangeSize < MAX_SUBDIV) {
       numSubdivision = rangeSize;
     } else if (rangeSize <= 0) {
@@ -93,12 +93,12 @@ namespace stk {
     //  Divide the range into 'numSubdivision' equal segments.  Determine locally the segment each existing id falls in.
     //  Note, last subdivision could be somewhat large due to rounding effects
     //
-    unsigned subdivisionSize = rangeSize/numSubdivision;
+    uint64_t subdivisionSize = rangeSize/numSubdivision;
 
-    unsigned localSubDivCount[MAX_SUBDIV];
-    unsigned subDivStart     [MAX_SUBDIV];
-    unsigned subDivEnd       [MAX_SUBDIV];
-    for(unsigned i=0; i < numSubdivision-1; ++i) {
+    uint64_t localSubDivCount[MAX_SUBDIV];
+    uint64_t subDivStart     [MAX_SUBDIV];
+    uint64_t subDivEnd       [MAX_SUBDIV];
+    for(uint64_t i=0; i < numSubdivision-1; ++i) {
       localSubDivCount[i] = 0;
       subDivStart[i] = subdivisionSize*i        + rangeStart;
       subDivEnd[i]   = (subdivisionSize*(i+1)-1 + rangeStart);
@@ -108,12 +108,12 @@ namespace stk {
     subDivStart     [numSubdivision-1] = subdivisionSize*(numSubdivision-1) + rangeStart;
     subDivEnd       [numSubdivision-1] = rangeEnd;
 
-    for(std::vector<unsigned>::iterator i=existingIdStart; i != existingIdEnd; ++i) {
-      unsigned curId = (*i);
+    for(std::vector<uint64_t>::iterator i=existingIdStart; i != existingIdEnd; ++i) {
+      uint64_t curId = (*i);
       if(curId < rangeStart || curId > rangeEnd) {
         continue;
       }      
-      unsigned curSubdivision = (curId-rangeStart)/subdivisionSize;
+      uint64_t curSubdivision = (curId-rangeStart)/subdivisionSize;
       if(curSubdivision >= numSubdivision) {
         curSubdivision = numSubdivision-1;
       }
@@ -123,8 +123,8 @@ namespace stk {
     //
     //  Get a global consistent sum of the subdomain usage
     //
-    unsigned globalSubDivCount[MAX_SUBDIV];
-    int mpiResult = MPI_Allreduce(localSubDivCount, globalSubDivCount, numSubdivision, MPI_UNSIGNED, MPI_SUM, comm);
+    uint64_t globalSubDivCount[MAX_SUBDIV];
+    int mpiResult = MPI_Allreduce(localSubDivCount, globalSubDivCount, numSubdivision, MPI_UNSIGNED_LONG, MPI_SUM, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
       return 2;
@@ -135,35 +135,18 @@ namespace stk {
     //  of subdivision fill ammount for potential later use.
     //
 
-    unsigned subFillLength = 0;
-    std::pair<unsigned, unsigned> subFill[MAX_SUBDIV];
+    uint64_t subFillLength = 0;
+    std::pair<uint64_t, uint64_t> subFill[MAX_SUBDIV];
 
-    unsigned numNeededIds = numIdsRequested;    
-    unsigned totalIdsAvailable = 0;
+    uint64_t numNeededIds = numIdsRequested;    
+    uint64_t totalIdsAvailable = 0;
 
 
-    for(unsigned idiv = 0; idiv<numSubdivision; ++idiv) {
+    for(uint64_t idiv = 0; idiv<numSubdivision; ++idiv) {
 
       if(globalSubDivCount[idiv] == 0 && numNeededIds > 0) {
-        /*
-        //
-        //  Empty subdivision, Allocate its indexes to needed processors
-        //
-        unsigned rangeSize = (subDivEnd[idiv]-subDivStart[idiv])+1;
-        unsigned numIdsToUse = min(numNeededIDs, rangeSize);
-        //
-        //  Case 1, return range above proc range
-        //
-        if(curReturnIndex >= myProcLastReturnIndex) {
-          numNeededIds -= numIdsToUse;
-          curReturnIndex += numNeededIds;
-        }
-        //
-        //  Case 2, return range below proc range
-        //
-        */
 
-        for(unsigned index=subDivStart[idiv]; index<=subDivEnd[idiv]; ++index) {
+        for(uint64_t index=subDivStart[idiv]; index<=subDivEnd[idiv]; ++index) {
           if(numNeededIds == 0) break;
 
           
@@ -175,10 +158,10 @@ namespace stk {
           --numNeededIds;
         }
       } else {
-        unsigned curRangeSize = (subDivEnd[idiv]-subDivStart[idiv])+1;
+        uint64_t curRangeSize = (subDivEnd[idiv]-subDivStart[idiv])+1;
         if(curRangeSize > globalSubDivCount[idiv]) {  
-          unsigned curNumAvail = curRangeSize-globalSubDivCount[idiv];
-          subFill[subFillLength] = std::pair<unsigned, unsigned>(curNumAvail, idiv);
+          uint64_t curNumAvail = curRangeSize-globalSubDivCount[idiv];
+          subFill[subFillLength] = std::pair<uint64_t, uint64_t>(curNumAvail, idiv);
           subFillLength++;
           totalIdsAvailable += curNumAvail;
         }
@@ -198,22 +181,22 @@ namespace stk {
     //
     std::sort(subFill, subFill+subFillLength);
 
-    unsigned densityFactor = totalIdsAvailable/numNeededIds;
+    uint64_t densityFactor = totalIdsAvailable/numNeededIds;
 
 
-    unsigned idiv =     subFillLength-1;
+    uint64_t idiv =     subFillLength-1;
     while(true) {
 
-      unsigned curDiv        = subFill[idiv].second;
+      uint64_t curDiv        = subFill[idiv].second;
 
-      unsigned curRangeStart = subDivStart[curDiv];
-      unsigned curRangeEnd   = subDivEnd[curDiv];
+      uint64_t curRangeStart = subDivStart[curDiv];
+      uint64_t curRangeEnd   = subDivEnd[curDiv];
 
-      unsigned curRangeSize  = (curRangeEnd-curRangeStart)+1;
-      unsigned numFree       = curRangeSize-globalSubDivCount[curDiv];
+      uint64_t curRangeSize  = (curRangeEnd-curRangeStart)+1;
+      uint64_t numFree       = curRangeSize-globalSubDivCount[curDiv];
 
       if(numFree > 0) {
-        unsigned maxNumToFill;
+        uint64_t maxNumToFill;
         if(densityFactor > 5) {  
           //  Sparse fill.  Fill no more than half of each range
           maxNumToFill = ceil(double(numFree)/2.0);
@@ -222,12 +205,12 @@ namespace stk {
           maxNumToFill = numFree;
         }
 
-        unsigned numToFill = std::min(maxNumToFill, numNeededIds);
+        uint64_t numToFill = std::min(maxNumToFill, numNeededIds);
         //
         //  Extract the existing id range that overlaps this subdivision
         //
-        const std::vector<unsigned>::iterator newExistingStart = std::lower_bound(existingIdStart, existingIdEnd, curRangeStart);
-        const std::vector<unsigned>::iterator newExistingEnd   = std::upper_bound(existingIdStart, existingIdEnd, curRangeEnd-1);
+        const std::vector<uint64_t>::iterator newExistingStart = std::lower_bound(existingIdStart, existingIdEnd, curRangeStart);
+        const std::vector<uint64_t>::iterator newExistingEnd   = std::upper_bound(existingIdStart, existingIdEnd, curRangeEnd-1);
 
         int returnCode = ParallelFindFreeIdsInRangeGlobal(comm, curRangeStart, curRangeEnd, numToFill, newExistingStart, newExistingEnd, 
                                                           myProcFirstReturnIndex, myProcLastReturnIndex, curReturnIndex, returnIds);
@@ -269,27 +252,27 @@ namespace stk {
   //
   //  Returns:  An MPI error code, 0 if correct
   //
-  inline int parallel_index_gap_finder_global(ParallelMachine comm, const unsigned minId, 
-                                       const unsigned maxId, 
-                                       const std::vector<unsigned>& localIdsInUse, 
-                                       const unsigned localNumIdsNeeded,            
-                                       const unsigned globalNumIdsNeeded,
-                                       const unsigned prefixSumOfLocalIdsNeeded,
-                                       std::vector<unsigned>& returnIds ) {
+  inline int parallel_index_gap_finder_global(ParallelMachine comm, const uint64_t minId, 
+                                       const uint64_t maxId, 
+                                       const std::vector<uint64_t>& localIdsInUse, 
+                                       const uint64_t localNumIdsNeeded,            
+                                       const uint64_t globalNumIdsNeeded,
+                                       const uint64_t prefixSumOfLocalIdsNeeded,
+                                       std::vector<uint64_t>& returnIds ) {
 
     if(minId > maxId) {
       throw std::runtime_error("In parallel_index_gap_finder_global, invalid max and min id range");
     }
 
-    //const unsigned p_size = parallel_machine_size( comm );
+    //const uint64_t p_size = parallel_machine_size( comm );
     returnIds.clear();
     returnIds.reserve(globalNumIdsNeeded);
     //
     //  Create a sorted id vector needed by the id finding algorithm
     //
-    std::vector<unsigned> sortedIdsInUse = localIdsInUse;
+    std::vector<uint64_t> sortedIdsInUse = localIdsInUse;
     std::sort(sortedIdsInUse.begin(), sortedIdsInUse.end());
-    unsigned curIndex = 0;
+    uint64_t curIndex = 0;
     return ParallelFindFreeIdsInRangeGlobal(comm, minId, maxId-1, globalNumIdsNeeded, sortedIdsInUse.begin(), sortedIdsInUse.end(), 
                                             prefixSumOfLocalIdsNeeded, prefixSumOfLocalIdsNeeded+localNumIdsNeeded, curIndex, returnIds);
   }
