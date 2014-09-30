@@ -99,8 +99,9 @@ namespace Xpetra {
     //! Sets all vector entries to zero.
     explicit EpetraVectorT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, bool zeroOut=true);
 
+    // Commenting out since no definition provided in cpp.
     //! Vector copy constructor.
-    EpetraVectorT(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source);
+    // EpetraVectorT(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source);
 
     //! Destructor.
     virtual ~EpetraVectorT() { }

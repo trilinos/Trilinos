@@ -172,6 +172,9 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
   PAMGEN_NEVADA::Inline_Mesh_Desc * ims = Inline_Mesh_Desc::first_im_static_storage;
   while(ims){
     
+    /*flip to sequential if any topology is changed*/
+    ims->brokerDecompositionStrategy();
+
     long long error_code = ims->Check_Blocks();
     if(error_code){
       (*parse_error_count) ++;
@@ -317,10 +320,13 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
     else if(mesh_type == "DECOMPOSITION STRATEGY"){
       Parse_Decomposition_Strategy(token_stream,0);
     }
+    else if(mesh_type == "TOPOLOGY MODIFICATION"){
+      Parse_Topology_Modification(token_stream,0);
+    }
     else{
       //DMH trouble here Inline_Mesh_Desc::im_static_storage not yet in existence
       token_stream->Parse_Error("incorrect keyword ",
-                                "expected a geometry type (CYLINDRICAL,SPHERICAL,RECTILINEAR) or SET ASSIGN");
+                                "expected a geometry type (CYLINDRICAL,SPHERICAL,RECTILINEAR, RADIAL, RADIAL TRISECTION, USER DEFINED ELEMENT DENSITY, USER DEFINED GEOMETRY TRANSFORMATION, DECOMPOSITION STRATEGY) or SET ASSIGN");
     }  
   }
   
@@ -1074,6 +1080,38 @@ Token Parse_User_Defined_Geometry_Transformation(Token_Stream *token_stream, int
   return Token();
 }
 
+/*****************************************************************************/
+Token Parse_Topology_Modification(Token_Stream *token_stream, int)
+/*****************************************************************************/
+{
+  assert(token_stream);
+
+  // TOPOLOGY MODIFICATION
+  //  SUPPRESS BLOCK 1 
+  //  SUPPRESS BLOCK 2 
+  //   
+  //   
+  //   
+  // END
+  
+
+  Token next = token_stream->Lookahead();
+  Token token = next;
+  
+  while(next.Type() != TK_END){
+    token = token_stream->Shift();
+
+    if(token == "SUPPRESS BLOCK"){
+      int the_block = token_stream->Parse_Integer();
+      Inline_Mesh_Desc::im_static_storage->addSuppressedBlock(the_block);
+    }
+    else {
+    token_stream->Parse_Error("Expecting SUPPRESS BLOCK int");
+    }
+    next = token_stream->Lookahead();
+  }
+  return token;
+}
 /*****************************************************************************/
 Token Parse_Decomposition_Strategy(Token_Stream *token_stream, int)
 /*****************************************************************************/

@@ -128,12 +128,12 @@ struct DeviceForNode2< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
 #include "Tpetra_Import_Util2.hpp"
 namespace Tpetra {
   namespace Import_Util {
-    template <typename S, typename LO, typename GO, typename D, typename LMO>
+    template <typename S, typename LO, typename GO, typename D>
     struct MatrixSerializationTraits<
-      CrsMatrix< Sacado::UQ::PCE<S>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D>,LMO> > {
+      CrsMatrix< Sacado::UQ::PCE<S>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> > > {
       typedef Sacado::UQ::PCE<S> Scalar;
       typedef Kokkos::Compat::KokkosDeviceWrapperNode<D> Node;
-      typedef CrsMatrix<Scalar,LO,GO,Node,LMO> Matrix;
+      typedef CrsMatrix<Scalar,LO,GO,Node> Matrix;
 
       typedef typename Scalar::value_type scalar_value;
 

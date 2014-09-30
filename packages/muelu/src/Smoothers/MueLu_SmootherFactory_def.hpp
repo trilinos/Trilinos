@@ -61,7 +61,8 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype) {
+  SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype,
+                                                                              RCP<SmootherPrototype> postSmootherPrototype) {
     SetSmootherPrototypes(preSmootherPrototype, postSmootherPrototype);
   }
 
@@ -73,7 +74,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetSmootherPrototypes(RCP<SmootherPrototype> preSmootherPrototype,
-                                                                                                      RCP<SmootherPrototype> postSmootherPrototype) {
+                                                                                         RCP<SmootherPrototype> postSmootherPrototype) {
     preSmootherPrototype_  = preSmootherPrototype;
     postSmootherPrototype_ = postSmootherPrototype;
     CheckPrototypes();
@@ -89,7 +90,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetSmootherPrototypes(RCP<SmootherPrototype>& preSmootherPrototype,
-                                                                                                      RCP<SmootherPrototype>& postSmootherPrototype) const {
+                                                                                         RCP<SmootherPrototype>& postSmootherPrototype) const {
     preSmootherPrototype  = preSmootherPrototype_;
     postSmootherPrototype = postSmootherPrototype_;
   }

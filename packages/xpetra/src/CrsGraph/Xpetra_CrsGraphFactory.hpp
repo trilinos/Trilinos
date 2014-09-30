@@ -89,12 +89,12 @@ namespace Xpetra {
     }
   };
 
-  template <class GlobalOrdinalArg>
-  class CrsGraphFactory<int, GlobalOrdinalArg> {
+  template <>
+  class CrsGraphFactory<int, int> {
 
     typedef int LocalOrdinal;
-    typedef GlobalOrdinalArg GlobalOrdinal;
-    typedef typename CrsGraph<int, GlobalOrdinal>::node_type Node;
+    typedef int GlobalOrdinal;
+    typedef CrsGraph<int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -112,8 +112,10 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraCrsGraphT<GlobalOrdinal>(map, NumVectors, pftype) );
+        return rcp( new EpetraCrsGraphT<int>(map, NumVectors, pftype) );
+#endif
 #endif
 
       XPETRA_FACTORY_END;
@@ -122,6 +124,42 @@ namespace Xpetra {
 
   };
 
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template <>
+  class CrsGraphFactory<int, long long> {
+
+    typedef int LocalOrdinal;
+    typedef long long GlobalOrdinal;
+    typedef CrsGraph<int, GlobalOrdinal>::node_type Node;
+
+  private:
+    //! Private constructor. This is a static class.
+    CrsGraphFactory() {}
+
+  public:
+
+    static RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, ProfileType pftype=DynamicProfile) {
+      XPETRA_MONITOR("CrsGraphFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> (map, NumVectors, pftype) );
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+      if (map->lib() == UseEpetra)
+        return rcp( new EpetraCrsGraphT<long long>(map, NumVectors, pftype) );
+#endif
+#endif
+
+      XPETRA_FACTORY_END;
+      return null;
+    }
+
+  };
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 }
 
 #define XPETRA_CRSGRAPHFACTORY_SHORT

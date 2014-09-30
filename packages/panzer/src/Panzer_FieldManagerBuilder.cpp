@@ -276,9 +276,18 @@ writeBCGraphvizDependencyFiles(std::string filename_prefix) const
     panzer::BC bc = blkItr->first;
     const PHX::FieldManager<panzer::Traits> & fm = blkItr->second.begin()->second; // get the first field manager 
 
+    BCType bc_type = bc.bcType();
+    std::string type;
+    if (bc_type == BCT_Dirichlet)
+	type = "_Dirichlet";
+    else if (bc_type == BCT_Neumann)
+        type = "_Neumann";
+    else
+        TEUCHOS_ASSERT(false);
+
     std::string blockId = bc.elementBlockID();
     std::string sideId = bc.sidesetID();
-    fm.writeGraphvizFile(filename_prefix+blockId+"_"+sideId);
+    fm.writeGraphvizFile(filename_prefix+blockId+"_"+sideId+type);
   }
 
 }

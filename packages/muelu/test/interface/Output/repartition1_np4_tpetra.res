@@ -20,10 +20,10 @@ Level 1
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
        Build (MueLu::CoalesceDropFactory)
-       lightweight wrap = 1
        aggregation: drop tol = 0   [default]
        aggregation: Dirichlet threshold = 0   [default]
        aggregation: drop scheme = classical   [default]
+       lightweight wrap = 1
 
       aggregation: mode = old   [default]
       aggregation: max agg size = 2147483647   [default]
@@ -81,18 +81,18 @@ Level 1
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
 
- type = Interpolation
- repartition: rebalance P and R = 1
+ repartition: rebalance P and R = 1   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
+ type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
 
  Build (MueLu::RebalanceTransferFactory)
- type = Restriction
- repartition: rebalance P and R = 1
- transpose: use implicit = 0
+ repartition: rebalance P and R = 1   [default]
+ transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
+ type = Restriction
  write start = -1   [default]
  write end = -1   [default]
 
@@ -120,10 +120,10 @@ Level 2
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
        Build (MueLu::CoalesceDropFactory)
-       lightweight wrap = 1
        aggregation: drop tol = 0   [default]
        aggregation: Dirichlet threshold = 0   [default]
        aggregation: drop scheme = classical   [default]
+       lightweight wrap = 1
 
       aggregation: mode = old   [default]
       aggregation: max agg size = 2147483647   [default]
@@ -181,18 +181,18 @@ Level 2
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
 
- type = Interpolation
- repartition: rebalance P and R = 1
+ repartition: rebalance P and R = 1   [default]
  transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
+ type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
 
  Build (MueLu::RebalanceTransferFactory)
- type = Restriction
- repartition: rebalance P and R = 1
- transpose: use implicit = 0
+ repartition: rebalance P and R = 1   [default]
+ transpose: use implicit = 0   [default]
  useSubcomm = 1   [default]
+ type = Restriction
  write start = -1   [default]
  write end = -1   [default]
 

@@ -9,10 +9,10 @@ Level 1
   Build (MueLu::TentativePFactory)
    Build (MueLu::CoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    lightweight wrap = 1
 
    [empty list]
 
@@ -53,10 +53,10 @@ Level 2
   Build (MueLu::TentativePFactory)
    Build (MueLu::CoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    lightweight wrap = 1
 
    [empty list]
 

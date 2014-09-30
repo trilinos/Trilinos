@@ -230,18 +230,22 @@ size_t generateRandomNumber(T a, T b)
 
 //- -- --------------------------------------------------------
 
-unsigned int generateSeed(Teuchos::Comm<int> const &comm, const double initSeed)
+unsigned int generateSeed(const Teuchos::Comm<int>& comm, const double initSeed)
 {
   timeval t1;
   gettimeofday(&t1, NULL);
+
   unsigned int seed;
   if (initSeed > -1) seed = Teuchos::as<unsigned int>(initSeed);
   else               seed = t1.tv_usec * t1.tv_sec;
+
+  const Teuchos::MpiComm<int> * mpiComm = dynamic_cast<const Teuchos::MpiComm<int> *>(&comm);
+  TEUCHOS_TEST_FOR_EXCEPTION(mpiComm == 0, MueLu::Exceptions::RuntimeError, "Cast to MpiComm failed");
+
   // use variant of proc 0's seed so we can always reproduce the results
-  const Teuchos::MpiComm<int> &mpicomm = dynamic_cast<const Teuchos::MpiComm<int> &>(comm);
-  TEUCHOS_TEST_FOR_EXCEPTION(&mpicomm==0,MueLu::Exceptions::RuntimeError,"cast to MpiComm failed");
-  MPI_Bcast((void*)&seed,1,MPI_UNSIGNED,0,*(mpicomm.getRawMpiComm()));
+  MPI_Bcast((void*)&seed, 1, MPI_UNSIGNED, 0, *(mpiComm->getRawMpiComm()));
   seed = seed * (1+comm.getRank());
+
   return seed;
 }
 

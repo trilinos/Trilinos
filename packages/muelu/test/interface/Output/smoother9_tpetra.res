@@ -1,25 +1,24 @@
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
+ chebyshev: ratio eigenvalue = 20
+ chebyshev: min diagonal value = 2.22045e-16   [default]
+ chebyshev: degree = 1   [default]
+ chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: zero starting solution = 1   [default]
+ chebyshev: assume matrix does not change = 0   [default]
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = ILUT})
- presmoother ->
-  chebyshev: ratio eigenvalue = 20
-  chebyshev: min diagonal value = 2.22045e-16   [default]
-  chebyshev: degree = 1   [default]
-  chebyshev: eigenvalue max iterations = 10   [default]
-  chebyshev: zero starting solution = 1   [default]
-  chebyshev: assume matrix does not change = 0   [default]
- postsmoother ->
-  [empty list]
+ [empty list]
 
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    lightweight wrap = 1
 
    aggregation: mode = old   [default]
    aggregation: max agg size = 2147483647   [default]
@@ -67,26 +66,25 @@ Level 1
  RepairMainDiagonal = 0   [default]
 
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
+ chebyshev: ratio eigenvalue = 20
+ chebyshev: min diagonal value = 2.22045e-16   [default]
+ chebyshev: degree = 1   [default]
+ chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: zero starting solution = 1   [default]
+ chebyshev: assume matrix does not change = 0   [default]
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = ILUT})
- presmoother ->
-  chebyshev: ratio eigenvalue = 20
-  chebyshev: min diagonal value = 2.22045e-16   [default]
-  chebyshev: degree = 1   [default]
-  chebyshev: eigenvalue max iterations = 10   [default]
-  chebyshev: zero starting solution = 1   [default]
-  chebyshev: assume matrix does not change = 0   [default]
- postsmoother ->
-  [empty list]
+ [empty list]
 
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    lightweight wrap = 1
 
    aggregation: mode = old   [default]
    aggregation: max agg size = 2147483647   [default]

@@ -548,10 +548,13 @@ evaluateFields(typename Traits::EvalData workset)
                local_r[r_lid] += (scatterField.val());
 
             blockOffsets[numFieldBlocks] = scatterField.size(); // add the sentinel
-    
             // loop over the sensitivity indices: all DOFs on a cell
             jacRow.resize(scatterField.size());
-            
+  
+            // For Neumann conditions with no dependence on degrees of freedom, there should be no Jacobian contribution
+            if(scatterField.size() == 0)
+                continue;
+ 
             for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex) {
                jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
             }

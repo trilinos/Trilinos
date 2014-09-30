@@ -1070,9 +1070,10 @@ namespace panzer_stk_classic {
     fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,bc_cm_factory,bc_factory,closure_models,lo_factory,user_data);
 
     // Print Phalanx DAGs
-    if (writeGraph)
+    if (writeGraph){
       fmb->writeVolumeGraphvizDependencyFiles(graphPrefix, physicsBlocks);
-
+      fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
+    }
     return fmb;
   }
 

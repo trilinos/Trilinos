@@ -1,11 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stddef.h>                     // for size_t, NULL
 #include <iosfwd>                       // for ostringstream, ostream
@@ -243,8 +267,12 @@ TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 
   bulk.modification_begin();
   Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
-  Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
-  bulk.declare_relation(new_cell, new_node, 0);
+  unsigned cell_num_nodes = fixture.get_elem_topology().num_nodes();
+  for (unsigned i = 0; i < cell_num_nodes; ++i)
+  {
+    Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    bulk.declare_relation(new_cell, new_node, i);
+  }
   bulk.modification_end();
 
   ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.fem_meta().universal_part() ) );
@@ -265,8 +293,14 @@ TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 
   bulk.modification_begin();
   Entity new_cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
-  Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
-  bulk.declare_relation(new_cell, new_node, 0);
+  unsigned cell_num_nodes = fixture.get_elem_topology().num_nodes();
+  for (unsigned i = 0; i < cell_num_nodes; ++i)
+  {
+    Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    bulk.declare_relation(new_cell, new_node, i);
+  }
+  // Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
+  // bulk.declare_relation(new_cell, new_node, 0);
   bulk.change_entity_parts ( new_cell , create_parts , empty_parts );
   bulk.modification_end();
   ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
@@ -350,7 +384,6 @@ TEST ( UnitTestBulkData_new , verifyInducedMembership )
   Entity node0 = fixture.get_new_entity ( stk::topology::NODE_RANK , 2 );
   Entity node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
   Entity cell = fixture.get_new_entity ( stk::topology::ELEM_RANK , 1 );
-
   bulk.change_entity_parts ( node , create_node_parts , PartVector () );
   bulk.change_entity_parts ( cell , create_cell_parts , PartVector () );
   // Add node to cell part
@@ -358,12 +391,22 @@ TEST ( UnitTestBulkData_new , verifyInducedMembership )
   bulk.declare_relation ( cell , node0 , cell_node_rel_id );
   cell_node_rel_id = 1;
   bulk.declare_relation ( cell , node , cell_node_rel_id );
+
+  unsigned cell_num_nodes = fixture.get_elem_topology().num_nodes();
+  for (unsigned i = 2; i < cell_num_nodes; ++i)
+  {
+    Entity another_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    bulk.declare_relation(cell, another_node, i);
+  }
+
   bulk.modification_end();
 
   ASSERT_TRUE ( bulk.bucket(node).member ( fixture.m_cell_part ) );
 
   bulk.modification_begin();
   bulk.destroy_relation ( cell , node, cell_node_rel_id );
+  Entity another_node = fixture.get_new_entity ( stk::topology::NODE_RANK , cell_num_nodes );
+  bulk.declare_relation(cell, another_node, cell_node_rel_id);
   bulk.modification_end();
 
   ASSERT_TRUE ( !bulk.bucket(node).member ( fixture.m_cell_part ) );
@@ -373,18 +416,27 @@ TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
 {
   TestBoxFixture fixture;
   BulkData           &bulk = fixture.bulk_data ();
-  PartVector          add_parts , remove_parts, empty_parts;
+  PartVector          add_parts , add_elem_parts, remove_parts, empty_parts;
 
   add_parts.push_back ( &fixture.m_part_B_3 );
   add_parts.push_back ( &fixture.m_part_A_superset );
+  add_elem_parts = add_parts;
+  Part &elem_part = fixture.get_elem_part();;
+  add_elem_parts.push_back(&elem_part);
 
   remove_parts.push_back ( &fixture.m_part_A_superset );
 
   bulk.modification_begin();
 
-  Entity e = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , add_parts );
+  Entity e = bulk.declare_entity ( stk::topology::ELEMENT_RANK , fixture.comm_rank()+1 , add_elem_parts );
   Entity n = bulk.declare_entity ( stk::topology::NODE_RANK , fixture.comm_rank()+1 , add_parts );
   bulk.declare_relation(e, n, 0);
+  unsigned elem_num_nodes = fixture.get_elem_topology().num_nodes();
+  for (unsigned i = 1; i < elem_num_nodes; ++i)
+  {
+    Entity another_node = fixture.get_new_entity ( stk::topology::NODE_RANK , i+1 );
+    bulk.declare_relation(e, another_node, i);
+  }
   bulk.modification_end();
 
   bulk.modification_begin();
@@ -695,6 +747,7 @@ TEST ( UnitTestBulkData_new , verifyBoxGhosting )
 
 TEST ( UnitTestBulkData_new , testEntityComm )
 {
+  //08-18-14 Patrick Xavier, Flint Pierce - This test needs to be rewritten as it tests nothing after comm
   //Test on unpack_field_values in EntityComm.cpp
   //code based on ../base/BulkDataGhosting.cpp
   //Create a simple mesh. Add nodes one element and some parts.
@@ -902,7 +955,7 @@ TEST ( UnitTestBulkData_new , testEntityComm )
     }
   }//end of CommAll section
 
-  bulk.modification_end ();
+  //bulk.modification_end ();
 }
 
 TEST ( UnitTestBulkData_new , testUninitializedMetaData )
@@ -1110,30 +1163,40 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
-  const unsigned spatial_dim = 2;
+  const unsigned spatial_dim = 1;
 
-  std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
+  std::vector<std::string> entity_rank_names;
+  entity_rank_names.push_back("NODE_RANK");
+  entity_rank_names.push_back("EDGE_RANK");
+  entity_rank_names.push_back("FACE_RANK");
+  entity_rank_names.push_back("ELEM_RANK");
   entity_rank_names.push_back("FAMILY_TREE");
 
   MetaData meta_data(spatial_dim, entity_rank_names);
-  //Part & part_tmp = meta_data.declare_part( "temp");
+  Part & elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::LINE_2_1D);
+  Part & node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
 
   meta_data.commit();
-  unsigned max_bucket_size = 1;
-  BulkData mesh(meta_data, pm, max_bucket_size);
-  //BulkData mesh(MetaData::get_meta_data(meta_data), pm);
+  BulkData mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
 
   if (p_size != 3) return;
 
+  // Build map for node sharing
+  stk::mesh::fixtures::NodeToProcsMMap nodes_to_procs;
+  {
+    for (unsigned ielem=0; ielem < nelems; ielem++) {
+      int e_owner = static_cast<int>(elems_0[ielem][3]);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][2], e_owner);
+      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][1], e_owner);
+    }
+  }
+
   //
   // Begin modification cycle so we can create the entities and relations
   //
   {
-    // We're just going to add everything to the universal part
-    PartVector empty_parts;
-
     // Create elements
     const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
     Entity elem = Entity();
@@ -1141,17 +1204,22 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
     mesh.modification_begin();
 
     for (unsigned ielem=0; ielem < nelems; ielem++) {
-      if (static_cast<int>(elems_0[ielem][3]) == p_rank) {
-        elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], empty_parts);
+      int owner = static_cast<int>(elems_0[ielem][3]);
+      if (owner == p_rank) {
+        elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], elem_part);
 
         EntityVector nodes;
         // Create node on all procs
-        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][2], empty_parts) );
-        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][1], empty_parts) );
+        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][2], node_part) );
+        nodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, elems_0[ielem][1], node_part) );
 
         // Add relations to nodes
         mesh.declare_relation( elem, nodes[0], 0 );
         mesh.declare_relation( elem, nodes[1], 1 );
+
+        // Node sharing
+        stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[0]), nodes[0]);
+        stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[1]), nodes[1]);
       }
     }
 
@@ -1160,8 +1228,6 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
 
   // change node owners
   {
-    mesh.modification_begin();
-
     std::vector<EntityProc> change;
 
     for (unsigned inode=0; inode < nnodes; inode++) {
@@ -1174,8 +1240,6 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
     }
 
     mesh.change_entity_owner( change );
-
-    mesh.modification_end();
   }
 
   // The real test is here
@@ -1198,5 +1262,30 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
       ASSERT_TRUE(mesh.is_valid(node_21_handle_before_elem_deletion));
     }
   }
+}
+
+TEST ( UnitTestBulkData_new , testCustomBucketCapacity )
+{
+  const int spatial_dimension = 3;
+
+  MetaData meta(spatial_dimension);
+
+  Part & node_part = meta.declare_part_with_topology("node_part", stk::topology::NODE);
+
+  meta.commit();
+
+  PartVector    create_vector;
+  create_vector.push_back ( &node_part );
+
+  const unsigned non_standard_bucket_capacity = 42;
+  BulkData bulk ( meta , MPI_COMM_WORLD , true, NULL, NULL, non_standard_bucket_capacity);
+
+  bulk.modification_begin();
+
+  EntityId nodeID = bulk.parallel_rank()+1;
+  Entity node = bulk.declare_entity ( stk::topology::NODE_RANK , nodeID, create_vector );
+  bulk.modification_end();
+
+  EXPECT_EQ( bulk.bucket(node).capacity(), non_standard_bucket_capacity );
 }
 

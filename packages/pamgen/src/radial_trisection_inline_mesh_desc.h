@@ -148,6 +148,8 @@ virtual  void Calc_Parallel_Info(
   void get_l_and_remainder_from_elno(long long el, long long & l, long long & remainder);
   void get_l_and_remainder_from_node_number(long long el, long long & l, long long & remainder);
 
+  virtual long long getBlockFromElementNumber(long long the_element);
+
   virtual long long Element_Proc(long long);
     
   long long * tri_block_cum_nn;

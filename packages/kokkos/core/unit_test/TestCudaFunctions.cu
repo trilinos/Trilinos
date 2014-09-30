@@ -105,9 +105,15 @@ void test_device_cuda_view_api()
 
 void test_device_cuda_range_tag()
 {
-  TestRange< Kokkos::Cuda >::test_for(1000);
-  TestRange< Kokkos::Cuda >::test_reduce(1000);
-  TestRange< Kokkos::Cuda >::test_scan(1000);
+  // TestRange< Kokkos::Cuda >::test_for(1000);
+  // TestRange< Kokkos::Cuda >::test_reduce(1000);
+  // TestRange< Kokkos::Cuda >::test_scan(1000);
+}
+
+void test_device_cuda_team_tag()
+{
+  // TestTeamPolicy< Kokkos::Cuda >::test_for(1000);
+  // TestTeamPolicy< Kokkos::Cuda >::test_reduce(1000);
 }
 
 void test_device_cuda_crsarray() {

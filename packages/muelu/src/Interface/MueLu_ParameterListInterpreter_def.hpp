@@ -144,8 +144,7 @@ namespace MueLu {
   else if (defaultList.isParameter(varName)) listWrite.set(varName, defaultList.get<T>(varName));
 
 #define MUELU_TEST_AND_SET_VAR(var, varName, paramList, T) \
-  if (paramList.isParameter(varName)) \
-    var = paramList.get<T>(varName);
+  (paramList.isParameter(varName) ? var = paramList.get<T>(varName), true : false)
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetEasyParameterList(const Teuchos::ParameterList& constParamList) {
@@ -168,7 +167,7 @@ namespace MueLu {
     this->numDesiredLevel_  = paramList.get<int> ("max levels",          MasterList::getDefault<int>("max levels"));
     blockSize_              = paramList.get<int> ("number of equations", 1);
 
-    MUELU_TEST_AND_SET_VAR(this->graphOutputLevel_, "debug: graph level", paramList, int);
+    (void)MUELU_TEST_AND_SET_VAR(this->graphOutputLevel_, "debug: graph level", paramList, int);
 
     // Save level data
     if (paramList.isSublist("export data")) {
@@ -226,11 +225,12 @@ namespace MueLu {
     }
 
     // Detect if we do implicit P and R rebalance
+    changedPRrebalance_ = false;
     if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
-      MUELU_TEST_AND_SET_VAR(this->doPRrebalance_, "repartition: rebalance P and R", paramList, bool);
+      changedPRrebalance_ = MUELU_TEST_AND_SET_VAR(this->doPRrebalance_, "repartition: rebalance P and R", paramList, bool);
 
     // Detect if we use implicit transpose
-    MUELU_TEST_AND_SET_VAR(this->implicitTranspose_, "transpose: use implicit", paramList, bool);
+    changedImplicitTranspose_ = MUELU_TEST_AND_SET_VAR(this->implicitTranspose_, "transpose: use implicit", paramList, bool);
 
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
@@ -350,9 +350,9 @@ namespace MueLu {
       defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
       defaultSmootherParams.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
 
-      RCP<SmootherPrototype> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
-      std::string            preSmootherType,             postSmootherType;
-      ParameterList          preSmootherParams,           postSmootherParams;
+      RCP<SmootherFactory> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
+      std::string          preSmootherType,             postSmootherType;
+      ParameterList        preSmootherParams,           postSmootherParams;
 
       if (paramList.isParameter("smoother: overlap"))
         overlap = paramList.get<int>("smoother: overlap");
@@ -376,7 +376,7 @@ namespace MueLu {
         else if (preSmootherType == "RELAXATION")
           preSmootherParams = defaultSmootherParams;
 
-        preSmoother = rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap));
+        preSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap))));
       }
 
       if (PreOrPost == "post" || PreOrPost == "both") {
@@ -401,10 +401,16 @@ namespace MueLu {
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
         else
-          postSmoother = rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap));
+          postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
       }
 
-      manager.SetFactory("Smoother", rcp(new SmootherFactory(preSmoother, postSmoother)));
+      if (preSmoother == postSmoother)
+        manager.SetFactory("Smoother",     preSmoother);
+      else {
+        manager.SetFactory("PreSmoother",  preSmoother);
+        manager.SetFactory("PostSmoother", postSmoother);
+      }
+
     }
 
     // === Coarse solver ===
@@ -441,7 +447,7 @@ namespace MueLu {
       else
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
 
-      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother, Teuchos::null)));
+      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
     }
 
     // === Aggregation ===
@@ -451,8 +457,7 @@ namespace MueLu {
     dropParams.set("lightweight wrap", true);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop scheme",         paramList, defaultList, std::string);
     // Rename classical to original
-    if (dropParams.isParameter("aggregation: drop scheme") && dropParams.get<std::string>("aggregation: drop scheme") == "classical")
-      dropParams.set("aggregation: drop scheme", "original");
+    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop scheme",         paramList, defaultList, std::string);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop tol",            paramList, defaultList, double);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: Dirichlet threshold", paramList, defaultList, double);
 
@@ -661,7 +666,8 @@ namespace MueLu {
       RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
       ParameterList newPparams;
       newPparams.set("type",                           "Interpolation");
-      newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+      if (changedPRrebalance_)
+        newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
@@ -674,8 +680,10 @@ namespace MueLu {
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
       newRparams.set("type",                           "Restriction");
-      newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
-      newRparams.set("transpose: use implicit",        this->implicitTranspose_);
+      if (changedPRrebalance_)
+        newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+      if (changedImplicitTranspose_)
+        newRparams.set("transpose: use implicit",        this->implicitTranspose_);
       newR->  SetParameterList(newRparams);
       newR->  SetFactory("Importer",       manager.GetFactory("Importer"));
       if (!this->implicitTranspose_) {
@@ -816,6 +824,11 @@ namespace MueLu {
       if (hieraList.isParameter("repartition: rebalance P and R")) {
         this->doPRrebalance_ = hieraList.get<bool>("repartition: rebalance P and R");
         hieraList.remove("repartition: rebalance P and R");
+      }
+
+      if (hieraList.isParameter("transpose: use implicit")) {
+        this->implicitTranspose_ = hieraList.get<bool>("transpose: use implicit");
+        hieraList.remove("transpose: use implicit");
       }
 
       //TODO Move this its own class or MueLu::Utils?

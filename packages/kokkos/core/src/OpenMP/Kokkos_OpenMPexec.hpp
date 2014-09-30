@@ -693,7 +693,6 @@ public:
   typedef Kokkos::OpenMP             execution_space ;  ///< Execution space
   typedef TeamPolicy                 execution_policy ;
 
-
   typedef typename
     Impl::if_c< ! Impl::is_same< Kokkos::OpenMP , Arg0 >::value , Arg0 , Arg1 >::type
       work_tag ;

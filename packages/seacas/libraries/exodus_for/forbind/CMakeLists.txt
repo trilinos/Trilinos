@@ -13,14 +13,12 @@ LIST(REMOVE_ITEM SOURCES "${DIR}/src/exo_jack-windows.c")
 
 SET(HEADERS
   include/exodusII.inc
-  include/exodusII_int.inc
 )
 
 TRIBITS_ADD_LIBRARY(
 	exodus_for
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
-	DEPLIBS exodus
 )
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)

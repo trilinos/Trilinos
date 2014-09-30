@@ -142,7 +142,30 @@ PAMGEN_ADD_TEST( 45 ARGS -f two_meshes.txt -r 0 -n 1 -d 3)
 PAMGEN_ADD_TEST( 46 ARGS -f double_ss_ns.txt -r 0 -n 1 -d 3)
 PAMGEN_ADD_TEST( 47 ARGS -f 360tri.txt -r 0 -n 1 -d 3)
 PAMGEN_ADD_TEST( 48 ARGS -f dual_tube.txt -r 0 -n 1 -d 3)
+PAMGEN_ADD_TEST( 49 ARGS -f d2brick2d.txt -r 0 -n 1 -d 2)
+PAMGEN_ADD_TEST( 50 ARGS -f d2brick2d.txt -r 0 -n 3 -d 2)
+PAMGEN_ADD_TEST( 51 ARGS -f d2brick2d.txt -r 1 -n 3 -d 2)
+PAMGEN_ADD_TEST( 52 ARGS -f d2brick2d.txt -r 2 -n 3 -d 2)
+PAMGEN_ADD_TEST( 53 ARGS -f d2dtri.txt -r 0 -n 1 -d 2)
+PAMGEN_ADD_TEST( 54 ARGS -f d2dtri.txt -r 0 -n 3 -d 2)
+PAMGEN_ADD_TEST( 55 ARGS -f d2dtri.txt -r 1 -n 3 -d 2)
+PAMGEN_ADD_TEST( 56 ARGS -f d2dtri.txt -r 2 -n 3 -d 2)
 
+
+PAMGEN_ADD_TEST( 57 ARGS -f d360tri.txt -r 0 -n 1 -d 3)
+PAMGEN_ADD_TEST( 58 ARGS -f d360tri.txt -r 0 -n 3 -d 3)
+PAMGEN_ADD_TEST( 59 ARGS -f d360tri.txt -r 1 -n 3 -d 3)
+PAMGEN_ADD_TEST( 60 ARGS -f d360tri.txt -r 2 -n 3 -d 3)
+
+PAMGEN_ADD_TEST( 61 ARGS -f dbrick.txt -r 0 -n 1 -d 3)
+PAMGEN_ADD_TEST( 62 ARGS -f dbrick.txt -r 0 -n 3 -d 3)
+PAMGEN_ADD_TEST( 63 ARGS -f dbrick.txt -r 1 -n 3 -d 3)
+PAMGEN_ADD_TEST( 64 ARGS -f dbrick.txt -r 2 -n 3 -d 3)
+
+PAMGEN_ADD_TEST( 65 ARGS -f dgeom_warp2d.txt -r 0 -n 1 -d 2)
+PAMGEN_ADD_TEST( 66 ARGS -f dgeom_warp2d.txt -r 0 -n 3 -d 2)
+PAMGEN_ADD_TEST( 67 ARGS -f dgeom_warp2d.txt -r 1 -n 3 -d 2)
+PAMGEN_ADD_TEST( 68 ARGS -f dgeom_warp2d.txt -r 2 -n 3 -d 2)
 
 # 2009/05/28: rabartl: Above, the test 17 timing out at 600s on gabriel and
 # the test 26 just takes too long (see bug 4428).
@@ -159,6 +182,7 @@ report9.txt report10.txt report7.txt report8.txt report6.txt report4.txt
 report5.txt report3.txt report2.txt report1.txt geom_warp.txt ui2d.txt ui.txt
 mesh.txt lbrick.txt brick.txt tri.txt tri_proc.txt 2dtri.txt 2dtribis.txt
 hbrick.txt 3dbj.txt trisect_multi_theta.txt trisect_multi_theta_2d.txt
-double_ss_ns.txt 360tri.txt dual_tube.txt ${RES_FILES}
+double_ss_ns.txt 360tri.txt dual_tube.txt d2brick2d.txt  d2dtri.txt
+d360tri.txt  dbrick.txt  dgeom_warp2d.txt ${RES_FILES}
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_files
   )

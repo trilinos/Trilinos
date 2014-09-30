@@ -1173,6 +1173,8 @@ sgs_nums[3] = (double *) extra;
 	 ml->post_smoother[i].data_destroy = fun2;
       }
    else pr_error("Print unknown pre_or_post choice\n");
+   if (sgs_nums != NULL)
+     ML_free(sgs_nums);
    return(status);
 }
 

@@ -333,8 +333,8 @@ Runtime-bound functions are essentially a library of functions that are
 available to RTC functions. This library can be expanded or two ways. \\
 
 \noindent
-First, one could edit the Registrar.cc and RegistrarRTC.hh files
-directly. In RegistrarRTC.hh you would declare a new class that is a 
+First, one could edit the Registrar.cc and RTC\_RegistrarRTC.hh files
+directly. In RTC\_RegistrarRTC.hh you would declare a new class that is a 
 sub-class of the RTBoundFunc class. You need the contructor of this class
 to contruct the parent class (RTBoundFunc) with the name of the function
 and the number of arguments the function will expect. An optional third
@@ -366,7 +366,7 @@ FUNCTIONS[Example().name()] = new Example();
 \noindent
 Providing a definition for the execute method is tricky. The input argument
 to this method is an array of Values. The value interface is located in
-the file ValueRTC.hh. You are allowed to ask these values for their type
+the file RTC\_ValueRTC.hh. You are allowed to ask these values for their type
 and can set or ask for their values. For example, say we wanted our Example
 rtbound function to assume its first argument is an array and to fill this
 array with the value of the second argument and to return the value of the
@@ -403,7 +403,7 @@ like any other function ($\sin$, $\cos$, etc).
 There is a new type of runtime-bound function available to users: functions
 without a fixed signature, like printf. In order to have your RTBoundFunc be
 a variable signature function, there is an optional fourth argument for the
-constructor. See the implementation of the class Printf in RegistrarRTC.hh and
+constructor. See the implementation of the class Printf in RTC\_RegistrarRTC.hh and
 Registrar.cc for an example.
 
 \subsection{Recent Changes}

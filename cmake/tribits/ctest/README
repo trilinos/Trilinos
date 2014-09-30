@@ -90,10 +90,20 @@ You can set the environment variable TDD_PARALLEL_LEVEL to control how
 many dashboards are run in parallel (as tests) by the <Project>Driver
 dashboard.
 
-You may also need to set the environment variable TDD_HTTP_PROXY for
-your http proxy which is needed if the script download-cmake.py can't
-figure it out the proxy automatically.  For Sandia machines, this is
-http://wwwproxy.sandia.gov:80/.
+By default, the TDD system will download the version of CMake/CTest using the
+download-cmake.py script.  This allows one to use specific versions of
+CMake/CTest for the build and also to have the versions upgraded automatically
+according to how download-cmake.py is set up (see download-cmake.py --help for
+details).  However, if TRIBITS_TDD_USE_SYSTEM_CTEST=1 is set in the env, then
+CTest/CMake as found in the default env at the time the TDD driver
+tdd_driver.py is run will be used instead of downloading and installing
+CMake/CTest.
+
+If TRIBITS_TDD_USE_SYSTEM_CTEST != 1, then the download of CMake/CTest will
+occur.  In this case, you may also need to set the environment variable
+TDD_HTTP_PROXY for your http proxy which is needed if the script
+download-cmake.py can't figure it out the proxy automatically.  For Sandia
+machines, this is http://wwwproxy.sandia.gov:80/.
 
 Typical cron_driver.sh contents:
 

@@ -94,8 +94,6 @@
 #ifdef HAVE_MPI    
 #include "Ioss_FileInfo.h"
 #undef MPICPP
-#include <zoltan_cpp.h>
-
 #endif
 
 namespace Iopx {

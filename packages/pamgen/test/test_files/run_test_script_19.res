@@ -945,8 +945,8 @@ global ns info for ns index 7 id 401 num_nodes = 45 num_ns_df = 0
 global ns info for ns index 8 id 301 num_nodes = 45 num_ns_df = 0
 global ns info for ns index 9 id 201 num_nodes = 45 num_ns_df = 0
 global ns info for ns index 10 id 101 num_nodes = 45 num_ns_df = 0
-global ss info for ss index 0 id 11 num_elements = 768 num_ss_df = 0
-global ss info for ss index 1 id 21 num_elements = 768 num_ss_df = 0
+global ss info for ss index 0 id 11 num_elements = 1024 num_ss_df = 0
+global ss info for ss index 1 id 21 num_elements = 1024 num_ss_df = 0
 global ss info for ss index 2 id 800 num_elements = 32 num_ss_df = 0
 global ss info for ss index 3 id 700 num_elements = 32 num_ss_df = 0
 global ss info for ss index 4 id 600 num_elements = 32 num_ss_df = 0

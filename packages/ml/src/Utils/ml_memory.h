@@ -65,7 +65,7 @@ extern "C"
   extern char *ML_memory_check(char *fmt, ...);
 
 
-extern  int  ML_memory_alloc( void **, unsigned int, char * );
+extern  int  ML_memory_alloc( void **, unsigned int, char const * );
 extern  int  ML_memory_free( void ** );
 extern  int  ML_memory_check_var(void *);
 extern  int  ML_memory_inquire(void);

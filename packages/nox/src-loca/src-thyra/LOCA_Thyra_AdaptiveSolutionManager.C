@@ -52,7 +52,8 @@ using Teuchos::rcp;
 
 LOCA::Thyra::AdaptiveSolutionManager::AdaptiveSolutionManager() :
    adaptiveMesh_(false),
-   time_(0.0), iter_(0)
+   time_(0.0), iter_(0),
+   p_index_(0)
 {
 }
 

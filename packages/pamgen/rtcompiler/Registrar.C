@@ -1,8 +1,8 @@
 #include "Pamgen_config.h"
-#include "LineRTC.hh"
-#include "RegistrarRTC.hh"
-#include "ArrayVarRTC.hh"
-#include "Bessel_I.hh"
+#include "RTC_LineRTC.hh"
+#include "RTC_RegistrarRTC.hh"
+#include "RTC_ArrayVarRTC.hh"
+#include "RTC_Bessel_I_RTC.hh"
 #include <map>
 #include <string>
 #include <iostream>

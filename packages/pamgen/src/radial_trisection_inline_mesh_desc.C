@@ -752,6 +752,10 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
     kestride += div * div;
   }
 
+  for(long long i = 0; i < kestride*nel_tot[2];i++){
+    if(!isElementSuppressed(i))total_unsupressed_elements ++;
+  }
+
   knstride = 0;
   // sum of trisection squares
   for(long long i = 0; i < trisection_blocks; i ++){
@@ -786,23 +790,13 @@ void Radial_Trisection_Inline_Mesh_Desc::setStrides()
 //! Zoltan could be used for this. The elements on the processor are
 //! packed into the stl list.
 /****************************************************************************/
- long long Radial_Trisection_Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids)
+long long Radial_Trisection_Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids)
   /****************************************************************************/
 {
   std::vector <Partition *> sorted_partition_list;
   
   if(inline_decomposition_type == SEQUENTIAL){
-    long long total = kestride * nel_tot[2];
-    long long num_per_proc = total/num_processors;
-    long long remainder = total - num_per_proc*num_processors;
-    long long my_start = my_rank * num_per_proc;
-    long long my_end = my_start + num_per_proc;
-    if(my_rank == num_processors-1)my_end +=remainder;
-
-    for(long long mtotal = my_start; mtotal < my_end; mtotal ++){
-      global_el_ids.insert(mtotal);
-    }
-    return 0;
+    return DecomposeSequential(global_el_ids);
   }
   else if(inline_decomposition_type == RANDOM){
     long long total = kestride * nel_tot[2];
@@ -1327,6 +1321,35 @@ void Radial_Trisection_Inline_Mesh_Desc::get_l_i_j_k_from_node_number(long long 
 }
 
 /****************************************************************************/
+long long Radial_Trisection_Inline_Mesh_Desc::getBlockFromElementNumber(long long the_element)
+/****************************************************************************/
+{
+  long long global_l;
+  long long global_i;
+  long long global_j;
+  long long global_k;
+  
+  get_l_i_j_k_from_element_number(the_element,global_l,global_i,global_j,global_k);
+  
+  //allow only blocks in i/x/r direction
+  long long block_k  = get_block_index(global_k,inline_b[2],c_inline_n[2]);
+  long long block_j = 0;
+  if(global_l == trisection_blocks){
+    block_j = get_block_index(global_j,inline_b[1],c_inline_n[1]);
+  }
+  long long block_i = 0;
+  if(global_l == trisection_blocks){
+    block_i = get_block_index(global_i,inline_b[0],c_inline_n[0]);
+  }   
+  
+  // This is the ordinal number of the block the element resides in
+  if(block_i == 0)block_j = 0;
+  long long local_block = block_i + block_j*(inline_b[0]-1)+ block_k*(blockKstride());
+
+  return local_block;
+}
+
+/****************************************************************************/
 void Radial_Trisection_Inline_Mesh_Desc::Build_Global_Lists(const std::set <long long> & global_element_ids,
                                        std::vector <long long> & element_vector,
                                        std::list <long long> & global_node_list,
@@ -1353,20 +1376,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Build_Global_Lists(const std::set <long
 
     get_l_i_j_k_from_element_number(the_element,global_l,global_i,global_j,global_k);
 
-    //allow only blocks in i/x/r direction
-    long long block_k  = get_block_index(global_k,inline_b[2],c_inline_n[2]);
-    long long block_j = 0;
-    if(global_l == trisection_blocks){
-      block_j = get_block_index(global_j,inline_b[1],c_inline_n[1]);
-    }
-    long long block_i = 0;
-    if(global_l == trisection_blocks){
-      block_i = get_block_index(global_i,inline_b[0],c_inline_n[0]);
-    }   
-
-    // This is the ordinal number of the block the element resides in
-    if(block_i == 0)block_j = 0;
-    long long local_block = block_i + block_j*(inline_b[0]-1)+ block_k*(blockKstride());
+    long long local_block = getBlockFromElementNumber(the_element);//block_i + block_j*(inline_b[0]-1)+ block_k*(blockKstride());
 
     {
       long long global_block_el_id = GetBlockBasedGlobalID(the_element, local_block);
@@ -1670,8 +1680,11 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(const std::set <l
   //  These values are combined to calculate the index of the element that corresponds
   // to numbering the elements sequentially within blocks. 
   nsct = 0;
-  if(sideset_list.size() > 0)sideset_vectors = new std::vector < std::pair <long long ,Topo_Loc > > [sideset_list.size()];  
-
+  if(sideset_list.size() > 0){
+    sideset_vectors = new std::vector < std::pair <long long ,Topo_Loc > > [sideset_list.size()];  
+    sideset_global_count = new long long [sideset_list.size()];
+    for(int ict = 0; ict < sideset_list.size();ict++)sideset_global_count[ict] = 0.;  
+  }
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++,nsct ++){
     for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
 
@@ -1684,10 +1697,13 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(const std::set <l
 	    for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
 	      for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
 		long long elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-		long long the_proc_id = Element_Proc(elnumber);
-		if(the_proc_id == my_rank){// add only if on this proc
-		  std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
-		  sideset_vectors[nsct].push_back(el_loc_pair);
+		if(!isElementSuppressed(elnumber)){
+		  sideset_global_count[nsct]++;
+		  long long the_proc_id = Element_Proc(elnumber);
+		  if(the_proc_id == my_rank){// add only if on this proc
+		    std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
+		    sideset_vectors[nsct].push_back(el_loc_pair);
+		  }
 		}
 	      }
 	    }
@@ -1698,10 +1714,13 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(const std::set <l
 	  for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
 	    for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
 	      long long elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-	      long long the_proc_id = Element_Proc(elnumber);
-	      if(the_proc_id == my_rank){// add only if on this proc
-		std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
-		sideset_vectors[nsct].push_back(el_loc_pair);
+	      if(!isElementSuppressed(elnumber)){
+		sideset_global_count[nsct]++;
+		long long the_proc_id = Element_Proc(elnumber);
+		if(the_proc_id == my_rank){// add only if on this proc
+		  std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
+		  sideset_vectors[nsct].push_back(el_loc_pair);
+		}
 	      }
 	    }
 	  }
@@ -1720,10 +1739,13 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(const std::set <l
 	      for ( long long _nj_ = tll.js; _nj_ < tll.je; _nj_ ++){ 
 		for ( long long _ni_ = tll.is; _ni_ < tll.ie; _ni_ ++) {
 		  long long elnumber = get_element_number_from_l_i_j_k(i,_ni_,_nj_,_nk_);
-		  long long the_proc_id = Element_Proc(elnumber);
-		  if(the_proc_id == my_rank){// add only if on this proc	  
-		    std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,new_location);
-		    sideset_vectors[nsct].push_back(el_loc_pair);
+		  if(!isElementSuppressed(elnumber)){
+		    sideset_global_count[nsct]++;
+		    long long the_proc_id = Element_Proc(elnumber);
+		    if(the_proc_id == my_rank){// add only if on this proc	  
+		      std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,new_location);
+		      sideset_vectors[nsct].push_back(el_loc_pair);
+		    }
 		  }
 		}
 	      }
@@ -1734,10 +1756,13 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(const std::set <l
 	    for ( long long _nj_ = tll.js; _nj_ < tll.je; _nj_ ++){ 
 	      for ( long long _ni_ = tll.is; _ni_ < tll.ie; _ni_ ++) {
 		long long elnumber = get_element_number_from_l_i_j_k(i,_ni_,_nj_,_nk_);
-		long long the_proc_id = Element_Proc(elnumber);
-		if(the_proc_id == my_rank){// add only if on this proc	  
-		  std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,new_location);
-		  sideset_vectors[nsct].push_back(el_loc_pair);
+		if(!isElementSuppressed(elnumber)){
+		  sideset_global_count[nsct]++;
+		  long long the_proc_id = Element_Proc(elnumber);
+		  if(the_proc_id == my_rank){// add only if on this proc	  
+		    std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,new_location);
+		    sideset_vectors[nsct].push_back(el_loc_pair);
+		  }
 		}
 	      }
 	    }
@@ -2025,10 +2050,9 @@ long long Radial_Trisection_Inline_Mesh_Desc::Element_Proc(long long global_elem
 {
   long long proc = 0;
   if(inline_decomposition_type == SEQUENTIAL){
-    long long total = kestride * nel_tot[2];
-    long long num_per_proc = total/num_processors;
-    proc = global_element_id/num_per_proc;
-    if(proc >= num_processors)proc = num_processors-1;
+    for(unsigned ict = 0; ict < sequential_decomp_limits.size();ict ++){
+      if(sequential_decomp_limits[ict] >= global_element_id)return ict;
+    }
   }
   else if(inline_decomposition_type == RANDOM){
     SRANDOM(global_element_id);

@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
 #include <stddef.h>                     // for NULL, size_t
@@ -15,8 +40,6 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <vector>                       // for vector, etc
-#include "Shards_CellTopologyData.h"    // for CellTopologyData
-#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Relation.hpp"
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
@@ -84,6 +107,8 @@ void filter_superimposed_entities(const BulkData& mesh, const Entity entity, Ent
   }
 }
 
+} // unnamed namespace
+
 /** \brief  Get the entities adjacent to the input entity.
  *
  *  The adjacent entities are of the same rank as the input entity.
@@ -105,12 +130,10 @@ void get_adjacent_entities( const BulkData& mesh,  const Entity entity ,
 
   // Get nodes that make up the subcell we're looking at
   EntityVector subcell_nodes;
-  const CellTopologyData * subcell_topology = get_subcell_nodes(mesh, entity,
+  stk::topology stksubcell_topology = get_subcell_nodes(mesh, entity,
                                                                 subcell_rank,
                                                                 subcell_identifier,
                                                                 subcell_nodes);
-  ThrowAssert(subcell_topology != NULL);
-
 
   // Given the nodes related to the subcell, find all entities
   // with the same rank that have a relation to all of these nodes
@@ -124,7 +147,7 @@ void get_adjacent_entities( const BulkData& mesh,  const Entity entity ,
   // the input entity
   filter_superimposed_entities(mesh, entity, potentially_adjacent_entities);
 
-  // Add the local ids, from the POV of the adj entitiy, to the return value.
+  // Add the local ids, from the POV of the adj entity, to the return value.
   // Reverse the nodes so that the adjacent entity has them in the positive
   // orientation
   std::reverse(subcell_nodes.begin(),subcell_nodes.end());
@@ -133,15 +156,13 @@ void get_adjacent_entities( const BulkData& mesh,  const Entity entity ,
        eitr != potentially_adjacent_entities.end(); ++eitr) {
     int local_subcell_num = get_entity_subcell_id(mesh, *eitr,
                                                   subcell_rank,
-                                                  *subcell_topology,
+                                                  stksubcell_topology,
                                                   subcell_nodes);
     if ( local_subcell_num != -1) {
       adjacent_entities.push_back(EntitySideComponent(*eitr, local_subcell_num));
     }
   }
 }
-
-} // unnamed namespace
 
 void boundary_analysis(const BulkData& bulk_data,
                        const EntityVector & entities_closure,
@@ -164,15 +185,15 @@ void boundary_analysis(const BulkData& bulk_data,
     // some temporaries for clarity
     std::vector<EntitySideComponent > adjacent_entities;
     Entity curr_entity = *itr;
-    const CellTopologyData* celltopology = get_cell_topology(bulk_data.bucket(curr_entity)).getCellTopologyData();
-    if (celltopology == NULL) {
+    stk::topology celltopology = bulk_data.bucket(curr_entity).topology();
+    if (celltopology == stk::topology::INVALID_TOPOLOGY) {
       continue;
     }
 
     EntityRank subcell_rank = closure_rank == stk::topology::ELEMENT_RANK ? bulk_data.mesh_meta_data().side_rank() : static_cast<EntityRank>(closure_rank - 1);
 
     // iterate over the subcells of the current entity
-    for (unsigned nitr = 0; nitr < celltopology->subcell_count[subcell_rank]; ++nitr) {
+    for (unsigned nitr = 0; nitr < celltopology.num_sub_topology(subcell_rank); ++nitr) {
       // find the entities (same rank as subcell) adjacent to this subcell
       unsigned subcell_identifier = nitr;
       get_adjacent_entities(bulk_data, curr_entity,

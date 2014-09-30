@@ -473,7 +473,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalBlockEntryViewNonCon
     Teuchos::RCP<Node> node = getNode();
     size_t blockSize = numPtRows*numPtCols;
     blockEntry = Teuchos::arcp(new Scalar[blockSize], 0, blockSize);
-    std::fill(blockEntry.begin(), blockEntry.end(), 0);
+    std::fill(blockEntry.begin(), blockEntry.end(), (Scalar) 0);
     blkrow.insert(std::make_pair(globalBlockCol, blockEntry));
     blkGraph_->insertGlobalIndices(globalBlockRow, Teuchos::ArrayView<GlobalOrdinal>(&globalBlockCol, 1));
   }

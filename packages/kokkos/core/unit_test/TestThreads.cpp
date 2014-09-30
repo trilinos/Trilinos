@@ -147,6 +147,12 @@ TEST_F( threads , range_tag )
   TestRange< Kokkos::Threads >::test_scan(1000);
 }
 
+TEST_F( threads , team_tag )
+{
+  TestTeamPolicy< Kokkos::Threads >::test_for(1000);
+  TestTeamPolicy< Kokkos::Threads >::test_reduce(1000);
+}
+
 TEST_F( threads, long_reduce) {
   TestReduce< long ,   Kokkos::Threads >( 1000000 );
 }

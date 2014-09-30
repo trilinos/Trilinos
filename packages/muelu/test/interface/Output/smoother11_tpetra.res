@@ -1,40 +1,39 @@
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+ relaxation: sweeps = 3
+ relaxation: type = Jacobi   [default]
+ relaxation: damping factor = 1   [default]
+ relaxation: zero starting solution = 1   [default]
+ relaxation: backward mode = 0   [default]
+ relaxation: use l1 = 0   [default]
+ relaxation: l1 eta = 1.5   [default]
+ relaxation: min diagonal value = 0   [default]
+ relaxation: fix tiny diagonal entries = 0   [default]
+ relaxation: check diagonal entries = 0   [default]
+ relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
- presmoother ->
-  relaxation: sweeps = 3
-  relaxation: type = Jacobi   [default]
-  relaxation: damping factor = 1   [default]
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: min diagonal value = 0   [default]
-  relaxation: fix tiny diagonal entries = 0   [default]
-  relaxation: check diagonal entries = 0   [default]
-  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
- postsmoother ->
-  relaxation: sweeps = 0
-  relaxation: type = Jacobi   [default]
-  relaxation: damping factor = 1   [default]
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: min diagonal value = 0   [default]
-  relaxation: fix tiny diagonal entries = 0   [default]
-  relaxation: check diagonal entries = 0   [default]
-  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+ relaxation: sweeps = 0
+ relaxation: type = Jacobi   [default]
+ relaxation: damping factor = 1   [default]
+ relaxation: zero starting solution = 1   [default]
+ relaxation: backward mode = 0   [default]
+ relaxation: use l1 = 0   [default]
+ relaxation: l1 eta = 1.5   [default]
+ relaxation: min diagonal value = 0   [default]
+ relaxation: fix tiny diagonal entries = 0   [default]
+ relaxation: check diagonal entries = 0   [default]
+ relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
 
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    lightweight wrap = 1
 
    aggregation: mode = old   [default]
    aggregation: max agg size = 2147483647   [default]
@@ -82,41 +81,40 @@ Level 1
  RepairMainDiagonal = 0   [default]
 
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+ relaxation: sweeps = 3
+ relaxation: type = Jacobi   [default]
+ relaxation: damping factor = 1   [default]
+ relaxation: zero starting solution = 1   [default]
+ relaxation: backward mode = 0   [default]
+ relaxation: use l1 = 0   [default]
+ relaxation: l1 eta = 1.5   [default]
+ relaxation: min diagonal value = 0   [default]
+ relaxation: fix tiny diagonal entries = 0   [default]
+ relaxation: check diagonal entries = 0   [default]
+ relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
- presmoother ->
-  relaxation: sweeps = 3
-  relaxation: type = Jacobi   [default]
-  relaxation: damping factor = 1   [default]
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: min diagonal value = 0   [default]
-  relaxation: fix tiny diagonal entries = 0   [default]
-  relaxation: check diagonal entries = 0   [default]
-  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
- postsmoother ->
-  relaxation: sweeps = 0
-  relaxation: type = Jacobi   [default]
-  relaxation: damping factor = 1   [default]
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: min diagonal value = 0   [default]
-  relaxation: fix tiny diagonal entries = 0   [default]
-  relaxation: check diagonal entries = 0   [default]
-  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+ relaxation: sweeps = 0
+ relaxation: type = Jacobi   [default]
+ relaxation: damping factor = 1   [default]
+ relaxation: zero starting solution = 1   [default]
+ relaxation: backward mode = 0   [default]
+ relaxation: use l1 = 0   [default]
+ relaxation: l1 eta = 1.5   [default]
+ relaxation: min diagonal value = 0   [default]
+ relaxation: fix tiny diagonal entries = 0   [default]
+ relaxation: check diagonal entries = 0   [default]
+ relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
 
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    lightweight wrap = 1
 
    aggregation: mode = old   [default]
    aggregation: max agg size = 2147483647   [default]

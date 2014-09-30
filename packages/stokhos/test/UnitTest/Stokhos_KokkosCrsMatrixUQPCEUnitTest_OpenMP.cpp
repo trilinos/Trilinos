@@ -62,7 +62,8 @@ int main( int argc, char* argv[] ) {
   const size_t num_hyper_threads =
     Kokkos::hwloc::get_available_threads_per_core();
   Kokkos::OpenMP::initialize(num_cores * num_hyper_threads);
-  //Kokkos::OpenMP::print_configuration(std::cout);
+  //Kokkos::OpenMP::initialize(1);
+  Kokkos::OpenMP::print_configuration(std::cout);
 
   // Run tests
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);

@@ -1,7 +1,7 @@
 #ifndef element_density_functionH
 #define element_density_functionH
 
-#include "../rtcompiler/FunctionRTC.hh"
+#include "../rtcompiler/RTC_FunctionRTC.hh"
 namespace PAMGEN_NEVADA {
 
 class Element_Density_Function{

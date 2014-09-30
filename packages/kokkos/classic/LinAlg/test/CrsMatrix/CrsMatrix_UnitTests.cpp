@@ -124,7 +124,7 @@ namespace {
     ArrayRCP<size_t> ptrs(N+1);
     {
       std::fill( inds.begin(), inds.end(), 0 );
-      std::fill( vals.begin(), vals.end(), 0 );
+      std::fill( vals.begin(), vals.end(), (Scalar) 0 );
       Ordinal curoffset = 0;
       for (Ordinal r=0; r < N; ++r) {
         ptrs[r] = curoffset;
@@ -166,7 +166,7 @@ namespace {
     ArrayRCP<size_t> ptrs(N+1);
     {
       std::fill( inds.begin(), inds.end(), 0 );
-      std::fill( vals.begin(), vals.end(), 0 );
+      std::fill( vals.begin(), vals.end(), (Scalar) 0 );
       Ordinal curoffset = 0;
       for (Ordinal r=0; r < N; ++r) {
         Ordinal numper;

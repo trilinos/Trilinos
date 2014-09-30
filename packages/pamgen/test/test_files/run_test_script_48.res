@@ -303,10 +303,10 @@ global ns info for ns index 3 id 40 num_nodes = 224 num_ns_df = 0
 global ns info for ns index 4 id 50 num_nodes = 1400 num_ns_df = 0
 global ns info for ns index 5 id 60 num_nodes = 1400 num_ns_df = 0
 global ss info for ss index 0 id 10 num_elements = 72 num_ss_df = 0
-global ss info for ss index 1 id 30 num_elements = 165 num_ss_df = 0
-global ss info for ss index 2 id 40 num_elements = 165 num_ss_df = 0
-global ss info for ss index 3 id 50 num_elements = 1320 num_ss_df = 0
-global ss info for ss index 4 id 60 num_elements = 1320 num_ss_df = 0
+global ss info for ss index 1 id 30 num_elements = 201 num_ss_df = 0
+global ss info for ss index 2 id 40 num_elements = 201 num_ss_df = 0
+global ss info for ss index 3 id 50 num_elements = 1464 num_ss_df = 0
+global ss info for ss index 4 id 60 num_elements = 1464 num_ss_df = 0
 Loadbal params:
 num_internal_nodes 6176
 num_border_nodes0

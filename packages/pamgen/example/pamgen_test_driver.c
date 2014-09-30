@@ -3,8 +3,8 @@
 #include <stdio.h>
 
 #include "create_inline_mesh.h"
-#include "../mesh_spec_lt/im_exodusII.h"
-#include "../mesh_spec_lt/im_ne_nemesisI.h"
+#include "../mesh_spec_lt/pamgen_im_exodusII.h"
+#include "../mesh_spec_lt/pamgen_im_ne_nemesisI.h"
 #include "Pamgen_config.h"
 #include <string.h>
 #include <limits.h>

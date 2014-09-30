@@ -404,21 +404,21 @@ private:
   typedef ReduceAdapter< FunctorType >   Reduce ;
 
 
-  template< class TagType >
+  template< class PType >
   KOKKOS_FORCEINLINE_FUNCTION static
-  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+  void driver( typename Impl::enable_if< Impl::is_same< typename PType::work_tag , void >::value ,
                  const FunctorType & >::type functor
-             , const typename Policy::member_type  & member
+             , const typename PType::member_type  & member
              ,       typename Reduce::reference_type update )
     { functor( member , update ); }
 
-  template< class TagType >
+  template< class PType >
   KOKKOS_FORCEINLINE_FUNCTION static
-  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+  void driver( typename Impl::enable_if< ! Impl::is_same< typename PType::work_tag , void >::value ,
                  const FunctorType & >::type functor
-             , const typename Policy::member_type  & member
+             , const typename PType::member_type  & member
              ,       typename Reduce::reference_type update )
-    { functor( TagType() , member , update ); }
+    { functor( typename PType::work_tag() , member , update ); }
 
 public:
 
@@ -442,7 +442,7 @@ public:
       typename Reduce::reference_type update = Reduce::init( functor , exec.scratch_reduce() );
 
       for ( typename Policy::member_type member( exec , policy , team_shmem_size ); member.valid() ; member.next() ) {
-        ParallelReduce::template driver< typename Policy::work_tag >( functor , member , update );
+        ParallelReduce::template driver< Policy >( functor , member , update );
       }
     }
 /* END #pragma omp parallel */
@@ -478,7 +478,7 @@ public:
       typename Reduce::reference_type update = Reduce::init( functor , exec.scratch_reduce() );
 
       for ( typename Policy::member_type member( exec , policy , team_shmem_size ); member.valid() ; member.next() ) {
-        functor( member , update );
+        ParallelReduce::template driver< Policy >( functor , member , update );
       }
     }
 /* END #pragma omp parallel */

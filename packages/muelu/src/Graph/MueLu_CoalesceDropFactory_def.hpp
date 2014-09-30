@@ -86,7 +86,7 @@ namespace MueLu {
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
       validParamList->getEntry("aggregation: drop scheme").setValidator(
-        rcp(new validatorType(Teuchos::tuple<std::string>("original", "distance laplacian", "classical"), "aggregation: drop scheme")));
+        rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
     }
 #undef  SET_VALID_ENTRY
     validParamList->set< bool >                  ("lightweight wrap",           false, "Experimental option for lightweight graph access");
@@ -134,11 +134,9 @@ namespace MueLu {
 
     if (doExperimentalWrap) {
       std::string algo = pL.get<std::string>("aggregation: drop scheme");
-      if (algo == "classical")
-        algo = "original";
 
-      TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
-      TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "distance laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|distance laplacian)");
+      TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "classical", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
+      TEUCHOS_TEST_FOR_EXCEPTION(algo != "classical" && algo != "distance laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (classical|distance laplacian)");
 
       SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
       GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
@@ -148,7 +146,7 @@ namespace MueLu {
 
       GO numDropped = 0, numTotal = 0;
       std::string graphType = "unamalgamated"; //for description purposes only
-      if (algo == "original") {
+      if (algo == "classical") {
         if (predrop_ == null) {
           // ap: this is a hack: had to declare predrop_ as mutable
           predrop_ = rcp(new PreDropFunctionConstVal(threshold));

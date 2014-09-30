@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include "STKElem.hpp"
 
 namespace stk {
@@ -20,20 +53,20 @@ unsigned parametric(std::vector<double> &para_coords,
   for (unsigned i=0; i<spatial_dimension; ++i) input_phy_points(0,i) = to[i];
 
   const mesh::Bucket & bucket = bulkData.bucket(element);
-  const CellTopologyData * const bucket_cell_topo_data = mesh::get_cell_topology(bucket).getCellTopologyData();
-  ThrowRequireMsg (bucket_cell_topo_data, __FILE__<<":"<<__LINE__<<" parametric::bogus topology");
+  stk::topology bucket_topo = bucket.topology();
+  ThrowRequireMsg (bucket_topo != stk::topology::INVALID_TOPOLOGY, __FILE__<<":"<<__LINE__<<" parametric::bogus topology");
 
-  shards::CellTopology topo(bucket_cell_topo_data);
-  const unsigned numNodes = topo.getNodeCount();
+  const unsigned numNodes = bucket_topo.num_nodes();
 
   mesh::Entity const* elem_node_rels = bulkData.begin_nodes(element);
   const unsigned num_nodes = bulkData.num_nodes(element);
 
-  ThrowRequireMsg (topo.getDimension() == spatial_dimension,__FILE__<<":"<<__LINE__<<" Wrong spatical spatial_dimension"
-    <<" for topology. Expected "<<spatial_dimension<<" found "<<topo.getDimension());
+  ThrowRequireMsg (bucket_topo.dimension() == spatial_dimension,__FILE__<<":"<<__LINE__<<" Wrong dimension"
+    <<" for topology. Expected "<<spatial_dimension<<" found "<<bucket_topo.dimension());
   ThrowRequireMsg (numNodes == num_nodes ,
     __FILE__<<":"<<__LINE__<<" Expected "<<numNodes<<" nodes but found "<<num_nodes);
 
+  shards::CellTopology topo = stk::mesh::get_cell_topology(bucket_topo);
   /// FIXME -- fill cellWorkset
   MDArray cellWorkset(numCells, numNodes, spatial_dimension);
   for (unsigned iCell = 0; iCell < numCells; iCell++) {
@@ -89,10 +122,10 @@ void parametric(std::vector<std::vector<double> > &val,
   const unsigned num_nodes = bulkData.num_nodes(element);
 
   const mesh::Bucket & elem_bucket = bulkData.bucket(element);
-  const CellTopologyData * const bucket_cell_topo_data = mesh::get_cell_topology(elem_bucket).getCellTopologyData();
-  ThrowRequireMsg (bucket_cell_topo_data, __FILE__<<":"<<__LINE__<<" parametric::bogus topology");
+  stk::topology bucket_topo = elem_bucket.topology();
+  ThrowRequireMsg (bucket_topo!=stk::topology::INVALID_TOPOLOGY, __FILE__<<":"<<__LINE__<<" parametric::bogus topology");
 
-  const shards::CellTopology topo(bucket_cell_topo_data);
+  const shards::CellTopology topo(stk::mesh::get_cell_topology(bucket_topo));
   const unsigned numNodes = topo.getNodeCount();
 
   ThrowRequireMsg (topo.getDimension() == spatial_dimension,__FILE__<<":"<<__LINE__<<" Wrong spatical spatial_dimension"

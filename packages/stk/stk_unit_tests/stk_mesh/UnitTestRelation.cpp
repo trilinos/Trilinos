@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
@@ -97,10 +122,8 @@ TEST(UnitTestingOfRelation, testRelationNoGhosting)
   mesh.generate_mesh( );
   ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk,
                                                           aura_flag));
-  ring_bulk.modification_begin();
-  mesh.fixup_node_ownership( );
-  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk,
-                                                          aura_flag));
+
+  mesh.fixup_node_ownership(aura_flag, BulkData::MOD_END_COMPRESS_AND_SORT);
 
   // This process' first element in the loop
   // if a parallel mesh has a shared node
@@ -140,9 +163,7 @@ TEST(UnitTestingOfRelation, testRelationWithGhosting)
     mesh.generate_mesh();
     ASSERT_TRUE(bulk.modification_end());
 
-    bulk.modification_begin();
     mesh.fixup_node_ownership();
-    ASSERT_TRUE(bulk.modification_end());
 
     const unsigned nNotOwned = nPerProc * p_rank ;
 
@@ -215,43 +236,48 @@ TEST(UnitTestingOfRelation, testDegenerateRelation)
   }
 }
 
-TEST(UnitTestingOfRelation, testRelationAttribute)
-{
-  // Test relation attribute
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-
-  // Set up meta and bulk data
-  const unsigned spatial_dim = 2;
-  MetaData meta_data(spatial_dim);
-  meta_data.commit();
-  BulkData mesh(meta_data, pm);
-  unsigned p_rank = mesh.parallel_rank();
-
-  // Begin modification cycle so we can create the entities and relations
-  mesh.modification_begin();
-
-  // We're just going to add everything to the universal part
-  stk::mesh::PartVector empty_parts;
-
-  // Create element
-  const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
-  Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
-
-  // Create node
-  Entity node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
-
-  mesh.declare_relation( elem, node, 0 );
-
-  //// Tests a deprecated feature?
-  ////
-  //  const Relation & my_relation = *(mesh.nodes(elem).begin());
-  //  my_relation.set_attribute(6u);
-  //
-  //  ASSERT_EQ( my_relation.attribute(), 6u);
-
-  mesh.modification_end();
-}
+////
+//// 2014-08-20 PGX:  IT LOOKS LIKE IT HAS BEEN A YEAR SINCE THIS TEST TESTED WHAT IT
+////                  IS SUPPOSED TO.
+////
+//TEST(UnitTestingOfRelation, testRelationAttribute)
+//{
+//  // Test relation attribute
+//
+//  stk::ParallelMachine pm = MPI_COMM_WORLD;
+//
+//  // Set up meta and bulk data
+//  const unsigned spatial_dim = 2;
+//  MetaData meta_data(spatial_dim);
+//  meta_data.commit();
+//  BulkData mesh(meta_data, pm);
+//  unsigned p_rank = mesh.parallel_rank();
+//
+//  // Begin modification cycle so we can create the entities and relations
+//  mesh.modification_begin();
+//
+//  // We're just going to add everything to the universal part
+//  stk::mesh::PartVector empty_parts;
+//
+//  // Create element
+//  const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
+//  Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
+//
+//  // Create node
+//  Entity node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
+//
+//  mesh.declare_relation( elem, node, 0 );
+//
+//  //// Tests a deprecated feature?
+//  ////
+//  //  const Relation & my_relation = *(mesh.nodes(elem).begin());
+//  //  my_relation.set_attribute(6u);
+//  //
+//  //  ASSERT_EQ( my_relation.attribute(), 6u);
+//
+//  mesh.modification_end();
+//}
 
 
 TEST(UnitTestingOfRelation, testRelationExtendedRanks)
@@ -267,6 +293,7 @@ TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   }
 
   MetaData meta_data(spatial_dim, entity_rank_names);
+  Part &hex8_part = meta_data.declare_part_with_topology("Hex8_Part", stk::topology::HEX_8);
   meta_data.commit();
   BulkData mesh(meta_data, pm);
 
@@ -280,10 +307,16 @@ TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   unsigned new_ent_id = (p_rank << 16) + 1;
 
   // baseline
+  stk::mesh::PartVector elem_parts;
+  elem_parts.push_back(&hex8_part);
   mesh.modification_begin();
-  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, new_ent_id++, empty_parts);
-  Entity node = mesh.declare_entity(stk::topology::NODE_RANK, new_ent_id++, empty_parts);
-  mesh.declare_relation(elem, node, 0);
+  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, new_ent_id++, elem_parts);
+  Entity node;
+  for (unsigned i = 0; i < 8; ++i)
+  {
+    node = mesh.declare_entity(stk::topology::NODE_RANK, new_ent_id++, empty_parts);
+    mesh.declare_relation(elem, node, i);
+  }
   mesh.modification_end();
 
   ASSERT_FALSE(mesh.num_connectivity(elem, ext_ranks[0]));
@@ -404,6 +437,8 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
+  Part &quad4_part = meta_data.declare_part_with_topology("quad4_part", stk::topology::QUAD_4_2D);
+  Part &line2_part = meta_data.declare_part_with_topology("LINE2_part", stk::topology::LINE_2);
   meta_data.commit();
   BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
@@ -417,17 +452,22 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   // Begin modification cycle so we can create the entities and relations
   mesh.modification_begin();
 
+
   Entity edge = Entity();
   EntityVector nodes;
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
 
   if (p_rank < 2) {
-    // We're just going to add everything to the universal part
-    stk::mesh::PartVector empty_parts;
+
+    // entities with EDGE_RANK, FACE_RANK, or ELEMENT_RANK need topology before
+    // modification_end() is called.
+    stk::mesh::PartVector elems_parts, sides_parts, empty_parts;
+    elems_parts.push_back(&quad4_part);
+    sides_parts.push_back(&line2_part);
 
     // Create element
     const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
-    Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
+    Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, elems_parts);
 
     // Create nodes
     const unsigned starting_node_id = p_rank * nodes_per_side + 1;
@@ -443,7 +483,7 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
 
     // Create edge
     const EntityRank edge_rank = meta_data.side_rank();
-    edge = mesh.declare_entity(edge_rank, 1 /*id*/, empty_parts);
+    edge = mesh.declare_entity(edge_rank, 1 /*id*/, sides_parts);
 
     // Set up relation from elem to edge
     mesh.declare_relation( elem, edge, 0 /*rel-id*/ );

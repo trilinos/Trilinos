@@ -101,6 +101,7 @@ TEST_F( serial , range_tag )
 TEST_F( serial , team_tag )
 {
   TestTeamPolicy< Kokkos::Serial >::test_for( 1000 );
+  TestTeamPolicy< Kokkos::Serial >::test_reduce( 1000 );
 }
 
 TEST_F( serial, crsarray) {
