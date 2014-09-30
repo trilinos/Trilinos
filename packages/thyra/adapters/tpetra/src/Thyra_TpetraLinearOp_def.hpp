@@ -47,6 +47,8 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
+#include "Tpetra_CrsMatrix.hpp"
+
 #ifdef HAVE_THYRA_TPETRA_EPETRA
 #  include "Thyra_EpetraThyraWrappers.hpp"
 #endif
@@ -295,6 +297,145 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
 
   tpetraOperator_->apply(*tX, *tY, tTransp, alpha, beta);
 
+}
+
+// Protected member functions overridden from ScaledLinearOpBase
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::supportsScaleLeftImpl() const
+{
+  return true;
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::supportsScaleRightImpl() const
+{
+  return true;
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void 
+TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+scaleLeftImpl(const VectorBase<Scalar> &row_scaling_in)
+{
+  using Teuchos::rcpFromRef;
+
+  const RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > row_scaling = 
+    TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector(rcpFromRef(row_scaling_in));
+
+  const RCP<typename Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowMatrix = 
+    Teuchos::rcp_dynamic_cast<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpetraOperator_.getNonconstObj(),true);
+
+  rowMatrix->leftScale(*row_scaling);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void 
+TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+scaleRightImpl(const VectorBase<Scalar> &col_scaling_in)
+{
+  using Teuchos::rcpFromRef;
+
+  const RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > col_scaling = 
+    TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector(rcpFromRef(col_scaling_in));
+
+  const RCP<typename Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowMatrix = 
+    Teuchos::rcp_dynamic_cast<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpetraOperator_.getNonconstObj(),true);
+
+  rowMatrix->rightScale(*col_scaling);
+}
+
+// Protected member functions overridden from RowStatLinearOpBase
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+rowStatIsSupportedImpl(
+  const RowStatLinearOpBaseUtils::ERowStat rowStat) const
+{
+  if (is_null(tpetraOperator_))
+    return false;
+
+  switch (rowStat) {
+    case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
+    case RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM:
+      return true;
+    default:
+      return false;
+  }
+
+  return false; // Will never be called!
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRowStatImpl(
+  const RowStatLinearOpBaseUtils::ERowStat rowStat,
+  const Ptr<VectorBase<Scalar> > &rowStatVec_in
+  ) const
+{
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+    TpetraVector_t;
+  
+  if ( (rowStat == RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM) ||
+       (rowStat == RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM) ) {
+    
+    TEUCHOS_ASSERT(nonnull(tpetraOperator_));
+    TEUCHOS_ASSERT(nonnull(rowStatVec_in));
+
+    // Currently we only support the case of row sums for a concrete
+    // Tpetra::CrsMatrix where (1) the entire row is stored on a
+    // single process and (2) that the domain map, the range map and
+    // the row map are the SAME.  These checks enforce that.  Later on
+    // we hope to add complete support for any mapping to the concrete
+    // tpetra matrix types.
+    
+    const RCP<TpetraVector_t> tRowSumVec =
+      TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetraVector(rcpFromPtr(rowStatVec_in));
+    
+    const RCP<const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tCrsMatrix = 
+      Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpetraOperator_.getConstObj(),true);
+    
+    TEUCHOS_ASSERT(tCrsMatrix->getRowMap()->isSameAs(*tCrsMatrix->getDomainMap()));
+    TEUCHOS_ASSERT(tCrsMatrix->getRowMap()->isSameAs(*tCrsMatrix->getRangeMap()));
+    TEUCHOS_ASSERT(tCrsMatrix->getRowMap()->isSameAs(*tRowSumVec->getMap()));
+
+    size_t numMyRows = tCrsMatrix->getNodeNumRows();
+    
+    Teuchos::ArrayView<const LocalOrdinal> indices;
+    Teuchos::ArrayView<const Scalar> values;
+
+    for (size_t row=0; row < numMyRows; ++row) {
+      Scalar sum = Scalar(0.0);
+      tCrsMatrix->getLocalRowView(row,indices,values);
+
+      for (int col = 0; col < values.size(); ++col)
+	sum += std::abs(values[col]);
+      
+      if (rowStat == RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM) {
+	if (sum < Teuchos::ScalarTraits<Scalar>::sfmin()) {
+	  TEUCHOS_TEST_FOR_EXCEPTION(sum == Teuchos::ScalarTraits<Scalar>::zero(), std::runtime_error,
+				     "Error - Thyra::TpetraLinearOp::getRowStatImpl() - Inverse row sum "
+				     << "requested for a matrix where one of the rows has a zero row sum!");
+	
+	  sum = Scalar(1.0) / Teuchos::ScalarTraits<Scalar>::sfmin();
+	}
+	else 
+	  sum = Scalar(1.0) / sum;
+      }
+      
+      tRowSumVec->replaceLocalValue(row,sum);
+    }
+
+  }
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+			       "Error - Thyra::TpetraLinearOp::getRowStatImpl() - Colum sum support not implemented!");
+  }
 }
 
 

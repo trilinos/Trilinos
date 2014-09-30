@@ -38,6 +38,7 @@
  *	main()
  *	print_input()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+#include <iostream>
 #include <stddef.h>                     // for size_t
 #include <stdio.h>                      // for printf, NULL, fprintf, etc
 #include <stdlib.h>                     // for free, exit, malloc
@@ -114,6 +115,8 @@ int internal_main(int argc, char *argv[], INT /* dummy */);
 
 int main (int argc, char *argv[])
 {
+  std::cerr << "Beginning nem_slice execution." << std::endl;
+  
   double start_time = get_time();
 
   /* Initialize to just reporting the error */
@@ -142,6 +145,7 @@ int main (int argc, char *argv[])
     int cpu_ws = 0;
     int io_ws  = 0;
     float vers = 00.0;
+    std::cerr << "Input Mesh File = '" << mesh_file_name << "'" << std::endl;
     int exoid=ex_open(mesh_file_name, EX_READ, &cpu_ws, &io_ws, &vers);
     if (exoid < 0) {
       char ctemp[1024];
@@ -159,10 +163,11 @@ int main (int argc, char *argv[])
 
   int status;
   if (int64db || int64com) {
-    printf("Using 64-bit integer mode for decomposition...\n");
+    std::cerr << "Using 64-bit integer mode for decomposition...\n";
     status = internal_main(argc, argv, int64_t(0));
   }
   else {
+    std::cerr << "Using 32-bit integer mode for decomposition...\n";
     status = internal_main(argc, argv, int(0));
   }
 
@@ -171,7 +176,7 @@ int main (int argc, char *argv[])
 
   /* Get ending time */
   double end_time = get_time();
-  printf("The entire load balance took %fs\n", end_time-start_time);
+  std::cerr << "The entire load balance took " << end_time-start_time << " seconds.\n";
   add_to_log(argv[0], end_time-start_time);
   return status;
 }

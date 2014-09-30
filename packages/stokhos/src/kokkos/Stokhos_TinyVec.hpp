@@ -53,6 +53,258 @@ extern "C" {
 
 namespace Stokhos {
 
+#if defined(__INTEL_COMPILER) && ! defined( __CUDA_ARCH__)
+
+template <typename ValueType, int N, bool UseIntrinsics, bool Mask = false >
+class TinyVec {
+public:
+
+  static const int Num = N;
+
+  TinyVec() {}
+
+  TinyVec(const ValueType a[]) {
+    load(a);
+  }
+
+  template <typename OrdinalType>
+  TinyVec(const ValueType a[], const OrdinalType idx[]) {
+    gather(a,idx);
+  }
+
+  TinyVec(const ValueType a) {
+    load(a);
+  }
+
+  TinyVec(const TinyVec& tv) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = tv.v[i];
+  }
+
+  TinyVec& operator=(const TinyVec& tv) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = tv.v[i];
+    return *this;
+  }
+
+  void load(const ValueType a[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = a[i];
+  }
+
+  void load(const ValueType a) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = a;
+  }
+
+  void aligned_load(const ValueType a[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = a[i];
+  }
+
+  template <typename OrdinalType>
+  void gather(const ValueType a[], const OrdinalType idx[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = a[idx[i]];
+  }
+
+  void scatter(ValueType a[]) const {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      a[i] = v[i];
+  }
+
+  void aligned_scatter(ValueType a[]) const {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      a[i] = v[i];
+  }
+
+  void zero() {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = ValueType(0.0);
+  }
+
+  void plus_equal(const TinyVec& t) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] += t.v[i];
+  }
+
+  void times_equal(const TinyVec& t) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] *= t.v[i];
+  }
+
+  // *this = *this + t1 * t2
+  void multiply_add(const TinyVec& t1, const TinyVec& t2) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] += t1.v[i]*t2.v[i];
+  }
+
+  ValueType sum() const {
+    ValueType s(0.0);
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      s += v[i];
+    return s;
+  }
+
+private:
+   ValueType v[Num] __attribute__((aligned(64)));
+};
+
+template <typename ValueType, int N, bool UseIntrinsics >
+class TinyVec<ValueType,N,UseIntrinsics,true> {
+public:
+
+  static const int Num = N;
+
+  TinyVec(int size) { sz = size; }
+
+  TinyVec(const ValueType a[], int size) {
+    sz = size;
+    load(a);
+  }
+
+  template <typename OrdinalType>
+  TinyVec(const ValueType a[], const OrdinalType idx[], int size) {
+    sz = size;
+    gather(a,idx);
+  }
+
+  TinyVec(const ValueType a, int size) {
+    sz = size;
+    load(a);
+  }
+
+  TinyVec(const TinyVec& tv) {
+    sz = tv.sz;
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = tv.v[i];
+  }
+
+  TinyVec& operator=(const TinyVec& tv) {
+    sz = tv.sz;
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = tv.v[i];
+    return *this;
+  }
+
+  void load(const ValueType a[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = a[i];
+  }
+
+  void load(const ValueType a) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = a;
+  }
+
+  void aligned_load(const ValueType a[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = a[i];
+  }
+
+  template <typename OrdinalType>
+  void gather(const ValueType a[], const OrdinalType idx[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = a[idx[i]];
+  }
+
+  void scatter(ValueType a[]) const {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      a[i] = v[i];
+  }
+
+  void aligned_scatter(ValueType a[]) const {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      a[i] = v[i];
+  }
+
+  void zero() {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = ValueType(0.0);
+  }
+
+  void plus_equal(const TinyVec& t) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] += t.v[i];
+  }
+
+  void times_equal(const TinyVec& t) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] *= t.v[i];
+  }
+
+  // *this = *this + t1 * t2
+  void multiply_add(const TinyVec& t1, const TinyVec& t2) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] += t1.v[i]*t2.v[i];
+  }
+
+  ValueType sum() const {
+    ValueType s(0.0);
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      s += v[i];
+    return s;
+  }
+
+private:
+  ValueType v[Num] __attribute__((aligned(64)));
+  int sz;
+};
+
+#else
+
 template <typename ValueType, int N, bool UseIntrinsics, bool Mask = false >
 class TinyVec {
 public:
@@ -248,6 +500,8 @@ private:
   ValueType v[Num];
   int sz;
 };
+
+#endif
 
 #if defined(HAVE_STOKHOS_INTRINSICS) && !defined( __CUDACC__ )
 
@@ -649,7 +903,7 @@ private:
 };
 #endif
 
-#ifdef __MIC__
+#if defined( __MIC__ )
 template <>
 class TinyVec<double,8,true,false> {
 public:
@@ -992,11 +1246,13 @@ public:
     // to the low 256 bits (DCBA -> BADC where 128 bit lanes are read right to
     // left).  Then load the vectors into v1 and v2.
     // logather_pd only uses the low 256 bits in the index vector.
+    // Note:  permute4f128 overwrites its argument, so we need to load v1 first
     __m512i v1idx = _mm512_load_epi32(idx);
-    __m512i v2idx = _mm512_permute4f128_epi32(v1idx, _MM_PERM_BADC);
     v1 = _mm512_i32logather_pd(v1idx, a, 8);
+
+    v1idx = _mm512_permute4f128_epi32(v1idx, _MM_PERM_BADC);
     v2 = _mm512_setzero_pd();
-    v2 = _mm512_mask_i32logather_pd(v2, mask, v2idx, a, 8);
+    v2 = _mm512_mask_i32logather_pd(v2, mask, v1idx, a, 8);
   }
 
   void scatter(ValueType a[]) const {

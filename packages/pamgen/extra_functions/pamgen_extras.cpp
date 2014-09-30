@@ -1,6 +1,6 @@
 #include "Pamgen_config.h"
-#include "../mesh_spec_lt/im_exodusII_l.h"
-#include "../mesh_spec_lt/im_ne_nemesisI_l.h"
+#include "../mesh_spec_lt/pamgen_im_exodusII_l.h"
+#include "../mesh_spec_lt/pamgen_im_ne_nemesisI_l.h"
 #include "pamgen_extras.h"
 #include <vector>
 #include <set>

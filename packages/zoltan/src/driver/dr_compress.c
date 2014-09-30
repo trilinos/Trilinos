@@ -166,11 +166,7 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
 }
 
 
-#ifdef _MSC_VER
-SSIZE_T ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file)
-#else
 ssize_t ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file)
-#endif
 {
   int toread = 0;
   int nbrdone = 0;

@@ -28,7 +28,7 @@ if (NOT MUELU_VALGRIND_TESTING)
     TRIBITS_ADD_TEST_DIRECTORIES(helmholtz)
   ENDIF()
 ELSE()
-  MESSAGE("Skipping EasyParameterListInterpreter and Helmholtz due to valgrind testing.")
+  MESSAGE(STATUS "Skipping EasyParameterListInterpreter and Helmholtz due to valgrind testing.")
 ENDIF()
 
 #TRIBITS_ADD_TEST_DIRECTORIES(mhdvanka)

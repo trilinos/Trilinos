@@ -299,11 +299,8 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ADVANCED_SET(TPL_FIND_SHARED_LIBS ON CACHE BOOL
     "If ON, then the TPL system will find shared libs if the exist, otherwise will only find static libs." )
 
-  IF ("${CMAKE_VERSION}" VERSION_GREATER "2.8.4")
-    #MESSAGE("This is CMake 2.8.5!")
-    ADVANCED_SET(${PROJECT_NAME}_LINK_SEARCH_START_STATIC OFF CACHE BOOL
-      "If on, then the property LINK_SEARCH_START_STATIC will be added to all executables." )
-  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_LINK_SEARCH_START_STATIC OFF CACHE BOOL
+    "If on, then the property LINK_SEARCH_START_STATIC will be added to all executables." )
 
   ADVANCED_SET(${PROJECT_NAME}_LIBRARY_NAME_PREFIX ""
     CACHE STRING
@@ -616,10 +613,6 @@ MACRO(TRIBITS_SETUP_INSTALLATION_PATHS)
   #
 
   SET(TRIBITS_USE_GNUINSTALLDIRS TRUE)
-
-  IF (CMAKE_VERSION VERSION_LESS "2.8.5")
-    SET(TRIBITS_USE_GNUINSTALLDIRS FALSE)
-  ENDIF()
 
   IF (NOT ${PROJECT_NAME}_USE_GNUINSTALLDIRS)
     # For backward compatibility and unit testing

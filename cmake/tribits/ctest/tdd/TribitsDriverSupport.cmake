@@ -44,6 +44,9 @@ INCLUDE(SetDefaultAndFromEnv)
 # Set if the inner CMake installs are performed or not
 SET_DEFAULT_AND_FROM_ENV(TDD_FORCE_INNER_CMAKE_INSTALL 1)
 
+# Set if the inner CMake installs are performed or not
+SET_DEFAULT_AND_FROM_ENV(TRIBITS_TDD_USE_SYSTEM_CTEST 0)
+
 # Get this value outside of any functions so it will be the path to
 # *this* file and not the path to the file calling any of these
 # functions.
@@ -232,7 +235,11 @@ endfunction()
 #
 function(TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS)
 
-  IF (TDD_FORCE_INNER_CMAKE_INSTALL STREQUAL 1) 
+  IF (TRIBITS_TDD_USE_SYSTEM_CTEST STREQUAL "1")
+
+    MESSAGE(STATUS "Skipping CMake install tests because TRIBITS_TDD_USE_SYSTEM_CTEST==1")
+
+  ELSEIF (TDD_FORCE_INNER_CMAKE_INSTALL STREQUAL "1") 
 
     get_property(types GLOBAL PROPERTY TD_CMAKE_INSTALLER_TYPES)
   

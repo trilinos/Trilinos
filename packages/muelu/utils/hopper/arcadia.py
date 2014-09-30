@@ -31,7 +31,7 @@ def controller():
     p.add_option('-r', '--run',        dest="action", action="store_const", const='run')
 
     # env arguments
-    p.add_option('-e', '--exec',       dest="binary",       default="MueLu_ScalingTestParamList.exe")   # executable
+    p.add_option('-e', '--exec',       dest="binary",       default="MueLu_Driver.exe")                 # executable
     p.add_option('-o', '--output',     dest="output",       default="screen")                           # output files for analysis
     p.add_option('-p', '--petra',      dest="petra",        default="both")                             # petra mode
     p.add_option('-N', '--nnodes',     dest="nnodes",       default="")                                 # custom node numbers
@@ -39,7 +39,8 @@ def controller():
     p.add_option('-t', '--template',   dest="template",     default="sched.template")                   # template file for all runs
     p.add_option('-l', '--labels',     dest="ltmodule",     default="")                                 # labels and timelines
     p.add_option(      '--cpn',        dest="cpn",          default=CPN, type='int')                    # cores per node
-    p.add_option('-u', '--unified',    dest="unified",      action="store_true", default=True)          # by default, try to use unified
+    # FIXME (29 Sep 2014): unified interface is buggy, disabling
+    p.add_option('-u', '--unified',    dest="unified",      action="store_true", default=False)         # by default, try to use unified
     p.add_option('-d', '--default',    dest="unified",      action="store_false")                       #   but sometimes we want to use
                                                                                                         #   the default one, particularly
                                                                                                         #   when we get segfaults and such
@@ -54,6 +55,8 @@ def controller():
     options, arguments = p.parse_args()
 
     unified = options.unified
+    if unified == True:
+        raise RuntimeError("Unified interface is buggy, and must be disabled")
 
     if   options.petra == 'epetra': petra = 1
     elif options.petra == 'tpetra': petra = 2

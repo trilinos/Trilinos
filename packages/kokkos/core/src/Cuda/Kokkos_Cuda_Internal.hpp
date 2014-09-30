@@ -118,7 +118,6 @@ int cuda_get_opt_block_size(const typename DriverType::functor_type & f) {
 #else
   bool Large = ( CudaTraits::ConstantMemoryUseThreshold < sizeof(DriverType) );
 
-  int minGridSize;
   int blockSize=16;
   int numBlocks;
   int sharedmem;

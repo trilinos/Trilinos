@@ -17,27 +17,23 @@ TRIBITS_ADD_LIBRARY(
 	fastqlib
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
-	DEPLIBS supes suplib exodus_for plt
 )
 
 TRIBITS_ADD_EXECUTABLE(fastq_x11 NOEXEPREFIX NOEXESUFFIX
 				LINKER_LANGUAGE Fortran
 			        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fastq.f
-			        DEPLIBS fastqlib svdi_cgi_x11 
 			        COMM serial mpi)
 install_executable(fastq_x11)
 
 TRIBITS_ADD_EXECUTABLE(fastq_xcps NOEXEPREFIX NOEXESUFFIX
 				LINKER_LANGUAGE Fortran
 			        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fastq.f
-			        DEPLIBS fastqlib vdx11cps vdicps_dual 
 			        COMM serial mpi)
 install_executable(fastq_xcps)
 
 TRIBITS_ADD_EXECUTABLE(fastq_cps NOEXEPREFIX NOEXESUFFIX
 				LINKER_LANGUAGE Fortran
 			        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fastq.f
-			        DEPLIBS fastqlib svdi_cgi_cps
 			        COMM serial mpi)
 install_executable(fastq_cps)
 

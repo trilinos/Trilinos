@@ -202,10 +202,10 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
     dim=(xcoord!=0) + (ycoord!=0) + (zcoord!=0);
 
     /* Sanity Checks */
-    if(dim == 0 || ((!xcoord && (ycoord || zcoord)) || (xcoord && !ycoord && zcoord))){
-      std::cerr<<"Error: Coordinates not defined and no nullspace is provided.  One of these are *necessary* for the EdgeMatrixFreePreconditioner (found "<<dim<<" coordinates).\n";
-      exit(-1);
-    }/*end if*/
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      dim == 0 || ((!xcoord && (ycoord || zcoord)) || (xcoord && !ycoord && zcoord)),
+      "Error: Coordinates not defined and no nullspace is provided.  One of these are *necessary* for the EdgeMatrixFreePreconditioner (found "<<dim<<" coordinates).\n"
+      );
 
     /* Normalize */
     double d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), xcoord, xcoord, ml_comm_));

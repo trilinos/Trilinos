@@ -1,0 +1,14 @@
+#!/bin/csh
+./pamgen_test_driver.exe -f dbrick2d.txt -r 1 -n 3 -d 2 >! temp_file_51
+
+diff temp_file_51 run_test_script_51.res >! difresults
+
+set tmp = ( `wc -c difresults` )
+if ( $tmp[1] > 0 ) then
+head difresults
+exit 1
+else
+echo Test passed!
+endif
+exit 0
+

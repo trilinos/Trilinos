@@ -138,7 +138,8 @@ typedef long default_gno_t;
     \li \c gno (global number) is the integral data type used by Zoltan2 to represent global indices and global counts.
  */  
 
-template <typename scalar, typename gid, typename lno, typename gno>
+template <typename scalar=double, typename gid=int,
+          typename lno=int, typename gno=int>
 class BasicUserTypes{
 };
 

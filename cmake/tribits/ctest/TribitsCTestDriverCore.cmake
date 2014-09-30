@@ -49,7 +49,7 @@ MESSAGE("*******************************")
 MESSAGE("")
 
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11 FATAL_ERROR)
 
 #
 # Get the basic variables that define the project and the build
@@ -609,7 +609,7 @@ ENDMACRO()
 
 
 #
-# B) Exclude disabled packages from from ${PROJECT_NAME}_EXCLUDE_PACKAGES
+# Exclude disabled packages from ${PROJECT_NAME}_EXCLUDE_PACKAGES
 #
 # NOTE: These disables need to dominate over the above enables so this code is
 # after all the enable code has run
@@ -621,6 +621,40 @@ MACRO(DISABLE_EXCLUDED_PACKAGES)
     SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} OFF)
     SET(${TRIBITS_PACKAGE}_EXPLICITY_EXCLUDED TRUE)
   ENDFOREACH()
+ENDMACRO()
+
+
+#
+# Remove packages that are only implicitly enabled but don't have tests
+# enabled.
+#
+#
+MACRO(SELECT_FINAL_SET_OF_PACKAGES_TO_PROCESS)
+
+  SET(${PROJECT_NAME}_PACKAGES_TO_PROCESS)
+
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
+
+    SET(PROCESS_THE_PACKAGE FALSE)
+
+    IF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}
+      AND ${TRIBITS_PACKAGE}_ENABLE_TESTS
+      )
+      SET(PROCESS_THE_PACKAGE  TRUE)
+    ELSEIF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}
+      AND CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES
+      )
+      SET(PROCESS_THE_PACKAGE  TRUE)
+    ENDIF()
+    
+    IF(PROCESS_THE_PACKAGE)
+      APPEND_SET(${PROJECT_NAME}_PACKAGES_TO_PROCESS  ${TRIBITS_PACKAGE})
+    ENDIF()
+
+  ENDFOREACH()
+
+  SET(${PROJECT_NAME}_PACKAGES ${${PROJECT_NAME}_PACKAGES_TO_PROCESS})
+
 ENDMACRO()
 
 
@@ -698,10 +732,8 @@ MACRO(CTEST_SUBMIT)
   # failed submits:
   #
   SET(retry_args "")
-  IF("${CMAKE_VERSION}" VERSION_GREATER "2.8.2")
-    SET(retry_args RETRY_COUNT 25 RETRY_DELAY 120)
-    MESSAGE("info: using retry_args='${retry_args}' for _ctest_submit call")
-  ENDIF()
+  SET(retry_args RETRY_COUNT 25 RETRY_DELAY 120)
+  MESSAGE("info: using retry_args='${retry_args}' for _ctest_submit call")
 
   # Call the original CTEST_SUBMIT and pay attention to its RETURN_VALUE:
   #
@@ -1019,7 +1051,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Set as part of CI testing in order to only enable modified packages
   SET_DEFAULT_AND_FROM_ENV( CTEST_ENABLE_MODIFIED_PACKAGES_ONLY OFF )
 
-  # Set if implicitly enabled packages should be explicitly handled
+  # Set if implicitly enabled packages should be explicitly processes
   IF (CTEST_ENABLE_MODIFIED_PACKAGES_ONLY AND NOT CTEST_START_WITH_EMPTY_BINARY_DIRECTORY)
     SET( CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES_DEFAULT FALSE )
   ELSE()
@@ -1311,14 +1343,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET(DO_PROCESS_MPI_ENABLES FALSE) # Should not be needed but CMake is messing up
   TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES() # Sets ${PROJECT_NAME}_NUM_ENABLED_PACKAGES
 
-  MESSAGE(
-    "\n***"
-    "\n*** Disabling packages to be excluded from being implicitly enabled on"
-    " a repository basis ..."
-    "\n***"
-    )
-
-  TRIBITS_APPLY_REPOSITORY_NO_IMPLICIT_PACKAGE_ENABLE_DISABLE()  
+  SELECT_FINAL_SET_OF_PACKAGES_TO_PROCESS()
 
   TRIBITS_PRINT_ENABLED_PACKAGE_LIST(
     "\nFinal set of packages to be explicitly processed by CTest/CDash" ON FALSE)
@@ -1434,285 +1459,270 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       " tests='${${TRIBITS_PACKAGE}_ENABLE_TESTS}'")
     MESSAGE("")
 
-    IF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} AND
-     NOT ${TRIBITS_PACKAGE}_ENABLE_TESTS AND
-     NOT CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES
-     )
-
-      MESSAGE("Not enabling implicitly enabled package ${TRIBITS_PACKAGE} on request!")
-
-    ELSEIF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
-
-      SET_PROPERTY(GLOBAL PROPERTY SubProject ${TRIBITS_PACKAGE})
-      SET_PROPERTY(GLOBAL PROPERTY Label ${TRIBITS_PACKAGE})
-   
-      #
-      # A) Configure the package and its dependent packages
-      #
-    
-      MESSAGE("Configuring TRIBITS_PACKAGE='${TRIBITS_PACKAGE}'")
-    
-      # Create CONFIGURE_OPTIONS for this TRIBITS_PACKAGE
-      SET( CONFIGURE_OPTIONS
+    SET_PROPERTY(GLOBAL PROPERTY SubProject ${TRIBITS_PACKAGE})
+    SET_PROPERTY(GLOBAL PROPERTY Label ${TRIBITS_PACKAGE})
+ 
+    #
+    # A) Configure the package and its dependent packages
+    #
+  
+    MESSAGE("Configuring TRIBITS_PACKAGE='${TRIBITS_PACKAGE}'")
+  
+    # Create CONFIGURE_OPTIONS for this TRIBITS_PACKAGE
+    SET( CONFIGURE_OPTIONS
 	"-D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}"
-        "-DCTEST_USE_LAUNCHERS:BOOL=${CTEST_USE_LAUNCHERS}"
-        "-D${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON"
-        "-D${PROJECT_NAME}_ENABLE_TESTS:BOOL=${${TRIBITS_PACKAGE}_ENABLE_TESTS}"
-        "-D${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS:STRING=${${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS}"
-        "-D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON"
-        "-D${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES}"
+      "-DCTEST_USE_LAUNCHERS:BOOL=${CTEST_USE_LAUNCHERS}"
+      "-D${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON"
+      "-D${PROJECT_NAME}_ENABLE_TESTS:BOOL=${${TRIBITS_PACKAGE}_ENABLE_TESTS}"
+      "-D${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS:STRING=${${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS}"
+      "-D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON"
+      "-D${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES}"
+      )
+    IF (NOT CTEST_GENERATE_DEPS_XML_OUTPUT_FILE)
+      LIST(APPEND CONFIGURE_OPTIONS
+      "-D${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE:FILEPATH=")
+    ENDIF()
+    IF (${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE)
+      LIST(APPEND CONFIGURE_OPTIONS
+        "-D${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON")
+    ENDIF()
+    # ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE is deprecated!
+    IF (${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE)
+      LIST(APPEND CONFIGURE_OPTIONS
+        "-D${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON")
+    ENDIF()
+    IF (NOT MPI_EXEC_MAX_NUMPROCS STREQUAL 0)
+      LIST(APPEND CONFIGURE_OPTIONS
+        "-DMPI_EXEC_MAX_NUMPROCS:STRING=${MPI_EXEC_MAX_NUMPROCS}")
+    ENDIF()
+    IF (CTEST_DO_COVERAGE_TESTING)
+      LIST(APPEND CONFIGURE_OPTIONS
+        "-D${PROJECT_NAME}_ENABLE_COVERAGE_TESTING:BOOL=ON")
+    ENDIF()
+    LIST(APPEND CONFIGURE_OPTIONS
+      "-D${PROJECT_NAME}_EXTRAREPOS_FILE:STRING=${${PROJECT_NAME}_EXTRAREPOS_FILE}")
+    LIST(APPEND CONFIGURE_OPTIONS # See TRIBITS_SETUP_PACKAGES
+      "-D${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON")
+    LIST(APPEND CONFIGURE_OPTIONS
+      "-D${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=${${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE}")
+    IF (DEFINED ${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
+      LIST(APPEND CONFIGURE_OPTIONS
+        "-D${PROJECT_NAME}_ENABLE_${${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE}:BOOL=")
+      SET(${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
+    ENDIF()
+    FOREACH(FAILED_PACKAGE ${${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES})
+      LIST(APPEND CONFIGURE_OPTIONS
+        "-D${PROJECT_NAME}_ENABLE_${FAILED_PACKAGE}:BOOL=OFF")
+    ENDFOREACH()
+    SET(CONFIGURE_OPTIONS ${CONFIGURE_OPTIONS}
+      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS} ${EXTRA_CONFIGURE_OPTIONS})
+    LIST(APPEND CONFIGURE_OPTIONS # Package enable must be at the very end to override other stuff!
+       "-D${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}:BOOL=ON" )
+    MESSAGE("\nCONFIGURE_OPTIONS = '${CONFIGURE_OPTIONS}'")
+
+    # Remember this package so we can set its enable to "" next time
+    SET(${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE "${TRIBITS_PACKAGE}")
+
+    #
+    # B) Configure the package and its dependent packages
+    #
+
+    IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
+  
+      CTEST_CONFIGURE(
+        BUILD "${CTEST_BINARY_DIRECTORY}"
+        OPTIONS "${CONFIGURE_OPTIONS}" # New option!
+        RETURN_VALUE CONFIGURE_RETURN_VAL
         )
-      IF (NOT CTEST_GENERATE_DEPS_XML_OUTPUT_FILE)
-        LIST(APPEND CONFIGURE_OPTIONS
-        "-D${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE:FILEPATH=")
-      ENDIF()
-      IF (${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE)
-        LIST(APPEND CONFIGURE_OPTIONS
-          "-D${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON")
-      ENDIF()
-      # ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE is deprecated!
-      IF (${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE)
-        LIST(APPEND CONFIGURE_OPTIONS
-          "-D${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON")
-      ENDIF()
-      IF (NOT MPI_EXEC_MAX_NUMPROCS STREQUAL 0)
-        LIST(APPEND CONFIGURE_OPTIONS
-          "-DMPI_EXEC_MAX_NUMPROCS:STRING=${MPI_EXEC_MAX_NUMPROCS}")
-      ENDIF()
-      IF (CTEST_DO_COVERAGE_TESTING)
-        LIST(APPEND CONFIGURE_OPTIONS
-          "-D${PROJECT_NAME}_ENABLE_COVERAGE_TESTING:BOOL=ON")
-      ENDIF()
-      LIST(APPEND CONFIGURE_OPTIONS
-        "-D${PROJECT_NAME}_EXTRAREPOS_FILE:STRING=${${PROJECT_NAME}_EXTRAREPOS_FILE}")
-      LIST(APPEND CONFIGURE_OPTIONS # See TRIBITS_SETUP_PACKAGES
-        "-D${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON")
-      LIST(APPEND CONFIGURE_OPTIONS
-        "-D${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=${${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE}")
-      IF (DEFINED ${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
-        LIST(APPEND CONFIGURE_OPTIONS
-          "-D${PROJECT_NAME}_ENABLE_${${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE}:BOOL=")
-        SET(${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
-      ENDIF()
-      FOREACH(FAILED_PACKAGE ${${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES})
-        LIST(APPEND CONFIGURE_OPTIONS
-          "-D${PROJECT_NAME}_ENABLE_${FAILED_PACKAGE}:BOOL=OFF")
+  
+      MESSAGE("Generating the file CMakeCache.clean.txt ...")
+      FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
+      MESSAGE("CMAKE_CACHE_CLEAN_FILE = ${CMAKE_CACHE_CLEAN_FILE}")
+      SET(CMAKE_CACHE_CLEAN_FILE_STR "")
+      FOREACH(line ${CACHE_CONTENTS})
+        # write lines that do not start with # or //
+        IF(NOT "${line}" MATCHES "^(#|//)")
+          APPEND_STRING_VAR(CMAKE_CACHE_CLEAN_FILE_STR "${line}\n")
+        ENDIF()
       ENDFOREACH()
-      SET(CONFIGURE_OPTIONS ${CONFIGURE_OPTIONS}
-        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS} ${EXTRA_CONFIGURE_OPTIONS})
-      LIST(APPEND CONFIGURE_OPTIONS # Package enable must be at the very end to override other stuff!
-         "-D${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}:BOOL=ON" )
-      MESSAGE("\nCONFIGURE_OPTIONS = '${CONFIGURE_OPTIONS}'")
-
-      # Remember this package so we can set its enable to "" next time
-      SET(${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE "${TRIBITS_PACKAGE}")
-
-      #
-      # B) Configure the package and its dependent packages
-      #
-
-      IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-    
-        CTEST_CONFIGURE(
-          BUILD "${CTEST_BINARY_DIRECTORY}"
-          OPTIONS "${CONFIGURE_OPTIONS}" # New option!
-          RETURN_VALUE CONFIGURE_RETURN_VAL
-          )
-    
-        MESSAGE("Generating the file CMakeCache.clean.txt ...")
-        FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
-        MESSAGE("CMAKE_CACHE_CLEAN_FILE = ${CMAKE_CACHE_CLEAN_FILE}")
-        SET(CMAKE_CACHE_CLEAN_FILE_STR "")
-        FOREACH(line ${CACHE_CONTENTS})
-          # write lines that do not start with # or //
-          IF(NOT "${line}" MATCHES "^(#|//)")
-            APPEND_STRING_VAR(CMAKE_CACHE_CLEAN_FILE_STR "${line}\n")
-          ENDIF()
-        ENDFOREACH()
-        FILE(WRITE "${CMAKE_CACHE_CLEAN_FILE}" ${CMAKE_CACHE_CLEAN_FILE_STR})
-    
-        # If the configure failed, add the package to the list
-        # of failed packages
-        IF (NOT "${CONFIGURE_RETURN_VAL}" EQUAL "0")
-          MESSAGE("${TRIBITS_PACKAGE} FAILED to configure")
-          LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
-          LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
-        ELSE()
-          # load target properties and test keywords
-          CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
-          # Overridde from this file!
-          INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
-        ENDIF()
-
-        IF (EXISTS ${CMAKE_CACHE_CLEAN_FILE})
-          SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE};${CMAKE_CACHE_CLEAN_FILE}")
-        ELSE()
-          SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE}")
-        ENDIF()
-        PRINT_VAR(CTEST_NOTES_FILES)
-      
-        # Submit configure results and the notes to the dashboard 
-        IF (CTEST_DO_SUBMIT)
-          MESSAGE("\nSubmitting configure and notes ...")
-          CTEST_SUBMIT( PARTS configure notes )
-        ENDIF()
-
+      FILE(WRITE "${CMAKE_CACHE_CLEAN_FILE}" ${CMAKE_CACHE_CLEAN_FILE_STR})
+  
+      # If the configure failed, add the package to the list
+      # of failed packages
+      IF (NOT "${CONFIGURE_RETURN_VAL}" EQUAL "0")
+        MESSAGE("${TRIBITS_PACKAGE} FAILED to configure")
+        LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
+        LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
+      ELSE()
+        # load target properties and test keywords
+        CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
+        # Overridde from this file!
+        INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
       ENDIF()
-      
-      #
-      # C) If configure passed then try the build.  Otherwise, move on to
-      # to the next package.
-      #
+
+      IF (EXISTS ${CMAKE_CACHE_CLEAN_FILE})
+        SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE};${CMAKE_CACHE_CLEAN_FILE}")
+      ELSE()
+        SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE}")
+      ENDIF()
+      PRINT_VAR(CTEST_NOTES_FILES)
     
-      IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0" AND
-        NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING AND
-        NOT CTEST_CONFIGURATION_UNIT_TESTING
+      # Submit configure results and the notes to the dashboard 
+      IF (CTEST_DO_SUBMIT)
+        MESSAGE("\nSubmitting configure and notes ...")
+        CTEST_SUBMIT( PARTS configure notes )
+      ENDIF()
+
+    ENDIF()
+    
+    #
+    # C) If configure passed then try the build.  Otherwise, move on to
+    # to the next package.
+    #
+  
+    IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0" AND
+      NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING AND
+      NOT CTEST_CONFIGURATION_UNIT_TESTING
+      )
+  
+      # Start by trying to build just the libraries for the current package
+  
+      SET( CTEST_BUILD_TARGET ${TRIBITS_PACKAGE}_libs )
+      MESSAGE("\nBuilding target: '${CTEST_BUILD_TARGET}' ...\n")
+      CTEST_BUILD(
+        BUILD "${CTEST_BINARY_DIRECTORY}"
+        RETURN_VALUE  BUILD_LIBS_RETURN_VAL
+        NUMBER_ERRORS  BUILD_LIBS_NUM_ERRORS
+        APPEND
         )
-    
-        # Start by trying to build just the libraries for the current package
-    
-        SET( CTEST_BUILD_TARGET ${TRIBITS_PACKAGE}_libs )
-        MESSAGE("\nBuilding target: '${CTEST_BUILD_TARGET}' ...\n")
+      MESSAGE("Build return: RETURN_VALUE=${BUILD_LIBS_RETURN_VAL},"
+        " NUMBER_ERRORS=${BUILD_LIBS_NUM_ERRORS}")
+  
+      # Determine if the build failed or not.
+  
+      SET(BUILD_LIBS_SUCCESS FALSE)
+      IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" AND
+        "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
+        )
+        SET(BUILD_LIBS_SUCCESS TRUE)
+      ENDIF()
+      # Above: Since make -i is used BUILD_LIBS_RETURN_VAL might be 0, but
+      # if there are errors the build should fail, so both
+      # BUILD_LIBS_RETURN_VAL and BUILD_LIBS_NUM_ERRORS should be 0 for a
+      # good build and for the all target to be built.
+  
+      # Submit the library build results to the dashboard
+  
+      IF (CTEST_DO_SUBMIT)
+        CTEST_SUBMIT( PARTS build )
+      ENDIF()
+  
+      # If the build of the libraries passed, then go on the build
+      # the tests/examples and run them.
+
+      IF (BUILD_LIBS_SUCCESS)
+
+        SET(BUILD_OR_TEST_FAILED FALSE)
+  
+        # Build the ALL target, but append the results to the last build.xml
+        SET(CTEST_BUILD_TARGET)
+        MESSAGE("\nBuild ALL target for '${TRIBITS_PACKAGE}' ...\n")
         CTEST_BUILD(
           BUILD "${CTEST_BINARY_DIRECTORY}"
-          RETURN_VALUE  BUILD_LIBS_RETURN_VAL
-          NUMBER_ERRORS  BUILD_LIBS_NUM_ERRORS
+          RETURN_VALUE  BUILD_ALL_RETURN_VAL
+          NUMBER_ERRORS  BUILD_ALL_NUM_ERRORS
           APPEND
           )
-        MESSAGE("Build return: RETURN_VALUE=${BUILD_LIBS_RETURN_VAL},"
-          " NUMBER_ERRORS=${BUILD_LIBS_NUM_ERRORS}")
-    
-        # Determine if the build failed or not.
-    
-        SET(BUILD_LIBS_SUCCESS FALSE)
-        IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" AND
-          "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
+        MESSAGE("Build all: BUILD_ALL_NUM_ERRORS='${BUILD_ALL_NUM_ERRORS}',"
+          "BUILD_ALL_RETURN_VAL='${BUILD_ALL_RETURN_VAL}'" )
+  
+        IF (NOT "${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" OR
+          NOT "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
           )
-          SET(BUILD_LIBS_SUCCESS TRUE)
+          SET(BUILD_OR_TEST_FAILED TRUE)
         ENDIF()
-        # Above: Since make -i is used BUILD_LIBS_RETURN_VAL might be 0, but
-        # if there are errors the build should fail, so both
-        # BUILD_LIBS_RETURN_VAL and BUILD_LIBS_NUM_ERRORS should be 0 for a
-        # good build and for the all target to be built.
-    
-        # Submit the library build results to the dashboard
-    
+
+        # Submit the build for all target
         IF (CTEST_DO_SUBMIT)
           CTEST_SUBMIT( PARTS build )
         ENDIF()
-    
-        # If the build of the libraries passed, then go on the build
-        # the tests/examples and run them.
-
-        IF (BUILD_LIBS_SUCCESS)
   
-          SET(BUILD_OR_TEST_FAILED FALSE)
-    
-          # Build the ALL target, but append the results to the last build.xml
-          SET(CTEST_BUILD_TARGET)
-          MESSAGE("\nBuild ALL target for '${TRIBITS_PACKAGE}' ...\n")
-          CTEST_BUILD(
+        IF (CTEST_DO_TEST)
+          # Remove the LastTestsFailed log so we can detect if there are any
+          # failed tests.
+          SET(TEST_TMP_DIR "${CTEST_BINARY_DIRECTORY}/Testing/Temporary")
+          FILE(GLOB logfiles "${TEST_TMP_DIR}/LastTestsFailed*.log")
+          FOREACH(logfile ${logfiles})
+            FILE(REMOVE "${logfile}")
+          ENDFOREACH()
+          # Run the tests that match the ${TRIBITS_PACKAGE} name 
+          MESSAGE("\nRunning test for package '${TRIBITS_PACKAGE}' ...\n")
+          CTEST_TEST(
             BUILD "${CTEST_BINARY_DIRECTORY}"
-            RETURN_VALUE  BUILD_ALL_RETURN_VAL
-            NUMBER_ERRORS  BUILD_ALL_NUM_ERRORS
-            APPEND
+            PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
+            INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
+            #NUMBER_FAILED  TEST_NUM_FAILED
             )
-          MESSAGE("Build all: BUILD_ALL_NUM_ERRORS='${BUILD_ALL_NUM_ERRORS}',"
-            "BUILD_ALL_RETURN_VAL='${BUILD_ALL_RETURN_VAL}'" )
-    
-          IF (NOT "${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" OR
-            NOT "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
-            )
+          # See if a 'LastTestsFailed*.log' file exists to determine if there
+          # are failed tests
+          FILE(GLOB FAILED_TEST_LOG_FILE "${TEST_TMP_DIR}/LastTestsFailed*.log")
+          PRINT_VAR(FAILED_TEST_LOG_FILE)
+          IF (FAILED_TEST_LOG_FILE)
             SET(BUILD_OR_TEST_FAILED TRUE)
           ENDIF()
-  
-          # Submit the build for all target
+          # 2009/12/05: ToDo: We need to add an argument to CTEST_TEST(...) 
+          # called something like 'NUMBER_FAILED numFailedTests' to allow us
+          # to detect when the tests have filed.
+          #IF (TEST_NUM_FAILED GREATER 0)
+          #  SET(BUILD_OR_TEST_FAILED TRUE)
+          #ENDIF()
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT( PARTS build )
+            CTEST_SUBMIT( PARTS Test )
           ENDIF()
-    
-          IF (CTEST_DO_TEST)
-            # Remove the LastTestsFailed log so we can detect if there are any
-            # failed tests.
-            SET(TEST_TMP_DIR "${CTEST_BINARY_DIRECTORY}/Testing/Temporary")
-            FILE(GLOB logfiles "${TEST_TMP_DIR}/LastTestsFailed*.log")
-            FOREACH(logfile ${logfiles})
-              FILE(REMOVE "${logfile}")
-            ENDFOREACH()
-            # Run the tests that match the ${TRIBITS_PACKAGE} name 
-            MESSAGE("\nRunning test for package '${TRIBITS_PACKAGE}' ...\n")
-            CTEST_TEST(
-              BUILD "${CTEST_BINARY_DIRECTORY}"
-              PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
-              INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
-              #NUMBER_FAILED  TEST_NUM_FAILED
-              )
-            # See if a 'LastTestsFailed*.log' file exists to determine if there
-            # are failed tests
-            FILE(GLOB FAILED_TEST_LOG_FILE "${TEST_TMP_DIR}/LastTestsFailed*.log")
-            PRINT_VAR(FAILED_TEST_LOG_FILE)
-            IF (FAILED_TEST_LOG_FILE)
-              SET(BUILD_OR_TEST_FAILED TRUE)
-            ENDIF()
-            # 2009/12/05: ToDo: We need to add an argument to CTEST_TEST(...) 
-            # called something like 'NUMBER_FAILED numFailedTests' to allow us
-            # to detect when the tests have filed.
-            #IF (TEST_NUM_FAILED GREATER 0)
-            #  SET(BUILD_OR_TEST_FAILED TRUE)
-            #ENDIF()
-            IF (CTEST_DO_SUBMIT)
-              CTEST_SUBMIT( PARTS Test )
-            ENDIF()
-          ENDIF()
-  
-          IF (CTEST_DO_COVERAGE_TESTING)
-            MESSAGE("\nRunning coverage for package '${TRIBITS_PACKAGE}' ...\n")
-            CTEST_COVERAGE(
-              BUILD "${CTEST_BINARY_DIRECTORY}"
-              LABELS ${TRIBITS_PACKAGE} ${TRIBITS_PACKAGE}Libs ${TRIBITS_PACKAGE}Exes
-              )
-            IF (CTEST_DO_SUBMIT)
-              CTEST_SUBMIT( PARTS Coverage )
-            ENDIF()
-          ENDIF() 
-   
-          IF (CTEST_DO_MEMORY_TESTING)
-            MESSAGE("\nRunning memory testing for package '${TRIBITS_PACKAGE}' ...\n")
-            PRINT_VAR(CTEST_MEMORYCHECK_COMMAND)
-	    PRINT_VAR(CTEST_MEMORYCHECK_COMMAND_OPTIONS)
-            PRINT_VAR(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE)
-            CTEST_MEMCHECK(
-              BUILD "${CTEST_BINARY_DIRECTORY}"
-              PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
-              INCLUDE_LABEL "^${TRIBITS_PACKAGE}$")
-            IF (CTEST_DO_SUBMIT)
-              CTEST_SUBMIT( PARTS MemCheck )
-            ENDIF()
-          ENDIF()
-  
-          IF (BUILD_OR_TEST_FAILED)
-            LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
-          ENDIF()
-    
-        ELSE()
-    
-          MESSAGE("FAILED library build for package '${TRIBITS_PACKAGE}'")
-          LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
-          LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
-    
         ENDIF()
-    
+
+        IF (CTEST_DO_COVERAGE_TESTING)
+          MESSAGE("\nRunning coverage for package '${TRIBITS_PACKAGE}' ...\n")
+          CTEST_COVERAGE(
+            BUILD "${CTEST_BINARY_DIRECTORY}"
+            LABELS ${TRIBITS_PACKAGE} ${TRIBITS_PACKAGE}Libs ${TRIBITS_PACKAGE}Exes
+            )
+          IF (CTEST_DO_SUBMIT)
+            CTEST_SUBMIT( PARTS Coverage )
+          ENDIF()
+        ENDIF() 
+ 
+        IF (CTEST_DO_MEMORY_TESTING)
+          MESSAGE("\nRunning memory testing for package '${TRIBITS_PACKAGE}' ...\n")
+          PRINT_VAR(CTEST_MEMORYCHECK_COMMAND)
+	    PRINT_VAR(CTEST_MEMORYCHECK_COMMAND_OPTIONS)
+          PRINT_VAR(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE)
+          CTEST_MEMCHECK(
+            BUILD "${CTEST_BINARY_DIRECTORY}"
+            PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
+            INCLUDE_LABEL "^${TRIBITS_PACKAGE}$")
+          IF (CTEST_DO_SUBMIT)
+            CTEST_SUBMIT( PARTS MemCheck )
+          ENDIF()
+        ENDIF()
+
+        IF (BUILD_OR_TEST_FAILED)
+          LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
+        ENDIF()
+  
+      ELSE()
+  
+        MESSAGE("FAILED library build for package '${TRIBITS_PACKAGE}'")
+        LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
+        LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
+  
       ENDIF()
   
-      IF (CTEST_DO_SUBMIT)
-        MESSAGE("\nSubmit the update file that will trigger the notification email ...\n")
-        CTEST_SUBMIT( PARTS update )
-      ENDIF()
+    ENDIF()
 
-    ELSE()
-
-      MESSAGE("Package ${TRIBITS_PACKAGE} is disabled, skipping configure, build, test ...")
-
+    IF (CTEST_DO_SUBMIT)
+      MESSAGE("\nSubmit the update file that will trigger the notification email ...\n")
+      CTEST_SUBMIT( PARTS update )
     ENDIF()
 
     MATH(EXPR PACKAGE_IDX "${PACKAGE_IDX}+1")

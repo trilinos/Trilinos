@@ -89,14 +89,16 @@ public:
   struct Attribute {
 
     Kokkos::Impl::cuda_texture_object_type m_tex_obj ;
+    int                                    m_tex_flag ;
 
-    Attribute() : m_tex_obj(0) {}
+    Attribute() : m_tex_obj(0), m_tex_flag(0) {}
 
     ~Attribute()
       {
-        if ( m_tex_obj ) {
+        if ( m_tex_flag ) {
           cudaDestroyTextureObject( m_tex_obj );
-          m_tex_obj = 0 ;
+          m_tex_obj  = 0 ;
+          m_tex_flag = 0 ;
         }
       }
 
@@ -107,28 +109,28 @@ public:
     {
       cudaError cuda_status = cudaSuccess ;
 
-      if ( 0 == m_tex_obj ) {
+      if ( 0 == m_tex_flag ) {
  
         cuda_status = cudaDeviceSynchronize();
 
-        struct cudaResourceDesc resDesc ;
-        struct cudaTextureDesc  texDesc ;
+        if ( cudaSuccess == cuda_status ) {
+          struct cudaResourceDesc resDesc ;
+          struct cudaTextureDesc  texDesc ;
 
-        memset( & resDesc , 0 , sizeof(resDesc) );
-        memset( & texDesc , 0 , sizeof(texDesc) );
+          memset( & resDesc , 0 , sizeof(resDesc) );
+          memset( & texDesc , 0 , sizeof(texDesc) );
 
-        resDesc.resType                = cudaResourceTypeLinear ;
-        resDesc.res.linear.desc        = arg_desc ;
-        resDesc.res.linear.sizeInBytes = arg_byte_size ;
-        resDesc.res.linear.devPtr      = arg_alloc_ptr ;
+          resDesc.resType                = cudaResourceTypeLinear ;
+          resDesc.res.linear.desc        = arg_desc ;
+          resDesc.res.linear.sizeInBytes = arg_byte_size ;
+          resDesc.res.linear.devPtr      = arg_alloc_ptr ;
 
-        cuda_status = cudaCreateTextureObject( & m_tex_obj , & resDesc, & texDesc, NULL);
+          cuda_status = cudaCreateTextureObject( & m_tex_obj , & resDesc, & texDesc, NULL);
+        }
 
         if ( cudaSuccess == cuda_status ) { cuda_status = cudaDeviceSynchronize(); }
 
-        if ( ( cudaSuccess == cuda_status ) && ( 0 == m_tex_obj ) ) {
-          throw std::logic_error(std::string("FAILED assumption that Cuda texture objects are non-zero"));
-        }
+        if ( cudaSuccess == cuda_status ) { m_tex_flag = 1 ; }
       }
 
       return cuda_status ;

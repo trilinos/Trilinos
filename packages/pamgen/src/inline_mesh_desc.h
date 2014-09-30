@@ -98,6 +98,11 @@ public:
  
   long long Check_Block_BC_Sets();
   long long Check_Blocks();
+
+  void brokerDecompositionStrategy(){
+    /* if any blocks are suppressed set the decomposition to sequential */
+    if(!suppressed_blocks.empty()) inline_decomposition_type = SEQUENTIAL;
+  };
  
   virtual long long Rename_Block_BC_Sets(){return 0;};
 
@@ -236,8 +241,29 @@ virtual  void Calc_Parallel_Info(
 
   double transition_radius;
 
+  long long total_unsupressed_elements;
+  std::vector < long long > sequential_decomp_limits;
+
+
   std::list < PG_BC_Specification * > nodeset_list; 
   std::list < PG_BC_Specification * > sideset_list; 
+
+  std::set < long long > suppressed_blocks;
+
+  void addSuppressedBlock(int ablock){
+  suppressed_blocks.insert(ablock);
+  }
+
+  bool isBlockSuppressed(int ablock){
+    if(suppressed_blocks.find(ablock) != suppressed_blocks.end())return true;
+    return false;
+  }
+
+  bool isElementSuppressed(long long elno){
+    long long bid = getBlockFromElementNumber(elno);
+    bool is_sup = isBlockSuppressed(bid+1);
+    return is_sup;
+  }
 
   PG_BC_Specification * getSideset_by_id(long long test_id){
     std::list < PG_BC_Specification * > :: iterator it;
@@ -311,12 +337,18 @@ virtual  void Calc_Parallel_Info(
 			  std::map <long long, long long> & global_element_map);
   virtual long long Element_Proc(long long);
   virtual long long Decompose(std::set <long long> & global_el_ids);
+  long long DecomposeSequential(std::set <long long> & global_el_ids);
   long long get_block_index(long long ordinal_val, long long count, long long * cumulative);
+
+  virtual long long getBlockFromElementNumber(long long the_element);
+
   
   unsigned my_rank;
   unsigned num_processors;
 
   std::vector < std::pair < long long, Topo_Loc > > *  sideset_vectors;
+  long long  *  sideset_global_count;
+  long long  *  nodeset_global_count;
   std::vector < long long > *  nodeset_vectors;
   static Inline_Mesh_Desc * im_static_storage;
   static Inline_Mesh_Desc * first_im_static_storage;

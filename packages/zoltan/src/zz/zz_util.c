@@ -331,10 +331,6 @@ MPI_Datatype Zoltan_mpi_gno_type()
   #endif
 #endif
 
-#ifdef _MSC_VER
-#define ssize_t SSIZE_T
-#endif
-
   if (sizeof(ssize_t) == size_short){
     zz_mpi_gno_type = MPI_SHORT;
     zz_mpi_gno_name=zz_mpi_datatype_names[0];
@@ -545,7 +541,7 @@ char buf[2048],label[64],value[64],units[64];
     *result = c;
   }
 }
-#endif
+#endif  // !WIN32
 
 int Zoltan_get_global_id_type(char **name)
 {

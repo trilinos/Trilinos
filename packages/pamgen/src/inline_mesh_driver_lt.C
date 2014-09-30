@@ -65,14 +65,6 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
     long long error_code = imd->Decompose(global_el_ids);
     if(error_code){return NULL;}
   }
-//   for(std::list <long long >::iterator lit = global_el_ids.begin();lit != global_el_ids.end();lit++){
-//     std::cout << " geid " << *lit << std::endl;
-//   }
- 
-//   global_el_ids.erase(0);
-//   global_el_ids.erase(1);
-//   global_el_ids.erase(2);
-//   global_el_ids.erase(3);
 
   // reads in all the serial component of the mesh specification
   // including the maps
@@ -259,11 +251,7 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   nsct = 0;
   for(setit = imd->sideset_list.begin(); setit != imd->sideset_list.end();setit++,nsct ++){
     ss_ids_global[nsct]=(*setit)->id;
-    ss_cnts_global[nsct] = 0;
-    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
-      PAMGEN_NEVADA::LoopLimits ll = (*setit)->the_locs[ict].limits;
-      ss_cnts_global[nsct] += ll.total;
-    }
+    ss_cnts_global[nsct] = imd->sideset_global_count[nsct];
     ss_df_cnts_global[nsct] = 0;
   }
   //Declare containers for par info Calculation

@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <gtest/gtest.h>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -149,6 +182,11 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
         const std::string generatedMeshSpec = "generated:2x2x2|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
+        stk::mesh::MetaData &stkMeshMetaData = *stkMesh.getMetaData();
+        stk::mesh::Part &line2_part = stkMeshMetaData.get_topology_root_part(stk::topology::LINE_2);
+        stk::mesh::Part &quad4_part = stkMeshMetaData.get_topology_root_part(stk::topology::QUAD_4);
+        stk::mesh::Part &hex8_part = stkMeshMetaData.get_topology_root_part(stk::topology::HEX_8);
+
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
         MPI_Barrier(communicator);
@@ -174,6 +212,11 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
         stkMeshBulkData.modification_begin();
         stkMeshBulkData.generate_new_entities(requests, requested_entities);
 
+        stk::mesh::PartVector element_topo_parts, face_topo_parts, edge_topo_parts, empty_parts;
+        edge_topo_parts.push_back(&line2_part);
+        face_topo_parts.push_back(&quad4_part);
+        element_topo_parts.push_back(&hex8_part);
+
         //each entity in requested_entities needs to be connected to at least one node
         //because stk-mesh requires that.
         size_t idx = requests[0];
@@ -181,7 +224,32 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
         for(size_t i=1; i<requests.size(); ++i) {
           for(size_t j=0; j<requests[i]; ++j) {
             stk::mesh::Entity entity = requested_entities[idx++];
-            stkMeshBulkData.declare_relation(entity, node, 0);
+            stk::topology entity_topo;
+            stk::mesh::EntityRank entity_rank = stkMeshBulkData.entity_rank(entity);
+            switch (entity_rank)
+            {
+            case stk::topology::EDGE_RANK:
+              stkMeshBulkData.change_entity_parts(entity, edge_topo_parts, empty_parts);
+              entity_topo = stk::topology::LINE_2;
+              break;
+            case stk::topology::FACE_RANK:
+              stkMeshBulkData.change_entity_parts(entity, face_topo_parts, empty_parts);
+              entity_topo = stk::topology::QUAD_4;
+              break;
+            case stk::topology::ELEMENT_RANK:
+              stkMeshBulkData.change_entity_parts(entity, element_topo_parts, empty_parts);
+              entity_topo = stk::topology::HEX_8;
+              break;
+            default:
+              break;
+            }
+            if (entity_rank != stk::topology::NODE_RANK)
+            {
+              for (unsigned ord = 0; ord < entity_topo.num_nodes(); ++ord)
+              {
+                stkMeshBulkData.declare_relation(entity, node, ord);
+              }
+            }
           }
         }
 
@@ -575,13 +643,11 @@ void testElementMove(int fromProc, int toProc, int myProc, int elementToMoveId, 
     stk::mesh::Entity elementToMove = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToMoveId);
 
     std::vector<std::pair<stk::mesh::Entity, int> > entityProcPairs;
-    stkMeshBulkData.modification_begin();
     if(myProc == fromProc)
     {
         entityProcPairs.push_back(std::make_pair(elementToMove, toProc));
     }
     stkMeshBulkData.change_entity_owner(entityProcPairs);
-    stkMeshBulkData.modification_end();
     //END_DOC_FOR_ELEMENT_MOVE
 }
 

@@ -65,7 +65,9 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   overlapType(OType_),
   ColumnToOverlapImporter(0),
   Comm(&comm),
-  NumGlobalNodes(numGlobalNodes)
+  NumGlobalNodes(numGlobalNodes),
+  flag(F_ONLY),
+  rhs(NULL)
 {
 
   // Commonly used variables

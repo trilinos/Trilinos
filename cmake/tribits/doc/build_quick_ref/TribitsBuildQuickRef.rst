@@ -36,6 +36,8 @@ project-specific build of this document.
 
 .. _Package Dependencies and Enable/Disable Logic: ../developers_guide/TribitsDevelopersGuide.html#package-dependencies-and-enable-disable-logic
 
+.. _TriBITS Dependency Handling Behaviors: ../developers_guide/TribitsDevelopersGuide.html#tribits-dependency-handling-behaviors
+
 
 Getting set up to use CMake
 ===========================
@@ -217,7 +219,7 @@ Selecting the list of packages to enable
 
 The <Project> project is broken up into a set of packages that can be enabled
 (or disbled).  For details and generic examples, see `Package Dependencies and
-Enable/Disable Logic`_.
+Enable/Disable Logic`_ and `TriBITS Dependency Handling Behaviors`_.
 
 See the following use cases:
 
@@ -302,12 +304,18 @@ Specific packages can be disabled with
 ``<Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=OFF``.  This will also disable all
 packages that depend on ``<TRIBITS_PACKAGE>``.
 
-All examples are enabled by default when setting
+All examples are also enabled by default when setting
 ``<Project>_ENABLE_TESTS:BOOL=ON``.
 
 By default, setting ``<Project>_ENABLE_ALL_PACKAGES=ON`` only enables primary
 tested (PT) code.  To have this also enable all secondary tested (ST) code,
 one must also set ``<Project>_ENABLE_SECONDARY_TESTED_CODE=ON``.
+
+NOTE: If the project is a "meta-project", then
+``<Project>_ENABLE_ALL_PACKAGES:BOOL=ON`` may not enable *all* the SE packages
+but only the project's primary meta-project packages.  See `Package
+Dependencies and Enable/Disable Logic`_ and `TriBITS Dependency Handling
+Behaviors`_ for details.
 
 Disable a package and all its dependencies
 ++++++++++++++++++++++++++++++++++++++++++

@@ -123,8 +123,8 @@
 
 // Pamgen includes
 #include "create_inline_mesh.h"
-#include "im_exodusII_l.h"
-#include "im_ne_nemesisI_l.h"
+#include "pamgen_im_exodusII_l.h"
+#include "pamgen_im_ne_nemesisI_l.h"
 #include "pamgen_extras.h"
 
 // AztecOO includes

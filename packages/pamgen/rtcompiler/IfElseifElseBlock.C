@@ -1,8 +1,8 @@
-#include "IfElseifElseBlockRTC.hh"
-#include "BlockRTC.hh"
-#include "ConditionalBlockRTC.hh"
-#include "NormalBlockRTC.hh"
-#include "commonRTC.hh"
+#include "RTC_IfElseifElseBlockRTC.hh"
+#include "RTC_BlockRTC.hh"
+#include "RTC_ConditionalBlockRTC.hh"
+#include "RTC_NormalBlockRTC.hh"
+#include "RTC_commonRTC.hh"
 
 #include <string>
 #include <list>
