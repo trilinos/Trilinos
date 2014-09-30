@@ -1,15 +1,15 @@
 KOKKOS_PATH = ../../..
 SRC = $(wildcard *.cpp)
-
+CXX11=yes
 ifeq ($(CUDA), yes)
 CC = nvcc
-CCFLAGS = -O3 -arch=sm_35 --std=c++11
+CCFLAGS = -O3 -arch=sm_35 
 LINK = g++
 LINKFLAGS = 
 EXE = $(SRC:.cpp=.cuda)
 else
 CC = icpc 
-CCFLAGS = -O3 --std=c++11
+CCFLAGS = -O3 
 LINK = icpc
 LINKFLAGS =  
 EXE = $(SRC:.cpp=.host)
