@@ -170,9 +170,10 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
+
       RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       fos->setOutputToRootOnly(0);
-      H.print(*fos,verbosity_);
+      H.describe(*fos, verbosity_);
 
       // When we reuse hierarchy, it is necessary that we don't
       // change the number of levels. We also cannot make requests

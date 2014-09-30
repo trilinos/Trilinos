@@ -340,7 +340,6 @@ namespace MueLu {
 
     //! Printing method
     // TODO: print only shows requested variables. check if we also list kept factories with ref counter=0?
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
     void print(std::ostream& out, const VerbLevel verbLevel = Default) const;
 
 #if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)

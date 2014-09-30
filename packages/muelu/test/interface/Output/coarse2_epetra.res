@@ -300,32 +300,30 @@ Level 5
  RepairMainDiagonal = 0   [default]
 
 
- --------------------------------------------------------------------------------
- ---                            Multigrid Summary                             ---
- --------------------------------------------------------------------------------
- Number of levels    = 6
- Operator complexity = 1.50
- Max Coarse Size     = 100
- Implicit Transpose  = false
+--------------------------------------------------------------------------------
+---                            Multigrid Summary                             ---
+--------------------------------------------------------------------------------
+Number of levels    = 6
+Operator complexity = 1.50
 
- matrix rows    nnz  nnz/row procs
- A 0    9999  29995     3.00  1
- A 1    3333   9997     3.00  1
- A 2    1111   3331     3.00  1
- A 3     371   1111     2.99  1
- A 4     124    370     2.98  1
- A 5      42    124     2.95  1
+matrix rows    nnz  nnz/row procs
+A 0    9999  29995     3.00  1
+A 1    3333   9997     3.00  1
+A 2    1111   3331     3.00  1
+A 3     371   1111     2.99  1
+A 4     124    370     2.98  1
+A 5      42    124     2.95  1
 
- Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
- Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
- Smoother (level 2) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 2) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
- Smoother (level 3) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 3) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
- Smoother (level 4) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 4) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
- Smoother (level 5) pre  : no smoother
- Smoother (level 5) post : no smoother
+Smoother (level 5) pre  : no smoother
+Smoother (level 5) post : no smoother
 

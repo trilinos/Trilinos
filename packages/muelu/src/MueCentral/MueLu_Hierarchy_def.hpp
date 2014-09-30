@@ -46,6 +46,7 @@
 #ifndef MUELU_HIERARCHY_DEF_HPP
 #define MUELU_HIERARCHY_DEF_HPP
 
+#include <algorithm>
 #include <sstream>
 
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -119,8 +120,20 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  LocalOrdinal Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetNumLevels() const {
+  int Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetNumLevels() const {
     return Levels_.size();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  int Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetGlobalNumLevels() const {
+    RCP<Matrix> A = Levels_[0]->template Get<RCP<Matrix> >("A");
+    RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+
+    int numLevels = GetNumLevels();
+    int numGlobalLevels;
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numLevels, Teuchos::ptr(&numGlobalLevels));
+
+    return numGlobalLevels;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -288,11 +301,19 @@ namespace MueLu {
 
     // Test if we reach the end of the hierarchy
     bool isOrigLastLevel = isLastLevel;
-    if (isLastLevel || Ac.is_null() || (Ac->getGlobalNumRows() <= maxCoarseSize_)) {
-      // This is definitely the last level, but reasons for it may be different:
-      //   - we have achieved numDesiredLevels
-      //   - we do not belong to the next subcommunicator
-      //   - the size of the coarse matrix is too small
+    if (isLastLevel) {
+      // Last level as we have achieved the max limit
+      isLastLevel = true;
+
+    } else if (Ac.is_null()) {
+      // Last level for this processor, as it does not belong to the next
+      // subcommunicator. Other processors may continue working on the
+      // hierarchy
+      isLastLevel = true;
+
+    } else if (Ac->getGlobalNumRows() <= maxCoarseSize_) {
+      // Last level as the size of the coarse matrix became too small
+      GetOStream(Runtime0) << "Max coarse size (<= " << maxCoarseSize_ << ") achieved, finishing" << std::endl;
       isLastLevel = true;
     }
 
@@ -424,24 +445,22 @@ namespace MueLu {
     // factories if you exit this function with an exception
     manager.Clean();
 
-    std::ostringstream ss;
-    print(ss, GetVerbLevel());
-    GetOStream(Statistics0) << ss.str();
+    describe(GetOStream(Statistics0), GetVerbLevel());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Clear(int startLevel) {
-    if (startLevel < GetNumberOfLevels())
+    if (startLevel < GetNumLevels())
       GetOStream(Runtime0) << "Clearing old data (if any)" << std::endl;
 
-    for (int iLevel = startLevel; iLevel < GetNumberOfLevels(); iLevel++)
+    for (int iLevel = startLevel; iLevel < GetNumLevels(); iLevel++)
       Levels_[iLevel]->Clear();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ExpertClear() {
     GetOStream(Runtime0) << "Clearing old data (expert)" << std::endl;
-    for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
+    for (int iLevel = 0; iLevel < GetNumLevels(); iLevel++)
       Levels_[iLevel]->ExpertClear();
   }
 
@@ -722,101 +741,109 @@ namespace MueLu {
   std::string Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
     std::ostringstream out;
     out << BaseClass::description();
-    out << "{numLevels = " << GetNumLevels() << "}";
+    out << "{#levels = " << GetGlobalNumLevels() << ", complexity = " << GetOperatorComplexity() << "}";
     return out.str();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
-    MUELU_DESCRIBE; //macro that defines out0
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
+    RCP<Matrix> A0 = Levels_[0]->template Get<RCP<Matrix> >("A");
+    RCP<const Teuchos::Comm<int> > comm = A0->getRowMap()->getComm();
 
-    std::ostringstream ss;
-    print(ss, verbLevel);
+    int numLevels = GetNumLevels();
+    int root = comm->getRank();
 
-    out0 << ss.str();
+#ifdef HAVE_MPI
+    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
 
-    Teuchos::ParameterList status;
-    status.set("number of levels", GetNumLevels());
-    status.set("complexity",       GetOperatorComplexity());
+    std::vector<int> numGlobalLevels(comm->getSize());
+    MPI_Allgather(&numLevels, 1, MPI_INT, &numGlobalLevels[0], 1, MPI_INT, rawComm);
+    root = std::max_element(numGlobalLevels.begin(), numGlobalLevels.end()) - numGlobalLevels.begin();
+#endif
 
-    return status;
+    std::string outstr;
+    if (comm->getRank() == root) {
+      std::vector<Xpetra::global_size_t> nnzPerLevel;
+      std::vector<Xpetra::global_size_t> rowsPerLevel;
+      std::vector<int> numProcsPerLevel;
+      for (int i = 0; i < numLevels; ++i) {
+        TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError,
+                                   "Matrix A is unavailable on level " << i);
+
+        RCP<Matrix> A = Levels_[i]->template Get<RCP<Matrix> >("A");
+        TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), Exceptions::RuntimeError,
+                                   "Matrix A on level " << i << " is null.");
+
+        Xpetra::global_size_t nnz = A->getGlobalNumEntries();
+        nnzPerLevel     .push_back(nnz);
+        rowsPerLevel    .push_back(A->getGlobalNumRows());
+        numProcsPerLevel.push_back(A->getRowMap()->getComm()->getSize());
+      }
+      double operatorComplexity = as<double>(std::accumulate(nnzPerLevel.begin(), nnzPerLevel.end(), 0)) / A0->getGlobalNumEntries();
+
+      std::ostringstream oss;
+      if (verbLevel & (Statistics0 | Test)) {
+        oss << "\n--------------------------------------------------------------------------------\n" <<
+                "---                            Multigrid Summary                             ---\n"
+                "--------------------------------------------------------------------------------" << std::endl;
+        oss << "Number of levels    = " << numLevels << std::endl;
+        oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
+            << operatorComplexity << std::endl;
+        oss << std::endl;
+
+        Xpetra::global_size_t tt = rowsPerLevel[0];
+        int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
+        tt = nnzPerLevel[0];
+        int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
+        tt = numProcsPerLevel[0];
+        int npspacer = 2;  while (tt != 0) { tt /= 10; npspacer++; }
+        oss  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::setw(npspacer)  << " procs" << std::endl;
+        for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
+          oss << "A " << i << "  "
+              << std::setw(rowspacer) << rowsPerLevel[i]
+              << std::setw(nnzspacer) << nnzPerLevel[i]
+              << std::setw(9) << std::setprecision(2) << std::setiosflags(std::ios::fixed)
+              << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i]
+              << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
+        }
+        oss << std::endl;
+        for (int i = 0; i < GetNumLevels(); ++i) {
+          RCP<SmootherBase> preSmoo, postSmoo;
+          if (Levels_[i]->IsAvailable("PreSmoother"))
+            preSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PreSmoother");
+          if (Levels_[i]->IsAvailable("PostSmoother"))
+            postSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PostSmoother");
+
+          if (preSmoo != null && preSmoo == postSmoo)
+            oss << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
+          else {
+            oss << "Smoother (level " << i << ") pre  : "
+                << (preSmoo != null ?  preSmoo->description() : "no smoother") << std::endl;
+            oss << "Smoother (level " << i << ") post : "
+                << (postSmoo != null ?  postSmoo->description() : "no smoother") << std::endl;
+          }
+
+          oss << std::endl;
+        }
+      }
+      outstr = oss.str();
+    }
+
+#ifdef HAVE_MPI
+    int strLength = outstr.size();
+    MPI_Bcast(&strLength, 1, MPI_INT, root, rawComm);
+    if (comm->getRank() != root)
+      outstr.resize(strLength+1);
+    MPI_Bcast(&outstr[0], strLength, MPI_CHAR, root, rawComm);
+#endif
+
+    out << outstr;
   }
 
   // NOTE: at some point this should be replaced by a friend operator <<
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(std::ostream& out, const VerbLevel verbLevel) const {
-    Xpetra::global_size_t totalNnz = 0;
-    std::vector<Xpetra::global_size_t> nnzPerLevel;
-    std::vector<Xpetra::global_size_t> rowsPerLevel;
-    std::vector<int> numProcsPerLevel;
-    for (int i = 0; i < GetNumLevels(); ++i) {
-      TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError, "Operator complexity cannot be calculated because A is unavailable on level " << i);
-
-      RCP<Matrix> A = Levels_[i]->template Get<RCP<Matrix> >("A");
-      if (A.is_null())
-        break;
-
-      Xpetra::global_size_t nnz = A->getGlobalNumEntries();
-      totalNnz += nnz;
-      nnzPerLevel.push_back(nnz);
-      rowsPerLevel.push_back(A->getGlobalNumRows());
-      numProcsPerLevel.push_back(A->getRowMap()->getComm()->getSize());
-    }
-    double operatorComplexity = Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
-
-    if (verbLevel & (Statistics0 | Test)) {
-      // save ostream flags
-      std::ios::fmtflags flags(out.flags());
-
-      out << "\n--------------------------------------------------------------------------------\n" <<
-               "---                            Multigrid Summary                             ---\n"
-               "--------------------------------------------------------------------------------" << std::endl;
-      out << "Number of levels    = " << GetNumLevels() << std::endl;
-      out << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-                                      << operatorComplexity << std::endl;
-      out << "Max Coarse Size     = " << maxCoarseSize_ << std::endl;
-      out << "Implicit Transpose  = " << (implicitTranspose_ ? "true" : "false") << std::endl;
-      out << std::endl;
-
-      Xpetra::global_size_t tt = rowsPerLevel[0];
-      int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
-      tt = nnzPerLevel[0];
-      int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
-      tt = numProcsPerLevel[0];
-      int npspacer = 2; while (tt != 0) { tt /= 10; npspacer++; }
-      out  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::setw(npspacer)  << " procs" << std::endl;
-      for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
-        out << "A " << i << "  "
-             << std::setw(rowspacer) << rowsPerLevel[i]
-             << std::setw(nnzspacer) << nnzPerLevel[i]
-             << std::setw(9) << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-             << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i]
-             << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
-      }
-      out << std::endl;
-      for (int i = 0; i < GetNumLevels(); ++i) {
-        RCP<SmootherBase> preSmoo, postSmoo;
-        if (Levels_[i]->IsAvailable("PreSmoother"))
-          preSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PreSmoother");
-        if (Levels_[i]->IsAvailable("PostSmoother"))
-          postSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PostSmoother");
-
-        if (preSmoo != null && preSmoo == postSmoo)
-          out << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
-        else {
-          out << "Smoother (level " << i << ") pre  : "
-              << (preSmoo != null ?  preSmoo->description() : "no smoother") << std::endl;
-          out << "Smoother (level " << i << ") post : "
-              << (postSmoo != null ?  postSmoo->description() : "no smoother") << std::endl;
-        }
-
-        out << std::endl;
-
-        // restore ostream flags
-        out.flags(flags);
-      }
-    }
-
     Teuchos::OSTab tab2(out);
     for (int i = 0; i < GetNumLevels(); ++i)
       Levels_[i]->print(out, verbLevel);

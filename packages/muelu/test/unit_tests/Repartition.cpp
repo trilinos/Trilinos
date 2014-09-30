@@ -844,7 +844,7 @@ namespace MueLuTests {
     H->GetLevel(0)->Set("A", A);
     H->GetLevel(0)->Set("Coordinates", coordinates);
     mueLuFactory->SetupHierarchy(*H);
-    ParameterList stats1 = H->print();
+    double cplx1 = H->GetOperatorComplexity();
 
     //build a map that is a "randomly" permuted version of the correct
     //coordinate map.  This map will be used to build the "bad" coordinates.
@@ -872,10 +872,8 @@ namespace MueLuTests {
     H->GetLevel(0)->Set("A", A);
     H->GetLevel(0)->Set("Coordinates", badCoordinates);
     mueLuFactory->SetupHierarchy(*H);
-    ParameterList stats2 = H->print();
+    double cplx2 = H->GetOperatorComplexity();
 
-    double cplx1 = stats1.get<double>("complexity");
-    double cplx2 = stats2.get<double>("complexity");
     TEST_EQUALITY(cplx1, cplx2);
 
   } // CoordinateMap

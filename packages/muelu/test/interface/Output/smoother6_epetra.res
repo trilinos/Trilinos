@@ -120,23 +120,21 @@ Level 2
   [empty list]
 
 
- --------------------------------------------------------------------------------
- ---                            Multigrid Summary                             ---
- --------------------------------------------------------------------------------
- Number of levels    = 3
- Operator complexity = 1.44
- Max Coarse Size     = 2000
- Implicit Transpose  = false
+--------------------------------------------------------------------------------
+---                            Multigrid Summary                             ---
+--------------------------------------------------------------------------------
+Number of levels    = 3
+Operator complexity = 1.44
 
- matrix rows    nnz  nnz/row procs
- A 0    9999  29995     3.00  1
- A 1    3333   9997     3.00  1
- A 2    1111   3331     3.00  1
+matrix rows    nnz  nnz/row procs
+A 0    9999  29995     3.00  1
+A 1    3333   9997     3.00  1
+A 2    1111   3331     3.00  1
 
- Smoother (level 0) both : MueLu::IfpackSmoother{type = ILUT}
+Smoother (level 0) both : MueLu::IfpackSmoother{type = ILUT}
 
- Smoother (level 1) both : MueLu::IfpackSmoother{type = ILUT}
+Smoother (level 1) both : MueLu::IfpackSmoother{type = ILUT}
 
- Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
- Smoother (level 2) post : no smoother
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 2) post : no smoother
 
