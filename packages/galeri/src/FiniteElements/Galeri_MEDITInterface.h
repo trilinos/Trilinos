@@ -123,14 +123,14 @@ public:
       switch (data.NumDimensions()) {
       case 2:
         for (int i = 0 ; i < SingleProcCoord.MyLength() ; ++i) {
-          medit << std::setw(12) << setiosflags(std::ios::showpoint) 
+          medit << std::setw(12) << std::setiosflags(std::ios::showpoint)
             << std::setw(12) << SingleProcCoord[0][i] << " "
             << std::setw(12) << SingleProcCoord[1][i] << " 0.0 1" << std::endl;
         }
         break;
       case 3:
         for (int i = 0 ; i < SingleProcCoord.MyLength() ; ++i) {
-          medit << std::setw(12) << setiosflags(std::ios::showpoint) 
+          medit << std::setw(12) << std::setiosflags(std::ios::showpoint)
             << std::setw(12) << SingleProcCoord[0][i] << " "
             << std::setw(12) << SingleProcCoord[1][i] << " "
             << std::setw(12) << SingleProcCoord[2][i] << " 1" << std::endl;
@@ -176,7 +176,7 @@ public:
           medit << Comm().MyPID() << endl;
         }
 
-        if (ProcID == Comm().NumProc() - 1) 
+        if (ProcID == Comm().NumProc() - 1)
           medit << endl << "End" << endl;
 
         medit.close();
@@ -192,14 +192,14 @@ public:
 
     if (Comm().MyPID() == 0) {
 
-      string BBName = BaseName + ".bb";    
+      string BBName = BaseName + ".bb";
       std::ofstream bb;
 
         bb.open(BBName.c_str());
         bb << "3 1 " << data.NumGlobalVertices() << " 2" << endl;
 
       for (int i = 0 ; i < SingleProcField.MyLength() ; ++i)
-        bb << setiosflags(std::ios::showpoint) << SingleProcField[0][i] << endl;
+        bb << std::setiosflags(std::ios::showpoint) << SingleProcField[0][i] << endl;
 
       bb.close();
 
