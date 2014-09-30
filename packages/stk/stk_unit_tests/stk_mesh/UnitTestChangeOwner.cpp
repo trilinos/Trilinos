@@ -102,7 +102,7 @@ TEST( UnitTestOfBulkData, testChangeEntityOwnerShared_2EltsChown1ChownNoNodes )
 }
 
 
-TEST( UnitTestOfBulkData, testChangeEntityOwnerShared_2EltsChown1ChownUncommonNodes)
+TEST( UnitTestOfBulkData, testChangeEntityOwnerShared_2EltsChown1ChownUncommonNodesFlip)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   const int p_rank = stk::parallel_machine_rank( pm );
@@ -117,12 +117,12 @@ TEST( UnitTestOfBulkData, testChangeEntityOwnerShared_2EltsChown1ChownUncommonNo
   stk::mesh::BulkData bulk( meta, pm);
 
   //   id/owner_proc 
-  //
-  //   1/0---4/0---5/0      1/0---4/0---5/1
-  //    |     |     |        |     |     |
-  //    | 1/0 | 2/0 |   =>   | 1/0 | 2/1 |
-  //    |     |     |        |     |     |
-  //   2/0---3/0---6/0      2/0---3/0---6/1
+  //                                           then flip
+  //   1/0---4/0---5/0      1/0---4/0---5/1        1/1---4/0---5/0
+  //    |     |     |        |     |     |          |     |     |
+  //    | 1/0 | 2/0 |   =>   | 1/0 | 2/1 |     =>   | 1/1 | 2/0 |
+  //    |     |     |        |     |     |          |     |     |
+  //   2/0---3/0---6/0      2/0---3/0---6/1        2/1---3/0---6/0
 
   stk::mesh::EntityId element_ids [2] = {1, 2};
   stk::mesh::EntityId elem_node_ids [][4] = {{1, 2, 3, 4}, {4, 3, 6, 5}};
@@ -135,8 +135,8 @@ TEST( UnitTestOfBulkData, testChangeEntityOwnerShared_2EltsChown1ChownUncommonNo
   std::vector<stk::mesh::Entity> elems;
   bulk.modification_begin();
   if (p_rank == 0) {
-    elems.push_back(stk::mesh::declare_element(bulk, elem_part ,element_ids[0], elem_node_ids[0] ) );
-    elems.push_back(stk::mesh::declare_element(bulk, elem_part ,element_ids[1], elem_node_ids[1] ) );
+    elems.push_back(stk::mesh::declare_element(bulk, elem_part, element_ids[0], elem_node_ids[0] ) );
+    elems.push_back(stk::mesh::declare_element(bulk, elem_part, element_ids[1], elem_node_ids[1] ) );
   }
   bulk.modification_end();
 
@@ -150,21 +150,74 @@ TEST( UnitTestOfBulkData, testChangeEntityOwnerShared_2EltsChown1ChownUncommonNo
 
   stk::mesh::Entity node3 = bulk.get_entity(stk::topology::NODE_RANK, 3);
   stk::mesh::Entity node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
+  stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, 1);
+  stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEM_RANK, 2);
+
   EXPECT_TRUE(bulk.is_valid(node3));
   EXPECT_TRUE(bulk.is_valid(node5));
 
   if (p_rank == 0) {
+    EXPECT_TRUE(bulk.bucket_ptr(elem1) && bulk.bucket_ptr(elem1)->owned());
     EXPECT_TRUE(bulk.bucket_ptr(node3) && bulk.bucket_ptr(node3)->owned());
     EXPECT_TRUE(bulk.bucket_ptr(node3) && bulk.bucket_ptr(node3)->shared());
     EXPECT_TRUE(bulk.bucket_ptr(node5) && !bulk.bucket_ptr(node5)->owned());
     EXPECT_TRUE(bulk.bucket_ptr(node5) && !bulk.bucket_ptr(node5)->shared());
-  }
-  else {
+  } else {
+    EXPECT_TRUE(bulk.bucket_ptr(elem2) && bulk.bucket_ptr(elem2)->owned());
     EXPECT_TRUE(bulk.bucket_ptr(node3) && !bulk.bucket_ptr(node3)->owned());
     EXPECT_TRUE(bulk.bucket_ptr(node3) && bulk.bucket_ptr(node3)->shared());
     EXPECT_TRUE(bulk.bucket_ptr(node5) && bulk.bucket_ptr(node5)->owned());
     EXPECT_TRUE(bulk.bucket_ptr(node5) && !bulk.bucket_ptr(node5)->shared());
   }
+
+  //okay now flip
+  //    1/0---4/0---5/1          1/1---4/0---5/0
+  //     |     |     |            |     |     |
+  //     | 1/0 | 2/1 |       =>   | 1/1 | 2/0 |
+  //     |     |     |            |     |     |
+  //    2/0---3/0---6/1          2/1---3/0---6/0
+  stk::mesh::EntityProcVec entity_procs_flip;
+  if (p_rank == 0) {
+    entity_procs_flip.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK, 1), 1));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 1), 1));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 2), 1));
+  } else {
+    entity_procs_flip.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK, 2), 0));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 5), 0));
+    entity_procs_flip.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 6), 0));
+  }
+  bulk.change_entity_owner(entity_procs_flip);
+
+  //now do checks for flip
+  elem1 = bulk.get_entity(stk::topology::ELEM_RANK, 1);
+  elem2 = bulk.get_entity(stk::topology::ELEM_RANK, 2);
+  stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+  node3 = bulk.get_entity(stk::topology::NODE_RANK, 3);
+  node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
+  EXPECT_TRUE(bulk.is_valid(elem1));
+  EXPECT_TRUE(bulk.is_valid(elem2));
+  EXPECT_TRUE(bulk.is_valid(node1));
+  EXPECT_TRUE(bulk.is_valid(node3));
+  EXPECT_TRUE(bulk.is_valid(node5));
+  if (p_rank == 0) {
+      EXPECT_TRUE(bulk.bucket_ptr(elem2) && bulk.bucket_ptr(elem2)->owned());
+      EXPECT_TRUE(bulk.bucket_ptr(elem1) && !bulk.bucket_ptr(elem1)->owned());
+      EXPECT_TRUE(bulk.bucket_ptr(node3) && bulk.bucket_ptr(node3)->owned());
+      EXPECT_TRUE(bulk.bucket_ptr(node3) && bulk.bucket_ptr(node3)->shared());
+      EXPECT_TRUE(bulk.bucket_ptr(node5) && bulk.bucket_ptr(node5)->owned());
+      EXPECT_TRUE(bulk.bucket_ptr(node5) && !bulk.bucket_ptr(node5)->shared());
+      EXPECT_TRUE(bulk.bucket_ptr(node1) && !bulk.bucket_ptr(node1)->owned());
+      EXPECT_TRUE(bulk.bucket_ptr(node1) && !bulk.bucket_ptr(node1)->shared());
+    } else {
+      EXPECT_TRUE(bulk.bucket_ptr(elem2) && !bulk.bucket_ptr(elem2)->owned());
+      EXPECT_TRUE(bulk.bucket_ptr(elem1) && bulk.bucket_ptr(elem1)->owned());
+      EXPECT_TRUE(bulk.bucket_ptr(node3) && !bulk.bucket_ptr(node3)->owned());
+      EXPECT_TRUE(bulk.bucket_ptr(node3) && bulk.bucket_ptr(node3)->shared());
+      EXPECT_TRUE(bulk.bucket_ptr(node5) && !bulk.bucket_ptr(node5)->owned());
+      EXPECT_TRUE(bulk.bucket_ptr(node5) && !bulk.bucket_ptr(node5)->shared());
+      EXPECT_TRUE(bulk.bucket_ptr(node1) && bulk.bucket_ptr(node1)->owned());
+      EXPECT_TRUE(bulk.bucket_ptr(node1) && !bulk.bucket_ptr(node1)->shared());
+    }
 }
 
 
