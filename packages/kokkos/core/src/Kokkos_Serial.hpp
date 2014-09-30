@@ -339,11 +339,17 @@ public:
     op();
   }
 
+  /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
+  template< class Operation , typename ValueType>
+  KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op, ValueType& bcast) const {
+    op();
+  }
+
   /** \brief  Intra-thread vector parallel for. Executes op(iType i) for each i=0..N-1.
    *
    * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
    * This functionality requires C++11 support.*/
-  template< typename iType, class Operation, typename ValueType >
+  template< typename iType, class Operation >
   KOKKOS_INLINE_FUNCTION void vector_par_for(const iType n, const Operation & op) const {
     #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
     #pragma ivdep
@@ -737,11 +743,27 @@ public:
     }
 };
 
-template< unsigned int VectorLength, class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Serial , void > >
+template< unsigned int VectorLength , class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength , Arg0 , Arg1 , Kokkos::Serial > >
 {
 private:
-  typedef Kokkos::TeamVectorPolicy< VectorLength,Kokkos::Serial , void > Policy ;
+
+  typedef Kokkos::TeamVectorPolicy< VectorLength , Arg0 , Arg1 , Kokkos::Serial > Policy ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( TagType() , member ); }
+
 public:
 
   ParallelFor( const FunctorType & functor
@@ -752,7 +774,9 @@ public:
       Kokkos::Serial::scratch_memory_resize( 0 , shared_size );
 
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
-        functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) );
+        ParallelFor::template driver< typename Policy::work_tag >
+          ( functor , typename Policy::member_type(ileague,policy.league_size(),shared_size) );
+        // functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) );
       }
     }
 };

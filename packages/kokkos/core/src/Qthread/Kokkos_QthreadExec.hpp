@@ -539,18 +539,25 @@ public:
   friend class Impl::QthreadTeamPolicyMember ;
 };
 
-template< unsigned int VectorLength, class WorkArgTag >
-class TeamVectorPolicy< VectorLength, Kokkos::Qthread , WorkArgTag > {
+template< unsigned VectorLength
+        , class Arg0
+        , class Arg1 >
+class TeamVectorPolicy<VectorLength, Arg0, Arg1, Kokkos::Qthread> {
+public:
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef Kokkos::Qthread            execution_space ;  ///< Execution space
+  typedef TeamVectorPolicy           execution_policy ;
+
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Qthread , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 private:
   const int m_league_size ;
   const int m_team_size ;
   const int m_shepherd_iter ;
 
 public:
-
-  typedef Impl::ExecutionPolicyTag  kokkos_tag ;
-  typedef Qthread                   execution_space ;
-
 
   // One active team per shepherd
   TeamVectorPolicy( Kokkos::Qthread & q
@@ -652,11 +659,16 @@ public:
     op();
   }
 
+  /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
+  template< class Operation , typename ValueType>
+  KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op, ValueType& bcast) const {
+    op();
+  }
   /** \brief  Intra-thread vector parallel for. Executes op(iType i) for each i=0..N-1.
    *
    * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
    * This functionality requires C++11 support.*/
-  template< typename iType, class Operation, typename ValueType >
+  template< typename iType, class Operation >
   KOKKOS_INLINE_FUNCTION void vector_par_for(const iType n, const Operation & op) const {
     #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
     #pragma ivdep

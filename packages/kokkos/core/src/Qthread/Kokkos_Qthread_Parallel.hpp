@@ -252,6 +252,60 @@ public:
     }
 };
 
+template< unsigned int VectorLength , class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , TeamVectorPolicy< VectorLength , Arg0 , Arg1 , Kokkos::Qthread > >
+{
+private:
+
+  typedef TeamVectorPolicy< VectorLength ,  Arg0 , Arg1 , Kokkos::Qthread >  Policy ;
+
+  const FunctorType  m_func ;
+  const Policy       m_team ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_func( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_func( TagType() , member ); }
+
+  static void execute( QthreadExec & exec , const void * arg )
+  {
+    const ParallelFor & self = * ((const ParallelFor *) arg );
+
+    typename Policy::member_type team_index( exec , self.m_team );
+
+    while ( team_index ) {
+      // Reset shared memory offset to beginning of reduction range.
+      exec.shared_reset();
+      self.ParallelFor::template driver< typename Policy::work_tag >( team_index );
+      team_index.team_barrier();
+      team_index.next_team();
+    }
+
+    exec.exec_all_barrier();
+  }
+
+public:
+
+  ParallelFor( const FunctorType & functor ,
+               const Policy      & policy )
+    : m_func( functor )
+    , m_team( policy )
+    {
+      QthreadExec::resize_worker_scratch
+        ( /* reduction   memory */ 0
+        , /* team shared memory */ FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() ) );
+
+      Impl::QthreadExec::exec_all( Qthread::instance() , & ParallelFor::execute , this );
+    }
+};
+
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class Arg0 , class Arg1 >

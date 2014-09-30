@@ -347,13 +347,28 @@ namespace Kokkos {
  *  This allows a functor to have multiple work member functions.
  */
 template< unsigned VectorLength
-        , class ExecSpace  = DefaultExecutionSpace
-        , class WorkArgTag = void >
+        , class Arg0 = void
+        , class Arg1 = void
+        , class ExecSpace =
+          // If the second argument is not an execution
+          // then use the default execution space.
+          typename Impl::if_c< Impl::is_execution_space< Arg0 >::value , Arg0
+                             , Kokkos::DefaultExecutionSpace >::type
+        >
 class TeamVectorPolicy {
+private:
+  enum { Arg0_ExecSpace = Impl::is_execution_space< Arg0 >::value };
+  enum { Arg1_Void      = Impl::is_same< Arg1 , void >::value };
+  enum { ArgOption_OK   = Impl::StaticAssert< ( Arg0_ExecSpace || Arg1_Void ) >::value };
+
+  typedef typename Impl::if_c< Arg0_ExecSpace , Arg1 , Arg0 >::type WorkTag ;
+
 public:
 
   typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
   typedef ExecSpace                  execution_space ; ///< Execution space
+  typedef TeamVectorPolicy           execution_policy ;
+  typedef WorkTag                    work_tag ;
 
   /** \brief  Query maximum team size for a given functor.
    *
@@ -477,7 +492,7 @@ public:
      *
      * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
      * This functionality requires C++11 support.*/
-    template< typename iType, class Operation, typename ValueType >
+    template< typename iType, class Operation>
     KOKKOS_INLINE_FUNCTION void vector_par_for(const iType n, const Operation & op) const ;
 
     /** \brief  Intra-thread vector parallel reduce. Executes op(const iType i, ValueType & val) for each i=0..N-1.
