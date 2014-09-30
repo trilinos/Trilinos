@@ -2198,7 +2198,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
 void internal_insert_owned_nodes_send(
           const BulkData &mesh,
           const EntityProc                  send_entry ,
-          std::map<Entity,std::set<int> > owned_node_sharing_map);
+          std::map<Entity,std::set<int> > & owned_node_sharing_map);
 
 } // namespace mesh
 } // namespace stk

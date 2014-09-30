@@ -7618,7 +7618,7 @@ void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<Entity
 void internal_insert_owned_nodes_send(
   const BulkData &mesh,
   const EntityProc                  send_entry ,
-  std::map<Entity,std::set<int> > owned_node_sharing_map)
+  std::map<Entity,std::set<int> > & owned_node_sharing_map)
 {
   ThrowRequireMsg( mesh.is_valid(send_entry.first),
                    "Cannot send destroyed entity");
