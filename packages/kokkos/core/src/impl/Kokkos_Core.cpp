@@ -51,7 +51,15 @@
 #include <cstdlib>
 
 namespace Kokkos {
-
+  namespace {
+    bool isnumber(const char* str) {
+      for(int i=0;i<strlen(str);i++) {
+        if(!isdigit(str[i]))
+          return false;
+      }
+      return true;
+    }
+  }
   typedef Kokkos::DefaultExecutionSpace::host_mirror_device_type  DefaultHostMirrorSpaceType ;
 
   enum { DefaultIsNotHostSpace = ! Impl::is_same< Kokkos::DefaultExecutionSpace , DefaultHostMirrorSpaceType >::value };
@@ -63,82 +71,193 @@ namespace Kokkos {
     Kokkos::DefaultExecutionSpace::initialize();
   }
 
-  void initialize(int narg, char* arg[]) {
+  void initialize(int& narg, char* arg[]) {
 
     int nthreads = -1;
     int numa = -1;
     int device = -1;
 
+    int kokkos_threads_found = 0;
+    int kokkos_numa_found = 0;
+    int kokkos_device_found = 0;
+    int kokkos_ndevices_found = 0;
+    int kokkos_help_found = 0;
+
     int iarg = 0;
 
     while (iarg < narg) {
-      if (strcmp(arg[iarg],"--threads") == 0) {
-         if (iarg+2 > narg)
-            Impl::throw_runtime_exception("Error: expecting an integer number after command line argument '--threads'. Raised by Kokkos::initialize(int narg, char* argc[]).");
-         nthreads = atoi(arg[iarg+1]);
-         iarg+=2;
-      } else if (strcmp(arg[iarg],"--numa") == 0) {
-         if (iarg+2 > narg)
-            Impl::throw_runtime_exception("Error: expecting an integer number after command line argument '--numa'. Raised by Kokkos::initialize(int narg, char* argc[]).");
-         numa = atoi(arg[iarg+1]);
-         iarg+=2;
-      } else if (strcmp(arg[iarg],"--device") == 0) {
-         if (iarg+2 > narg)
-            Impl::throw_runtime_exception("Error: expecting an integer number after command line argument '--device'. Raised by Kokkos::initialize(int narg, char* argc[]).");
-         device = atoi(arg[iarg+1]);
-         iarg+=2;
-      } else if (strcmp(arg[iarg],"--ngpus") == 0) {
-         if (iarg+2 > narg)
-            Impl::throw_runtime_exception("Error: expecting one or two integer numbers after command line argument '--ngpus'. Raised by Kokkos::initialize(int narg, char* argc[]).");
-         int ngpu = atoi(arg[iarg+1]);
-         iarg += 2;
+      if ((strncmp(arg[iarg],"--kokkos-threads",16) == 0) || (strncmp(arg[iarg],"--threads",9) == 0)) {
+        //Find the number of threads (expecting --threads=XX)
+        if (!((strncmp(arg[iarg],"--kokkos-threads=",17) == 0) || (strncmp(arg[iarg],"--threads=",10) == 0)))
+          Impl::throw_runtime_exception("Error: expecting an '=INT' after command line argument '--threads/--kokkos-threads'. Raised by Kokkos::initialize(int narg, char* argc[]).");
 
-         int skip_gpu = 9999;
-         if (iarg+2 < narg && isdigit(arg[iarg+2][0])) {
-           skip_gpu = atoi(arg[iarg+2]);
+        char* number =  strchr(arg[iarg],'=')+1;
+
+        if(!isnumber(number) || (strlen(number)==0))
+          Impl::throw_runtime_exception("Error: expecting an '=INT' after command line argument '--threads/--kokkos-threads'. Raised by Kokkos::initialize(int narg, char* argc[]).");
+
+        if((strncmp(arg[iarg],"--kokkos-threads",16) == 0) || !kokkos_threads_found)
+          nthreads = atoi(number);
+
+        //Remove the --kokkos-threads argument from the list but leave --threads
+        if(strncmp(arg[iarg],"--kokkos-threads",16) == 0) {
+          for(int k=iarg;k<narg-1;k++) {
+            arg[k] = arg[k+1];
+          }
+          kokkos_threads_found=1;
+          narg--;
+        } else {
+          iarg++;
+        }
+      } else if ((strncmp(arg[iarg],"--kokkos-numa",13) == 0) || (strncmp(arg[iarg],"--numa",6) == 0)) {
+        //Find the number of numa (expecting --numa=XX)
+        if (!((strncmp(arg[iarg],"--kokkos-numa=",14) == 0) || (strncmp(arg[iarg],"--numa=",7) == 0)))
+          Impl::throw_runtime_exception("Error: expecting an '=INT' after command line argument '--numa/--kokkos-numa'. Raised by Kokkos::initialize(int narg, char* argc[]).");
+
+        char* number =  strchr(arg[iarg],'=')+1;
+
+        if(!isnumber(number) || (strlen(number)==0))
+          Impl::throw_runtime_exception("Error: expecting an '=INT' after command line argument '--numa/--kokkos-numa'. Raised by Kokkos::initialize(int narg, char* argc[]).");
+
+        if((strncmp(arg[iarg],"--kokkos-numa",13) == 0) || !kokkos_numa_found)
+          numa = atoi(number);
+
+        //Remove the --kokkos-numa argument from the list but leave --numa
+        if(strncmp(arg[iarg],"--kokkos-numa",13) == 0) {
+          for(int k=iarg;k<narg-1;k++) {
+            arg[k] = arg[k+1];
+          }
+          kokkos_numa_found=1;
+          narg--;
+        } else {
+          iarg++;
+        }
+      } else if ((strncmp(arg[iarg],"--kokkos-device",15) == 0) || (strncmp(arg[iarg],"--device",8) == 0)) {
+        //Find the number of device (expecting --device=XX)
+        if (!((strncmp(arg[iarg],"--kokkos-device=",16) == 0) || (strncmp(arg[iarg],"--device=",9) == 0)))
+          Impl::throw_runtime_exception("Error: expecting an '=INT' after command line argument '--device/--kokkos-device'. Raised by Kokkos::initialize(int narg, char* argc[]).");
+
+        char* number =  strchr(arg[iarg],'=')+1;
+
+        if(!isnumber(number) || (strlen(number)==0))
+          Impl::throw_runtime_exception("Error: expecting an '=INT' after command line argument '--device/--kokkos-device'. Raised by Kokkos::initialize(int narg, char* argc[]).");
+
+        if((strncmp(arg[iarg],"--kokkos-device",15) == 0) || !kokkos_device_found)
+          device = atoi(number);
+
+        //Remove the --kokkos-device argument from the list but leave --device
+        if(strncmp(arg[iarg],"--kokkos-device",15) == 0) {
+          for(int k=iarg;k<narg-1;k++) {
+            arg[k] = arg[k+1];
+          }
+          kokkos_device_found=1;
+          narg--;
+        } else {
+          iarg++;
+        }
+      } else if ((strncmp(arg[iarg],"--kokkos-ndevices",17) == 0) || (strncmp(arg[iarg],"--ndevices",10) == 0)) {
+
+        //Find the number of device (expecting --device=XX)
+        if (!((strncmp(arg[iarg],"--kokkos-ndevices=",18) == 0) || (strncmp(arg[iarg],"--ndevices=",11) == 0)))
+          Impl::throw_runtime_exception("Error: expecting an '=INT[,INT]' after command line argument '--ndevices/--kokkos-ndevices'. Raised by Kokkos::initialize(int narg, char* argc[]).");
+
+        int ndevices=-1;
+        int skip_device = 9999;
+
+        char* num1 = strchr(arg[iarg],'=')+1;
+        char* num2 = strpbrk(num1,",");
+        int num1_len = num2==NULL?strlen(num1):num2-num1;
+        char* num1_only = new char[num1_len+1];
+        strncpy(num1_only,num1,num1_len);
+        num1_only[num1_len]=0;
+
+        if(!isnumber(num1_only) || (strlen(num1_only)==0)) {
+          Impl::throw_runtime_exception("Error: expecting an integer number after command line argument '--kokkos-ndevices'. Raised by Kokkos::initialize(int narg, char* argc[]).");
+        }
+        if((strncmp(arg[iarg],"--kokkos-ndevices",17) == 0) || !kokkos_ndevices_found)
+          ndevices = atoi(num1_only);
+
+        if( num2 != NULL ) {
+          if(( !isnumber(num2+1) ) || (strlen(num2)==1) )
+            Impl::throw_runtime_exception("Error: expecting an integer number after command line argument '--kokkos-ndevices=XX,'. Raised by Kokkos::initialize(int narg, char* argc[]).");
+
+          if((strncmp(arg[iarg],"--kokkos-ndevices",17) == 0) || !kokkos_ndevices_found)
+            skip_device = atoi(num2+1);
+        }
+
+        if((strncmp(arg[iarg],"--kokkos-ndevices",17) == 0) || !kokkos_ndevices_found) {
+          printf("Ndevices: %i %i\n",ndevices,skip_device);
+          char *str;
+          if ((str = getenv("SLURM_LOCALID"))) {
+            int local_rank = atoi(str);
+            device = local_rank % ndevices;
+            if (device >= skip_device) device++;
+          }
+          if ((str = getenv("MV2_COMM_WORLD_LOCAL_RANK"))) {
+            int local_rank = atoi(str);
+            device = local_rank % ndevices;
+            if (device >= skip_device) device++;
+          }
+          if ((str = getenv("OMPI_COMM_WORLD_LOCAL_RANK"))) {
+            int local_rank = atoi(str);
+            device = local_rank % ndevices;
+            if (device >= skip_device) device++;
+          }
+          if(device==-1) {
+            device = 0;
+            if (device >= skip_device) device++;
+          }
+        }
+
+        //Remove the --kokkos-ndevices argument from the list but leave --ndevices
+        if(strncmp(arg[iarg],"--kokkos-ndevices",17) == 0) {
+          for(int k=iarg;k<narg-1;k++) {
+            arg[k] = arg[k+1];
+          }
+          kokkos_ndevices_found=1;
+          narg--;
+        } else {
+          iarg++;
+        }
+      } else if ((strcmp(arg[iarg],"--kokkos-help") == 0) || (strcmp(arg[iarg],"--help") == 0)) {
+         std::cout << std::endl;
+         std::cout << "--------------------------------------------------------------------------------" << std::endl;
+         std::cout << "-------------Kokkos command line arguments--------------------------------------" << std::endl;
+         std::cout << "--------------------------------------------------------------------------------" << std::endl;
+         std::cout << "The following arguments exist also without prefix 'kokkos' (e.g. --help)." << std::endl;
+         std::cout << "The prefixed arguments will be removed from the list by Kokkos::initialize()," << std::endl;
+         std::cout << "the non-prefixed ones are not removed. Prefixed versions take precedence over " << std::endl;
+         std::cout << "non prefixed ones, and the last occurence of an argument overwrites prior" << std::endl;
+         std::cout << "settings." << std::endl;
+         std::cout << std::endl;
+         std::cout << "--kokkos-help               : print this message" << std::endl;
+         std::cout << "--kokkos-threads=INT        : specify total number of threads or" << std::endl;
+         std::cout << "                              number of threads per NUMA region if " << std::endl;
+         std::cout << "                              used in conjunction with '--numa' option. " << std::endl;
+         std::cout << "--kokkos-numa=INT           : specify number of NUMA regions used by process." << std::endl;
+         std::cout << "--kokkos-device=INT         : specify device id to be used by Kokkos. " << std::endl;
+         std::cout << "--kokkos-ndevices=INT[,INT] : used when running MPI jobs. Specify number of" << std::endl;
+         std::cout << "                              devices per node to be used. Process to device" << std::endl;
+         std::cout << "                              mapping happens by obtaining the local MPI rank" << std::endl;
+         std::cout << "                              and assigning devices round-robin. The optional" << std::endl;
+         std::cout << "                              second argument allows for an existing device" << std::endl;
+         std::cout << "                              to be ignored. This is most useful on workstations" << std::endl;
+         std::cout << "                              with multiple GPUs of which one is used to drive" << std::endl;
+         std::cout << "                              screen output." << std::endl;
+         std::cout << std::endl;
+         std::cout << "--------------------------------------------------------------------------------" << std::endl;
+         std::cout << std::endl;
+
+         //Remove the --kokkos-help argument from the list but leave --ndevices
+         if(strcmp(arg[iarg],"--kokkos-help") == 0) {
+           for(int k=iarg;k<narg-1;k++) {
+             arg[k] = arg[k+1];
+           }
+           kokkos_help_found=1;
+           narg--;
+         } else {
            iarg++;
          }
-
-         char *str;
-         if ((str = getenv("SLURM_LOCALID"))) {
-           int local_rank = atoi(str);
-           device = local_rank % ngpu;
-           if (device >= skip_gpu) device++;
-         }
-         if ((str = getenv("MV2_COMM_WORLD_LOCAL_RANK"))) {
-           int local_rank = atoi(str);
-           device = local_rank % ngpu;
-           if (device >= skip_gpu) device++;
-         }
-         if ((str = getenv("OMPI_COMM_WORLD_LOCAL_RANK"))) {
-           int local_rank = atoi(str);
-           device = local_rank % ngpu;
-           if (device >= skip_gpu) device++;
-         }
-      } else if (strcmp(arg[iarg],"--help") == 0) {
-         std::cout << std::endl;
-         std::cout << "-------------------------------" << std::endl;
-         std::cout << "-Kokkos command line arguments-" << std::endl;
-         std::cout << "-------------------------------" << std::endl;
-         std::cout << std::endl;
-         std::cout << "--help               : print this message" << std::endl;
-         std::cout << "--threads INT        : specify total number of threads or" << std::endl;
-         std::cout << "                       number of threads per NUMA region if " << std::endl;
-         std::cout << "                       used in conjunction with '--numa' option. " << std::endl;
-         std::cout << "--numa INT           : specify number of NUMA regions used by process." << std::endl;
-         std::cout << "--device INT         : specify device id to be used by Kokkos. " << std::endl;
-         std::cout << "--ngpus INT [INT]    : used when running MPI jobs. Specify number of" << std::endl;
-         std::cout << "                       devices per node to be used. Process to device" << std::endl;
-         std::cout << "                       mapping happens by obtaining the local MPI rank" << std::endl;
-         std::cout << "                       and assigning devices round-robin. The optional" << std::endl;
-         std::cout << "                       second argument allows for an existing device" << std::endl;
-         std::cout << "                       to be ignored. This is most useful on workstations" << std::endl;
-         std::cout << "                       with multiple GPUs of which one is used to drive" << std::endl;
-         std::cout << "                       screen output." << std::endl;
-         std::cout << std::endl;
-         std::cout << "-------------------------------" << std::endl;
-         std::cout << std::endl;
-         iarg++;
       } else
       iarg++;
     }

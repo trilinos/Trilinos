@@ -75,7 +75,7 @@
 namespace Kokkos {
   void initialize();
 
-  void initialize(int narg, char* arg[]);
+  void initialize(int& narg, char* arg[]);
 
   void finalize();
   
