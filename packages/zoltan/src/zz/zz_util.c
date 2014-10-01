@@ -1,4 +1,4 @@
-/* 
+/*
  * @HEADER
  *
  * ***********************************************************************
@@ -36,8 +36,8 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Questions? Contact Karen Devine	kddevin@sandia.gov
- *                    Erik Boman	egboman@sandia.gov
+ * Questions? Contact Karen Devine  kddevin@sandia.gov
+ *                    Erik Boman  egboman@sandia.gov
  *
  * ***********************************************************************
  *
@@ -73,31 +73,31 @@ extern int fsync(int fd);
 /* Remove leading & trailing white space and convert to upper case. */
 
 int Zoltan_Clean_String(
-const char *string1,			/* original string */
-char **pstring2) 		/* cleaned string to return */
+const char *string1,      /* original string */
+char **pstring2)    /* cleaned string to return */
 {
 
-    char     *string2;		/* cleaned up string */
-    int       start, end;	/* indices bounding true string */
-    int       length1;		/* length of string 1 */
-    int       i;		/* loop counter */
+    char     *string2;    /* cleaned up string */
+    int       start, end; /* indices bounding true string */
+    int       length1;    /* length of string 1 */
+    int       i;    /* loop counter */
 
     length1 = strlen(string1);
     start = 0;
     end = length1;
     while (start < length1 && isspace((int)(string1[start])))
-	start++;
+  start++;
     while (end > start && isspace((int)(string1[end])))
-	end--;
+  end--;
 
     string2 = (char *) ZOLTAN_MALLOC((end - start + 1) * sizeof(char));
     *pstring2 = string2;
 
     if (string2 == NULL)
-	return (ZOLTAN_MEMERR);
+  return (ZOLTAN_MEMERR);
 
     for (i = start; i < end; i++) {
-	*string2++ = toupper(string1[i]);
+  *string2++ = toupper(string1[i]);
     }
     *string2 = '\0';
 
@@ -130,7 +130,7 @@ char *Zoltan_Strdup(const char *str)
 /*****************************************************************************/
 /*****************************************************************************/
  /*
-  * These transformations are used by the box assign functions when 
+  * These transformations are used by the box assign functions when
   * coordinates have been transformed due to degenerate geometries.
   */
 void Zoltan_Transform_Point(
@@ -156,29 +156,29 @@ void Zoltan_Transform_Point(
     }
   }
   else{
-    if (d == 2){  
+    if (d == 2){
       v[0] = m[0][0] * tmp[0]  +  m[0][1] * tmp[1];
-   
-      v[1] = (ndims < 2) ? 
+
+      v[1] = (ndims < 2) ?
               0.0 :
               m[1][0] * tmp[0]  +  m[1][1] * tmp[1];
     }
     else if (d == 3) {
       v[0] = m[0][0]*tmp[0] + m[0][1]*tmp[1] + m[0][2]*tmp[2];
-   
-      v[1] = (ndims < 2) ? 
+
+      v[1] = (ndims < 2) ?
               0.0 :
               m[1][0]*tmp[0] + m[1][1]*tmp[1] + m[1][2]*tmp[2];
-   
+
       v[2] = (ndims < 3) ?
               0.0 :
               m[2][0]*tmp[0] + m[2][1]*tmp[1] + m[2][2]*tmp[2];
-     
+
     }
   }
 }
 
-/* 
+/*
  * Input: the bounds of an axis-aligned box, a linear transformation, the
  * dimension (2 or 3) of the box, and the dimension of the transformed box
  * (1, 2 or 3).
@@ -200,11 +200,11 @@ void Zoltan_Transform_Box_Points(
 {
      int i;
 
-     if (d == 2){  
+     if (d == 2){
        v[0][0] = lo[0]; v[0][1] = lo[1];
        v[1][0] = lo[0]; v[1][1] = hi[1];
-       v[2][0] = hi[0]; v[2][1] = hi[1]; 
-       v[3][0] = hi[0]; v[3][1] = lo[1]; 
+       v[2][0] = hi[0]; v[2][1] = hi[1];
+       v[3][0] = hi[0]; v[3][1] = lo[1];
 
        for (i=0; i<4; i++){
          Zoltan_Transform_Point(v[i], m, perm, 2, ndims, v[i]);
@@ -226,7 +226,7 @@ void Zoltan_Transform_Box_Points(
      }
 }
 
-/* 
+/*
  * Given the bounds of a 2D or 3D axis-aligned box and a linear
  * transformation, return the bounds of the transformed box,  Set
  * ndims as described above if the box is to be projected to a
@@ -236,13 +236,13 @@ void Zoltan_Transform_Box_Points(
  * transformed due to degenerate geometries.
  */
 
-void Zoltan_Transform_Box( 
+void Zoltan_Transform_Box(
   double *lo, double *hi,  /* input: box bounds, output: bounds of transformed box */
   double (*m)[3],          /* 3x3 transformation */
   int *perm,               /* if transformation is simple coordinate permutation */
   int d,                   /* dimension of box */
   int ndims)               /* dimension of transformed box */
-{          
+{
      double v[8][3];
      int i, npoints;
 
@@ -303,7 +303,7 @@ Zoltan_AllReduceInPlace(void *sndrcvbuf, int count, MPI_Datatype datatype, MPI_O
 
 static MPI_Datatype zz_mpi_gno_type;
 static char* zz_mpi_gno_name=NULL;
-static char* zz_mpi_datatype_names[5] = 
+static char* zz_mpi_datatype_names[5] =
 {
 "MPI_SHORT",
 "MPI_INT",
@@ -406,7 +406,7 @@ int f, rc;
     rc = read(f, (void *)c, 1);
   }
   *c = 0;  /* null terminate */
-  
+
   close(f);
   if (buf[0] == 0) return 0;
 
@@ -424,11 +424,12 @@ int f, rc;
  */
 void Zoltan_write_linux_meminfo(int append, char *msg, int committedOnly)
 {
-int rank;
-int f, n;
-size_t fsize, rc;
-char *c=NULL, *next=NULL, *c_end;
-char fbuf[64],buf[2048],label[64],value[64],units[64];
+  static char * yo = "Zoltan_write_linux_meminfo";
+  int rank;
+  int f, n;
+  size_t fsize, rc;
+  char *c=NULL, *next=NULL, *c_end;
+  char fbuf[64],buf[2048],label[64],value[64],units[64];
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -480,11 +481,13 @@ char fbuf[64],buf[2048],label[64],value[64],units[64];
   }
   else{
     if (msg != NULL){
-      write(f, msg, strlen(msg));
+      if (write(f, msg, strlen(msg)) != strlen(msg))
+        ZOLTAN_PRINT_ERROR(rank, yo, "I/O error.");
     }
   }
 
-  write(f,buf,fsize);
+  if (write(f,buf,fsize) != fsize)
+    ZOLTAN_PRINT_ERROR(rank, yo, "I/O error.");
 
   fsync(f);
   close(f);
@@ -573,10 +576,10 @@ size_t mask;
 /*****************************************************************************/
 #ifdef ZOLTAN_PURIFY
 
-/* Purify has a bug in strcasecmp and strncasecmp; 
+/* Purify has a bug in strcasecmp and strncasecmp;
  * for now, we provide a work-around for purify builds. */
 
-int Zoltan_strcasecmp(const char *s1, const char *s2) 
+int Zoltan_strcasecmp(const char *s1, const char *s2)
 {
   char *t1, *t2;
   int len1 = strlen(s1), len2 = strlen(s2);
@@ -585,16 +588,16 @@ int Zoltan_strcasecmp(const char *s1, const char *s2)
   t2 = t1 + len1 + 1;
   strcpy(t1, s1);
   strcpy(t2, s2);
-  for (i = 0; i < len1; i++) 
+  for (i = 0; i < len1; i++)
     if (t1[i] >= 'A' && t1[i] <= 'Z') t1[i] = t1[i] - 'A' + 'a';
-  for (i = 0; i < len2; i++) 
+  for (i = 0; i < len2; i++)
     if (t2[i] >= 'A' && t2[i] <= 'Z') t2[i] = t2[i] - 'A' + 'a';
   i = strcmp(t1, t2);
   ZOLTAN_FREE(&t1);
   return i;
 }
 
-int Zoltan_strncasecmp(const char *s1, const char *s2, size_t n) 
+int Zoltan_strncasecmp(const char *s1, const char *s2, size_t n)
 {
   char *t1, *t2;
   int len1 = strlen(s1), len2 = strlen(s2);
@@ -603,9 +606,9 @@ int Zoltan_strncasecmp(const char *s1, const char *s2, size_t n)
   t2 = t1 + len1 + 1;
   strcpy(t1, s1);
   strcpy(t2, s2);
-  for (i = 0; i < len1; i++) 
+  for (i = 0; i < len1; i++)
     if (t1[i] >= 'A' && t1[i] <= 'Z') t1[i] = t1[i] - 'A' + 'a';
-  for (i = 0; i < len2; i++) 
+  for (i = 0; i < len2; i++)
     if (t2[i] >= 'A' && t2[i] <= 'Z') t2[i] = t2[i] - 'A' + 'a';
   i = strncmp(t1, t2, n);
   ZOLTAN_FREE(&t1);

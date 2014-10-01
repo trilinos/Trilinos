@@ -21,6 +21,6 @@ SET(SOURCES
 	flgrad.f intrp3.f invcon.f mke.f    mvopnfil.f rda2.f   seton0.f   shlsrc.f tetsrc.f vol.f    ininod.f
 	initlz.f debug.f  inielt.f sintpe.f rdinpt.f )
 
-TRIBITS_ADD_LIBRARY(mapvarlib HEADERS ${HEADERS} SOURCES ${SOURCES})
+TRIBITS_ADD_LIBRARY(mapvarlib NOINSTALLHEADERS SOURCES ${SOURCES} DEPLIBS exodus_for suplib)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()

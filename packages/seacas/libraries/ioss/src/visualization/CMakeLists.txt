@@ -16,7 +16,7 @@ TRIBITS_ADD_LIBRARY(
 	Iovs
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
-	DEPLIBS paraview_imesh
+	DEPLIBS Ioss paraview_imesh
 )
 
 IF (BUILD_TESTING)

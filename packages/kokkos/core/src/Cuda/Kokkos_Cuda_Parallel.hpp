@@ -296,7 +296,7 @@ public:
     { return this->template team_scan<Type>( value , 0 ); }
 
 #ifdef KOKKOS_HAVE_CXX11
-  template< typename iType, class Operation, typename ValueType >
+  template< typename iType, class Operation>
   __device__ inline void team_par_for(const iType n, const Operation & op ) const {
     for(int _i = threadIdx.y; _i < n; _i += team_size())
       op(_i);
@@ -381,7 +381,14 @@ public:
       op();
   }
 
-  template< typename iType, class Operation, typename ValueType >
+  template< class Operation, typename ValueType>
+  __device__ inline void vector_single(const Operation & op, ValueType& bcast) const {
+    if(threadIdx.x == 0)
+      op();
+    bcast = shfl(bcast,0,VectorLength);
+  }
+
+  template< typename iType, class Operation >
   __device__ inline void vector_par_for(const iType n, const Operation & op ) const {
     for(int _i = threadIdx.x; _i < n; _i += VectorLength)
       op(_i);
@@ -390,7 +397,6 @@ public:
 #if (__CUDA_ARCH__ >= 300)
   template< typename iType, class Operation, typename ValueType >
   __device__ inline void vector_par_reduce(const iType n, const Operation & op, ValueType& result
-      , typename Impl::enable_if< (sizeof(ValueType) & 3u) == 0 >::type * = 0
     ) const {
 
     ValueType val = ValueType();
@@ -418,7 +424,6 @@ public:
 #if (__CUDA_ARCH__ >= 300)
   template< typename iType, class Operation, typename ValueType , class JoinType>
   __device__ inline void vector_par_reduce(const iType n, const Operation & op, ValueType& result , const JoinType & join
-      , typename Impl::enable_if< (sizeof(ValueType) & 3u) == 0 >::type * = 0
   ) const {
 
     ValueType val = result;
@@ -451,7 +456,6 @@ public:
 #if (__CUDA_ARCH__ >= 300)
   template< typename iType, class Operation, typename ValueType >
   __device__ inline void vector_par_scan(const iType n, const Operation & op, ValueType& scan_val = ValueType()
-      , typename Impl::enable_if< (sizeof(ValueType) & 3u) == 0 >::type * = 0
     ) const {
 
     scan_val = ValueType();
@@ -516,14 +520,14 @@ public:
 
 #else
 
-  const execution_space::scratch_memory_space & team_shmem() const ;
+  const execution_space::scratch_memory_space & team_shmem() const {};
 
-  int league_rank() const ;
-  int league_size() const ;
-  int team_rank() const ;
-  int team_size() const ;
+  int league_rank() const { return 0;};
+  int league_size() const { return 1;};
+  int team_rank() const { return 0;};
+  int team_size() const { return 1;};
 
-  void team_barrier() const ;
+  void team_barrier() const {};
 
   template< typename Type >
   Type team_scan( const Type & value , Type * const global_accum ) const ;
@@ -545,6 +549,9 @@ public:
 
   template< class Operation >
   void vector_single(const Operation & op) const {}
+
+  template< class Operation , typename ValueType>
+  void vector_single(const Operation & op, ValueType& val) const {}
 
   template< typename iType, class Operation >
   void vector_par_for(const iType n, const Operation & op) const {}
@@ -633,8 +640,8 @@ public:
   typedef Kokkos::Impl::CudaTeamMember member_type ;
 };
 
-template< unsigned VectorLength, class WorkArgTag >
-class TeamVectorPolicy< VectorLength, Kokkos::Cuda , WorkArgTag > {
+template< unsigned VectorLength, class Arg0 , class Arg1 >
+class TeamVectorPolicy< VectorLength, Arg0 , Arg1 , Kokkos::Cuda  > {
 private:
 
   enum { MAX_WARP = 8 };
@@ -645,7 +652,13 @@ private:
 public:
 
   typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::Cuda               execution_space ; ///< Execution space
+  typedef Kokkos::Cuda               execution_space ;  ///< Execution space
+  typedef TeamVectorPolicy           execution_policy ;
+
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Cuda , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 
   inline int team_size()   const { return m_team_size ; }
   inline int league_size() const { return m_league_size ; }
@@ -844,18 +857,19 @@ public:
   }
 };
 
-template< unsigned VectorLength, class FunctorType>
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy<VectorLength,Kokkos::Cuda,void> >
+template< class FunctorType , unsigned VectorLength, class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Arg0 , Arg1 , Kokkos::Cuda > >
 {
 private:
 
-  typedef TeamVectorPolicy<VectorLength,Kokkos::Cuda,void>  Policy ;
+  typedef Kokkos::TeamVectorPolicy< VectorLength, Arg0 , Arg1 , Kokkos::Cuda >   Policy ;
 
 public:
 
-  typedef FunctorType                   functor_type ;
-  typedef typename Policy::member_type  team_member ;
-  typedef Cuda::size_type               size_type ;
+  typedef FunctorType      functor_type ;
+  typedef Cuda::size_type  size_type ;
+
+private:
 
   // Algorithmic constraints: blockDim.y is a power of two AND blockDim.y == blockDim.z == 1
   // shared memory utilization:
@@ -869,19 +883,32 @@ public:
   size_type         m_shmem_size ;
   size_type         m_league_size ;
 
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type  member ) const
+    { m_functor( TagType() , member ); }
+
+public:
+
   __device__ inline
   void operator()(void) const
   {
     // Iterate this block through the league
     for ( int league_rank = blockIdx.x ; league_rank < m_league_size ; league_rank += gridDim.x ) {
 
-      const team_member member( kokkos_impl_cuda_shared_memory<void>()
-                              , m_shmem_begin
-                              , m_shmem_size
-                              , league_rank
-                              , m_league_size );
-
-      m_functor( member );
+      ParallelFor::template driver< typename Policy::work_tag >(
+        typename Policy::member_type( kokkos_impl_cuda_shared_memory<void>()
+                                    , m_shmem_begin
+                                    , m_shmem_size
+                                    , league_rank
+                                    , m_league_size ) );
     }
   }
 
@@ -903,11 +930,12 @@ public:
     }
 
     const dim3 grid( std::min( int(policy.league_size()) , int(cuda_internal_maximum_grid_count()) ) , 1 , 1 );
-    const dim3 block( VectorLength, policy.team_size() , 1 );
+    const dim3 block( VectorLength , policy.team_size() , 1 );
 
     CudaParallelLaunch< ParallelFor >( *this, grid, block, shmem_size_total ); // copy to device and execute
   }
 };
+
 
 } // namespace Impl
 } // namespace Kokkos

@@ -14,7 +14,7 @@ SET(HEADERS "")
 SET(SOURCES ap_builtin.c  ap_stat.c  y.tab.c  ap_util.c  ap_init.c
 	    ap_hash.c     ap_liballoc.c  ap_units.c      ap_aprepro.c ap_array.c)
 
-TRIBITS_ADD_EXECUTABLE(aprepro NOEXEPREFIX NOEXESUFFIX SOURCES ${SOURCES} DEPLIBS m COMM serial mpi)
+TRIBITS_ADD_EXECUTABLE(aprepro NOEXEPREFIX NOEXESUFFIX SOURCES ${SOURCES} DEPLIBS suplib m COMM serial mpi)
 install_executable(aprepro)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()

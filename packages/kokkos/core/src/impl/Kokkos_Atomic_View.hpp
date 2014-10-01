@@ -48,6 +48,10 @@
 namespace Kokkos {
 namespace Impl {
 
+//The following tag is used to prevent an implicit call of the constructor when trying
+//to assign a literal 0 int ( = 0 );
+struct AtomicViewConstTag {};
+
 template<class ViewTraits>
 class AtomicDataElement {
 public:
@@ -57,7 +61,7 @@ public:
   volatile value_type* const ptr;
 
   KOKKOS_INLINE_FUNCTION
-  AtomicDataElement(value_type* ptr_):ptr(ptr_){}
+  AtomicDataElement(value_type* ptr_, AtomicViewConstTag ):ptr(ptr_){}
 
   KOKKOS_INLINE_FUNCTION
   const_value_type operator = (const_value_type& val) const {
@@ -391,7 +395,7 @@ public:
   template<class iType>
   KOKKOS_INLINE_FUNCTION
   AtomicDataElement<ViewTraits> operator[] (const iType& i) const {
-    return AtomicDataElement<ViewTraits>(ptr+i);
+    return AtomicDataElement<ViewTraits>(ptr+i,AtomicViewConstTag());
   }
 };
 

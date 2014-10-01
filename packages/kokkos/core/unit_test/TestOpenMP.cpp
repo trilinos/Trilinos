@@ -282,9 +282,11 @@ TEST_F( openmp , cxx11 )
 #if defined (KOKKOS_HAVE_CXX11)
 TEST_F( openmp , team_vector )
 {
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(0) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(1) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(4) ) );
 }
 #endif
 } // namespace test

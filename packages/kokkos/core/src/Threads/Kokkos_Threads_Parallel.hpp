@@ -168,28 +168,37 @@ public:
     }
 };
 
-template< unsigned int VectorLength, class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Threads , void > >
+template< unsigned int VectorLength, class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Arg0 , Arg1 , Kokkos::Threads > >
 {
 private:
 
-  typedef TeamVectorPolicy< VectorLength , Kokkos::Threads , void >  Policy ;
+  typedef TeamVectorPolicy<VectorLength, Arg0 , Arg1 , Kokkos::Threads >  Policy ;
 
   const FunctorType  m_func ;
   const Policy       m_policy ;
   const int          m_shared ;
 
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_func( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const typename Policy::member_type & >::type member ) const
+    { m_func( TagType() , member ); }
+
   static void execute( ThreadsExec & exec , const void * arg )
   {
     const ParallelFor & self = * ((const ParallelFor *) arg );
 
-    // TODO: Add thread pool queries to ThreadExec.
-    // TODO: Move all of the team state out of ThreadsExec and into the Policy.
-
     typename Policy::member_type member( exec , self.m_policy , self.m_shared );
 
     for ( ; member.valid() ; member.next() ) {
-      self.m_func( member );
+      self.ParallelFor::template driver< typename Policy::work_tag >( member );
     }
 
     exec.fan_in();

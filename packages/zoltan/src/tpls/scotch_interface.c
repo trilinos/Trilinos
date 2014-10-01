@@ -1,4 +1,4 @@
-/* 
+/*
  * @HEADER
  *
  * ***********************************************************************
@@ -153,7 +153,7 @@ int Zoltan_Scotch_Order(
   if ((sizeof(indextype) != sizeof(SCOTCH_Num)) ||
       (sizeof(weighttype) != sizeof(SCOTCH_Num)) || i){
 
-    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, 
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
         "Not supported: Multiple 3rd party libraries with incompatible data types.");
     return ZOLTAN_FATAL;
   }
@@ -253,7 +253,7 @@ int Zoltan_Scotch_Order(
 
     if (
 #ifdef ZOLTAN_PTSCOTCH
-        (IS_GLOBAL_GRAPH(gr.graph_type) && 
+        (IS_GLOBAL_GRAPH(gr.graph_type) &&
         (SCOTCH_stratDgraphOrder (&stradat, strat)) != 0) ||
 #endif /* ZOLTAN_PTSCOTCH */
         (SCOTCH_stratGraphOrder (&stradat, strat) != 0)) {
@@ -295,7 +295,7 @@ int Zoltan_Scotch_Order(
   }
 
 #ifdef ZOLTAN_PTSCOTCH
-  if (IS_GLOBAL_GRAPH(gr.graph_type) && 
+  if (IS_GLOBAL_GRAPH(gr.graph_type) &&
       (SCOTCH_dgraphOrderInit (&grafdat, &ordedat) != 0)) {
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch graph.");
@@ -330,7 +330,7 @@ int Zoltan_Scotch_Order(
   /* Get a time here */
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
 
-  if (IS_LOCAL_GRAPH(gr.graph_type)) { 
+  if (IS_LOCAL_GRAPH(gr.graph_type)) {
     /* We already have separator tree, just have to compute the leaves */
     for (numbloc = 0 ; numbloc < zz->TPL_Order.nbr_blocks ; ++numbloc) {
       zz->TPL_Order.leaves[numbloc] = numbloc;
@@ -338,7 +338,7 @@ int Zoltan_Scotch_Order(
     for (numbloc = 0 ; numbloc < zz->TPL_Order.nbr_blocks ; ++numbloc) {
       if (zz->TPL_Order.ancestor[numbloc] < 0)
         continue;
-      zz->TPL_Order.leaves[zz->TPL_Order.ancestor[numbloc]] = 
+      zz->TPL_Order.leaves[zz->TPL_Order.ancestor[numbloc]] =
                                                   zz->TPL_Order.nbr_blocks + 1;
     }
     /* TODO : check if there is a normalized sort in Zoltan */
@@ -447,7 +447,7 @@ int Zoltan_Scotch_Order(
   memcpy(gids, l_gids, n*zz->Num_GID*sizeof(ZOLTAN_ID_TYPE));
   memcpy(lids, l_lids, n*zz->Num_GID*sizeof(ZOLTAN_ID_TYPE));
 
-  ierr = Zoltan_Postprocess_Graph(zz, l_gids, l_lids, &gr, NULL, NULL, NULL, 
+  ierr = Zoltan_Postprocess_Graph(zz, l_gids, l_lids, &gr, NULL, NULL, NULL,
                                   &ord, NULL);
 
   ZOLTAN_FREE(&l_gids);
@@ -529,8 +529,8 @@ static int Zoltan_Scotch_Construct_Offset(
       break;
 
     childrensize += size[children[3*root+i]];
-    offset = Zoltan_Scotch_Construct_Offset(order, children, 
-                                            children[3*root+i], size, 
+    offset = Zoltan_Scotch_Construct_Offset(order, children,
+                                            children[3*root+i], size,
                                             tree, offset, leafnum);
   }
 
@@ -621,7 +621,7 @@ int Zoltan_Scotch(
   if ((sizeof(indextype) != sizeof(SCOTCH_Num)) ||
       (sizeof(weighttype) != sizeof(SCOTCH_Num)) || i){
 
-    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, 
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
           "Not supported: Multiple 3rd party libraries with incompatible data types.");
     return ZOLTAN_FATAL;
   }
@@ -756,7 +756,7 @@ int Zoltan_Scotch(
   if (IS_GLOBAL_GRAPH(gr.graph_type)) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the PT-Scotch library");
     if (SCOTCH_dgraphMap(&grafdat, &archdat, &stradat, prt.part) != 0) {
-/*  KDDKDD TO COMPARE WITH ZOLTAN2, USE SCOTCH_dgraphPart 
+/*  KDDKDD TO COMPARE WITH ZOLTAN2, USE SCOTCH_dgraphPart
     KDDKDD INSTEAD OF SCOTCH_dgraphMap .
 
     printf("KDDKDD CALLING SCOTCH_dgraphPart\n");
@@ -882,9 +882,13 @@ static int Zoltan_Scotch_Bind_Param(ZZ* zz, char *alg, char *graph_type, char **
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     fseek(stratfile, (long)0, SEEK_SET);
-    fgets (*strat, size+1, stratfile);
-    fclose(stratfile);
+    if (fgets (*strat, size+1, stratfile) == NULL) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "I/O error.");
+      fclose(stratfile);
+      return(ZOLTAN_FATAL);
+    }
 
+    fclose(stratfile);
 
     return (ZOLTAN_OK);
   }
@@ -951,7 +955,7 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
           call assumes the global numbers are consectutive across processes
      */
 
-    if (SCOTCH_dgraphBuild (dgrafptr, 0, (SCOTCH_Num)gr->num_obj, (SCOTCH_Num)gr->num_obj, 
+    if (SCOTCH_dgraphBuild (dgrafptr, 0, (SCOTCH_Num)gr->num_obj, (SCOTCH_Num)gr->num_obj,
                             gr->xadj, gr->xadj + 1,
                               gr->vwgt, NULL,edgelocnbr, edgelocnbr, gr->adjncy, NULL, gr->ewgts) != 0) {
       SCOTCH_dgraphExit(dgrafptr);

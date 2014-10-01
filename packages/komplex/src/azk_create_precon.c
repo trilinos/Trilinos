@@ -212,4 +212,6 @@ void AZK_create_precon(int *options, double *params,
 
     }
   }
+  free(Prec_pass_data);
+  Prec_pass_data = NULL;
 }

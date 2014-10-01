@@ -247,9 +247,11 @@ TEST_F( qthread , team_scan )
 #if defined (KOKKOS_HAVE_CXX11)
 TEST_F( qthread , team_vector )
 {
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(0) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(1) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(4) ) );
 }
 #endif
 

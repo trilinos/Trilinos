@@ -361,11 +361,26 @@ public:
   void wait() {}
 };
 
-template< unsigned VectorLength, class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::OpenMP , void > >
+template< class FunctorType , unsigned VectorLength, class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Arg0 , Arg1 , Kokkos::OpenMP > >
 {
 private:
-  typedef Kokkos::TeamVectorPolicy< VectorLength, Kokkos::OpenMP , void > Policy ;
+
+  typedef Kokkos::TeamVectorPolicy< VectorLength, Arg0 , Arg1 , Kokkos::OpenMP > Policy ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member )
+    { functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member )
+    { functor( TagType() , member ); }
 
 public:
 
@@ -379,14 +394,14 @@ public:
     const size_t team_reduce_size = Policy::member_type::team_reduce_size();
     const size_t team_shmem_size  = FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() );
 
-    OpenMPexec::resize_scratch( 0 , team_reduce_size + team_shmem_size );
+    OpenMPexec::resize_scratch( 0 , team_reduce_size + team_shmem_size + 128 );
 
 #pragma omp parallel
     {
-      typename Policy::member_type member( * OpenMPexec::get_thread_omp() , policy , team_shmem_size );
+      typename Policy::member_type member( * OpenMPexec::get_thread_omp() , policy , team_shmem_size + 128 );
 
       for ( ; member.valid() ; member.next() ) {
-        functor( member );
+        ParallelFor::template driver< typename Policy::work_tag >( functor , member );
       }
     }
 /* END #pragma omp parallel */

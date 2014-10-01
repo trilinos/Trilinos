@@ -545,9 +545,29 @@ public:
 
 #ifdef KOKKOS_HAVE_CXX11
 
+  /** \brief  Inter-thread parallel for. Executes op(iType i) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all threads of the the calling thread team.
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation>
+  KOKKOS_INLINE_FUNCTION void team_par_for(const iType n, const Operation & op) const {
+    const int chunk = ((n+m_team_size-1)/m_team_size);
+    const int start = chunk*m_team_rank;
+    const int end = start+chunk<n?start+chunk:n;
+    for(int i=start; i<end ; i++) {
+      op(i);
+    }
+  }
+
   /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
   template< class Operation >
   KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op) const {
+    op();
+  }
+
+  /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
+  template< class Operation , typename ValueType>
+  KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op, ValueType& bcast) const {
     op();
   }
 
@@ -555,7 +575,7 @@ public:
    *
    * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
    * This functionality requires C++11 support.*/
-  template< typename iType, class Operation, typename ValueType >
+  template< typename iType, class Operation>
   KOKKOS_INLINE_FUNCTION void vector_par_for(const iType n, const Operation & op) const {
     #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
     #pragma ivdep
@@ -574,6 +594,9 @@ public:
 
     result = ValueType();
 
+    #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+    #pragma ivdep
+    #endif
     for(int i=0; i<n ; i++) {
       ValueType tmp = ValueType();
       op(i,tmp);
@@ -593,7 +616,9 @@ public:
 
     ValueType result = init_result;
 
-
+    #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+    #pragma ivdep
+    #endif
     for(int i=0; i<n ; i++) {
       ValueType tmp = init_result;
       op(i,tmp);
@@ -757,12 +782,19 @@ public:
 
 namespace Kokkos {
 
-template < unsigned VectorLength, class WorkArgTag >
-class TeamVectorPolicy< VectorLength, Kokkos::OpenMP , WorkArgTag > {
+template< unsigned VectorLength
+        , class Arg0
+        , class Arg1 >
+class TeamVectorPolicy<VectorLength, Arg0, Arg1, Kokkos::OpenMP> {
 public:
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef Kokkos::OpenMP             execution_space ;  ///< Execution space
+  typedef TeamVectorPolicy           execution_policy ;
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::OpenMP             execution_space ; ///< Execution space
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::OpenMP , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 
 private:
 

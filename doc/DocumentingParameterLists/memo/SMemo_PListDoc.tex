@@ -129,7 +129,7 @@ provides a finite set of valid string values, and also provides a
 description of each valid value.  These values and descriptions are
 rendered in a table under the description of the parameter itself.
 
-\begin{figure}[b]
+\begin{figure}[h]
   \begin{centering}
     \scalebox{0.7}{\includegraphics{OpenStringParameterWithValidator}}
     \caption{\label{fig:open_string} Documentation of a string
@@ -286,13 +286,18 @@ Each of the aforementioned steps require a more detailed explanation.
 \item \textbf{Add Doxygen directive(s) to your source file(s).} The
   Trilinos documentation build system will automatically move the
   generated XML files to where they can be found by the generated
-  Doxygen HTML files. The last piece that is needed is one or more
-  directives in the Doxygen comments of your source code to tell
-  Doxygen where the collapsible \texttt{Teuchos::ParameterList}
-  documentation should go. Typically, this would be in the section of
-  code where arguments, specifically a \texttt{Teuchos::ParameterList}
-  argument, is documented. The final Doxygen comment should look
-  something like this:
+  Doxygen HTML files.  This is enabled in part by the python script
+  \texttt{copy\_xml\_to\_src\_html.py}, which was copied to your
+  \texttt{doc} directory in step 2 of sections~\ref{sec:steps}
+  and~\ref{sec:description}.
+
+  The last piece that is needed is one or more directives in the
+  Doxygen comments of your source code to tell Doxygen where the
+  collapsible \texttt{Teuchos::ParameterList} documentation should
+  go. Typically, this would be in the section of code where arguments,
+  specifically a \texttt{Teuchos::ParameterList} argument, is
+  documented. The final Doxygen comment should look something like
+  this for each XML file generated:
 
  \footnotesize
  \begin{verbatim}
@@ -338,6 +343,7 @@ web browser.  The steps are
      description of the script.  This script will configure Trilinos
      to build all packages that support collapsible ParameterList
      documentation, plus all of those packages' optional packages.
+     Then use \texttt{make} to build Trilinos.
 
     \item \textbf{Run the executable(s) that generate the
         \texttt{Teuchos::ParameterList} XML files.}  The easiest way to
