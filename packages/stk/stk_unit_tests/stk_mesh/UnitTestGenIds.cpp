@@ -278,6 +278,44 @@ TEST(GeneratedIds, StkMeshApproach2)
 
 ////////////////////////////////////////////////////////////////////
 
+//TEST(GeneratedIds, useInternallDifferentIds)
+//{
+//    MpiInfo mpiInfo(MPI_COMM_WORLD);
+//
+//    std::string exodusFileName = getOption("-i", "generated:10x10x10");
+//    const int spatialDim = 3;
+//    stk::mesh::MetaData stkMeshMetaData(spatialDim);
+//    stk::mesh::BulkData *stkMeshBulkData = new stk::mesh::BulkData(stkMeshMetaData, mpiInfo.getMpiComm());
+//
+//    // STK IO module will be described in separate chapter.
+//    // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
+//    // The order of the following lines in {} are important
+//    {
+//      stk::io::StkMeshIoBroker exodusFileReader(mpiInfo.getMpiComm());
+//
+//      // Inform STK IO which STK Mesh objects to populate later
+//      exodusFileReader.set_bulk_data(*stkMeshBulkData);
+//
+//      exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+//
+//      // Populate the MetaData which has the descriptions of the Parts and Fields.
+//      exodusFileReader.create_input_mesh();
+//
+//      // Populate entities in STK Mesh from Exodus file
+//      exodusFileReader.populate_bulk_data();
+//    }
+//
+//    ////////////////////////////////////////////////////q
+//
+//    std::vector<size_t> count1;
+//    stk::mesh::comm_mesh_counts(*stkMeshBulkData, count1);
+//    size_t totalIdsInUse = count1[stk::topology::NODE_RANK];
+//    size_t goldNum = 11*11*11;
+//    EXPECT_EQ(goldNum, totalIdsInUse);
+//}
+
+////////////////////////////////////////////////////////////////////
+
 void checkUniqueIds(const std::vector<uint64_t> &myIds, const std::vector<uint64_t> &uniqueIds, const MpiInfo &mpiInfo)
 {
     std::vector<uint64_t> sortedIds(uniqueIds.begin(), uniqueIds.end());
@@ -366,13 +404,13 @@ INTMPI whichProcOwnsId(const uint64_t maxId, const uint64_t id, INTMPI numProcs)
 
 bool sendIdToCheck(const INTMPI root, uint64_t id, MPI_Comm comm)
 {
-    MPI_Bcast(&id, 1, MPI_UINT64_T, root, comm);
+    MPI_Bcast(&id, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
     bool goodId = true;
     if ( id != 0 )
     {
         uint64_t good = 0;
         uint64_t received = 0;
-        MPI_Reduce(&good, &received, 1, MPI_UINT64_T, MPI_SUM, root, comm);
+        MPI_Reduce(&good, &received, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, root, comm);
 
         if ( received > 0 )
         {
@@ -390,7 +428,7 @@ void receiveIdAndCheck(const int root, const std::vector<uint64_t> &idsInUse, MP
 
     while( true )
     {
-        MPI_Bcast(&id, 1, MPI_UINT64_T, root, comm);
+        MPI_Bcast(&id, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
         if ( id == 0) break;
 
         bool found = std::binary_search(idsInUse.begin(), idsInUse.end(), id);
@@ -399,7 +437,7 @@ void receiveIdAndCheck(const int root, const std::vector<uint64_t> &idsInUse, MP
         {
             result = 1;
         }
-        MPI_Reduce(&result, &result, 1, MPI_UINT64_T, MPI_SUM, root, comm);
+        MPI_Reduce(&result, &result, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, root, comm);
     }
 }
 
@@ -410,7 +448,7 @@ void receiveIdAndCheck(const int root, stk::mesh::BulkData &stkMeshBulkData, MPI
 
     while( true )
     {
-        MPI_Bcast(&id, 1, MPI_UINT64_T, root, comm);
+        MPI_Bcast(&id, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
         if ( id == 0) break;
 
         stk::mesh::Entity entity = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, id);
@@ -420,7 +458,7 @@ void receiveIdAndCheck(const int root, stk::mesh::BulkData &stkMeshBulkData, MPI
         {
             result = 1;
         }
-        MPI_Reduce(&result, &result, 1, MPI_UINT64_T, MPI_SUM, root, comm);
+        MPI_Reduce(&result, &result, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, root, comm);
     }
 }
 
@@ -432,10 +470,10 @@ void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_
 
     while( true )
     {
-        MPI_Bcast(&id, 1, MPI_UINT64_T, root, comm);
+        MPI_Bcast(&id, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
         if ( id == 0) break;
         uint64_t numIdsToGet=0;
-        MPI_Bcast(&numIdsToGet, 1, MPI_UINT64_T, root, comm);
+        MPI_Bcast(&numIdsToGet, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
 
         std::vector<int> areIdsBeingused(numIdsToGet,0);
         for (size_t i=0;i<areIdsBeingused.size();i++)
@@ -458,10 +496,10 @@ void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_
 
     while( true )
     {
-        MPI_Bcast(&id, 1, MPI_UINT64_T, root, comm);
+        MPI_Bcast(&id, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
         if ( id == 0) break;
         uint64_t numIdsToGet=0;
-        MPI_Bcast(&numIdsToGet, 1, MPI_UINT64_T, root, comm);
+        MPI_Bcast(&numIdsToGet, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
 
         std::vector<int> areIdsBeingused(numIdsToGet,0);
         for (size_t i=0;i<areIdsBeingused.size();i++)
@@ -481,10 +519,10 @@ void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_
 
 void retrieveIds(const INTMPI root, uint64_t id, MPI_Comm comm, uint64_t numIdsToGetPerProc, std::vector<int>& areIdsBeingUsed)
 {
-    MPI_Bcast(&id, 1, MPI_UINT64_T, root, comm);
+    MPI_Bcast(&id, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
     if ( id != 0 )
     {
-        MPI_Bcast(&numIdsToGetPerProc, 1, MPI_UINT64_T, root, comm);
+        MPI_Bcast(&numIdsToGetPerProc, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
         std::vector<uint64_t> zeroids(numIdsToGetPerProc,0);
         MPI_Reduce(&zeroids[0], &areIdsBeingUsed[0], numIdsToGetPerProc, MPI_INT, MPI_SUM, root, comm);
     }
@@ -566,7 +604,7 @@ void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeed
 {
     INTMPI numprocs = mpiInfo.getNumProcs();
     std::vector<uint64_t> receivedInfo(numprocs,0);
-    MPI_Allgather(&numIdsNeeded, 1, MPI_UINT64_T, &receivedInfo[0], 1, MPI_UINT64_T, mpiInfo.getMpiComm());
+    MPI_Allgather(&numIdsNeeded, 1, MPI_UNSIGNED_LONG_LONG, &receivedInfo[0], 1, MPI_UNSIGNED_LONG_LONG, mpiInfo.getMpiComm());
 
     std::vector<uint64_t> sortedIds(myIds.begin(), myIds.end());
     std::sort(sortedIds.begin(), sortedIds.end());
@@ -574,7 +612,7 @@ void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeed
     uint64_t largestIdHere = sortedIds.back();
     uint64_t largestIdEverywhere = 0;
 
-    MPI_Allreduce(&largestIdHere, &largestIdEverywhere, 1, MPI_UINT64_T, MPI_MAX, mpiInfo.getMpiComm());
+    MPI_Allreduce(&largestIdHere, &largestIdEverywhere, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, mpiInfo.getMpiComm());
 
     uint64_t totalNumberOfIdsNeeded = 0;
     uint64_t offsetId=0;
@@ -615,7 +653,7 @@ void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeed
                     respondToRootProcessorAboutIdsOwnedOnThisProc(procIndex, maxId, sortedIds, mpiInfo.getMpiComm());
                 }
                 // updated starting id across all procs
-                MPI_Bcast(&startingIdToSearchForNewIds, 1, MPI_UINT64_T, procIndex, mpiInfo.getMpiComm());
+                MPI_Bcast(&startingIdToSearchForNewIds, 1, MPI_UNSIGNED_LONG_LONG, procIndex, mpiInfo.getMpiComm());
             }
         }
     }
@@ -625,7 +663,7 @@ void getAvailableIds_exp(stk::mesh::BulkData &stkMeshBulkData, uint64_t numIdsNe
 {
     INTMPI numprocs = mpiInfo.getNumProcs();
     std::vector<uint64_t> receivedInfo(numprocs,0);
-    MPI_Allgather(&numIdsNeeded, 1, MPI_UINT64_T, &receivedInfo[0], 1, MPI_UINT64_T, mpiInfo.getMpiComm());
+    MPI_Allgather(&numIdsNeeded, 1, MPI_UNSIGNED_LONG_LONG, &receivedInfo[0], 1, MPI_UNSIGNED_LONG_LONG, mpiInfo.getMpiComm());
 
     stk::mesh::EntityId largestIdHere = 0;
 
@@ -648,7 +686,7 @@ void getAvailableIds_exp(stk::mesh::BulkData &stkMeshBulkData, uint64_t numIdsNe
     }
 
     uint64_t largestIdEverywhere = 0;
-    MPI_Allreduce(&largestIdHere, &largestIdEverywhere, 1, MPI_UINT64_T, MPI_MAX, mpiInfo.getMpiComm());
+    MPI_Allreduce(&largestIdHere, &largestIdEverywhere, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, mpiInfo.getMpiComm());
 
     uint64_t totalNumberOfIdsNeeded = 0;
     uint64_t offsetId=0;
@@ -689,7 +727,7 @@ void getAvailableIds_exp(stk::mesh::BulkData &stkMeshBulkData, uint64_t numIdsNe
                     respondToRootProcessorAboutIdsOwnedOnThisProc(procIndex, maxId, stkMeshBulkData, mpiInfo.getMpiComm());
                 }
                 // updated starting id across all procs
-                MPI_Bcast(&startingIdToSearchForNewIds, 1, MPI_UINT64_T, procIndex, mpiInfo.getMpiComm());
+                MPI_Bcast(&startingIdToSearchForNewIds, 1, MPI_UNSIGNED_LONG_LONG, procIndex, mpiInfo.getMpiComm());
             }
         }
     }
