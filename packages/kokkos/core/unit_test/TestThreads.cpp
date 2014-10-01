@@ -318,9 +318,11 @@ TEST_F( threads , cxx11 )
 #if defined (KOKKOS_HAVE_CXX11)
 TEST_F( threads , team_vector )
 {
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(0) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(1) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(4) ) );
 }
 #endif
 } // namespace Test

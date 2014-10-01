@@ -103,7 +103,7 @@ double AddTestFunctor() {
 
 
 
-#if defined (KOKKOS_HAVE_CXX11)
+#if defined (KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA)
 template<class DeviceType, bool PWRTest>
 double AddTestLambda() {
 
@@ -219,7 +219,7 @@ double ReduceTestFunctor() {
   return result;
 }
 
-#if defined (KOKKOS_HAVE_CXX11)
+#if defined (KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA)
 template<class DeviceType, bool PWRTest>
 double ReduceTestLambda() {
 

@@ -331,9 +331,11 @@ TEST_F( serial , cxx11 )
 #if defined (KOKKOS_HAVE_CXX11)
 TEST_F( serial , team_vector )
 {
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(0) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(1) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(4) ) );
 }
 #endif
 } // namespace test

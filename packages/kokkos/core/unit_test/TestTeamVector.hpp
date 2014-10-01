@@ -75,6 +75,7 @@ struct my_complex {
     im += src.im;
     return *this;
   }
+
   KOKKOS_INLINE_FUNCTION
   void operator += (const volatile my_complex& src) volatile {
     re += src.re;
@@ -104,6 +105,11 @@ struct my_complex {
       return (re != src.re) || (im != src.im);
   }
   KOKKOS_INLINE_FUNCTION
+  bool operator != (const double& val) {
+    return (re != val) ||
+           (im != 0);
+  }
+  KOKKOS_INLINE_FUNCTION
   my_complex& operator= (const int& val) {
     re = val;
     im = 0.0;
@@ -122,6 +128,73 @@ struct my_complex {
 };
 
 #if defined (KOKKOS_HAVE_CXX11)
+
+template<typename Scalar, class DeviceType>
+struct functor_vec_single {
+  typedef Kokkos::TeamVectorPolicy<VECTORLENGTH,DeviceType> policy_type;
+  typedef DeviceType device_type;
+
+  Kokkos::View<int,DeviceType> flag;
+  functor_vec_single(Kokkos::View<int,DeviceType> flag_):flag(flag_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (typename policy_type::member_type team) const {
+    Scalar value = 0;
+
+    team.vector_par_for(13,[&] (int i) {
+      value = i;
+    });
+
+    team.vector_single([&] () {
+    },value);
+
+    Scalar value2 = 0;
+    team.vector_par_reduce(13, [&] (int i, Scalar& val) {
+      val += value;
+    },value2);
+
+    if(value2!=(value*13)) {
+      printf("FAILED vector_single broadcast %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) value2,(double) value);
+      flag()=1;
+    }
+  }
+};
+
+template<typename Scalar, class DeviceType>
+struct functor_vec_for {
+  typedef Kokkos::TeamVectorPolicy<VECTORLENGTH,DeviceType> policy_type;
+  typedef DeviceType device_type;
+
+  Kokkos::View<int,DeviceType> flag;
+  functor_vec_for(Kokkos::View<int,DeviceType> flag_):flag(flag_) {}
+
+  unsigned team_shmem_size(int team_size) const {return team_size*13*sizeof(Scalar)+8;}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (typename policy_type::member_type team) const {
+
+    typedef typename DeviceType::scratch_memory_space shmem_space ;
+    typedef Kokkos::View<Scalar*,shmem_space,Kokkos::MemoryUnmanaged> shared_int;
+    shared_int values = shared_int(team.team_shmem(),team.team_size()*13);
+
+    team.vector_par_for(13,[&] (int i) {
+      values(13*team.team_rank() + i) = i - team.team_rank() - team.league_rank() + team.league_size() + team.team_size();
+    });
+
+    team.vector_single([&] () {
+      Scalar test = 0;
+      Scalar value = 0;
+      for(int i = 0; i < 13; i++) {
+        test += i - team.team_rank() - team.league_rank() + team.league_size() + team.team_size();
+        value += values(13*team.team_rank() + i);
+      }
+      if(test!=value) {
+        printf("FAILED vector_par_for %i %i %lf %lf\n",team.league_rank(),team.team_rank(),(double) test,(double) value);
+        flag()=1;
+      }
+    });
+  }
+};
 
 template<typename Scalar, class DeviceType>
 struct functor_vec_red {
@@ -228,6 +301,12 @@ bool test_scalar(int nteams, int team_size, int test) {
   if(test==2)
   Kokkos::parallel_for( Kokkos::TeamVectorPolicy<VECTORLENGTH,DeviceType>(nteams,team_size),
       functor_vec_scan<Scalar, DeviceType>(d_flag));
+  if(test==3)
+  Kokkos::parallel_for( Kokkos::TeamVectorPolicy<VECTORLENGTH,DeviceType>(nteams,team_size),
+      functor_vec_for<Scalar, DeviceType>(d_flag));
+  if(test==4)
+  Kokkos::parallel_for( Kokkos::TeamVectorPolicy<VECTORLENGTH,DeviceType>(nteams,team_size),
+      functor_vec_single<Scalar, DeviceType>(d_flag));
   #endif
   Kokkos::deep_copy(h_flag,d_flag);
 
