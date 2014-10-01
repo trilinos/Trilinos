@@ -494,16 +494,22 @@ public:
 
 namespace Kokkos {
 
-template < unsigned int VectorLength, class WorkArgTag >
-class TeamVectorPolicy< VectorLength, Kokkos::Serial , WorkArgTag > {
+template< unsigned int VectorLength , class Arg0 , class Arg1 >
+class TeamVectorPolicy< VectorLength , Arg0 , Arg1 , Kokkos::Serial >
+{
 private:
 
   const int m_league_size ;
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::Serial             execution_space ; ///< Execution space
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef TeamVectorPolicy           execution_policy ; ///< Execution policy
+  typedef Kokkos::Serial             execution_space ;  ///< Execution space
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Serial , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 
   inline int team_size() const { return 1 ; }
   inline int league_size() const { return m_league_size ; }

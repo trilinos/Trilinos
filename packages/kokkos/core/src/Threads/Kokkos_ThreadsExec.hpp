@@ -1113,7 +1113,7 @@ public:
 
 
   typedef typename
-    Impl::if_c< ! Impl::is_same< Kokkos::OpenMP , Arg0 >::value , Arg0 , Arg1 >::type
+    Impl::if_c< ! Impl::is_same< Kokkos::Threads , Arg0 >::value , Arg0 , Arg1 >::type
       work_tag ;
 private:
 
