@@ -424,11 +424,12 @@ int f, rc;
  */
 void Zoltan_write_linux_meminfo(int append, char *msg, int committedOnly)
 {
-int rank;
-int f, n;
-size_t fsize, rc;
-char *c=NULL, *next=NULL, *c_end;
-char fbuf[64],buf[2048],label[64],value[64],units[64];
+  static char * yo = "Zoltan_write_linux_meminfo";
+  int rank;
+  int f, n;
+  size_t fsize, rc;
+  char *c=NULL, *next=NULL, *c_end;
+  char fbuf[64],buf[2048],label[64],value[64],units[64];
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -480,11 +481,13 @@ char fbuf[64],buf[2048],label[64],value[64],units[64];
   }
   else{
     if (msg != NULL){
-      write(f, msg, strlen(msg));
+      if (write(f, msg, strlen(msg)) != strlen(msg))
+        ZOLTAN_PRINT_ERROR(rank, yo, "I/O error.");
     }
   }
 
-  write(f,buf,fsize);
+  if (write(f,buf,fsize) != fsize)
+    ZOLTAN_PRINT_ERROR(rank, yo, "I/O error.");
 
   fsync(f);
   close(f);
