@@ -225,7 +225,7 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
     if(print_hierarchy) EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",e_coords,0,0,false);
 
     /* Build the Nullspace */
-    nullspace=new Epetra_MultiVector(*EdgeDomainMap_,dim,false);
+    nullspace=new Epetra_MultiVector(*EdgeDomainMap_,dim,true);
     D0_Clean_Matrix_->Multiply(false,e_coords,*nullspace);
   }
 
