@@ -3905,7 +3905,12 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
 		       __FILE__,__LINE__);
         exit(EXIT_FAILURE);
      }
-     fgets(buffer,199,ifp);
+     if (fgets(buffer,199,ifp) == NULL)
+     {
+        (void) fprintf(stderr,"I/O error\n%s:%d\n",
+		       __FILE__,__LINE__);
+        exit(EXIT_FAILURE);
+     }
      gnblocks = strtol(buffer,&buffptr,10);
 
      /* loop all blocks and fill gblocks and gblock_pde */
