@@ -88,7 +88,7 @@ void Ifpack_BreakForDebugger(Epetra_Comm& Comm)
     printf( "**\n");
     printf( "** Enter a character to continue > "); fflush(stdout);
     char go;
-    scanf("%c",&go);
+    TEUCHOS_ASSERT(scanf("%c",&go) != EOF);
   }
 
   Comm.Barrier();
