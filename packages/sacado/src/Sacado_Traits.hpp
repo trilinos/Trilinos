@@ -97,12 +97,21 @@ namespace Sacado {
 
 #undef SACADO_PROMOTE_SPECIALIZATION
 
+  //
+  // We define defaults for all of the traits to make Sacado easier to use.
+  // The default choices are based on what appears to be the "safest" choice
+  // for any scalar type.  They may not work in all cases, in which case a
+  // specialization should be provided.
+  //
+
   //! Base template specification for %ScalarType
   /*!
    * The %ScalarType classes provide a mechanism for computing the
    * base underlying type of nested AD classes
    */
-  template <typename T> struct ScalarType {};
+  template <typename T> struct ScalarType {
+    typedef T type;
+  };
 
   //! Specialization of %ScalarType for const types
   /*!
@@ -117,7 +126,9 @@ namespace Sacado {
    * The %ValueType classes provide a mechanism for computing the
    * the type stored in AD classes
    */
-  template <typename T> struct ValueType {};
+  template <typename T> struct ValueType {
+    typedef T type;
+  };
 
   //! Specialization of %ValueType for const types
   /*!
@@ -132,41 +143,60 @@ namespace Sacado {
    * The %IsADType classes provide a mechanism for computing the
    * determining whether a type is an AD type
    */
-  template <typename T> struct IsADType {};
+  template <typename T> struct IsADType {
+    static const bool value = false;
+  };
 
   //! Base template specification for %IsScalarType
   /*!
    * The %IsScalarType classes provide a mechanism for computing the
    * determining whether a type is a scalar type (float, double, etc...)
    */
-  template <typename T> struct IsScalarType {};
+  template <typename T> struct IsScalarType {
+    static const bool value = false;
+  };
 
   //! Base template specification for %Value
   /*!
    * The %Value functor returns the value of an AD type.
    */
-  template <typename T> struct Value {};
+  template <typename T> struct Value {
+    KOKKOS_INLINE_FUNCTION
+    static const T& eval(const T& x) { return x; }
+  };
 
   //! Base template specification for %ScalarValue
   /*!
    * The %ScalarValue functor returns the base scalar value of an AD type,
    * i.e., something that isn't an AD type.
    */
-  template <typename T> struct ScalarValue {};
+  template <typename T> struct ScalarValue {
+    KOKKOS_INLINE_FUNCTION
+    static const T& eval(const T& x) { return x; }
+  };
 
   //! Base template specification for marking constants
   template <typename T> struct MarkConstant {
+    KOKKOS_INLINE_FUNCTION
     static void eval(T& x) {}
   };
 
   //! Base template specification for string names of types
-  template <typename T> struct StringName {};
+  template <typename T> struct StringName {
+    KOKKOS_INLINE_FUNCTION
+    static std::string eval() { return ""; }
+  };
 
   //! Base template specification for testing equivalence
-  template <typename T> struct IsEqual {};
+  template <typename T> struct IsEqual {
+    KOKKOS_INLINE_FUNCTION
+    static bool eval(const T& x, const T& y) { return x == y; }
+  };
 
   //! Base template specification for testing whether type is statically sized
-  template <typename T> struct IsStaticallySized {};
+  template <typename T> struct IsStaticallySized {
+    static const bool value = false;
+  };
 
   //! Base template specification for static size
   template <typename T> struct StaticSize {
