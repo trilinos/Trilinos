@@ -256,10 +256,10 @@ namespace Sacado {                                                      \
     template <typename T> class Taylor;                                 \
     template <typename T> Taylor<T> OP (const Taylor<T>&,               \
                                         const Taylor<T>&);              \
-    template <typename T> Taylor<T> OP (const T&,                       \
+    template <typename T> Taylor<T> OP (const typename Taylor<T>::value_type&, \
                                         const Taylor<T>&);              \
     template <typename T> Taylor<T> OP (const Taylor<T>&,               \
-                                        const T&);                      \
+                                        const typename Taylor<T>::value_type&); \
   }                                                                     \
                                                                         \
   namespace FlopCounterPack {                                           \
