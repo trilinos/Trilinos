@@ -834,13 +834,189 @@ int nssi_test(nssi_request *req, int *rc) {
     return (int)NSSI_ENOTSUP;
 }
 
-/**
- * @brief Wait for the server to fetch the long args.
- *
- */
-static int cleanup_long_args(
-        nssi_request *req,
-        int timeout)
+static int setup_short_request(nssi_request *request)
+{
+    int rc = NSSI_OK;
+    int short_request_len = 0;
+
+    trios_declare_timer(call_time);
+
+    if (nssi_config.use_buffer_queue) {
+        request->short_request_hdl=trios_buffer_queue_pop(&send_bq);
+        log_debug(rpc_debug_level, "Popped short request buffer");
+    } else {
+        /* allocate memory for the short request buffer */
+        short_request_len = NNTI_BUFFER_SIZE(&request->svc->req_addr);
+
+        trios_start_timer(call_time);
+        rc=NNTI_alloc(
+                &transports[request->svc->transport_id],
+                short_request_len,
+                1,
+                NNTI_SEND_SRC,
+                request->short_request_hdl);
+        trios_stop_timer("NNTI_register_memory - short request", call_time);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering short request: %s",
+                    nnti_err_str(rc));
+            goto cleanup;
+        }
+        log_debug(rpc_debug_level, "Allocated short request buffer");
+    }
+
+cleanup:
+    return rc;
+}
+
+static int teardown_short_request(nssi_request *request)
+{
+    int rc = NSSI_OK;
+
+    trios_declare_timer(call_time);
+
+    if (nssi_config.use_buffer_queue) {
+        trios_buffer_queue_push(&send_bq, request->short_request_hdl);
+    } else {
+        trios_start_timer(call_time);
+        rc=NNTI_free(request->short_request_hdl);
+        trios_stop_timer("NNTI_unregister_memory - send req", call_time);
+    }
+    request->short_request_hdl=NULL;
+
+    return rc;
+}
+
+static int setup_bulk_data(nssi_request *request)
+{
+    int rc = NSSI_OK;
+
+    trios_declare_timer(call_time);
+
+    if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= request->data_size)) {
+        log_debug(rpc_debug_level, "using buffer queue for TARGET buffer");
+        request->bulk_data_hdl=trios_buffer_queue_pop(&rdma_target_bq);
+        assert(request->bulk_data_hdl);
+        NNTI_BUFFER_SIZE(request->bulk_data_hdl)=request->data_size;
+        /* copy the user buffer contents into RDMA buffer */
+        trios_start_timer(call_time);
+        memcpy(NNTI_BUFFER_C_POINTER(request->bulk_data_hdl), (char *)request->data, request->data_size);
+        trios_stop_timer("memcpy target buf to bq", call_time);
+    } else {
+        log_debug(rpc_debug_level, "using user buffer for TARGET buffer");
+        log_debug (rpc_debug_level, "Registering data buffer (size=%d)", request->data_size);
+
+        trios_start_timer(call_time);
+        rc=NNTI_register_memory(
+                &transports[request->svc->transport_id],
+                (char *)request->data,
+                request->data_size,
+                1,
+                (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
+                request->bulk_data_hdl);
+        trios_stop_timer("NNTI_register_memory - data", call_time);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering data: %s",
+                    nnti_err_str(rc));
+            goto cleanup;
+        }
+        log_debug(rpc_debug_level, "Allocated bulk data buffer");
+    }
+
+    if (logging_debug(rpc_debug_level)) {
+        fprint_NNTI_buffer(logger_get_file(), "request->bulk_data_hdl",
+                "NNTI_buffer_t", request->bulk_data_hdl);
+    }
+
+cleanup:
+    return rc;
+}
+
+static int teardown_bulk_data(nssi_request *request)
+{
+    int rc = NSSI_OK;
+
+    if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= request->data_size)) {
+        trios_buffer_queue_push(&rdma_target_bq, request->bulk_data_hdl);
+    } else {
+        rc=NNTI_unregister_memory(request->bulk_data_hdl);
+    }
+    request->bulk_data_hdl=NULL;
+
+    return rc;
+}
+
+static int setup_short_result(nssi_request *request)
+{
+    int rc = NSSI_OK;
+
+    trios_declare_timer(call_time);
+
+    if (nssi_config.use_buffer_queue) {
+        request->short_result_hdl=trios_buffer_queue_pop(&recv_bq);
+    } else {
+        log_debug (rpc_debug_level, "allocating short result (size=%d)", NSSI_SHORT_RESULT_SIZE);
+
+        trios_start_timer(call_time);
+        rc=NNTI_alloc(
+                &transports[request->svc->transport_id],
+                NSSI_SHORT_RESULT_SIZE,
+                1,
+                NNTI_RECV_DST,
+                request->short_result_hdl);
+        trios_stop_timer("NNTI_register_memory - short result", call_time);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering short result: %s",
+                    nnti_err_str(rc));
+            goto cleanup;
+        }
+        log_debug(rpc_debug_level, "Allocated short result buffer");
+    }
+
+cleanup:
+    return rc;
+}
+
+static int teardown_short_result(nssi_request *request)
+{
+    int rc = NSSI_OK;
+
+    if (nssi_config.use_buffer_queue) {
+        trios_buffer_queue_push(&recv_bq, request->short_result_hdl);
+    } else {
+        rc=NNTI_free(request->short_result_hdl);
+    }
+    request->short_result_hdl=NULL;
+
+    return rc;
+}
+
+static int setup_long_args(nssi_request *request, nssi_size args_size)
+{
+    int rc = NSSI_OK;
+
+    log_debug(rpc_debug_level,"allocating space for args");
+    /* allocate memory for the encoded arguments. The request
+     * structure keeps track of the buffer so it can free
+     * the memory later. */
+    rc=NNTI_alloc(
+            &transports[request->svc->transport_id],
+            args_size,
+            1,
+            NNTI_GET_SRC,
+            request->long_args_hdl);
+    if (rc != NNTI_OK) {
+        log_error(rpc_debug_level, "failed registering long args: %s",
+                nnti_err_str(rc));
+        goto cleanup;
+    }
+
+cleanup:
+    return rc;
+}
+
+static int teardown_long_args(nssi_request *req)
 {
     int rc = NSSI_OK;
     char *buf;
@@ -853,10 +1029,12 @@ static int cleanup_long_args(
 
     log_debug(rpc_debug_level, "waiting for long args");
 
-    rc=NNTI_free(&req->long_args_hdl);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed unregistering long args: %s",
-                nnti_err_str(rc));
+    if (req->app_pinned_long_args == FALSE) {
+        rc=NNTI_free(req->long_args_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed unregistering long args: %s",
+                    nnti_err_str(rc));
+        }
     }
 
     return rc;
@@ -943,7 +1121,7 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
     if (req->use_long_args) {
         log_debug(debug_level, "Cleanup long args");
         /* Now we need to clean up the long arguments (if they were used) */
-        rc = cleanup_long_args(req, timeout);
+        rc = teardown_long_args(req);
         if (rc != NSSI_OK) {
             log_error(debug_level, "failed to cleanup long args");
             return NSSI_EBADRPC;
@@ -964,19 +1142,8 @@ cleanup:
         req->callback(req);
     }
 
-    if (nssi_config.use_buffer_queue) {
-        trios_buffer_queue_push(&recv_bq, req->short_result_hdl);
-        req->short_result_hdl=NULL;
-    } else {
-        /* Free data allocated for the short result */
-        log_debug(debug_level, "Unregister memory for short_result");
-        /* TODO: Fix this so an error or timeout cleans up data structures */
-        rc=NNTI_free(req->short_result_hdl);
-        if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed unregistering short result: %s",
-                    nnti_err_str(rc));
-        }
-        req->short_result_hdl=NULL;
+    if (req->app_pinned_short_result == FALSE) {
+        teardown_short_result(req);
     }
 
     /* If the request has data associated with it, the data should
@@ -984,24 +1151,19 @@ cleanup:
      * We need to unlink the MD and free the event queue.
      */
     if (req->data != NULL) {
-        if ((nssi_config.use_buffer_queue) &&
-            (nssi_config.rdma_buffer_queue_buffer_size >= req->data_size)) {
-            /* copy the RDMA buffer contents into the user buffer.
-             * we can't tell if the server op was get or put.
-             * if it was get, then this is a waste of time.
-             * if it was put, then this is required.
-             */
-            trios_start_timer(call_time);
-            memcpy(req->data, NNTI_BUFFER_C_POINTER(req->bulk_data_hdl), req->data_size);
-            trios_stop_timer("memcpy bq to bulk buf", call_time);
-            trios_buffer_queue_push(&rdma_target_bq, req->bulk_data_hdl);
-        } else {
-            log_debug(debug_level, "Unregister memory for data");
-            rc=NNTI_unregister_memory(req->bulk_data_hdl);
-            if (rc != NNTI_OK) {
-                log_error(rpc_debug_level, "failed unregistering data: %s",
-                        nnti_err_str(rc));
+        if (req->app_pinned_bulk_data == FALSE) {
+            if ((nssi_config.use_buffer_queue) &&
+                (nssi_config.rdma_buffer_queue_buffer_size >= req->data_size)) {
+                /* copy the RDMA buffer contents into the user buffer.
+                 * we can't tell if the server op was get or put.
+                 * if it was get, then this is a waste of time.
+                 * if it was put, then this is required.
+                 */
+                trios_start_timer(call_time);
+                memcpy(req->data, NNTI_BUFFER_C_POINTER(req->bulk_data_hdl), req->data_size);
+                trios_stop_timer("memcpy bq to target buf", call_time);
             }
+            teardown_bulk_data(req);
         }
     }
 
@@ -1118,7 +1280,7 @@ int nssi_waitany(
     if (req_array[*which].use_long_args) {
     	log_debug(debug_level, "Cleanup long args");
     	/* Now we need to clean up the long arguments (if they were used) */
-    	rc = cleanup_long_args(&req_array[*which], timeout);
+    	rc = teardown_long_args(&req_array[*which]);
     	if (rc != NSSI_OK) {
     		log_error(debug_level, "failed to cleanup long args");
     		return NSSI_EBADRPC;
@@ -1143,48 +1305,32 @@ cleanup:
 	/* call the callback function associated with the request */
 	log_debug(debug_level, "calling callback for wait(): op=%d", req_array[*which].opcode);
 	if (req_array[*which].callback) {
-		req_array[*which].callback(&req_array[*which]);
+	    req_array[*which].callback(&req_array[*which]);
 	}
 
-	if (nssi_config.use_buffer_queue) {
-		trios_buffer_queue_push(&recv_bq, req_array[*which].short_result_hdl);
-		req_array[*which].short_result_hdl=NULL;
-	} else {
-		/* Free data allocated for the short result */
-		log_debug(debug_level, "Unregister memory for short_result");
-		/* TODO: Fix this so an error or timeout cleans up data structures */
-		rc=NNTI_free(req_array[*which].short_result_hdl);
-		if (rc != NNTI_OK) {
-			log_error(rpc_debug_level, "failed unregistering short result: %s",
-					nnti_err_str(rc));
-		}
-		req_array[*which].short_result_hdl=NULL;
-	}
+    if (req_array[*which].app_pinned_short_result == FALSE) {
+        teardown_short_result(&req_array[*which]);
+    }
 
 	/* If the request has data associated with it, the data should
 	 * be transferred by now (server would not have sent result).
 	 * We need to unlink the MD and free the event queue.
 	 */
 	if (req_array[*which].data != NULL) {
-		if ((nssi_config.use_buffer_queue) &&
-			(nssi_config.rdma_buffer_queue_buffer_size >= req_array[*which].data_size)) {
-			/* copy the RDMA buffer contents into the user buffer.
-			 * we can't tell if the server op was get or put.
-			 * if it was get, then this is a waste of time.
-			 * if it was put, then this is required.
-			 */
-	        trios_start_timer(call_time);
-			memcpy(req_array[*which].data, NNTI_BUFFER_C_POINTER(req_array[*which].bulk_data_hdl), req_array[*which].data_size);
-	        trios_stop_timer("memcpy bq to target buf", call_time);
-			trios_buffer_queue_push(&rdma_target_bq, req_array[*which].bulk_data_hdl);
-		} else {
-			log_debug(debug_level, "Unregister memory for data");
-			rc=NNTI_unregister_memory(req_array[*which].bulk_data_hdl);
-			if (rc != NNTI_OK) {
-				log_error(rpc_debug_level, "failed unregistering data: %s",
-						nnti_err_str(rc));
-			}
-		}
+        if (req_array[*which].app_pinned_bulk_data == FALSE) {
+            if ((nssi_config.use_buffer_queue) &&
+                (nssi_config.rdma_buffer_queue_buffer_size >= req_array[*which].data_size)) {
+                /* copy the RDMA buffer contents into the user buffer.
+                 * we can't tell if the server op was get or put.
+                 * if it was get, then this is a waste of time.
+                 * if it was put, then this is required.
+                 */
+                trios_start_timer(call_time);
+                memcpy(req_array[*which].data, NNTI_BUFFER_C_POINTER(req_array[*which].bulk_data_hdl), req_array[*which].data_size);
+                trios_stop_timer("memcpy bq to target buf", call_time);
+            }
+            teardown_bulk_data(&req_array[*which]);
+        }
 	}
 
 
@@ -1233,8 +1379,6 @@ int nssi_waitall(
 	int timeouts=0;
 
     NNTI_work_request_t **work_requests=new NNTI_work_request_t*[req_count];
-//    NNTI_status_t        *statuses;
-//    NNTI_status_t       **status_list;
     NNTI_status_t         status;
 
     uint32_t which=0;
@@ -1260,11 +1404,6 @@ int nssi_waitall(
 				break;
         }
     }
-//    statuses   =(NNTI_status_t  *)malloc(req_count*sizeof(NNTI_status_t));
-//    status_list=(NNTI_status_t **)malloc(req_count*sizeof(NNTI_status_t *));
-//    for (i=0;i<req_count;i++) {
-//        status_list[i]=&statuses[i];
-//    }
 
     for (i=0;i<req_count;i++) {
     	nnti_rc=NNTI_waitany(
@@ -1302,7 +1441,7 @@ int nssi_waitall(
         if (req_array[which].use_long_args) {
             log_debug(debug_level, "Cleanup long args");
             /* Now we need to clean up the long arguments (if they were used) */
-            rc = cleanup_long_args(&req_array[which], timeout);
+            rc = teardown_long_args(&req_array[which]);
             if (rc != NSSI_OK) {
                 log_error(debug_level, "failed to cleanup long args");
                 req_array[which].status = NSSI_REQUEST_ERROR;
@@ -1318,19 +1457,8 @@ int nssi_waitall(
             req_array[which].callback(&req_array[which]);
         }
 
-        if (nssi_config.use_buffer_queue) {
-            trios_buffer_queue_push(&recv_bq, req_array[which].short_result_hdl);
-            req_array[which].short_result_hdl=NULL;
-        } else {
-            /* Free data allocated for the short result */
-            log_debug(debug_level, "Unregister memory for short_result");
-            /* TODO: Fix this so an error or timeout cleans up data structures */
-            nnti_rc=NNTI_free(req_array[which].short_result_hdl);
-            if (nnti_rc != NNTI_OK) {
-                log_error(rpc_debug_level, "failed unregistering short result: %s",
-                        nnti_err_str(nnti_rc));
-            }
-            req_array[which].short_result_hdl=NULL;
+        if (req_array[which].app_pinned_short_result == FALSE) {
+            teardown_short_result(&req_array[which]);
         }
 
         /* If the request has data associated with it, the data should
@@ -1338,24 +1466,19 @@ int nssi_waitall(
          * We need to unlink the MD and free the event queue.
          */
         if (req_array[which].data != NULL) {
-            if ((nssi_config.use_buffer_queue) &&
-                (nssi_config.rdma_buffer_queue_buffer_size >= req_array[which].data_size)) {
-                /* copy the RDMA buffer contents into the user buffer.
-                 * we can't tell if the server op was get or put.
-                 * if it was get, then this is a waste of time.
-                 * if it was put, then this is required.
-                 */
-    	        trios_start_timer(call_time);
-                memcpy(req_array[which].data, NNTI_BUFFER_C_POINTER(req_array[which].bulk_data_hdl), req_array[which].data_size);
-    	        trios_stop_timer("memcpy bq to target buf", call_time);
-                trios_buffer_queue_push(&rdma_target_bq, req_array[which].bulk_data_hdl);
-            } else {
-                log_debug(debug_level, "Unregister memory for data");
-                nnti_rc=NNTI_unregister_memory(req_array[which].bulk_data_hdl);
-                if (nnti_rc != NNTI_OK) {
-                    log_error(rpc_debug_level, "failed unregistering data: %s",
-                            nnti_err_str(nnti_rc));
+            if (req_array[which].app_pinned_bulk_data == FALSE) {
+                if ((nssi_config.use_buffer_queue) &&
+                    (nssi_config.rdma_buffer_queue_buffer_size >= req_array[which].data_size)) {
+                    /* copy the RDMA buffer contents into the user buffer.
+                     * we can't tell if the server op was get or put.
+                     * if it was get, then this is a waste of time.
+                     * if it was put, then this is required.
+                     */
+                    trios_start_timer(call_time);
+                    memcpy(req_array[which].data, NNTI_BUFFER_C_POINTER(req_array[which].bulk_data_hdl), req_array[which].data_size);
+                    trios_stop_timer("memcpy bq to target buf", call_time);
                 }
+                teardown_bulk_data(&req_array[which]);
             }
         }
 
@@ -1457,6 +1580,11 @@ static int encode_args(
         } else {
             /* args will not fit in the request. server must fetch. */
             header->fetch_args = TRUE;
+
+            if (request->is_responseless == TRUE) {
+                log_debug(rpc_debug_level, "illegal combination: responseless + long args");
+                return NSSI_EINVAL;
+            }
         }
     }
 
@@ -1475,26 +1603,15 @@ static int encode_args(
 
         request->use_long_args=1;
 
-        log_debug(rpc_debug_level,"allocating space for args");
-        /* allocate memory for the encoded arguments. The request
-         * structure keeps track of the buffer so it can free
-         * the memory later. */
-        rc=NNTI_alloc(
-                &transports[svc->transport_id],
-                args_size,
-                1,
-                NNTI_GET_SRC,
-                &request->long_args_hdl);
-        if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed registering long args: %s",
-                    nnti_err_str(rc));
-            goto cleanup;
+        /* the app may provide its own registered long args buffer.  check here. */
+        if (request->app_pinned_long_args == FALSE) {
+            setup_long_args(request, args_size);
         }
-        header->args_addr=request->long_args_hdl;
+        header->args_addr=*request->long_args_hdl;
 
         /* create an xdr memory stream for the encoded args */
-        xdrmem_create(&args_xdrs, NNTI_BUFFER_C_POINTER(&request->long_args_hdl),
-                NNTI_BUFFER_SIZE(&request->long_args_hdl), XDR_ENCODE);
+        xdrmem_create(&args_xdrs, NNTI_BUFFER_C_POINTER(request->long_args_hdl),
+                NNTI_BUFFER_SIZE(request->long_args_hdl), XDR_ENCODE);
 
         /* if we get here, args should not be NULL */
         assert(args);
@@ -1609,26 +1726,24 @@ cleanup:
 
 
 /**
- * @brief Send an RPC request to an NSSI server.
+ * @brief Setup an RPC request.
  *
  * @ingroup rpc_ptl_impl
  *
- * This method encodes and transfers an RPC request header and
- * operation arguments to an NSSI server using Portals. If the
- * arguments are sufficiently small, \b nssi_call_rpc sends
- * the request header and the arguments in a single message.
- * If the arguments are large (i.e., too large for the request buffer),
- * the server to fetch the arguments from a client-side portal.
+ * This method populates an RPC request.  All input parameters are copied
+ * into the request.  The request can be used to send the RPC to the service
+ * and wait for the result
  *
- * @param rpc           @input descriptor for the remote method.
+ * @param svc           @input descriptor for the NSSI service.
+ * @param opcode        @input descriptor for the remote method.
  * @param args          @input pointer to the arguments.
  * @param data          @input pointer to data (for bulk data transfers).
  * @param data_size     @input length of data buffer
  * @param result        @input where to put results.
- * @param req           @output The request handle (used to test for
+ * @param request       @output The request handle (used to test for
  *                              completion).
  */
-int nssi_call_rpc(
+int nssi_create_request(
         const nssi_service *svc,
         const int opcode,
         void *args,
@@ -1645,13 +1760,7 @@ int nssi_call_rpc(
 
     log_level debug_level = rpc_debug_level;
 
-    nssi_request_header header;   /* the request header */
     char *buf;
-    int short_req_len = 0;
-    NNTI_buffer_t       short_req;
-    NNTI_buffer_t      *short_req_hdl=&short_req;
-    NNTI_work_request_t short_req_wr;
-    NNTI_status_t       status;
 
     int retries=0;
 
@@ -1662,7 +1771,7 @@ int nssi_call_rpc(
 
     trios_start_timer(total_time);
 
-    log_debug(rpc_debug_level, "entered nssi_call_rpc");
+    log_debug(rpc_debug_level, "enter");
 
     /* increment global counter */
     local_count = nthread_counter_increment(&request_count);
@@ -1673,114 +1782,126 @@ int nssi_call_rpc(
 
     /*------ Initialize variables and buffers ------*/
     memset(request, 0, sizeof(nssi_request));
-    memset(&header, 0, sizeof(nssi_request_header));
 
     /* set request fields */
-    request->id = local_count;  /* id of the request (used for debugging) */
-    request->svc = svc;
-    request->opcode = opcode;   /* operation ID */
-    request->result = result;   /* where to put the result */
-    request->data = (data_size > 0)? data : NULL;
-    request->data_size = data_size;
-    request->error_code = NSSI_OK;                /* return code of remote method */
-    request->status = NSSI_SENDING_REQUEST;       /* status of this request */
+    request->svc                      = svc;
+    request->id                       = local_count;           /* id of the request (used for debugging) */
+    request->opcode                   = opcode;                /* operation ID */
+    request->is_responseless          = FALSE;
+    request->is_sync                  = FALSE;
+    request->sync_timeout             = -1;
+    request->error_code               = NSSI_OK;               /* return code of remote method */
+    request->status                   = NSSI_SENDING_REQUEST;  /* status of this request */
+    request->app_pinned_short_request = FALSE;
+    request->short_request_hdl        = &request->short_request;
+    request->app_pinned_long_args     = FALSE;
+    request->long_args_hdl            = &request->long_args;
+    request->args                     = args;                  /* where to find the RPC args */
+    request->app_pinned_bulk_data     = FALSE;
+    request->bulk_data_hdl            = &request->bulk_data;
+    request->data_size                = data_size;
+    request->data                     = (data_size > 0) ? data : NULL;
+    request->app_pinned_short_result  = FALSE;
+    request->short_result_hdl         = &request->short_result;
+    request->result                   = result;                /* where to put the result */
+
+    log_debug(rpc_debug_level, "exit");
+
+cleanup:
+
+    return rc;
+}
+
+/**
+ * @brief Send an RPC request to an NSSI server.
+ *
+ * @ingroup rpc_ptl_impl
+ *
+ * This method encodes and transfers an RPC request header and
+ * operation arguments to an NSSI server using NNTI. If the
+ * arguments are sufficiently small, \b nssi_send_request sends
+ * the request header and the arguments in a single message.
+ * If the arguments are large (i.e., too large for the request buffer),
+ * the server fetches the arguments from a client-side buffer.
+ *
+ * @param request   @inout The request handle (used to test for completion).
+ */
+int nssi_send_request(
+        nssi_request *request)
+{
+    /* local variables */
+    int rc=NSSI_OK;  /* return code */
+
+    NNTI_status_t status;
+
+    log_level debug_level = rpc_debug_level;
+
+    nssi_request_header header;   /* the request header */
+    char *buf;
+
+    int retries=0;
+
+    trios_declare_timer(total_time);
+    trios_declare_timer(call_time);
+
+    unsigned long len=0;
+
+    trios_start_timer(total_time);
+
+    log_debug(rpc_debug_level, "enter");
+
+    if (request->is_responseless == TRUE) {
+        /* quick check for illegal request setup */
+        if (request->app_pinned_short_result == TRUE) {
+            log_debug(rpc_debug_level, "illegal combination: responseless + app pinned short result");
+            return NSSI_EINVAL;
+        }
+        if ((request->app_pinned_short_result == FALSE) && (request->result)) {
+            log_debug(rpc_debug_level, "illegal combination: responseless + short result NOT NULL");
+            return NSSI_EINVAL;
+        }
+        if (request->data_size > 0) {
+            log_debug(rpc_debug_level, "illegal combination: responseless + bulk data");
+            return NSSI_EINVAL;
+        }
+    }
+
+
+    /*------ Initialize variables and buffers ------*/
+    memset(&header, 0, sizeof(nssi_request_header));
 
     /* set the opcode for the request header */
-    header.opcode = opcode;
+    header.opcode = request->opcode;
 
-    if (nssi_config.use_buffer_queue) {
-        short_req_hdl=trios_buffer_queue_pop(&send_bq);
-    } else {
-        /* allocate memory for the short request buffer */
-        short_req_len = NNTI_BUFFER_SIZE(&svc->req_addr);
-
-        trios_start_timer(call_time);
-        rc=NNTI_alloc(
-                &transports[svc->transport_id],
-                short_req_len,
-                1,
-                NNTI_SEND_SRC,
-                short_req_hdl);
-        trios_stop_timer("NNTI_register_memory - short req", call_time);
-        if (rc != NNTI_OK) {
-            log_error(debug_level, "failed registering short request: %s",
-                    nnti_err_str(rc));
-            goto cleanup;
-        }
-        log_debug(rpc_debug_level, "Allocated short req buffer");
+    /* the app may provide its own registered request buffer.  check here. */
+    if (request->app_pinned_short_request == FALSE) {
+        /* the app didn't provide a registered request buffer.  get one here. */
+        setup_short_request(request);
     }
 
-    log_debug(debug_level, "Registered short req buffer");
+    if (request->data_size > 0) {
 
-    if (data_size > 0) {
-
-        if ((nssi_config.use_buffer_queue) &&
-            (nssi_config.rdma_buffer_queue_buffer_size >= data_size)) {
-            log_debug(rpc_debug_level, "using buffer queue for TARGET buffer");
-            request->bulk_data_hdl=trios_buffer_queue_pop(&rdma_target_bq);
-            assert(request->bulk_data_hdl);
-            NNTI_BUFFER_SIZE(request->bulk_data_hdl)=data_size;
-            /* copy the user buffer contents into RDMA buffer */
-	        trios_start_timer(call_time);
-            memcpy(NNTI_BUFFER_C_POINTER(request->bulk_data_hdl), (char *)data, data_size);
-	        trios_stop_timer("memcpy target buf to bq", call_time);
-        } else {
-            log_debug(rpc_debug_level, "using user buffer for TARGET buffer");
-            log_debug (debug_level, "Registering data buffer (size=%d)", data_size);
-            request->bulk_data_hdl=&request->bulk_data;
-            trios_start_timer(call_time);
-            rc=NNTI_register_memory(
-                    &transports[svc->transport_id],
-                    (char *)data,
-                    data_size,
-                    1,
-                    (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
-                    request->bulk_data_hdl);
-            trios_stop_timer("NNTI_register_memory - data", call_time);
-            if (rc != NNTI_OK) {
-                log_error(rpc_debug_level, "failed registering data: %s",
-                        nnti_err_str(rc));
-                goto cleanup;
-            }
+        /* the app may provide its own registered bulk data buffer.  check here. */
+        if (request->app_pinned_bulk_data == FALSE) {
+            /* the app didn't provide a registered bulk data buffer.  get one here. */
+            setup_bulk_data(request);
         }
         header.data_addr=*request->bulk_data_hdl;
-
-        if (logging_debug(rpc_debug_level)) {
-            fprint_NNTI_buffer(logger_get_file(), "request->bulk_data_hdl",
-                    "NNTI_buffer_t", request->bulk_data_hdl);
-        }
-
-        log_debug(rpc_debug_level, "Registered data buffer");
     }
 
-    if (nssi_config.use_buffer_queue) {
-        request->short_result_hdl=trios_buffer_queue_pop(&recv_bq);
-    } else {
-        log_debug (debug_level, "allocating short result (size=%d)", NSSI_SHORT_RESULT_SIZE);
-        request->short_result_hdl=&request->short_result;
-
-        trios_start_timer(call_time);
-        rc=NNTI_alloc(
-                &transports[svc->transport_id],
-                NSSI_SHORT_RESULT_SIZE,
-                1,
-                NNTI_RECV_DST,
-                request->short_result_hdl);
-        trios_stop_timer("NNTI_register_memory - short result", call_time);
-        if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed registering short result: %s",
-                    nnti_err_str(rc));
-            goto cleanup;
+    header.is_responseless = request->is_responseless;
+    if (request->is_responseless == FALSE) {
+        /* the app may provide its own registered result buffer.  check here. */
+        if (request->app_pinned_short_result == FALSE) {
+            /* the app didn't provide a registered result buffer.  get one here. */
+            setup_short_result(request);
         }
-        log_debug(rpc_debug_level, "Allocated short result buffer buf=%p", buf);
+        header.res_addr=*request->short_result_hdl;
     }
-    header.res_addr=*request->short_result_hdl;
-
-    log_debug(rpc_debug_level, "Registered short result buffer");
 
     /* --- encode the arguments (might place args in the short request) --- */
     trios_start_timer(call_time);
-    rc = encode_args(svc, args, short_req_hdl, &header, request);
+    rc = encode_args(request->svc, request->args, request->short_request_hdl, &header, request);
     trios_stop_timer("encode_args", call_time);
     if (rc != NSSI_OK) {
         log_fatal(rpc_debug_level, "unable to encode arguments");
@@ -1806,10 +1927,10 @@ int nssi_call_rpc(
     do {
     	trios_start_timer(call_time);
     	rc=NNTI_send(
-    			&svc->svc_host,
-    			short_req_hdl,
-    			&svc->req_addr,
-    			&short_req_wr);
+    			&request->svc->svc_host,
+    			request->short_request_hdl,
+    			&request->svc->req_addr,
+    			&request->short_request_wr);
     	trios_stop_timer("NNTI_send - send req", call_time);
     	if (rc != NNTI_OK) {
     		log_error(rpc_debug_level, "failed sending short request: %s",
@@ -1817,7 +1938,7 @@ int nssi_call_rpc(
     	} else {
     		trios_start_timer(call_time);
     		rc=NNTI_wait(
-    				&short_req_wr,
+    				&request->short_request_wr,
     				-1,
     				&status);
     		trios_stop_timer("NNTI_wait - send req", call_time);
@@ -1844,40 +1965,97 @@ int nssi_call_rpc(
     /* change the state of the pending request */
     request->status = NSSI_PROCESSING_REQUEST;
 
+    if (request->is_sync == TRUE) {
+        int remote_rc=NSSI_OK;
+        rc=nssi_timedwait(request, request->sync_timeout, &remote_rc);
+    }
+
 cleanup:
-    log_debug(rpc_debug_level, "finished nssi_call_rpc (req.opcode=%d, req.id=%d)",
+    log_debug(rpc_debug_level, "finished nssi_send_request (req.opcode=%d, req.id=%d)",
             request->opcode, request->id);
 
-    if (nssi_config.use_buffer_queue) {
-        trios_buffer_queue_push(&send_bq, short_req_hdl);
-        short_req_hdl=NULL;
-    } else {
-        trios_start_timer(call_time);
-        NNTI_free(short_req_hdl);
-        trios_stop_timer("NNTI_unregister_memory - send req", call_time);
-    }
-
     if (rc != NSSI_OK) {
-        if (data_size > 0) {
-            if ((nssi_config.use_buffer_queue) &&
-                (nssi_config.rdma_buffer_queue_buffer_size >= data_size)) {
-                trios_buffer_queue_push(&rdma_target_bq, request->bulk_data_hdl);
-            } else {
-                NNTI_unregister_memory(request->bulk_data_hdl);
+        if (request->app_pinned_short_request == FALSE) {
+            teardown_short_request(request);
+        }
+
+        if (request->app_pinned_bulk_data == FALSE) {
+            if (request->data_size > 0) {
+                teardown_bulk_data(request);
             }
         }
-        if (nssi_config.use_buffer_queue) {
-            trios_buffer_queue_push(&recv_bq, request->short_result_hdl);
-            request->short_result_hdl=NULL;
-        } else {
-            NNTI_free(request->short_result_hdl);
-            request->short_result_hdl=NULL;
+        if (request->app_pinned_short_result == FALSE) {
+            teardown_short_result(request);
         }
     }
 
-    trios_stop_timer("nssi_call_rpc - total", total_time);
+    trios_stop_timer("nssi_send_request - total", total_time);
 
     return rc;
+}
+
+
+/**
+ * @brief Setup and send an RPC request to an NSSI server.
+ *
+ * @ingroup rpc_ptl_impl
+ *
+ * This method populates, encodes and transfers an RPC request header and
+ * operation arguments to an NSSI server using NNTI. If the
+ * arguments are sufficiently small, \b nssi_call_rpc sends
+ * the request header and the arguments in a single message.
+ * If the arguments are large (i.e., too large for the request buffer),
+ * the server fetches the arguments from a client-side buffer.
+ *
+ * @param svc           @input descriptor for the NSSI service.
+ * @param opcode        @input descriptor for the remote method.
+ * @param args          @input pointer to the arguments.
+ * @param data          @input pointer to data (for bulk data transfers).
+ * @param data_size     @input length of data buffer
+ * @param result        @input where to put results.
+ * @param request       @output The request handle (used to test for
+ *                              completion).
+ */
+int nssi_call_rpc(
+        const nssi_service *svc,
+        const int opcode,
+        void *args,
+        void *data,
+        uint32_t data_size,
+        void *result,
+        nssi_request *request)
+{
+    /* local variables */
+    int rc=NSSI_OK;  /* return code */
+
+    log_level debug_level = rpc_debug_level;
+
+    nssi_request_header header;   /* the request header */
+
+    int retries=0;
+
+    trios_declare_timer(total_time);
+    trios_declare_timer(call_time);
+
+    unsigned long len=0;
+
+    trios_start_timer(total_time);
+
+    log_debug(rpc_debug_level, "enter");
+
+    rc=nssi_create_request(svc, opcode, args, data, data_size, result, request);
+    if (rc != NSSI_OK) {
+        goto cleanup;
+    }
+    rc=nssi_send_request(request);
+    if (rc != NSSI_OK) {
+        goto cleanup;
+    }
+
+cleanup:
+
+    return rc;
+
 }
 
 

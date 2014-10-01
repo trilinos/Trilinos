@@ -121,14 +121,14 @@ extern "C" {
                 /** @brief The opcode of the remote function. */
                 int opcode;
 
-                /** @brief Points to the memory reserved for the result. */
-                void *result;
+                /** @brief If TRUE, nssi_send_request() will mark this request complete - long args, bulk data and short result are not allowed. */
+                int8_t is_responseless;
 
-                /** @brief Points to the memory reserved for the bulk data transfers (NULL if not used). */
-                void *data;
+                /** @brief If TRUE, nssi_send_request() will wait for this request to complete. */
+                int8_t is_sync;
 
-                /** @brief The max size of the memory used for bulk transfers. */
-                uint32_t data_size;
+                /** @brief If is_sync==TRUE, the timeout for nssi_timedwait(). */
+                int8_t sync_timeout;
 
                 /** @brief The error code of request. This value will be \ref NSSI_OK unless the
                  *          request status=\ref NSSI_REQUEST_ERROR . */
@@ -138,46 +138,71 @@ extern "C" {
                 nssi_request_status status;
 
 
-                /* IMPLEMENTATION-SPECIFIC PORTION */
+                /***********************
+                 ** Short Request
+                 ***********************/
+                /** @brief If TRUE, the app pinned the short request buffer, so do not unpin/free at cleanup. */
+                int8_t               app_pinned_short_request;
+                /** @brief Handle for the buffer where the short request will be put. */
+                NNTI_buffer_t       *short_request_hdl;
+                NNTI_buffer_t        short_request;
+                /** @brief Work request to track the short request transfer. */
+                NNTI_work_request_t  short_request_wr;
 
-                /** @brief Points to the XDR function used to encode arguments. This
-                  field is implementation specific. */
-                xdrproc_t xdr_encode_args;
+                /***********************
+                 ** Long Args
+                 ***********************/
+                /** @brief If TRUE, the app pinned the long args buffer, so do not unpin/free at cleanup. */
+                int8_t               app_pinned_long_args;
+                int                  use_long_args;
+                /** @brief Points to the memory reserved for the args. */
+                void                *args;
+                /** @brief Points to the XDR function used to encode arguments. */
+                xdrproc_t            xdr_encode_args;
+                /** @brief Handle for the buffer where the long arguments reside. */
+                NNTI_buffer_t       *long_args_hdl;
+                NNTI_buffer_t        long_args;
+                /** @brief Work request to track the long arguments transfer. */
+                NNTI_work_request_t  long_args_wr;
 
-                /** @brief Points to the XDR function used to encode data. This
-                  field is implementation specific. */
-                xdrproc_t xdr_encode_data;
+                /***********************
+                 ** Bulk Data
+                 ***********************/
+                /** @brief If TRUE, the app pinned the bulk data buffer, so do not unpin/free at cleanup. */
+                int8_t               app_pinned_bulk_data;
+                /** @brief Points to the memory reserved for the bulk data transfers (NULL if not used). */
+                void                *data;
+                /** @brief The max size of the memory used for bulk transfers. */
+                uint32_t             data_size;
+                /** @brief Points to the XDR function used to encode data. */
+                xdrproc_t            xdr_encode_data;
+                /** @brief Handle for the buffer where the data reside. */
+                NNTI_buffer_t       *bulk_data_hdl;
+                NNTI_buffer_t        bulk_data;
+                /** @brief Work request to track the bulk data transfer. */
+                NNTI_work_request_t  bulk_data_wr;
 
-                /** @brief Points to the XDR function used to decode the result. This
-                  field is implementation specific.*/
-                xdrproc_t xdr_decode_result;
-
-                int use_long_args;
-
-                /** @brief Handle for the buffer where the long arguments reside.  */
-                NNTI_buffer_t       long_args_hdl;
-                /** @brief Work request to track the long arguments transfer.  */
-                NNTI_work_request_t long_args_wr;
-
-                /** @brief Handle for the buffer where the data reside.  */
-                NNTI_buffer_t *bulk_data_hdl;
-                NNTI_buffer_t bulk_data;
-                /** @brief Work request to track the bulk data transfer.  */
-                NNTI_work_request_t bulk_data_wr;
-
-                /** @brief Handle for the buffer where the short result will be put.  */
-                NNTI_buffer_t *short_result_hdl;
-                NNTI_buffer_t short_result;
-                /** @brief Work request to track the short result transfer.  */
+                /***********************
+                 ** Short Result
+                 ***********************/
+                /** @brief If TRUE, the app pinned the short result buffer, so do not unpin/free at cleanup. */
+                int8_t               app_pinned_short_result;
+                /** @brief Points to the memory reserved for the result. */
+                void               *result;
+                /** @brief Points to the XDR function used to decode the result. */
+                xdrproc_t           xdr_decode_result;
+                /** @brief Handle for the buffer where the short result will be put. */
+                NNTI_buffer_t      *short_result_hdl;
+                NNTI_buffer_t       short_result;
+                /** @brief Work request to track the short result transfer. */
                 NNTI_work_request_t short_result_wr;
 
-                /** @brief A callback function used by the wait() function when
-                 *         a request is complete.
-                 */
+                /***********************
+                 ** Callback
+                 ***********************/
+                /** @brief A callback function used by the wait() function when a request is complete. */
                 int (*callback)(struct nssi_request *);
-
-                /** @brief Optional arguments for the callback function.
-                 */
+                /** @brief Optional arguments for the callback function. */
                 void *callback_args;
 
         };

@@ -1,31 +1,29 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -54,7 +52,7 @@ namespace Sacado {
      * for expression templating.  Class CacheTaylor provides the complete
      * user inteface.
      */
-    template <typename T> 
+    template <typename T>
     class CacheTaylorImplementation {
 
     public:
@@ -75,13 +73,13 @@ namespace Sacado {
       /*!
        * Initializes first coeffienct to \c x and of a polynomial of degree d
        */
-      CacheTaylorImplementation(int d, const T & x) : 
-	coeff_(T(0.),d+1) {
-	coeff_[0] = x;
+      CacheTaylorImplementation(int d, const T & x) :
+        coeff_(T(0.),d+1) {
+        coeff_[0] = x;
       }
 
       //! Copy constructor
-      CacheTaylorImplementation(const CacheTaylorImplementation& x) : 
+      CacheTaylorImplementation(const CacheTaylorImplementation& x) :
         coeff_(x.coeff_) {}
 
       //! Destructor
@@ -89,14 +87,14 @@ namespace Sacado {
 
        //! Resize polynomial to degree d
       /*!
-       * Coefficients are preserved if \c keep_coeffs is \c true, otherwise 
+       * Coefficients are preserved if \c keep_coeffs is \c true, otherwise
        * all coefficients are reset to zero.
        */
       void resize(int d, bool keep_coeffs) {
-	if (keep_coeffs)
-	  resizeCoeffs(d);
-	else
-	  coeff_.resize(d+1, T(0.));
+        if (keep_coeffs)
+          resizeCoeffs(d);
+        else
+          coeff_.resize(d+1, T(0.));
       }
 
       /*!
@@ -127,13 +125,13 @@ namespace Sacado {
       const std::valarray<T>& coeff() const { return coeff_;}
 
       //! Returns degree \c i term with bounds checking
-      const T coeff(int i) const { 
-	T tmp= i<coeff_size() ? coeff_[i]:T(0.); return tmp;}
+      const T coeff(int i) const {
+        T tmp= i<coeff_size() ? coeff_[i]:T(0.); return tmp;}
 
       //! Returns degree \c i term with bounds checking
-      T coeff(int i) { 
-	T tmp= i<coeff_size() ? coeff_[i]:T(0.); return tmp;}
-    
+      T coeff(int i) {
+        T tmp= i<coeff_size() ? coeff_[i]:T(0.); return tmp;}
+
       //! Returns degree \c i term without bounds checking
       T& fastAccessCoeff(int i) { return coeff_[i];}
 
@@ -146,31 +144,31 @@ namespace Sacado {
       //! Returns whether two Taylor objects have the same values
       template <typename S>
       bool isEqualTo(const Expr<S>& x) const {
-	typedef IsEqual<value_type> IE;
-	if (x.degree() != this->degree()) return false;
-	bool eq = true;
-	for (int i=0; i<=this->degree(); i++)
-	  eq = eq && IE::eval(x.coeff(i), this->coeff(i));
-	return eq;
+        typedef IsEqual<value_type> IE;
+        if (x.degree() != this->degree()) return false;
+        bool eq = true;
+        for (int i=0; i<=this->degree(); i++)
+          eq = eq && IE::eval(x.coeff(i), this->coeff(i));
+        return eq;
       }
-    
+
       //@}
 
     protected:
 
       //! Resize coefficient array to new size
       void resizeCoeffs(int dnew) {
-	std::valarray<T> tmp = coeff_;
-	int sz = coeff_size();
-	coeff_.resize(dnew+1,T(0.));
-	if (sz > dnew+1) {
-	  std::slice s(0,dnew+1,1);
-	  coeff_ = tmp[s];
-	}
-	else {
-	  std::slice s(0,sz,1);
-	  coeff_[s] = tmp;
-	}
+        std::valarray<T> tmp = coeff_;
+        int sz = coeff_size();
+        coeff_.resize(dnew+1,T(0.));
+        if (sz > dnew+1) {
+          std::slice s(0,dnew+1,1);
+          coeff_ = tmp[s];
+        }
+        else {
+          std::slice s(0,sz,1);
+          coeff_[s] = tmp;
+        }
       }
 
       int coeff_size() const { return coeff_.size(); }
@@ -186,8 +184,8 @@ namespace Sacado {
     /*!
      * This template class represents a simple CacheTaylor expression.
      */
-    template <typename T> 
-    class Expr< CacheTaylorImplementation<T> > : 
+    template <typename T>
+    class Expr< CacheTaylorImplementation<T> > :
       public CacheTaylorImplementation<T> {
 
     public:
@@ -229,9 +227,9 @@ namespace Sacado {
       typedef typename ScalarType<T>::type scalar_type;
 
       //! Turn CacheTaylor into a meta-function class usable with mpl::apply
-      template <typename U> 
+      template <typename U>
       struct apply {
-	typedef CacheTaylor<U> type;
+        typedef CacheTaylor<U> type;
       };
 
       /*!
@@ -254,14 +252,14 @@ namespace Sacado {
        * Creates a dummy overload when ValueT and ScalarT are the same type.
        */
       CacheTaylor(const typename dummy<value_type,scalar_type>::type& x) :
-	Expr< CacheTaylorImplementation<T> >(value_type(x)) {}
+        Expr< CacheTaylorImplementation<T> >(value_type(x)) {}
 
       //! Constructor with degree d and value \c x
       /*!
        * Initializes first coeffienct to \c x and of a polynomial of degree d
        */
-      CacheTaylor(int d, const T & x) : 
-	Expr< CacheTaylorImplementation<T> >(d,x) {}
+      CacheTaylor(int d, const T & x) :
+        Expr< CacheTaylorImplementation<T> >(d,x) {}
 
       //! Copy constructor
       CacheTaylor(const CacheTaylor& x) : Expr< CacheTaylorImplementation<T> >(x) {}
@@ -284,19 +282,19 @@ namespace Sacado {
 
       //! Assignment operator with constant right-hand-side
       /*!
-       * Creates a dummy overload when value_type and scalar_type are 
+       * Creates a dummy overload when value_type and scalar_type are
        * the same type.
        */
-      CacheTaylor<T>& 
+      CacheTaylor<T>&
       operator=(const typename dummy<value_type,scalar_type>::type& val) {
-	return operator=(value_type(val));
+        return operator=(value_type(val));
       }
 
       //! Assignment with CacheTaylor right-hand-side
       CacheTaylor<T>& operator=(const CacheTaylor<T>& x);
 
       //! Assignment operator with any expression right-hand-side
-      template <typename S> CacheTaylor<T>& operator=(const Expr<S>& x); 
+      template <typename S> CacheTaylor<T>& operator=(const Expr<S>& x);
 
       //@}
 
@@ -308,15 +306,15 @@ namespace Sacado {
       //! Unary-plus operator
       inline Expr< UnaryExpr< CacheTaylor<T>, UnaryPlusOp > >
       operator + () const {
-	typedef UnaryExpr< CacheTaylor<T>, UnaryPlusOp > expr_t;
-	return Expr<expr_t>(expr_t(*this));
+        typedef UnaryExpr< CacheTaylor<T>, UnaryPlusOp > expr_t;
+        return Expr<expr_t>(expr_t(*this));
       }
 
       //! Unary-minus operator
       inline Expr< UnaryExpr< CacheTaylor<T>, UnaryMinusOp > >
       operator - () const {
-	typedef UnaryExpr< CacheTaylor<T>, UnaryMinusOp > expr_t;
-	return Expr<expr_t>(expr_t(*this));
+        typedef UnaryExpr< CacheTaylor<T>, UnaryMinusOp > expr_t;
+        return Expr<expr_t>(expr_t(*this));
       }
 
       //! Addition-assignment operator with constant right-hand-side
@@ -336,7 +334,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with Taylor right-hand-side
       template <typename S> CacheTaylor<T>& operator -= (const S& x);
-  
+
       //! Multiplication-assignment operator with Taylor right-hand-side
       template <typename S> CacheTaylor<T>& operator *= (const S& x);
 

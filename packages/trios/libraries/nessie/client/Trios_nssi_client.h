@@ -236,6 +236,50 @@ extern "C" {
 
 
     /**
+     * @brief Setup an RPC request.
+     *
+     * @ingroup rpc_ptl_impl
+     *
+     * This method populates an RPC request.  All input parameters are copied
+     * into the request.  The request can be used to send the RPC to the service
+     * and wait for the result
+     *
+     * @param svc           @input descriptor for the NSSI service.
+     * @param opcode        @input descriptor for the remote method.
+     * @param args          @input pointer to the arguments.
+     * @param data          @input pointer to data (for bulk data transfers).
+     * @param data_size     @input length of data buffer
+     * @param result        @input where to put results.
+     * @param request       @output The request handle (used to test for
+     *                              completion).
+     */
+    extern int nssi_create_request(
+            const nssi_service *svc,
+            const int opcode,
+            void *args,
+            void *data,
+            uint32_t data_size,
+            void *result,
+            nssi_request *request);
+
+    /**
+     * @brief Send an RPC request to an NSSI server.
+     *
+     * @ingroup rpc_ptl_impl
+     *
+     * This method encodes and transfers an RPC request header and
+     * operation arguments to an NSSI server using NNTI. If the
+     * arguments are sufficiently small, \b nssi_send_request sends
+     * the request header and the arguments in a single message.
+     * If the arguments are large (i.e., too large for the request buffer),
+     * the server fetches the arguments from a client-side buffer.
+     *
+     * @param request   @inout The request handle (used to test for completion).
+     */
+    extern int nssi_send_request(
+            nssi_request *request);
+
+    /**
      * @brief Call a remote procedure.
      *
      * @ingroup rpc_client_api
@@ -315,7 +359,7 @@ extern "C" {
             void *data,
             uint32_t data_len,
             void *result,
-            nssi_request *req);
+            nssi_request *request);
 
 
     /**
