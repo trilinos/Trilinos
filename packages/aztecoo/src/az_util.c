@@ -840,7 +840,7 @@ void AZ_free_memory(int label)
 *******************************************************************************/
 
 {
-  (void) AZ_manage_memory((int) NULL, AZ_CLEAR, label, (char *) NULL,
+  (void) AZ_manage_memory((unsigned int) NULL, AZ_CLEAR, label, (char *) NULL,
                           (int *) NULL);
 }
 
