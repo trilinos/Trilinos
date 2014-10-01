@@ -50,6 +50,7 @@ operators, and dense and sparse matrices.
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_Teuchos_Util.h"
 #include "PyTrilinos_NumPy_Util.hpp"
 
 // Import the numpy interface
@@ -58,12 +59,19 @@ operators, and dense and sparse matrices.
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_ArrayView.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 using Teuchos::RCP;
+using Teuchos::Array;
+using Teuchos::ArrayView;
+using Teuchos::ArrayRCP;
 
 // Tpetra includes
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Version.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
 %}
 
 // Global swig features
@@ -299,6 +307,56 @@ template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 {
 Map = Map_default
 }
+
+/////////////////////////////
+// Tpetra Transfer support //
+/////////////////////////////
+%include "Tpetra_Details_Transfer.hpp"
+%teuchos_rcp(Tpetra::Details::Transfer< long, long, KokkosClassic::DefaultNode::DefaultNodeType >)
+%template(Transfer_default) Tpetra::Details::Transfer< long, long, KokkosClassic::DefaultNode::DefaultNodeType >;
+
+///////////////////////////
+// Tpetra Export support //
+///////////////////////////
+%include "Tpetra_Export_decl.hpp"
+%teuchos_rcp(Tpetra::Export< long, long, KokkosClassic::DefaultNode::DefaultNodeType >)
+%template(Export_default) Tpetra::Export< long, long, KokkosClassic::DefaultNode::DefaultNodeType >;
+%pythoncode
+{
+Export = Export_default
+}
+
+///////////////////////////
+// Tpetra Import support //
+///////////////////////////
+%include "Tpetra_Import_decl.hpp"
+%teuchos_rcp(Tpetra::Import< long, long, KokkosClassic::DefaultNode::DefaultNodeType >)
+%template(Import_default) Tpetra::Import< long, long, KokkosClassic::DefaultNode::DefaultNodeType >;
+%pythoncode
+{
+Import = Import_default
+}
+
+//////////////////////////////////
+// Tpetra SrcDistObject support //
+//////////////////////////////////
+%teuchos_rcp(Tpetra::SrcDistObject)
+%include "Tpetra_SrcDistObject.hpp"
+
+///////////////////////////////
+// Tpetra DistObject support //
+///////////////////////////////
+%ignore Tpetra::removeEmptyProcessesInPlace;
+%include "Tpetra_DistObject_decl.hpp"
+%teuchos_rcp(Tpetra::DistObject< int, long, long >)
+%template(DistObject_int) Tpetra::DistObject< int, long, long >;
+
+////////////////////////////////
+// Tpetra MultiVector support //
+////////////////////////////////
+// %include "Tpetra_MultiVector_decl.hpp"
+// %teuchos_rcp(Tpetra::MultiVector< int, long, long >)
+// %template(MultiVector_int) Tpetra::MultiVector< int, long, long >;
 
 // Turn off exception handling
 %exception;
