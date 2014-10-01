@@ -971,16 +971,16 @@ public:
     m_mark_entity[entity.local_offset()] = NOT_MARKED;
   }
 
-  bool set_parallel_owner_rank(Entity entity, int in_owner_rank)
+  bool internal_set_parallel_owner_rank(Entity entity, int in_owner_rank)
   {
     TraceIfWatching("stk::mesh::BulkData::set_entity_owner_rank", LOG_ENTITY, entity_key(entity));
     DiagIfWatching(LOG_ENTITY, entity_key(entity), "new owner: " << in_owner_rank);
 
     entity_setter_debug_check(entity);
 
-    int &rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];
-    if ( in_owner_rank != rank ) {
-      rank = in_owner_rank;
+    int &nonconst_processor_rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];
+    if ( in_owner_rank != nonconst_processor_rank ) {
+      nonconst_processor_rank = in_owner_rank;
       mark_entity_and_upward_related_entities_as_modified(entity);
       return true;
     }
@@ -1598,16 +1598,18 @@ private:
 
 public:
   typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;
-  void internal_calculate_node_sharing(const std::vector<EntityProc> & local_change,
+  void internal_calculate_sharing(const std::vector<EntityProc> & local_change,
                            const std::vector<EntityProc> & shared_change,
+                           const std::vector<EntityProc> & ghosted_change,
                            NodeToDependentProcessorsMap & owned_node_sharing_map);
   void internal_apply_node_sharing(const NodeToDependentProcessorsMap & owned_node_sharing_map);
   void internal_add_node_sharing( Entity node, int sharing_proc );
   void internal_remove_node_sharing( EntityKey node, int sharing_proc );
   void internal_compute_proposed_owned_closure_count(const std::vector<EntityProc> & local_change,
                                                      const std::vector<EntityProc> & shared_change,
+                                                     const std::vector<EntityProc> & ghosted_change,
                                                      std::vector<uint16_t> & new_closure_count) const;
-
+  void internal_print_comm_map( std::string title);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

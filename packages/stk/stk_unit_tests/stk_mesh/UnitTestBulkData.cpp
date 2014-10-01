@@ -1091,20 +1091,23 @@ TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_
         stk::mesh::internal_get_processor_dependencies(bulk,stk::mesh::EntityProc(elem, dest_proc),
                                                     owned_node_sharing_map);
         BulkData::NodeToDependentProcessorsMap expected_map;
+        expected_map[EntityKey(stk::topology::NODE_RANK, 7)].insert(0);
+        expected_map[EntityKey(stk::topology::NODE_RANK, 7)].insert(3);
+        expected_map[EntityKey(stk::topology::NODE_RANK, 12)].insert(0);
+        expected_map[EntityKey(stk::topology::NODE_RANK, 12)].insert(3);
         expected_map[EntityKey(stk::topology::NODE_RANK, 8)].insert(2);
         expected_map[EntityKey(stk::topology::NODE_RANK, 8)].insert(3);
         expected_map[EntityKey(stk::topology::NODE_RANK, 13)].insert(2);
         expected_map[EntityKey(stk::topology::NODE_RANK, 13)].insert(3);
-//        typedef std::map<Entity, std::set<int> > map_of_sets;
-//        for (map_of_sets::iterator i=owned_node_sharing_map.begin(); i != owned_node_sharing_map.end(); ++i)
-//        {
-//            std::cout << "node id=" << bulk.identifier(i->first) << "\n";
-//            std::set<int> & this_set = i->second;
-//            for (std::set<int>::iterator j=this_set.begin() ; j != this_set.end(); ++j)
-//            {
-//                std::cout << "sharing proc=" << *j << "\n";
-//            }
-//        }
+        for (BulkData::NodeToDependentProcessorsMap::iterator i=owned_node_sharing_map.begin(); i != owned_node_sharing_map.end(); ++i)
+        {
+            std::cout << "entity = " << i->first << "\n";
+            std::set<int> & this_set = i->second;
+            for (std::set<int>::iterator j=this_set.begin() ; j != this_set.end(); ++j)
+            {
+                std::cout << "sharing proc=" << *j << "\n";
+            }
+        }
         bool result = expected_map == owned_node_sharing_map;
         EXPECT_TRUE(result);
     }
@@ -1130,15 +1133,12 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   // it will test the changing-of-ownership of a shared edge to a proc that
   // either ghosted it or did not know about it.
   //
-  //  proc 0 owns element 1
-  //  ...
-  //  proc n owns element n+1
-  //
-  //   1---3---5---7---9---11--13
-  //   | 1 | 2 | 3 | 4 | 5 | 6 | ...
-  //   2---4---6---8---10--12--14
-  //     this edge moves --^
-  //     element 5 moves to proc 0.
+  //         P0  P1  P2  P3
+  //        1---3---5---7---9
+  //        | 1 | 2 | 3 | 4 |
+  //        2---4---6---8---10
+  //  this edge moves --^
+  //  element 3 moves to proc 0.
   //
   // To test this, we use the mesh above, with each elem going on a separate
   // proc, one elem per proc. We will take the edge shared by the last
@@ -1160,21 +1160,19 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   const EntityRank edge_rank = stk::topology::EDGE_RANK;
   const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 
-  // Bail if we have fewer than 3 procs
-  if (p_size < 3) {
+  if (p_size != 4) {
     return;
   }
 
   // Begin modification cycle so we can create the entities and relations
   mesh.modification_begin();
 
-  const unsigned nodes_per_elem = 4, nodes_per_side = 2;
-  EntityKey elem_key_chg_own(elem_rank, p_size - 1 /*id*/);
+  EntityKey elem_key_chg_own(elem_rank, 3 /*id*/);
   EntityKey edge_key_chg_own(edge_rank, 1 /*id*/);
-  EntityKey node_A_key_chg_own(node_rank, p_size*2-1 /*id*/);
-  EntityKey node_B_key_chg_own(node_rank, p_size*2 /*id*/);
-  EntityKey node_C_key(node_rank, p_size*2-1-2 /*id*/);
-  EntityKey node_D_key(node_rank, p_size*2-2 /*id*/);
+  EntityKey node_A_key_chg_own(node_rank, 7 /*id*/);
+  EntityKey node_B_key_chg_own(node_rank, 8 /*id*/);
+  EntityKey node_C_key(node_rank, 5 /*id*/);
+  EntityKey node_D_key(node_rank, 6 /*id*/);
 
   // Create element
   Entity elem = mesh.declare_entity(elem_rank,
@@ -1182,19 +1180,36 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
                                       elem_part);
 
   // If it is 2nd to last element, it is the one changing
-  if (p_rank == p_size - 2) {
+  if (p_rank == 2) {
     EXPECT_TRUE(elem_key_chg_own == mesh.entity_key(elem));
   }
 
   // Create nodes
   EntityVector nodes;
-  const unsigned starting_node_id = p_rank * nodes_per_side + 1;
-  for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-    nodes.push_back(mesh.declare_entity(NODE_RANK, id, node_part));
+  if (p_rank == 0) {
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 1, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 2, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 3, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 4, node_part));
   }
-  // proc 0:  1,2,3,4
-  // proc 1:  3,4,5,6
-  // proc 2:  5,6,7,8
+  else if (p_rank == 1) {
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 3, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 4, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 5, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 6, node_part));
+  }
+  else if (p_rank == 2) {
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 5, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 6, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 7, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 8, node_part));
+  }
+  else {// p_rank == 3
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 7, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 8, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 9, node_part));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, 10, node_part));
+  }
 
   // Add element relations to nodes
   unsigned rel_id = 0;
@@ -1204,7 +1219,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
 
   // Create edge on last two procs
 
-  if (p_rank >= p_size - 2) {
+  if (p_rank >= 2) {
     Entity edge = mesh.declare_entity(edge_rank,
                                        1, // id
                                        edge_part);
@@ -1214,28 +1229,28 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     mesh.declare_relation( elem, edge, 1 /*rel-id*/);
 
     // Add edge relations to nodes
-    unsigned start_idx = p_rank == p_size - 1 ? 0 : nodes_per_side;
-    unsigned end_idx = start_idx + nodes_per_side;
-    rel_id = 0;
-    for (unsigned idx = start_idx ;
-         start_idx < end_idx;
-         ++start_idx, ++rel_id) {
-      mesh.declare_relation( edge, nodes[idx], rel_id );
+    if (p_rank == 2) {
+        mesh.declare_relation(edge, nodes[2], 0);
+        mesh.declare_relation(edge, nodes[3], 1);
+    }
+    else { // p_rank == 3
+        mesh.declare_relation(edge, nodes[0], 0);
+        mesh.declare_relation(edge, nodes[1], 1);
     }
   }
   if (p_rank == 0) {
       mesh.add_node_sharing(nodes[2],1);
       mesh.add_node_sharing(nodes[3],1);
   }
-  else if (p_rank == p_size-1) {
-      mesh.add_node_sharing(nodes[0],p_rank-1);
-      mesh.add_node_sharing(nodes[1],p_rank-1);
-  }
-  else {
+  else if ((p_rank == 1) || (p_rank ==2)) {
       mesh.add_node_sharing(nodes[0],p_rank-1);
       mesh.add_node_sharing(nodes[1],p_rank-1);
       mesh.add_node_sharing(nodes[2],p_rank+1);
       mesh.add_node_sharing(nodes[3],p_rank+1);
+  }
+  else { // p_rank ==3
+      mesh.add_node_sharing(nodes[0],p_rank-1);
+      mesh.add_node_sharing(nodes[1],p_rank-1);
   }
 
   mesh.modification_end();
@@ -1248,38 +1263,16 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     Entity changing_node_A = mesh.get_entity(node_A_key_chg_own);
     Entity changing_node_B = mesh.get_entity(node_B_key_chg_own);
 
-    if (p_size == 3) {
-      // Should be ghosted
-      ASSERT_TRUE(mesh.is_valid(changing_elem));
-      ASSERT_TRUE(mesh.is_valid(changing_edge));
-      ASSERT_TRUE(mesh.is_valid(changing_node_A));
-      ASSERT_TRUE(mesh.is_valid(changing_node_B));
-
-      // Verify that the entities are ghosted
-      Part& owned = meta_data.locally_owned_part();
-      Part& shared = meta_data.globally_shared_part();
-      EXPECT_TRUE(!(mesh.bucket(changing_elem).member(owned) ||
-                       mesh.bucket(changing_elem).member(shared)));
-      EXPECT_TRUE(!(mesh.bucket(changing_edge).member(owned) ||
-                       mesh.bucket(changing_edge).member(shared)));
-      EXPECT_TRUE(!(mesh.bucket(changing_node_A).member(owned) ||
-                       mesh.bucket(changing_node_A).member(shared)));
-      EXPECT_TRUE(!(mesh.bucket(changing_node_B).member(owned) ||
-                       mesh.bucket(changing_node_B).member(shared)));
-
-    }
-    else {
-      // Should be invalid
-      EXPECT_TRUE(!mesh.is_valid(changing_elem));
-      EXPECT_TRUE(!mesh.is_valid(changing_edge));
-      EXPECT_TRUE(!mesh.is_valid(changing_node_A));
-      EXPECT_TRUE(!mesh.is_valid(changing_node_B));
-    }
+    // Should be invalid
+    EXPECT_TRUE(!mesh.is_valid(changing_elem));
+    EXPECT_TRUE(!mesh.is_valid(changing_edge));
+    EXPECT_TRUE(!mesh.is_valid(changing_node_A));
+    EXPECT_TRUE(!mesh.is_valid(changing_node_B));
   }
 
 
   std::vector<EntityProc> change ;
-  if (p_rank == (p_size-2) ) {
+  if (p_rank == 2) {
     // Change ownership of changing elem and all entities in it's closure that
     // we own to proc 0.
 
@@ -1305,27 +1298,23 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   }
 
   // What state are we in now?
-  if (p_rank == p_size-1) {
+  if (p_rank == 3) {
       EXPECT_TRUE( mesh.in_shared(node_A_key_chg_own, p_rank-1) );
       EXPECT_TRUE( mesh.in_shared(node_B_key_chg_own, p_rank-1) );
       EXPECT_TRUE( mesh.in_shared(edge_key_chg_own, p_rank-1) );
   }
-  else if (p_rank == p_size-2 ) {
+  else if (p_rank == 2 ) {
       EXPECT_TRUE( mesh.in_shared(node_A_key_chg_own, p_rank+1) );
       EXPECT_TRUE( mesh.in_shared(node_B_key_chg_own, p_rank+1) );
       EXPECT_TRUE( mesh.in_shared(edge_key_chg_own, p_rank+1) );
       EXPECT_TRUE( mesh.in_shared(node_C_key, p_rank-1) );
       EXPECT_TRUE( mesh.in_shared(node_D_key, p_rank-1) );
   }
-  else if ( (p_rank == p_size-3) && (p_size>3) ) {
+  else if (p_rank == 1) {
       EXPECT_TRUE( mesh.in_shared(node_C_key, p_rank+1) );
       EXPECT_TRUE( mesh.in_shared(node_D_key, p_rank+1) );
   }
-  else if (p_rank == 0) {
-      if (p_size>3) {
-          EXPECT_FALSE( mesh.in_shared(node_C_key, p_rank-3) );
-          EXPECT_FALSE( mesh.in_shared(node_D_key, p_rank-3) );
-      }
+  else { // (p_rank == 0)
       EXPECT_FALSE( mesh.in_shared(node_A_key_chg_own, p_size-1) );
       EXPECT_FALSE( mesh.in_shared(node_B_key_chg_own, p_size-1) );
       EXPECT_FALSE( mesh.in_shared(edge_key_chg_own, p_size-1) );
@@ -1357,17 +1346,17 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
     EXPECT_TRUE( mesh.in_shared( node_A_key_chg_own, p_size-1 ) );
     EXPECT_TRUE( mesh.in_shared( node_B_key_chg_own, p_size-1 ) );
   }
-  if ((p_rank == p_size-3) && (p_size > 3)) {
+  else if (p_rank == 1) {
       EXPECT_TRUE( mesh.in_shared( node_C_key, 0 ) );
       EXPECT_TRUE( mesh.in_shared( node_D_key, 0 ) );
   }
-  if (p_rank == p_size-2) {
+  else if (p_rank == 2) {
       EXPECT_TRUE(!mesh.is_valid(changing_elem));
       EXPECT_TRUE(!mesh.is_valid(changing_edge));
       EXPECT_TRUE(!mesh.is_valid(changing_node_A));
       EXPECT_TRUE(!mesh.is_valid(changing_node_B));
   }
-  if (p_rank == p_size-1) {
+  else { // (p_rank == 3)
       EXPECT_TRUE( mesh.in_shared( edge_key_chg_own, 0 ) );
       EXPECT_TRUE( mesh.in_shared( node_A_key_chg_own, 0 ) );
       EXPECT_TRUE( mesh.in_shared( node_B_key_chg_own, 0 ) );
