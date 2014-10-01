@@ -1145,10 +1145,7 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
     if (pid == MyPID) {
 
       fp = fopen(FileName,"a");
-      if( fp == NULL ) {
-        fprintf(stderr,"%s","ERROR\n");
-        exit(EXIT_FAILURE);
-      }
+      TEUCHOS_ASSERT(fp != NULL);
 
       for (int i = 0 ; i < NumMyRows ; ++i) {
 
