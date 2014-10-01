@@ -284,6 +284,10 @@ struct nssi_request_header {
      *        <em>\ref data_addr</em>. */
     bool fetch_data;
 
+    /** @brief A flag that tells the server if the client expects 
+     * a response. */
+    bool is_responseless;
+
     /** @brief The remote memory address reserved for
      *        long arguments. */
     NNTI_buffer_t args_addr;
