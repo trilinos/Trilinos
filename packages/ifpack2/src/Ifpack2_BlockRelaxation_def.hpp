@@ -87,7 +87,6 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   NumSweeps_ (1),
   NumLocalBlocks_(0),
   PrecType_ (Ifpack2::Details::JACOBI),
-  MinDiagonalValue_ (STS::zero ()),
   DampingFactor_ (STS::one ()),
   IsParallel_ (false),
   ZeroStartingSolution_ (true),
@@ -154,7 +153,6 @@ setParameters (const Teuchos::ParameterList& List)
 
   Ifpack2::getParameter (List, "relaxation: sweeps",NumSweeps_);
   Ifpack2::getParameter (List, "relaxation: damping factor", DampingFactor_);
-  Ifpack2::getParameter (List, "relaxation: min diagonal value", MinDiagonalValue_);
   Ifpack2::getParameter (List, "relaxation: zero starting solution", ZeroStartingSolution_);
   Ifpack2::getParameter (List, "relaxation: backward mode",DoBackwardGS_);
   Ifpack2::getParameter (List, "partitioner: type",PartitionerType_);

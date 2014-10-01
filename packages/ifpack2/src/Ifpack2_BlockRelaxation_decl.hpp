@@ -422,9 +422,6 @@ private:
   //! Which type of point relaxation approach to use
   Details::RelaxationType PrecType_;
 
-  //! Minimum diagonal value
-  scalar_type MinDiagonalValue_;
-
   //! Damping factor.
   scalar_type DampingFactor_;
 
