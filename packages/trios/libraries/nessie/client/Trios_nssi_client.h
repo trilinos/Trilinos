@@ -253,7 +253,7 @@ extern "C" {
      * @param request       @output The request handle (used to test for
      *                              completion).
      */
-    int nssi_create_request(
+    extern int nssi_create_request(
             const nssi_service *svc,
             const int opcode,
             void *args,
@@ -276,7 +276,7 @@ extern "C" {
      *
      * @param request   @inout The request handle (used to test for completion).
      */
-    int nssi_send_request(
+    extern int nssi_send_request(
             nssi_request *request);
 
     /**

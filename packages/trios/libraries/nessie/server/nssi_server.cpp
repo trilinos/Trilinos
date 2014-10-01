@@ -185,6 +185,8 @@ typedef struct {
     NNTI_buffer_t *data_hdl;
     NNTI_buffer_t  shadow_data;
     NNTI_buffer_t *shadow_data_hdl;
+
+    int8_t         is_responseless;
 } request_args_t;
 
 static std::map<struct caller_reqid, request_args_t *, caller_reqid_lt> request_args_map;
@@ -1040,16 +1042,18 @@ int nssi_send_result(
 
     log_debug(rpc_debug_level, "args=%p", args);
 
-    /* lookup the service description of the opcode */
-    rc = lookup_service_op(args->opcode, &op);
-    if (rc != NSSI_OK) {
-        log_warn(rpc_debug_level, "Invalid opcode=%d", args->opcode);
-        return rc;
-    }
+    if (args->is_responseless==FALSE) {
+        /* lookup the service description of the opcode */
+        rc = lookup_service_op(args->opcode, &op);
+        if (rc != NSSI_OK) {
+            log_warn(rpc_debug_level, "Invalid opcode=%d", args->opcode);
+            return rc;
+        }
 
-    rc = send_result(caller, request_id, result_addr, op.encode_res, return_code, result);
-    if (rc != NSSI_OK) {
-        log_warn(rpc_debug_level, "Unable to send result to client: %s", nssi_err_str(rc));
+        rc = send_result(caller, request_id, result_addr, op.encode_res, return_code, result);
+        if (rc != NSSI_OK) {
+            log_warn(rpc_debug_level, "Unable to send result to client: %s", nssi_err_str(rc));
+        }
     }
 
     return rc;
@@ -1087,6 +1091,8 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
     shadow_buffer_entry *sbe=NULL;
     char          *shadow_data_buf =NULL;
     nssi_size      shadow_data_size=0;
+
+    NNTI_buffer_t *res_addr=NULL;
 
 
     request_args_t *req_args=NULL;
@@ -1211,9 +1217,9 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
     req_args->request_id = header.id;
     req_args->arrival_time = rpc_req->arrival_time;
     req_args->start_time = trios_get_time_ms();
-    request_args_add(&caller, header.id, req_args);
-
     req_args->data_hdl=&header.data_addr;
+    req_args->is_responseless=header.is_responseless;
+    request_args_add(&caller, header.id, req_args);
 
     shadow_data_size=NNTI_BUFFER_SIZE(&header.data_addr);
     if (header.fetch_data == TRUE) {
@@ -1263,6 +1269,10 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
         insert_shadow_buffer(sbe);
     }
 
+    if (header.is_responseless == FALSE) {
+        res_addr=&header.res_addr;
+    }
+
     /* end the decode args interval */
     trace_end_interval(trace_interval_gid, TRACE_RPC_DECODE,
             0, "decode request");
@@ -1279,9 +1289,9 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
     // is reentrant??
     trios_start_timer(call_time);
     if (svc_op.func) {
-        rc = svc_op.func(header.id, &caller, op_args, req_args->shadow_data_hdl, &header.res_addr);
+        rc = svc_op.func(header.id, &caller, op_args, req_args->shadow_data_hdl, res_addr);
     } else if (svc_op.obj) {
-        rc = svc_op.obj->doRPC(svc_op.opcode, header.id, &caller, op_args, req_args->shadow_data_hdl, &header.res_addr);
+        rc = svc_op.obj->doRPC(svc_op.opcode, header.id, &caller, op_args, req_args->shadow_data_hdl, res_addr);
     } else {
         rc = NSSI_ENOENT;
     }

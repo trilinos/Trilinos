@@ -1789,6 +1789,7 @@ int nssi_create_request(
     request->opcode                   = opcode;                /* operation ID */
     request->is_responseless          = FALSE;
     request->is_sync                  = FALSE;
+    request->sync_timeout             = -1;
     request->error_code               = NSSI_OK;               /* return code of remote method */
     request->status                   = NSSI_SENDING_REQUEST;  /* status of this request */
     request->app_pinned_short_request = FALSE;
@@ -1859,6 +1860,10 @@ int nssi_send_request(
             log_debug(rpc_debug_level, "illegal combination: responseless + short result NOT NULL");
             return NSSI_EINVAL;
         }
+        if (request->data_size > 0) {
+            log_debug(rpc_debug_level, "illegal combination: responseless + bulk data");
+            return NSSI_EINVAL;
+        }
     }
 
 
@@ -1884,12 +1889,15 @@ int nssi_send_request(
         header.data_addr=*request->bulk_data_hdl;
     }
 
-    /* the app may provide its own registered result buffer.  check here. */
-    if (request->app_pinned_short_result == FALSE) {
-        /* the app didn't provide a registered result buffer.  get one here. */
-        setup_short_result(request);
+    header.is_responseless = request->is_responseless;
+    if (request->is_responseless == FALSE) {
+        /* the app may provide its own registered result buffer.  check here. */
+        if (request->app_pinned_short_result == FALSE) {
+            /* the app didn't provide a registered result buffer.  get one here. */
+            setup_short_result(request);
+        }
+        header.res_addr=*request->short_result_hdl;
     }
-    header.res_addr=*request->short_result_hdl;
 
     /* --- encode the arguments (might place args in the short request) --- */
     trios_start_timer(call_time);
