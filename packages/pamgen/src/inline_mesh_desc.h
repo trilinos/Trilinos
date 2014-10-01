@@ -26,26 +26,56 @@ namespace PAMGEN_NEVADA {
   {
     public:
 
-      Inline_Mesh_Desc(){
+      Inline_Mesh_Desc():
+        dimension(0),
+        instride(0),
+        jnstride(0),
+        knstride(0),
+        iestride(0),
+        jestride(0),
+        kestride(0),
+        element_block_lists(NULL)
+      {
         ZeroSet();
       };
 
       virtual ~Inline_Mesh_Desc();
 
-      long long reportSize(const long long &, const long long &, const long long &,std::stringstream & ss,long long max_int);
+      long long reportSize(
+          const long long &,
+          const long long &,
+          const long long &,
+          std::stringstream & ss,
+          long long max_int
+          );
 
-      virtual long long numBlocks(){return inline_b[0]*inline_b[1]*inline_b[2];};
-      virtual long long blockKstride(){return inline_b[0]*inline_b[1];};
-      virtual long long GlobalNumElements(){return nel_tot[0]*nel_tot[1]*nel_tot[2];};
+      virtual long long numBlocks()
+      {
+        return inline_b[0]*inline_b[1]*inline_b[2];
+      };
+
+      virtual long long blockKstride()
+      {
+        return inline_b[0]*inline_b[1];
+      };
+
+      virtual long long GlobalNumElements()
+      {
+        return nel_tot[0]*nel_tot[1]*nel_tot[2];
+      };
 
       virtual void Display_Class(std::ostream&, const std::string &indent); //called by Class_Display
 
       virtual long long Set_Up() = 0;
       long long Check_Spans();
 
-      virtual void calculateSize(long long & total_el_count,
+      virtual void calculateSize(
+          long long & total_el_count,
           long long & total_node_count,
-          long long & total_edge_count){};
+          long long & total_edge_count
+          )
+      {
+      };
 
       bool Debug_Location() {return debug_mode;};
       void Debug_Location(bool dm) {debug_mode = dm;};

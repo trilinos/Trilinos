@@ -13,13 +13,15 @@ using namespace PG_RuntimeCompiler;
 
 /*****************************************************************************/
 IfElseifElseBlock::
-IfElseifElseBlock(map<string, Variable*> vars, 
-		  Tokenizer& lines, string& errs) : Block(vars) 
-/*****************************************************************************/
+IfElseifElseBlock(
+    map<string, Variable*> vars,
+    Tokenizer& lines, string& errs
+    ):
+  Block(vars),
+  _if(NULL),
+  _else(NULL)
 {
   if (errs != "") return;
-
-  _else = NULL;
 
   //create the conditionalBlock for the if part
   _if = new ConditionalBlock(_vars, lines, errs);
@@ -39,8 +41,7 @@ IfElseifElseBlock(map<string, Variable*> vars,
 }
 
 /*****************************************************************************/
-IfElseifElseBlock::~IfElseifElseBlock() 
-/*****************************************************************************/
+IfElseifElseBlock::~IfElseifElseBlock()
 {
   delete _if;
   list<ConditionalBlock*>::iterator itr = _elseifs.begin();
@@ -55,21 +56,20 @@ IfElseifElseBlock::~IfElseifElseBlock()
 }
 
 /*****************************************************************************/
-Value* IfElseifElseBlock::execute() 
-/*****************************************************************************/
+Value* IfElseifElseBlock::execute()
 {
   _if->execute();
-  
+
   if (_if->wasExecuted()) {
     _if->reset();
     return NULL;
   }
 
   list<ConditionalBlock*>::iterator itr = _elseifs.begin();
-    
+
   while(itr != _elseifs.end()) {
     (*itr)->execute();
-    
+
     if ( (*itr)->wasExecuted()) {
       (*itr)->reset();
       return NULL;
@@ -80,21 +80,20 @@ Value* IfElseifElseBlock::execute()
 
   if (_else != NULL)
     _else->execute();
-  
+
   return NULL;
-} 
+}
 
 /*****************************************************************************/
 ostream& IfElseifElseBlock::operator<<(ostream& os) const
-/*****************************************************************************/
 {
   os << *_if;
 
   for (list<ConditionalBlock*>::const_iterator itr = _elseifs.begin();
-       itr != _elseifs.end(); itr++) {
+      itr != _elseifs.end(); itr++) {
     os << *(*itr);
   }
-  
+
   if (_else != NULL) {
     os << *_else;
   }

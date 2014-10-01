@@ -54,7 +54,14 @@ namespace PAMGEN_NEVADA {
   {
     public:
 
-      Radial_Trisection_Inline_Mesh_Desc(long long dim){dimension = dim;};
+      Radial_Trisection_Inline_Mesh_Desc(long long dim):
+        tri_block_cum_nn(NULL),
+        nn_center(0),
+        div(0),
+        mod(0)
+      {
+        dimension = dim;
+      };
 
       virtual ~Radial_Trisection_Inline_Mesh_Desc(){
         if(tri_block_cum_nn)delete []  tri_block_cum_nn;
