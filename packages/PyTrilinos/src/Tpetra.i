@@ -70,6 +70,7 @@ using Teuchos::ArrayRCP;
 // Tpetra includes
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Version.hpp"
+#include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 %}
@@ -157,6 +158,7 @@ template< class T > RCP< T > rcpFromRef(T& r);
 template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 }
 %include "Tpetra_ConfigDefs.hpp"
+%include "Tpetra_CombineMode.hpp"
 
 ////////////////////////
 // Tpetra Map support //
