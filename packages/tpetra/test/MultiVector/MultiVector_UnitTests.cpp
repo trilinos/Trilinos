@@ -209,18 +209,20 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector, ViewModeConstructorTests, Node )
   {
-    #ifdef HAVE_TPETRA_KOKKOSCOMPAT
-      #ifdef KOKKOS_HAVE_CUDA
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
-      #endif
-      #ifdef KOKKOS_HAVE_OPENMP
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
-      #endif
-      #ifdef KOKKOS_HAVE_PTHREAD
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
-      #endif
-    #endif
-
+    // The old "view mode constructors" don't work for the Kokkos
+    // refactor version of Tpetra.  We skip the test in that case.
+#ifdef HAVE_TPETRA_KOKKOSCOMPAT
+#  ifdef KOKKOS_HAVE_CUDA
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
+#  endif
+#  ifdef KOKKOS_HAVE_OPENMP
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
+#  endif
+#  ifdef KOKKOS_HAVE_PTHREAD
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
+#  endif
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosSerialWrapperNode)) return;
+#endif // HAVE_TPETRA_KOKKOSCOMPAT
 
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<double,int,int,Node> MV;
@@ -262,18 +264,20 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Vector, ViewModeConstructorTests, Node )
   {
-    #ifdef HAVE_TPETRA_KOKKOSCOMPAT
-      #ifdef KOKKOS_HAVE_CUDA
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
-      #endif
-      #ifdef KOKKOS_HAVE_OPENMP
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
-      #endif
-      #ifdef KOKKOS_HAVE_PTHREAD
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
-      #endif
-    #endif
-
+    // The old "view mode constructors" don't work for the Kokkos
+    // refactor version of Tpetra.  We skip the test in that case.
+#ifdef HAVE_TPETRA_KOKKOSCOMPAT
+#  ifdef KOKKOS_HAVE_CUDA
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
+#  endif
+#  ifdef KOKKOS_HAVE_OPENMP
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
+#  endif
+#  ifdef KOKKOS_HAVE_PTHREAD
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
+#  endif
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosSerialWrapperNode)) return;
+#endif // HAVE_TPETRA_KOKKOSCOMPAT
 
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::Vector<double,int,int,Node> Vec;
