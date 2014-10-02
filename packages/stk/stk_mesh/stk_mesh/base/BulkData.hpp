@@ -1610,6 +1610,8 @@ public:
                                                      const std::vector<EntityProc> & ghosted_change,
                                                      std::vector<uint16_t> & new_closure_count) const;
   void internal_print_comm_map( std::string title);
+  void internal_communicate_entity_to_dependent_processors_map(
+          NodeToDependentProcessorsMap & entity_to_dependent_processors_map);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

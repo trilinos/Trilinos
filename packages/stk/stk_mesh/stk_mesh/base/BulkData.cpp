@@ -3827,6 +3827,111 @@ void BulkData::internal_compute_proposed_owned_closure_count(const std::vector<E
     }
 }
 
+namespace {
+void print_entity_to_dependent_processors_map(std::string title, int parallel_rank, const BulkData::NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
+{
+#ifndef NDEBUG
+  {
+      std::ostringstream oss;
+      oss << "\n";
+      BulkData::NodeToDependentProcessorsMap::const_iterator dep_proc_it = entity_to_dependent_processors_map.begin();
+      for (; dep_proc_it != entity_to_dependent_processors_map.end() ; ++dep_proc_it ) {
+          EntityKey key = dep_proc_it->first;
+          const std::set<int> & sharing_procs = dep_proc_it->second;
+          oss << title << " P" << parallel_rank << ": entity_to_dependent_processors_map[" << key << "] = { ";
+          for (std::set<int>::const_iterator it=sharing_procs.begin() ; it!=sharing_procs.end() ; ++it) {
+              oss << *it << " ";
+          }
+          oss << "}" << std::endl;
+          std::cout << oss.str() << std::flush;
+      }
+  }
+#endif // NDEBUG
+
+}
+
+} // namespace
+
+void BulkData::internal_communicate_entity_to_dependent_processors_map(
+        NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
+{
+  print_entity_to_dependent_processors_map("BEFORE",parallel_rank(),entity_to_dependent_processors_map);
+  // Now we have updated sharing lists for every soon-to-be not-owned node.
+  // Lets talk with our neighbors!
+  const int p_size = parallel_size();
+  CommAll comm( parallel() );
+  std::vector<int> procs ;
+
+  // pack and communicate sharing information to all
+  // processes that need to know about the entity
+  for ( int phase = 0; phase < 2; ++phase) {
+    NodeToDependentProcessorsMap::const_iterator map_it = entity_to_dependent_processors_map.begin();
+    for ( ; map_it != entity_to_dependent_processors_map.end() ; ++map_it ) {
+        EntityKey node_key = map_it->first;
+        const std::set<int> & sharing_procs = map_it->second;
+        std::set<int>::const_iterator proc_it = sharing_procs.begin();
+        for ( ; proc_it != sharing_procs.end() ; ++proc_it) {
+            if (*proc_it == parallel_rank()) { continue; }
+            comm.send_buffer(*proc_it)
+                                    .pack<EntityKey>( node_key )
+                                    .pack<int>( sharing_procs.size() );
+            std::set<int>::const_iterator proc_it_inner = sharing_procs.begin();
+            for ( ; proc_it_inner != sharing_procs.end() ; ++proc_it_inner) {
+                comm.send_buffer(*proc_it).pack<int>( *proc_it_inner );
+            }
+        }
+    }
+    if (phase == 0) { // allocation phase
+      comm.allocate_buffers( p_size / 4 , 0 );
+    }
+    else { // communication phase
+      comm.communicate();
+    }
+  }
+
+  // unpack communicated owner information into the
+  // ghosted and shared change vectors.
+  for ( int ip = 0 ; ip < p_size ; ++ip ) {
+    CommBuffer & buf = comm.recv_buffer( ip );
+    while ( buf.remaining() ) {
+      EntityKey key ;
+      int num_sharing_procs;
+      buf.unpack<EntityKey>( key )
+         .unpack<int>( num_sharing_procs );
+      for (int i=0 ; i < num_sharing_procs ; ++i) {
+          int sharing_proc;
+          buf.unpack<int>( sharing_proc );
+          entity_to_dependent_processors_map[key].insert(sharing_proc);
+      }
+    }
+  }
+  print_entity_to_dependent_processors_map("AFTER",parallel_rank(),entity_to_dependent_processors_map);
+
+}
+
+void internal_print_comm_list(std::string title, BulkData & mesh)
+{
+#ifndef NDEBUG
+  std::ostringstream oss;
+  oss << "\n";
+  const EntityCommListInfoVector & entity_comm_list = mesh.comm_list();
+  int index=0;
+  for(EntityCommListInfoVector::const_iterator i = entity_comm_list.begin(); i != entity_comm_list.end(); ++i) {
+      oss << title << " P" << mesh.parallel_rank() << ": m_entity_comm_list[" << index << "] owner=" << i->owner << ", key=" << i->key << ", owner_rank=" << i->entity_comm->owner_rank << ", comm_map = { ";
+      const EntityCommInfoVector & comm_map = i->entity_comm->comm_map;
+      for (EntityCommInfoVector::const_iterator comm_map_it = comm_map.begin() ; comm_map_it != comm_map.end() ; ++comm_map_it ) {
+          unsigned ghost_id = comm_map_it->ghost_id;
+          int proc = comm_map_it->proc;
+          oss << "(" << (ghost_id == 0 ? "SHARED" : "AURA") << ", " << proc << ") " ;
+      }
+      oss << " }\n";
+      ++index;
+  }
+  std::cout << oss.str() << std::flush;
+#endif // NDEBUG
+}
+
+
 void BulkData::internal_calculate_sharing(const std::vector<EntityProc> & local_change,
                          const std::vector<EntityProc> & shared_change,
                          const std::vector<EntityProc> & ghosted_change,
@@ -3834,6 +3939,7 @@ void BulkData::internal_calculate_sharing(const std::vector<EntityProc> & local_
 
 {
   internal_print_comm_map("BEFORE");
+  internal_print_comm_list("BEFORE", *this);
   typedef std::set<EntityProc,EntityLess> EntityProcSet;
   // OWNER sends sharing information to all current and newly sharing/owning processors
   // For each node in send_closure, send a list of sharing processors to sharing list and new owner:
@@ -3887,75 +3993,7 @@ void BulkData::internal_calculate_sharing(const std::vector<EntityProc> & local_
           // This entity can be removed from globally_shared part
       }
   }
-
-  // Now we have updated sharing lists for every soon-to-be not-owned node.
-  // Lets talk with our neighbors!
-  const int p_size = parallel_size();
-  CommAll comm( parallel() );
-  std::vector<int> procs ;
-
-  // pack and communicate sharing information to all
-  // processes that need to know about the entity
-  for ( int phase = 0; phase < 2; ++phase) {
-    NodeToDependentProcessorsMap::const_iterator map_it = node_to_dependent_processors_map.begin();
-    for ( ; map_it != node_to_dependent_processors_map.end() ; ++map_it ) {
-        EntityKey node_key = map_it->first;
-//        Entity node = get_entity(node_key);
-//        if (!bucket(node).owned()) { continue; }
-        const std::set<int> & sharing_procs = map_it->second;
-        std::set<int>::const_iterator proc_it = sharing_procs.begin();
-        for ( ; proc_it != sharing_procs.end() ; ++proc_it) {
-            if (*proc_it == parallel_rank()) { continue; }
-            comm.send_buffer(*proc_it)
-                                    .pack<EntityKey>( node_key )
-                                    .pack<int>( sharing_procs.size() );
-            std::set<int>::const_iterator proc_it_inner = sharing_procs.begin();
-            for ( ; proc_it_inner != sharing_procs.end() ; ++proc_it_inner) {
-                comm.send_buffer(*proc_it).pack<int>( *proc_it_inner );
-            }
-        }
-    }
-    if (phase == 0) { // allocation phase
-      comm.allocate_buffers( p_size / 4 , 0 );
-    }
-    else { // communication phase
-      comm.communicate();
-    }
-  }
-
-  // unpack communicated owner information into the
-  // ghosted and shared change vectors.
-  for ( int ip = 0 ; ip < p_size ; ++ip ) {
-    CommBuffer & buf = comm.recv_buffer( ip );
-    while ( buf.remaining() ) {
-      EntityKey key ;
-      int num_sharing_procs;
-      buf.unpack<EntityKey>( key )
-         .unpack<int>( num_sharing_procs );
-//      ThrowAssertMsg( node_to_dependent_processors_map.find(key) == node_to_dependent_processors_map.end(), "P" << parallel_rank() << " Error, already have EntityKey = " << key << " in node_to_dependent_processors_map!" );
-      for (int i=0 ; i < num_sharing_procs ; ++i) {
-          int sharing_proc;
-          buf.unpack<int>( sharing_proc );
-          node_to_dependent_processors_map[key].insert(sharing_proc);
-      }
-    }
-  }
-#ifndef NDEBUG
-  {
-      NodeToDependentProcessorsMap::const_iterator dep_proc_it = node_to_dependent_processors_map.begin();
-      for (; dep_proc_it != node_to_dependent_processors_map.end() ; ++dep_proc_it ) {
-          EntityKey key = dep_proc_it->first;
-          const std::set<int> & sharing_procs = dep_proc_it->second;
-          std::ostringstream oss;
-          oss << "P" << parallel_rank() << ": node_to_dependent_processors_map[" << key << "] = { ";
-          for (std::set<int>::const_iterator it=sharing_procs.begin() ; it!=sharing_procs.end() ; ++it) {
-              oss << *it << " ";
-          }
-          oss << "}" << std::endl;
-          std::cout << oss.str() << std::flush;
-      }
-  }
-#endif // NDEBUG
+  internal_communicate_entity_to_dependent_processors_map(node_to_dependent_processors_map);
 }
 
 void BulkData::internal_apply_node_sharing(const NodeToDependentProcessorsMap & node_sharing_map)
@@ -3994,6 +4032,7 @@ void BulkData::internal_apply_node_sharing(const NodeToDependentProcessorsMap & 
     update_comm_list(modified_nodes);
 
     internal_print_comm_map("AFTER");
+    internal_print_comm_list("AFTER", *this);
 }
 
 void BulkData::internal_print_comm_map (std::string title)
@@ -4009,7 +4048,7 @@ void BulkData::internal_print_comm_map (std::string title)
             for(; comm_pit.first != comm_pit.second; ++comm_pit){
                 unsigned ghost_id = comm_pit.first->ghost_id;
                 int proc = comm_pit.first->proc;
-                oss << "(" << ghost_id << ", " << proc << ") " ;
+                oss << "(" << (ghost_id == 0 ? "SHARED" : "AURA") << ", " << proc << ") " ;
             }
             oss << "}" << std::endl;
         }
