@@ -1131,6 +1131,10 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
 
 cleanup:
 
+    if (req->is_responseless == TRUE) {
+        return rc;
+    }
+
     /* Did we get here because of an error in this code? */
     if (rc != NSSI_OK) {
         return rc;
@@ -1974,7 +1978,11 @@ cleanup:
     log_debug(rpc_debug_level, "finished nssi_send_request (req.opcode=%d, req.id=%d)",
             request->opcode, request->id);
 
-    if (rc != NSSI_OK) {
+    if (rc == NSSI_OK) {
+        if (request->is_responseless == TRUE) {
+            request->status = NSSI_REQUEST_COMPLETE;
+        }
+    } else {
         if (request->app_pinned_short_request == FALSE) {
             teardown_short_request(request);
         }
