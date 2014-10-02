@@ -53,70 +53,61 @@
 # ************************************************************************
 # @HEADER
 
-
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.perseus.gcc.cmake")
-
-#
-# Set the options specific to this build case
-#
-
-SET(COMM_TYPE MPI)
-SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_RELEASE_DEV_DownStream_KokkosRefactor_ETI_OPENMP_HWLOC_GCC)
-SET(CTEST_PARALLEL_LEVEL 1)
-SET(CTEST_TEST_TYPE Nightly)
-SET(CTEST_TEST_TIMEOUT 900)
-
-SET(Trilinos_PACKAGES Tpetra KokkosCore KokkosLinAlg KokkosContainers KokkosCompat KokkosClassic KokkosMpiComm Belos Ifpack2 MueLu  Amesos Amesos2 Ifpack  Epetra EpetraExt Zoltan Zoltan2)
-
-
-SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTPL_ENABLE_SuperLU=ON"
-
-  "-DTpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
-  "-DTeptra_ENABLE_Kokkos_Refactor_Map:BOOL=ON"
-  "-DTpetra_ENABLE_KokkosCompat:BOOL=ON"
-  "-DTpetra_ENABLE_MPI_CUDA_RDMA:BOOL=OFF"
-  "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to;socket;--map-by;socket"
-
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DTeuchos_ENABLE_COMPLEX:BOOL=OFF"
-  "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
-  "-DKokkosClassic_DefaultNode:STRING=Kokkos::Compat::KokkosOpenMPWrapperNode"
-  "-DTPL_ENABLE_HWLOC:STRING=OFF"
-  "-DTPL_ENABLE_CUDA:STRING=OFF"
-    
-  "-DTPL_ENABLE_CUSPARSE:STRING=OFF"
-  "-DTpetra_ENABLE_Thrust:BOOL=OFF"
-  "-DKokkosClassic_ENABLE_Thrust=OFF"
-  "-DCUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}"
-
-  "-DAmesos_ENABLE_TESTS=OFF"
-  "-DAmesos_ENABLE_EXAMPLES=OFF"
-  "-DAmesos2_ENABLE_TESTS=OFF"
-  "-DAmesos2_ENABLE_EXAMPLES=OFF"
-  "-DIfpack_ENABLE_TESTS=OFF"
-  "-DIfpack_ENABLE_EXAMPLES=OFF"
-  "-DEpetra_ENABLE_TESTS=OFF"
-  "-DEpetra_ENABLE_EXAMPLES=OFF"
-  "-DEpetraExt_ENABLE_TESTS=OFF"
-  "-DEpetraExt_ENABLE_EXAMPLES=OFF"
-  "-DZoltan_ENABLE_TESTS=OFF"
-  "-DZoltan_ENABLE_EXAMPLES=OFF"
-  "-DZoltan2_ENABLE_TESTS=OFF"
-  "-DZoltan2_ENABLE_EXAMPLES=OFF"
   
-  "-DTrilinos_ENABLE_KokkosCore=ON"
-  "-DTrilinos_ENABLE_KokkosCompat=ON"
-  "-DTrilinos_ENABLE_KokkosContainers=ON"
-  "-DTrilinos_ENABLE_KokkosLinAlg=ON"
-  "-DTrilinos_ENABLE_KokkosAlgorithms=ON"
-  "-DTrilinos_ENABLE_KokkosClassic=ON"
-  "-DTrilinos_ENABLE_KokkosMpiComm=ON"
-)
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Set the rest of the system-specific options and run the dashboard build/test
+# Platform/compiler specific options for typhon using gcc
 #
 
-TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
+MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+
+  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+
+  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+
+  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
+  
+  SET( CTEST_BUILD_FLAGS "-j16 -i" )
+
+  SET_DEFAULT( CTEST_PARALLEL_LEVEL "4" )
+
+  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+
+  # Only turn on PyTrilinos for shared libraries
+  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
+  
+  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+    "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
+    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+
+    "-DCMAKE_CXX_COMPILER:FILEPATH=/opt/mpi/openmpi/1.8/intel/cuda6037/bin/mpicxx" 
+    "-DCMAKE_C_COMPILER:FILEPATH=/opt/mpi/openmpi/1.8/intel/cuda6037/bin/mpicc" 
+    "-DMPI_CXX_COMPILER:FILEPATH=/opt/mpi/openmpi/1.8/intel/cuda6037/bin/mpicxx" 
+    "-DMPI_C_COMPILER:FILEPATH=/opt/mpi/openmpi/1.8/intel/cuda6037/bin/mpicc" 
+    "-DMPI_EXEC:FILEPATH=/opt/mpi/openmpi/1.8/intel/cuda6037/bin/mpirun"
+
+    "-DTPL_ENABLE_BLAS:BOOL=ON"
+    "-DTPL_ENABLE_LAPACK:BOOL=ON"
+    "-DTPL_SuperLU_LIBRARIES=/home/crtrott/Software/SuperLU_4.3/lib/libsuperlu_4.3.a"
+    "-DTPL_SuperLU_INCLUDE_DIRS=/home/crtrott/Software/SuperLU_4.3/SRC"
+ 
+
+    "-DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/cuda/6.0.9"
+    )
+
+  SET_DEFAULT(COMPILER_VERSION "Intel-14.0.1")
+
+  #Ensuring that MPI is on for all parallel builds that might be run.
+  IF(COMM_TYPE STREQUAL MPI)
+    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+         "-DTPL_ENABLE_MPI:BOOL=ON"
+         "-DMPI_BASE_DIR:PATH=/opt/mpi/openmpi/1.8/intel/cuda6037"
+       )
+  ENDIF()
+
+  TRILINOS_CTEST_DRIVER()
+
+ENDMACRO()

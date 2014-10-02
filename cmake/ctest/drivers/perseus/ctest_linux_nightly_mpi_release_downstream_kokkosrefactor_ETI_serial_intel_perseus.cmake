@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.perseus.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.perseus.icpc.cmake")
 
 #
 # Set the options specific to this build case
@@ -62,7 +62,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.perseus.gcc.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_RELEASE_DEV_DownStream_KokkosRefactor_ETI_OPENMP_HWLOC_GCC)
+SET(BUILD_DIR_NAME MPI_RELEASE_DEV_DownStream_KokkosRefactor_ETI_SERIAL_Intel)
 SET(CTEST_PARALLEL_LEVEL 1)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
@@ -81,14 +81,16 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTeuchos_ENABLE_COMPLEX:BOOL=OFF"
-  "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
-  "-DKokkosClassic_DefaultNode:STRING=Kokkos::Compat::KokkosOpenMPWrapperNode"
+  "-DTrilinos_ENABLE_OpenMP:BOOL=OFF"
+  "-DTPL_ENABLE_Pthread:BOOL=OFF"  
+  "-DKokkosClassic_DefaultNode:STRING=Kokkos::Compat::KokkosSerialWrapperNode"
   "-DTPL_ENABLE_HWLOC:STRING=OFF"
   "-DTPL_ENABLE_CUDA:STRING=OFF"
     
   "-DTPL_ENABLE_CUSPARSE:STRING=OFF"
   "-DTpetra_ENABLE_Thrust:BOOL=OFF"
   "-DKokkosClassic_ENABLE_Thrust=OFF"
+  "-DKokkosClassic_ENABLE_Serial=OFF"
   "-DCUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}"
 
   "-DAmesos_ENABLE_TESTS=OFF"
