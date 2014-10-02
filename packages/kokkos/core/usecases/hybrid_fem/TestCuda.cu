@@ -5,6 +5,8 @@
 #include <Implicit.hpp>
 #include <Nonlinear.hpp>
 #include <Explicit.hpp>
+
+#define BUILD_FROM_CU_FILE
 #include <SparseLinearSystem.hpp>
 
 //----------------------------------------------------------------------------

@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <Kokkos_Core.hpp>
 #include <HostExecSpace.hpp>
 #include <feint.hpp>
 
