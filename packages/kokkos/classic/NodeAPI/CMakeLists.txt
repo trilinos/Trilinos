@@ -117,35 +117,38 @@ IF (KokkosClassic_ENABLE_TBB)
   APPEND_SET(SOURCES ${TBB_SOURCES})
 ENDIF()
 
-ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
+# Check whether to add the new Kokkos wrapper Nodes to the list.
+# These Nodes live in the KokkosCompat subpackage.
 ASSERT_DEFINED(KokkosClassic_ENABLE_KokkosCompat)
 IF (KokkosClassic_ENABLE_KokkosCompat)
-IF (Kokkos_ENABLE_OpenMP)
-  LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosOpenMPWrapperNode")
-  MESSAGE(STATUS "Enabling node: OpenMP/Wrapper")
+  ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
+  IF (Kokkos_ENABLE_OpenMP)
+    LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosOpenMPWrapperNode")
+    MESSAGE(STATUS "Enabling node: OpenMP/Wrapper")
+    APPEND_SET(HEADERS ../../compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+  ENDIF()
+  
+  ASSERT_DEFINED(Kokkos_ENABLE_Pthread)
+  IF (Kokkos_ENABLE_Pthread)
+    LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosThreadsWrapperNode")
+    MESSAGE(STATUS "Enabling node: Threads/Wrapper")
+    APPEND_SET(HEADERS ../../compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+  ENDIF()
+  
+  ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
+  IF (Kokkos_ENABLE_Cuda)
+    LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosCudaWrapperNode")
+    MESSAGE(STATUS "Enabling node: Cuda/Wrapper")
+    APPEND_SET(HEADERS ../../compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
+  ENDIF()
+  
+  # FIXME (mfh 02 Oct 2014) I can't find a CMake variable that tells me
+  # whether the Serial device is enabled.  Is it enabled all the time?
+  LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosSerialWrapperNode")
+  MESSAGE(STATUS "Enabling node: Serial/Wrapper")
   APPEND_SET(HEADERS ../../compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
-ENDIF()
-ENDIF()
+ENDIF() # KokkosClassic_ENABLE_KokkosCompat
 
-ASSERT_DEFINED(Kokkos_ENABLE_Pthread)
-ASSERT_DEFINED(KokkosClassic_ENABLE_KokkosCompat)
-IF (KokkosClassic_ENABLE_KokkosCompat)
-IF (Kokkos_ENABLE_Pthread)
-  LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosThreadsWrapperNode")
-  MESSAGE(STATUS "Enabling node: Threads/Wrapper")
-  APPEND_SET(HEADERS ../../compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
-ENDIF()
-ENDIF()
-
-ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
-ASSERT_DEFINED(KokkosClassic_ENABLE_KokkosCompat)
-IF (KokkosClassic_ENABLE_KokkosCompat)
-IF (Kokkos_ENABLE_Cuda)
-  LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosCudaWrapperNode")
-  MESSAGE(STATUS "Enabling node: Cuda/Wrapper")
-  APPEND_SET(HEADERS ../../compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
-ENDIF()
-ENDIF()
 
 IF(NOT DEFINED KokkosClassic_DefaultNode)
   SET(KokkosClassic_DefaultNode ${kokkos_defaultnode_default})
