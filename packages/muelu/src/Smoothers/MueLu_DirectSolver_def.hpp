@@ -117,7 +117,11 @@ namespace MueLu {
     // where one first runs hierarchy with tpetra matrix, and then with epetra.
     bool useTpetra = (currentLevel.lib() == Xpetra::UseTpetra);
     s_ = (useTpetra ? sTpetra_ : sEpetra_);
-    TEUCHOS_TEST_FOR_EXCEPTION(s_.is_null(), Exceptions::RuntimeError, "Direct solver for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        s_.is_null(),
+        Exceptions::RuntimeError,
+        "Direct solver for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed"
+        );
 
     s_->DeclareInput(currentLevel);
   }
