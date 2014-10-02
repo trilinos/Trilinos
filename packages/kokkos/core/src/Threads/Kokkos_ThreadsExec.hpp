@@ -135,7 +135,7 @@ public:
   static ThreadsExec * get_thread( const int init_thread_rank );
 
   inline void * reduce_memory() const { return ((unsigned char *) m_scratch ); }
-  inline void * scratch_memory() const { return ((unsigned char *) m_scratch ) + m_scratch_reduce_end ; }
+  KOKKOS_INLINE_FUNCTION  void * scratch_memory() const { return ((unsigned char *) m_scratch ) + m_scratch_reduce_end ; }
 
   static void driver(void);
 

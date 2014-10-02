@@ -520,20 +520,22 @@ public:
 
 #else
 
-  const execution_space::scratch_memory_space & team_shmem() const {};
+  const execution_space::scratch_memory_space & team_shmem() const {
+    return m_team_shared;
+  }
 
-  int league_rank() const { return 0;};
-  int league_size() const { return 1;};
-  int team_rank() const { return 0;};
-  int team_size() const { return 1;};
+  int league_rank() const { return 0;}
+  int league_size() const { return 1;}
+  int team_rank() const { return 0;}
+  int team_size() const { return 1;}
 
-  void team_barrier() const {};
+  void team_barrier() const {}
 
   template< typename Type >
-  Type team_scan( const Type & value , Type * const global_accum ) const ;
+  Type team_scan( const Type & value , Type * const global_accum ) const {return Type();}
 
   template< typename Type >
-  Type team_scan( const Type & value ) const ;
+  Type team_scan( const Type & value ) const {return Type();}
 
   template< typename iType, class Operation >
   void team_par_for(const iType n, const Operation & op) const {}
