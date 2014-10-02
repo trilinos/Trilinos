@@ -451,7 +451,7 @@ SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(const SerialTriDiM
   else if ( trans == Teuchos::CONJ_TRANS && ScalarTraits<ScalarType>::isComplex ) 
     {	  
       numRowsCols_ = Source.numRowsCols_;
-      const OrdinalType numvals = (numRowsCols == 1) ? 1 :  4*(numRowsCols_-1);
+      const OrdinalType numvals = (numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
       values_ = new ScalarType[numvals];
       DL_ = values_;
       D_  = DL_+(numRowsCols_-1);
@@ -478,7 +478,7 @@ SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(const SerialTriDiM
       const OrdinalType numvals = (numRowsCols_  == 1) ? 1 : 4*(numRowsCols_-1);
       values_ = new ScalarType[numvals];
       OrdinalType min = numRowsCols_;
-      if(min > Source.numRowsCols) min = Source.numRowsCols;
+      if(min > Source.numRowsCols_) min = Source.numRowsCols_;
       for(OrdinalType i = 0 ; i< min ; ++i) {
 	D_ = Source.D_[i];
 	if(i < (min-1)) {
