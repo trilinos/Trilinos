@@ -167,6 +167,8 @@ ELSEIF(KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosOpenMPWrapperNo
   SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE ON CACHE BOOL "")
 ELSEIF(KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosThreadsWrapperNode")
   SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE ON CACHE BOOL "")
+ELSEIF(KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosSerialWrapperNode")
+  SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE ON CACHE BOOL "")
 ELSE()
   MESSAGE(WARNING "Unrecognized or disabled node type; setting default node to KokkosClassic::SerialNode.")
   SET(KokkosClassic_DefaultNode "KokkosClassic::SerialNode")
