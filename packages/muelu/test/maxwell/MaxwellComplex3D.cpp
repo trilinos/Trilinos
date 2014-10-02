@@ -100,8 +100,8 @@ int main(int argc, char *argv[]) {
     std::complex<double> centry(entry,0.0);
     if(edge_map->isNodeGlobalElement(row)) {
       S_Matrix->insertGlobalValues(row,
-				   Teuchos::ArrayView<LO>(&col,1),
-				   Teuchos::ArrayView<SC>(&centry,1));
+          Teuchos::ArrayView<LO>(&col,1),
+          Teuchos::ArrayView<SC>(&centry,1));
     }
   }
   S_Matrix->fillComplete();
@@ -116,8 +116,8 @@ int main(int argc, char *argv[]) {
     std::complex<double> centry(entry,0.0);
     if(edge_map->isNodeGlobalElement(row)) {
       M1_Matrix->insertGlobalValues(row,
-				    Teuchos::ArrayView<LO>(&col,1),
-				    Teuchos::ArrayView<SC>(&centry,1));
+          Teuchos::ArrayView<LO>(&col,1),
+          Teuchos::ArrayView<SC>(&centry,1));
     }
   }
   M1_Matrix->fillComplete();
@@ -132,8 +132,8 @@ int main(int argc, char *argv[]) {
     std::complex<double> centry(entry,0.0);
     if(node_map->isNodeGlobalElement(row)) {
       M0_Matrix->insertGlobalValues(row,
-				    Teuchos::ArrayView<LO>(&col,1),
-				    Teuchos::ArrayView<SC>(&centry,1));
+          Teuchos::ArrayView<LO>(&col,1),
+          Teuchos::ArrayView<SC>(&centry,1));
     }
   }
   M0_Matrix->fillComplete();
@@ -148,8 +148,8 @@ int main(int argc, char *argv[]) {
     std::complex<double> centry(entry,0.0);
     if(edge_map->isNodeGlobalElement(row)) {
       D0_Matrix->insertGlobalValues(row,
-				    Teuchos::ArrayView<LO>(&col,1),
-				    Teuchos::ArrayView<SC>(&centry,1));
+          Teuchos::ArrayView<LO>(&col,1),
+          Teuchos::ArrayView<SC>(&centry,1));
     }
   }
   D0_Matrix->fillComplete(node_map,edge_map);
@@ -183,8 +183,8 @@ int main(int argc, char *argv[]) {
       LocalOrdinal lclidx = node_map->getLocalElement(i);
       std::complex<double> centry = invdiags[lclidx];
       M0inv_Matrix -> insertGlobalValues(row,
-					 Teuchos::ArrayView<LO>(&col,1),
-					 Teuchos::ArrayView<SC>(&centry,1));
+          Teuchos::ArrayView<LO>(&col,1),
+          Teuchos::ArrayView<SC>(&centry,1));
     }
   }
   M0inv_Matrix->fillComplete();
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
   // construct preconditioner
   RCP<RefMaxwell> preconditioner
     = rcp( new RefMaxwell(SM_Matrix,D0_Matrix,M0inv_Matrix,
-			  M1_Matrix,Teuchos::null,coords,params) );
+          M1_Matrix,Teuchos::null,coords,params) );
 
   // setup LHS, RHS
   RCP<TMV> vec = rcp( new TMV(edge_map,1) );
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
   else {
     throw(MueLu::Exceptions::RuntimeError("FAIL! Belos did not converge fast enough."));
   }
-  
+
 #endif
 
 } // main

@@ -57,20 +57,20 @@ namespace MueLuTests {
 
   //TODO: should go in the Aggregates class
   template <class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node>
-  void printAggregates(MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node>& aggregates, Teuchos::FancyOStream& out) {
-    RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates.GetVertex2AggId()->getMap() );
+           class GlobalOrdinal,
+           class Node>
+             void printAggregates(MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node>& aggregates, Teuchos::FancyOStream& out) {
+               RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates.GetVertex2AggId()->getMap() );
 
-    ArrayRCP<LO> Final = Final_->getDataNonConst(0);
-    ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
-    ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
+               ArrayRCP<LO> Final = Final_->getDataNonConst(0);
+               ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+               ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
 
-    for (size_t i=0; i<aggregates.GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
-      Final[i] = vertex2AggId[i] + procWinner[i]*1000;
+               for (size_t i=0; i<aggregates.GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
+                 Final[i] = vertex2AggId[i] + procWinner[i]*1000;
 
-    out << *Final_ << std::endl;
-  }
+               out << *Final_ << std::endl;
+             }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoupledAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -140,9 +140,9 @@ namespace MueLuTests {
     }
   } // Build
 
-    //
-    // INSTANTIATIONS
-    //
+  //
+  // INSTANTIATIONS
+  //
 
   typedef double Scalar;                             // Scalar is not relevant for this test
   typedef KokkosClassic::DefaultNode::DefaultNodeType Node; // Kokkos Node is not relevant for this test
@@ -160,11 +160,11 @@ namespace MueLuTests {
   UNIT_TEST_GROUP_4(Scalar, LO, GO, Node)
 
   UNIT_TEST_GROUP_2(int, int)
-  UNIT_TEST_GROUP_2(int, LongInt)
-  UNIT_TEST_GROUP_2(LongInt, LongInt)
+    UNIT_TEST_GROUP_2(int, LongInt)
+    UNIT_TEST_GROUP_2(LongInt, LongInt)
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  UNIT_TEST_GROUP_2(LongInt, LongLongInt)
+    UNIT_TEST_GROUP_2(LongInt, LongLongInt)
 #endif
 
 } // namespace <anonymous>

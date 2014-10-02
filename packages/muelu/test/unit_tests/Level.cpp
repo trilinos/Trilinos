@@ -343,12 +343,12 @@ namespace MueLuTests {
 
     /*l.RemoveKeepFlag("Aggregates", aggFact.get(), MueLu::Keep);
 
-    TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
-    TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
+      TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
+      TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
 
-    TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
-    TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
-    TEST_EQUALITY(l.GetKeepFlag("Graph",      graphFact.get()), 0);*/
+      TEST_EQUALITY(l.IsRequested("Graph",      graphFact.get()), false);
+      TEST_EQUALITY(l.IsAvailable("Graph",      graphFact.get()), false);
+      TEST_EQUALITY(l.GetKeepFlag("Graph",      graphFact.get()), 0);*/
 
   }
 
@@ -356,28 +356,28 @@ namespace MueLuTests {
   // Helper class for unit test 'Level/CircularDependency'
   class CircularFactory : public MueLu::SingleLevelFactoryBase {
 
-  public:
+    public:
 
-    CircularFactory(int value) : value_(value) { }
+      CircularFactory(int value) : value_(value) { }
 
-    virtual ~CircularFactory() { }
+      virtual ~CircularFactory() { }
 
-    void SetCircularFactory(RCP<FactoryBase> circular) { circular_ = circular; }
+      void SetCircularFactory(RCP<FactoryBase> circular) { circular_ = circular; }
 
-    void DeclareInput(Level &level) const {
-      level.DeclareInput("data", circular_.get(), this);
-    }
+      void DeclareInput(Level &level) const {
+        level.DeclareInput("data", circular_.get(), this);
+      }
 
-    void Build(Level& level) const {
-      level.Set("data", value_, this);
-      int value = level.Get<int>("data", circular_.get());
-      level.Set("data", value+value_, this);
-    }
+      void Build(Level& level) const {
+        level.Set("data", value_, this);
+        int value = level.Get<int>("data", circular_.get());
+        level.Set("data", value+value_, this);
+      }
 
-  private:
+    private:
 
-    int value_;
-    RCP<FactoryBase> circular_;
+      int value_;
+      RCP<FactoryBase> circular_;
 
   }; //class CircularFactory
 

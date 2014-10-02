@@ -146,10 +146,10 @@ int main(int argc, char *argv[]) {
   clp.setOption("xml", &xmlFile, "xml file with solver parameters for a 2x2 blocked NS example");
 
   switch (clp.parse(argc,argv)) {
-  case CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case CommandLineProcessor::PARSE_ERROR:
-  case CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case CommandLineProcessor::PARSE_ERROR:
+    case CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
@@ -342,5 +342,5 @@ int main(int argc, char *argv[]) {
     aztecSolver.Iterate(maxIts, tol);
   }
 
-   return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }

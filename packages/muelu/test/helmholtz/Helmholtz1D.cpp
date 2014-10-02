@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
   shift=0.5;
 
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Helmholtz1D", 0, stretchx, stretchy, stretchz,
-						  h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
+      h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
   Xpetra::Parameters             xpetraParameters(clp);
 
   RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
@@ -139,12 +139,12 @@ int main(int argc, char *argv[]) {
 
   // Build problem
   RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParams);
+    Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParams);
   RCP<Matrix> A = Pr->BuildMatrix();
 
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
   nullspace->putScalar( (SC) 1.0);
- 
+
   comm->barrier();
 
   tm = Teuchos::null;
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   // Solve Ax = b
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
   RCP<TVEC> X = Tpetra::createVector<SC,LO,GO,NO>(tmap);
-  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(tmap);  
+  RCP<TVEC> B = Tpetra::createVector<SC,LO,GO,NO>(tmap);
   X->putScalar((SC) 0.0);
   B->putScalar((SC) 0.0);
   if(comm->getRank()==0) {
@@ -181,14 +181,14 @@ int main(int argc, char *argv[]) {
 
   // Construct a Belos LinearProblem object
   RCP<TProblem> belosProblem = rcp(new TProblem(belosOp,X,B));
-  belosProblem->setRightPrec(belosPrec); 
+  belosProblem->setRightPrec(belosPrec);
   bool set = belosProblem->setProblem();
   if (set == false) {
     if(comm->getRank()==0)
-      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;    
+      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return EXIT_FAILURE;
   }
-    
+
   // Belos parameter list
   int maxIts = 100;
   double tol = 1e-6;
@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
     if (comm->getRank() == 0)
       std::cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
   }
-  
+
   // Check convergence
   if (ret != Belos::Converged) {
     if (comm->getRank() == 0) std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
   // Get the number of iterations for this solve.
   if(comm->getRank()==0)
     std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
- 
+
   tm = Teuchos::null;
 
   globalTimeMonitor = Teuchos::null;

@@ -111,88 +111,88 @@ namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
-RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
+  RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
 
-  RCP<SmootherPrototype> smooProto;
-  Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
+    RCP<SmootherPrototype> smooProto;
+    Teuchos::ParameterList ifpackList;
+    ifpackList.set("relaxation: sweeps", (LO) 1);
+    ifpackList.set("relaxation: damping factor", (SC) 1.0);
 
-  if (lib == Xpetra::UseEpetra) {
+    if (lib == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-    ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-    smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+      ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
+      smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
 #endif
-  } else if (lib == Xpetra::UseTpetra) {
+    } else if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
-    ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-    smooProto = rcp( new Ifpack2Smoother("RELAXATION", ifpackList) );
+      ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+      smooProto = rcp( new Ifpack2Smoother("RELAXATION", ifpackList) );
 #endif
-  }
-  if (smooProto == Teuchos::null) {
-    throw(MueLu::Exceptions::RuntimeError("gimmeGaussSeidelSmoother: smoother error"));
-  }
-
-  return smooProto;
-}
-
-RCP<SmootherPrototype> gimmeCoarseProto(Xpetra::UnderlyingLib lib, const std::string& coarseSolver, int rank) {
-  RCP<SmootherPrototype> coarseProto;
-  if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
-    if (rank == 0) std::cout << "CoarseGrid: AMESOS" << std::endl;
-    Teuchos::ParameterList amesosList;
-    amesosList.set("PrintTiming",true);
-    coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
-    //#elif
-#endif
-  } else if (lib == Xpetra::UseTpetra) {
-    if (coarseSolver=="amesos2") {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
-      if (rank == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
-      Teuchos::ParameterList paramList; //unused
-      coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
-#else
-      std::cout  << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
-      return Teuchos::null; // TODO test for exception //EXIT_FAILURE;
-#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
-    } else if(coarseSolver=="ifpack2") {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
-      if (rank == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
-      Teuchos::ParameterList ifpack2List;
-      ifpack2List.set("fact: ilut level-of-fill",(double)99); // TODO ??
-      ifpack2List.set("fact: drop tolerance", 0.0);
-      ifpack2List.set("fact: absolute threshold", 0.0);
-      ifpack2List.set("fact: relative threshold", 1.0);
-      coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
-#else
-      std::cout  << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
-      //TODO        TEUCHOS_TEST_FOR_EXCEPTION
-      return Teuchos::null;
-#endif
-    } else {
-      std::cout  << "Unknow coarse grid solver (try  --coarseSolver=ifpack2 or --coarseSolver=amesos2)" << std::endl;
-      return Teuchos::null;
+    }
+    if (smooProto == Teuchos::null) {
+      throw(MueLu::Exceptions::RuntimeError("gimmeGaussSeidelSmoother: smoother error"));
     }
 
-  }
-  if (coarseProto == Teuchos::null) {
-    throw(MueLu::Exceptions::RuntimeError("main: coarse smoother error"));
+    return smooProto;
   }
 
-  return coarseProto;
-}
+  RCP<SmootherPrototype> gimmeCoarseProto(Xpetra::UnderlyingLib lib, const std::string& coarseSolver, int rank) {
+    RCP<SmootherPrototype> coarseProto;
+    if (lib == Xpetra::UseEpetra) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
+      if (rank == 0) std::cout << "CoarseGrid: AMESOS" << std::endl;
+      Teuchos::ParameterList amesosList;
+      amesosList.set("PrintTiming",true);
+      coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
+      //#elif
+#endif
+    } else if (lib == Xpetra::UseTpetra) {
+      if (coarseSolver=="amesos2") {
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+        if (rank == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
+        Teuchos::ParameterList paramList; //unused
+        coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
+#else
+        std::cout  << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
+        return Teuchos::null; // TODO test for exception //EXIT_FAILURE;
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
+      } else if(coarseSolver=="ifpack2") {
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+        if (rank == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
+        Teuchos::ParameterList ifpack2List;
+        ifpack2List.set("fact: ilut level-of-fill",(double)99); // TODO ??
+        ifpack2List.set("fact: drop tolerance", 0.0);
+        ifpack2List.set("fact: absolute threshold", 0.0);
+        ifpack2List.set("fact: relative threshold", 1.0);
+        coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
+#else
+        std::cout  << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
+        //TODO        TEUCHOS_TEST_FOR_EXCEPTION
+        return Teuchos::null;
+#endif
+      } else {
+        std::cout  << "Unknow coarse grid solver (try  --coarseSolver=ifpack2 or --coarseSolver=amesos2)" << std::endl;
+        return Teuchos::null;
+      }
+
+    }
+    if (coarseProto == Teuchos::null) {
+      throw(MueLu::Exceptions::RuntimeError("main: coarse smoother error"));
+    }
+
+    return coarseProto;
+  }
 
 
-RCP<SmootherPrototype> gimmeMergedSmoother(int nSmoothers, Xpetra::UnderlyingLib lib, const std::string& coarseSolver, int rank) {
-  ArrayRCP<RCP<SmootherPrototype> > smootherList(nSmoothers);
+  RCP<SmootherPrototype> gimmeMergedSmoother(int nSmoothers, Xpetra::UnderlyingLib lib, const std::string& coarseSolver, int rank) {
+    ArrayRCP<RCP<SmootherPrototype> > smootherList(nSmoothers);
 
-  for (int i=0; i<nSmoothers; i++)
-    smootherList[i] = gimmeGaussSeidelProto(lib);
+    for (int i=0; i<nSmoothers; i++)
+      smootherList[i] = gimmeGaussSeidelProto(lib);
 
-  return rcp (new MergedSmoother(smootherList));
-  //verbose mode: return rcp (new MergedSmoother(smootherList, true));
-}
+    return rcp (new MergedSmoother(smootherList));
+    //verbose mode: return rcp (new MergedSmoother(smootherList, true));
+  }
 
 }
 
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
   RCP<Matrix> Op = Pr->BuildMatrix();
 
 #ifdef NEUMANN

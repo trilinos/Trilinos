@@ -157,10 +157,10 @@ int main(int argc, char *argv[]) {
 #endif
 
   switch (clp.parse(argc, argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
 
@@ -235,21 +235,21 @@ int main(int argc, char *argv[]) {
     // determine numPDEs
     LocalOrdinal numPDEs = 1;
     if(Op->IsView("stridedMaps")==true) {
-     Xpetra::viewLabel_t oldView = Op->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-     //TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap()) == Teuchos::null, Exceptions::BadCast, "cast to strided row map failed.");
-     numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap())->getFixedBlockSize();
-     oldView = Op->SwitchToView(oldView);
+      Xpetra::viewLabel_t oldView = Op->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+      //TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap()) == Teuchos::null, Exceptions::BadCast, "cast to strided row map failed.");
+      numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap())->getFixedBlockSize();
+      oldView = Op->SwitchToView(oldView);
     }
 
     //GetOStream(Runtime1, 0) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
     nullspace = MultiVectorFactory::Build(Op->getDomainMap(), numPDEs);
 
     for (int i=0; i<numPDEs; ++i) {
-     Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
-     int numBlocks = nsValues.size() / numPDEs;
-     for (int j=0; j< numBlocks; ++j) {
-       nsValues[j*numPDEs + i] = 1.0;
-     }
+      Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
+      int numBlocks = nsValues.size() / numPDEs;
+      for (int j=0; j< numBlocks; ++j) {
+        nsValues[j*numPDEs + i] = 1.0;
+      }
     }
     Finest->Set("Nullspace",nullspace);
   }

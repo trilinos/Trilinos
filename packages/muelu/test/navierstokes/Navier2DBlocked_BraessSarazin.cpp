@@ -438,24 +438,24 @@ int main(int argc, char *argv[]) {
   //Another factory manager for braes sarazin smoother
   //Schur Complement Factory, using the factory to generate AcFact
   SC omega = 1.3;
-    RCP<SchurComplementFactory> SFact = rcp(new SchurComplementFactory());
-    SFact->SetParameter("omega", ParameterEntry(omega));
-    SFact->SetFactory("A", MueLu::NoFactory::getRCP());
+  RCP<SchurComplementFactory> SFact = rcp(new SchurComplementFactory());
+  SFact->SetParameter("omega", ParameterEntry(omega));
+  SFact->SetFactory("A", MueLu::NoFactory::getRCP());
 
-    //Smoother Factory, using SFact as a factory for A
-    std::string ifpackSCType;
-    ParameterList ifpackSCList;
-    ifpackSCList.set("relaxation: sweeps", (LocalOrdinal) 3);
-    ifpackSCList.set("relaxation: damping factor", (Scalar) 1.0);
-    ifpackSCType = "RELAXATION";
-    ifpackSCList.set("relaxation: type", "Gauss-Seidel");
-    RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
-    smoProtoSC->SetFactory("A", SFact);
-    RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
+  //Smoother Factory, using SFact as a factory for A
+  std::string ifpackSCType;
+  ParameterList ifpackSCList;
+  ifpackSCList.set("relaxation: sweeps", (LocalOrdinal) 3);
+  ifpackSCList.set("relaxation: damping factor", (Scalar) 1.0);
+  ifpackSCType = "RELAXATION";
+  ifpackSCList.set("relaxation: type", "Gauss-Seidel");
+  RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
+  smoProtoSC->SetFactory("A", SFact);
+  RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
-    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
-    smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(3));
-    smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(omega));
+  RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
+  smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(3));
+  smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(omega));
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
@@ -547,5 +547,5 @@ int main(int argc, char *argv[]) {
     aztecSolver.Iterate(maxIts, tol);
   }
 
-   return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }

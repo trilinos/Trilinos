@@ -115,10 +115,10 @@ int main(int argc, char *argv[]) {
   clp.setOption("timings",&printTimings,"print timings to screen");
 
   switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
   Teuchos::RCP<Teuchos::TimeMonitor> globalTimeMonitor = Teuchos::rcp (new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Timings: Global Time")));
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
 
     map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
     Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
     A = Pr->BuildMatrix();
 
   }
@@ -161,9 +161,9 @@ int main(int argc, char *argv[]) {
 
   ///////////////////////////////////////////////////////////
 
- Teuchos::RCP<MueLu::Level> Finest = hierarchy->GetLevel();  // get finest level
+  Teuchos::RCP<MueLu::Level> Finest = hierarchy->GetLevel();  // get finest level
 
- Finest->Set("A",A);
+  Finest->Set("A",A);
 
   Teuchos::RCP<AmalgamationFactory> amalgFact = Teuchos::rcp(new AmalgamationFactory());
   Teuchos::RCP<CoalesceDropFactory> dropFact = Teuchos::rcp(new CoalesceDropFactory());

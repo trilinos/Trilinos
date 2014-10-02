@@ -165,12 +165,12 @@ int main(int argc, char *argv[]) {
 
     GlobalOrdinal gid = map->getGlobalElement(Teuchos::as<LocalOrdinal>(i));
     if(gid % 2 == 0) {
-      data0[i] = 1.0; data1[i] = 0.0;
+    data0[i] = 1.0; data1[i] = 0.0;
     }
     else {
-      data0[i] = 0.0; data1[i] = 1.0;
+    data0[i] = 0.0; data1[i] = 1.0;
     }
-  }*/
+    }*/
 
   RCP<MueLu::Hierarchy<SC,LO,GO,NO> > H = rcp ( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
@@ -224,18 +224,18 @@ int main(int argc, char *argv[]) {
   /*if (smooType == "sgs") {
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-  } else if (smooType == "gs") {*/
-    ifpackType = "RELAXATION";
-    ifpackList.set("relaxation: type", "Gauss-Seidel");
+    } else if (smooType == "gs") {*/
+  ifpackType = "RELAXATION";
+  ifpackList.set("relaxation: type", "Gauss-Seidel");
   /*}
-  else if (smooType == "cheby") {
+    else if (smooType == "cheby") {
     ifpackType = "CHEBYSHEV";
     ifpackList.set("chebyshev: degree", (LO) sweeps);
     ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
     ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
     ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
     ifpackList.set("chebyshev: zero starting solution", true);
-  }*/
+    }*/
 
   smooProto = Teuchos::rcp( new TrilinosSmoother(Xpetra::UseEpetra, ifpackType, ifpackList) );
   RCP<SmootherFactory> SmooFact;

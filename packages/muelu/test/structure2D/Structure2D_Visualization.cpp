@@ -278,8 +278,8 @@ int main(int argc, char *argv[]) {
   //   status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
   H->Setup(M, 0, maxLevels);
 
-//   *out << "======================\n Multigrid statistics \n======================" << std::endl;
-//   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
+  //   *out << "======================\n Multigrid statistics \n======================" << std::endl;
+  //   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
 
   Finest->print(*out);
 

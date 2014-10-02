@@ -105,9 +105,9 @@ namespace MueLuTests {
     const size_t numMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
     RCP<Matrix> A = rcp(new CrsMatrixWrap(map, 1)); // Force underlying linear algebra library to allocate more
-                                                    // memory on the fly.  While not super efficient, this
-                                                    // ensures that no zeros are being stored.  Thus, from
-                                                    // Zoltan's perspective the matrix is imbalanced.
+    // memory on the fly.  While not super efficient, this
+    // ensures that no zeros are being stored.  Thus, from
+    // Zoltan's perspective the matrix is imbalanced.
     // Create a vector with random integer entries in [1,maxEntriesPerRow].
     ST::seedrandom(666*comm->getRank());
     RCP<Xpetra::Vector<LO,LO,GO,NO> > entriesPerRow = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(map,false);
@@ -153,11 +153,11 @@ namespace MueLuTests {
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = level.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",zoltan.get());
     /* //TODO temporary code to have the trivial decomposition (no change)
-    ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-    for (ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
-      *i = comm->getRank();
-    decompEntries=Teuchos::null;
-    */ //TODO end of temporary code
+       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
+       for (ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
+     *i = comm->getRank();
+     decompEntries=Teuchos::null;
+     */ //TODO end of temporary code
 
     //Create vector whose local length is the global number of partitions.
     //This vector will record the local number of nonzeros associated with each partition.
@@ -165,8 +165,8 @@ namespace MueLuTests {
     for (int i=0; i<numPartitions; ++i) parts[i] = i;
     Teuchos::ArrayView<GO> partsView(&parts[0],numPartitions);
     RCP<const Map> partitionMap = MapFactory::Build(TestHelpers::Parameters::getLib(),
-                                                    Teuchos::OrdinalTraits<global_size_t>::invalid(), partsView,
-                                                    map->getIndexBase(),comm);
+        Teuchos::OrdinalTraits<global_size_t>::invalid(), partsView,
+        map->getIndexBase(),comm);
     RCP<Xpetra::Vector<LO,LO,GO,NO> > localPartsVec = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(partitionMap);
 
     //For the local rows in each partition, tally up the number of nonzeros.  This is what
@@ -189,48 +189,48 @@ namespace MueLuTests {
     size_t mysize=1;
     if (comm->getRank() == 0) mysize = numPartitions;
     RCP<const Map> globalTallyMap = MapFactory::Build(TestHelpers::Parameters::getLib(),
-                                                Teuchos::OrdinalTraits<global_size_t>::invalid(),
-                                                mysize,
-                                                map->getIndexBase(),
-                                                comm);
+        Teuchos::OrdinalTraits<global_size_t>::invalid(),
+        mysize,
+        map->getIndexBase(),
+        comm);
     RCP<Xpetra::Vector<LO,LO,GO,NO> > globalTallyVec = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(globalTallyMap);
     RCP<const Export> exporter = ExportFactory::Build( partitionMap, globalTallyMap);
     globalTallyVec->doExport(*localPartsVec,*exporter,Xpetra::ADD);
 
     ArrayRCP<GO> expectedResults(numPartitions);
     switch (comm->getSize()) {
-       case 1:
-         expectedResults[0] = 807;
-         break;
+      case 1:
+        expectedResults[0] = 807;
+        break;
 
-       case 2:
-         expectedResults[0] = 364;
-         expectedResults[1] = 363;
-         break;
+      case 2:
+        expectedResults[0] = 364;
+        expectedResults[1] = 363;
+        break;
 
-       case 3:
-         expectedResults[0] = 277;
-         expectedResults[1] = 261;
-         expectedResults[2] = 269;
-         break;
+      case 3:
+        expectedResults[0] = 277;
+        expectedResults[1] = 261;
+        expectedResults[2] = 269;
+        break;
 
-       case 4:
-         expectedResults[0] = 195;
-         expectedResults[1] = 186;
-         expectedResults[2] = 177;
-         expectedResults[3] = 168;
-         break;
+      case 4:
+        expectedResults[0] = 195;
+        expectedResults[1] = 186;
+        expectedResults[2] = 177;
+        expectedResults[3] = 168;
+        break;
 
-       case 5:
-         expectedResults[0] = 161;
-         expectedResults[1] = 145;
-         expectedResults[2] = 148;
-         expectedResults[3] = 159;
-         expectedResults[4] = 157;
-         break;
+      case 5:
+        expectedResults[0] = 161;
+        expectedResults[1] = 145;
+        expectedResults[2] = 148;
+        expectedResults[3] = 159;
+        expectedResults[4] = 157;
+        break;
 
-       default:
-         break;
+      default:
+        break;
     };
 
     //FIXME cool ... this next line causes a hang if locally the globalyTallyVec has no data.
@@ -329,7 +329,7 @@ namespace MueLuTests {
       // reside on the same processor.
       int numNodes = numGlobalElements / dofsPerNode;
       TEUCHOS_TEST_FOR_EXCEPTION( (numGlobalElements - numNodes * dofsPerNode) != 0, MueLu::Exceptions::RuntimeError,
-                                  "Number of matrix rows is not divisible by #dofs" );
+          "Number of matrix rows is not divisible by #dofs" );
       int nproc = comm->getSize();
       if (comm->getRank() < nproc-1) numMyNodes = numNodes / nproc;
       else numMyNodes = numNodes - (numNodes/nproc) * (nproc-1);
@@ -341,9 +341,9 @@ namespace MueLuTests {
     const size_t numMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
     RCP<Matrix> A = rcp(new CrsMatrixWrap(map, 1)); // Force underlying linear algebra library to allocate more
-                                                    // memory on the fly.  While not super efficient, this
-                                                    // ensures that no zeros are being stored.  Thus, from
-                                                    // Zoltan's perspective the matrix is imbalanced.
+    // memory on the fly.  While not super efficient, this
+    // ensures that no zeros are being stored.  Thus, from
+    // Zoltan's perspective the matrix is imbalanced.
     // Populate CrsMatrix with random number of entries (up to maxEntriesPerRow) per row.
     // Create a vector with random integer entries in [1,maxEntriesPerRow].
     ST::seedrandom(666*comm->getRank());
@@ -411,7 +411,7 @@ namespace MueLuTests {
         Teuchos::ArrayRCP<const SC> coord = coordinates->getData(2);
         Teuchos::ArrayRCP<SC> coordCpy(coord.size());
         for(int i=0; i<coord.size(); i++) {
-          coordCpy[i] = coord[i];
+        coordCpy[i] = coord[i];
         }
         level.Set("ZCoordinates", coordCpy);
         }*/
@@ -430,11 +430,11 @@ namespace MueLuTests {
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = level.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",zoltan.get());
     /* //temporary code to have the trivial decomposition (no change)
-    ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-    for (ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
-      *i = comm->getRank();
-    decompEntries=Teuchos::null;
-    */
+       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
+       for (ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
+     *i = comm->getRank();
+     decompEntries=Teuchos::null;
+     */
 
     //Create vector whose local length is the global number of partitions.
     //This vector will record the local number of nonzeros associated with each partition.
@@ -442,8 +442,8 @@ namespace MueLuTests {
     for (int i=0; i<numPartitions; ++i) parts[i] = i;
     Teuchos::ArrayView<GO> partsView(&parts[0],numPartitions);
     RCP<const Map> partitionMap = MapFactory::Build(TestHelpers::Parameters::getLib(),
-                                                    Teuchos::OrdinalTraits<global_size_t>::invalid(), partsView,
-                                                    map->getIndexBase(),comm);
+        Teuchos::OrdinalTraits<global_size_t>::invalid(), partsView,
+        map->getIndexBase(),comm);
     RCP<Xpetra::Vector<LO,LO,GO,NO> > localPartsVec = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(partitionMap);
 
     RCP<Xpetra::Vector<LO,LO,GO,NO> > nnzPerRow = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(A->getRowMap());
@@ -465,65 +465,65 @@ namespace MueLuTests {
     nnzData = Teuchos::null;
 
     /*
-    if (comm->getRank() == 0)
-      std::cout << "nnz per row" << std::endl;
-    nnzPerRow->describe(*fos,Teuchos::VERB_EXTREME);
+       if (comm->getRank() == 0)
+       std::cout << "nnz per row" << std::endl;
+       nnzPerRow->describe(*fos,Teuchos::VERB_EXTREME);
 
-    if (comm->getRank() == 0)
-      std::cout << "Row-to-partition assignment (from Zoltan)" << std::endl;
-    decomposition->describe(*fos,Teuchos::VERB_EXTREME);
+       if (comm->getRank() == 0)
+       std::cout << "Row-to-partition assignment (from Zoltan)" << std::endl;
+       decomposition->describe(*fos,Teuchos::VERB_EXTREME);
 
-    if (comm->getRank() == 0)
-      std::cout << "#nonzeros per partition" << std::endl;
-    localPartsVec->describe(*fos,Teuchos::VERB_EXTREME);
-    */
+       if (comm->getRank() == 0)
+       std::cout << "#nonzeros per partition" << std::endl;
+       localPartsVec->describe(*fos,Teuchos::VERB_EXTREME);
+       */
 
     //Send the local nnz tallies to pid 0, which can report the global sums.
     size_t mysize=1;
     if (comm->getRank() == 0) mysize = numPartitions;
     RCP<const Map> globalTallyMap = MapFactory::Build(TestHelpers::Parameters::getLib(),
-                                                Teuchos::OrdinalTraits<global_size_t>::invalid(),
-                                                mysize,
-                                                map->getIndexBase(),
-                                                comm);
+        Teuchos::OrdinalTraits<global_size_t>::invalid(),
+        mysize,
+        map->getIndexBase(),
+        comm);
     RCP<Xpetra::Vector<LO,LO,GO,NO> > globalTallyVec = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(globalTallyMap);
     RCP<const Export> exporter = ExportFactory::Build( partitionMap, globalTallyMap);
     globalTallyVec->doExport(*localPartsVec,*exporter,Xpetra::ADD);
 
     ArrayRCP<GO> expectedResults(numPartitions);
     switch (comm->getSize()) {
-       case 1:
-         expectedResults[0] = 3951;
-         break;
+      case 1:
+        expectedResults[0] = 3951;
+        break;
 
-       case 2:
-         expectedResults[0] = 1955;
-         expectedResults[1] = 1910;
-         break;
+      case 2:
+        expectedResults[0] = 1955;
+        expectedResults[1] = 1910;
+        break;
 
-       case 3:
-         expectedResults[0] = 1326;
-         expectedResults[1] = 1340;
-         expectedResults[2] = 1321;
-         break;
+      case 3:
+        expectedResults[0] = 1326;
+        expectedResults[1] = 1340;
+        expectedResults[2] = 1321;
+        break;
 
-       case 4:
-         expectedResults[0] = 950;
-         expectedResults[1] = 922;
-         expectedResults[2] = 908;
-         expectedResults[3] = 936;
-         break;
+      case 4:
+        expectedResults[0] = 950;
+        expectedResults[1] = 922;
+        expectedResults[2] = 908;
+        expectedResults[3] = 936;
+        break;
 
-       case 5:
-         expectedResults[0] = 774;
-         expectedResults[1] = 735;
-         expectedResults[2] = 726;
-         expectedResults[3] = 771;
-         expectedResults[4] = 759;
-         break;
+      case 5:
+        expectedResults[0] = 774;
+        expectedResults[1] = 735;
+        expectedResults[2] = 726;
+        expectedResults[3] = 771;
+        expectedResults[4] = 759;
+        break;
 
-       default:
-         break;
+      default:
+        break;
     };
 
     ArrayRCP<const LO> gtvData = globalTallyVec->getData(0);
@@ -563,8 +563,8 @@ namespace MueLuTests {
         for (int i=0; i < D.size()/blockSize; ++i) {
           int nnz=0;
           for (int k=0; k<blockSize; ++k)  nnz += nnzData[i*blockSize+k];
-            *outFile << X[i] << ", " << Y[i] << ", " << ST::zero() << ", "
-                     << D[i*blockSize] << ", " << nnz << std::endl;
+          *outFile << X[i] << ", " << Y[i] << ", " << ST::zero() << ", "
+            << D[i*blockSize] << ", " << nnz << std::endl;
         }
       }
     } //for (int i=0; i<comm->getSize(); ++i)

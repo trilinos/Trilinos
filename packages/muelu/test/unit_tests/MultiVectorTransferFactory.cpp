@@ -190,20 +190,20 @@ namespace MueLuTests {
     int maxLevels = 3;
     H->Setup(M, 0, maxLevels);
 
-/*
+    /*
     //FIXME we probably need to do some requests....
     coarseLevel.Request("onesVector",mvtf.get());
     coarseLevel.Request("R",RFact.get());
     coarseLevel.Request("P",TentativePFact.get());
-*/
+    */
 
-/*
-    RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector",mvtf.get());
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> vn(1);
-    coarseOnes->norm2(vn);
+    /*
+       RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector",mvtf.get());
+       Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> vn(1);
+       coarseOnes->norm2(vn);
 
-    TEST_FLOATING_EQUALITY(vn[0]*vn[0],((SC)fineOnes->getGlobalLength()),1e-12);
-*/
+       TEST_FLOATING_EQUALITY(vn[0]*vn[0],((SC)fineOnes->getGlobalLength()),1e-12);
+       */
   } // ThreeLevels
 
 } // namespace MueLuTests

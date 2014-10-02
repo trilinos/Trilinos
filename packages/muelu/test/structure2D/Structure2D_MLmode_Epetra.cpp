@@ -212,11 +212,11 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Reading matrix market file" << std::endl;
   /*EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);*/
+    EpetraExt::MatrixMarketFileToVector("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
+    EpetraExt::MatrixMarketFileToMultiVector( "/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);*/
   /*EpetraExt::MatrixMarketFileToCrsMatrix("/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q52011/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q52011/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q52011/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);*/
+    EpetraExt::MatrixMarketFileToVector("/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q52011/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
+    EpetraExt::MatrixMarketFileToMultiVector( "/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q52011/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);*/
   EpetraExt::MatrixMarketFileToCrsMatrix("stru2d_A.txt",emap,emap,emap,ptrA);
   EpetraExt::MatrixMarketFileToVector("stru2d_b.txt",emap,ptrf);
   EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
@@ -281,9 +281,9 @@ int main(int argc, char *argv[]) {
 
   /*for(int i=0; i<H->GetNumLevels(); i++) {
     RCP<Level> l = H->GetLevel(i);
-    *out << std::endl << "Level " << i << std::endl;
-    l->print(*out);
-  }*/
+   *out << std::endl << "Level " << i << std::endl;
+   l->print(*out);
+   }*/
 
 
   return EXIT_SUCCESS;

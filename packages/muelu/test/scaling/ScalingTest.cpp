@@ -192,10 +192,10 @@ int main(int argc, char *argv[]) {
   double optTol      = 1e-7;              clp.setOption("tol",            &optTol,                "stopping tolerance for Krylov method");
 
   switch (clp.parse(argc, argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
   RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
 
     map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
     Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
     A = Pr->BuildMatrix();
 
     if (matrixParameters.GetMatrixType() == "Laplace1D") {
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
   // USER GUIDE // define near null space
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
   nullspace->putScalar( (SC) 1.0);
-  // USER GUIDE // 
+  // USER GUIDE //
   Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   nullspace->norm1(norms);
@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
   // USER GUIDE // create new hierarchy
   RCP<MueLu::Hierarchy<SC, LO, GO, NO> > H;
   // USER GUIDE //
-  
+
   //
   //
   // SETUP
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
     H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     H->SetMaxCoarseSize((GO) optMaxCoarseSize);
     // USER GUIDE //
-    
+
     //
     // Finest level
     //
@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
     Finest->Set("Nullspace",   nullspace);
     Finest->Set("Coordinates", coordinates); //FIXME: XCoordinates, YCoordinates, ..
     // USER GUIDE //
-    
+
     //
     // FactoryManager
     //
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
       //AggregationFact->SetPhase3AggCreation(0.5);
       M.SetFactory("Aggregates", AggregationFact);
 
-    *out << "=============================================================================" << std::endl;
+      *out << "=============================================================================" << std::endl;
     }
 
     //
@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
       RCP<RAPFactory> AFact = rcp(new RAPFactory());
       AFact->setVerbLevel(Teuchos::VERB_HIGH);
       // USER GUIDE //
-      
+
       if (!optExplicitR) {
         H->SetImplicitTranspose(true);
         ParameterList Aclist = *(AFact->GetValidParameterList());
@@ -368,7 +368,7 @@ int main(int argc, char *argv[]) {
         M.SetFactory("P", PFact);
         M.SetFactory("R", RFact);
         M.SetFactory("A", AFact);
-	// USER GUIDE //
+        // USER GUIDE //
 
       } else {
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
@@ -466,7 +466,7 @@ int main(int argc, char *argv[]) {
         ifpackType = "RELAXATION";
         ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
       }
-      // USER GUIDE // 
+      // USER GUIDE //
       else if (optSmooType == "l1-sgs") {
         ifpackType = "RELAXATION";
         ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
@@ -506,13 +506,13 @@ int main(int argc, char *argv[]) {
   } // end of Setup TimeMonitor
 
   /*{ // some debug output
-    // print out content of levels
-    std::cout << "FINAL CONTENT of multigrid levels" << std::endl;
-    for(LO l = 0; l < H->GetNumLevels(); l++) {
-      RCP<Level> coarseLevel = H->GetLevel(l);
-      coarseLevel->print(*out);
-    }
-    std::cout << "END FINAL CONTENT of multigrid levels" << std::endl;
+  // print out content of levels
+  std::cout << "FINAL CONTENT of multigrid levels" << std::endl;
+  for(LO l = 0; l < H->GetNumLevels(); l++) {
+  RCP<Level> coarseLevel = H->GetLevel(l);
+  coarseLevel->print(*out);
+  }
+  std::cout << "END FINAL CONTENT of multigrid levels" << std::endl;
   } // end debug output*/
 
   //
@@ -531,7 +531,7 @@ int main(int argc, char *argv[]) {
   B->norm2(norms);
   B->scale(1.0/norms[0]);
   // USER GUIDE //
-  
+
   //
   // Use AMG directly as an iterative method
   //
@@ -557,7 +557,7 @@ int main(int argc, char *argv[]) {
 
     RCP<TimeMonitor> tm;
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
-    
+
     // USER GUIDE // Operator and Multivector type that will be used with Belos
     typedef MultiVector          MV;
     typedef Belos::OperatorT<MV> OP;
@@ -592,15 +592,15 @@ int main(int argc, char *argv[]) {
     // Create an iterative solver manager
     RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
     // USER GUIDE //
-    
+
     // Perform solve
     Belos::ReturnType ret = Belos::Unconverged;
     try {
       {
         TimeMonitor tm2(*TimeMonitor::getNewTimer("ScalingTest: 5bis - Belos Internal Solve"));
-	// USER GUIDE // solve linear system
+        // USER GUIDE // solve linear system
         ret = solver->solve();
-	// USER GUIDE // 
+        // USER GUIDE //
       } // end of TimeMonitor
 
       // Get the number of iterations for this solve.
@@ -640,7 +640,7 @@ int main(int argc, char *argv[]) {
     } else {
       if (comm->getRank() == 0) std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
     }
-    // USER GUIDE // 
+    // USER GUIDE //
     tm = Teuchos::null;
 
   } //if (optPrecond)
@@ -670,6 +670,6 @@ int main(int argc, char *argv[]) {
       amesosList.set("PrintTiming", true);
       smootherPrototype = rcp(new DirectSolver("", amesosList));
       }
-*/
+      */
 
 // TODO: option one level

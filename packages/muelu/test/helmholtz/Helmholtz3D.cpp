@@ -119,9 +119,9 @@ int main(int argc, char *argv[]) {
     std::cout<<"velocity model: "<<model<<std::endl;
 
   Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "Helmholtz3D", 0, stretchx, stretchy, stretchz,
-							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0, mx, my, mz, model);
+      h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0, mx, my, mz, model);
   Galeri::Xpetra::Parameters<GO> matrixParameters_shifted(clp, nx, ny, nz, "Helmholtz3D", 0, stretchx, stretchy, stretchz,
-							  h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift, mx, my, mz, model);
+      h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift, mx, my, mz, model);
   Xpetra::Parameters             xpetraParameters(clp);
 
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList matrixParams_shifted   = matrixParameters_shifted.GetParameterList();
 
   RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_helmholtz =
-      Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_helmholtz.GetMatrixType(), map, matrixParams_helmholtz);
+    Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_helmholtz.GetMatrixType(), map, matrixParams_helmholtz);
   RCP<Matrix> Kmat, Mmat;
   std::pair< RCP<Matrix>, RCP<Matrix> > system = Pr_helmholtz->BuildMatrices();
   Kmat = system.first;
@@ -167,9 +167,9 @@ int main(int argc, char *argv[]) {
   RCP<Matrix> Amat = Pr_helmholtz->BuildMatrix();
 
   RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_shifted =
-      Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_shifted.GetMatrixType(), map, matrixParams_shifted);
+    Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_shifted.GetMatrixType(), map, matrixParams_shifted);
   RCP<Matrix> Pmat = Pr_shifted->BuildMatrix();
- 
+
   comm->barrier();
 
   tm = Teuchos::null;
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
   SLSolver -> setupSlowRAP();
 
   tm = Teuchos::null;
-  
+
   //************************************//
   //   Solve linear system with Belos   //
   //************************************//
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
 
   RCP<TMV> X = Tpetra::createMultiVector<SC,LO,GO,NO>(tmap,1);
-  RCP<TMV> B = Tpetra::createMultiVector<SC,LO,GO,NO>(tmap,1);  
+  RCP<TMV> B = Tpetra::createMultiVector<SC,LO,GO,NO>(tmap,1);
   X->putScalar((SC) 0.0);
   B->putScalar((SC) 0.0);
   int pointsourceid=nx*ny*nz/2+nx*ny/2+nx/2;

@@ -169,10 +169,10 @@ int main(int argc, char *argv[]) {
   clp.setOption("SchurComp_solver",    &SC_bUseDirectSolver,  "if 1: use direct solver for SchurComp equation, otherwise use GaussSeidel smoother (=default)");
 
   switch (clp.parse(argc,argv)) {
-  case CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case CommandLineProcessor::PARSE_ERROR:
-  case CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case CommandLineProcessor::PARSE_ERROR:
+    case CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
   int globalNumDofs = 8898;  // used for the maps

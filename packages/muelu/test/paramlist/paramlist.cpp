@@ -21,41 +21,41 @@
 namespace MueLu {
   class MyFactory : public ParameterListAcceptorImpl {
 
-  public:
+    public:
 
-    MyFactory() { }
+      MyFactory() { }
 
-    virtual ~MyFactory() { }
+      virtual ~MyFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList() const {
-      RCP<ParameterList> validParamList = rcp(new ParameterList());
+      RCP<const ParameterList> GetValidParameterList() const {
+        RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-      validParamList->set("ParamA", 0.1, "Documentation string for param A");
-      validParamList->set("ParamB", 0.2, "Documentation string for param B");
-      validParamList->set("ParamC", 0.3, "Documentation string for param C");
-      validParamList->set("ParamD", 0.4, "Documentation string for param D");
+        validParamList->set("ParamA", 0.1, "Documentation string for param A");
+        validParamList->set("ParamB", 0.2, "Documentation string for param B");
+        validParamList->set("ParamC", 0.3, "Documentation string for param C");
+        validParamList->set("ParamD", 0.4, "Documentation string for param D");
 
-      return validParamList;
-    }
+        return validParamList;
+      }
 
-    // Main algorithm
-    //
-    // - We do not want to set default parameters inside of the algorithm.
-    //  => Otherwise, it's difficult to track the defaults. Cf. ML.
-    //  => use ParameterList::get() without the default value input parameter.
-    void Build() {
+      // Main algorithm
+      //
+      // - We do not want to set default parameters inside of the algorithm.
+      //  => Otherwise, it's difficult to track the defaults. Cf. ML.
+      //  => use ParameterList::get() without the default value input parameter.
+      void Build() {
 
-      if (GetParameterList().get<double>("ParamA") == 0.5) { } // change "[used]"/["unused"] flag
-      if (GetParameterList().get<double>("ParamC") == 0.5) { }
+        if (GetParameterList().get<double>("ParamA") == 0.5) { } // change "[used]"/["unused"] flag
+        if (GetParameterList().get<double>("ParamC") == 0.5) { }
 
-      // statsParamList_.set(...);
+        // statsParamList_.set(...);
 
-    }
+      }
 
-    // - Do we want to store output stats on the same parameter list?
-    //   => better to distinguish as stats parameters are not valid input.
-    // - RCP? => a view seems enough.
-    Teuchos::ParameterList statsParamList_;
+      // - Do we want to store output stats on the same parameter list?
+      //   => better to distinguish as stats parameters are not valid input.
+      // - RCP? => a view seems enough.
+      Teuchos::ParameterList statsParamList_;
 
   };
 

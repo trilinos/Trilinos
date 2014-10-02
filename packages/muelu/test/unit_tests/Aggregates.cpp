@@ -100,79 +100,79 @@ namespace MueLuTests {
     TEST_EQUALITY(aggregates != Teuchos::null, true);
   }
 
-///////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////
 
   TEUCHOS_UNIT_TEST(Aggregates, GetNumAggregates)
   {
-      out << "version: " << MueLu::Version() << std::endl;
+    out << "version: " << MueLu::Version() << std::endl;
 
-      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
-      RCP<const Map> rowmap = A->getRowMap();
-      RCP<AmalgamationInfo> amalgInfo;
-      RCP<Aggregates> aggregates = gimmeAggregates(A, amalgInfo);
-      GO numAggs = aggregates->GetNumAggregates();
-      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+    RCP<const Map> rowmap = A->getRowMap();
+    RCP<AmalgamationInfo> amalgInfo;
+    RCP<Aggregates> aggregates = gimmeAggregates(A, amalgInfo);
+    GO numAggs = aggregates->GetNumAggregates();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-      ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
-      ArrayRCP<LO> aggStart;
-      ArrayRCP<GO> aggToRowMap;
-      amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMap);
-      for (LO i = 0; i < numAggs; ++i)
-        aggSizes[i] = aggStart[i+1] - aggStart[i];
+    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
+    ArrayRCP<LO> aggStart;
+    ArrayRCP<GO> aggToRowMap;
+    amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMap);
+    for (LO i = 0; i < numAggs; ++i)
+      aggSizes[i] = aggStart[i+1] - aggStart[i];
 
-      bool foundAggNotSize3=false;
-      for (int i=0; i<aggSizes.size(); ++i)
-        if (aggSizes[i] != 3) {
-          foundAggNotSize3=true;
-          break;
-        }
-
-      switch (comm->getSize()) {
-
-        case 1 :
-           TEST_EQUALITY(numAggs, 12);
-           TEST_EQUALITY(foundAggNotSize3, false);
-           break;
-
-        case 2:
-           TEST_EQUALITY(numAggs, 6);
-           TEST_EQUALITY(foundAggNotSize3, false);
-           break;
-
-        case 3:
-           TEST_EQUALITY(numAggs, 4);
-           TEST_EQUALITY(foundAggNotSize3, false);
-           break;
-
-        case 4:
-           TEST_EQUALITY(numAggs, 3);
-           TEST_EQUALITY(foundAggNotSize3, false);
-           break;
-
-        default:
-           std::string msg = "Only 1-4 MPI processes are supported.";
-           //throw(MueLu::Exceptions::NotImplemented(msg));
-           out << msg << std::endl;
-           break;
+    bool foundAggNotSize3=false;
+    for (int i=0; i<aggSizes.size(); ++i)
+      if (aggSizes[i] != 3) {
+        foundAggNotSize3=true;
+        break;
       }
 
-      //ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
-      int root = out.getOutputToRootOnly();
-      out.setOutputToRootOnly(-1);
-      for (int j=0; j<comm->getSize(); ++j) {
-        if (comm->getRank() == j) {
-            out << "++ pid " << j << " ++" << std::endl;
-            out << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
-          for (int i=0; i< numAggs; ++i) {
-            out << "   aggregate " << i << ": ";
-            for (int k=aggStart[i]; k< aggStart[i+1]; ++k)
-              out << aggToRowMap[k] << " ";
-            out << std::endl;
-          }
+    switch (comm->getSize()) {
+
+      case 1 :
+        TEST_EQUALITY(numAggs, 12);
+        TEST_EQUALITY(foundAggNotSize3, false);
+        break;
+
+      case 2:
+        TEST_EQUALITY(numAggs, 6);
+        TEST_EQUALITY(foundAggNotSize3, false);
+        break;
+
+      case 3:
+        TEST_EQUALITY(numAggs, 4);
+        TEST_EQUALITY(foundAggNotSize3, false);
+        break;
+
+      case 4:
+        TEST_EQUALITY(numAggs, 3);
+        TEST_EQUALITY(foundAggNotSize3, false);
+        break;
+
+      default:
+        std::string msg = "Only 1-4 MPI processes are supported.";
+        //throw(MueLu::Exceptions::NotImplemented(msg));
+        out << msg << std::endl;
+        break;
+    }
+
+    //ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
+    int root = out.getOutputToRootOnly();
+    out.setOutputToRootOnly(-1);
+    for (int j=0; j<comm->getSize(); ++j) {
+      if (comm->getRank() == j) {
+        out << "++ pid " << j << " ++" << std::endl;
+        out << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
+        for (int i=0; i< numAggs; ++i) {
+          out << "   aggregate " << i << ": ";
+          for (int k=aggStart[i]; k< aggStart[i+1]; ++k)
+            out << aggToRowMap[k] << " ";
+          out << std::endl;
         }
-        comm->barrier();
       }
-      out.setOutputToRootOnly(root);
+      comm->barrier();
+    }
+    out.setOutputToRootOnly(root);
 
   } //GetNumAggregates
 

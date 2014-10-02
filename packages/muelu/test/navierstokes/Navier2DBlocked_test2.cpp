@@ -498,26 +498,26 @@ int main(int argc, char *argv[]) {
 
   //Another factory manager for braes sarazin smoother
   //Schur Complement Factory, using the factory to generate AcFact
-    SC omega = 1.3;
-    RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
-    SFact->SetParameter("omega", Teuchos::ParameterEntry(omega));
-    SFact->SetFactory("A", MueLu::NoFactory::getRCP()); // this finally be the rebalanced block operator!
+  SC omega = 1.3;
+  RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
+  SFact->SetParameter("omega", Teuchos::ParameterEntry(omega));
+  SFact->SetFactory("A", MueLu::NoFactory::getRCP()); // this finally be the rebalanced block operator!
 
-    //Smoother Factory, using SFact as a factory for A
-    std::string ifpackSCType;
-    Teuchos::ParameterList ifpackSCList;
-    ifpackSCList.set("relaxation: sweeps", (LocalOrdinal) 3);
-    ifpackSCList.set("relaxation: damping factor", (Scalar) 1.0);
-    ifpackSCType = "RELAXATION";
-    ifpackSCList.set("relaxation: type", "Gauss-Seidel");
-    RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
-    smoProtoSC->SetFactory("A", SFact);
-    RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
+  //Smoother Factory, using SFact as a factory for A
+  std::string ifpackSCType;
+  Teuchos::ParameterList ifpackSCList;
+  ifpackSCList.set("relaxation: sweeps", (LocalOrdinal) 3);
+  ifpackSCList.set("relaxation: damping factor", (Scalar) 1.0);
+  ifpackSCType = "RELAXATION";
+  ifpackSCList.set("relaxation: type", "Gauss-Seidel");
+  RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
+  smoProtoSC->SetFactory("A", SFact);
+  RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
-    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
-    smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(3));
-    smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(omega));
-    smootherPrototype->SetFactory("A",MueLu::NoFactory::getRCP());
+  RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
+  smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(3));
+  smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(omega));
+  smootherPrototype->SetFactory("A",MueLu::NoFactory::getRCP());
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
   RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother() );
@@ -547,15 +547,15 @@ int main(int argc, char *argv[]) {
   H->Setup(M,0,maxLevels);
 
   /**out << std::endl;
-  *out << "print content of multigrid levels:" << std::endl;
+   *out << "print content of multigrid levels:" << std::endl;
 
-  Finest->print(*out);
+   Finest->print(*out);
 
-  RCP<Level> coarseLevel = H->GetLevel(1);
-  coarseLevel->print(*out);
+   RCP<Level> coarseLevel = H->GetLevel(1);
+   coarseLevel->print(*out);
 
-  RCP<Level> coarseLevel2 = H->GetLevel(2);
-  coarseLevel2->print(*out);*/
+   RCP<Level> coarseLevel2 = H->GetLevel(2);
+   coarseLevel2->print(*out);*/
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap,1);
 
@@ -607,5 +607,5 @@ int main(int argc, char *argv[]) {
 
 #endif // end ifndef HAVE_LONG_LONG_INT
 #endif // #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
-   return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }

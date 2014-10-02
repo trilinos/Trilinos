@@ -147,10 +147,10 @@ int main(int argc, char *argv[]) {
   clp.setOption("BGS_omega", &BGS_omega,  "scaling factor for BGS smoother");
 
   switch (clp.parse(argc,argv)) {
-  case CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case CommandLineProcessor::PARSE_ERROR:
-  case CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case CommandLineProcessor::PARSE_ERROR:
+    case CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
@@ -570,5 +570,5 @@ int main(int argc, char *argv[]) {
     aztecSolver.Iterate(maxIts, tol);
   }
 
-   return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }

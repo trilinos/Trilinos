@@ -63,28 +63,28 @@ namespace MueLuTests {
   // Test Belos adapters for the couple <MV,OP>
   // TODO: add a bunch of 'const' on prototype
   template <class Scalar, class MV, class OP>
-  int BelosAdaptersTest(RCP<OP> & belosOp, RCP<OP> & belosPrec, RCP<MV> & X, RCP<MV> & B, Teuchos::FancyOStream & out, bool & success) {
-    RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, B));
-    belosProblem->setLeftPrec(belosPrec);
+    int BelosAdaptersTest(RCP<OP> & belosOp, RCP<OP> & belosPrec, RCP<MV> & X, RCP<MV> & B, Teuchos::FancyOStream & out, bool & success) {
+      RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, B));
+      belosProblem->setLeftPrec(belosPrec);
 
-    bool set = belosProblem->setProblem();
-    TEST_EQUALITY(set, true);
+      bool set = belosProblem->setProblem();
+      TEST_EQUALITY(set, true);
 
-    // Belos parameter list
-    Teuchos::ParameterList belosList;
-    belosList.set("Maximum Iterations",    10);   // Maximum number of iterations allowed
-    belosList.set("Convergence Tolerance", 1e-7); // Relative convergence tolerance requested
+      // Belos parameter list
+      Teuchos::ParameterList belosList;
+      belosList.set("Maximum Iterations",    10);   // Maximum number of iterations allowed
+      belosList.set("Convergence Tolerance", 1e-7); // Relative convergence tolerance requested
 
-    // Create an iterative solver manager.
-    RCP<Belos::SolverManager<Scalar, MV, OP> > belosSolver = rcp(new Belos::BlockCGSolMgr<double,MV,OP>(belosProblem, rcp(&belosList,false)));
+      // Create an iterative solver manager.
+      RCP<Belos::SolverManager<Scalar, MV, OP> > belosSolver = rcp(new Belos::BlockCGSolMgr<double,MV,OP>(belosProblem, rcp(&belosList,false)));
 
-    // Perform solve
-    Belos::ReturnType ret = belosSolver->solve();
-    TEST_EQUALITY(ret, Belos::Converged);
+      // Perform solve
+      Belos::ReturnType ret = belosSolver->solve();
+      TEST_EQUALITY(ret, Belos::Converged);
 
-    // Return number of iterations
-    return belosSolver->getNumIters();
-  }
+      // Return number of iterations
+      return belosSolver->getNumIters();
+    }
 
   //
   // Helpers function to verify results
@@ -92,44 +92,44 @@ namespace MueLuTests {
 
   // Singleton for norm comparisons across tests
   template <class Scalar>
-  bool BelosAdaptersTestResultsNorm(typename Teuchos::ScalarTraits<Scalar>::magnitudeType r) {
-    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType ref = -1;
-    if (ref == -1) {
-      //std::cout << "BelosAdaptersTestResults(): Set reference results" << std::endl;
-      ref = r;
-      return true;
+    bool BelosAdaptersTestResultsNorm(typename Teuchos::ScalarTraits<Scalar>::magnitudeType r) {
+      static typename Teuchos::ScalarTraits<Scalar>::magnitudeType ref = -1;
+      if (ref == -1) {
+        //std::cout << "BelosAdaptersTestResults(): Set reference results" << std::endl;
+        ref = r;
+        return true;
+      }
+      //std::cout << "BelosAdaptersTestResults(): Compare" << std::endl;
+
+      if (r != ref)
+        std::cout << "ref  norm = " << ref << std::endl
+          << "curr norm = " << r   << std::endl;
+
+      return (r == ref);
     }
-    //std::cout << "BelosAdaptersTestResults(): Compare" << std::endl;
-
-    if (r != ref)
-      std::cout << "ref  norm = " << ref << std::endl
-                << "curr norm = " << r   << std::endl;
-
-    return (r == ref);
-  }
 
   // Test results
   template <class Scalar, class MV>
-  bool BelosAdaptersTestResults(int numIters, RCP<MV> & X, Teuchos::FancyOStream & out, bool & success) {
+    bool BelosAdaptersTestResults(int numIters, RCP<MV> & X, Teuchos::FancyOStream & out, bool & success) {
 
-    // Check numIters
-    switch (TestHelpers::Parameters::getDefaultComm()->getSize()) {
-    case 0: TEST_EQUALITY(numIters, 5); break;
-    case 4:
-      // Epetra TEST_EQUALITY(numIters, 6);
-      // Tpetra TEST_EQUALITY(numIters, 7);
-      break;
-    default:;
+      // Check numIters
+      switch (TestHelpers::Parameters::getDefaultComm()->getSize()) {
+        case 0: TEST_EQUALITY(numIters, 5); break;
+        case 4:
+                // Epetra TEST_EQUALITY(numIters, 6);
+                // Tpetra TEST_EQUALITY(numIters, 7);
+                break;
+        default:;
+      }
+
+      // Compute norm of X (using MV traits)
+      typedef Belos::MultiVecTraits<Scalar, MV> MVT;
+      std::vector<Scalar> norms(1);
+      MVT::MvNorm(*X, norms);
+
+      // Test norm equality across the unit tests
+      return MueLuTests::BelosAdaptersTestResultsNorm<Scalar>(norms[0]);
     }
-
-    // Compute norm of X (using MV traits)
-    typedef Belos::MultiVecTraits<Scalar, MV> MVT;
-    std::vector<Scalar> norms(1);
-    MVT::MvNorm(*X, norms);
-
-    // Test norm equality across the unit tests
-    return MueLuTests::BelosAdaptersTestResultsNorm<Scalar>(norms[0]);
-  }
 
   //
   // Tests

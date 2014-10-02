@@ -123,133 +123,122 @@ int main(int argc, char *argv[]) {
 
   //Loop over V rows
   for (size_t VRow = 0; VRow < nv; VRow++)
+  {
+    Teuchos::ArrayView<const LO> colPtr;
+    Teuchos::ArrayView<const SC> valPtr;
+
+    A00->getLocalRowView(VRow,colPtr,valPtr);
+
+    //Can be directly inserted!
+    A->insertGlobalValues(VRow,colPtr,valPtr);
+
+    //Now do pressure column:
+    A01->getLocalRowView(VRow,colPtr,valPtr);
+
+    Teuchos::ArrayRCP<LO> newColPtr(colPtr.size(),nv);
+    for (LO jj=0; jj<colPtr.size(); jj++)
     {
-      Teuchos::ArrayView<const LO> colPtr;
-      Teuchos::ArrayView<const SC> valPtr;
-
-      A00->getLocalRowView(VRow,colPtr,valPtr);
-
-      //Can be directly inserted!
-      A->insertGlobalValues(VRow,colPtr,valPtr);
-
-      //Now do pressure column:
-      A01->getLocalRowView(VRow,colPtr,valPtr);
-
-      Teuchos::ArrayRCP<LO> newColPtr(colPtr.size(),nv);
-      for (LO jj=0; jj<colPtr.size(); jj++)
-        {
-          newColPtr[jj] += colPtr[jj];
-        }
-
-      //Insert into A
-      A->insertGlobalValues(VRow,newColPtr.view(0,colPtr.size()),valPtr);
-
-      //Now do magnetics column:
-      A02->getLocalRowView(VRow,colPtr,valPtr);
-
-      newColPtr.clear();
-      newColPtr.resize(colPtr.size(),nv+np);
-      for (LO jj=0; jj<colPtr.size(); jj++)
-        {
-          newColPtr[jj] += colPtr[jj];
-        }
-
-      //Insert into A
-      A->insertGlobalValues(VRow,newColPtr.view(0,colPtr.size()),valPtr);
-
+      newColPtr[jj] += colPtr[jj];
     }
+
+    //Insert into A
+    A->insertGlobalValues(VRow,newColPtr.view(0,colPtr.size()),valPtr);
+
+    //Now do magnetics column:
+    A02->getLocalRowView(VRow,colPtr,valPtr);
+
+    newColPtr.clear();
+    newColPtr.resize(colPtr.size(),nv+np);
+    for (LO jj=0; jj<colPtr.size(); jj++)
+    {
+      newColPtr[jj] += colPtr[jj];
+    }
+
+    //Insert into A
+    A->insertGlobalValues(VRow,newColPtr.view(0,colPtr.size()),valPtr);
+
+  }
 
   //Loop over P rows
   for (size_t PRow = 0; PRow < np; PRow++)
+  {
+    Teuchos::ArrayView<const LO> colPtr;
+    Teuchos::ArrayView<const SC> valPtr;
+
+    A10->getLocalRowView(PRow,colPtr,valPtr);
+
+    //Can be directly inserted!
+    A->insertGlobalValues(PRow+nv,colPtr,valPtr);
+
+    //Now do pressure column:
+    A11->getLocalRowView(PRow,colPtr,valPtr);
+
+    Teuchos::ArrayRCP<LO> newColPtr(colPtr.size(),nv);
+    for (LO jj=0; jj<colPtr.size(); jj++)
     {
-      Teuchos::ArrayView<const LO> colPtr;
-      Teuchos::ArrayView<const SC> valPtr;
-
-      A10->getLocalRowView(PRow,colPtr,valPtr);
-
-      //Can be directly inserted!
-      A->insertGlobalValues(PRow+nv,colPtr,valPtr);
-
-      //Now do pressure column:
-      A11->getLocalRowView(PRow,colPtr,valPtr);
-
-      Teuchos::ArrayRCP<LO> newColPtr(colPtr.size(),nv);
-      for (LO jj=0; jj<colPtr.size(); jj++)
-        {
-          newColPtr[jj] += colPtr[jj];
-        }
-
-      //Insert into A
-      A->insertGlobalValues(PRow+nv,newColPtr.view(0,colPtr.size()),valPtr);
-
-      //Now do magnetics column:
-      A12->getLocalRowView(PRow,colPtr,valPtr);
-
-      newColPtr.clear();
-      newColPtr.resize(colPtr.size(),nv+np);
-      for (LO jj=0; jj<colPtr.size(); jj++)
-        {
-          newColPtr[jj] += colPtr[jj];
-        }
-
-      //Insert into A
-      A->insertGlobalValues(PRow+nv,newColPtr.view(0,colPtr.size()),valPtr);
-
+      newColPtr[jj] += colPtr[jj];
     }
+
+    //Insert into A
+    A->insertGlobalValues(PRow+nv,newColPtr.view(0,colPtr.size()),valPtr);
+
+    //Now do magnetics column:
+    A12->getLocalRowView(PRow,colPtr,valPtr);
+
+    newColPtr.clear();
+    newColPtr.resize(colPtr.size(),nv+np);
+    for (LO jj=0; jj<colPtr.size(); jj++)
+    {
+      newColPtr[jj] += colPtr[jj];
+    }
+
+    //Insert into A
+    A->insertGlobalValues(PRow+nv,newColPtr.view(0,colPtr.size()),valPtr);
+
+  }
 
   //Loop over M rows
   for (size_t MRow = 0; MRow < nm; MRow++)
+  {
+    Teuchos::ArrayView<const LO> colPtr;
+    Teuchos::ArrayView<const SC> valPtr;
+
+    A20->getLocalRowView(MRow,colPtr,valPtr);
+
+    //Can be directly inserted!
+    A->insertGlobalValues(MRow+nv+np,colPtr,valPtr);
+
+    //Now do pressure column:
+    A21->getLocalRowView(MRow,colPtr,valPtr);
+
+    Teuchos::ArrayRCP<LO> newColPtr(colPtr.size(),nv);
+    for (LO jj=0; jj<colPtr.size(); jj++)
     {
-      Teuchos::ArrayView<const LO> colPtr;
-      Teuchos::ArrayView<const SC> valPtr;
-
-      A20->getLocalRowView(MRow,colPtr,valPtr);
-
-      //Can be directly inserted!
-      A->insertGlobalValues(MRow+nv+np,colPtr,valPtr);
-
-      //Now do pressure column:
-      A21->getLocalRowView(MRow,colPtr,valPtr);
-
-      Teuchos::ArrayRCP<LO> newColPtr(colPtr.size(),nv);
-      for (LO jj=0; jj<colPtr.size(); jj++)
-        {
-          newColPtr[jj] += colPtr[jj];
-        }
-
-      //Insert into A
-      A->insertGlobalValues(MRow+nv+np,newColPtr.view(0,colPtr.size()),valPtr);
-
-      //Now do magnetics column:
-      A22->getLocalRowView(MRow,colPtr,valPtr);
-
-      newColPtr.clear();
-      newColPtr.resize(colPtr.size(),nv+np);
-      for (LO jj=0; jj<colPtr.size(); jj++)
-        {
-          newColPtr[jj] += colPtr[jj];
-        }
-
-      //Insert into A
-      A->insertGlobalValues(MRow+nv+np,newColPtr.view(0,colPtr.size()),valPtr);
-
+      newColPtr[jj] += colPtr[jj];
     }
+
+    //Insert into A
+    A->insertGlobalValues(MRow+nv+np,newColPtr.view(0,colPtr.size()),valPtr);
+
+    //Now do magnetics column:
+    A22->getLocalRowView(MRow,colPtr,valPtr);
+
+    newColPtr.clear();
+    newColPtr.resize(colPtr.size(),nv+np);
+    for (LO jj=0; jj<colPtr.size(); jj++)
+    {
+      newColPtr[jj] += colPtr[jj];
+    }
+
+    //Insert into A
+    A->insertGlobalValues(MRow+nv+np,newColPtr.view(0,colPtr.size()),valPtr);
+
+  }
 
   A->fillComplete();
 
 
-
-
-
-
-
-
-
-
-
-
-
-// Let's read in the element connectivity info:
+  // Let's read in the element connectivity info:
   GO totalFineElements = 32*32;
 
   RCP<Teuchos::SerialDenseMatrix<GO,GO> > fineGridVElements = rcp(new Teuchos::SerialDenseMatrix<GO,GO>(totalFineElements,18));
@@ -261,21 +250,21 @@ int main(int argc, char *argv[]) {
   std::ifstream MElementFile("./Matrices/elements_2_2");
 
   for (GO ii=0;ii<totalFineElements;ii++)
+  {
+    for (LO jj=0;jj<9;jj++)
     {
-      for (LO jj=0;jj<9;jj++)
-        {
-          VElementFile >> (*fineGridVElements)(ii,2*jj);
-          VElementFile >> (*fineGridVElements)(ii,2*jj+1);
+      VElementFile >> (*fineGridVElements)(ii,2*jj);
+      VElementFile >> (*fineGridVElements)(ii,2*jj+1);
 
-          MElementFile >> (*fineGridMElements)(ii,jj);
-        }
-
-      for (LO kk=0;kk<4;kk++)
-        {
-          PElementFile >> (*fineGridPElements)(ii,kk);
-        }
-
+      MElementFile >> (*fineGridMElements)(ii,jj);
     }
+
+    for (LO kk=0;kk<4;kk++)
+    {
+      PElementFile >> (*fineGridPElements)(ii,kk);
+    }
+
+  }
   VElementFile.close();
   PElementFile.close();
   MElementFile.close();
@@ -308,8 +297,6 @@ int main(int argc, char *argv[]) {
   finest->Set("NP",A10->getGlobalNumRows());
   finest->Set("NM",A20->getGlobalNumRows());
 
-
-
   // Create a GeoInterpFactory
   RCP<GeoInterpFactory> geoInterp = rcp( new GeoInterpFactory() );
   RCP<Q2Q1Q2CoarseGridFactory> coarseElementFact = rcp( new Q2Q1Q2CoarseGridFactory() );
@@ -337,14 +324,6 @@ int main(int argc, char *argv[]) {
 
 
   H.Setup(*M,0,3);
-
-
-
-
-
-
-
-
 
   //Utils::Write("./output/BigAMat.mm",*A);
   std::cout << "Hello world!\n";

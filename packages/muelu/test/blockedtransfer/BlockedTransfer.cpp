@@ -123,63 +123,63 @@ namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
-Teuchos::RCP<CrsMatrixWrap> GenerateProblemMatrix(const Teuchos::RCP<const Map> map, Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
-  Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(map, 3);
+  Teuchos::RCP<CrsMatrixWrap> GenerateProblemMatrix(const Teuchos::RCP<const Map> map, Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
+    Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(map, 3);
 
-  LocalOrdinal NumMyElements = map->getNodeNumElements();
-  Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
-  GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
-  GlobalOrdinal nIndexBase = map->getIndexBase();
+    LocalOrdinal NumMyElements = map->getNodeNumElements();
+    Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+    GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
+    GlobalOrdinal nIndexBase = map->getIndexBase();
 
-  GlobalOrdinal NumEntries;
-  LocalOrdinal nnz=2;
-  std::vector<Scalar> Values(nnz);
-  std::vector<GlobalOrdinal> Indices(nnz);
+    GlobalOrdinal NumEntries;
+    LocalOrdinal nnz=2;
+    std::vector<Scalar> Values(nnz);
+    std::vector<GlobalOrdinal> Indices(nnz);
 
-  for (LocalOrdinal i = 0; i < NumMyElements; ++i)
-  {
-    if (MyGlobalElements[i] == nIndexBase)
+    for (LocalOrdinal i = 0; i < NumMyElements; ++i)
     {
-      // off-diagonal for first row
-      Indices[0] = nIndexBase;
-      NumEntries = 1;
-      Values[0] = c;
-    }
-    else if (MyGlobalElements[i] == nIndexBase + NumGlobalElements - 1)
-    {
-      // off-diagonal for last row
-      Indices[0] = nIndexBase + NumGlobalElements - 2;
-      NumEntries = 1;
-      Values[0] = b;
-    }
-    else
-    {
-      // off-diagonal for internal row
-      Indices[0] = MyGlobalElements[i] - 1;
-      Values[1] = b;
-      Indices[1] = MyGlobalElements[i] + 1;
-      Values[0] = c;
-      NumEntries = 2;
-    }
+      if (MyGlobalElements[i] == nIndexBase)
+      {
+        // off-diagonal for first row
+        Indices[0] = nIndexBase;
+        NumEntries = 1;
+        Values[0] = c;
+      }
+      else if (MyGlobalElements[i] == nIndexBase + NumGlobalElements - 1)
+      {
+        // off-diagonal for last row
+        Indices[0] = nIndexBase + NumGlobalElements - 2;
+        NumEntries = 1;
+        Values[0] = b;
+      }
+      else
+      {
+        // off-diagonal for internal row
+        Indices[0] = MyGlobalElements[i] - 1;
+        Values[1] = b;
+        Indices[1] = MyGlobalElements[i] + 1;
+        Values[0] = c;
+        NumEntries = 2;
+      }
 
-    // put the off-diagonal entries
-    // Xpetra wants ArrayViews (sigh)
-    Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
-    Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
-    mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
+      // put the off-diagonal entries
+      // Xpetra wants ArrayViews (sigh)
+      Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
+      Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
+      mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
 
-    // Put in the diagonal entry
-    mtx->insertGlobalValues(MyGlobalElements[i],
-        Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
-        Teuchos::tuple<Scalar>(a) );
+      // Put in the diagonal entry
+      mtx->insertGlobalValues(MyGlobalElements[i],
+          Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
+          Teuchos::tuple<Scalar>(a) );
 
-  } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
+    } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
 
 
-  mtx->fillComplete(map,map);
+    mtx->fillComplete(map,map);
 
-  return mtx;
-}
+    return mtx;
+  }
 
 }
 
@@ -213,10 +213,10 @@ int main(int argc, char *argv[]) {
   Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
   //RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
   RCP<CrsMatrixWrap> Op22 = MueLuTests::GenerateProblemMatrix(map2,3,-2,-1);
 
   /*Op11->describe(*out,Teuchos::VERB_EXTREME);
-  Op22->describe(*out,Teuchos::VERB_EXTREME);*/
+    Op22->describe(*out,Teuchos::VERB_EXTREME);*/
 
   // build blocked operator
   Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(mapExtractor,mapExtractor,10));
@@ -391,5 +391,3 @@ int main(int argc, char *argv[]) {
 
 // TODO: add warning if:
 // DEBUG_MODE, LONG_LONG or KLU
-
-

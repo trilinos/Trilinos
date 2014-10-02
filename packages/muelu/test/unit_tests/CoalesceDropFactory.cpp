@@ -107,7 +107,7 @@ namespace MueLuTests {
     std::cout << graph->GetDomainMap()->getGlobalNumElements() << std::endl;
     graph->print(out, MueLu::Debug);
 
-//    TEST_EQUALITY(1 == 0, true);
+    //    TEST_EQUALITY(1 == 0, true);
 
   } //PreDrop
 
