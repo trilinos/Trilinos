@@ -85,11 +85,11 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   if (cmdline.CMD_USE_CUDA && cmdline.CMD_USE_CUDA_DEV == -1) {
     int local_rank = 0;
     char *str;
-    if ((str = std::getenv("SLURM_LOCALID")))
-      local_rank = std::atoi(str);
-    else if ((str = std::getenv("MV2_COMM_WORLD_LOCAL_RANK")))
+    if ((str = std::getenv("MV2_COMM_WORLD_LOCAL_RANK")))
       local_rank = std::atoi(str);
     else if ((str = getenv("OMPI_COMM_WORLD_LOCAL_RANK")))
+      local_rank = std::atoi(str);
+    else if ((str = std::getenv("SLURM_LOCALID")))
       local_rank = std::atoi(str);
     cmdline.CMD_USE_CUDA_DEV = local_rank % cmdline.CMD_USE_NGPUS;
 
