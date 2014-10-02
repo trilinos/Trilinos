@@ -57,94 +57,114 @@ namespace Kokkos {
   namespace Impl {
 
     template<class ViewType>
-    size_t getStride2DView(ViewType A) {
+    size_t getStride2DView (ViewType A) {
       size_t stride[8];
       A.stride (stride);
       return A.dimension_1 () > 1 ? stride[1] : A.dimension_0 ();
     }
   }
- // Class for providing GEMM for a particular Node
-  template <typename Scalar, typename Node>
+
+  /// \struct DeviceGEMM
+  /// \brief Class that provides GEMM for a particular Kokkos Device.
+  /// \tparam Scalar The type of the entries in the matrices.
+  /// \tparam DeviceType The Kokkos Device type.
+  ///
+  /// GEMM refers to the BLAS' dense matrix-matrix multiply routine.
+  template <typename Scalar, typename DeviceType>
   struct DeviceGEMM {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
-          View<const Scalar**,LayoutLeft,Node> A, View<const Scalar**,LayoutLeft,Node> B, Scalar beta,
-          View<Scalar**,LayoutLeft,Node> C) {
-        Teuchos::BLAS<int,Scalar> blas;
-        const int m = Teuchos::as<int>(C.dimension_0()),
-                  n = Teuchos::as<int>(C.dimension_1()),
-                  k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-                  lda = Teuchos::as<int>(Impl::getStride2DView(A)),
-                  ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
-                  ldc = Teuchos::as<int>(Impl::getStride2DView(C));
-        // For some BLAS implementations (i.e. MKL), GEMM when B has one column
-        // is signficantly less efficient
-        if (n == 1 && transB == Teuchos::NO_TRANS)
-          blas.GEMV(transA, A.dimension_0(), A.dimension_1(), alpha, A.ptr_on_device(), lda, B.ptr_on_device(), Teuchos::as<int>(1), beta, C.ptr_on_device(), Teuchos::as<int>(1));
-        else
-          blas.GEMM(transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+  public:
+    static void
+    GEMM (const Teuchos::ETransp transA,
+          const Teuchos::ETransp transB,
+          const Scalar alpha,
+          View<const Scalar**, LayoutLeft, DeviceType> A,
+          View<const Scalar**, LayoutLeft, DeviceType> B,
+          const Scalar beta,
+          View<Scalar**, LayoutLeft, DeviceType> C)
+    {
+      Teuchos::BLAS<int,Scalar> blas;
+      const int m = static_cast<int> (C.dimension_0 ()),
+        n = static_cast<int> (C.dimension_1 ()),
+        k = (transA == Teuchos::NO_TRANS ? A.dimension_1 () : A.dimension_0 ()),
+        lda = static_cast<int> (Impl::getStride2DView (A)),
+        ldb = static_cast<int> (Impl::getStride2DView (B)),
+        ldc = static_cast<int> (Impl::getStride2DView (C));
+      // For some BLAS implementations (e.g., MKL), GEMM when B has
+      // one column may be signficantly less efficient than GEMV.
+      if (n == 1 && transB == Teuchos::NO_TRANS) {
+        blas.GEMV (transA, A.dimension_0 (), A.dimension_1 (), alpha,
+                   A.ptr_on_device(), lda,
+                   B.ptr_on_device(), static_cast<int> (1),
+                   beta, C.ptr_on_device(), static_cast<int> (1));
       }
+      else {
+        blas.GEMM (transA, transB, m, n, k, alpha,
+                   A.ptr_on_device(), lda,
+                   B.ptr_on_device(), ldb,
+                   beta, C.ptr_on_device(), ldc);
+      }
+    }
   };
 
-  template <typename Scalar>
-  struct DeviceGEMM<Scalar,Serial> {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
-          View<const Scalar**,LayoutLeft,Serial> A, View<const Scalar**,LayoutLeft,Serial> B,
-          Scalar beta, View<Scalar**,Serial> C) {
-        Teuchos::BLAS<int,Scalar> blas;
-        const int m = Teuchos::as<int>(C.dimension_0()),
-                  n = Teuchos::as<int>(C.dimension_1()),
-                  k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-                  lda = Teuchos::as<int>(Impl::getStride2DView(A)),
-                  ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
-                  ldc = Teuchos::as<int>(Impl::getStride2DView(C));
-        // For some BLAS implementations (i.e. MKL), GEMM when B has one column
-        // is signficantly less efficient
-        if (n == 1 && transB == Teuchos::NO_TRANS)
-          blas.GEMV(transA, A.dimension_0(), A.dimension_1(), alpha, A.ptr_on_device(), lda, B.ptr_on_device(), Teuchos::as<int>(1), beta, C.ptr_on_device(), Teuchos::as<int>(1));
-        else
-          blas.GEMM(transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
-      }
-  };
+//   template <typename Scalar>
+//   struct DeviceGEMM<Scalar,Serial> {
+//     public:
+//       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
+//           View<const Scalar**,LayoutLeft,Serial> A, View<const Scalar**,LayoutLeft,Serial> B,
+//           Scalar beta, View<Scalar**,Serial> C) {
+//         Teuchos::BLAS<int,Scalar> blas;
+//         const int m = Teuchos::as<int>(C.dimension_0()),
+//                   n = Teuchos::as<int>(C.dimension_1()),
+//                   k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
+//                   lda = Teuchos::as<int>(Impl::getStride2DView(A)),
+//                   ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
+//                   ldc = Teuchos::as<int>(Impl::getStride2DView(C));
+//         // For some BLAS implementations (i.e. MKL), GEMM when B has one column
+//         // is signficantly less efficient
+//         if (n == 1 && transB == Teuchos::NO_TRANS)
+//           blas.GEMV(transA, A.dimension_0(), A.dimension_1(), alpha, A.ptr_on_device(), lda, B.ptr_on_device(), Teuchos::as<int>(1), beta, C.ptr_on_device(), Teuchos::as<int>(1));
+//         else
+//           blas.GEMM(transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+//       }
+//   };
 
-#ifdef KOKKOS_HAVE_PTHREAD
-  template <typename Scalar>
-  struct DeviceGEMM<Scalar,Threads> {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
-          View<const Scalar**,LayoutLeft,Threads> A, View<const Scalar**,LayoutLeft,Threads> B,
-          Scalar beta, View<Scalar**,LayoutLeft,Threads> C) {
-        Teuchos::BLAS<int,Scalar> blas;
-        const int m = Teuchos::as<int>(C.dimension_0()),
-                  n = Teuchos::as<int>(C.dimension_1()),
-                  k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-                  lda = Teuchos::as<int>(Impl::getStride2DView(A)),
-                  ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
-                  ldc = Teuchos::as<int>(Impl::getStride2DView(C));
-        blas.GEMM(transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
-      }
-  };
-#endif
+// #ifdef KOKKOS_HAVE_PTHREAD
+//   template <typename Scalar>
+//   struct DeviceGEMM<Scalar,Threads> {
+//     public:
+//       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
+//           View<const Scalar**,LayoutLeft,Threads> A, View<const Scalar**,LayoutLeft,Threads> B,
+//           Scalar beta, View<Scalar**,LayoutLeft,Threads> C) {
+//         Teuchos::BLAS<int,Scalar> blas;
+//         const int m = Teuchos::as<int>(C.dimension_0()),
+//                   n = Teuchos::as<int>(C.dimension_1()),
+//                   k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
+//                   lda = Teuchos::as<int>(Impl::getStride2DView(A)),
+//                   ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
+//                   ldc = Teuchos::as<int>(Impl::getStride2DView(C));
+//         blas.GEMM(transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+//       }
+//   };
+// #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
-  template <typename Scalar>
-  struct DeviceGEMM<Scalar,OpenMP> {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
-          View<const Scalar**,LayoutLeft,OpenMP> A, View<const Scalar**,LayoutLeft,OpenMP> B,
-          Scalar beta, View<Scalar**,LayoutLeft,OpenMP> C) {
-        Teuchos::BLAS<int,Scalar> blas;
-        const int m = Teuchos::as<int>(C.dimension_0()),
-                  n = Teuchos::as<int>(C.dimension_1()),
-                  k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-                  lda = Teuchos::as<int>(Impl::getStride2DView(A)),
-                  ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
-                  ldc = Teuchos::as<int>(Impl::getStride2DView(C));
-        blas.GEMM(transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
-      }
-  };
-#endif
+// #ifdef KOKKOS_HAVE_OPENMP
+//   template <typename Scalar>
+//   struct DeviceGEMM<Scalar,OpenMP> {
+//     public:
+//       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
+//           View<const Scalar**,LayoutLeft,OpenMP> A, View<const Scalar**,LayoutLeft,OpenMP> B,
+//           Scalar beta, View<Scalar**,LayoutLeft,OpenMP> C) {
+//         Teuchos::BLAS<int,Scalar> blas;
+//         const int m = Teuchos::as<int>(C.dimension_0()),
+//                   n = Teuchos::as<int>(C.dimension_1()),
+//                   k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
+//                   lda = Teuchos::as<int>(Impl::getStride2DView(A)),
+//                   ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
+//                   ldc = Teuchos::as<int>(Impl::getStride2DView(C));
+//         blas.GEMM(transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
+//       }
+//   };
+// #endif
 
 #ifdef KOKKOS_HAVE_CUDA
   template <typename Scalar>
