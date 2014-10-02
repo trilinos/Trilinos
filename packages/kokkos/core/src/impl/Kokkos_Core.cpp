@@ -60,9 +60,42 @@ namespace Kokkos {
       return true;
     }
   }
+
   typedef Kokkos::DefaultExecutionSpace::host_mirror_device_type  DefaultHostMirrorSpaceType ;
 
   enum { DefaultIsNotHostSpace = ! Impl::is_same< Kokkos::DefaultExecutionSpace , DefaultHostMirrorSpaceType >::value };
+
+  namespace Impl {
+    void initialize_internal(const int& nthreads, const int& numa, const int& device) {
+      if(DefaultIsNotHostSpace) {
+        if(nthreads>0) {
+          if(numa>0)
+            DefaultHostMirrorSpaceType::initialize(nthreads,numa);
+          else
+            DefaultHostMirrorSpaceType::initialize(nthreads);
+        } else
+          DefaultHostMirrorSpaceType::initialize();
+      }
+
+      #ifdef KOKKOS_HAVE_CUDA
+      if(Impl::is_same<Kokkos::DefaultExecutionSpace, Kokkos::Cuda>::value) {
+        if(device>-1)
+          Kokkos::Cuda::initialize(device);
+        else
+          Kokkos::Cuda::initialize();
+      } else
+      #endif
+      {
+        if(nthreads>0) {
+          if(numa>0)
+            Kokkos::DefaultExecutionSpace::initialize(nthreads,numa);
+          else
+            Kokkos::DefaultExecutionSpace::initialize(nthreads);
+        } else
+          Kokkos::DefaultExecutionSpace::initialize();
+      }
+    }
+  }
 
   void initialize() {
     if ( DefaultIsNotHostSpace ) {
@@ -81,7 +114,6 @@ namespace Kokkos {
     int kokkos_numa_found = 0;
     int kokkos_device_found = 0;
     int kokkos_ndevices_found = 0;
-    int kokkos_help_found = 0;
 
     int iarg = 0;
 
@@ -253,7 +285,6 @@ namespace Kokkos {
            for(int k=iarg;k<narg-1;k++) {
              arg[k] = arg[k+1];
            }
-           kokkos_help_found=1;
            narg--;
          } else {
            iarg++;
@@ -262,34 +293,52 @@ namespace Kokkos {
       iarg++;
     }
 
+    Impl::initialize_internal(nthreads,numa,device);
 
-    if(DefaultIsNotHostSpace) {
-      if(nthreads>0) {
-        if(numa>0)
-          DefaultHostMirrorSpaceType::initialize(nthreads,numa);
-        else
-          DefaultHostMirrorSpaceType::initialize(nthreads);
-      } else
-        DefaultHostMirrorSpaceType::initialize();
-    }
+  }
+
+  void initialize(const int arg1) {
+    int nthreads = -1;
+    int numa = -1;
+    int device = -1;
 
     #ifdef KOKKOS_HAVE_CUDA
     if(Impl::is_same<Kokkos::DefaultExecutionSpace, Kokkos::Cuda>::value) {
-      if(device>-1)
-        Kokkos::Cuda::initialize(device);
-      else
-        Kokkos::Cuda::initialize();
+      device = arg1;
     } else
     #endif
     {
-      if(nthreads>0) {
-        if(numa>0)
-          Kokkos::DefaultExecutionSpace::initialize(nthreads,numa);
-        else
-          Kokkos::DefaultExecutionSpace::initialize(nthreads);
-      } else
-        Kokkos::DefaultExecutionSpace::initialize();
+      nthreads = arg1;
     }
+
+    Impl::initialize_internal(nthreads,numa,device);
+  }
+
+  void initialize(const int arg1, const int arg2) {
+    int nthreads = -1;
+    int numa = -1;
+    int device = -1;
+
+    #ifdef KOKKOS_HAVE_CUDA
+    if(Impl::is_same<Kokkos::DefaultExecutionSpace, Kokkos::Cuda>::value) {
+      nthreads = arg1;
+      device = arg2;
+    } else
+    #endif
+    {
+      nthreads = arg1;
+      numa = arg2;
+    }
+
+    Impl::initialize_internal(nthreads,numa,device);
+  }
+
+  void initialize(const int arg1, const int arg2, const int arg3) {
+    int nthreads = arg1;
+    int numa = arg2;
+    int device = arg3;
+
+    Impl::initialize_internal(nthreads,numa,device);
   }
 
   void finalize() {
