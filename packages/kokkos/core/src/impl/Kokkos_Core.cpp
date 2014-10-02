@@ -53,9 +53,17 @@
 namespace Kokkos {
   namespace {
     bool isnumber(const char* str) {
-      for(int i=0;i<strlen(str);i++) {
-        if(!isdigit(str[i]))
+      // FIXME (mfh 02 Oct 2014): Doesn't C99 / C++11 have a better
+      // way to tell if a string represents an integer?  We could even
+      // give it to strtol(l), which knows how to report if the input
+      // string is not an integer.  We should call this method
+      // "isinteger", because it currently returns false for
+      // floating-point and complex numbers.
+      const size_t len = strlen (str);
+      for (size_t i = 0; i < len; ++i) {
+        if (! isdigit (str[i])) {
           return false;
+        }
       }
       return true;
     }
