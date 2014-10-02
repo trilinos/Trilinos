@@ -55,16 +55,7 @@
 ///   we even promise that this header file will continue to exist.
 
 #include <KokkosCompat_config.h>
-#include <Kokkos_Macros.hpp>
-#if defined( KOKKOS_HAVE_PTHREAD )
-#include <Kokkos_Threads.hpp>
-#endif
-#if defined( KOKKOS_HAVE_OPENMP )
-#include <Kokkos_OpenMP.hpp>
-#endif
-#if defined( KOKKOS_HAVE_CUDA )
-#include <Kokkos_Cuda.hpp>
-#endif
+#include <Kokkos_Core.hpp>
 #include <Kokkos_View.hpp>
 #include <Teuchos_ArrayView.hpp>
 
