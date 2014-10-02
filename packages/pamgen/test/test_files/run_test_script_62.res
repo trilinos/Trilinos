@@ -10,8 +10,8 @@ Dimension 3
 Number of Nodes 1821 
 Number of Elements 1080 
 Number of Element Blocks 6 
-Number of Node Sets 2 
-Number of Side Sets 2 
+Number of Node Sets 0 
+Number of Side Sets 0 
 
 num node set nodes 0
 num node set dfs 0
@@ -140,13 +140,6 @@ block 5 element 6 connectivty 278 279 298 297 885 886 905 904
 block 5 element 7 connectivty 279 280 299 298 886 887 906 905 
 block 5 element 8 connectivty 280 281 300 299 887 888 907 906 
 block 5 element 9 connectivty 281 282 301 300 888 889 908 907 
-Nodeset i = 0 id = 1 has 0 nodes
-Nodeset i = 1 id = 2 has 3 nodes
-nodeset node i=0 = 1
-nodeset node i=1 = 608
-nodeset node i=2 = 1215
-Side set index 0 id 1 has 0 elements
-Side set index 1 id 2 has 0 elements
 num qa records 1
 
 QA Record 0
@@ -157,8 +150,8 @@ Nemesis data
 Num nodes global 8029
 Num elems global 6480
 Num elm_blks global 6
-Num node sets global 2
-Num side sets global 2
+Num node sets global 0
+Num side sets global 0
 Num total proc 3
 Num proc in file 1
 element block index 0 has id 1 and 1296 elements
@@ -167,10 +160,6 @@ element block index 2 has id 3 and 1296 elements
 element block index 3 has id 4 and 1296 elements
 element block index 4 has id 5 and 648 elements
 element block index 5 has id 6 and 1296 elements
-global ns info for ns index 0 id 1 num_nodes = 91 num_ns_df = 0
-global ns info for ns index 1 id 2 num_nodes = 49 num_ns_df = 0
-global ss info for ss index 0 id 1 num_elements = 0 num_ss_df = 0
-global ss info for ss index 1 id 2 num_elements = 0 num_ss_df = 0
 Loadbal params:
 num_internal_nodes 1214
 num_border_nodes607

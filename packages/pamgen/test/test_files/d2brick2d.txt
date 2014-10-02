@@ -8,8 +8,8 @@
       yblock 2 2. interval 12
     end
    set assign
-      block nodeset, jlo, 1 1
-      block sideset, jlo, 1 1
+$      block nodeset, jlo, 1 1
+$      block sideset, jlo, 1 1
     end
 
    topology modification

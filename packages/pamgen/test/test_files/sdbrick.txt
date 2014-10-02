@@ -20,6 +20,7 @@ $    end
     suppress block, 1
     suppress block, 2
     suppress block, 6
+    suppress block, 600
     end
     decomposition strategy
       sequential
