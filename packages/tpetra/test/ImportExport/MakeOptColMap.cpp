@@ -264,8 +264,8 @@ namespace {
     using ::Tpetra::Details::makeOptimizedColMap;
     using ::Tpetra::Details::makeOptimizedColMapAndImport;
     typedef MapType map_type;
-    typedef typename MapType::local_ordinal_type LO;
-    typedef typename MapType::global_ordinal_type GO;
+    // typedef typename MapType::local_ordinal_type LO;
+    // typedef typename MapType::global_ordinal_type GO;
     typedef typename GetImportType<MapType>::import_type import_type;
 
     const Comm<int>& comm = * (domMap.getComm ());
