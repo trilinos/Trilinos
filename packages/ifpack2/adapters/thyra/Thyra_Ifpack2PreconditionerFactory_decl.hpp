@@ -44,8 +44,6 @@
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
-#include "Kokkos_DefaultNode.hpp"
-
 namespace Thyra {
 
 /** \brief Concrete preconditioner factory subclass based on Ifpack2.
