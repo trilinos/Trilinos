@@ -1126,6 +1126,163 @@ TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_
     }
 }
 
+
+TEST(UnitTestingOfBulkData, testChangeEntityOwnerWithChangingSharedAndGhosted)
+{
+  //
+  //         P0  P0  P1              P0  P1  P1
+  //        1---3---5---7           1---3---5---7
+  //        | 1 | 2 | 3 |  ----->   | 1 | 2 | 3 |
+  //        2---4---6---8           2---4---6---8
+  //
+  // P0:  Nodes: 1,2,3,4,5,6 and Elements: 1,2
+  // P1:  Nodes: 7,8 and Element: 3
+  // After change entity owner: P0:E2,N3-6 give to P1
+  // P0:  Nodes: 1,2 and Element: 1
+  // P1:  Nodes: 3,4,5,6,7,8 and Elements: 2,3
+  //
+  //  Ghosted -> Owned:  P1:  N3,N4,E2
+  //  Ghosted -> Shared  P1:  N3,N4
+  //  Shared -> Ghosted  P0:  N5,N6
+  //  Shared -> Owned    P1:  N5,N6
+  //  Owned -> Ghosted   P0:  N5,N6,E2
+  //  Owned -> Shared    P0:  N3,N4
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  // Set up meta and bulk data
+  const unsigned spatial_dim = 2;
+  MetaData meta_data(spatial_dim);
+  Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
+  Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
+  meta_data.commit();
+  BulkData mesh(meta_data, pm);
+  int p_rank = mesh.parallel_rank();
+  int p_size = mesh.parallel_size();
+  const EntityRank node_rank = stk::topology::NODE_RANK;
+  const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
+
+  if (p_size != 2) {
+    return;
+  }
+
+  // Begin modification cycle so we can create the entities and relations
+  mesh.modification_begin();
+
+  EntityVector nodes;
+  EntityVector elements;
+  if (p_rank == 0) {
+    nodes.push_back(mesh.declare_entity(node_rank, 1, node_part));
+    nodes.push_back(mesh.declare_entity(node_rank, 2, node_part));
+    nodes.push_back(mesh.declare_entity(node_rank, 3, node_part));
+    nodes.push_back(mesh.declare_entity(node_rank, 4, node_part));
+    nodes.push_back(mesh.declare_entity(node_rank, 5, node_part));
+    nodes.push_back(mesh.declare_entity(node_rank, 6, node_part));
+    elements.push_back(mesh.declare_entity(elem_rank, 1, elem_part));
+    elements.push_back(mesh.declare_entity(elem_rank, 2, elem_part));
+    mesh.declare_relation(elements[0], nodes[0], 0);
+    mesh.declare_relation(elements[0], nodes[1], 1);
+    mesh.declare_relation(elements[0], nodes[2], 2);
+    mesh.declare_relation(elements[0], nodes[3], 3);
+
+    mesh.declare_relation(elements[1], nodes[2], 0);
+    mesh.declare_relation(elements[1], nodes[3], 1);
+    mesh.declare_relation(elements[1], nodes[4], 2);
+    mesh.declare_relation(elements[1], nodes[5], 3);
+
+    mesh.add_node_sharing(nodes[4],1);
+    mesh.add_node_sharing(nodes[5],1);
+  }
+  else { // p_rank == 1
+    nodes.push_back(mesh.declare_entity(node_rank, 5, node_part));
+    nodes.push_back(mesh.declare_entity(node_rank, 6, node_part));
+    nodes.push_back(mesh.declare_entity(node_rank, 7, node_part));
+    nodes.push_back(mesh.declare_entity(node_rank, 8, node_part));
+    elements.push_back(mesh.declare_entity(elem_rank, 3, elem_part));
+    mesh.declare_relation(elements[0], nodes[0], 0);
+    mesh.declare_relation(elements[0], nodes[1], 1);
+    mesh.declare_relation(elements[0], nodes[2], 2);
+    mesh.declare_relation(elements[0], nodes[3], 3);
+
+    mesh.add_node_sharing(nodes[0],0);
+    mesh.add_node_sharing(nodes[1],0);
+  }
+
+  mesh.modification_end();
+
+  typedef std::vector<EntityKey> EntityKeyVector;
+  EntityKeyVector node_keys(9);
+  EntityKeyVector element_keys(4);
+  node_keys[1] = EntityKey(stk::topology::NODE_RANK,1);
+  node_keys[2] = EntityKey(stk::topology::NODE_RANK,2);
+  node_keys[3] = EntityKey(stk::topology::NODE_RANK,3);
+  node_keys[4] = EntityKey(stk::topology::NODE_RANK,4);
+  node_keys[5] = EntityKey(stk::topology::NODE_RANK,5);
+  node_keys[6] = EntityKey(stk::topology::NODE_RANK,6);
+  node_keys[7] = EntityKey(stk::topology::NODE_RANK,7);
+  node_keys[8] = EntityKey(stk::topology::NODE_RANK,8);
+  element_keys[1] = EntityKey(stk::topology::ELEMENT_RANK,1);
+  element_keys[2] = EntityKey(stk::topology::ELEMENT_RANK,2);
+  element_keys[3] = EntityKey(stk::topology::ELEMENT_RANK,3);
+
+  // TODO:  Verify comm_map and comm_list are correct
+  std::map<EntityKey,std::vector<stk::mesh::EntityCommInfo> > gold_entity_comm;
+  if (p_rank == 0) {
+     gold_entity_comm[node_keys[1]].clear();
+     gold_entity_comm[node_keys[2]].clear();
+     gold_entity_comm[node_keys[3]].push_back(stk::mesh::EntityCommInfo(1,1));
+     gold_entity_comm[node_keys[4]].push_back(stk::mesh::EntityCommInfo(1,1));
+     gold_entity_comm[node_keys[5]].push_back(stk::mesh::EntityCommInfo(0,1));
+     gold_entity_comm[node_keys[6]].push_back(stk::mesh::EntityCommInfo(0,1));
+     gold_entity_comm[node_keys[7]].push_back(stk::mesh::EntityCommInfo(1,1));
+     gold_entity_comm[node_keys[8]].push_back(stk::mesh::EntityCommInfo(1,1));
+     gold_entity_comm[element_keys[1]].clear();
+     gold_entity_comm[element_keys[2]].push_back(stk::mesh::EntityCommInfo(1,1));
+     gold_entity_comm[element_keys[3]].push_back(stk::mesh::EntityCommInfo(1,1));
+  }
+  else { // p_rank == 1
+     gold_entity_comm[node_keys[1]].clear();
+     gold_entity_comm[node_keys[2]].clear();
+     gold_entity_comm[node_keys[3]].push_back(stk::mesh::EntityCommInfo(1,0));
+     gold_entity_comm[node_keys[4]].push_back(stk::mesh::EntityCommInfo(1,0));
+     gold_entity_comm[node_keys[5]].push_back(stk::mesh::EntityCommInfo(0,0));
+     gold_entity_comm[node_keys[6]].push_back(stk::mesh::EntityCommInfo(0,0));
+     gold_entity_comm[node_keys[7]].push_back(stk::mesh::EntityCommInfo(1,0));
+     gold_entity_comm[node_keys[8]].push_back(stk::mesh::EntityCommInfo(1,0));
+     gold_entity_comm[element_keys[1]].clear();
+     gold_entity_comm[element_keys[2]].push_back(stk::mesh::EntityCommInfo(1,0));
+     gold_entity_comm[element_keys[3]].push_back(stk::mesh::EntityCommInfo(1,0));
+  }
+  for (EntityRank rank = stk::topology::NODE_RANK; rank != stk::topology::END_RANK; rank++){
+      BulkData::const_entity_iterator entity_it = mesh.begin_entities(rank);
+      for(; entity_it != mesh.end_entities(rank); entity_it ++){
+          EntityKey key = entity_it->first;
+          stk::mesh::PairIterEntityComm comm_pit = mesh.entity_comm_map(key);
+          ASSERT_LE( std::distance(comm_pit.first,comm_pit.second), 1 );
+          for(; comm_pit.first != comm_pit.second; ++comm_pit){
+              unsigned ghost_id = comm_pit.first->ghost_id;
+              int proc = comm_pit.first->proc;
+              EXPECT_EQ( ghost_id, gold_entity_comm[key][0].ghost_id );
+              EXPECT_EQ( proc, gold_entity_comm[key][0].proc );
+          }
+      }
+  }
+
+  std::vector<EntityProc> change ;
+  if (p_rank == 0) {
+      change.push_back(EntityProc(elements[1],1));
+      change.push_back(EntityProc(nodes[2],1));
+      change.push_back(EntityProc(nodes[3],1));
+      change.push_back(EntityProc(nodes[4],1));
+      change.push_back(EntityProc(nodes[5],1));
+  }
+
+  mesh.change_entity_owner(change);
+
+  // TODO:  Verify comm_map and comm_lists are correct
+
+}
+
 TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
 {
   // This unit-test is designed to test the conditions that results that
