@@ -2816,13 +2816,13 @@ namespace Tpetra {
     // Check if A, B, C have constant stride, if not then make temp copy (strided)
     RCP<const MV> Atmp, Btmp;
     RCP<MV>       Ctmp;
-    if (isConstantStride() == false) Ctmp = rcp (new MV (*this));
+    if (isConstantStride() == false) Ctmp = rcp (new MV (*this, Teuchos::Copy));
     else Ctmp = rcp(this,false);
 
-    if (A.isConstantStride() == false) Atmp = rcp (new MV (A));
+    if (A.isConstantStride() == false) Atmp = rcp (new MV (A, Teuchos::Copy));
     else Atmp = rcp(&A,false);
 
-    if (B.isConstantStride() == false) Btmp = rcp (new MV (B));
+    if (B.isConstantStride() == false) Btmp = rcp (new MV (B, Teuchos::Copy));
     else Btmp = rcp(&B,false);
 
 #ifdef HAVE_TEUCHOS_DEBUG
