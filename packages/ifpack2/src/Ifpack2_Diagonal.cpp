@@ -56,19 +56,17 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_SLG(LCLINST)
 
-  #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_IFPACK2_KOKKOSCLASSIC)
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class Diagonal<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
   template class Diagonal<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
-  #endif
+#endif
 
-  // FIXME (mfh 23 Apr 2014) This will result in a duplicate symbol if
-  // the default Node type is TPINode.  See the definition of LCLINST
-  // above.
-  #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class Diagonal<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
   template class Diagonal<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
-  #endif
-
+#endif
+#endif // defined(HAVE_IFPACK2_KOKKOSCLASSIC)
 
 }
 

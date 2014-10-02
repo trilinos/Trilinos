@@ -103,16 +103,30 @@ namespace {
     "(by calling setParameters()).";
 
   // Utility function for inverting diagonal
+#ifdef HAVE_IFPACK2_KOKKOSCLASSIC
   template <typename S, typename L, typename G, typename N>
-  void reciprocal_threshold( const Tpetra::Vector<S,L,G,N>& v,
-                             const S& min_val ) {
+  void
+  reciprocal_threshold (const Tpetra::Vector<S,L,G,N>& v,
+                        const S& min_val)
+  {
     typedef KokkosClassic::MultiVector<S,N> KMV;
     typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
     KMV local_v = v.getLocalMV ();
     KMVT::ReciprocalThreshold (local_v, min_val);
   }
+#else
+  template <typename S, typename L, typename G, typename N>
+  void
+  reciprocal_threshold (const Tpetra::Vector<S,L,G,N>& v,
+                        const S& min_val)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "No default implementation available.");
+  }
+#endif // HAVE_IFPACK2_KOKKOSCLASSIC
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
   template <typename S, typename L, typename G, typename D>
   void reciprocal_threshold(
     const Tpetra::Vector<S,L,G,Kokkos::Compat::KokkosDeviceWrapperNode<D> >& v,
@@ -120,7 +134,9 @@ namespace {
     Kokkos::MV_ReciprocalThreshold( v.template getLocalView<D>(),
                                     min_val );
   }
-#endif
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
+
 }
 
 template<class ScalarType, class MV>

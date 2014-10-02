@@ -46,7 +46,6 @@
 
 #include "Ifpack2_Hiptmair_def.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
-#include "KokkosClassic_config.h"
 
 #define IFPACK2_INST_HIPTMAIR(S,LO,GO) \
   template class Hiptmair<Tpetra::CrsMatrix< S, LO, GO > >;
@@ -57,13 +56,15 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_HIPTMAIR )
 
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_IFPACK2_KOKKOSCLASSIC)
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class Hiptmair<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class Hiptmair<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
 #endif
+#endif // defined(HAVE_IFPACK2_KOKKOSCLASSIC)
 
 }
 
