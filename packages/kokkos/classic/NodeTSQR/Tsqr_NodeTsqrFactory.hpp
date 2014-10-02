@@ -42,19 +42,14 @@
 #ifndef __TSQR_NodeTsqrFactory_hpp
 #define __TSQR_NodeTsqrFactory_hpp
 
-#include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOSCLASSIC_TBB
+#include <Kokkos_ConfigDefs.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-#  include <Kokkos_TBBNode.hpp>
 #  include <TbbTsqr.hpp>
 #endif // HAVE_KOKKOSCLASSIC_TBB
 
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#  include <Kokkos_TPINode.hpp>
-#  include <Tsqr_KokkosNodeTsqr.hpp>
-#endif // HAVE_KOKKOSCLASSIC_THREADPOOL
-
-#include <Kokkos_SerialNode.hpp>
+#include <Tsqr_KokkosNodeTsqr.hpp>
 #include <Tsqr_SequentialTsqr.hpp>
 
 #include <Teuchos_ParameterList.hpp>
@@ -236,6 +231,7 @@ namespace TSQR {
   };
 #endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 
+#if defined(HAVE_KOKKOSCLASSIC_SERIAL)
   //
   // Specialization of NodeTsqrFactory for KokkosClassic::SerialNode.
   //
@@ -279,6 +275,7 @@ namespace TSQR {
       (void) node;
     }
   };
+#endif // defined(HAVE_KOKKOSCLASSIC_SERIAL)
 
 } // namespace TSQR
 

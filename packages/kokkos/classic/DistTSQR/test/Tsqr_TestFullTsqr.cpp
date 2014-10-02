@@ -54,6 +54,7 @@
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
 
 typedef int ordinal_type;
+typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
 namespace {
   //
@@ -241,73 +242,72 @@ namespace {
   // Return true if all tests were successful, else false.
   //
   bool
-    test (int argc,
+  test (int argc,
         char* argv[],
         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-        const Teuchos::RCP<KokkosClassic::SerialNode>& node,
+        const Teuchos::RCP<node_type>& node,
         const bool allowedToPrint)
-    {
-      using TSQR::Test::NullCons;
-      using TSQR::Test::Cons;
-      using Teuchos::null;
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-      using Teuchos::rcp;
-      //
-      // Get a default random seed, and set up the Caller (that iterates
-      // the test over all Scalar types of interest).
-      //
-      typedef TSQR::Test::FullTsqrVerifierCaller caller_type;
-      std::vector<int> randomSeed = caller_type::defaultRandomSeed ();
-      caller_type caller (comm, node, randomSeed);
+  {
+    using TSQR::Test::NullCons;
+    using TSQR::Test::Cons;
+    using Teuchos::null;
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    //
+    // Get a default random seed, and set up the Caller (that iterates
+    // the test over all Scalar types of interest).
+    //
+    typedef TSQR::Test::FullTsqrVerifierCaller caller_type;
+    std::vector<int> randomSeed = caller_type::defaultRandomSeed ();
+    caller_type caller (comm, node, randomSeed);
 
-      //
-      // Read command-line options
-      //
-      RCP<const ParameterList> defaultParams = caller.getValidParameterList();
-      CmdLineOptions cmdLineOpts (defaultParams);
-      const bool printedHelp = cmdLineOpts.read (argc, argv, defaultParams, allowedToPrint);
-      // Don't run the tests (and do succeed) if help was printed.
-      if (printedHelp)
-        return true;
+    //
+    // Read command-line options
+    //
+    RCP<const ParameterList> defaultParams = caller.getValidParameterList();
+    CmdLineOptions cmdLineOpts (defaultParams);
+    const bool printedHelp = cmdLineOpts.read (argc, argv, defaultParams, allowedToPrint);
+    // Don't run the tests (and do succeed) if help was printed.
+    if (printedHelp)
+      return true;
 
-      //
-      // Use read-in command-line options to set up test parameters.
-      //
-      RCP<ParameterList> testParams = testParameters (defaultParams, cmdLineOpts);
-      defaultParams = null; // save a little space
+    //
+    // Use read-in command-line options to set up test parameters.
+    //
+    RCP<ParameterList> testParams = testParameters (defaultParams, cmdLineOpts);
+    defaultParams = null; // save a little space
 
-      //
-      // Define lists of Scalar types to test.  We keep separate lists
-      // for real and complex types, since callers can control whether
-      // each of these is tested independently on the command line.
-      //
-      typedef Cons<float, Cons<double, NullCons> > real_type_list;
+    //
+    // Define lists of Scalar types to test.  We keep separate lists
+    // for real and complex types, since callers can control whether
+    // each of these is tested independently on the command line.
+    //
+    typedef Cons<float, Cons<double, NullCons> > real_type_list;
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-      typedef Cons<std::complex<float>, Cons<std::complex<double>, NullCons> > complex_type_list;
+    typedef Cons<std::complex<float>, Cons<std::complex<double>, NullCons> > complex_type_list;
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
 
-      //
-      // Run the tests.  If the tests are set up to fail on
-      // insufficiently inaccurate results, run() will throw an
-      // exception in that case.  Otherwise, the tests return nothing,
-      // and "succeed" if they don't crash or throw an exception.
-      //
-      // The testReal and testComplex options are read in at the command
-      // line, but since they do not apply to all Scalar types, they
-      // don't belong in testParams.
-      //
-      if (cmdLineOpts.testReal)
-        caller.run<real_type_list> (testParams);
+    //
+    // Run the tests.  If the tests are set up to fail on
+    // insufficiently inaccurate results, run() will throw an
+    // exception in that case.  Otherwise, the tests return nothing,
+    // and "succeed" if they don't crash or throw an exception.
+    //
+    // The testReal and testComplex options are read in at the command
+    // line, but since they do not apply to all Scalar types, they
+    // don't belong in testParams.
+    //
+    if (cmdLineOpts.testReal)
+      caller.run<real_type_list> (testParams);
 #ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-      if (cmdLineOpts.testComplex)
-        caller.run<complex_type_list> (testParams);
+    if (cmdLineOpts.testComplex)
+      caller.run<complex_type_list> (testParams);
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
 
-      return true; // for success
-    }
-
+    return true; // for success
+  }
 } // namespace (anonymous)
 
 
@@ -350,14 +350,14 @@ main (int argc, char* argv[])
   bool verbose = false;
   try {
     RCP<ParameterList> nodeParams =
-      TSQR::Test::getValidNodeParameters<KokkosClassic::SerialNode> ();
-    RCP<KokkosClassic::SerialNode> node =
-      TSQR::Test::getNode<KokkosClassic::SerialNode> (nodeParams);
+      TSQR::Test::getValidNodeParameters<node_type> ();
+    RCP<node_type> node = TSQR::Test::getNode<node_type> (nodeParams);
 
     success = test (argc, argv, comm, node, allowedToPrint);
-    if (allowedToPrint && success)
+    if (allowedToPrint && success) {
       // The Trilinos test framework expects a message like this.
       out << "\nEnd Result: TEST PASSED" << endl;
+    }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );

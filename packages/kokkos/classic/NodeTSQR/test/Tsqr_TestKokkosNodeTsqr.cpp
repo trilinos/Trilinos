@@ -67,7 +67,7 @@ namespace {
   // (they are for testing only).
   //
   template<class NodeType>
-    Teuchos::RCP<Teuchos::ParameterList> getValidNodeParameters ();
+  Teuchos::RCP<Teuchos::ParameterList> getValidNodeParameters ();
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
   //
@@ -75,17 +75,17 @@ namespace {
   // - "Num Threads" (int) option, defaults to -1 for late init.
   //
   template<>
-    Teuchos::RCP<Teuchos::ParameterList>
-    getValidNodeParameters<KokkosClassic::TBBNode> ()
-    {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
+  Teuchos::RCP<Teuchos::ParameterList>
+  getValidNodeParameters<KokkosClassic::TBBNode> ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
 
-      RCP<ParameterList> plist = parameterList ("TBBNode");
-      plist->set ("Num Threads", -1);
-      return plist;
-    }
+    RCP<ParameterList> plist = parameterList ("TBBNode");
+    plist->set ("Num Threads", -1);
+    return plist;
+  }
 #endif // HAVE_KOKKOSCLASSIC_TBB
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
@@ -98,55 +98,57 @@ namespace {
   //   threads; defaults to 0.
   //
   template<>
-    Teuchos::RCP<Teuchos::ParameterList>
-    getValidNodeParameters<KokkosClassic::TPINode> ()
-    {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
+  Teuchos::RCP<Teuchos::ParameterList>
+  getValidNodeParameters<KokkosClassic::TPINode> ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
 
-      // FIXME (mfh 02 Jul 2013) I wonder what happens if the node
-      // doesn't have this many cores... Would TPINode initialization
-      // fail in that case?
-      const int numThreads = 8;
+    // FIXME (mfh 02 Jul 2013) I wonder what happens if the node
+    // doesn't have this many cores... Would TPINode initialization
+    // fail in that case?
+    const int numThreads = 8;
 
-      RCP<ParameterList> plist = parameterList ("TPINode");
-      plist->set ("Num Threads", numThreads);
-      plist->set ("Verbose", 1);
-      return plist;
-    }
+    RCP<ParameterList> plist = parameterList ("TPINode");
+    plist->set ("Num Threads", numThreads);
+    plist->set ("Verbose", 1);
+    return plist;
+  }
 #endif // HAVE_KOKKOSCLASSIC_THREADPOOL
 
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
   //
   // Specialization for SerialNode, which takes no parameters.
   //
   template<>
-    Teuchos::RCP<Teuchos::ParameterList>
-    getValidNodeParameters<KokkosClassic::SerialNode> ()
-    {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
+  Teuchos::RCP<Teuchos::ParameterList>
+  getValidNodeParameters<KokkosClassic::SerialNode> ()
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
 
-      RCP<ParameterList> plist = parameterList ("SerialNode");
-      return plist;
-    }
+    RCP<ParameterList> plist = parameterList ("SerialNode");
+    return plist;
+  }
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
   //
   // Instantiate and return a Kokkos Node instance with the given
   // parameters.
   //
   template<class NodeType>
-    Teuchos::RCP<NodeType>
-    getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        const bool debug)
-    {
-      if (debug) {
-        std::cerr << "Instantiating a Kokkos Node of type "
-          << Teuchos::TypeNameTraits<NodeType>::name() << std::endl;
-      }
-      return Teuchos::rcp (new NodeType (*plist));
+  Teuchos::RCP<NodeType>
+  getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist,
+           const bool debug)
+  {
+    if (debug) {
+      std::cerr << "Instantiating a Kokkos Node of type "
+                << Teuchos::TypeNameTraits<NodeType>::name() << std::endl;
     }
+    return Teuchos::rcp (new NodeType (*plist));
+  }
 
   //
   // The documentation string for this test executable to print out at
