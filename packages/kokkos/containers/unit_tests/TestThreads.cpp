@@ -47,9 +47,6 @@
 
 #if defined( KOKKOS_HAVE_PTHREAD )
 
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
-
 #include <Kokkos_Bitset.hpp>
 #include <Kokkos_UnorderedMap.hpp>
 

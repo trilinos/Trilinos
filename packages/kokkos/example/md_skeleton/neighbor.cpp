@@ -42,8 +42,8 @@
 */
 
 #include <system.h>
-#include <Kokkos_Atomic.hpp>
 #include <cstdio>
+#include <Kokkos_Core.hpp>
 
 #define SMALL 1.0e-6
 #define FACTOR 0.999

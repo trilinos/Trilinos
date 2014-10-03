@@ -39,8 +39,7 @@
 // ************************************************************************
 */
 
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_OpenMP.hpp>
+#include <Kokkos_Core.hpp>
 #include <HexElement.hpp>
 #include <fenl_impl.hpp>
 

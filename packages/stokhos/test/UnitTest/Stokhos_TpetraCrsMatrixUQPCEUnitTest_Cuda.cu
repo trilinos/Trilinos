@@ -45,7 +45,7 @@
 
 #include "Stokhos_TpetraCrsMatrixUQPCEUnitTest.hpp"
 
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
 // Instantiate tests for cuda node

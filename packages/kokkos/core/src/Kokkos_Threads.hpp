@@ -44,7 +44,7 @@
 #ifndef KOKKOS_THREADS_HPP
 #define KOKKOS_THREADS_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
 #if defined( KOKKOS_HAVE_PTHREAD )
 

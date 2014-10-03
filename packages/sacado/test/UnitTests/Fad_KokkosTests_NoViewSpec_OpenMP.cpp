@@ -35,8 +35,7 @@
 
 #include "Fad_KokkosTests.hpp"
 
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_OpenMP.hpp"
+#include "Kokkos_Core.hpp"
 
 // Instantiate tests for OpenMP device
 using Kokkos::OpenMP;

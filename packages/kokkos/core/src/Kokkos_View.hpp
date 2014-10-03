@@ -45,7 +45,7 @@
 #define KOKKOS_VIEW_HPP
 
 #include <string>
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 

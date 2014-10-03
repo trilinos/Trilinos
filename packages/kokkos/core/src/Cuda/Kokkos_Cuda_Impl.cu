@@ -44,7 +44,7 @@
 /*--------------------------------------------------------------------------*/
 /* Kokkos interfaces */
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <Cuda/Kokkos_Cuda_Internal.hpp>
 #include <impl/Kokkos_Error.hpp>
 

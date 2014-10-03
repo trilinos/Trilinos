@@ -45,7 +45,7 @@
 #include "Sacado_UQ_PCE.hpp"
 #include "Sacado_UQ_PCE_Traits.hpp"
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 #include "Kokkos_AnalyzeSacadoShape.hpp"
 #include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_UQ_PCE_Utils.hpp"

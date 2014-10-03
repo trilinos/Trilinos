@@ -46,8 +46,7 @@
 
 #include <stdlib.h>
 
-#include <KokkosCore_config.h>
-#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <algorithm>
 

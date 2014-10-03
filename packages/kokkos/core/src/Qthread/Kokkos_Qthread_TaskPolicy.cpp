@@ -43,7 +43,7 @@
 
 // Experimental unified task-data parallel manycore LDRD
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
 #if defined( KOKKOS_HAVE_QTHREAD )
 

@@ -38,9 +38,7 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
 
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace
 {

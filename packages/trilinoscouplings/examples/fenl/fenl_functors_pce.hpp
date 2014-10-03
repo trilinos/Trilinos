@@ -786,7 +786,7 @@ public:
 
       // Set quadrature point in diffusion coefficient
       for (unsigned i=0; i<dim; ++i)
-        for (unsigned j=0; j<EnsembleSize; ++j)
+        for (unsigned j=0; j< unsigned(EnsembleSize); ++j)
           hrv(i).fastAccessCoeff(j) = quad_points(qp+j,i);
       Kokkos::deep_copy( rv, hrv );
 

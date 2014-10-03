@@ -46,7 +46,7 @@
 
 #ifdef HAVE_STOKHOS_KOKKOSCORE
 
-#include "KokkosCore_config.h"
+#include "Kokkos_Macros.hpp"
 
 #include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
 

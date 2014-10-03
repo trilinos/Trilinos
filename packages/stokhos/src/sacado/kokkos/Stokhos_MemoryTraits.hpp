@@ -44,8 +44,7 @@
 
 #include <cstdlib>
 
-#include "Kokkos_Macros.hpp"
-#include "Kokkos_HostSpace.hpp"
+#include "Kokkos_Core_fwd.hpp"
 
 // Currently always aligning
 #define STOKHOS_ALIGN_MEMORY 1

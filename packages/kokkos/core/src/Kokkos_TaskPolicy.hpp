@@ -47,7 +47,7 @@
 #ifndef KOKKOS_TASKPOLICY_HPP
 #define KOKKOS_TASKPOLICY_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Tags.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>

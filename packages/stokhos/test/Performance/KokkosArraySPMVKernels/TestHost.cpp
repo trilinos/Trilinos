@@ -41,10 +41,7 @@
 
 #include <iostream>
 
-#include "KokkosCore_config.h"
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_OpenMP.hpp"
-#include "Kokkos_hwloc.hpp"
+#include "Kokkos_Core.hpp"
 
 #ifdef KOKKOS_HAVE_PTHREAD
 #include "Stokhos_Threads_CrsProductTensor.hpp"

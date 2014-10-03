@@ -42,8 +42,7 @@
 #ifndef STOKHOS_MULTIPLY_HPP
 #define STOKHOS_MULTIPLY_HPP
 
-#include "Kokkos_Pair.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 #include <vector> // for std::vector (needed below)
 
 namespace Stokhos {

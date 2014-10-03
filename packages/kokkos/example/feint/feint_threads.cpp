@@ -42,18 +42,20 @@
 */
 
 #include <Kokkos_Core.hpp>
-#include <HostExecSpace.hpp>
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+
 #include <feint.hpp>
 
 namespace Kokkos {
 namespace Example {
 
-template void feint<HostExecSpace,false>(
+template void feint< Kokkos::Threads ,false>(
   const unsigned global_elem_nx ,
   const unsigned global_elem_ny ,
   const unsigned global_elem_nz );
 
-template void feint<HostExecSpace,true>(
+template void feint< Kokkos::Threads ,true>(
   const unsigned global_elem_nx ,
   const unsigned global_elem_ny ,
   const unsigned global_elem_nz );
@@ -61,3 +63,4 @@ template void feint<HostExecSpace,true>(
 } /* namespace Example */
 } /* namespace Kokkos */
 
+#endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */

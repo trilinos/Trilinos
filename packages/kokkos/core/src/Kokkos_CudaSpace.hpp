@@ -50,7 +50,7 @@
 #include <typeinfo>
 #include <string>
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Cuda/Kokkos_Cuda_abort.hpp>
 

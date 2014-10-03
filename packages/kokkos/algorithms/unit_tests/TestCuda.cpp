@@ -45,7 +45,7 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <stdint.h>
 
 #include <iomanip>

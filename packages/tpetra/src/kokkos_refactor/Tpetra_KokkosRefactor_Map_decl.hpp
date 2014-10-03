@@ -43,7 +43,8 @@
 #define TPETRA_KOKKOSREFACTOR_MAP_DECL_HPP
 
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#include <Kokkos_UnorderedMap.hpp> // includes Kokkos_View.hpp
+#include <Kokkos_Core.hpp>
+#include <Kokkos_UnorderedMap.hpp>
 #include "Tpetra_KokkosRefactor_Details_Map.hpp"
 
 namespace Tpetra {

@@ -43,9 +43,7 @@
 #include "TestAssembly.hpp"
 
 // Devices
-#include "KokkosCore_config.h"
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_OpenMP.hpp"
+#include "Kokkos_Core.hpp"
 
 template <typename Storage>
 void mainHost(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,

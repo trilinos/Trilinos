@@ -1,14 +1,4 @@
-#include <KokkosCore_config.h>
-#include <Kokkos_hwloc.hpp>
-#include <Kokkos_Threads.hpp>
-
-#if defined( KOKKOS_HAVE_CUDA )
-#include <Kokkos_Cuda.hpp>
-#endif
-
-#if defined( KOKKOS_HAVE_OPENMP )
-#include <Kokkos_OpenMP.hpp>
-#endif
+#include <Kokkos_Core.hpp>
 
 #include <fenl.hpp>
 #include <fenl_utils.hpp>

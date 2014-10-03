@@ -43,7 +43,7 @@
 #define KOKKOS_ATOMIC_MP_VECTOR_HPP
 
 #include "Sacado_MP_Vector.hpp"
-#include "Kokkos_Atomic.hpp"
+#include "Kokkos_Core.hpp"
 
 //----------------------------------------------------------------------------
 // Overloads of Kokkos atomic functions for Sacado::MP::Vector scalar type

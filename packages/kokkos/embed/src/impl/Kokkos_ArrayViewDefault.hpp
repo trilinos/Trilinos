@@ -44,9 +44,7 @@
 #ifndef KOKKOS_COREVIEWDEFAULT_HPP
 #define KOKKOS_COREVIEWDEFAULT_HPP
 
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_View.hpp>
-#include <impl/Kokkos_Shape.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Kokkos {
 namespace Impl {

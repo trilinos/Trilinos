@@ -44,12 +44,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <KokkosCore_config.h>
-#include <Kokkos_hwloc.hpp>
-#include <Kokkos_Serial.hpp>
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_Cuda.hpp>
-#include <Kokkos_OpenMP.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <grow_array.hpp>
 

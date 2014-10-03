@@ -49,8 +49,7 @@
 #include <string>
 #include <vector>
 
-#include <Kokkos_View.hpp>
-#include <Kokkos_Parallel.hpp> // for parallel_reduce
+#include <Kokkos_Core.hpp>
 
 namespace Kokkos {
 

@@ -43,15 +43,7 @@
 
 #include <gtest/gtest.h>
 
-// Force OMP atomics for testing only
-
-//#define KOKKOS_ATOMICS_USE_OMP31
-#include <Kokkos_Atomic.hpp>
-
 #include <Kokkos_Core.hpp>
-#include <Kokkos_hwloc.hpp>
-
-#include <Kokkos_View.hpp>
 
 #include <Kokkos_CrsArray.hpp>
 

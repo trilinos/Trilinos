@@ -1,5 +1,5 @@
 
-#include <KokkosCore_config.h>
+#include <Kokkos_Macros.hpp>
 #include <ParallelComm.hpp>
 #include <sstream>
 #include <iostream>

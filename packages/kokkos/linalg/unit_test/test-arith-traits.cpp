@@ -42,19 +42,7 @@
 #include <iostream>
 
 #include "Kokkos_ArithTraitsTest.hpp"
-#include "Kokkos_Serial.hpp"
-
-#ifdef KOKKOS_HAVE_OPENMP
-#  include "Kokkos_OpenMP.hpp"
-#endif // KOKKOS_HAVE_OPENMP
-
-#ifdef KOKKOS_HAVE_PTHREAD
-#  include "Kokkos_Threads.hpp"
-#endif // KOKKOS_HAVE_PTHREAD
-
-#ifdef KOKKOS_HAVE_CUDA
-#  include "Kokkos_Cuda.hpp"
-#endif // KOKKOS_HAVE_CUDA
+#include "Kokkos_Core.hpp"
 
 #ifdef KOKKOS_HAVE_CUDA
 // We annoyingly have to build the CUDA tests in a separate .cu file,

@@ -44,7 +44,7 @@
 #define KOKKOS_TEUCHOS_COMM_ADAPTERS_HPP
 
 #include "Teuchos_CommHelpers.hpp"
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 #include "KokkosCompat_View.hpp"
 
 /// \file Kokkos_TeuchosCommAdapters.hpp

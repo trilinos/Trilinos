@@ -101,17 +101,6 @@ struct TestViewOperator
 
 /*--------------------------------------------------------------------------*/
 
-template< class ViewType >
-ViewType create_test_view( const typename ViewType::shape_type shape )
-{
-  const unsigned stride =
-    Kokkos::Impl::ShapeMap< typename ViewType::shape_type,
-                                 typename ViewType::array_layout >
-    ::template stride< typename ViewType::memory_space >( shape );
-
-  return ViewType( (typename ViewType::scalar_type *) 0 , shape , stride );
-}
-
 template< class DataType >
 struct rank {
 private:

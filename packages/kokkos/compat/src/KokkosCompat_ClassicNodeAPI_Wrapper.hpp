@@ -5,24 +5,14 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #ifdef KOKKOS_HAVE_CUDA
   #ifndef KERNEL_PREFIX
     #ifdef __CUDACC__
     #define KERNEL_PREFIX __host__ __device__
     #endif
   #endif
-  #include <Kokkos_Cuda.hpp>
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
-#include <Kokkos_OpenMP.hpp>
-#endif
-#ifdef KOKKOS_HAVE_PTHREAD
-#include <Kokkos_Threads.hpp>
-#endif
-
-#include <Kokkos_Serial.hpp>
-
 
 #include <KokkosCompat_View.hpp>
 /*namespace KokkosClassic {

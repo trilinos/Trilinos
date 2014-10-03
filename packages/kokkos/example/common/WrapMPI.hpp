@@ -44,7 +44,7 @@
 #ifndef KOKKOS_EXAMPLE_WRAP_MPI
 #define KOKKOS_EXAMPLE_WRAP_MPI
 
-#include <KokkosCore_config.h>
+#include <Kokkos_Macros.hpp>
 #include <string>
 
 #if defined( KOKKOS_HAVE_MPI )

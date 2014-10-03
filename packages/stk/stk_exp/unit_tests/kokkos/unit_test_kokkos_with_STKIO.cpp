@@ -38,9 +38,7 @@
 // restrict this file to only build if KokkosCore is enabled and if STKIO is enabled
 #if defined(HAVE_STK_KokkosCore) && defined(HAVE_STKIO)
 
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <iostream>
 

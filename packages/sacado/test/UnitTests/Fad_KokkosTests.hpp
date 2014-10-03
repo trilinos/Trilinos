@@ -28,8 +28,7 @@
 // @HEADER
 #include "Teuchos_TestingHelpers.hpp"
 
-#include "Kokkos_View.hpp"
-#include "Kokkos_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 #include "Sacado.hpp"
 
 #include "Kokkos_View_Fad.hpp"

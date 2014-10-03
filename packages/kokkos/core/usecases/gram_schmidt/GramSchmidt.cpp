@@ -43,10 +43,7 @@
 
 #include <GramSchmidt.hpp>
 
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_View.hpp>
-#include <Kokkos_Cuda.hpp>
-#include <Kokkos_Threads.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <impl/Kokkos_Timer.hpp>
 

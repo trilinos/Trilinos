@@ -38,11 +38,7 @@
 // restrict this file to only build if KokkosCore is enabled
 #ifdef HAVE_STK_KokkosCore
 
-#include <Kokkos_Serial.hpp>
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_OpenMP.hpp>
-#include <Kokkos_hwloc.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <iostream>
 

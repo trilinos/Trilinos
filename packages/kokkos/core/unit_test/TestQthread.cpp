@@ -43,9 +43,8 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Qthread.hpp>
-#include <Kokkos_View.hpp>
 #include <Kokkos_CrsArray.hpp>
 
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>

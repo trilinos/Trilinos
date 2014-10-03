@@ -35,8 +35,7 @@
 
 #include "Fad_KokkosTests.hpp"
 
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Threads.hpp"
+#include "Kokkos_Core.hpp"
 
 // Instantiate tests for Threads device
 using Kokkos::Threads;

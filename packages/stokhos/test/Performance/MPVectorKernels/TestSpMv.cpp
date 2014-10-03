@@ -45,10 +45,7 @@
 #include "TestSpMv.hpp"
 
 // Devices
-#include "KokkosCore_config.h"
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Utilities
 #include "Teuchos_CommandLineProcessor.hpp"

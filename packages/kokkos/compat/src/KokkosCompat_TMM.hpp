@@ -54,9 +54,8 @@
 ///   backwards compatibility for any interface in this file, nor do
 ///   we even promise that this header file will continue to exist.
 
-#include <KokkosCompat_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_View.hpp>
+#include <KokkosCompat_config.h>
 #include <Teuchos_ArrayView.hpp>
 
 #if 0

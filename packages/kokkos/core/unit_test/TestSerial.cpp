@@ -44,9 +44,7 @@
 #include <gtest/gtest.h>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_hwloc.hpp>
 
-#include <Kokkos_View.hpp>
 #include <impl/Kokkos_ViewTileLeft.hpp>
 #include <impl/Kokkos_Serial_TaskPolicy.hpp>
 
