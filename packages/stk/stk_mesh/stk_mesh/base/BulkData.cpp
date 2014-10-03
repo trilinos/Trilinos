@@ -4012,6 +4012,7 @@ void BulkData::internal_apply_node_sharing(const NodeToDependentProcessorsMap & 
             if (*set_it == parallel_rank()) { continue; }
             markEntity(node, IS_SHARED);
             m_add_node_sharing_called = true;
+            // Cannot have both sharing and ghosting of a node to same proc.
             entity_comm_map_erase(node_key, EntityCommInfo(stk::mesh::BulkData::AURA, *set_it));
             entity_comm_map_insert(node, EntityCommInfo(stk::mesh::BulkData::SHARED, *set_it));
             modified_nodes.push_back(node);
@@ -4099,7 +4100,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
   internal_generate_parallel_change_lists( *this , local_change ,
                             shared_change , ghosted_change );
 
-// #define CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
+//#define CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
 #ifdef CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
   NodeToDependentProcessorsMap node_to_dependent_processors_map;
   internal_calculate_sharing(local_change, shared_change, ghosted_change, node_to_dependent_processors_map);

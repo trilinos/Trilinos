@@ -967,6 +967,20 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
         {
             mesh.declare_relation(elem, *itr, rel_id);
         }
+        if (p_rank == 0)
+        {
+            Entity shared_node0 = nodes[2];
+            Entity shared_node1 = nodes[3];
+            mesh.add_node_sharing(shared_node0, 1);
+            mesh.add_node_sharing(shared_node1, 1);
+        }
+        else
+        {
+            Entity shared_node0 = nodes[0];
+            Entity shared_node1 = nodes[1];
+            mesh.add_node_sharing(shared_node0, 0);
+            mesh.add_node_sharing(shared_node1, 0);
+        }
     }
 
     mesh.modification_end();
@@ -2448,6 +2462,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
     // is moved on one processor during the same modification cycle in which
     // it was declared.
     //
+    //   p0  p1
     // 1---3---5
     // | 1 | 2 |
     // 2---4---6
@@ -2516,7 +2531,20 @@ TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
             PartVector add_parts(1, &extra_node_part);
             mesh.change_entity_parts(changing_node, add_parts);
         }
-
+        if (p_rank == 0)
+        {
+            Entity shared_node0 = nodes[2];
+            Entity shared_node1 = nodes[3];
+            mesh.add_node_sharing(shared_node0, 1);
+            mesh.add_node_sharing(shared_node1, 1);
+        }
+        else
+        {
+            Entity shared_node0 = nodes[0];
+            Entity shared_node1 = nodes[1];
+            mesh.add_node_sharing(shared_node0, 0);
+            mesh.add_node_sharing(shared_node1, 0);
+        }
         mesh.modification_end();
 
         // Expect that this is a shared node
@@ -2629,6 +2657,8 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
         EntityVector side_nodes;
         side_nodes.push_back(mesh.get_entity(NODE_RANK, 3));
         side_nodes.push_back(mesh.get_entity(NODE_RANK, 4));
+        mesh.add_node_sharing(side_nodes[0], (p_rank == 0 ? 1 : 0));
+        mesh.add_node_sharing(side_nodes[1], (p_rank == 0 ? 1 : 0));
         unsigned side_rel_id = 0;
         for(EntityVector::iterator itr = side_nodes.begin(); itr != side_nodes.end(); ++itr, ++side_rel_id)
         {
@@ -2639,22 +2669,31 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
         mesh.modification_end();
 
         // Expect that the side is not shared, but the nodes of side are shared
-        EXPECT_TRUE(mesh.entity_comm_map_shared(mesh.entity_key(side)).empty());
+        EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side)).empty());
         EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side_nodes[0])).empty());
         EXPECT_FALSE(mesh.entity_comm_map_shared(mesh.entity_key(side_nodes[1])).empty());
 
         // Now "detect" that there is a duplicate aura side using the side nodes
         EntityVector sides;
         get_entities_through_relations(mesh, side_nodes, side_rank, sides);
-        EXPECT_EQ(2u, sides.size());
+        EXPECT_EQ(1u, sides.size());
 
         mesh.modification_begin();
 
         // Delete the local side and create new, shared side
-        mesh.destroy_relation(elem, side, 0);
+        side = sides[0];
+        bool destroyrelationship = mesh.destroy_relation(elem, side, 0);
+        EXPECT_TRUE(destroyrelationship);
+        mesh.modification_end();
+        //must call this here to delete ghosts, kills relationship between side and ghost of elem on other proc, allows side to be deleted in next phase
+        mesh.modification_begin();
         bool successfully_destroyed = mesh.destroy_entity(side);
-        EXPECT_TRUE(successfully_destroyed);
-
+        if (p_rank == 0) {
+            EXPECT_TRUE(successfully_destroyed);
+        }
+        else {
+            EXPECT_FALSE(successfully_destroyed);
+        }
         const EntityId side_id = 1;
         side = mesh.declare_entity(side_rank, side_id, side_part);
 
@@ -2679,12 +2718,14 @@ TEST(UnitTestingOfBulkData, testParallelSideCreation)
     }
     else
     {
-        // On extra procs, do bare minimum
+        // On extra procs, do bare minimum, collective calls must be made on each proc
         mesh.modification_begin();
         mesh.modification_end();
         mesh.modification_begin();
         mesh.modification_end();
-    }
+        mesh.modification_begin();
+        mesh.modification_end();
+   }
 }
 
 TEST(UnitTestingOfBulkData, test_final_modification_end)
