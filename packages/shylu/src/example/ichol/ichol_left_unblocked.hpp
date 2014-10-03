@@ -2,24 +2,33 @@
 #ifndef __ICHOL_LEFT_UNBLOCKED_HPP__
 #define __ICHOL_LEFT_UNBLOCKED_HPP__
 
+#include "partition.hpp"
+#include "scale.hpp"
+#include "dot.hpp"
+#include "gemv.hpp"
+
 namespace Example { 
 
   using namespace std;
   
   // use Lower Triangular part only
   template<typename CrsMatrixView>
-  int factorizeLeftUnblocked(const CrsMatrixView &A) {
-    CrsMatrixView 
-      ATL, ATR,
-      ABL, ABR;
+  inline int 
+  factorizeLeftUnblocked(const CrsMatrixView &A) {
+    typedef typename CrsMatrixView::value_type   value_type;
+    typedef typename CrsMatrixView::ordinal_type ordinal_type;
+
+    // if succeed, return 0 
+    int r_val = 0;
+    value_type zero = 0.0;
+
+    CrsMatrixView ATL, ATR,      A00,  a01,     A02,
+      /**/        ABL, ABR,      a10t, alpha11, a12t,
+      /**/                       A20,  a21,     A22;    
     
-    CrsMatrixView
-      A00,  a01,     A02,
-      a10t, alpha11, a12t,
-      A20,  a21,     A22;
-    
-    Part_2x2(A,  ATL, ATR,
-             /**/ABL, ABR, 0, Partition::TopLeft);
+    Part_2x2(A,   ATL, ATR,
+             /**/ ABL, ABR, 
+             0, 0, Partition::TopLeft);
     
     while (ATL.NumRows() < A.NumRows()) {
       Part_2x2_to_3x3(ATL, ATR, /**/  A00,  a01,     A02,
@@ -27,38 +36,39 @@ namespace Example {
                       ABL, ABR, /**/  A20,  a21,     A22,  
                       1, 1, Partition::BottomRight);
       // -----------------------------------------------------
-      CrsMatrixView AB0, ab1;
-      
-      Merge_2x1(alpha11,
-                a12,     ab1);
-      
-      Merge_2x1(a10t,
-                A20,     AB0);
-      
-      // sparse gemv
-      for (ordinal_type k=0;k<ab1.NumRows();++k) {
-        auto &alpha = ab1(k,0);
-        alpha = alpha - SpDot(AB0.ExtractRow(k), a10t.ExtractRow(0));
+
+      // extract diagonal from alpha11 
+      auto alpha = alpha11.extractRow(0);
+      ordinal_type id = alpha.Index(0);
+      value_type &alpha_val = (id < 0 ? zero : alpha.Value(id));
+                           
+      // if encounter null diag, return the -(row + 1)
+      if (abs(alpha_val) == 0.0) {
+        r_val = -(ATL.NumRows() + 1);
+        break;
       }
-      
-      for (ordinal_type k=0;k<ab1.NumRows();++k) {
-        auto &alpha = ab1(k,0);
-        alpha = sqrt(alpha);
-        
-        // sparse inverse scal
-        for (ordinal_type m=k+1;m<ab1.NumRows();++m) {
-          ab1(m,0) = ab1(m,0)/alpha;
-        } 
-      }
-      
+
+      // update on alpha_val
+      auto r10t = a10t.extractRow(0);
+      alpha_val -= dot(r10t, r10t);
+
+      // sparse gemv 
+      gemv_nt_t(-1.0, A20, a10t, 1.0, a21);
+
+      // sqrt on diag
+      alpha_val = sqrt(alpha_val);
+
+      // sparse inverse scale
+      scale(1.0/alpha_val, a21);
+
       // -----------------------------------------------------
-      Partition_3x3_to_2x2(A00,  a01,     A02,  /**/ ATL, ATR,
-                           a10t, alpha11, a12t, /**/ /******/
-                           A20,  a21,     A22,  /**/ ABL, ABR  
-                           1, 1, Partition::TopLeft);
+      Merge_3x3_to_2x2(A00,  a01,     A02,  /**/ ATL, ATR,
+                       a10t, alpha11, a12t, /**/ /******/
+                       A20,  a21,     A22,  /**/ ABL, ABR,
+                       Partition::TopLeft);
     }
 
-    return 0;
+    return r_val;
   }
 
 }

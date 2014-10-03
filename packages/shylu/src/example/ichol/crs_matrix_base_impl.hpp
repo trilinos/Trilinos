@@ -14,7 +14,7 @@ namespace Example {
   ::importMatrixMarket(ifstream &file) {
     // skip initial title comments
     {
-      ordinal_type base = 0, m, n;
+      ordinal_type m, n;
       size_type nnz;
           
       while (file.good()) {
@@ -30,9 +30,9 @@ namespace Example {
       file >> m >> n >> nnz;
           
       // construct workspace and set variables
-      init(base, m, n, nnz);
+      init(m, n, nnz);
     }
-        
+
     // read the coordinate format (matrix-market)
     vector<ijv_type> mm(_nnz);
     {
@@ -51,7 +51,7 @@ namespace Example {
       }
       sort(mm.begin(), mm.end(), less<ijv_type>());
     }
-        
+
     // change mm to crs
     {
       ordinal_type ii = 0;
@@ -63,12 +63,13 @@ namespace Example {
       _ax[jj] = prev._val;
       ++jj;
 
-      for (size_type j=1;j<_nnz;++j) {
-        ijv_type aij = mm[j];
-            
+      for (typename vector<ijv_type>::iterator it=(mm.begin()+1);it<mm.end();++it) {
+        ijv_type aij = (*it);
+        
         // row index
-        if (aij._i != prev._i) 
+        if (aij._i != prev._i) {
           _ap[ii++] = jj; 
+        }
             
         if (aij == prev) {
           --jj;
@@ -84,7 +85,8 @@ namespace Example {
       }
           
       // add the last index to terminate the storage
-      _ap[ii++] = _nnz = jj;
+      _ap[ii++] = jj;
+      _nnz = jj;
     }
       
     return 0;
@@ -95,7 +97,7 @@ namespace Example {
            typename SizeType>
   inline int 
   CrsMatrixBase<ValueType,OrdinalType,SizeType>
-  ::showMe(ostream &os, ordinal_type *perm) const {
+  ::showMe(ostream &os) const {
     streamsize prec = os.precision();
     os.precision(15);
     os << scientific;
@@ -104,35 +106,20 @@ namespace Example {
       os << " -- CrsMatrixBase is not initialized -- " << endl;
 
     os << " -- CrsMatrixBase -- " << endl
-       << "    Base Value     = " << _base << endl
        << "    # of Rows      = " << _m << endl
        << "    # of Cols      = " << _n << endl
        << "    # of NonZeros  = " << _nnz << endl;
     const int w = 6;
-    if (perm == NULL) {
-      for (ordinal_type i=0;i<_m;++i) {
-        size_type jbegin = _ap[i], jend = _ap[i+1];
-
-        os << endl;
-        for (size_type j=jbegin;j<jend;++j) 
-          os << setw(w) << i << "  " 
-             << setw(w) << _aj[j] << "  " 
-             << _ax[j] << endl;
-      }
-    } else {
-      for (ordinal_type i=0;i<_m;++i) {
-        ordinal_type ip = perm[i];
-        size_type jbegin = _ap[ip], jend = _ap[ip];
-
-        os << endl;
-        for (size_type j=jbegin;j<jend;++j) {
-          ordinal_type jp = perm[_aj[j]];              
-          os << setw(w) << ip << "  " 
-             << setw(w) << jp << "  " 
-             << _ax[j] << endl;
-        }
-      }
+    for (ordinal_type i=0;i<_m;++i) {
+      size_type jbegin = _ap[i], jend = _ap[i+1];
+      
+      os << endl;
+      for (size_type j=jbegin;j<jend;++j) 
+        os << setw(w) << i << "  " 
+           << setw(w) << _aj[j] << "  " 
+           << _ax[j] << endl;
     }
+
     os.unsetf(ios::scientific);
     os.precision(prec);
 

@@ -7,7 +7,8 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef size_t size_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrix;
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
+typedef Example::Uplo Uplo;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -15,8 +16,10 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   
-  // --------------------------------------------------------------------
-  CrsMatrix A;
+  CrsMatrixBase A;
+
+  cout << "Empty Matrix A = " << endl;
+  A.showMe(cout);
 
   ifstream in;
   in.open(argv[1]);
@@ -25,9 +28,13 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   A.importMatrixMarket(in);
+
+  cout << "Imported Matrix A from " << argv[0] << endl;
   A.showMe(cout);
 
-  // --------------------------------------------------------------------
+  CrsMatrixBase L(A, Uplo::Lower);
+  cout << "Lower Triangular L = " << endl;
+  L.showMe(cout);
 
   return 0;
 }

@@ -36,7 +36,7 @@ namespace Example {
       _cblk  = 0;
 
       // scotch does not allow self-contribution (diagonal term in sparse matrix)
-      _base  = A.BaseVal();
+      _base  = 0; //A.BaseVal();
       _m     = A.NumRows();
       _nnz   = A.NumNonZeros();       
 

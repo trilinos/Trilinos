@@ -19,6 +19,14 @@ namespace Example {
         _j(b._j),
         _val(b._val) {}
 
+    Coo<ValueType,OrdinalType>& operator=(const Coo<ValueType,OrdinalType> &y) {
+      this->_i = y._i;
+      this->_j = y._j;
+      this->_val = y._val;
+
+      return *this;
+    }
+
     bool operator<(const Coo<ValueType,OrdinalType> &y) const {
       OrdinalType r_val = (this->_i - y._i);
       return (r_val == 0 ? this->_j < y._j : r_val < 0);

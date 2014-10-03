@@ -6,8 +6,16 @@ info :
 
 OBJ   = 
 
-TEST  = scotch
-TESTS = crs scotch
+TEST  = ichol_left_blocked
+TESTS = \
+	crs_matrix_base \
+	crs_matrix_view \
+	crs_row_view \
+	partition \
+	dot \
+	ichol_left_unblocked \
+	ichol_left_blocked \
+	scotch
 
 TRILINOS_DIR = ${HOME}/Work/lib/trilinos/kokkos-dev
 QTHREADS_DIR = ${HOME}/Work/lib/qthreads
@@ -17,7 +25,7 @@ include $(TRILINOS_DIR)/include/Makefile.export.Kokkos
 include $(TRILINOS_DIR)/include/Makefile.export.KokkosExample
 
 CC = g++
-CCFLAGS = -g -O3 -mavx -fopenmp 
+CCFLAGS = -g -O0 -std=c++11
 
 CCINCS = -I. -I${QTHREADS_DIR}/include -I${TRILINOS_DIR}/include -I${SCOTCH_DIR}/include
 CCWARN = -Wno-pointer-arith

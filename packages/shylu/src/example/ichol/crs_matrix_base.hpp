@@ -21,7 +21,6 @@ namespace Example {
     typedef Coo<value_type,ordinal_type> ijv_type;
     
   private:
-    ordinal_type  _base;    // base index 0 or 1
     ordinal_type  _m;       // # of rows
     ordinal_type  _n;       // # of cols
     size_type     _nnz;     // # of nonzeros
@@ -34,7 +33,6 @@ namespace Example {
 
     int finalize() {
       if (_is_initialized) {
-        _base = 0;
         _m    = 0;
         _n    = 0;
         _nnz  = 0;
@@ -48,14 +46,12 @@ namespace Example {
       }
       return 0;
     }
-    int init(const ordinal_type base,
-             const ordinal_type m,
+    int init(const ordinal_type m,
              const ordinal_type n,
              const size_type    nnz) {
       if (_is_initialized) 
         finalize();
 
-      _base = base;
       _m    = m;
       _n    = n;
       _nnz  = nnz;
@@ -71,18 +67,19 @@ namespace Example {
     }
       
   public:
-    ordinal_type  BaseVal()     const { return _base; }
-    ordinal_type  NumRows()     const { return _m;    }
-    ordinal_type  NumCols()     const { return _n;    }
+    ordinal_type  NumRows() const { return _m; }
+    ordinal_type  NumCols() const { return _n; }
+
+    size_type*    RowPtr(const ordinal_type i=0)   const { return &_ap[i]; }
+    ordinal_type* ColIndex(const ordinal_type i=0) const { return &_aj[_ap[i]]; }
+    value_type*   Value(const ordinal_type i=0)    const { return &_ax[_ap[i]]; }
+
     size_type     NumNonZeros() const { return _nnz;  }
-    ordinal_type  NumNonZerosInRow(const int i) { return (_ap[i+1] - _ap[i]); } 
-    size_type*    RowPtr(const int i=0)   const { return &_ap[i]; }
-    ordinal_type* ColIndex(const int i=0) const { return &_aj[_ap[i]]; }
-    value_type*   Value(const int i=0)    const { return &_ax[_ap[i]]; }
+    ordinal_type  NumNonZerosInRow(const ordinal_type i) const { return (_ap[i+1] - _ap[i]); } 
 
     CrsMatrixBase() 
-      : _base(0),
-        _m(0),
+      : _m(0),
+        _n(0),
         _nnz(0),
         _ap(NULL),
         _aj(NULL),
@@ -90,8 +87,8 @@ namespace Example {
         _is_initialized(false),
         _is_symmetry(false) { }
 
-    CrsMatrixBase(const CrsMatrixBase &b) {
-      init(b._base, b._m, b._n, b._nnz);
+    CrsMatrixBase(CrsMatrixBase &b) {
+      init(b._m, b._n, b._nnz);
 
       copy(b._ap, b._ap+_m+1, _ap);
       copy(b._aj, b._aj+_nnz, _aj); 
@@ -100,12 +97,42 @@ namespace Example {
       _is_symmetry = b._is_symmetry;
     }
 
+    CrsMatrixBase(CrsMatrixBase &b, const int uplo) {
+      _is_symmetry = b._is_symmetry;
+      switch (uplo) {
+      case Uplo::Lower: {
+        init(b._m, b._n, b._nnz);
+
+        _nnz = 0;
+        for (ordinal_type i=0;i<_m;++i) {
+          ordinal_type jbegin = b._ap[i];
+          ordinal_type jend   = b._ap[i+1];
+          _ap[i] = _nnz;
+          for (ordinal_type j=jbegin;j<jend;++j) {
+            if (i >= b._aj[j]) {
+              _aj[_nnz] = b._aj[j];
+              _ax[_nnz] = b._ax[j]; 
+              ++_nnz;
+            }
+          }
+        }
+        _ap[_m] = _nnz;
+        break;
+      }
+      case Uplo::Upper:
+        // not yet implemented
+        break;
+      }
+
+      // maybe resize
+    }
+
     virtual~CrsMatrixBase() {
       finalize();
     }
 
     int importMatrixMarket(ifstream &file);
-    int showMe(ostream &os, ordinal_type *perm = NULL) const;
+    int showMe(ostream &os) const;
     int convertGraph(size_type &nnz,
                      size_type *rptr,
                      ordinal_type *cidx) const;

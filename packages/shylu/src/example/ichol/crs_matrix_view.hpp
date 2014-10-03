@@ -6,58 +6,121 @@ namespace Example {
 
   using namespace std;
 
+  // forward declaration
+  template <typename ValueType, 
+            typename OrdinalType>
+  class CrsRowView;
+
   template<typename CrsMatrixBase>
   class CrsMatrixView {
   public:
-    typedef CrsMatrixBase::value_type   value_type;
-    typedef CrsMatrixBase::ordinal_type ordinal_type;
-    typedef CrsMatrixBase::size_type    size_type;
+    typedef typename CrsMatrixBase::value_type   value_type;
+    typedef typename CrsMatrixBase::ordinal_type ordinal_type;
+    typedef typename CrsMatrixBase::size_type    size_type;
 
   private:
-    typedef valute_type vt;
-    typedef ordinal_type ot;
-    typedef size_type st;
-
     ordinal_type  _offm;    // offset in rows
     ordinal_type  _offn;    // offset in cols
     ordinal_type  _m;       // # of rows
     ordinal_type  _n;       // # of cols
 
-    CrsMatrixBase &_base;   // pointer to the base object
+    CrsMatrixBase *_base;   // pointer to the base object
     
   public:
-    ordinal_type  BaseVal()     const { return _base.BaseVal(); }
-    ordinal_type  NumRows()     const { return _m; }
-    ordinal_type  NumNonZerosInRow(const int i) { return (_ap[i+1] - _ap[i]); } 
-    size_type*    RowPtr(const int i=0)   const { return &_ap[i]; }
-    ordinal_type* ColIndex(const int i=0) const { return &_aj[_ap[i]]; }
-    value_type*   Value(const int i=0)    const { return &_ax[_ap[i]]; }
-    
-    CrsRowView<vt,ot,st> ExtractRow(const int i) { 
-      return CrsRowView<vt,ot,st>(NumNonZerosInRow(i), 
-                                  RowPtr(i), 
-                                  ColIndex(i), 
-                                  Value(i));
+    CrsMatrixBase* BaseObject() const { return _base; }
+    void setView(CrsMatrixBase *base,
+                 ordinal_type offm, ordinal_type m,
+                 ordinal_type offn, ordinal_type n) {
+      _base = base;
+      _offm = offm; _m = m;
+      _offn = offn; _n = n;
     }
 
-    CrsMatrixBase(const CrsMatrixBase &b) 
-      : _base(b),
+    ordinal_type  OffsetRows() const { return _offm; }
+    ordinal_type  OffsetCols() const { return _offn; }
+
+    ordinal_type  NumRows() const { return _m; }
+    ordinal_type  NumCols() const { return _n; }
+
+    CrsRowView<value_type,ordinal_type> extractRow(const int i) const { 
+      ordinal_type ii = _offm + i;  // i at base
+
+      // grep a row in base
+      ordinal_type *ci_base = _base->ColIndex(ii); 
+      value_type   *val_base = _base->Value(ii); 
+      ordinal_type nnz_base_row = _base->NumNonZerosInRow(ii);
+
+      // count
+      ordinal_type *ci_view = NULL;
+      value_type   *val_view = NULL;
+      ordinal_type nnz_view_row = 0;
+
+      ordinal_type nn = (_offn + _n);
+      for (ordinal_type k=0;k<nnz_base_row;++k) {
+        if (ci_base[k] >= nn)
+          break;
+
+        if (ci_base[k] >= _offn)
+          ++nnz_view_row;
+
+        if (nnz_view_row == 1) {
+          ci_view = &ci_base[k];
+          val_view = &val_base[k];
+        }
+      }
+
+      // global view
+      return CrsRowView<value_type,ordinal_type>(_offn, _n, nnz_view_row, ci_view, val_view);
+    }
+
+    CrsMatrixView()
+      : _base(NULL),
+        _offm(0),
+        _offn(0),
+        _m(0),
+        _n(0)
+    { } 
+    
+    CrsMatrixView(CrsMatrixBase &b)
+      : _base(&b),
         _offm(0),
         _offn(0),
         _m(b.NumRows()),
-        _n(b.NumCols()) 
+        _n(b.NumCols())
     { } 
 
-    CrsMatrixBase(const CrsMatrixBase &b,
+    CrsMatrixView(CrsMatrixBase &b,
                   const ordinal_type offm, const ordinal_type m,
                   const ordinal_type offn, const ordinal_type n) 
-      : _base(b),
+      : _base(&b),
         _offm(offm),
         _offn(offn),
         _m(m),
         _n(n) 
     { } 
-    virtual~CrsMatrixBase() {
+
+    int showMe(ostream &os) const {
+      streamsize prec = os.precision();
+      os.precision(15);
+      os << scientific;
+      
+      os << " -- CrsMatrixView -- " << endl
+         << "    Offset in Rows = " << _offm << endl
+         << "    Offset in Cols = " << _offn << endl
+         << "    # of Rows      = " << _m << endl
+         << "    # of Cols      = " << _n << endl;
+
+      const int w = 6;
+      for (ordinal_type i=0;i<_m;++i) {
+        os << endl;
+        CrsRowView<value_type,ordinal_type> row = extractRow(i);
+        row.showMe(os);
+      }
+
+      os.unsetf(ios::scientific);
+      os.precision(prec);
+      
+      return 0;
     }
 
   };
