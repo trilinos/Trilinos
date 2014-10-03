@@ -401,6 +401,20 @@ CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of non-enabled SE packages:  Triutils EpetraExt ThyraGoodStuff ThyraCrazyStuff ThyraEpetraExt 5"
   )
 
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableAllPackages_VerboseConfigure
+  ARGS
+    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+    -DTrilinos_VERBOSE_CONFIGURE:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Teuchos_FULL_ENABLED_DEP_PACKAGES=''"
+    "RTOp_FULL_ENABLED_DEP_PACKAGES='Teuchos'"
+    "Epetra_FULL_ENABLED_DEP_PACKAGES=''"
+    "ThyraCoreLibs_FULL_ENABLED_DEP_PACKAGES='RTOp.Teuchos'"
+    "ThyraEpetra_FULL_ENABLED_DEP_PACKAGES='ThyraCoreLibs.Epetra.RTOp.Teuchos'"
+    "Thyra_FULL_ENABLED_DEP_PACKAGES='ThyraEpetra.ThyraCoreLibs.Epetra.RTOp.Teuchos'"
+  )
+
 
 #
 # EnableAllPackages_RequiredOnly

@@ -32,8 +32,17 @@ TRIBITS_PACKAGE(WrapExternal)
 
 INCLUDE(TribitsFindMostRecentFileTimestamp)
 
+ADVANCED_SET(${PACKAGE_NAME}_SHOW_MOST_RECENT_FILES   FALSE
+  CACHE  BOOL
+  "Set to TRUE to see most recent modified files.")
+IF (${PACKAGE_NAME}_SHOW_MOST_RECENT_FILES)
+  SET(SHOW_MOST_RECENT_FILES_ARG SHOW_MOST_RECENT_FILES)
+ELSE()
+  SET(SHOW_MOST_RECENT_FILES_ARG)
+ENDIF()
+
 TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT(
-  #SHOW_MOST_RECENT_FILES
+  ${SHOW_MOST_RECENT_FILES_ARG}
   SHOW_OVERALL_MOST_RECENT_FILES
   CURRENT_PACKAGE_OUT_OF_DATE_OUT ${PACKAGE_NAME}_BULID_IS_OUT_OF_DATE
   )
@@ -116,13 +125,13 @@ ADD_DEPENDENCIES(external_func build_external_func)
 
 # E.2) Make sure before we build the external library, we first build the
 # libraries.
-ADD_DEPENDENCIES(build_external_func pws_c)
+ADD_DEPENDENCIES(build_external_func pws_a)
 # NOTE: You have to put the lib dependencies on build target, not the imported
 # library target!
 
 # E.3) Update the TriBITS variables
 APPEND_SET(${PACKAGE_NAME}_LIB_TARGETS external_func)
-GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES external_func pws_c)
+GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES external_func pws_a)
 GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS ${EXTERNAL_FUNC_SOURCE_DIR})
 GLOBAL_SET(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES ON)
 INCLUDE_DIRECTORIES(${EXTERNAL_FUNC_SOURCE_DIR})
@@ -134,12 +143,15 @@ INCLUDE_DIRECTORIES(${EXTERNAL_FUNC_SOURCE_DIR})
 # F) Add an executable and test to show that it works!
 #
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(run_external_func
-  SOURCES run_external_func.cpp
-  DEPLIBS external_func
-  PASS_REGULAR_EXPRESSION "external_func C B A"
-  NUM_MPI_PROCS 1
-  )
+IF (${PACKAGE_NAME}_ENABLE_TESTS)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(run_external_func
+    SOURCES run_external_func.cpp
+    PASS_REGULAR_EXPRESSION "external_func A no_deps"
+    NUM_MPI_PROCS 1
+    )
+
+ENDIF()
 
 # Run this if you need to ensure that the external library is build before you
 # build this object file!

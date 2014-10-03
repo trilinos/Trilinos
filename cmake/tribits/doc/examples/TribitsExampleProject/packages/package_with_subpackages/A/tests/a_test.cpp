@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 
-// I can see this, because they are in subpackage A and so am I!
 #include "A.hpp"
 
 using namespace PackageWithSubpackages;

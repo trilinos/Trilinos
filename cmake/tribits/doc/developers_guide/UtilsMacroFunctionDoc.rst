@@ -586,11 +586,15 @@ instead of ``';'`` but only if it is not empty.
 
 Usage::
 
-   PRINT_NONEMPTY_VAR_WITH_SPACES(<varName>)
+   PRINT_NONEMPTY_VAR_WITH_SPACES(<varName>  <printedVarInOut>)
 
 Prints the variable as::
 
    <varName>: <ele0> <ele1> ...
+
+If ``$<printedVarInOut>`` is ``TRUE`` on input, then the varible is not
+touched. If however, the varible ``$<printedVarInOut>`` is not ``TRUE`` on
+input, then it is set to ``TRUE`` on output.
 
 PRINT_VAR()
 +++++++++++

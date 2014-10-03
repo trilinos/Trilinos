@@ -1637,8 +1637,8 @@ are being processed:
 
   ``PACKAGE_SOURCE_DIR``
 
-    The absolute path to the package's base source directory.  This is set
-    automatically by TriBITS in the macro `TRIBITS_PACKAGE()`_.
+    The absolute path to the package's base source directory.    This is
+    set automatically by TriBITS in the macro `TRIBITS_PACKAGE()`_.
 
   ``PACKAGE_BINARY_DIR``
 
@@ -1662,8 +1662,9 @@ defined:
     example in other packages, refer to this by the raw name like
     ``PackageX_SOURCE_DIR``.  This makes such CMake code independent of where
     the package is in relation to other packages.  NOTE: This variable is
-    defined for all declared packages, independent of whether they are enabled
-    or not!
+    defined for all declared packages that exist, independent of whether they
+    are enabled or not.  This varible is set as soon as it is known if the
+    given package exists or not.
 
   ``${PACKAGE_NAME}_BINARY_DIR``
 
@@ -4864,7 +4865,7 @@ To help set up a full-featured development environment (i.e. not just the
 basic configure, build, test, and install) for TriBITS projects with multiple
 repositories, TriBITS provides some extra development tools implemented using
 Python.  The primary tools supporting multi-repository projects are the
-`checkin-test.py`_ tool and the `egdist`_ tool.
+`checkin-test.py`_ tool and the `gitdist`_ tool.
 
 For projects with a standard set of extra repositories defined in the
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file, the
@@ -4874,14 +4875,14 @@ For projects with a standard set of extra repositories defined in the
 perform all of the various actions for all of the selected repositories.  See
 `checkin-test.py`_ and `checkin-test.py --help`_ for more details.
 
-.. _egdist:
+.. _gitdist:
 
-The tool **egdist** is a simple stand-alone Python script that distributes an
-eg/git command across a set of git repos.  This tool is not specific to
-TriBITS but it is very useful for dealing with TriBITS projects with multiple
+The tool **gitdist** is a simple stand-alone Python script that distributes a
+git command across a set of git repos.  This tool is not specific to TriBITS
+but it is very useful for dealing with TriBITS projects with multiple
 repositories.  It only requires that a base git repo and a set of zero or more
 git repos cloned under it.  For example, consider the TriBITS meta-project
-given in the ExtraRepositoriesList.cmake file:
+specified in the following ExtraRepositoriesList.cmake file:
 
 .. include:: ../../python/UnitTests/ExtraReposList.cmake
    :literal:
@@ -4900,8 +4901,8 @@ This would be laid out in directories as::
     ExtraRepo4/
       .git/
 
-to use ``egdist`` with this aggregate project, one would first set up the file
-``BaseRepo/.egdist`` to contain just::
+to use ``gitdist`` with this aggregate project, one would first set up the file
+``BaseRepo/.gitdist`` to contain just::
 
   ExtraRepo1
   packages/SomePackage/Blah
@@ -4919,19 +4920,19 @@ contains the lines::
 Common aggregate commands then run under the ``BaseRepo/`` directory are::
 
   # See status of all repos at once
-  egdist status
+  gitdist status
 
   # Pull updates to all
-  egdist pull
+  gitdist pull
 
   # Push local commits to tracking branches
-  egdist push
+  gitdist push
 
-The script ``egdist`` is version controlled in the main TriBIT repo under::
+The script ``gitdist`` is version controlled in the main TriBIT repo under::
 
-   common_tools/git/egdist
+   common_tools/git/gitdist
 
-See `egdist --help`_ for more details.
+See `gitdist --help`_ for more details.
 
 The TriBITS approach to managing multiple VC repos described above works well
 for order-10 or so VC repos but will not scale well to order-30 or more repos.
@@ -4941,7 +4942,7 @@ aggregate several related repositories into a single git repo.  Another
 approach might be to use git submodules.  However, note that the TriBITS tools
 and processes described here are **not** currently set up to support aggregate
 VC repos that use git submodules.  The design decision with TriBITS was to
-explicitly handle the different git VC repos using `egdist`_ and the
+explicitly handle the different git VC repos using `gitdist`_ and the
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  There are advantages
 and disadvantages to using git submodules verses explicitly handling the
 different git repos currently employed by the TriBITS software development
@@ -4984,13 +4985,13 @@ Multi-Repository Development Workflow
 The development workflow for a project with multiple VC repos is very similar
 to a project with just a single VC repo if the project provides a standard
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  The major difference
-is in making changes, creating commits, etc.  The `egdist`_ tool makes these
+is in making changes, creating commits, etc.  The `gitdist`_ tool makes these
 steps easier and has been shown to work fairly well for up to 20 extra VC
 repos (as used in the CASL VERA project).  The `checkin-test.py`_ script
 automatically handles all of the details of pulling, diffing, pushing etc. to
 all the VC repos.
 
-.. ToDo: Discuss usage of 'egdist' and the rep clone script.
+.. ToDo: Discuss usage of 'gitdist' and the rep clone script.
 
 
 Howtos
@@ -5409,7 +5410,7 @@ While the core TriBITS functionality to configure, build, test, and install
 software is written using only raw CMake, the more sophisticated development
 tools needed to implement the full TriBITS development environment require
 Python 2.4 (or higher, but not Python 3.x).  Python is needed for tools like
-`checkin-test.py`_ and `egdist`_.  In addition, these python tools are used in
+`checkin-test.py`_ and `gitdist`_.  In addition, these python tools are used in
 `TRIBITS_CTEST_DRIVER()`_ to drive automated testing and submits to CDash.
 Also not that git is the chosen version control tool for the TriBITS software
 development tools and all the VC-related functionality in TriBITS.  But none
@@ -5764,14 +5765,14 @@ integration server url4.gov as follows (all of which become 'origin')::
 where, ``SYNC_BASE_DIR=~/sync_base_dir`` for example, which must already be
 created.
 
-An ``.egdist`` file can be created to aid in multi-repo git commands using the
-tool `egdist`_.  This file is located in the ``BaseProj`` directory and can be
+An ``.gitdist`` file can be created to aid in multi-repo git commands using the
+tool `gitdist`_.  This file is located in the ``BaseProj`` directory and can be
 created as::
 
   $ cd $SYNC_BASE_DIR/BaseProj
-  $ echo ExtraRepo1 > .egdist
-  $ echo ExtraRepo2 >> .egdist
-  $ cat .egdist
+  $ echo ExtraRepo1 > .gitdist
+  $ echo ExtraRepo2 >> .gitdist
+  $ cat .gitdist
   ExtraRepo1
   ExtraRepo2
 
@@ -5793,7 +5794,7 @@ Next, the remotes that define the integration pattern are created as follows::
 This gives the remotes::
 
   $ cd $SYNC_BASE_DIR/BaseProj
-  $ egdist remote -v | grep -v push | grep -v "^$"
+  $ gitdist remote -v | grep -v push | grep -v "^$"
   *** Base Git Repo: BaseProj
   origin	        url4.gov:/git/BaseProj (fetch)
   integrate-from	url4.gov:/git/BaseProj (fetch)
@@ -7177,14 +7178,14 @@ of different use cases for using the script.
    :literal:
 
 
-egdist --help
--------------
+gitdist --help
+--------------
 
-Below is a snapshot of the output from ``egdist --help``.  For more details on
-the usage of ``egdist``, see `Multi-Repository Support`_ and `Multi-Repository
+Below is a snapshot of the output from ``gitdist --help``.  For more details on
+the usage of ``gitdist``, see `Multi-Repository Support`_ and `Multi-Repository
 Development Workflow`_.
 
-.. include:: egdist-help.txt
+.. include:: gitdist-help.txt
    :literal:
 
 .. _snapshot-dir.py:

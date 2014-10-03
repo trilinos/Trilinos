@@ -68,7 +68,6 @@ ENDIF()
 TRIBITS_ADD_ADVANCED_TEST( RawHelloWorld
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
-  CATEGORIES CONTINUOUS
   TEST_0 CMND ${CMAKE_COMMAND}
     ARGS
       ${COMMON_ENV_ARGS_PASSTHROUGH}
@@ -83,7 +82,7 @@ TRIBITS_ADD_ADVANCED_TEST( RawHelloWorld
       "Built target hello_world_lib"
       "Built target hello_world"
       "Built target unit_tests"
-  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
     PASS_REGULAR_EXPRESSION_ALL
       ": test .*  Passed"
       ": unit_test .*  Passed"
@@ -94,7 +93,6 @@ TRIBITS_ADD_ADVANCED_TEST( RawHelloWorld
 TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
-  CATEGORIES CONTINUOUS
   TEST_0 CMND ${CMAKE_COMMAND}
     ARGS
       ${COMMON_ENV_ARGS_PASSTHROUGH}
@@ -109,7 +107,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
       "Built target hello_world_lib"
       "Built target hello_world"
       "Built target HelloWorld_unit_tests"
-  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
     PASS_REGULAR_EXPRESSION_ALL
       ": HelloWorld_hello_world .*  Passed"
       ": HelloWorld_unit_tests .*  Passed"
@@ -121,7 +119,6 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld
 TRIBITS_ADD_ADVANCED_TEST( TribitsHelloWorld_ScaleTimeout
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
-  CATEGORIES CONTINUOUS
 
   TEST_0 CMND ${CMAKE_COMMAND}
     ARGS
@@ -180,9 +177,9 @@ ENDIF()
 TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
-  CATEGORIES CONTINUOUS
+
   TEST_0 CMND ${CMAKE_COMMAND}
-    MESSAGE "Do the initial configure"
+    MESSAGE "Do the initial configure (and test a lot of things at once"
     ARGS
       ${COMMON_ENV_ARGS_PASSTHROUGH}
       -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
@@ -192,10 +189,29 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
       -DTribitsExProj_TRACE_FILE_PROCESSING=ON
       -DTribitsExProj_ENABLE_CPACK_PACKAGING=ON
       -DTribitsExProj_DUMP_CPACK_SOURCE_IGNORE_FILES=ON
+      -DTribitsExProj_DUMP_PACKAGE_DEPENDENCIES=ON
+      -DTribitsExProj_ENABLE_EXPORT_MAKEFILES=ON
+      -DTribitsExProj_ENABLE_INSTALL_CMAKE_CONFIG_FILES=ON
+      -DCMAKE_INSTALL_PREFIX=install
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
       "Warning: Setting TribitsExProj_ENABLE_WrapExternal=OFF because "
       "Warning: Setting TribitsExProj_ENABLE_MixedLanguage=OFF because "
+      "Printing package dependencies ..."
+      "-- TribitsExProj_PACKAGES: SimpleCxx MixedLanguage PackageWithSubpackages WrapExternal"
+      "-- TribitsExProj_SE_PACKAGES: SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages WrapExternal"
+      "-- SimpleCxx: No dependencies!"
+      "-- MixedLanguage: No dependencies!"
+      "-- PackageWithSubpackagesSubpackageA_LIB_REQUIRED_DEP_PACKAGES: SimpleCxx"
+      "-- PackageWithSubpackagesSubpackageB_LIB_REQUIRED_DEP_PACKAGES: PackageWithSubpackagesSubpackageA"
+      "-- PackageWithSubpackagesSubpackageC_LIB_REQUIRED_DEP_PACKAGES: PackageWithSubpackagesSubpackageB"
+      "-- PackageWithSubpackages_LIB_REQUIRED_DEP_PACKAGES: PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC"
+      "-- WrapExternal_LIB_REQUIRED_DEP_PACKAGES: PackageWithSubpackages"
+      "-- SimpleCxx: No library dependencies!"
+      "-- PackageWithSubpackagesSubpackageA_FULL_ENABLED_DEP_PACKAGES: SimpleCxx"
+      "-- PackageWithSubpackagesSubpackageB_FULL_ENABLED_DEP_PACKAGES: PackageWithSubpackagesSubpackageA SimpleCxx"
+      "-- PackageWithSubpackagesSubpackageC_FULL_ENABLED_DEP_PACKAGES: PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageA SimpleCxx"
+      "-- PackageWithSubpackages_FULL_ENABLED_DEP_PACKAGES: PackageWithSubpackagesSubpackageC PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageA SimpleCxx"
       "Explicitly enabled packages on input .by user.:  0"
       "Explicitly disabled packages on input .by user or by default.:  MixedLanguage WrapExternal 2"
       "Enabling all SE packages that are not currently disabled because of TribitsExProj_ENABLE_ALL_PACKAGES=ON "
@@ -234,15 +250,14 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/C/tests/CMakeLists.txt"
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/cmake/CallbackDefineRepositoryPackaging.cmake"
       "-- File Trace: PROJECT    INCLUDE    .*/TribitsExampleProject/cmake/CallbackDefineProjectPackaging.cmake"
-  TEST_1 CMND make
+  TEST_1 CMND make ARGS ${CTEST_BUILD_FLAGS}
     MESSAGE "Build the default 'all' target using raw 'make'"
-    ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target simplecxx"
       "Built target pws_a"
       "Built target pws_b"
       "Built target pws_c"
-  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
     MESSAGE "Run all the tests with raw 'ctest'"
     PASS_REGULAR_EXPRESSION_ALL
       "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
@@ -250,7 +265,76 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
       "PackageWithSubpackagesSubpackageB_test_of_b .* Passed"
       "PackageWithSubpackagesSubpackageC_test_of_c .* Passed"
       "100% tests passed, 0 tests failed out of 4"
-  TEST_3 CMND make ARGS package_source
+
+  TEST_3 CMND make ARGS install ${CTEST_BUILD_FLAGS}
+    MESSAGE "Build 'install' target using raw 'make'"
+    PASS_REGULAR_EXPRESSION_ALL
+      "Installing: .+/install/include/TribitsExProj_version.h"
+      "Installing: .+/install/lib/cmake/TribitsExProj/TribitsExProjConfig.cmake"
+      "Installing: .+/install/include/Makefile.export.TribitsExProj"
+      "Installing: .+/install/lib/cmake/TribitsExProj/TribitsExProjConfigVersion.cmake"
+      "Installing: .+/install/include/TribitsExProjConfig.cmake"
+      "Installing: .+/install/lib/cmake/SimpleCxx/SimpleCxxConfig.cmake"
+      "Installing: .+/install/lib/cmake/SimpleCxx/SimpleCxxTargets.cmake"
+      "Installing: .+/install/lib/cmake/SimpleCxx/SimpleCxxTargets-release.cmake"
+      "Installing: .+/install/include/Makefile.export.SimpleCxx"
+      "Installing: .+/install/lib/libsimplecxx.a"
+      "Installing: .+/install/include/SimpleCxx_HelloWorld.hpp"
+      "Installing: .+/install/lib/cmake/PackageWithSubpackages/PackageWithSubpackagesConfig.cmake"
+      "Installing: .+/install/include/Makefile.export.PackageWithSubpackages"
+      "Installing: .+/install/lib/libpws_a.a"
+      "Installing: .+/install/include/A.hpp"
+      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageA/PackageWithSubpackagesSubpackageAConfig.cmake"
+      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageA/PackageWithSubpackagesSubpackageATargets.cmake"
+      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageA/PackageWithSubpackagesSubpackageATargets-release.cmake"
+      "Installing: .+/install/include/Makefile.export.PackageWithSubpackagesSubpackageA"
+      "Installing: .+/install/lib/libpws_b.a"
+      "Installing: .+/install/include/B.hpp"
+      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageB/PackageWithSubpackagesSubpackageBConfig.cmake"
+      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageB/PackageWithSubpackagesSubpackageBTargets.cmake"
+      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageB/PackageWithSubpackagesSubpackageBTargets-release.cmake"
+      "Installing: .+/install/include/Makefile.export.PackageWithSubpackagesSubpackageB"
+      "Installing: .+/install/lib/libpws_c.a"
+      "Installing: .+/install/include/C.hpp"
+      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageC/PackageWithSubpackagesSubpackageCConfig.cmake"
+      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageC/PackageWithSubpackagesSubpackageCTargets.cmake"
+      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageC/PackageWithSubpackagesSubpackageCTargets-release.cmake"
+      "Installing: .+/install/include/Makefile.export.PackageWithSubpackagesSubpackageC"
+
+  TEST_4 CMND ${CMAKE_COMMAND}
+    ARGS
+      -DDUMMY_PROJECT_NAME=DummyProject
+      -DDUMMY_PROJECT_DIR=dummy_client_of_PackageWithSubpackages
+      -DEXPORT_VAR_PREFIX=PackageWithSubpackages
+      -DEXPORT_CONFIG_FILE=../install/lib/cmake/PackageWithSubpackages/PackageWithSubpackagesConfig.cmake
+      -DCMAKE_COMMAND=${CMAKE_COMMAND}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/RunDummyPackageClientBulid.cmake
+    MESSAGE "Create and configure a dummy project that includes PackageWithSubpackagesConfig.cmake"
+    PASS_REGULAR_EXPRESSION_ALL
+      "PackageWithSubpackages_CXX_FLAGS = '.*'"
+      "PackageWithSubpackages_C_FLAGS = '.*'"
+      "PackageWithSubpackages_FORTRAN_FLAGS = '.*'"
+      "PackageWithSubpackages_EXTRA_LD_FLAGS = '.*'"
+      "PackageWithSubpackages_SHARED_LIB_RPATH_COMMAND = '.*'"
+      "PackageWithSubpackages_BUILD_SHARED_LIBS = '.*'"
+      "PackageWithSubpackages_LINKER = '.+'"
+      "PackageWithSubpackages_AR = '.+'"
+      "PackageWithSubpackages_INCLUDE_DIRS = '.+/install/lib/cmake/PackageWithSubpackages/../../../include'"
+      "PackageWithSubpackages_LIBRARY_DIRS = '.+/install/lib/cmake/PackageWithSubpackages/../../../lib'"
+      "PackageWithSubpackages_LIBRARIES = 'pws_c.pws_b.pws_a.simplecxx'"
+      "PackageWithSubpackages_TPL_INCLUDE_DIRS = ''"
+      "PackageWithSubpackages_TPL_LIBRARY_DIRS = ''"
+      "PackageWithSubpackages_TPL_LIBRARIES = ''"
+      "PackageWithSubpackages_MPI_LIBRARIES = ''"
+      "PackageWithSubpackages_MPI_LIBRARY_DIRS = ''"
+      "PackageWithSubpackages_MPI_INCLUDE_DIRS = ''"
+      "PackageWithSubpackages_MPI_EXEC = '${MPI_EXEC}'"
+      "PackageWithSubpackages_MPI_EXEC_MAX_NUMPROCS = '${MPI_EXEC_MAX_NUMPROCS}'"
+      "PackageWithSubpackages_MPI_EXEC_NUMPROCS_FLAG = '${MPI_EXEC_NUMPROCS_FLAG}'"
+      "PackageWithSubpackages_PACKAGE_LIST = 'PackageWithSubpackagesSubpackageC.PackageWithSubpackagesSubpackageB.PackageWithSubpackagesSubpackageA.SimpleCxx'"
+      "PackageWithSubpackages_TPL_LIST = ''"
+
+  TEST_5 CMND make ARGS package_source
     MESSAGE "Create the tarball"
     PASS_REGULAR_EXPRESSION_ALL
       "Run CPack packaging tool for source..."
@@ -264,9 +348,9 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
       "CPack: - Install directory: .*/doc/examples/TribitsExampleProject"
       "CPack: Create package"
       "CPack: - package: .*/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT_NoFortran/tribitsexproj-1.1-Source.tar.bz2 generated."
-  TEST_4 CMND tar ARGS -xzf tribitsexproj-1.1-Source.tar.gz
+  TEST_6 CMND tar ARGS -xzf tribitsexproj-1.1-Source.tar.gz
     MESSAGE "Untar the tarball"
-  TEST_5 CMND diff ARGS -qr ${CMAKE_CURRENT_SOURCE_DIR}/../TribitsExampleProject tribitsexproj-1.1-Source
+  TEST_7 CMND diff ARGS -qr ${CMAKE_CURRENT_SOURCE_DIR}/../TribitsExampleProject tribitsexproj-1.1-Source
     MESSAGE "Make sure right directoires are excluced"
     PASS_REGULAR_EXPRESSION_ALL
       "Only in .*/TribitsExampleProject/cmake: ctest"
@@ -281,7 +365,6 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
   TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
     OVERALL_WORKING_DIRECTORY TEST_NAME
     OVERALL_NUM_MPI_PROCS 1
-    CATEGORIES CONTINUOUS
     TEST_0 CMND ${CMAKE_COMMAND}
       MESSAGE "Do the initial configure"
       ARGS
@@ -289,6 +372,8 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
         -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
         -DTribitsExProj_ENABLE_TESTS=ON
+        -DTribitsExProj_ENABLE_EXPORT_MAKEFILES=ON
+        -DTribitsExProj_ENABLE_INSTALL_CMAKE_CONFIG_FILES=ON
         ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
       PASS_REGULAR_EXPRESSION_ALL
         "Warning: Setting TribitsExProj_ENABLE_WrapExternal=OFF because "
@@ -313,7 +398,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         "Built target pws_a"
         "Built target pws_b"
         "Built target pws_c"
-    TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+    TEST_2 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
       MESSAGE "Run all the tests with raw 'ctest'"
       PASS_REGULAR_EXPRESSION_ALL
         "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
@@ -329,7 +414,6 @@ ENDIF()
 TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_SimpleCxx_DEBUG_int64
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
-  CATEGORIES CONTINUOUS
   TEST_0 CMND ${CMAKE_COMMAND}
     MESSAGE "Do the initial configure"
     ARGS
@@ -349,7 +433,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_SimpleCxx_DEBUG_int64
     ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target simplecxx"
-  TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+  TEST_2 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
     MESSAGE "Run all the tests with raw 'ctest'"
     PASS_REGULAR_EXPRESSION_ALL
       "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
@@ -360,11 +444,9 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_SimpleCxx_DEBUG_int64
 TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
-  CATEGORIES CONTINUOUS
 
   TEST_0 CMND cp
-    ARGS -r ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
-      .
+    ARGS -r ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject .
 
   TEST_1 CMND ${CMAKE_COMMAND}
     ARGS
@@ -379,14 +461,13 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
     PASS_REGULAR_EXPRESSION_ALL
       "Explicitly enabled packages on input .by user.:  WrapExternal 1"
       "Explicitly disabled packages on input .by user or by default.:  0"
-      "Setting TribitsExProj_ENABLE_PackageWithSubpackages=ON because WrapExternal has a required dependence on PackageWithSubpackages"
-      "Setting TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageA=ON because PackageWithSubpackages has a required dependence on PackageWithSubpackagesSubpackageA"
-      "Setting TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageB=ON because PackageWithSubpackages has a required dependence on PackageWithSubpackagesSubpackageB"
-      "Setting TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageC=ON because PackageWithSubpackages has a required dependence on PackageWithSubpackagesSubpackageC"
+      "Setting TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageA=ON because WrapExternal has a required dependence on PackageWithSubpackagesSubpackageA"
+      "Setting TribitsExProj_ENABLE_MixedLanguage=ON because WrapExternal has an optional dependence on MixedLanguage"
       "Setting TribitsExProj_ENABLE_SimpleCxx=ON because PackageWithSubpackagesSubpackageA has a required dependence on SimpleCxx"
-      "Final set of enabled packages:  SimpleCxx PackageWithSubpackages WrapExternal 3"
-      "Final set of enabled SE packages:  SimpleCxx PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages WrapExternal 6"
-      "Final set of non-enabled packages:  MixedLanguage 1"
+      "Final set of enabled packages:  SimpleCxx MixedLanguage PackageWithSubpackages WrapExternal 4"
+      "Final set of enabled SE packages:  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackages WrapExternal 5"
+      "Final set of non-enabled packages:  0"
+      "Final set of non-enabled SE packages:  PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC 2"
       "This package has no unfiltered binary files so consider out of date"
       "Configuring done"
       "Generating done"
@@ -394,64 +475,119 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
   TEST_2 CMND make ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target WrapExternal_run_external_func"
-  TEST_3 CMND ${CMAKE_CTEST_COMMAND}
+  TEST_3 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
     PASS_REGULAR_EXPRESSION_ALL
       "WrapExternal_run_external_func${TEST_MPI_1_SUFFIX} .* Passed"
       "100% tests passed, 0 tests failed out of 1"
 
-  TEST_4 CMND sleep ARGS 1s 
+  TEST_4 CMND sleep ARGS 1s
      MESSAGE "Sleep for 1 sec for systems were time stamps are only accurate to 1 sec"
   TEST_5 CMND touch
-     ARGS TribitsExampleProject/packages/simple_cxx/src/SimpleCxx_HelloWorld.cpp
+     ARGS TribitsExampleProject/packages/package_with_subpackages/A/A.cpp
      MESSAGE "Test that changing upstream source will trigger rebuild"
   TEST_6 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
+      -DWrapExternal_SHOW_MOST_RECENT_FILES=TRUE
      MESSAGE "Recofigure with changed upstream source"
     PASS_REGULAR_EXPRESSION_ALL
-      "The upstream SE package source file ./src/SimpleCxx_HelloWorld.cpp is more recent than this package's binary file ./WrapExternal_run_external_func.exe"
+      "Most recent file in ./packages/package_with_subpackages/ is ./A/A.cpp"
+      "Overall most recent modified file is in ./packages/package_with_subpackages/ and is ./A/A.cpp"
+      "The upstream SE package source file ./A/A.cpp is more recent than this package's binary file ./WrapExternal_run_external_func.exe"
       "Blowing away WrapExternal build dir external_func/ so it will build from scratch"
   TEST_7 CMND make ARGS ${CTEST_BUILD_FLAGS}
     MESSAGE "Rebuild only exteranl_func"
     PASS_REGULAR_EXPRESSION_ALL
       "Built target simplecxx"
+      "Built target mixedlanguage"
       "Built target pws_a"
-      "Built target pws_b"
-      "Built target pws_c"
       "Generating external_func/libexternal_func.a"
       "Linking CXX executable WrapExternal_run_external_func.exe"
 
-  TEST_8 CMND ${CMAKE_COMMAND}
-     ARGS  -DSimpleCxx_ENABLE_DEBUG=ON  TribitsExampleProject
+  TEST_8 CMND sleep ARGS 1s
+     MESSAGE "Sleep for 1 sec for systems were time stamps are only accurate to 1 sec"
+  TEST_9 CMND ${CMAKE_COMMAND}
+     ARGS  -DSimpleCxx_ENABLE_DEBUG=ON  -DWrapExternal_SHOW_MOST_RECENT_FILES=FALSE
+       TribitsExampleProject
      MESSAGE "Recofigure changing the debug mode to trigger rebuild"
     PASS_REGULAR_EXPRESSION_ALL
       "The upstream SE package binary file ./src/SimpleCxx_config.h is more recent than this package's binary file ./WrapExternal_run_external_func.exe"
       "Blowing away WrapExternal build dir external_func/ so it will build from scratch"
-  TEST_9 CMND make ARGS ${CTEST_BUILD_FLAGS}
+  TEST_10 CMND make ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Generating external_func/libexternal_func.a"
       "Linking CXX executable WrapExternal_run_external_func.exe"
 
-  TEST_10 CMND sleep ARGS 1s 
+  TEST_11 CMND sleep ARGS 1s
      MESSAGE "Sleep for 1 sec for systems were time stamps are only accurate to 1 sec"
-  TEST_11 CMND touch
+  TEST_12 CMND touch
      ARGS TribitsExampleProject/packages/wrap_external/external_func/configure.py
      MESSAGE "Test that changing the external file will trigger rebuild"
-  TEST_12 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
+  TEST_13 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
      MESSAGE "Recofigure with changes external file"
     PASS_REGULAR_EXPRESSION_ALL
       "The this package's source file ./external_func/configure.py is more recent than this package's binary file ./WrapExternal_run_external_func.exe"
       "Blowing away WrapExternal build dir external_func/ so it will build from scratch"
-  TEST_13 CMND make ARGS ${CTEST_BUILD_FLAGS}
+  TEST_14 CMND make ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Generating external_func/libexternal_func.a"
       "Linking CXX executable WrapExternal_run_external_func.exe"
 
-  TEST_14 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
+  TEST_15 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
      MESSAGE "Recofigure with no changes that will not do anything"
     PASS_REGULAR_EXPRESSION_ALL
       "This package's most recent binary file ./WrapExternal_run_external_func.exe is more recent than its upstream SE package source or binary files or this package's source files"
-  TEST_15 CMND make ARGS ${CTEST_BUILD_FLAGS}
+  TEST_16 CMND make ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target build_external_func"
       "Built target WrapExternal_run_external_func"
+
+  )
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+  CATEGORIES CONTINUOUS
+
+  TEST_0
+    MESSSAGE "Do a verbose configure and check that the packages coupling variables are correct."
+    CMND ${CMAKE_COMMAND}
+    ARGS
+      ${COMMON_ENV_ARGS_PASSTHROUGH}
+      -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -DTribitsExProj_ENABLE_Fortran=OFF
+      -DTribitsExProj_ENABLE_DEBUG=OFF
+      -DTribitsExProj_ENABLE_EXPORT_MAKEFILES=OFF
+      -DTribitsExProj_ENABLE_INSTALL_CMAKE_CONFIG_FILES=OFF
+      -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
+      -DTribitsExProj_ENABLE_SECONDARY_TESTED_CODE=ON
+      -DTribitsExProj_ENABLE_TESTS=ON
+      -DTribitsExProj_VERBOSE_CONFIGURE=ON
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
+    PASS_REGULAR_EXPRESSION_ALL
+      "Final set of enabled packages:  SimpleCxx PackageWithSubpackages WrapExternal 3"
+      "Final set of enabled SE packages:  SimpleCxx PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages WrapExternal 6"
+
+      "SimpleCxx_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src'"
+      "SimpleCxx_LIBRARY_DIRS='.+/packages/simple_cxx/src'"
+      "SimpleCxx_LIBRARIES='simplecxx'"
+
+      "PackageWithSubpackagesSubpackageA_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TribitsExampleProject/packages/package_with_subpackages/A..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src'"
+      "PackageWithSubpackagesSubpackageA_LIBRARY_DIRS='.+/packages/package_with_subpackages/A..+/packages/simple_cxx/src'"
+      "PackageWithSubpackagesSubpackageA_LIBRARIES='pws_a'"
+
+      "PackageWithSubpackagesSubpackageB_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TribitsExampleProject/packages/package_with_subpackages/B..+/TribitsExampleProject/packages/package_with_subpackages/A..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src'"
+      "PackageWithSubpackagesSubpackageB_LIBRARY_DIRS='.+/packages/package_with_subpackages/B..+/packages/package_with_subpackages/A..+/packages/simple_cxx/src'"
+      "PackageWithSubpackagesSubpackageB_LIBRARIES='pws_b'"
+
+      "PackageWithSubpackagesSubpackageC_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TribitsExampleProject/packages/package_with_subpackages/C..+/TribitsExampleProject/packages/package_with_subpackages/B..+/TribitsExampleProject/packages/package_with_subpackages/A..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src'"
+      "PackageWithSubpackagesSubpackageC_LIBRARY_DIRS='.+/packages/package_with_subpackages/C..+/packages/package_with_subpackages/B..+/packages/package_with_subpackages/A..+/packages/simple_cxx/src'"
+      "PackageWithSubpackagesSubpackageC_LIBRARIES='pws_c'"
+
+      "PackageWithSubpackages_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TribitsExampleProject/packages/package_with_subpackages/C..+/TribitsExampleProject/packages/package_with_subpackages/B..+/TribitsExampleProject/packages/package_with_subpackages/A..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TribitsExampleProject/packages/package_with_subpackages/B..+/TribitsExampleProject/packages/package_with_subpackages/A..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TribitsExampleProject/packages/package_with_subpackages/A..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src'"
+      "PackageWithSubpackages_LIBRARY_DIRS='.+/packages/package_with_subpackages/C..+/packages/package_with_subpackages/B..+/packages/package_with_subpackages/A..+/packages/simple_cxx/src..+/packages/package_with_subpackages/B..+/packages/package_with_subpackages/A..+/packages/simple_cxx/src..+/packages/package_with_subpackages/A..+/packages/simple_cxx/src'"
+      "PackageWithSubpackages_LIBRARIES='pws_c.pws_b.pws_a'"
+
+      "WrapExternal_INCLUDE_DIRS='.+/packages/wrap_external/external_func'"
+      "WrapExternal_LIBRARY_DIRS=''"
+      "WrapExternal_LIBRARIES='external_func.pws_a'"
 
   )

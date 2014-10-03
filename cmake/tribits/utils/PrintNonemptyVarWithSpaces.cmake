@@ -48,13 +48,17 @@ INCLUDE(AppendStringVarWithSep)
 #
 # Usage::
 #
-#    PRINT_NONEMPTY_VAR_WITH_SPACES(<varName>)
+#    PRINT_NONEMPTY_VAR_WITH_SPACES(<varName>  <printedVarInOut>)
 #
 # Prints the variable as::
 #
 #    <varName>: <ele0> <ele1> ...
 #
-FUNCTION(PRINT_NONEMPTY_VAR_WITH_SPACES VARIBLE_NAME)
+# If ``$<printedVarInOut>`` is ``TRUE`` on input, then the varible is not
+# touched. If however, the varible ``$<printedVarInOut>`` is not ``TRUE`` on
+# input, then it is set to ``TRUE`` on output.
+#
+FUNCTION(PRINT_NONEMPTY_VAR_WITH_SPACES  VARIBLE_NAME  PRINTED_VAR_OUT)
   ASSERT_DEFINED(VARIBLE_NAME)
   IF (NOT "${${VARIBLE_NAME}}" STREQUAL "")
     SET(OUTSTR "${VARIBLE_NAME}:")
@@ -62,5 +66,6 @@ FUNCTION(PRINT_NONEMPTY_VAR_WITH_SPACES VARIBLE_NAME)
       APPEND_STRING_VAR_WITH_SEP(OUTSTR " " "${ELE}")
     ENDFOREACH()
     MESSAGE("-- ${OUTSTR}")
+    SET(${PRINTED_VAR_OUT} TRUE PARENT_SCOPE)
   ENDIF()
 ENDFUNCTION()

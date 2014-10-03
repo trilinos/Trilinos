@@ -1,6 +1,8 @@
 #ifndef PACKAGEWITHSUBPACKAGES_B_HPP_
 #define PACKAGEWITHSUBPACKAGES_B_HPP_
 
+#include "PackageWithSubpackagesSubpackageB_config.h"
+
 #include <string>
 
 namespace PackageWithSubpackages {

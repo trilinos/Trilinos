@@ -190,6 +190,7 @@ Enable/Disable Logic`_ and `TriBITS Dependency Handling Behaviors`_.
 See the following use cases:
 
 * `Determine the list of packages that can be enabled`_
+* `Print package dependencies`_
 * `Enable a set of packages`_
 * `Enable to test all effects of changing a given package(s)`_
 * `Enable all packages with tests and examples`_
@@ -201,7 +202,7 @@ Determine the list of packages that can be enabled
 
 In order to see the list of available <Project> SE Packages to enable, just
 run a basic CMake configure, enabling nothing, and then grep the output to see
-what packages are avaiable to enable.  The full set of defined packages is
+what packages are available to enable.  The full set of defined packages is
 contained the lines starting with ``'Final set of enabled SE packages'`` and
 ``'Final set of non-enabled SE packages'``.  If no SE packages are enabled by
 default (which is base behavior), the full list of packages will be listed on
@@ -211,8 +212,32 @@ full list of defined packages, run::
   ./do-configure 2>&1 | grep "Final set of .*enabled SE packages"
 
 Any of the packages shown on those lines can potentially be enabled using ``-D
-<Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON`` (unless they are forcabily
-disabled for some reason, see the CMake ouptut for package disable warnings).
+<Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON`` (unless they are set to disabled
+for some reason, see the CMake output for package disable warnings).
+
+Another way to see the full list of SE packages that can be enabled is to
+configure with `<Project>_DUMP_PACKAGE_DEPENDENCIES`_ = ``ON`` and then grep
+for ``<Project>_SE_PACKAGES`` using, for example::
+
+  ./do-configure 2>&1 | grep "<Project>_SE_PACKAGES: "
+
+.. _<Project>_DUMP_PACKAGE_DEPENDENCIES:
+
+Print package dependencies
+++++++++++++++++++++++++++
+
+The set of package dependencies in a project will be printed in the ``cmake``
+STDOUT by setting::
+
+  -D <Project>_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON
+
+This will print the basic backward dependencies for each SE package.  To also
+see the direct forward dependencies for each SE package, also include::
+
+  -D <Project>_DUMP_FORWARD_PACKAGE_DEPENDENCIES:BOOL=ON
+
+Both of these variables are automatically enabled when
+`<Project>_VERBOSE_CONFIGURE`_ = ``ON``.
 
 Enable a set of packages
 ++++++++++++++++++++++++
@@ -315,13 +340,6 @@ downstream package, then the configure will error out if
 will be printed and the downstream package will be disabled and configuration
 will continue.
 
-Print package dependencies
-++++++++++++++++++++++++++
-
-The set of package dependenices in a project will be printed in the ``cmake``
-STDOUT by setting::
-
-  -D <Project>_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON
 
 Remove all package enables in the cache
 +++++++++++++++++++++++++++++++++++++++
@@ -959,7 +977,9 @@ a) **Trace file processing during configure:**
   output.
 
   Note that `<Project>_TRACE_FILE_PROCESSING`_ is set to ``ON`` automatically
-  when ``<Project>_VERBOSE_CONFIGURE:BOOL=ON``.
+  when `<Project>_VERBOSE_CONFIGURE`_  = ``ON``.
+
+.. _<Project>_VERBOSE_CONFIGURE:
 
 b) **Getting verbose output from TriBITS configure:**
 
@@ -1320,6 +1340,39 @@ the time is being spent.
 NOTE: This requires that you are running on a Linux/Unix system that has the
 stanard command 'date'.  CMake does not have built-in timing functions so you
 have to query the system.
+
+Generating export files
+-----------------------
+
+The project <Project> can generate export files for external CMake projects or
+external Makefile projects.  These export files provide the lists of
+libraries, include directories, compilers and compiler options, etc.
+
+To configure to generate CMake export files for the project, configure with::
+
+   -D <Project>_ENABLE_INSTALL_CMAKE_CONFIG_FILES:BOOL=ON
+
+This will generate the file ``<Project>Config.cmake`` for the project and the
+files ``<Package>Config.cmake`` for each enabled package in the build tree.
+In addition, this will install versions of these files into the install tree.
+
+To confiugre Makefile export files, configure with::
+
+   -D <Project>_ENABLE_EXPORT_MAKEFILES:BOOL=ON
+
+which will generate the file ``Makefile.export.<Project>`` for the project and
+the files ``Makefile.export.<Package>`` for each enabled package in the build
+tree.  In addition, this will install versions of these files into the install tree.
+
+The list of export files generated can be reduced by specifying the exact
+list of packages the files are requested for with::
+
+  -D <Project>_GENERATE_EXPORT_FILES_FOR_ONLY_LISTED_SE_PACKAGES="<pkg0>;<pkg1>"
+
+NOTES:
+* Only enabled packages will have their export files generated.
+* One would only want to limit the export files generated for very large
+projects where the cost my be high for doing so.
 
 
 Generating a project repo version file

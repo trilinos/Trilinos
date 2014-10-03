@@ -1874,6 +1874,11 @@ these three files are more recent than this package's most recent binary
 file, then the output variable ``<currentPackageOutOfDate>`` is set to
 ``TRUE``.  Otherwise, it is set to ``FALSE``. 
 
+NOTE: The source and binary directories for full packages are searched, not
+individual subpackage dirs.  This is to reduce the number of dirs searched.
+This will, however, result in changes in non-dependent subpackages being
+considered as well.
+
 See the demonstration of the usage of this function in the ``WrapExternal``
 package in `TribitsExampleProject`_.
 
@@ -1934,6 +1939,7 @@ Usage::
 
   TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP(
     BINARY_BASE_DIRS <dir0> <dir1> ... 
+    [BINARY_BASE_BASE_DIR <dir>]
     [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]
     [MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>]
     [MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>]
@@ -1956,6 +1962,7 @@ Usage::
 
   TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(
     BASE_DIRS <dir0> <dir1> ... 
+    [BASE_BASE_DIR <dir>]
     [EXCLUDE_REGEXES "<re0>" "<re1>" ... 
     [SHOW_MOST_RECENT_FILES]
     [SHOW_OVERALL_MOST_RECENT_FILE]
@@ -1970,6 +1977,11 @@ Usage::
 
     Gives the absolute base directory paths that will be searched for the
     most recently modified files, as described above.
+
+  ``BASE_BASE_DIR <dir>```
+
+    Absolute path for which to print file paths relative to.  This makes
+    outputting less verbose and easier to read (optional).
 
   ``EXCLUDE_REGEXES "<re0>" "<re1>" ...``
 
@@ -2030,6 +2042,7 @@ Usage::
 
   TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP(
     SOURCE_BASE_DIRS <dir0> <dir1> ... 
+    [SOURCE_BASE_BASE_DIR <dir>]
     [SHOW_MOST_RECENT_FILES]
     [SHOW_OVERALL_MOST_RECENT_FILE]
     [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]

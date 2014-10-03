@@ -6,7 +6,7 @@
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>TriBITS Developers Guide and Reference</title>
 <meta name="author" content="Roscoe A. Bartlett (bartlettra&#64;ornl.gov)" />
-<meta name="date" content="2014-09-17" />
+<meta name="date" content="2014-09-29" />
 <style type="text/css">
 
 /*
@@ -315,9 +315,9 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Author:</th>
 <td>Roscoe A. Bartlett (<a class="reference external" href="mailto:bartlettra&#64;ornl.gov">bartlettra&#64;ornl.gov</a>)</td></tr>
 <tr><th class="docinfo-name">Date:</th>
-<td>2014-09-17</td></tr>
+<td>2014-09-29</td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>TriBITS Development at 2014-09-17</td></tr>
+<td>TriBITS Development at 2014-09-29</td></tr>
 </tbody>
 </table>
 <table class="docutils field-list" frame="void" rules="none">
@@ -570,7 +570,7 @@ ul.auto-toc {
 <li><a class="reference internal" href="#why-a-tribits-package-is-not-a-cmake-package" id="id182">13.2&nbsp;&nbsp;&nbsp;Why a TriBITS Package is not a CMake Package</a></li>
 <li><a class="reference internal" href="#design-considerations-for-tribits" id="id183">13.3&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></li>
 <li><a class="reference internal" href="#checkin-test-py-help" id="id184">13.4&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></li>
-<li><a class="reference internal" href="#egdist-help" id="id185">13.5&nbsp;&nbsp;&nbsp;egdist --help</a></li>
+<li><a class="reference internal" href="#gitdist-help" id="id185">13.5&nbsp;&nbsp;&nbsp;gitdist --help</a></li>
 <li><a class="reference internal" href="#snapshot-dir-py-help" id="id186">13.6&nbsp;&nbsp;&nbsp;snapshot-dir.py --help</a></li>
 </ul>
 </li>
@@ -1279,7 +1279,7 @@ version of CMake required by TriBITS is given at in <a class="reference external
 CMake</a>) .  For example, the <tt class="docutils literal">VERA/CMakeLists.txt</tt> file lists as its first
 line:</p>
 <pre class="literal-block">
-SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 2.8.5)
+SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 2.8.11)
 CMAKE_MINIMUM_REQUIRED(VERSION ${VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED})
 </pre>
 <p id="projectdir-ctestconfig-cmake"><strong>&lt;projectDir&gt;/CTestConfig.cmake</strong>: [Optional] Specifies the CDash site and
@@ -2111,7 +2111,7 @@ file configuration features.</p>
 the package can call this file anything it wants.  Also, a package can
 configure multiple header files in different directories for different
 purposes using <a class="reference internal" href="#tribits-configure-file">TRIBITS_CONFIGURE_FILE()</a> or even calls to the raw CMake
-function <a class="reference external" href="http://www.cmake.org/cmake/help/v2.8.5/cmake.html#command:configure_file">CONFIGURE_FILE()</a>.</p>
+function <a class="reference external" href="http://www.cmake.org/cmake/help/v2.8.11/cmake.html#command:configure_file">CONFIGURE_FILE()</a>.</p>
 <p id="packagedir-cmakelists-txt"><strong>&lt;packageDir&gt;/CMakeLists.txt</strong>: [Required] The package's top-level
 <tt class="docutils literal">CMakeLists.txt</tt> file that defines the libraries, include directories, and
 contains the tests for the package.</p>
@@ -2249,8 +2249,8 @@ TriBITS before the packages's <tt class="docutils literal">CMakeLists.txt</tt> f
 (see <a class="reference internal" href="#globally-unique-tribits-package-names">Globally unique TriBITS package names</a>).</blockquote>
 <p><tt class="docutils literal">PACKAGE_SOURCE_DIR</tt></p>
 <blockquote>
-The absolute path to the package's base source directory.  This is set
-automatically by TriBITS in the macro <a class="reference internal" href="#id1">TRIBITS_PACKAGE()</a>.</blockquote>
+The absolute path to the package's base source directory.    This is
+set automatically by TriBITS in the macro <a class="reference internal" href="#id1">TRIBITS_PACKAGE()</a>.</blockquote>
 <p><tt class="docutils literal">PACKAGE_BINARY_DIR</tt></p>
 <blockquote>
 The absolute path to the package's base binary/build directory.  This is
@@ -2270,8 +2270,9 @@ The absolute path to the package's base source directory.  CMake code, for
 example in other packages, refer to this by the raw name like
 <tt class="docutils literal">PackageX_SOURCE_DIR</tt>.  This makes such CMake code independent of where
 the package is in relation to other packages.  NOTE: This variable is
-defined for all declared packages, independent of whether they are enabled
-or not!</blockquote>
+defined for all declared packages that exist, independent of whether they
+are enabled or not.  This varible is set as soon as it is known if the
+given package exists or not.</blockquote>
 <p><tt class="docutils literal">${PACKAGE_NAME}_BINARY_DIR</tt></p>
 <blockquote>
 The absolute path to the package's base binary directory.  CMake code, for
@@ -5157,7 +5158,7 @@ test-related classifications:</p>
 </table>
 <p>Typically a TriBITS project will define a &quot;standard development environment&quot;
 which is comprised of a standard compiler (e.g. GCC 4.6.1), TPL versions
-(e.g. OpenMPI 1.4.2, Boost 4.9, etc.), and other tools (e.g. cmake 2.8.5, git
+(e.g. OpenMPI 1.4.2, Boost 4.9, etc.), and other tools (e.g. cmake 2.8.11, git
 1.8.2, etc.).  This standard development environment is expected to be used to
 test changes to the project's code before any push.  By using a standard
 development environment, if the code builds and all the tests pass for the
@@ -5699,7 +5700,7 @@ aggregations of software.</p>
 basic configure, build, test, and install) for TriBITS projects with multiple
 repositories, TriBITS provides some extra development tools implemented using
 Python.  The primary tools supporting multi-repository projects are the
-<a class="reference internal" href="#checkin-test-py">checkin-test.py</a> tool and the <a class="reference internal" href="#egdist">egdist</a> tool.</p>
+<a class="reference internal" href="#checkin-test-py">checkin-test.py</a> tool and the <a class="reference internal" href="#gitdist">gitdist</a> tool.</p>
 <p>For projects with a standard set of extra repositories defined in the
 <a class="reference internal" href="#projectdir-cmake-extrarepositorieslist-cmake">&lt;projectDir&gt;/cmake/ExtraRepositoriesList.cmake</a> file, the
 <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> script only requires passing in the option
@@ -5707,12 +5708,12 @@ Python.  The primary tools supporting multi-repository projects are the
 <tt class="docutils literal">Nightly</tt>, see <a class="reference internal" href="#repository-test-classification">Repository Test Classification</a>) and it will automatically
 perform all of the various actions for all of the selected repositories.  See
 <a class="reference internal" href="#checkin-test-py">checkin-test.py</a> and <a class="reference internal" href="#checkin-test-py-help">checkin-test.py --help</a> for more details.</p>
-<p id="egdist">The tool <strong>egdist</strong> is a simple stand-alone Python script that distributes an
-eg/git command across a set of git repos.  This tool is not specific to
-TriBITS but it is very useful for dealing with TriBITS projects with multiple
+<p id="gitdist">The tool <strong>gitdist</strong> is a simple stand-alone Python script that distributes a
+git command across a set of git repos.  This tool is not specific to TriBITS
+but it is very useful for dealing with TriBITS projects with multiple
 repositories.  It only requires that a base git repo and a set of zero or more
 git repos cloned under it.  For example, consider the TriBITS meta-project
-given in the ExtraRepositoriesList.cmake file:</p>
+specified in the following ExtraRepositoriesList.cmake file:</p>
 <pre class="literal-block">
 TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
   ExtraRepo1  &quot;&quot;  GIT  someurl.com:/ExtraRepo1   &quot;&quot;          Continuous
@@ -5737,8 +5738,8 @@ BaseRepo/
   ExtraRepo4/
     .git/
 </pre>
-<p>to use <tt class="docutils literal">egdist</tt> with this aggregate project, one would first set up the file
-<tt class="docutils literal"><span class="pre">BaseRepo/.egdist</span></tt> to contain just:</p>
+<p>to use <tt class="docutils literal">gitdist</tt> with this aggregate project, one would first set up the file
+<tt class="docutils literal"><span class="pre">BaseRepo/.gitdist</span></tt> to contain just:</p>
 <pre class="literal-block">
 ExtraRepo1
 packages/SomePackage/Blah
@@ -5756,19 +5757,19 @@ contains the lines:</p>
 <p>Common aggregate commands then run under the <tt class="docutils literal">BaseRepo/</tt> directory are:</p>
 <pre class="literal-block">
 # See status of all repos at once
-egdist status
+gitdist status
 
 # Pull updates to all
-egdist pull
+gitdist pull
 
 # Push local commits to tracking branches
-egdist push
+gitdist push
 </pre>
-<p>The script <tt class="docutils literal">egdist</tt> is version controlled in the main TriBIT repo under:</p>
+<p>The script <tt class="docutils literal">gitdist</tt> is version controlled in the main TriBIT repo under:</p>
 <pre class="literal-block">
-common_tools/git/egdist
+common_tools/git/gitdist
 </pre>
-<p>See <a class="reference internal" href="#egdist-help">egdist --help</a> for more details.</p>
+<p>See <a class="reference internal" href="#gitdist-help">gitdist --help</a> for more details.</p>
 <p>The TriBITS approach to managing multiple VC repos described above works well
 for order-10 or so VC repos but will not scale well to order-30 or more repos.
 For larger numbers of VC repos, one should consider nested integration
@@ -5777,7 +5778,7 @@ aggregate several related repositories into a single git repo.  Another
 approach might be to use git submodules.  However, note that the TriBITS tools
 and processes described here are <strong>not</strong> currently set up to support aggregate
 VC repos that use git submodules.  The design decision with TriBITS was to
-explicitly handle the different git VC repos using <a class="reference internal" href="#egdist">egdist</a> and the
+explicitly handle the different git VC repos using <a class="reference internal" href="#gitdist">gitdist</a> and the
 <a class="reference internal" href="#projectdir-cmake-extrarepositorieslist-cmake">&lt;projectDir&gt;/cmake/ExtraRepositoriesList.cmake</a> file.  There are advantages
 and disadvantages to using git submodules verses explicitly handling the
 different git repos currently employed by the TriBITS software development
@@ -5812,12 +5813,12 @@ Reference</a>).</p>
 <p>The development workflow for a project with multiple VC repos is very similar
 to a project with just a single VC repo if the project provides a standard
 <a class="reference internal" href="#projectdir-cmake-extrarepositorieslist-cmake">&lt;projectDir&gt;/cmake/ExtraRepositoriesList.cmake</a> file.  The major difference
-is in making changes, creating commits, etc.  The <a class="reference internal" href="#egdist">egdist</a> tool makes these
+is in making changes, creating commits, etc.  The <a class="reference internal" href="#gitdist">gitdist</a> tool makes these
 steps easier and has been shown to work fairly well for up to 20 extra VC
 repos (as used in the CASL VERA project).  The <a class="reference internal" href="#checkin-test-py">checkin-test.py</a> script
 automatically handles all of the details of pulling, diffing, pushing etc. to
 all the VC repos.</p>
-<!-- ToDo: Discuss usage of 'egdist' and the rep clone script. -->
+<!-- ToDo: Discuss usage of 'gitdist' and the rep clone script. -->
 </div>
 </div>
 <div class="section" id="howtos">
@@ -6169,17 +6170,14 @@ installation of CMake (which typically includes the executables <tt class="docut
 <tt class="docutils literal">ctest</tt>, and <tt class="docutils literal">cpack</tt>).  Great effort has been expended to implement all of
 the core functionality of TriBITS just using raw CMake.  That means that
 anyone who needs to configure, build, and install software that uses TriBITS
-just needs a compatible CMake implementation.  TriBITS is purposefully
-maintained to work with older versions of CMake (as well as newer versions).
-At the time of this writing, the minimum required version of CMake needed to
-use TriBITS is CMake 2.8.1 (released in March 2010, see <a class="reference external" href="http://www.cmake.org/Wiki/CMake_Released_Versions">CMake Release Wiki</a>).  CMake is becoming
-iniquitous enough that many clients will already have a current-enough version
-of CMake installed by default on their systems and will therefore not need to
-download or install any extra software when building and installing a project
-that uses TriBITS (assuming the necessary compilers etc. required by the
-project are also installed).  If a current-enough version of CMake is not
-installed on a given system, it is easy to download the source code and all it
-needs is a basic C++ compiler to build and install.</p>
+just needs a compatible CMake implementation.  CMake is becoming iniquitous
+enough that many clients will already have a current-enough version of CMake
+installed by default on their systems and will therefore not need to download
+or install any extra software when building and installing a project that uses
+TriBITS (assuming the necessary compilers etc. required by the project are
+also installed).  If a current-enough version of CMake is not installed on a
+given system, it is easy to download the source code and all it needs is a
+basic C++ compiler to build and install.</p>
 <p>However, note that a specific TriBITS project is free to use any newer CMake
 features it wants and therefore these projects will require newer versions of
 CMake than what is required by TriBITS (see discussion of
@@ -6195,7 +6193,7 @@ goal of CMake).</p>
 software is written using only raw CMake, the more sophisticated development
 tools needed to implement the full TriBITS development environment require
 Python 2.4 (or higher, but not Python 3.x).  Python is needed for tools like
-<a class="reference internal" href="#checkin-test-py">checkin-test.py</a> and <a class="reference internal" href="#egdist">egdist</a>.  In addition, these python tools are used in
+<a class="reference internal" href="#checkin-test-py">checkin-test.py</a> and <a class="reference internal" href="#gitdist">gitdist</a>.  In addition, these python tools are used in
 <a class="reference internal" href="#tribits-ctest-driver">TRIBITS_CTEST_DRIVER()</a> to drive automated testing and submits to CDash.
 Also not that git is the chosen version control tool for the TriBITS software
 development tools and all the VC-related functionality in TriBITS.  But none
@@ -6516,14 +6514,14 @@ $ git clone url4.gov:/git/ExtraRepo2
 </pre>
 <p>where, <tt class="docutils literal"><span class="pre">SYNC_BASE_DIR=~/sync_base_dir</span></tt> for example, which must already be
 created.</p>
-<p>An <tt class="docutils literal">.egdist</tt> file can be created to aid in multi-repo git commands using the
-tool <a class="reference internal" href="#egdist">egdist</a>.  This file is located in the <tt class="docutils literal">BaseProj</tt> directory and can be
+<p>An <tt class="docutils literal">.gitdist</tt> file can be created to aid in multi-repo git commands using the
+tool <a class="reference internal" href="#gitdist">gitdist</a>.  This file is located in the <tt class="docutils literal">BaseProj</tt> directory and can be
 created as:</p>
 <pre class="literal-block">
 $ cd $SYNC_BASE_DIR/BaseProj
-$ echo ExtraRepo1 &gt; .egdist
-$ echo ExtraRepo2 &gt;&gt; .egdist
-$ cat .egdist
+$ echo ExtraRepo1 &gt; .gitdist
+$ echo ExtraRepo2 &gt;&gt; .gitdist
+$ cat .gitdist
 ExtraRepo1
 ExtraRepo2
 </pre>
@@ -6544,7 +6542,7 @@ $ cd ..
 <p>This gives the remotes:</p>
 <pre class="literal-block">
 $ cd $SYNC_BASE_DIR/BaseProj
-$ egdist remote -v | grep -v push | grep -v &quot;^$&quot;
+$ gitdist remote -v | grep -v push | grep -v &quot;^$&quot;
 *** Base Git Repo: BaseProj
 origin                url4.gov:/git/BaseProj (fetch)
 integrate-from        url4.gov:/git/BaseProj (fetch)
@@ -9020,7 +9018,7 @@ CONFIGURE_FILE(
   )
 </pre>
 <p>which does basic substitution of CMake variables (see documentation for
-built-in CMake <a class="reference external" href="http://www.cmake.org/cmake/help/v2.8.5/cmake.html#command:configure_file">CONFIGURE_FILE()</a> command for rules on how it performs
+built-in CMake <a class="reference external" href="http://www.cmake.org/cmake/help/v2.8.11/cmake.html#command:configure_file">CONFIGURE_FILE()</a> command for rules on how it performs
 substitutions).  This command is typically used to configure the package's
 main <a class="reference internal" href="#packagedir-cmake-packagename-config-h-in">&lt;packageDir&gt;/cmake/&lt;packageName&gt;_config.h.in</a> file.</p>
 <p>In addition to just calling <tt class="docutils literal">CONFIGURE_FILE()</tt>, this function also aids in
@@ -9270,6 +9268,10 @@ recent binary file timestamp in this package's binary directory.  If any of
 these three files are more recent than this package's most recent binary
 file, then the output variable <tt class="docutils literal">&lt;currentPackageOutOfDate&gt;</tt> is set to
 <tt class="docutils literal">TRUE</tt>.  Otherwise, it is set to <tt class="docutils literal">FALSE</tt>.</p>
+<p>NOTE: The source and binary directories for full packages are searched, not
+individual subpackage dirs.  This is to reduce the number of dirs searched.
+This will, however, result in changes in non-dependent subpackages being
+considered as well.</p>
 <p>See the demonstration of the usage of this function in the <tt class="docutils literal">WrapExternal</tt>
 package in <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>.</p>
 </div>
@@ -9322,6 +9324,7 @@ its timestamp.</p>
 <pre class="literal-block">
 TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP(
   BINARY_BASE_DIRS &lt;dir0&gt; &lt;dir1&gt; ...
+  [BINARY_BASE_BASE_DIR &lt;dir&gt;]
   [MOST_RECENT_TIMESTAMP_OUT  &lt;mostRecentTimestamp&gt;]
   [MOST_RECENT_FILEPATH_BASE_DIR_OUT &lt;mostRecentFilepathBaseDir&gt;]
   [MOST_RECENT_RELATIVE_FILEPATH_OUT &lt;mostRecentRelativeFilePath&gt;]
@@ -9342,6 +9345,7 @@ timestamp.</p>
 <pre class="literal-block">
 TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(
   BASE_DIRS &lt;dir0&gt; &lt;dir1&gt; ...
+  [BASE_BASE_DIR &lt;dir&gt;]
   [EXCLUDE_REGEXES &quot;&lt;re0&gt;&quot; &quot;&lt;re1&gt;&quot; ...
   [SHOW_MOST_RECENT_FILES]
   [SHOW_OVERALL_MOST_RECENT_FILE]
@@ -9356,6 +9360,10 @@ TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(
 <blockquote>
 Gives the absolute base directory paths that will be searched for the
 most recently modified files, as described above.</blockquote>
+<p><tt class="docutils literal">BASE_BASE_DIR &lt;dir&gt;`</tt></p>
+<blockquote>
+Absolute path for which to print file paths relative to.  This makes
+outputting less verbose and easier to read (optional).</blockquote>
 <p><tt class="docutils literal">EXCLUDE_REGEXES &quot;&lt;re0&gt;&quot; &quot;&lt;re1&gt;&quot; ...</tt></p>
 <blockquote>
 Gives the regular expressions that are used to exclude files from
@@ -9407,6 +9415,7 @@ its timestamp.</p>
 <pre class="literal-block">
 TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP(
   SOURCE_BASE_DIRS &lt;dir0&gt; &lt;dir1&gt; ...
+  [SOURCE_BASE_BASE_DIR &lt;dir&gt;]
   [SHOW_MOST_RECENT_FILES]
   [SHOW_OVERALL_MOST_RECENT_FILE]
   [MOST_RECENT_TIMESTAMP_OUT  &lt;mostRecentTimestamp&gt;]
@@ -10721,12 +10730,15 @@ PRINT_NONEMPTY_VAR(&lt;varName&gt;)
 instead of <tt class="docutils literal">';'</tt> but only if it is not empty.</p>
 <p>Usage:</p>
 <pre class="literal-block">
-PRINT_NONEMPTY_VAR_WITH_SPACES(&lt;varName&gt;)
+PRINT_NONEMPTY_VAR_WITH_SPACES(&lt;varName&gt;  &lt;printedVarInOut&gt;)
 </pre>
 <p>Prints the variable as:</p>
 <pre class="literal-block">
 &lt;varName&gt;: &lt;ele0&gt; &lt;ele1&gt; ...
 </pre>
+<p>If <tt class="docutils literal">$&lt;printedVarInOut&gt;</tt> is <tt class="docutils literal">TRUE</tt> on input, then the varible is not
+touched. If however, the varible <tt class="docutils literal">$&lt;printedVarInOut&gt;</tt> is not <tt class="docutils literal">TRUE</tt> on
+input, then it is set to <tt class="docutils literal">TRUE</tt> on output.</p>
 </div>
 <div class="section" id="print-var">
 <h3><a class="toc-backref" href="#id165">PRINT_VAR()</a></h3>
@@ -11282,13 +11294,13 @@ automatically be written out with typical CMake cache variables (commented
 out) that you would need to set out.  Any CMake cache variables listed in
 these files will be read into and passed on the configure line to 'cmake'.
 
-WARNING: Please do not add any CMake cache variables than what are needed to
-get the Primary Tested (PT) --default-builds builds to work.  Adding other
-enables/disables will make the builds non-standard and break these PT builds.
-The goal of these configuration files is to allow you to specify the minimum
-environment to find MPI, your compilers, and the required TPLs (e.g. BLAS,
-LAPACK, etc.).  If you need to fudge what packages are enabled, please use the
-script arguments --enable-packages, --disable-packages,
+WARNING: Please do not add any extra CMake cache variables than what are
+needed to get the Primary Tested (PT) --default-builds builds to work.  Adding
+other enables/disables will make the builds non-standard and can break these
+PT builds.  The goal of these configuration files is to allow you to specify
+the minimum environment to find MPI, your compilers, and the required TPLs
+(e.g. BLAS, LAPACK, etc.).  If you need to fudge what packages are enabled,
+please use the script arguments --enable-packages, --disable-packages,
 --no-enable-fwd-packages, and/or --enable-all-packages to control this, not
 the *.config files!
 
@@ -11339,6 +11351,11 @@ Common Use Cases (examples):
 (*) Basic full testing with integrating with local repo and push:
 
   ../checkin-test.py --do-all --push
+
+  NOTE: By default this will rebase your local commits and ammend the last
+  commit with a short summary of test results.  This is appropriate for
+  pushing commits that only exist in your local repo and are not shared with
+  any remote repo.
 
 (*) Push to global repo after a completed set of tests have finished:
 
@@ -11395,7 +11412,9 @@ Common Use Cases (examples):
     --do-all
   
   NOTE: This will override all logic in the script about which packages will
-  be enabled and only the given packages will be enabled.
+  be enabled based on file changes and only the given packages will be
+  enabled.  When there are tens of thousands of changed files and hundreds of
+  defined packages, this auto-detection algorithm can be very expensive!
 
   NOTE: You might also want to pass in --enable-all-packages=off in case the
   script wants to enable all the packages (see the output in the
@@ -11471,10 +11490,10 @@ Common Use Cases (examples):
 
 (*) Avoid changing any of the local commit SHA1s:
 
-  If you are pushing commits from a shared branch, it is critical that you
-  don't not change any of the SHA1s of the commits.  To change the SHA1s for
-  any of the commits will mess up various multi-repo, multi-branch workflows.
-  To avoid changing any of the SHA1s of the local commits, one must run with:
+  If you are pushing commits from a shared branch, it is critical that you do
+  not change any of the SHA1s of the commits.  Changing the SHA1s for any of
+  the commits will mess up various multi-repo, multi-branch workflows.  To
+  avoid changing any of the SHA1s of the local commits, one must run with:
 
     ../checkin-test.py --no-rebase --no-append-test-results [options]
 
@@ -11722,6 +11741,8 @@ Options:
                         is empty, then the list of packages to enable will be
                         determined automatically by examining the set of
                         modified files from the version control update log.
+                        Note that this will skip the auto-detection of changed
+                        packages based on changed files.
   --disable-packages=DISABLEPACKAGES
                         List of comma separated packages to explicitly disable
                         (example, 'Tpetra,NOX').  This list of disables will
@@ -11734,16 +11755,20 @@ Options:
                         script.
   --enable-all-packages=ENABLEALLPACKAGES
                         Determine if all packages are enabled 'on', or 'off',
-                        or let other logic decide 'auto'.  Setting to 'off' is
-                        appropriate when the logic in this script determines
-                        that a global build file has changed but you know that
-                        you don't need to rebuild every package for a
-                        reasonable test.  Setting --enable-packages
-                        effectively disables this option.  NOTE: Setting this
-                        to 'off' does *not* stop the forward enabling of
+                        or 'auto' (let other logic decide).  Setting to 'off'
+                        is appropriate when the logic in this script
+                        determines that a global build file has changed but
+                        you know that you don't need to rebuild and test every
+                        package for a reasonable test.  Setting --enable-
+                        packages effectively disables this option.  Setting
+                        this to 'off' does *not* stop the forward enabling of
                         downstream packages for packages that are modified or
-                        set by --enable-packages. Choices = ('auto', 'on',
-                        'off').  [default = 'auto']
+                        set by --enable-packages. Setting this to 'on' will
+                        skip the automatic detection of changed packages based
+                        on changed files.  It can be helpful to stop the auto-
+                        detection changed packages when there are thousands of
+                        changed files and hundreds of defined packages.
+                        Choices = ('auto', 'on', 'off').  [default = 'auto']
   --enable-fwd-packages
                         Enable forward packages. [default]
   --no-enable-fwd-packages
@@ -11939,31 +11964,31 @@ Options:
 
 </pre>
 </div>
-<div class="section" id="egdist-help">
-<h2><a class="toc-backref" href="#id185">13.5&nbsp;&nbsp;&nbsp;egdist --help</a></h2>
-<p>Below is a snapshot of the output from <tt class="docutils literal">egdist <span class="pre">--help</span></tt>.  For more details on
-the usage of <tt class="docutils literal">egdist</tt>, see <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a> and <a class="reference internal" href="#multi-repository-development-workflow">Multi-Repository
+<div class="section" id="gitdist-help">
+<h2><a class="toc-backref" href="#id185">13.5&nbsp;&nbsp;&nbsp;gitdist --help</a></h2>
+<p>Below is a snapshot of the output from <tt class="docutils literal">gitdist <span class="pre">--help</span></tt>.  For more details on
+the usage of <tt class="docutils literal">gitdist</tt>, see <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a> and <a class="reference internal" href="#multi-repository-development-workflow">Multi-Repository
 Development Workflow</a>.</p>
 <pre class="literal-block">
-Usage: egdist [egdist options] [OPTIONS]
+Usage: gitdist [gitdist options] [OPTIONS]
 
-Run eg/git recursively over extra repos
+Run git recursively over extra repos
 
 Instead of typing
 
-   $ eg [OPTIONS]
+   $ git [OPTIONS]
 
 type:
 
-  $ egdist [egdist options] [OPTIONS]
+  $ gitdist [gitdist options] [OPTIONS]
 
 This will distribute git options across all git repos listed, including the
-base git repo.  The options in [egdist options] are prefixed with '--dist-'
-and are are pulled out before running eg/git on the underlying executable.
-See --help to see the egdist options.
+base git repo.  The options in [gitdist options] are prefixed with '--dist-'
+and are are pulled out before running git on the underlying executable.  See
+--help to see the gitdist options.
 
 If --dist-extra-repos=&quot;&quot;, then the list of extra repos will be read from the
-file .egdist.  The format of this file is to have one repo name per line as
+file .gitdist.  The format of this file is to have one repo name per line as
 in:
 
    Repo1
@@ -11974,30 +11999,27 @@ in:
 NOTE: If any extra repository does not exist, then it will be ignored and no
 output will be produced.  Therefore, be careful to manually verify that the
 script recognizes the repositories that you list.  The best way to do that is
-to type 'egdist status'.
+to type 'gitdist status'.
 
-NOTE: This script has no other dependencies so it can be copied and moved
-anywhere and used.
+NOTE: This script has no dependencies other than standard linux packagse so it
+can be copied and moved anywhere and used.
 
 TIPS:
 
- - Use 'egdist --no-pager &lt;command&gt; ...' to get the full output from
+ - Use 'gitdist --no-pager &lt;command&gt; ...' to get the full output from
    all extra repos in one contiguous stream which can then be piped
    to 'less' or to a file to be read with emacs or vi (may also want
    to use --dist-no-color as well).
 
- - 'egdist --help' will run egdist help, not eg/git help.  If you want
-   eg/git help, run raw 'eg --help'.
+ - 'gitdist --help' will run gitdist help, not git help.  If you want git
+   help, run raw 'git --help'.
 
- - By default, egdist will use 'eg' in the environment.  If it can't find 'eg'
-   in the environment, it will try to use 'eg' in the same directory as
-   'egdist' (which is the case in the home tribits directory).  If it can't
-   find this 'eg' it will look for 'git' in the environment.  If it can't find
-   'git' it will require that the user specify the eg/git command to run with
-   --with-eg-git=&lt;the command&gt;.
+ - By default, gitdist will use 'git' in the environment.  If it can't find
+   'git' in the environment, it will require that the user specify the git
+   command to run with --dist-use-git=&lt;the command&gt;.
 
- - To exclude processing either the base git repo and/or git repos listed in
-   .egdist, pass in --dist-not-base-repo and/or
+ - To exclude processing either the base git repo and/or other git repos
+   listed in .gitdist, pass in --dist-not-base-repo and/or
    --dist-not-extra-repos=RepoX,RepoZ,...  The provides complete control over
    what git repos the given command is run on.
 
@@ -12027,12 +12049,12 @@ Each repository entry can have a summary message or not (i.e. use two or three
 lines per repo in the file).  A compatible repo version file can be generated
 with this script using, for example, using:
 
-   $ egdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;%n%s&quot; \
+   $ gitdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;%n%s&quot; \
     | grep -v &quot;^$&quot; &amp;&gt; RepoVersion.txt
 
 using three lines per repo, or just:
 
-   $ egdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;&quot; \
+   $ gitdist --dist-no-color log -1 --pretty=format:&quot;%h [%ad] &lt;%ae&gt;&quot; \
     | grep -v &quot;^$&quot; &amp;&gt; RepoVersion.txt
 
 using two lines per repo in the output file.
@@ -12042,19 +12064,19 @@ consistent versions of the repos, etc.
 
 To checkout an older set of consistent versions of the set of repos, use:
 
-  $ egdist fetch origin
-  $ egdist --dist-version-file=RepoVersion.SomeDate.txt checkout _VERSION_
+  $ gitdist fetch origin
+  $ gitdist --dist-version-file=RepoVersion.SomeDate.txt checkout _VERSION_
 
 The '_VERSION_' string will be replaced with the SHA1 for each of the repos.
 
 To tag and branch the set of repos using a consistent set of versions, use:
 
-  $ egdist --dist-version-file=RepoVersion.SomeDate.txt \
+  $ gitdist --dist-version-file=RepoVersion.SomeDate.txt \
     tag -a some_tag _VERSION_
 
 To diff two sets of versions of the repos, for example, use:
 
-  $ egdist --dist-version-file=RepoVersion.NewerDate.txt \
+  $ gitdist --dist-version-file=RepoVersion.NewerDate.txt \
      --dist-version-file2=RepoVersion.OlderDate.txt \
      diff _VERSION_ ^_VERSION2_
 
@@ -12075,30 +12097,31 @@ compatible version of 'git' at the very minimum as well of course.
 
 Options:
   -h, --help            show this help message and exit
-  --with-eg-git=EGGIT   The (path) to the eg/git executable to use for each
-                        git repo command (default='eg')
+  --dist-use-git=USEGIT
+                        The (path) to the git executable to use for each git
+                        repo command (default='git')
   --dist-extra-repos=EXTRAREPOS
-                        Comma-separated list of extra repos to forward eg/git
+                        Comma-separated list of extra repos to forward git
                         commands to.  If the list is empty, it will look for a
-                        file called .egdist to get the list of extra repos
+                        file called .gitdist to get the list of extra repos
                         separated by newlines.
   --dist-not-extra-repos=NOTEXTRAREPOS
                         Comma separated list of extra repos to *not* forward
-                        eg/git commands to.  This removes any repos from being
+                        git commands to.  This removes any repos from being
                         processed that would otherwise be.
-  --dist-not-base-repo  If set, don't pass the eg/git command on to the base
-                        git repo.
+  --dist-not-base-repo  If set, don't pass the git command on to the base git
+                        repo.
   --dist-version-file=VERSIONFILE
                         Path to a file contains a list of extra repo
                         directories and git versions (replaces _VERSION_).
   --dist-version-file2=VERSIONFILE2
                         Path to a second file contains a list of extra repo
                         directories and git versions (replaces _VERSION2_).
-  --dist-no-color       If set, don't use color in the output for egdist
+  --dist-no-color       If set, don't use color in the output for gitdist
                         (better for output to a file).
   --dist-debug          If set, then debugging info is printed.
-  --dist-no-opt         If set, then no eg/git commands will be run but
-                        instead will just be printed.
+  --dist-no-opt         If set, then no git commands will be run but instead
+                        will just be printed.
 
 </pre>
 </div>

@@ -48,8 +48,8 @@ INCLUDE(PrintVar)
 INCLUDE(PrependSet)
 INCLUDE(PrependGlobalSet)
 INCLUDE(RemoveGlobalDuplicates)
-INCLUDE(TribitsAddOptionAndDefine)
 
+INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TribitsAddExecutable)
 INCLUDE(TribitsAddExecutableAndTest)
@@ -551,8 +551,8 @@ MACRO(TRIBITS_PACKAGE_POSTPROCESS_COMMON)
     ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES
     )
     # Create the configure file so external projects can find packages with a
-    # call to find_package(<package_name>)
-    # This also creates the Makefile.export.* files.
+    # call to find_package(<package_name>).  This also creates the
+    # Makefile.export.* files.
     TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES(${PACKAGE_NAME})
   ENDIF()
   
@@ -631,8 +631,6 @@ MACRO(TRIBITS_PROCESS_SUBPACKAGES)
       LIST(GET ${PARENT_PACKAGE_NAME}_SUBPACKAGE_DIRS ${SUBPACKAGE_IDX} SUBPACKAGE_DIR)
       #PRINT_VAR(SUBPACKAGE_DIR)
 
-      DUAL_SCOPE_SET(${SUBPACKAGE_FULLNAME}_SOURCE_DIR
-        ${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/${SUBPACKAGE_DIR})
       DUAL_SCOPE_SET(${SUBPACKAGE_FULLNAME}_BINARY_DIR
         ${${PARENT_PACKAGE_NAME}_BINARY_DIR}/${SUBPACKAGE_DIR})
 
@@ -661,13 +659,12 @@ ENDMACRO()
 #   ${PACKAGE_NAME}_LIBRARY_DIRS
 #   ${PACKAGE_NAME}_LIBRARIES
 #   ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES
-#   ${PACKAGE_NAME}_FULL_EXPORT_DEP_PACKAGES
+#   ${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES
 #   ${PARENT_PACKAGE_NAME}_LIB_TARGETS
 #   ${PARENT_PACKAGE_NAME}_ALL_TARGETS
 #
 # without carefully studying the documentation in README.DEPENENCIES and then
 # carefully studying all of the code and issues that modify these variables!
 #
-# ToDo: Write some good unit tests that pin down the behavior of all of all
-# of this!
+# ToDo: Write some good unit tests that pin down the behavior of all of this!
 #

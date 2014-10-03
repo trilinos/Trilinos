@@ -1,27 +1,15 @@
-#
-# A) Define the subpackage
-#
 TRIBITS_SUBPACKAGE(SubpackageB)
 
-#
-# B) Set up package-specific options
-#
-# None!
-
-#
-# C) Add the libraries, tests, and examples
-#
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 TRIBITS_ADD_LIBRARY(pws_b
   SOURCES B.cpp
   HEADERS B.hpp
   NOINSTALLHEADERS 
-)
+  )
 
 TRIBITS_ADD_TEST_DIRECTORIES(tests)
 
-#
-# D) Do standard postprocessing
-#
 TRIBITS_SUBPACKAGE_POSTPROCESS()

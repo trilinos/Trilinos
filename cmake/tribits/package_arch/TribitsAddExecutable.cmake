@@ -70,7 +70,8 @@ INCLUDE(ParseVariableArguments)
 #     [HOSTTYPE <hosttype0> <hosttype1> ...]
 #     [XHOSTTYPE <hosttype0> <hosttype1> ...]
 #     [DIRECTORY <dir>]
-#     [DEPLIBS <lib0> <lib1> ...]
+#     [TESTONLYLIBS <lib0> <lib1> ...]
+#     [IMPORTEDLIBS <lib0> <lib1> ...]
 #     [COMM [serial] [mpi]]
 #     [LINKER_LANGUAGE (C|CXX|Fortran)]
 #     [DEFINES -D<define0> -D<define1> ...]
@@ -158,20 +159,16 @@ INCLUDE(ParseVariableArguments)
 #     The list of host types for which **not** to enable the test (see
 #     `TRIBITS_ADD_TEST()`_).
 #
-#   ``DEPLIBS <lib0> <lib1> ...``
+#   ``TESTONLYLIBS <lib0> <lib1> ...``
 #
 #     Specifies extra libraries that will be linked to the executable using
 #     ``TARGET_LINK_LIBRARY()``.  Note that regular libraries (i.e. not
 #     ``TESTONLY``) defined in the current SE package or any upstream SE
-#     packages do **NOT** need to be listed!  TriBITS automatically links non
+#     packages can *NOT* be listed!  TriBITS automatically links non
 #     ``TESTONLY`` libraries in this package and upstream packages to the
 #     executable.  The only libraries that should be listed in this argument
-#     are either ``TESTONLY`` libraries, or other libraries that are built
-#     external from this CMake project and are not provided through a proper
-#     `TriBITS TPL`_.  The latter usage of passing in external libraries is
-#     not recommended.  External libraries should be handled as declared
-#     `TriBITS TPLs`_.  For a ``TESTONLY`` library, the include directories
-#     will automatically be added using::
+#     are either ``TESTONLY`` libraries.  The include directories for each
+#     test-only library will automatically be added using::
 #
 #       INCLUDE_DIRECTORIES(${<libi>_INCLUDE_DIRS})
 #
@@ -181,7 +178,16 @@ INCLUDE(ParseVariableArguments)
 #
 #     Therefore, to link to a defined ``TESTONLY`` library in any upstream
 #     enabled package, one just needs to pass in the library name through
-#     ``DEPLIBS ... <libi> ...`` and that is it!
+#     ``TESTONLYLIBS ... <libi> ...`` and that is it!
+#
+#   ``IMPORTEDLIBS <lib0> <lib1> ...``
+#
+#     Specifies extra libraries that will be linked to the executable using
+#     ``TARGET_LINK_LIBRARY()``.  This can only be used for libraries that are
+#     built external from this CMake project and are not provided through a
+#     proper `TriBITS TPL`_.  The latter usage of passing in external
+#     libraries is not recommended.  External libraries should be handled as
+#     declared `TriBITS TPLs`_.
 #
 #   ``COMM [serial] [mpi]``
 #
@@ -280,7 +286,7 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     #prefix
     PARSE
     #lists
-    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;DIRECTORY;DEPLIBS;COMM;LINKER_LANGUAGE;DEFINES"
+    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;DEFINES"
     #options
     "NOEXEPREFIX;NOEXESUFFIX;ADD_DIR_TO_NAME;INSTALLABLE"
     ${ARGN}
@@ -347,14 +353,51 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
       SET (EXE_SOURCES ${EXE_SOURCES} ${SOURCE_FILE})
     ENDFOREACH( )
   ENDIF()
+ 
+  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_DEBUG)
 
+    # Assert that TESTONLYLIBS only contains TESTONLY libs!
+    FOREACH(TESTONLYLIB ${PARSE_TESTONLYLIBS})
+      IF (NOT ${TESTONLYLIB}_INCLUDE_DIRS)
+        MESSAGE(FATAL_ERROR "ERROR: TESTONLY lib '$TESTONLYLIB}' being passed through"
+        " TESTONLYLIBS is NOT a test-only lib!")
+      ENDIF()
+    ENDFOREACH()
+  
+    # Assert that IMPORTEDLIBS are not TESTONLY libs are not regular package
+    # libs!
+    FOREACH(IMPORTEDLIB ${PARSE_IMPORTEDLIBS})
+      IF (${IMPORTEDLIB}_INCLUDE_DIRS)
+        MESSAGE(FATAL_ERROR "ERROR: IMPORTED lib '$IMPORTEDLIB}' being passed through"
+        " IMPORTEDLIBS is not allowed to be a TESTONLY lib!")
+      ENDIF()
+      LIST(FIND ${PACKAGE_NAME}_LIBRARIES ${IMPORTEDLIB} FOUND_IDX)
+      IF (NOT FOUND_IDX EQUAL -1)
+        MESSAGE(FATAL_ERROR "ERROR: IMPORTED lib '$IMPORTEDLIB}' being passed through"
+        " IMPORTEDLIBS is not allowed to be one of the package's own libs!")
+      ENDIF()
+    ENDFOREACH()
+  ENDIF()
+
+  # Convert from old DEPLIBS to TESTONLYLIBS and IMPORTEDLIBS
   FOREACH(DEPLIB ${PARSE_DEPLIBS})
     IF (${DEPLIB}_INCLUDE_DIRS)
+      LIST(APPEND PARSE_TESTONLYLIBS ${DEPLIB})
+      MESSAGE(WARNING "WARNING: TESTONLY lib '${DEPLIB}' being passed through"
+        " DEPLIBS must be passed through TESTONLYLIB!  DEPLIBS is deprecated!")
+    ELSE()
+      LIST(APPEND PARSE_IMPORTEDLIBS ${DEPLIB})
+      MESSAGE(WARNING "WARNING: non-TESTONLY lib '${DEPLIB}' being passed through"
+        " DEPLIBS must be passed through IMPORTEDLIBS!  DEPLIBS is deprecated!")
+    ENDIF()
+  ENDFOREACH()
+
+  FOREACH(TESTONLYLIB ${PARSE_TESTONLYLIBS})
+    IF (${TESTONLYLIB}_INCLUDE_DIRS)
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "Adding include directories ${DEPLIB}_INCLUDE_DIRS ...")
-        #PRINT_VAR(${DEPLIB}_INCLUDE_DIRS)
+        MESSAGE(STATUS "Adding include directories ${TESTONLYLIB}_INCLUDE_DIRS ...")
       ENDIF()
-      INCLUDE_DIRECTORIES(${${DEPLIB}_INCLUDE_DIRS})
+      INCLUDE_DIRECTORIES(${${TESTONLYLIB}_INCLUDE_DIRS})
     ENDIF()
   ENDFOREACH()
 
@@ -380,25 +423,24 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
 
   SET(LINK_LIBS)
 
-  # First, add in the passed in dependent libraries
-  IF (PARSE_DEPLIBS)
+  # First, add in the passed in TESTONLY dependent libraries
+  IF (PARSE_TESTONLYLIBS)
     SET(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
-    SET(PREFIXED_DEPLIBS)
-    FOREACH(LIB ${PARSE_DEPLIBS})
-      LIST(APPEND PREFIXED_DEPLIBS "${LIBRARY_NAME_PREFIX}${LIB}")
+    FOREACH(LIB ${PARSE_TESTONLYLIBS})
+      LIST(APPEND LINK_LIBS "${LIBRARY_NAME_PREFIX}${LIB}")
     ENDFOREACH()
-    APPEND_SET(LINK_LIBS ${PREFIXED_DEPLIBS})
   ENDIF()
-  # 2009/01/09: rabartl: Above, I moved the list of dependent
-  # libraries first to get around a problem with test-only libraries
-  # creating multiple duplicate libraries on the link line with
-  # CMake.
 
   # Second, add the package's own regular libraries
   IF(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
-    APPEND_SET(LINK_LIBS ${${PACKAGE_NAME}_LIBRARIES})
+    LIST(APPEND LINK_LIBS ${${PACKAGE_NAME}_LIBRARIES})
   ELSE()
-    APPEND_SET(LINK_LIBS ${${PACKAGE_NAME}_INSTALLATION_LIBRARIES})
+    LIST(APPEND LINK_LIBS ${${PACKAGE_NAME}_INSTALLATION_LIBRARIES})
+  ENDIF()
+
+  # Third, add the IMPORTEDLIBS
+  IF (PARSE_IMPORTEDLIBS)
+    LIST(APPEND LINK_LIBS ${PARSE_IMPORTEDLIBS})
   ENDIF()
 
   # Call INCLUDE_DIRECTORIES() and LINK_DIRECTORIES(...) for upstream
@@ -423,12 +465,12 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     TRIBITS_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
       ${PACKAGE_NAME}  TEST  LINK_LIBS)
   ELSE()
-    APPEND_SET(LINK_LIBS ${${PACKAGE_NAME}_INSTALLATION_TPL_LIBRARIES})
+    LIST(APPEND LINK_LIBS ${${PACKAGE_NAME}_INSTALLATION_TPL_LIBRARIES})
   ENDIF()
 
   # Last, add last_lib to get extra link options on the link line
   IF (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
-    APPEND_SET(LINK_LIBS last_lib)
+    LIST(APPEND LINK_LIBS last_lib)
   ENDIF()
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)

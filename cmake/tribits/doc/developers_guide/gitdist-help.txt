@@ -1,22 +1,22 @@
-Usage: egdist [egdist options] [OPTIONS]
+Usage: gitdist [gitdist options] [OPTIONS]
 
-Run eg/git recursively over extra repos
+Run git recursively over extra repos
 
 Instead of typing
 
-   $ eg [OPTIONS]
+   $ git [OPTIONS]
 
 type:
 
-  $ egdist [egdist options] [OPTIONS]
+  $ gitdist [gitdist options] [OPTIONS]
 
 This will distribute git options across all git repos listed, including the
-base git repo.  The options in [egdist options] are prefixed with '--dist-'
-and are are pulled out before running eg/git on the underlying executable.
-See --help to see the egdist options.
+base git repo.  The options in [gitdist options] are prefixed with '--dist-'
+and are are pulled out before running git on the underlying executable.  See
+--help to see the gitdist options.
 
 If --dist-extra-repos="", then the list of extra repos will be read from the
-file .egdist.  The format of this file is to have one repo name per line as
+file .gitdist.  The format of this file is to have one repo name per line as
 in:
 
    Repo1
@@ -27,30 +27,27 @@ in:
 NOTE: If any extra repository does not exist, then it will be ignored and no
 output will be produced.  Therefore, be careful to manually verify that the
 script recognizes the repositories that you list.  The best way to do that is
-to type 'egdist status'.
+to type 'gitdist status'.
 
-NOTE: This script has no other dependencies so it can be copied and moved
-anywhere and used.
+NOTE: This script has no dependencies other than standard linux packagse so it
+can be copied and moved anywhere and used.
 
 TIPS:
 
- - Use 'egdist --no-pager <command> ...' to get the full output from
+ - Use 'gitdist --no-pager <command> ...' to get the full output from
    all extra repos in one contiguous stream which can then be piped
    to 'less' or to a file to be read with emacs or vi (may also want
    to use --dist-no-color as well).
 
- - 'egdist --help' will run egdist help, not eg/git help.  If you want
-   eg/git help, run raw 'eg --help'.
+ - 'gitdist --help' will run gitdist help, not git help.  If you want git
+   help, run raw 'git --help'.
 
- - By default, egdist will use 'eg' in the environment.  If it can't find 'eg'
-   in the environment, it will try to use 'eg' in the same directory as
-   'egdist' (which is the case in the home tribits directory).  If it can't
-   find this 'eg' it will look for 'git' in the environment.  If it can't find
-   'git' it will require that the user specify the eg/git command to run with
-   --with-eg-git=<the command>.
+ - By default, gitdist will use 'git' in the environment.  If it can't find
+   'git' in the environment, it will require that the user specify the git
+   command to run with --dist-use-git=<the command>.
 
- - To exclude processing either the base git repo and/or git repos listed in
-   .egdist, pass in --dist-not-base-repo and/or
+ - To exclude processing either the base git repo and/or other git repos
+   listed in .gitdist, pass in --dist-not-base-repo and/or
    --dist-not-extra-repos=RepoX,RepoZ,...  The provides complete control over
    what git repos the given command is run on.
 
@@ -80,12 +77,12 @@ Each repository entry can have a summary message or not (i.e. use two or three
 lines per repo in the file).  A compatible repo version file can be generated
 with this script using, for example, using:
 
-   $ egdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
+   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
     | grep -v "^$" &> RepoVersion.txt
 
 using three lines per repo, or just:
 
-   $ egdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
+   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
     | grep -v "^$" &> RepoVersion.txt
 
 using two lines per repo in the output file.
@@ -95,19 +92,19 @@ consistent versions of the repos, etc.
 
 To checkout an older set of consistent versions of the set of repos, use:
 
-  $ egdist fetch origin
-  $ egdist --dist-version-file=RepoVersion.SomeDate.txt checkout _VERSION_
+  $ gitdist fetch origin
+  $ gitdist --dist-version-file=RepoVersion.SomeDate.txt checkout _VERSION_
 
 The '_VERSION_' string will be replaced with the SHA1 for each of the repos.
 
 To tag and branch the set of repos using a consistent set of versions, use:
 
-  $ egdist --dist-version-file=RepoVersion.SomeDate.txt \
+  $ gitdist --dist-version-file=RepoVersion.SomeDate.txt \
     tag -a some_tag _VERSION_
 
 To diff two sets of versions of the repos, for example, use:
 
-  $ egdist --dist-version-file=RepoVersion.NewerDate.txt \
+  $ gitdist --dist-version-file=RepoVersion.NewerDate.txt \
      --dist-version-file2=RepoVersion.OlderDate.txt \
      diff _VERSION_ ^_VERSION2_
 
@@ -128,27 +125,28 @@ compatible version of 'git' at the very minimum as well of course.
 
 Options:
   -h, --help            show this help message and exit
-  --with-eg-git=EGGIT   The (path) to the eg/git executable to use for each
-                        git repo command (default='eg')
+  --dist-use-git=USEGIT
+                        The (path) to the git executable to use for each git
+                        repo command (default='git')
   --dist-extra-repos=EXTRAREPOS
-                        Comma-separated list of extra repos to forward eg/git
+                        Comma-separated list of extra repos to forward git
                         commands to.  If the list is empty, it will look for a
-                        file called .egdist to get the list of extra repos
+                        file called .gitdist to get the list of extra repos
                         separated by newlines.
   --dist-not-extra-repos=NOTEXTRAREPOS
                         Comma separated list of extra repos to *not* forward
-                        eg/git commands to.  This removes any repos from being
+                        git commands to.  This removes any repos from being
                         processed that would otherwise be.
-  --dist-not-base-repo  If set, don't pass the eg/git command on to the base
-                        git repo.
+  --dist-not-base-repo  If set, don't pass the git command on to the base git
+                        repo.
   --dist-version-file=VERSIONFILE
                         Path to a file contains a list of extra repo
                         directories and git versions (replaces _VERSION_).
   --dist-version-file2=VERSIONFILE2
                         Path to a second file contains a list of extra repo
                         directories and git versions (replaces _VERSION2_).
-  --dist-no-color       If set, don't use color in the output for egdist
+  --dist-no-color       If set, don't use color in the output for gitdist
                         (better for output to a file).
   --dist-debug          If set, then debugging info is printed.
-  --dist-no-opt         If set, then no eg/git commands will be run but
-                        instead will just be printed.
+  --dist-no-opt         If set, then no git commands will be run but instead
+                        will just be printed.
