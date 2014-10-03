@@ -82,6 +82,7 @@ extern void cuda_test_failed_insert(  uint32_t num_nodes );
 extern void cuda_test_deep_copy(  uint32_t num_nodes );
 extern void cuda_test_vector_combinations(unsigned int size);
 extern void cuda_test_dualview_combinations(unsigned int size);
+extern void cuda_test_segmented_view(unsigned int size);
 
 extern void cuda_test_bitset();
 

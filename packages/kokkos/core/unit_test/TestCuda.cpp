@@ -81,6 +81,7 @@ extern void test_device_cuda_atomic();
 extern void test_device_cuda_scan();
 extern void test_device_cuda_team_scan();
 extern void test_device_cuda_compiler_macros();
+extern void test_device_cuda_memory_space();
 
 TEST_F( cuda, view_impl )
 {

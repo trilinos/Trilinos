@@ -436,7 +436,7 @@ void CudaSpace::print_memory_view( std::ostream & oss )
 
 int CudaSpace::count( const void * ptr ) {
   if ( ! HostSpace::in_parallel() ) {
-    return Impl::cuda_space_singleton().count(p);
+    return Impl::cuda_space_singleton().count(ptr);
   }
   else {
     Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::CudaSpace::count called within a parallel functor") );
@@ -505,7 +505,7 @@ void CudaUVMSpace::increment( const void * ptr )
 
 int CudaUVMSpace::count( const void * ptr ) {
   if ( ! HostSpace::in_parallel() ) {
-    return Impl::cuda_uvm_space_singleton().count(p);
+    return Impl::cuda_uvm_space_singleton().count(ptr);
   }
   else {
     Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::CudaUVMSpace::count called within a parallel functor") );
@@ -562,7 +562,7 @@ void CudaHostPinnedSpace::increment( const void * ptr )
 
 int CudaHostPinnedSpace::count( const void * ptr ) {
   if ( ! HostSpace::in_parallel() ) {
-    return Impl::cuda_uvm_space_singleton().count(p);
+    return Impl::cuda_uvm_space_singleton().count(ptr);
   }
   else {
     Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::CudaHostPinnedSpace::count called within a parallel functor") );
