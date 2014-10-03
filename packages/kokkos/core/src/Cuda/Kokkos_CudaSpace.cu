@@ -202,6 +202,11 @@ public :
       return entry ? entry->label() : error ;
     }
 
+  int count(const void * ptr) const {
+    entry_type * const entry = m_tracking.query( ptr );
+    return entry ? entry->count() : 0 ;
+  }
+
   void * allocate(
     const std::string    & label ,
     const std::type_info & scalar_type ,
@@ -429,6 +434,16 @@ void CudaSpace::print_memory_view( std::ostream & oss )
   Impl::cuda_space_singleton().print( oss , std::string("  ") );
 }
 
+int CudaSpace::count( const void * ptr ) {
+  if ( ! HostSpace::in_parallel() ) {
+    return Impl::cuda_space_singleton().count(p);
+  }
+  else {
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::CudaSpace::count called within a parallel functor") );
+    return -1;
+  }
+}
+
 std::string CudaSpace::query_label( const void * p )
 {
   return std::string( Impl::cuda_space_singleton().query_label(p) );
@@ -488,6 +503,16 @@ void CudaUVMSpace::increment( const void * ptr )
   Impl::cuda_uvm_space_singleton().increment( ptr );
 }
 
+int CudaUVMSpace::count( const void * ptr ) {
+  if ( ! HostSpace::in_parallel() ) {
+    return Impl::cuda_uvm_space_singleton().count(p);
+  }
+  else {
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::CudaUVMSpace::count called within a parallel functor") );
+    return -1;
+  }
+}
+
 void CudaUVMSpace::print_memory_view( std::ostream & oss )
 {
   Impl::cuda_uvm_space_singleton().print( oss , std::string("  ") );
@@ -533,6 +558,16 @@ void CudaHostPinnedSpace::decrement( const void * ptr )
 void CudaHostPinnedSpace::increment( const void * ptr )
 {
   Impl::cuda_host_pinned_space_singleton().increment( ptr );
+}
+
+int CudaHostPinnedSpace::count( const void * ptr ) {
+  if ( ! HostSpace::in_parallel() ) {
+    return Impl::cuda_uvm_space_singleton().count(p);
+  }
+  else {
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::CudaHostPinnedSpace::count called within a parallel functor") );
+    return -1;
+  }
 }
 
 void CudaHostPinnedSpace::print_memory_view( std::ostream & oss )

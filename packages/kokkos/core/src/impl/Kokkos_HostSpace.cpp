@@ -247,6 +247,18 @@ void HostSpace::decrement( const void * ptr )
   }
 }
 
+int HostSpace::count( const void * ptr ) {
+  if ( ! HostSpace::in_parallel() ) {
+    Impl::MemoryTracking<>::Entry * const entry =
+        Impl::host_space_singleton().query(ptr);
+    return entry != NULL?entry->count():0;
+  }
+  else {
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::HostSpace::count called within a parallel functor") );
+    return -1;
+  }
+}
+
 void HostSpace::print_memory_view( std::ostream & o )
 {
   Impl::host_space_singleton().print( o , std::string("  ") );

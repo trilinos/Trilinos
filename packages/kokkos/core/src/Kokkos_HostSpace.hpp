@@ -107,6 +107,14 @@ public:
    */
   static void decrement( const void * );
 
+  /** \brief  Get the reference count of the block of memory
+   *          in which the input pointer resides.  If the reference
+   *          count is zero the memory region is not tracked.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static int count( const void * );
+
   /*--------------------------------*/
 
   /** \brief  Print all tracked memory to the output stream. */
@@ -126,11 +134,14 @@ public:
 //----------------------------------------------------------------------------
 
 template< class ExecutionSpace , class DataSpace >
-struct VerifyExecutionSpaceCanAccessDataSpace ;
+struct VerifyExecutionSpaceCanAccessDataSpace {
+  enum {value = 0};
+};
 
 template<>
 struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , HostSpace >
 {
+  enum {value = 1};
   inline static void verify(void) {}
   inline static void verify(const void *) {}
 };
