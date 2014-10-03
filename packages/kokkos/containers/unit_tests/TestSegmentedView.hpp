@@ -58,10 +58,10 @@ namespace Test {
 
 namespace Impl {
 
-  template<typename ViewType , typename ExecutionSpace, int Rank = ViewType::Rank>
+  template<class ViewType , class ExecutionSpace, int Rank = ViewType::Rank>
   struct GrowTest;
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct GrowTest<ViewType , ExecutionSpace , 1> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -85,7 +85,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct GrowTest<ViewType , ExecutionSpace , 2> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -115,7 +115,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct GrowTest<ViewType , ExecutionSpace , 3> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -146,7 +146,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct GrowTest<ViewType , ExecutionSpace , 4> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -179,7 +179,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct GrowTest<ViewType , ExecutionSpace , 5> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -215,7 +215,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct GrowTest<ViewType , ExecutionSpace , 6> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -253,7 +253,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct GrowTest<ViewType , ExecutionSpace , 7> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -293,7 +293,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct GrowTest<ViewType , ExecutionSpace , 8> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -337,10 +337,10 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace, int Rank = ViewType::Rank>
+  template<class ViewType , class ExecutionSpace, int Rank = ViewType::Rank>
   struct VerifyTest;
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct VerifyTest<ViewType , ExecutionSpace , 1> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -362,7 +362,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct VerifyTest<ViewType , ExecutionSpace , 2> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -385,7 +385,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct VerifyTest<ViewType , ExecutionSpace , 3> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -409,7 +409,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct VerifyTest<ViewType , ExecutionSpace , 4> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -434,7 +434,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct VerifyTest<ViewType , ExecutionSpace , 5> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -460,7 +460,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct VerifyTest<ViewType , ExecutionSpace , 6> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -487,7 +487,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct VerifyTest<ViewType , ExecutionSpace , 7> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -515,7 +515,7 @@ namespace Impl {
     }
   };
 
-  template<typename ViewType , typename ExecutionSpace>
+  template<class ViewType , class ExecutionSpace>
   struct VerifyTest<ViewType , ExecutionSpace , 8> {
     typedef ExecutionSpace execution_space;
     typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -556,7 +556,7 @@ namespace Impl {
     double result;
     double reference;
 
-    template <typename ViewType>
+    template <class ViewType>
     void run_me(ViewType a, int max_length){
       reference = 0;
       result = 0;
@@ -632,7 +632,7 @@ namespace Impl {
 
 
 
-template <typename Scalar, typename ExecutionSpace>
+template <typename Scalar, class ExecutionSpace>
 void test_segmented_view(unsigned int size)
 {
   {

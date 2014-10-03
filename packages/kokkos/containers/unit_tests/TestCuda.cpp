@@ -127,7 +127,7 @@ TEST_F( cuda, bitset )
 
 #define CUDA_SEGMENTEDVIEW_TEST( size )                             \
   TEST_F( cuda, segmentedview_##size##x) {       \
-      test_segmented_view<double,Kokkos::Cuda>(size);                     \
+      cuda_test_segmented_view<double,Kokkos::Cuda>(size);                     \
   }
 
 CUDA_DUALVIEW_COMBINE_TEST( 10 )
