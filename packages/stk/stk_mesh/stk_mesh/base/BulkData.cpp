@@ -3786,8 +3786,8 @@ void BulkData::internal_compute_proposed_owned_closure_count(const std::vector<E
         for (EntityRank rank = stk::topology::NODE_RANK, end_rank = entity_rank(locally_owned_entity); rank < end_rank; ++rank) {
             unsigned num = num_connectivity(locally_owned_entity,rank);
             Entity const * entities = begin(locally_owned_entity,rank);
-            for (unsigned i =0; i<num; ++i) {
-                --new_closure_count[entities[i].local_offset()];
+            for (unsigned j =0; j<num; ++j) {
+                --new_closure_count[entities[j].local_offset()];
             }
         }
     }
@@ -3802,8 +3802,8 @@ void BulkData::internal_compute_proposed_owned_closure_count(const std::vector<E
             for (EntityRank rank = stk::topology::NODE_RANK, end_rank = entity_rank(remotely_owned_entity); rank < end_rank; ++rank) {
                 unsigned num = num_connectivity(remotely_owned_entity,rank);
                 Entity const * entities = begin(remotely_owned_entity,rank);
-                for (unsigned i =0; i<num; ++i) {
-                    ++new_closure_count[entities[i].local_offset()];
+                for (unsigned j =0; j<num; ++j) {
+                    ++new_closure_count[entities[j].local_offset()];
                 }
             }
         }
@@ -3819,8 +3819,8 @@ void BulkData::internal_compute_proposed_owned_closure_count(const std::vector<E
             for (EntityRank rank = stk::topology::NODE_RANK, end_rank = entity_rank(remotely_owned_entity); rank < end_rank; ++rank) {
                 unsigned num = num_connectivity(remotely_owned_entity,rank);
                 Entity const * entities = begin(remotely_owned_entity,rank);
-                for (unsigned i =0; i<num; ++i) {
-                    ++new_closure_count[entities[i].local_offset()];
+                for (unsigned j =0; j<num; ++j) {
+                    ++new_closure_count[entities[j].local_offset()];
                 }
             }
         }
@@ -4012,6 +4012,7 @@ void BulkData::internal_apply_node_sharing(const NodeToDependentProcessorsMap & 
             if (*set_it == parallel_rank()) { continue; }
             markEntity(node, IS_SHARED);
             m_add_node_sharing_called = true;
+            entity_comm_map_erase(node_key, EntityCommInfo(stk::mesh::BulkData::AURA, *set_it));
             entity_comm_map_insert(node, EntityCommInfo(stk::mesh::BulkData::SHARED, *set_it));
             modified_nodes.push_back(node);
         }
@@ -4098,9 +4099,11 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
   internal_generate_parallel_change_lists( *this , local_change ,
                             shared_change , ghosted_change );
 
-//  NodeToDependentProcessorsMap node_to_dependent_processors_map;
-//  internal_calculate_sharing(local_change, shared_change, ghosted_change, node_to_dependent_processors_map);
-
+// #define CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
+#ifdef CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
+  NodeToDependentProcessorsMap node_to_dependent_processors_map;
+  internal_calculate_sharing(local_change, shared_change, ghosted_change, node_to_dependent_processors_map);
+#endif
   //------------------------------
   // Have enough information to delete all effected ghosts.
   // If the closure of a ghost contains a changing entity
@@ -4299,7 +4302,12 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
     send_closure.clear(); // Has been invalidated
   }
 
-//  internal_apply_node_sharing(node_to_dependent_processors_map);
+#ifdef CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
+  internal_apply_node_sharing(node_to_dependent_processors_map);
+#endif
+
+  internal_print_comm_map("A-APNS");
+  internal_print_comm_list("A-APNS", *this);
 
   internal_modification_end(regenerate_aura, mod_optimization);
 }
