@@ -428,6 +428,14 @@ This function performs a variety of matrix-matrix multiply operations.
     virtual int RowColDim() const { return N(); }
   //@}
 
+ int ReportError(const std::string Message, int ErrorCode) const {
+      GetTracebackStream()
+	<< std::endl << "Error in Ifpack_SerialTriDiMatrix "<< std::endl
+	<< "Ifpack Error:  " << Message.c_str() << "  Error Code:  " << ErrorCode << std::endl;
+      return(ErrorCode);
+
+    }
+
  protected:
 
   void CopyMat(const double* Source, int NumRowCol,
