@@ -50,6 +50,7 @@
 #include "boost/range/iterator_range_core.hpp"  // for iterator_range
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { struct Entity; } }
 namespace stk { namespace mesh { struct EntityKey; } }

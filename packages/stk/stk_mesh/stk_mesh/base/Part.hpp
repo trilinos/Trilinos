@@ -83,6 +83,9 @@ public:
 
   BulkData & mesh_bulk_data() const;
 
+  Part& RILEYFIXME() { return *this; }
+  const Part& RILEYFIXME() const { return *this; }
+
   /** \brief  The primary entity type for this part.
    *
    *   For example, the primary purpose of an Element part
