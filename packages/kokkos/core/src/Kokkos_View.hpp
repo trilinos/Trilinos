@@ -514,7 +514,8 @@ public:
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename Impl::if_c< traits::is_hostspace ,
+                  typename traits::execution_space , HostSpace>::type ,
                 void > HostMirror ;
 
   //------------------------------------
