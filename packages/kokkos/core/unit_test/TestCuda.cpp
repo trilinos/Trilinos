@@ -162,5 +162,11 @@ TEST_F( cuda , compiler_macros )
   test_device_cuda_compiler_macros();
 }
 
+TEST_F( cuda , memory_space )
+{
+  test_device_cuda_memory_space();
+}
+
+
 }
 

@@ -72,6 +72,7 @@
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
 
 namespace Test {
 
@@ -265,8 +266,15 @@ TEST_F( openmp , compiler_macros )
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::OpenMP >() ) );
 }
 
+//----------------------------------------------------------------------------
+
+TEST_F( openmp , memory_space )
+{
+  TestMemorySpace< Kokkos::OpenMP >();
+}
 
 //----------------------------------------------------------------------------
+
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
 TEST_F( openmp , cxx11 )
 {

@@ -72,6 +72,7 @@
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
 
 namespace Test {
 
@@ -299,6 +300,11 @@ TEST_F( threads , team_scan )
 TEST_F( threads , compiler_macros )
 {
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Threads >() ) );
+}
+
+TEST_F( threads , memory_space )
+{
+  TestMemorySpace< Kokkos::Threads >();
 }
 
 

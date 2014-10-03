@@ -67,6 +67,7 @@
 #include <TestTeam.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestMemorySpaceTracking.hpp>
 
 namespace Test {
 
@@ -279,5 +280,13 @@ void test_device_cuda_compiler_macros()
 {
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Cuda >() ) );
 }
+
+void test_device_cuda_memory_space()
+{
+  TestMemorySpace< Kokkos::Cuda >();
+}
+
+//----------------------------------------------------------------------------
+
 
 }

@@ -70,6 +70,7 @@
 #include <TestTaskPolicy.hpp>
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
 
 namespace Test {
 
@@ -304,6 +305,13 @@ TEST_F( serial, tile_16x16)
 TEST_F( serial , compiler_macros )
 {
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Serial >() ) );
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( serial , memory_space )
+{
+  TestMemorySpace< Kokkos::Serial >();
 }
 
 //----------------------------------------------------------------------------
