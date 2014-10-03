@@ -282,7 +282,6 @@ Selector selectUnion( const PartVector& union_part_vector );
  * \relates Selector
  * */
 Selector selectIntersection( const PartVector& intersection_part_vector );
-Selector selectIntersection( const ConstPartVector& intersection_part_vector );
 
 /** \brief Return a selector for the union of the parts where field exists.
  * \relates Selector
