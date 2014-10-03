@@ -45,7 +45,7 @@
 
 #include <iostream>
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <Kokkos_Bitset.hpp>
 #include <Kokkos_UnorderedMap.hpp>
@@ -58,6 +58,7 @@
 #include <TestUnorderedMap.hpp>
 #include <TestVector.hpp>
 #include <TestDualView.hpp>
+#include <TestSegmentedView.hpp>
 
 namespace Test {
 
@@ -96,6 +97,11 @@ void cuda_test_vector_combinations(unsigned int size)
 void cuda_test_dualview_combinations(unsigned int size)
 {
   test_dualview_combinations<int,Kokkos::Cuda>(size);
+}
+
+void cuda_test_segmented_view(unsigned int size)
+{
+  test_segmented_view<double,Kokkos::Cuda>(size);
 }
 
 void cuda_test_bitset()

@@ -124,6 +124,11 @@ TEST_F( cuda, bitset )
       cuda_test_dualview_combinations(size);                     \
   }
 
+#define CUDA_SEGMENTEDVIEW_TEST( size )                             \
+  TEST_F( cuda, segmentedview_##size##x) {       \
+      test_segmented_view<double,Kokkos::Cuda>(size);                     \
+  }
+
 CUDA_DUALVIEW_COMBINE_TEST( 10 )
 CUDA_VECTOR_COMBINE_TEST( 10 )
 CUDA_VECTOR_COMBINE_TEST( 3057 )
@@ -133,6 +138,7 @@ CUDA_INSERT_TEST(close,               100000, 90000, 100, 500)
 CUDA_INSERT_TEST(far,                 100000, 90000, 100, 500)
 CUDA_DEEP_COPY( 10000, 1 )
 CUDA_FAILED_INSERT_TEST( 10000, 1000 )
+CUDA_SEGMENTEDVIEW_TEST( 100000 )
 
 
 #undef CUDA_INSERT_TEST
@@ -141,5 +147,6 @@ CUDA_FAILED_INSERT_TEST( 10000, 1000 )
 #undef CUDA_DEEP_COPY
 #undef CUDA_VECTOR_COMBINE_TEST
 #undef CUDA_DUALVIEW_COMBINE_TEST
+#undef CUDA_SEGMENTEDVIEW_TEST
 #endif
 }
