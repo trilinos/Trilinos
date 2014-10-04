@@ -752,6 +752,7 @@ std::string CommandLineProcessor::opt_type_str( EOptType opt_type ) const
       break;
     case OPT_SIZE_T:
       str = "size_t";
+      break;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
     case OPT_LONG_LONG_INT:
       str = "long long int";
