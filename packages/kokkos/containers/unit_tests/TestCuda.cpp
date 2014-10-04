@@ -86,10 +86,10 @@ extern void cuda_test_segmented_view(unsigned int size);
 
 extern void cuda_test_bitset();
 
-TEST_F( cuda, bitset )
+/*TEST_F( cuda, bitset )
 {
   cuda_test_bitset();
-}
+}*/
 
 #define CUDA_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
   TEST_F( cuda, UnorderedMap_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
@@ -139,7 +139,7 @@ CUDA_INSERT_TEST(close,               100000, 90000, 100, 500)
 CUDA_INSERT_TEST(far,                 100000, 90000, 100, 500)
 CUDA_DEEP_COPY( 10000, 1 )
 CUDA_FAILED_INSERT_TEST( 10000, 1000 )
-CUDA_SEGMENTEDVIEW_TEST( 100000 )
+CUDA_SEGMENTEDVIEW_TEST( 200 )
 
 
 #undef CUDA_INSERT_TEST

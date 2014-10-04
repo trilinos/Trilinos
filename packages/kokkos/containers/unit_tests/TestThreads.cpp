@@ -91,10 +91,10 @@ protected:
   }
 };
 
-TEST_F( threads, bitset )
+/*TEST_F( threads, bitset )
 {
   test_bitset<Kokkos::Threads>();
-}
+}*/
 
 #define THREADS_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat, near )                                \
   TEST_F( threads, UnorderedMap_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \

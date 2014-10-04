@@ -82,6 +82,7 @@ namespace Impl {
       if((a.dimension_0()>team_idx+team_member.team_rank()) &&
          (a.dimension(0)>team_idx+team_member.team_rank()))
         a(team_idx+team_member.team_rank()) = team_idx+team_member.team_rank();
+
     }
   };
 
@@ -102,12 +103,12 @@ namespace Impl {
 
       a.grow(team_member , team_idx+ team_member.team_size());
 
-      for(int k=0;k<7;k++)
+      for( typename ExecutionSpace::size_type k=0;k<7;k++)
         value += team_idx + team_member.team_rank() + 13*k;
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++) {
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++) {
           a(team_idx+ team_member.team_rank(),k) =
               team_idx+ team_member.team_rank() + 13*k;
         }
@@ -132,14 +133,14 @@ namespace Impl {
 
       a.grow(team_member , team_idx+ team_member.team_size());
 
-      for(int k=0;k<7;k++)
-        for(int l=0;l<3;l++)
+      for( typename ExecutionSpace::size_type k=0;k<7;k++)
+        for( typename ExecutionSpace::size_type l=0;l<3;l++)
           value += team_idx + team_member.team_rank() + 13*k + 3*l;
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
             a(team_idx+ team_member.team_rank(),k,l) =
                 team_idx+ team_member.team_rank() + 13*k + 3*l;
       }
@@ -163,16 +164,16 @@ namespace Impl {
 
       a.grow(team_member , team_idx+ team_member.team_size());
 
-      for(int k=0;k<7;k++)
-        for(int l=0;l<3;l++)
-          for(int m=0;m<2;m++)
+      for( typename ExecutionSpace::size_type k=0;k<7;k++)
+        for( typename ExecutionSpace::size_type l=0;l<3;l++)
+          for( typename ExecutionSpace::size_type m=0;m<2;m++)
             value += team_idx + team_member.team_rank() + 13*k + 3*l + 7*m;
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
-            for(int m=0;m<a.dimension_3();m++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
+            for( typename ExecutionSpace::size_type m=0;m<a.dimension_3();m++)
               a(team_idx+ team_member.team_rank(),k,l,m) =
                   team_idx+ team_member.team_rank() + 13*k + 3*l + 7*m;
       }
@@ -196,19 +197,19 @@ namespace Impl {
 
       a.grow(team_member , team_idx+ team_member.team_size());
 
-      for(int k=0;k<7;k++)
-        for(int l=0;l<3;l++)
-          for(int m=0;m<2;m++)
-            for(int n=0;n<3;n++)
+      for( typename ExecutionSpace::size_type k=0;k<7;k++)
+        for( typename ExecutionSpace::size_type l=0;l<3;l++)
+          for( typename ExecutionSpace::size_type m=0;m<2;m++)
+            for( typename ExecutionSpace::size_type n=0;n<3;n++)
               value +=
                   team_idx + team_member.team_rank() + 13*k + 3*l + 7*m + 5*n;
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
-            for(int m=0;m<a.dimension_3();m++)
-              for(int n=0;n<a.dimension_4();n++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
+            for( typename ExecutionSpace::size_type m=0;m<a.dimension_3();m++)
+              for( typename ExecutionSpace::size_type n=0;n<a.dimension_4();n++)
                 a(team_idx+ team_member.team_rank(),k,l,m,n) =
                   team_idx+ team_member.team_rank() + 13*k + 3*l + 7*m + 5*n;
       }
@@ -232,21 +233,21 @@ namespace Impl {
 
       a.grow(team_member , team_idx+ team_member.team_size());
 
-      for(int k=0;k<7;k++)
-        for(int l=0;l<3;l++)
-          for(int m=0;m<2;m++)
-            for(int n=0;n<3;n++)
-              for(int o=0;o<2;o++)
+      for( typename ExecutionSpace::size_type k=0;k<7;k++)
+        for( typename ExecutionSpace::size_type l=0;l<3;l++)
+          for( typename ExecutionSpace::size_type m=0;m<2;m++)
+            for( typename ExecutionSpace::size_type n=0;n<3;n++)
+              for( typename ExecutionSpace::size_type o=0;o<2;o++)
               value +=
                   team_idx + team_member.team_rank() + 13*k + 3*l + 7*m + 5*n + 2*o ;
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
-            for(int m=0;m<a.dimension_3();m++)
-              for(int n=0;n<a.dimension_4();n++)
-                for(int o=0;o<a.dimension_5();o++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
+            for( typename ExecutionSpace::size_type m=0;m<a.dimension_3();m++)
+              for( typename ExecutionSpace::size_type n=0;n<a.dimension_4();n++)
+                for( typename ExecutionSpace::size_type o=0;o<a.dimension_5();o++)
                 a(team_idx+ team_member.team_rank(),k,l,m,n,o) =
                     team_idx + team_member.team_rank() + 13*k + 3*l + 7*m + 5*n + 2*o ;
       }
@@ -270,23 +271,23 @@ namespace Impl {
 
       a.grow(team_member , team_idx+ team_member.team_size());
 
-      for(int k=0;k<7;k++)
-        for(int l=0;l<3;l++)
-          for(int m=0;m<2;m++)
-            for(int n=0;n<3;n++)
-              for(int o=0;o<2;o++)
-                for(int p=0;p<4;p++)
+      for( typename ExecutionSpace::size_type k=0;k<7;k++)
+        for( typename ExecutionSpace::size_type l=0;l<3;l++)
+          for( typename ExecutionSpace::size_type m=0;m<2;m++)
+            for( typename ExecutionSpace::size_type n=0;n<3;n++)
+              for( typename ExecutionSpace::size_type o=0;o<2;o++)
+                for( typename ExecutionSpace::size_type p=0;p<4;p++)
               value +=
                   team_idx + team_member.team_rank() + 13*k + 3*l + 7*m + 5*n + 2*o + 15*p ;
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
-            for(int m=0;m<a.dimension_3();m++)
-              for(int n=0;n<a.dimension_4();n++)
-                for(int o=0;o<a.dimension_5();o++)
-                  for(int p=0;p<a.dimension_6();p++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
+            for( typename ExecutionSpace::size_type m=0;m<a.dimension_3();m++)
+              for( typename ExecutionSpace::size_type n=0;n<a.dimension_4();n++)
+                for( typename ExecutionSpace::size_type o=0;o<a.dimension_5();o++)
+                  for( typename ExecutionSpace::size_type p=0;p<a.dimension_6();p++)
                 a(team_idx+ team_member.team_rank(),k,l,m,n,o,p) =
                     team_idx + team_member.team_rank() + 13*k + 3*l + 7*m + 5*n + 2*o + 15*p ;
       }
@@ -307,30 +308,27 @@ namespace Impl {
     KOKKOS_INLINE_FUNCTION
     void operator() (team_type team_member, double& value) const {
       unsigned int team_idx = team_member.league_rank() * team_member.team_size();
-
-      if(team_idx + team_member.team_size() > 100100 && team_idx + team_member.team_size() < 100110)
-      printf("Size: %i %i %i %i | %i\n",team_member.league_rank(),team_member.team_rank(),team_member.league_size(),team_member.team_size(),team_idx + team_member.team_size());
       a.grow(team_member , team_idx + team_member.team_size());
 
-      for(int k=0;k<7;k++)
-        for(int l=0;l<3;l++)
-          for(int m=0;m<2;m++)
-            for(int n=0;n<3;n++)
-              for(int o=0;o<2;o++)
-                for(int p=0;p<4;p++)
-                  for(int q=0;q<3;q++)
+      for( typename ExecutionSpace::size_type k=0;k<7;k++)
+        for( typename ExecutionSpace::size_type l=0;l<3;l++)
+          for( typename ExecutionSpace::size_type m=0;m<2;m++)
+            for( typename ExecutionSpace::size_type n=0;n<3;n++)
+              for( typename ExecutionSpace::size_type o=0;o<2;o++)
+                for( typename ExecutionSpace::size_type p=0;p<4;p++)
+                  for( typename ExecutionSpace::size_type q=0;q<3;q++)
               value +=
                   team_idx + team_member.team_rank() + 13*k + 3*l + 7*m + 5*n + 2*o + 15*p + 17*q;
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
-            for(int m=0;m<a.dimension_3();m++)
-              for(int n=0;n<a.dimension_4();n++)
-                for(int o=0;o<a.dimension_5();o++)
-                  for(int p=0;p<a.dimension_6();p++)
-                    for(int q=0;q<a.dimension_7();q++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
+            for( typename ExecutionSpace::size_type m=0;m<a.dimension_3();m++)
+              for( typename ExecutionSpace::size_type n=0;n<a.dimension_4();n++)
+                for( typename ExecutionSpace::size_type o=0;o<a.dimension_5();o++)
+                  for( typename ExecutionSpace::size_type p=0;p<a.dimension_6();p++)
+                    for( typename ExecutionSpace::size_type q=0;q<a.dimension_7();q++)
                 a(team_idx+ team_member.team_rank(),k,l,m,n,o,p,q) =
                     team_idx + team_member.team_rank() + 13*k + 3*l + 7*m + 5*n + 2*o + 15*p + 17*q;
       }
@@ -379,7 +377,7 @@ namespace Impl {
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
           value += a(team_idx+ team_member.team_rank(),k);
       }
     }
@@ -402,8 +400,8 @@ namespace Impl {
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
             value += a(team_idx+ team_member.team_rank(),k,l);
       }
     }
@@ -426,9 +424,9 @@ namespace Impl {
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
-            for(int m=0;m<a.dimension_3();m++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
+            for( typename ExecutionSpace::size_type m=0;m<a.dimension_3();m++)
               value += a(team_idx+ team_member.team_rank(),k,l,m);
       }
     }
@@ -451,10 +449,10 @@ namespace Impl {
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
-            for(int m=0;m<a.dimension_3();m++)
-              for(int n=0;n<a.dimension_4();n++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
+            for( typename ExecutionSpace::size_type m=0;m<a.dimension_3();m++)
+              for( typename ExecutionSpace::size_type n=0;n<a.dimension_4();n++)
                 value += a(team_idx+ team_member.team_rank(),k,l,m,n);
       }
     }
@@ -477,11 +475,11 @@ namespace Impl {
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
-            for(int m=0;m<a.dimension_3();m++)
-              for(int n=0;n<a.dimension_4();n++)
-                for(int o=0;o<a.dimension_5();o++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
+            for( typename ExecutionSpace::size_type m=0;m<a.dimension_3();m++)
+              for( typename ExecutionSpace::size_type n=0;n<a.dimension_4();n++)
+                for( typename ExecutionSpace::size_type o=0;o<a.dimension_5();o++)
                   value += a(team_idx+ team_member.team_rank(),k,l,m,n,o);
       }
     }
@@ -504,12 +502,12 @@ namespace Impl {
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
-            for(int m=0;m<a.dimension_3();m++)
-              for(int n=0;n<a.dimension_4();n++)
-                for(int o=0;o<a.dimension_5();o++)
-                  for(int p=0;p<a.dimension_6();p++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
+            for( typename ExecutionSpace::size_type m=0;m<a.dimension_3();m++)
+              for( typename ExecutionSpace::size_type n=0;n<a.dimension_4();n++)
+                for( typename ExecutionSpace::size_type o=0;o<a.dimension_5();o++)
+                  for( typename ExecutionSpace::size_type p=0;p<a.dimension_6();p++)
                     value += a(team_idx+ team_member.team_rank(),k,l,m,n,o,p);
       }
     }
@@ -532,13 +530,13 @@ namespace Impl {
 
       if((a.dimension_0()>team_idx+ team_member.team_rank()) &&
          (a.dimension(0)>team_idx+ team_member.team_rank())) {
-        for(int k=0;k<a.dimension_1();k++)
-          for(int l=0;l<a.dimension_2();l++)
-            for(int m=0;m<a.dimension_3();m++)
-              for(int n=0;n<a.dimension_4();n++)
-                for(int o=0;o<a.dimension_5();o++)
-                  for(int p=0;p<a.dimension_6();p++)
-                    for(int q=0;q<a.dimension_7();q++)
+        for( typename ExecutionSpace::size_type k=0;k<a.dimension_1();k++)
+          for( typename ExecutionSpace::size_type l=0;l<a.dimension_2();l++)
+            for( typename ExecutionSpace::size_type m=0;m<a.dimension_3();m++)
+              for( typename ExecutionSpace::size_type n=0;n<a.dimension_4();n++)
+                for( typename ExecutionSpace::size_type o=0;o<a.dimension_5();o++)
+                  for( typename ExecutionSpace::size_type p=0;p<a.dimension_6();p++)
+                    for( typename ExecutionSpace::size_type q=0;q<a.dimension_7();q++)
                       value += a(team_idx+ team_member.team_rank(),k,l,m,n,o,p,q);
       }
     }
@@ -573,6 +571,7 @@ namespace Impl {
       int nteams = max_length/team_size;
 
       Kokkos::parallel_reduce(Policy(nteams,team_size),GrowTest<ViewType,execution_space>(a),reference);
+      Kokkos::fence();
       Kokkos::parallel_reduce(Policy(nteams,team_size),VerifyTest<ViewType,execution_space>(a),result);
       Kokkos::fence();
     }
@@ -636,6 +635,41 @@ template <typename Scalar, class ExecutionSpace>
 void test_segmented_view(unsigned int size)
 {
   {
+    typedef Kokkos::SegmentedView<Scalar*****[2][4][3],Kokkos::LayoutLeft,ExecutionSpace> view_type;
+    view_type a("A",128,size,7,3,2,3);
+    double reference;
+    int team_size = ExecutionSpace::team_max();
+#ifdef KOKKOS_HAVE_CUDA
+    if(Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value)
+      team_size = 128;
+    else
+#endif
+    if(team_size>4)
+      team_size = 4;
+    int nteams = (size+team_size-1)/team_size;
+    Impl::GrowTest<view_type,ExecutionSpace> f(a);
+    Kokkos::parallel_reduce(Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size),f,reference);
+    size_t real_size = ((size+127)/128)*128;
+
+    ASSERT_EQ(real_size,a.dimension_0());
+    ASSERT_EQ(7,a.dimension_1());
+    ASSERT_EQ(3,a.dimension_2());
+    ASSERT_EQ(2,a.dimension_3());
+    ASSERT_EQ(3,a.dimension_4());
+    ASSERT_EQ(2,a.dimension_5());
+    ASSERT_EQ(4,a.dimension_6());
+    ASSERT_EQ(3,a.dimension_7());
+    ASSERT_EQ(real_size,a.dimension(0));
+    ASSERT_EQ(7,a.dimension(1));
+    ASSERT_EQ(3,a.dimension(2));
+    ASSERT_EQ(2,a.dimension(3));
+    ASSERT_EQ(3,a.dimension(4));
+    ASSERT_EQ(2,a.dimension(5));
+    ASSERT_EQ(4,a.dimension(6));
+    ASSERT_EQ(3,a.dimension(7));
+    ASSERT_EQ(8,a.Rank);
+  }
+  {
     Impl::test_segmented_view<Scalar,ExecutionSpace> test(size,1);
     ASSERT_EQ(test.reference,test.result);
   }
@@ -667,33 +701,7 @@ void test_segmented_view(unsigned int size)
     Impl::test_segmented_view<Scalar,ExecutionSpace> test(size,8);
     ASSERT_EQ(test.reference,test.result);
   }
-  {
-    typedef Kokkos::SegmentedView<Scalar*****[2][4][3],Kokkos::LayoutLeft,ExecutionSpace> view_type;
-    view_type a("A",128,size,7,3,2,1);
-    double reference;
-    int team_size = 1;
-    int nteams = size/team_size;
 
-    Kokkos::parallel_reduce(Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size),Impl::GrowTest<view_type,ExecutionSpace>(a),reference);
-    size_t real_size = ((size+127)/128)*128;
-    ASSERT_EQ(real_size,a.dimension_0());
-    ASSERT_EQ(7,a.dimension_1());
-    ASSERT_EQ(3,a.dimension_2());
-    ASSERT_EQ(2,a.dimension_3());
-    ASSERT_EQ(1,a.dimension_4());
-    ASSERT_EQ(2,a.dimension_5());
-    ASSERT_EQ(4,a.dimension_6());
-    ASSERT_EQ(3,a.dimension_7());
-    ASSERT_EQ(real_size,a.dimension(0));
-    ASSERT_EQ(7,a.dimension(1));
-    ASSERT_EQ(3,a.dimension(2));
-    ASSERT_EQ(2,a.dimension(3));
-    ASSERT_EQ(1,a.dimension(4));
-    ASSERT_EQ(2,a.dimension(5));
-    ASSERT_EQ(4,a.dimension(6));
-    ASSERT_EQ(3,a.dimension(7));
-    ASSERT_EQ(8,a.Rank);
-  }
 }
 
 

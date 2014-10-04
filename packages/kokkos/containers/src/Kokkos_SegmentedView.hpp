@@ -71,7 +71,7 @@ void DeviceSetAllocatableMemorySize<Kokkos::CudaSpace>(size_t size) {
     cudaDeviceSetLimit(cudaLimitMallocHeapSize,2*size);
   cudaDeviceGetLimit(&size_limit,cudaLimitMallocHeapSize);
 #endif
-};
+}
 #endif
 
 #ifdef KOKKOS_HAVE_CUDA_UVM
@@ -109,14 +109,14 @@ public:
                 Kokkos::MemoryUnmanaged > t_dev ;
 
 
-private:
+public:
   Kokkos::View<t_dev*,typename traits::memory_space> views_;
 
   Kokkos::View<int,typename traits::memory_space> realloc_lock;
   Kokkos::View<int,typename traits::memory_space> nviews_;
 
-  const size_t view_length_;
-  const size_t view_length_m1_;
+  size_t view_length_;
+  size_t view_length_m1_;
   int max_views_;
 
   int view_length_log2;
@@ -165,6 +165,7 @@ private:
 #if ! defined( __CUDA_ARCH__ )
     Impl::DeepCopy< HostSpace , typename traits::memory_space >( & n , nviews_.ptr_on_device() , sizeof(int) );
 #endif
+
     return n * view_length_ ;
   }
 
@@ -176,7 +177,7 @@ public:
 
   /* \brief return (current) size of dimension 0 */
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_0() const {
-    enum { Accessible = VerifyExecutionSpaceCanAccessDataSpace<
+    enum { Accessible = Impl::VerifyExecutionCanAccessMemorySpace<
              Impl::ActiveExecutionMemorySpace, typename traits::memory_space >::value };
     int n = SegmentedView::dimension_0_intern< Accessible >();
     return n ;
@@ -263,6 +264,7 @@ public:
 
   }
 
+  KOKKOS_INLINE_FUNCTION
   SegmentedView(const SegmentedView& src):
     views_(src.views_),
     realloc_lock (src.realloc_lock),
@@ -274,9 +276,21 @@ public:
     m_offset_map (src.m_offset_map)
   {}
 
+  KOKKOS_INLINE_FUNCTION
+  SegmentedView& operator= (const SegmentedView& src) {
+    views_ = src.views_;
+    realloc_lock = src.realloc_lock;
+    nviews_ = src.nviews_;
+    view_length_= src.view_length_;
+    view_length_m1_= src.view_length_m1_;
+    max_views_ = src.max_views_;
+    view_length_log2= src.view_length_log2;
+    m_offset_map = src.m_offset_map;
+    return *this;
+  }
+
   ~SegmentedView() {
     if (traits::execution_space::in_parallel()) return;
-
     int count = traits::memory_space::count(views_.ptr_on_device());
     if(count == 1) {
       Kokkos::fence();
@@ -322,7 +336,6 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void grow_non_thread_safe(const size_t& size) const {
-    printf("Grow: %i %i\n",size,nviews_());
     if(size>max_views_*view_length_) {
       printf("Exceeding maxSize: %i %i\n",size,max_views_*view_length_);return;
     }
