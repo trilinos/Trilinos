@@ -131,20 +131,6 @@ public:
   static void register_in_parallel( int (*)() );
 };
 
-//----------------------------------------------------------------------------
-
-template< class ExecutionSpace , class DataSpace >
-struct VerifyExecutionSpaceCanAccessDataSpace {
-  enum {value = 0};
-};
-
-template<>
-struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , HostSpace >
-{
-  enum {value = 1};
-  inline static void verify(void) {}
-  inline static void verify(const void *) {}
-};
 
 } // namespace Kokkos
 

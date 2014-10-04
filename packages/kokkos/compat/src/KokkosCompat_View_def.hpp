@@ -55,7 +55,7 @@ namespace Kokkos {
     Kokkos::View<T*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView<T>& a) {
       typedef typename Kokkos::Impl::if_c<
-            VerifyExecutionSpaceCanAccessDataSpace< D, Kokkos::HostSpace>::value,
+            Impl::VerifyExecutionCanAccessMemorySpace< D, Kokkos::HostSpace>::value,
             typename D::execution_space, Kokkos::HostSpace>::type
           HostDevice;
       typedef Kokkos::View<T*,D>  view_type;
@@ -72,7 +72,7 @@ namespace Kokkos {
     Kokkos::View<const T*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView<const T>& a) {
       typedef typename Kokkos::Impl::if_c<
-            VerifyExecutionSpaceCanAccessDataSpace< D, Kokkos::HostSpace>::value,
+            Impl::VerifyExecutionCanAccessMemorySpace< D, Kokkos::HostSpace>::value,
             typename D::execution_space, Kokkos::HostSpace>::type
           HostDevice;
       typedef Kokkos::View<T*,D>  view_type;

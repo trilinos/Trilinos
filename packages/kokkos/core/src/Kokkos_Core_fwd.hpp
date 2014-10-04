@@ -118,11 +118,14 @@ typedef void ActiveExecutionMemorySpace ;
 #endif
 
 template< class ActiveSpace , class MemorySpace >
-struct VerifyExecutionCanAccessMemorySpace {};
+struct VerifyExecutionCanAccessMemorySpace {
+  enum {value = 0};
+};
 
 template< class Space >
 struct VerifyExecutionCanAccessMemorySpace< Space , Space >
 {
+  enum {value = 1};
   KOKKOS_INLINE_FUNCTION static void verify(void) {}
   KOKKOS_INLINE_FUNCTION static void verify(const void *) {}
 };
