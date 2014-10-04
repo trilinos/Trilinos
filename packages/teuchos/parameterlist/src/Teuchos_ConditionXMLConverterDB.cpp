@@ -58,7 +58,7 @@ void ConditionXMLConverterDB::addConverter(
 
 RCP<const ConditionXMLConverter>
 ConditionXMLConverterDB::getConverter(const Condition& condition){
-  ConverterMap::const_iterator it = 
+  ConverterMap::const_iterator it =
     getConverterMap().find(condition.getTypeAttributeValue());
   TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindConditionConverterException,
@@ -72,7 +72,7 @@ ConditionXMLConverterDB::getConverter(const Condition& condition){
 
 RCP<const ConditionXMLConverter>
 ConditionXMLConverterDB::getConverter(const XMLObject& xmlObject)
-{ 
+{
   std::string conditionType = xmlObject.getRequired(
     ConditionXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(conditionType);
@@ -91,7 +91,7 @@ XMLObject ConditionXMLConverterDB::convertCondition(
 {
   return getConverter(*condition)->fromConditiontoXML(condition, entryIDsMap);
 }
- 
+
 RCP<Condition> ConditionXMLConverterDB::convertXML(
   const XMLObject& xmlObject,
   const XMLParameterListReader::EntryIDsMap& entryIDsMap)

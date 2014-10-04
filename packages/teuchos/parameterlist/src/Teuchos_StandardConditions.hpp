@@ -80,10 +80,10 @@ public:
   ParameterCondition(RCP<const ParameterEntry> parameter);
 
   virtual ~ParameterCondition(){}
-  
+
   //@}
 
-  //! @name Attribute/Query Methods 
+  //! @name Attribute/Query Methods
   //@{
 
   /**
@@ -101,7 +101,7 @@ public:
   inline RCP<const ParameterEntry> getParameter() const{
     return parameterEntry_.getConst();
   }
-  
+
   //@}
 
   /** \name Overridden from Condition */
@@ -115,15 +115,15 @@ public:
     return true;
   }
 
-  Dependency::ConstParameterEntryList getAllParameters() const;                
-  
+  Dependency::ConstParameterEntryList getAllParameters() const;
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /**
    * Parameter to be evaluated.
    */
@@ -138,7 +138,7 @@ private:
  * whether or not a string parameter has taken on a particular
  * value or set of values.
  *
- * Please see StringConditionConverter for documenation 
+ * Please see StringConditionConverter for documenation
  * regarding the XML representation of this condition.
  */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT StringCondition : public ParameterCondition{
@@ -151,8 +151,8 @@ public:
   /**
    * \brief Convience typedef representing an array of strings.
    */
-  typedef Array<std::string> ValueList; 
-  
+  typedef Array<std::string> ValueList;
+
   //@}
 
   /** \name Constructors/Destructor */
@@ -176,7 +176,7 @@ public:
   StringCondition(RCP<const ParameterEntry> parameter, ValueList values);
 
   virtual ~StringCondition(){}
-  
+
   //@}
 
   /** \name Overridden from Condition */
@@ -185,14 +185,14 @@ public:
   std::string getTypeAttributeValue() const{
     return "StringCondition";
   }
-  
+
   //@}
 
   /** \name Overridden from ParameterCondition */
   //@{
 
   bool evaluateParameter() const;
-  
+
   //@}
 
   /** \name Attribute/Query Functions */
@@ -209,7 +209,7 @@ private:
 
   /** \name Private Members */
   //@{
-  
+
   /**
    * A list of values against which to evaluate the parameter's value.
    */
@@ -217,9 +217,9 @@ private:
 
   /** \brief Ensures the parameter is the proper type. In this case a string. */
   void checkParameterType();
-  
+
   //@}
-  
+
 };
 
 
@@ -240,20 +240,20 @@ public:
   * StringCondition.
   */
   static RCP<StringCondition> getDummyObject();
-  
+
   //@}
-  
+
 };
 
 
 /**
  * \brief A Number Condition is a Parameter Condition that evaluates
  * whether or not a number parameter is greater than 0 (or some other number
- * based on a given function). 
- * If the parameter is  greater than 0 this is interperted as the condition 
+ * based on a given function).
+ * If the parameter is  greater than 0 this is interperted as the condition
  * being "true". Otherwise the oncidiont is interperted as false.
  *
- * Please see NumberConditionConverter for documenation 
+ * Please see NumberConditionConverter for documenation
  * regarding the XML representation of this condition.
  */
 template<class T>
@@ -268,21 +268,21 @@ public:
    * \brief Constructs a Number Condition.
    *
    * @param parameterName The name of the parameter to be evaluated.
-   * @param func A function to run the value of the parameter through. 
+   * @param func A function to run the value of the parameter through.
    * If the function returns a value
-   * greater than 0, this will be interperted as the condition being "true". 
-   * If the function returns a value of 0 or less, this will be interperted 
+   * greater than 0, this will be interperted as the condition being "true".
+   * If the function returns a value of 0 or less, this will be interperted
    * as the condition being false.
    */
   NumberCondition(
     RCP<const ParameterEntry> parameter,
     RCP<const SimpleFunctionObject<T> > func=null):
-    ParameterCondition(parameter), 
+    ParameterCondition(parameter),
     func_(func)
   {}
 
   virtual ~NumberCondition(){}
-  
+
   //@}
 
   /** \name Overridden from Condition */
@@ -291,7 +291,7 @@ public:
   std::string getTypeAttributeValue() const{
     return "NumberCondition(" + TypeNameTraits<T>::name() + ")";
   }
-  
+
   //@}
 
   /** \name Overridden from ParameterCondition */
@@ -305,9 +305,9 @@ public:
     }
     return value > 0;
   }
-  
+
   //@}
-  
+
   /** \name Getters/Setters */
   //@{
 
@@ -324,10 +324,10 @@ private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief . */
   RCP<const SimpleFunctionObject<T> > func_;
-  
+
   //@}
 
 };
@@ -350,9 +350,9 @@ public:
   * NumberCondition.
   */
   static RCP<NumberCondition<T> > getDummyObject();
-  
+
   //@}
-  
+
 };
 
 template<class T>
@@ -368,7 +368,7 @@ RCP<NumberCondition<T> >
  * \brief A Bool Condition is a Parameter Condition that evaluates
  * whether or not a Boolean parameter is ture.
  *
- * Please see BoolConditionConverter for documenation 
+ * Please see BoolConditionConverter for documenation
  * regarding the XML representation of this condition.
  */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT BoolCondition : public ParameterCondition{
@@ -386,7 +386,7 @@ public:
   BoolCondition(RCP<const ParameterEntry> parameter);
 
   virtual ~BoolCondition(){}
-  
+
   //@}
 
   /** \name Overridden from Condition */
@@ -395,14 +395,14 @@ public:
   std::string getTypeAttributeValue() const{
     return "BoolCondition";
   }
-  
+
   //@}
 
   /** \name Overridden from ParameterCondition */
   //@{
 
   bool evaluateParameter() const;
-  
+
   //@}
 
 };
@@ -425,9 +425,9 @@ public:
   * BoolCondition.
   */
   static RCP<BoolCondition > getDummyObject();
-  
+
   //@}
-  
+
 };
 
 
@@ -458,7 +458,7 @@ public:
   virtual ~BoolLogicCondition(){}
 
   //@}
-  
+
   /** \name Modifier Functions */
 
   //@{
@@ -474,7 +474,7 @@ public:
 
   //@}
 
-  //! @name Attribute/Query Methods 
+  //! @name Attribute/Query Methods
   //@{
 
   /**
@@ -489,7 +489,7 @@ public:
   virtual bool applyOperator(bool op1, bool op2) const = 0;
 
   /**
-   * \brief Gets a list of all conditions that are a part of this 
+   * \brief Gets a list of all conditions that are a part of this
    * BoolLogicCondition/
    */
   inline
@@ -517,7 +517,7 @@ private:
 
   /** \name Private Members */
   //@{
-  
+
   /*
    * \brief A list of conditions on which to perform some logic operation.
    */
@@ -531,7 +531,7 @@ private:
  * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical OR on the conditions.
  *
- * Please see OrConditionConverter for documenation 
+ * Please see OrConditionConverter for documenation
  * regarding the XML representation of this condition.
  */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT OrCondition : public BoolLogicCondition{
@@ -561,7 +561,7 @@ public:
   std::string getTypeAttributeValue() const{
     return "OrCondition";
   }
-  
+
   //@}
 
   /** \name Overridden from BoolLogicCondition */
@@ -569,7 +569,7 @@ public:
 
   /** \brief . */
   bool applyOperator(bool op1, bool op2) const;
-  
+
   //@}
 
 };
@@ -592,9 +592,9 @@ public:
   * OrCondition.
   */
   static RCP<OrCondition> getDummyObject();
-  
+
   //@}
-  
+
 };
 
 
@@ -602,7 +602,7 @@ public:
  * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical AND on the conditions.
  *
- * Please see AndConditionConverter for documenation 
+ * Please see AndConditionConverter for documenation
  * regarding the XML representation of this condition.
  */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT AndCondition : public BoolLogicCondition{
@@ -623,7 +623,7 @@ public:
    * \brief Deconstructs an And Condition.
    */
   virtual ~AndCondition(){}
-  
+
   //@}
 
   /** \name Overridden from Condition */
@@ -632,7 +632,7 @@ public:
   std::string getTypeAttributeValue() const{
     return "AndCondition";
   }
-  
+
   //@}
 
 
@@ -641,7 +641,7 @@ public:
 
   /** \brief . */
   bool applyOperator(bool op1, bool op2) const;
-  
+
   //@}
 
 };
@@ -664,9 +664,9 @@ public:
   * AndCondition.
   */
   static RCP<AndCondition > getDummyObject();
-  
+
   //@}
-  
+
 };
 
 
@@ -674,7 +674,7 @@ public:
  * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical EQUALS on the conditions.
  *
- * Please see EqualsConditionConverter for documenation 
+ * Please see EqualsConditionConverter for documenation
  * regarding the XML representation of this condition.
  */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT EqualsCondition : public BoolLogicCondition{
@@ -695,7 +695,7 @@ public:
    * \brief Deconstructs an Equals Condition.
    */
   virtual ~EqualsCondition(){}
-  
+
   //@}
 
   /** \name Overridden from Condition */
@@ -704,7 +704,7 @@ public:
   std::string getTypeAttributeValue() const{
     return "EqualsCondition";
   }
-  
+
   //@}
 
   /** \name Overridden from BoolLogicCondition */
@@ -712,7 +712,7 @@ public:
 
   /** \brief . */
   bool applyOperator(bool op1, bool op2) const;
-  
+
   //@}
 
 };
@@ -735,9 +735,9 @@ public:
   * EqualsCondition.
   */
   static RCP<EqualsCondition > getDummyObject();
-  
+
   //@}
-  
+
 };
 
 
@@ -746,7 +746,7 @@ public:
  * performing a logical NOT on a given
  * condition.
  *
- * Please see NotConditionConverter for documenation 
+ * Please see NotConditionConverter for documenation
  * regarding the XML representation of this condition.
  */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT NotCondition : public Condition{
@@ -767,7 +767,7 @@ public:
    * \brief Deconstructs a Not Condition.
    */
   virtual ~NotCondition(){}
-  
+
   //@}
 
   /** \name Attribute/Query Functions */
@@ -777,7 +777,7 @@ public:
   RCP<const Condition> getChildCondition() const{
     return childCondition_;
   }
-  
+
   //@}
 
   /** \name Overridden from Condition */
@@ -795,19 +795,19 @@ public:
   std::string getTypeAttributeValue() const{
     return "NotCondition";
   }
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /**
    * The condition on which to perfrom the logical NOT.
    */
   RCP<const Condition> childCondition_;
-  
+
   //@}
 
 };
@@ -830,9 +830,9 @@ public:
   * NotCondition.
   */
   static RCP<NotCondition> getDummyObject();
-  
+
   //@}
-  
+
 };
 
 } //namespace Teuchos

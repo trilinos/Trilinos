@@ -225,7 +225,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, arcpWithEmbeddedObj )
 {
   const ArrayRCP<const int> a_arcp =
     Teuchos::arcpWithEmbeddedObj<int>(new int[1], 0, 1, as<int>(1), true);
-  const int embeddedObj = Teuchos::getEmbeddedObj<int,int>(a_arcp); 
+  const int embeddedObj = Teuchos::getEmbeddedObj<int,int>(a_arcp);
   TEST_EQUALITY_CONST( embeddedObj, as<int>(1) );
 }
 
@@ -451,7 +451,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_nonpod_default_construct )
   out << "num_chars = " << num_chars << "\n";
 
   ECHO(ArrayRCP<char> arcp_chars = arcp<char>(num_chars));
-  
+
   ECHO(MockObject::reset());
   TEST_EQUALITY(MockObject::numConstructorsCalled(), 0);
   TEST_EQUALITY(MockObject::numCopyConstructorsCalled(), 0);
@@ -510,7 +510,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_nonpod_copy_construct )
   TEST_EQUALITY(MockObject::numConstructorsCalled(), 1);
   TEST_EQUALITY(MockObject::numCopyConstructorsCalled(), 0);
   TEST_EQUALITY(MockObject::numDestructorsCalled(), 0);
-  
+
   ECHO(MockObject::reset());
   TEST_EQUALITY(MockObject::numConstructorsCalled(), 0);
   TEST_EQUALITY(MockObject::numCopyConstructorsCalled(), 0);
@@ -714,22 +714,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, resize, T )
   std::vector<T> a;
   ArrayRCP<T> a_arcp;
 
-  out << "\nChecking resize(n, val1) ...\n"; 
+  out << "\nChecking resize(n, val1) ...\n";
   a.resize(n, val1);
   a_arcp.resize(n, val1);
   TEST_COMPARE_ARRAYS(a, a_arcp);
 
-  out << "\nChecking resize(2*n, val2) ...\n"; 
+  out << "\nChecking resize(2*n, val2) ...\n";
   a.resize(2*n, val2);
   a_arcp.resize(2*n, val2);
   TEST_COMPARE_ARRAYS(a, a_arcp);
 
-  out << "\nChecking resize(n/2) ...\n"; 
+  out << "\nChecking resize(n/2) ...\n";
   a.resize(n/2);
   a_arcp.resize(n/2);
   TEST_COMPARE_ARRAYS(a, a_arcp);
 
-  out << "\nChecking resize(0) ...\n"; 
+  out << "\nChecking resize(0) ...\n";
   a.resize(0);
   a_arcp.resize(0);
   TEST_COMPARE_ARRAYS(a, a_arcp);
@@ -755,7 +755,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, nullIterator, T )
 {
   typedef ArrayRCP<T> iter_t;
   ArrayRCP<T> arcp1 = Teuchos::NullIteratorTraits<iter_t>::getNull();
-  TEST_EQUALITY_CONST(arcp1, Teuchos::null); 
+  TEST_EQUALITY_CONST(arcp1, Teuchos::null);
 }
 
 
@@ -930,7 +930,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, danglingArrayView, T )
   TEST_THROW( av.getConst(), DanglingReferenceError );
   TEST_THROW( av.begin(), DanglingReferenceError );
   TEST_THROW( av.end(), DanglingReferenceError );
-#endif  
+#endif
 }
 
 

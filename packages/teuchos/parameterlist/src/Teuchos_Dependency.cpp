@@ -55,9 +55,9 @@ ParameterEntryList dependents):
 }
 
 Dependency::Dependency(
-  ConstParameterEntryList dependees, 
+  ConstParameterEntryList dependees,
   RCP<ParameterEntry> dependent):
-  dependees_(dependees), 
+  dependees_(dependees),
   dependents_(ParameterEntryList(&dependent, &dependent+1))
 {
   checkDependeesAndDependents();
@@ -66,7 +66,7 @@ Dependency::Dependency(
 
 
 Dependency::Dependency(
-  RCP<const ParameterEntry> dependee, 
+  RCP<const ParameterEntry> dependee,
   ParameterEntryList dependents):
   dependees_(ConstParameterEntryList(&dependee, &dependee+1)),
   dependents_(dependents)
@@ -74,9 +74,9 @@ Dependency::Dependency(
   checkDependeesAndDependents();
   createConstDependents();
 }
-  
+
 Dependency::Dependency(
-  RCP<const ParameterEntry> dependee, 
+  RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent):
   dependees_(ConstParameterEntryList(&dependee, &dependee+1)),
   dependents_(ParameterEntryList(&dependent, &dependent+1))
@@ -104,14 +104,14 @@ void Dependency::print(std::ostream& out) const{
 }
 
 void Dependency::checkDependeesAndDependents(){
-  ConstParameterEntryList::iterator it1 = dependees_.begin(); 
+  ConstParameterEntryList::iterator it1 = dependees_.begin();
   for(; it1 != dependees_.end(); ++it1){
     TEUCHOS_TEST_FOR_EXCEPTION((*it1).is_null(),
       InvalidDependencyException,
       "Cannot have a null dependee!" << std::endl << std::endl);
    }
 
-  ParameterEntryList::iterator it2 = dependents_.begin(); 
+  ParameterEntryList::iterator it2 = dependents_.begin();
   for(; it2 != dependents_.end(); ++it2){
     TEUCHOS_TEST_FOR_EXCEPTION((*it2).is_null(),
       InvalidDependencyException,

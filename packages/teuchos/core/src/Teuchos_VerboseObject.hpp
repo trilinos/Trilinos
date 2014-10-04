@@ -66,7 +66,7 @@ namespace Teuchos {
 class TEUCHOSCORE_LIB_DLL_EXPORT VerboseObjectBase {
 public:
 
-  //! @name Public static member functions 
+  //! @name Public static member functions
   //@{
 
   /** \brief Set the default output stream object.
@@ -81,9 +81,9 @@ public:
 
   //@}
 
-  //! @name Constructors/Initializers 
+  //! @name Constructors/Initializers
   //@{
-  
+
   /** \brief . */
   virtual ~VerboseObjectBase();
 
@@ -93,7 +93,7 @@ public:
   VerboseObjectBase(
     const RCP<FancyOStream> &oStream = Teuchos::null
     );
-  
+
   /** \brief Calls <tt>initializeVerboseObject()</tt>.
    */
   virtual void initializeVerboseObjectBase(
@@ -122,7 +122,7 @@ public:
 
   //@}
 
-  //! @name Query functions 
+  //! @name Query functions
   //@{
 
   /** \brief Return the output stream to be used for out for <tt>*this</tt>
@@ -143,7 +143,7 @@ public:
 
   //@}
 
-  //! @name Utilities 
+  //! @name Utilities
   //@{
 
   /** \brief Create a tab object which sets the number of tabs and optionally the line prefix.
@@ -164,7 +164,7 @@ public:
   //@}
 
 protected:
-  
+
   /** \brief Function that is called whenever the verbosity state
    * is updated.
    *
@@ -188,7 +188,7 @@ private:
   mutable RCP<FancyOStream> thisOverridingOStream_;
 #ifdef _MSC_VER
 #pragma warning(pop)
-#endif 
+#endif
 
   static RCP<FancyOStream>& privateDefaultOStream();
 
@@ -233,7 +233,7 @@ private:
 template<class ObjectType>
 class VerboseObject : virtual public VerboseObjectBase {
 public:
-  //! @name Public static member functions 
+  //! @name Public static member functions
   //@{
 
   /** \brief Set the default verbosity level.
@@ -246,16 +246,16 @@ public:
   static EVerbosityLevel getDefaultVerbLevel();
 
   //@}
-  //! @name Constructors/Initializers 
+  //! @name Constructors/Initializers
   //@{
-  
+
   //! Constructor: calls <tt>initializeVerboseObject()</tt>.
   explicit
   VerboseObject(
     const EVerbosityLevel verbLevel = VERB_DEFAULT,  // Note, this must be the same as the default value for defaultVerbLevel_
     const RCP<FancyOStream> &oStream  = Teuchos::null
     );
-  
+
   /// \brief Initialize the VerboseObject.
   ///
   /// \param verbLevel [in] Initial verbosity level.
@@ -264,7 +264,7 @@ public:
   /// \note \c verbLevel must be the same as the default value for
   ///   <tt>defaultVerbLevel_</tt>.
   virtual void initializeVerboseObject(
-    const EVerbosityLevel verbLevel = VERB_DEFAULT,  
+    const EVerbosityLevel verbLevel = VERB_DEFAULT,
     const RCP<FancyOStream> &oStream  = Teuchos::null
     );
 
@@ -286,19 +286,19 @@ public:
     const EVerbosityLevel verbLevel) const;
 
   //@}
-  //! @name Query functions 
+  //! @name Query functions
   //@{
 
   /** \brief Get the verbosity level */
   virtual EVerbosityLevel getVerbLevel() const;
 
   //@}
-  
+
 private:
-  
+
   mutable EVerbosityLevel thisVerbLevel_;
   mutable EVerbosityLevel thisOverridingVerbLevel_;
-  
+
   static EVerbosityLevel& privateDefaultVerbLevel();
 
 };

@@ -49,7 +49,7 @@ StringInputSource::StringInputSource(const std::string& text)
 	: XMLInputSource(), text_(text)
 {;}
 
-RCP<XMLInputStream> StringInputSource::stream() const 
+RCP<XMLInputStream> StringInputSource::stream() const
 {
 	return rcp(new StringInputStream(text_), true);
 }

@@ -84,21 +84,21 @@ namespace Teuchos
     };
 
 
-  /** \relates HashUtils 
-      \brief Standard interface for getting the hash code of an object 
+  /** \relates HashUtils
+      \brief Standard interface for getting the hash code of an object
   */
   template <class T> int hashCode(const T& x);
 
-  /** \relates HashUtils 
-      \brief Get the hash code of an int 
+  /** \relates HashUtils
+      \brief Get the hash code of an int
   */
-  template <> inline int hashCode(const int& x) 
+  template <> inline int hashCode(const int& x)
     {
       return x;
     }
 
-  /** \relates HashUtils  
-      \brief Get the hash code of a double 
+  /** \relates HashUtils
+      \brief Get the hash code of a double
   */
   template <> inline int hashCode(const double& x)
     {
@@ -106,16 +106,16 @@ namespace Teuchos
         reinterpret_cast<const unsigned char *>(&x), sizeof(double));
     }
 
-  /** \relates HashUtils  
-      \brief Get the hash code of a bool 
+  /** \relates HashUtils
+      \brief Get the hash code of a bool
   */
   template <> inline int hashCode(const bool& x)
     {
       return (int) x;
     }
 
-  /** \relates HashUtils  
-      \brief Get the hash code of a long long 
+  /** \relates HashUtils
+      \brief Get the hash code of a long long
   */
   template <> inline int hashCode(const long long& x)
     {
@@ -123,8 +123,8 @@ namespace Teuchos
         reinterpret_cast<const unsigned char *>(&x), sizeof(long long));
     }
 
-  /** \relates HashUtils  
-      \brief Get the hash code of a long 
+  /** \relates HashUtils
+      \brief Get the hash code of a long
   */
   template <> inline int hashCode(const long& x)
     {
@@ -132,8 +132,8 @@ namespace Teuchos
         reinterpret_cast<const unsigned char *>(&x), sizeof(long));
     }
 
-  /** \relates HashUtils 
-      \brief Get the hash code of a std::string 
+  /** \relates HashUtils
+      \brief Get the hash code of a std::string
   */
   template <> inline int hashCode(const std::string& x)
     {

@@ -96,7 +96,7 @@ private:
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
   EAlgoType algoType_;
   double algoTol_;
-  
+
 };
 
 

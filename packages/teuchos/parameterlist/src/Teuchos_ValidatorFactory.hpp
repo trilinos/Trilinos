@@ -58,7 +58,7 @@ public:
   IntArray, ShortArray, DoubleArray, FloatArray, FileNameArray};
 
   /** \brief Creates a validator of the given type.
-   * 
+   *
    * @param valiType The type of validator to be created.
    */
   static RCP<ParameterEntryValidator> createValidator(ValidatorType valiType);

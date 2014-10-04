@@ -74,7 +74,7 @@ class InvalidParameterValue : public InvalidParameter
 {public: InvalidParameterValue(const std::string& what_arg) : InvalidParameter(what_arg) {}};
 
 } // namespace Exceptions
-  
+
 } // end of Teuchos namespace
 
 #endif // TEUCHOS_PARAMETER_LIST_EXCEPTIONS_H

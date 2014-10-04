@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   // Setting parameters in this list can be easily done:
   myPL.set("Max Iters", 1550, "Determines the maximum number of iterations in the solver");
   myPL.set("Tolerance", 1e-10, "The tolerance used for the convergence check");
-  
+
   // For the "Solver" option, create a validator that will automatically
   // create documentation for this parameter but will also help in validation.
   RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
@@ -89,39 +89,39 @@ int main(int argc, char* argv[])
 
   /* Reference-counted pointers can also be passed through a ParameterList.
      To illustrate this we will use the Array class to create an array of 10 doubles
-     representing an initial guess for a linear solver, whose memory is being managed by a 
+     representing an initial guess for a linear solver, whose memory is being managed by a
      RCP.
    */
-  
+
   myPL.set<Array<double> >("Initial Guess", tuple<double>( 10, 0.0 ),
     "The initial guess as a RCP to an array object.");
 
-  /* A hierarchy of parameter lists can be constructed using {\tt ParameterList}.  This 
+  /* A hierarchy of parameter lists can be constructed using {\tt ParameterList}.  This
      means another parameter list is a valid {\it value} in any parameter list.  To create a sublist
      in a parameter list and obtain a reference to it:
   */
-  ParameterList& Prec_List = myPL.sublist("Preconditioner", false, 
+  ParameterList& Prec_List = myPL.sublist("Preconditioner", false,
     "Sublist that defines the preconditioner.");
 
   // Now this parameter list can be filled with values:
   Prec_List.set("Type", "ILU", "The tpye of preconditioner to use");
-  Prec_List.set("Drop Tolerance", 1e-3, 
+  Prec_List.set("Drop Tolerance", 1e-3,
     "The tolerance below which entries from the\n""factorization are left out of the factors.");
 
   // The parameter list can be queried about the existance of a parameter, sublist, or type:
   // Has a solver been chosen?
   bool solver_defined = false, prec_defined = false, dtol_double = false;
   solver_defined = myPL.isParameter("Solver");
-  TEUCHOS_ASSERT_EQUALITY(solver_defined, true);  
+  TEUCHOS_ASSERT_EQUALITY(solver_defined, true);
   // Has a preconditioner been chosen?
-  prec_defined = myPL.isSublist("Preconditioner"); 
-  TEUCHOS_ASSERT_EQUALITY(prec_defined, true);  
+  prec_defined = myPL.isSublist("Preconditioner");
+  TEUCHOS_ASSERT_EQUALITY(prec_defined, true);
   // Has a tolerance been chosen and is it a double-precision number?
   bool tol_double = false;
   tol_double = myPL.INVALID_TEMPLATE_QUALIFIER isType<double>("Tolerance");
   TEUCHOS_ASSERT_EQUALITY(tol_double, false); // It is 'float'!
   // Has a drop tolerance been chosen and is it a double-precision number?
-  dtol_double = Teuchos::isParameterType<double>(Prec_List, "Drop Tolerance"); 
+  dtol_double = Teuchos::isParameterType<double>(Prec_List, "Drop Tolerance");
   TEUCHOS_ASSERT_EQUALITY(dtol_double, true);
 
   // Parameters can be retrieved from the parameter list in quite a few ways:
@@ -147,13 +147,13 @@ int main(int argc, char* argv[])
 
   std::cout << "\n# Printing the parameter list only showing documentation fields ...\n\n";
   myPL.print(std::cout,
-    ParameterList::PrintOptions().showDoc(true).indent(2).showTypes(true)); 
+    ParameterList::PrintOptions().showDoc(true).indent(2).showTypes(true));
 
-  /* It is important to note that mispelled parameters 
-     (with additional space characters, capitalizations, etc.) may be ignored.  
-     Therefore, it is important to be aware that a given parameter has not been used. 
+  /* It is important to note that mispelled parameters
+     (with additional space characters, capitalizations, etc.) may be ignored.
+     Therefore, it is important to be aware that a given parameter has not been used.
      Unused parameters can be printed with method:
-  */ 
+  */
   std::cout << "\n# Showing unused parameters ...\n\n";
   myPL.unused( std::cout );
 

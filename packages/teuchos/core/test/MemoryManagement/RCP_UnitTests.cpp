@@ -97,7 +97,7 @@ TEUCHOS_UNIT_TEST( RCP, assignSelf_null )
 TEUCHOS_UNIT_TEST( RCP, assignSelf_nonnull )
 {
   RCP<A> a_rcp(new A);
-  A *a_raw_ptr = a_rcp.getRawPtr(); 
+  A *a_raw_ptr = a_rcp.getRawPtr();
   a_rcp = a_rcp;
   TEST_ASSERT(nonnull(a_rcp));
   TEST_EQUALITY(a_rcp.getRawPtr(), a_raw_ptr);
@@ -759,7 +759,7 @@ TEUCHOS_UNIT_TEST( RCP, circularReference_c_then_a )
     // complex and in order to avoid trouble, an object that holds an RCP to
     // another object weakly should *never* try to call any members on the
     // wrapped object as it gets deleted!
-    
+
     TEST_EQUALITY( a->call_C_f(), C_f_return );
     TEST_EQUALITY( c->call_A_g(), A_g_return );
 

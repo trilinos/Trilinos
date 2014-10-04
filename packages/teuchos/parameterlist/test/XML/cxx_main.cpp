@@ -108,16 +108,16 @@ int main(int argc, char** argv)
       /* parse XML in a std::string */
       StringInputSource src(str);
       XMLObject reread = src.getObject();
-      
+
       std::cerr << reread << std::endl;
 
       /* write to a file, and then read and parse the file */
       std::ofstream of("tmp.xml");
       of << reread << std::endl;
-      
+
       FileInputSource fileSrc("tmp.xml");
       XMLObject fileXML = fileSrc.getObject();
-      
+
       std::cerr << fileXML << std::endl;
 
       return 0;

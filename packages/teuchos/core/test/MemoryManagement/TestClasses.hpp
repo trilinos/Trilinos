@@ -69,7 +69,7 @@ const int E_f_return  = 12;
            |  A  |
             -----
              /|\
-              | 
+              |
          ------------
         |            |
       -----        ------
@@ -199,7 +199,7 @@ void deallocHandleA(A** handle);
            |  D  |
             -----
              /|\
-              | 
+              |
             -----
            |  E  |
             -----
@@ -207,7 +207,7 @@ void deallocHandleA(A** handle);
 */
 
 
-class D 
+class D
 {
 	int D_g_, D_f_;
 public:

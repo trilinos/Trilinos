@@ -70,8 +70,8 @@ using Teuchos::ScalarTraits;
 #endif
 
 // Define the ordinal type
-#define OType1	   long int 
-#define OType2	   int 
+#define OType1	   long int
+#define OType2	   int
 
 // MVMIN/MAX define the minimum and maximum dimensions of generated matrices and vectors, respectively.
 // These are well within the range of OType1 and OType2
@@ -127,15 +127,15 @@ template<typename TYPE, typename OTYPE>
 void PrintMatrix(TYPE* Matrix, OTYPE Rows, OTYPE Columns, OTYPE LDM, std::string Name, bool Matlab = 0);
 
 template<typename TYPE>
-bool CompareScalars(TYPE Scalar1, TYPE Scalar2, typename ScalarTraits<TYPE>::magnitudeType Tolerance ); 
+bool CompareScalars(TYPE Scalar1, TYPE Scalar2, typename ScalarTraits<TYPE>::magnitudeType Tolerance );
 
 template<typename TYPE, typename OTYPE1, typename OTYPE2>
-bool CompareVectors(TYPE* Vector1, OTYPE1 Size1, TYPE* Vector2, OTYPE2 Size2, typename ScalarTraits<TYPE>::magnitudeType Tolerance ); 
+bool CompareVectors(TYPE* Vector1, OTYPE1 Size1, TYPE* Vector2, OTYPE2 Size2, typename ScalarTraits<TYPE>::magnitudeType Tolerance );
 
 template<typename TYPE, typename OTYPE1, typename OTYPE2>
-bool CompareMatrices(TYPE* Matrix1, OTYPE1 Rows1, OTYPE1 Columns1, OTYPE1 LDM1, 
+bool CompareMatrices(TYPE* Matrix1, OTYPE1 Rows1, OTYPE1 Columns1, OTYPE1 LDM1,
                      TYPE* Matrix2, OTYPE2 Rows2, OTYPE2 Columns2, OTYPE2 LDM2,
-                     typename ScalarTraits<TYPE>::magnitudeType Tolerance ); 
+                     typename ScalarTraits<TYPE>::magnitudeType Tolerance );
 
 // Use this to convert the larger ordinal type to the smaller one (nothing inherently makes sure of this).
 template<typename OTYPE1, typename OTYPE2>
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
   SType OType1alpha, OType1beta;
   SType OType2alpha, OType2beta;
   SType *OType1A, *OType1B, *OType1C, *OType1x, *OType1y;
-  SType *OType2A, *OType2B, *OType2C, *OType2x, *OType2y; 
+  SType *OType2A, *OType2B, *OType2C, *OType2x, *OType2y;
   SType OType1ASUMresult, OType1DOTresult, OType1NRM2result, OType1SINresult;
   SType OType2ASUMresult, OType2DOTresult, OType2NRM2result, OType2SINresult;
   MType OType1COSresult, OType2COSresult;
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
   Teuchos::ETransp TRANS, TRANSA, TRANSB;
   Teuchos::EDiag DIAG;
   MType TOL = 1e-8*ScalarTraits<MType>::one();
-  
+
   std::srand(time(NULL));
 
   //--------------------------------------------------------------------------------
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
       OType2COSresult = OType1COSresult;
       OType1SINresult = ScalarTraits<SType>::zero();
       OType2SINresult = OType1SINresult;
-      
+
       if(debug)
 	{
 	  std::cout << "Test #" << TotalTestCount << " -- ROTG -- " << std::endl;
@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
 	}
       if ( !CompareScalars(OType1COSresult, OType2COSresult, TOL) || !CompareScalars(OType1SINresult, OType2SINresult, TOL) )
 	std::cout << "FAILED TEST!!!!!!" << std::endl;
-      GoodTestSubcount += ( CompareScalars(OType1COSresult, OType2COSresult, TOL) && 
+      GoodTestSubcount += ( CompareScalars(OType1COSresult, OType2COSresult, TOL) &&
 			    CompareScalars(OType1SINresult, OType2SINresult, TOL) );
     }
   GoodTestCount += GoodTestSubcount;
@@ -297,15 +297,15 @@ int main(int argc, char *argv[])
     incy1 = GetRandom(-5,5);
     if (incx1 == 0) incx1 = 1;
     if (incy1 == 0) incy1 = 1;
-    incx2 = ConvertType( incx1, incx2 ); 
-    incy2 = ConvertType( incy1, incy2 ); 
+    incx2 = ConvertType( incx1, incx2 );
+    incy2 = ConvertType( incy1, incy2 );
     M1 = GetRandom(MVMIN, MVMIN+8);
     M2 = ConvertType( M1, M2 );
     Mx1 = M1*std::abs(incx1);
     My1 = M1*std::abs(incy1);
     if (Mx1 == 0) { Mx1 = 1; }
     if (My1 == 0) { My1 = 1; }
-    Mx2 = ConvertType( Mx1, Mx2 ); 
+    Mx2 = ConvertType( Mx1, Mx2 );
     My2 = ConvertType( My1, My2 );
     OType1x = new SType[Mx1];
     OType1y = new SType[My1];
@@ -431,7 +431,7 @@ int main(int argc, char *argv[])
       OType1x = new SType[Mx1];
       OType1y = new SType[My1];
       OType2x = new SType[Mx2];
-      OType2y = new SType[My2]; 
+      OType2y = new SType[My2];
       for(j1 = 0, j2 = 0; j1 < Mx1; j1++, j2++)
 	{
 	  OType1x[j1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
       OType1x = new SType[Mx1];
       OType1y = new SType[My1];
       OType2x = new SType[Mx2];
-      OType2y = new SType[My2]; 
+      OType2y = new SType[My2];
       for(j1 = 0, j2 = 0; j1 < Mx1; j1++, j2++)
 	{
 	  OType1x[j1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -562,7 +562,7 @@ int main(int argc, char *argv[])
       OType1x = new SType[Mx1];
       OType1y = new SType[My1];
       OType2x = new SType[Mx2];
-      OType2y = new SType[My2]; 
+      OType2y = new SType[My2];
       for(j1 = 0, j2 = 0; j1 < Mx1; j1++, j2++)
 	{
 	  OType1x[j1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -592,9 +592,9 @@ int main(int argc, char *argv[])
       if (CompareScalars(OType1DOTresult, OType2DOTresult, TOL) == 0) {
 	std::cout << "DOT test " << i+1 << " of " << DOTTESTS << " FAILED!  "
 		  << "SType = " << Teuchos::TypeNameTraits<SType>::name () << ".  "
-		  << "The two results are " << OType1DOTresult << " and " 
-		  << OType2DOTresult << ".  incx1 = " << incx1 << ", incy1 = " 
-		  << incy1 << ", incx2 = " << incx2 << ", and incy2 = " 
+		  << "The two results are " << OType1DOTresult << " and "
+		  << OType2DOTresult << ".  incx1 = " << incx1 << ", incy1 = "
+		  << incy1 << ", incx2 = " << incx2 << ", and incy2 = "
 		  << incy2 << std::endl;
       }
 
@@ -663,7 +663,7 @@ int main(int argc, char *argv[])
   for(i = 0; i < SCALTESTS; i++)
     {
       // These will only test for the case that the increment is > 0, the
-      // templated case can handle when incx < 0, but the blas library doesn't 
+      // templated case can handle when incx < 0, but the blas library doesn't
       // seem to be able to on some machines.
       incx1 = GetRandom(1, MVMAX);
       incx2 = ConvertType( incx1, incx2 );
@@ -771,8 +771,8 @@ int main(int argc, char *argv[])
       while (incy1 == 0) {
       	  incy1 = GetRandom(1, MVMAX);
       }
-      incx2 = ConvertType( incx1, incx2 );   
-      incy2 = ConvertType( incy1, incy2 );   
+      incx2 = ConvertType( incx1, incx2 );
+      incy2 = ConvertType( incy1, incy2 );
       M1 = GetRandom(MVMIN, MVMAX);
       N1 = GetRandom(MVMIN, MVMAX);
       M2 = ConvertType( M1, M2 );
@@ -782,7 +782,7 @@ int main(int argc, char *argv[])
       OType1 M2_1 = 0, N2_1 = 0;
       if (Teuchos::ETranspChar[TRANS] == 'N') {	
       	M2_1 = M1*std::abs(incy1);
-      	N2_1 = N1*std::abs(incx1);   
+      	N2_1 = N1*std::abs(incx1);
       } else {
 	M2_1 = N1*std::abs(incy1);
 	N2_1 = M1*std::abs(incx1);
@@ -795,7 +795,7 @@ int main(int argc, char *argv[])
       LDA1 = GetRandom(MVMIN, MVMAX);
       while (LDA1 < M1) {
           LDA1 = GetRandom(MVMIN, MVMAX);
-      }   
+      }
       LDA2 = ConvertType( LDA1, LDA2 );
 
       OType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
@@ -808,7 +808,7 @@ int main(int argc, char *argv[])
       OType1y = new SType[M2_1];
       OType2A = new SType[LDA2 * N2];
       OType2x = new SType[N2_2];
-      OType2y = new SType[M2_2]; 
+      OType2y = new SType[M2_2];
 
       for(j1 = 0, j2 = 0; j1 < LDA1 * N1; j1++, j2++)
 	{
@@ -874,10 +874,10 @@ int main(int argc, char *argv[])
     {
       UPLO = RandomUPLO();
       TRANSA = RandomTRANS();
-      
+
       // Since the entries are integers, we don't want to use the unit diagonal feature,
       // this creates ill-conditioned, nearly-singular matrices.
-      //DIAG = RandomDIAG();  
+      //DIAG = RandomDIAG();
       DIAG = Teuchos::NON_UNIT_DIAG;
 
       N1 = GetRandom(MVMIN, MVMAX);
@@ -905,11 +905,11 @@ int main(int argc, char *argv[])
       OType2A = new SType[LDA2 * N2];
 
       for(j1 = 0, j2 = 0; j1 < N1; j1++, j2++)
-	{	     
+	{	
 	  if(Teuchos::EUploChar[UPLO] == 'U') {
 	    // The operator is upper triangular, make sure that the entries are
 	    // only in the upper triangular part of A and the diagonal is non-zero.
-	    for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++) 
+	    for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++)
 	    {
 	      if(k1 < j1) {
 		OType1A[j1*LDA1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -933,7 +933,7 @@ int main(int argc, char *argv[])
 	  } else {
 	    // The operator is lower triangular, make sure that the entries are
 	    // only in the lower triangular part of A and the diagonal is non-zero.
-	    for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++) 
+	    for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++)
 	      {
 		if(k1 > j1) {
 		  OType1A[j1*LDA1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -956,12 +956,12 @@ int main(int argc, char *argv[])
 	      } // end for(k=0 ...		
 	  } // end if(UPLO == 'U') ...
 	} // end for(j=0 ...      for(j = 0; j < N*N; j++)
-      
+
       if(debug)
 	{
 	  std::cout << "Test #" << TotalTestCount << " -- TRMV -- " << std::endl;
-	  std::cout << "UPLO = " << Teuchos::EUploChar[UPLO] << "\t" 
-	       << "TRANSA = " << Teuchos::ETranspChar[TRANSA] << "\t" 
+	  std::cout << "UPLO = " << Teuchos::EUploChar[UPLO] << "\t"
+	       << "TRANSA = " << Teuchos::ETranspChar[TRANSA] << "\t"
 	       << "DIAG = " << Teuchos::EDiagChar[DIAG] << std::endl;
 	  PrintMatrix(OType1A, N1, N1, LDA1,"OType1A", matlab);
 	  PrintVector(OType1x, N1*incx1, "OType1x_before_operation", matlab);
@@ -1001,11 +1001,11 @@ int main(int argc, char *argv[])
       incx1 = GetRandom(1, MVMAX);
       while (incx1 == 0) {
       	  incx1 = GetRandom(1, MVMAX);
-      }   
+      }
       incy1 = GetRandom(1, MVMAX);
       while (incy1 == 0) {
       	  incy1 = GetRandom(1, MVMAX);
-      }   
+      }
       incx2 = ConvertType( incx1, incx2 );
       incy2 = ConvertType( incy1, incy2 );
       M1 = GetRandom(MVMIN, MVMAX);
@@ -1016,7 +1016,7 @@ int main(int argc, char *argv[])
       LDA1 = GetRandom(MVMIN, MVMAX);
       while (LDA1 < M1) {
           LDA1 = GetRandom(MVMIN, MVMAX);
-      }   
+      }
       LDA2 = ConvertType( LDA1, LDA2 );
 
       OType1A = new SType[LDA1 * N1];
@@ -1087,8 +1087,8 @@ int main(int argc, char *argv[])
   //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < GEMMTESTS; i++)
-    { 
-      TRANSA = RandomTRANS();      
+    {
+      TRANSA = RandomTRANS();
       TRANSB = RandomTRANS();
       M1 = GetRandom(MVMIN, MVMAX);
       N1 = GetRandom(MVMIN, MVMAX);
@@ -1099,8 +1099,8 @@ int main(int argc, char *argv[])
 
       if(debug)	{
 	  std::cout << "Test #" << TotalTestCount << " -- GEMM -- " << std::endl;
-	  std::cout << "TRANSA = " << Teuchos::ETranspChar[TRANSA] << "\t" 
-	       << "TRANSB = " << Teuchos::ETranspChar[TRANSB] << std::endl; 
+	  std::cout << "TRANSA = " << Teuchos::ETranspChar[TRANSA] << "\t"
+	       << "TRANSB = " << Teuchos::ETranspChar[TRANSB] << std::endl;
       }
       LDA1 = GetRandom(MVMIN, MVMAX);
       if (Teuchos::ETranspChar[TRANSA] == 'N') {
@@ -1148,7 +1148,7 @@ int main(int argc, char *argv[])
 	  PrintMatrix(OType1B, P1, N1, LDB1,"OType1B", matlab);
 	  PrintMatrix(OType2B, P2, N2, LDB2,"OType2B", matlab);
 	}
-      } else { 
+      } else {
 	while (LDB1 < N1) {  LDB1 = GetRandom(MVMIN, MVMAX); }
         LDB2 = ConvertType( LDB1, LDB2 );
 	OType1B = new SType[LDB1 * P1];
@@ -1189,9 +1189,9 @@ int main(int argc, char *argv[])
       OType2BLAS.GEMM(TRANSA, TRANSB, M2, N2, P2, OType2alpha, OType2A, LDA2, OType2B, LDB2, OType2beta, OType2C, LDC2);
       if(debug)
 	{
-	  std::cout << "M1="<<M1 << "\t" << "N1="<<N1 << "\t" << "P1 = " << P1 
+	  std::cout << "M1="<<M1 << "\t" << "N1="<<N1 << "\t" << "P1 = " << P1
                     << "\t" << "LDA1="<<LDA1 << "\t" << "LDB1="<<LDB1 << "\t" << "LDC1=" << LDC1 << std::endl;
-	  std::cout << "M2="<<M2 << "\t" << "N2="<<N2 << "\t" << "P2 = " << P2 
+	  std::cout << "M2="<<M2 << "\t" << "N2="<<N2 << "\t" << "P2 = " << P2
                     << "\t" << "LDA2="<<LDA2 << "\t" << "LDB2="<<LDB2 << "\t" << "LDC2=" << LDC2 << std::endl;
 	  std::cout << "OType1alpha = " << OType1alpha << std::endl;
 	  std::cout << "OType2alpha = " << OType2alpha << std::endl;
@@ -1223,7 +1223,7 @@ int main(int argc, char *argv[])
   //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < SYMMTESTS; i++)
-    { 
+    {
       M1 = GetRandom(MVMIN, MVMAX);
       N1 = GetRandom(MVMIN, MVMAX);
       M2 = ConvertType( M1, M2 );
@@ -1261,7 +1261,7 @@ int main(int argc, char *argv[])
 	  OType1B[j1] = GetRandom(-SCALARMAX, SCALARMAX);
 	  OType2B[j2] = OType1B[j1];
       }
-    
+
       LDC1 = GetRandom(MVMIN, MVMAX);
       while (LDC1 < M1) {  LDC1 = GetRandom(MVMIN, MVMAX); }
       LDC2 = ConvertType( LDC1, LDC2 );
@@ -1271,7 +1271,7 @@ int main(int argc, char *argv[])
 	  OType1C[j1] = GetRandom(-SCALARMAX, SCALARMAX);
 	  OType2C[j2] = OType1C[j1];
       }
-      
+
       OType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
       OType1beta = GetRandom(-SCALARMAX, SCALARMAX);
       OType2alpha = OType1alpha;
@@ -1279,7 +1279,7 @@ int main(int argc, char *argv[])
       if(debug)
 	{
 	  std::cout << "Test #" << TotalTestCount << " -- SYMM -- " << std::endl;
-	  std::cout << "SIDE = " << Teuchos::ESideChar[SIDE] << "\t" 
+	  std::cout << "SIDE = " << Teuchos::ESideChar[SIDE] << "\t"
 	       << "UPLO = " << Teuchos::EUploChar[UPLO] << std::endl;
 	  std::cout << "OType1alpha = " << OType1alpha << std::endl;
 	  std::cout << "OType2alpha = " << OType2alpha << std::endl;
@@ -1379,7 +1379,7 @@ int main(int argc, char *argv[])
             OType1C[j1*LDC1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
           } else {
             OType1C[j1*LDC1+k1] = STypezero;
-          } 
+          }
           OType2C[j2*LDC2+k2] = OType1C[j1*LDC1+k1];
         }
       }
@@ -1393,9 +1393,9 @@ int main(int argc, char *argv[])
           }
           OType2C[j2*LDC2+k2] = OType1C[j1*LDC1+k1];
         }
-      } 
+      }
     }
-       
+
     OType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
     OType1beta = GetRandom(-SCALARMAX, SCALARMAX);
     OType2alpha = OType1alpha;
@@ -1403,11 +1403,11 @@ int main(int argc, char *argv[])
     if(debug)
     {
       std::cout << "Test #" << TotalTestCount << " -- SYRK -- " << std::endl;
-      std::cout << "UPLO = " << Teuchos::EUploChar[UPLO] << "\t" 
+      std::cout << "UPLO = " << Teuchos::EUploChar[UPLO] << "\t"
  	        << "TRANS = " << Teuchos::ETranspChar[TRANS] << std::endl;
-      std::cout << "N1="<<N1 << "\t" << "K1 = " << K1 
+      std::cout << "N1="<<N1 << "\t" << "K1 = " << K1
                 << "\t" << "LDA1="<<LDA1 << "\t" << "LDC1=" << LDC1 << std::endl;
-      std::cout << "N2="<<N2 << "\t" << "K2 = " << K2 
+      std::cout << "N2="<<N2 << "\t" << "K2 = " << K2
                 << "\t" << "LDA2="<<LDA2 << "\t" << "LDC2=" << LDC2 << std::endl;
       std::cout << "OType1alpha = " << OType1alpha << std::endl;
       std::cout << "OType2alpha = " << OType2alpha << std::endl;
@@ -1453,7 +1453,7 @@ int main(int argc, char *argv[])
   //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < TRMMTESTS; i++)
-    { 
+    {
       M1 = GetRandom(MVMIN, MVMAX);
       N1 = GetRandom(MVMIN, MVMAX);
       M2 = ConvertType( M1, M2 );
@@ -1485,11 +1485,11 @@ int main(int argc, char *argv[])
 	  OType2A = new SType[LDA2 * M2];
 
 	  for(j1 = 0, j2 = 0; j1 < M1; j1++, j2++)
-	    {	     
+	    {	
 	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
-		for(k1 = 0, k2 = 0; k1 < M1; k1++, k2++) 
+		for(k1 = 0, k2 = 0; k1 < M1; k1++, k2++)
 		{
 		    if(k1 < j1) {
 	      		OType1A[j1*LDA1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1513,7 +1513,7 @@ int main(int argc, char *argv[])
 	      } else {
 		// The operator is lower triangular, make sure that the entries are
 		// only in the lower triangular part of A and the diagonal is non-zero.
-		for(k1 = 0, k2 = 0; k1 < M1; k1++, k2++) 
+		for(k1 = 0, k2 = 0; k1 < M1; k1++, k2++)
 		{
 		    if(k1 > j1) {
 	      		OType1A[j1*LDA1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1549,11 +1549,11 @@ int main(int argc, char *argv[])
 	  OType2A = new SType[LDA2 * N2];
 
 	  for(j1 = 0, j2 = 0; j1 < N1; j1++, j2++)
-	    {	     
+	    {	
 	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
-		for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++) 
+		for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++)
 		{
 		    if(k1 < j1) {
 	      		OType1A[j1*LDA1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1577,7 +1577,7 @@ int main(int argc, char *argv[])
 	      } else {
 		// The operator is lower triangular, make sure that the entries are
 		// only in the lower triangular part of A and the diagonal is non-zero.
-		for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++) 
+		for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++)
 		{
 		    if(k1 > j1) {
 	      		OType1A[j1*LDA1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1614,13 +1614,13 @@ int main(int argc, char *argv[])
       if(debug)
 	{
 	  std::cout << "Test #" << TotalTestCount << " -- TRMM -- " << std::endl;
-	  std::cout << "SIDE = " << Teuchos::ESideChar[SIDE] << "\t" 
-	       << "UPLO = " << Teuchos::EUploChar[UPLO] << "\t" 
-	       << "TRANSA = " << Teuchos::ETranspChar[TRANSA] << "\t" 
+	  std::cout << "SIDE = " << Teuchos::ESideChar[SIDE] << "\t"
+	       << "UPLO = " << Teuchos::EUploChar[UPLO] << "\t"
+	       << "TRANSA = " << Teuchos::ETranspChar[TRANSA] << "\t"
 	       << "DIAG = " << Teuchos::EDiagChar[DIAG] << std::endl;
 	  std::cout << "OType1alpha = " << OType1alpha << std::endl;
 	  std::cout << "OType2alpha = " << OType2alpha << std::endl;
-          if(Teuchos::ESideChar[SIDE] == 'L') { 
+          if(Teuchos::ESideChar[SIDE] == 'L') {
 	    PrintMatrix(OType1A, M1, M1, LDA1, "OType1A", matlab);
 	    PrintMatrix(OType2A, M2, M2, LDA2, "OType2A", matlab);
 	  } else {
@@ -1658,7 +1658,7 @@ int main(int argc, char *argv[])
   //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < TRSMTESTS; i++)
-    { 
+    {
       M1 = GetRandom(MVMIN, MVMAX);
       N1 = GetRandom(MVMIN, MVMAX);
       M2 = ConvertType( M1, M2 );
@@ -1678,7 +1678,7 @@ int main(int argc, char *argv[])
       TRANSA = RandomTRANS();
       // Since the entries are integers, we don't want to use the unit diagonal feature,
       // this creates ill-conditioned, nearly-singular matrices.
-      //DIAG = RandomDIAG();  
+      //DIAG = RandomDIAG();
       DIAG = Teuchos::NON_UNIT_DIAG;
 
       if(Teuchos::ESideChar[SIDE] == 'L')  // The operator is on the left side
@@ -1693,11 +1693,11 @@ int main(int argc, char *argv[])
 	  OType2A = new SType[LDA2 * M2];
 
 	  for(j1 = 0, j2 = 0; j1 < M1; j1++, j2++)
-	    {	     
+	    {	
 	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
-		for(k1 = 0, k2 = 0; k1 < M1; k1++, k2++) 
+		for(k1 = 0, k2 = 0; k1 < M1; k1++, k2++)
 		{
 		    if(k1 < j1) {
 	      		OType1A[j1*LDA1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1721,7 +1721,7 @@ int main(int argc, char *argv[])
 	      } else {
 		// The operator is lower triangular, make sure that the entries are
 		// only in the lower triangular part of A and the diagonal is non-zero.
-		for(k1 = 0, k2 = 0; k1 < M1; k1++, k2++) 
+		for(k1 = 0, k2 = 0; k1 < M1; k1++, k2++)
 		{
 		    if(k1 > j1) {
 	      		OType1A[j1*LDA1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1757,11 +1757,11 @@ int main(int argc, char *argv[])
 	  OType2A = new SType[LDA2 * N2];
 
 	  for(j1 = 0, j2 = 0; j1 < N1; j1++, j2++)
-	    {	     
+	    {	
 	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
-		for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++) 
+		for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++)
 		{
 		    if(k1 < j1) {
 	      		OType1A[j1*LDA1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1785,7 +1785,7 @@ int main(int argc, char *argv[])
 	      } else {
 		// The operator is lower triangular, make sure that the entries are
 		// only in the lower triangular part of A and the diagonal is non-zero.
-		for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++) 
+		for(k1 = 0, k2 = 0; k1 < N1; k1++, k2++)
 		{
 		    if(k1 > j1) {
 	      		OType1A[j1*LDA1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1813,22 +1813,22 @@ int main(int argc, char *argv[])
       // Fill in the right hand side block B.
       for(j1 = 0, j2 = 0; j1 < N1; j1++, j2++)
 	{
-	  for(k1 = 0, k2 = 0; k1 < M1; k1++, k2++) 
+	  for(k1 = 0, k2 = 0; k1 < M1; k1++, k2++)
 	    {
 	  	OType1B[j1*LDB1+k1] = GetRandom(-SCALARMAX, SCALARMAX);
 	  	OType2B[j2*LDB2+k2] = OType1B[j1*LDB1+k1];
 	    }
 	}
-      
+
       OType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
       OType2alpha = OType1alpha;
-      
+
       if(debug)
 	{
 	  std::cout << "Test #" << TotalTestCount << " -- TRSM -- " << std::endl;
-	  std::cout << "SIDE = " << Teuchos::ESideChar[SIDE] << "\t" 
-	       << "UPLO = " << Teuchos::EUploChar[UPLO] << "\t" 
-	       << "TRANSA = " << Teuchos::ETranspChar[TRANSA] << "\t" 
+	  std::cout << "SIDE = " << Teuchos::ESideChar[SIDE] << "\t"
+	       << "UPLO = " << Teuchos::EUploChar[UPLO] << "\t"
+	       << "TRANSA = " << Teuchos::ETranspChar[TRANSA] << "\t"
 	       << "DIAG = " << Teuchos::EDiagChar[DIAG] << std::endl;
 	  std::cout << "M1="<<M1 << "\t" << "N1="<<N1 << "\t" << "LDA1="<<LDA1 << "\t" << "LDB1="<<LDB1 << std::endl;
 	  std::cout << "M2="<<M2 << "\t" << "N2="<<N2 << "\t" << "LDA2="<<LDA2 << "\t" << "LDB2="<<LDB2 << std::endl;
@@ -1848,7 +1848,7 @@ int main(int argc, char *argv[])
 
       OType1BLAS.TRSM(SIDE, UPLO, TRANSA, DIAG, M1, N1, OType1alpha, OType1A, LDA1, OType1B, LDB1);
       OType2BLAS.TRSM(SIDE, UPLO, TRANSA, DIAG, M2, N2, OType2alpha, OType2A, LDA2, OType2B, LDB2);
- 
+
       if(debug)
 	{
 	  PrintMatrix(OType1B, M1, N1, LDB1, "OType1B_after_operation", matlab);
@@ -1864,7 +1864,7 @@ int main(int argc, char *argv[])
       delete [] OType2A;
       delete [] OType2B;
     }
-  GoodTestCount += GoodTestSubcount; 
+  GoodTestCount += GoodTestSubcount;
   if(verbose || debug) std::cout << "TRSM: " << GoodTestSubcount << " of " << TRSMTESTS << " tests were successful." << std::endl;
   if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
@@ -2016,7 +2016,7 @@ bool CompareVectors(TYPE* Vector1, OTYPE1 Size1, TYPE* Vector2, OTYPE2 Size2, ty
 */
 template<typename TYPE, typename OTYPE1, typename OTYPE2>
 bool CompareMatrices(TYPE* Matrix1, OTYPE1 Rows1, OTYPE1 Columns1, OTYPE1 LDM1,
-                     TYPE* Matrix2, OTYPE2 Rows2, OTYPE2 Columns2, OTYPE2 LDM2, 
+                     TYPE* Matrix2, OTYPE2 Rows2, OTYPE2 Columns2, OTYPE2 LDM2,
                      typename ScalarTraits<TYPE>::magnitudeType Tolerance)
 {
   TYPE temp = ScalarTraits<TYPE>::zero();
@@ -2031,7 +2031,7 @@ bool CompareMatrices(TYPE* Matrix1, OTYPE1 Rows1, OTYPE1 Columns1, OTYPE1 LDM1,
       for(i1 = 0, i2 = 0; i1 < Rows1; i1++, i2++)
 	{
 	  sum2 = ScalarTraits<TYPE>::magnitude(ScalarTraits<TYPE>::conjugate(Matrix2[j2*LDM2 + i2])*Matrix2[j2*LDM2 + i2]);
-	  temp = Matrix1[j1*LDM1 + i1] - Matrix2[j2*LDM2 + i2]; 
+	  temp = Matrix1[j1*LDM1 + i1] - Matrix2[j2*LDM2 + i2];
 	  sum = ScalarTraits<TYPE>::magnitude(ScalarTraits<TYPE>::conjugate(temp)*temp);
 	}
     }

@@ -58,21 +58,21 @@ void MPISession::init(int* argc, void*** argv)
 		{
 			mpierr = ::MPI_Init (argc, (char ***) argv);
       TEUCHOS_TEST_FOR_EXCEPTION(mpierr != 0, std::runtime_error,
-                         "Error code=" << mpierr 
+                         "Error code=" << mpierr
                          << " detected in MPI_Init()");
 		}
 	
 	/* find rank */
 	mpierr = ::MPI_Comm_rank (MPI_COMM_WORLD, &rank_);
 	TEUCHOS_TEST_FOR_EXCEPTION(mpierr != 0, std::runtime_error,
-                     "Error code=" << mpierr 
+                     "Error code=" << mpierr
                      << " detected in MPI_Comm_rank()");
 
 	/* find number of procs */
 	mpierr = ::MPI_Comm_size (MPI_COMM_WORLD, &nProc_);
 
 	TEUCHOS_TEST_FOR_EXCEPTION(mpierr != 0, std::runtime_error,
-                     "Error code=" << mpierr 
+                     "Error code=" << mpierr
                      << " detected in MPI_Comm_size()");
 
   /* get machine name */
@@ -81,12 +81,12 @@ void MPISession::init(int* argc, void*** argv)
   mpierr = ::MPI_Get_processor_name(procName,&nameLen);
 
   TEUCHOS_TEST_FOR_EXCEPTION(mpierr != 0, std::runtime_error,
-                     "Error code=" << mpierr 
+                     "Error code=" << mpierr
                      << " detected in MPI_Get_processor_name()");
 
   if (showStartupMessage())
     {
-      std::cerr << "Teuchos::MPISession::init() started processor " 
+      std::cerr << "Teuchos::MPISession::init() started processor "
            << procName << std::endl;
     }
   else

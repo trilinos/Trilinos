@@ -65,7 +65,7 @@ public:
   /** \name Converter Functions */
   //@{
 
-  /** \brief Converts the given xml into a parameter entry. 
+  /** \brief Converts the given xml into a parameter entry.
    *
    * \param xmlObj The xml to be converted to a parameter entry.
    * \returns A ParameterEntry with the aspects specified by the xml.
@@ -83,14 +83,14 @@ public:
     const std::string &name,
     const ParameterEntry::ParameterEntryID& id,
     const ValidatortoIDMap& validatorIDsMap) const;
-  
+
   virtual any getAny(const XMLObject& xmlObj) const=0;
 
   //@}
 
-  //! \name Attribute/Query Methods 
+  //! \name Attribute/Query Methods
   //@{
-  
+
   /** \brief Gets a string representing the value that should be assigned to
    * the "type" attribute when converting a parameter entry to xml.
    *
@@ -109,7 +109,7 @@ public:
    */
   virtual const std::string getValueAttributeValue(
     RCP<const ParameterEntry > entry) const=0;
-  
+
   /** \brief . */
   static const std::string& getTypeAttributeName() {
     static const std::string typeAttributeName_ = "type";
@@ -127,14 +127,14 @@ public:
     static const std::string valueAttributeName_ = "value";
     return valueAttributeName_;
   }
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief . */
   static const std::string& getDefaultAttributeName() {
     static const std::string defaultAttributeName_ = "isDefault";
@@ -146,13 +146,13 @@ private:
     static const std::string usedAttributeName_ = "isUsed";
     return usedAttributeName_;
   }
-  
+
   /** \brief . */
   static const std::string& getDocStringAttributeName() {
     static const std::string docStringAttributeName_ = "docString";
     return docStringAttributeName_;
   }
-  
+
   //@}
 
 };

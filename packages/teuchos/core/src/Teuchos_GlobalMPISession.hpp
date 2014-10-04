@@ -102,7 +102,7 @@ namespace Teuchos {
 /// TeuchosCore software.  For example, you can do a barrier or sum an int
 /// across processes.  These are needed by the most basic operations involving
 /// output or determining success or failure across processes for unit tests.
-/// 
+///
 /// GlobalMPISession's static functions cleverly checks whether MPI has been
 /// initialized already before calling any MPI functions.  Therefore, you can
 /// use it in your libraries without requiring that a GlobalMPISession object

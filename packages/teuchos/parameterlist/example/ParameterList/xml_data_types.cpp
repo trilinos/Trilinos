@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
   CustomDataType sampleCustom(3, "hello");
 
   myPL.set("my custom data", sampleCustom);
-  
+
   //Now before we write this out to xml, we have to make sure we have a
   //converter for our cusomt data type. Since our custom datatype overrides
   //the operator<< and operator>> we can just use and instance of the
@@ -182,8 +182,8 @@ int main(int argc, char* argv[])
   Teuchos::writeParameterListToXmlOStream(
     myPL,
     std::cout);
- 
-  const RCP<ParameterList> readPL = 
+
+  const RCP<ParameterList> readPL =
     Teuchos::getParametersFromXmlFile("xml_data_types_test_list.xml");
 
   std::cout << *readPL;

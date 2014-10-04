@@ -64,9 +64,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Functions, SubtractionTests){
     SimpleFunctionXMLConverter<int>::getOperandAttributeName());
   TEST_ASSERT(operand == intTester->getModifiyingOperand());
 
-  RCP<FunctionObject> readIn = 
+  RCP<FunctionObject> readIn =
     FunctionObjectXMLConverterDB::convertXML(subFuncXML);
-  RCP<SubtractionFunction<int> > readInCasted = 
+  RCP<SubtractionFunction<int> > readInCasted =
     rcp_dynamic_cast<SubtractionFunction<int> >(readIn);
   TEST_ASSERT(readInCasted.get() != NULL);
   TEST_ASSERT(
@@ -89,9 +89,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Functions, AdditionTests){
     SimpleFunctionXMLConverter<int>::getOperandAttributeName());
   TEST_ASSERT(operand == intTester->getModifiyingOperand());
 
-  RCP<FunctionObject> readIn = 
+  RCP<FunctionObject> readIn =
     FunctionObjectXMLConverterDB::convertXML(addFuncXML);
-  RCP<AdditionFunction<int> > readInCasted = 
+  RCP<AdditionFunction<int> > readInCasted =
     rcp_dynamic_cast<AdditionFunction<int> >(readIn);
   TEST_ASSERT(readInCasted.get() != NULL);
   TEST_ASSERT(
@@ -114,9 +114,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Functions, MultiplicationTests){
     SimpleFunctionXMLConverter<int>::getOperandAttributeName());
   TEST_ASSERT(operand == intTester->getModifiyingOperand());
 
-  RCP<FunctionObject> readIn = 
+  RCP<FunctionObject> readIn =
     FunctionObjectXMLConverterDB::convertXML(multiFuncXML);
-  RCP<MultiplicationFunction<int> > readInCasted = 
+  RCP<MultiplicationFunction<int> > readInCasted =
     rcp_dynamic_cast<MultiplicationFunction<int> >(readIn);
   TEST_ASSERT(readInCasted.get() != NULL);
   TEST_ASSERT(
@@ -139,9 +139,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Functions, DivisionTests){
     SimpleFunctionXMLConverter<int>::getOperandAttributeName());
   TEST_ASSERT(operand == intTester->getModifiyingOperand());
 
-  RCP<FunctionObject> readIn = 
+  RCP<FunctionObject> readIn =
     FunctionObjectXMLConverterDB::convertXML(divisFuncXML);
-  RCP<DivisionFunction<int> > readInCasted = 
+  RCP<DivisionFunction<int> > readInCasted =
     rcp_dynamic_cast<DivisionFunction<int> >(readIn);
   TEST_ASSERT(readInCasted.get() != NULL);
   TEST_ASSERT(

@@ -74,7 +74,7 @@ namespace Teuchos {
 /// template parameter in this class, the following line of code will
 /// result in a compile error.
 /// \code
-/// RCP<const Comm<int> pComm = DefaultComm<int>::getDefaultSerialComm (null); 
+/// RCP<const Comm<int> pComm = DefaultComm<int>::getDefaultSerialComm (null);
 /// \endcode
 template<typename OrdinalType>
 class DefaultComm {
@@ -99,7 +99,7 @@ public:
 
 private:
 
-  /// \brief The default global communicator.  
+  /// \brief The default global communicator.
   ///
   /// If Teuchos was built with MPI, this is a wrapper for
   /// MPI_COMM_WORLD.  Otherwise, this is a "serial" communicator
@@ -118,9 +118,9 @@ DefaultComm<OrdinalType>::getComm()
   if(!comm_.get()) {
 #ifdef HAVE_MPI
     comm_ = rcp(new MpiComm<OrdinalType>(opaqueWrapper((MPI_Comm)MPI_COMM_WORLD)));
-#else // HAVE_MPI    
+#else // HAVE_MPI
     comm_ = rcp(new SerialComm<OrdinalType>());
-#endif // HAVE_MPI    
+#endif // HAVE_MPI
   }
   return comm_;
 }

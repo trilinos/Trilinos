@@ -52,7 +52,7 @@ namespace Teuchos{
 
 
 VisualDependency::VisualDependency(
-  RCP<const ParameterEntry> dependee, 
+  RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
   bool showIf):
   Dependency(dependee, dependent),
@@ -66,7 +66,7 @@ VisualDependency::VisualDependency(
   showIf_(showIf){}
 
 VisualDependency::VisualDependency(
-  ConstParameterEntryList dependees, 
+  ConstParameterEntryList dependees,
   RCP<ParameterEntry> dependent,
   bool showIf):
   Dependency(dependees, dependent),
@@ -95,14 +95,14 @@ void VisualDependency::evaluate(){
     dependentVisible_ = false;
   }
 }
-  
-ValidatorDependency::ValidatorDependency( 
+
+ValidatorDependency::ValidatorDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent):
   Dependency(dependee, dependent){}
 
 ValidatorDependency::ValidatorDependency(
-  RCP<const ParameterEntry> dependee, 
+  RCP<const ParameterEntry> dependee,
   ParameterEntryList dependents):
   Dependency(dependee, dependents){}
 
@@ -129,8 +129,8 @@ StringVisualDependency::StringVisualDependency(
 }
 
 StringVisualDependency::StringVisualDependency(
-  RCP<const ParameterEntry> dependee, 
-  Dependency::ParameterEntryList dependents, 
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
   const std::string& value,
   bool showIf):
   VisualDependency(dependee, dependents, showIf),
@@ -140,8 +140,8 @@ StringVisualDependency::StringVisualDependency(
 }
 
 StringVisualDependency::StringVisualDependency(
-  RCP<const ParameterEntry> dependee, 
-  Dependency::ParameterEntryList dependents, 
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
   const ValueList& values,
   bool showIf):
   VisualDependency(dependee, dependents, showIf),
@@ -150,14 +150,14 @@ StringVisualDependency::StringVisualDependency(
   validateDep();
 }
 
-const StringVisualDependency::ValueList& 
+const StringVisualDependency::ValueList&
   StringVisualDependency::getValues() const
 {
   return values_;
 }
 
 bool StringVisualDependency::getDependeeState() const{
-  return find(values_.begin(), values_.end(), 
+  return find(values_.begin(), values_.end(),
     getFirstDependeeValue<std::string>()) != values_.end();
 }
 
@@ -169,13 +169,13 @@ void StringVisualDependency::validateDep() const{
   TEUCHOS_TEST_FOR_EXCEPTION(!getFirstDependee()->isType<std::string>(),
     InvalidDependencyException,
     "Ay no! The dependee of a "
-    "String Visual Dependency must be of type " 
+    "String Visual Dependency must be of type "
     << TypeNameTraits<std::string>::name() << std::endl <<
-    "Type encountered: " << getFirstDependee()->getAny().typeName() << 
+    "Type encountered: " << getFirstDependee()->getAny().typeName() <<
     std::endl << std::endl);
 }
 
-RCP<StringVisualDependency> 
+RCP<StringVisualDependency>
   DummyObjectGetter<StringVisualDependency>::getDummyObject()
 {
   std::string blahString = "blah";
@@ -195,8 +195,8 @@ BoolVisualDependency::BoolVisualDependency(
 }
 
 BoolVisualDependency::BoolVisualDependency(
-  RCP<const ParameterEntry> dependee, 
-  Dependency::ParameterEntryList dependents, 
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
   bool showIf):
   VisualDependency(dependee, dependents, showIf)
 {
@@ -215,13 +215,13 @@ void BoolVisualDependency::validateDep() const{
   TEUCHOS_TEST_FOR_EXCEPTION(!getFirstDependee()->isType<bool>(),
     InvalidDependencyException,
     "Ay no! The dependee of a "
-    "Bool Visual Dependency must be of type " << 
+    "Bool Visual Dependency must be of type " <<
     TypeNameTraits<bool>::name() << std::endl <<
-    "Encountered type: " << getFirstDependee()->getAny().typeName() << 
+    "Encountered type: " << getFirstDependee()->getAny().typeName() <<
     std::endl << std::endl);
 }
 
-RCP<BoolVisualDependency> 
+RCP<BoolVisualDependency>
   DummyObjectGetter<BoolVisualDependency>::getDummyObject()
 {
   return rcp(new BoolVisualDependency(
@@ -231,7 +231,7 @@ RCP<BoolVisualDependency>
 
 ConditionVisualDependency::ConditionVisualDependency(
   RCP<const Condition> condition,
-  RCP<ParameterEntry> dependent, 
+  RCP<ParameterEntry> dependent,
   bool showIf):
   VisualDependency(condition->getAllParameters(), dependent, showIf),
   condition_(condition)
@@ -261,7 +261,7 @@ std::string ConditionVisualDependency::getTypeAttributeValue() const{
   return "ConditionVisualDependency";
 }
 
-RCP<ConditionVisualDependency> 
+RCP<ConditionVisualDependency>
   DummyObjectGetter<ConditionVisualDependency>::getDummyObject()
 {
   return rcp(new ConditionVisualDependency(
@@ -270,9 +270,9 @@ RCP<ConditionVisualDependency>
 }
 
 StringValidatorDependency::StringValidatorDependency(
-  RCP<const ParameterEntry> dependee, 
+  RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  ValueToValidatorMap valuesAndValidators, 
+  ValueToValidatorMap valuesAndValidators,
   RCP<ParameterEntryValidator> defaultValidator):
   ValidatorDependency(dependee, dependent),
   valuesAndValidators_(valuesAndValidators),
@@ -282,9 +282,9 @@ StringValidatorDependency::StringValidatorDependency(
 }
 
 StringValidatorDependency::StringValidatorDependency(
-  RCP<const ParameterEntry> dependee, 
+  RCP<const ParameterEntry> dependee,
   Dependency::ParameterEntryList dependents,
-  ValueToValidatorMap valuesAndValidators, 
+  ValueToValidatorMap valuesAndValidators,
   RCP<ParameterEntryValidator> defaultValidator):
   ValidatorDependency(dependee, dependents),
   valuesAndValidators_(valuesAndValidators),
@@ -293,13 +293,13 @@ StringValidatorDependency::StringValidatorDependency(
   validateDep();
 }
 
-const StringValidatorDependency::ValueToValidatorMap& 
+const StringValidatorDependency::ValueToValidatorMap&
   StringValidatorDependency::getValuesAndValidators() const
 {
   return valuesAndValidators_;
 }
 
-RCP<const ParameterEntryValidator> 
+RCP<const ParameterEntryValidator>
   StringValidatorDependency::getDefaultValidator() const
 {
   return defaultValidator_;
@@ -308,13 +308,13 @@ RCP<const ParameterEntryValidator>
 void StringValidatorDependency::evaluate(){
   std::string currentDependeeValue = getFirstDependeeValue<std::string>();
   for(
-    ParameterEntryList::iterator it = getDependents().begin(); 
-    it != getDependents().end(); 
+    ParameterEntryList::iterator it = getDependents().begin();
+    it != getDependents().end();
     ++it)
   {
     if(
-      valuesAndValidators_.find(currentDependeeValue) 
-      == 
+      valuesAndValidators_.find(currentDependeeValue)
+      ==
       valuesAndValidators_.end())
     {
       (*it)->setValidator(defaultValidator_);
@@ -367,7 +367,7 @@ RCP<StringValidatorDependency >
     DummyObjectGetter<ParameterEntry>::getDummyObject(),
     dummyMap));
 }
-  
+
 BoolValidatorDependency::BoolValidatorDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
@@ -396,23 +396,23 @@ void BoolValidatorDependency::evaluate(){
   bool dependeeValue = getFirstDependeeValue<bool>();
   for(
     ParameterEntryList::iterator it = getDependents().begin();
-    it != getDependents().end(); 
+    it != getDependents().end();
     ++it)
-  { 
-    dependeeValue ? 
-      (*it)->setValidator(trueValidator_) 
+  {
+    dependeeValue ?
+      (*it)->setValidator(trueValidator_)
       :
       (*it)->setValidator(falseValidator_);
   }
 }
 
-RCP<const ParameterEntryValidator> 
+RCP<const ParameterEntryValidator>
   BoolValidatorDependency::getTrueValidator() const
 {
   return trueValidator_;
 }
 
-RCP<const ParameterEntryValidator> 
+RCP<const ParameterEntryValidator>
   BoolValidatorDependency::getFalseValidator() const
 {
   return falseValidator_;
@@ -421,7 +421,7 @@ RCP<const ParameterEntryValidator>
 std::string BoolValidatorDependency::getTypeAttributeValue() const{
   return "BoolValidatorDependency";
 }
-  
+
 
 void BoolValidatorDependency::validateDep() const{
 
@@ -439,7 +439,7 @@ void BoolValidatorDependency::validateDep() const{
       "Ay no! The true and false validators of a Bool Validator Dependency "
       "must be the same type! " <<std::endl << std::endl);
   }
-  
+
 }
 
 RCP<BoolValidatorDependency>

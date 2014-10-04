@@ -53,7 +53,7 @@ TEUCHOS_UNIT_TEST( XMLParameterListHelpers, toFromFile )
   A.sublist("SublistA").sublist("SublistB").set("param_b", "b");
   out << "\nA:\n"; A.print(out);
   writeParameterListToXmlFile(A, "A.xml");
- 
+
   ParameterList B;
   updateParametersFromXmlFile("A.xml", inoutArg(B));
   out << "\nB:\n"; B.print(out);

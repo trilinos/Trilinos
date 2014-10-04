@@ -208,7 +208,7 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
       }
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
-    
+
 #ifdef HAVE_TEUCHOS_BOOST
     // shared_ptr
     {
@@ -248,7 +248,7 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
     outputter.outputField(rcpRatio);
 
     outputter.nextRow();
-    
+
     arraySize *= 4;
     finalRcpRawRatio = TEUCHOS_MIN(rcpRatio, finalRcpRawRatio);
 
@@ -326,7 +326,7 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
       }
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
-    
+
 #ifdef HAVE_TEUCHOS_BOOST
     // shared_ptr
     {
@@ -376,7 +376,7 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
 #endif
 
     outputter.nextRow();
-    
+
     arraySize *= 4;
 
   }
@@ -390,7 +390,7 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
 #else
   (void)finalRcpSpRatio;
 #endif
-  
+
 }
 
 
@@ -425,7 +425,7 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
   int arraySize = 64;
   const int dummy_int_val = 1;
   int overall_dummy_int_out = 0;
-  
+
 
   for (
     int test_case_k = 0;
@@ -467,7 +467,7 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
     overall_dummy_int_out += dummy_int_out;
-    
+
     // shared_ptr
 #ifdef HAVE_TEUCHOS_BOOST
     {
@@ -523,7 +523,7 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
 #endif
 
     outputter.nextRow();
-    
+
     arraySize *= 4;
 
   }
@@ -536,7 +536,7 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
   // optimize away the loops!
   if (overall_dummy_int_out == 0)
     success = false;
-  
+
 }
 
 
@@ -618,7 +618,7 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
     overall_dummy_int_out += dummy_int_out;
-    
+
     // shared_ptr
 #ifdef HAVE_TEUCHOS_BOOST
     {
@@ -674,7 +674,7 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
 #endif
 
     outputter.nextRow();
-    
+
     arraySize *= 4;
 
   }
@@ -687,7 +687,7 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
   // optimize away the loops!
   if (overall_dummy_int_out == 0)
     success = false;
-  
+
 }
 
 

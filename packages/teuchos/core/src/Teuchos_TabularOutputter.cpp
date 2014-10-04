@@ -141,7 +141,7 @@ void TabularOutputter::setFieldTypePrecision( const EFieldType fieldType,
 
 void TabularOutputter::outputHeader()
 {
-  
+
   using std::left;
   using std::setw;
 

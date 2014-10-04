@@ -44,7 +44,7 @@
 
 
 /*! \file Teuchos_TwoDArray.hpp
-  \brief A thin wrapper around the Teuchos Array class that allows for 
+  \brief A thin wrapper around the Teuchos Array class that allows for
   2 dimensional arrays.
 */
 
@@ -59,12 +59,12 @@ namespace Teuchos{
  *
  * 2D Array's can also be "symetric". This means that anyone viewing the
  * Array should only consider the lower half of the array as valid. The
- * 
- * \warning The TwoDArray will not enforce symetry. However, when two 
+ *
+ * \warning The TwoDArray will not enforce symetry. However, when two
  * symmetrical TwoDArrays are compared, only the the lower half of the
  * TwoDArray's will be compared.
  */
-template<class T> 
+template<class T>
 class TwoDArray{
 public:
   /**
@@ -99,13 +99,13 @@ public:
   virtual ~TwoDArray(){}
 
   //@}
-  
+
   /** \name Getters and Setters */
   //@{
-  
+
   /** \brief Returns an ArrayView containing the contents of row i */
   inline ArrayView<T> operator[](size_type i);
-  
+
   /** \brief Returns a const ArrayView containing the contents of row i */
   inline const ArrayView<T> operator[](size_type i) const;
 
@@ -165,7 +165,7 @@ public:
   }
 
   /**
-   * \brief Sets whether or not the the TwoDArray should be 
+   * \brief Sets whether or not the the TwoDArray should be
    * interpurted as symetric.
    *
    * \note A symmetrical TwoDArray is defined as an TwoDArray where
@@ -209,7 +209,7 @@ public:
    * of columns is greater than the current number of columns, the columns are appended on
    * to the end of the array and the new entries are initialized to T's default value.
    *
-   * \warning This operation has the potential to be very expensive 
+   * \warning This operation has the potential to be very expensive
    * as it essentially creates an entirely new 2DArray.
    * Please take this into account when using this function.
    *
@@ -219,7 +219,7 @@ public:
 
   //@}
 
-  
+
   /** \name String conversion functions */
   //@{
 
@@ -246,7 +246,7 @@ public:
   static TwoDArray<T> fromString(const std::string& string);
 
   //@}
-  
+
 private:
   size_type _numRows,_numCols;
   Array<T> _data;
@@ -257,12 +257,12 @@ private:
 
 template<class T> inline
 ArrayView<T> TwoDArray<T>::operator[](size_type i){
-  return _data.view(_numCols*i, _numCols);  
+  return _data.view(_numCols*i, _numCols);
 }
 
 template<class T> inline
 const ArrayView<T> TwoDArray<T>::operator[](size_type i) const{
-  return _data.view(_numCols*i, _numCols);  
+  return _data.view(_numCols*i, _numCols);
 }
 
 template<class T>
@@ -293,7 +293,7 @@ std::string TwoDArray<T>::toString(const TwoDArray<T> array){
   numColsStream << array.getNumCols();
   numRowsStream << array.getNumRows();
   std::string metaSeperator = TwoDArray<T>::getMetaSeperator();
-  return 
+  return
     numRowsStream.str() +
     TwoDArray<T>::getDimensionsDelimiter() +
     numColsStream.str() +
@@ -311,7 +311,7 @@ TwoDArray<T> TwoDArray<T>::fromString(const std::string& string_in){
   curString = curString.substr(curPos+1);
 
   //process dimensions
-  size_t dimCharPos = 
+  size_t dimCharPos =
     dimString.find(TwoDArray<T>::getDimensionsDelimiter());
   std::istringstream numRowsStream(dimString.substr(0,dimCharPos));
   std::istringstream numColsStream(dimString.substr(dimCharPos+1));
@@ -369,12 +369,12 @@ namespace TwoDDetails {
  *
  * @param a1 The first array to compare.
  * @param a2 The second array to compare.
- * @return True if the two TwoDArrays are symmetricaly the same, false 
+ * @return True if the two TwoDArrays are symmetricaly the same, false
  * otherwise.
  */
 template<typename T>
 bool symmetricCompare(const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
-  if(a1.getNumRows() != a2.getNumRows() || 
+  if(a1.getNumRows() != a2.getNumRows() ||
     a1.getNumRows() != a2.getNumRows())
   {
     return false;
@@ -399,17 +399,17 @@ bool symmetricCompare(const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
  * their dimensions are the same.
  *
  * \note If the arrays are symmetrical, only the values in the upper half
- * of the array are compared. For example: in a 4x4 array, only the values 
+ * of the array are compared. For example: in a 4x4 array, only the values
  * indicated with x's in the figure below would be compared.
  *
  *   o o o o
- *   x o o o 
- *   x x o o  
+ *   x o o o
+ *   x x o o
  *   x x x o
  *
  * \relates TwoDArray
  */
-template<typename T> 
+template<typename T>
 bool operator==( const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
   if(a1.isSymmetrical() != a2.isSymmetrical()){
     return false;
@@ -418,7 +418,7 @@ bool operator==( const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
     return TwoDDetails::symmetricCompare(a1,a2);
   }
   else{
-    return a1.getDataArray() == a2.getDataArray() && 
+    return a1.getDataArray() == a2.getDataArray() &&
     a1.getNumRows() == a2.getNumRows() &&
     a1.getNumCols() == a2.getNumCols();
   }
@@ -426,11 +426,11 @@ bool operator==( const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
 
 /**
  * \brief Get the format that is used for the specialization of the TypeName
- * traits class for TwoDArray. 
+ * traits class for TwoDArray.
  *
  * The string returned will contain only one
- * "*" character. The "*" character should then be replaced with the actual 
- * template type of the array. 
+ * "*" character. The "*" character should then be replaced with the actual
+ * template type of the array.
  * \relates TwoDArray.
  */
 inline
@@ -442,7 +442,7 @@ std::string getTwoDArrayTypeNameTraitsFormat(){
 template<typename T>
 class TEUCHOSCORE_LIB_DLL_EXPORT TypeNameTraits<TwoDArray<T> > {
 public:
-  static std::string name(){ 
+  static std::string name(){
     std::string formatString = getTwoDArrayTypeNameTraitsFormat();
     size_t starPos = formatString.find("*");
     std::string prefix = formatString.substr(0,starPos);

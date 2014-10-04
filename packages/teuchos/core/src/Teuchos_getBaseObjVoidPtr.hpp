@@ -69,7 +69,7 @@ public:
   static const void* getBaseObjVoidPtr(T *p)
     {
       return dynamic_cast<const void*>(p);
-    } 
+    }
 };
 
 
