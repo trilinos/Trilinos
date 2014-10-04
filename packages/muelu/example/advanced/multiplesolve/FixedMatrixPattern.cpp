@@ -45,6 +45,8 @@
 // @HEADER
 #include <iostream>
 
+#include <Teuchos_StandardCatchMacros.hpp>
+
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraUtils.hpp>
@@ -75,160 +77,167 @@ int main(int argc, char *argv[]) {
 
   using Teuchos::RCP;
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   typedef Teuchos::ScalarTraits<SC> ST;
 
-  //
-  // Parameters
-  //
+  bool success = false;
+  bool verbose = true;
+  try {
+    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    //
+    // Parameters
+    //
 
-  Teuchos::CommandLineProcessor clp(false);
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);
-  Xpetra::Parameters xpetraParameters(clp);
+    Teuchos::CommandLineProcessor clp(false);
+    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);
+    Xpetra::Parameters xpetraParameters(clp);
 
-  bool optRecycling           = true;  clp.setOption("recycling",             "no-recycling",             &optRecycling,           "Enable recycling of the multigrid preconditioner");
+    bool optRecycling           = true;  clp.setOption("recycling",             "no-recycling",             &optRecycling,           "Enable recycling of the multigrid preconditioner");
 
-  /* DO NOT WORK YET
-  bool optRecyclingRAPpattern = true;  clp.setOption("recycling-rap-pattern", "no-recycling-rap-pattern", &optRecyclingRAPpattern, "Enable recycling of Ac=RAP pattern");
-  bool optRecyclingAPpattern  = false; clp.setOption("recycling-ap-pattern",  "no-recycling-ap-pattern",  &optRecyclingAPpattern,  "Enable recycling of AP pattern");
-  */
-  bool optRecyclingRAPpattern = false;
-  bool optRecyclingAPpattern  = false;
+    /* DO NOT WORK YET
+       bool optRecyclingRAPpattern = true;  clp.setOption("recycling-rap-pattern", "no-recycling-rap-pattern", &optRecyclingRAPpattern, "Enable recycling of Ac=RAP pattern");
+       bool optRecyclingAPpattern  = false; clp.setOption("recycling-ap-pattern",  "no-recycling-ap-pattern",  &optRecyclingAPpattern,  "Enable recycling of AP pattern");
+       */
+    bool optRecyclingRAPpattern = false;
+    bool optRecyclingAPpattern  = false;
 
-  switch (clp.parse(argc, argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    switch (clp.parse(argc, argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    }
+
+    // option dependencies
+    if (optRecycling == false) {
+      optRecyclingRAPpattern = false;
+      optRecyclingAPpattern  = false;
+    }
+
+    //
+    // Construct the problems
+    //
+
+    RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+    Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+    RCP<Matrix> A1 = Pr->BuildMatrix();
+
+    RCP<Matrix> A2 = Pr->BuildMatrix(); // TODO: generate another problem would be more meaningful (ex: scale A1)
+
+    //
+    // First solve
+    //
+
+    FactoryManager M;
+
+    Hierarchy H(A1);
+
+    if (optRecycling) {
+      // Configuring "Keep" options before running the first setup.
+
+      // Note: "Keep" flags should not be set on the default factories provided by the FactoryManager because in the current
+      // implementation of FactoryManager, those factories are freed and reallocated between Hierarchy::Setup() calls (see FactoryManager::Clean() and Hierarchy::Setup()).
+      // So we define our own factories here.
+
+      // AGGREGATES:
+      // Note: aggregates are only used to build Ptent, so it is not useful to keep them. Keeping Ptent is enough.
+      // RCP<Factory> AggFact   = rcp(new CoupledAggregationFactory());
+      // M.SetFactory("Aggregates", AggFact);
+      // H.Keep("Aggregates", AggFact.get());
+
+      // PTENT:
+      RCP<Factory> PtentFact = rcp(new TentativePFactory());
+      M.SetFactory("Ptent", PtentFact);
+      H.Keep("P",           PtentFact.get());
+    }
+
+    RCP<Factory> AcFact = rcp(new RAPFactory());
+    M.SetFactory("A", AcFact);
+
+    if (optRecyclingRAPpattern) {
+      H.Keep("RAP Pattern", AcFact.get());
+    }
+    if (optRecyclingAPpattern) {
+      H.Keep("AP Pattern", AcFact.get());
+    }
+    //
+
+    H.Setup(M);
+
+    {
+      RCP<Vector> X = VectorFactory::Build(map);
+      RCP<Vector> B = VectorFactory::Build(map);
+
+      X->putScalar((Scalar) 0.0);
+      B->setSeed(846930886); B->randomize();
+
+      int nIts = 9;
+      H.Iterate(*B, *X, nIts);
+
+      ST::magnitudeType residualNorms = Utils::ResidualNorm(*A1, *X, *B)[0];
+      if (comm->getRank() == 0)
+        std::cout << "||Residual|| = " << residualNorms << std::endl;
+    }
+
+    //
+    // Second solve
+    //
+
+    cout << "Status of the preconditioner between runs:" << std::endl;
+    H.print(*getFancyOStream(Teuchos::rcpFromRef(cout)), MueLu::High);
+
+    // Change the problem
+    RCP<Level> finestLevel = H.GetLevel(0);
+    finestLevel->Set("A", A2);
+
+    if (optRecycling) {
+      // Optional: this makes sure that the aggregates are never requested (and built) during the second run.
+      // If someone request the aggregates, an exception will be thrown.
+      M.SetFactory("Aggregates", MueLu::NoFactory::getRCP());
+    }
+
+    // Redo the setup
+    H.Setup(M);
+
+    {
+      RCP<Vector> X = VectorFactory::Build(map);
+      RCP<Vector> B = VectorFactory::Build(map);
+
+      X->putScalar((Scalar) 0.0);
+      B->setSeed(846930886); B->randomize();
+
+      int nIts = 9;
+      H.Iterate(*B, *X, nIts);
+
+      ST::magnitudeType residualNorms = Utils::ResidualNorm(*A2, *X, *B)[0];
+      if (comm->getRank() == 0)
+        std::cout << "||Residual|| = " << residualNorms << std::endl;
+    }
+
+    //
+    // Clean-up
+    //
+
+    // Remove kept data from the preconditioner. This will force recomputation on future runs. "Keep" flags are also removed.
+
+    if (optRecycling) {
+      //if aggregates explicitly kept: H.Delete("Aggregates", M.GetFactory("Aggregates").get());
+      H.Delete("P",           M.GetFactory("Ptent").get());
+    }
+    if (optRecyclingRAPpattern) {
+      H.Delete("RAP Pattern", M.GetFactory("A").get());
+    }
+    if (optRecyclingAPpattern) {
+      H.Delete("AP Pattern", M.GetFactory("A").get());
+    }
+
+    cout << "Status of the preconditioner at the end:" << std::endl;
+    H.print(*getFancyOStream(Teuchos::rcpFromRef(cout)), MueLu::High);
+
+    success = true;
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  // option dependencies
-  if (optRecycling == false) {
-    optRecyclingRAPpattern = false;
-    optRecyclingAPpattern  = false;
-  }
-
-  //
-  // Construct the problems
-  //
-
-  RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-  RCP<Matrix> A1 = Pr->BuildMatrix();
-
-  RCP<Matrix> A2 = Pr->BuildMatrix(); // TODO: generate another problem would be more meaningful (ex: scale A1)
-
-  //
-  // First solve
-  //
-
-  FactoryManager M;
-
-  Hierarchy H(A1);
-
-  if (optRecycling) {
-    // Configuring "Keep" options before running the first setup.
-
-    // Note: "Keep" flags should not be set on the default factories provided by the FactoryManager because in the current
-    // implementation of FactoryManager, those factories are freed and reallocated between Hierarchy::Setup() calls (see FactoryManager::Clean() and Hierarchy::Setup()).
-    // So we define our own factories here.
-
-    // AGGREGATES:
-    // Note: aggregates are only used to build Ptent, so it is not useful to keep them. Keeping Ptent is enough.
-    // RCP<Factory> AggFact   = rcp(new CoupledAggregationFactory());
-    // M.SetFactory("Aggregates", AggFact);
-    // H.Keep("Aggregates", AggFact.get());
-
-    // PTENT:
-    RCP<Factory> PtentFact = rcp(new TentativePFactory());
-    M.SetFactory("Ptent", PtentFact);
-    H.Keep("P",           PtentFact.get());
-  }
-
-  RCP<Factory> AcFact = rcp(new RAPFactory());
-  M.SetFactory("A", AcFact);
-
-  if (optRecyclingRAPpattern) {
-    H.Keep("RAP Pattern", AcFact.get());
-  }
-  if (optRecyclingAPpattern) {
-    H.Keep("AP Pattern", AcFact.get());
-  }
-  //
-
-  H.Setup(M);
-
-  {
-    RCP<Vector> X = VectorFactory::Build(map);
-    RCP<Vector> B = VectorFactory::Build(map);
-
-    X->putScalar((Scalar) 0.0);
-    B->setSeed(846930886); B->randomize();
-
-    int nIts = 9;
-    H.Iterate(*B, *X, nIts);
-
-    ST::magnitudeType residualNorms = Utils::ResidualNorm(*A1, *X, *B)[0];
-    if (comm->getRank() == 0)
-      std::cout << "||Residual|| = " << residualNorms << std::endl;
-  }
-
-  //
-  // Second solve
-  //
-
-  cout << "Status of the preconditioner between runs:" << std::endl;
-  H.print(*getFancyOStream(Teuchos::rcpFromRef(cout)), MueLu::High);
-
-  // Change the problem
-  RCP<Level> finestLevel = H.GetLevel(0);
-  finestLevel->Set("A", A2);
-
-  if (optRecycling) {
-    // Optional: this makes sure that the aggregates are never requested (and built) during the second run.
-    // If someone request the aggregates, an exception will be thrown.
-    M.SetFactory("Aggregates", MueLu::NoFactory::getRCP());
-  }
-
-  // Redo the setup
-  H.Setup(M);
-
-  {
-    RCP<Vector> X = VectorFactory::Build(map);
-    RCP<Vector> B = VectorFactory::Build(map);
-
-    X->putScalar((Scalar) 0.0);
-    B->setSeed(846930886); B->randomize();
-
-    int nIts = 9;
-    H.Iterate(*B, *X, nIts);
-
-    ST::magnitudeType residualNorms = Utils::ResidualNorm(*A2, *X, *B)[0];
-    if (comm->getRank() == 0)
-      std::cout << "||Residual|| = " << residualNorms << std::endl;
-  }
-
-  //
-  // Clean-up
-  //
-
-  // Remove kept data from the preconditioner. This will force recomputation on future runs. "Keep" flags are also removed.
-
-  if (optRecycling) {
-    //if aggregates explicitly kept: H.Delete("Aggregates", M.GetFactory("Aggregates").get());
-    H.Delete("P",           M.GetFactory("Ptent").get());
-  }
-  if (optRecyclingRAPpattern) {
-    H.Delete("RAP Pattern", M.GetFactory("A").get());
-  }
-  if (optRecyclingAPpattern) {
-    H.Delete("AP Pattern", M.GetFactory("A").get());
-  }
-
-  cout << "Status of the preconditioner at the end:" << std::endl;
-  H.print(*getFancyOStream(Teuchos::rcpFromRef(cout)), MueLu::High);
-
-  return EXIT_SUCCESS;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
