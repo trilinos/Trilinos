@@ -117,7 +117,7 @@ namespace Teuchos {
 	This allows the user to redefine the length of a SerialDenseVector at any point.
 	This method can be called at any point after construction.  Any values previously in
 	this object will be copied to the resized vector.
-    */	
+    */
     int resize(OrdinalType length_in)
       {return(SerialDenseMatrix<OrdinalType,ScalarType>::reshape(length_in, 1));}
   //@}
@@ -279,12 +279,12 @@ namespace Teuchos {
       os << "Values_copied : yes" << std::endl;
     else
       os << "Values_copied : no" << std::endl;
-      os << "Length : " << this->numRows_ << std::endl;
+    os << "Length : " << this->numRows_ << std::endl;
     if(this->numRows_ == 0) {
       os << "(std::vector is empty, no values to display)" << std::endl;
     } else {
       for(OrdinalType i = 0; i < this->numRows_; i++) {
-	  os << (*this)(i) << " ";
+        os << (*this)(i) << " ";
       }
       os << std::endl;
     }
