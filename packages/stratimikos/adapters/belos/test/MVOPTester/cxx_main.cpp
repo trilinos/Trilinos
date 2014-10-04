@@ -69,7 +69,6 @@
 
 int main(int argc, char *argv[])
 {
-
   using Teuchos::rcp_implicit_cast;
 
 #ifdef HAVE_MPI
@@ -237,11 +236,12 @@ int main(int argc, char *argv[])
       else
         std::cout << "End Result: TEST FAILED" << std::endl;
     }
-    TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
 #ifdef HAVE_MPI
-    MPI_Finalize();
+  MPI_Finalize();
 #endif
 
-    return (success ? EXIT_SUCCESS : EXIT_FAILURE);
-  }
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
+}
