@@ -535,6 +535,7 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 
     curGroupPtr->printSolution();
 
+    return LOCA::Abstract::Iterator::FinishedWithNatural;
   }
 
   return LOCA::Abstract::Iterator::Finished;

@@ -146,40 +146,57 @@ Piro::LOCASolver<Scalar>::evalModelImpl(
   }
 
   stepper_->reset(globalData_, group_, locaStatusTests_, noxStatusTests_, piroParams_);
-  const LOCA::Abstract::Iterator::IteratorStatus status = stepper_->run();
 
-  if (status == LOCA::Abstract::Iterator::Finished) {
-    std::cerr << "Continuation Stepper Finished.\n";
-  } else if (status == LOCA::Abstract::Iterator::NotFinished) {
-    std::cerr << "Continuation Stepper did not reach final value.\n";
-  } else {
-    std::cerr << "Nonlinear solver failed to converge.\n";
-    outArgs.setFailed();
-  }
+  LOCA::Abstract::Iterator::IteratorStatus istat;
+  LOCA::Abstract::Iterator::StepStatus sstat;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>
+    modelInArgs = this->getModel().createInArgs();
+  stepper_->initializeIterateOnce(istat);
+  for (;;) {
+    const bool keep_iterating = stepper_->iterateOnce(istat, sstat);
 
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_outargs = outArgs.get_g(this->num_g());
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_final =
-    Teuchos::nonnull(x_outargs) ? x_outargs : Thyra::createMember(this->get_g_space(this->num_g()));
-
-  {
-    // Deep copy final solution from LOCA group
-    NOX::Thyra::Vector finalSolution(x_final);
-    finalSolution = group_->getX();
-  }
-
-  // Compute responses for the final solution
-  {
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs =
-      this->getModel().createInArgs();
-    {
-      modelInArgs.set_x(x_final);
-      modelInArgs.set_p(l, p_inargs);
+    if (!keep_iterating) {
+      // End of the final continuation step, so do some extra stuff.
+      if (istat == LOCA::Abstract::Iterator::Finished ||
+          istat == LOCA::Abstract::Iterator::FinishedWithNatural) {
+        std::cerr << "Continuation Stepper Finished.\n";
+      } else if (istat == LOCA::Abstract::Iterator::NotFinished) {
+        // Should not get here.
+        std::cerr << "Continuation Stepper did not reach final value.\n";
+      } else {
+        std::cerr << "Nonlinear solver failed to converge.\n";
+        outArgs.setFailed();
+      }
+      if (istat != LOCA::Abstract::Iterator::FinishedWithNatural) {
+        // If finish() did an extra step to hit the target, then we want to run
+        // evalConvergedModel(). Otherwise, we're done, so break from the loop.
+        break;
+      }
     }
 
+    // Compute responses at the end of this continuation step.
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >
+      x_outargs = outArgs.get_g(this->num_g());
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >
+      x_current = (Teuchos::nonnull(x_outargs) ?
+                   x_outargs :
+                   Thyra::createMember(this->get_g_space(this->num_g())));
+
+    { // Deep copy solution for this continuation step from LOCA
+      // group. Vector::operator= does a deep copy into the memory that
+      // x_current points to. v_current itself does not need to be kept; it's
+      // used just for its operator=.
+      NOX::Thyra::Vector v_current(x_current);
+      v_current = group_->getX(); }
+
+    modelInArgs.set_x(x_current);
+    modelInArgs.set_p(l, p_inargs);
+
     this->evalConvergedModel(modelInArgs, outArgs);
+
+    if (!keep_iterating) break;
   }
 }
-
 
 template <typename Scalar>
 Teuchos::RCP<Piro::LOCASolver<Scalar> >
