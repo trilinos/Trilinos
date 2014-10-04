@@ -190,7 +190,7 @@ namespace Teuchos {
       operator<< (std::ostream& out, const Element<Scalar, Ordinal>& elt)
       {
         typedef ScalarTraits<Scalar> STS;
-        std::ios::fmtflags f( cout.flags() );
+        std::ios::fmtflags f( out.flags() );
         // Non-Ordinal types are floating-point types.  In order not to
         // lose information when we print a floating-point type, we have
         // to set the number of digits to print.  C++ standard behavior
