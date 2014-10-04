@@ -70,42 +70,42 @@ public:
 
   /** \name Public types */
   //@{
-
+  
   /** \brief . */
   typedef unsigned int ParameterEntryID;
-
+  
   //@}
 
-  //! @name Constructors/Destructor
+  //! @name Constructors/Destructor 
   //@{
 
   //! Default Constructor
   ParameterEntry();
-
+  
   //! Copy constructor
   ParameterEntry(const ParameterEntry& source);
 
   //! Templated constructor
   template<typename T>
   explicit ParameterEntry(
-    const T & value, bool isDefault = false, bool isList = false,
+    T value, bool isDefault = false, bool isList = false,
     const std::string &docString = "",
     RCP<const ParameterEntryValidator> const& validator = null
     );
 
   //@}
 
-  //! @name Set Methods
+  //! @name Set Methods 
   //@{
 
   //! Replace the current parameter entry with \c source.
   ParameterEntry& operator=(const ParameterEntry& source);
 
-  /*! \brief Templated set method that uses the input value type to determine the type of parameter.
-
+  /*! \brief Templated set method that uses the input value type to determine the type of parameter.  
+      
       \note <ul>
-	    <li> Invalidates any previous values stored by this object although it doesn't necessarily erase them.
-            <li> Resets 'isUsed' functionality.
+	    <li> Invalidates any previous values stored by this object although it doesn't necessarily erase them.  
+            <li> Resets 'isUsed' functionality.  
 	    </ul>
   */
   template<typename T>
@@ -141,12 +141,12 @@ public:
 
   //@}
 
-  //! @name Get Methods
+  //! @name Get Methods 
   //@{
+   
+  /*! \brief Templated get method that uses the input pointer type to determine the type of parameter to return.  
 
-  /*! \brief Templated get method that uses the input pointer type to determine the type of parameter to return.
-
-      \note This method will cast the value to the type requested.  If that type is incorrect,
+      \note This method will cast the value to the type requested.  If that type is incorrect, 
 	    an std::exception will be thrown by the any_cast.
   */
   template<typename T>
@@ -154,14 +154,14 @@ public:
   T& getValue(T *ptr) const;
 
   /*! \brief Direct access to the Teuchos::any data value underlying this
-   *  object. The bool argument \c activeQry (default: true) indicates that the
+   *  object. The bool argument \c activeQry (default: true) indicates that the 
    *  call to getAny() will set the isUsed() value of the ParameterEntry to true.
    */
   inline
   any& getAny(bool activeQry = true);
 
   /*! \brief Constant direct access to the Teuchos::any data value underlying this
-   *  object. The bool argument \c activeQry (default: true) indicates that the
+   *  object. The bool argument \c activeQry (default: true) indicates that the 
    *  call to getAny() will set the isUsed() value of the ParameterEntry to true.
    */
   inline
@@ -169,16 +169,16 @@ public:
 
   //@}
 
-  //! @name Attribute/Query Methods
+  //! @name Attribute/Query Methods 
   //@{
-
+  
   //! Return whether or not the value has been used; i.e., whether or not the value has been retrieved via a get function.
   inline
   bool isUsed() const;
 
   //! Return whether or not the value itself is a list.
   bool isList() const;
-
+  
   //! Test the type of the data being contained.
   template <typename T>
   inline
@@ -204,13 +204,13 @@ public:
 
   //@}
 
-  //! @name I/O Methods
+  //! @name I/O Methods 
   //@{
-  /*! \brief Output a non-list parameter to the given output stream.
+  /*! \brief Output a non-list parameter to the given output stream.  
 
-      The parameter is followed by "[default]" if it is the default value given through a
-      Set method.  Otherwise, if the parameter was unused (not accessed through a Get method),
-      it will be followed by "[unused]".  This function is called by the "std::ostream& operator<<".
+      The parameter is followed by "[default]" if it is the default value given through a 
+      Set method.  Otherwise, if the parameter was unused (not accessed through a Get method), 
+      it will be followed by "[unused]".  This function is called by the "std::ostream& operator<<". 
   */
   std::ostream& leftshift(std::ostream& os, bool printFlags = true) const;
 
@@ -221,14 +221,14 @@ public:
       static const std::string tagName = "Parameter";
       return tagName;
   }
-
+  
   //@}
-
+  
 private:
 
   //! Reset the entry
   void reset();
-
+  
   //! Templated Datatype
   any val_;
 
@@ -254,7 +254,7 @@ private:
 
 };
 
-/*! \relates ParameterEntry
+/*! \relates ParameterEntry 
     \brief A templated helper function for returning the value of type \c T held in the ParameterEntry object,
     where the type \c T can be specified in the call.  This is an easier way to call the getValue method
     in the ParameterEntry class, since the user does not have to pass in a pointer of type \c T.
@@ -265,7 +265,7 @@ inline T& getValue( const ParameterEntry &entry )
   return entry.getValue(static_cast<T*>(0));
 }
 
-/*! \relates ParameterEntry
+/*! \relates ParameterEntry 
     \brief A templated helper function for returning the value of type \c T held in the ParameterEntry object,
     where the type \c T can be specified in the call.  This is an easier way to call the getValue method
     in the ParameterEntry class, since the user does not have to pass in a pointer of type \c T.
@@ -276,11 +276,11 @@ inline T& getValue(RCP<const ParameterEntry> entry)
   return entry->getValue(static_cast<T*>(0));
 }
 
-/*! \relates ParameterEntry
+/*! \relates ParameterEntry 
     \brief Returns true if two ParameterEntry objects are equal.
 */
-inline bool operator==(const ParameterEntry& e1, const ParameterEntry& e2)
-{
+inline bool operator==(const ParameterEntry& e1, const ParameterEntry& e2) 
+{ 
   return (
     e1.getAny() == e2.getAny()
     && e1.isList()== e2.isList()
@@ -289,19 +289,19 @@ inline bool operator==(const ParameterEntry& e1, const ParameterEntry& e2)
     );
 }
 
-/*! \relates ParameterEntry
+/*! \relates ParameterEntry 
     \brief Returns true if two ParameterEntry objects are <b>not</b> equal.
 */
-inline bool operator!=(const ParameterEntry& e1, const ParameterEntry& e2)
-{
+inline bool operator!=(const ParameterEntry& e1, const ParameterEntry& e2) 
+{ 
   return !( e1 == e2 );
 }
 
-/*! \relates ParameterEntry
-    \brief Output stream operator for handling the printing of parameter entries.
+/*! \relates ParameterEntry 
+    \brief Output stream operator for handling the printing of parameter entries.  
 */
-inline std::ostream& operator<<(std::ostream& os, const ParameterEntry& e)
-{
+inline std::ostream& operator<<(std::ostream& os, const ParameterEntry& e) 
+{ 
   return e.leftshift(os);
 }
 
@@ -313,7 +313,7 @@ inline std::ostream& operator<<(std::ostream& os, const ParameterEntry& e)
 template<typename T>
 inline
 ParameterEntry::ParameterEntry(
-  const T & value_in,
+  T value_in,
   bool isDefault_in,
   bool /*isList_in*/, // 2007/11/26: rabartl: ToDo: This arg is ignored and should be removed!
   const std::string &docString_in,
@@ -355,20 +355,20 @@ T& ParameterEntry::getValue(T * /*ptr*/) const
 
 inline
 any& ParameterEntry::getAny(bool activeQry)
-{
+{ 
   if (activeQry == true) {
     isUsed_ = true;
   }
-  return val_;
+  return val_; 
 }
 
 inline
 const any& ParameterEntry::getAny(bool activeQry) const
-{
+{ 
   if (activeQry == true) {
     isUsed_ = true;
   }
-  return val_;
+  return val_; 
 }
 
 // Attribute Methods
