@@ -315,8 +315,9 @@ public:
     const RCP<const VerboseObject<ObjectType> > &verboseObject,
     const RCP<FancyOStream> &newOStream,
     const EVerbosityLevel newVerbLevel
-    )
-    :verboseObject_(verboseObject)
+    ):
+    verboseObject_(verboseObject),
+    oldVerbLevel_(VERB_DEFAULT)
     {
       if(verboseObject_.get()) {
         oldOStream_ = verboseObject_->getOStream();

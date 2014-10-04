@@ -251,7 +251,12 @@ private:
   size_type _numRows,_numCols;
   Array<T> _data;
   TwoDArray(size_type numRows, size_type numCols, Array<T> data):
-    _numRows(numRows),_numCols(numCols),_data(data){}
+    _numRows(numRows),
+    _numCols(numCols),
+    _data(data),
+    _symmetrical(false)
+  {}
+
   bool _symmetrical;
 };
 

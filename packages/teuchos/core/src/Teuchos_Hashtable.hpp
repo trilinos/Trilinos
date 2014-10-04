@@ -142,9 +142,13 @@ namespace Teuchos
   std::ostream& operator<<(std::ostream& os, const Hashtable<Key, Value>& h);
 
   template<class Key, class Value> inline
-    Hashtable<Key, Value>::Hashtable(int capacity, double rehashDensity)
-    : data_(), count_(0), capacity_(HashUtils::nextPrime(capacity)),
-    nHits_(0), avgDegeneracy_(0), rehashDensity_(rehashDensity)
+    Hashtable<Key, Value>::Hashtable(int capacity, double rehashDensity):
+    data_(),
+    count_(0),
+    capacity_(HashUtils::nextPrime(capacity)),
+    nHits_(0),
+    avgDegeneracy_(0),
+    rehashDensity_(rehashDensity)
     {
       data_.resize(capacity_);
     }

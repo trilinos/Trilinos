@@ -442,8 +442,10 @@ private:
 
   //
   struct opt_val_val_t {
-    opt_val_val_t()
-      :opt_type(OPT_NONE)
+    opt_val_val_t():
+      opt_type(OPT_NONE),
+      required(false),
+      was_read(false)
       {}
     opt_val_val_t( EOptType opt_type_in, const any& opt_val_in, bool required_in )
       :opt_type(opt_type_in),opt_val(opt_val_in),required(required_in),was_read(false)

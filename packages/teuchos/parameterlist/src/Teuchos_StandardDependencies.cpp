@@ -56,28 +56,36 @@ VisualDependency::VisualDependency(
   RCP<ParameterEntry> dependent,
   bool showIf):
   Dependency(dependee, dependent),
-  showIf_(showIf){}
+  showIf_(showIf),
+  dependentVisible_(false)
+  {}
 
 VisualDependency::VisualDependency(
   RCP<const ParameterEntry> dependee,
   ParameterEntryList dependents,
   bool showIf):
   Dependency(dependee, dependents),
-  showIf_(showIf){}
+  showIf_(showIf),
+  dependentVisible_(false)
+  {}
 
 VisualDependency::VisualDependency(
   ConstParameterEntryList dependees,
   RCP<ParameterEntry> dependent,
   bool showIf):
   Dependency(dependees, dependent),
-  showIf_(showIf){}
+  showIf_(showIf),
+  dependentVisible_(false)
+  {}
 
 VisualDependency::VisualDependency(
   ConstParameterEntryList dependees,
   ParameterEntryList dependents,
   bool showIf):
   Dependency(dependees, dependents),
-  showIf_(showIf){}
+  showIf_(showIf),
+  dependentVisible_(false)
+  {}
 
 bool VisualDependency::isDependentVisible() const{
   return dependentVisible_;

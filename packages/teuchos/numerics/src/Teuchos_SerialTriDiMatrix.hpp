@@ -77,7 +77,7 @@ public:
 
   //! Default Constructor
   /*! Creates a empty matrix of no dimension.  The Shaping methods should be used to size this matrix.
-    Values of this matrix should be set using the [], (), or = operators.	
+    Values of this matrix should be set using the [], (), or = operators.
   */
   SerialTriDiMatrix();
 
@@ -167,7 +167,7 @@ public:
     If \c Source is a view (i.e. CV = Teuchos::View), then this method will
     return a view.  Otherwise, it will return a copy of \c Source.  \e this object
     will be resized if it is not large enough to copy \c Source into.
-  */	
+  */
   SerialTriDiMatrix<OrdinalType, ScalarType>& operator= (const SerialTriDiMatrix<OrdinalType, ScalarType>& Source);
 
   //! Copies values from one matrix to another.
@@ -175,7 +175,7 @@ public:
     The operator= copies the values from one existing SerialTriDiMatrix to another
     if the dimension of both matrices are the same.  If not, \e this matrix
     will be returned unchanged.
-  */	
+  */
   SerialTriDiMatrix<OrdinalType, ScalarType>& assign (const SerialTriDiMatrix<OrdinalType, ScalarType>& Source);
 
   //! Set all values in the matrix to a constant value.
@@ -395,7 +395,16 @@ protected:
 
 template<typename OrdinalType, typename ScalarType>
 SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix()
-  : CompObject(), Object("Teuchos::SerialTriDiMatrix"), numRowsCols_(0), valuesCopied_(false), values_(0)
+  :
+    CompObject(),
+    Object("Teuchos::SerialTriDiMatrix"),
+    numRowsCols_(0),
+    valuesCopied_(false),
+    values_(0),
+    DL_(NULL),
+    D_(NULL),
+    DU_(NULL),
+    DU2_(NULL)
 {}
 
 template<typename OrdinalType, typename ScalarType>
@@ -449,7 +458,7 @@ SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix(const SerialTriDiM
     copyMat(Source, 0, 0);
   }
   else if ( trans == Teuchos::CONJ_TRANS && ScalarTraits<ScalarType>::isComplex )
-    {	
+    {
       numRowsCols_ = Source.numRowsCols_;
       const OrdinalType numvals = (numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
       values_ = new ScalarType[numvals];
@@ -943,19 +952,19 @@ void SerialTriDiMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
     {
       os << "DL: "<<std::endl;
       for(int i=0;i<numRowsCols_-1;++i)
-	os << DL_[i]<<" ";	
+	os << DL_[i]<<" ";
       os << std::endl;
       os << "D: "<<std::endl;
       for(int i=0;i<numRowsCols_;++i)
-	os << D_[i]<<" ";	
+	os << D_[i]<<" ";
       os << std::endl;
       os << "DU: "<<std::endl;
       for(int i=0;i<numRowsCols_-1;++i)
-	os << DU_[i]<<" ";	
+	os << DU_[i]<<" ";
       os << std::endl;
       os << "DU2: "<<std::endl;
       for(int i=0;i<numRowsCols_-2;++i)
-	os << DU2_[i]<<" ";	
+	os << DU2_[i]<<" ";
       os << std::endl;
     }
 
