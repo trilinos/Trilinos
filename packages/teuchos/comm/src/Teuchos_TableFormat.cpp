@@ -39,6 +39,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include <iostream>
 
 #include "Teuchos_TableFormat.hpp"
 #include "Teuchos_Assert.hpp"
@@ -106,6 +107,7 @@ void TableFormat::writeRow(
   TEUCHOS_TEST_FOR_EXCEPT(entries.size() != columnWidths_.size()
     && columnWidths_.size() != 0);
 
+  std::ios::fmtflags f( out.flags() );
   for (Array<RCP<TableEntry> >::size_type i=0; i<entries.size(); i++)
   {
     int cw = defaultColumnWidth();
@@ -114,6 +116,7 @@ void TableFormat::writeRow(
     out << std::left << std::setw(cw) << entries[i]->toString();
   }
   out << std::endl;
+  out.flags(f);
 }
 
 
@@ -140,6 +143,7 @@ void TableFormat::writeWholeTable(
   const Array<TableColumn>& columns
   ) const
 {
+  std::ios::fmtflags f(out.flags());
 
   /* compute the total width */
   int pgWidth = 0;
@@ -186,6 +190,8 @@ void TableFormat::writeWholeTable(
   /* write the footer */
   out << thickline() << std::endl;
 
+  // Restore flags
+  out.flags(f);
 }
 
 
