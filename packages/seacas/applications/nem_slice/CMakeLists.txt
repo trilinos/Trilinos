@@ -22,7 +22,6 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES ${SOURCES}
-  IMPORTEDLIBS ${ZOLTAN_DEP} exodus nemesis chaco suplib
   COMM serial mpi
   )
 install_executable(nem_slice)

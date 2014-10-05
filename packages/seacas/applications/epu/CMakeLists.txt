@@ -20,7 +20,6 @@ IF(NOT __LINUX_COMPILER_PGI)
     NOEXEPREFIX
     NOEXESUFFIX
     SOURCES ${SOURCES}
-    IMPORTEDLIBS suplib exodus
     COMM serial mpi
     )
   install_executable(epu)

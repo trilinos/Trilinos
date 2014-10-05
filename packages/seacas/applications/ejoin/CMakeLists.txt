@@ -16,7 +16,6 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXESUFFIX
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  IMPORTEDLIBS Ioss exodus suplib
   COMM serial mpi
   )
 install_executable(ejoin)

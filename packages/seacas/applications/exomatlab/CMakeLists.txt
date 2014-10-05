@@ -16,7 +16,6 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES ${SOURCES}
-  IMPORTEDLIBS Ioss suplib
   COMM serial mpi
   )
 install_executable(exomatlab)

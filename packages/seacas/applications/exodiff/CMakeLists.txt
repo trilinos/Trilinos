@@ -15,7 +15,6 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES ${SOURCES}
-  IMPORTEDLIBS exodus suplib
   COMM serial mpi
   )
 install_executable(exodiff)

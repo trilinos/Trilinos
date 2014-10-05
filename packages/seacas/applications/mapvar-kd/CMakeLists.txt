@@ -18,7 +18,6 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXESUFFIX
   LINKER_LANGUAGE Fortran
   SOURCES ${SOURCES}
-  IMPORTEDLIBS mapvarlib supes suplib exodus_for
   COMM serial mpi
   )
 install_executable(mapvar-kd)

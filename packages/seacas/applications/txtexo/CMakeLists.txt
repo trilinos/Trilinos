@@ -17,7 +17,6 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXESUFFIX
   LINKER_LANGUAGE Fortran
   SOURCES ${SOURCES}
-  IMPORTEDLIBS supes suplib exodus_for exodus
   COMM serial mpi
   )
 install_executable(txtexo)

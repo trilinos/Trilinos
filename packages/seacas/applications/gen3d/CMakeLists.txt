@@ -17,7 +17,7 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXESUFFIX
   LINKER_LANGUAGE Fortran
   SOURCES ${SOURCES}
-  IMPORTEDLIBS supes suplib exodus_for COMM serial mpi
+  COMM serial mpi
   )
 
 install_executable(gen3d)

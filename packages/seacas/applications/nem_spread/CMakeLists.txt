@@ -16,7 +16,6 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES ${SOURCES}
-  IMPORTEDLIBS exodus nemesis suplib
   COMM serial mpi
   )
 install_executable(nem_spread)

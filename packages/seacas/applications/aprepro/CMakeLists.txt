@@ -29,7 +29,7 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXEPREFIX
   NOEXESUFFIX
   SOURCES ${SOURCES}
-  IMPORTEDLIBS suplib m
+  IMPORTEDLIBS m
   COMM serial mpi
   )
 install_executable(aprepro)
