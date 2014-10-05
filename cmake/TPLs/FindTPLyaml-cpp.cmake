@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( yaml-cpp
   REQUIRED_HEADERS yaml-cpp/yaml.h

@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( GLPK
   REQUIRED_HEADERS glpk.h

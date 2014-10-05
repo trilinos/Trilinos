@@ -1,4 +1,5 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE(
   ml_AztecMsr

@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( ADIC
   REQUIRED_HEADERS ad_grad.h

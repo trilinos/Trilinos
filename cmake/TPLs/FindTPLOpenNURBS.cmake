@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
     
     TRIBITS_TPL_DECLARE_LIBRARIES( OpenNURBS
       REQUIRED_HEADERS opennurbs.h 

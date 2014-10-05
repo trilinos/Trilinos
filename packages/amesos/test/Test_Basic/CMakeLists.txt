@@ -1,4 +1,6 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF(${PACKAGE_NAME}_ENABLE_Triutils)
   SET(${PACKAGE_NAME}_TEST_BASIC_SOURCES

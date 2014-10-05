@@ -29,6 +29,7 @@
 # @HEADER
 
 # Include the package macros
+INCLUDE(TribitsPackageMacros)
 
 # Set the package name
 TRIBITS_PACKAGE(PyTrilinos DISABLE_STRONG_WARNINGS)

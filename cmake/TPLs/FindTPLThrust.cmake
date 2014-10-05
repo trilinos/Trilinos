@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 # Thrust TPL requires CUDA
 IF (NOT TPL_ENABLE_CUDA)

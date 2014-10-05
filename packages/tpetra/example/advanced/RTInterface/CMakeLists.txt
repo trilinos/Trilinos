@@ -1,3 +1,5 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(TribitsETISupport)
 
 # RTI examples can't use the GPU, so any HybridPlatform-supported example 

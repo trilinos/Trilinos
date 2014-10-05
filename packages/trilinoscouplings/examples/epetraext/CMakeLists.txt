@@ -1,4 +1,5 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Isorropia)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)

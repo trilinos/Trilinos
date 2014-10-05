@@ -1,3 +1,4 @@
+INCLUDE(TribitsLibraryMacros)
 
 TRIBITS_SUBPACKAGE(Suplib)
 INCLUDE(FortranSettings)

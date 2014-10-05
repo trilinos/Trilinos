@@ -1,3 +1,5 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(driver 
 #  SOURCES ${HEADERS} driver.cpp

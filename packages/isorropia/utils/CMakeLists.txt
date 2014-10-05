@@ -1,4 +1,5 @@
 
+INCLUDE(TribitsLibraryMacros)
 
 #
 # B) Define the header and source files (and directories)

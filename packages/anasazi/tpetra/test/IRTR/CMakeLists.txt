@@ -1,4 +1,5 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_IRTR_ComplexLap_test

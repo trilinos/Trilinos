@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 SET(SerializationFiles
   MissingDependee.xml

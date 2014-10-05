@@ -1,3 +1,5 @@
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 # Path to test and example data directory
 #KDD NOT WORKING IN NIGHTLY TEST SYSTEM

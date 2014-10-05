@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( SuperLUDist
   REQUIRED_HEADERS "superlu_defs.h superludefs.h" supermatrix.h

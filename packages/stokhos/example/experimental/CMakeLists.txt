@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND Stokhos_ENABLE_MueLu)
 

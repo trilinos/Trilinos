@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 # NOTE: ADOL-C has a bug in the installtion process.  It fails to
 # install the file "config.h" into the install directory.  This is

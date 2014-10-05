@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( Coupler
   REQUIRED_HEADERS ne_couplerI.h

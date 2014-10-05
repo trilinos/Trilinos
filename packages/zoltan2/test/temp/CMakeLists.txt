@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 IF (${PROJECT_NAME}_ENABLE_Zoltan)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

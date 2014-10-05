@@ -39,6 +39,7 @@
 #  *************************************************************************
 # @HEADER
 
+INCLUDE(TribitsPackageMacros)
 
 # We need to make sure at least one of the optional TPLs for data transport
 # was enabled. There might be a way to do this in the Dependencies.cmake file,

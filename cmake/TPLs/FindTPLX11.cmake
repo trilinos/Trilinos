@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( X11
   REQUIRED_HEADERS X11/Xlib.h X11/Xutil.h X11/Xos.h X11/keysym.h X11/Xresource.h X11/Xatom.h

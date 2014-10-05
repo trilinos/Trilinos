@@ -1,3 +1,5 @@
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 #  When adding test directories if you want the test to be distributed

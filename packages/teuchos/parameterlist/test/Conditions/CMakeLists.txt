@@ -1,3 +1,5 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 SET(SerializationFiles
   MissingParameterEntryDefinition.xml

@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Vector_UnitTests2

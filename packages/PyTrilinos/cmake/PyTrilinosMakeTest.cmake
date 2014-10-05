@@ -26,6 +26,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsAddTest)
 
 MACRO(PyTrilinos_MAKE_TEST TEST_NAME)
 

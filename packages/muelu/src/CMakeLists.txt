@@ -1,3 +1,4 @@
+INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 # Note about the use of wildcard in CMakeLists.txt: CMake dont't know

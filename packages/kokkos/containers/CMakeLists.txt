@@ -1,4 +1,5 @@
 
+INCLUDE(TribitsSubPackageMacros)
 
 TRIBITS_SUBPACKAGE(Containers)
 

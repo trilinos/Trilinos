@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 IF (WIN32 AND BUILD_SHARED_LIBS)
 ELSE()

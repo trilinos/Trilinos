@@ -1,4 +1,5 @@
 
+INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options

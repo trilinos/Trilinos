@@ -1,4 +1,5 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_MVOPTester_complex_test

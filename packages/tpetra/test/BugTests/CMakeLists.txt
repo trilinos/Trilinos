@@ -1,4 +1,6 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF(Kokkos_ENABLE_Cuda)
   #

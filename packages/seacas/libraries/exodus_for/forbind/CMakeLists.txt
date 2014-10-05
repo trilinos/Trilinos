@@ -1,3 +1,4 @@
+INCLUDE(TribitsLibraryMacros)
 INCLUDE(FortranSettings)
 
 INCLUDE_DIRECTORIES(

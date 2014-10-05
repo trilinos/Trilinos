@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 SET(SOURCES "main.cpp")
 FILE(GLOB SOURCES "*.cpp")

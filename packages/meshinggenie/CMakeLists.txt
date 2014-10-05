@@ -1,3 +1,4 @@
+INCLUDE(TribitsPackageMacros)
 #INCLUDE(TribitsAddOptionAndDefine)
 
 #

@@ -1,3 +1,5 @@
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # Define the subpackage

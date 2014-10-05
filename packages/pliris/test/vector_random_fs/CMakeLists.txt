@@ -1,4 +1,5 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   vector_random_fs

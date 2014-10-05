@@ -40,6 +40,8 @@
 #  *************************************************************************
 # @HEADER
 
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsLibraryMacros)
 
 
 TRIBITS_SUBPACKAGE(commsplitter)

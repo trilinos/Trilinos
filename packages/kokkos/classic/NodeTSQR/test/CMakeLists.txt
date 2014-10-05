@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 # It's not necessary to run these tests in an MPI build ("COMM mpi"),
 # since none of them need to run on more than one MPI process.

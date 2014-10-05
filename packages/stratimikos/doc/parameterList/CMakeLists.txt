@@ -1,5 +1,6 @@
 # -*- cmake -*-
 
+INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # Create the ValidParameters executable

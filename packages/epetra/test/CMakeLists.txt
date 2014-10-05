@@ -1,4 +1,6 @@
 
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
 
 # Library with test functions.
 ADD_SUBDIRECTORY(src)

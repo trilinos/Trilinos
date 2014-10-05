@@ -1,4 +1,6 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 
 ADD_SUBDIRECTORY(geometric)

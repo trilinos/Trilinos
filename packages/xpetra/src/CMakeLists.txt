@@ -1,5 +1,6 @@
 # CMakeLists inspired by Tpetra/src/CMakeLists.txt
 
+INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 #

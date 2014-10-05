@@ -1,3 +1,4 @@
+INCLUDE(TribitsLibraryMacros)
 
 SET(HEADERS "")
 SET(SOURCES "")

@@ -1,3 +1,5 @@
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddExecutable)
 
 TRIBITS_SUBPACKAGE(Aprepro)
 

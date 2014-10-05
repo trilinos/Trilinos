@@ -1,6 +1,8 @@
 
 option(USE_TRIBITS "Use the Tribits modules to build Aprepro" ON)
 if(USE_TRIBITS)
+  INCLUDE(TribitsSubPackageMacros)
+  INCLUDE(TribitsLibraryMacros)
 
   TRIBITS_SUBPACKAGE(Aprepro_lib)
 endif()

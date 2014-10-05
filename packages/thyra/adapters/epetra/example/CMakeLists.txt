@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 
 SET(COMMON_SOURCES createTridiagEpetraLinearOp.cpp)

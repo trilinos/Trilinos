@@ -1,3 +1,5 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 #TODO: re-enable
 # IF (${PACKAGE_NAME}_ENABLE_Epetra)

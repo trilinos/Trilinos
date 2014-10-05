@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE(
   Epetra_MVOPTester_example

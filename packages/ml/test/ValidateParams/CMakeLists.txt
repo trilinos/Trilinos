@@ -1,4 +1,7 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddAdvancedTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(ML_ENABLE_AztecOO)
 ASSERT_DEFINED(ML_ENABLE_Amesos)

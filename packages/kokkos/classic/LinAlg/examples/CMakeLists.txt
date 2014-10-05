@@ -1,3 +1,5 @@
+INCLUDE(TribitsAddExecutableAndTest)   
+INCLUDE(TribitsLibraryMacros)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(  EmptySparseKernelDriver  
   SOURCES EmptySparseKernelDriver.cpp  

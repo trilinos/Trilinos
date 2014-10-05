@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 
 INCLUDE_DIRECTORIES(

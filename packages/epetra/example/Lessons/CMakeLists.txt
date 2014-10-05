@@ -1,3 +1,4 @@
+INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORY(Lesson01-Init)
 ADD_SUBDIRECTORY(Lesson02-Map-Vector)

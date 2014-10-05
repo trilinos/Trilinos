@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 #This find is largely not useful. The blacs libraries by default do not use a standard
 #naming convention. They are called "blacs.a" instead of "libblacs.a" The TRIBITS_TPL_DECLARE_LIBRARIES

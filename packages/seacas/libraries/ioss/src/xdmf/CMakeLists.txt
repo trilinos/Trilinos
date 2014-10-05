@@ -1,3 +1,4 @@
+INCLUDE(TribitsLibraryMacros)
 INCLUDE(CheckIncludeFile)
 
 SET(HEADERS "")

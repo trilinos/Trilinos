@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutable)
 
 TRIBITS_ADD_EXECUTABLE(
   Grid

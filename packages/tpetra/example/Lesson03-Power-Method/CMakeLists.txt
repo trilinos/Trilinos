@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   lesson03_power_method

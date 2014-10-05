@@ -59,6 +59,7 @@
 #
 
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 
 TRIBITS_TPL_DECLARE_LIBRARIES( BinUtils

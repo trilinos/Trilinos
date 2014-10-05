@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MapColoring_test_LL

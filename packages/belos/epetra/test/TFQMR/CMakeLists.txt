@@ -1,4 +1,6 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)

@@ -41,6 +41,11 @@
 # @HEADER
 
 
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddTest)
 INCLUDE(TriosProcessXDR)
 
 ############# Special exception for rpcgen extra commas in enum ##########

@@ -1,5 +1,6 @@
 # NTS: The funny thing is that I need to include this in order to 
 # get the link/include directories correct.  Go figure.
+INCLUDE(TribitsAddExecutable)
 
 if(TPL_ENABLE_MATLAB)
   INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIRS})

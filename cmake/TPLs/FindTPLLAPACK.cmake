@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 IF (MSVC AND NOT
     (LAPACK_LIBRARY_DIRS  OR

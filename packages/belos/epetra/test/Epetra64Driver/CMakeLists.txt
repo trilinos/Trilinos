@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Epetra64_Laplacian_Driver

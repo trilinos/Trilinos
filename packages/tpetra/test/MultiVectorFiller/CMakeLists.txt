@@ -1,3 +1,5 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddExecutable)
 
 # As of <= 14 Mar 2012, MultiVectorFiller doesn't work yet with
 # multiple MPI processes.  Thus, I'll leave it out of the MPI tests

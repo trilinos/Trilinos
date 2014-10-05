@@ -1,3 +1,4 @@
+INCLUDE(TribitsPackageMacros)
 
 #
 # A) Forward delcare the package so that certain options are also defined for

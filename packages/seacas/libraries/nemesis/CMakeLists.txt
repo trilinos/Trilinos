@@ -1,3 +1,6 @@
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(FortranSettings)
 
 TRIBITS_SUBPACKAGE(Nemesis)

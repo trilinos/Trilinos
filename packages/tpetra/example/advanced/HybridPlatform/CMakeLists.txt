@@ -1,3 +1,5 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 # These tests require double, so disable if cuda is enabled
 # but cuda-double is not enabled

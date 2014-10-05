@@ -1,4 +1,5 @@
 
+INCLUDE(TribitsPackageMacros)
 
 TRIBITS_PACKAGE(Triutils)
 

@@ -1,3 +1,5 @@
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package

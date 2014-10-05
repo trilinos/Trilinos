@@ -1,4 +1,6 @@
 
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(DualScopeSet)
 
 #

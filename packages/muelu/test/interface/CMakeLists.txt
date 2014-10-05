@@ -11,6 +11,7 @@ ASSERT_DEFINED(
 # Executable
 #
 
+INCLUDE(TribitsAddExecutable)
 
 #TODO: how to remove that?
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})

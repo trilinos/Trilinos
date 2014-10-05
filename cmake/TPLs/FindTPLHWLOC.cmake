@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 #-----------------------------------------------------------------------------
 #  Hardware locality detection and control library.

@@ -27,6 +27,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsLibraryMacros)
 
 #
 # Package-specific configuration options

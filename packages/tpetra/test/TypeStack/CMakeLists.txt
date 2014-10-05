@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 IF(Kokkos_ENABLE_Cuda)
   #

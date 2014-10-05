@@ -1,3 +1,4 @@
+INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( Pablo
   REQUIRED_HEADERS PipeReader.h

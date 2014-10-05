@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 IF (Anasazi_ENABLE_Epetra)
 TRIBITS_ADD_EXECUTABLE(

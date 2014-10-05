@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
   TRIBITS_ADD_EXECUTABLE(
     pamgen_test_driver

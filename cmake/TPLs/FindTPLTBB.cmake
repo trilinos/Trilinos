@@ -244,6 +244,7 @@
 #   
 #   endif (NOT _TBB_INSTALL_DIR)
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( TBB
   REQUIRED_HEADERS tbb/task_scheduler_init.h

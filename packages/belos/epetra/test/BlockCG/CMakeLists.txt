@@ -1,4 +1,6 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   pseudo_cg_indefinite

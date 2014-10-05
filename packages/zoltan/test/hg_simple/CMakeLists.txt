@@ -21,6 +21,9 @@ SET(ZZDIRNAME hg_${ZZNAME})
 #### with ${ZZNAME} is an exception; the copy macro at the end of this file
 #### must be modified.)
 
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddAdvancedTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 # All data files needed for tested (*.graph, *.mtx, *.mtxp, *.coords, *.hg)
 FILE(GLOB DATA_INP RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${ZZNAME}.*)

@@ -1,4 +1,5 @@
 
+INCLUDE(TribitsLibraryMacros)
 
 ADD_SUBDIRECTORY(sierra_element)
 

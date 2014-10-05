@@ -1,3 +1,6 @@
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsAddAdvancedTest)
 
 ADD_DEFINITIONS(-DUSING_CMAKE)
 

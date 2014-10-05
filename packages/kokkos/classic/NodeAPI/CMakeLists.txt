@@ -1,3 +1,5 @@
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 
 #

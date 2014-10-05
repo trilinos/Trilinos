@@ -1,4 +1,6 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF(Amesos_ENABLE_Galeri)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

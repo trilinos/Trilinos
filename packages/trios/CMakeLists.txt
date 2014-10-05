@@ -40,6 +40,9 @@
 #  *************************************************************************
 # @HEADER
 
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 ###########################################################
 # A) Define the package

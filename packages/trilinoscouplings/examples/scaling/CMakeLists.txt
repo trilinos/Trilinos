@@ -1,3 +1,5 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND

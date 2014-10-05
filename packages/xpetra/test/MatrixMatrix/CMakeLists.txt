@@ -1,3 +1,5 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF (NOT Xpetra_Epetra_NO_32BIT_GLOBAL_INDICES)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

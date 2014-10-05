@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutable)
 
 SET(COMMON_DRIVER_SRC
   dr_err.c

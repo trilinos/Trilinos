@@ -1,3 +1,5 @@
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddExecutable)
 INCLUDE(FortranSettings)
 
 TRIBITS_SUBPACKAGE(Mapvar)

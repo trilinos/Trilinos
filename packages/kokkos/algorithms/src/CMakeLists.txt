@@ -1,3 +1,5 @@
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 

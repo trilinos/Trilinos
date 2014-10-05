@@ -1,4 +1,6 @@
 
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 # 
 #   Exception added to deal with fixed form Fortran code on XL

@@ -1,3 +1,6 @@
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsLibraryMacros)
 
 IF (TPL_ENABLE_Matio)
 TRIBITS_SUBPACKAGE(Mat2exo)

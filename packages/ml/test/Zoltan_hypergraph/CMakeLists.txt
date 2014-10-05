@@ -1,4 +1,5 @@
 
+INCLUDE(TribitsAddExecutableAndTest)
 
 IF(Amesos_ENABLE_AztecOO)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

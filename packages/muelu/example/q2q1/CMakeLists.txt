@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF( (${PACKAGE_NAME}_ENABLE_Tpetra                                      AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR

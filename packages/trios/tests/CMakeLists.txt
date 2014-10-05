@@ -41,6 +41,9 @@
 # @HEADER
 
 
+INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 TRIBITS_SUBPACKAGE(tests)
 

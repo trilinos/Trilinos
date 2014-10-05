@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 ADD_SUBDIRECTORY(EpetraOperatorWrapper)
 ADD_SUBDIRECTORY(UnitTests)

@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)
 IF(${PACKAGE_NAME}_ENABLE_Experimental)

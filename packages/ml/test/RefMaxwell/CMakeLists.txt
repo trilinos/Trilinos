@@ -1,3 +1,5 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF(${PROJECT_NAME}_ENABLE_Epetra AND ${PROJECT_NAME}_ENABLE_EpetraExt AND
    ${PROJECT_NAME}_ENABLE_Ifpack AND ${PROJECT_NAME}_ENABLE_AztecOO)

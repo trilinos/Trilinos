@@ -1,3 +1,5 @@
+INCLUDE(TribitsAddExecutableAndTest)   
+INCLUDE(TribitsLibraryMacros)
 
 IF (KokkosClassic_ENABLE_CUSPARSE AND KokkosClassic_ENABLE_ThreadPool) 
   set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)

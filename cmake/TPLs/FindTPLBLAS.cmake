@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 IF (MSVC AND NOT
     (BLAS_LIBRARY_DIRS  OR

@@ -1,3 +1,4 @@
+INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( Portals
   REQUIRED_HEADERS portals3.h

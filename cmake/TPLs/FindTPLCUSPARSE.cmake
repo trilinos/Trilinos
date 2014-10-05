@@ -54,6 +54,7 @@
 # @HEADER
 
 # Check for CUDA support
+INCLUDE(TribitsTplDeclareLibraries)
 
 IF (NOT TPL_ENABLE_CUDA OR CUDA_VERSION VERSION_LESS "4.1")
   MESSAGE(FATAL_ERROR "\nCUSPARSE: did not find acceptable version of CUDA libraries (4.1 or greater)")

@@ -1,3 +1,4 @@
+INCLUDE(AddSubdirectories)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
 IF (${PACKAGE_NAME}_ENABLE_EpetraExt)

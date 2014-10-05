@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Galeri)
 IF (${PACKAGE_NAME}_ENABLE_Galeri)

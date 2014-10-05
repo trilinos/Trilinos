@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 IF (NOT TPL_ENABLE_Thrust)
   MESSAGE(FATAL_ERROR "\nCusp TPL requires that Thrust support is enabled. Please set \n  TPL_ENABLE_Thrust=ON\n\n")

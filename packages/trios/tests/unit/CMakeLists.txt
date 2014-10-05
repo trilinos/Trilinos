@@ -41,6 +41,11 @@
 # @HEADER
 
 
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsAddTest)
 
 #
 #  When adding test directories if you want the test to be distributed

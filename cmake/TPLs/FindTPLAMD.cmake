@@ -55,6 +55,7 @@
 
 # Tertiary stable code since amd is also built as part of UMFPACK.
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( AMD
   REQUIRED_HEADERS amd.h

@@ -1,2 +1,3 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 

@@ -1,3 +1,4 @@
+INCLUDE(TribitsSubPackageMacros)
 
 #
 # A) Define the package

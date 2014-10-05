@@ -1,3 +1,4 @@
+INCLUDE(TribitsAddExecutableAndTest)
 
 IF (Stokhos_ENABLE_EpetraExt)
   TRIBITS_ADD_EXECUTABLE(

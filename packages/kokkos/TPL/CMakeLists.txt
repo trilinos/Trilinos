@@ -1,3 +1,6 @@
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddOptionAndDefine)
+INCLUDE(TribitsSubPackageMacros)
 
 TRIBITS_SUBPACKAGE(TPL)
 

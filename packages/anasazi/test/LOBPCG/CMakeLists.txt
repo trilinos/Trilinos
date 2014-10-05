@@ -1,3 +1,6 @@
+INCLUDE(TribitsAddExecutable)
+INCLUDE(TribitsAddTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
 

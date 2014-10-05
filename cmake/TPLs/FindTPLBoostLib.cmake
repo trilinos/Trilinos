@@ -53,6 +53,7 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( BoostLib
   REQUIRED_HEADERS boost/version.hpp boost/mpl/at.hpp

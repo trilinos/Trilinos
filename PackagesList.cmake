@@ -54,6 +54,7 @@
 # @HEADER
 
 
+INCLUDE(TribitsListHelpers)
 
 
 #
