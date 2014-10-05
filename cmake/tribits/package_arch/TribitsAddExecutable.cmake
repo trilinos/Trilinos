@@ -161,14 +161,15 @@ INCLUDE(ParseVariableArguments)
 #
 #   ``TESTONLYLIBS <lib0> <lib1> ...``
 #
-#     Specifies extra libraries that will be linked to the executable using
-#     ``TARGET_LINK_LIBRARY()``.  Note that regular libraries (i.e. not
-#     ``TESTONLY``) defined in the current SE package or any upstream SE
-#     packages can *NOT* be listed!  TriBITS automatically links non
-#     ``TESTONLY`` libraries in this package and upstream packages to the
-#     executable.  The only libraries that should be listed in this argument
-#     are either ``TESTONLY`` libraries.  The include directories for each
-#     test-only library will automatically be added using::
+#     Specifies extra test-only libraries defined in this CMake project that
+#     will be linked to the executable using ``TARGET_LINK_LIBRARY()``.  Note
+#     that regular libraries (i.e. not ``TESTONLY``) defined in the current SE
+#     package or any upstream SE packages can *NOT* be listed!  TriBITS
+#     automatically links non ``TESTONLY`` libraries in this package and
+#     upstream packages to the executable.  The only libraries that should be
+#     listed in this argument are either ``TESTONLY`` libraries.  The include
+#     directories for each test-only library will automatically be added
+#     using::
 #
 #       INCLUDE_DIRECTORIES(${<libi>_INCLUDE_DIRS})
 #
@@ -182,12 +183,15 @@ INCLUDE(ParseVariableArguments)
 #
 #   ``IMPORTEDLIBS <lib0> <lib1> ...``
 #
-#     Specifies extra libraries that will be linked to the executable using
-#     ``TARGET_LINK_LIBRARY()``.  This can only be used for libraries that are
-#     built external from this CMake project and are not provided through a
-#     proper `TriBITS TPL`_.  The latter usage of passing in external
-#     libraries is not recommended.  External libraries should be handled as
-#     declared `TriBITS TPLs`_.
+#     Specifies extra external libraries that will be linked to the executable
+#     using ``TARGET_LINK_LIBRARY()``.  This can only be used for libraries
+#     that are built external from this CMake project and are not provided
+#     through a proper `TriBITS TPL`_.  The latter usage of passing in
+#     external libraries is not recommended.  External libraries should be
+#     handled as declared `TriBITS TPLs`_.  So far, the only case where
+#     ``IMPORTEDLIBS`` has been shown to be necessary is to pass in the
+#     standard C math library ``m``.  In every other case, a TriBITS TPL
+#     should be used instead.
 #
 #   ``COMM [serial] [mpi]``
 #
@@ -317,6 +321,8 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
   # C) Add the executable
   #
 
+  SET(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
+
   IF (NOT TRIBITS_ADD_EXECUTABLE_UNIT_TESTING)
     TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
       ${${PACKAGE_NAME}_INCLUDE_DIRS})
@@ -353,46 +359,83 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
       SET (EXE_SOURCES ${EXE_SOURCES} ${SOURCE_FILE})
     ENDFOREACH( )
   ENDIF()
- 
-  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_DEBUG)
 
-    # Assert that TESTONLYLIBS only contains TESTONLY libs!
-    FOREACH(TESTONLYLIB ${PARSE_TESTONLYLIBS})
-      IF (NOT ${TESTONLYLIB}_INCLUDE_DIRS)
-        MESSAGE(FATAL_ERROR "ERROR: TESTONLY lib '$TESTONLYLIB}' being passed through"
-        " TESTONLYLIBS is NOT a test-only lib!")
-      ENDIF()
-    ENDFOREACH()
+  # Assert that TESTONLYLIBS only contains TESTONLY libs!
+  FOREACH(TESTONLYLIB ${PARSE_TESTONLYLIBS})
+    SET(PREFIXED_LIB "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${TESTONLYLIB}")
+    IF (NOT ${PREFIXED_LIB}_INCLUDE_DIRS)
+      MESSAGE(FATAL_ERROR "ERROR: '${TESTONLYLIB}' in TESTONLYLIBS not a TESTONLY lib!"
+        "  If this a regular library in this SE package or in an dependent upstream SE"
+        " package then TriBITS will link automatically to it.  If you remove this and it"
+        " does not link, then you need to add a new SE package dependency to"
+        " this SE package's dependencies file"
+        " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
+    ELSEIF(PARSE_INSTALLABLE)
+      MESSAGE(FATAL_ERROR "ERROR: TESTONLY lib '${TESTONLYLIB}' not allowed with"
+        " INSTALLABLE executable!  An INSTALLABLE executable can only depend on"
+        " non-TESTONLY libraries!  Otherwise, when shared libs are used, and"
+        " TESTONLY library would not be installed and the installed executable"
+        " would be unusable!" )
+    ENDIF()
+  ENDFOREACH()
   
-    # Assert that IMPORTEDLIBS are not TESTONLY libs are not regular package
-    # libs!
-    FOREACH(IMPORTEDLIB ${PARSE_IMPORTEDLIBS})
-      IF (${IMPORTEDLIB}_INCLUDE_DIRS)
-        MESSAGE(FATAL_ERROR "ERROR: IMPORTED lib '$IMPORTEDLIB}' being passed through"
-        " IMPORTEDLIBS is not allowed to be a TESTONLY lib!")
-      ENDIF()
-      LIST(FIND ${PACKAGE_NAME}_LIBRARIES ${IMPORTEDLIB} FOUND_IDX)
-      IF (NOT FOUND_IDX EQUAL -1)
-        MESSAGE(FATAL_ERROR "ERROR: IMPORTED lib '$IMPORTEDLIB}' being passed through"
-        " IMPORTEDLIBS is not allowed to be one of the package's own libs!")
-      ENDIF()
-    ENDFOREACH()
-  ENDIF()
-
-  # Convert from old DEPLIBS to TESTONLYLIBS and IMPORTEDLIBS
-  FOREACH(DEPLIB ${PARSE_DEPLIBS})
-    IF (${DEPLIB}_INCLUDE_DIRS)
-      LIST(APPEND PARSE_TESTONLYLIBS ${DEPLIB})
-      MESSAGE(WARNING "WARNING: TESTONLY lib '${DEPLIB}' being passed through"
-        " DEPLIBS must be passed through TESTONLYLIB!  DEPLIBS is deprecated!")
-    ELSE()
-      LIST(APPEND PARSE_IMPORTEDLIBS ${DEPLIB})
-      MESSAGE(WARNING "WARNING: non-TESTONLY lib '${DEPLIB}' being passed through"
-        " DEPLIBS must be passed through IMPORTEDLIBS!  DEPLIBS is deprecated!")
+  # Assert that IMPORTEDLIBS are not TESTONLY libs are not regular package
+  # libs!
+  FOREACH(IMPORTEDLIB ${PARSE_IMPORTEDLIBS})
+    SET(PREFIXED_LIB "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${IMPORTEDLIB}")
+    IF (${PREFIXED_LIB}_INCLUDE_DIRS)
+      MESSAGE(FATAL_ERROR "ERROR: Lib '${IMPORTEDLIB}' being passed through"
+      " IMPORTEDLIBS is not allowed to be a TESTONLY lib!"
+      "  Use TESTONLYLIBS instead!" )
+    ENDIF()
+    LIST(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
+    IF (NOT FOUND_IDX EQUAL -1)
+      MESSAGE(FATAL_ERROR "ERROR: Lib '${IMPORTEDLIB}' in IMPORTEDLIBS is in"
+      " this SE package and is *not* an external lib!"
+      "  TriBITS takes care of linking against libs the current"
+      " SE package automatically.  Please remove '${IMPORTEDLIB}' from IMPORTEDLIBS!")
+    ELSEIF (TARGET ${PREFIXED_LIB})
+      MESSAGE(FATAL_ERROR "ERROR: Lib '${IMPORTEDLIB}' being passed through"
+      " IMPORTEDLIBS is *not* an external library but instead is a library"
+      " defined in this CMake project!"
+      "  TriBITS takes care of linking against libraries in dependent upstream"
+      " SE packages.  If you want to link to a library in an upstream SE"
+      " package then add the SE package name for that library to the appropriate"
+      " list in this SE package's dependencies file"
+      " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
     ENDIF()
   ENDFOREACH()
 
-  FOREACH(TESTONLYLIB ${PARSE_TESTONLYLIBS})
+  # Convert from old DEPLIBS to TESTONLYLIBS and IMPORTEDLIBS
+  FOREACH(DEPLIB ${PARSE_DEPLIBS})
+    SET(PREFIXED_LIB "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${DEPLIB}")
+    IF (${PREFIXED_LIB}_INCLUDE_DIRS)
+      MESSAGE(WARNING "WARNING: Passing TESTONLY lib '${DEPLIB}' through DEPLIBS"
+        " is deprecated!  Instead, please pass through TESTONLYLIBS instead!"
+        "  DEPLIBS is deprecated!")
+      LIST(APPEND PARSE_TESTONLYLIBS ${DEPLIB})
+    ELSEIF (TARGET ${PREFIXED_LIB})
+      MESSAGE(WARNING "WARNING: Passing non-TESTONLY lib '${DEPLIB}' through DEPLIBS"
+      " is deprecated!  The library '${DEPLIB}' appears to be a"
+      " library defined in this CMake project."
+      "  TriBITS takes care of linking against libraries in dependent upstream"
+      " SE packages.  Therefore, please remove '${DEPLIB}' from this list."
+      "   If you want to link to a library from an upstream SE"
+      " package, then add the SE package name to the appropriate category"
+      " in this SE package's dependencies file: "
+      " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
+    ELSE()
+      MESSAGE(WARNING "WARNING: Passing external lib '${DEPLIB}' through"
+        " DEPLIBS is deprecated!  Instead, pass through IMPORTEDLIBS!"
+        "  DEPLIBS is deprecated!"
+        "  Please note that only external libs are allowed to be passed through"
+        " IMPORTEDLIBS.")
+      LIST(APPEND PARSE_IMPORTEDLIBS ${DEPLIB})
+    ENDIF()
+  ENDFOREACH()
+
+  FOREACH(TESTONLYLIB_IN ${PARSE_TESTONLYLIBS})
+    SET(TESTONLYLIB "${LIBRARY_NAME_PREFIX}${TESTONLYLIB_IN}")
     IF (${TESTONLYLIB}_INCLUDE_DIRS)
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
         MESSAGE(STATUS "Adding include directories ${TESTONLYLIB}_INCLUDE_DIRS ...")
@@ -406,7 +449,7 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
   ENDIF()
 
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("TRIBITS_ADD_EXECUTABLE: ADD_EXECTUABLE(${EXE_BINARY_NAME} ${EXE_SOURCES})")
+    MESSAGE("TRIBITS_ADD_EXECUTABLE: ADD_EXECUTABLE(${EXE_BINARY_NAME} ${EXE_SOURCES})")
   ENDIF()
   ADD_EXECUTABLE(${EXE_BINARY_NAME} ${EXE_SOURCES})
   APPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_ALL_TARGETS ${EXE_BINARY_NAME})
@@ -425,7 +468,6 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
 
   # First, add in the passed in TESTONLY dependent libraries
   IF (PARSE_TESTONLYLIBS)
-    SET(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
     FOREACH(LIB ${PARSE_TESTONLYLIBS})
       LIST(APPEND LINK_LIBS "${LIBRARY_NAME_PREFIX}${LIB}")
     ENDFOREACH()

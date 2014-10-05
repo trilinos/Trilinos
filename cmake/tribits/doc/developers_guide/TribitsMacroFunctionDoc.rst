@@ -322,7 +322,7 @@ below their ``TEST_<idx>`` argument and before the next test block (see
 
 By default, the overall test will be assumed to pass if it prints::
 
-  "OVERALL FINAL RESULT: TEST PASSED"
+  "OVERALL FINAL RESULT: TEST PASSED (${PACKAGE_NAME}_<testName>)"
 
 However, this can be changed by setting one of the following optional arguments:
 
@@ -494,7 +494,8 @@ Usage::
     [HOSTTYPE <hosttype0> <hosttype1> ...]
     [XHOSTTYPE <hosttype0> <hosttype1> ...]
     [DIRECTORY <dir>]
-    [DEPLIBS <lib0> <lib1> ...]
+    [TESTONLYLIBS <lib0> <lib1> ...]
+    [IMPORTEDLIBS <lib0> <lib1> ...]
     [COMM [serial] [mpi]]
     [LINKER_LANGUAGE (C|CXX|Fortran)]
     [DEFINES -D<define0> -D<define1> ...]
@@ -582,20 +583,17 @@ Usage::
     The list of host types for which **not** to enable the test (see
     `TRIBITS_ADD_TEST()`_).
 
-  ``DEPLIBS <lib0> <lib1> ...``
+  ``TESTONLYLIBS <lib0> <lib1> ...``
 
-    Specifies extra libraries that will be linked to the executable using
-    ``TARGET_LINK_LIBRARY()``.  Note that regular libraries (i.e. not
-    ``TESTONLY``) defined in the current SE package or any upstream SE
-    packages do **NOT** need to be listed!  TriBITS automatically links non
-    ``TESTONLY`` libraries in this package and upstream packages to the
-    executable.  The only libraries that should be listed in this argument
-    are either ``TESTONLY`` libraries, or other libraries that are built
-    external from this CMake project and are not provided through a proper
-    `TriBITS TPL`_.  The latter usage of passing in external libraries is
-    not recommended.  External libraries should be handled as declared
-    `TriBITS TPLs`_.  For a ``TESTONLY`` library, the include directories
-    will automatically be added using::
+    Specifies extra test-only libraries defined in this CMake project that
+    will be linked to the executable using ``TARGET_LINK_LIBRARY()``.  Note
+    that regular libraries (i.e. not ``TESTONLY``) defined in the current SE
+    package or any upstream SE packages can *NOT* be listed!  TriBITS
+    automatically links non ``TESTONLY`` libraries in this package and
+    upstream packages to the executable.  The only libraries that should be
+    listed in this argument are either ``TESTONLY`` libraries.  The include
+    directories for each test-only library will automatically be added
+    using::
 
       INCLUDE_DIRECTORIES(${<libi>_INCLUDE_DIRS})
 
@@ -605,7 +603,19 @@ Usage::
 
     Therefore, to link to a defined ``TESTONLY`` library in any upstream
     enabled package, one just needs to pass in the library name through
-    ``DEPLIBS ... <libi> ...`` and that is it!
+    ``TESTONLYLIBS ... <libi> ...`` and that is it!
+
+  ``IMPORTEDLIBS <lib0> <lib1> ...``
+
+    Specifies extra external libraries that will be linked to the executable
+    using ``TARGET_LINK_LIBRARY()``.  This can only be used for libraries
+    that are built external from this CMake project and are not provided
+    through a proper `TriBITS TPL`_.  The latter usage of passing in
+    external libraries is not recommended.  External libraries should be
+    handled as declared `TriBITS TPLs`_.  So far, the only case where
+    ``IMPORTEDLIBS`` has been shown to be necessary is to pass in the
+    standard C math library ``m``.  In every other case, a TriBITS TPL
+    should be used instead.
 
   ``COMM [serial] [mpi]``
 
@@ -709,8 +719,8 @@ Usage::
     [XHOSTTYPE <xhosttype0> <xhosttype1> ...]
     [XHOSTTYPE_TEST <xhosttype0> <xhosttype1> ...]
     [DIRECTORY <dir>]
-    [DEFINES -DS<someDefine>]
-    [DEPLIBS <lib0> <lib1> ... ]
+    [TESTONLYLIBS <lib0> <lib1> ...]
+    [IMPORTEDLIBS <lib0> <lib1> ...]
     [COMM [serial] [mpi]]
     [ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...]
     [NUM_MPI_PROCS <numProcs>]
@@ -822,27 +832,25 @@ Usage::
     List of dependent libraries that are built in the current SE package
     that this library is dependent on.  These libraries are passed into
     ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-    dependency structure of the libraries within the package.  **NOTE:** One
-    must **not** list libraries in other upstream `TriBITS SE Packages`_ or
-    libraries built externally from this TriBITS CMake project.  The TriBITS
-    system automatically handles linking to libraries in upstream TriBITS SE
-    packages.  External libraries need to be listed in the ``IMPORTEDLIBS``
-    argument instead if they are not already specified automatically using a
-    `TriBITS TPL`_.
+    dependency structure of the libraries within this SE package.  **NOTE:**
+    One must **not** list libraries in other upstream `TriBITS SE Packages`_
+    or libraries built externally from this TriBITS CMake project in
+    ``DEPLIBS``.  The TriBITS system automatically handles linking to
+    libraries in upstream TriBITS SE packages.  External libraries need to
+    be listed in the ``IMPORTEDLIBS`` argument instead if they are not
+    already specified automatically using a `TriBITS TPL`_.
 
   ``IMPORTEDLIBS <ideplib0> <ideplib1> ...``
 
     List of dependent libraries built externally from this TriBITS CMake
     project.  These libraries are passed into
     ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-    dependency.  These libraries are added to the
-    ``${PACKAGE_NAME}_LIBRARIES`` variable so that downstream SE packages
-    will also pick up these libraries and these libraries will show up in
-    the generated ``Makefile.export.${PACKAGE_NAME}`` and
-    ``${PACKAGE_NAME}Config.cmake`` files (if they are generated).  However,
-    note that external libraries are often better handled as `TriBITS
-    TPLs`_.  A well constructed TriBITS package and library should never
-    have to use this option!
+    dependency.  However, note that external libraries are often better
+    handled as `TriBITS TPLs`_.  A well constructed TriBITS package and
+    library should never have to use this option!  So far, the only case
+    where ``IMPORTEDLIBS`` has been shown to be necessary is to pass in the
+    standard C math library ``m``.  In every other case, a TriBITS TPL
+    should be used instead.
 
   ``TESTONLY``
 

@@ -1504,8 +1504,12 @@ FUNCTION(UNITEST_TRIBITS_ADD_ADVANCED_TEST_PROPERTIES)
     )
   UNITTEST_COMPARE_CONST(
     TRIBITS_SET_TEST_PROPERTIES_INPUT
-    "PackageA_PackageAddAdvancedTest_basic_cmnd_1_args_0;PROPERTY;REQUIRED_FILES;someCmnd;PackageA_PackageAddAdvancedTest_basic_cmnd_1_args_0;APPEND;PROPERTY;LABELS;PackageA_PackageAddAdvancedTest_basic_cmnd_1_args_0;PROPERTIES;PROCESSORS;1;PackageA_PackageAddAdvancedTest_basic_cmnd_1_args_0;PROPERTIES;PASS_REGULAR_EXPRESSION;OVERALL FINAL RESULT: TEST PASSED"
+    "PackageA_PackageAddAdvancedTest_basic_cmnd_1_args_0;PROPERTY;REQUIRED_FILES;someCmnd;PackageA_PackageAddAdvancedTest_basic_cmnd_1_args_0;APPEND;PROPERTY;LABELS;PackageA_PackageAddAdvancedTest_basic_cmnd_1_args_0;PROPERTIES;PROCESSORS;1;PackageA_PackageAddAdvancedTest_basic_cmnd_1_args_0;PROPERTIES;PASS_REGULAR_EXPRESSION;OVERALL FINAL RESULT: TEST PASSED .PackageA_PackageAddAdvancedTest_basic_cmnd_1_args_0."
     )
+  # NOTE: Above, in unit test mode, TRIBITS_ADD_ADVANCED_TEST() changes is
+  # final pass expression so as to not match the outer run of
+  # TRIBITS_ADD_ADVANCED_TEST() that looks for it.  Otherwise, the outer
+  # TRIBITS_ADD_ADVANCED_TEST() always thinks these unit tests pass!
 
   MESSAGE("Test setting non-integer TIMEOUT with no scaling (not even defined)")
   TRIBITS_ADD_ADVANCED_TEST_UNITTEST_RESET()
@@ -1544,13 +1548,15 @@ FUNCTION(UNITEST_TRIBITS_ADD_EXECUTABLE_AND_TEST)
     NAME_POSTFIX testNamePostfix
     CATEGORIES category1 category2
     HOST host1 host2
+    DEPLIBS lib1 lib2  # Deprecated
     XHOST host1 host2
     HOSTTYPE hosttype1 hosttype2
     XHOSTTYPE hosttype1 hosttype2
     NOEXEPREFIX
     NOEXESUFFIX
+    IMPORTEDLIBS ilib1 ilib2
+    TESTONLYLIBS tolib1 tolib2
     DIRECTORY dir
-    DEPLIBS lib1 lib2
     COMM serial mpi
     NUM_MPI_PROCS numProcs
     LINKER_LANGUAGE C
@@ -1566,7 +1572,7 @@ FUNCTION(UNITEST_TRIBITS_ADD_EXECUTABLE_AND_TEST)
     )
   UNITTEST_COMPARE_CONST(
     TRIBITS_ADD_EXECUTABLE_CAPTURE_ARGS
-    "execName;COMM;serial;mpi;CATEGORIES;category1;category2;HOST;host1;host2;XHOST;host1;host2;HOSTTYPE;hosttype1;hosttype2;XHOSTTYPE;hosttype1;hosttype2;NOEXEPREFIX;NOEXESUFFIX;SOURCES;src1;src2;DEPLIBS;lib1;lib2;DIRECTORY;dir;ADD_DIR_TO_NAME;LINKER_LANGUAGE;C;DEFINES;-DSOMEDEFINE"
+    "execName;COMM;serial;mpi;CATEGORIES;category1;category2;HOST;host1;host2;XHOST;host1;host2;HOSTTYPE;hosttype1;hosttype2;XHOSTTYPE;hosttype1;hosttype2;NOEXEPREFIX;NOEXESUFFIX;SOURCES;src1;src2;DEPLIBS;lib1;lib2;TESTONLYLIBS;tolib1;tolib2;IMPORTEDLIBS;ilib1;ilib2;DIRECTORY;dir;ADD_DIR_TO_NAME;LINKER_LANGUAGE;C;DEFINES;-DSOMEDEFINE"
     )
   UNITTEST_COMPARE_CONST(
     TRIBITS_ADD_TEST_CAPTURE_ARGS
@@ -2019,4 +2025,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(232)
+UNITTEST_FINAL_RESULT(233)

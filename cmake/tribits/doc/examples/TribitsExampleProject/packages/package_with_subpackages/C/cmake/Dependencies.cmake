@@ -1,4 +1,4 @@
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES PackageWithSubpackagesSubpackageA
-  LIB_OPTIONAL_PACKAGES PackageWithSubpackagesSubpackageB
+    PackageWithSubpackagesSubpackageB
   )

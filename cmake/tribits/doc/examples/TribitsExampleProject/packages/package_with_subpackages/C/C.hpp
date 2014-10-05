@@ -5,13 +5,10 @@
 
 namespace PackageWithSubpackages {
 
-  // return a string containing "C"
-  std::string getC();
+std::string getC();
 
-  // return a string describing the dependencies of "C", recursively
-  std::string depsC();
+std::string depsC();
 
 }
-
 
 #endif /* PACKAGEWITHSUBPACKAGES_C_HPP_ */
