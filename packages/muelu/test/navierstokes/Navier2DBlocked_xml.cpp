@@ -136,13 +136,12 @@ int main(int argc, char *argv[]) {
   typedef Xpetra::StridedMap<int,int>        StridedMap;
   typedef Xpetra::StridedMapFactory<int,int> StridedMapFactory;
 
+  oblackholestream blackhole;
   GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
   bool success = false;
   bool verbose = true;
   try {
-    oblackholestream blackhole;
-
     // default parameters
     std::string xmlFile = "myXML.xml";
 
