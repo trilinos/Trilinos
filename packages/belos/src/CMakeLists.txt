@@ -87,7 +87,7 @@ APPEND_SET(HEADERS
   BelosTFQMRIter.hpp
   BelosTFQMRSolMgr.hpp
   BelosTypes.hpp
-  ) 
+  )
 
 # UTIL
 APPEND_SET(SOURCES
@@ -162,7 +162,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)
 IF(${PACKAGE_NAME}_ENABLE_Experimental)
   #
   # Add experimental files to HEADERS and SOURCES.
-  # 
+  #
   APPEND_SET(HEADERS ${${PACKAGE_NAME}_EXPERIMENTAL_HEADERS})
   APPEND_SET(SOURCES ${${PACKAGE_NAME}_EXPERIMENTAL_SOURCES})
 ENDIF() # ${PACKAGE_NAME}_ENABLE_Experimental
@@ -179,7 +179,6 @@ IF (${PACKAGE_NAME}_ENABLE_TSQR)
     belos
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
-    DEPLIBS kokkos kokkosnodetsqr kokkosdisttsqr
     )
 ELSE ()
   TRIBITS_ADD_LIBRARY(

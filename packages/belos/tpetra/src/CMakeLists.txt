@@ -24,7 +24,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  BelosTpetraAdapter.hpp 
+  BelosTpetraAdapter.hpp
   )
 
 APPEND_SET(SOURCES
@@ -42,13 +42,11 @@ IF (${PACKAGE_NAME}_ENABLE_TSQR)
     belostpetra
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
-    DEPLIBS belos tpetra kokkos kokkosnodetsqr kokkosdisttsqr
     )
 ELSE ()
   TRIBITS_ADD_LIBRARY(
     belostpetra
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
-    DEPLIBS belos tpetra kokkos
     )
 ENDIF ()
