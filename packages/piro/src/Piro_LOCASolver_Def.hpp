@@ -156,23 +156,33 @@ Piro::LOCASolver<Scalar>::evalModelImpl(
     const bool keep_iterating = stepper_->iterateOnce(istat, sstat);
 
     if (!keep_iterating) {
-      // End of the final continuation step, so do some extra stuff.
+      // Just after the call to finish().
+      bool do_break = true; // Break from the loop?
       if (istat == LOCA::Abstract::Iterator::Finished ||
           istat == LOCA::Abstract::Iterator::FinishedWithNatural) {
         std::cerr << "Continuation Stepper Finished.\n";
+        // If finish() did an extra step to hit the target, then we want to run
+        // evalConvergedModel(), so don't break from the loop.
+        if (istat == LOCA::Abstract::Iterator::FinishedWithNatural)
+          do_break = false;
       } else if (istat == LOCA::Abstract::Iterator::NotFinished) {
-        // Should not get here.
         std::cerr << "Continuation Stepper did not reach final value.\n";
       } else {
         std::cerr << "Nonlinear solver failed to converge.\n";
         outArgs.setFailed();
+        // The behavior of the previous implementation of evalModelImpl was to
+        // call evalConvergedModel regardless of the iterator status. Do that in
+        // the new implementation, too.
+        //   A subtlety is that outArgs.setFailed() sets get_g(num_g) to
+        // null. Only the call to get_g_space in the following code restores it.
+        do_break = false;
       }
-      if (istat != LOCA::Abstract::Iterator::FinishedWithNatural) {
-        // If finish() did an extra step to hit the target, then we want to run
-        // evalConvergedModel(). Otherwise, we're done, so break from the loop.
-        break;
-      }
+      if (do_break) break;
     }
+
+    // Perhaps we should call evalConvergedModel only if the step was
+    // successful. If we decide to refine the logic accordingly, at the same
+    // time we should rework the logic surrounding istat above.
 
     // Compute responses at the end of this continuation step.
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >

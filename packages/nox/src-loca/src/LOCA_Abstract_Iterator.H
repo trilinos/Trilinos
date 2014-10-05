@@ -152,11 +152,13 @@ namespace LOCA {
 
       /// \brief Iterate once.
       ///
-      /// \param iteratorStatus [in, out] On exit, the value to be passed to \c
-      /// iterateOnce().
+      /// \param iteratorStatus [in, out] On entry, either the value from
+      /// initializeIterateOnce() or from the previous call of iterateOnce(), if
+      /// it returned true. On exit, the status of the iterator. If
+      /// iterateOnce() returns true, also the input for the next call.
       ///
-      /// \param stepStatus [in, out] On exit, the value to be passed to \c
-      /// iterateOnce().
+      /// \param stepStatus [in, out] Same behavior as iteratorStatus, but for
+      /// StepStatus.
       ///
       /// Returns \c true if one should keep iterating, false if done.
       ///
