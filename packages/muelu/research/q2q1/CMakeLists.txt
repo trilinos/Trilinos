@@ -6,7 +6,6 @@ IF( (${PACKAGE_NAME}_ENABLE_Tpetra                                      AND ${PA
     TRIBITS_ADD_EXECUTABLE(
       Q2Q1
       SOURCES Q2Q1.cpp MueLu_Q2Q1PFactory.hpp
-      DEPLIBS muelu xpetra
       COMM serial mpi
       )
 

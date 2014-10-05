@@ -152,7 +152,6 @@ TRIBITS_ADD_LIBRARY(
   muelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS xpetra xpetra-sup xpetra-ext
   )
 
 IF(KokkosClassic_ENABLE_Thrust OR

@@ -11,7 +11,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES paramlist.cpp
   ARGS ""
   COMM serial mpi
-  DEPLIBS muelu xpetra
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -19,5 +18,4 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES paramlistAdv.cpp
   ARGS ""
   COMM serial mpi
-  DEPLIBS muelu xpetra
   )

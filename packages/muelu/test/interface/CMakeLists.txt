@@ -26,7 +26,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     ParameterListInterpreter
     SOURCES ParameterListInterpreter.cpp ../unit_tests/MueLu_TestHelpers.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra
     )
 
 ENDIF()

@@ -13,7 +13,6 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAG
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         Simple-LongInt
         SOURCES Simple-LongInt.cpp
-        DEPLIBS muelu xpetra
         NUM_MPI_PROCS 4
         COMM serial mpi
         )
@@ -30,7 +29,6 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAG
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Simple-Complex
       SOURCES Simple-Complex.cpp
-      DEPLIBS muelu xpetra
       NUM_MPI_PROCS 1
       COMM serial mpi
       )

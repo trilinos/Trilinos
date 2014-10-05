@@ -5,6 +5,5 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     SeparateSetups
     SOURCES SeparateSetups.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra
     )
 ENDIF()

@@ -8,7 +8,6 @@ IF(NOT HAVE_MUELU_COMPLEX AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     SOURCES Permutation.cpp
     ARGS ""
     COMM serial mpi
-    DEPLIBS muelu xpetra
     )
 ENDIF()
 

@@ -102,7 +102,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     UnitTests
     SOURCES ${SOURCES}
     COMM serial mpi
-    DEPLIBS muelu muelu-adapters xpetra
     )
 
   IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt
