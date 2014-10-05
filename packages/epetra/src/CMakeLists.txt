@@ -13,6 +13,10 @@ SET(Epetra_HAVE_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
 # This is the preferred macro to key on, but am keeping the old one for backward compatibility
 SET(EPETRA_HAVE_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
 
+SET(HAVE_BLAS ON)
+SET(HAVE_LAPACK ON)
+SET(HAVE_MPI ${Epetra_ENABLE_MPI})
+
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 # Set the base Trilinos directory in order to find Trilinos_version.h
