@@ -1,6 +1,3 @@
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddAdvancedTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(ParseVariableArguments)
 
 

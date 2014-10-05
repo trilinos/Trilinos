@@ -1,7 +1,6 @@
 
 IF(${PROJECT_NAME}_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
 
-INCLUDE(TribitsAddExecutable)
 
 SET(ZFDRIVE_SOURCES
     fdr_migrate.f90 

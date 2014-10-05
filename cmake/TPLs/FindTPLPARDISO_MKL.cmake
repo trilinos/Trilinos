@@ -53,7 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( PARDISO_MKL
   REQUIRED_HEADERS mkl_pardiso.h

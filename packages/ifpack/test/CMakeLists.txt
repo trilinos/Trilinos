@@ -1,4 +1,3 @@
-INCLUDE(AddSubdirectories)
 
 IF (NOT Trilinos_NO_32BIT_GLOBAL_INDICES)
 

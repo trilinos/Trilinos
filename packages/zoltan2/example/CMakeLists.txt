@@ -1,4 +1,3 @@
-INCLUDE(AddSubdirectories)
 
 # For Tpetra_config.h to get explicit instantiation info
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)

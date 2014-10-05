@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

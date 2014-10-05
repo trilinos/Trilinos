@@ -1,4 +1,3 @@
-INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( InfiniBand
   REQUIRED_HEADERS verbs.h

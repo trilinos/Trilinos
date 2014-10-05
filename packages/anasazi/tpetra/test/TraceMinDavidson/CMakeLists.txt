@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 # FIXME (mfh 25 Aug 2014) The "smallest" tests in this directory are
 # either failing or hanging (smallest_bdprec_test).  (It's odd that

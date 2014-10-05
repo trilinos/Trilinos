@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
 

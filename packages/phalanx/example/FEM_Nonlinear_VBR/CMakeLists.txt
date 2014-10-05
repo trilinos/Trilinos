@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(Phalanx_ENABLE_Belos)
 ASSERT_DEFINED(Phalanx_ENABLE_Epetra)

@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE(
   Tpetra_TD_Gen_example
