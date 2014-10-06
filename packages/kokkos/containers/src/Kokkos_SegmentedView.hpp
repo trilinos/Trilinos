@@ -327,15 +327,15 @@ public:
 
   template< class MemberType>
   KOKKOS_INLINE_FUNCTION
-  void grow(MemberType& team_member, const size_t& size) const {
-    if(size>max_segments_*segment_length_) {
-      printf("Exceeding maxSize: %lu %lu\n",size,max_segments_*segment_length_);
+  void grow (MemberType& team_member, const size_t& growSize) const {
+    if (growSize>max_segments_*segment_length_) {
+      printf ("Exceeding maxSize: %lu %lu\n", growSize, max_segments_*segment_length_);
       return;
     }
     if(team_member.team_rank()==0) {
-      bool too_small = size > segment_length_ * nsegments_();
+      bool too_small = growSize > segment_length_ * nsegments_();
       while(too_small && Kokkos::atomic_compare_exchange(&realloc_lock(),0,1) ) {
-        too_small = size > segment_length_ * nsegments_();
+        too_small = growSize > segment_length_ * nsegments_();
       }
       if(too_small) {
         while(too_small) {
@@ -346,7 +346,7 @@ public:
           segments_(nsegments_()) =
             t_dev(ptr,segment_length_,m_offset_map.N1,m_offset_map.N2,m_offset_map.N3,m_offset_map.N4,m_offset_map.N5,m_offset_map.N6,m_offset_map.N7);
           nsegments_()++;
-          too_small = size > segment_length_ * nsegments_();
+          too_small = growSize > segment_length_ * nsegments_();
         }
         realloc_lock() = 0;
       }
@@ -355,21 +355,25 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  void grow_non_thread_safe(const size_t& size) const {
-    if(size>max_segments_*segment_length_) {
-      printf("Exceeding maxSize: %i %i\n",size,max_segments_*segment_length_);return;
+  void grow_non_thread_safe (const size_t& growSize) const {
+    if (growSize>max_segments_*segment_length_) {
+      printf ("Exceeding maxSize: %i %i\n", growSize, max_segments_*segment_length_);
+      return;
     }
-    bool too_small = size > segment_length_ * nsegments_();
+    bool too_small = growSize > segment_length_ * nsegments_();
     if(too_small) {
       while(too_small) {
         const size_t alloc_size = segment_length_*m_offset_map.N1*m_offset_map.N2*m_offset_map.N3*
                             m_offset_map.N4*m_offset_map.N5*m_offset_map.N6*m_offset_map.N7;
-        typename traits::non_const_value_type* const ptr = new typename traits::non_const_value_type[alloc_size];
+        typename traits::non_const_value_type* const ptr =
+          new typename traits::non_const_value_type[alloc_size];
 
         segments_(nsegments_()) =
-          t_dev(ptr,segment_length_,m_offset_map.N1,m_offset_map.N2,m_offset_map.N3,m_offset_map.N4,m_offset_map.N5,m_offset_map.N6,m_offset_map.N7);
+          t_dev (ptr, segment_length_, m_offset_map.N1, m_offset_map.N2,
+                 m_offset_map.N3, m_offset_map.N4, m_offset_map.N5,
+                 m_offset_map.N6, m_offset_map.N7);
         nsegments_()++;
-        too_small = size > segment_length_ * nsegments_();
+        too_small = growSize > segment_length_ * nsegments_();
       }
     }
   }
