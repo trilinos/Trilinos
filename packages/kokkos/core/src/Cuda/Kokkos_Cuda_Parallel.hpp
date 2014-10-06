@@ -158,6 +158,87 @@ public:
   __device__ inline Type team_scan( const Type & value ) const
     { return this->template team_scan<Type>( value , 0 ); }
 
+
+#ifdef KOKKOS_HAVE_CXX11
+  template< typename iType, class Operation>
+  __device__ inline void team_par_for(const iType n, const Operation & op ) const {
+    for(int _i = threadIdx.y; _i < n; _i += team_size())
+      op(_i);
+  }
+
+  template< typename iType, class Operation, typename ValueType >
+  __device__ inline void team_par_reduce(const iType n, const Operation & op, ValueType& result
+  ) const {
+
+    ValueType val = ValueType();
+
+    for(int _i = threadIdx.y; _i < n; _i += team_size())
+      op(_i,val);
+
+    __shared__ ValueType sh_val[blockDim.y];
+
+    if( threadIdx.x == 0 ) sh_val[threadIdx.y] = val;
+    for(int _i = 1; _i < blockDim.y; _i*=2) {
+      if( ( threadIdx.x == 0) && ( threadIdx.y + _i<blockDim.y ) ) {
+        sh_val[threadIdx.y] += sh_val[threadIdx.y+_i];
+      }
+      __threadfence_block();
+    }
+
+    result = sh_val[0];
+  }
+
+  template< typename iType, class Operation, typename ValueType, class JoinType >
+  __device__ inline void team_par_reduce(const iType n, const Operation & op, ValueType& result, const JoinType & join
+  ) const {
+
+    ValueType val = ValueType();
+
+    for(int _i = threadIdx.y; _i < n; _i += team_size())
+      op(_i,val);
+
+    __shared__ ValueType sh_val[blockDim.y];
+
+    if( threadIdx.x == 0 ) sh_val[threadIdx.y] = val;
+    for(int _i = 1; _i < blockDim.y; _i*=2) {
+      if( ( threadIdx.x == 0) && ( threadIdx.y + _i<blockDim.y ) ) {
+        join(sh_val[threadIdx.y], sh_val[threadIdx.y+_i]);
+      }
+      __threadfence_block();
+    }
+
+    result = sh_val[0];
+  }
+
+  template< typename iType, class Operation, typename ValueType >
+  __device__ inline void team_par_scan(const iType n, const Operation & op, ValueType& scan_val ) const {
+
+    scan_val = ValueType();
+
+    iType loop_bound = ((n+blockDim.y-1)/blockDim.y) * blockDim.y;
+
+    for(int _i = threadIdx.y; _i < loop_bound; _i += blockDim.y) {
+      ValueType val = ValueType();
+      if(_i<n)
+        op(_i , val , false);
+
+      __shared__ ValueType sh_val[blockDim.y];
+
+      if( threadIdx.x==0 ) sh_val[threadIdx.y] = val;
+      for(int _i = 1; _i < blockDim.y; _i++) {
+        if( (threadIdx.x==0) && (threadIdx.y - _i >= 0) ) {
+          sh_val[threadIdx.y] += sh_val[threadIdx.y-_i];
+        }
+        __threadfence_block();
+      }
+      val = scan_val + sh_val[threadIdx.y] - val;
+      scan_val += sh_val[blockDim.y-1];
+
+      if(_i<n)
+        op(_i , val , true);
+    }
+  }
+#endif
   //----------------------------------------
   // Private for the driver
 
@@ -193,6 +274,18 @@ public:
 
   template< typename Type >
   Type team_scan( const Type & value ) const ;
+
+  template< typename iType, class Operation >
+  void team_par_for(const iType n, const Operation & op) const {}
+
+  template< typename iType, class Operation, typename ValueType >
+  void team_par_reduce(const iType n, const Operation & op, ValueType& result) const {}
+
+  template< typename iType, class Operation, typename ValueType , class JoinType>
+  void team_par_reduce(const iType n, const Operation & op, ValueType& result, const JoinType & join) const {}
+
+  template< typename iType, class Operation, typename ValueType >
+  void team_par_scan(const iType n, const Operation & op, ValueType& result) const {}
 
   //----------------------------------------
   // Private for the driver
