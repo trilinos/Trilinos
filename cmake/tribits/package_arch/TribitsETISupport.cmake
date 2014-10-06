@@ -129,9 +129,9 @@ FUNCTION(TRIBITS_ETI_CHECK_EXCLUSION processed_excludes processed_inst excluded)
           BREAK()
         ENDIF()
       ENDFOREACH()
-      IF(lcltest) 
+      IF(lcltest)
         SET(${excluded} ON PARENT_SCOPE)
-        IF (${PROJECT}_VERBOSE_CONFIGURE) 
+        IF (${PROJECT}_VERBOSE_CONFIGURE)
           MESSAGE(STATUS "-- Instantiation excluded by ${excl}")
         ENDIF()
         RETURN()
@@ -140,8 +140,8 @@ FUNCTION(TRIBITS_ETI_CHECK_EXCLUSION processed_excludes processed_inst excluded)
   ENDFOREACH()
 ENDFUNCTION()
 
-# given a list of field names and list of macrofields, translate the 
-# field names in macrofields into indices corresponding to the position in 
+# given a list of field names and list of macrofields, translate the
+# field names in macrofields into indices corresponding to the position in
 # the list of field names
 FUNCTION(TRIBITS_ETI_INDEX_MACRO_FIELDS etifields macrofields indexvar)
   FOREACH(mf ${macrofields})
@@ -193,7 +193,7 @@ ENDFUNCTION()
 # utility for mangling type names to make them safe for the C preprocessor
 # upon mangling, it automatically inserts an ifdef into the mangling macro
 FUNCTION(TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO
-         typedefvar 
+         typedefvar
          symbolvar
          manglistvar)
   SET(oldsymbol "${${symbolvar}}")
@@ -252,7 +252,7 @@ FUNCTION(TRIBITS_ETI_GENERATE_MACROS etifields etisetvar etiexcludelist mangling
   LIST(LENGTH etifields numfields)
   MATH(EXPR NFm1 "${numfields}-1")
   FOREACH(inst ${etisetvar})
-    IF (${PROJECT}_VERBOSE_CONFIGURE) 
+    IF (${PROJECT}_VERBOSE_CONFIGURE)
       MESSAGE(STATUS "Processing instantiation: ${inst}") # comment
     ENDIF()
     TRIBITS_ETI_EXPLODE("${etifields}" "${inst}" tmp)
@@ -263,7 +263,7 @@ FUNCTION(TRIBITS_ETI_GENERATE_MACROS etifields etisetvar etiexcludelist mangling
     ENDIF()
     # check whether it is on the exclude list
     TRIBITS_ETI_CHECK_EXCLUSION("${processed_excludes}" "${inst}" excluded)
-    IF(NOT excluded) 
+    IF(NOT excluded)
       SPLIT("${inst}" "\\|" inst)
       # append tuple to list
       FOREACH(m RANGE 1 ${num_macros})

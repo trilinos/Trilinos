@@ -46,7 +46,7 @@ INCLUDE(PrintVar)
 
 #
 # @FUNCTION: TRIBITS_ADD_ADVANCED_TEST()
-# 
+#
 # Function that creates an advanced test defined by stringing together one or
 # more executables and/or commands that is run as a ``cmake -P`` script with
 # very flexible pass/fail criteria.
@@ -108,7 +108,7 @@ INCLUDE(PrintVar)
 # order for the overall test to pass.
 #
 # *Sections:*
-# 
+#
 # * `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
@@ -225,7 +225,7 @@ INCLUDE(PrintVar)
 #     the full CTest test, not individual ``TEST_<idx>`` commands!
 #
 # .. _TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
-# 
+#
 # **TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # Each test command block ``TEST_<idx>`` runs either a package-built test
@@ -358,7 +358,7 @@ INCLUDE(PrintVar)
 # `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
 # .. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
-# 
+#
 # **Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # By default, the overall test will be assumed to pass if it prints::
@@ -378,7 +378,7 @@ INCLUDE(PrintVar)
 #     ``<regex>``.  Otherwise, it will be assumed to fail.
 #
 # .. _Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST()):
-# 
+#
 # **Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # The basic tool used for parsing the arguments to this function is the macro
@@ -519,7 +519,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
      )
   # NOTE: The TIMEOUT argument is not documented on purpose.  I don't want to
   # advertise it!
-  
+
   #
   # B) Add or don't add tests based on a number of criteria
   #
@@ -674,7 +674,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
       ENDIF()
 
       SET( TEST_CMND_ARRAY ${PARSE_CMND} ${ARGS_STR} )
-    
+
     ELSE()
 
       MESSAGE( FATAL_ERROR
@@ -805,7 +805,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       MESSAGE("\nWriting file \"${TEST_SCRIPT_FILE}\" ...")
     ENDIF()
-  
+
     FILE( WRITE "${TEST_SCRIPT_FILE}"
       "${TEST_SCRIPT_STR}" )
 
@@ -827,20 +827,20 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
     LIST(REMOVE_DUPLICATES TEST_EXE_LIST)
     TRIBITS_SET_TEST_PROPERTY(${TEST_NAME} PROPERTY REQUIRED_FILES ${TEST_EXE_LIST})
-  
+
     IF(PARSE_RUN_SERIAL)
       TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES RUN_SERIAL ON)
     ENDIF()
-    
+
     TRIBITS_PRIVATE_ADD_TEST_ADD_LABEL_AND_KEYWORDS(${TEST_NAME})
-    
+
     #This if clause will set the number of PROCESSORS to reserve during testing
     #to the number requested for the test.
     IF(NUM_PROCS_USED)
       TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
         PROCESSORS "${NUM_PROCS_USED}")
     ENDIF()
-    
+
     IF (PARSE_FINAL_PASS_REGULAR_EXPRESSION)
       TRIBITS_SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
         PASS_REGULAR_EXPRESSION "${PARSE_FINAL_PASS_REGULAR_EXPRESSION}" )
@@ -852,12 +852,12 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
         PASS_REGULAR_EXPRESSION
         "OVERALL FINAL RESULT: TEST PASSED .${TEST_NAME}." )
     ENDIF()
-    
+
     IF (PARSE_TIMEOUT)
       TRIBITS_SCALE_TIMEOUT(${PARSE_TIMEOUT} TIMEOUT_USED)
       TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES TIMEOUT ${TIMEOUT_USED})
     ENDIF()
-  
+
     IF (PARSE_ENVIRONMENT)
       TRIBITS_SET_TEST_PROPERTY(${TEST_NAME} PROPERTY ENVIRONMENT ${PARSE_ENVIRONMENT})
     ENDIF()

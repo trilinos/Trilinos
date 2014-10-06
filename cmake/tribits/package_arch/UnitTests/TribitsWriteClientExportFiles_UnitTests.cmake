@@ -73,7 +73,7 @@ ENDMACRO()
 
 
 #
-# A) Test basic package processing and reading dependencies 
+# A) Test basic package processing and reading dependencies
 #
 
 

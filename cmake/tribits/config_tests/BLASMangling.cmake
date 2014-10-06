@@ -42,7 +42,7 @@
 # Sets the following outputs on success:
 #
 #  BLAS_FN_CASE
-#    "UPPER" if names are translated to upper-case, 
+#    "UPPER" if names are translated to upper-case,
 #    "LOWER" otherwise.
 #
 #  BLAS_FN_UNDERSCORE

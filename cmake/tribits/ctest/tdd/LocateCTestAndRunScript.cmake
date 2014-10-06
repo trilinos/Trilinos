@@ -70,7 +70,7 @@ elseif(NOT CTEST_EXE)
 
   message("Selecting '${ctest_filename}' of type '${ctest_type}'...")
 
-  set(CTEST_EXE 
+  set(CTEST_EXE
     "${TD_BASE_DIR}/tools/cmake-${ctest_type}/bin/${ctest_filename}")
 
   if(NOT CTEST_EXE)

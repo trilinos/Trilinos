@@ -6,7 +6,7 @@
 std::string ExternalProj::external_func()
 {
   return std::string("external_func ")
-    + PackageWithSubpackages::getA()
+    + WithSubpackages::getA()
     + " "
-    + PackageWithSubpackages::depsA();
+    + WithSubpackages::depsA();
 }

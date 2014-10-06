@@ -68,7 +68,7 @@ FUNCTION(DRIVE_ADVANCED_TEST)
 
   SET(OUTPUT_SEP
     "--------------------------------------------------------------------------------")
-  
+
   MATH(EXPR LAST_CMND_IDX ${NUM_CMNDS}-1)
 
   MESSAGE("\n${ADVANDED_TEST_SEP}\n")
@@ -91,10 +91,10 @@ FUNCTION(DRIVE_ADVANCED_TEST)
       APPEND_STRING_VAR( TEST_NAMES_STR ", TEST_${CMND_IDX}" )
     ENDIF()
   ENDFOREACH()
-  MESSAGE("Running test commands: ${TEST_NAMES_STR}") 
+  MESSAGE("Running test commands: ${TEST_NAMES_STR}")
 
   SET(OVERALL_TEST_PASSED TRUE)
-  
+
   FOREACH ( CMND_IDX RANGE ${LAST_CMND_IDX} )
 
     MESSAGE("\n${TEST_SEP}\n")
@@ -228,9 +228,9 @@ FUNCTION(DRIVE_ADVANCED_TEST)
         ENDIF()
       ENDIF()
     ENDIF()
-  
+
   ENDFOREACH()
-        
+
   MESSAGE("\n${TEST_SEP}\n")
 
   IF (NOT SHOW_COMMANDS_ONLY)

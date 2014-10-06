@@ -6,7 +6,7 @@
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>TriBITS Developers Guide and Reference</title>
 <meta name="author" content="Roscoe A. Bartlett (bartlettra&#64;ornl.gov)" />
-<meta name="date" content="2014-10-04" />
+<meta name="date" content="2014-10-06" />
 <style type="text/css">
 
 /*
@@ -315,9 +315,9 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Author:</th>
 <td>Roscoe A. Bartlett (<a class="reference external" href="mailto:bartlettra&#64;ornl.gov">bartlettra&#64;ornl.gov</a>)</td></tr>
 <tr><th class="docinfo-name">Date:</th>
-<td>2014-10-04</td></tr>
+<td>2014-10-06</td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>TriBITS Development at 2014-10-04</td></tr>
+<td>TriBITS Development at 2014-10-06</td></tr>
 </tbody>
 </table>
 <table class="docutils field-list" frame="void" rules="none">
@@ -642,7 +642,7 @@ lower-level roles.</p>
 <p id="tribits-project-users"><span id="tribits-project-user"></span>The first role is that of a <strong>TriBITS Project User</strong> who only needs to be able
 to configure, build, and test a project that uses TriBITS as its build system.
 A person acting in this role needs to know little about CMake other than
-basics about how to run the <tt class="docutils literal">cmake</tt> and <tt class="docutils literal">ctest</tt> exectuables, how to set
+basics about how to run the <tt class="docutils literal">cmake</tt> and <tt class="docutils literal">ctest</tt> executables, how to set
 CMake cache variables, and the basics of building software by typing <tt class="docutils literal">make</tt>
 and running tests with <tt class="docutils literal">ctest</tt>.  The proper reference for a TriBITS Project
 User is the <a class="reference internal" href="#project-specific-build-quick-reference">Project-Specific Build Quick Reference</a>.  The <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS
@@ -653,7 +653,7 @@ anything else described in this current document except for <a class="reference 
 Dependencies and Enable/Disable Logic</a>.</p>
 <p id="tribits-project-developers"><span id="tribits-project-developer"></span>A <strong>TriBITS Project Developer</strong> is someone who contributes to a software
 project that uses TriBITS.  They will add source files, libraries and
-exectuables, test executables and define tests run with <tt class="docutils literal">ctest</tt>.  They have
+executables , test executables and define tests run with <tt class="docutils literal">ctest</tt>.  They have
 to configure and build the project code in order to be able to develop and run
 tests and therefore this role includes all of the necessary knowledge and
 functions of a TriBITS Project User.  A casual TriBITS Project Developer
@@ -976,7 +976,7 @@ engineering books out there (see
 <div class="section" id="tribits-project-structure">
 <h1><a class="toc-backref" href="#id9">3&nbsp;&nbsp;&nbsp;TriBITS Project Structure</a></h1>
 <p>TriBITS is a Framework, implemented in CMake, to create CMake projects.  As a
-Framework (with a capital &quot;F&quot;), TriBITS defines the the overall structure of a
+Framework (with a capital &quot;F&quot;), TriBITS defines the overall structure of a
 CMake build system for a project and it processes the various project-,
 repository-, and package-specific files in a specified order.  Almost all of
 this processing takes place in the <a class="reference internal" href="#id2">TRIBITS_PROJECT()</a> macro (or macros and
@@ -1010,7 +1010,7 @@ A package also typically defines a single integrated unit of documentation
 and testing (see <a class="reference internal" href="#tribits-automated-testing">TriBITS Automated Testing</a>).  A TriBITS package may or
 may not be broken down into multiple subpackages. Examples of TriBITS
 packages in <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a> include <tt class="docutils literal">SimpleCXX</tt>,
-<tt class="docutils literal">MixedLanguage</tt> and <tt class="docutils literal">PackageWithSubpackages</tt>.  (Don't confuse a TriBITS
+<tt class="docutils literal">MixedLang</tt> and <tt class="docutils literal">WithSubpackages</tt>.  (Don't confuse a TriBITS
 &quot;Package&quot; with a raw CMake &quot;Package&quot;. A raw CMake &quot;Package&quot; actually maps to
 a <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>; see <a class="reference internal" href="#why-a-tribits-package-is-not-a-cmake-package">Why a TriBITS Package is not a CMake Package</a>.)</li>
 </ul>
@@ -1019,23 +1019,23 @@ a <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>; see <a clas
 typically has source files built into libraries and tests but is documented
 and tested along with the other subpackages the parent package.  The primary
 purpose for supporting subpackages is to provide finer-grained control of
-software dependencies.  In <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>,
-<tt class="docutils literal">PackageWithSubpackages</tt> is an example of a package with subpackages
-<tt class="docutils literal">SubpackageA</tt>, <tt class="docutils literal">SubpackaeB</tt>, and <tt class="docutils literal">SubpackageC</tt>.  The full subpackage
-name has the parent package name prefixed the the subpackage name
-(e.g. <tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>).  The parent package is always
-implicitly dependent on its subpackages.</li>
+software dependencies.  In <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>, <tt class="docutils literal">WithSubpackages</tt> is
+an example of a package with subpackages <tt class="docutils literal">'A'</tt>, <tt class="docutils literal">'B'</tt>, and <tt class="docutils literal">'C'</tt>.  The
+full subpackage name is prefixed by the parent package name (e.g. the full
+name for subpackage <tt class="docutils literal">'A'</tt> is <tt class="docutils literal">WithSubpackagesA</tt>).  The parent package is
+always implicitly dependent on its subpackages (e.g. parent package
+<tt class="docutils literal">WithSubpackages</tt> depends on its subpackages <tt class="docutils literal">WithSubpackagesA</tt>,
+<tt class="docutils literal">WithSubpackagesB</tt>, and <tt class="docutils literal">WithSubpackagesC</tt>).</li>
 </ul>
 <ul class="simple" id="tribits-se-packages">
 <span id="tribits-se-package"></span><li><strong>TriBITS SE Package</strong>: The combined set of <a class="reference internal" href="#tribits-packages">TriBITS Packages</a> and <a class="reference internal" href="#tribits-subpackages">TriBITS
-Subpackages</a> that constitute the basic <em>Software Engineering</em> packages (see
-<a class="reference internal" href="#software-engineering-packaging-principles">Software Engineering Packaging Principles</a>) of a TriBITS project: SE
+Subpackages</a> that constitute the basic <em>Software Engineering</em> packages of a
+TriBITS project (see <a class="reference internal" href="#software-engineering-packaging-principles">Software Engineering Packaging Principles</a>): SE
 packages are the basis for setting dependencies in the TriBITS system.  For
 example, the SE Packages provided by the top-level example package
-<tt class="docutils literal">PackageWithSubpackages</tt> (in order of increasing dependencies) are
-<tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>, <tt class="docutils literal">PackageWithSubpackagesSubpackageB</tt>,
-<tt class="docutils literal">PackageWithSubpackagesSubpackageC</tt>, and <tt class="docutils literal">PackageWithSubpackages</tt> (see
-<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>).</li>
+<tt class="docutils literal">WithSubpackages</tt> (in order of increasing dependencies) are
+<tt class="docutils literal">WithSubpackagesA</tt>, <tt class="docutils literal">WithSubpackagesB</tt>, <tt class="docutils literal">WithSubpackagesC</tt>, and
+<tt class="docutils literal">WithSubpackages</tt> (see <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>).</li>
 </ul>
 <ul class="simple" id="tribits-tpls">
 <li><a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>: The specification for a particular external dependency that
@@ -1333,7 +1333,7 @@ SET(${REPOSITORY_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT ON) # Change to 'OFF' for
 </pre>
 <p>Note that the prefix <tt class="docutils literal">${REPOSITORY_NAME}_</tt> is used instead of hard-coding
 the project name.  This is so that the same <tt class="docutils literal">Version.txt</tt> file can be used
-as the the <a class="reference internal" href="#repodir-version-cmake">&lt;repoDir&gt;/Version.cmake</a> file and have the repository name be
+as the <a class="reference internal" href="#repodir-version-cmake">&lt;repoDir&gt;/Version.cmake</a> file and have the repository name be
 flexible.  TriBITS sets <tt class="docutils literal">REPOSITORY_NAME = ${PROJECT_NAME}</tt> when it reads in
 this file at the project-level scope.</p>
 <p>It is strongly recommended that every TriBITS project contain a
@@ -1506,7 +1506,7 @@ MACRO(TRIBITS_PROJECT_DEFINE_PACKAGING)
     TRIBITS_COPY_INSTALLER_RESOURCE(TribitsExProj_LICENSE
       &quot;${TribitsExProj_SOURCE_DIR}/LICENSE&quot;
       &quot;${TribitsExProj_BINARY_DIR}/LICENSE.txt&quot;)
-  
+
     SET(CPACK_PACKAGE_DESCRIPTION &quot;TribitsExampleProject just shows you how to use TriBITS.&quot;)
     SET(CPACK_PACKAGE_FILE_NAME &quot;tribitsexproj-setup-${TribitsExProj_VERSION}&quot;)
     SET(CPACK_PACKAGE_INSTALL_DIRECTORY &quot;TribitsExProj ${TribitsExProj_VERSION}&quot;)
@@ -1519,7 +1519,7 @@ MACRO(TRIBITS_PROJECT_DEFINE_PACKAGING)
     SET(${PROJECT_NAME}_CPACK_SOURCE_GENERATOR_DEFAULT &quot;TGZ;TBZ2&quot;)
     SET(CPACK_SOURCE_FILE_NAME &quot;tribitsexproj-source-${TribitsExProj_VERSION}&quot;)
     SET(CPACK_COMPONENTS_ALL ${TribitsExProj_PACKAGES} Unspecified)
-  
+
 ENDMACRO()
 
 </pre>
@@ -1693,10 +1693,10 @@ with their directories and other properties.  For example, the file
 <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">PackagesList.cmake</tt> looks like:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
-  SimpleCxx               packages/simple_cxx                 PT
-  MixedLanguage           packages/mixed_language             PT
-  PackageWithSubpackages  packages/package_with_subpackages   PT
-  WrapExternal            packages/wrap_external              ST
+  SimpleCxx          packages/simple_cxx         PT
+  MixedLang          packages/mixed_lang         PT
+  WithSubpackages    packages/with_subpackages   PT
+  WrapExternal       packages/wrap_external      ST
   )
 
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(WrapExternal Windows)
@@ -1893,11 +1893,11 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
   IF (NOT ${PROJECT_NAME}_ENABLE_Fortran)
     MESSAGE(
       &quot;\n***&quot;
-      &quot;\n*** Warning: Setting ${PROJECT_NAME}_ENABLE_MixedLanguage=OFF&quot;
+      &quot;\n*** Warning: Setting ${PROJECT_NAME}_ENABLE_MixedLang=OFF&quot;
       &quot; because ${PROJECT_NAME}_ENABLE_Fortran=OFF!&quot;
       &quot;\n***\n&quot;
       )
-    SET(${PROJECT_NAME}_ENABLE_MixedLanguage OFF)
+    SET(${PROJECT_NAME}_ENABLE_MixedLang OFF)
   ENDIF()
 
 ENDMACRO()
@@ -1922,7 +1922,7 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
   APPEND_SET(CPACK_SOURCE_IGNORE_FILES
     &quot;${${REPOSITORY_NAME}_SOURCE_DIR}/cmake/ctest/&quot;
     )
-  
+
 ENDMACRO()
 
 </pre>
@@ -1977,10 +1977,10 @@ the user to help define the what packages from the repository
 <blockquote>
 <p id="repository-name-no-primary-meta-project-packages"><tt class="docutils literal">${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES</tt></p>
 <blockquote>
-If set to <tt class="docutils literal">TRUE</tt>, then the package's in the the TriBITS repository are
-not considered to be part of the primary meta-project packages.  This
-affects what packages get enabled by default when enabling all packages
-with setting <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON</tt> and what tests and
+If set to <tt class="docutils literal">TRUE</tt>, then the package's in the TriBITS repository are not
+considered to be part of the primary meta-project packages.  This affects
+what packages get enabled by default when enabling all packages with
+setting <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON</tt> and what tests and
 examples get enabled by default when setting
 <tt class="docutils literal">${PROJECT_NAME}_ENABLE_TESTS=ON</tt>.  See <a class="reference internal" href="#tribits-dependency-handling-behaviors">TriBITS Dependency Handling
 Behaviors</a> for more details.</blockquote>
@@ -2082,24 +2082,23 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   )
 
 </pre>
-<p id="package-with-subpackages-cmake-dependencies-cmake">An example of a package with subpackages is the example package
-<tt class="docutils literal">PackageWithSubpackages</tt> which has the the file:</p>
+<p id="with-subpackages-cmake-dependencies-cmake">An example of a package with subpackages is <tt class="docutils literal">WithSubpackages</tt> which has the
+dependencies file:</p>
 <blockquote>
-<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/package_with_subpackages/cmake/Dependencies.cmake</tt></blockquote>
+<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/with_subpackages/cmake/Dependencies.cmake</tt></blockquote>
 <p>which is:</p>
 <pre class="literal-block">
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-    SubpackageA   A   PT  REQUIRED
-    SubpackageB   B   ST  OPTIONAL
-    SubpackageC   C   ST  OPTIONAL
+    A   a   PT  REQUIRED
+    B   b   ST  OPTIONAL
+    C   c   ST  OPTIONAL
   )
 
 </pre>
-<p>The last case defines three subpackages which creates three new SE packages
-with names <tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>,
-<tt class="docutils literal">PackageWithSubpackagesSubpackageB</tt>, and
-<tt class="docutils literal">PackageWithSubpackagesSubpackageC</tt>.</p>
+<p><tt class="docutils literal">WithSubpackages</tt> defines three subpackages which creates three new SE
+packages with names <tt class="docutils literal">WithSubpackagesA</tt>, <tt class="docutils literal">WithSubpackagesB</tt>, and
+<tt class="docutils literal">WithSubpackagesC</tt>.</p>
 <p id="packagedir-cmake-packagename-config-h-in"><strong>&lt;packageDir&gt;/cmake/&lt;packageName&gt;_config.h.in</strong>: [Optional] The package's
 configured header file.  This file will contain placeholders for variables
 that will be substitute at configure time with <a class="reference internal" href="#tribits-configure-file">TRIBITS_CONFIGURE_FILE()</a>.
@@ -2175,18 +2174,18 @@ necessary post-processing by TriBITS.</p>
 only <tt class="docutils literal">CMakeLists.txt</tt> file for a package.  Such an example can be see in the
 example project <a class="reference internal" href="#tribitshelloworld">TribitsHelloWorld</a> in the <tt class="docutils literal">HelloWorld</tt> package.</p>
 <p>When a TriBITS package is broken up into subpackages (see <a class="reference internal" href="#tribits-subpackage">TriBITS
-Subpackage</a>), its <tt class="docutils literal">CMakeLists.txt</tt> file looks a little different from what
-is shown above.  The basic structure of this file for a <strong>package with
-subpackages</strong> is shown in:</p>
+Subpackage</a>), its <tt class="docutils literal">CMakeLists.txt</tt> file looks a little different from a
+package with no subpackages as shown above.  The basic structure of this file
+for a <strong>package with subpackages</strong> is shown in:</p>
 <blockquote>
-<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/package_with_subpackages/CMakeLists.txt</tt></blockquote>
+<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/with_subpackages/CMakeLists.txt</tt></blockquote>
 <p>which contains:</p>
 <pre class="literal-block">
 #
 # A) Forward declare the package so that certain options are also defined for
 # subpackages
 #
-TRIBITS_PACKAGE_DECL(PackageWithSubpackages)
+TRIBITS_PACKAGE_DECL(WithSubpackages)
 
 #
 # B) Define the common options for the package first so they can be used by
@@ -2216,7 +2215,7 @@ tests/example of its own, it can define those after calling
 <a class="reference internal" href="#tribits-package-def">TRIBITS_PACKAGE_DEF()</a>, just like with a regular package.  However, it is
 rare for a package broken up into subpackages to have its own libraries and/or
 tests and examples.  As always, the final command called inside of a package's
-base <tt class="docutils literal">CMakeLists.txt</tt> is <a class="reference internal" href="#tribits-package-postprocess">TRIBITS_PACKAGE_POSTPROCESS()</a>.</p>
+base <tt class="docutils literal">CMakeLists.txt</tt> file is <a class="reference internal" href="#tribits-package-postprocess">TRIBITS_PACKAGE_POSTPROCESS()</a>.</p>
 <p>NOTE: The package's base <tt class="docutils literal">CMakeLists.txt</tt> file only gets processed if the
 package is actually enabled
 (i.e. <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON</span></tt>).  This is an important
@@ -2464,34 +2463,35 @@ Core Files</a> and are:</p>
 of this file for subpackages are identical as for top-level packages.  It just
 contains a call to the macro <a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a> to
 define this SE package's <a class="reference internal" href="#upstream">upstream</a> TPL and SE package dependencies.  A
-simple example is for the example package <tt class="docutils literal">SubpackageB</tt> (declared in
-<a class="reference internal" href="#package-with-subpackages-cmake-dependencies-cmake">package_with_subpackages/cmake/Dependencies.cmake</a>) with the file:</p>
+simple example is for the example subpackage <tt class="docutils literal">WithSubpackagesB</tt> (declared in
+<a class="reference internal" href="#with-subpackages-cmake-dependencies-cmake">with_subpackages/cmake/Dependencies.cmake</a>) with the file:</p>
 <blockquote>
-<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/package_with_subpackages/B/cmake/Dependneices.cmake</tt></blockquote>
+<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/with_subpackages/b/cmake/Dependencies.cmake</tt></blockquote>
 <p>which is:</p>
 <pre class="literal-block">
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES SimpleCxx
-  LIB_OPTIONAL_PACKAGES PackageWithSubpackagesSubpackageA
-  TEST_OPTIONAL_PACKAGES MixedLanguage
+  LIB_OPTIONAL_PACKAGES WithSubpackagesA
+  TEST_OPTIONAL_PACKAGES MixedLang
   )
 
 </pre>
 <p>What this shows is that subpackages must list their dependencies on each other
 (if such dependencies exist) using the full SE package name
-<tt class="docutils literal"><span class="pre">${PARENT_PACKAGE_NAME}${SUBPACKAGE_NAME}</span></tt> or in this case
-<tt class="docutils literal">PackageWithSubpackages</tt> + <tt class="docutils literal">SubpackageA</tt> =
-<tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>.</p>
+<tt class="docutils literal"><span class="pre">${PARENT_PACKAGE_NAME}${SUBPACKAGE_NAME}</span></tt> or in this case:</p>
+<pre class="literal-block">
+'WithSubpackagesA' = 'WithSubpackages' + 'A'
+</pre>
 <p>Note that the parent SE package depends on its subpackages, not the other way
-around.  For example, the <tt class="docutils literal">PackageWithSubpackages</tt> parent SE package
+around.  For example, the <tt class="docutils literal">WithSubpackages</tt> parent SE package
 automatically depends its SE subpackages
-<tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>, <tt class="docutils literal">PackageWithSubpackagesSubpackageC</tt>,
-and <tt class="docutils literal">PackageWithSubpackagesSubpackageC</tt>.  As such all (direct) dependencies
+<tt class="docutils literal">WithSubpackagesA</tt>, <tt class="docutils literal">WithSubpackagesC</tt>,
+and <tt class="docutils literal">WithSubpackagesC</tt>.  As such all (direct) dependencies
 for a subpackage must be listed in its own <tt class="docutils literal">Dependencies.cmake</tt> file.  For
-example, the <tt class="docutils literal">PackageWithSubpackages</tt> subpackage <tt class="docutils literal">SubpackageA</tt> depends on
+example, the <tt class="docutils literal">WithSubpackages</tt> subpackage <tt class="docutils literal">A</tt> depends on
 the <tt class="docutils literal">SimpleCxx</tt> package and is declared as such as shown in:</p>
 <blockquote>
-<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/package_with_subpackages/A/cmake/Dependneices.cmake</tt></blockquote>
+<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/with_subpackages/a/cmake/Dependencies.cmake</tt></blockquote>
 <p>which is:</p>
 <pre class="literal-block">
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
@@ -2502,20 +2502,20 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
 <p>What this means is that any TPL or library dependencies listed in the parent
 package's <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file are <strong>NOT</strong>
 dependencies of its subpackages.  For example, if
-<a class="reference internal" href="#package-with-subpackages-cmake-dependencies-cmake">package_with_subpackages/cmake/Dependencies.cmake</a> where changed to be:</p>
+<a class="reference internal" href="#with-subpackages-cmake-dependencies-cmake">with_subpackages/cmake/Dependencies.cmake</a> where changed to be:</p>
 <pre class="literal-block">
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_TPLS Boost
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-    SubpackageA   A   PT  REQUIRED
+    A   A   PT  REQUIRED
     ...
   )
 </pre>
 <p>then the <tt class="docutils literal">Boost</tt> TPL would <strong>NOT</strong> be a dependency of the SE package
-<tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt> but instead would be listed as a
-dependency of the parent SE package <tt class="docutils literal">PackageWithSubpackages</tt>.  (And in this
+<tt class="docutils literal">WithSubpackagesA</tt> but instead would be listed as a
+dependency of the parent SE package <tt class="docutils literal">WithSubpackages</tt>.  (And in this
 case, this TPL dependency is pretty worthless since the SE package
-<tt class="docutils literal">PackageWithSubpackages</tt> does not even define any libraries or tests of its
+<tt class="docutils literal">WithSubpackages</tt> does not even define any libraries or tests of its
 own.)</p>
 <p id="packagedir-spkgdir-cmakelists-txt"><strong>&lt;packageDir&gt;/&lt;spkgDir&gt;/CMakeLists.txt</strong>: [Required] The subpackage's
 top-level <tt class="docutils literal">CMakeLists.txt</tt> file that defines the libraries, include
@@ -2526,13 +2526,13 @@ difference is that the commands <a class="reference internal" href="#id1">TRIBIT
 <a class="reference internal" href="#tribits-package-postprocess">TRIBITS_PACKAGE_POSTPROCESS()</a> and replaced with <a class="reference internal" href="#id3">TRIBITS_SUBPACKAGE()</a> and
 <a class="reference internal" href="#tribits-subpackage-postprocess">TRIBITS_SUBPACKAGE_POSTPROCESS()</a> as shown in the file:</p>
 <blockquote>
-<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/package_with_subpackages/A/CMakeLists.txt</tt></blockquote>
+<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/with_subpackages/a/CMakeLists.txt</tt></blockquote>
 <p>which contains:</p>
 <pre class="literal-block">
 #
 # A) Define the subpackage
 #
-TRIBITS_SUBPACKAGE(SubpackageA)
+TRIBITS_SUBPACKAGE(A)
 
 #
 # B) Set up subpackage-specific options
@@ -2645,7 +2645,7 @@ packages that depend on that TPL will be automatically disabled as well (see
 <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a>, there must exist a file, typically called
 <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt>, that once processed, produces the variables
 <tt class="docutils literal">${TPL_NAME}_LIBRARIES</tt> and <tt class="docutils literal">${TPL_NAME}_INCLUDE_DIRS</tt>.  Most
-<tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt> files just use the the function
+<tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt> files just use the function
 <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> the define the TriBITS TPL.  A simple
 example of such a file is the standard TriBITS <tt class="docutils literal">FindTPLPETSC.cmake</tt> module
 which is currently:</p>
@@ -2654,7 +2654,7 @@ INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( PETSC
   REQUIRED_HEADERS petsc.h
-  REQUIRED_LIBS_NAMES petsc 
+  REQUIRED_LIBS_NAMES petsc
   )
 
 </pre>
@@ -2686,7 +2686,7 @@ if <tt class="docutils literal">Repo1/TPLsList.cmake</tt> and <tt class="docutil
 <tt class="docutils literal">SomeTpl</tt>, then if <tt class="docutils literal">Repo2</tt> is processed after <tt class="docutils literal">Repo1</tt>, then
 <tt class="docutils literal">SomeTpl_TESTGROUP</tt> is determined by <tt class="docutils literal">Repo1/TPLsList.cmake</tt> and the
 test group in <tt class="docutils literal">Repo2/TPLsList.cmake</tt> is ignored.  However, if
-<tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> is already set before the the
+<tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> is already set before the
 <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> files are processed, then that test group will
 be used.  Therefore, the project can override the test group for a given
 TPL if desired.</blockquote>
@@ -2953,26 +2953,26 @@ $ cmake \
 -- File Trace: REPOSITORY INCLUDE    [...]/PackagesList.cmake
 -- File Trace: REPOSITORY INCLUDE    [...]/TPLsList.cmake
 -- File Trace: PACKAGE    INCLUDE    [...]/packages/simple_cxx/cmake/Dependencies.cmake
--- File Trace: PACKAGE    INCLUDE    [...]/packages/mixed_language/cmake/Dependencies.cmake
--- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/cmake/Dependencies.cmake
--- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/A/cmake/Dependencies.cmake
--- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/B/cmake/Dependencies.cmake
--- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/C/cmake/Dependencies.cmake
+-- File Trace: PACKAGE    INCLUDE    [...]/packages/mixed_lang/cmake/Dependencies.cmake
+-- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/cmake/Dependencies.cmake
+-- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/a/cmake/Dependencies.cmake
+-- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/b/cmake/Dependencies.cmake
+-- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/c/cmake/Dependencies.cmake
 -- File Trace: PACKAGE    INCLUDE    [...]/packages/wrap_external/cmake/Dependencies.cmake
 -- File Trace: PROJECT    CONFIGURE  [...]/cmake/ctest/CTestCustom.cmake.in
 -- File Trace: REPOSITORY READ       [...]/Copyright.txt
 -- File Trace: REPOSITORY INCLUDE    [...]/Version.cmake
 -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/simple_cxx/CMakeLists.txt
 -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/simple_cxx/test/CMakeLists.txt
--- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_language/CMakeLists.txt
--- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_language/test/CMakeLists.txt
--- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/CMakeLists.txt
--- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/A/CMakeLists.txt
--- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/A/tests/CMakeLists.txt
--- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/B/CMakeLists.txt
--- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/B/tests/CMakeLists.txt
--- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/C/CMakeLists.txt
--- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/C/tests/CMakeLists.txt
+-- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_lang/CMakeLists.txt
+-- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_lang/test/CMakeLists.txt
+-- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/CMakeLists.txt
+-- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/a/CMakeLists.txt
+-- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/a/tests/CMakeLists.txt
+-- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/b/CMakeLists.txt
+-- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/b/tests/CMakeLists.txt
+-- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/CMakeLists.txt
+-- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/tests/CMakeLists.txt
 -- File Trace: REPOSITORY INCLUDE    [...]/cmake/CallbackDefineRepositoryPackaging.cmake
 -- File Trace: PROJECT    INCLUDE    [...]/cmake/CallbackDefineProjectPackaging.cmake
 </pre>
@@ -2980,7 +2980,7 @@ $ cmake \
 if it should be obvious that the file is being processed.  For example, the
 package's configured header file created using <a class="reference internal" href="#tribits-configure-file">TRIBITS_CONFIGURE_FILE()</a>
 does not result in a file trace print statement because this is an
-unconditional command that is explicitly called in one of the the package's
+unconditional command that is explicitly called in one of the package's
 <tt class="docutils literal">CMakeLists.txt</tt> files so it should be clear that this file is being
 processed and exactly when it is processed.</p>
 </div>
@@ -2992,8 +2992,7 @@ repositories and packages.  The known allowed simplifications are described
 below.</p>
 <p><strong>TriBITS Repository == TriBITS Project</strong>: It is allowed for a TriBITS Project
 and a TriBITS Repository to be the same source directory and in fact this is
-the default for every TriBITS project (unless the the
-<a class="reference internal" href="#projectdir-cmake-nativerepositorieslist-cmake">&lt;projectDir&gt;/cmake/NativeRepositoriesList.cmake</a> is defined).  In this case,
+the default for every TriBITS project (unless the <a class="reference internal" href="#projectdir-cmake-nativerepositorieslist-cmake">&lt;projectDir&gt;/cmake/NativeRepositoriesList.cmake</a> is defined).  In this case,
 the repository name <a class="reference internal" href="#repository-name">REPOSITORY_NAME</a> and the project name <a class="reference internal" href="#project-name">PROJECT_NAME</a>
 are the same as well.  This is quite common and is in fact the default that
 every TriBITS Project is also a TriBITS repository (and therefore must contain
@@ -3272,8 +3271,8 @@ TribitsExampleProject/
       test/
         CMakeLists.txt
         SimpleCxx_HelloWorld_Tests.cpp
-    mixed_language/ ...
-    package_with_subpackages/
+    mixed_lang/ ...
+    with_subpackages/
       CMakeLists.txt
       cmake/
         Dependencies.cmake
@@ -3290,17 +3289,17 @@ TribitsExampleProject/
 order listed in the <tt class="docutils literal">TribitsExampleProject/PackagesList.cmake</tt> file:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
-  SimpleCxx               packages/simple_cxx                 PT
-  MixedLanguage           packages/mixed_language             PT
-  PackageWithSubpackages  packages/package_with_subpackages   PT
-  WrapExternal            packages/wrap_external              ST
+  SimpleCxx          packages/simple_cxx         PT
+  MixedLang          packages/mixed_lang         PT
+  WithSubpackages    packages/with_subpackages   PT
+  WrapExternal       packages/wrap_external      ST
   )
 
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(WrapExternal Windows)
 
 </pre>
 <p>From this file, we get the list of top-level packages <tt class="docutils literal">SimpleCxx</tt>,
-<tt class="docutils literal">MixedLanguage</tt>, <tt class="docutils literal">PackageWithSubpackages</tt>, and <tt class="docutils literal">WrapExternal</tt> (and their
+<tt class="docutils literal">MixedLang</tt>, <tt class="docutils literal">WithSubpackages</tt>, and <tt class="docutils literal">WrapExternal</tt> (and their
 base package directories and testing group, see
 <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a>).</p>
 <p>A full listing of package files in <a class="reference internal" href="#tribitsexampleproject-files-and-directories">TribitsExampleProject Files and
@@ -3313,19 +3312,19 @@ must exist for every package directory listed in
 <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> and we see these files under in the directory
 <tt class="docutils literal">packages/simple_cxx/</tt>.  The package <tt class="docutils literal">SimpleCxx</tt> does not have any
 <a class="reference internal" href="#upstream">upstream</a> SE package dependencies.</p>
-<p>Now consider the example top-level package <tt class="docutils literal">PackageWithSubpackages</tt> which,
+<p>Now consider the example top-level package <tt class="docutils literal">WithSubpackages</tt> which,
 as the name suggests, is broken down into subpackages.  The
-<tt class="docutils literal">PackageWithSubpackages</tt> dependencies file:</p>
+<tt class="docutils literal">WithSubpackages</tt> dependencies file:</p>
 <pre class="literal-block">
-TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake
+TribitsExampleProject/packages/with_subpackages/cmake/Dependencies.cmake
 </pre>
 <p>with contents:</p>
 <pre class="literal-block">
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-    SubpackageA   A   PT  REQUIRED
-    SubpackageB   B   ST  OPTIONAL
-    SubpackageC   C   ST  OPTIONAL
+    A   a   PT  REQUIRED
+    B   b   ST  OPTIONAL
+    C   c   ST  OPTIONAL
   )
 
 </pre>
@@ -3333,22 +3332,21 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
 <tt class="docutils literal">B</tt>, and <tt class="docutils literal">C</tt> under the parent package directory
 <tt class="docutils literal">packages/package_with_packages/</tt> which are shown in <a class="reference internal" href="#tribitsexampleproject-files-and-directories">TribitsExampleProject
 Files and Directories</a>.  This gives another set of three SE packages
-<tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>, <tt class="docutils literal">PackageWithSubpackagesSubpackageB</tt>,
-and <tt class="docutils literal">PackageWithSubpackagesSubpackageC</tt>.  Combining <tt class="docutils literal">&lt;packageDir&gt; =
+<tt class="docutils literal">WithSubpackagesA</tt>, <tt class="docutils literal">WithSubpackagesB</tt>,
+and <tt class="docutils literal">WithSubpackagesC</tt>.  Combining <tt class="docutils literal">&lt;packageDir&gt; =
 packages/package_with_packages</tt> and <tt class="docutils literal">&lt;spkgDir&gt;</tt> for each subpackage gives
 the subpackage directories:</p>
 <pre class="literal-block">
-TribitsExampleProject/packages/package_with_subpackages/A/
-TribitsExampleProject/packages/package_with_subpackages/B/
-TribitsExampleProject/packages/package_with_subpackages/C/
+TribitsExampleProject/packages/with_subpackages/a/
+TribitsExampleProject/packages/with_subpackages/b/
+TribitsExampleProject/packages/with_subpackages/c/
 </pre>
-<p>Together with the top-level parent SE package <tt class="docutils literal">PackageWithSubpackages</tt>
+<p>Together with the top-level parent SE package <tt class="docutils literal">WithSubpackages</tt>
 itself, this top-level package provides four <a class="reference internal" href="#tribits-se-packages">TriBITS SE Packages</a> giving the
 final list of SE packages provided by this TriBITS repo as:</p>
 <pre class="literal-block">
-SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA \
-  PackageWithSubpackagesSubpackaeB PackageWithSubpackagesSubpackageC \
-  PackageWithSubpackages WrapExternal 7
+SimpleCxx MixedLang WithSubpackagesA WithSubpackagesB WithSubpackagesC \
+  WithSubpackages WrapExternal 7
 </pre>
 <p>The above list of SE packages is printed (with the number of packages printed
 at the end) by TriBITS to the <tt class="docutils literal">cmake</tt> stdout on the line starting with
@@ -3357,7 +3355,7 @@ at the end) by TriBITS to the <tt class="docutils literal">cmake</tt> stdout on 
 in line-brakes with continuation characters <tt class="docutils literal">&quot;\&quot;</tt> as shown above.)  TriBITS
 defines enable/disable cache variables for each of these defined SE packages
 like <tt class="docutils literal">TribitsExProj_ENABLE_SimpleCxx</tt> and
-<tt class="docutils literal">TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageA</tt>, and defines all
+<tt class="docutils literal">TribitsExProj_ENABLE_WithSubpackagesA</tt>, and defines all
 the variables listed in <a class="reference internal" href="#tribits-package-cache-variables">TriBITS Package Cache Variables</a> that are settable
 by the users or by the dependency logic described in section <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package
 Dependencies and Enable/Disable Logic</a>.</p>
@@ -3395,7 +3393,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TrilinosFramework   cmake                           PT
   Teuchos             packages/teuchos                PT
   RTOp                packages/rtop                   PT
-  Epetra              packages/epetra                 PT 
+  Epetra              packages/epetra                 PT
   Zoltan              packages/zoltan                 PT
   Shards              packages/shards                 PT
   Triutils            packages/triutils               PT
@@ -3488,7 +3486,7 @@ tribits/package_arch/UnitTests/ReducedMockTrilinos/PackagesList.cmake
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Teuchos             packages/teuchos                PT
   RTOp                packages/rtop                   PT
-  Epetra              packages/epetra                 PT 
+  Epetra              packages/epetra                 PT
   Triutils            packages/triutils               ST
   EpetraExt           packages/epetraext              ST
   Thyra               packages/thyra                  PT
@@ -3602,7 +3600,7 @@ this project is defined in the file <tt class="docutils literal">ReducedMockTril
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Teuchos             packages/teuchos                PT
   RTOp                packages/rtop                   PT
-  Epetra              packages/epetra                 PT 
+  Epetra              packages/epetra                 PT
   Triutils            packages/triutils               ST
   EpetraExt           packages/epetraext              ST
   Thyra               packages/thyra                  PT
@@ -4883,9 +4881,9 @@ marked as <tt class="docutils literal">Nightly</tt> are not processed by default
 <a class="reference internal" href="#pre-push-ci-testing">Pre-Push CI Testing</a> or <a class="reference internal" href="#post-push-ci-testing">Post-Push CI Testing</a>.  One would mark a
 repository as <tt class="docutils literal">Nightly</tt> for few reasons.  First, an extra repo may be
 marked as <tt class="docutils literal">Nightly</tt> if it may not be available to all developers to clone
-and only the the nightly testing processes and machines may have access.
-Also, an extra repo may also be marked as <tt class="docutils literal">Nightly</tt> if it does not contain
-any packages that the project wants to pay the cost to include in even
+and only the nightly testing processes and machines may have access.  Also,
+an extra repo may also be marked as <tt class="docutils literal">Nightly</tt> if it does not contain any
+packages that the project wants to pay the cost to include in even
 <a class="reference internal" href="#post-push-ci-testing">Post-Push CI Testing</a>.  NOTE: One should <strong>not</strong> confuse this with the
 <a class="reference internal" href="#test-test-category-nightly">Test Test Category NIGHTLY</a>.</li>
 </ul>
@@ -4940,8 +4938,8 @@ marked as <tt class="docutils literal">PT</tt> as well.  A TPL, on the other han
 it is required by a <tt class="docutils literal">PT</tt> SE package.  Every project developer is expected
 to have every <tt class="docutils literal">PT</tt> TPL installed on every machine where they do
 development on and from which they push to the global repo (see
-<a class="reference internal" href="#checkin-test-py">checkin-test.py</a> script).  <tt class="docutils literal">PT</tt> SE packages and TPLs are the the
-foundation for <a class="reference internal" href="#pre-push-ci-testing">Pre-Push CI Testing</a>.</li>
+<a class="reference internal" href="#checkin-test-py">checkin-test.py</a> script).  <tt class="docutils literal">PT</tt> SE packages and TPLs are the foundation
+for <a class="reference internal" href="#pre-push-ci-testing">Pre-Push CI Testing</a>.</li>
 </ul>
 <ul class="simple" id="st">
 <li><strong>Secondary Tested (PT)</strong> Code is still very important code for the project
@@ -4979,7 +4977,7 @@ developer has to take a part in helping to keep working.</li>
 <p>The test group for each type of entity is assigned in the following places:</p>
 <ul class="simple">
 <li>The top-level <a class="reference internal" href="#tribits-package">TriBITS Package</a>'s test group is assigned using the
-<tt class="docutils literal">CLASSIFICATION</tt> field in the the macro call
+<tt class="docutils literal">CLASSIFICATION</tt> field in the macro call
 <a class="reference internal" href="#tribits-repository-define-packages">TRIBITS_REPOSITORY_DEFINE_PACKAGES()</a> in its parent repository's
 <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file.</li>
 <li>A <a class="reference internal" href="#tribits-subpackage">TriBITS Subpackage</a>'s test group is assigned using the
@@ -5303,7 +5301,7 @@ tests using the following test-related classifications:</p>
 <p>Project developer teams should strive to limit the number of test cases that
 are marked as <tt class="docutils literal">WEEKLY</tt> since these tests will <em>not</em> get run nightly and
 developers will tend to never enable them when doing more extensive testing
-using <tt class="docutils literal"><span class="pre">--st-extra-builds</span></tt> with the the <a class="reference internal" href="#checkin-test-py">checkin-test.py</a> script in extended
+using <tt class="docutils literal"><span class="pre">--st-extra-builds</span></tt> with the <a class="reference internal" href="#checkin-test-py">checkin-test.py</a> script in extended
 pre-push testing.</p>
 <p id="performance-testing"><strong>Performance Testing</strong></p>
 <p><em>Performance Testing</em> builds are a special class of builds that have tests
@@ -5864,7 +5862,7 @@ dependencies on this new package.</p>
 package described in <a class="reference internal" href="#how-to-add-a-new-tribits-package">How to Add a new TriBITS Package</a>.  Again, it is
 recommended that one copies an example package from <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>.
 For example, one could copy files and directories from the example package
-<tt class="docutils literal">PackageWithSubpackages</tt>.</p>
+<tt class="docutils literal">WithSubpackages</tt>.</p>
 <p>To add a new TriBITS package with packages, do the following:</p>
 <ol class="arabic simple">
 <li>Chose a name <tt class="docutils literal">&lt;packageName&gt;</tt> for the new package and which TriBITS
@@ -5897,7 +5895,7 @@ repository-level files.  One only needs to add the declaration for the new
 subpackages in its parent's <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file then
 fill out the pieces of the new subpackage defined in the section <a class="reference internal" href="#tribits-subpackage-core-files">TriBITS
 Subpackage Core Files</a>.  It is recommended to copy files from one of the
-<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a> subpackages in the <tt class="docutils literal">PackageWithSubpackages</tt>
+<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a> subpackages in the <tt class="docutils literal">WithSubpackages</tt>
 package.</p>
 <p>To add a new TriBITS subpackage to a top-level package that already has
 subpackages, do the following:</p>
@@ -6493,8 +6491,8 @@ git integration server <tt class="docutils literal">url4.gov</tt>.  The state wh
 the three different git/TriBITS repos in the master branch on <tt class="docutils literal">url4.gov</tt> all
 work together correctly constitutes the initial condition for the ACI process
 described below.  From that initial condition, the ACI processes ensures that
-updates the the master branches for the git/TriBITS repos on <tt class="docutils literal">url4.gov</tt> do
-not break any builds or tests of the integrated software.</p>
+updates the master branches for the git/TriBITS repos on <tt class="docutils literal">url4.gov</tt> do not
+break any builds or tests of the integrated software.</p>
 <p>In order to describe how to set up an ACI process using the
 <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> script, the following subsections will focus on the update
 of the git/TriBITS <tt class="docutils literal">ExtraRepo1</tt> repo keeping the other two git/TriBITS repos
@@ -6576,7 +6574,7 @@ It is assumed that this script would be called only once a day and not
 continuously in a loop (but that is possible as well but is not documented
 here).</p>
 <p>NOTE: Other build directory structures are possible, it all depends how one
-writes the the <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> wrapper scripts but the above directory
+writes the <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> wrapper scripts but the above directory
 structure is fairly standard in the usage of the <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> script.</p>
 </div>
 <div class="section" id="aci-sync-driver-script">
@@ -6702,7 +6700,7 @@ packages have changed files in the <tt class="docutils literal">ExtraRepo1</tt> 
 repository.  This is the preferred way to go since any affected packages will
 automatically be enabled as determined by the TriBITS package dependency
 structure and therefore this driver script will require no modifications if
-the the dependency structure changes over time.  However, there are cases and
+the dependency structure changes over time.  However, there are cases and
 various reasons where the exact list of packages to be tested (or not tested)
 should be specified using the <tt class="docutils literal"><span class="pre">--enable-packages</span></tt> option (or the
 <tt class="docutils literal"><span class="pre">--disable-packages</span></tt> option, respectively).  However, these should not be
@@ -7242,7 +7240,7 @@ package in one or more CTest tests.</p>
 <p>Some TriBITS projects choose to snapshot the <tt class="docutils literal">TriBITS</tt> directory source tree
 into their project's source tree, typically under
 <a class="reference internal" href="#projectdir-cmake-tribits">&lt;projectDir&gt;/cmake/tribits/</a>.  The independent <tt class="docutils literal">TriBITS</tt> source tree
-contains a symbolic link to the the tool <a class="reference internal" href="#snapshot-dir-py">snapshot-dir.py</a> that allows one to
+contains a symbolic link to the tool <a class="reference internal" href="#snapshot-dir-py">snapshot-dir.py</a> that allows one to
 update the snapshot of the TriBITS source tree as simply as:</p>
 <pre class="literal-block">
 $ cd &lt;projectDir&gt;/cmake/tribits/
@@ -8308,7 +8306,7 @@ through <tt class="docutils literal">ARGS</tt>.  For more flexibility, just use
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_ADD_LIBRARY(
-  &lt;libName&gt;
+  &lt;libBaseName&gt;
   [HEADERS &lt;h0&gt; &lt;h1&gt; ...]
   [NOINSTALLHEADERS &lt;nih0&gt; &lt;hih1&gt; ...]
   [SOURCES &lt;src0&gt; &lt;src1&gt; ...]
@@ -8317,6 +8315,7 @@ TRIBITS_ADD_LIBRARY(
   [TESTONLY]
   [NO_INSTALL_LIB_OR_HEADERS]
   [CUDALIBRARY]
+  [ADDED_LIB_TARGET_NAME_OUT &lt;libTargetName&gt;]
   )
 </pre>
 <p><em>Sections:</em></p>
@@ -8329,14 +8328,22 @@ TRIBITS_ADD_LIBRARY(
 </ul>
 <p id="formal-arguments-tribits-add-library"><strong>Formal Arguments (TRIBITS_ADD_LIBRARY())</strong></p>
 <blockquote>
-<p><tt class="docutils literal">&lt;libName&gt;</tt></p>
+<p><tt class="docutils literal">&lt;libBaseName&gt;</tt></p>
 <blockquote>
-Required name of the library.  This is the name passed to
-<tt class="docutils literal"><span class="pre">ADD_LIBRARY(&lt;libName&gt;</span> <span class="pre">...)</span></tt>.  The name is <em>not</em> prefixed by the
-package name.  CMake will of course add any standard prefix or post-fix
-to the library file name appropriate for the platform and if this is a
-static or shared library build (see documentation for the built-in CMake
-command <tt class="docutils literal">ADD_LIBRARY()</tt>.</blockquote>
+<p>Required base name of the library.  The name of the actual libray name
+will be prefixed by <tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}</span></tt> to
+produce:</p>
+<pre class="literal-block">
+&lt;libTargetName&gt; = ${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}&lt;libBaseName&gt;
+</pre>
+<p>This is the name passed to <tt class="docutils literal"><span class="pre">ADD_LIBRARY(&lt;libTargetName&gt;</span> <span class="pre">...)</span></tt>.  The
+name is <em>not</em> prefixed by the package name.  CMake will of course add
+any standard prefix or post-fix to the library file name appropriate for
+the platform and if this is a static or shared library build (e.g. on
+Linux prefix = <tt class="docutils literal">'lib'</tt>, postfix = <tt class="docutils literal">'.so'</tt> for shared lib and postfix
+= <tt class="docutils literal">'.a'</tt> static lib) (see documentation for the built-in CMake command
+<tt class="docutils literal">ADD_LIBRARY()</tt>.</p>
+</blockquote>
 <p><tt class="docutils literal">HEADERS &lt;h0&gt; &lt;h1&gt; ...</tt></p>
 <blockquote>
 List of public header files for using this library.  By default, these
@@ -8363,11 +8370,11 @@ extension (see CMake documentation for <tt class="docutils literal">ADD_LIBRARY(
 <blockquote>
 List of dependent libraries that are built in the current SE package
 that this library is dependent on.  These libraries are passed into
-<tt class="docutils literal"><span class="pre">TARGET_LINK_LIBRARIES(&lt;libName&gt;</span> <span class="pre">...)</span></tt> so that CMake knows about the
-dependency structure of the libraries within this SE package.  <strong>NOTE:</strong>
-One must <strong>not</strong> list libraries in other upstream <a class="reference internal" href="#tribits-se-packages">TriBITS SE Packages</a>
-or libraries built externally from this TriBITS CMake project in
-<tt class="docutils literal">DEPLIBS</tt>.  The TriBITS system automatically handles linking to
+<tt class="docutils literal"><span class="pre">TARGET_LINK_LIBRARIES(&lt;libTargetName&gt;</span> <span class="pre">...)</span></tt> so that CMake knows about
+the dependency structure of the libraries within this SE package.
+<strong>NOTE:</strong> One must <strong>not</strong> list libraries in other upstream <a class="reference internal" href="#tribits-se-packages">TriBITS SE
+Packages</a> or libraries built externally from this TriBITS CMake project
+in <tt class="docutils literal">DEPLIBS</tt>.  The TriBITS system automatically handles linking to
 libraries in upstream TriBITS SE packages.  External libraries need to
 be listed in the <tt class="docutils literal">IMPORTEDLIBS</tt> argument instead if they are not
 already specified automatically using a <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>.</blockquote>
@@ -8375,8 +8382,8 @@ already specified automatically using a <a class="reference internal" href="#tri
 <blockquote>
 List of dependent libraries built externally from this TriBITS CMake
 project.  These libraries are passed into
-<tt class="docutils literal"><span class="pre">TARGET_LINK_LIBRARIES(&lt;libName&gt;</span> <span class="pre">...)</span></tt> so that CMake knows about the
-dependency.  However, note that external libraries are often better
+<tt class="docutils literal"><span class="pre">TARGET_LINK_LIBRARIES(&lt;libTargetName&gt;</span> <span class="pre">...)</span></tt> so that CMake knows about
+the dependency.  However, note that external libraries are often better
 handled as <a class="reference internal" href="#tribits-tpls">TriBITS TPLs</a>.  A well constructed TriBITS package and
 library should never have to use this option!  So far, the only case
 where <tt class="docutils literal">IMPORTEDLIBS</tt> has been shown to be necessary is to pass in the
@@ -8384,16 +8391,16 @@ standard C math library <tt class="docutils literal">m</tt>.  In every other cas
 should be used instead.</blockquote>
 <p><tt class="docutils literal">TESTONLY</tt></p>
 <blockquote>
-If passed in, then <tt class="docutils literal">&lt;libName&gt;</tt> will <strong>not</strong> be added to
+If passed in, then <tt class="docutils literal">&lt;libTargetName&gt;</tt> will <strong>not</strong> be added to
 <tt class="docutils literal">${PACKAGE_NAME}_LIBRARIES</tt> and an install target for the library will
 not be added.  In this case, the current include directories will be set
-in the global variable <tt class="docutils literal">&lt;libName&gt;_INCLUDE_DIR</tt> which will be used in
-<a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a> when a test-only library is linked in
-through its <tt class="docutils literal">DEPLIBS</tt> argument.</blockquote>
+in the global variable <tt class="docutils literal">&lt;libTargetName&gt;_INCLUDE_DIR</tt> which will be
+used in <a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a> when a test-only library is linked
+in through its <tt class="docutils literal">DEPLIBS</tt> argument.</blockquote>
 <p><tt class="docutils literal">NO_INSTALL_LIB_OR_HEADERS</tt></p>
 <blockquote>
 If specified, then no install targets will be added for the library
-<tt class="docutils literal">&lt;libName&gt;</tt> or the header files listed in <tt class="docutils literal">HEADERS</tt>.</blockquote>
+<tt class="docutils literal">&lt;libTargetName&gt;</tt> or the header files listed in <tt class="docutils literal">HEADERS</tt>.</blockquote>
 <p><tt class="docutils literal">CUDALIBRARY</tt></p>
 <blockquote>
 If specified then <tt class="docutils literal">CUDA_ADD_LIBRARY()</tt> is used instead of
@@ -8404,6 +8411,13 @@ TPLs</a>).  For this option to work, this SE package must have an enabled
 direct or indirect dependency on the TriBITS CUDA TPL or a
 configure-time error may occur about not knowing about
 <tt class="docutils literal">CUDA_ALL_LIBRARY()</tt>.</blockquote>
+<p><tt class="docutils literal">ADDED_LIB_TARGET_NAME_OUT &lt;libTargetName&gt;</tt></p>
+<blockquote>
+If specified, then on output the variable <tt class="docutils literal">&lt;libTargetName&gt;</tt> will be
+set with the name of the library passed to <tt class="docutils literal">ADD_LIBRARY()</tt>.  Having
+this name allows the calling <tt class="docutils literal">CMakeLists.txt</tt> file access and set
+additional target propeties (see <a class="reference internal" href="#additional-library-and-source-file-properties-tribits-add-library">Additional Library and Source File
+Properties (TRIBITS_ADD_LIBRARY())</a>).</blockquote>
 </blockquote>
 <p id="include-directories-tribits-add-library"><strong>Include Directories (TRIBITS_ADD_LIBRARY())</strong></p>
 <p>Any base directories for the header files listed in the arguments
@@ -8414,7 +8428,7 @@ directories <tt class="docutils literal">${PACKAGE_NAME}_INCLUDE_DIRS</tt> which
 downstream SE packages..</p>
 <p id="install-targets-tribits-add-library"><strong>Install Targets (TRIBITS_ADD_LIBRARY())</strong></p>
 <p>By default, an install target for the library is created using
-<tt class="docutils literal">INSTALL(TARGETS &lt;libName&gt; <span class="pre">...)</span></tt> to install into the directory
+<tt class="docutils literal">INSTALL(TARGETS &lt;libTargetName&gt; <span class="pre">...)</span></tt> to install into the directory
 <tt class="docutils literal"><span class="pre">${CMAKE_INSTALL_PREFIX}/lib/</span></tt> (actual install directory is given by
 <tt class="docutils literal">${PROJECT}_INSTALL_LIB_DIR</tt>, see <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#setting-the-install-prefix-at-configure-time">Setting the install prefix at configure
 time</a>).  However, this install target will not get created if
@@ -8431,11 +8445,11 @@ actual install directory is given by
 configure time</a>).  Note that an install target will <em>not</em> get created for
 the headers listed in <tt class="docutils literal">NOINSTALLHEADERS</tt>.</p>
 <p id="additional-library-and-source-file-properties-tribits-add-library"><strong>Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())</strong></p>
-<p>Once <tt class="docutils literal"><span class="pre">ADD_LIBRARY(&lt;libName&gt;</span> ... &lt;src0&gt; &lt;src1&gt; <span class="pre">...)</span></tt> is called, one can set
-and change properties on the <tt class="docutils literal">&lt;libName&gt;</tt> library target using the built-in
-CMake command <tt class="docutils literal">SET_TARGET_PROPERTIES()</tt> as well as set and change
-properties on any of the source files listed in <tt class="docutils literal">SOURCES</tt> using the
-built-in CMake command <tt class="docutils literal">SET_SOURCE_FILE_PROPERTIES()</tt> just like in any
+<p>Once <tt class="docutils literal"><span class="pre">ADD_LIBRARY(&lt;libTargetName&gt;</span> ... &lt;src0&gt; &lt;src1&gt; <span class="pre">...)</span></tt> is called, one
+can set and change properties on the <tt class="docutils literal">&lt;libTargetName&gt;</tt> library target
+using the built-in CMake command <tt class="docutils literal">SET_TARGET_PROPERTIES()</tt> as well as set
+and change properties on any of the source files listed in <tt class="docutils literal">SOURCES</tt> using
+the built-in CMake command <tt class="docutils literal">SET_SOURCE_FILE_PROPERTIES()</tt> just like in any
 CMake project.</p>
 <p id="miscellaneous-notes-tribits-add-library"><strong>Miscellaneous Notes (TRIBITS_ADD_LIBRARY())</strong></p>
 <p><strong>WARNING:</strong> Do <strong>NOT</strong> use the built-in CMake command <tt class="docutils literal">ADD_DEFINITIONS()</tt>
@@ -10841,8 +10855,8 @@ etc!</p>
 </div>
 <div class="section" id="timer-get-raw-seconds">
 <h3><a class="toc-backref" href="#id172">TIMER_GET_RAW_SECONDS()</a></h3>
-<p>Return the raw time in seconds since epoch, i.e., since 1970-01-01 00:00:00
-UTC.</p>
+<p>Return the raw time in seconds (nano-second accuracy) since epoch, i.e.,
+since 1970-01-01 00:00:00 UTC.</p>
 <p>Usage:</p>
 <pre class="literal-block">
 TIMER_GET_RAW_SECONDS(&lt;rawSecondsVar&gt;)
@@ -10851,11 +10865,11 @@ TIMER_GET_RAW_SECONDS(&lt;rawSecondsVar&gt;)
 <a class="reference internal" href="#timer-print-rel-time">TIMER_PRINT_REL_TIME()</a> to time big chunks of CMake code for timing and
 profiling purposes.  See <a class="reference internal" href="#timer-print-rel-time">TIMER_PRINT_REL_TIME()</a> for more details and an
 example.</p>
-<p>NOTE: This function runs an external process to run the <tt class="docutils literal">date</tt> command.
-Therefore, it only works on Unix/Linux and other systems that have a
-standard <tt class="docutils literal">date</tt> command.  Since this runs an external process, this
-function should only be used to time very course-grained operations
-(i.e. that take longer than a second).</p>
+<p>NOTE: This function runs an external process with <tt class="docutils literal">EXECUTE_PROCESS()</tt> to
+run the <tt class="docutils literal">date</tt> command.  Therefore, it only works on Unix/Linux and other
+systems that have a standard <tt class="docutils literal">date</tt> command.  Since this uses
+<tt class="docutils literal">EXECUTE_PROCESS()</tt>, this function should only be used to time very
+course-grained operations (i.e. that take longer than a second).</p>
 </div>
 <div class="section" id="timer-get-rel-seconds">
 <h3><a class="toc-backref" href="#id173">TIMER_GET_REL_SECONDS()</a></h3>
@@ -10879,9 +10893,7 @@ TIMER_PRINT_REL_TIME(&lt;startSeconds&gt; &lt;endSeconds&gt; &quot;&lt;messageSt
 </pre>
 <p>Differences the raw times <tt class="docutils literal">&lt;startSeconds&gt;</tt> and <tt class="docutils literal">&lt;endSeconds&gt;</tt>
 (i.e. gotten from <a class="reference internal" href="#timer-get-raw-seconds">TIMER_GET_RAW_SECONDS()</a>) and prints the time in
-<tt class="docutils literal">&lt;min&gt;m&lt;sec&gt;s</tt> format.  This can only resolve times a second or greater
-apart.  If the start and end times are less than a second then <tt class="docutils literal">0m0s</tt> will
-be printed.</p>
+<tt class="docutils literal">&lt;min&gt;m&lt;sec&gt;s</tt> format.</p>
 <p>This is meant to be used with <a class="reference internal" href="#timer-get-raw-seconds">TIMER_GET_RAW_SECONDS()</a> to time expensive
 blocks of CMake code like:</p>
 <pre class="literal-block">
@@ -10896,10 +10908,8 @@ TIMER_PRINT_REL_TIME(${REAL_EXPENSIVE_START} ${REAL_EXPENSIVE_END}
 </pre>
 <p>This will print something like:</p>
 <pre class="literal-block">
-REAL_EXPENSIVE() time: 0m5s
+REAL_EXPENSIVE() time: 0m5.235s
 </pre>
-<p>Again, don't try to time something that takes less than 1 second as it will
-be recorded as <tt class="docutils literal">0m0s</tt>.</p>
 </div>
 <div class="section" id="unittest-compare-const">
 <h3><a class="toc-backref" href="#id175">UNITTEST_COMPARE_CONST()</a></h3>
@@ -12265,8 +12275,12 @@ Options:
 <!-- Common references to TribitsBuildQuickRef document -->
 <!-- Common references to the TribitsOverview document -->
 <!-- Common references to the TribitsLifecycleModel document -->
-<!-- OTher common references -->
+<!-- Other common references -->
 <!-- Common references to raw CMake commands: -->
+<!-- LocalWords:  TribitsOverview TribitsLifecycleModel Lifecycle CMakeLists -->
+<!-- LocalWords:  TriBITS Subpackage subpackage Subpackages subpackages TPL TPLs Kitware -->
+<!-- LocalWords:  CMake cmake CTest ctest CDash CPack WithSubpackages WithSubpackagesA -->
+<!-- LocalWords:  WithSubpackagesB WithSubpackagesC executables FOREACH ENDFOREACH -->
 </div>
 </div>
 </div>

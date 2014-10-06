@@ -38,5 +38,5 @@
 # @HEADER
 
 TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
-  ExtraTeuchosRepo  packages/teuchos/extrastuff GIT  url3.com:/ExtraStuff  ""  Continuous  
+  ExtraTeuchosRepo  packages/teuchos/extrastuff GIT  url3.com:/ExtraStuff  ""  Continuous
   )

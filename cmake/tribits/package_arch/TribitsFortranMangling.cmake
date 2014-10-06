@@ -62,7 +62,7 @@ IF (FC_FUNC_DEFAULT)
   # be too hard.
 
 ELSE()
- 
+
   IF(CYGWIN)
     SET(F77_FUNC_DEFAULT "(name,NAME) name ## _" )
     SET(F77_FUNC__DEFAULT "(name,NAME) name ## __" )

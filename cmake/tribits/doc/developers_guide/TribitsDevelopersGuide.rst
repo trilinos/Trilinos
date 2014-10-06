@@ -104,7 +104,7 @@ lower-level roles.
 The first role is that of a **TriBITS Project User** who only needs to be able
 to configure, build, and test a project that uses TriBITS as its build system.
 A person acting in this role needs to know little about CMake other than
-basics about how to run the ``cmake`` and ``ctest`` exectuables, how to set
+basics about how to run the ``cmake`` and ``ctest`` executables, how to set
 CMake cache variables, and the basics of building software by typing ``make``
 and running tests with ``ctest``.  The proper reference for a TriBITS Project
 User is the `Project-Specific Build Quick Reference`_.  The `TriBITS
@@ -119,7 +119,7 @@ Dependencies and Enable/Disable Logic`_.
 
 A **TriBITS Project Developer** is someone who contributes to a software
 project that uses TriBITS.  They will add source files, libraries and
-exectuables, test executables and define tests run with ``ctest``.  They have
+executables , test executables and define tests run with ``ctest``.  They have
 to configure and build the project code in order to be able to develop and run
 tests and therefore this role includes all of the necessary knowledge and
 functions of a TriBITS Project User.  A casual TriBITS Project Developer
@@ -479,7 +479,7 @@ TriBITS Project Structure
 =========================
 
 TriBITS is a Framework, implemented in CMake, to create CMake projects.  As a
-Framework (with a capital "F"), TriBITS defines the the overall structure of a
+Framework (with a capital "F"), TriBITS defines the overall structure of a
 CMake build system for a project and it processes the various project-,
 repository-, and package-specific files in a specified order.  Almost all of
 this processing takes place in the `TRIBITS_PROJECT()`_ macro (or macros and
@@ -518,7 +518,7 @@ units are:
   and testing (see `TriBITS Automated Testing`_).  A TriBITS package may or
   may not be broken down into multiple subpackages. Examples of TriBITS
   packages in `TribitsExampleProject`_ include ``SimpleCXX``,
-  ``MixedLanguage`` and ``PackageWithSubpackages``.  (Don't confuse a TriBITS
+  ``MixedLang`` and ``WithSubpackages``.  (Don't confuse a TriBITS
   "Package" with a raw CMake "Package". A raw CMake "Package" actually maps to
   a `TriBITS TPL`_; see `Why a TriBITS Package is not a CMake Package`_.)
 
@@ -528,25 +528,25 @@ units are:
   typically has source files built into libraries and tests but is documented
   and tested along with the other subpackages the parent package.  The primary
   purpose for supporting subpackages is to provide finer-grained control of
-  software dependencies.  In `TribitsExampleProject`_,
-  ``PackageWithSubpackages`` is an example of a package with subpackages
-  ``SubpackageA``, ``SubpackaeB``, and ``SubpackageC``.  The full subpackage
-  name has the parent package name prefixed the the subpackage name
-  (e.g. ``PackageWithSubpackagesSubpackageA``).  The parent package is always
-  implicitly dependent on its subpackages.
+  software dependencies.  In `TribitsExampleProject`_, ``WithSubpackages`` is
+  an example of a package with subpackages ``'A'``, ``'B'``, and ``'C'``.  The
+  full subpackage name is prefixed by the parent package name (e.g. the full
+  name for subpackage ``'A'`` is ``WithSubpackagesA``).  The parent package is
+  always implicitly dependent on its subpackages (e.g. parent package
+  ``WithSubpackages`` depends on its subpackages ``WithSubpackagesA``,
+  ``WithSubpackagesB``, and ``WithSubpackagesC``).
 
 .. _TriBITS SE Package:
 .. _TriBITS SE Packages:
 
 * **TriBITS SE Package**: The combined set of `TriBITS Packages`_ and `TriBITS
-  Subpackages`_ that constitute the basic *Software Engineering* packages (see
-  `Software Engineering Packaging Principles`_) of a TriBITS project: SE
+  Subpackages`_ that constitute the basic *Software Engineering* packages of a
+  TriBITS project (see `Software Engineering Packaging Principles`_): SE
   packages are the basis for setting dependencies in the TriBITS system.  For
   example, the SE Packages provided by the top-level example package
-  ``PackageWithSubpackages`` (in order of increasing dependencies) are
-  ``PackageWithSubpackagesSubpackageA``, ``PackageWithSubpackagesSubpackageB``,
-  ``PackageWithSubpackagesSubpackageC``, and ``PackageWithSubpackages`` (see
-  `TribitsExampleProject`_).
+  ``WithSubpackages`` (in order of increasing dependencies) are
+  ``WithSubpackagesA``, ``WithSubpackagesB``, ``WithSubpackagesC``, and
+  ``WithSubpackages`` (see `TribitsExampleProject`_).
 
 .. _TriBITS TPLs:
 
@@ -819,7 +819,7 @@ variables set in this file are seen by the entire CMake project.  For example,
 
 Note that the prefix ``${REPOSITORY_NAME}_`` is used instead of hard-coding
 the project name.  This is so that the same ``Version.txt`` file can be used
-as the the `<repoDir>/Version.cmake`_ file and have the repository name be
+as the `<repoDir>/Version.cmake`_ file and have the repository name be
 flexible.  TriBITS sets ``REPOSITORY_NAME = ${PROJECT_NAME}`` when it reads in
 this file at the project-level scope.
 
@@ -1392,10 +1392,10 @@ the user to help define the what packages from the repository
 
   ``${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES``
 
-    If set to ``TRUE``, then the package's in the the TriBITS repository are
-    not considered to be part of the primary meta-project packages.  This
-    affects what packages get enabled by default when enabling all packages
-    with setting ``${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON`` and what tests and
+    If set to ``TRUE``, then the package's in the TriBITS repository are not
+    considered to be part of the primary meta-project packages.  This affects
+    what packages get enabled by default when enabling all packages with
+    setting ``${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON`` and what tests and
     examples get enabled by default when setting
     ``${PROJECT_NAME}_ENABLE_TESTS=ON``.  See `TriBITS Dependency Handling
     Behaviors`_ for more details.
@@ -1503,22 +1503,21 @@ required dependencies is for the mock ``Panzer`` package in `MockTrilinos`_:
 .. include:: ../../package_arch/UnitTests/MockTrilinos/packages/panzer/cmake/Dependencies.cmake
    :literal:
 
-.. _package_with_subpackages/cmake/Dependencies.cmake:
+.. _with_subpackages/cmake/Dependencies.cmake:
 
-An example of a package with subpackages is the example package
-``PackageWithSubpackages`` which has the the file:
+An example of a package with subpackages is ``WithSubpackages`` which has the
+dependencies file:
 
-  `TribitsExampleProject`_/``packages/package_with_subpackages/cmake/Dependencies.cmake``
+  `TribitsExampleProject`_/``packages/with_subpackages/cmake/Dependencies.cmake``
 
 which is:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake
+.. include:: ../examples/TribitsExampleProject/packages/with_subpackages/cmake/Dependencies.cmake
    :literal:
 
-The last case defines three subpackages which creates three new SE packages
-with names ``PackageWithSubpackagesSubpackageA``,
-``PackageWithSubpackagesSubpackageB``, and
-``PackageWithSubpackagesSubpackageC``.
+``WithSubpackages`` defines three subpackages which creates three new SE
+packages with names ``WithSubpackagesA``, ``WithSubpackagesB``, and
+``WithSubpackagesC``.
 
 .. _<packageDir>/cmake/<packageName>_config.h.in:
 
@@ -1579,15 +1578,15 @@ only ``CMakeLists.txt`` file for a package.  Such an example can be see in the
 example project `TribitsHelloWorld`_ in the ``HelloWorld`` package.
 
 When a TriBITS package is broken up into subpackages (see `TriBITS
-Subpackage`_), its ``CMakeLists.txt`` file looks a little different from what
-is shown above.  The basic structure of this file for a **package with
-subpackages** is shown in:
+Subpackage`_), its ``CMakeLists.txt`` file looks a little different from a
+package with no subpackages as shown above.  The basic structure of this file
+for a **package with subpackages** is shown in:
 
-  `TribitsExampleProject`_/``packages/package_with_subpackages/CMakeLists.txt``
+  `TribitsExampleProject`_/``packages/with_subpackages/CMakeLists.txt``
 
 which contains:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/CMakeLists.txt
+.. include:: ../examples/TribitsExampleProject/packages/with_subpackages/CMakeLists.txt
    :literal:
 
 What is different about ``CMakeLists.txt`` files for packages without
@@ -1600,7 +1599,7 @@ tests/example of its own, it can define those after calling
 `TRIBITS_PACKAGE_DEF()`_, just like with a regular package.  However, it is
 rare for a package broken up into subpackages to have its own libraries and/or
 tests and examples.  As always, the final command called inside of a package's
-base ``CMakeLists.txt`` is `TRIBITS_PACKAGE_POSTPROCESS()`_.
+base ``CMakeLists.txt`` file is `TRIBITS_PACKAGE_POSTPROCESS()`_.
 
 NOTE: The package's base ``CMakeLists.txt`` file only gets processed if the
 package is actually enabled
@@ -1890,55 +1889,55 @@ These TriBITS Subpackage files are documented in more detail below:
 of this file for subpackages are identical as for top-level packages.  It just
 contains a call to the macro `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ to
 define this SE package's `upstream`_ TPL and SE package dependencies.  A
-simple example is for the example package ``SubpackageB`` (declared in
-`package_with_subpackages/cmake/Dependencies.cmake`_) with the file:
+simple example is for the example subpackage ``WithSubpackagesB`` (declared in
+`with_subpackages/cmake/Dependencies.cmake`_) with the file:
 
-  `TribitsExampleProject`_/``packages/package_with_subpackages/B/cmake/Dependneices.cmake``
+  `TribitsExampleProject`_/``packages/with_subpackages/b/cmake/Dependencies.cmake``
 
 which is:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/B/cmake/Dependencies.cmake
+.. include:: ../examples/TribitsExampleProject/packages/with_subpackages/b/cmake/Dependencies.cmake
    :literal:
 
 What this shows is that subpackages must list their dependencies on each other
 (if such dependencies exist) using the full SE package name
-``${PARENT_PACKAGE_NAME}${SUBPACKAGE_NAME}`` or in this case
-``PackageWithSubpackages`` + ``SubpackageA`` =
-``PackageWithSubpackagesSubpackageA``.
+``${PARENT_PACKAGE_NAME}${SUBPACKAGE_NAME}`` or in this case::
+
+   'WithSubpackagesA' = 'WithSubpackages' + 'A'
 
 Note that the parent SE package depends on its subpackages, not the other way
-around.  For example, the ``PackageWithSubpackages`` parent SE package
+around.  For example, the ``WithSubpackages`` parent SE package
 automatically depends its SE subpackages
-``PackageWithSubpackagesSubpackageA``, ``PackageWithSubpackagesSubpackageC``,
-and ``PackageWithSubpackagesSubpackageC``.  As such all (direct) dependencies
+``WithSubpackagesA``, ``WithSubpackagesC``,
+and ``WithSubpackagesC``.  As such all (direct) dependencies
 for a subpackage must be listed in its own ``Dependencies.cmake`` file.  For
-example, the ``PackageWithSubpackages`` subpackage ``SubpackageA`` depends on
+example, the ``WithSubpackages`` subpackage ``A`` depends on
 the ``SimpleCxx`` package and is declared as such as shown in:
 
-  `TribitsExampleProject`_/``packages/package_with_subpackages/A/cmake/Dependneices.cmake``
+  `TribitsExampleProject`_/``packages/with_subpackages/a/cmake/Dependencies.cmake``
 
 which is:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/A/cmake/Dependencies.cmake
+.. include:: ../examples/TribitsExampleProject/packages/with_subpackages/a/cmake/Dependencies.cmake
    :literal:
 
 What this means is that any TPL or library dependencies listed in the parent
 package's `<packageDir>/cmake/Dependencies.cmake`_ file are **NOT**
 dependencies of its subpackages.  For example, if
-`package_with_subpackages/cmake/Dependencies.cmake`_ where changed to be::
+`with_subpackages/cmake/Dependencies.cmake`_ where changed to be::
 
   TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
     LIB_REQUIRED_TPLS Boost
     SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-      SubpackageA   A   PT  REQUIRED
+      A   A   PT  REQUIRED
       ...
     )
 
 then the ``Boost`` TPL would **NOT** be a dependency of the SE package
-``PackageWithSubpackagesSubpackageA`` but instead would be listed as a
-dependency of the parent SE package ``PackageWithSubpackages``.  (And in this
+``WithSubpackagesA`` but instead would be listed as a
+dependency of the parent SE package ``WithSubpackages``.  (And in this
 case, this TPL dependency is pretty worthless since the SE package
-``PackageWithSubpackages`` does not even define any libraries or tests of its
+``WithSubpackages`` does not even define any libraries or tests of its
 own.)
 
 .. _<packageDir>/<spkgDir>/CMakeLists.txt:
@@ -1953,11 +1952,11 @@ difference is that the commands `TRIBITS_PACKAGE()`_ and
 `TRIBITS_SUBPACKAGE_POSTPROCESS()`_ as shown in the file:
 
 
-  `TribitsExampleProject`_/``packages/package_with_subpackages/A/CMakeLists.txt``
+  `TribitsExampleProject`_/``packages/with_subpackages/a/CMakeLists.txt``
 
 which contains:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/A/CMakeLists.txt
+.. include:: ../examples/TribitsExampleProject/packages/with_subpackages/a/CMakeLists.txt
    :literal:
 
 Unlike `TRIBITS_PACKAGE()`_, `TRIBITS_SUBPACKAGE()`_ does not take any extra
@@ -2057,7 +2056,7 @@ For each TPL referenced in a `<repoDir>/TPLsList.cmake`_ file using the macro
 `TRIBITS_REPOSITORY_DEFINE_TPLS()`_, there must exist a file, typically called
 ``FindTPL${TPL_NAME}.cmake``, that once processed, produces the variables
 ``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  Most
-``FindTPL${TPL_NAME}.cmake`` files just use the the function
+``FindTPL${TPL_NAME}.cmake`` files just use the function
 `TRIBITS_TPL_DECLARE_LIBRARIES()`_ the define the TriBITS TPL.  A simple
 example of such a file is the standard TriBITS ``FindTPLPETSC.cmake`` module
 which is currently:
@@ -2099,7 +2098,7 @@ non-cache variables:
     ``SomeTpl``, then if ``Repo2`` is processed after ``Repo1``, then
     ``SomeTpl_TESTGROUP`` is determined by ``Repo1/TPLsList.cmake`` and the
     test group in ``Repo2/TPLsList.cmake`` is ignored.  However, if
-    ``${TPL_NAME}_TESTGROUP`` is already set before the the
+    ``${TPL_NAME}_TESTGROUP`` is already set before the
     `<repoDir>/TPLsList.cmake`_ files are processed, then that test group will
     be used.  Therefore, the project can override the test group for a given
     TPL if desired.
@@ -2324,26 +2323,26 @@ looks something like::
   -- File Trace: REPOSITORY INCLUDE    [...]/PackagesList.cmake
   -- File Trace: REPOSITORY INCLUDE    [...]/TPLsList.cmake
   -- File Trace: PACKAGE    INCLUDE    [...]/packages/simple_cxx/cmake/Dependencies.cmake
-  -- File Trace: PACKAGE    INCLUDE    [...]/packages/mixed_language/cmake/Dependencies.cmake
-  -- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/cmake/Dependencies.cmake
-  -- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/A/cmake/Dependencies.cmake
-  -- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/B/cmake/Dependencies.cmake
-  -- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/C/cmake/Dependencies.cmake
+  -- File Trace: PACKAGE    INCLUDE    [...]/packages/mixed_lang/cmake/Dependencies.cmake
+  -- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/cmake/Dependencies.cmake
+  -- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/a/cmake/Dependencies.cmake
+  -- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/b/cmake/Dependencies.cmake
+  -- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/c/cmake/Dependencies.cmake
   -- File Trace: PACKAGE    INCLUDE    [...]/packages/wrap_external/cmake/Dependencies.cmake
   -- File Trace: PROJECT    CONFIGURE  [...]/cmake/ctest/CTestCustom.cmake.in
   -- File Trace: REPOSITORY READ       [...]/Copyright.txt
   -- File Trace: REPOSITORY INCLUDE    [...]/Version.cmake
   -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/simple_cxx/CMakeLists.txt
   -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/simple_cxx/test/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_language/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_language/test/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/A/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/A/tests/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/B/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/B/tests/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/C/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/C/tests/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_lang/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_lang/test/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/a/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/a/tests/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/b/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/b/tests/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/tests/CMakeLists.txt
   -- File Trace: REPOSITORY INCLUDE    [...]/cmake/CallbackDefineRepositoryPackaging.cmake
   -- File Trace: PROJECT    INCLUDE    [...]/cmake/CallbackDefineProjectPackaging.cmake
 
@@ -2351,7 +2350,7 @@ However, every file that TriBITS processes is not printed in this file trace
 if it should be obvious that the file is being processed.  For example, the
 package's configured header file created using `TRIBITS_CONFIGURE_FILE()`_
 does not result in a file trace print statement because this is an
-unconditional command that is explicitly called in one of the the package's
+unconditional command that is explicitly called in one of the package's
 ``CMakeLists.txt`` files so it should be clear that this file is being
 processed and exactly when it is processed.
 
@@ -2365,8 +2364,7 @@ below.
 
 **TriBITS Repository == TriBITS Project**: It is allowed for a TriBITS Project
 and a TriBITS Repository to be the same source directory and in fact this is
-the default for every TriBITS project (unless the the
-`<projectDir>/cmake/NativeRepositoriesList.cmake`_ is defined).  In this case,
+the default for every TriBITS project (unless the `<projectDir>/cmake/NativeRepositoriesList.cmake`_ is defined).  In this case,
 the repository name `REPOSITORY_NAME`_ and the project name `PROJECT_NAME`_
 are the same as well.  This is quite common and is in fact the default that
 every TriBITS Project is also a TriBITS repository (and therefore must contain
@@ -2651,8 +2649,8 @@ the partial list of `TribitsExampleProject Files and Directories`_ below::
         test/
           CMakeLists.txt
           SimpleCxx_HelloWorld_Tests.cpp
-      mixed_language/ ...
-      package_with_subpackages/
+      mixed_lang/ ...
+      with_subpackages/
         CMakeLists.txt
         cmake/
           Dependencies.cmake
@@ -2672,7 +2670,7 @@ order listed in the ``TribitsExampleProject/PackagesList.cmake`` file:
    :literal:
 
 From this file, we get the list of top-level packages ``SimpleCxx``,
-``MixedLanguage``, ``PackageWithSubpackages``, and ``WrapExternal`` (and their
+``MixedLang``, ``WithSubpackages``, and ``WrapExternal`` (and their
 base package directories and testing group, see
 `<repoDir>/PackagesList.cmake`_).
 
@@ -2687,37 +2685,36 @@ must exist for every package directory listed in
 ``packages/simple_cxx/``.  The package ``SimpleCxx`` does not have any
 `upstream`_ SE package dependencies.
 
-Now consider the example top-level package ``PackageWithSubpackages`` which,
+Now consider the example top-level package ``WithSubpackages`` which,
 as the name suggests, is broken down into subpackages.  The
-``PackageWithSubpackages`` dependencies file::
+``WithSubpackages`` dependencies file::
 
-  TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake
+  TribitsExampleProject/packages/with_subpackages/cmake/Dependencies.cmake
 
 with contents:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake
+.. include:: ../examples/TribitsExampleProject/packages/with_subpackages/cmake/Dependencies.cmake
    :literal:
 
 references the three subpackages with sub-directories ``<spkgDir>`` = ``A``,
 ``B``, and ``C`` under the parent package directory
 ``packages/package_with_packages/`` which are shown in `TribitsExampleProject
 Files and Directories`_.  This gives another set of three SE packages
-``PackageWithSubpackagesSubpackageA``, ``PackageWithSubpackagesSubpackageB``,
-and ``PackageWithSubpackagesSubpackageC``.  Combining ``<packageDir> =
+``WithSubpackagesA``, ``WithSubpackagesB``,
+and ``WithSubpackagesC``.  Combining ``<packageDir> =
 packages/package_with_packages`` and ``<spkgDir>`` for each subpackage gives
 the subpackage directories::
 
-  TribitsExampleProject/packages/package_with_subpackages/A/
-  TribitsExampleProject/packages/package_with_subpackages/B/
-  TribitsExampleProject/packages/package_with_subpackages/C/
+  TribitsExampleProject/packages/with_subpackages/a/
+  TribitsExampleProject/packages/with_subpackages/b/
+  TribitsExampleProject/packages/with_subpackages/c/
 
-Together with the top-level parent SE package ``PackageWithSubpackages``
+Together with the top-level parent SE package ``WithSubpackages``
 itself, this top-level package provides four `TriBITS SE Packages`_ giving the
 final list of SE packages provided by this TriBITS repo as::
 
-  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA \
-    PackageWithSubpackagesSubpackaeB PackageWithSubpackagesSubpackageC \
-    PackageWithSubpackages WrapExternal 7
+  SimpleCxx MixedLang WithSubpackagesA WithSubpackagesB WithSubpackagesC \
+    WithSubpackages WrapExternal 7
 
 The above list of SE packages is printed (with the number of packages printed
 at the end) by TriBITS to the ``cmake`` stdout on the line starting with
@@ -2726,7 +2723,7 @@ at the end) by TriBITS to the ``cmake`` stdout on the line starting with
 in line-brakes with continuation characters ``"\"`` as shown above.)  TriBITS
 defines enable/disable cache variables for each of these defined SE packages
 like ``TribitsExProj_ENABLE_SimpleCxx`` and
-``TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageA``, and defines all
+``TribitsExProj_ENABLE_WithSubpackagesA``, and defines all
 the variables listed in `TriBITS Package Cache Variables`_ that are settable
 by the users or by the dependency logic described in section `Package
 Dependencies and Enable/Disable Logic`_.
@@ -4055,9 +4052,9 @@ CTest/Dash Driver`_ for details).
   `Pre-Push CI Testing`_ or `Post-Push CI Testing`_.  One would mark a
   repository as ``Nightly`` for few reasons.  First, an extra repo may be
   marked as ``Nightly`` if it may not be available to all developers to clone
-  and only the the nightly testing processes and machines may have access.
-  Also, an extra repo may also be marked as ``Nightly`` if it does not contain
-  any packages that the project wants to pay the cost to include in even
+  and only the nightly testing processes and machines may have access.  Also,
+  an extra repo may also be marked as ``Nightly`` if it does not contain any
+  packages that the project wants to pay the cost to include in even
   `Post-Push CI Testing`_.  NOTE: One should **not** confuse this with the
   `Test Test Category NIGHTLY`_.
 
@@ -4122,8 +4119,8 @@ More detailed descriptions of the test groups are given below.
   it is required by a ``PT`` SE package.  Every project developer is expected
   to have every ``PT`` TPL installed on every machine where they do
   development on and from which they push to the global repo (see
-  `checkin-test.py`_ script).  ``PT`` SE packages and TPLs are the the
-  foundation for `Pre-Push CI Testing`_.
+  `checkin-test.py`_ script).  ``PT`` SE packages and TPLs are the foundation
+  for `Pre-Push CI Testing`_.
 
 .. _ST:
 
@@ -4163,7 +4160,7 @@ More detailed descriptions of the test groups are given below.
 The test group for each type of entity is assigned in the following places:
 
 * The top-level `TriBITS Package`_'s test group is assigned using the
-  ``CLASSIFICATION`` field in the the macro call
+  ``CLASSIFICATION`` field in the macro call
   `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_ in its parent repository's
   `<repoDir>/PackagesList.cmake`_ file.
 
@@ -4455,7 +4452,7 @@ Test Test Category         ``WEEKLY``          (`Test Test Category WEEKLY`_)
 Project developer teams should strive to limit the number of test cases that
 are marked as ``WEEKLY`` since these tests will *not* get run nightly and
 developers will tend to never enable them when doing more extensive testing
-using ``--st-extra-builds`` with the the `checkin-test.py`_ script in extended
+using ``--st-extra-builds`` with the `checkin-test.py`_ script in extended
 pre-push testing.
 
 .. _Performance Testing:
@@ -5049,7 +5046,7 @@ Adding a new package with subpackages is similar to adding a new regular
 package described in `How to Add a new TriBITS Package`_.  Again, it is
 recommended that one copies an example package from `TribitsExampleProject`_.
 For example, one could copy files and directories from the example package
-``PackageWithSubpackages``.
+``WithSubpackages``.
 
 To add a new TriBITS package with packages, do the following:
 
@@ -5088,7 +5085,7 @@ repository-level files.  One only needs to add the declaration for the new
 subpackages in its parent's `<packageDir>/cmake/Dependencies.cmake`_ file then
 fill out the pieces of the new subpackage defined in the section `TriBITS
 Subpackage Core Files`_.  It is recommended to copy files from one of the
-`TribitsExampleProject`_ subpackages in the ``PackageWithSubpackages``
+`TribitsExampleProject`_ subpackages in the ``WithSubpackages``
 package.
 
 To add a new TriBITS subpackage to a top-level package that already has
@@ -5740,8 +5737,8 @@ git integration server ``url4.gov``.  The state where the TriBITS packages in
 the three different git/TriBITS repos in the master branch on ``url4.gov`` all
 work together correctly constitutes the initial condition for the ACI process
 described below.  From that initial condition, the ACI processes ensures that
-updates the the master branches for the git/TriBITS repos on ``url4.gov`` do
-not break any builds or tests of the integrated software.
+updates the master branches for the git/TriBITS repos on ``url4.gov`` do not
+break any builds or tests of the integrated software.
 
 In order to describe how to set up an ACI process using the
 ``checkin-test.py`` script, the following subsections will focus on the update
@@ -5831,7 +5828,7 @@ continuously in a loop (but that is possible as well but is not documented
 here).
 
 NOTE: Other build directory structures are possible, it all depends how one
-writes the the ``checkin-test.py`` wrapper scripts but the above directory
+writes the ``checkin-test.py`` wrapper scripts but the above directory
 structure is fairly standard in the usage of the ``checkin-test.py`` script.
 
 
@@ -5966,7 +5963,7 @@ packages have changed files in the ``ExtraRepo1`` git/TriBITS extra
 repository.  This is the preferred way to go since any affected packages will
 automatically be enabled as determined by the TriBITS package dependency
 structure and therefore this driver script will require no modifications if
-the the dependency structure changes over time.  However, there are cases and
+the dependency structure changes over time.  However, there are cases and
 various reasons where the exact list of packages to be tested (or not tested)
 should be specified using the ``--enable-packages`` option (or the
 ``--disable-packages`` option, respectively).  However, these should not be
@@ -6569,7 +6566,7 @@ TriBITS directory snapshotting
 Some TriBITS projects choose to snapshot the ``TriBITS`` directory source tree
 into their project's source tree, typically under
 `<projectDir>/cmake/tribits/`_.  The independent ``TriBITS`` source tree
-contains a symbolic link to the the tool `snapshot-dir.py`_ that allows one to
+contains a symbolic link to the tool `snapshot-dir.py`_ that allows one to
 update the snapshot of the TriBITS source tree as simply as::
 
   $ cd <projectDir>/cmake/tribits/
@@ -7248,10 +7245,15 @@ snapshotting`_.
 
 .. _TriBITS Lifecycle Model: ../lifecycle_model/TribitsLifecycleModel.pdf
 
-..  OTher common references
+..  Other common references
 
 .. _CTest documentation: http://www.cmake.org/Wiki/CMake/Testing_With_CTest
 
 .. Common references to raw CMake commands:
 
 .. _CONFIGURE_FILE(): http://www.cmake.org/cmake/help/v2.8.11/cmake.html#command:configure_file
+
+..  LocalWords:  TribitsOverview TribitsLifecycleModel Lifecycle CMakeLists
+..  LocalWords:  TriBITS Subpackage subpackage Subpackages subpackages TPL TPLs Kitware
+..  LocalWords:  CMake cmake CTest ctest CDash CPack WithSubpackages WithSubpackagesA
+..  LocalWords:  WithSubpackagesB WithSubpackagesC executables FOREACH ENDFOREACH

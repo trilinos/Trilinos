@@ -107,9 +107,9 @@ ENDMACRO()
 FUNCTION(TRIBITS_GET_REPO_NAME  REPO_DIR  REPO_NAME_OUT)
   IF (REPO_DIR STREQUAL ".")
     SET(REPO_NAME ${PROJECT_NAME})
-  ELSE() 
+  ELSE()
     SET(REPO_NAME ${REPO_DIR})
-  ENDIF() 
+  ENDIF()
   SET(${REPO_NAME_OUT} "${REPO_NAME}" PARENT_SCOPE)
 ENDFUNCTION()
 
@@ -119,9 +119,9 @@ ENDFUNCTION()
 FUNCTION(TRIBITS_SET_BASE_REPO_DIR  BASE_DIR  REPO_DIR  BASE_REPO_DIR_OUT)
   IF (REPO_DIR STREQUAL ".")
     SET(REPO_DIR_STR "")
-  ELSE() 
+  ELSE()
     SET(REPO_DIR_STR "/${REPO_DIR}")
-  ENDIF() 
+  ENDIF()
   SET(${BASE_REPO_DIR_OUT} "${BASE_DIR}${REPO_DIR_STR}" PARENT_SCOPE)
 ENDFUNCTION()
 
@@ -194,7 +194,7 @@ FUNCTION(TRIBITS_SET_DEP_PACKAGES  PACKAGE_NAME   LIB_OR_TEST  REQUIRED_OR_OPTIO
           IF (REQUIRED_OR_OPTIONAL STREQUAL "REQUIRED")
             SET(SE_PACKAGE_ENABLE_VAR  ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
             MESSAGE_WRAPPER("WARNING: Setting ${SE_PACKAGE_ENABLE_VAR}=OFF because"
-              " ${DEP_PKG} is a required missing package!") 
+              " ${DEP_PKG} is a required missing package!")
             DUAL_SCOPE_SET(${SE_PACKAGE_ENABLE_VAR} OFF)
           ENDIF()
         ENDIF()
@@ -221,7 +221,7 @@ ENDFUNCTION()
 #
 
 FUNCTION(TRIBITS_APPEND_FORWARD_DEP_PACKAGES PACKAGE_NAME LIST_TYPE)
- 
+
   #MESSAGE("\nPACKAGE_ARCH_APPEND_FORWARD_DEP_PACKAGES: ${PACKAGE_NAME} ${LIST_TYPE}")
 
   SET(DEP_PKG_LIST_NAME "${PACKAGE_NAME}_${LIST_TYPE}")
@@ -308,7 +308,7 @@ ENDMACRO()
 #
 #     List of required upstream SE packages that must be enabled in order to
 #     build and use the libraries (or capabilities) in this SE package.
-#  
+#
 #   ``LIB_OPTIONAL_PACKAGES``
 #
 #     List of additional optional upstream SE packages that can be used in
@@ -316,14 +316,14 @@ ENDMACRO()
 #     enabled in order to enable this SE package but not enabling one or more
 #     of these optional upstream SE packages will result in diminished
 #     capabilities of this SE package.
-#  
+#
 #   ``TEST_REQUIRED_PACKAGES``
 #
 #     List of additional upstream SE packages that must be enabled in order to
 #     build and/or run the tests and/or examples in this SE package.  If any
 #     of these upstream SE packages are not enabled, then there will be no
 #     tests or examples defined or run for this SE package.
-#  
+#
 #   ``TEST_OPTIONAL_PACKAGES``
 #
 #     List of additional optional upstream SE packages that can be used by the
@@ -331,26 +331,26 @@ ENDMACRO()
 #     enabled in order to run some basic tests or examples for this SE
 #     package.  Typically, extra tests that depend on optional test SE
 #     packages involve integration testing of some type.
-#  
+#
 #   ``LIB_REQUIRED_TPLS``
 #
 #     List of required upstream TPLs that must be enabled in order to build
 #     and use the libraries (or capabilities) in this SE package.
-#  
+#
 #   ``LIB_OPTIONAL_TPLS``
 #
 #     List of additional optional upstream TPLs that can be used in this SE
 #     package if enabled.  These upstream TPLs need not be enabled in order to
 #     use this SE package but not enabling one or more of these optional
 #     upstream TPLs will result in diminished capabilities of this SE package.
-#  
+#
 #   ``TEST_REQUIRED_TPLS``
 #
 #     List of additional upstream TPLs that must be enabled in order to build
 #     and/or run the tests and/or examples in this SE package.  If any of
 #     these upstream TPLs are not enabled, then there will be no tests or
 #     examples defined or run for this SE package.
-#  
+#
 #   ``TEST_OPTIONAL_TPLS``
 #
 #     List of additional optional upstream TPLs that can be used by the tests
@@ -410,20 +410,20 @@ ENDMACRO()
 #       The full SE package name is ``${PARENT_PACKAGE_NAME}<spkg_name>``.
 #       The full SE package name is what is used in listing dependencies in
 #       other SE packages.
-#    
+#
 #     * **DIRS** (Column 1): The subdirectory ``<spkg_dir>`` relative to the
 #       parent package's base directory.  All of the contents of the
 #       subpackage should be under this subdirectory.  This is assumed by the
 #       TriBITS testing support software when mapping modified files to SE
 #       packages that need to be tested (see `checkin-test.py`_).
-#    
+#
 #     * **CLASSIFICATIONS** (Column 2): The `Test Test Category`_ `PT`_,
 #       `ST`_, `EX`_ and the maturity level ``EP``, ``RS``, ``PG``, ``PM``,
 #       ``GRS``, ``GPG``, ``GPM``, and ``UM``, separated by a coma ',' with no
 #       spaces in between (e.g. ``"PT,GPM"``).  These have exactly the same
 #       meaning as for full packages (see
 #       `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_).
-#    
+#
 #     * **OPTREQ** (Column 3): Determines if the outer parent package has an
 #       ``OPTIONAL`` or ``REQUIRED`` dependence on this subpackage.
 #
@@ -455,7 +455,7 @@ ENDMACRO()
 # need to set all of the above local variables, even those that are empty.
 # This is a error checking property of the TriBITS system to avoid misspelling
 # the names of these variables.
-# 
+#
 MACRO(TRIBITS_PACKAGE_DEFINE_DEPENDENCIES)
 
   PARSE_ARGUMENTS(
@@ -585,9 +585,9 @@ MACRO(TRIBITS_PARSE_SUBPACKAGES_AND_APPEND_SE_PACKAGES_AND_ADD_OPTIONS  PACKAGE_
     #PRINT_VAR(NUM_SUBPACKAGES)
     MATH(EXPR SUBPACKAGES_LAST_IDX "${NUM_SUBPACKAGES}-1")
     #PRINT_VAR(SUBPACKAGES_LAST_IDX)
-  
+
     FOREACH(SUBPACKAGE_IDX RANGE ${SUBPACKAGES_LAST_IDX})
-  
+
       #MESSAGE("")
       #PRINT_VAR(SUBPACKAGE_IDX)
 
@@ -598,14 +598,14 @@ MACRO(TRIBITS_PARSE_SUBPACKAGES_AND_APPEND_SE_PACKAGES_AND_ADD_OPTIONS  PACKAGE_
       #PRINT_VAR(SUBPACKAGE_NAME)
 
       SET(SUBPACKAGE_FULLNAME ${PACKAGE_NAME}${SUBPACKAGE_NAME})
- 
-      # SUBPACKAGE_DIR     
+
+      # SUBPACKAGE_DIR
       MATH(EXPR SUBPACKAGE_DIR_IDX "${SUBPACKAGE_IDX}*${SPDC_NUM_FIELDS}+${SPDC_SP_DIR_OFFSET}")
       #PRINT_VAR(SUBPACKAGE_DIR_IDX)
       LIST(GET SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${SUBPACKAGE_DIR_IDX} SUBPACKAGE_DIR )
       #PRINT_VAR(SUBPACKAGE_DIR)
- 
-      # SUBPACKAGE_CLASSIFICATION     
+
+      # SUBPACKAGE_CLASSIFICATION
       MATH(EXPR SUBPACKAGE_CLASSIFICATION_IDX
         "${SUBPACKAGE_IDX}*${SPDC_NUM_FIELDS}+${SPDC_SP_CLASSIFICATION_OFFSET}")
       #PRINT_VAR(SUBPACKAGE_CLASSIFICATION_IDX)
@@ -617,8 +617,8 @@ MACRO(TRIBITS_PARSE_SUBPACKAGES_AND_APPEND_SE_PACKAGES_AND_ADD_OPTIONS  PACKAGE_
       SET(SUBPACKAGE_TESTGROUP ${SUBPACKAGE_CLASSIFICATION})
 
       TRIBITS_UPDATE_PS_PT_SS_ST(Subpackage ${SUBPACKAGE_FULLNAME} SUBPACKAGE_TESTGROUP)
- 
-      # SUBPACKAGE_OPTREQ     
+
+      # SUBPACKAGE_OPTREQ
       MATH(EXPR SUBPACKAGE_OPTREQ_IDX
         "${SUBPACKAGE_IDX}*${SPDC_NUM_FIELDS}+${SPDC_SP_OPTREQ_OFFSET}")
       #PRINT_VAR(SUBPACKAGE_OPTREQ_IDX)
@@ -635,16 +635,16 @@ MACRO(TRIBITS_PARSE_SUBPACKAGES_AND_APPEND_SE_PACKAGES_AND_ADD_OPTIONS  PACKAGE_
       ENDIF()
       #PRINT_VAR(SUBPACKAGE_FULL_SOURCE_DIR)
       #PRINT_VAR(SUBPACKAGE_EXISTS)
-  
+
       IF (NOT SUBPACKAGE_EXISTS AND ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
          MESSAGE(SEND_ERROR "ERROR: Subpackage dir '${SUBPACKAGE_FULL_SOURCE_DIR}'"
            " is missing!")
       ENDIF()
-  
+
       # Append to lists and global variables
 
       IF (SUBPACKAGE_EXISTS)
-  
+
         LIST(APPEND ${PACKAGE_NAME}_SUBPACKAGES ${SUBPACKAGE_NAME})
         LIST(APPEND ${PACKAGE_NAME}_SUBPACKAGE_DIRS ${SUBPACKAGE_DIR})
         LIST(APPEND ${PACKAGE_NAME}_SUBPACKAGE_OPTREQ ${SUBPACKAGE_OPTREQ})
@@ -661,11 +661,11 @@ MACRO(TRIBITS_PARSE_SUBPACKAGES_AND_APPEND_SE_PACKAGES_AND_ADD_OPTIONS  PACKAGE_
         # Set up the input options for this subpackage
         TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS(${SUBPACKAGE_FULLNAME}
           ${SUBPACKAGE_TESTGROUP})
-  
+
         #PRINT_VAR(${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
 
       ENDIF()
-  
+
     ENDFOREACH()
 
   ENDIF()
@@ -708,7 +708,7 @@ MACRO(TRIBITS_READ_SUBPACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR
   #
 
   SET(SUBPACKAGE_FULL_DIR "${PACKAGE_DIR}/${SUBPACKAGE_DIR}")
-  LIST(APPEND ${PROJECT_NAME}_SE_PACKAGE_DIRS ${SUBPACKAGE_FULL_DIR}) 
+  LIST(APPEND ${PROJECT_NAME}_SE_PACKAGE_DIRS ${SUBPACKAGE_FULL_DIR})
 
   SET(SUBPACKAGE_ABS_DIR "${PROJECT_SOURCE_DIR}/${SUBPACKAGE_FULL_DIR}")
   SET(SUBPAKCAGE_DEPENDENCIES_FILE "${SUBPACKAGE_ABS_DIR}/cmake/Dependencies.cmake")
@@ -723,24 +723,24 @@ MACRO(TRIBITS_READ_SUBPACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR
 
     TRIBITS_TRACE_FILE_PROCESSING(PACKAGE  INCLUDE  "${SUBPAKCAGE_DEPENDENCIES_FILE}")
     INCLUDE(${SUBPAKCAGE_DEPENDENCIES_FILE})
-  
+
     TRIBITS_ASSERT_READ_DEPENDENCY_VARS(${SUBPACKAGE_FULLNAME})
-  
+
     #
     # C) Finish processing this subpackage's dependencies into dependency graph vars
     #
-  
+
     TRIBITS_PROCESS_PACKAGE_DEPENDENCIES_LISTS(${SUBPACKAGE_FULLNAME})
-  
+
     #PRINT_VAR(${SUBPACKAGE_FULLNAME}_FORWARD_LIB_REQUIRED_DEP_PACKAGES)
     #PRINT_VAR(${SUBPACKAGE_FULLNAME}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES)
     #PRINT_VAR(${SUBPACKAGE_FULLNAME}_FORWARD_TEST_REQUIRED_DEP_PACKAGES)
     #PRINT_VAR(${SUBPACKAGE_FULLNAME}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES)
-  
+
     #
     # D) Set the email addresses for the subpackage to the parent package's
     #
-  
+
     SET(${SUBPACKAGE_FULLNAME}_REGRESSION_EMAIL_LIST ${${PACKAGE_NAME}_REGRESSION_EMAIL_LIST})
 
   ENDIF()
@@ -765,7 +765,7 @@ MACRO(TRIBITS_READ_ALL_PACKAGE_SUBPACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DI
     MATH(EXPR SUBPACKAGE_IDX "${SUBPACKAGE_IDX}+1")
   ENDFOREACH()
 
-  LIST(APPEND ${PROJECT_NAME}_SE_PACKAGE_DIRS ${PACKAGE_DIR}) 
+  LIST(APPEND ${PROJECT_NAME}_SE_PACKAGE_DIRS ${PACKAGE_DIR})
 
 ENDMACRO()
 
@@ -830,7 +830,7 @@ MACRO(TRIBITS_READ_PACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     PRINT_VAR(REGRESSION_EMAIL_LIST)
   ENDIF()
- 
+
   TRIBITS_GET_REPO_NAME(${${PACKAGE_NAME}_PARENT_REPOSITORY} REPOSITORY_NAME)
   #PRINT_VAR(REPOSITORY_NAME)
 
@@ -979,10 +979,10 @@ MACRO(TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES)
   #
   # B) Process the package dependency files, yielding the list of subpackages as well
   #
-  
+
   SET(${PROJECT_NAME}_SE_PACKAGES) # Packages and subpackages
   SET(${PROJECT_NAME}_SE_PACKAGE_DIRS)
-  
+
   SET(PACKAGE_IDX 0)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
     LIST(GET ${PROJECT_NAME}_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
@@ -990,7 +990,7 @@ MACRO(TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES)
     #TRIBITS_ADD_OPTIONAL_PACKAGE_ENABLES(${TRIBITS_PACKAGE})
     MATH(EXPR PACKAGE_IDX "${PACKAGE_IDX}+1")
   ENDFOREACH()
-  
+
   # Create a reverse se packages list for later use
   SET(${PROJECT_NAME}_REVERSE_SE_PACKAGES ${${PROJECT_NAME}_SE_PACKAGES})
   IF (${PROJECT_NAME}_REVERSE_SE_PACKAGES)
@@ -1007,11 +1007,11 @@ MACRO(TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES)
       #PRINT_VAR(TPL_ENABLE_${TPL})
     ENDIF()
   ENDFOREACH()
- 
+
   ADVANCED_OPTION(${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES
     "Dump the package dependency information."
     "${${PROJECT_NAME}_VERBOSE_CONFIGURE}" )
- 
+
   ADVANCED_OPTION(${PROJECT_NAME}_DUMP_FORWARD_PACKAGE_DEPENDENCIES
     "Dump the package forwrad dependency information."
     "${${PROJECT_NAME}_VERBOSE_CONFIGURE}" )
@@ -1101,7 +1101,7 @@ MACRO(TRIBITS_PRIVATE_DISABLE_TPL_REQUIRED_PACKAGE_ENABLE
   )
 
   #MESSAGE("TRIBITS_PRIVATE_DISABLE_TPL_REQUIRED_PACKAGE_ENABLE"
-  #  " ${TPL_NAME} ${PACKAGE_NAME} ${LIBRARY_DEP}")  
+  #  " ${TPL_NAME} ${PACKAGE_NAME} ${LIBRARY_DEP}")
 
   # Only turn off PACKAGE_NAME libraries and test/eamples if it
   # is currently enabled or could be enabled.
@@ -1149,7 +1149,7 @@ MACRO(TRIBITS_PRIVATE_DISABLE_TPL_REQUIRED_PACKAGE_ENABLE
     ENDIF()
 
   ENDIF()
-  
+
 ENDMACRO()
 
 
@@ -1168,7 +1168,7 @@ MACRO(TRIBITS_PRIVATE_DISABLE_REQUIRED_PACKAGE_ENABLES
   )
 
   #MESSAGE("TRIBITS_PRIVATE_DISABLE_REQUIRED_PACKAGE_ENABLES"
-  #  " ${FORWARD_DEP_PACKAGE_NAME} ${LIBRARY_DEP}")  
+  #  " ${FORWARD_DEP_PACKAGE_NAME} ${LIBRARY_DEP}")
 
   # Only turn off FORWARD_DEP_PACKAGE libraries and test/eamples if it
   # is currently enabled or could be enabled
@@ -1199,7 +1199,7 @@ MACRO(TRIBITS_PRIVATE_DISABLE_REQUIRED_PACKAGE_ENABLES
           ${FORWARD_DEP_PACKAGE_NAME} "${DEP_TYPE_STR}" )
         SET(${FORWARD_DEP_PACKAGE_NAME}_ENABLE_TESTS OFF)
       ENDIF()
-    
+
       #ASSERT_DEFINED(${FORWARD_DEP_PACKAGE_NAME}_ENABLE_EXAMPLES)
       IF (${FORWARD_DEP_PACKAGE_NAME}_ENABLE_EXAMPLES
         OR ${FORWARD_DEP_PACKAGE_NAME}_ENABLE_EXAMPLES STREQUAL ""
@@ -1213,7 +1213,7 @@ MACRO(TRIBITS_PRIVATE_DISABLE_REQUIRED_PACKAGE_ENABLES
     ENDIF()
 
   ENDIF()
-  
+
 ENDMACRO()
 
 
@@ -1275,13 +1275,13 @@ MACRO(TRIBITS_DISABLE_PARENTS_SUBPACKAGES PARENT_PACKAGE_NAME)
   IF(NOT ${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME}
     AND NOT "${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME}" STREQUAL ""
     )
-  
+
     SET(SUBPACKAGE_IDX 0)
     FOREACH(TRIBITS_SUBPACKAGE ${${PARENT_PACKAGE_NAME}_SUBPACKAGES})
-    
+
       SET(SUBPACKAGE_NAME ${TRIBITS_SUBPACKAGE})
       SET(SUBPACKAGE_FULLNAME ${PARENT_PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
-  
+
       #PRINT_VAR(${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
       IF (NOT "${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME}" STREQUAL "OFF")
         SET(ENABLE_BEING_DISABLED_VAR_NAME ${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
@@ -1290,9 +1290,9 @@ MACRO(TRIBITS_DISABLE_PARENTS_SUBPACKAGES PARENT_PACKAGE_NAME)
           " because parent package ${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME}=OFF")
         SET(${ENABLE_BEING_DISABLED_VAR_NAME} OFF)
       ENDIF()
-    
+
       MATH(EXPR SUBPACKAGE_IDX "${SUBPACKAGE_IDX}+1")
-    
+
     ENDFOREACH()
 
   ENDIF()
@@ -1310,15 +1310,15 @@ MACRO(TRIBITS_ENABLE_PARENTS_SUBPACKAGES PARENT_PACKAGE_NAME)
   #PRINT_VAR(${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME})
 
   IF(${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME})
-  
+
     SET(SUBPACKAGE_IDX 0)
     FOREACH(TRIBITS_SUBPACKAGE ${${PARENT_PACKAGE_NAME}_SUBPACKAGES})
-    
+
       SET(SUBPACKAGE_NAME ${TRIBITS_SUBPACKAGE})
       SET(SUBPACKAGE_FULLNAME ${PARENT_PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
-  
+
       #PRINT_VAR(${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
-     
+
       IF (NOT ${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME} AND
         NOT "${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME}" STREQUAL ""
         )
@@ -1337,9 +1337,9 @@ MACRO(TRIBITS_ENABLE_PARENTS_SUBPACKAGES PARENT_PACKAGE_NAME)
           SET(${ENABLE_BEING_ENABLED_VAR_NAME} ON)
         ENDIF()
       ENDIF()
-    
+
       MATH(EXPR SUBPACKAGE_IDX "${SUBPACKAGE_IDX}+1")
-    
+
     ENDFOREACH()
 
   ENDIF()
@@ -1432,7 +1432,7 @@ MACRO(TRIBITS_PRIVATE_ADD_OPTIONAL_PACKAGE_ENABLE PACKAGE_NAME  OPTIONAL_DEP_PAC
       "  Set to 'ON', 'OFF', or leave empty"
       " to allow for other logic to decide."
       )
-  
+
     SET_CACHE_ON_OFF_EMPTY( ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE} ""
       ${DOCSTR} )
 
@@ -1451,14 +1451,14 @@ MACRO(TRIBITS_PRIVATE_ADD_OPTIONAL_TPL_ENABLE PACKAGE_NAME OPTIONAL_DEP_TPL
   TYPE  SET_AS_CACHE_IN )
 
   IF (SET_AS_CACHE_IN)
-  
+
     MULTILINE_SET(DOCSTR
       "Enable optional ${TYPE} support in the package ${PACKAGE_NAME}"
       " for the TPL ${OPTIONAL_DEP_TPL}."
       "  Set to 'ON', 'OFF', or leave empty"
       " to allow for other logic to decide."
       )
-    
+
     SET_CACHE_ON_OFF_EMPTY( ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL} ""
       ${DOCSTR} )
 
@@ -1491,7 +1491,7 @@ MACRO(TRIBITS_ADD_OPTIONAL_PACKAGE_ENABLES PACKAGE_NAME)
        " to allow for other logic to decide."
        )
     SET_CACHE_ON_OFF_EMPTY( ${PACKAGE_NAME}_ENABLE_TESTS "" ${DOCSTR} )
-    
+
     MULTILINE_SET(DOCSTR
       "Build examples for the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty ''"
        " to allow for other logic to decide."
@@ -1507,23 +1507,23 @@ MACRO(TRIBITS_ADD_OPTIONAL_PACKAGE_ENABLES PACKAGE_NAME)
       SET( ${PACKAGE_NAME}_ENABLE_EXAMPLES "" )
     ENDIF()
 
-  ENDIF() 
- 
+  ENDIF()
+
   FOREACH(OPTIONAL_DEP_PACKAGE ${${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES})
     TRIBITS_PRIVATE_ADD_OPTIONAL_PACKAGE_ENABLE(
       ${PACKAGE_NAME} ${OPTIONAL_DEP_PACKAGE} "library" "${SET_AS_CACHE}" )
   ENDFOREACH()
-  
+
   FOREACH(OPTIONAL_DEP_PACKAGE ${${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES})
     TRIBITS_PRIVATE_ADD_OPTIONAL_PACKAGE_ENABLE(
       ${PACKAGE_NAME} ${OPTIONAL_DEP_PACKAGE} "test" "${SET_AS_CACHE}" )
   ENDFOREACH()
-  
+
   FOREACH(OPTIONAL_DEP_TPL ${${PACKAGE_NAME}_LIB_OPTIONAL_DEP_TPLS})
     TRIBITS_PRIVATE_ADD_OPTIONAL_TPL_ENABLE(
       ${PACKAGE_NAME} ${OPTIONAL_DEP_TPL} "library" "${SET_AS_CACHE}" )
   ENDFOREACH()
-  
+
   FOREACH(OPTIONAL_DEP_TPL ${${PACKAGE_NAME}_TEST_OPTIONAL_DEP_TPLS})
     TRIBITS_PRIVATE_ADD_OPTIONAL_TPL_ENABLE(
       ${PACKAGE_NAME} ${OPTIONAL_DEP_TPL} "test" "${SET_AS_CACHE}" )
@@ -1585,11 +1585,11 @@ MACRO(TRIBITS_PRIVATE_POSTPROCESS_OPTIONAL_TPL_ENABLE PACKAGE_NAME OPTIONAL_DEP_
         " since TPL_ENABLE_${OPTIONAL_DEP_TPL}=ON")
       SET(${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL} ON)
     ENDIF()
-  
+
     STRING(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UPPER)
     STRING(TOUPPER ${OPTIONAL_DEP_TPL} OPTIONAL_DEP_TPL_UPPER)
     SET(MACRO_DEFINE_NAME HAVE_${PACKAGE_NAME_UPPER}_${OPTIONAL_DEP_TPL_UPPER})
-  
+
     IF (${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL})
       SET(${MACRO_DEFINE_NAME} ON)
     ELSE()
@@ -1617,7 +1617,7 @@ MACRO(TRIBITS_POSTPROCESS_OPTIONAL_PACKAGE_ENABLES PACKAGE_NAME)
       TRIBITS_PRIVATE_POSTPROCESS_OPTIONAL_PACKAGE_ENABLE(
         ${PACKAGE_NAME} ${OPTIONAL_DEP_PACKAGE} )
     ENDFOREACH()
-  
+
     FOREACH(OPTIONAL_DEP_PACKAGE ${${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES})
       TRIBITS_PRIVATE_POSTPROCESS_OPTIONAL_PACKAGE_ENABLE(
         ${PACKAGE_NAME} ${OPTIONAL_DEP_PACKAGE} )
@@ -1630,7 +1630,7 @@ ENDMACRO()
 
 #
 # Macro that post-processes final package enables for packages with subpackage
-# enables. 
+# enables.
 #
 
 MACRO(TRIBITS_POSTPROCESS_PACKAGE_WITH_SUBPACKAGES_ENABLES  PACKAGE_NAME)
@@ -1775,7 +1775,7 @@ MACRO(TRIBITS_PRIVATE_ENABLE_FORWARD_PACKAGE  FORWARD_DEP_PACKAGE_NAME  PACKAGE_
   TRIBITS_IMPLICIT_PACKAGE_ENABLE_IS_ALLOWED( "" ${FORWARD_DEP_PACKAGE_NAME}
     ALLOW_PACKAGE_ENABLE )
   #MESSAGE("TRIBITS_PRIVATE_ENABLE_FORWARD_PACKAGE: "
-  #  "${FORWARD_DEP_PACKAGE_NAME} ${PACKAGE_NAME} ${ALLOW_PACKAGE_ENABLE}") 
+  #  "${FORWARD_DEP_PACKAGE_NAME} ${PACKAGE_NAME} ${ALLOW_PACKAGE_ENABLE}")
   # Enable the forward package if it is not already set to ON or OFF
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME})
   IF(${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME} STREQUAL ""
@@ -2136,7 +2136,7 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
 
   TRIBITS_GET_ENABLED_LIST( ${PROJECT_NAME}_SE_PACKAGES  ${PROJECT_NAME}
     ON  TRUE  ${PROJECT_NAME}_NOTDISABLED_SE_PACKAGES "")
- 
+
   MESSAGE("")
   MESSAGE("Disabling all packages that have a required dependency"
     " on disabled TPLs and optional package TPL support based on TPL_ENABLE_<TPL>=OFF ...")
@@ -2180,7 +2180,7 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_NOTDISABLED_SE_PACKAGES})
     TRIBITS_ENABLE_PARENTS_SUBPACKAGES(${TRIBITS_PACKAGE})
   ENDFOREACH()
-  
+
   IF (${PROJECT_NAME}_ENABLE_ALL_PACKAGES)
     MESSAGE("")
     MESSAGE("Enabling all SE packages that are not currently disabled because of"
@@ -2190,7 +2190,7 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
       TRIBITS_APPLY_ALL_PACKAGE_ENABLES(${TRIBITS_PACKAGE})
     ENDFOREACH()
   ENDIF()
-  
+
   IF (${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES)
     MESSAGE("")
     MESSAGE("Sweep forward enabling all forward library dependent packages because"
@@ -2219,7 +2219,7 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
   #
   # C) Enable tests for currently enabled SE packages
   #
-  
+
   IF (${PROJECT_NAME}_ENABLE_TESTS OR ${PROJECT_NAME}_ENABLE_EXAMPLES)
     MESSAGE("")
     MESSAGE("Enabling all tests and/or examples that have not been"
@@ -2258,7 +2258,7 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
 
   TRIBITS_GET_ENABLED_LIST( ${PROJECT_NAME}_NOTDISABLED_SE_PACKAGES  ${PROJECT_NAME}
     ON  FALSE  ${PROJECT_NAME}_ENABLED_SE_PACKAGES  "")
-  
+
   MESSAGE("")
   MESSAGE("Enabling all optional intra-package enables <TRIBITS_PACKAGE>_ENABLE_<DEPPACKAGE>"
     " that are not currently disabled if both sets of packages are enabled ...")
@@ -2278,7 +2278,7 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_ENABLED_SE_PACKAGES})
     TRIBITS_ENABLE_REQUIRED_TPLS(${TRIBITS_PACKAGE})
   ENDFOREACH()
-  
+
   MESSAGE("")
   MESSAGE("Enabling all optional package TPL support for currently"
     " enabled TPLs ...")
@@ -2286,7 +2286,7 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_ENABLED_SE_PACKAGES})
     TRIBITS_POSTPROCESS_OPTIONAL_TPL_ENABLES(${TRIBITS_PACKAGE})
   ENDFOREACH()
-  
+
   MESSAGE("")
   MESSAGE("Enabling TPLs based on <TRIBITS_PACKAGE>_ENABLE_<TPL>=ON if TPL is not explicitly disabled ...")
   MESSAGE("")
@@ -2311,7 +2311,7 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
   #
   # G) Turn on parent packages where at least one subpackage has been enabled
   #
-  
+
   MESSAGE("")
   MESSAGE("Enabling all packages not yet enabled that have at least one subpackage enabled ...")
   MESSAGE("")
@@ -2406,7 +2406,7 @@ FUNCTION(TRIBITS_SET_UP_ENABLED_ONLY_DEPENDENCIES)
 
   SET(GENERATE_EXPORT_DEPENDENCIES ${${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES})
   SET(LAST_EXPORT_SE_PACKAGE)
-  
+
   IF (GENERATE_EXPORT_DEPENDENCIES
       AND ${PROJECT_NAME}_GENERATE_EXPORT_FILES_FOR_ONLY_LISTED_SE_PACKAGES
     )
@@ -2444,8 +2444,8 @@ FUNCTION(TRIBITS_SET_UP_ENABLED_ONLY_DEPENDENCIES)
       MESSAGE("\nSetting up export dependencies up through ${LAST_EXPORT_SE_PACKAGE} ...\n")
     ELSE()
       MESSAGE("\nSetting up export dependencies for all enabled SE packages ...\n")
-    ENDIF()  
- 
+    ENDIF()
+
     FOREACH(TRIBITS_SE_PACKAGE ${${PROJECT_NAME}_ENABLED_SE_PACKAGES})
       TRIBITS_PACKAGE_SET_FULL_ENABLED_DEP_PACKAGES(${TRIBITS_SE_PACKAGE})
       IF (${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES)

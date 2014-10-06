@@ -199,7 +199,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
   OVERALL_NUM_MPI_PROCS 1
 
   TEST_0 CMND ${CMAKE_COMMAND}
-    MESSAGE "Do the initial configure (and test a lot of things at once"
+    MESSAGE "Do the initial configure (and test a lot of things at once)"
     ARGS
       ${COMMON_ENV_ARGS_PASSTHROUGH}
       -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
@@ -217,35 +217,35 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
       "Warning: Setting TribitsExProj_ENABLE_WrapExternal=OFF because "
-      "Warning: Setting TribitsExProj_ENABLE_MixedLanguage=OFF because "
+      "Warning: Setting TribitsExProj_ENABLE_MixedLang=OFF because "
       "Printing package dependencies ..."
-      "-- TribitsExProj_PACKAGES: SimpleCxx MixedLanguage PackageWithSubpackages WrapExternal"
-      "-- TribitsExProj_SE_PACKAGES: SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages WrapExternal"
+      "-- TribitsExProj_PACKAGES: SimpleCxx MixedLang WithSubpackages WrapExternal"
+      "-- TribitsExProj_SE_PACKAGES: SimpleCxx MixedLang WithSubpackagesA WithSubpackagesB WithSubpackagesC WithSubpackages WrapExternal"
 
       "-- SimpleCxx: No dependencies!"
-      "-- MixedLanguage: No dependencies!"
-      "-- PackageWithSubpackagesSubpackageA_LIB_REQUIRED_DEP_PACKAGES: SimpleCxx"
-      "-- PackageWithSubpackagesSubpackageB_LIB_REQUIRED_DEP_PACKAGES: SimpleCxx"
-      "-- PackageWithSubpackagesSubpackageB_LIB_OPTIONAL_DEP_PACKAGES: PackageWithSubpackagesSubpackageA"
-      "-- PackageWithSubpackagesSubpackageB_TEST_OPTIONAL_DEP_PACKAGES: MixedLanguage"
-      "-- PackageWithSubpackagesSubpackageC_LIB_REQUIRED_DEP_PACKAGES: PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB"
-      "-- PackageWithSubpackages_LIB_REQUIRED_DEP_PACKAGES: PackageWithSubpackagesSubpackageA"
-      "-- PackageWithSubpackages_LIB_OPTIONAL_DEP_PACKAGES: PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC"
-      "-- WrapExternal_LIB_REQUIRED_DEP_PACKAGES: PackageWithSubpackagesSubpackageA"
-      "-- WrapExternal_LIB_OPTIONAL_DEP_PACKAGES: MixedLanguage"
+      "-- MixedLang: No dependencies!"
+      "-- WithSubpackagesA_LIB_REQUIRED_DEP_PACKAGES: SimpleCxx"
+      "-- WithSubpackagesB_LIB_REQUIRED_DEP_PACKAGES: SimpleCxx"
+      "-- WithSubpackagesB_LIB_OPTIONAL_DEP_PACKAGES: WithSubpackagesA"
+      "-- WithSubpackagesB_TEST_OPTIONAL_DEP_PACKAGES: MixedLang"
+      "-- WithSubpackagesC_LIB_REQUIRED_DEP_PACKAGES: WithSubpackagesA WithSubpackagesB"
+      "-- WithSubpackages_LIB_REQUIRED_DEP_PACKAGES: WithSubpackagesA"
+      "-- WithSubpackages_LIB_OPTIONAL_DEP_PACKAGES: WithSubpackagesB WithSubpackagesC"
+      "-- WrapExternal_LIB_REQUIRED_DEP_PACKAGES: WithSubpackagesA"
+      "-- WrapExternal_LIB_OPTIONAL_DEP_PACKAGES: MixedLang"
       "-- SimpleCxx: No library dependencies!"
-      "-- PackageWithSubpackagesSubpackageA_FULL_ENABLED_DEP_PACKAGES: SimpleCxx"
-      "-- PackageWithSubpackagesSubpackageB_FULL_ENABLED_DEP_PACKAGES: PackageWithSubpackagesSubpackageA SimpleCxx"
-      "-- PackageWithSubpackagesSubpackageC_FULL_ENABLED_DEP_PACKAGES: PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageA SimpleCxx"
-      "-- PackageWithSubpackages_FULL_ENABLED_DEP_PACKAGES: PackageWithSubpackagesSubpackageC PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageA SimpleCxx"
+      "-- WithSubpackagesA_FULL_ENABLED_DEP_PACKAGES: SimpleCxx"
+      "-- WithSubpackagesB_FULL_ENABLED_DEP_PACKAGES: WithSubpackagesA SimpleCxx"
+      "-- WithSubpackagesC_FULL_ENABLED_DEP_PACKAGES: WithSubpackagesB WithSubpackagesA SimpleCxx"
+      "-- WithSubpackages_FULL_ENABLED_DEP_PACKAGES: WithSubpackagesC WithSubpackagesB WithSubpackagesA SimpleCxx"
       "Explicitly enabled packages on input .by user.:  0"
-      "Explicitly disabled packages on input .by user or by default.:  MixedLanguage WrapExternal 2"
+      "Explicitly disabled packages on input .by user or by default.:  MixedLang WrapExternal 2"
       "Enabling all SE packages that are not currently disabled because of TribitsExProj_ENABLE_ALL_PACKAGES=ON "
       "Setting TribitsExProj_ENABLE_SimpleCxx=ON"
-      "Setting TribitsExProj_ENABLE_PackageWithSubpackages=ON"
-      "Final set of enabled packages:  SimpleCxx PackageWithSubpackages 2"
-      "Final set of enabled SE packages:  SimpleCxx PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages 5"
-      "Final set of non-enabled packages:  MixedLanguage WrapExternal 2"
+      "Setting TribitsExProj_ENABLE_WithSubpackages=ON"
+      "Final set of enabled packages:  SimpleCxx WithSubpackages 2"
+      "Final set of enabled SE packages:  SimpleCxx WithSubpackagesA WithSubpackagesB WithSubpackagesC WithSubpackages 5"
+      "Final set of non-enabled packages:  MixedLang WrapExternal 2"
       "Performing Test HAVE_SIMPLECXX___INT64"
       "Configuring done"
       "Generating done"
@@ -255,11 +255,11 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/PackagesList.cmake"
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/TPLsList.cmake"
       "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/simple_cxx/cmake/Dependencies.cmake"
-      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/mixed_language/cmake/Dependencies.cmake"
-      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake"
-      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/A/cmake/Dependencies.cmake"
-      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/B/cmake/Dependencies.cmake"
-      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/package_with_subpackages/C/cmake/Dependencies.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/mixed_lang/cmake/Dependencies.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/with_subpackages/cmake/Dependencies.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/with_subpackages/a/cmake/Dependencies.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/with_subpackages/b/cmake/Dependencies.cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/with_subpackages/c/cmake/Dependencies.cmake"
       "-- File Trace: PACKAGE    INCLUDE    .*/TribitsExampleProject/packages/wrap_external/cmake/Dependencies.cmake"
       "-- File Trace: PROJECT    CONFIGURE  .*/TribitsExampleProject/cmake/ctest/CTestCustom.cmake.in"
       "-- File Trace: REPOSITORY READ       .*/TribitsExampleProject/Copyright.txt"
@@ -267,13 +267,13 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
       "${TPL_MPI_FILE_TRACE}"
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/simple_cxx/CMakeLists.txt"
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/simple_cxx/test/CMakeLists.txt"
-      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/CMakeLists.txt"
-      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/A/CMakeLists.txt"
-      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/A/tests/CMakeLists.txt"
-      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/B/CMakeLists.txt"
-      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/B/tests/CMakeLists.txt"
-      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/C/CMakeLists.txt"
-      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/C/tests/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/with_subpackages/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/with_subpackages/a/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/with_subpackages/a/tests/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/with_subpackages/b/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/with_subpackages/b/tests/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/with_subpackages/c/CMakeLists.txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/with_subpackages/c/tests/CMakeLists.txt"
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/cmake/CallbackDefineRepositoryPackaging.cmake"
       "-- File Trace: PROJECT    INCLUDE    .*/TribitsExampleProject/cmake/CallbackDefineProjectPackaging.cmake"
   TEST_1 CMND make ARGS ${CTEST_BUILD_FLAGS}
@@ -287,10 +287,10 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
     MESSAGE "Run all the tests with raw 'ctest'"
     PASS_REGULAR_EXPRESSION_ALL
       "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
-      "PackageWithSubpackagesSubpackageA_test_of_a .* Passed"
-      "PackageWithSubpackagesSubpackageB_test_of_b .* Passed"
-      "PackageWithSubpackagesSubpackageC_test_of_c .* Passed"
-      "PackageWithSubpackagesSubpackageC_test_of_c_util.* Passed" 
+      "WithSubpackagesA_test_of_a .* Passed"
+      "WithSubpackagesB_test_of_b .* Passed"
+      "WithSubpackagesC_test_of_c .* Passed"
+      "WithSubpackagesC_test_of_c_util.* Passed" 
       "100% tests passed, 0 tests failed out of 5"
 
   TEST_3 CMND make ARGS install ${CTEST_BUILD_FLAGS}
@@ -307,59 +307,59 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
       "Installing: .+/install/include/Makefile.export.SimpleCxx"
       "Installing: .+/install/lib/libsimplecxx.a"
       "Installing: .+/install/include/SimpleCxx_HelloWorld.hpp"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackages/PackageWithSubpackagesConfig.cmake"
-      "Installing: .+/install/include/Makefile.export.PackageWithSubpackages"
+      "Installing: .+/install/lib/cmake/WithSubpackages/WithSubpackagesConfig.cmake"
+      "Installing: .+/install/include/Makefile.export.WithSubpackages"
       "Installing: .+/install/lib/libpws_a.a"
       "Installing: .+/install/include/A.hpp"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageA/PackageWithSubpackagesSubpackageAConfig.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageA/PackageWithSubpackagesSubpackageATargets.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageA/PackageWithSubpackagesSubpackageATargets-release.cmake"
-      "Installing: .+/install/include/Makefile.export.PackageWithSubpackagesSubpackageA"
+      "Installing: .+/install/lib/cmake/WithSubpackagesA/WithSubpackagesAConfig.cmake"
+      "Installing: .+/install/lib/cmake/WithSubpackagesA/WithSubpackagesATargets.cmake"
+      "Installing: .+/install/lib/cmake/WithSubpackagesA/WithSubpackagesATargets-release.cmake"
+      "Installing: .+/install/include/Makefile.export.WithSubpackagesA"
       "Installing: .+/install/lib/libpws_b.a"
       "Installing: .+/install/include/B.hpp"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageB/PackageWithSubpackagesSubpackageBConfig.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageB/PackageWithSubpackagesSubpackageBTargets.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageB/PackageWithSubpackagesSubpackageBTargets-release.cmake"
-      "Installing: .+/install/include/Makefile.export.PackageWithSubpackagesSubpackageB"
+      "Installing: .+/install/lib/cmake/WithSubpackagesB/WithSubpackagesBConfig.cmake"
+      "Installing: .+/install/lib/cmake/WithSubpackagesB/WithSubpackagesBTargets.cmake"
+      "Installing: .+/install/lib/cmake/WithSubpackagesB/WithSubpackagesBTargets-release.cmake"
+      "Installing: .+/install/include/Makefile.export.WithSubpackagesB"
       "Installing: .+/install/lib/libpws_c.a"
       "Installing: .+/install/include/C.hpp"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageC/PackageWithSubpackagesSubpackageCConfig.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageC/PackageWithSubpackagesSubpackageCTargets.cmake"
-      "Installing: .+/install/lib/cmake/PackageWithSubpackagesSubpackageC/PackageWithSubpackagesSubpackageCTargets-release.cmake"
-      "Installing: .+/install/include/Makefile.export.PackageWithSubpackagesSubpackageC"
+      "Installing: .+/install/lib/cmake/WithSubpackagesC/WithSubpackagesCConfig.cmake"
+      "Installing: .+/install/lib/cmake/WithSubpackagesC/WithSubpackagesCTargets.cmake"
+      "Installing: .+/install/lib/cmake/WithSubpackagesC/WithSubpackagesCTargets-release.cmake"
+      "Installing: .+/install/include/Makefile.export.WithSubpackagesC"
 
   TEST_4 CMND ${CMAKE_COMMAND}
     ARGS
       -DDUMMY_PROJECT_NAME=DummyProject
-      -DDUMMY_PROJECT_DIR=dummy_client_of_PackageWithSubpackages
-      -DEXPORT_VAR_PREFIX=PackageWithSubpackages
-      -DEXPORT_CONFIG_FILE=../install/lib/cmake/PackageWithSubpackages/PackageWithSubpackagesConfig.cmake
+      -DDUMMY_PROJECT_DIR=dummy_client_of_WithSubpackages
+      -DEXPORT_VAR_PREFIX=WithSubpackages
+      -DEXPORT_CONFIG_FILE=../install/lib/cmake/WithSubpackages/WithSubpackagesConfig.cmake
       -DCMAKE_COMMAND=${CMAKE_COMMAND}
       -P ${CMAKE_CURRENT_SOURCE_DIR}/RunDummyPackageClientBulid.cmake
-    MESSAGE "Create and configure a dummy project that includes PackageWithSubpackagesConfig.cmake"
+    MESSAGE "Create and configure a dummy project that includes WithSubpackagesConfig.cmake"
     PASS_REGULAR_EXPRESSION_ALL
-      "PackageWithSubpackages_CXX_FLAGS = '.*'"
-      "PackageWithSubpackages_C_FLAGS = '.*'"
-      "PackageWithSubpackages_FORTRAN_FLAGS = '.*'"
-      "PackageWithSubpackages_EXTRA_LD_FLAGS = '.*'"
-      "PackageWithSubpackages_SHARED_LIB_RPATH_COMMAND = '.*'"
-      "PackageWithSubpackages_BUILD_SHARED_LIBS = '.*'"
-      "PackageWithSubpackages_LINKER = '.+'"
-      "PackageWithSubpackages_AR = '.+'"
-      "PackageWithSubpackages_INCLUDE_DIRS = '.+/install/lib/cmake/PackageWithSubpackages/../../../include'"
-      "PackageWithSubpackages_LIBRARY_DIRS = '.+/install/lib/cmake/PackageWithSubpackages/../../../lib'"
-      "PackageWithSubpackages_LIBRARIES = 'pws_c.pws_b.pws_a.simplecxx'"
-      "PackageWithSubpackages_TPL_INCLUDE_DIRS = ''"
-      "PackageWithSubpackages_TPL_LIBRARY_DIRS = ''"
-      "PackageWithSubpackages_TPL_LIBRARIES = ''"
-      "PackageWithSubpackages_MPI_LIBRARIES = ''"
-      "PackageWithSubpackages_MPI_LIBRARY_DIRS = ''"
-      "PackageWithSubpackages_MPI_INCLUDE_DIRS = ''"
-      "PackageWithSubpackages_MPI_EXEC = '${MPI_EXEC}'"
-      "PackageWithSubpackages_MPI_EXEC_MAX_NUMPROCS = '${MPI_EXEC_MAX_NUMPROCS}'"
-      "PackageWithSubpackages_MPI_EXEC_NUMPROCS_FLAG = '${MPI_EXEC_NUMPROCS_FLAG}'"
-      "PackageWithSubpackages_PACKAGE_LIST = 'PackageWithSubpackagesSubpackageC.PackageWithSubpackagesSubpackageB.PackageWithSubpackagesSubpackageA.SimpleCxx'"
-      "PackageWithSubpackages_TPL_LIST = ''"
+      "WithSubpackages_CXX_FLAGS = '.*'"
+      "WithSubpackages_C_FLAGS = '.*'"
+      "WithSubpackages_FORTRAN_FLAGS = '.*'"
+      "WithSubpackages_EXTRA_LD_FLAGS = '.*'"
+      "WithSubpackages_SHARED_LIB_RPATH_COMMAND = '.*'"
+      "WithSubpackages_BUILD_SHARED_LIBS = '.*'"
+      "WithSubpackages_LINKER = '.+'"
+      "WithSubpackages_AR = '.+'"
+      "WithSubpackages_INCLUDE_DIRS = '.+/install/lib/cmake/WithSubpackages/../../../include'"
+      "WithSubpackages_LIBRARY_DIRS = '.+/install/lib/cmake/WithSubpackages/../../../lib'"
+      "WithSubpackages_LIBRARIES = 'pws_c.pws_b.pws_a.simplecxx'"
+      "WithSubpackages_TPL_INCLUDE_DIRS = ''"
+      "WithSubpackages_TPL_LIBRARY_DIRS = ''"
+      "WithSubpackages_TPL_LIBRARIES = ''"
+      "WithSubpackages_MPI_LIBRARIES = ''"
+      "WithSubpackages_MPI_LIBRARY_DIRS = ''"
+      "WithSubpackages_MPI_INCLUDE_DIRS = ''"
+      "WithSubpackages_MPI_EXEC = '${MPI_EXEC}'"
+      "WithSubpackages_MPI_EXEC_MAX_NUMPROCS = '${MPI_EXEC_MAX_NUMPROCS}'"
+      "WithSubpackages_MPI_EXEC_NUMPROCS_FLAG = '${MPI_EXEC_NUMPROCS_FLAG}'"
+      "WithSubpackages_PACKAGE_LIST = 'WithSubpackagesC.WithSubpackagesB.WithSubpackagesA.SimpleCxx'"
+      "WithSubpackages_TPL_LIST = ''"
 
   TEST_5 CMND make ARGS package_source
     MESSAGE "Create the tarball"
@@ -382,9 +382,76 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
     PASS_REGULAR_EXPRESSION_ALL
       "Only in .*/TribitsExampleProject/cmake: ctest"
       "Only in .*/TribitsExampleProject: .gitignore"
-      "Only in .*/TribitsExampleProject/packages: mixed_language"
+      "Only in .*/TribitsExampleProject/packages: mixed_lang"
       "Only in .*/TribitsExampleProject/packages: wrap_external"
+
   )
+
+
+IF (NOT ${PROJECT_NAME}_HOSTTYPE STREQUAL "Windows")
+
+  TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran_ConfigTiming
+    OVERALL_WORKING_DIRECTORY TEST_NAME
+    OVERALL_NUM_MPI_PROCS 1
+  
+    TEST_0 CMND ${CMAKE_COMMAND}
+      MESSAGE "Do the initial configure with basic configure timing"
+      ARGS
+        ${COMMON_ENV_ARGS_PASSTHROUGH}
+        -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+        -DTribitsExProj_ENABLE_Fortran=OFF
+        -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
+        -DTribitsExProj_ENABLE_TESTS=ON
+        -DTribitsExProj_ENABLE_CPACK_PACKAGING=ON
+        -DTribitsExProj_ENABLE_EXPORT_MAKEFILES=ON
+        -DTribitsExProj_ENABLE_CONFIGURE_TIMING=ON
+        ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
+      PASS_REGULAR_EXPRESSION_ALL
+        "Total time to read in and process all package dependencies: "
+        "Total time to adjust package and TPL enables: "
+        "Total time to probe and setup the environment: "
+        "Total time to configure enabled TPLs: "
+        "Total time to configure enabled packages: "
+        "Total time to set up for CPack packaging: "
+        "Total time to configure TribitsExProj: "
+        "Final set of enabled packages:  SimpleCxx WithSubpackages 2"
+        "Final set of enabled SE packages:  SimpleCxx WithSubpackagesA WithSubpackages 3"
+  
+    TEST_1 CMND ${CMAKE_COMMAND}
+      MESSAGE "Reconfigure to test out timing of all packages"
+      ARGS
+        -DTribitsExProj_ENABLE_PACKAGE_CONFIGURE_TIMING=ON
+        .
+      PASS_REGULAR_EXPRESSION_ALL
+        "Total time to read in and process all package dependencies: "
+        "Total time to adjust package and TPL enables: "
+        "Total time to probe and setup the environment: "
+        "Total time to configure enabled TPLs: "
+        "-- Total time to configure package SimpleCxx: "
+        "-- Total time to configure package WithSubpackages: "
+        "Total time to configure enabled packages: "
+        "Total time to set up for CPack packaging: "
+        "Total time to configure TribitsExProj: "
+  
+    TEST_2 CMND ${CMAKE_COMMAND}
+      MESSAGE "Reconfigure to test out timing of just one package"
+      ARGS
+        -DTribitsExProj_ENABLE_PACKAGE_CONFIGURE_TIMING=OFF
+        -DSimpleCxx_PACKAGE_CONFIGURE_TIMING=ON
+        .
+      PASS_REGULAR_EXPRESSION_ALL
+        "Total time to read in and process all package dependencies: "
+        "Total time to adjust package and TPL enables: "
+        "Total time to probe and setup the environment: "
+        "Total time to configure enabled TPLs: "
+        "-- Total time to configure package SimpleCxx: "
+        "Total time to configure enabled packages: "
+        "Total time to set up for CPack packaging: "
+        "Total time to configure TribitsExProj: "
+  
+    )
+
+ENDIF()
 
 
 TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
@@ -406,14 +473,14 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
       "-- SimpleCxx: No library dependencies!"
-      "-- PackageWithSubpackagesSubpackageA_FULL_ENABLED_DEP_PACKAGES: SimpleCxx"
-      "-- PackageWithSubpackages_FULL_ENABLED_DEP_PACKAGES: PackageWithSubpackagesSubpackageA SimpleCxx"
+      "-- WithSubpackagesA_FULL_ENABLED_DEP_PACKAGES: SimpleCxx"
+      "-- WithSubpackages_FULL_ENABLED_DEP_PACKAGES: WithSubpackagesA SimpleCxx"
       "Explicitly enabled packages on input .by user.:  0"
-      "Explicitly disabled packages on input .by user or by default.:  MixedLanguage WrapExternal 2"
-      "Final set of enabled packages:  SimpleCxx PackageWithSubpackages 2"
-      "Final set of enabled SE packages:  SimpleCxx PackageWithSubpackagesSubpackageA PackageWithSubpackages 3"
-      "Final set of non-enabled packages:  MixedLanguage WrapExternal 2"
-      "Final set of non-enabled SE packages:  MixedLanguage PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC WrapExternal 4"
+      "Explicitly disabled packages on input .by user or by default.:  MixedLang WrapExternal 2"
+      "Final set of enabled packages:  SimpleCxx WithSubpackages 2"
+      "Final set of enabled SE packages:  SimpleCxx WithSubpackagesA WithSubpackages 3"
+      "Final set of non-enabled packages:  MixedLang WrapExternal 2"
+      "Final set of non-enabled SE packages:  MixedLang WithSubpackagesB WithSubpackagesC WrapExternal 4"
 
   TEST_1 CMND make ARGS ${CTEST_BUILD_FLAGS}
     MESSAGE "Build the default 'all' target using raw 'make'"
@@ -425,29 +492,29 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
     MESSAGE "Run all the tests with raw 'ctest'"
     PASS_REGULAR_EXPRESSION_ALL
       "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
-      "PackageWithSubpackagesSubpackageA_test_of_a .* Passed"
+      "WithSubpackagesA_test_of_a .* Passed"
       "100% tests passed, 0 tests failed out of 2"
 
   TEST_3 CMND make ARGS install ${CTEST_BUILD_FLAGS}
     MESSAGE "Build 'install' target using raw 'make'"
     PASS_REGULAR_EXPRESSION_ALL
-      "Installing: .+/install/lib/cmake/PackageWithSubpackages/PackageWithSubpackagesConfig.cmake"
-      "Installing: .+/install/include/Makefile.export.PackageWithSubpackages"
+      "Installing: .+/install/lib/cmake/WithSubpackages/WithSubpackagesConfig.cmake"
+      "Installing: .+/install/include/Makefile.export.WithSubpackages"
 
   TEST_4 CMND ${CMAKE_COMMAND}
     ARGS
       -DDUMMY_PROJECT_NAME=DummyProject
-      -DDUMMY_PROJECT_DIR=dummy_client_of_PackageWithSubpackages
-      -DEXPORT_VAR_PREFIX=PackageWithSubpackages
-      -DEXPORT_CONFIG_FILE=../install/lib/cmake/PackageWithSubpackages/PackageWithSubpackagesConfig.cmake
+      -DDUMMY_PROJECT_DIR=dummy_client_of_WithSubpackages
+      -DEXPORT_VAR_PREFIX=WithSubpackages
+      -DEXPORT_CONFIG_FILE=../install/lib/cmake/WithSubpackages/WithSubpackagesConfig.cmake
       -DCMAKE_COMMAND=${CMAKE_COMMAND}
       -P ${CMAKE_CURRENT_SOURCE_DIR}/RunDummyPackageClientBulid.cmake
-    MESSAGE "Create and configure a dummy project that includes PackageWithSubpackagesConfig.cmake"
+    MESSAGE "Create and configure a dummy project that includes WithSubpackagesConfig.cmake"
     PASS_REGULAR_EXPRESSION_ALL
-      "PackageWithSubpackages_INCLUDE_DIRS = '.+/install/lib/cmake/PackageWithSubpackages/../../../include'"
-      "PackageWithSubpackages_LIBRARY_DIRS = '.+/install/lib/cmake/PackageWithSubpackages/../../../lib'"
-      "PackageWithSubpackages_LIBRARIES = 'pws_a.simplecxx'"
-      "PackageWithSubpackages_PACKAGE_LIST = 'PackageWithSubpackagesSubpackageA.SimpleCxx'"
+      "WithSubpackages_INCLUDE_DIRS = '.+/install/lib/cmake/WithSubpackages/../../../include'"
+      "WithSubpackages_LIBRARY_DIRS = '.+/install/lib/cmake/WithSubpackages/../../../lib'"
+      "WithSubpackages_LIBRARIES = 'pws_a.simplecxx'"
+      "WithSubpackages_PACKAGE_LIST = 'WithSubpackagesA.SimpleCxx'"
   )
 
 
@@ -476,10 +543,10 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         "Explicitly disabled packages on input .by user or by default.:  WrapExternal 1"
         "Enabling all SE packages that are not currently disabled because of TribitsExProj_ENABLE_ALL_PACKAGES=ON "
         "Setting TribitsExProj_ENABLE_SimpleCxx=ON"
-        "Setting TribitsExProj_ENABLE_MixedLanguage=ON"
-        "Setting TribitsExProj_ENABLE_PackageWithSubpackages=ON"
-        "Final set of enabled packages:  SimpleCxx MixedLanguage PackageWithSubpackages 3"
-        "Final set of enabled SE packages:  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages 6"
+        "Setting TribitsExProj_ENABLE_MixedLang=ON"
+        "Setting TribitsExProj_ENABLE_WithSubpackages=ON"
+        "Final set of enabled packages:  SimpleCxx MixedLang WithSubpackages 3"
+        "Final set of enabled SE packages:  SimpleCxx MixedLang WithSubpackagesA WithSubpackagesB WithSubpackagesC WithSubpackages 6"
         "Final set of non-enabled packages:  WrapExternal 1"
         "Configuring done"
         "Generating done"
@@ -497,13 +564,13 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
       MESSAGE "Run all the tests with raw 'ctest'"
       PASS_REGULAR_EXPRESSION_ALL
         "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
-        "MixedLanguage_RayTracerTests${TEST_MPI_1_SUFFIX} .* Passed"
-        "PackageWithSubpackagesSubpackageA_test_of_a .* Passed"
-        "PackageWithSubpackagesSubpackageB_test_of_b .* Passed"
-        "PackageWithSubpackagesSubpackageB_test_of_b_mixed_lang.* Passed"
-        "PackageWithSubpackagesSubpackageC_test_of_c_util.* Passed" 
-        "PackageWithSubpackagesSubpackageC_test_of_c .* Passed"
-        "PackageWithSubpackagesSubpackageC_test_of_c_b_mixed_lang.* Passed"
+        "MixedLang_RayTracerTests${TEST_MPI_1_SUFFIX} .* Passed"
+        "WithSubpackagesA_test_of_a .* Passed"
+        "WithSubpackagesB_test_of_b .* Passed"
+        "WithSubpackagesB_test_of_b_mixed_lang.* Passed"
+        "WithSubpackagesC_test_of_c_util.* Passed" 
+        "WithSubpackagesC_test_of_c .* Passed"
+        "WithSubpackagesC_test_of_c_b_mixed_lang.* Passed"
         "100% tests passed, 0 tests failed out of 8"
     )
 
@@ -530,10 +597,10 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         "Explicitly disabled packages on input .by user or by default.:  WrapExternal 1"
         "Enabling all SE packages that are not currently disabled because of TribitsExProj_ENABLE_ALL_PACKAGES=ON "
         "Setting TribitsExProj_ENABLE_SimpleCxx=ON"
-        "Setting TribitsExProj_ENABLE_MixedLanguage=ON"
-        "Setting TribitsExProj_ENABLE_PackageWithSubpackages=ON"
-        "Final set of enabled packages:  SimpleCxx MixedLanguage PackageWithSubpackages 3"
-        "Final set of enabled SE packages:  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages 6"
+        "Setting TribitsExProj_ENABLE_MixedLang=ON"
+        "Setting TribitsExProj_ENABLE_WithSubpackages=ON"
+        "Final set of enabled packages:  SimpleCxx MixedLang WithSubpackages 3"
+        "Final set of enabled SE packages:  SimpleCxx MixedLang WithSubpackagesA WithSubpackagesB WithSubpackagesC WithSubpackages 6"
         "Final set of non-enabled packages:  WrapExternal 1"
         "Configuring done"
         "Generating done"
@@ -551,13 +618,13 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
       MESSAGE "Run all the tests with raw 'ctest'"
       PASS_REGULAR_EXPRESSION_ALL
         "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
-        "MixedLanguage_RayTracerTests${TEST_MPI_1_SUFFIX} .* Passed"
-        "PackageWithSubpackagesSubpackageA_test_of_a .* Passed"
-        "PackageWithSubpackagesSubpackageB_test_of_b .* Passed"
-        "PackageWithSubpackagesSubpackageB_test_of_b_mixed_lang.* Passed"
-        "PackageWithSubpackagesSubpackageC_test_of_c_util.* Passed" 
-        "PackageWithSubpackagesSubpackageC_test_of_c .* Passed"
-        "PackageWithSubpackagesSubpackageC_test_of_c_b_mixed_lang.* Passed"
+        "MixedLang_RayTracerTests${TEST_MPI_1_SUFFIX} .* Passed"
+        "WithSubpackagesA_test_of_a .* Passed"
+        "WithSubpackagesB_test_of_b .* Passed"
+        "WithSubpackagesB_test_of_b_mixed_lang.* Passed"
+        "WithSubpackagesC_test_of_c_util.* Passed" 
+        "WithSubpackagesC_test_of_c .* Passed"
+        "WithSubpackagesC_test_of_c_b_mixed_lang.* Passed"
         "100% tests passed, 0 tests failed out of 8"
     )
 
@@ -580,8 +647,8 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         -DTribitsExProj_ENABLE_SECONDARY_TESTED_CODE=ON
         ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
       PASS_REGULAR_EXPRESSION_ALL
-        "Final set of enabled packages:  SimpleCxx MixedLanguage PackageWithSubpackages 3"
-        "Final set of enabled SE packages:  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages 6"
+        "Final set of enabled packages:  SimpleCxx MixedLang WithSubpackages 3"
+        "Final set of enabled SE packages:  SimpleCxx MixedLang WithSubpackagesA WithSubpackagesB WithSubpackagesC WithSubpackages 6"
         "Configuring done"
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage"
@@ -597,7 +664,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: 'simplecxx' in DEPSLIBS is not a lib in this SE package"
-        "packages/package_with_subpackages/B/src/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "packages/with_subpackages/b/src/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage"
 
@@ -609,7 +676,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: Lib 'pws_b' in IMPORTEDLIBS is in this SE package "
-        "packages/package_with_subpackages/B/tests/testlib/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "packages/with_subpackages/b/tests/testlib/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage"
 
@@ -622,8 +689,8 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: Lib 'simplecxx' being passed through IMPORTEDLIBS"
-        "TribitsExampleProject/packages/package_with_subpackages/B/cmake/Dependencies.cmake"
-        "packages/package_with_subpackages/B/tests/testlib/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "TribitsExampleProject/packages/with_subpackages/b/cmake/Dependencies.cmake"
+        "packages/with_subpackages/b/tests/testlib/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage"
 
@@ -635,8 +702,8 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: 'b_mixed_lang' in DEPLIBS is a TESTONLY lib "
-        "TribitsExampleProject/packages/package_with_subpackages/C/cmake/Dependencies.cmake"
-        "packages/package_with_subpackages/C/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "TribitsExampleProject/packages/with_subpackages/c/cmake/Dependencies.cmake"
+        "packages/with_subpackages/c/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage"
 
@@ -648,7 +715,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: 'b_mixed_lang' in IMPORTEDLIBS is a TESTONLY lib"
-        "packages/package_with_subpackages/C/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "packages/with_subpackages/c/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage"
 
@@ -660,7 +727,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: 'm' in DEPSLIBS is not a lib defined in the current cmake "
-        "packages/package_with_subpackages/B/src/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "packages/with_subpackages/b/src/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage"
 
@@ -676,7 +743,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "ERROR: TESTONLY lib 'b_mixed_lang' not allowed with INSTALLABLE executable"
-        "packages/package_with_subpackages/B/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
+        "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Configuring incomplete, errors occurred!"
 
     TEST_8
@@ -687,7 +754,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         " ERROR: 'simplecxx' in TESTONLYLIBS not a TESTONLY lib"
-        "packages/package_with_subpackages/B/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
+        "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Configuring incomplete, errors occurred!"
 
     TEST_9
@@ -698,7 +765,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "ERROR: Lib 'pws_b' in IMPORTEDLIBS is in this SE package"
-        "packages/package_with_subpackages/B/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
+        "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Configuring incomplete, errors occurred!"
 
     TEST_10
@@ -709,7 +776,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: Passing TESTONLY lib 'b_mixed_lang' through DEPLIBS is deprecated"
-        "packages/package_with_subpackages/B/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
+        "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage"
 
@@ -721,7 +788,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: Passing non-TESTONLY lib 'pws_b' through DEPLIBS is deprecated"
-        "packages/package_with_subpackages/B/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
+        "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage"
 
@@ -733,7 +800,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: Passing external lib 'm' through DEPLIBS is deprecated"
-        "packages/package_with_subpackages/B/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
+        "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage"
 
@@ -759,8 +826,8 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         -DTribitsExProj_LIBRARY_NAME_PREFIX=tep_
         ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
       PASS_REGULAR_EXPRESSION_ALL
-        "Final set of enabled packages:  SimpleCxx MixedLanguage PackageWithSubpackages 3"
-        "Final set of enabled SE packages:  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages 6"
+        "Final set of enabled packages:  SimpleCxx MixedLang WithSubpackages 3"
+        "Final set of enabled SE packages:  SimpleCxx MixedLang WithSubpackagesA WithSubpackagesB WithSubpackagesC WithSubpackages 6"
         "Configuring done"
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage_LibPrefix"
@@ -776,7 +843,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: 'simplecxx' in DEPSLIBS is not a lib in this SE package"
-        "packages/package_with_subpackages/B/src/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "packages/with_subpackages/b/src/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage_LibPrefix"
 
@@ -788,7 +855,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: Lib 'pws_b' in IMPORTEDLIBS is in this SE package "
-        "packages/package_with_subpackages/B/tests/testlib/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "packages/with_subpackages/b/tests/testlib/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage_LibPrefix"
 
@@ -801,8 +868,8 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: Lib 'simplecxx' being passed through IMPORTEDLIBS"
-        "TribitsExampleProject/packages/package_with_subpackages/B/cmake/Dependencies.cmake"
-        "packages/package_with_subpackages/B/tests/testlib/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "TribitsExampleProject/packages/with_subpackages/b/cmake/Dependencies.cmake"
+        "packages/with_subpackages/b/tests/testlib/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage_LibPrefix"
 
@@ -814,8 +881,8 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: 'b_mixed_lang' in DEPLIBS is a TESTONLY lib "
-        "TribitsExampleProject/packages/package_with_subpackages/C/cmake/Dependencies.cmake"
-        "packages/package_with_subpackages/C/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "TribitsExampleProject/packages/with_subpackages/c/cmake/Dependencies.cmake"
+        "packages/with_subpackages/c/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage_LibPrefix"
 
@@ -827,7 +894,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: 'b_mixed_lang' in IMPORTEDLIBS is a TESTONLY lib"
-        "packages/package_with_subpackages/C/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "packages/with_subpackages/c/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage_LibPrefix"
 
@@ -839,7 +906,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: 'm' in DEPSLIBS is not a lib defined in the current cmake "
-        "packages/package_with_subpackages/B/src/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
+        "packages/with_subpackages/b/src/CMakeLists.txt:.* .TRIBITS_ADD_LIBRARY."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage_LibPrefix"
 
@@ -855,7 +922,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "ERROR: TESTONLY lib 'b_mixed_lang' not allowed with INSTALLABLE executable"
-        "packages/package_with_subpackages/B/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
+        "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Configuring incomplete, errors occurred!"
 
     TEST_8
@@ -866,7 +933,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         " ERROR: 'simplecxx' in TESTONLYLIBS not a TESTONLY lib"
-        "packages/package_with_subpackages/B/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
+        "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Configuring incomplete, errors occurred!"
 
     TEST_9
@@ -877,7 +944,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "ERROR: Lib 'pws_b' in IMPORTEDLIBS is in this SE package"
-        "packages/package_with_subpackages/B/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
+        "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Configuring incomplete, errors occurred!"
 
     TEST_10
@@ -888,7 +955,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: Passing TESTONLY lib 'b_mixed_lang' through DEPLIBS is deprecated"
-        "packages/package_with_subpackages/B/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
+        "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage_LibPrefix"
 
@@ -900,7 +967,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         .
       PASS_REGULAR_EXPRESSION_ALL
         "WARNING: Passing non-TESTONLY lib 'pws_b' through DEPLIBS is deprecated"
-        "packages/package_with_subpackages/B/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
+        "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Generating done"
         "Build files have been written to: .*/TriBITS_TribitsExampleProject_ALL_ST_LibUsage_LibPrefix"
 
@@ -960,13 +1027,13 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
     PASS_REGULAR_EXPRESSION_ALL
       "Explicitly enabled packages on input .by user.:  WrapExternal 1"
       "Explicitly disabled packages on input .by user or by default.:  0"
-      "Setting TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageA=ON because WrapExternal has a required dependence on PackageWithSubpackagesSubpackageA"
-      "Setting TribitsExProj_ENABLE_MixedLanguage=ON because WrapExternal has an optional dependence on MixedLanguage"
-      "Setting TribitsExProj_ENABLE_SimpleCxx=ON because PackageWithSubpackagesSubpackageA has a required dependence on SimpleCxx"
-      "Final set of enabled packages:  SimpleCxx MixedLanguage PackageWithSubpackages WrapExternal 4"
-      "Final set of enabled SE packages:  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackages WrapExternal 5"
+      "Setting TribitsExProj_ENABLE_WithSubpackagesA=ON because WrapExternal has a required dependence on WithSubpackagesA"
+      "Setting TribitsExProj_ENABLE_MixedLang=ON because WrapExternal has an optional dependence on MixedLang"
+      "Setting TribitsExProj_ENABLE_SimpleCxx=ON because WithSubpackagesA has a required dependence on SimpleCxx"
+      "Final set of enabled packages:  SimpleCxx MixedLang WithSubpackages WrapExternal 4"
+      "Final set of enabled SE packages:  SimpleCxx MixedLang WithSubpackagesA WithSubpackages WrapExternal 5"
       "Final set of non-enabled packages:  0"
-      "Final set of non-enabled SE packages:  PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC 2"
+      "Final set of non-enabled SE packages:  WithSubpackagesB WithSubpackagesC 2"
       "This package has no unfiltered binary files so consider out of date"
       "Configuring done"
       "Generating done"
@@ -982,15 +1049,15 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
   TEST_4 CMND sleep ARGS 1s
      MESSAGE "Sleep for 1 sec for systems were time stamps are only accurate to 1 sec"
   TEST_5 CMND touch
-     ARGS TribitsExampleProject/packages/package_with_subpackages/A/A.cpp
+     ARGS TribitsExampleProject/packages/with_subpackages/a/A.cpp
      MESSAGE "Test that changing upstream source will trigger rebuild"
   TEST_6 CMND ${CMAKE_COMMAND} ARGS TribitsExampleProject
       -DWrapExternal_SHOW_MOST_RECENT_FILES=TRUE
      MESSAGE "Recofigure with changed upstream source"
     PASS_REGULAR_EXPRESSION_ALL
-      "Most recent file in ./packages/package_with_subpackages/ is ./A/A.cpp"
-      "Overall most recent modified file is in ./packages/package_with_subpackages/ and is ./A/A.cpp"
-      "The upstream SE package source file ./A/A.cpp is more recent than this package's binary file ./WrapExternal_run_external_func.exe"
+      "Most recent file in ./packages/with_subpackages/ is ./a/A.cpp"
+      "Overall most recent modified file is in ./packages/with_subpackages/ and is ./a/A.cpp"
+      "The upstream SE package source file ./a/A.cpp is more recent than this package's binary file ./WrapExternal_run_external_func.exe"
       "Blowing away WrapExternal build dir external_func/ so it will build from scratch"
   TEST_7 CMND make ARGS ${CTEST_BUILD_FLAGS}
     MESSAGE "Rebuild only exteranl_func"
@@ -1062,28 +1129,28 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_NoFortran_WrapExternal_Verb
       -DTribitsExProj_VERBOSE_CONFIGURE=ON
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
-      "Final set of enabled packages:  SimpleCxx PackageWithSubpackages WrapExternal 3"
-      "Final set of enabled SE packages:  SimpleCxx PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages WrapExternal 6"
+      "Final set of enabled packages:  SimpleCxx WithSubpackages WrapExternal 3"
+      "Final set of enabled SE packages:  SimpleCxx WithSubpackagesA WithSubpackagesB WithSubpackagesC WithSubpackages WrapExternal 6"
 
       "SimpleCxx_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src'"
       "SimpleCxx_LIBRARY_DIRS='.+/packages/simple_cxx/src'"
       "SimpleCxx_LIBRARIES='simplecxx'"
 
-      "PackageWithSubpackagesSubpackageA_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TribitsExampleProject/packages/package_with_subpackages/A..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src'"
-      "PackageWithSubpackagesSubpackageA_LIBRARY_DIRS='.+/packages/package_with_subpackages/A..+/packages/simple_cxx/src'"
-      "PackageWithSubpackagesSubpackageA_LIBRARIES='pws_a'"
+      "WithSubpackagesA_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TribitsExampleProject/packages/with_subpackages/a..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src'"
+      "WithSubpackagesA_LIBRARY_DIRS='.+/packages/with_subpackages/a..+/packages/simple_cxx/src'"
+      "WithSubpackagesA_LIBRARIES='pws_a'"
 
-      "PackageWithSubpackagesSubpackageB_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TribitsExampleProject/packages/package_with_subpackages/B..+/TribitsExampleProject/packages/package_with_subpackages/A..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src'"
-      "PackageWithSubpackagesSubpackageB_LIBRARY_DIRS='.+/packages/package_with_subpackages/B..+/packages/package_with_subpackages/A..+/packages/simple_cxx/src'"
-      "PackageWithSubpackagesSubpackageB_LIBRARIES='pws_b'"
+      "WithSubpackagesB_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TribitsExampleProject/packages/with_subpackages/b..+/TribitsExampleProject/packages/with_subpackages/a..+/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src'"
+      "WithSubpackagesB_LIBRARY_DIRS='.+/packages/with_subpackages/b..+/packages/with_subpackages/a..+/packages/simple_cxx/src'"
+      "WithSubpackagesB_LIBRARIES='pws_b'"
 
-      "PackageWithSubpackagesSubpackageC_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/package_with_subpackages/B/src..+/TribitsExampleProject/packages/package_with_subpackages/B/src..+/TribitsExampleProject/packages/package_with_subpackages/A..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src..+/TribitsExampleProject/packages/package_with_subpackages/C'"
-      "PackageWithSubpackagesSubpackageC_LIBRARY_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/package_with_subpackages/B/src..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/package_with_subpackages/A..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/simple_cxx/src..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/package_with_subpackages/C'"
-      "PackageWithSubpackagesSubpackageC_LIBRARIES='pws_c'"
+      "WithSubpackagesC_INCLUDE_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/with_subpackages/b/src..+/TribitsExampleProject/packages/with_subpackages/b/src..+/TribitsExampleProject/packages/with_subpackages/a..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src..+/TribitsExampleProject/packages/with_subpackages/c'"
+      "WithSubpackagesC_LIBRARY_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/with_subpackages/b/src..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/with_subpackages/a..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/simple_cxx/src..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/with_subpackages/c'"
+      "WithSubpackagesC_LIBRARIES='pws_c'"
 
-      "PackageWithSubpackages_INCLUDE_DIRS='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/package_with_subpackages/B/src..+/TribitsExampleProject/packages/package_with_subpackages/B/src..+/TribitsExampleProject/packages/package_with_subpackages/A..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src..+/TribitsExampleProject/packages/package_with_subpackages/C'"
-      "PackageWithSubpackages_LIBRARY_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/package_with_subpackages/B/src..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/package_with_subpackages/A..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/simple_cxx/src..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/package_with_subpackages/C'"
-      "PackageWithSubpackages_LIBRARIES='pws_c.pws_b.pws_a'"
+      "WithSubpackages_INCLUDE_DIRS='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/with_subpackages/b/src..+/TribitsExampleProject/packages/with_subpackages/b/src..+/TribitsExampleProject/packages/with_subpackages/a..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/simple_cxx/src..+/TribitsExampleProject/packages/simple_cxx/src..+/TribitsExampleProject/packages/with_subpackages/c'"
+      "WithSubpackages_LIBRARY_DIRS='.+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/with_subpackages/b/src..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/with_subpackages/a..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/simple_cxx/src..+/TriBITS_TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure/packages/with_subpackages/c'"
+      "WithSubpackages_LIBRARIES='pws_c.pws_b.pws_a'"
 
       "WrapExternal_INCLUDE_DIRS='.+/packages/wrap_external/external_func'"
       "WrapExternal_LIBRARY_DIRS=''"

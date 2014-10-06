@@ -1332,14 +1332,36 @@ To add timers to various configure steps, configure with::
 
   -D <Project>_ENABLE_CONFIGURE_TIMING:BOOL=ON
 
-If you configuring a large number of packages (perhaps including add-on
-packages in extra repos) then the configure time might be excessive and
-therefore you might want to be able to add configuration timing to see where
-the time is being spent.
+This will do baulk timing for the major configure steps which is independent
+of the number of packages in the project.
 
-NOTE: This requires that you are running on a Linux/Unix system that has the
-stanard command 'date'.  CMake does not have built-in timing functions so you
-have to query the system.
+To additionally add timing for the configure of individual packages, configure
+with::
+
+  -D <Project>_ENABLE_PACKAGE_CONFIGURE_TIMING:BOOL=ON
+
+If you configuring a large number of packages (perhaps by including a lot of
+add-on packages in extra repos) then you might not want to enable
+package-by-package timing since it can some significant overhead to the
+configure times.
+
+If you just want to time individual packages instead, you can enable that
+with::
+
+  -D <TRIBITS_PACKAGE_0>_PACKAGE_CONFIGURE_TIMING:BOOL=ON \
+  -D <TRIBITS_PACKAGE_1>_PACKAGE_CONFIGURE_TIMING:BOOL=ON \
+  ...
+
+NOTES:
+* This requires that you are running on a Linux/Unix system that has the
+  standard shell command ``date``.  CMake does not have built-in timing
+  functions so you have to query the system.  This will report timings to
+  0.001 seconds but not that the overall configure time will go up due to the
+  increased overhead of calling ``date``.
+* Because this feature has to call the ``data`` using CMake's
+  ``EXECUTE_PROCESS()`` command, it can be expensive.  Therefore, this should
+  really only be turned on for large projects (where the extra overhead is
+  small) or for smaller projects for extra informational purposes.
 
 Generating export files
 -----------------------

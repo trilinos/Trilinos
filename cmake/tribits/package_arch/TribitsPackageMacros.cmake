@@ -148,12 +148,12 @@ ENDMACRO()
 #     turned off, if they are not already turned off by global cache
 #     variables.  Strong warnings are turned on by default in development
 #     mode.
-#  
+#
 #   ``CLEANED``
 #
 #     If specified, then warnings will be promoted to errors for compiling the
 #     package's sources for all defined warnings.
-#  
+#
 #   ``DISABLE_CIRCULAR_REF_DETECTION_FAILURE``
 #
 #     If specified, then the standard grep looking for RCPNode circular
@@ -187,7 +187,7 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nTRIBITS_PACKAGE_DECL: ${PACKAGE_NAME_IN}")
   ENDIF()
-   
+
   #
   # A) Parse the input arguments
   #
@@ -220,7 +220,7 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   #
 
   TRIBITS_SET_COMMON_VARS(${PACKAGE_NAME_IN})
-  
+
   SET(${PACKAGE_NAME_IN}_DISABLE_STRONG_WARNINGS OFF
      CACHE BOOL
      "If set to true, then strong warnings for package ${PACKAGE_NAME_IN} will be disabled."
@@ -240,8 +240,8 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   TRIBITS_DEFINE_TARGET_VARS(${PACKAGE_NAME})
 
   #
-  # Append the local package's cmake directory in order to help pull in 
-  # configure-time testing macros  
+  # Append the local package's cmake directory in order to help pull in
+  # configure-time testing macros
   #
 
   PREPEND_SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -286,7 +286,7 @@ MACRO(TRIBITS_PACKAGE_DEF)
     ENDIF()
     RETURN()
   ENDIF()
-  
+
   # Reset in case were changed by subpackages
   TRIBITS_SET_COMMON_VARS(${PACKAGE_NAME})
 
@@ -443,7 +443,7 @@ ENDMACRO()
 
 #
 # @MACRO: TRIBITS_ADD_EXAMPLE_DIRECTORIES()
-#  
+#
 # Macro called to conditionally add a set of example directories for an SE
 # package.
 #
@@ -495,10 +495,10 @@ FUNCTION(TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS)
 
     SET(SUBPACKAGE_IDX 0)
     FOREACH(TRIBITS_SUBPACKAGE ${${PARENT_PACKAGE_NAME}_SUBPACKAGES})
-  
+
       SET(SUBPACKAGE_NAME ${TRIBITS_SUBPACKAGE})
       SET(SUBPACKAGE_FULLNAME ${PARENT_PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
-  
+
       IF (${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
         PREPEND_SET(PARENT_PACKAGE_INCLUDE_DIRS
           ${${SUBPACKAGE_FULLNAME}_INCLUDE_DIRS})
@@ -507,9 +507,9 @@ FUNCTION(TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS)
         PREPEND_SET(PARENT_PACKAGE_LIBRARIES
           ${${SUBPACKAGE_FULLNAME}_LIBRARIES})
       ENDIF()
-  
+
       MATH(EXPR SUBPACKAGE_IDX "${SUBPACKAGE_IDX}+1")
-  
+
     ENDFOREACH()
 
     LIST(REMOVE_DUPLICATES PARENT_PACKAGE_INCLUDE_DIRS)
@@ -526,7 +526,7 @@ FUNCTION(TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS)
     # them based on this package's dependencies.
 
     TRIBITS_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS(
-      ${PACKAGE_NAME}  LIB  LINK_LIBS) 
+      ${PACKAGE_NAME}  LIB  LINK_LIBS)
 
     TRIBITS_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
       ${PACKAGE_NAME}  LIB  LINK_LIBS)
@@ -563,7 +563,7 @@ MACRO(TRIBITS_PACKAGE_POSTPROCESS_COMMON)
     # Makefile.export.* files.
     TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES(${PACKAGE_NAME})
   ENDIF()
-  
+
   SET(${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE TRUE
     CACHE INTERNAL "")
 
@@ -572,7 +572,7 @@ ENDMACRO()
 
 #
 # @MACRO: TRIBITS_PACKAGE_POSTPROCESS()
-#  
+#
 # Macro called at the very end of a package's top-level
 # `<packageDir>/CMakeLists.txt`_ file that performs some critical
 # post-processing activities.
@@ -600,7 +600,7 @@ MACRO(TRIBITS_PACKAGE_POSTPROCESS)
   TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS()
   TRIBITS_PACKAGE_POSTPROCESS_COMMON()
 
-  # NOTE: This package is only able 
+  # NOTE: This package is only able
 
 ENDMACRO()
 
@@ -635,7 +635,7 @@ MACRO(TRIBITS_PROCESS_SUBPACKAGES)
     #PRINT_VAR(SUBPACKAGE_FULLNAME)
 
     IF (${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
-      
+
       LIST(GET ${PARENT_PACKAGE_NAME}_SUBPACKAGE_DIRS ${SUBPACKAGE_IDX} SUBPACKAGE_DIR)
       #PRINT_VAR(SUBPACKAGE_DIR)
 

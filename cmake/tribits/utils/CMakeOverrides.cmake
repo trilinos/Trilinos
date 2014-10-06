@@ -47,7 +47,7 @@ INCLUDE(ParseVariableArguments)
 # for a TriBITS package.
 
 # Usage::
-# 
+#
 #   TRIBITS_INCLUDE_DIRECTORIES(
 #     [REQUIRED_DURING_INSTALLATION_TESTING] <dir0> <dir1> ...
 #     )

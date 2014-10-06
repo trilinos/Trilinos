@@ -190,11 +190,11 @@ function(TRIBITS_DRIVER_ADD_DASHBOARD testname scriptname)
   # driving ctest:
   #
   set_property(TEST ${testname} PROPERTY DEPENDS "install-cmake-${ctest_type}")
-  
+
   if(PARSE_DEPENDS)
     set_property(TEST ${testname} PROPERTY DEPENDS "${PARSE_DEPENDS}")
   endif()
-  
+
   if(PARSE_REQUIRED_FILES)
     set_property(TEST ${testname} PROPERTY REQUIRED_FILES "${PARSE_REQUIRED_FILES}")
   endif()
@@ -239,10 +239,10 @@ function(TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS)
 
     MESSAGE(STATUS "Skipping CMake install tests because TRIBITS_TDD_USE_SYSTEM_CTEST==1")
 
-  ELSEIF (TDD_FORCE_INNER_CMAKE_INSTALL STREQUAL "1") 
+  ELSEIF (TDD_FORCE_INNER_CMAKE_INSTALL STREQUAL "1")
 
     get_property(types GLOBAL PROPERTY TD_CMAKE_INSTALLER_TYPES)
-  
+
     if (types)
       list(REMOVE_DUPLICATES types)
       foreach (type ${types})

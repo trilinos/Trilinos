@@ -456,7 +456,7 @@ the package's `<packageDir>/CMakeLists.txt`_ file.
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES()
 +++++++++++++++++++++++++++++++++
- 
+
 Macro called to conditionally add a set of example directories for an SE
 package.
 
@@ -770,7 +770,7 @@ Function used to add a CMake library and target using ``ADD_LIBRARY()``.
 Usage::
 
   TRIBITS_ADD_LIBRARY(
-    <libName>
+    <libBaseName>
     [HEADERS <h0> <h1> ...]
     [NOINSTALLHEADERS <nih0> <hih1> ...]
     [SOURCES <src0> <src1> ...]
@@ -779,6 +779,7 @@ Usage::
     [TESTONLY]
     [NO_INSTALL_LIB_OR_HEADERS]
     [CUDALIBRARY]
+    [ADDED_LIB_TARGET_NAME_OUT <libTargetName>]
     )
 
 *Sections:*
@@ -793,14 +794,21 @@ Usage::
 
 **Formal Arguments (TRIBITS_ADD_LIBRARY())**
 
-  ``<libName>``
+  ``<libBaseName>``
 
-    Required name of the library.  This is the name passed to
-    ``ADD_LIBRARY(<libName> ...)``.  The name is *not* prefixed by the
-    package name.  CMake will of course add any standard prefix or post-fix
-    to the library file name appropriate for the platform and if this is a
-    static or shared library build (see documentation for the built-in CMake
-    command ``ADD_LIBRARY()``.
+    Required base name of the library.  The name of the actual libray name
+    will be prefixed by ``${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}`` to
+    produce::
+    
+      <libTargetName> = ${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}<libBaseName>
+
+    This is the name passed to ``ADD_LIBRARY(<libTargetName> ...)``.  The
+    name is *not* prefixed by the package name.  CMake will of course add
+    any standard prefix or post-fix to the library file name appropriate for
+    the platform and if this is a static or shared library build (e.g. on
+    Linux prefix = ``'lib'``, postfix = ``'.so'`` for shared lib and postfix
+    = ``'.a'`` static lib) (see documentation for the built-in CMake command
+    ``ADD_LIBRARY()``.
 
   ``HEADERS <h0> <h1> ...``
 
@@ -831,11 +839,11 @@ Usage::
 
     List of dependent libraries that are built in the current SE package
     that this library is dependent on.  These libraries are passed into
-    ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-    dependency structure of the libraries within this SE package.  **NOTE:**
-    One must **not** list libraries in other upstream `TriBITS SE Packages`_
-    or libraries built externally from this TriBITS CMake project in
-    ``DEPLIBS``.  The TriBITS system automatically handles linking to
+    ``TARGET_LINK_LIBRARIES(<libTargetName> ...)`` so that CMake knows about
+    the dependency structure of the libraries within this SE package.
+    **NOTE:** One must **not** list libraries in other upstream `TriBITS SE
+    Packages`_ or libraries built externally from this TriBITS CMake project
+    in ``DEPLIBS``.  The TriBITS system automatically handles linking to
     libraries in upstream TriBITS SE packages.  External libraries need to
     be listed in the ``IMPORTEDLIBS`` argument instead if they are not
     already specified automatically using a `TriBITS TPL`_.
@@ -844,8 +852,8 @@ Usage::
 
     List of dependent libraries built externally from this TriBITS CMake
     project.  These libraries are passed into
-    ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-    dependency.  However, note that external libraries are often better
+    ``TARGET_LINK_LIBRARIES(<libTargetName> ...)`` so that CMake knows about
+    the dependency.  However, note that external libraries are often better
     handled as `TriBITS TPLs`_.  A well constructed TriBITS package and
     library should never have to use this option!  So far, the only case
     where ``IMPORTEDLIBS`` has been shown to be necessary is to pass in the
@@ -854,17 +862,17 @@ Usage::
 
   ``TESTONLY``
 
-    If passed in, then ``<libName>`` will **not** be added to
+    If passed in, then ``<libTargetName>`` will **not** be added to
     ``${PACKAGE_NAME}_LIBRARIES`` and an install target for the library will
     not be added.  In this case, the current include directories will be set
-    in the global variable ``<libName>_INCLUDE_DIR`` which will be used in
-    `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked in
-    through its ``DEPLIBS`` argument.
+    in the global variable ``<libTargetName>_INCLUDE_DIR`` which will be
+    used in `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked
+    in through its ``DEPLIBS`` argument.
 
   ``NO_INSTALL_LIB_OR_HEADERS``
 
     If specified, then no install targets will be added for the library
-    ``<libName>`` or the header files listed in ``HEADERS``.
+    ``<libTargetName>`` or the header files listed in ``HEADERS``.
 
   ``CUDALIBRARY``
 
@@ -876,6 +884,14 @@ Usage::
     direct or indirect dependency on the TriBITS CUDA TPL or a
     configure-time error may occur about not knowing about
     ``CUDA_ALL_LIBRARY()``.
+
+  ``ADDED_LIB_TARGET_NAME_OUT <libTargetName>``
+
+    If specified, then on output the variable ``<libTargetName>`` will be
+    set with the name of the library passed to ``ADD_LIBRARY()``.  Having
+    this name allows the calling ``CMakeLists.txt`` file access and set
+    additional target propeties (see `Additional Library and Source File
+    Properties (TRIBITS_ADD_LIBRARY())`_).
 
 .. _Include Directories (TRIBITS_ADD_LIBRARY()):
 
@@ -893,7 +909,7 @@ downstream SE packages..
 **Install Targets (TRIBITS_ADD_LIBRARY())**
 
 By default, an install target for the library is created using
-``INSTALL(TARGETS <libName> ...)`` to install into the directory
+``INSTALL(TARGETS <libTargetName> ...)`` to install into the directory
 ``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
 ``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix at configure
 time`_).  However, this install target will not get created if
@@ -915,11 +931,11 @@ the headers listed in ``NOINSTALLHEADERS``.
 
 **Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())**
 
-Once ``ADD_LIBRARY(<libName> ... <src0> <src1> ...)`` is called, one can set
-and change properties on the ``<libName>`` library target using the built-in
-CMake command ``SET_TARGET_PROPERTIES()`` as well as set and change
-properties on any of the source files listed in ``SOURCES`` using the
-built-in CMake command ``SET_SOURCE_FILE_PROPERTIES()`` just like in any
+Once ``ADD_LIBRARY(<libTargetName> ... <src0> <src1> ...)`` is called, one
+can set and change properties on the ``<libTargetName>`` library target
+using the built-in CMake command ``SET_TARGET_PROPERTIES()`` as well as set
+and change properties on any of the source files listed in ``SOURCES`` using
+the built-in CMake command ``SET_SOURCE_FILE_PROPERTIES()`` just like in any
 CMake project.
 
 .. _Miscellaneous Notes (TRIBITS_ADD_LIBRARY()):
@@ -1046,14 +1062,14 @@ Usage::
     is to allow multiple tests to be defined for the same executable.  CTest
     requires all test names to be globally unique in a single project.  See
     `Determining the Full Test Name (TRIBITS_ADD_TEST())`_.
- 
+
   ``NAME_POSTFIX <testNamePostfix>``
 
     If specified, gives a postfix that will be added to the standard test
     name based on ``<exeRootName>`` (appended as ``_<NAME_POSTFIX>``).  If
     the ``NAME <testRootName>`` argument is given, this argument is ignored.
     See `Determining the Full Test Name (TRIBITS_ADD_TEST())`_.
- 
+
   ``DIRECTORY <dir>``
 
     If specified, then the executable is assumed to be in the directory
@@ -1061,7 +1077,7 @@ Usage::
     absolute path.  If not specified, the executable is assumed to be in the
     current binary directory ``${CMAKE_CURRENT_BINARY_DIR}``.  See
     `Determining the Executable or Command to Run (TRIBITS_ADD_TEST())`_.
-  
+
   ``ADD_DIR_TO_NAME``
 
     If specified, then the directory name that this test resides in will be
@@ -1071,7 +1087,7 @@ Usage::
     base directory stripped off so only the unique part of the test
     directory will be used.  All directory separators ``"/"`` will be
     changed into underscores ``"_"``.
- 
+
   ``RUN_SERIAL``
 
     If specified then no other tests will be allowed to run while this test
@@ -1079,7 +1095,7 @@ Usage::
     exclusive access for processes/threads.  This just sets the CTest test
     property ``RUN_SERIAL`` using the built-in CMake function
     ``SET_TESTS_PROPERTIES()``.
- 
+
   ``ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...``
 
     If specified, then a set of arguments can be passed in quotes.  If
@@ -1093,18 +1109,18 @@ Usage::
     arguments passed to a single test invocation must be quoted or multiple
     tests taking single arguments will be created instead!  See `Adding
     Multiple Tests (TRIBITS_ADD_TEST())`_ for more details and exmaples.
- 
+
   ``POSTFIX_AND_ARGS_<IDX> <postfix> <arg0> <arg1> ...``
 
     If specified, gives a sequence of sets of test postfix names and
     arguments lists for different tests (up to ``POSTFIX_AND_ARGS_19``).
     For example, a set of three different tests with argument lists can be
     specified as::
-      
+
       POSTIFX_AND_ARGS_0 postfix0 --arg1 --arg2="dummy"
       POSTIFX_AND_ARGS_1 postfix1  --arg2="fly"
       POSTIFX_AND_ARGS_2 postfix2  --arg2="bags"
- 
+
     This will create three different test cases with the postfix names
     ``postfix0``, ``postfix1``, and ``postfix2``.  The indexes must be
     consecutive starting a ``0`` and going up to (currently) ``19``.  The
@@ -1113,7 +1129,7 @@ Usage::
     specify multiple arguments without having to quote them and one can
     allow long argument lists to span multiple lines.  See `Adding Multiple
     Tests (TRIBITS_ADD_TEST())`_ for more details and exmaples.
- 
+
   ``COMM [serial] [mpi]``
 
     If specified, determines if the test will be added in serial and/or MPI
@@ -1124,7 +1140,7 @@ Usage::
     the test will **not** be added if ``TPL_ENABLE_MPI=ON``.  If ``COMM
     serial mpi`` or ``COMM mpi serial`` is passed in, then the value of
     ``TPL_ENABLE_MPI`` does not determine if the test is added or not.
- 
+
   ``NUM_MPI_PROCS <numProcs>``
 
     If specified, gives the number of MPI processes used to run the test
@@ -1165,7 +1181,7 @@ Usage::
     of ``${PROJECT_NAME}_HOSTNAME`` gets printed out in the TriBITS cmake
     output under the section ``Probing the environment`` (see `Full
     Processing of TriBITS Project Files`_).
- 
+
   ``XHOST <host0> <host1> ...``
 
     If specified, gives a list of hostnames (see ``HOST`` argument) on which
@@ -1279,7 +1295,7 @@ which is (by no coincidence) identical to how it is selected in
 
 By default, this executable is assumed to be in the current CMake binary
 directory ``${CMAKE_CURRENT_BINARY_DIR}`` but the directory location can be
-changed using the ``DIRECTORY <dir>`` argument.  
+changed using the ``DIRECTORY <dir>`` argument.
 
 If an arbitrary executable is to be run (i.e. not build inside of the
 project), then pass in ``NOEXEPREFIX`` and ``NOEXESUFFIX`` and set
@@ -1871,7 +1887,7 @@ This function is designed to help take an externally configured and built
 piece of software (that generates libraries) and wrap it as a TriBITS
 package or subpackage.  This function uses the lower-level functions:
 
-* `TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()`_ 
+* `TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()`_
 * `TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()`_
 
 to determine the most recent modified files in the upstream TriBITS SE
@@ -1880,7 +1896,7 @@ file for the current package.  It then compares these timestamps to the most
 recent binary file timestamp in this package's binary directory.  If any of
 these three files are more recent than this package's most recent binary
 file, then the output variable ``<currentPackageOutOfDate>`` is set to
-``TRUE``.  Otherwise, it is set to ``FALSE``. 
+``TRUE``.  Otherwise, it is set to ``FALSE``.
 
 NOTE: The source and binary directories for full packages are searched, not
 individual subpackage dirs.  This is to reduce the number of dirs searched.
@@ -1936,7 +1952,7 @@ Also, be careful to note that the ``<filei>`` arguments are actually regexes
 and one must be very careful not understand how CPack will use these regexes
 to match files that get excluded from the tarball.  For more details, see
 `Creating Source Distributions`_.
-   
+
 TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()
 ++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1946,7 +1962,7 @@ its timestamp.
 Usage::
 
   TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP(
-    BINARY_BASE_DIRS <dir0> <dir1> ... 
+    BINARY_BASE_DIRS <dir0> <dir1> ...
     [BINARY_BASE_BASE_DIR <dir>]
     [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]
     [MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>]
@@ -1969,9 +1985,9 @@ timestamp.
 Usage::
 
   TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(
-    BASE_DIRS <dir0> <dir1> ... 
+    BASE_DIRS <dir0> <dir1> ...
     [BASE_BASE_DIR <dir>]
-    [EXCLUDE_REGEXES "<re0>" "<re1>" ... 
+    [EXCLUDE_REGEXES "<re0>" "<re1>" ...
     [SHOW_MOST_RECENT_FILES]
     [SHOW_OVERALL_MOST_RECENT_FILE]
     [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]
@@ -2030,7 +2046,7 @@ Usage::
 **Description:**
 
 This function uses the Linux/Unix command::
-    
+
     $ find . -type f -printf '%T@ %p\n'
         | grep -v "<re0>" | grep -v "<re1>" | ... \
         | sort -n | tail -1
@@ -2049,7 +2065,7 @@ its timestamp.
 Usage::
 
   TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP(
-    SOURCE_BASE_DIRS <dir0> <dir1> ... 
+    SOURCE_BASE_DIRS <dir0> <dir1> ...
     [SOURCE_BASE_BASE_DIR <dir>]
     [SHOW_MOST_RECENT_FILES]
     [SHOW_OVERALL_MOST_RECENT_FILE]
@@ -2148,12 +2164,12 @@ The arguments are:
     turned off, if they are not already turned off by global cache
     variables.  Strong warnings are turned on by default in development
     mode.
- 
+
   ``CLEANED``
 
     If specified, then warnings will be promoted to errors for compiling the
     package's sources for all defined warnings.
- 
+
   ``DISABLE_CIRCULAR_REF_DETECTION_FAILURE``
 
     If specified, then the standard grep looking for RCPNode circular
@@ -2237,7 +2253,7 @@ upstream dependencies).  The arguments that apply to all SE packages are:
 
     List of required upstream SE packages that must be enabled in order to
     build and use the libraries (or capabilities) in this SE package.
- 
+
   ``LIB_OPTIONAL_PACKAGES``
 
     List of additional optional upstream SE packages that can be used in
@@ -2245,14 +2261,14 @@ upstream dependencies).  The arguments that apply to all SE packages are:
     enabled in order to enable this SE package but not enabling one or more
     of these optional upstream SE packages will result in diminished
     capabilities of this SE package.
- 
+
   ``TEST_REQUIRED_PACKAGES``
 
     List of additional upstream SE packages that must be enabled in order to
     build and/or run the tests and/or examples in this SE package.  If any
     of these upstream SE packages are not enabled, then there will be no
     tests or examples defined or run for this SE package.
- 
+
   ``TEST_OPTIONAL_PACKAGES``
 
     List of additional optional upstream SE packages that can be used by the
@@ -2260,26 +2276,26 @@ upstream dependencies).  The arguments that apply to all SE packages are:
     enabled in order to run some basic tests or examples for this SE
     package.  Typically, extra tests that depend on optional test SE
     packages involve integration testing of some type.
- 
+
   ``LIB_REQUIRED_TPLS``
 
     List of required upstream TPLs that must be enabled in order to build
     and use the libraries (or capabilities) in this SE package.
- 
+
   ``LIB_OPTIONAL_TPLS``
 
     List of additional optional upstream TPLs that can be used in this SE
     package if enabled.  These upstream TPLs need not be enabled in order to
     use this SE package but not enabling one or more of these optional
     upstream TPLs will result in diminished capabilities of this SE package.
- 
+
   ``TEST_REQUIRED_TPLS``
 
     List of additional upstream TPLs that must be enabled in order to build
     and/or run the tests and/or examples in this SE package.  If any of
     these upstream TPLs are not enabled, then there will be no tests or
     examples defined or run for this SE package.
- 
+
   ``TEST_OPTIONAL_TPLS``
 
     List of additional optional upstream TPLs that can be used by the tests
@@ -2339,20 +2355,20 @@ Subpackages`_.  In this case, the following argument must be passed in:
       The full SE package name is ``${PARENT_PACKAGE_NAME}<spkg_name>``.
       The full SE package name is what is used in listing dependencies in
       other SE packages.
-   
+
     * **DIRS** (Column 1): The subdirectory ``<spkg_dir>`` relative to the
       parent package's base directory.  All of the contents of the
       subpackage should be under this subdirectory.  This is assumed by the
       TriBITS testing support software when mapping modified files to SE
       packages that need to be tested (see `checkin-test.py`_).
-   
+
     * **CLASSIFICATIONS** (Column 2): The `Test Test Category`_ `PT`_,
       `ST`_, `EX`_ and the maturity level ``EP``, ``RS``, ``PG``, ``PM``,
       ``GRS``, ``GPG``, ``GPM``, and ``UM``, separated by a coma ',' with no
       spaces in between (e.g. ``"PT,GPM"``).  These have exactly the same
       meaning as for full packages (see
       `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_).
-   
+
     * **OPTREQ** (Column 3): Determines if the outer parent package has an
       ``OPTIONAL`` or ``REQUIRED`` dependence on this subpackage.
 
@@ -2387,7 +2403,7 @@ the names of these variables.
 
 TRIBITS_PACKAGE_POSTPROCESS()
 +++++++++++++++++++++++++++++
- 
+
 Macro called at the very end of a package's top-level
 `<packageDir>/CMakeLists.txt`_ file that performs some critical
 post-processing activities.
