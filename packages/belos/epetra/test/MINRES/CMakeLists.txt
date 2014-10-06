@@ -6,11 +6,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   ARGS
     "--debug --verbose --tol=1e-5"
-  STANDARD_PASS_OUTPUT 
+  STANDARD_PASS_OUTPUT
   )
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
-IF (${PACKAGE_NAME}_ENABLE_Triutils)
+ASSERT_DEFINED(Belos_ENABLE_Triutils)
+IF (Belos_ENABLE_Triutils)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     minres_hb
@@ -18,7 +18,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     COMM serial mpi
     ARGS
       "--verbose --filename=bcsstk14.hb --tol=1e-5"
-    STANDARD_PASS_OUTPUT 
+    STANDARD_PASS_OUTPUT
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestMinresFiles
@@ -26,5 +26,5 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     SOURCE_FILES bcsstk14.hb
     EXEDEPS minres_hb
     )
- 
-ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
+
+ENDIF(Belos_ENABLE_Triutils)

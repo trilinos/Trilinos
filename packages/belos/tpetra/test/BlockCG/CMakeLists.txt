@@ -21,17 +21,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  COMM serial mpi
 #  )
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
-IF (${PACKAGE_NAME}_ENABLE_Triutils)
-
+#ASSERT_DEFINED(Belos_ENABLE_Triutils)
+#IF (Belos_ENABLE_Triutils)
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   Tpetra_BlockCG_hb_multiprec_test
 #   SOURCES test_bl_cg_hb_multiprec.cpp
 #   ARGS
 #   COMM serial mpi
 #   )
-
-ENDIF()
+#ENDIF()
 
 #TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_complex_hb_CopyFiles
 #  SOURCE_DIR ${Belos_SOURCE_DIR}/test/MVOPTester

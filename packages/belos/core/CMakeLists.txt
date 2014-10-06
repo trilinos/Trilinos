@@ -1,10 +1,11 @@
 
+TRIBITS_SUBPACKAGE(Core)
 
 ######################################################################
 ## Package-specific configuration options
 ######################################################################
 
-TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(Belos_config.h)
 
 ######################################################################
 ## Define the header and source files (and directories)
@@ -16,7 +17,7 @@ SET(SOURCES "")
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(HEADERS ${HEADERS}
-  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  ${CMAKE_CURRENT_BINARY_DIR}/Belos_config.h
   )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -119,13 +120,13 @@ APPEND_SET(HEADERS
 ## certain configure-time options.
 ######################################################################
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TSQR)
-IF(${PACKAGE_NAME}_ENABLE_TSQR)
+ASSERT_DEFINED(Belos_ENABLE_TSQR)
+IF(Belos_ENABLE_TSQR)
   #
   # Build the TSQR-based OrthoManager and MatOrthoManager classes.
   #
   APPEND_SET(HEADERS BelosTsqrOrthoManagerImpl.hpp BelosTsqrOrthoManager.hpp)
-ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
+ENDIF()
 
 #
 # See the comments on "experimental" code in belos/CMakeLists.txt.  In
@@ -158,32 +159,23 @@ APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES
   BelosInnerSolveResult.cpp
 )
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)
-IF(${PACKAGE_NAME}_ENABLE_Experimental)
+ASSERT_DEFINED(Belos_ENABLE_Experimental)
+IF(Belos_ENABLE_Experimental)
   #
   # Add experimental files to HEADERS and SOURCES.
   #
   APPEND_SET(HEADERS ${${PACKAGE_NAME}_EXPERIMENTAL_HEADERS})
   APPEND_SET(SOURCES ${${PACKAGE_NAME}_EXPERIMENTAL_SOURCES})
-ENDIF() # ${PACKAGE_NAME}_ENABLE_Experimental
+ENDIF()
 
 ######################################################################
 ## Define the targets for the package's library/ies.
 ######################################################################
 
-IF (${PACKAGE_NAME}_ENABLE_TSQR)
-  # If TSQR support is enabled in Belos, we have to link Belos with
-  # the appropriate Kokkos libraries, since TSQR is implemented in
-  # Kokkos.
-  TRIBITS_ADD_LIBRARY(
-    belos
-    HEADERS ${HEADERS}
-    SOURCES ${SOURCES}
-    )
-ELSE ()
-  TRIBITS_ADD_LIBRARY(
-    belos
-    HEADERS ${HEADERS}
-    SOURCES ${SOURCES}
-    )
-ENDIF ()
+TRIBITS_ADD_LIBRARY(
+  belos
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  )
+
+TRIBITS_SUBPACKAGE_POSTPROCESS()

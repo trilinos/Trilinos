@@ -1,9 +1,9 @@
 
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
-IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
-    
+ASSERT_DEFINED(Belos_ENABLE_Triutils)
+ASSERT_DEFINED(Belos_ENABLE_EpetraExt)
+IF (Belos_ENABLE_Triutils AND Belos_ENABLE_EpetraExt)
+
   TRIBITS_ADD_EXECUTABLE(
     BlockCG_Epetra_File_Ex
     SOURCES BlockCGEpetraExFile.cpp
@@ -22,8 +22,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     EXEDEPS BlockCG_Epetra_File_Ex
     )
 
-  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
-  IF(${PACKAGE_NAME}_ENABLE_Ifpack)
+  ASSERT_DEFINED(Belos_ENABLE_Ifpack)
+  IF(Belos_ENABLE_Ifpack)
 
     TRIBITS_ADD_EXECUTABLE(
       BlockPrecCG_Epetra_File_Ex
@@ -37,6 +37,6 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
       COMM serial mpi
       )
 
-  ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
+  ENDIF(Belos_ENABLE_Ifpack)
 
-ENDIF(${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
+ENDIF(Belos_ENABLE_Triutils AND Belos_ENABLE_EpetraExt)

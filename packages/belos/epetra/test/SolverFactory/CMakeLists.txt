@@ -1,7 +1,7 @@
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Galeri)
-IF (${PACKAGE_NAME}_ENABLE_Galeri)
-    
+ASSERT_DEFINED(Belos_ENABLE_Galeri)
+IF (Belos_ENABLE_Galeri)
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     solver_factory_test
     SOURCES test_solver_factory.cpp
@@ -9,4 +9,4 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     STANDARD_PASS_OUTPUT
     )
 
-ENDIF (${PACKAGE_NAME}_ENABLE_Galeri)
+ENDIF (Belos_ENABLE_Galeri)
