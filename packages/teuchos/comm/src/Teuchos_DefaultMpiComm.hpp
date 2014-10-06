@@ -416,7 +416,6 @@ public:
     const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
     );
 
-private:
   /// \brief Construct an MpiComm with a wrapped MPI_Comm and a default tag.
   ///
   /// This constructor has the same meaning as the one-argument
