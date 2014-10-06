@@ -3598,11 +3598,13 @@ bool member_of_owned_closure(const BulkData& mesh, const Entity e , const int p_
   return false;
 }
 
+} // namespace
+
 //----------------------------------------------------------------------
 
 // Given a vector of local ownership changes, remove duplicates and
 // sanity check.
-void clean_and_verify_parallel_change(
+void internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,
   std::vector<EntityProc> & local_change )
 {
@@ -3689,7 +3691,6 @@ void clean_and_verify_parallel_change(
   }
 }
 
-} // namespace
 
 //----------------------------------------------------------------------
 // Generate a parallel consistent list of ownership changes:
@@ -3935,21 +3936,49 @@ void internal_print_comm_list(std::string title, BulkData & mesh)
 void BulkData::internal_calculate_sharing(const std::vector<EntityProc> & local_change,
                          const std::vector<EntityProc> & shared_change,
                          const std::vector<EntityProc> & ghosted_change,
-                         NodeToDependentProcessorsMap & node_to_dependent_processors_map)
+                         NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
 
 {
   internal_print_comm_map("BEFORE");
   internal_print_comm_list("BEFORE", *this);
   typedef std::set<EntityProc,EntityLess> EntityProcSet;
-  // OWNER sends sharing information to all current and newly sharing/owning processors
-  // For each node in send_closure, send a list of sharing processors to sharing list and new owner:
-  //   Create list of sharing processors for each node in the send_closure list.
-  // STEP ONE:  local_change and shared_change will not be full at the same time.
 
-  node_to_dependent_processors_map.clear();
+  // * Create map of old owner to new owner for each entity key represented in
+  // local_change, shared_change, ghosted_change lists.
+  typedef std::map<EntityKey,int> NewOwnerMap;
+  NewOwnerMap new_owner_map;
+  // I'm giving away ownership of these entities:
+  for (unsigned i=0 ; i < local_change.size() ; ++i) {
+      EntityKey key = entity_key(local_change[i].first);
+      new_owner_map[key] = local_change[i].second;
+  }
+  // I share these entities with the owner, and the owner is giving away ownership:
+  for (unsigned i=0 ; i < shared_change.size() ; ++i) {
+      EntityKey key = entity_key(shared_change[i].first);
+      new_owner_map[key] = shared_change[i].second;
+  }
+  // I ghost these entities from the owner, and the owner is giving away ownership:
+  for (unsigned i=0 ; i < ghosted_change.size() ; ++i) {
+      EntityKey key = entity_key(ghosted_change[i].first);
+      new_owner_map[key] = ghosted_change[i].second;
+  }
+
+  // * Pass this map to internal_get_processor_dependencies to be used when adding
+  // current sharing information to the entity_to_dependent_processors_map, so
+  // the new owner is used instead of a potentially old owner.
+
+  entity_to_dependent_processors_map.clear();
   for ( std::vector<EntityProc>::const_iterator
-        i = local_change.begin() ; i != local_change.end() ; ++i ) {
-      internal_get_processor_dependencies(*this, *i , node_to_dependent_processors_map );
+        owned_giving_away_eproc = local_change.begin() ; owned_giving_away_eproc != local_change.end() ; ++owned_giving_away_eproc ) {
+      internal_get_processor_dependencies(*this, *owned_giving_away_eproc , entity_to_dependent_processors_map, new_owner_map);
+  }
+  for (std::vector<EntityProc>::const_iterator
+          shared_giving_away_eproc = shared_change.begin() ; shared_giving_away_eproc != shared_change.end() ; ++shared_giving_away_eproc ) {
+      internal_get_processor_dependencies_shared_or_ghosted(*this, *shared_giving_away_eproc, entity_to_dependent_processors_map );
+  }
+  for (std::vector<EntityProc>::const_iterator
+          ghosted_giving_away_eproc = ghosted_change.begin() ; ghosted_giving_away_eproc != ghosted_change.end() ; ++ghosted_giving_away_eproc ) {
+      internal_get_processor_dependencies_shared_or_ghosted(*this, *ghosted_giving_away_eproc, entity_to_dependent_processors_map );
   }
 
 #ifndef NDEBUG
@@ -3978,60 +4007,66 @@ void BulkData::internal_calculate_sharing(const std::vector<EntityProc> & local_
 #endif // NDEBUG
 
   // Do I depend on any of these entities after all the ownership changes?
-  NodeToDependentProcessorsMap::iterator map_it = node_to_dependent_processors_map.begin();
-  for (; map_it != node_to_dependent_processors_map.end() ; ++map_it) {
-      Entity node_in_send_closure = get_entity(map_it->first);
-      if (proposed_closure_count[node_in_send_closure.local_offset()] > static_cast<uint16_t>(0u)) {
+  NodeToDependentProcessorsMap::iterator map_it = entity_to_dependent_processors_map.begin();
+  for (; map_it != entity_to_dependent_processors_map.end() ; ++map_it) {
+      Entity entity_in_send_closure = get_entity(map_it->first);
+      if (proposed_closure_count[entity_in_send_closure.local_offset()] > static_cast<uint16_t>(0u)) {
           map_it->second.insert(parallel_rank());
-          if (proposed_closure_count[node_in_send_closure.local_offset()] == static_cast<uint16_t>(1u)) {
+          if (proposed_closure_count[entity_in_send_closure.local_offset()] == static_cast<uint16_t>(1u)) {
               std::ostringstream oss;
-              oss << "P" << parallel_rank() << ": Warning: orphaned node = " << node_in_send_closure << " is locally owned but no owned entities have downward relations to it on this processor!  This will likely brake I/O." << std::endl;
+              oss << "P" << parallel_rank() << ": Warning: orphaned node = " << entity_in_send_closure << " is locally owned but no owned entities have downward relations to it on this processor!  This will likely brake I/O." << std::endl;
               std::cout << oss.str() << std::flush;
           }
       }
       else { // 0u
-          // This entity can be removed from globally_shared part
+          map_it->second.erase(parallel_rank());
+          // This entity can be removed from globally_shared part on my processor
       }
   }
-  internal_communicate_entity_to_dependent_processors_map(node_to_dependent_processors_map);
+  internal_communicate_entity_to_dependent_processors_map(entity_to_dependent_processors_map);
 }
 
-void BulkData::internal_apply_node_sharing(const NodeToDependentProcessorsMap & node_sharing_map)
+void BulkData::internal_apply_node_sharing(const NodeToDependentProcessorsMap & entity_sharing_map)
 {
-    std::vector<stk::mesh::Entity> modified_nodes;
+    std::vector<stk::mesh::Entity> modified_entities;
     // update sharing!
-    NodeToDependentProcessorsMap::const_iterator map_it = node_sharing_map.begin();
-    for ( ; map_it != node_sharing_map.end() ; ++map_it ) {
-        EntityKey node_key = map_it->first;
-        entity_comm_map_erase(  node_key, shared_ghosting() );
-        Entity node = get_entity(node_key);
-        if (!is_valid(node)) { continue; }
+    NodeToDependentProcessorsMap::const_iterator map_it = entity_sharing_map.begin();
+    for ( ; map_it != entity_sharing_map.end() ; ++map_it ) {
+        EntityKey key = map_it->first;
+        entity_comm_map_erase(  key, shared_ghosting() );
+        Entity entity = get_entity(key);
+        if (!is_valid(entity)) { continue; }
         const std::set<int> & sharing_procs = map_it->second;
+        if (sharing_procs.find(parallel_rank()) == sharing_procs.end()) {
+            // Skip adding sharing if my processor is not listed in sharing_procs.
+            continue;
+        }
+        ThrowAssert(entity_rank(entity) != stk::topology::ELEMENT_RANK); // TODO:  remove
         std::set<int>::const_iterator set_it = sharing_procs.begin();
         for (; set_it != sharing_procs.end() ; ++set_it ) {
             if (*set_it == parallel_rank()) { continue; }
-            markEntity(node, IS_SHARED);
+            markEntity(entity, IS_SHARED);
             m_add_node_sharing_called = true;
             // Cannot have both sharing and ghosting of a node to same proc.
-            entity_comm_map_erase(node_key, EntityCommInfo(stk::mesh::BulkData::AURA, *set_it));
-            entity_comm_map_insert(node, EntityCommInfo(stk::mesh::BulkData::SHARED, *set_it));
-            modified_nodes.push_back(node);
+            entity_comm_map_erase(key, EntityCommInfo(stk::mesh::BulkData::AURA, *set_it));
+            entity_comm_map_insert(entity, EntityCommInfo(stk::mesh::BulkData::SHARED, *set_it));
+            modified_entities.push_back(entity);
         }
-        if (!bucket(node).owned()) { continue; }
+        if (!bucket(entity).owned()) { continue; }
         PartVector globally_shared_pv;
         globally_shared_pv.push_back(&m_mesh_meta_data.globally_shared_part());
         PartVector empty_pv;
         const bool more_than_owner_in_sharing_list = (sharing_procs.size() > 1);
         if (more_than_owner_in_sharing_list) {
-            internal_verify_and_change_entity_parts(node, globally_shared_pv, empty_pv);
+            internal_verify_and_change_entity_parts(entity, globally_shared_pv, empty_pv);
         }
         else {
-            internal_verify_and_change_entity_parts(node, empty_pv, globally_shared_pv);
+            internal_verify_and_change_entity_parts(entity, empty_pv, globally_shared_pv);
         }
     }
     update_comm_list_based_on_changes_in_comm_map();
 
-    update_comm_list(modified_nodes);
+    update_comm_list(modified_entities);
 
     internal_print_comm_map("AFTER");
     internal_print_comm_list("AFTER", *this);
@@ -4086,7 +4121,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
   std::vector<EntityProc> local_change( arg_change );
 
   // Parallel synchronous clean up and verify the requested changes:
-  clean_and_verify_parallel_change( *this , local_change );
+  internal_clean_and_verify_parallel_change( *this , local_change );
 
   //----------------------------------------
   // Parallel synchronous determination of changing shared and ghosted.
@@ -4100,7 +4135,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
   internal_generate_parallel_change_lists( *this , local_change ,
                             shared_change , ghosted_change );
 
-//#define CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
+#undef CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
 #ifdef CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
   NodeToDependentProcessorsMap node_to_dependent_processors_map;
   internal_calculate_sharing(local_change, shared_change, ghosted_change, node_to_dependent_processors_map);
@@ -7805,12 +7840,14 @@ void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<Entity
 void internal_get_processor_dependencies(
   const BulkData &mesh,
   const EntityProc                  send_entry ,
-  BulkData::NodeToDependentProcessorsMap & node_to_dependent_processors_map)
+  BulkData::NodeToDependentProcessorsMap & node_to_dependent_processors_map,
+  const std::map<EntityKey,int> & new_owner_map )
 {
     ThrowRequireMsg( mesh.is_valid(send_entry.first),
                      "Cannot send destroyed entity");
 
     Entity moving_entity = send_entry.first;
+    EntityKey moving_key = mesh.entity_key(moving_entity);
     int new_owning_proc = send_entry.second;
 
     if (mesh.entity_rank(moving_entity) != stk::topology::ELEMENT_RANK) {
@@ -7818,7 +7855,7 @@ void internal_get_processor_dependencies(
         EntityCommInfoVector::const_iterator shared_proc_it = shared_procs.first;
         for ( ; shared_proc_it != shared_procs.second ; ++shared_proc_it ) {
             ThrowAssert(shared_proc_it->ghost_id == BulkData::SHARED);
-            int sharing_proc = shared_proc_it->proc;
+            int sharing_proc = new_owner_map.find(moving_key)->second;
             node_to_dependent_processors_map[mesh.entity_key(moving_entity)].insert(sharing_proc);
         }
         node_to_dependent_processors_map[mesh.entity_key(moving_entity)].insert(new_owning_proc);
@@ -7839,8 +7876,39 @@ void internal_get_processor_dependencies(
             for ( ; shared_proc_it != shared_procs.second ; ++shared_proc_it ) {
                 ThrowAssert(shared_proc_it->ghost_id == BulkData::SHARED);
                 int sharing_proc = shared_proc_it->proc;
+                if (new_owner_map.find(mesh.entity_key(entity)) != new_owner_map.end()) {
+                    sharing_proc = new_owner_map.find(mesh.entity_key(entity))->second;
+                }
                 node_to_dependent_processors_map[mesh.entity_key(entity)].insert(sharing_proc);
             }
+            node_to_dependent_processors_map[mesh.entity_key(entity)].insert(new_owning_proc);
+        }
+    }
+}
+
+
+void internal_get_processor_dependencies_shared_or_ghosted(
+  const BulkData &mesh,
+  const EntityProc                  shared_or_ghosted_entity ,
+  BulkData::NodeToDependentProcessorsMap & node_to_dependent_processors_map)
+{
+    Entity moving_entity = shared_or_ghosted_entity.first;
+    int new_owning_proc = shared_or_ghosted_entity.second;
+
+    if (mesh.entity_rank(moving_entity) != stk::topology::ELEMENT_RANK) {
+        node_to_dependent_processors_map[mesh.entity_key(moving_entity)].insert(new_owning_proc);
+    }
+
+    const Bucket &ebucket = mesh.bucket(moving_entity);
+    const Ordinal ebordinal = mesh.bucket_ordinal(moving_entity);
+    const EntityRank node_rank = stk::topology::NODE_RANK;
+
+    for ( EntityRank rank = node_rank ; rank < mesh.entity_rank(moving_entity) ; ++rank) {
+        Entity const *rels_itr = ebucket.begin(ebordinal, rank);
+        Entity const *rels_end= ebucket.end(ebordinal, rank);
+        for (; rels_itr != rels_end; ++rels_itr)
+        {
+            Entity entity = *rels_itr;
             node_to_dependent_processors_map[mesh.entity_key(entity)].insert(new_owning_proc);
         }
     }

@@ -1221,6 +1221,170 @@ TEST(UnitTestingOfBulkData, change_entity_owner_8quads_4procs_move_top)
     EXPECT_EQ(expectedOwner, bulk.parallel_owner_rank(node3));
 }
 
+TEST(UnitTestingOfBulkData, test_internal_clean_and_verify_parallel_change_trivial)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+    unsigned spatialDim = 2;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+    std::vector<EntityProc> local_change;
+    stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change);
+    EXPECT_TRUE(local_change.size() == 0);
+}
+TEST(UnitTestingOfBulkData, test_internal_clean_and_verify_parallel_change_sort_unique)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(pm);
+    int myRank = stk::parallel_machine_rank(pm);
+    if (numProcs < 2) { return; }
+
+    unsigned spatialDim = 2;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+    mesh.modification_begin();
+    Entity node1, node2, node3, node4;
+    if (myRank == 0) {
+        node1 = mesh.declare_entity(stk::topology::NODE_RANK,1);
+        node2 = mesh.declare_entity(stk::topology::NODE_RANK,2);
+        node3 = mesh.declare_entity(stk::topology::NODE_RANK,3);
+        node4 = mesh.declare_entity(stk::topology::NODE_RANK,4);
+    }
+    mesh.modification_end();
+    std::vector<EntityProc> local_change;
+    if (myRank == 0)
+    {
+        local_change.push_back(EntityProc(node4,0));
+        local_change.push_back(EntityProc(node3,1));
+        local_change.push_back(EntityProc(node2,1));
+        local_change.push_back(EntityProc(node2,1));
+        local_change.push_back(EntityProc(node1,1));
+    }
+    stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change);
+    if (myRank == 0)
+    {
+        EXPECT_EQ(3u,local_change.size());
+        EXPECT_TRUE( EntityProc(node1,1) == local_change[0] );
+        EXPECT_TRUE( EntityProc(node2,1) == local_change[1] );
+        EXPECT_TRUE( EntityProc(node3,1) == local_change[2] );
+    }
+}
+TEST(UnitTestingOfBulkData, test_internal_clean_and_verify_parallel_change_bad_null)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+    unsigned spatialDim = 2;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+    std::vector<EntityProc> local_change;
+    local_change.push_back(EntityProc(Entity(),1));
+    EXPECT_THROW( stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change),
+                  std::runtime_error );
+}
+TEST(UnitTestingOfBulkData, test_internal_clean_and_verify_parallel_change_not_owner)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(pm);
+    int myRank = stk::parallel_machine_rank(pm);
+    if (numProcs < 2) { return; }
+
+    unsigned spatialDim = 2;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
+    stk::mesh::BulkData mesh(meta, pm);
+    mesh.modification_begin();
+    Entity node1, node2, node3, node4, node5, node6;
+    if (myRank == 0)
+    {
+        Entity element = mesh.declare_entity(stk::topology::ELEMENT_RANK,1,block_1);
+        node1 = mesh.declare_entity(stk::topology::NODE_RANK,1);
+        node2 = mesh.declare_entity(stk::topology::NODE_RANK,2); // shared
+        node3 = mesh.declare_entity(stk::topology::NODE_RANK,3); // shared
+        node4 = mesh.declare_entity(stk::topology::NODE_RANK,4);
+        mesh.declare_relation(element,node1,0);
+        mesh.declare_relation(element,node2,1);
+        mesh.declare_relation(element,node3,2);
+        mesh.declare_relation(element,node4,3);
+        mesh.add_node_sharing(node2,1);
+        mesh.add_node_sharing(node3,1);
+    }
+    if (myRank == 1)
+    {
+        Entity element = mesh.declare_entity(stk::topology::ELEMENT_RANK,2,block_1);
+        node2 = mesh.declare_entity(stk::topology::NODE_RANK,2); // shared
+        node5 = mesh.declare_entity(stk::topology::NODE_RANK,5);
+        node6 = mesh.declare_entity(stk::topology::NODE_RANK,6);
+        node3 = mesh.declare_entity(stk::topology::NODE_RANK,3); // shared
+        mesh.declare_relation(element,node2,0);
+        mesh.declare_relation(element,node5,1);
+        mesh.declare_relation(element,node6,2);
+        mesh.declare_relation(element,node3,3);
+        mesh.add_node_sharing(node2,0);
+        mesh.add_node_sharing(node3,0);
+    }
+    mesh.modification_end();
+
+    std::vector<EntityProc> local_change;
+    if (myRank == 1)
+    {
+        EXPECT_FALSE( mesh.bucket(node2).owned() );
+        local_change.push_back(EntityProc(node2,1));
+    }
+    EXPECT_THROW( stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change),
+                  std::runtime_error );
+}
+TEST(UnitTestingOfBulkData, test_internal_clean_and_verify_parallel_change_invalid_owner)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(pm);
+    int myRank = stk::parallel_machine_rank(pm);
+    if (numProcs < 2) { return; }
+
+    unsigned spatialDim = 2;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+    mesh.modification_begin();
+    Entity node1;
+    if (myRank == 0)
+    {
+        node1 = mesh.declare_entity(stk::topology::NODE_RANK,1);
+    }
+    mesh.modification_end();
+    std::vector<EntityProc> local_change;
+    if (myRank == 0)
+    {
+        local_change.push_back(EntityProc(node1,numProcs));
+    }
+    EXPECT_THROW( stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change),
+                  std::runtime_error );
+}
+TEST(UnitTestingOfBulkData, test_internal_clean_and_verify_parallel_change_send_to_2_owners)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(pm);
+    int myRank = stk::parallel_machine_rank(pm);
+    if (numProcs < 3) { return; }
+
+    unsigned spatialDim = 2;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+    mesh.modification_begin();
+    Entity node1;
+    if (myRank == 0) {
+        node1 = mesh.declare_entity(stk::topology::NODE_RANK,1);
+    }
+    mesh.modification_end();
+    std::vector<EntityProc> local_change;
+    if (myRank == 0)
+    {
+        local_change.push_back(EntityProc(node1,1));
+        local_change.push_back(EntityProc(node1,2));
+    }
+    EXPECT_THROW( stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change),
+                  std::runtime_error );
+}
+
+
 TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_owned_nodes)
 {
     stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -1245,12 +1409,15 @@ TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_
     //   1----2----3----4----5           1----2------3----4/0----5
     // also moves any owned nodes of elem3 along with the element
     // moves element 6 from proc 1 to proc 3. tests moving an element and owned nodes
+    std::map<EntityKey,int> new_owner_map;
+    new_owner_map[EntityKey(stk::topology::ELEMENT_RANK,6)] = 3;
+    new_owner_map[EntityKey(stk::topology::NODE_RANK,4)] = 0;
     if(bulk.parallel_rank() == 1)
     {
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 6);
         int dest_proc = 3;
         BulkData::NodeToDependentProcessorsMap owned_node_sharing_map;
-        stk::mesh::internal_get_processor_dependencies(bulk, stk::mesh::EntityProc(elem, dest_proc), owned_node_sharing_map);
+        stk::mesh::internal_get_processor_dependencies(bulk, stk::mesh::EntityProc(elem, dest_proc), owned_node_sharing_map, new_owner_map);
         BulkData::NodeToDependentProcessorsMap expected_map;
         expected_map[EntityKey(stk::topology::NODE_RANK, 7)].insert(0);
         expected_map[EntityKey(stk::topology::NODE_RANK, 7)].insert(3);
@@ -1279,10 +1446,19 @@ TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::NODE_RANK, 4);
         int dest_proc = 0;
         BulkData::NodeToDependentProcessorsMap owned_node_sharing_map;
-        stk::mesh::internal_get_processor_dependencies(bulk, stk::mesh::EntityProc(elem, dest_proc), owned_node_sharing_map);
+        stk::mesh::internal_get_processor_dependencies(bulk, stk::mesh::EntityProc(elem, dest_proc), owned_node_sharing_map, new_owner_map);
         BulkData::NodeToDependentProcessorsMap expected_map;
         expected_map[EntityKey(stk::topology::NODE_RANK, 4)].insert(0);
-        expected_map[EntityKey(stk::topology::NODE_RANK, 4)].insert(3);
+        for(BulkData::NodeToDependentProcessorsMap::iterator i = owned_node_sharing_map.begin();
+                i != owned_node_sharing_map.end(); ++i)
+                {
+            std::cout << "entity = " << i->first << "\n";
+            std::set<int> & this_set = i->second;
+            for(std::set<int>::iterator j = this_set.begin(); j != this_set.end(); ++j)
+            {
+                std::cout << "sharing proc=" << *j << "\n";
+            }
+        }
         bool result = expected_map == owned_node_sharing_map;
         EXPECT_TRUE(result);
     }
