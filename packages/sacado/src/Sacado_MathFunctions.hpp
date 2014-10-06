@@ -30,6 +30,8 @@
 #ifndef SACADO_MATHFUNCTIONS_HPP
 #define SACADO_MATHFUNCTIONS_HPP
 
+#include <cmath>
+
 #include "Sacado_ConfigDefs.h"
 
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
