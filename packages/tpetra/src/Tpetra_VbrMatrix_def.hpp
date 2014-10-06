@@ -46,15 +46,13 @@
 #include <Tpetra_BlockCrsGraph.hpp>
 #include <Tpetra_DistObject.hpp>
 #include <Tpetra_Vector.hpp>
+#include <Tpetra_VbrMatrix_decl.hpp>
 #include <Kokkos_NodeHelpers.hpp>
 #include <Kokkos_VbrMatrix.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <algorithm>
 #include <sstream>
 
-#ifdef DOXYGEN_USE_ONLY
-#include "Tpetra_VbrMatrix_decl.hpp"
-#endif
 
 namespace Tpetra {
 

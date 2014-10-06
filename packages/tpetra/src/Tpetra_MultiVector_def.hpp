@@ -50,9 +50,7 @@
 #  include <Tpetra_Details_MultiVectorDistObjectKernels.hpp>
 #endif
 
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_MultiVector_decl.hpp"
-#endif
+#include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra {
 

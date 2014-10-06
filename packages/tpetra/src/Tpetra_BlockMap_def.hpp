@@ -44,10 +44,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Distributor.hpp"
-
-#ifdef DOXYGEN_USE_ONLY
 #include "Tpetra_BlockMap_decl.hpp"
-#endif
 
 namespace Tpetra {
 

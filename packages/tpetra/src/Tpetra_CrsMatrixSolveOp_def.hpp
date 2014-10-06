@@ -46,10 +46,8 @@
 ///
 /// Definition of Tpetra::CrsMatrixSolveOp and its nonmember constructor.
 
-#include "Tpetra_CrsMatrix.hpp"
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_CrsMatrixSolveOp_decl.hpp"
-#endif
+#include "Tpetra_CrsMatrix_def.hpp"
+#include "Tpetra_CrsMatrixSolveOp_decl.hpp"
 
 namespace Tpetra {
 

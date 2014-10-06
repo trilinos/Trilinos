@@ -50,10 +50,7 @@
 #include <string>
 #include <utility>
 #include <Teuchos_SerialDenseMatrix.hpp>
-
-#ifdef DOXYGEN_USE_ONLY
-  #include "Tpetra_CrsGraph_decl.hpp"
-#endif
+#include "Tpetra_CrsGraph_decl.hpp"
 
 namespace Tpetra {
 

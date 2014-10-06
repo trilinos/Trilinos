@@ -42,9 +42,7 @@
 #ifndef TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
 
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
-#endif
+#include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
 
 namespace Tpetra {
 namespace Experimental {

@@ -45,10 +45,7 @@
 #include <Kokkos_DefaultArithmetic.hpp>
 #include <Kokkos_NodeTrace.hpp>
 #include <Tpetra_MultiVector.hpp>
-
-#ifdef DOXYGEN_USE_ONLY
-  #include "Tpetra_Vector_decl.hpp"
-#endif
+#include <Tpetra_Vector_decl.hpp>
 
 namespace Tpetra {
 

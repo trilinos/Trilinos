@@ -43,6 +43,7 @@
 #define TPETRA_BLOCKMULTIVECTOR_DEF_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_BlockMultiVector_decl.hpp"
 
 namespace Tpetra {
 

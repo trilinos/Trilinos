@@ -48,9 +48,8 @@
 
 #include <Tpetra_Util.hpp>
 
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
-#endif
+#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
+#include "Tpetra_CrsMatrix_def.hpp"
 
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
 #  include "Teuchos_VerboseObject.hpp"

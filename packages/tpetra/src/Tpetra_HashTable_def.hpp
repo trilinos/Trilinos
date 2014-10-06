@@ -44,11 +44,7 @@
 #ifndef TPETRA_HASHTABLE_DEF_HPP_
 #define TPETRA_HASHTABLE_DEF_HPP_
 
-#ifdef DOXYGEN_USE_ONLY
-  #include "Tpetra_HashTable_decl.hpp"
-#endif
-
-
+#include "Tpetra_HashTable_decl.hpp"
 #include "MurmurHash3.hpp"
 
 

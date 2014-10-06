@@ -44,10 +44,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Vector.hpp"
-
-#ifdef DOXYGEN_USE_ONLY
 #include "Tpetra_BlockCrsGraph_decl.hpp"
-#endif
 
 namespace Tpetra {
 
