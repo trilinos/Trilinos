@@ -145,7 +145,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
   const GST globalNumRows = comm->getSize () * localNumRows;
   const global_ordinal_type indexBase = 0;
 
-  RCP<const map_type> rowMap (new map_type (globalNumRows, localNumRows, indexBase, comm, node));
+  RCP<const map_type> rowMap = rcp(new map_type (globalNumRows, localNumRows, indexBase, comm, node));
   RCP<const map_type> colMap = rowMap;
   RCP<const map_type> domMap = rowMap;
   RCP<const map_type> ranMap = rowMap;
@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TriDiSolver, LapackComparison, ScalarType, Loc
 
   // The matrix will be block diagonal, so we can use the row Map as
   // the column Map.
-  RCP<crs_matrix_type> A (new crs_matrix_type (rowMap, colMap, (size_t) 0));
+  RCP<crs_matrix_type> A = rcp(new crs_matrix_type (rowMap, colMap, (size_t) 0));
 
   Array<scalar_type> val (3);
   Array<local_ordinal_type> ind (3);
