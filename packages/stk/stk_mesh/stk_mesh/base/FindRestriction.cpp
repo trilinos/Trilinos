@@ -61,7 +61,7 @@ void throw_conflicting_restrictions(const FieldBase& field, const PartVector& pa
 
 }
 
-#ifdef __clang__
+#if defined (__clang__) && !defined(__INTEL_COMPILER)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
 #endif
@@ -72,7 +72,7 @@ const FieldBase::Restriction & empty_field_restriction()
   static const FieldBase::Restriction empty ;
   return empty ;
 }
-#ifdef __clang__
+#if defined (__clang__) && !defined(__INTEL_COMPILER)
 #pragma clang diagnostic pop
 #endif
 
