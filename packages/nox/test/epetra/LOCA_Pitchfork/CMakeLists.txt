@@ -14,7 +14,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     Pitchfork.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )

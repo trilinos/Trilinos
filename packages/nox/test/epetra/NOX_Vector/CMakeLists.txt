@@ -9,7 +9,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Epetra_Vector
     SOURCES test.C
-    DEPLIBS noxtestutils
+    TESTONLYLIBS noxtestutils
     COMM serial mpi
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
@@ -18,7 +18,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Epetra_VectorSpace
     SOURCES vectorSpace.C
-    DEPLIBS noxtestutils
+    TESTONLYLIBS noxtestutils
     COMM serial mpi
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"

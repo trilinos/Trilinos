@@ -13,7 +13,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
     SOURCES ChanContinuation.C
     COMM serial mpi
     NUM_MPI_PROCS 1
-    DEPLIBS noxtestutils localapacktestproblems
+    TESTONLYLIBS noxtestutils localapacktestproblems
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 
@@ -22,7 +22,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
     SOURCES ChanTPContinuation.C
     COMM serial mpi
     NUM_MPI_PROCS 1
-    DEPLIBS noxtestutils localapacktestproblems
+    TESTONLYLIBS noxtestutils localapacktestproblems
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 
@@ -31,7 +31,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
     SOURCES ChanHomotopy.C
     COMM serial mpi
     NUM_MPI_PROCS 1
-    DEPLIBS noxtestutils localapacktestproblems
+    TESTONLYLIBS noxtestutils localapacktestproblems
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 

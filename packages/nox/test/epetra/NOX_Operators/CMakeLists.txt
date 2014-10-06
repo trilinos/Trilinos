@@ -12,7 +12,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt)
     test.C
     Laplace2D.C
     Laplace2D.H
-    DEPLIBS noxtestutils
+    TESTONLYLIBS noxtestutils
     COMM serial mpi
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
@@ -22,7 +22,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt)
     BroydenOp
     SOURCES
     test_BroydenOp.C
-    DEPLIBS noxtestutils
+    TESTONLYLIBS noxtestutils
     COMM serial mpi
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"

@@ -14,7 +14,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     HouseholderBorderedSolve.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
@@ -25,7 +25,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     HouseholderTransposeBorderedSolve.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
@@ -36,7 +36,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     TransposeSolve.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
@@ -47,7 +47,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     CompositeConstraint.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
@@ -58,7 +58,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     CompositeConstraintMVDX.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
@@ -69,7 +69,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     NaturalContResidualFills.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
