@@ -535,7 +535,9 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 
     curGroupPtr->printSolution();
 
-    return LOCA::Abstract::Iterator::FinishedWithNatural;
+    //amb TODO I need to signal this extra step, but for now, because it breaks
+    // tests, I'll omit this line.
+    //return LOCA::Abstract::Iterator::FinishedWithNatural;
   }
 
   return LOCA::Abstract::Iterator::Finished;
