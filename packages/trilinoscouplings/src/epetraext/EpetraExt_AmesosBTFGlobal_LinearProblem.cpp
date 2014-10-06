@@ -139,7 +139,7 @@ operator()( OriginalTypeRef orig )
   blockPtr_ = BTFTrans.BlockPtr();
   numBlocks_ = BTFTrans.NumBlocks();
  
-  if (myPID == matProc && verbose_) {
+  if ( (myPID == matProc) && verbose_) {
     bool isSym = true;
     for (int i=0; i<nGlobal; ++i) {
       if (rowPerm_[i] != colPerm_[i]) {
@@ -181,8 +181,8 @@ operator()( OriginalTypeRef orig )
 
   Teuchos::RCP<Epetra_Map> balancedMap;
   
-  if (balance_ == "linear") {
-    
+  if (balance_ == "linear") 
+  {
     // Distribute block somewhat evenly across processors
     std::vector<int> rowDist(numProcs+1,0);
     int balRows = nGlobal / numProcs + 1;
@@ -203,11 +203,12 @@ operator()( OriginalTypeRef orig )
     //NewColMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, nGlobal, &colPerm_[0], 0, OldMatrix_->Comm() ) );
     
     if ( verbose_ ) 
+    {
       std::cout << "Processor " << myPID << " has " << numMyBalancedRows << " rows." << std::endl;    
-    //balancedMap = Teuchos::rcp( new Epetra_Map( nGlobal, numMyBalancedRows, 0, serialMatrix->Comm() ) );
+    }
   }
-  else if (balance_ == "isorropia") {
-	
+  else if (balance_ == "isorropia") 
+  {
     // Compute block adjacency graph for partitioning.
     std::vector<double> weight;
     EpetraExt::BlockAdjacencyGraph adjGraph;
@@ -252,7 +253,9 @@ operator()( OriginalTypeRef orig )
     //balancedMap = Teuchos::rcp( new Epetra_Map( nGlobal, myElements, &myGlobalElements[0], 0, serialMatrix->Comm() ) );
 
     if ( verbose_ ) 
+    {
       std::cout << "Processor " << myPID << " has " << myElements << " rows." << std::endl;
+    }
   }
   
   // Use New Domain and Range Maps to Generate Importer
@@ -322,7 +325,6 @@ rvs()
 {
   //  std::cout << "AmesosBTFGlobal_LinearProblem: NewLHS_" << std::endl;
   //  std::cout << *NewLHS_ << std::endl;
-
   OldLHS_->Import( *NewLHS_, *Importer2_, Insert );
   int numrhs = OldLHS_->NumVectors();
   std::vector<double> actual_resids( numrhs ), rhs_norm( numrhs );
