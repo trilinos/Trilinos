@@ -516,9 +516,9 @@ void BlockRelaxation<MatrixType,ContainerType>::ExtractSubmatrices()
 
   NumLocalBlocks_ = Partitioner_->numLocalParts ();
   Containers_.resize (NumLocalBlocks_);
-  Tpetra::Vector<scalar_type,LocalOrdinal,GlobalOrdinal,Node>* Diagonal =  new Tpetra::Vector<scalar_type,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap()); 
+  Tpetra::Vector<scalar_type,LocalOrdinal,GlobalOrdinal,Node>* Diagonal =  new Tpetra::Vector<scalar_type,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap());
   A_->getLocalDiagCopy(*Diagonal);
-  //  Teuchos::ArrayRCP< const scalar_type > 
+  //  Teuchos::ArrayRCP< const scalar_type >
   DiagRCP = Diagonal->getData();
 
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
@@ -580,22 +580,22 @@ void BlockRelaxation<MatrixType,ContainerType>::DoJacobi(const MV& X, MV& Y) con
     for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
       // may happen that a partition is empty
       if( Partitioner_->numRowsInPart (i) != 1 ) {
-	if(Containers_[i]->getNumRows () == 0 )	continue;
-	Containers_[i]->apply (X, Y, Teuchos::NO_TRANS, DampingFactor_, one);
-	ApplyFlops_ += NumVectors * 2 * NumGlobalRows_;
+        if(Containers_[i]->getNumRows () == 0 ) continue;
+        Containers_[i]->apply (X, Y, Teuchos::NO_TRANS, DampingFactor_, one);
+        ApplyFlops_ += NumVectors * 2 * NumGlobalRows_;
       }
-      else { // singleton, can't access Containers_[i] as it was never filled and may be null. 
-	local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block. 	
-	Teuchos::ArrayView< const scalar_type > Diag   = DiagRCP();
-	scalar_type d = Diag[LRID];
-	for(unsigned int nv = 0;nv < NumVectors ; ++nv ) {
-	  Teuchos::ArrayRCP< const scalar_type > xRCP = X.getData(nv);
-	  scalar_type x = xRCP[LRID];
-	  Teuchos::ArrayRCP<  scalar_type > yRCP = Y.getDataNonConst(nv);
+      else { // singleton, can't access Containers_[i] as it was never filled and may be null.
+        local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
+        Teuchos::ArrayView< const scalar_type > Diag   = DiagRCP();
+        scalar_type d = Diag[LRID];
+        for(unsigned int nv = 0;nv < NumVectors ; ++nv ) {
+          Teuchos::ArrayRCP< const scalar_type > xRCP = X.getData(nv);
+          scalar_type x = xRCP[LRID];
+          Teuchos::ArrayRCP<  scalar_type > yRCP = Y.getDataNonConst(nv);
 
-	  scalar_type newy= x/d;
-	  yRCP[LRID]= newy;
-	}
+          scalar_type newy= x/d;
+          yRCP[LRID]= newy;
+        }
       }
     }
   }
@@ -605,15 +605,15 @@ void BlockRelaxation<MatrixType,ContainerType>::DoJacobi(const MV& X, MV& Y) con
       // may happen that a partition is empty
       if(Containers_[i]->getNumRows() == 0) continue;
       if ( Partitioner_->numRowsInPart (i)  != 1 ) {
-	try {
-	  Containers_[i]->weightedApply(X,Y,*W_,Teuchos::NO_TRANS,DampingFactor_,one);
-	} catch (std::exception& e) {
-	  std::cerr << "BlockRelaxation::DoJacobi: Containers_[" << i
-		    << "]->weightedApply() threw an exception: " << e.what ()
-		    << std::endl;
-	  throw;
-	}
-      } // end  Partitioner_->numRowsInPart (i)  != 1       
+        try {
+          Containers_[i]->weightedApply(X,Y,*W_,Teuchos::NO_TRANS,DampingFactor_,one);
+        } catch (std::exception& e) {
+          std::cerr << "BlockRelaxation::DoJacobi: Containers_[" << i
+                    << "]->weightedApply() threw an exception: " << e.what ()
+                    << std::endl;
+          throw;
+        }
+      } // end  Partitioner_->numRowsInPart (i)  != 1
 
       // NOTE: do not count (for simplicity) the flops due to overlapping rows
       ApplyFlops_ += NumVectors * 4 * NumGlobalRows_;
@@ -687,24 +687,24 @@ DoGaussSeidel (MV& X, MV& Y) const
       if (Containers_[i]->getNumRows () == 0) continue;
       // update from previous block
       ArrayView<const local_ordinal_type> localRows =
-	Containers_[i]->getLocalRows ();
+        Containers_[i]->getLocalRows ();
       const size_t localNumRows = Containers_[i]->getNumRows ();
       for (size_t j = 0; j < localNumRows; ++j) {
-	const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
-	size_t NumEntries;
-	A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
+        const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
+        size_t NumEntries;
+        A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
-	for (size_t m = 0; m < NumVectors; ++m) {
-	  ArrayView<const scalar_type> x_local = (x_ptr())[m]();
-	  ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-	  ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
+        for (size_t m = 0; m < NumVectors; ++m) {
+          ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+          ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+          ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
 
-	  r_local[LID] = x_local[LID];
-	  for (size_t k = 0; k < NumEntries; ++k) {
-	    const local_ordinal_type col = Indices[k];
-	    r_local[LID] -= Values[k] * y2_local[col];
-	  }
-	}
+          r_local[LID] = x_local[LID];
+          for (size_t k = 0; k < NumEntries; ++k) {
+            const local_ordinal_type col = Indices[k];
+            r_local[LID] -= Values[k] * y2_local[col];
+          }
+        }
       }
       // solve with this block
       //
@@ -713,23 +713,23 @@ DoGaussSeidel (MV& X, MV& Y) const
       //
       // Note: Add flop counts for inverse apply
       Containers_[i]->apply (Residual, *Y2, Teuchos::NO_TRANS,
-			     DampingFactor_,one);
-    
+                             DampingFactor_,one);
+
       // operations for all getrow's
       ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
-    }    
-    else {       // singleton, can't access Containers_[i] as it was never filled and may be null. 
-      // a singleton calculation is exact, all residuals should be zero. 
-      local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block. 	
+    }
+    else {       // singleton, can't access Containers_[i] as it was never filled and may be null.
+      // a singleton calculation is exact, all residuals should be zero.
+      local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
       Teuchos::ArrayView< const scalar_type > Diag   = DiagRCP();
       scalar_type d = Diag[LRID];
-      ArrayRCP<ArrayRCP<scalar_type> >          y2_ptr = Y2->get2dViewNonConst();
+      ArrayRCP<ArrayRCP<scalar_type> >          y2_ptr2 = Y2->get2dViewNonConst();
       for(unsigned int nv = 0;nv < NumVectors ; ++nv ) {
-	Teuchos::ArrayRCP< const scalar_type > xRCP = X.getData(nv);
-	scalar_type x = xRCP[LRID];
-	ArrayView<scalar_type>      y2_local = (y2_ptr())[nv]();
-	scalar_type newy= x/d;
-	y2_local[LRID]= newy;
+        Teuchos::ArrayRCP< const scalar_type > xRCP = X.getData(nv);
+        scalar_type x = xRCP[LRID];
+        ArrayView<scalar_type>      y2_local = (y2_ptr2())[nv]();
+        scalar_type newy= x/d;
+        y2_local[LRID]= newy;
       }
     } // end else
   } // end for NumLocalBlocks_
@@ -740,12 +740,12 @@ DoGaussSeidel (MV& X, MV& Y) const
       ArrayView<scalar_type> y2_local = (y2_ptr())[m]();
       ArrayView<scalar_type> y_local = (y_ptr())[m]();
       for (size_t i = 0; i < NumMyRows_; ++i) {
-	y_local[i] = y2_local[i];
+        y_local[i] = y2_local[i];
       }
     }
   }
 }
-  
+
 //==========================================================================
 template<class MatrixType,class ContainerType>
 void
@@ -811,28 +811,28 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
     if( Partitioner_->numRowsInPart (i) != 1 ) {
       if (Containers_[i]->getNumRows () == 0) {
-	continue; // Skip empty partitions
+        continue; // Skip empty partitions
       }
       // update from previous block
       ArrayView<const local_ordinal_type> localRows =
-	Containers_[i]->getLocalRows ();
+        Containers_[i]->getLocalRows ();
       for (size_t j = 0; j < Containers_[i]->getNumRows (); ++j) {
-	const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
-	size_t NumEntries;
-	A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
+        const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
+        size_t NumEntries;
+        A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
-	//set tmpresid = initresid - A*correction
-	for (size_t m = 0; m < NumVectors; ++m) {
-	  ArrayView<const scalar_type> x_local = (x_ptr())[m]();
-	  ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-	  ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
+        //set tmpresid = initresid - A*correction
+        for (size_t m = 0; m < NumVectors; ++m) {
+          ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+          ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+          ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
 
-	  r_local[LID] = x_local[LID];
-	  for (size_t k = 0 ; k < NumEntries ; k++) {
-	    local_ordinal_type col = Indices[k];
-	    r_local[LID] -= Values[k] * y2_local[col];
-	  }
-	}
+          r_local[LID] = x_local[LID];
+          for (size_t k = 0 ; k < NumEntries ; k++) {
+            local_ordinal_type col = Indices[k];
+            r_local[LID] -= Values[k] * y2_local[col];
+          }
+        }
       }
       // solve with this block
       //
@@ -845,19 +845,19 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
 
       // operations for all getrow's
       ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
-      
+
     }
-    else { // singleton, can't access Containers_[i] as it was never filled and may be null. 
-      local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block. 	
+    else { // singleton, can't access Containers_[i] as it was never filled and may be null.
+      local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
       Teuchos::ArrayView< const scalar_type > Diag   = DiagRCP();
       scalar_type d = Diag[LRID];
       for(unsigned int nv = 0;nv < NumVectors ; ++nv ) {
-	Teuchos::ArrayRCP< const scalar_type > xRCP = X.getData(nv);
-	scalar_type x = xRCP[LRID];
-	Teuchos::ArrayRCP<  scalar_type > yRCP = Y.getDataNonConst(nv);
+        Teuchos::ArrayRCP< const scalar_type > xRCP = X.getData(nv);
+        scalar_type x = xRCP[LRID];
+        Teuchos::ArrayRCP<  scalar_type > yRCP = Y.getDataNonConst(nv);
 
-	scalar_type newy= x/d;
-	yRCP[LRID]= newy;
+        scalar_type newy= x/d;
+        yRCP[LRID]= newy;
       }
     } // end else
   } // end forward sweep over NumLocalBlocks
@@ -872,27 +872,27 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
   for (local_ordinal_type i = NumLocalBlocks_; i > 0; --i) {
     if( Partitioner_->numRowsInPart (i) != 1 ) {
       if (Containers_[i-1]->getNumRows () == 0) continue;
-      
+
       // update from previous block
       ArrayView<const local_ordinal_type> localRows =
-	Containers_[i-1]->getLocalRows ();
+        Containers_[i-1]->getLocalRows ();
       for (size_t j = 0; j < Containers_[i-1]->getNumRows (); ++j) {
-	const local_ordinal_type LID = localRows[j]; // Containers_[i-1]->ID (j);
-	size_t NumEntries;
-	A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
+        const local_ordinal_type LID = localRows[j]; // Containers_[i-1]->ID (j);
+        size_t NumEntries;
+        A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
-	//set tmpresid = initresid - A*correction
-	for (size_t m = 0; m < NumVectors; ++m) {
-	  ArrayView<const scalar_type> x_local = (x_ptr())[m]();
-	  ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-	  ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
+        //set tmpresid = initresid - A*correction
+        for (size_t m = 0; m < NumVectors; ++m) {
+          ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+          ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+          ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
 
-	  r_local [LID] = x_local[LID];
-	  for (size_t k = 0; k < NumEntries; ++k)  {
-	    local_ordinal_type col = Indices[k];
-	    r_local[LID] -= Values[k] * y2_local[col];
-	  }
-	}
+          r_local [LID] = x_local[LID];
+          for (size_t k = 0; k < NumEntries; ++k)  {
+            local_ordinal_type col = Indices[k];
+            r_local[LID] -= Values[k] * y2_local[col];
+          }
+        }
       }
 
       // solve with this block
@@ -902,12 +902,12 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
       //
       // Note: Add flop counts for inverse apply
       Containers_[i-1]->apply (Residual, *Y2, Teuchos::NO_TRANS,
-			       DampingFactor_, one);
+                               DampingFactor_, one);
 
       // operations for all getrow's
       ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
     } // end  Partitioner_->numRowsInPart (i) != 1 ) {
-    // else do nothing, as by definition with a singleton, the residuals are zero. 
+    // else do nothing, as by definition with a singleton, the residuals are zero.
   } //end reverse sweep
 
   // Attention: this is delicate... Not all combinations
