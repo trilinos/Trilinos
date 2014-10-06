@@ -427,7 +427,6 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
-        DEPLIBS stokhos kokkoscore
         )
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -437,7 +436,6 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
-        DEPLIBS stokhos kokkoscore
         )
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -447,7 +445,6 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
-        DEPLIBS stokhos kokkoscore
         )
     ENDIF()
 
@@ -460,7 +457,6 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
-        DEPLIBS stokhos kokkoscore
         )
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -470,7 +466,6 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
-        DEPLIBS stokhos kokkoscore
         )
 
     ENDIF()
@@ -490,7 +485,6 @@ IF(Stokhos_ENABLE_Sacado)
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         RUN_SERIAL
-        DEPLIBS stokhos kokkoscore
         )
 
       SET(CUDA_SOURCES "")
@@ -503,7 +497,6 @@ IF(Stokhos_ENABLE_Sacado)
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         RUN_SERIAL
-        DEPLIBS stokhos kokkoscore
         )
     ENDIF()
 
@@ -517,7 +510,6 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
-          DEPLIBS stokhos kokkoscore kokkoscorelinalg
           )
 
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -527,7 +519,6 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
-          DEPLIBS stokhos kokkoscore kokkoscorelinalg
           )
       ENDIF()
 
@@ -539,7 +530,6 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
-          DEPLIBS stokhos kokkoscore kokkoscorelinalg
           )
 
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -549,7 +539,6 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
-          DEPLIBS stokhos kokkoscore kokkoscorelinalg
           )
       ENDIF()
 
@@ -566,7 +555,6 @@ IF(Stokhos_ENABLE_Sacado)
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
           RUN_SERIAL
-          DEPLIBS stokhos kokkoscore kokkoscorelinalg
           )
 
         CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosCrsMatrixUQPCEUnitTest_Cuda.cu)
@@ -578,7 +566,6 @@ IF(Stokhos_ENABLE_Sacado)
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
           RUN_SERIAL
-          DEPLIBS stokhos kokkoscore kokkoscorelinalg
           )
       ENDIF()
 
@@ -592,7 +579,6 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
-            DEPLIBS stokhos kokkoscore kokkoscorelinalg
             )
 
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -602,7 +588,6 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
-            DEPLIBS stokhos kokkoscore kokkoscorelinalg
             )
         ENDIF()
 
@@ -614,7 +599,6 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
-            DEPLIBS stokhos kokkoscore kokkoscorelinalg
             )
 
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -624,7 +608,6 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
-            DEPLIBS stokhos kokkoscore kokkoscorelinalg
             )
         ENDIF()
 
@@ -638,7 +621,6 @@ IF(Stokhos_ENABLE_Sacado)
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
             RUN_SERIAL
-            DEPLIBS stokhos kokkoscore kokkoscorelinalg
             )
 
           CUDA_COMPILE(CUDA_SOURCES Stokhos_TpetraCrsMatrixUQPCEUnitTest_Cuda.cu)
@@ -650,7 +632,6 @@ IF(Stokhos_ENABLE_Sacado)
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
             RUN_SERIAL
-            DEPLIBS stokhos kokkoscore kokkoscorelinalg
             )
         ENDIF()
 
@@ -678,8 +659,7 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
 #    COMM serial mpi
 #    STANDARD_PASS_OUTPUT
 #    NUM_MPI_PROCS 1
-#    DEPLIBS stokhos kokkoscore
-#    )
+##    )
 
   IF (Kokkos_ENABLE_Pthread)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -691,7 +671,6 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
-      DEPLIBS stokhos kokkoscore
       )
   ENDIF()
 
@@ -705,7 +684,6 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
-      DEPLIBS stokhos kokkoscore
       )
   ENDIF()
 
@@ -723,7 +701,6 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
       RUN_SERIAL
-      DEPLIBS stokhos kokkoscore
       )
   ENDIF()
 

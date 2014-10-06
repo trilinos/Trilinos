@@ -28,7 +28,6 @@ IF (Stokhos_ENABLE_KokkosCore)
             TestAssembly_Host.cpp
             ${CUDA_SOURCES}
     COMM serial mpi
-    DEPLIBS stokhos kokkoscore
     )
 
 ENDIF()

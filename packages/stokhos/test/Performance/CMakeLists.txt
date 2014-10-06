@@ -4,7 +4,6 @@ IF (Stokhos_ENABLE_EpetraExt)
     TestEpetraMatrixFreeApply
     SOURCES TestEpetraMatrixFreeApply.cpp
     COMM serial mpi
-    DEPLIBS stokhos
     )
 ENDIF()
 

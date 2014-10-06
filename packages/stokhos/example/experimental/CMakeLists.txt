@@ -3,35 +3,32 @@ IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND
 
      TRIBITS_ADD_EXECUTABLE(
        Linear2D_Diffusion_Example
-       SOURCES linear2d_diffusion.cpp 
-               twoD_diffusion_problem_tpetra.hpp 
-	       twoD_diffusion_problem_tpetra_def.hpp
+       SOURCES linear2d_diffusion.cpp
+               twoD_diffusion_problem_tpetra.hpp
+               twoD_diffusion_problem_tpetra_def.hpp
        COMM serial mpi
-       DEPLIBS stokhos
       )
 
     TRIBITS_ADD_EXECUTABLE(
        Linear2D_Diffusion_IPCE_Example
-       SOURCES linear2d_diffusion_pce.cpp 
-               twoD_diffusion_problem_tpetra.hpp 
-	       twoD_diffusion_problem_tpetra_def.hpp
+       SOURCES linear2d_diffusion_pce.cpp
+               twoD_diffusion_problem_tpetra.hpp
+               twoD_diffusion_problem_tpetra_def.hpp
        COMM serial mpi
-       DEPLIBS stokhos muelu xpetra
       )
     TRIBITS_ADD_EXECUTABLE(
        Linear2D_Diffusion_IPCE_Ifpack2_Example
-       SOURCES linear2d_diffusion_pce_ifpack2.cpp 
-               twoD_diffusion_problem_tpetra.hpp 
-	       twoD_diffusion_problem_tpetra_def.hpp
+       SOURCES linear2d_diffusion_pce_ifpack2.cpp
+               twoD_diffusion_problem_tpetra.hpp
+               twoD_diffusion_problem_tpetra_def.hpp
        COMM serial mpi
-       DEPLIBS stokhos
       )
      TRIBITS_ADD_TEST(
             Linear2D_Diffusion_IPCE_Ifpack2_Example
             NAME "Linear2D_Diffusion_IPCE_Ifpack2_Example_Direct"
             ARGS "--num_mesh=8 --division_method=Direct"
             COMM serial mpi
-            NUM_MPI_PROCS 1 
+            NUM_MPI_PROCS 1
             PASS_REGULAR_EXPRESSION "Example Passed!"
           )
        TRIBITS_ADD_TEST(

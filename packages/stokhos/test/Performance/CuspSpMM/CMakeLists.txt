@@ -12,7 +12,6 @@ IF (Stokhos_ENABLE_Cusp)
     TestSpMM
     SOURCES ${CUDA_SOURCES}
     COMM serial mpi
-    DEPLIBS stokhos
     )
 
 ENDIF()

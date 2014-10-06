@@ -21,5 +21,4 @@ TRIBITS_ADD_EXECUTABLE(
           TestSpMM_Host.cpp
           ${CUDA_SOURCES}
   COMM serial mpi
-  DEPLIBS stokhos kokkoscore
   )
