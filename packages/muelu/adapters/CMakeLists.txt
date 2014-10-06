@@ -105,7 +105,11 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS muelu
+  ADDED_LIB_TARGET_NAME_OUT MUELU_ADAPTERS_LIBNAME
   )
 
 # Set linker language explicitly for CUDA builds.
-set_target_properties(muelu-adapters PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(
+  ${MUELU_ADAPTERS_LIBNAME}
+  PROPERTIES LINKER_LANGUAGE CXX
+  )
