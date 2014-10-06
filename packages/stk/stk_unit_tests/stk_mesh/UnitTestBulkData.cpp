@@ -2253,8 +2253,8 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
             {
                 if (mesh.parallel_owner_rank(*to_i) == p_rank)
                 {
-                    EntityProc eproc(*to_i, 0 /*new owner*/);
-                    change.push_back(eproc);
+                    EntityProc eproc_new(*to_i, 0 /*new owner*/);
+                    change.push_back(eproc_new);
                 }
             }
         }
