@@ -1442,6 +1442,7 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerWithChangingSharedAndGhosted)
         }
     }
     const stk::mesh::EntityCommListInfoVector & entity_comm_list_after = mesh.comm_list();
+    ASSERT_EQ( commlist_after_keys.size(), entity_comm_list_after.size() );
     index = 0;
     for(stk::mesh::EntityCommListInfoVector::const_iterator i = entity_comm_list_after.begin(); i != entity_comm_list_after.end(); ++i)
     {

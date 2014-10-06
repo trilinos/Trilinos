@@ -4305,10 +4305,10 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 
 #ifdef CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
   internal_apply_node_sharing(node_to_dependent_processors_map);
-#endif
-
   internal_print_comm_map("A-APNS");
   internal_print_comm_list("A-APNS", *this);
+#endif
+
 
   internal_modification_end(regenerate_aura, mod_optimization);
 }
