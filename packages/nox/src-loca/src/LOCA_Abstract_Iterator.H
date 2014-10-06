@@ -99,7 +99,6 @@ namespace LOCA {
 
       //! Enumerated type for status of the iterator
       enum IteratorStatus {
-        FinishedWithNatural = 4,  //!< A successful last step was taken to hit the target
         BeforeFirstIteration = 3, //!< The iteration has not started
         LastIteration = 2,        //!< This is the last iteration
         Finished = 1,             //!< The iterator is finished
