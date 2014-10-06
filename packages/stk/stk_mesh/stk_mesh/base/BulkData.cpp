@@ -3896,11 +3896,11 @@ void BulkData::internal_communicate_entity_to_dependent_processors_map(
     CommBuffer & buf = comm.recv_buffer( ip );
     while ( buf.remaining() ) {
       EntityKey key ;
-      int num_sharing_procs;
+      int num_sharing_procs=-1;
       buf.unpack<EntityKey>( key )
          .unpack<int>( num_sharing_procs );
       for (int i=0 ; i < num_sharing_procs ; ++i) {
-          int sharing_proc;
+          int sharing_proc=-1;
           buf.unpack<int>( sharing_proc );
           entity_to_dependent_processors_map[key].insert(sharing_proc);
       }

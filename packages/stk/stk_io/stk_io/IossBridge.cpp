@@ -1340,8 +1340,8 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
     std::vector<size_t> entityCounts;
     stk::mesh::comm_mesh_counts(bulk, entityCounts);
     
-    io_region.property_add(Ioss::Property("global_node_count",    (int64_t)entityCounts[stk::topology::NODE_RANK]));
-    io_region.property_add(Ioss::Property("global_element_count", (int64_t)entityCounts[stk::topology::ELEMENT_RANK]));
+    io_region.property_add(Ioss::Property("global_node_count",    static_cast<int64_t>(entityCounts[stk::topology::NODE_RANK])));
+    io_region.property_add(Ioss::Property("global_element_count", static_cast<int64_t>(entityCounts[stk::topology::ELEMENT_RANK])));
   }
 }
 
