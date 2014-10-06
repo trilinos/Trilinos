@@ -43,7 +43,7 @@
 
 #ifndef KOKKOS_SEGMENTED_VIEW_HPP_
 #define KOKKOS_SEGMENTED_VIEW_HPP_
-#include<omp.h>
+
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <cstdio>
@@ -109,17 +109,17 @@ public:
                 Kokkos::MemoryUnmanaged > t_dev ;
 
 
-public:
-  Kokkos::View<t_dev*,typename traits::memory_space> views_;
+private:
+  Kokkos::View<t_dev*,typename traits::memory_space> segments_;
 
   Kokkos::View<int,typename traits::memory_space> realloc_lock;
-  Kokkos::View<int,typename traits::memory_space> nviews_;
+  Kokkos::View<int,typename traits::memory_space> nsegments_;
 
-  size_t view_length_;
-  size_t view_length_m1_;
-  int max_views_;
+  size_t segment_length_;
+  size_t segment_length_m1_;
+  int max_segments_;
 
-  int view_length_log2;
+  int segment_length_log2;
 
   // Dimensions, cardinality, capacity, and offset computation for
   // multidimensional array view of contiguous memory.
@@ -153,7 +153,7 @@ public:
   template< bool Accessible >
   KOKKOS_INLINE_FUNCTION
   typename Impl::enable_if< Accessible , typename traits::size_type >::type
-  dimension_0_intern() const { return nviews_() * view_length_ ; }
+  dimension_0_intern() const { return nsegments_() * segment_length_ ; }
 
   template< bool Accessible >
   KOKKOS_INLINE_FUNCTION
@@ -163,10 +163,10 @@ public:
     // In Host space
     int n = 0 ;
 #if ! defined( __CUDA_ARCH__ )
-    Impl::DeepCopy< HostSpace , typename traits::memory_space >( & n , nviews_.ptr_on_device() , sizeof(int) );
+    Impl::DeepCopy< HostSpace , typename traits::memory_space >( & n , nsegments_.ptr_on_device() , sizeof(int) );
 #endif
 
-    return n * view_length_ ;
+    return n * segment_length_ ;
   }
 
 public:
@@ -214,6 +214,26 @@ public:
       return Impl::dimension( m_offset_map , i );
   }
 
+  KOKKOS_INLINE_FUNCTION
+  typename traits::size_type capacity() {
+    return segments_.dimension_0() *
+        m_offset_map.N1 * m_offset_map.N2 * m_offset_map.N3 * m_offset_map.N4 *
+        m_offset_map.N5 * m_offset_map.N6 * m_offset_map.N7;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  typename traits::size_type get_num_segments() {
+    enum { Accessible = Impl::VerifyExecutionCanAccessMemorySpace<
+             Impl::ActiveExecutionMemorySpace, typename traits::memory_space >::value };
+    int n = SegmentedView::dimension_0_intern< Accessible >();
+    return n/segment_length_ ;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  typename traits::size_type get_max_segments() {
+    return max_segments_;
+  }
+
   /// \brief Constructor that allocates View objects with an initial length of 0.
   ///
   /// This constructor works mostly like the analogous constructor of View.
@@ -241,92 +261,92 @@ public:
       const size_t n5 = 0 ,
       const size_t n6 = 0 ,
       const size_t n7 = 0
-      ): view_length_(view_length),view_length_m1_(view_length-1)
+      ): segment_length_(view_length),segment_length_m1_(view_length-1)
   {
-    view_length_log2 = -1;
-    size_t l = view_length_;
+    segment_length_log2 = -1;
+    size_t l = segment_length_;
     while(l>0) {
       l>>=1;
-      view_length_log2++;
+      segment_length_log2++;
     }
-    l = 1<<view_length_log2;
-    if(l!=view_length_)
+    l = 1<<segment_length_log2;
+    if(l!=segment_length_)
       Impl::throw_runtime_exception("Kokkos::SegmentedView requires a 'power of 2' segment length");
 
-    max_views_ = (n0+view_length_m1_)/view_length_;
+    max_segments_ = (n0+segment_length_m1_)/segment_length_;
 
-    Impl::DeviceSetAllocatableMemorySize<typename traits::memory_space>(view_length_*max_views_*sizeof(typename traits::value_type));
+    Impl::DeviceSetAllocatableMemorySize<typename traits::memory_space>(segment_length_*max_segments_*sizeof(typename traits::value_type));
 
-    views_ = Kokkos::View<t_dev*,typename traits::execution_space>(label , max_views_);
+    segments_ = Kokkos::View<t_dev*,typename traits::execution_space>(label , max_segments_);
     realloc_lock = Kokkos::View<int,typename traits::execution_space>("Lock");
-    nviews_ = Kokkos::View<int,typename traits::execution_space>("nviews");
+    nsegments_ = Kokkos::View<int,typename traits::execution_space>("nviews");
     m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n0*n1*n2*n3*n4*n5*n6*n7 );
 
   }
 
   KOKKOS_INLINE_FUNCTION
   SegmentedView(const SegmentedView& src):
-    views_(src.views_),
+    segments_(src.segments_),
     realloc_lock (src.realloc_lock),
-    nviews_ (src.nviews_),
-    view_length_(src.view_length_),
-    view_length_m1_(src.view_length_m1_),
-    max_views_ (src.max_views_),
-    view_length_log2(src.view_length_log2),
+    nsegments_ (src.nsegments_),
+    segment_length_(src.segment_length_),
+    segment_length_m1_(src.segment_length_m1_),
+    max_segments_ (src.max_segments_),
+    segment_length_log2(src.segment_length_log2),
     m_offset_map (src.m_offset_map)
   {}
 
   KOKKOS_INLINE_FUNCTION
   SegmentedView& operator= (const SegmentedView& src) {
-    views_ = src.views_;
+    segments_ = src.segments_;
     realloc_lock = src.realloc_lock;
-    nviews_ = src.nviews_;
-    view_length_= src.view_length_;
-    view_length_m1_= src.view_length_m1_;
-    max_views_ = src.max_views_;
-    view_length_log2= src.view_length_log2;
+    nsegments_ = src.nsegments_;
+    segment_length_= src.segment_length_;
+    segment_length_m1_= src.segment_length_m1_;
+    max_segments_ = src.max_segments_;
+    segment_length_log2= src.segment_length_log2;
     m_offset_map = src.m_offset_map;
     return *this;
   }
 
   ~SegmentedView() {
     if (traits::execution_space::in_parallel()) return;
-    int count = traits::memory_space::count(views_.ptr_on_device());
+    int count = traits::memory_space::count(segments_.ptr_on_device());
     if(count == 1) {
       Kokkos::fence();
       typename Kokkos::View<int,typename traits::execution_space>::HostMirror h_nviews("h_nviews");
-      Kokkos::deep_copy(h_nviews,nviews_);
+      Kokkos::deep_copy(h_nviews,nsegments_);
       Kokkos::parallel_for(h_nviews(),Impl::delete_segmented_view<DataType , Arg1Type , Arg2Type, Arg3Type>(*this));
     }
   }
 
   KOKKOS_INLINE_FUNCTION
-  t_dev get_view(const int& i) const {
-    return views_[i];
+  t_dev get_segment(const int& i) const {
+    return segments_[i];
   }
 
   template< class MemberType>
   KOKKOS_INLINE_FUNCTION
   void grow(MemberType& team_member, const size_t& size) const {
-    if(size>max_views_*view_length_) {
-      printf("Exceeding maxSize: %lu %lu\n",size,max_views_*view_length_);
+    if(size>max_segments_*segment_length_) {
+      printf("Exceeding maxSize: %lu %lu\n",size,max_segments_*segment_length_);
       return;
     }
     if(team_member.team_rank()==0) {
-      bool too_small = size > view_length_ * nviews_();
+      bool too_small = size > segment_length_ * nsegments_();
       while(too_small && Kokkos::atomic_compare_exchange(&realloc_lock(),0,1) ) {
-        too_small = size > view_length_ * nviews_();
+        too_small = size > segment_length_ * nsegments_();
       }
       if(too_small) {
         while(too_small) {
-          const size_t alloc_size = view_length_*m_offset_map.N1*m_offset_map.N2*m_offset_map.N3*
+          const size_t alloc_size = segment_length_*m_offset_map.N1*m_offset_map.N2*m_offset_map.N3*
                               m_offset_map.N4*m_offset_map.N5*m_offset_map.N6*m_offset_map.N7;
           typename traits::non_const_value_type* const ptr = new typename traits::non_const_value_type[alloc_size];
 
-          views_(nviews_()) =
-            t_dev(ptr,view_length_,m_offset_map.N1,m_offset_map.N2,m_offset_map.N3,m_offset_map.N4,m_offset_map.N5,m_offset_map.N6,m_offset_map.N7);
-          nviews_()++;
-          too_small = size > view_length_ * nviews_();
+          segments_(nsegments_()) =
+            t_dev(ptr,segment_length_,m_offset_map.N1,m_offset_map.N2,m_offset_map.N3,m_offset_map.N4,m_offset_map.N5,m_offset_map.N6,m_offset_map.N7);
+          nsegments_()++;
+          too_small = size > segment_length_ * nsegments_();
         }
         realloc_lock() = 0;
       }
@@ -336,20 +356,20 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void grow_non_thread_safe(const size_t& size) const {
-    if(size>max_views_*view_length_) {
-      printf("Exceeding maxSize: %i %i\n",size,max_views_*view_length_);return;
+    if(size>max_segments_*segment_length_) {
+      printf("Exceeding maxSize: %i %i\n",size,max_segments_*segment_length_);return;
     }
-    bool too_small = size > view_length_ * nviews_();
+    bool too_small = size > segment_length_ * nsegments_();
     if(too_small) {
       while(too_small) {
-        const size_t alloc_size = view_length_*m_offset_map.N1*m_offset_map.N2*m_offset_map.N3*
+        const size_t alloc_size = segment_length_*m_offset_map.N1*m_offset_map.N2*m_offset_map.N3*
                             m_offset_map.N4*m_offset_map.N5*m_offset_map.N6*m_offset_map.N7;
         typename traits::non_const_value_type* const ptr = new typename traits::non_const_value_type[alloc_size];
 
-        views_(nviews_()) =
-          t_dev(ptr,view_length_,m_offset_map.N1,m_offset_map.N2,m_offset_map.N3,m_offset_map.N4,m_offset_map.N5,m_offset_map.N6,m_offset_map.N7);
-        nviews_()++;
-        too_small = size > view_length_ * nviews_();
+        segments_(nsegments_()) =
+          t_dev(ptr,segment_length_,m_offset_map.N1,m_offset_map.N2,m_offset_map.N3,m_offset_map.N4,m_offset_map.N5,m_offset_map.N6,m_offset_map.N7);
+        nsegments_()++;
+        too_small = size > segment_length_ * nsegments_();
       }
     }
   }
@@ -359,7 +379,7 @@ public:
   typename Impl::ViewEnableArrayOper< typename traits::value_type & , traits, typename traits::array_layout, 1, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
-      return views_[i0>>view_length_log2](i0&(view_length_m1_));
+      return segments_[i0>>segment_length_log2](i0&(segment_length_m1_));
     }
 
   template< typename iType0 , typename iType1 >
@@ -368,7 +388,7 @@ public:
                iType0 , iType1>::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      return views_[i0>>view_length_log2](i0&(view_length_m1_),i1);
+      return segments_[i0>>segment_length_log2](i0&(segment_length_m1_),i1);
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -377,7 +397,7 @@ public:
                iType0 , iType1 , iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      return views_[i0>>view_length_log2](i0&(view_length_m1_),i1,i2);
+      return segments_[i0>>segment_length_log2](i0&(segment_length_m1_),i1,i2);
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -386,7 +406,7 @@ public:
                iType0 , iType1 , iType2 , iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
-      return views_[i0>>view_length_log2](i0&(view_length_m1_),i1,i2,i3);
+      return segments_[i0>>segment_length_log2](i0&(segment_length_m1_),i1,i2,i3);
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -397,7 +417,7 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 ) const
     {
-      return views_[i0>>view_length_log2](i0&(view_length_m1_),i1,i2,i3,i4);
+      return segments_[i0>>segment_length_log2](i0&(segment_length_m1_),i1,i2,i3,i4);
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -408,7 +428,7 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 ) const
     {
-      return views_[i0>>view_length_log2](i0&(view_length_m1_),i1,i2,i3,i4,i5);
+      return segments_[i0>>segment_length_log2](i0&(segment_length_m1_),i1,i2,i3,i4,i5);
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -419,7 +439,7 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
-      return views_[i0>>view_length_log2](i0&(view_length_m1_),i1,i2,i3,i4,i5,i6);
+      return segments_[i0>>segment_length_log2](i0&(segment_length_m1_),i1,i2,i3,i4,i5,i6);
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -430,7 +450,7 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
-      return views_[i0>>view_length_log2](i0&(view_length_m1_),i1,i2,i3,i4,i5,i6,i7);
+      return segments_[i0>>segment_length_log2](i0&(segment_length_m1_),i1,i2,i3,i4,i5,i6,i7);
     }
 };
 
@@ -446,7 +466,7 @@ struct delete_segmented_view {
 
   KOKKOS_INLINE_FUNCTION
   void operator() (int i) const {
-    delete [] view_.get_view(i).ptr_on_device();
+    delete [] view_.get_segment(i).ptr_on_device();
   }
 };
 
