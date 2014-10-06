@@ -84,8 +84,8 @@ protected:
       Impl::test_random<Kokkos::Random_XorShift1024_Pool<Kokkos::OpenMP> >(num_draws);                                   \
   }
 
-OPENMP_RANDOM_XORSHIFT64( 10000000 )
-OPENMP_RANDOM_XORSHIFT1024( 10000000 )
+OPENMP_RANDOM_XORSHIFT64( 10240000 )
+OPENMP_RANDOM_XORSHIFT1024( 10130144 )
 
 #undef OPENMP_RANDOM_XORSHIFT64
 #undef OPENMP_RANDOM_XORSHIFT1024
