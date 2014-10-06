@@ -327,14 +327,7 @@ void TriDiSolver<MatrixType, false>::compute ()
     }
     extract (A_local_tridi_, *A_local_); // extract the tridi local matrix
 
-    std::cout << " inside compute, after extract, before factor "<<std::endl;
-
-    A_local_tridi_.print(std::cout);
-
     factor (A_local_tridi_, ipiv_ ()); // factor the tridi local matrix
-
-    std::cout << " inside compute, after factor "<<std::endl;
-    A_local_tridi_.print(std::cout);
 
     isComputed_ = true;
     ++numCompute_;
