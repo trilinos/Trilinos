@@ -469,6 +469,7 @@ public:
           cgsolve = belos_solve(rcpFromRef(g_jacobian),
                                 rcpFromRef(g_nodal_residual),
                                 rcpFromRef(g_nodal_delta),
+                                fixture,
                                 use_muelu,
                                 use_mean_based,
                                 cg_iteration_limit ,

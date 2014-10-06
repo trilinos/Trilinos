@@ -1,14 +1,12 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -51,9 +49,9 @@
 namespace Kokkos {
 namespace Example {
 
-  /*! 
-   * \brief An abstract class to represent a generic stochastic Galerkin 
-   * preconditioner 
+  /*!
+   * \brief An abstract class to represent a generic stochastic Galerkin
+   * preconditioner
    */
   template<class S, class LO, class GO, class N>
   class SGPreconditioner {
@@ -66,12 +64,14 @@ namespace Example {
     virtual ~SGPreconditioner() {}
 
     //! Setup preconditioner
-    virtual 
-    Teuchos::RCP<Tpetra::Operator<S,LO,GO,N> > 
-    setupPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A,
-                        const std::string& xmlFilename) = 0;
+    virtual
+    Teuchos::RCP<Tpetra::Operator<S,LO,GO,N> >
+    setupPreconditioner(
+      const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A,
+      const std::string& xmlFilename,
+      const Teuchos::RCP<Tpetra::MultiVector<S,LO,GO,N> >& coords) = 0;
 
-  private: 
+  private:
 
     // Prohibit copying
     SGPreconditioner(const SGPreconditioner&);
@@ -80,6 +80,6 @@ namespace Example {
     SGPreconditioner& operator=(const SGPreconditioner& b);
   }; // class SGPreconditioner
 
-} 
+}
 }
 #endif // SG_PRECONDITIONER_HPP
