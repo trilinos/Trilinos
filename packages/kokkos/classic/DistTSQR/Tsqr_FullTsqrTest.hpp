@@ -701,7 +701,7 @@ namespace TSQR {
       ///   over which to perform tests.
       FullTsqrVerifierCaller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
         comm_ (comm),
-        node_ (getNode<node_type> (getValidNodeParameters<node_type> ())),
+        node_ (getNode<node_type> (Teuchos::rcp (new Teuchos::ParameterList (node_type::getDefaultParameters ())))),
         randomSeed_ (defaultRandomSeed ())
       {}
 

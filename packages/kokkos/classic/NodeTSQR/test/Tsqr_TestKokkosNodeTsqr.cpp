@@ -59,82 +59,6 @@
 
 namespace {
   //
-  // Return valid parameter list with default values, corresponding to
-  // the given NodeType (Kokkos Node type).
-  //
-  // Doxygen won't generate documentation from these comments; this is
-  // on purpose, since users aren't meant to call these functions
-  // (they are for testing only).
-  //
-  template<class NodeType>
-  Teuchos::RCP<Teuchos::ParameterList> getValidNodeParameters ();
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  //
-  // Specialization for TBBNode:
-  // - "Num Threads" (int) option, defaults to -1 for late init.
-  //
-  template<>
-  Teuchos::RCP<Teuchos::ParameterList>
-  getValidNodeParameters<KokkosClassic::TBBNode> ()
-  {
-    using Teuchos::ParameterList;
-    using Teuchos::parameterList;
-    using Teuchos::RCP;
-
-    RCP<ParameterList> plist = parameterList ("TBBNode");
-    plist->set ("Num Threads", -1);
-    return plist;
-  }
-#endif // HAVE_KOKKOSCLASSIC_TBB
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  //
-  // Specialization for TPINode:
-  // - "Num Threads" (int) option, defaults to 0.  This number
-  //   seems to be taken more seriously than TBBNode's input.
-  //
-  // - "Verbose" (int) option to print info about number of
-  //   threads; defaults to 0.
-  //
-  template<>
-  Teuchos::RCP<Teuchos::ParameterList>
-  getValidNodeParameters<KokkosClassic::TPINode> ()
-  {
-    using Teuchos::ParameterList;
-    using Teuchos::parameterList;
-    using Teuchos::RCP;
-
-    // FIXME (mfh 02 Jul 2013) I wonder what happens if the node
-    // doesn't have this many cores... Would TPINode initialization
-    // fail in that case?
-    const int numThreads = 8;
-
-    RCP<ParameterList> plist = parameterList ("TPINode");
-    plist->set ("Num Threads", numThreads);
-    plist->set ("Verbose", 1);
-    return plist;
-  }
-#endif // HAVE_KOKKOSCLASSIC_THREADPOOL
-
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-  //
-  // Specialization for SerialNode, which takes no parameters.
-  //
-  template<>
-  Teuchos::RCP<Teuchos::ParameterList>
-  getValidNodeParameters<KokkosClassic::SerialNode> ()
-  {
-    using Teuchos::ParameterList;
-    using Teuchos::parameterList;
-    using Teuchos::RCP;
-
-    RCP<ParameterList> plist = parameterList ("SerialNode");
-    return plist;
-  }
-#endif // HAVE_KOKKOSCLASSIC_SERIAL
-
-  //
   // Instantiate and return a Kokkos Node instance with the given
   // parameters.
   //
@@ -506,7 +430,7 @@ namespace {
 //
 // The "main" test driver.
 //
-  int
+int
 main (int argc, char *argv[])
 {
 #ifdef HAVE_MPI
@@ -514,6 +438,7 @@ main (int argc, char *argv[])
 #endif // HAVE_MPI
   using Teuchos::ParameterList;
   using Teuchos::RCP;
+  using Teuchos::rcp;
 
 #ifdef HAVE_MPI
   Teuchos::oblackholestream blackhole;
@@ -566,7 +491,8 @@ main (int argc, char *argv[])
 #  endif // HAVE_KOKKOSCLASSIC_THREADPOOL
 #endif // HAVE_KOKKOSCLASSIC_TBB
 
-      RCP<ParameterList> nodeParams = getValidNodeParameters<node_type> ();
+      RCP<ParameterList> nodeParams =
+        rcp (new ParameterList (node_type::getDefaultParameters ()));
 
       // We allow the same run to do both benchmark and verify.
       runTests (getNode<node_type> (nodeParams, params.debug), params);

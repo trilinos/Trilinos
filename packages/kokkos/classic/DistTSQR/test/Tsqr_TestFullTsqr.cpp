@@ -53,9 +53,6 @@
 #  include <complex>
 #endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
 
-typedef int ordinal_type;
-typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
-
 namespace {
   //
   // Documentation string to print out if --help is a command-line argument.
@@ -89,8 +86,8 @@ namespace {
       {}
 
     size_t cacheSizeHint;
-    ordinal_type numRowsLocal;
-    ordinal_type numCols;
+    int numRowsLocal;
+    int numCols;
     bool contiguousCacheBlocks;
     bool testFactorExplicit;
     bool testRankRevealing;
@@ -241,11 +238,12 @@ namespace {
   //
   // Return true if all tests were successful, else false.
   //
+  template<class NodeType>
   bool
   test (int argc,
         char* argv[],
         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-        const Teuchos::RCP<node_type>& node,
+        const Teuchos::RCP<NodeType>& node,
         const bool allowedToPrint)
   {
     using TSQR::Test::NullCons;
@@ -322,6 +320,7 @@ main (int argc, char* argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
   using std::endl;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
 #ifdef HAVE_MPI
   typedef RCP<const Teuchos::Comm<int> > comm_ptr;
@@ -350,10 +349,10 @@ main (int argc, char* argv[])
   bool verbose = false;
   try {
     RCP<ParameterList> nodeParams =
-      TSQR::Test::getValidNodeParameters<node_type> ();
+      rcp (new ParameterList (node_type::getDefaultParameters ()));
     RCP<node_type> node = TSQR::Test::getNode<node_type> (nodeParams);
 
-    success = test (argc, argv, comm, node, allowedToPrint);
+    success = test<node_type> (argc, argv, comm, node, allowedToPrint);
     if (allowedToPrint && success) {
       // The Trilinos test framework expects a message like this.
       out << "\nEnd Result: TEST PASSED" << endl;

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -65,80 +65,9 @@ namespace Teuchos {
 namespace TSQR {
   namespace Test {
 
-    /// \fn getValidNodeParameters
-    /// \brief Return valid parameter list with default values.
-    ///
-    /// The returned parameter list corresponds to the given NodeType
-    /// (Kokkos Node type), and is meant to be the input argument of
-    /// \c getNode().
-    template<class NodeType>
-    Teuchos::RCP<Teuchos::ParameterList> getValidNodeParameters ();
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-    //
-    // Specialization for TBBNode: 
-    // - "Num Threads" (int) option, defaults to -1 for late init.
-    //
-    template<>
-    Teuchos::RCP<Teuchos::ParameterList> 
-    getValidNodeParameters<KokkosClassic::TBBNode> () 
-    {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
-      RCP<ParameterList> plist = parameterList ("TBBNode");
-      // -1 tells the task scheduler to control the number of threads.
-      plist->set ("Num Threads", -1);
-      return plist;
-    }
-#endif // HAVE_KOKKOSCLASSIC_TBB
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-    //
-    // Specialization for TPINode: 
-    // - "Num Threads" (int) option, defaults to 0.  This number
-    //   seems to be taken more seriously than TBBNode's input.
-    //
-    // - "Verbose" (int) option to print info about number of
-    //   threads; defaults to 0.
-    //
-    template<>
-    Teuchos::RCP<Teuchos::ParameterList> 
-    getValidNodeParameters<KokkosClassic::TPINode> () 
-    {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
-      const int numThreads = 8;
-
-      RCP<ParameterList> plist = parameterList ("TPINode");
-      plist->set ("Num Threads", numThreads);
-      plist->set ("Verbose", 1);
-      return plist;
-    }
-#endif // HAVE_KOKKOSCLASSIC_THREADPOOL
-
-    //
-    // Specialization for SerialNode, which takes no parameters.
-    //
-    template<>
-    Teuchos::RCP<Teuchos::ParameterList> 
-    getValidNodeParameters<KokkosClassic::SerialNode> () 
-    {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
-      RCP<ParameterList> plist = parameterList ("SerialNode");
-      return plist;
-    }
-
     /// \brief Return a Kokkos Node instance with the given parameters.
     ///
-    /// \param plist [in/out] Return value of \c
-    ///   getValidNodeParameters() for the given NodeType.  This
+    /// \param plist [in/out] List of parameters for the Node.  This
     ///   function reserves the right to modify the input parameter
     ///   list (for example, to fill in any missing parameters with
     ///   defaults).  Do not rely on this behavior.
