@@ -664,8 +664,10 @@ IF (NOT TPL_ENABLE_MPI)
   SET(DEPLIBS simpi)
 ENDIF()
 
-# Add libm linking for ceil, floor and such.
-LIST(APPEND IMPORTEDLIBS m)
+IF(NOT MSVC)
+  # Add libm linking for ceil, floor and such.
+  LIST(APPEND IMPORTEDLIBS m)
+ENDIF()
 
 TRIBITS_ADD_LIBRARY(
   zoltan
