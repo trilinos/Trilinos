@@ -42,7 +42,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
     fenl
     SOURCES ${SOURCES}
     COMM serial mpi
-    DEPLIBS fenl
+    TESTONLYLIBS fenl
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(copyFenlFiles
@@ -69,7 +69,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
       fenl_ensemble
       SOURCES ${SOURCES}
       COMM serial mpi
-      DEPLIBS fenl stokhos kokkoscorelinalg kokkoscontainers kokkoscore
+      TESTONLYLIBS fenl
       )
 
     SET( SOURCES fenl_functors_pce.hpp fenl_pce.cpp )
@@ -83,7 +83,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
       fenl_pce
       SOURCES ${SOURCES}
       COMM serial mpi
-      DEPLIBS fenl stokhos kokkoscorelinalg kokkoscontainers kokkoscore
+      TESTONLYLIBS fenl
       )
 
   ENDIF()
