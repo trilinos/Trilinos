@@ -1541,7 +1541,7 @@ TEST(UnitTestingOfBulkData, test_internal_generate_parallel_change_lists_2EltsFl
 }
 
 
-TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_owned_nodes)
+TEST(UnitTestingOfBulkData, test_nominal_internal_get_processor_dependencies_shared_or_ghosted)
 {
     stk::ParallelMachine pm = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(pm);
@@ -1557,66 +1557,52 @@ TEST(UnitTestingOfBulkData, change_entity_owner_internal_get_current_sharing_of_
     setup8Quad4ProcMesh2D(bulk);
     // setup now, now change
     //  move 6 from p1 to p3, move node 4 from p2 to p0 to test other case in function
-    //     p0   p1   p2   p3               p0    /p     p2   p3
-    //  11---12---13---14---15          11---12------13---14-----15
-    //   | 5  | 6  | 7  | 8  |    ->     | 5  | 6/3  | 7  |   8  |
-    //   6----7----8----9---10           6----7------8----9-----10
-    //   | 1  | 2  | 3  | 4  |           | 1  | 2/1  | 3  |   4  |
-    //   1----2----3----4----5           1----2------3----4/0----5
+    //     p0   p1   p2   p3               p0    /p     /p   p3
+    //  11---12---13---14---15          11---12----13/3--14/0-----15
+    //   | 5  | 6  | 7  | 8  |    ->     | 5  | 6/3  | 7/0  |   8  |
+    //   6----7----8----9---10           6----7----8/3----9/0-----10
+    //   | 1  | 2  | 3  | 4  |           | 1  | 2/1  | 3/2  |   4  |
+    //   1----2----3----4----5           1----2------3------4------5
     // also moves any owned nodes of elem3 along with the element
     // moves element 6 from proc 1 to proc 3. tests moving an element and owned nodes
-    std::map<EntityKey,int> new_owner_map;
-    new_owner_map[EntityKey(stk::topology::ELEMENT_RANK,6)] = 3;
-    new_owner_map[EntityKey(stk::topology::NODE_RANK,4)] = 0;
     if(bulk.parallel_rank() == 1)
     {
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 6);
         int dest_proc = 3;
         BulkData::NodeToDependentProcessorsMap owned_node_sharing_map;
-        stk::mesh::internal_get_processor_dependencies(bulk, stk::mesh::EntityProc(elem, dest_proc), owned_node_sharing_map, new_owner_map);
-        BulkData::NodeToDependentProcessorsMap expected_map;
-        expected_map[EntityKey(stk::topology::NODE_RANK, 7)].insert(0);
-        expected_map[EntityKey(stk::topology::NODE_RANK, 7)].insert(3);
-        expected_map[EntityKey(stk::topology::NODE_RANK, 12)].insert(0);
-        expected_map[EntityKey(stk::topology::NODE_RANK, 12)].insert(3);
-        expected_map[EntityKey(stk::topology::NODE_RANK, 8)].insert(2);
-        expected_map[EntityKey(stk::topology::NODE_RANK, 8)].insert(3);
-        expected_map[EntityKey(stk::topology::NODE_RANK, 13)].insert(2);
-        expected_map[EntityKey(stk::topology::NODE_RANK, 13)].insert(3);
-        for(BulkData::NodeToDependentProcessorsMap::iterator i = owned_node_sharing_map.begin();
-                i != owned_node_sharing_map.end(); ++i)
-                {
-            std::cout << "entity = " << i->first << "\n";
-            std::set<int> & this_set = i->second;
-            for(std::set<int>::iterator j = this_set.begin(); j != this_set.end(); ++j)
-            {
-                std::cout << "sharing proc=" << *j << "\n";
-            }
-        }
-        bool result = expected_map == owned_node_sharing_map;
-        EXPECT_TRUE(result);
-    }
-    // moves node 4 from proc2 to proc0, tests moving a single node
-    else if(bulk.parallel_rank() == 2)
-    {
-        stk::mesh::Entity elem = bulk.get_entity(stk::topology::NODE_RANK, 4);
-        int dest_proc = 0;
-        BulkData::NodeToDependentProcessorsMap owned_node_sharing_map;
-        stk::mesh::internal_get_processor_dependencies(bulk, stk::mesh::EntityProc(elem, dest_proc), owned_node_sharing_map, new_owner_map);
-        BulkData::NodeToDependentProcessorsMap expected_map;
-        expected_map[EntityKey(stk::topology::NODE_RANK, 4)].insert(0);
-        for(BulkData::NodeToDependentProcessorsMap::iterator i = owned_node_sharing_map.begin();
-                i != owned_node_sharing_map.end(); ++i)
-                {
-            std::cout << "entity = " << i->first << "\n";
-            std::set<int> & this_set = i->second;
-            for(std::set<int>::iterator j = this_set.begin(); j != this_set.end(); ++j)
-            {
-                std::cout << "sharing proc=" << *j << "\n";
-            }
-        }
-        bool result = expected_map == owned_node_sharing_map;
-        EXPECT_TRUE(result);
+        stk::mesh::internal_get_processor_dependencies_shared_or_ghosted(bulk, stk::mesh::EntityProc(elem, dest_proc), owned_node_sharing_map);
+
+        EntityKey node7_key(stk::topology::NODE_RANK,7);
+        EntityKey node8_key(stk::topology::NODE_RANK,8);
+        EntityKey node12_key(stk::topology::NODE_RANK,12);
+        EntityKey node13_key(stk::topology::NODE_RANK,13);
+
+        EXPECT_EQ( 4u, owned_node_sharing_map.size() );
+
+        const std::set<int> & node7_set = owned_node_sharing_map[node7_key];
+        EXPECT_EQ( 1u, node7_set.size() );
+        EXPECT_TRUE( node7_set.end() != node7_set.find(3) );
+
+        const std::set<int> & node8_set = owned_node_sharing_map[node8_key];
+        EXPECT_EQ( 1u, node8_set.size() );
+        EXPECT_TRUE( node8_set.end() != node8_set.find(3) );
+
+        const std::set<int> & node12_set = owned_node_sharing_map[node12_key];
+        EXPECT_EQ( 1u, node12_set.size() );
+        EXPECT_TRUE( node12_set.end() != node12_set.find(3) );
+
+        const std::set<int> & node13_set = owned_node_sharing_map[node13_key];
+        EXPECT_EQ( 1u, node13_set.size() );
+        EXPECT_TRUE( node13_set.end() != node13_set.find(3) );
+
+        stk::mesh::Entity node8 = bulk.get_entity(stk::topology::NODE_RANK, 8);
+        owned_node_sharing_map.clear();
+        stk::mesh::internal_get_processor_dependencies_shared_or_ghosted(bulk, stk::mesh::EntityProc(node8, dest_proc), owned_node_sharing_map);
+
+        EXPECT_EQ( 1u, owned_node_sharing_map.size() );
+        const std::set<int> & node_set = owned_node_sharing_map[node8_key];
+        EXPECT_EQ( 1u, node_set.size() );
+        EXPECT_TRUE( node_set.end() != node_set.find(3) );
     }
 }
 

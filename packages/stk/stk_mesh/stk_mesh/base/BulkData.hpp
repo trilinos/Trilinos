@@ -2213,12 +2213,6 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
                                               std::vector<EntityProc> & shared_change ,
                                               std::vector<EntityProc> & ghosted_change );
 
-void internal_get_processor_dependencies(
-          const BulkData &mesh,
-          const EntityProc                  send_entry ,
-          BulkData::NodeToDependentProcessorsMap & owned_node_sharing_map,
-          const std::map<EntityKey,int> & new_owner_map );
-
 void internal_get_processor_dependencies_shared_or_ghosted(
           const BulkData &mesh,
           const EntityProc                  shared_or_ghosted_entry ,
