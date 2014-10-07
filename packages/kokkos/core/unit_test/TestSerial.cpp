@@ -342,6 +342,7 @@ TEST_F( serial , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(3) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(5) ) );
 }
 #endif
 } // namespace test

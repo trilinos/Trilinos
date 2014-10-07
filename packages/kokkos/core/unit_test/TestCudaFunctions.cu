@@ -67,6 +67,7 @@
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestMemorySpaceTracking.hpp>
+#include <TestTeamVector.hpp>
 
 namespace Test {
 
@@ -284,6 +285,18 @@ void test_device_cuda_memory_space()
 {
   TestMemorySpace< Kokkos::Cuda >();
 }
+
+#ifdef KOKKOS_HAVE_CXX11
+void test_device_cuda_team_vector()
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(0) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(5) ) );
+}
+#endif
 
 //----------------------------------------------------------------------------
 

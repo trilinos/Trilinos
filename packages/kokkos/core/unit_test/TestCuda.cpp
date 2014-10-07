@@ -81,6 +81,7 @@ extern void test_device_cuda_scan();
 extern void test_device_cuda_team_scan();
 extern void test_device_cuda_compiler_macros();
 extern void test_device_cuda_memory_space();
+extern void test_device_cuda_team_vector();
 
 TEST_F( cuda, view_impl )
 {
@@ -167,6 +168,11 @@ TEST_F( cuda , memory_space )
   test_device_cuda_memory_space();
 }
 
-
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( cuda , team_vector )
+{
+  test_device_cuda_team_vector();
+}
+#endif
 }
 

@@ -287,6 +287,7 @@ TEST_F( openmp , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(3) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(5) ) );
 }
 #endif
 } // namespace test
