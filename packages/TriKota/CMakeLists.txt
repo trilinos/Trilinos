@@ -53,8 +53,8 @@ ENDIF()
 # Tell DAKOTA (and all sub-packages) to use PROJECT_NAME, e.g.,
 # Trilinos or VERA for export targets.  For a non TriBITS system
 # would instead want CMAKE_PROJECT_NAME
-SET(ExportTarget ${PROJECT_NAME} CACHE STRING 
-  "Name for the export target for ${PROJECT_NAME}"
+SET(ExportTarget ${PACKAGE_NAME} CACHE STRING 
+  "Name for the export target for ${PACKAGE_NAME}"
   )
 message(STATUS "TriKota setting ExportTarget=${ExportTarget}")    
 
