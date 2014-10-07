@@ -2912,12 +2912,32 @@ namespace {
 #endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
 
 #define VIEWMODETEST(NODE) \
-        TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, NODE ) \
-        TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_N_NOGPU(VIEWMODETEST)
+  // mfh 06 Oct 2014: These tests only work for the non-GPU (not
+  // KokkosClassic::ThrustGPUNode) KokkosClassic Node types.  They
+  // don't work for the Kokkos refactor Node types in Kokkos::Compat.
+
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, KokkosClassic_SerialNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, KokkosClassic_SerialNode )
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
+
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, KokkosClassic_TPINode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, KokkosClassic_TPINode )
+#endif // HAVE_KOKKOSCLASSIC_THREADPOOL
+
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, KokkosClassic_TBBNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, KokkosClassic_TBBNode )
+#endif // HAVE_KOKKOSCLASSIC_TBB
+
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, KokkosClassic_OpenMPNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, KokkosClassic_OpenMPNode )
+#endif // HAVE_KOKKOSCLASSIC_OPENMP
 
   // mfh 04 June 2013: To avoid explicit instantiation - related link
   // errors for LO = int and GO = unsigned (long) int, I've forced
