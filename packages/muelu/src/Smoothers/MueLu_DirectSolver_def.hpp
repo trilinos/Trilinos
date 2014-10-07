@@ -131,7 +131,11 @@ namespace MueLu {
     if (SmootherPrototype::IsSetup() == true)
       this->GetOStream(Warnings0) << "MueLu::DirectSolver::Setup(): Setup() has already been called";
 
+    int oldRank = s_->SetProcRankVerbose(this->GetProcRankVerbose());
+
     s_->Setup(currentLevel);
+
+    s_->SetProcRankVerbose(oldRank);
 
     SmootherPrototype::IsSetup(true);
 

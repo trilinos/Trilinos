@@ -64,7 +64,7 @@ namespace MueLu {
             class LocalOrdinal = typename Xpetra::MultiVector<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename Xpetra::MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node = typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class SmootherBase : virtual public BaseClass {
+  class SmootherBase : public virtual BaseClass {
   public:
     typedef Scalar scalar_type;
     typedef LocalOrdinal local_ordinal_type;

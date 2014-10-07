@@ -136,6 +136,10 @@ namespace MueLu {
 
     if ((preOrPost & PRE) && !preSmootherPrototype_.is_null()) {
       preSmoother = preSmootherPrototype_->Copy();
+
+      if (!currentLevel.GetComm().is_null())
+        preSmoother->SetProcRankVerbose(currentLevel.GetComm()->getRank());
+
       preSmoother->Setup(currentLevel);
       preSmootherParams = preSmoother->GetParameterList();
 
@@ -176,6 +180,10 @@ namespace MueLu {
         //  - either we only do postsmoothing without any presmoothing
         //  - or our postsmoother is different from presmoother
         postSmoother = postSmootherPrototype_->Copy();
+
+        if (!currentLevel.GetComm().is_null())
+          postSmoother->SetProcRankVerbose(GetProcRankVerbose());
+
         postSmoother->Setup(currentLevel);
       }
       postSmootherParams = postSmoother->GetParameterList();

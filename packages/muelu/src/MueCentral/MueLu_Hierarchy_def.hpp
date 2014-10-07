@@ -196,26 +196,30 @@ namespace MueLu {
     if (fineLevelManager == Teuchos::null) isFinestLevel = true;
     if (nextLevelManager == Teuchos::null) isLastLevel   = true;
 
+    int oldRank = -1;
     if (isFinestLevel) {
-      RCP<Matrix>                    A    = level.Get< RCP<Matrix> >("A");
-      RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+      RCP<Matrix>                    A      = level.Get< RCP<Matrix> >("A");
+      RCP<const Map>                 rowMap = A->getRowMap();
+      RCP<const Teuchos::Comm<int> > comm   = rowMap->getComm();
 
       // Initialize random seed for reproducibility
       Utils::SetRandomSeed(*comm);
 
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
       // Record the communicator on the level (used for timers sync)
       level.SetComm(comm);
-#endif
+      oldRank = SetProcRankVerbose(comm->getRank());
 
       // Set the Hierarchy library to match that of the finest level matrix,
       // even if it was already set
-      lib_ = A->getRowMap()->lib();
+      lib_ = rowMap->lib();
       level.setlib(lib_);
 
     } else {
       // Permeate library to a coarser level
       level.setlib(lib_);
+
+      Level& prevLevel = *Levels_[coarseLevelID-1];
+      oldRank = SetProcRankVerbose(prevLevel.GetComm()->getRank());
     }
 
     CheckLevel(level, coarseLevelID);
@@ -293,11 +297,9 @@ namespace MueLu {
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Matrix> >("A");
 
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-    // Record the communicator on the level (used for timers sync)
+    // Record the communicator on the level
     if (!Ac.is_null())
       level.SetComm(Ac->getRowMap()->getComm());
-#endif
 
     // Test if we reach the end of the hierarchy
     bool isOrigLastLevel = isLastLevel;
@@ -313,22 +315,15 @@ namespace MueLu {
 
     } else if (Ac->getGlobalNumRows() <= maxCoarseSize_) {
       // Last level as the size of the coarse matrix became too small
-      GetOStream(Runtime0) << "Max coarse size (<= " << maxCoarseSize_ << ") achieved, finishing" << std::endl;
+      GetOStream(Runtime0) << "Max coarse size (<= " << maxCoarseSize_ << ") achieved" << std::endl;
       isLastLevel = true;
     }
 
-    if (!isFinestLevel) {
+    if (!Ac.is_null() && !isFinestLevel) {
       RCP<Matrix> A = Levels_[coarseLevelID-1]->template Get< RCP<Matrix> >("A");
 
       const double maxCoarse2FineRatio = 0.8;
-      if (Ac.is_null() || Ac->getGlobalNumRows() > maxCoarse2FineRatio*A->getGlobalNumRows()) {
-        // Aggregation stagnated, aborting
-        GetOStream(Warnings0) << "Aggregation stagnated. Please check your matrix and/or adjust your configuration file."
-            << "Possible fixes:\n"
-            << "  - reduce the maximum number of levels\n"
-            << "  - enable repartitioning\n"
-            << "  - increase the minimum coarse size." << std::endl;
-
+      if (Ac->getGlobalNumRows() > maxCoarse2FineRatio*A->getGlobalNumRows()) {
         // We could abort here, but for now we simply notify user.
         // Couple of additional points:
         //   - if repartitioning is delayed until level K, but the aggregation
@@ -336,9 +331,12 @@ namespace MueLu {
         //     repartitioning could enable faster coarsening once again, but the
         //     hierarchy construction will abort due to the stagnation check.
         //   - if the matrix is small enough, we could move it to one processor.
+        GetOStream(Warnings0) << "Aggregation stagnated. Please check your matrix and/or adjust your configuration file."
+            << "Possible fixes:\n"
+            << "  - reduce the maximum number of levels\n"
+            << "  - enable repartitioning\n"
+            << "  - increase the minimum coarse size." << std::endl;
 
-        // GetOStream(Warnings0) << "Aborting hierarchy construction.\n"
-        // isLastLevel = true;
       }
     }
 
@@ -386,6 +384,9 @@ namespace MueLu {
       // which we construct in RAPFactory
       level.Release(coarseRAPFactory);
     }
+
+    if (oldRank != -1)
+      SetProcRankVerbose(oldRank);
 
     return isLastLevel;
   }

@@ -71,7 +71,10 @@ namespace MueLu {
     procRank_ = 0;
 #ifdef HAVE_MPI
     int mpiStarted = 0; MPI_Initialized(&mpiStarted);
-    if (mpiStarted)     MPI_Comm_rank(MPI_COMM_WORLD, &procRank_);
+    if (mpiStarted)     {
+      MPI_Comm_rank(MPI_COMM_WORLD, &procRank_);
+      MPI_Comm_size(MPI_COMM_WORLD, &numProcs_);
+    }
 #endif
 
     // When Teuchos::VerboseObject is constructed, its default OStream is set to output only to processor 0.
@@ -97,6 +100,14 @@ namespace MueLu {
 
   int VerboseObject::GetProcRankVerbose() const {
     return procRank_;
+  }
+
+  int VerboseObject::SetProcRankVerbose(int procRank) const {
+    int oldRank = procRank_;
+    procRank_ = procRank;
+    getOStream()->setProcRankAndSize(procRank_, numProcs_);
+
+    return oldRank;
   }
 
   bool VerboseObject::IsPrint(MsgType type, int thisProcRankOnly) const {

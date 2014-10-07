@@ -69,27 +69,23 @@ namespace MueLu {
   public:
 
     //! Constructor
-    PrintMonitor(const BaseClass& object, const std::string& msg, MsgType msgLevel = Runtime0) {
-
-      // Inherit verbosity from 'object'
-      SetVerbLevel(object.GetVerbLevel());
-      setOStream(object.getOStream());
-
-      // Print description and new indent
-      if (IsPrint(msgLevel)) {
-        GetOStream(msgLevel, 0) << msg << std::endl;
-        tab_ = rcp(new Teuchos::OSTab(getOStream()));
+    PrintMonitor(const BaseClass& object, const std::string& msg, MsgType msgLevel = Runtime0) : object_(object) {
+      tabbed = false;
+      if (object_.IsPrint(msgLevel)) {
+        // Print description and new indent
+        object_.GetOStream(msgLevel, 0) << msg << std::endl;
+        object_.getOStream()->pushTab();
+        tabbed = true;
       }
-
     }
 
-    ~PrintMonitor() { }
-
-  protected:
-    PrintMonitor() { }
+    ~PrintMonitor() { if (tabbed) object_.getOStream()->popTab(); }
 
   private:
-    RCP<Teuchos::OSTab> tab_;
+    PrintMonitor();
+
+    bool tabbed;
+    const BaseClass& object_;
   };
 
   /*! @class Monitor
@@ -209,9 +205,11 @@ namespace MueLu {
       : Monitor(object, msg, msgLevel, timerLevel),
         timerMonitorExclusive_(object, object.ShortClassName() + " : " + msg, timerLevel)
     {
-      if (IsPrint(TimingsByLevel)) {
-        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg + " (total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
-        levelTimeMonitorExclusive_ = rcp(new MutuallyExclusiveTimeMonitor<Level>(object, object.ShortClassName() + " " + MUELU_TIMER_AS_STRING + " : " + msg + " (level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
+      if (object.IsPrint(TimingsByLevel)) {
+        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg +
+            " (total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
+        levelTimeMonitorExclusive_ = rcp(new MutuallyExclusiveTimeMonitor<Level>(object, object.ShortClassName() +
+            " " + MUELU_TIMER_AS_STRING + " : " + msg + " (level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
       }
     }
 
@@ -229,9 +227,11 @@ namespace MueLu {
       : Monitor(object, msg, msgLevel, timerLevel),
       timerMonitorExclusive_(object, object.ShortClassName() + " : " + msg, timerLevel)
     {
-      if (IsPrint(TimingsByLevel)) {
-        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " +  msg + " (total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
-        levelTimeMonitorExclusive_ = rcp(new MutuallyExclusiveTimeMonitor<Level>(object, object.ShortClassName() + " " + MUELU_TIMER_AS_STRING + " : " + msg + " (level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
+      if (object.IsPrint(TimingsByLevel)) {
+        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " +  msg +
+            " (total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
+        levelTimeMonitorExclusive_ = rcp(new MutuallyExclusiveTimeMonitor<Level>(object, object.ShortClassName() + " "
+            + MUELU_TIMER_AS_STRING + " : " + msg + " (level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
       }
     }
 
@@ -274,9 +274,9 @@ namespace MueLu {
     SubFactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1)
       : SubMonitor(object, msg, msgLevel, timerLevel)
     {
-      if (IsPrint(TimingsByLevel)) {
-        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg + " (sub, total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
-      }
+      if (object.IsPrint(TimingsByLevel))
+        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg +
+                                                " (sub, total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
     }
 
     /*! @brief Constructor
@@ -290,9 +290,9 @@ namespace MueLu {
     SubFactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1)
       : SubMonitor(object, msg, msgLevel, timerLevel)
     {
-      if (IsPrint(TimingsByLevel)) {
-        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " +  msg + " (sub, total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
-      }
+      if (object.IsPrint(TimingsByLevel))
+        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " +  msg +
+                                                " (sub, total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
     }
   private:
     //! Total time spent on this level in this object and all children.

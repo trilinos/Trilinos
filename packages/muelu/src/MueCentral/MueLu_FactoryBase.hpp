@@ -57,7 +57,7 @@ namespace MueLu {
     @brief Base class for factories (e.g., R, P, and A_coarse).
     @ingroup MueLuBaseClasses
   */
-  class FactoryBase : virtual public BaseClass {
+  class FactoryBase : public virtual BaseClass {
 
   public:
     //@{ Constructors/Destructors.

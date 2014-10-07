@@ -106,15 +106,19 @@ namespace MueLu {
       }
 
       if (!rebalancedAc.is_null() && IsPrint(Statistics1)) {
+        int oldRank = SetProcRankVerbose(rebalancedAc->getRowMap()->getComm()->getRank());
+
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
         GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
+
+        SetProcRankVerbose(oldRank);
       }
 
     } else {
       // Ac already built by the load balancing process and no load balancing needed
-      GetOStream(Warnings0) << "No rebalancing" << std::endl;
+      GetOStream(Runtime1) << "No rebalancing" << std::endl;
       Set(coarseLevel, "A", originalAc);
     }
 
