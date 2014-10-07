@@ -151,7 +151,9 @@ public:
 
   void getInnerTol(std::vector<Scalar>& tolerances) const { tolerances = tolerances_; };
 
-  int getMaxIts() const { return maxits_; }
+  void setMaxIts(const int maxits) { maxits_ = maxits; };
+  
+  int getMaxIts() const { return maxits_; };
 
   // applies A+\sigma B to a vector
   void Apply(const MV& X, MV& Y) const;
@@ -538,7 +540,7 @@ ZERO(Teuchos::ScalarTraits<Scalar>::zero())
   A_ = A;
   B_ = B;
   // TODO: maxits should not be hard coded
-  maxits_ = 1000000;
+  maxits_ = 1000;
 
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
   PetraMultTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: TraceMinRitzOp: *Petra::Apply()");
