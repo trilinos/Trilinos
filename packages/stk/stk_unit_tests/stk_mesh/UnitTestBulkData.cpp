@@ -1517,18 +1517,21 @@ TEST(UnitTestingOfBulkData, test_internal_generate_parallel_change_lists_2EltsFl
 
 
   if (p_rank == 0) {
-    EXPECT_EQ(0u, shared_change.size());
-    EXPECT_EQ(3u, ghosted_change.size());
+    ASSERT_EQ(0u, shared_change.size());
+    ASSERT_EQ(3u, ghosted_change.size());
     EntityProc node5_ghosted = ghosted_change[0];
     EntityProc node6_ghosted = ghosted_change[1];
     EntityProc elt2_ghosted  = ghosted_change[2];
     EXPECT_EQ(stk::mesh::EntityKey(stk::topology::NODE_RANK, 5), bulk.entity_key(node5_ghosted.first));
     EXPECT_EQ(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6), bulk.entity_key(node6_ghosted.first));
     EXPECT_EQ(stk::mesh::EntityKey(stk::topology::ELEMENT_RANK, 2), bulk.entity_key(elt2_ghosted.first));
+    EXPECT_EQ(0, node5_ghosted.second);
+    EXPECT_EQ(0, node6_ghosted.second);
+    EXPECT_EQ(0, elt2_ghosted.second);
   }
   else if (p_rank == 1) {
-    EXPECT_EQ(1u, shared_change.size());
-    EXPECT_EQ(3u, ghosted_change.size());
+    ASSERT_EQ(1u, shared_change.size());
+    ASSERT_EQ(3u, ghosted_change.size());
     EntityProc node4_shared  = shared_change[0];
     EntityProc node1_ghosted = ghosted_change[0];
     EntityProc node2_ghosted = ghosted_change[1];
@@ -1537,6 +1540,164 @@ TEST(UnitTestingOfBulkData, test_internal_generate_parallel_change_lists_2EltsFl
     EXPECT_EQ(stk::mesh::EntityKey(stk::topology::NODE_RANK, 1), bulk.entity_key(node1_ghosted.first));
     EXPECT_EQ(stk::mesh::EntityKey(stk::topology::NODE_RANK, 2), bulk.entity_key(node2_ghosted.first));
     EXPECT_EQ(stk::mesh::EntityKey(stk::topology::ELEMENT_RANK, 1), bulk.entity_key(elt1_ghosted.first));
+    EXPECT_EQ(1, node4_shared.second);
+    EXPECT_EQ(1, node1_ghosted.second);
+    EXPECT_EQ(1, node2_ghosted.second);
+    EXPECT_EQ(1, elt1_ghosted.second);
+  }
+}
+
+TEST(UnitTestingOfBulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsFlip)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_rank = stk::parallel_machine_rank( pm );
+  const int p_size = stk::parallel_machine_size( pm );
+
+  if (p_size != 2) {
+    return;
+  }
+
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta( spatial_dimension );
+  stk::mesh::BulkData bulk( meta, pm);
+
+  //   id/owner_proc
+  //
+  //   1/0---4/0---5/1      1/1---4/1---5/0
+  //    |     |     |        |     |     |
+  //    | 1/0 | 2/1 |   =>   | 1/1 | 2/0 |
+  //    |     |     |        |     |     |
+  //   2/0---3/0---6/1      2/1---3/0---6/0
+
+  stk::mesh::EntityId element_ids [2] = {1, 2};
+  stk::mesh::EntityId elem_node_ids [][4] = {{1, 2, 3, 4}, {4, 3, 6, 5}};
+
+  stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part",stk::topology::QUAD_4_2D);
+  meta.commit();
+
+  // Start with all entities on proc 0
+  Entity elem;
+  bulk.modification_begin();
+  if (p_rank == 0) {
+    elem = stk::mesh::declare_element(bulk, elem_part ,element_ids[0], elem_node_ids[0] );
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK, 3), 1);
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK, 4), 1);
+  }
+  else if (p_rank == 1) {
+    elem = stk::mesh::declare_element(bulk, elem_part ,element_ids[1], elem_node_ids[1] );
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK, 3), 0);
+    bulk.add_node_sharing(bulk.get_entity(stk::topology::NODE_RANK, 4), 0);
+  }
+  bulk.modification_end();
+
+  stk::mesh::EntityProcVec local_change;
+  if (p_rank == 0) {
+    local_change.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 1), 1));
+    local_change.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 2), 1));
+    local_change.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 4), 1));
+    local_change.push_back(stk::mesh::EntityProc(elem, 1));
+  }
+  else if (p_rank == 1) {
+    local_change.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 5), 0));
+    local_change.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 6), 0));
+    local_change.push_back(stk::mesh::EntityProc(elem, 0));
+  }
+
+  std::vector<EntityProc> shared_change;
+  std::vector<EntityProc> ghosted_change;
+  stk::mesh::internal_generate_parallel_change_lists(bulk, local_change, shared_change, ghosted_change);
+
+  // Contents on p0:
+  //    shared_change: (empty)
+  //   ghosted_change: {node5, 0}
+  //                   {node6, 0}
+  //                   {elem2, 0}
+  // Contents on p1:
+  //    shared_change: {node4, 1}
+  //   ghosted_change: {node1, 1}
+  //                   {node2, 1}
+  //                   {elem1, 1}
+
+  {
+    BulkData::NodeToDependentProcessorsMap entity_to_dependent_processors_map;
+    for (std::vector<EntityProc>::const_iterator shared_giving_away_eproc = shared_change.begin();
+         shared_giving_away_eproc != shared_change.end(); ++shared_giving_away_eproc)
+    {
+      stk::mesh::internal_get_processor_dependencies_shared_or_ghosted(bulk, *shared_giving_away_eproc,
+                                                                       entity_to_dependent_processors_map);
+    }
+
+    if (p_rank == 0)
+    {
+      EXPECT_TRUE(entity_to_dependent_processors_map.empty());
+    }
+    if (p_rank == 1)
+    {
+      EXPECT_EQ(1u, entity_to_dependent_processors_map.size());
+      BulkData::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
+      EXPECT_TRUE(node4_it != entity_to_dependent_processors_map.end());
+      const std::set<int> & node4_procs = node4_it->second;
+      EXPECT_EQ(1, *(node4_procs.begin()));
+    }
+  }
+
+  {
+    BulkData::NodeToDependentProcessorsMap entity_to_dependent_processors_map;
+    for (std::vector<EntityProc>::const_iterator ghosted_giving_away_eproc = ghosted_change.begin();
+         ghosted_giving_away_eproc != ghosted_change.end(); ++ghosted_giving_away_eproc)
+    {
+      stk::mesh::internal_get_processor_dependencies_shared_or_ghosted(bulk, *ghosted_giving_away_eproc,
+                                                                       entity_to_dependent_processors_map);
+    }
+
+    if (p_rank == 0)
+    {
+      EXPECT_EQ(4u, entity_to_dependent_processors_map.size());
+      BulkData::NodeToDependentProcessorsMap::const_iterator node3_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
+      BulkData::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
+      BulkData::NodeToDependentProcessorsMap::const_iterator node5_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 5));
+      BulkData::NodeToDependentProcessorsMap::const_iterator node6_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
+      ASSERT_TRUE(node3_it != entity_to_dependent_processors_map.end());
+      ASSERT_TRUE(node4_it != entity_to_dependent_processors_map.end());
+      ASSERT_TRUE(node5_it != entity_to_dependent_processors_map.end());
+      ASSERT_TRUE(node6_it != entity_to_dependent_processors_map.end());
+      const std::set<int> & node3_procs = node3_it->second;
+      const std::set<int> & node4_procs = node4_it->second;
+      const std::set<int> & node5_procs = node5_it->second;
+      const std::set<int> & node6_procs = node6_it->second;
+      ASSERT_EQ(1u, node3_procs.size());
+      ASSERT_EQ(1u, node4_procs.size());
+      ASSERT_EQ(1u, node5_procs.size());
+      ASSERT_EQ(1u, node6_procs.size());
+      EXPECT_EQ(0, *(node3_procs.begin()));
+      EXPECT_EQ(0, *(node4_procs.begin()));
+      EXPECT_EQ(0, *(node5_procs.begin()));
+      EXPECT_EQ(0, *(node6_procs.begin()));
+    }
+    if (p_rank == 1)
+    {
+      EXPECT_EQ(4u, entity_to_dependent_processors_map.size());
+      BulkData::NodeToDependentProcessorsMap::const_iterator node1_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 1));
+      BulkData::NodeToDependentProcessorsMap::const_iterator node2_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 2));
+      BulkData::NodeToDependentProcessorsMap::const_iterator node3_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
+      BulkData::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
+      ASSERT_TRUE(node1_it != entity_to_dependent_processors_map.end());
+      ASSERT_TRUE(node2_it != entity_to_dependent_processors_map.end());
+      ASSERT_TRUE(node3_it != entity_to_dependent_processors_map.end());
+      ASSERT_TRUE(node4_it != entity_to_dependent_processors_map.end());
+      const std::set<int> & node1_procs = node1_it->second;
+      const std::set<int> & node2_procs = node2_it->second;
+      const std::set<int> & node3_procs = node3_it->second;
+      const std::set<int> & node4_procs = node4_it->second;
+      ASSERT_EQ(1u, node1_procs.size());
+      ASSERT_EQ(1u, node2_procs.size());
+      ASSERT_EQ(1u, node3_procs.size());
+      ASSERT_EQ(1u, node4_procs.size());
+      EXPECT_EQ(1, *(node1_procs.begin()));
+      EXPECT_EQ(1, *(node2_procs.begin()));
+      EXPECT_EQ(1, *(node3_procs.begin()));
+      EXPECT_EQ(1, *(node4_procs.begin()));
+    }
   }
 }
 
