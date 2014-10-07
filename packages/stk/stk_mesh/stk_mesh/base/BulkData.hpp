@@ -1598,6 +1598,7 @@ private:
 
 public:
   typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;
+  typedef std::map<EntityKey,int> NewOwnerMap;
   void internal_calculate_sharing(const std::vector<EntityProc> & local_change,
                            const std::vector<EntityProc> & shared_change,
                            const std::vector<EntityProc> & ghosted_change,
@@ -1609,6 +1610,12 @@ public:
                                                      const std::vector<EntityProc> & shared_change,
                                                      const std::vector<EntityProc> & ghosted_change,
                                                      std::vector<uint16_t> & new_closure_count) const;
+  void internal_create_new_owner_map(const std::vector<EntityProc> & local_change,
+                                     const std::vector<EntityProc> & shared_change,
+                                     const std::vector<EntityProc> & ghosted_change,
+                                     NewOwnerMap & new_owner_map);
+  void update_dependent_processor_map_from_closure_count(const std::vector<uint16_t> & proposed_closure_count,
+                                                         NodeToDependentProcessorsMap & entity_to_dependent_processors_map);
   void internal_print_comm_map( std::string title);
   void internal_communicate_entity_to_dependent_processors_map(
           NodeToDependentProcessorsMap & entity_to_dependent_processors_map);

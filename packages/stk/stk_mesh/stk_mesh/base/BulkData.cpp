@@ -3896,11 +3896,11 @@ void BulkData::internal_communicate_entity_to_dependent_processors_map(
     CommBuffer & buf = comm.recv_buffer( ip );
     while ( buf.remaining() ) {
       EntityKey key ;
-      int num_sharing_procs=-1;
+      int num_sharing_procs = -1;
       buf.unpack<EntityKey>( key )
          .unpack<int>( num_sharing_procs );
       for (int i=0 ; i < num_sharing_procs ; ++i) {
-          int sharing_proc=-1;
+          int sharing_proc = -1;
           buf.unpack<int>( sharing_proc );
           entity_to_dependent_processors_map[key].insert(sharing_proc);
       }
@@ -3932,7 +3932,6 @@ void internal_print_comm_list(std::string title, BulkData & mesh)
 #endif // NDEBUG
 }
 
-
 void BulkData::internal_calculate_sharing(const std::vector<EntityProc> & local_change,
                          const std::vector<EntityProc> & shared_change,
                          const std::vector<EntityProc> & ghosted_change,
@@ -3943,25 +3942,8 @@ void BulkData::internal_calculate_sharing(const std::vector<EntityProc> & local_
   internal_print_comm_list("BEFORE", *this);
   typedef std::set<EntityProc,EntityLess> EntityProcSet;
 
-  // * Create map of old owner to new owner for each entity key represented in
-  // local_change, shared_change, ghosted_change lists.
-  typedef std::map<EntityKey,int> NewOwnerMap;
   NewOwnerMap new_owner_map;
-  // I'm giving away ownership of these entities:
-  for (unsigned i=0 ; i < local_change.size() ; ++i) {
-      EntityKey key = entity_key(local_change[i].first);
-      new_owner_map[key] = local_change[i].second;
-  }
-  // I share these entities with the owner, and the owner is giving away ownership:
-  for (unsigned i=0 ; i < shared_change.size() ; ++i) {
-      EntityKey key = entity_key(shared_change[i].first);
-      new_owner_map[key] = shared_change[i].second;
-  }
-  // I ghost these entities from the owner, and the owner is giving away ownership:
-  for (unsigned i=0 ; i < ghosted_change.size() ; ++i) {
-      EntityKey key = entity_key(ghosted_change[i].first);
-      new_owner_map[key] = ghosted_change[i].second;
-  }
+  internal_create_new_owner_map(local_change, shared_change, ghosted_change, new_owner_map);
 
   // * Pass this map to internal_get_processor_dependencies to be used when adding
   // current sharing information to the entity_to_dependent_processors_map, so
@@ -4006,6 +3988,39 @@ void BulkData::internal_calculate_sharing(const std::vector<EntityProc> & local_
   }
 #endif // NDEBUG
 
+  update_dependent_processor_map_from_closure_count(proposed_closure_count, entity_to_dependent_processors_map);
+
+  internal_communicate_entity_to_dependent_processors_map(entity_to_dependent_processors_map);
+}
+
+void BulkData::internal_create_new_owner_map(const std::vector<EntityProc> & local_change,
+                                             const std::vector<EntityProc> & shared_change,
+                                             const std::vector<EntityProc> & ghosted_change,
+                                             NewOwnerMap & new_owner_map)
+{
+  // * Create map of old owner to new owner for each entity key represented in
+  // local_change, shared_change, ghosted_change lists.
+
+  // I'm giving away ownership of these entities:
+  for (unsigned i=0 ; i < local_change.size() ; ++i) {
+      EntityKey key = entity_key(local_change[i].first);
+      new_owner_map[key] = local_change[i].second;
+  }
+  // I share these entities with the owner, and the owner is giving away ownership:
+  for (unsigned i=0 ; i < shared_change.size() ; ++i) {
+      EntityKey key = entity_key(shared_change[i].first);
+      new_owner_map[key] = shared_change[i].second;
+  }
+  // I ghost these entities from the owner, and the owner is giving away ownership:
+  for (unsigned i=0 ; i < ghosted_change.size() ; ++i) {
+      EntityKey key = entity_key(ghosted_change[i].first);
+      new_owner_map[key] = ghosted_change[i].second;
+  }
+}
+
+void BulkData::update_dependent_processor_map_from_closure_count(const std::vector<uint16_t> & proposed_closure_count,
+                                                                 NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
+{
   // Do I depend on any of these entities after all the ownership changes?
   NodeToDependentProcessorsMap::iterator map_it = entity_to_dependent_processors_map.begin();
   for (; map_it != entity_to_dependent_processors_map.end() ; ++map_it) {
@@ -4023,7 +4038,6 @@ void BulkData::internal_calculate_sharing(const std::vector<EntityProc> & local_
           // This entity can be removed from globally_shared part on my processor
       }
   }
-  internal_communicate_entity_to_dependent_processors_map(entity_to_dependent_processors_map);
 }
 
 void BulkData::internal_apply_node_sharing(const NodeToDependentProcessorsMap & entity_sharing_map)
