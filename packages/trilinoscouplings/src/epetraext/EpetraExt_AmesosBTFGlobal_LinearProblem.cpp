@@ -326,18 +326,6 @@ rvs()
   //  std::cout << "AmesosBTFGlobal_LinearProblem: NewLHS_" << std::endl;
   //  std::cout << *NewLHS_ << std::endl;
   OldLHS_->Import( *NewLHS_, *Importer2_, Insert );
-  int numrhs = OldLHS_->NumVectors();
-  std::vector<double> actual_resids( numrhs ), rhs_norm( numrhs );
-  Epetra_MultiVector resid( OldLHS_->Map(), numrhs );
-  OldMatrix_->Apply( *OldLHS_, resid );
-  resid.Update( -1.0, *OldRHS_, 1.0 );
-  resid.Norm2( &actual_resids[0] );
-  OldRHS_->Norm2( &rhs_norm[0] );
-  if (OldLHS_->Comm().MyPID() == 0 ) {
-    for (int i=0; i<numrhs; i++ ) {
-      std::cout << "Problem " << i << " (in AmesosBTFGlobal): \t" << actual_resids[i]/rhs_norm[i] << std::endl;
-    }
-  }
   //std::cout << "AmesosBTFGlobal_LinearProblem: OldLHS_" << std::endl;
   //std::cout << *OldLHS_ << std::endl;
 
