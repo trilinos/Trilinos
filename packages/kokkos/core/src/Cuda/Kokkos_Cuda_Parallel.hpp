@@ -559,31 +559,46 @@ public:
         op(_i , val , false);
 
       ValueType tmp = val;
-      ValueType result_i = ValueType();
+      ValueType result_i;
 
       if(threadIdx.x%VectorLength == 0)
         result_i = tmp;
-      if (VectorLength > 1)
-        tmp += shfl_up(tmp, 1,VectorLength);
-      if (threadIdx.x%VectorLength == 1)
+      if (VectorLength > 1) {
+        const ValueType tmp2 = shfl_up(tmp, 1,VectorLength);
+        if(threadIdx.x > 0)
+          tmp+=tmp2;
+      }
+      if(threadIdx.x%VectorLength == 1)
         result_i = tmp;
-      if (VectorLength > 2)
-        tmp += shfl_up(tmp, 2,VectorLength);
+      if (VectorLength > 3) {
+        const ValueType tmp2 = shfl_up(tmp, 2,VectorLength);
+        if(threadIdx.x > 1)
+          tmp+=tmp2;
+      }
       if ((threadIdx.x%VectorLength >= 2) &&
           (threadIdx.x%VectorLength < 4))
         result_i = tmp;
-      if (VectorLength > 4)
-        tmp += shfl_up(tmp, 4,VectorLength);
+      if (VectorLength > 7) {
+        const ValueType tmp2 = shfl_up(tmp, 4,VectorLength);
+        if(threadIdx.x > 3)
+          tmp+=tmp2;
+      }
       if ((threadIdx.x%VectorLength >= 4) &&
           (threadIdx.x%VectorLength < 8))
         result_i = tmp;
-      if (VectorLength > 8)
-        tmp += shfl_up(tmp, 8,VectorLength);
+      if (VectorLength > 15) {
+        const ValueType tmp2 = shfl_up(tmp, 8,VectorLength);
+        if(threadIdx.x > 7)
+          tmp+=tmp2;
+      }
       if ((threadIdx.x%VectorLength >= 8) &&
           (threadIdx.x%VectorLength < 16))
         result_i = tmp;
-      if (VectorLength > 16)
-        tmp += shfl_up(tmp, 16,VectorLength);
+      if (VectorLength > 31) {
+        const ValueType tmp2 = shfl_up(tmp, 16,VectorLength);
+        if(threadIdx.x > 15)
+          tmp+=tmp2;
+      }
       if (threadIdx.x%VectorLength >= 16)
         result_i = tmp;
 
