@@ -25,7 +25,7 @@ TRIBITS_PACKAGE(Belos)
 # Tpetra, since Tpetra already had an optional dependency on Epetra.
 # So, for better or worse, you won't be able to use TSQR with Epetra
 # unless you enable both Epetra and Tpetra in your Trilinos build.
-# HAVE_BELOS_TSQR will correctly reflect this: it won't be defined
+# HAVE_BELOS_TSQR will correctly reflect this: it won't be defined 
 # unless both Epetra and Tpetra are enabled in your Trilinos build.
 IF(Belos_ENABLE_Epetra AND Belos_ENABLE_Tpetra AND KokkosClassic_ENABLE_TSQR)
   SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT ON)
@@ -67,7 +67,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # #ifdef HAVE_BELOS_EXPERIMENTAL ... #endif.
 #
 # Belos developers must maintain the lists of experimental header
-# resp. source files in belos/core/CMakeLists.txt, as
+# resp. source files in belos/src/CMakeLists.txt, as
 # ${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
 # resp. ${PACKAGE_NAME}_EXPERIMENTAL_SOURCES.
 #
@@ -88,7 +88,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   NO )
 
 # See above discussion of "experimental" Belos headers and source
-# files.  belos/core/CMakeLists.txt may append to these lists.
+# files.  belos/src/CMakeLists.txt may append to these lists.
 SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS "")
 SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES "")
 
@@ -97,9 +97,20 @@ SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES "")
 ## Add the libraries, tests, and examples
 ######################################################################
 
+ADD_SUBDIRECTORY(src)
+
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+
+IF (Belos_ENABLE_Epetra)
+  ADD_SUBDIRECTORY(epetra)
+ENDIF()
+
+IF (Belos_ENABLE_Tpetra)
+  ADD_SUBDIRECTORY(tpetra)
+ENDIF()
+
 
 ######################################################################
 ## Build list of files to exclude from the release tarball
@@ -114,28 +125,26 @@ TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 # Files and directories to exclude from the release tarball.
 #
 TRIBITS_EXCLUDE_FILES(
-  core/BelosAkxFactory.hpp
-  core/BelosAkx.hpp
-  core/BelosCaGmres.hpp
-  core/BelosGmresBaseFactory.hpp
-  core/BelosGmresBase.hpp
-  core/BelosGmresBaseIteration.hpp
-  core/BelosGmresInnerSolver.hpp
-  core/BelosGmresSolMgr.hpp
-  core/BelosInnerSolveResult.hpp
-  core/BelosInnerSolver.hpp
-  core/BelosMonomialOpAkx.hpp
-  core/BelosNewtonBasis.hpp
-  core/BelosNewtonOpAkx.hpp
-  core/BelosOpAkx.hpp
-  core/BelosProjectedLeastSquaresSolver.hpp
-  core/BelosStandardGmres.hpp
-  core/BelosInnerSolveResult.cpp
+  src/BelosAkxFactory.hpp
+  src/BelosAkx.hpp
+  src/BelosCaGmres.hpp
+  src/BelosGmresBaseFactory.hpp
+  src/BelosGmresBase.hpp
+  src/BelosGmresBaseIteration.hpp
+  src/BelosGmresInnerSolver.hpp
+  src/BelosGmresSolMgr.hpp
+  src/BelosInnerSolveResult.hpp
+  src/BelosInnerSolver.hpp
+  src/BelosMonomialOpAkx.hpp
+  src/BelosNewtonBasis.hpp
+  src/BelosNewtonOpAkx.hpp
+  src/BelosOpAkx.hpp
+  src/BelosProjectedLeastSquaresSolver.hpp
+  src/BelosStandardGmres.hpp
+  src/BelosInnerSolveResult.cpp
   tpetra/test/Gmres
   test/ProjectedLeastSquaresSolver
 )
-
-TRIBITS_PROCESS_SUBPACKAGES()
 
 ######################################################################
 ## Do standard postprocessing

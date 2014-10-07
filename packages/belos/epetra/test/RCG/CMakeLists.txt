@@ -1,8 +1,8 @@
 
 
-ASSERT_DEFINED(Belos_ENABLE_EpetraExt)
-ASSERT_DEFINED(Belos_ENABLE_Triutils)
-IF (Belos_ENABLE_Triutils AND Belos_ENABLE_EpetraExt)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     rcg_hb
@@ -10,7 +10,7 @@ IF (Belos_ENABLE_Triutils AND Belos_ENABLE_EpetraExt)
     COMM serial mpi
     ARGS
       "--verbose --tol=1e-6 --filename=bcsstk14.hb --num-rhs=10 --max-subspace=100 --recycle=10 --max-iters=4000"
-    STANDARD_PASS_OUTPUT
+    STANDARD_PASS_OUTPUT 
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestRCGFiles
@@ -19,8 +19,8 @@ IF (Belos_ENABLE_Triutils AND Belos_ENABLE_EpetraExt)
     EXEDEPS rcg_hb
     )
 
-  ASSERT_DEFINED(Belos_ENABLE_Ifpack)
-  IF(Belos_ENABLE_Ifpack)
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
+  IF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
     prec_rcg_hb
@@ -29,9 +29,9 @@ IF (Belos_ENABLE_Triutils AND Belos_ENABLE_EpetraExt)
     ARGS
       "--verbose --tol=1e-6 --filename=bcsstk14.hb --num-rhs=10 --max-subspace=100 --recycle=5 --max-iters=500 --left-prec"
       "--verbose --tol=1e-6 --filename=bcsstk14.hb --num-rhs=10 --max-subspace=100 --recycle=5 --max-iters=500 --right-prec"
-    STANDARD_PASS_OUTPUT
+    STANDARD_PASS_OUTPUT 
     )
 
-  ENDIF(Belos_ENABLE_Ifpack)
+  ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
 ENDIF()

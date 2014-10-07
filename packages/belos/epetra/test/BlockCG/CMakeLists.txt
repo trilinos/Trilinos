@@ -2,23 +2,23 @@
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   pseudo_cg_indefinite
-  SOURCES test_pseudo_cg_indefinite.cpp
+  SOURCES test_pseudo_cg_indefinite.cpp   
   COMM serial mpi
   ARGS
     "--debug --verbose --tol=1e-5"
   STANDARD_PASS_OUTPUT
   )
 
-ASSERT_DEFINED(Belos_ENABLE_Triutils)
-IF (Belos_ENABLE_Triutils)
-
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+IF (${PACKAGE_NAME}_ENABLE_Triutils)
+    
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     bl_cg_hb
     SOURCES test_bl_cg_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
     ARGS
       "--verbose --filename=bcsstk14.hb"
-    STANDARD_PASS_OUTPUT
+    STANDARD_PASS_OUTPUT 
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -27,7 +27,7 @@ IF (Belos_ENABLE_Triutils)
     COMM serial mpi
     ARGS
       "--verbose --filename=bcsstk14.hb"
-    STANDARD_PASS_OUTPUT
+    STANDARD_PASS_OUTPUT 
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockCGFiles
@@ -36,8 +36,8 @@ IF (Belos_ENABLE_Triutils)
     EXEDEPS bl_cg_hb
     )
 
-  ASSERT_DEFINED(Belos_ENABLE_Ifpack)
-  IF(Belos_ENABLE_Ifpack)
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
+  IF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_pcg_hb
@@ -46,7 +46,7 @@ IF (Belos_ENABLE_Triutils)
       ARGS
         "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --block-size=3 --max-iters=100"
         "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --block-size=3 --max-iters=100"
-      STANDARD_PASS_OUTPUT
+      STANDARD_PASS_OUTPUT 
       )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -56,7 +56,7 @@ IF (Belos_ENABLE_Triutils)
       ARGS
         "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
         "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
-      STANDARD_PASS_OUTPUT
+      STANDARD_PASS_OUTPUT 
       )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -66,11 +66,11 @@ IF (Belos_ENABLE_Triutils)
       ARGS
         "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
         "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
-      STANDARD_PASS_OUTPUT
+      STANDARD_PASS_OUTPUT 
       )
 
 
 
-  ENDIF(Belos_ENABLE_Ifpack)
+  ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
-ENDIF(Belos_ENABLE_Triutils)
+ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)

@@ -1,9 +1,8 @@
 
 
-ASSERT_DEFINED(Belos_ENABLE_Triutils)
-ASSERT_DEFINED(Belos_ENABLE_TSQR)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 
-IF (Belos_ENABLE_Triutils AND Belos_ENABLE_TSQR)
+IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_TSQR)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_OrthoManager_test
     SOURCES belos_orthomanager_tpetra.cpp
@@ -11,7 +10,7 @@ IF (Belos_ENABLE_Triutils AND Belos_ENABLE_TSQR)
     COMM serial mpi
     )
   # This "test" passes trivially with the given arguments.  That is
-  # because it is a benchmark that is meant to be run manually, with
+  # because it is a benchmark that is meant to be run manually, with 
   # carefully chosen arguments.
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_OrthoManager_benchmark

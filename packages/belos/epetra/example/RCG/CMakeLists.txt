@@ -1,7 +1,9 @@
-ASSERT_DEFINED(Belos_ENABLE_EpetraExt)
-ASSERT_DEFINED(Belos_ENABLE_Triutils)
-IF (Belos_ENABLE_Triutils AND Belos_ENABLE_EpetraExt)
 
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
+    
   TRIBITS_ADD_EXECUTABLE(
     RCG_Epetra_Ex_File
     SOURCES RCGEpetraExFile.cpp createEpetraProblem.cpp
