@@ -103,7 +103,12 @@ namespace {
     "(by calling setParameters()).";
 
   // Utility function for inverting diagonal
-#ifdef HAVE_IFPACK2_KOKKOSCLASSIC
+  //
+  // FIXME (mfh 06 Oct 2014) Ifpack2's CMake isn't defining
+  // HAVE_IFPACK2_KOKKOSCLASSIC for some reason, even though
+  // KokkosClassic is listed as a dependency of Ifpack2.  We'll need
+  // to protect use of KokkosClassic with some kind of macro, at some
+  // point, once we deprecate the KokkosClassic subpackage.
   template <typename S, typename L, typename G, typename N>
   void
   reciprocal_threshold (const Tpetra::Vector<S,L,G,N>& v,
@@ -114,18 +119,10 @@ namespace {
     KMV local_v = v.getLocalMV ();
     KMVT::ReciprocalThreshold (local_v, min_val);
   }
-#else
-  template <typename S, typename L, typename G, typename N>
-  void
-  reciprocal_threshold (const Tpetra::Vector<S,L,G,N>& v,
-                        const S& min_val)
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "No default implementation available.");
-  }
-#endif // HAVE_IFPACK2_KOKKOSCLASSIC
 
-
+  // mfh 06 Oct 2014: This specialization is still valid, whether or
+  // not we allow the above default implementation that uses
+  // KokkosClassic.
 #ifdef TPETRA_HAVE_KOKKOS_REFACTOR
   template <typename S, typename L, typename G, typename D>
   void reciprocal_threshold(
@@ -136,8 +133,7 @@ namespace {
   }
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
-
-}
+} // namespace (anonymous)
 
 template<class ScalarType, class MV>
 void Chebyshev<ScalarType, MV>::checkInputMatrix () const

@@ -60,7 +60,6 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_RELAXATION )
 
-#if defined(HAVE_IFPACK2_KOKKOSCLASSIC)
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class Relaxation<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
 
@@ -72,7 +71,6 @@ namespace Ifpack2 {
 
   template class Relaxation<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
 #endif
-#endif // defined(HAVE_IFPACK2_KOKKOSCLASSIC)
 
 }
 

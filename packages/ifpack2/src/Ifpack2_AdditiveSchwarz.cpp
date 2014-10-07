@@ -95,7 +95,7 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_ADDITIVE_SCHWARZ_ILUT )
 
-#if defined(HAVE_IFPACK2_KOKKOSCLASSIC) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_TPETRA_INST_DOUBLE)
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode>,
@@ -113,7 +113,7 @@ namespace Ifpack2 {
   template class AdditiveSchwarz<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>,
                                  Ifpack2::ILUT<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> > >;
 #endif
-#endif // HAVE_IFPACK2_KOKKOSCLASSIC && HAVE_TPETRA_INST_DOUBLE
+#endif // HAVE_TPETRA_INST_DOUBLE
 
 }
 

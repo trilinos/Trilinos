@@ -62,7 +62,7 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_SLG(LCLINST)
 
-#if defined(HAVE_IFPACK2_KOKKOSCLASSIC) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_TPETRA_INST_DOUBLE)
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
 
   template class BlockRelaxation<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, SparseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > > >;
@@ -74,7 +74,7 @@ namespace Ifpack2 {
   template class BlockRelaxation<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, DenseContainer<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, double > >;
 
 #endif
-#endif // HAVE_IFPACK2_KOKKOSCLASSIC && HAVE_TPETRA_INST_DOUBLE
+#endif // HAVE_TPETRA_INST_DOUBLE
 
 } // namespace Ifpack2
 

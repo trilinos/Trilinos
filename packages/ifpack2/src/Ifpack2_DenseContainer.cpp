@@ -60,14 +60,12 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_SLG(LCLINST)
 
-#if defined(HAVE_IFPACK2_KOKKOSCLASSIC)
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
 
   template class DenseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, double >;
   template class DenseContainer<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, double >;
 
 #endif
-#endif // defined(HAVE_IFPACK2_KOKKOSCLASSIC)
 
 }
 

@@ -62,7 +62,6 @@ namespace Details {
 
   IFPACK2_INSTANTIATE_SLG_REAL(LCLINST)
 
-#if defined(HAVE_IFPACK2_KOKKOSCLASSIC)
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class Amesos2Wrapper< Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
   template class Amesos2Wrapper< Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
@@ -72,7 +71,6 @@ namespace Details {
   template class Amesos2Wrapper< Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
   template class Amesos2Wrapper< Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
 #endif
-#endif // defined(HAVE_IFPACK2_KOKKOSCLASSIC)
 
 } // namespace Details
 } // namespace Ifpack2

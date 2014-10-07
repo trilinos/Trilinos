@@ -62,19 +62,13 @@ namespace Details {
 #define IFPACK2_DETAILS_CHEBYSHEV(S,LO,GO) template class Chebyshev<S, Tpetra::MultiVector<S,LO,GO> >;
 
 
-#if defined(HAVE_IFPACK2_KOKKOSCLASSIC)
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template <>
-  class Chebyshev<double,
-                  Tpetra::MultiVector<double, int, int, KokkosClassic::ThrustGPUNode> >;
+  template class Chebyshev<double, Tpetra::MultiVector<double, int, int, KokkosClassic::ThrustGPUNode> >;
 #endif
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template <>
-  class Chebyshev<double,
-                  Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode> >;
+  template class Chebyshev<double, Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode> >;
 #endif
-#endif // defined(HAVE_IFPACK2_KOKKOSCLASSIC)
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
