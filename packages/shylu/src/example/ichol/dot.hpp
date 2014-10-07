@@ -6,12 +6,12 @@ namespace Example {
 
   using namespace std;
   
-  template<typename CrsRowView>
-  inline typename CrsRowView::real_type 
-  dot(const CrsRowView x, const CrsRowView y) {
-    typedef typename CrsRowView::ordinal_type ordinal_type;
-    typedef typename CrsRowView::value_type   value_type;
-    typedef typename CrsRowView::real_type    real_type;
+  template<typename CrsRowViewType>
+  inline typename CrsRowViewType::real_type 
+  dot(const CrsRowViewType x, const CrsRowViewType y) {
+    typedef typename CrsRowViewType::ordinal_type ordinal_type;
+    typedef typename CrsRowViewType::value_type   value_type;
+    typedef typename CrsRowViewType::real_type    real_type;
 
     real_type r_val = 0.0;
     if (x.NumNonZeros() < y.NumNonZeros())  

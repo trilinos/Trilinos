@@ -6,15 +6,15 @@ namespace Example {
 
   using namespace std;
   
-  template<typename CrsMatrixView>
+  template<typename CrsMatViewType>
   inline int
-  gemm_nt_t(const typename CrsMatrixView::value_type alpha,
-            const CrsMatrixView A,
-            const CrsMatrixView X,
-            const typename CrsMatrixView::value_type beta,
-            const CrsMatrixView Y) {
-    typedef typename CrsMatrixView::ordinal_type ordinal_type;
-    typedef typename CrsMatrixView::value_type   value_type;
+  gemm_nt_t(const typename CrsMatViewType::value_type alpha,
+            const CrsMatViewType A,
+            const CrsMatViewType X,
+            const typename CrsMatViewType::value_type beta,
+            const CrsMatViewType Y) {
+    typedef typename CrsMatViewType::ordinal_type ordinal_type;
+    typedef typename CrsMatViewType::value_type   value_type;
     
     // case that X.transpose, A.no_transpose, Y.no_transpose
 

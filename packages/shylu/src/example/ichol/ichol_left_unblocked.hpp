@@ -12,19 +12,19 @@ namespace Example {
   using namespace std;
   
   // use Lower Triangular part only
-  template<typename CrsMatrixView>
+  template<typename CrsMatViewType>
   inline int 
-  factorizeLeftUnblocked(const CrsMatrixView &A) {
-    typedef typename CrsMatrixView::value_type   value_type;
-    typedef typename CrsMatrixView::ordinal_type ordinal_type;
+  ichol_left_unblocked_lower(const CrsMatViewType A) {
+    typedef typename CrsMatViewType::value_type   value_type;
+    typedef typename CrsMatViewType::ordinal_type ordinal_type;
 
     // if succeed, return 0 
     int r_val = 0;
     value_type zero = 0.0;
 
-    CrsMatrixView ATL, ATR,      A00,  a01,     A02,
-      /**/        ABL, ABR,      a10t, alpha11, a12t,
-      /**/                       A20,  a21,     A22;    
+    CrsMatViewType ATL, ATR,      A00,  a01,     A02,
+      /**/         ABL, ABR,      a10t, alpha11, a12t,
+      /**/                        A20,  a21,     A22;    
     
     Part_2x2(A,   ATL, ATR,
              /**/ ABL, ABR, 

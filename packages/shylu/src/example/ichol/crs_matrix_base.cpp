@@ -29,12 +29,12 @@ int main (int argc, char *argv[]) {
   }
   A.importMatrixMarket(in);
 
-  cout << "Imported Matrix A from " << argv[0] << endl;
-  A.showMe(cout);
+  cout << "Imported Matrix A from " << argv[0] << endl
+       << A << endl;
 
   CrsMatrixBase L(A, Uplo::Lower);
-  cout << "Lower Triangular L = " << endl;
-  L.showMe(cout);
+  cout << "Lower Triangular L = " << endl 
+       << L << endl;
 
   return 0;
 }

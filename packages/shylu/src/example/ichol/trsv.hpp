@@ -6,24 +6,24 @@ namespace Example {
 
   using namespace std;
   
-  template<typename CrsMatrixView>
+  template<typename CrsMatViewType>
   inline int
   trsv_l_n_t(const int diag,
-             const CrsMatrixView A,
-             const CrsMatrixView x) {
-    typedef typename CrsMatrixView::ordinal_type ordinal_type;
-    typedef typename CrsMatrixView::value_type   value_type;
+             const CrsMatViewType A,
+             const CrsMatViewType x) {
+    typedef typename CrsMatViewType::ordinal_type ordinal_type;
+    typedef typename CrsMatViewType::value_type   value_type;
     
     // case that A.lower.no_transpose.non_unit, b.transpose (row vector)
 
     int r_val = 0;
     value_type zero = 0.0, one = 1.0;
 
-    CrsMatrixView ATL, ATR,      A00,  a01,     A02,
-      /**/        ABL, ABR,      a10t, alpha11, a12t,
-      /**/                       A20,  a21,     A22;
+    CrsMatViewType ATL, ATR,      A00,  a01,     A02,
+      /**/         ABL, ABR,      a10t, alpha11, a12t,
+      /**/                        A20,  a21,     A22;
 
-    CrsMatrixView xL, xR,        x0,   xi1,     x2;
+    CrsMatViewType xL, xR,        x0,   xi1,     x2;
     
     Part_2x2(A,   ATL, ATR,
              /**/ ABL, ABR,

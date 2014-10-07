@@ -12,7 +12,7 @@ namespace Example {
   template<typename ValueType,
            typename OrdinalType, 
            typename SizeType>
-  class CrsMatrixBase {
+  class CrsMatrixBase : public Disp {
   public:
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
@@ -31,6 +31,7 @@ namespace Example {
     bool _is_initialized;
     bool _is_symmetry;
 
+  protected:
     int finalize() {
       if (_is_initialized) {
         _m    = 0;
@@ -127,16 +128,44 @@ namespace Example {
       // maybe resize
     }
 
+    template<typename CrsFlatBase>
+    CrsMatrixBase(CrsFlatBase &b,
+                  const ordinal_type mb = 1, 
+                  const ordinal_type nb = 1) {
+
+      // need partial specialization only for hierarchical matrix
+
+      // mb = 1, nb = 1 case only now
+      init(b.NumRows(), b.NumCols(), b.NumNonZeros());
+      
+      _nnz = 0;
+      for (ordinal_type i=0;i<_m;++i) {
+        ordinal_type jsize = (*b.RowPtr(i+1) - *b.RowPtr(i));
+        _ap[i] = _nnz;
+        ordinal_type *ci = b.ColIndex(i);
+        for (ordinal_type j=0;j<jsize;++j) {
+          _aj[_nnz] = ci[j];
+          _ax[_nnz].setView(&b,         i, 1,
+                            /**/_aj[_nnz], 1);
+          ++_nnz;
+        }
+      }
+      _ap[_m] = _nnz;
+
+      // this will create a hierarchical matrix which has 1x1 block matrix
+    }
+
     virtual~CrsMatrixBase() {
       finalize();
     }
 
     int importMatrixMarket(ifstream &file);
-    int showMe(ostream &os) const;
+    ostream& showMe(ostream &os) const;
     int convertGraph(size_type &nnz,
                      size_type *rptr,
-                     ordinal_type *cidx) const;
+                     ordinal_type *cidx) const; 
   };
+
 }
 
 #include "crs_matrix_base_impl.hpp"

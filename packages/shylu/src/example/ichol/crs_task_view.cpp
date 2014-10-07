@@ -1,9 +1,12 @@
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
-#include "crs_row_view.hpp"
 #include "crs_matrix_view.hpp"
+#include "crs_row_view.hpp"
 
+#include "symbolic_task.hpp"
+
+#include "crs_task_view.hpp"
 
 using namespace std;
 
@@ -13,7 +16,14 @@ typedef size_t size_type;
 
 typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
-typedef Example::CrsRowView<value_type,ordinal_type> CrsRowView;
+
+typedef Example::SymbolicTask Task;
+typedef Example::CrsTaskView<CrsMatrixBase,Task> CrsTaskView;
+
+typedef Example::CrsMatrixBase<CrsTaskView,ordinal_type,size_type> CrsHierBase;
+typedef Example::CrsTaskView<CrsHierBase,Task> CrsHierView;
+
+typedef Example::Uplo Uplo;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -31,16 +41,15 @@ int main (int argc, char *argv[]) {
   }
   A.importMatrixMarket(in);
 
-  CrsMatrixView AA(A,   2, 6, 
-                   /**/ 3, 8);
-  
-  CrsRowView row = AA.extractRow(2);
-  cout << row << endl;
+  CrsMatrixBase L(A, Uplo::Lower);
 
-  cout << "Densified row view = " << endl;
-  for (ordinal_type j=0;j<row.NumCols();++j) 
-    cout << row.get(j) << "  ";
-  cout << endl;
+  CrsHierBase H(L, 1, 1);
+
+  CrsHierView HH;
+  HH.setView(&H, 2, 3, 2, 3);
+  cout << "Hierarchical Block Matrix of L = " << endl
+       << HH << endl;
 
   return 0;
 }
+

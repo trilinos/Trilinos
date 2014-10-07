@@ -17,7 +17,6 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   
-  // --------------------------------------------------------------------
   CrsMatrix A;
 
   ifstream in;
@@ -29,14 +28,10 @@ int main (int argc, char *argv[]) {
   A.importMatrixMarket(in);
   A.showMe(cout);
 
-  // --------------------------------------------------------------------
   GraphHelper S(A);
 
   S.computeOrdering();
-  S.showMe(cout);
-  // --------------------------------------------------------------------
-  
-  
+  S.showMe(cout);  
 
   return 0;
 }

@@ -24,8 +24,7 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   
-  // --------------------------------------------------------------------
-  CrsMatrixBase Abase;
+  CrsMatrixBase AA;
 
   ifstream in;
   in.open(argv[1]);
@@ -33,10 +32,9 @@ int main (int argc, char *argv[]) {
     cout << "Error in open the file: " << argv[1] << endl;
     return -1;
   }
-  Abase.importMatrixMarket(in);
+  AA.importMatrixMarket(in);
 
-  // --------------------------------------------------------------------
-  CrsMatrixView A(Abase);
+  CrsMatrixView A(AA);
 
   CrsMatrixView 
     ATL, ATR,

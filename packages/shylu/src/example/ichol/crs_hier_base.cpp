@@ -1,9 +1,8 @@
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
-#include "crs_row_view.hpp"
 #include "crs_matrix_view.hpp"
-
+#include "crs_row_view.hpp"
 
 using namespace std;
 
@@ -13,7 +12,10 @@ typedef size_t size_type;
 
 typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
-typedef Example::CrsRowView<value_type,ordinal_type> CrsRowView;
+
+typedef Example::CrsMatrixBase<CrsMatrixView,ordinal_type,size_type> CrsHierBase;
+
+typedef Example::Uplo Uplo;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -31,16 +33,15 @@ int main (int argc, char *argv[]) {
   }
   A.importMatrixMarket(in);
 
-  CrsMatrixView AA(A,   2, 6, 
-                   /**/ 3, 8);
-  
-  CrsRowView row = AA.extractRow(2);
-  cout << row << endl;
+  CrsMatrixBase L(A, Uplo::Lower);
+  cout << "Lower Triangular L = " << endl
+       << L << endl;
 
-  cout << "Densified row view = " << endl;
-  for (ordinal_type j=0;j<row.NumCols();++j) 
-    cout << row.get(j) << "  ";
-  cout << endl;
+  // only 1x1 block matrix is implemented 
+  // later scotch interface will be placed here 
+  CrsHierBase H(L, 1, 1); 
+  cout << "Hierarchical Block Matrix of L = " << endl
+       << H << endl;
 
   return 0;
 }

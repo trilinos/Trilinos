@@ -6,16 +6,16 @@ namespace Example {
 
   using namespace std;
   
-  template<typename CrsMatrixView>
+  template<typename CrsMatViewType>
   inline int
   trsm_r_l_t(const int diag,
-             const typename CrsMatrixView::value_type alpha,
-             const CrsMatrixView A,
-             const CrsMatrixView B) {
+             const typename CrsMatViewType::value_type alpha,
+             const CrsMatViewType A,
+             const CrsMatViewType B) {
     
-    CrsMatrixView BT,   B0,
-      /**/        BB,   b1t,
-      /**/              B2;
+    CrsMatViewType BT,   B0,
+      /**/         BB,   b1t,
+      /**/               B2;
 
     scale(alpha, B);
     

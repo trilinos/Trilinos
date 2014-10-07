@@ -95,7 +95,7 @@ namespace Example {
   template<typename ValueType,
            typename OrdinalType, 
            typename SizeType>
-  inline int 
+  inline ostream& 
   CrsMatrixBase<ValueType,OrdinalType,SizeType>
   ::showMe(ostream &os) const {
     streamsize prec = os.precision();
@@ -123,7 +123,7 @@ namespace Example {
     os.unsetf(ios::scientific);
     os.precision(prec);
 
-    return 0;
+    return os;
   }
 
   template<typename ValueType,

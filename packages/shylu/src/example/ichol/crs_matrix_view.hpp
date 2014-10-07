@@ -11,12 +11,12 @@ namespace Example {
             typename OrdinalType>
   class CrsRowView;
 
-  template<typename CrsMatrixBase>
-  class CrsMatrixView {
+  template<typename CrsMatBaseType>
+  class CrsMatrixView : public Disp {
   public:
-    typedef typename CrsMatrixBase::value_type   value_type;
-    typedef typename CrsMatrixBase::ordinal_type ordinal_type;
-    typedef typename CrsMatrixBase::size_type    size_type;
+    typedef typename CrsMatBaseType::value_type   value_type;
+    typedef typename CrsMatBaseType::ordinal_type ordinal_type;
+    typedef typename CrsMatBaseType::size_type    size_type;
 
   private:
     ordinal_type  _offm;    // offset in rows
@@ -24,27 +24,28 @@ namespace Example {
     ordinal_type  _m;       // # of rows
     ordinal_type  _n;       // # of cols
 
-    CrsMatrixBase *_base;   // pointer to the base object
+    CrsMatBaseType *_base;   // pointer to the base object
     
   public:
-    CrsMatrixBase* BaseObject() const { return _base; }
-    void setView(CrsMatrixBase *base,
+    CrsMatBaseType* BaseObject() const { return _base; }
+    
+    void setView(CrsMatBaseType *base,
                  ordinal_type offm, ordinal_type m,
                  ordinal_type offn, ordinal_type n) {
       _base = base;
       _offm = offm; _m = m;
       _offn = offn; _n = n;
     }
-
+    
     ordinal_type  OffsetRows() const { return _offm; }
     ordinal_type  OffsetCols() const { return _offn; }
-
+    
     ordinal_type  NumRows() const { return _m; }
     ordinal_type  NumCols() const { return _n; }
-
+    
     CrsRowView<value_type,ordinal_type> extractRow(const int i) const { 
       ordinal_type ii = _offm + i;  // i at base
-
+      
       // grep a row in base
       ordinal_type *ci_base = _base->ColIndex(ii); 
       value_type   *val_base = _base->Value(ii); 
@@ -80,8 +81,16 @@ namespace Example {
         _m(0),
         _n(0)
     { } 
+
+    CrsMatrixView(const CrsMatrixView &b)
+      : _base(b._base),
+        _offm(b._offm),
+        _offn(b._offn),
+        _m(b._m),
+        _n(b._n)
+    { } 
     
-    CrsMatrixView(CrsMatrixBase &b)
+    CrsMatrixView(CrsMatBaseType &b)
       : _base(&b),
         _offm(0),
         _offn(0),
@@ -89,7 +98,7 @@ namespace Example {
         _n(b.NumCols())
     { } 
 
-    CrsMatrixView(CrsMatrixBase &b,
+    CrsMatrixView(CrsMatBaseType &b,
                   const ordinal_type offm, const ordinal_type m,
                   const ordinal_type offn, const ordinal_type n) 
       : _base(&b),
@@ -99,12 +108,15 @@ namespace Example {
         _n(n) 
     { } 
 
-    int showMe(ostream &os) const {
+    
+
+    ostream& showMe(ostream &os) const {
       streamsize prec = os.precision();
       os.precision(15);
       os << scientific;
       
-      os << " -- CrsMatrixView -- " << endl
+      os << endl
+         << " -- CrsMatrixView -- " << endl
          << "    Offset in Rows = " << _offm << endl
          << "    Offset in Cols = " << _offn << endl
          << "    # of Rows      = " << _m << endl
@@ -120,7 +132,7 @@ namespace Example {
       os.unsetf(ios::scientific);
       os.precision(prec);
       
-      return 0;
+      return os;
     }
 
   };

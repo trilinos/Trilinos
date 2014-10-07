@@ -10,7 +10,9 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
+#include <set>
 #include <algorithm>
+#include <memory>
 
 #include <cmath>
 
@@ -60,6 +62,28 @@ namespace Example {
     static const int NonUnit = 702;
   };
 
+  template<typename T> 
+  inline 
+  ostream& operator<<(ostream &os, const auto_ptr<T> &p) {
+    return p->showMe(os);
+  }
+
+  class Disp {
+    friend ostream& operator<<(ostream &os, const Disp &disp);
+  public:
+    Disp() { }
+    virtual ostream& showMe(ostream &os) const {
+      return os;
+    }
+  };
+  
+  inline 
+  ostream& operator<<(ostream &os, const Disp &disp) {
+    return disp.showMe(os);
+  }  
+
 }
+
+
 
 #endif

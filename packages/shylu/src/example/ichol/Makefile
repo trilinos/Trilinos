@@ -6,7 +6,8 @@ info :
 
 OBJ   = 
 
-TEST  = ichol_left_blocked
+TEST  = ichol_left_by_blocks
+
 TESTS = \
 	crs_matrix_base \
 	crs_matrix_view \
@@ -15,6 +16,10 @@ TESTS = \
 	dot \
 	ichol_left_unblocked \
 	ichol_left_blocked \
+	symbolic_task \
+	crs_hier_base \
+	crs_task_view \
+	ichol_left_by_blocks \
 	scotch
 
 TRILINOS_DIR = ${HOME}/Work/lib/trilinos/kokkos-dev

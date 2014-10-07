@@ -9,11 +9,11 @@ namespace Example {
   
   using namespace std;
 
-  template<class CrsMatrix>
+  template<class CrsMatrixType>
   class GraphHelper_Scotch {
   public:
-    typedef typename CrsMatrix::ordinal_type ordinal_type;
-    typedef typename CrsMatrix::size_type    size_type;
+    typedef typename CrsMatrixType::ordinal_type ordinal_type;
+    typedef typename CrsMatrixType::size_type    size_type;
 
   private:
     // scotch main data structure
@@ -30,7 +30,7 @@ namespace Example {
     bool _is_ordered;
 
   public:
-    GraphHelper_Scotch(CrsMatrix& A) {
+    GraphHelper_Scotch(CrsMatrixType& A) {
 
       _is_ordered = false;
       _cblk  = 0;
@@ -110,7 +110,7 @@ namespace Example {
     int constructTree() {
     }
 
-    int showMe(ostream &os) {
+    ostream& showMe(ostream &os) {
       streamsize prec = os.precision();
       os.precision(15);
       os << scientific;
@@ -140,7 +140,9 @@ namespace Example {
            << setw(w) << _tree[i] << endl; 
         
       os.unsetf(ios::scientific);
-      os.precision(prec);    
+      os.precision(prec);
+      
+      return os;
     }
     
   };

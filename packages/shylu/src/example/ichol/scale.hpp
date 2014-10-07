@@ -6,11 +6,11 @@ namespace Example {
 
   using namespace std;
   
-  template<typename CrsMatrixView>
+  template<typename CrsMatViewType>
   inline int
-  scale(const typename CrsMatrixView::value_type alpha,
-        CrsMatrixView &A) {
-    typedef typename CrsMatrixView::ordinal_type ordinal_type;
+  scale(const typename CrsMatViewType::value_type alpha,
+        CrsMatViewType &A) {
+    typedef typename CrsMatViewType::ordinal_type ordinal_type;
 
     for (ordinal_type i=0;i<A.NumRows();++i) {
       auto row = A.extractRow(i);

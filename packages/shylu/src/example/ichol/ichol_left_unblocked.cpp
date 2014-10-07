@@ -24,7 +24,6 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   
-  // --------------------------------------------------------------------
   CrsMatrixBase A;
 
   ifstream in;
@@ -37,13 +36,11 @@ int main (int argc, char *argv[]) {
   A.showMe(cout);
 
   CrsMatrixBase L(A, Uplo::Lower);
-  // --------------------------------------------------------------------
 
-  int r_val = factorizeLeftUnblocked(CrsMatrixView(L));
+  int r_val = Example::ichol_left_unblocked_lower(CrsMatrixView(L));
   if (r_val != 0) 
     cout << " Error = " << r_val << endl;
 
-  // --------------------------------------------------------------------
   L.showMe(cout);  
 
   return 0;

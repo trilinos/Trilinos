@@ -22,8 +22,7 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   
-  // --------------------------------------------------------------------
-  CrsMatrixBase Abase;
+  CrsMatrixBase A;
 
   ifstream in;
   in.open(argv[1]);
@@ -31,28 +30,21 @@ int main (int argc, char *argv[]) {
     cout << "Error in open the file: " << argv[1] << endl;
     return -1;
   }
-  Abase.importMatrixMarket(in);
+  A.importMatrixMarket(in);
 
-  // --------------------------------------------------------------------
-  CrsMatrixView A(Abase, 
-                  2, 6, 
-                  3, 8);
+  CrsMatrixView A2(A,   2, 6, 
+                   /**/ 3, 8);
   
-  CrsRowView r2 = A.extractRow(2);
-
-  CrsMatrixView B(Abase, 
-                  3, 7, 
-                  3, 8);
-  CrsRowView r3 = A.extractRow(2);
+  CrsRowView r2 = A2.extractRow(2);
+  
+  CrsMatrixView A3(A,   3, 7, 
+                   /**/ 3, 8);
+  CrsRowView r3 = A3.extractRow(2);
 
   value_type result = Example::dot<CrsRowView>(r2,r3);
 
-  cout << " r2 = " << endl;
-  r2.showMe(cout);
-
-  cout << " r3 = " << endl;
-  r3.showMe(cout);
-
+  cout << " r2 = " << endl << r2 << endl;
+  cout << " r3 = " << endl << r3 << endl;
   cout << " Dot Result = " << result << endl;
   
   return 0;

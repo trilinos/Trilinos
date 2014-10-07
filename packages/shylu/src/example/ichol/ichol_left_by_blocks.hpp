@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __ICHOL_LEFT_BLOCKED_HPP__
-#define __ICHOL_LEFT_BLOCKED_HPP__
+#ifndef __ICHOL_LEFT_BY_BLOCKS_HPP__
+#define __ICHOL_LEFT_BY_BLOCKS_HPP__
 
 #include "partition.hpp"
 
@@ -15,24 +15,24 @@
 
 #include "ichol_left_unblocked.hpp"
 
+#include "gen_tasks_ichol_gemm.hpp"
+#include "gen_tasks_ichol_scalar.hpp"
+#include "gen_tasks_ichol_trsm.hpp"
+
 namespace Example { 
 
   using namespace std;
   
   // use Lower Triangular part only
-  template<typename CrsMatViewType>
+  template<typename CrsTaskViewType>
   inline int 
-  ichol_left_blocked_lower(const CrsMatViewType A,
-                           const typename CrsMatViewType::ordinal_type mb) {
-    typedef typename CrsMatViewType::value_type   value_type;
-    typedef typename CrsMatViewType::ordinal_type ordinal_type;
-
+  ichol_left_by_blocks_lower(const CrsTaskViewType A) {
     // if succeed, return 0 
     int r_val = 0;
 
-    CrsMatViewType ATL, ATR,      A00, A01, A02,
-      /**/         ABL, ABR,      A10, A11, A12,
-      /**/                        A20, A21, A22;
+    CrsTaskViewType ATL, ATR,      A00, A01, A02,
+      /**/          ABL, ABR,      A10, A11, A12,
+      /**/                         A20, A21, A22;
     
     Part_2x2(A,  ATL, ATR,
              /**/ABL, ABR, 
@@ -42,9 +42,9 @@ namespace Example {
       Part_2x2_to_3x3(ATL, ATR, /**/  A00, A01, A02,
                       /*******/ /**/  A10, A11, A12,
                       ABL, ABR, /**/  A20, A21, A22,  
-                      mb, mb, Partition::BottomRight);
+                      1, 1, Partition::BottomRight);
       // -----------------------------------------------------
-      CrsMatViewType AB0, AB1;
+      CrsTaskViewType AB0, AB1;
       
       Merge_2x1(A11,
                 A21, AB1);
@@ -53,17 +53,13 @@ namespace Example {
                 A20, AB0);
 
       // sparse gemm
-      gemm_nt_t(-1.0, AB0, A10, /**/ 1.0, AB1);
+      gen_tasks_ichol_gemm(AB0, A10, AB1);
 
       // cholesky on diagonal block
-      r_val = ichol_left_unblocked_lower(A11);
-      if (r_val)
-        break;
+      gen_tasks_ichol_scalar(A11);
 
       // trsm
-      r_val = trsm_r_l_t(Diag::NonUnit, 1.0, A11, A21);
-      if (r_val)
-        break;
+      gen_tasks_ichol_trsm(A11, A21);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

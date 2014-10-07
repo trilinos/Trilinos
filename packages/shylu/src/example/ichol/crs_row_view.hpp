@@ -8,7 +8,7 @@ namespace Example {
 
   template<typename ValueType, 
            typename OrdinalType>
-  class CrsRowView {
+  class CrsRowView : public Disp {
   public:
     typedef ValueType   value_type;
     typedef ValueType   real_type;
@@ -56,14 +56,14 @@ namespace Example {
         _ax(ax) 
     { }
     
-    int showMe(ostream &os) const {                                                
+    ostream& showMe(ostream &os) const {                                                
       const int w = 6;
       os << " offset = " << setw(w) << _offn << endl; 
       for (ordinal_type j=0;j<_nnz;++j) {
         os << setw(w) << Col(j) << "  "
            << _ax[j] << endl;
       }                                                                                                   
-      return 0;
+      return os;
     }
   };
 }
