@@ -161,7 +161,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline static unsigned hardware_thread_id() { return thread_pool_rank(); }
+  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return thread_pool_rank(); }
   inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
 
   static inline int team_max()         { return thread_pool_size(1) ; }

@@ -1229,8 +1229,38 @@ deep_copy( ST & dst , const View<ST,SL,SD,SM,SS> & src )
 }
 
 //----------------------------------------------------------------------------
-/** \brief  A deep copy between views of the same specialization, compatible type,
- *          same rank, same layout are handled by that specialization.
+/** \brief  A deep copy between views of compatible type, and rank zero.
+ */
+template< class DT , class DL , class DD , class DM , class DS ,
+          class ST , class SL , class SD , class SM , class SS >
+inline
+void deep_copy( const View<DT,DL,DD,DM,DS> & dst ,
+                const View<ST,SL,SD,SM,SS> & src ,
+                typename Impl::enable_if<(
+                  // Same type and destination is not constant:
+                  Impl::is_same< typename View<DT,DL,DD,DM,DS>::value_type ,
+                                 typename View<ST,SL,SD,SM,SS>::non_const_value_type >::value
+                  &&
+                  // Rank zero:
+                  ( unsigned(View<DT,DL,DD,DM,DS>::rank) == unsigned(0) ) &&
+                  ( unsigned(View<ST,SL,SD,SM,SS>::rank) == unsigned(0) )
+                )>::type * = 0 )
+{
+  typedef  View<DT,DL,DD,DM,DS>  dst_type ;
+  typedef  View<ST,SL,SD,SM,SS>  src_type ;
+
+  typedef typename dst_type::memory_space  dst_memory_space ;
+  typedef typename src_type::memory_space  src_memory_space ;
+  typedef typename src_type::value_type    value_type ;
+
+  if ( dst.ptr_on_device() != src.ptr_on_device() ) {
+    Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , sizeof(value_type) );
+  }
+}
+
+//----------------------------------------------------------------------------
+/** \brief  A deep copy between views of the default specialization, compatible type,
+ *          same non-zero rank, same contiguous layout.
  */
 template< class DT , class DL , class DD , class DM ,
           class ST , class SL , class SD , class SM >
@@ -1238,16 +1268,19 @@ inline
 void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
                 const View<ST,SL,SD,SM,Impl::ViewDefault> & src ,
                 typename Impl::enable_if<(
-                  // Destination is not constant:
+                  // Same type and destination is not constant:
                   Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewDefault>::value_type ,
                                  typename View<ST,SL,SD,SM,Impl::ViewDefault>::non_const_value_type >::value
+                  &&
+                  // Same non-zero rank:
+                  ( unsigned(View<DT,DL,DD,DM,Impl::ViewDefault>::rank) ==
+                    unsigned(View<ST,SL,SD,SM,Impl::ViewDefault>::rank) )
+                  &&
+                  ( 0 < unsigned(View<DT,DL,DD,DM,Impl::ViewDefault>::rank) )
                   &&
                   // Same layout:
                   Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewDefault>::array_layout ,
                                  typename View<ST,SL,SD,SM,Impl::ViewDefault>::array_layout >::value
-                  &&
-                  // Same rank:
-                  ( unsigned(View<DT,DL,DD,DM,Impl::ViewDefault>::rank) == unsigned(View<ST,SL,SD,SM,Impl::ViewDefault>::rank) )
                 )>::type * = 0 )
 {
   typedef  View<DT,DL,DD,DM,Impl::ViewDefault>  dst_type ;
@@ -1256,21 +1289,19 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
   typedef typename dst_type::memory_space  dst_memory_space ;
   typedef typename src_type::memory_space  src_memory_space ;
 
+  enum { is_contiguous = // Contiguous (e.g., non-strided, non-tiled) layout
+           Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewDefault>::array_layout , LayoutLeft >::value ||
+           Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewDefault>::array_layout , LayoutRight >::value };
+
   if ( dst.ptr_on_device() != src.ptr_on_device() ) {
 
     // Same shape (dimensions)
     Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
 
-    if ( dst.capacity() == src.capacity() ) {
+    if ( is_contiguous && dst.capacity() == src.capacity() ) {
 
       // Views span equal length contiguous range.
       // Assuming can perform a straight memory copy over this range.
-      //
-      // TODO: Problem if these are subviews spanning equal length
-      //       contiguous range have non-padding gaps then those
-      //       gaps will be erroneously copied.
-      //       Need to detect if gaps are mere padding or valid subranges.
-      //       If subranges then cannot do a straight memory copy.
 
       const size_t nbytes = sizeof(typename dst_type::value_type) * dst.capacity();
 
@@ -1296,17 +1327,19 @@ inline
 void deep_copy( const View< DT, DL, DD, DM, DS > & dst ,
                 const View< ST, SL, SD, SM, SS > & src ,
                 const typename Impl::enable_if<(
-                  // Destination is not constant:
+                  // Same type and destination is not constant:
                   Impl::is_same< typename View<DT,DL,DD,DM,DS>::value_type ,
                                  typename View<DT,DL,DD,DM,DS>::non_const_value_type >::value
                   &&
-                  // Same space
-                  Impl::is_same< typename View<DT,DL,DD,DM,DS>::memory_space ,
-                                 typename View<ST,SL,SD,SM,SS>::memory_space >::value
+                  // Source memory space is accessible to destination memory space
+                  Impl::VerifyExecutionCanAccessMemorySpace< typename View<DT,DL,DD,DM,DS>::memory_space
+                                                           , typename View<ST,SL,SD,SM,SS>::memory_space >::value
                   &&
-                  // Same rank
+                  // Same non-zero rank
                   ( unsigned( View<DT,DL,DD,DM,DS>::rank ) ==
                     unsigned( View<ST,SL,SD,SM,SS>::rank ) )
+                  &&
+                  ( 0 < unsigned( View<DT,DL,DD,DM,DS>::rank ) )
                   &&
                   // Different layout or different specialization:
                   ( ( ! Impl::is_same< typename View<DT,DL,DD,DM,DS>::array_layout ,
