@@ -510,16 +510,17 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
 template<class MatrixType,class ContainerType>
 void BlockRelaxation<MatrixType,ContainerType>::ExtractSubmatrices()
 {
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
+                         global_ordinal_type, node_type> vec_type;
   TEUCHOS_TEST_FOR_EXCEPTION(
     Partitioner_.is_null (), std::runtime_error,
     "Ifpack2::BlockRelaxation::ExtractSubmatrices: Partitioner object is null.");
 
   NumLocalBlocks_ = Partitioner_->numLocalParts ();
   Containers_.resize (NumLocalBlocks_);
-  Tpetra::Vector<scalar_type,LocalOrdinal,GlobalOrdinal,Node>* Diagonal =  new Tpetra::Vector<scalar_type,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap());
-  A_->getLocalDiagCopy(*Diagonal);
-  //  Teuchos::ArrayRCP< const scalar_type >
-  DiagRCP = Diagonal->getData();
+  vec_type D (A_->getRowMap ());
+  A_->getLocalDiagCopy (D);
+  DiagRCP = D.getData ();
 
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
     const size_t numRows = Partitioner_->numRowsInPart (i);
