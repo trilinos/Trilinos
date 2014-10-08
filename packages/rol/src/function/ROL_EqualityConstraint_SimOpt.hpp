@@ -53,11 +53,11 @@
     \class ROL::EqualityConstraint_SimOpt
     \brief Defines the equality constraint operator interface for simulation-based optimization.
 
-    This equality constraint interface inherits from ROL_EqualityConstraint and implements the 
-    situation when \f$\mathcal{X}=\mathcal{U}\times\mathcal{Z}\f$ where \f$\mathcal{U}\f$ and 
-    \f$\mathcal{Z}\f$ are Banach spaces.  \f$\mathcal{U}\f$ denotes the simulation solution 
-    space and \f$\mathcal{Z}\f$ denotes the design/control/inversion parameters. These constraints 
-    are of the form
+    This equality constraint interface inherits from ROL_EqualityConstraint, for the
+    use case when \f$\mathcal{X}=\mathcal{U}\times\mathcal{Z}\f$ where \f$\mathcal{U}\f$ and 
+    \f$\mathcal{Z}\f$ are Banach spaces.  \f$\mathcal{U}\f$ denotes the "simulation space"
+    and \f$\mathcal{Z}\f$ denotes the "optimization space" (of designs, controls, parameters).
+    The simulation-based constraints are of the form
     \f[
       c(u,z) = 0 \,.
     \f]
@@ -106,7 +106,7 @@ public:
              at \f$(u,z)\f$.
 
              @param[out]      c   is the result of evaluating the constraint operator at @b \f$(u,z)\f$; a constraint-space vector
-             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       u   is the constraint argument; a simulation-space vector
              @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
@@ -122,7 +122,7 @@ public:
 
   /** \brief Given \f$z\f$, solve \f$c(u,z)=0\f$ for \f$u\f$.
 
-             @param[out]      u   is the solution vector
+             @param[out]      u   is the solution vector; a simulation-space vector
              @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
@@ -157,8 +157,8 @@ public:
              to the vector \f$v\f$.
 
              @param[out]      jv  is the result of applying the constraint Jacobian to @b v at @b \f$(u,z)\f$; a constraint-space vector
-             @param[in]       v   is an optimization-space vector
-             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       v   is a simulation-space vector
+             @param[in]       u   is the constraint argument; an simulation-space vector
              @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
@@ -201,7 +201,7 @@ public:
 
              @param[out]      jv  is the result of applying the constraint Jacobian to @b v at @b \f$(u,z)\f$; a constraint-space vector
              @param[in]       v   is an optimization-space vector
-             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       u   is the constraint argument; a simulation-space vector
              @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
@@ -241,10 +241,10 @@ public:
              \f$c_u(u,z)^{-1} \in L(\mathcal{C}, \mathcal{U})\f$,
              to the vector \f$v\f$.
 
-             @param[out]      ijv is the result of applying the inverse constraint Jacobian to @b v at @b \f$(u,z)\f$; an optimization-space vector, component 1
+             @param[out]      ijv is the result of applying the inverse constraint Jacobian to @b v at @b \f$(u,z)\f$; a simulation-space vector
              @param[in]       v   is a constraint-space vector
-             @param[in]       u   is the constraint argument; an optimization-space vector, component 1
-             @param[in]       z   is the constraint argument; an optimization-space vector, component 2
+             @param[in]       u   is the constraint argument; a simulation-space vector
+             @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
              On return, \f$\mathsf{ijv} = c_u(u,z)^{-1}v\f$, where
@@ -285,9 +285,9 @@ public:
              \f$c_u(u,z)^* \in L(\mathcal{C}^*, \mathcal{U}^*)\f$,
              to the vector \f$v\f$.
 
-             @param[out]      ajv is the result of applying the adjoint of the constraint Jacobian to @b v at @b (u,z); a dual optimization-space vector
+             @param[out]      ajv is the result of applying the adjoint of the constraint Jacobian to @b v at @b (u,z); a dual simulation-space vector
              @param[in]       v   is a dual constraint-space vector
-             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       u   is the constraint argument; a simulation-space vector
              @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
@@ -350,7 +350,7 @@ public:
 
              @param[out]      ajv is the result of applying the adjoint of the constraint Jacobian to @b v at @b \f$(u,z)\f$; a dual optimization-space vector
              @param[in]       v   is a dual constraint-space vector
-             @param[in]       u   is the constraint argument; an optimization-space vector
+             @param[in]       u   is the constraint argument; a simulation-space vector
              @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
@@ -412,9 +412,9 @@ public:
              to the vector \f$v\f$.
 
              @param[out]      iajv is the result of applying the inverse adjoint of the constraint Jacobian to @b v at @b (u,z); a dual constraint-space vector
-             @param[in]       v   is a dual optimization-space vector, component 1
-             @param[in]       u   is the constraint argument; an optimization-space vector, component 1
-             @param[in]       z   is the constraint argument; an optimization-space vector, component 2
+             @param[in]       v   is a dual simulation-space vector
+             @param[in]       u   is the constraint argument; a simulation-space vector
+             @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
              On return, \f$\mathsf{iajv} = c_u(u,z)^{-*}v\f$, where
@@ -457,10 +457,10 @@ public:
              \f$c_{uu}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{U}^*), \mathcal{U}^*)\f$,
              to vector \f$v\f$ in direction \f$w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
+             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual simulation-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual optimization-space vector
-             @param[in]       u    is the constraint argument; an optimization-space vector
+             @param[in]       v    is a dual simulation-space vector
+             @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
@@ -503,8 +503,8 @@ public:
 
              @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual optimization-space vector
-             @param[in]       u    is the constraint argument; an optimization-space vector
+             @param[in]       v    is a dual simulation-space vector
+             @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
@@ -545,10 +545,10 @@ public:
              \f$c_{zu}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{Z}^*), \mathcal{U}^*)\f$,
              to vector \f$v\f$ in direction \f$w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
+             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual simulation-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
              @param[in]       v    is a dual optimization-space vector
-             @param[in]       u    is the constraint argument; an optimization-space vector
+             @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
@@ -591,7 +591,7 @@ public:
              @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
              @param[in]       v    is a dual optimization-space vector
-             @param[in]       u    is the constraint argument; an optimization-space vector
+             @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
