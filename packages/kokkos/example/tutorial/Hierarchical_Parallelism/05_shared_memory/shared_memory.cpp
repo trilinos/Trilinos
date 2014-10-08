@@ -49,9 +49,9 @@
 #include <cstdio>
 #include <cstdlib>
 
-typedef Kokkos::DefaultExecutionSpace   Device ;
-typedef Device::host_mirror_device_type Host ;
-typedef Kokkos::TeamPolicy< Device >      team_policy ;
+typedef Kokkos::DefaultExecutionSpace   ExecutionSpace ;
+typedef Kokkos::DefaultHostExecutionSpace HostExecutionSpace ;
+typedef Kokkos::TeamPolicy< ExecutionSpace >      team_policy ;
 typedef team_policy::member_type team_member ;
 
 #define TEAM_SIZE 16
@@ -61,43 +61,58 @@ struct find_2_tuples {
   Kokkos::View<const int*> data;
   Kokkos::View<int**> histogram;
 
+  typedef ExecutionSpace::scratch_memory_space SharedSpace;
+
+  typedef Kokkos::View<int**,SharedSpace,Kokkos::MemoryUnmanaged> shared_2d_int;
+  typedef Kokkos::View<int*,SharedSpace,Kokkos::MemoryUnmanaged> shared_1d_int;
+
+
   find_2_tuples(int chunk_size_, Kokkos::DualView<int*> data_,
                 Kokkos::DualView<int**> histogram_):chunk_size(chunk_size_),
                 data(data_.d_view),histogram(histogram_.d_view) {
-      data_.sync<Device>();
-      histogram_.sync<Device>();
-      histogram_.modify<Device>();
+      data_.sync<ExecutionSpace>();
+      histogram_.sync<ExecutionSpace>();
+      histogram_.modify<ExecutionSpace>();
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() ( const team_member & dev) const {
-    Kokkos::View<int**,Kokkos::MemoryUnmanaged> l_histogram(dev.team_shmem(),TEAM_SIZE,TEAM_SIZE);
-    Kokkos::View<int*,Kokkos::MemoryUnmanaged> l_data(dev.team_shmem(),chunk_size+1);
+  void operator() ( const team_member & thread) const {
+    shared_2d_int l_histogram(thread.team_shmem(),TEAM_SIZE,TEAM_SIZE);
+    shared_1d_int l_data(thread.team_shmem(),chunk_size+1);
 
-    const int i = dev.league_rank() * chunk_size;
-    for(int j = dev.team_rank(); j<chunk_size+1; j+=dev.team_size())
+    const int i = thread.league_rank() * chunk_size;
+    thread.team_par_for( chunk_size , [&] (int& j) {
       l_data(j) = data(i+j);
+    });
 
-    for(int k = dev.team_rank(); k < TEAM_SIZE; k+=dev.team_size())
+    thread.team_par_for( chunk_size , [&] (int& k) {
       for(int l = 0; l < TEAM_SIZE; l++)
         l_histogram(k,l) = 0;
-    dev.team_barrier();
+    });
+
+    thread.team_barrier();
 
     for(int j = 0; j<chunk_size; j++) {
-      for(int k = dev.team_rank(); k < TEAM_SIZE; k+=dev.team_size())
+      thread.team_par_for( chunk_size , [&] (int& k) {
         for(int l = 0; l < TEAM_SIZE; l++) {
           if((l_data(j) == k) && (l_data(j+1)==l))
             l_histogram(k,l)++;
         }
+      });
     }
 
-    for(int k = dev.team_rank(); k < TEAM_SIZE; k+=dev.team_size())
+    thread.team_par_for( chunk_size , [&] (int& k) {
       for(int l = 0; l < TEAM_SIZE; l++) {
         Kokkos::atomic_fetch_add(&histogram(k,l),l_histogram(k,l));
       }
-    dev.team_barrier();
+    });
+    thread.team_barrier();
   }
-  size_t team_shmem_size( int team_size ) const { return sizeof(int)*(chunk_size+2 + team_size*team_size); }
+
+  size_t team_shmem_size( int team_size ) const {
+    return shared_2d_int::shmem_size(team_size,team_size) +
+           shared_1d_int::shmem_size(chunk_size+1);
+  }
 };
 
 int main(int narg, char* args[]) {
@@ -113,7 +128,7 @@ int main(int narg, char* args[]) {
     data.h_view(i) = rand()%TEAM_SIZE;
   }
   data.modify<Host>();
-  data.sync<Device>();
+  data.sync<ExecutionSpace>();
 
   Kokkos::DualView<int**> histogram("histogram",TEAM_SIZE,TEAM_SIZE);
 

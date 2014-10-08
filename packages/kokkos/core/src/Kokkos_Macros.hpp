@@ -130,7 +130,7 @@
 /*--------------------------------------------------------------------------*/
 /* Language info: C++, CUDA, OPENMP */
 
-#if defined( __CUDA_ARCH__ )
+#if defined( __CUDA_ARCH__ ) && defined( KOKKOS_HAVE_CUDA )
   // Compiling Cuda code to 'ptx'
 
   #define KOKKOS_FORCEINLINE_FUNCTION  __device__  __host__  __forceinline__
@@ -159,7 +159,7 @@
   // Device code is compile to 'ptx'.
   #define KOKKOS_COMPILER_NVCC __NVCC__
 
-  #if defined( KOKKOS_HAVE_CXX11 )
+  #if defined( KOKKOS_HAVE_CXX11 ) && defined (KOKKOS_HAVE_CUDA)
     // CUDA supports (inofficially) C++11 in device code starting with 
     // version 6.5. This includes auto type and device code internal
     // lambdas.
@@ -333,7 +333,7 @@
 
 /* Atomic selection is not pre-defined, choose from language and compiler. */
 
-#if defined( __CUDA_ARCH__ )
+#if defined( __CUDA_ARCH__ ) && defined (KOKKOS_HAVE_CUDA)
 
   #define KOKKOS_ATOMICS_USE_CUDA
 
@@ -406,7 +406,7 @@
 //----------------------------------------------------------------------------
 /** Determine for what space the code is being compiled: */
 
-#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
+#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ ) && defined (KOKKOS_HAVE_CUDA)
 #define KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA
 #else
 #define KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST

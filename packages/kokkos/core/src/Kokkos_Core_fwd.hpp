@@ -109,7 +109,7 @@ namespace Kokkos {
 namespace Kokkos {
 namespace Impl {
 
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA )
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA ) && defined (KOKKOS_HAVE_CUDA)
 typedef Kokkos::CudaSpace  ActiveExecutionMemorySpace ;
 #elif defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
 typedef Kokkos::HostSpace  ActiveExecutionMemorySpace ;

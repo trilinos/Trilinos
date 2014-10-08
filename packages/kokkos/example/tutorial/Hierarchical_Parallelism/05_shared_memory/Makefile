@@ -1,6 +1,8 @@
 KOKKOS_PATH = ../../../..
 SRC = $(wildcard *.cpp)
 
+CXX11 = yes
+
 ifeq ($(CUDA), yes)
 CC = nvcc
 CCFLAGS = -O3 -arch=sm_35  
