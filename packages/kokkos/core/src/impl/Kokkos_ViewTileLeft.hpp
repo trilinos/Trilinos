@@ -278,7 +278,7 @@ public:
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 void > HostMirror ;
 
   enum { Rank = 2 };

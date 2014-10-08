@@ -50,7 +50,7 @@
 // CMakeList.txt is not set up for compiling Cuda
 // so choose an appropriate non-cuda device:
 #if defined( KOKKOS_HAVE_CUDA )
-typedef Kokkos::Cuda::host_mirror_device_type TestDevice ;
+typedef Kokkos::HostSpace::execution_space TestDevice ;
 #else
 typedef Kokkos::DefaultExecutionSpace TestDevice ;
 #endif

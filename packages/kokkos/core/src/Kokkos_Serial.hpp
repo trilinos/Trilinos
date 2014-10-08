@@ -89,11 +89,6 @@ public:
   typedef HostSpace             memory_space ;
   //! This device's preferred array layout.
   typedef LayoutRight           array_layout ;
-  /// \brief This device's host mirror type.
-  ///
-  /// Serial is a host device, so the host mirror type is the same as
-  /// the device type itself.
-  typedef Serial                host_mirror_device_type ;
 
   /// \brief  Scratch memory space
   typedef ScratchMemorySpace< Kokkos::Serial >  scratch_memory_space ;
@@ -188,6 +183,7 @@ struct VerifyExecutionCanAccessMemorySpace
   , Kokkos::Serial::scratch_memory_space
   >
 {
+  enum { value = true };
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 };

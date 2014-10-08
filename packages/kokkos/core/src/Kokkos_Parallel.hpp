@@ -273,7 +273,7 @@ void parallel_reduce( const size_t        work_count
                                      >::type value_type ;
 
   Kokkos::View< value_type
-              , typename execution_space::host_mirror_device_type
+              , HostSpace
               , Kokkos::MemoryUnmanaged
               >
     result_view ;
@@ -319,7 +319,7 @@ void parallel_reduce( const ExecPolicy  & policy
                                      >::type value_type ;
 
   Kokkos::View< value_type
-              , typename execution_space::host_mirror_device_type
+              , HostSpace
               , Kokkos::MemoryUnmanaged
               >
     result_view( Reduce::pointer( result_ref )
@@ -370,7 +370,7 @@ void parallel_reduce( const size_t        work_count ,
                                      >::type value_type ;
 
   Kokkos::View< value_type
-              , typename execution_space::host_mirror_device_type
+              , HostSpace
               , Kokkos::MemoryUnmanaged
               >
     result_view( Reduce::pointer( result )

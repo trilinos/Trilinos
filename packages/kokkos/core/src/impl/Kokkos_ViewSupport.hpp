@@ -44,6 +44,7 @@
 #ifndef KOKKOS_VIEWSUPPORT_HPP
 #define KOKKOS_VIEWSUPPORT_HPP
 
+#include <Kokkos_ExecPolicy.hpp>
 #include <impl/Kokkos_Shape.hpp>
 
 //----------------------------------------------------------------------------
@@ -200,8 +201,7 @@ namespace Impl {
 template< class OutputView , class InputView  , unsigned Rank = OutputView::Rank >
 struct ViewRemap
 {
-  typedef typename OutputView::device_type device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef typename OutputView::size_type   size_type ;
 
   const OutputView output ;
   const InputView  input ;
@@ -225,7 +225,9 @@ struct ViewRemap
     , n6( std::min( (size_t)arg_out.dimension_6() , (size_t)arg_in.dimension_6() ) )
     , n7( std::min( (size_t)arg_out.dimension_7() , (size_t)arg_in.dimension_7() ) )
     {
-      parallel_for( n0 , *this );
+      typedef typename OutputView::execution_space execution_space ;
+      Kokkos::RangePolicy< execution_space > range( 0 , output.dimension_0() );
+      parallel_for( range , *this );
     }
 
   KOKKOS_INLINE_FUNCTION
@@ -263,9 +265,8 @@ struct ViewRemap< OutputView ,  InputView , 0 >
 template< class OutputView , unsigned Rank = OutputView::Rank >
 struct ViewFill
 {
-  typedef typename OutputView::device_type       device_type ;
   typedef typename OutputView::const_value_type  const_value_type ;
-  typedef typename device_type::size_type        size_type ;
+  typedef typename OutputView::size_type         size_type ;
 
   const OutputView output ;
   const_value_type input ;
@@ -273,8 +274,10 @@ struct ViewFill
   ViewFill( const OutputView & arg_out , const_value_type & arg_in )
     : output( arg_out ), input( arg_in )
     {
-      parallel_for( output.dimension_0() , *this );
-      device_type::fence();
+      typedef typename OutputView::execution_space execution_space ;
+      Kokkos::RangePolicy< execution_space > range( 0 , output.dimension_0() );
+      parallel_for( range , *this );
+      execution_space::fence();
     }
 
   KOKKOS_INLINE_FUNCTION
@@ -295,7 +298,6 @@ struct ViewFill
 template< class OutputView >
 struct ViewFill< OutputView , 0 >
 {
-  typedef typename OutputView::device_type       device_type ;
   typedef typename OutputView::const_value_type  const_value_type ;
   typedef typename OutputView::memory_space      dst_space ;
 

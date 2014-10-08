@@ -215,8 +215,8 @@ solveWithBelosGPU (
               << std::endl;
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
-    if (!Kokkos::Cuda::host_mirror_device_type::is_initialized())
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+    if (!Kokkos::HostSpace::execution_space::is_initialized())
+      Kokkos::HostSpace::execution_space::initialize();
     if (!Kokkos::Cuda::is_initialized())
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
 #endif
@@ -229,7 +229,7 @@ solveWithBelosGPU (
       gpu_node, X, A, B, prec_type, M_left, M_right);
 #if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
 #endif
   }
   else {

@@ -75,17 +75,17 @@ namespace Impl {
 
       Kokkos::Impl::ViewFill<typename ViewType::t_dev>(a.d_view,1);
       a.template modify<typename ViewType::device_type>();
-      a.template sync<typename ViewType::host_mirror_device_type>();
+      a.template sync<typename ViewType::host_mirror_space>();
 
       a.h_view(5,1) = 3;
       a.h_view(6,1) = 4;
       a.h_view(7,2) = 5;
-      a.template modify<typename ViewType::host_mirror_device_type>();
+      a.template modify<typename ViewType::host_mirror_space>();
       ViewType b = Kokkos::subview<ViewType>(a,std::pair<unsigned int, unsigned int>(6,9),std::pair<unsigned int, unsigned int>(0,1));
       a.template sync<typename ViewType::device_type>();
       b.template modify<typename ViewType::device_type>();
       Kokkos::Impl::ViewFill<typename ViewType::t_dev>(b.d_view,2);
-      a.template sync<typename ViewType::host_mirror_device_type>();
+      a.template sync<typename ViewType::host_mirror_space>();
       Scalar count = 0;
       for(unsigned int i = 0; i<a.d_view.dimension_0(); i++)
         for(unsigned int j = 0; j<a.d_view.dimension_1(); j++)

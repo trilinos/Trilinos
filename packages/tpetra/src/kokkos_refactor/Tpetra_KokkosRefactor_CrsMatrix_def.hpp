@@ -2778,7 +2778,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "getLocalDiagCopy";
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> vec_type;
     typedef typename vec_type::dual_view_type dual_view_type;
-    typedef typename device_type::host_mirror_device_type host_device_type;
+    typedef typename dual_view_type::host_mirror_space host_device_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! hasColMap (), std::runtime_error,
@@ -2854,7 +2854,7 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> vec_type;
     typedef typename vec_type::dual_view_type dual_view_type;
-    typedef typename device_type::host_mirror_device_type host_device_type;
+    typedef typename dual_view_type::host_mirror_space host_device_type;
 
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getLocalDiagCopy";
@@ -4852,7 +4852,7 @@ namespace Tpetra {
     typedef Tpetra::MultiVector<DomainScalar, LO, GO, node_type> DMV;
     typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
     typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> MMV;
-    typedef typename device_type::host_mirror_device_type HMDT;
+    typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
     typedef typename Graph::LocalStaticCrsGraphType k_local_graph_type;
     typedef typename k_local_graph_type::size_type offset_type;
     const char prefix[] = "Tpetra::CrsMatrix::localGaussSeidel: ";
@@ -4922,7 +4922,7 @@ namespace Tpetra {
     typedef Tpetra::MultiVector<DomainScalar, LO, GO, node_type> DMV;
     typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
     typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> MMV;
-    typedef typename device_type::host_mirror_device_type HMDT;
+    typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
     typedef typename Graph::LocalStaticCrsGraphType k_local_graph_type;
     typedef typename k_local_graph_type::size_type offset_type;
     const char prefix[] = "Tpetra::CrsMatrix::reorderedLocalGaussSeidel: ";
@@ -4996,7 +4996,7 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef Tpetra::MultiVector<DomainScalar, LO, GO, node_type> DMV;
     typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
-    typedef typename device_type::host_mirror_device_type HMDT;
+    typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
 
     const char tfecfFuncName[] = "localSolve: ";
 

@@ -83,8 +83,8 @@ public:
   typedef ValueType   value_type;
   typedef Memory      memory_type;
 
-  typedef typename device_type::host_mirror_device_type host_mirror_device_type;
-  typedef CrsProductTensor<value_type, host_mirror_device_type> HostMirror;
+  typedef typename Kokkos::ViewTraits< size_type*, device_type,void,void >::host_mirror_space host_mirror_space ;
+  typedef CrsProductTensor<value_type, host_mirror_space> HostMirror;
 
 // Vectorsize used in multiply algorithm
 #if defined(__AVX__)
@@ -119,7 +119,6 @@ private:
   typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type >  vec_type;
   typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > coord_array_type;
   typedef Kokkos::View< size_type*[2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
-  //typedef Kokkos::View< size_type*[2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
   typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type > value_array_type;
   typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > entry_array_type;
   typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > row_map_array_type;

@@ -378,11 +378,7 @@ public :
 CudaMemoryTracking &
 cuda_space_singleton()
 {
-#if defined( KOKKOS_USE_CUDA_UVM )
-  static CudaMemoryTracking s( CudaMemoryTracking::CudaUVMSpaceTag , "Kokkos::CudaSpace");
-#else
   static CudaMemoryTracking s( CudaMemoryTracking::CudaSpaceTag , "Kokkos::CudaSpace");
-#endif
   return s ;
 }
 

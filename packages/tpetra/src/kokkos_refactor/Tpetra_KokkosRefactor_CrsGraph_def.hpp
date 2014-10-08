@@ -186,7 +186,7 @@ namespace Tpetra {
     // (which is a const view, so we can't copy into it directly).
     typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, device_type>
       dual_view_type;
-    typedef typename device_type::host_mirror_device_type host_type;
+    typedef typename dual_view_type::host_mirror_space host_type;
     typedef Kokkos::View<const size_t*, Kokkos::LayoutLeft, host_type,
       Kokkos::MemoryUnmanaged> in_view_type;
     in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
@@ -373,7 +373,7 @@ namespace Tpetra {
     // (which is a const view, so we can't copy into it directly).
     typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, device_type>
       dual_view_type;
-    typedef typename device_type::host_mirror_device_type host_type;
+    typedef typename dual_view_type::host_mirror_space host_type;
     typedef Kokkos::View<const size_t*, Kokkos::LayoutLeft, host_type,
       Kokkos::MemoryUnmanaged> in_view_type;
     in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
@@ -1230,9 +1230,7 @@ namespace Tpetra {
       // Fill with zeros on the host.  k_numRowEntries_ is a DualView.
       //
       // TODO (mfh 05 Aug 2014) Write a device kernel for this.
-      typedef typename device_type::host_mirror_device_type
-        host_mirror_device_type;
-      k_numRowEntries_.template modify<host_mirror_device_type> ();
+      k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
       size_t* const hostPtr = k_numRowEntries_.h_view.ptr_on_device ();
       std::fill (hostPtr, hostPtr + numRows, static_cast<size_t> (0));
       k_numRowEntries_.template sync<device_type> ();
@@ -1568,9 +1566,7 @@ namespace Tpetra {
 
     // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
     // but for now, for correctness, do the modify-sync cycle here.
-    typedef typename device_type::host_mirror_device_type
-      host_mirror_device_type;
-    k_numRowEntries_.template modify<host_mirror_device_type> ();
+    k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
     k_numRowEntries_.h_view(rowinfo.localRow) += numNewInds;
     k_numRowEntries_.template sync<device_type> ();
 
@@ -1617,9 +1613,7 @@ namespace Tpetra {
 
     // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
     // but for now, for correctness, do the modify-sync cycle here.
-    typedef typename device_type::host_mirror_device_type
-      host_mirror_device_type;
-    k_numRowEntries_.template modify<host_mirror_device_type> ();
+    k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
     k_numRowEntries_.h_view(myRow) += numNewInds;
     k_numRowEntries_.template sync<device_type> ();
 
@@ -1685,9 +1679,7 @@ namespace Tpetra {
 
     // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
     // but for now, for correctness, do the modify-sync cycle here.
-    typedef typename device_type::host_mirror_device_type
-      host_mirror_device_type;
-    k_numRowEntries_.template modify<host_mirror_device_type> ();
+    k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
     k_numRowEntries_.h_view(myRow) += numNewInds;
     k_numRowEntries_.template sync<device_type> ();
 
@@ -1829,9 +1821,7 @@ namespace Tpetra {
 
     // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
     // but for now, for correctness, do the modify-sync cycle here.
-    typedef typename device_type::host_mirror_device_type
-      host_mirror_device_type;
-    k_numRowEntries_.template modify<host_mirror_device_type> ();
+    k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
     k_numRowEntries_.h_view(rowinfo.localRow) = mergedEntries;
     k_numRowEntries_.template sync<device_type> ();
 
@@ -1900,9 +1890,7 @@ namespace Tpetra {
 
     // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
     // but for now, for correctness, do the modify-sync cycle here.
-    typedef typename device_type::host_mirror_device_type
-      host_mirror_device_type;
-    k_numRowEntries_.template modify<host_mirror_device_type> ();
+    k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
     k_numRowEntries_.h_view(rowinfo.localRow) = mergedEntries;
     k_numRowEntries_.template sync<device_type> ();
 
@@ -2812,9 +2800,7 @@ namespace Tpetra {
 
       // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
       // but for now, for correctness, do the modify-sync cycle here.
-      typedef typename device_type::host_mirror_device_type
-        host_mirror_device_type;
-      k_numRowEntries_.template modify<host_mirror_device_type> ();
+      k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
       k_numRowEntries_.h_view(lrow) = 0;
       k_numRowEntries_.template sync<device_type> ();
     }

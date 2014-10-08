@@ -54,13 +54,13 @@ protected:
   static void SetUpTestCase()
   {
     Kokkos::Cuda::print_configuration( std::cout );
-    Kokkos::Cuda::host_mirror_device_type::initialize();
+    Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
   }
   static void TearDownTestCase()
   {
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
   }
 };
 

@@ -119,27 +119,29 @@ private:
 
   enum { Arg1IsLayout = Impl::is_layout<Arg1>::value };
 
-  enum { Arg1IsExecSpace = Impl::is_execution_space<Arg1>::value };
-  enum { Arg2IsExecSpace = Impl::is_execution_space<Arg2>::value };
-
-  enum { Arg1IsMemorySpace = Impl::is_memory_space<Arg1>::value };
-  enum { Arg2IsMemorySpace = Impl::is_memory_space<Arg2>::value };
+  enum { Arg1IsSpace = Impl::is_space<Arg1>::value };
+  enum { Arg2IsSpace = Impl::is_space<Arg2>::value };
 
   enum { Arg1IsMemoryTraits = Impl::is_memorytraits<Arg1>::value };
   enum { Arg2IsMemoryTraits = Impl::is_memorytraits<Arg2>::value };
   enum { Arg3IsMemoryTraits = Impl::is_memorytraits<Arg3>::value };
 
-  // Arg1 or Arg2 may be either execution space or memory space
-
-  typedef typename Impl::if_c<( Arg1IsExecSpace || Arg1IsMemorySpace ), Arg1 ,
-          typename Impl::if_c<( Arg2IsExecSpace || Arg2IsMemorySpace ), Arg2 ,
-          Kokkos::DefaultExecutionSpace 
+  // Arg1 or Arg2 may have execution and memory spaces
+  typedef typename Impl::if_c<( Arg1IsSpace ), Arg1 ,
+          typename Impl::if_c<( Arg2IsSpace ), Arg2 ,
+          Kokkos::DefaultExecutionSpace
           >::type >::type::execution_space  ExecutionSpace ;
 
-  typedef typename Impl::if_c<( Arg1IsExecSpace || Arg1IsMemorySpace ), Arg1 ,
-          typename Impl::if_c<( Arg2IsExecSpace || Arg2IsMemorySpace ), Arg2 ,
-          Kokkos::DefaultExecutionSpace 
+  typedef typename Impl::if_c<( Arg1IsSpace ), Arg1 ,
+          typename Impl::if_c<( Arg2IsSpace ), Arg2 ,
+          Kokkos::DefaultExecutionSpace
           >::type >::type::memory_space  MemorySpace ;
+
+  typedef typename Impl::is_space<
+    typename Impl::if_c<( Arg1IsSpace ), Arg1 ,
+    typename Impl::if_c<( Arg2IsSpace ), Arg2 ,
+    Kokkos::DefaultExecutionSpace
+    >::type >::type >::host_mirror_space  HostMirrorSpace ;
 
   // Arg1 may be array layout
   typedef typename Impl::if_c< Arg1IsLayout , Arg1 ,
@@ -187,19 +189,22 @@ public:
   enum { rank_dynamic = shape_type::rank_dynamic };
 
   //------------------------------------
-  // Execution space, memory space, and memory traits:
+  // Execution space, memory space, memory access traits, and host mirror space.
 
-  typedef ExecutionSpace  device_type ; // for backward compatibility
+  typedef ExecutionSpace   execution_space ;
+  typedef MemorySpace      memory_space ;
+  typedef MemoryTraits     memory_traits ;
+  typedef HostMirrorSpace  host_mirror_space ;
 
-  typedef ExecutionSpace  execution_space ;
-  typedef MemorySpace     memory_space ;
-  typedef MemoryTraits    memory_traits ;
-
-  typedef typename device_type::size_type  size_type ;
+  typedef typename memory_space::size_type  size_type ;
 
   enum { is_hostspace      = Impl::is_same< memory_space , HostSpace >::value };
   enum { is_managed        = memory_traits::Unmanaged == 0 };
   enum { is_random_access  = memory_traits::RandomAccess == 1 };
+
+  //------------------------------------
+
+  typedef ExecutionSpace  device_type ; // for backward compatibility, to be removed
 
   //------------------------------------
   // Specialization tag:
@@ -499,23 +504,22 @@ public:
 
   typedef View< typename traits::array_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > array_type ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > non_const_type ;
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename Impl::if_c< traits::is_hostspace ,
-                  typename traits::execution_space , HostSpace>::type ,
+                typename traits::host_mirror_space ,
                 void > HostMirror ;
 
   //------------------------------------
@@ -763,7 +767,7 @@ public:
   // Assign unmanaged View to portion of execution space's shared memory
 
   typedef Impl::if_c< ! traits::is_managed ,
-                      const typename traits::device_type::scratch_memory_space & ,
+                      const typename traits::execution_space::scratch_memory_space & ,
                       Impl::ViewError::device_shmem_constructor_requires_unmanaged >
       if_scratch_memory_constructor ;
 
@@ -1310,8 +1314,6 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
     else {
       // Destination view's execution space must be able to directly access source memory space
       // in order for the ViewRemap functor run in the destination memory space's execution space.
-      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< dst_memory_space , src_memory_space >::verify();
-
       Impl::ViewRemap< dst_type , src_type >( dst , src );
     }
   }

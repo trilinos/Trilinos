@@ -141,9 +141,9 @@ public:
   // Host mirror
   typedef View< typename Impl::RebindStokhosStorageDevice<
                   typename traits::data_type ,
-                  typename traits::device_type::host_mirror_device_type >::type ,
+                  typename traits::host_mirror_space >::type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 void > HostMirror ;
 
   // Equivalent array type for this view.
@@ -161,13 +161,13 @@ public:
   // Equivalent host array type for this view.
   typedef View< typename traits::array_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 typename traits::memory_traits > host_array_type ;
 
   // Equivalent const host array type for this view.
   typedef View< typename traits::const_array_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 typename traits::memory_traits > host_const_array_type ;
 
   typedef typename traits::value_type                   sacado_mp_vector_type ;

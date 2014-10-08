@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
           " to run with too many GPUs per node");
       }
 
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+      Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
 
       cudaDeviceProp deviceProp;
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
       mainCuda<Storage>(comm, print, nIter, atomic, use_nodes, check,
                         dev_config);
 
-      Kokkos::Cuda::host_mirror_device_type::finalize();
+      Kokkos::HostSpace::execution_space::finalize();
       Kokkos::Cuda::finalize();
     }
 #endif

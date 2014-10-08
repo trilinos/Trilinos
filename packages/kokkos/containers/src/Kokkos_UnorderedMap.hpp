@@ -214,6 +214,8 @@ template <   typename Key
         >
 class UnorderedMap
 {
+private:
+  typedef typename ViewTraits<Key,Device,void,void>::host_mirror_space host_mirror_space ;
 public:
   //! \name Public types and constants
   //@{
@@ -250,9 +252,7 @@ public:
 
   typedef UnorderedMapInsertResult insert_result;
 
-  typedef typename Device::host_mirror_device_type host_mirror_device_type;
-
-  typedef UnorderedMap<Key,Value,host_mirror_device_type,Hasher,EqualTo> HostMirror;
+  typedef UnorderedMap<Key,Value,host_mirror_space,Hasher,EqualTo> HostMirror;
 
   typedef Impl::UnorderedMapHistogram<const_map_type> histogram_type;
 
