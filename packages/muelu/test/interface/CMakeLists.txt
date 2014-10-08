@@ -40,8 +40,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
   # NOTE:
   # A the moment, the test environment for Trilinos on software is set incorrectly, and
   # results in not setting the value correctly.
-  # Hence, disable the tests for now.
-  IF(FALSE)
   IF ( ( HAVE_GCC_ABI_DEMANGLE STREQUAL "1") OR ( HAVE_GCC_ABI_DEMANGLE STREQUAL "ON") )
 
     IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
@@ -88,7 +86,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     ENDIF()
 
   ENDIF()
-  ENDIF()
+
 ENDIF()
 
 ADD_SUBDIRECTORY(EasyParameterListInterpreter)
