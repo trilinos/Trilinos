@@ -456,16 +456,20 @@ public:
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = jv.clone();
     applyAdjointJacobian_1(*Jv,v,u,z,tol);
-    Teuchos::RCP<Vector<Real> > iJJv = u.clone();
+    Teuchos::RCP<Vector<Real> > iJJv = v.clone();
     applyInverseAdjointJacobian_1(*iJJv,*Jv,u,z,tol);
     Teuchos::RCP<Vector<Real> > diff = v.clone();
     diff->set(v);
     diff->axpy(-1.0,*iJJv);
     Real dnorm = diff->norm();
     if ( printToScreen ) {
-      std::cout << "\nTest SimOpt equality constraint inverseAdjointJacobian_1: \n"
-                << "  ||v-inv(adj(J))adj(J)v|| = " 
-                << dnorm << "\n";
+      std::stringstream hist;
+      hist << std::scientific << std::setprecision(8);
+      hist << "\nTest SimOpt consistency of inverse adjoint Jacobian_1: \n  ||v-inv(adj(J))adj(J)v|| = "
+           << dnorm << "\n";
+      hist << "  ||v||                   = " << v.norm() << "\n";
+      hist << "  Relative Error          = " << dnorm / (v.norm()+ROL_UNDERFLOW) << "\n";
+      std::cout << hist.str();
     }
     return dnorm;
   }
