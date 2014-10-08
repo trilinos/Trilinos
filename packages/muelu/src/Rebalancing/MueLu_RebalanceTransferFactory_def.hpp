@@ -281,7 +281,7 @@ namespace MueLu {
       if (pL.get<bool>("transpose: use implicit") == false) {
         RCP<Matrix> originalR = Get< RCP<Matrix> >(coarseLevel, "R");
 
-        SubFactoryMonitor m2(*this, "Rebalancing restriction", coarseLevel);
+        SubFactoryMonitor m2(*this, "Rebalancing restrictor", coarseLevel);
 
         if (implicit || importer.is_null()) {
           GetOStream(Runtime0) << "Using original restrictor" << std::endl;

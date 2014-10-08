@@ -301,26 +301,24 @@ Level 3
   [empty list]
 
 
- --------------------------------------------------------------------------------
- ---                            Multigrid Summary                             ---
- --------------------------------------------------------------------------------
- Number of levels    = 4
- Operator complexity = 1.48
- Max Coarse Size     = 1000
- Implicit Transpose  = false
+--------------------------------------------------------------------------------
+---                            Multigrid Summary                             ---
+--------------------------------------------------------------------------------
+Number of levels    = 4
+Operator complexity = 1.48
 
- matrix rows    nnz  nnz/row procs
- A 0    9999  29995     3.00  4
- A 1    3335  10015     3.00  1
- A 2    1111   3331     3.00  1
- A 3     371   1111     2.99  1
+matrix rows    nnz  nnz/row procs
+A 0    9999  29995     3.00  4
+A 1    3335  10015     3.00  1
+A 2    1111   3331     3.00  1
+A 3     371   1111     2.99  1
 
- Smoother (level 0) both : MueLu::IfpackSmoother{type = Chebyshev}
+Smoother (level 0) both : MueLu::IfpackSmoother{type = Chebyshev}
 
- Smoother (level 1) both : MueLu::IfpackSmoother{type = Chebyshev}
+Smoother (level 1) both : MueLu::IfpackSmoother{type = Chebyshev}
 
- Smoother (level 2) both : MueLu::IfpackSmoother{type = Chebyshev}
+Smoother (level 2) both : MueLu::IfpackSmoother{type = Chebyshev}
 
- Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Superlu}
- Smoother (level 3) post : no smoother
+Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 3) post : no smoother
 

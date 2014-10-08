@@ -182,23 +182,21 @@ Level 2
   [empty list]
 
 
- --------------------------------------------------------------------------------
- ---                            Multigrid Summary                             ---
- --------------------------------------------------------------------------------
- Number of levels    = 3
- Operator complexity = 1.45
- Max Coarse Size     = 2000
- Implicit Transpose  = true
+--------------------------------------------------------------------------------
+---                            Multigrid Summary                             ---
+--------------------------------------------------------------------------------
+Number of levels    = 3
+Operator complexity = 1.45
 
- matrix rows    nnz  nnz/row procs
- A 0    9999  29995     3.00  4
- A 1    3335  10015     3.00  4
- A 2    1112   3340     3.00  1
+matrix rows    nnz  nnz/row procs
+A 0    9999  29995     3.00  4
+A 1    3335  10015     3.00  4
+A 2    1112   3340     3.00  1
 
- Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
- Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
+Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 
- Smoother (level 2) pre  : SuperLU solver interface, direct solve
- Smoother (level 2) post : no smoother
+Smoother (level 2) pre  : SuperLU solver interface, direct solve
+Smoother (level 2) post : no smoother
 

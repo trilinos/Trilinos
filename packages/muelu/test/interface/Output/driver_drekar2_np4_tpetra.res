@@ -307,26 +307,24 @@ Level 3
   [empty list]
 
 
- --------------------------------------------------------------------------------
- ---                            Multigrid Summary                             ---
- --------------------------------------------------------------------------------
- Number of levels    = 4
- Operator complexity = 1.48
- Max Coarse Size     = 1000
- Implicit Transpose  = false
+--------------------------------------------------------------------------------
+---                            Multigrid Summary                             ---
+--------------------------------------------------------------------------------
+Number of levels    = 4
+Operator complexity = 1.48
 
- matrix rows    nnz  nnz/row procs
- A 0    9999  29995     3.00  4
- A 1    3335  10015     3.00  1
- A 2    1111   3331     3.00  1
- A 3     371   1111     2.99  1
+matrix rows    nnz  nnz/row procs
+A 0    9999  29995     3.00  4
+A 1    3335  10015     3.00  1
+A 2    1111   3331     3.00  1
+A 3     371   1111     2.99  1
 
- Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94747, alpha: 20, lambdaMin: 0.0973734}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94747, alpha: 20, lambdaMin: 0.0973734}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
- Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94405, alpha: 20, lambdaMin: 0.0972025}, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
+Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94405, alpha: 20, lambdaMin: 0.0972025}, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 
- Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94378, alpha: 20, lambdaMin: 0.0971891}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
+Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94378, alpha: 20, lambdaMin: 0.0971891}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
 
- Smoother (level 3) pre  : SuperLU solver interface, direct solve
- Smoother (level 3) post : no smoother
+Smoother (level 3) pre  : SuperLU solver interface, direct solve
+Smoother (level 3) post : no smoother
 

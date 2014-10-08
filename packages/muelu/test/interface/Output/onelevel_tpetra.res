@@ -13,17 +13,15 @@ Level 0
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
 
 
- --------------------------------------------------------------------------------
- ---                            Multigrid Summary                             ---
- --------------------------------------------------------------------------------
- Number of levels    = 1
- Operator complexity = 1.00
- Max Coarse Size     = 2000
- Implicit Transpose  = false
+--------------------------------------------------------------------------------
+---                            Multigrid Summary                             ---
+--------------------------------------------------------------------------------
+Number of levels    = 1
+Operator complexity = 1.00
 
- matrix rows    nnz  nnz/row procs
- A 0    9999  29995     3.00  1
+matrix rows    nnz  nnz/row procs
+A 0    9999  29995     3.00  1
 
- Smoother (level 0) pre  : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Jacobi, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
- Smoother (level 0) post : no smoother
+Smoother (level 0) pre  : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Jacobi, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) post : no smoother
 
