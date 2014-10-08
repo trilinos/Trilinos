@@ -134,27 +134,6 @@ public:
     u.zero();
   }
 
-  virtual Real checkSolve(const ROL::Vector<Real> &u, 
-                          const ROL::Vector<Real> &z, 
-                          const bool printToScreen = true) {
-    // Solve equality constraint for u. 
-    Real tol = ROL_EPSILON;
-    Teuchos::RCP<ROL::Vector<Real> > s = u.clone();
-    solve(*s,z,tol);
-    // Evaluate equality constraint residual at (u,z).
-    Teuchos::RCP<ROL::Vector<Real> > c = u.clone();
-    value(*c,*s,z,tol);
-    // Output norm of residual.
-    Real cnorm = c->norm();
-    if ( printToScreen ) {
-      std::stringstream hist;
-      hist << std::scientific << std::setprecision(8);
-      hist << "\nTest SimOpt solve at feasible (u,z): \n  ||c(u,z)|| = " << cnorm << "\n";
-      std::cout << hist.str();
-    }
-    return cnorm;
-  }
-
   /** \brief Apply the partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_u(u,z) \in L(\mathcal{U}, \mathcal{C})\f$,
              to the vector \f$v\f$.
@@ -263,32 +242,6 @@ public:
     ijv.zero();
   }
 
-  virtual Real checkInverseJacobian_1(const Vector<Real> &jv, 
-                                      const Vector<Real> &v, 
-                                      const Vector<Real> &u, 
-                                      const Vector<Real> &z, 
-                                      const bool printToScreen = true) {
-    Real tol = ROL_EPSILON;
-    Teuchos::RCP<Vector<Real> > Jv = jv.clone();
-    applyJacobian_1(*Jv,v,u,z,tol);
-    Teuchos::RCP<Vector<Real> > iJJv = u.clone();
-    applyInverseJacobian_1(*iJJv,*Jv,u,z,tol);
-    Teuchos::RCP<Vector<Real> > diff = v.clone();
-    diff->set(v);
-    diff->axpy(-1.0,*iJJv);
-    Real dnorm = diff->norm();
-    if ( printToScreen ) {
-      std::stringstream hist;
-      hist << std::scientific << std::setprecision(8);
-      hist << "\nTest SimOpt consistency of inverse Jacobian_1: \n  ||v-inv(J)Jv|| = " 
-           << dnorm << "\n";
-      hist << "  ||v||          = " << v.norm() << "\n";
-      hist << "  Relative Error = " << dnorm / (v.norm()+ROL_UNDERFLOW) << "\n";
-      std::cout << hist.str();
-    }
-    return dnorm;
-  }
-
   /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_u(u,z)^* \in L(\mathcal{C}^*, \mathcal{U}^*)\f$,
              to the vector \f$v\f$.
@@ -330,31 +283,6 @@ public:
       ajv.axpy(cnew->dot(v),*(u.basis(i)));
     }
     this->update(u,z);
-  }
-
-  virtual Real checkJacobian_1(const Vector<Real> &w, 
-                               const Vector<Real> &v, 
-                               const Vector<Real> &u,
-                               const Vector<Real> &z,
-                               const bool printToScreen = true) {
-    Real tol = ROL_EPSILON;
-    Teuchos::RCP<Vector<Real> > Jv = w.clone();
-    applyJacobian_1(*Jv,v,u,z,tol);
-    Real wJv = w.dot(*Jv);
-    Teuchos::RCP<Vector<Real> > Jw = v.clone();
-    applyAdjointJacobian_1(*Jw,w,u,z,tol);
-    Real vJw = v.dot(*Jw);
-    Real diff = std::abs(wJv-vJw);
-    if ( printToScreen ) {
-      std::stringstream hist;
-      hist << std::scientific << std::setprecision(8);
-      hist << "\nTest SimOpt consistency of Jacobian_1 and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = " 
-           << diff << "\n";
-      hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
-      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
-      std::cout << hist.str();
-    }
-    return diff;
   }
 
   /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
@@ -400,31 +328,6 @@ public:
     this->update(u,z);
   }
 
-  virtual Real checkJacobian_2(const Vector<Real> &w, 
-                               const Vector<Real> &v, 
-                               const Vector<Real> &u,
-                               const Vector<Real> &z,
-                               const bool printToScreen = true) {
-    Real tol = ROL_EPSILON;
-    Teuchos::RCP<Vector<Real> > Jv = w.clone();
-    applyJacobian_2(*Jv,v,u,z,tol);
-    Real wJv = w.dot(*Jv);
-    Teuchos::RCP<Vector<Real> > Jw = v.clone();
-    applyAdjointJacobian_2(*Jw,w,u,z,tol);
-    Real vJw = v.dot(*Jw);
-    Real diff = std::abs(wJv-vJw);
-    if ( printToScreen ) {
-      std::stringstream hist;
-      hist << std::scientific << std::setprecision(8);
-      hist << "\nTest SimOpt consistency of Jacobian_2 and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = "
-           << diff << "\n";
-      hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
-      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
-      std::cout << hist.str();
-    }
-    return diff;
-  }
-
   /** \brief Apply the inverse of the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
              \f$c_u(u,z)^{-*} \in L(\mathcal{U}^*, \mathcal{C}^*)\f$,
              to the vector \f$v\f$.
@@ -447,33 +350,6 @@ public:
                                              Real &tol) {
     iajv.zero();
   };
-
-  virtual Real checkInverseAdjointJacobian_1(const Vector<Real> &jv, 
-                                             const Vector<Real> &v, 
-                                             const Vector<Real> &u, 
-                                             const Vector<Real> &z, 
-                                             const bool printToScreen = true) {
-    Real tol = ROL_EPSILON;
-    Teuchos::RCP<Vector<Real> > Jv = jv.clone();
-    applyAdjointJacobian_1(*Jv,v,u,z,tol);
-    Teuchos::RCP<Vector<Real> > iJJv = v.clone();
-    applyInverseAdjointJacobian_1(*iJJv,*Jv,u,z,tol);
-    Teuchos::RCP<Vector<Real> > diff = v.clone();
-    diff->set(v);
-    diff->axpy(-1.0,*iJJv);
-    Real dnorm = diff->norm();
-    if ( printToScreen ) {
-      std::stringstream hist;
-      hist << std::scientific << std::setprecision(8);
-      hist << "\nTest SimOpt consistency of inverse adjoint Jacobian_1: \n  ||v-inv(adj(J))adj(J)v|| = "
-           << dnorm << "\n";
-      hist << "  ||v||                   = " << v.norm() << "\n";
-      hist << "  Relative Error          = " << dnorm / (v.norm()+ROL_UNDERFLOW) << "\n";
-      std::cout << hist.str();
-    }
-    return dnorm;
-  }
-
 
   /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
              \f$c_{uu}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{U}^*), \mathcal{U}^*)\f$,
@@ -812,6 +688,128 @@ public:
     ahwvs.set_2(*C22); 
   }
 
+  virtual Real checkSolve(const ROL::Vector<Real> &u, 
+                          const ROL::Vector<Real> &z, 
+                          const bool printToScreen = true) {
+    // Solve equality constraint for u. 
+    Real tol = ROL_EPSILON;
+    Teuchos::RCP<ROL::Vector<Real> > s = u.clone();
+    solve(*s,z,tol);
+    // Evaluate equality constraint residual at (u,z).
+    Teuchos::RCP<ROL::Vector<Real> > c = u.clone();
+    value(*c,*s,z,tol);
+    // Output norm of residual.
+    Real cnorm = c->norm();
+    if ( printToScreen ) {
+      std::stringstream hist;
+      hist << std::scientific << std::setprecision(8);
+      hist << "\nTest SimOpt solve at feasible (u,z): \n  ||c(u,z)|| = " << cnorm << "\n";
+      std::cout << hist.str();
+    }
+    return cnorm;
+  }
+
+  virtual Real checkJacobian_1(const Vector<Real> &w, 
+                               const Vector<Real> &v, 
+                               const Vector<Real> &u,
+                               const Vector<Real> &z,
+                               const bool printToScreen = true) {
+    Real tol = ROL_EPSILON;
+    Teuchos::RCP<Vector<Real> > Jv = w.clone();
+    applyJacobian_1(*Jv,v,u,z,tol);
+    Real wJv = w.dot(*Jv);
+    Teuchos::RCP<Vector<Real> > Jw = v.clone();
+    applyAdjointJacobian_1(*Jw,w,u,z,tol);
+    Real vJw = v.dot(*Jw);
+    Real diff = std::abs(wJv-vJw);
+    if ( printToScreen ) {
+      std::stringstream hist;
+      hist << std::scientific << std::setprecision(8);
+      hist << "\nTest SimOpt consistency of Jacobian_1 and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = " 
+           << diff << "\n";
+      hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
+      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
+      std::cout << hist.str();
+    }
+    return diff;
+  }
+
+  virtual Real checkJacobian_2(const Vector<Real> &w, 
+                               const Vector<Real> &v, 
+                               const Vector<Real> &u,
+                               const Vector<Real> &z,
+                               const bool printToScreen = true) {
+    Real tol = ROL_EPSILON;
+    Teuchos::RCP<Vector<Real> > Jv = w.clone();
+    applyJacobian_2(*Jv,v,u,z,tol);
+    Real wJv = w.dot(*Jv);
+    Teuchos::RCP<Vector<Real> > Jw = v.clone();
+    applyAdjointJacobian_2(*Jw,w,u,z,tol);
+    Real vJw = v.dot(*Jw);
+    Real diff = std::abs(wJv-vJw);
+    if ( printToScreen ) {
+      std::stringstream hist;
+      hist << std::scientific << std::setprecision(8);
+      hist << "\nTest SimOpt consistency of Jacobian_2 and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = "
+           << diff << "\n";
+      hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
+      hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
+      std::cout << hist.str();
+    }
+    return diff;
+  }
+
+  virtual Real checkInverseJacobian_1(const Vector<Real> &jv, 
+                                      const Vector<Real> &v, 
+                                      const Vector<Real> &u, 
+                                      const Vector<Real> &z, 
+                                      const bool printToScreen = true) {
+    Real tol = ROL_EPSILON;
+    Teuchos::RCP<Vector<Real> > Jv = jv.clone();
+    applyJacobian_1(*Jv,v,u,z,tol);
+    Teuchos::RCP<Vector<Real> > iJJv = u.clone();
+    applyInverseJacobian_1(*iJJv,*Jv,u,z,tol);
+    Teuchos::RCP<Vector<Real> > diff = v.clone();
+    diff->set(v);
+    diff->axpy(-1.0,*iJJv);
+    Real dnorm = diff->norm();
+    if ( printToScreen ) {
+      std::stringstream hist;
+      hist << std::scientific << std::setprecision(8);
+      hist << "\nTest SimOpt consistency of inverse Jacobian_1: \n  ||v-inv(J)Jv|| = " 
+           << dnorm << "\n";
+      hist << "  ||v||          = " << v.norm() << "\n";
+      hist << "  Relative Error = " << dnorm / (v.norm()+ROL_UNDERFLOW) << "\n";
+      std::cout << hist.str();
+    }
+    return dnorm;
+  }
+
+  virtual Real checkInverseAdjointJacobian_1(const Vector<Real> &jv, 
+                                             const Vector<Real> &v, 
+                                             const Vector<Real> &u, 
+                                             const Vector<Real> &z, 
+                                             const bool printToScreen = true) {
+    Real tol = ROL_EPSILON;
+    Teuchos::RCP<Vector<Real> > Jv = jv.clone();
+    applyAdjointJacobian_1(*Jv,v,u,z,tol);
+    Teuchos::RCP<Vector<Real> > iJJv = v.clone();
+    applyInverseAdjointJacobian_1(*iJJv,*Jv,u,z,tol);
+    Teuchos::RCP<Vector<Real> > diff = v.clone();
+    diff->set(v);
+    diff->axpy(-1.0,*iJJv);
+    Real dnorm = diff->norm();
+    if ( printToScreen ) {
+      std::stringstream hist;
+      hist << std::scientific << std::setprecision(8);
+      hist << "\nTest SimOpt consistency of inverse adjoint Jacobian_1: \n  ||v-inv(adj(J))adj(J)v|| = "
+           << dnorm << "\n";
+      hist << "  ||v||                   = " << v.norm() << "\n";
+      hist << "  Relative Error          = " << dnorm / (v.norm()+ROL_UNDERFLOW) << "\n";
+      std::cout << hist.str();
+    }
+    return dnorm;
+  }
 
 }; // class EqualityConstraint_SimOpt
 
