@@ -195,7 +195,10 @@ namespace Teuchos
     void GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* C, ScalarType* D, ScalarType* X, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
     //! Computes a QR factorization of a general \c m by \c n matrix \c A.
-    void GEQRF( const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void GEQRF (const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
+    //! BLAS 2 version of GEQRF, with known workspace size.
+    void GEQR2 (const OrdinalType m, const OrdinalType n, ScalarType A[], const OrdinalType lda, ScalarType TAU[], ScalarType WORK[], OrdinalType* const info) const;
 
     //! Computes an LU factorization of a general \c m by \c n matrix \c A using partial pivoting with row interchanges.
     void GETRF(const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
@@ -412,22 +415,35 @@ namespace Teuchos
     ///
     /// Overwrite the general real \c m by \c n matrix \c C with the
     /// product of \c Q and \c C, whiere Q is the product of \c k
-    /// elementary (Householder) reflectors as returned by \c GEQRF.
+    /// elementary (Householder) reflectors as returned by GEQRF.
     ///
     /// \note This method is not defined when ScalarType is complex.
-    /// Call \c UNMQR in that case.  ("OR" stands for "orthogonal";
+    /// Call UNMQR in that case.  ("OR" stands for "orthogonal";
     /// "UN" stands for "unitary.")
     void ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
+    /// \brief BLAS 2 version of ORMQR; known workspace size.
+    ///
+    /// \note This method is not defined when ScalarType is complex.
+    /// Call UNM2R in that case.  ("OR" stands for "orthogonal"; "UN"
+    /// stands for "unitary.")
+    void ORM2R(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType A[], const OrdinalType lda, const ScalarType TAU[], ScalarType C[], const OrdinalType ldc, ScalarType WORK[], OrdinalType* const info) const;
 
     /// \brief Apply Householder reflectors (complex case).
     ///
     /// Overwrite the general complex \c m by \c n matrix \c C with
     /// the product of \c Q and \c C, where Q is the product of \c k
-    /// elementary (Householder) reflectors as returned by \c GEQRF.
+    /// elementary (Householder) reflectors as returned by GEQRF.
     ///
-    /// \note This method will call \c ORMQR when ScalarType is real.
+    /// \note This method will call ORMQR when ScalarType is real.
     /// (Unitary real matrices are orthogonal.)
     void UNMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
+    /// \brief BLAS 2 version of UNMQR; known workspace size.
+    ///
+    /// \note This method will call ORM2R when ScalarType is real.
+    /// (Unitary real matrices are orthogonal.)
+    void UNM2R(const char SIDE, const char TRANS, const OrdinalType M, const OrdinalType N, const OrdinalType K, const ScalarType A[], const OrdinalType LDA, const ScalarType TAU[], ScalarType C[], const OrdinalType LDC, ScalarType WORK[], OrdinalType* const INFO) const;
 
     /// \brief Compute explicit Q factor from QR factorization (GEQRF) (real case).
     ///
@@ -677,6 +693,12 @@ namespace Teuchos
 
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GEQRF( const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::GEQR2 (const OrdinalType m, const OrdinalType n, ScalarType A[], const OrdinalType lda, ScalarType TAU[], ScalarType WORK[], OrdinalType* const info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -1231,7 +1253,19 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::ORM2R(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType A[], const OrdinalType lda, const ScalarType TAU[], ScalarType C[], const OrdinalType ldc, ScalarType WORK[], OrdinalType* const info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::UNMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::UNM2R(const char SIDE, const char TRANS, const OrdinalType M, const OrdinalType N, const OrdinalType K, const ScalarType A[], const OrdinalType LDA, const ScalarType TAU[], ScalarType C[], const OrdinalType LDC, ScalarType WORK[], OrdinalType* const INFO) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -1372,7 +1406,9 @@ namespace Teuchos
     void GELSS(const int m, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, float* S, const float rcond, int* rank, float* WORK, const int lwork, float* RWORK, int* info) const;
     void GELSS(const int m, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, float* S, const float rcond, int* rank, float* WORK, const int lwork, int* info) const;
     void GGLSE(const int m, const int n, const int p, float* A, const int lda, float* B, const int ldb, float* C, float* D, float* X, float* WORK, const int lwork, int* info) const;
-    void GEQRF( const int m, const int n, float* A, const int lda, float* TAU, float* WORK, const int lwork, int* info) const;
+    void GEQRF(const int m, const int n, float* A, const int lda, float* TAU, float* WORK, const int lwork, int* info) const;
+    void GEQR2(const int m, const int n, float A[], const int lda, float TAU[], float WORK[], int* const info) const;
+
     void GETRF(const int m, const int n, float* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const float* A, const int lda, const int* IPIV, float* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const float cfrom, const float cto, const int m, const int n, float* A, const int lda, int* info) const;
@@ -1448,8 +1484,9 @@ namespace Teuchos
 
     // Orthogonal matrix routines.
     void ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const;
+    void ORM2R(const char SIDE, const char TRANS, const int m, const int n, const int k, const float A[], const int lda, const float TAU[], float C[], const int ldc, float WORK[], int* const info) const;
     void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const;
-
+    void UNM2R(const char SIDE, const char TRANS, const int M, const int N, const int K, const float A[], const int LDA, const float TAU[], float C[], const int LDC, float WORK[], int* const INFO) const;
     void ORGQR(const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
     void UNGQR(const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
     void ORGHR(const int n, const int ilo, const int ihi, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
@@ -1511,7 +1548,8 @@ namespace Teuchos
     void GELSS(const int m, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, double* S, const double rcond, int* rank, double* WORK, const int lwork, double* RWORK, int* info) const;
     void GELSS(const int m, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, double* S, const double rcond, int* rank, double* WORK, const int lwork, int* info) const;
     void GGLSE(const int m, const int n, const int p, double* A, const int lda, double* B, const int ldb, double* C, double* D, double* X, double* WORK, const int lwork, int* info) const;
-    void GEQRF( const int m, const int n, double* A, const int lda, double* TAU, double* WORK, const int lwork, int* info) const;
+    void GEQRF(const int m, const int n, double* A, const int lda, double* TAU, double* WORK, const int lwork, int* info) const;
+    void GEQR2(const int m, const int n, double A[], const int lda, double TAU[], double WORK[], int* const info) const;
     void GETRF(const int m, const int n, double* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const double* A, const int lda, const int* IPIV, double* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const double cfrom, const double cto, const int m, const int n, double* A, const int lda, int* info) const;
@@ -1586,7 +1624,9 @@ namespace Teuchos
 
     // Orthogonal matrix routines.
     void ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* C, const int ldc, double* WORK, const int lwork, int* info) const;
+    void ORM2R(const char SIDE, const char TRANS, const int m, const int n, const int k, const double A[], const int lda, const double TAU[], double C[], const int ldc, double WORK[], int* const info) const;
     void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* C, const int ldc, double* WORK, const int lwork, int* info) const;
+    void UNM2R(const char SIDE, const char TRANS, const int M, const int N, const int K, const double A[], const int LDA, const double TAU[], double C[], const int LDC, double WORK[], int* const INFO) const;
     void ORGQR(const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
     void UNGQR(const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
     void ORGHR(const int n, const int ilo, const int ihi, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
@@ -1648,9 +1688,11 @@ namespace Teuchos
     // General Linear System Routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, std::complex<float>* WORK, const int lwork, int* info) const;
     void GELSS(const int m, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, float* S, const float rcond, int* rank, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
-    void GEQRF( const int m, const int n, std::complex<float>* A, const int lda, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
+    void GEQRF(const int m, const int n, std::complex<float>* A, const int lda, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
+    void GEQR2(const int m, const int n, std::complex<float> A[], const int lda, std::complex<float> TAU[], std::complex<float> WORK[], int* const info) const;
     void UNGQR(const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
     void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* C, const int ldc, std::complex<float>* WORK, const int lwork, int* info) const;
+    void UNM2R(const char SIDE, const char TRANS, const int M, const int N, const int K, const std::complex<float> A[], const int LDA, const std::complex<float> TAU[], std::complex<float> C[], const int LDC, std::complex<float> WORK[], int* const INFO) const;
     void GETRF(const int m, const int n, std::complex<float>* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const float cfrom, const float cto, const int m, const int n, std::complex<float>* A, const int lda, int* info) const;
@@ -1765,9 +1807,12 @@ namespace Teuchos
     // General Linear System Routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, std::complex<double>* WORK, const int lwork, int* info) const;
     void GELSS(const int m, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, double* S, const double rcond, int* rank, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
-    void GEQRF( const int m, const int n, std::complex<double>* A, const int lda, std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
+    void GEQRF(const int m, const int n, std::complex<double>* A, const int lda, std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
+    void GEQR2(const int m, const int n, std::complex<double> A[], const int lda, std::complex<double> TAU[], std::complex<double> WORK[], int* const info) const;
     void UNGQR(const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
     void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* C, const int ldc, std::complex<double>* WORK, const int lwork, int* info) const;
+    void UNM2R(const char SIDE, const char TRANS, const int M, const int N, const int K, const std::complex<double> A[], const int LDA, const std::complex<double> TAU[], std::complex<double> C[], const int LDC, std::complex<double> WORK[], int* const INFO) const;
+
     void GETRF(const int m, const int n, std::complex<double>* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const double cfrom, const double cto, const int m, const int n, std::complex<double>* A, const int lda, int* info) const;

@@ -158,6 +158,10 @@ namespace Teuchos
   void LAPACK<int,float>::GEQRF( const int m, const int n, float* A, const int lda, float* TAU, float* WORK, const int lwork, int* info) const
   { SGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info); }
 
+  void LAPACK<int,float>::GEQR2 (const int m, const int n, float A[], const int lda, float TAU[], float WORK[], int* const info) const
+  {
+    SGEQR2_F77(&m, &n, A, &lda, TAU, WORK, info);
+  }
 
   void LAPACK<int,float>::GETRF(const int m, const int n, float* A, const int lda, int* IPIV, int* info) const
   { SGETRF_F77(&m, &n, A, &lda, IPIV, info); }
@@ -381,6 +385,11 @@ namespace Teuchos
   void LAPACK<int, float>::ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const
   { SORMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info); }
 
+
+  void LAPACK<int, float>::ORM2R(const char SIDE, const char TRANS, const int m, const int n, const int k, const float A[], const int lda, const float TAU[], float C[], const int ldc, float WORK[], int* const info) const
+  { SORM2R_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, info); }
+
+
   void LAPACK<int, float>::UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const
   {
     // LAPACK only defines UNMQR for Z and C (complex*8
@@ -388,6 +397,15 @@ namespace Teuchos
     // ORMQR for real arithmetic.
     ORMQR (SIDE, TRANS, m, n, k, A, lda, TAU, C, ldc, WORK, lwork, info);
   }
+
+  void LAPACK<int, float>::UNM2R (const char SIDE, const char TRANS, const int M, const int N, const int K, const float A[], const int LDA, const float TAU[], float C[], const int LDC, float WORK[], int* const INFO) const
+  {
+    // LAPACK only defines UNM2R for Z and C (complex*8
+    // resp. complex*16), but logically, UNM2R means the same thing as
+    // ORM2R for real arithmetic.
+    ORM2R (SIDE, TRANS, M, N, K, A, LDA, TAU, C, LDC, WORK, INFO);
+  }
+
 
   void LAPACK<int, float>::ORGQR(const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const
   { SORGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info); }
@@ -552,6 +570,10 @@ namespace Teuchos
   void LAPACK<int,double>::GEQRF( const int m, const int n, double* A, const int lda, double* TAU, double* WORK, const int lwork, int* info) const
   { DGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info); }
 
+  void LAPACK<int,double>::GEQR2 (const int m, const int n, double A[], const int lda, double TAU[], double WORK[], int* const info) const
+  {
+    DGEQR2_F77(&m, &n, A, &lda, TAU, WORK, info);
+  }
 
   void LAPACK<int,double>::GETRF(const int m, const int n, double* A, const int lda, int* IPIV, int* info) const
   { DGETRF_F77(&m, &n, A, &lda, IPIV, info); }
@@ -788,12 +810,25 @@ namespace Teuchos
     DORMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
   }
 
+  void LAPACK<int, double>::ORM2R(const char SIDE, const char TRANS, const int m, const int n, const int k, const double A[], const int lda, const double TAU[], double C[], const int ldc, double WORK[], int* const info) const
+  {
+    DORM2R_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, info);
+  }
+
   void LAPACK<int, double>::UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* C, const int ldc, double* WORK, const int lwork, int* info) const
   {
     // LAPACK only defines UNMQR for Z and C (complex*8
     // resp. complex*16), but logically, UNMQR means the same thing as
     // ORMQR for real arithmetic.
     ORMQR (SIDE, TRANS, m, n, k, A, lda, TAU, C, ldc, WORK, lwork, info);
+  }
+
+  void LAPACK<int, double>::UNM2R (const char SIDE, const char TRANS, const int M, const int N, const int K, const double A[], const int LDA, const double TAU[], double C[], const int LDC, double WORK[], int* const INFO) const
+  {
+    // LAPACK only defines UNM2R for Z and C (complex*8
+    // resp. complex*16), but logically, UNM2R means the same thing as
+    // ORM2R for real arithmetic.
+    ORM2R (SIDE, TRANS, M, N, K, A, LDA, TAU, C, LDC, WORK, INFO);
   }
 
   void LAPACK<int, double>::ORGQR(const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const
@@ -977,42 +1012,45 @@ namespace Teuchos
     CGELS_F77(CHAR_MACRO(TRANS), &m, &n, &nrhs, A, &lda, B, &ldb, WORK, &lwork, info);
   }
 
-
   void LAPACK<int, std::complex<float> >::GELSS(const int m, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, float* S, const float rcond, int* rank, std::complex<float>* WORK, const int lwork, float* rwork, int* info) const
   {
     CGELSS_F77(&m, &n, &nrhs, A, &lda, B, &ldb, S, &rcond, rank, WORK, &lwork, rwork, info);
   }
-
 
   void LAPACK<int,std::complex<float> >::GEQRF( const int m, const int n, std::complex<float>* A, const int lda, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const
   {
     CGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info);
   }
 
+  void LAPACK<int,std::complex<float> >::GEQR2 (const int m, const int n, std::complex<float> A[], const int lda, std::complex<float> TAU[], std::complex<float> WORK[], int* const info) const
+  {
+    CGEQR2_F77(&m, &n, A, &lda, TAU, WORK, info);
+  }
 
   void LAPACK<int,std::complex<float> >::UNGQR(const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const
   {
     CUNGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
   }
 
-
   void LAPACK<int,std::complex<float> >::UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* C, const int ldc, std::complex<float>* WORK, const int lwork, int* info) const
   {
     CUNMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
   }
 
+  void LAPACK<int,std::complex<float> >::UNM2R (const char SIDE, const char TRANS, const int M, const int N, const int K, const std::complex<float> A[], const int LDA, const std::complex<float> TAU[], std::complex<float> C[], const int LDC, std::complex<float> WORK[], int* const INFO) const
+  {
+    CUNM2R_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &M, &N, &K, A, &LDA, TAU, C, &LDC, WORK, INFO);
+  }
 
   void LAPACK<int,std::complex<float> >::GETRF(const int m, const int n, std::complex<float>* A, const int lda, int* IPIV, int* info) const
   {
     CGETRF_F77(&m, &n, A, &lda, IPIV, info);
   }
 
-
   void LAPACK<int,std::complex<float> >::GETRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* B , const int ldb, int* info) const
   {
     CGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, B, &ldb, info);
   }
-
 
   void LAPACK<int,std::complex<float> >::LASCL(const char TYPE, const int kl, const int ku, const float cfrom, const float cto, const int m, const int n, std::complex<float>* A, const int lda, int* info) const
   { CLASCL_F77(CHAR_MACRO(TYPE), &kl, &ku, &cfrom, &cto, &m, &n, A, &lda, info); }
@@ -1220,8 +1258,8 @@ namespace Teuchos
       // The eigenvalues are only valid on output if INFO is zero.
       // Otherwise, we shouldn't even write to WR or WI.
       for (int k = 0; k < n; ++k) {
-	WR[k] = w[k].real ();
-	WI[k] = w[k].imag ();
+        WR[k] = w[k].real ();
+        WI[k] = w[k].imag ();
       }
     }
   }
@@ -1251,8 +1289,8 @@ namespace Teuchos
       // The eigenvalues are only valid on output if INFO is zero.
       // Otherwise, we shouldn't even write to WR or WI.
       for (int k = 0; k < n; ++k) {
-	ALPHAR[k] = w[k].real ();
-	ALPHAI[k] = w[k].imag ();
+        ALPHAR[k] = w[k].real ();
+        ALPHAI[k] = w[k].imag ();
       }
     }
   }
@@ -1405,6 +1443,10 @@ namespace Teuchos
     ZGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info);
   }
 
+  void LAPACK<int,std::complex<double> >::GEQR2 (const int m, const int n, std::complex<double> A[], const int lda, std::complex<double> TAU[], std::complex<double> WORK[], int* const info) const
+  {
+    ZGEQR2_F77(&m, &n, A, &lda, TAU, WORK, info);
+  }
 
   void LAPACK<int,std::complex<double> >::UNGQR(const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const
   {
@@ -1417,6 +1459,10 @@ namespace Teuchos
     ZUNMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
   }
 
+  void LAPACK<int,std::complex<double> >::UNM2R (const char SIDE, const char TRANS, const int M, const int N, const int K, const std::complex<double> A[], const int LDA, const std::complex<double> TAU[], std::complex<double> C[], const int LDC, std::complex<double> WORK[], int* const INFO) const
+  {
+    ZUNM2R_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &M, &N, &K, A, &LDA, TAU, C, &LDC, WORK, INFO);
+  }
 
   void LAPACK<int,std::complex<double> >::GETRF(const int m, const int n, std::complex<double>* A, const int lda, int* IPIV, int* info) const
   {
@@ -1635,8 +1681,8 @@ namespace Teuchos
       // The eigenvalues are only valid on output if INFO is zero.
       // Otherwise, we shouldn't even write to WR or WI.
       for (int k = 0; k < n; ++k) {
-	WR[k] = w[k].real ();
-	WI[k] = w[k].imag ();
+        WR[k] = w[k].real ();
+        WI[k] = w[k].imag ();
       }
     }
   }
@@ -1665,8 +1711,8 @@ namespace Teuchos
       // The eigenvalues are only valid on output if INFO is zero.
       // Otherwise, we shouldn't even write to WR or WI.
       for (int k = 0; k < n; ++k) {
-	ALPHAR[k] = w[k].real ();
-	ALPHAI[k] = w[k].imag ();
+        ALPHAR[k] = w[k].real ();
+        ALPHAI[k] = w[k].imag ();
       }
     }
   }
