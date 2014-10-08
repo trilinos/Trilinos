@@ -208,6 +208,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
       parameter/Sacado_ScalarParameterLibrary.hpp
       parameter/Sacado_ScalarParameterVector.hpp
       parameter/Sacado_ParameterAccessor.hpp
+      parameter/Sacado_ParameterAccessorImp.hpp
       parameter/Sacado_ParameterRegistration.hpp
       )
 

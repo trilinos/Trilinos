@@ -29,43 +29,11 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef SACADO_PARAMETERACCESSOR_HPP
-#define SACADO_PARAMETERACCESSOR_HPP
-
-#include <vector>
-#include "Teuchos_RCP.hpp"
-#include "Sacado_ScalarParameterEntry.hpp"
-
-  /*!
-   * \brief Abstract class that provides access to a parameter
-   * value in a code for the parameter library. An object of this
-   * type is required to construct a ParameterRegistration object.
-   */
-
-namespace Sacado {
-  template <typename EvalType, typename EvalTypeTraits>
-  class ParameterRegistration;
-
-  template<typename EvalType, typename EvalTypeTraits = DefaultEvalTypeTraits> class ParameterAccessor {
-  private:
-    typedef typename EvalTypeTraits::template apply<EvalType>::type ScalarT;
-
-  public:
-
-    virtual ~ParameterAccessor() {};
-
-    //! Method that returns a reference to the parameter value given the name
-    //! The ParameterLibrary call this method when a parameter value cahnges
-    virtual ScalarT& getValue(const std::string &n) = 0;
-
-    void registerSacadoParameter(const std::string& name, Teuchos::RCP<ParamLib>& paramLib);
-
-  private:
-    std::vector< Teuchos::RCP< ParameterRegistration<EvalType, EvalTypeTraits> > > pr_;
-  };
+template <typename EvalType, typename EvalTypeTraits>
+void Sacado::ParameterAccessor<EvalType,EvalTypeTraits>::
+registerSacadoParameter(const std::string& name, Teuchos::RCP<ParamLib>& paramLib)
+{
+  pr_.push_back(Teuchos::rcp(
+                  new Sacado::ParameterRegistration<EvalType,EvalTypeTraits>(
+                    name, this, paramLib)));
 }
-
-// Include implementation
-#include "Sacado_ParameterAccessorImp.hpp"
-
-#endif
