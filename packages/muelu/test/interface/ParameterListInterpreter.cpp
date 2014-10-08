@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
         baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
 
         std::string cmd;
-        if (k > 0) {
+        if (k > 0 && myRank == 0) {
           // Restore res file
           cmd = "mv -f " + baseFile + ".resorig " + baseFile + ".res";
           system(cmd.c_str());

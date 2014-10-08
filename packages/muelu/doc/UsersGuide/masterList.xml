@@ -342,14 +342,6 @@
   </parameter>
 
   <parameter>
-    <name>repartition: keep proc 0</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Postprocessing for partitioning to keep processor 0 from dropping out. The goal is to keep processor 0 of the original fine level communication even when we use level subcommunicators.</description>
-    <visible>false</visible>
-  </parameter>
-
-  <parameter>
     <name>repartition: print partition distribution</name>
     <type>bool</type>
     <default>false</default>

@@ -77,7 +77,6 @@ Level 1
   repartition: start level = 1
   repartition: min rows per proc = 2000
   repartition: max imbalance = 1.327
-  repartition: keep proc 0 = 1
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
   repartition: remap num values = 4   [default]
@@ -178,7 +177,6 @@ Level 2
   repartition: start level = 1
   repartition: min rows per proc = 2000
   repartition: max imbalance = 1.327
-  repartition: keep proc 0 = 1
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
   repartition: remap num values = 4   [default]
@@ -279,7 +277,6 @@ Level 3
   repartition: start level = 1
   repartition: min rows per proc = 2000
   repartition: max imbalance = 1.327
-  repartition: keep proc 0 = 1
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
   repartition: remap num values = 4   [default]

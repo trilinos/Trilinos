@@ -93,8 +93,6 @@
         
 \cbb{repartition: remap num values}{int}{4}{Number of maximum components from each processor used to construct partial bipartite graph.}
         
-\cbb{repartition: keep proc 0}{bool}{true}{Postprocessing for partitioning to keep processor 0 from dropping out. The goal is to keep processor 0 of the original fine level communication even when we use level subcommunicators.}
-        
 \cbb{repartition: print partition distribution}{bool}{false}{Print partition distribution with '+' and '.'}
         
 \cbb{repartition: rebalance P and R}{bool}{true}{Do rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}

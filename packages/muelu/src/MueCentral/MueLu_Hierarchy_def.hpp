@@ -840,7 +840,7 @@ namespace MueLu {
     int strLength = outstr.size();
     MPI_Bcast(&strLength, 1, MPI_INT, root, rawComm);
     if (comm->getRank() != root)
-      outstr.resize(strLength+1);
+      outstr.resize(strLength);
     MPI_Bcast(&outstr[0], strLength, MPI_CHAR, root, rawComm);
 #endif
 

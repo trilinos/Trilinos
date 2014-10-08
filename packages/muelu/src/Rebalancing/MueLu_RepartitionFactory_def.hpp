@@ -82,7 +82,6 @@ namespace MueLu {
     SET_VALID_ENTRY("repartition: start level");
     SET_VALID_ENTRY("repartition: min rows per proc");
     SET_VALID_ENTRY("repartition: max imbalance");
-    SET_VALID_ENTRY("repartition: keep proc 0");
     SET_VALID_ENTRY("repartition: print partition distribution");
     SET_VALID_ENTRY("repartition: remap parts");
     SET_VALID_ENTRY("repartition: remap num values");
@@ -119,7 +118,6 @@ namespace MueLu {
     const LO     minRowsPerProcessor = pL.get<LO>    ("repartition: min rows per proc");
     const double nonzeroImbalance    = pL.get<double>("repartition: max imbalance");
     const bool   remapPartitions     = pL.get<bool>  ("repartition: remap parts");
-    const bool   keepProc0           = pL.get<bool>  ("repartition: keep proc 0");
 
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -303,7 +301,7 @@ namespace MueLu {
     if (remapPartitions) {
       SubFactoryMonitor m1(*this, "DeterminePartitionPlacement", currentLevel);
 
-      DeterminePartitionPlacement(*A, *decomposition, numPartitions, keepProc0);
+      DeterminePartitionPlacement(*A, *decomposition, numPartitions);
     }
 
     // ======================================================================================================
@@ -348,93 +346,6 @@ namespace MueLu {
         myGIDs     .push_back(GID);
       else
         sendMap[id].push_back(GID);
-    }
-
-    if (keepProc0 && !remapPartitions) {
-      // Figuring out how to keep processor 0 is easily and cheaply done in DeterminePartitionPlacement.
-      // Here, we are in situation when DeterminePartitionPlacement was not called, but the user still
-      // asked us to keep processor 0. Figuring that out is going to be slightly more difficult.
-
-      // First, lets try to see if processor 0 gets any data. If it does, no need to do anything
-      // For that, lets calculate the smalles part id that is valid.
-      GO oldPartId, minPartId = Teuchos::OrdinalTraits<GO>::max();
-      if (myGIDs.size())  minPartId = std::min(minPartId, Teuchos::as<GO>(myRank));
-      if (sendMap.size()) minPartId = std::min(minPartId, sendMap.begin()->first);
-      minAll(comm, minPartId, oldPartId);
-
-      if (oldPartId == 0) {
-        // Somebody owns a part with id 0. That means the processor 0 gets some data, even if it does
-        // not have any originally. Our work is done.
-        GetOStream(Statistics0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
-            " as processor 0 already receives some data" << std::endl;
-
-      } else if (oldPartId == Teuchos::OrdinalTraits<GO>::max()) {
-        // This is weird: nobody have any data. Nothing can be done.
-
-      } else {
-        // No partition with id 0, that means processor 0 gets no data. We have to do some extra legwork.
-        // Specifically, we want to select a part such that the process owning the part has very small
-        // fraction of the part.
-        // NOTE: one could also trying minimizing the number of owned GIDs of that part, but assuming
-        // good load balancing these metrics are the same.
-
-        // Here is a neat trick: we can send minimizing information along with partition id but using
-        // a single double. We use first numFracDigits digits of mantissa for actual fraction, and
-        // numProcDigits digits after for storing the part id
-        // NOTE: we need 10^{numAllDigits} to be smaller than INT_MAX
-        const int    numFracDigits = 2,               numProcDigits = 7,               numAllDigits = numFracDigits + numProcDigits;
-        const double powF = pow(10.0, numFracDigits), powP = pow(10.0, numProcDigits), powD = pow(10.0, numAllDigits);
-        TEUCHOS_TEST_FOR_EXCEPTION(numProcs > powP, Exceptions::RuntimeError, "Time to update the constant!");
-
-        double defaultFrac = 1.1, frac = defaultFrac, fracMin;
-        if (myGIDs.size()) {
-          frac = Teuchos::as<double>(myGIDs.size())/decompEntries.size();
-        } else {
-          // Some of the processors may have myGIDs size equal to zero. There are two way one could get that:
-          //   1) Somebody sends pieces of part id = this processor id to it
-          //   2) There is no part id corresponding to this processor id
-          // Differentiatin between these two would require a lot more communication. Therefore, we exclude
-          // all parts with no local GIDs from consideration. It results in suboptimal algorithm, but with
-          // no extra communication
-        }
-        frac = (floor(frac*powF))/powF;                 // truncate the fraction to first numFracDigits
-        frac = (floor(frac*powD) + myRank)/powD;        // store part id
-
-        minAll(comm, frac, fracMin);
-
-        if (fracMin < defaultFrac) {
-          // Somebody sent some useful informtaion
-          oldPartId = Teuchos::as<int>(fracMin*powD) % Teuchos::as<int>(powP); // decode
-
-        } else {
-          // Something weird is going on. This probably means that everybody does not keep any of its data
-        }
-
-        GetOStream(Statistics0) << "Remapping part " << oldPartId << " to processor 0 as \"alwaysKeepProc0\" option is on" << std::endl;
-
-        // Swap partitions
-        // If a processor has a part of partition with id = oldPartId, that means that it sends data to it, unless
-        // its rank is also oldPartId, in which case it some data is stored in myGIDs.
-        if (myRank != 0 && myRank != oldPartId && sendMap.count(oldPartId)) {
-          // We know for sure that there is no partition with id = 0 (there was a test for that). So we create one,
-          // and swap the data with existing one.
-          sendMap[0].swap(sendMap[oldPartId]);
-          sendMap.erase(oldPartId);
-
-        } else if (myRank == oldPartId && myGIDs.size()) {
-          // We know for sure that there is no partition with id = 0 (there was a test for that). As all our data
-          // belongs to processor 0 now, we move the data from myGIDs to the send array.
-          sendMap[0].swap(myGIDs);
-
-        } else if (myRank == 0 && sendMap.count(oldPartId)) {
-          // We have some data that we send to oldPartId processor in the original distribution. We own that data now,
-          // so we merge it with myGIDs array
-          int offset = myGIDs.size(), len = sendMap[oldPartId].size();
-          myGIDs.resize(offset + len);
-          memcpy(myGIDs.getRawPtr() + offset, sendMap[oldPartId].getRawPtr(), len*sizeof(GO));
-          sendMap.erase(oldPartId);
-        }
-      }
     }
     decompEntries = Teuchos::null;
 
@@ -555,8 +466,8 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition,
-                                                                                                               GO numPartitions, bool keepProc0) const {
+  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions) const {
     RCP<const Map> rowMap = A.getRowMap();
 
     RCP<const Teuchos::Comm<int> > comm = rowMap->getComm()->duplicate();
@@ -654,23 +565,7 @@ namespace MueLu {
     }
     GetOStream(Statistics0) << "Number of unassigned paritions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
 
-    // Step 4 [optional]: Keep processor 0
-    if (keepProc0) {
-      if (matchedRanks[0] == 0) {
-        // Reassign partition to processor 0
-        // The hope is that partition which we mapped last has few elements in it
-        GetOStream(Statistics0) << "Remapping part " << lastMatchedPart << " to processor 0 as \"alwaysKeepProc0\" option is on" << std::endl;
-        matchedRanks[match[lastMatchedPart]] = 0;       // unassign processor which was matched to lastMatchedPart part
-        matchedRanks[0] = 1;                            // assign processor 0
-        match[lastMatchedPart] = 0;                     // match part to processor 0
-
-      } else {
-        GetOStream(Statistics0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
-            " as processor 0 already receives some data" << std::endl;
-      }
-    }
-
-    // Step 5: Assign unassigned partitions
+    // Step 4: Assign unassigned partitions
     // We do that through random matching for remaining partitions. Not all part numbers are valid, but valid parts are a subset of [0, numProcs).
     // The reason it is done this way is that we don't need any extra communication, as we don't need to know which parts are valid.
     for (int part = 0, matcher = 0; part < numProcs; part++)
@@ -682,7 +577,7 @@ namespace MueLu {
         match[part] = matcher++;
       }
 
-    // Step 6: Permute entries in the decomposition vector
+    // Step 5: Permute entries in the decomposition vector
     for (LO i = 0; i < decompEntries.size(); i++)
       decompEntries[i] = match[decompEntries[i]];
   }
