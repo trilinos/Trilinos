@@ -371,7 +371,7 @@ namespace MueLu {
       // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
       // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to release those.
       Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
-      Levels_.pop_back(); // remove next level
+      Levels_.resize(nextLevelID);
     }
 
     // I think this is the proper place for graph so that it shows every dependence
@@ -757,6 +757,13 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > comm = A0->getRowMap()->getComm();
 
     int numLevels = GetNumLevels();
+    RCP<Matrix> cA = Levels_[numLevels-1]->template Get<RCP<Matrix> >("A");
+    if (cA.is_null()) {
+      // It may happen that we do repartition on the last level, but the matrix
+      // is small enough to satisfy "max coarse size" requirement. Then, even
+      // though we have the level, the matrix would be null on all but one processors
+      numLevels--;
+    }
     int root = comm->getRank();
 
 #ifdef HAVE_MPI
