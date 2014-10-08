@@ -34,10 +34,12 @@ namespace Example {
     int addDependence(SymbolicTask *b) {
       if (b != NULL) 
         _dep_tasks.insert(b);
+      return 0;
     }
 
     int clearDependence() {
       _dep_tasks.clear();
+      return 0;
     }
 
     ostream& showMe(ostream &os) const {
@@ -48,6 +50,19 @@ namespace Example {
       }
       return os;
     }    
+
+    ostream& graphviz(ostream &os) const {
+      os << (long)(this) 
+         << " [label=\"" << _name ;
+      auto it = g_graphviz_color.find(_name);
+      if (it != g_graphviz_color.end())
+        os << "\" ,style=filled,color=\"" << it->second << "\" "; 
+      os << "];";
+      for (auto it=_dep_tasks.begin();it!=_dep_tasks.end();++it) 
+        os << (long)(*it) << " -> " << (long)this << ";";
+      return (os << endl);
+    }
+
   };
 
   static vector<SymbolicTask*> g_queue;
@@ -77,6 +92,16 @@ namespace Example {
       return os;
     }
 
+    static ostream& graphviz(ostream &os, 
+                             const double width = 7.5,
+                             const double length = 10.0) {
+      os << "digraph TaskGraph {" << endl;
+      os << "size=\"" << width << "," << length << "\";" << endl;
+      for (auto it=g_queue.begin();it!=g_queue.end();++it) 
+        (*it)->graphviz(os);
+      os << "}" << endl;
+      return (os << endl);
+    }
   };
   
 }

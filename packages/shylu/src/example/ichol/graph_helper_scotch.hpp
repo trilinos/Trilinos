@@ -10,7 +10,7 @@ namespace Example {
   using namespace std;
 
   template<class CrsMatrixType>
-  class GraphHelper_Scotch {
+  class GraphHelper_Scotch : public Disp {
   public:
     typedef typename CrsMatrixType::ordinal_type ordinal_type;
     typedef typename CrsMatrixType::size_type    size_type;
@@ -30,6 +30,9 @@ namespace Example {
     bool _is_ordered;
 
   public:
+    ordinal_type* PermVector()    const { return _perm; }
+    ordinal_type* InvPermVector() const { return _peri; }
+
     GraphHelper_Scotch(CrsMatrixType& A) {
 
       _is_ordered = false;
@@ -110,7 +113,7 @@ namespace Example {
     int constructTree() {
     }
 
-    ostream& showMe(ostream &os) {
+    ostream& showMe(ostream &os) const {
       streamsize prec = os.precision();
       os.precision(15);
       os << scientific;
@@ -130,7 +133,8 @@ namespace Example {
       
       if (_is_ordered) 
         os << " -- Elimination tree -- " << endl
-           << "    CBLK   = " << _cblk << endl;
+           << "    CBLK   = " << _cblk << endl
+           << "  PERM     PERI     RANG     TREE" << endl;
 
       const int w = 6;
       for (ordinal_type i=0;i<_m;++i) 

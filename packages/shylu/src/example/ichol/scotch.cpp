@@ -8,8 +8,9 @@ using namespace std;
 typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrix;
-typedef Example::GraphHelper_Scotch<CrsMatrix> GraphHelper;
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
+typedef Example::GraphHelper_Scotch<CrsMatrixBase> GraphHelper;
+typedef Example::Uplo Uplo;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -17,7 +18,7 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   
-  CrsMatrix A;
+  CrsMatrixBase A;
 
   ifstream in;
   in.open(argv[1]);
@@ -26,12 +27,16 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   A.importMatrixMarket(in);
-  A.showMe(cout);
+  cout << A << endl;
 
   GraphHelper S(A);
 
   S.computeOrdering();
-  S.showMe(cout);  
+  cout << S << endl;
+
+  CrsMatrixBase PA(A, S.PermVector(), S.InvPermVector());
+
+  cout << PA << endl;
 
   return 0;
 }

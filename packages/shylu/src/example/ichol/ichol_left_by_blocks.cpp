@@ -7,6 +7,7 @@
 #include "symbolic_task.hpp"
 #include "crs_task_view.hpp"
 
+#include "graph_helper_scotch.hpp"
 #include "ichol_left_by_blocks.hpp"
 
 using namespace std;
@@ -19,6 +20,9 @@ typedef int    size_type;
 typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 
+// scotch reordering
+typedef Example::GraphHelper_Scotch<CrsMatrixBase> GraphHelper;
+
 // taskfy blocks
 typedef Example::SymbolicTask Task;
 typedef Example::CrsTaskView<CrsMatrixBase,Task> CrsTaskView;
@@ -30,8 +34,8 @@ typedef Example::CrsTaskView<CrsHierBase,Task> CrsHierView;
 typedef Example::Uplo Uplo;
 
 int main (int argc, char *argv[]) {
-  if (argc < 3) {
-    cout << "Usage: " << argv[0] << " filename" << " blksize" << endl;
+  if (argc < 4) {
+    cout << "Usage: " << argv[0] << " filename" << " blksize" << " flag-apply-scotch" << endl;
     return -1;
   }
 
@@ -44,10 +48,19 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   A.importMatrixMarket(in);
+  
+  GraphHelper S(A);
+  S.computeOrdering();
 
-  CrsMatrixBase L(A, Uplo::Lower);
+  CrsMatrixBase PA(A, S.PermVector(), S.InvPermVector());
 
-  CrsHierBase H(L, 1, 1);
+  bool flag_scotch = atoi(argv[3]);
+  CrsMatrixBase L((flag_scotch ? PA : A), Uplo::Lower);
+
+  ordinal_type blksize = atoi(argv[2]);
+  // for now
+  blksize = 1;
+  CrsHierBase H(L, blksize, blksize);
   CrsHierView HH(H);
 
   int r_val = Example::ichol_left_by_blocks_lower(HH);
@@ -57,6 +70,14 @@ int main (int argc, char *argv[]) {
   cout << HH << endl;
   
   Task::queue::showMe(cout);
-  
+
+  ofstream out;
+  out.open("task_graph.gv");
+  if (!out.good()) {
+    cout << "Error in open the file: task_graph.gv" << endl;
+    return -1;
+  }
+  Task::queue::graphviz(out);
+
   return 0;
 }

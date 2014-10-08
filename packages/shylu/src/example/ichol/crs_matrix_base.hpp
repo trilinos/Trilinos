@@ -128,6 +128,40 @@ namespace Example {
       // maybe resize
     }
 
+    CrsMatrixBase(CrsMatrixBase &b, 
+                  const ordinal_type *p,
+                  const ordinal_type *ip) {
+      _is_symmetry = b._is_symmetry;
+      init(b._m, b._n, b._nnz);
+      
+      vector<ijv_type> tmp;
+
+      _nnz = 0;
+      for (ordinal_type i=0;i<_m;++i) {
+        ordinal_type ii = ip[i];
+
+        ordinal_type jbegin = b._ap[ii];
+        ordinal_type jend   = b._ap[ii+1];
+        
+        _ap[i] = _nnz;
+        for (ordinal_type j=jbegin;j<jend;++j) {
+          ordinal_type jj = p[b._aj[j]];
+          ijv_type aij(i, jj, b._ax[j]);
+          tmp.push_back(aij);
+        }
+        sort(tmp.begin(), tmp.end(), less<ijv_type>());
+        for (auto it=tmp.begin();it<tmp.end();++it) {
+          ijv_type aij = (*it);
+
+          _aj[_nnz] = aij._j;
+          _ax[_nnz] = aij._val;
+          ++_nnz;
+        }
+        tmp.clear();
+      }
+      _ap[_m] = _nnz;
+    }
+
     template<typename CrsFlatBase>
     CrsMatrixBase(CrsFlatBase &b,
                   const ordinal_type mb = 1, 

@@ -14,10 +14,16 @@ namespace Example {
     ValueType _val;
     
     Coo() {}
+    Coo(const OrdinalType i, const OrdinalType j, const ValueType val) 
+      : _i(i),
+        _j(j),
+        _val(val) 
+    { }
     Coo(const Coo& b)
       : _i(b._i),
         _j(b._j),
-        _val(b._val) {}
+        _val(b._val) 
+    { }
 
     Coo<ValueType,OrdinalType>& operator=(const Coo<ValueType,OrdinalType> &y) {
       this->_i = y._i;

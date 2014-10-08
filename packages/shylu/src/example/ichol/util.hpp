@@ -11,6 +11,7 @@
 #include <fstream>
 #include <vector>
 #include <set>
+#include <map>
 #include <algorithm>
 #include <memory>
 
@@ -82,8 +83,11 @@ namespace Example {
     return disp.showMe(os);
   }  
 
+  static map<string,string> g_graphviz_color = {
+    { "ichol/scalar", "indianred2"},
+    { "ichol/trsm",   "orange2"   },
+    { "ichol/gemm",   "lightblue2"} };
+
 }
-
-
 
 #endif

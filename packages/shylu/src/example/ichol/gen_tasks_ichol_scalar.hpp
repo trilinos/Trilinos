@@ -26,7 +26,7 @@ namespace Example {
       auto &aa = a.Value(id);
       
       // task enqueue
-      auto task = task_type::queue::push(new task_type("ichol_scalar"));
+      auto task = task_type::queue::push(new task_type("ichol/scalar"));
      
       // self depedence
       task->addDependence(aa.Task());

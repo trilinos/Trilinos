@@ -10,6 +10,7 @@ TEST  = ichol_left_by_blocks
 
 TESTS = \
 	crs_matrix_base \
+	scotch \
 	crs_matrix_view \
 	crs_row_view \
 	partition \
@@ -19,8 +20,8 @@ TESTS = \
 	symbolic_task \
 	crs_hier_base \
 	crs_task_view \
-	ichol_left_by_blocks \
-	scotch
+	ichol_left_by_blocks 
+
 
 TRILINOS_DIR = ${HOME}/Work/lib/trilinos/kokkos-dev
 QTHREADS_DIR = ${HOME}/Work/lib/qthreads
