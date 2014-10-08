@@ -961,9 +961,9 @@ public:
   //----------------------------------------
   // Private for the driver
 
-  template< class WorkArgTag >
+  template< class Arg0 , class Arg1 >
   ThreadsExecTeamVectorMember( Impl::ThreadsExec & exec
-                       , const TeamVectorPolicy< VectorLength, execution_space , WorkArgTag > & team
+                       , const TeamVectorPolicy< VectorLength, Arg0, Arg1, Kokkos::Threads > & team
                        , const int shared_size )
     : m_exec( exec )
     , m_team_shared(0,0)

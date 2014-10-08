@@ -674,10 +674,10 @@ private:
 
 public:
 
-  template< class WorkArgTag >
+  template< class Arg0 , class Arg1 >
   inline
   OpenMPexecTeamVectorMember( Impl::OpenMPexec & exec
-                      , const TeamVectorPolicy< VectorLength, execution_space , WorkArgTag > & team
+                      , const TeamVectorPolicy< VectorLength, Arg0, Arg1, Kokkos::OpenMP> & team
                       , const int shmem_size
                       )
     : m_exec( exec )
