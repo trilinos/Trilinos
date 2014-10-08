@@ -136,7 +136,7 @@ TEST(GeneratedIds, StkMeshApproach1)
     std::string exodusFileName = getOption("-i", "generated:10x10x10");
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stk::mesh::BulkData *stkMeshBulkData = new stk::mesh::BulkData(stkMeshMetaData, mpiInfo.getMpiComm());
+    stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, mpiInfo.getMpiComm());
 
     // STK IO module will be described in separate chapter.
     // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
@@ -145,7 +145,7 @@ TEST(GeneratedIds, StkMeshApproach1)
       stk::io::StkMeshIoBroker exodusFileReader(mpiInfo.getMpiComm());
 
       // Inform STK IO which STK Mesh objects to populate later
-      exodusFileReader.set_bulk_data(*stkMeshBulkData);
+      exodusFileReader.set_bulk_data(stkMeshBulkData);
 
       exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
 
@@ -159,16 +159,16 @@ TEST(GeneratedIds, StkMeshApproach1)
     stk::mesh::Selector select_owned( stkMeshMetaData.locally_owned_part() );
 
     std::vector<unsigned> count;
-    stk::mesh::count_entities( select_owned , *stkMeshBulkData , count );
+    stk::mesh::count_entities( select_owned , stkMeshBulkData , count );
     size_t numIdsThisProc = count[stk::topology::NODE_RANK];
 
     std::vector<size_t> count1;
-    stk::mesh::comm_mesh_counts(*stkMeshBulkData, count1);
+    stk::mesh::comm_mesh_counts(stkMeshBulkData, count1);
     size_t totalIdsInUse = count1[stk::topology::NODE_RANK];
 
     std::vector<uint64_t> myIds(numIdsThisProc,0);
 
-    const stk::mesh::BucketVector& buckets = stkMeshBulkData->buckets(stk::topology::NODE_RANK);
+    const stk::mesh::BucketVector& buckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
 
     size_t counter = 0;
     for (size_t i=0;i<buckets.size();i++)
@@ -178,7 +178,7 @@ TEST(GeneratedIds, StkMeshApproach1)
         {
             for (size_t j=0;j<bucket.size();j++)
             {
-                stk::mesh::EntityKey entityKey = stkMeshBulkData->entity_key(bucket[j]);
+                stk::mesh::EntityKey entityKey = stkMeshBulkData.entity_key(bucket[j]);
                 myIds[counter] = entityKey;
                 counter++;
             }
@@ -222,7 +222,7 @@ TEST(GeneratedIds, StkMeshApproach2)
     std::string exodusFileName = getOption("-i", "generated:10x10x10");
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stk::mesh::BulkData *stkMeshBulkData = new stk::mesh::BulkData(stkMeshMetaData, mpiInfo.getMpiComm());
+    stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, mpiInfo.getMpiComm());
 
     // STK IO module will be described in separate chapter.
     // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
@@ -231,7 +231,7 @@ TEST(GeneratedIds, StkMeshApproach2)
       stk::io::StkMeshIoBroker exodusFileReader(mpiInfo.getMpiComm());
 
       // Inform STK IO which STK Mesh objects to populate later
-      exodusFileReader.set_bulk_data(*stkMeshBulkData);
+      exodusFileReader.set_bulk_data(stkMeshBulkData);
 
       exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
 
@@ -245,7 +245,7 @@ TEST(GeneratedIds, StkMeshApproach2)
     ////////////////////////////////////////////////////
 
     std::vector<size_t> count1;
-    stk::mesh::comm_mesh_counts(*stkMeshBulkData, count1);
+    stk::mesh::comm_mesh_counts(stkMeshBulkData, count1);
     size_t totalIdsInUse = count1[stk::topology::NODE_RANK];
 
     uint64_t startingIdToSearchForNewIds = 1;
@@ -255,7 +255,7 @@ TEST(GeneratedIds, StkMeshApproach2)
 
     double startTime = stk::wall_time();
 
-    getAvailableIds_exp(*stkMeshBulkData, numIdsNeeded, idsObtained, startingIdToSearchForNewIds, maxId, mpiInfo);
+    getAvailableIds_exp(stkMeshBulkData, numIdsNeeded, idsObtained, startingIdToSearchForNewIds, maxId, mpiInfo);
 
     double endTime = stk::wall_time();
 
@@ -266,7 +266,7 @@ TEST(GeneratedIds, StkMeshApproach2)
         std::cerr << "Took " << endTime-startTime << " seconds." << std::endl;
     }
 
-    checkUniqueIds(*stkMeshBulkData, idsObtained, mpiInfo);
+    checkUniqueIds(stkMeshBulkData, idsObtained, mpiInfo);
     writeIdsToFile("ids_", mpiInfo.getProcId(), idsObtained);
 
     for (size_t i=0;i<idsObtained.size();i++)
@@ -285,7 +285,7 @@ TEST(GeneratedIds, StkMeshApproach2)
 //    std::string exodusFileName = getOption("-i", "generated:10x10x10");
 //    const int spatialDim = 3;
 //    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-//    stk::mesh::BulkData *stkMeshBulkData = new stk::mesh::BulkData(stkMeshMetaData, mpiInfo.getMpiComm());
+//    stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, mpiInfo.getMpiComm());
 //
 //    // STK IO module will be described in separate chapter.
 //    // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
@@ -294,7 +294,7 @@ TEST(GeneratedIds, StkMeshApproach2)
 //      stk::io::StkMeshIoBroker exodusFileReader(mpiInfo.getMpiComm());
 //
 //      // Inform STK IO which STK Mesh objects to populate later
-//      exodusFileReader.set_bulk_data(*stkMeshBulkData);
+//      exodusFileReader.set_bulk_data(stkMeshBulkData);
 //
 //      exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
 //
@@ -308,7 +308,7 @@ TEST(GeneratedIds, StkMeshApproach2)
 //    ////////////////////////////////////////////////////q
 //
 //    std::vector<size_t> count1;
-//    stk::mesh::comm_mesh_counts(*stkMeshBulkData, count1);
+//    stk::mesh::comm_mesh_counts(stkMeshBulkData, count1);
 //    size_t totalIdsInUse = count1[stk::topology::NODE_RANK];
 //    size_t goldNum = 11*11*11;
 //    EXPECT_EQ(goldNum, totalIdsInUse);
