@@ -113,6 +113,10 @@ namespace ROL {
    */ 
   static const double ROL_OVERFLOW  = std::abs(Teuchos::ScalarTraits<double>::rmax());
 
+  /** \brief  Platform-dependent minimum double.
+   */ 
+  static const double ROL_UNDERFLOW  = std::abs(Teuchos::ScalarTraits<double>::rmin());
+
   struct removeSpecialCharacters {
     bool operator()(char c) {
       return (c ==' ' || c =='-' || c == '(' || c == ')' || c=='\'' || c=='\r' || c=='\n' || c=='\t');

@@ -366,25 +366,27 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
     jvCheck[i][3] = cnew->norm();
 
     if (printToScreen) {
+      std::stringstream hist;
       if (i==0) {
-      std::cout << std::right
-                << std::setw(20) << "Step size"
-                << std::setw(20) << "norm(Jac*vec)"
-                << std::setw(20) << "norm(FD approx)"
-                << std::setw(20) << "norm(abs error)"
-                << "\n"
-                << std::setw(20) << "---------"
-                << std::setw(20) << "-------------"
-                << std::setw(20) << "---------------"
-                << std::setw(20) << "---------------"
-                << "\n";
+      hist << std::right
+           << std::setw(20) << "Step size"
+           << std::setw(20) << "norm(Jac*vec)"
+           << std::setw(20) << "norm(FD approx)"
+           << std::setw(20) << "norm(abs error)"
+           << "\n"
+           << std::setw(20) << "---------"
+           << std::setw(20) << "-------------"
+           << std::setw(20) << "---------------"
+           << std::setw(20) << "---------------"
+           << "\n";
       }
-      std::cout << std::scientific << std::setprecision(11) << std::right
-                << std::setw(20) << jvCheck[i][0]
-                << std::setw(20) << jvCheck[i][1]
-                << std::setw(20) << jvCheck[i][2]
-                << std::setw(20) << jvCheck[i][3]
-                << "\n";
+      hist << std::scientific << std::setprecision(11) << std::right
+           << std::setw(20) << jvCheck[i][0]
+           << std::setw(20) << jvCheck[i][1]
+           << std::setw(20) << jvCheck[i][2]
+           << std::setw(20) << jvCheck[i][3]
+           << "\n";
+      std::cout << hist.str();
     }
 
     // Update eta.
@@ -449,25 +451,27 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
     ajvCheck[i][3] = ajv->norm();
 
     if (printToScreen) {
+      std::stringstream hist;
       if (i==0) {
-      std::cout << std::right
-                << std::setw(20) << "Step size"
-                << std::setw(20) << "norm(adj(Jac)*vec)"
-                << std::setw(20) << "norm(FD approx)"
-                << std::setw(20) << "norm(abs error)"
-                << "\n"
-                << std::setw(20) << "---------"
-                << std::setw(20) << "------------------"
-                << std::setw(20) << "---------------"
-                << std::setw(20) << "---------------"
-                << "\n";
+      hist << std::right
+           << std::setw(20) << "Step size"
+           << std::setw(20) << "norm(adj(Jac)*vec)"
+           << std::setw(20) << "norm(FD approx)"
+           << std::setw(20) << "norm(abs error)"
+           << "\n"
+           << std::setw(20) << "---------"
+           << std::setw(20) << "------------------"
+           << std::setw(20) << "---------------"
+           << std::setw(20) << "---------------"
+           << "\n";
       }
-      std::cout << std::scientific << std::setprecision(11) << std::right
-                << std::setw(20) << ajvCheck[i][0]
-                << std::setw(20) << ajvCheck[i][1]
-                << std::setw(20) << ajvCheck[i][2]
-                << std::setw(20) << ajvCheck[i][3]
-                << "\n";
+      hist << std::scientific << std::setprecision(11) << std::right
+           << std::setw(20) << ajvCheck[i][0]
+           << std::setw(20) << ajvCheck[i][1]
+           << std::setw(20) << ajvCheck[i][2]
+           << std::setw(20) << ajvCheck[i][3]
+           << "\n";
+      std::cout << hist.str();
     }
 
     // Update eta.
@@ -526,25 +530,27 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
     ahuvCheck[i][3] = AJnew->norm();
 
     if (printToScreen) {
+      std::stringstream hist;
       if (i==0) {
-      std::cout << std::right
-                << std::setw(20) << "Step size"
-                << std::setw(20) << "norm(adj(H)(u,v))"
-                << std::setw(20) << "norm(FD approx)"
-                << std::setw(20) << "norm(abs error)"
-                << "\n"
-                << std::setw(20) << "---------"
-                << std::setw(20) << "-----------------"
-                << std::setw(20) << "---------------"
-                << std::setw(20) << "---------------"
-                << "\n";
+      hist << std::right
+           << std::setw(20) << "Step size"
+           << std::setw(20) << "norm(adj(H)(u,v))"
+           << std::setw(20) << "norm(FD approx)"
+           << std::setw(20) << "norm(abs error)"
+           << "\n"
+           << std::setw(20) << "---------"
+           << std::setw(20) << "-----------------"
+           << std::setw(20) << "---------------"
+           << std::setw(20) << "---------------"
+           << "\n";
       }
-      std::cout << std::scientific << std::setprecision(11) << std::right
-                << std::setw(20) << ahuvCheck[i][0]
-                << std::setw(20) << ahuvCheck[i][1]
-                << std::setw(20) << ahuvCheck[i][2]
-                << std::setw(20) << ahuvCheck[i][3]
-                << "\n";
+      hist << std::scientific << std::setprecision(11) << std::right
+           << std::setw(20) << ahuvCheck[i][0]
+           << std::setw(20) << ahuvCheck[i][1]
+           << std::setw(20) << ahuvCheck[i][2]
+           << std::setw(20) << ahuvCheck[i][3]
+           << "\n";
+      std::cout << hist.str();
     }
 
     // Update eta.
