@@ -272,6 +272,7 @@ namespace MueLu {
         @param[in] verbLevel Controls amount of output.
     */
     void describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
+    void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
 
     // Hierarchy::print is local hierarchy function, thus the statistics can be different from global ones
     void print(std::ostream& out = std::cout, const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;

@@ -747,6 +747,11 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel tVerbLevel) const {
+    describe(out, toMueLuVerbLevel(tVerbLevel));
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     RCP<Matrix> A0 = Levels_[0]->template Get<RCP<Matrix> >("A");
     RCP<const Teuchos::Comm<int> > comm = A0->getRowMap()->getComm();

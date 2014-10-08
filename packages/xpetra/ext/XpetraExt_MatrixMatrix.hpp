@@ -525,9 +525,10 @@ inline void JacobiT(
   bool call_FillComplete_on_result,
   bool doOptimizeStorage) {
 
-  typedef double Scalar;
-  typedef int LocalOrdinal;
-  typedef typename Xpetra::Vector<double, int, GlobalOrdinal>::node_type Node;
+  typedef double        SC;
+  typedef int           LO;
+  typedef GlobalOrdinal GO;
+  typedef typename Xpetra::Vector<double, int, GlobalOrdinal>::node_type NO;
 
   if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
@@ -553,7 +554,7 @@ inline void JacobiT(
     Epetra_CrsMatrix & epB = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(B);
     Epetra_CrsMatrix & epC = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(C);
     //    const Epetra_Vector & epD = toEpetra(Dinv);
-    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GlobalOrdinal>, Dinv, epD, "Xpetra::MatrixMatrix::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GO>, Dinv, epD, "Xpetra::MatrixMatrix::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
     int i = EpetraExt::MatrixMatrix::Jacobi(omega,*epD.getEpetra_Vector(),epA,epB,epC,haveMultiplyDoFillComplete);
     if (i != 0) {
@@ -565,10 +566,10 @@ inline void JacobiT(
 #endif
     } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpA = Xpetra::MatrixMatrix::Op2TpetraCrs(A);
-    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
-    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
-    const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
+    const Tpetra::CrsMatrix<SC, LO, GO, NO> & tpA = Xpetra::MatrixMatrix::Op2TpetraCrs(A);
+    const Tpetra::CrsMatrix<SC, LO, GO, NO> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
+    Tpetra::CrsMatrix<SC, LO, GO, NO>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
+    const RCP<Tpetra::Vector<SC, LO, GO, NO>  >          & tpD = toTpetra(Dinv);
 
     Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete);
 #else
@@ -583,8 +584,8 @@ inline void JacobiT(
     }
 
     // transfer striding information
-    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Teuchos::rcpFromRef(A));
-    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Teuchos::rcpFromRef(B));
+    RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(A));
+    RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(B));
     C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
 } // end Jacobi
 
