@@ -1,4 +1,3 @@
-
 #
 # A) Package-specific configuration options
 #
@@ -73,6 +72,8 @@ SET(HEADERS ${HEADERS}
   Sacado_ELRFad_SFad.hpp
   Sacado_ELRFad_SFadImp.hpp
   Sacado_ELRFad_SFadTraits.hpp
+  Sacado_ELRFad_ViewFad.hpp
+  Sacado_ELRFad_ViewFadTraits.hpp
   )
 
 # LFAD
@@ -99,6 +100,8 @@ SET(HEADERS ${HEADERS}
   Sacado_CacheFad_SFadImp.hpp
   Sacado_CacheFad_SLFadTraits.hpp
   Sacado_CacheFad_SLFad.hpp
+  Sacado_CacheFad_ViewFad.hpp
+  Sacado_CacheFad_ViewFadTraits.hpp
   )
 
 # ELRCacheFAD
@@ -116,6 +119,8 @@ SET(HEADERS ${HEADERS}
   Sacado_ELRCacheFad_SFad.hpp
   Sacado_ELRCacheFad_SFadImp.hpp
   Sacado_ELRCacheFad_SFadTraits.hpp
+  Sacado_ELRCacheFad_ViewFad.hpp
+  Sacado_ELRCacheFad_ViewFadTraits.hpp
   )
 
 #TAYLOR

@@ -55,7 +55,8 @@
 
 template <typename T, typename Storage>
 template <typename S>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>::
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 GeneralFad(const Expr<S>& x) :
   Storage(x.size(), T(0.)),
   update_val_(x.updateValue())
@@ -121,7 +122,8 @@ GeneralFad(const Expr<S>& x) :
 }
 
 template <typename T, typename Storage>
-inline void
+KOKKOS_INLINE_FUNCTION
+void
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 diff(const int ith, const int n)
 {
@@ -134,7 +136,8 @@ diff(const int ith, const int n)
 }
 
 template <typename T, typename Storage>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator=(const T& v)
 {
@@ -147,7 +150,8 @@ operator=(const T& v)
 }
 
 template <typename T, typename Storage>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator=(const Sacado::ELRCacheFad::GeneralFad<T,Storage>& x)
 {
@@ -160,16 +164,24 @@ operator=(const Sacado::ELRCacheFad::GeneralFad<T,Storage>& x)
 
 template <typename T, typename Storage>
 template <typename S>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator=(const Expr<S>& x)
 {
   x.cache();
 
-  const int sz = x.size();
+  const int xsz = x.size();
 
-  if (sz != this->size())
-    this->resizeAndZero(sz);
+  if (xsz != this->size())
+    this->resizeAndZero(xsz);
+
+  const int sz = this->size();
+
+  // For ViewStorage, the resize above may not in fact resize the
+  // derivative array, so it is possible that sz != xsz at this point.
+  // The only valid use case here is sz > xsz == 0, so we use sz in the
+  // assignment below
 
   if (sz) {
 
@@ -231,7 +243,8 @@ operator=(const Expr<S>& x)
 }
 
 template <typename T, typename Storage>
-inline  Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator += (const T& v)
 {
@@ -242,7 +255,8 @@ operator += (const T& v)
 }
 
 template <typename T, typename Storage>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator -= (const T& v)
 {
@@ -253,7 +267,8 @@ operator -= (const T& v)
 }
 
 template <typename T, typename Storage>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator *= (const T& v)
 {
@@ -268,7 +283,8 @@ operator *= (const T& v)
 }
 
 template <typename T, typename Storage>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator /= (const T& v)
 {
@@ -283,7 +299,8 @@ operator /= (const T& v)
 }
 
 template <typename T, typename Storage>
-inline  Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator += (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
@@ -294,7 +311,8 @@ operator += (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 }
 
 template <typename T, typename Storage>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator -= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
@@ -305,7 +323,8 @@ operator -= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 }
 
 template <typename T, typename Storage>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator *= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
@@ -320,7 +339,8 @@ operator *= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 }
 
 template <typename T, typename Storage>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator /= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
@@ -336,7 +356,8 @@ operator /= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 
 template <typename T, typename Storage>
 template <typename S>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator += (const Sacado::ELRCacheFad::Expr<S>& x)
 {
@@ -344,7 +365,7 @@ operator += (const Sacado::ELRCacheFad::Expr<S>& x)
 
   const int xsz = x.size(), sz = this->size();
 
-#ifdef SACADO_DEBUG
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
@@ -426,7 +447,8 @@ operator += (const Sacado::ELRCacheFad::Expr<S>& x)
 
 template <typename T, typename Storage>
 template <typename S>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
@@ -434,7 +456,7 @@ operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
 
   const int xsz = x.size(), sz = this->size();
 
-#ifdef SACADO_DEBUG
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
@@ -516,7 +538,8 @@ operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
 
 template <typename T, typename Storage>
 template <typename S>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
@@ -527,7 +550,7 @@ operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
   T xval = x.val();
   T v = this->val();
 
-#ifdef SACADO_DEBUG
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
@@ -665,7 +688,8 @@ operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
 
 template <typename T, typename Storage>
 template <typename S>
-inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
+KOKKOS_INLINE_FUNCTION
+Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
@@ -676,7 +700,7 @@ operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
   T xval = x.val();
   T v = this->val();
 
-#ifdef SACADO_DEBUG
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
