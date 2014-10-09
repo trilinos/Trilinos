@@ -142,7 +142,6 @@ class BucketImpl {
 
   unsigned char * field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
   {
-    typedef unsigned char * byte_p ;
     const DataMap & data_map = m_field_map[ field_ordinal ];
     unsigned char * ptr = NULL;
     if ( data_map.m_size ) {
@@ -153,7 +152,6 @@ class BucketImpl {
   }
   unsigned char * fast_field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
   {
-    typedef unsigned char * byte_p ;
     const DataMap & data_map = m_field_map[ field_ordinal ];
     ThrowAssertMsg(data_map.m_size>0,"Field doesn't exist on bucket.");
     return const_cast<unsigned char*>(m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
