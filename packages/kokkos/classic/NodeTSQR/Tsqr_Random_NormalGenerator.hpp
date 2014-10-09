@@ -42,7 +42,7 @@
 #ifndef __TSQR_Random_NormalGenerator_hpp
 #define __TSQR_Random_NormalGenerator_hpp
 
-#include <Tsqr_Lapack.hpp>
+#include <Teuchos_LAPACK.hpp>
 #include <algorithm>
 #include <vector>
 
@@ -146,7 +146,7 @@ namespace TSQR {
       void
       fill_buffer ()
       {
-        LAPACK<Ordinal, Scalar> lapack;
+        Teuchos::LAPACK<Ordinal, Scalar> lapack;
 
         // LAPACK's _LARNV routine defines this "enum" (just an
         // integer, because it's Fortran) that lets users choose from

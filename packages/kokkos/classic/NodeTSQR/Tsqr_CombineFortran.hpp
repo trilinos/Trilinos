@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -86,69 +86,69 @@ namespace TSQR {
 
     void
     factor_first (const ordinal_type nrows,
-		  const ordinal_type ncols,
-		  Scalar A[],
-		  const ordinal_type lda,
-		  Scalar tau[],
-		  Scalar work[]) const;
-    
+                  const ordinal_type ncols,
+                  Scalar A[],
+                  const ordinal_type lda,
+                  Scalar tau[],
+                  Scalar work[]) const;
+
     void
     apply_first (const ApplyType& applyType,
-		 const ordinal_type nrows,
-		 const ordinal_type ncols_C,
-		 const ordinal_type ncols_A,
-		 const Scalar A[],
-		 const ordinal_type lda,
-		 const Scalar tau[],
-		 Scalar C[],
-		 const ordinal_type ldc,
-		 Scalar work[]) const;
+                 const ordinal_type nrows,
+                 const ordinal_type ncols_C,
+                 const ordinal_type ncols_A,
+                 const Scalar A[],
+                 const ordinal_type lda,
+                 const Scalar tau[],
+                 Scalar C[],
+                 const ordinal_type ldc,
+                 Scalar work[]) const;
 
     void
     apply_inner (const ApplyType& apply_type,
-		 const ordinal_type m,
-		 const ordinal_type ncols_C,
-		 const ordinal_type ncols_Q,
-		 const Scalar A[],
-		 const ordinal_type lda,
-		 const Scalar tau[],
-		 Scalar C_top[],
-		 const ordinal_type ldc_top,
-		 Scalar C_bot[],
-		 const ordinal_type ldc_bot,
-		 Scalar work[]) const;
+                 const ordinal_type m,
+                 const ordinal_type ncols_C,
+                 const ordinal_type ncols_Q,
+                 const Scalar A[],
+                 const ordinal_type lda,
+                 const Scalar tau[],
+                 Scalar C_top[],
+                 const ordinal_type ldc_top,
+                 Scalar C_bot[],
+                 const ordinal_type ldc_bot,
+                 Scalar work[]) const;
 
     void
     factor_inner (const ordinal_type m,
-		  const ordinal_type n,
-		  Scalar R[],
-		  const ordinal_type ldr,
-		  Scalar A[],
-		  const ordinal_type lda,
-		  Scalar tau[],
-		  Scalar work[]) const;
+                  const ordinal_type n,
+                  Scalar R[],
+                  const ordinal_type ldr,
+                  Scalar A[],
+                  const ordinal_type lda,
+                  Scalar tau[],
+                  Scalar work[]) const;
 
     void
     factor_pair (const ordinal_type n,
-		 Scalar R_top[],
-		 const ordinal_type ldr_top,
-		 Scalar R_bot[],
-		 const ordinal_type ldr_bot,
-		 Scalar tau[],
-		 Scalar work[]) const;
-    
+                 Scalar R_top[],
+                 const ordinal_type ldr_top,
+                 Scalar R_bot[],
+                 const ordinal_type ldr_bot,
+                 Scalar tau[],
+                 Scalar work[]) const;
+
     void
     apply_pair (const ApplyType& apply_type,
-		const ordinal_type ncols_C, 
-		const ordinal_type ncols_Q, 
-		const Scalar R_bot[], 
-		const ordinal_type ldr_bot,
-		const Scalar tau[], 
-		Scalar C_top[], 
-		const ordinal_type ldc_top, 
-		Scalar C_bot[], 
-		const ordinal_type ldc_bot, 
-		Scalar work[]) const;
+                const ordinal_type ncols_C,
+                const ordinal_type ncols_Q,
+                const Scalar R_bot[],
+                const ordinal_type ldr_bot,
+                const Scalar tau[],
+                Scalar C_top[],
+                const ordinal_type ldc_top,
+                Scalar C_bot[],
+                const ordinal_type ldc_bot,
+                Scalar work[]) const;
 
   private:
     mutable combine_default_type default_;
@@ -169,85 +169,85 @@ namespace TSQR {
     CombineFortran () {}
 
     static bool QR_produces_R_factor_with_nonnegative_diagonal() {
-      typedef LAPACK< int, Scalar > lapack_type;
+      //typedef LAPACK< int, Scalar > lapack_type;
 
-      return lapack_type::QR_produces_R_factor_with_nonnegative_diagonal() &&
-	combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      return /* lapack_type::QR_produces_R_factor_with_nonnegative_diagonal() */ false &&
+        combine_default_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     void
     factor_first (const ordinal_type nrows,
-		  const ordinal_type ncols,
-		  Scalar A[],
-		  const ordinal_type lda,
-		  Scalar tau[],
-		  Scalar work[]) const
+                  const ordinal_type ncols,
+                  Scalar A[],
+                  const ordinal_type lda,
+                  Scalar tau[],
+                  Scalar work[]) const
     {
       return default_.factor_first (nrows, ncols, A, lda, tau, work);
     }
-    
+
     void
     apply_first (const ApplyType& applyType,
-		 const ordinal_type nrows,
-		 const ordinal_type ncols_C,
-		 const ordinal_type ncols_A,
-		 const Scalar A[],
-		 const ordinal_type lda,
-		 const Scalar tau[],
-		 Scalar C[],
-		 const ordinal_type ldc,
-		 Scalar work[]) const
+                 const ordinal_type nrows,
+                 const ordinal_type ncols_C,
+                 const ordinal_type ncols_A,
+                 const Scalar A[],
+                 const ordinal_type lda,
+                 const Scalar tau[],
+                 Scalar C[],
+                 const ordinal_type ldc,
+                 Scalar work[]) const
     {
-      return default_.apply_first (applyType, nrows, ncols_C, ncols_A, 
-				   A, lda, tau, 
-				   C, ldc, work);
+      return default_.apply_first (applyType, nrows, ncols_C, ncols_A,
+                                   A, lda, tau,
+                                   C, ldc, work);
     }
 
     void
     apply_inner (const ApplyType& apply_type,
-		 const ordinal_type m,
-		 const ordinal_type ncols_C,
-		 const ordinal_type ncols_Q,
-		 const Scalar A[],
-		 const ordinal_type lda,
-		 const Scalar tau[],
-		 Scalar C_top[],
-		 const ordinal_type ldc_top,
-		 Scalar C_bot[],
-		 const ordinal_type ldc_bot,
-		 Scalar work[]) const;
+                 const ordinal_type m,
+                 const ordinal_type ncols_C,
+                 const ordinal_type ncols_Q,
+                 const Scalar A[],
+                 const ordinal_type lda,
+                 const Scalar tau[],
+                 Scalar C_top[],
+                 const ordinal_type ldc_top,
+                 Scalar C_bot[],
+                 const ordinal_type ldc_bot,
+                 Scalar work[]) const;
 
     void
     factor_inner (const ordinal_type m,
-		  const ordinal_type n,
-		  Scalar R[],
-		  const ordinal_type ldr,
-		  Scalar A[],
-		  const ordinal_type lda,
-		  Scalar tau[],
-		  Scalar work[]) const;
+                  const ordinal_type n,
+                  Scalar R[],
+                  const ordinal_type ldr,
+                  Scalar A[],
+                  const ordinal_type lda,
+                  Scalar tau[],
+                  Scalar work[]) const;
 
     void
     factor_pair (const ordinal_type n,
-		 Scalar R_top[],
-		 const ordinal_type ldr_top,
-		 Scalar R_bot[],
-		 const ordinal_type ldr_bot,
-		 Scalar tau[],
-		 Scalar work[]) const;
-    
+                 Scalar R_top[],
+                 const ordinal_type ldr_top,
+                 Scalar R_bot[],
+                 const ordinal_type ldr_bot,
+                 Scalar tau[],
+                 Scalar work[]) const;
+
     void
     apply_pair (const ApplyType& apply_type,
-		const ordinal_type ncols_C, 
-		const ordinal_type ncols_Q, 
-		const Scalar R_bot[], 
-		const ordinal_type ldr_bot,
-		const Scalar tau[], 
-		Scalar C_top[], 
-		const ordinal_type ldc_top, 
-		Scalar C_bot[], 
-		const ordinal_type ldc_bot, 
-		Scalar work[]) const;
+                const ordinal_type ncols_C,
+                const ordinal_type ncols_Q,
+                const Scalar R_bot[],
+                const ordinal_type ldr_bot,
+                const Scalar tau[],
+                Scalar C_top[],
+                const ordinal_type ldc_top,
+                Scalar C_bot[],
+                const ordinal_type ldc_bot,
+                Scalar work[]) const;
 
   private:
     mutable combine_default_type default_;
@@ -276,92 +276,92 @@ namespace TSQR {
 
     void
     factor_first (const ordinal_type nrows,
-		  const ordinal_type ncols,
-		  Scalar A[],
-		  const ordinal_type lda,
-		  Scalar tau[],
-		  Scalar work[]) const
+                  const ordinal_type ncols,
+                  Scalar A[],
+                  const ordinal_type lda,
+                  Scalar tau[],
+                  Scalar work[]) const
     {
       return default_.factor_first (nrows, ncols, A, lda, tau, work);
     }
-    
+
     void
     apply_first (const ApplyType& applyType,
-		 const ordinal_type nrows,
-		 const ordinal_type ncols_C,
-		 const ordinal_type ncols_A,
-		 const Scalar A[],
-		 const ordinal_type lda,
-		 const Scalar tau[],
-		 Scalar C[],
-		 const ordinal_type ldc,
-		 Scalar work[]) const
+                 const ordinal_type nrows,
+                 const ordinal_type ncols_C,
+                 const ordinal_type ncols_A,
+                 const Scalar A[],
+                 const ordinal_type lda,
+                 const Scalar tau[],
+                 Scalar C[],
+                 const ordinal_type ldc,
+                 Scalar work[]) const
     {
-      return default_.apply_first (applyType, nrows, ncols_C, ncols_A, 
-				   A, lda, tau, 
-				   C, ldc, work);
+      return default_.apply_first (applyType, nrows, ncols_C, ncols_A,
+                                   A, lda, tau,
+                                   C, ldc, work);
     }
 
     void
     apply_inner (const ApplyType& apply_type,
-		 const ordinal_type m,
-		 const ordinal_type ncols_C,
-		 const ordinal_type ncols_Q,
-		 const Scalar A[],
-		 const ordinal_type lda,
-		 const Scalar tau[],
-		 Scalar C_top[],
-		 const ordinal_type ldc_top,
-		 Scalar C_bot[],
-		 const ordinal_type ldc_bot,
-		 Scalar work[]) const
+                 const ordinal_type m,
+                 const ordinal_type ncols_C,
+                 const ordinal_type ncols_Q,
+                 const Scalar A[],
+                 const ordinal_type lda,
+                 const Scalar tau[],
+                 Scalar C_top[],
+                 const ordinal_type ldc_top,
+                 Scalar C_bot[],
+                 const ordinal_type ldc_bot,
+                 Scalar work[]) const
     {
-      default_.apply_inner (apply_type, m, ncols_C, ncols_Q, 
-			    A, lda, tau, 
-			    C_top, ldc_top, C_bot, ldc_bot, work);
+      default_.apply_inner (apply_type, m, ncols_C, ncols_Q,
+                            A, lda, tau,
+                            C_top, ldc_top, C_bot, ldc_bot, work);
     }
 
     void
     factor_inner (const ordinal_type m,
-		  const ordinal_type n,
-		  Scalar R[],
-		  const ordinal_type ldr,
-		  Scalar A[],
-		  const ordinal_type lda,
-		  Scalar tau[],
-		  Scalar work[]) const
+                  const ordinal_type n,
+                  Scalar R[],
+                  const ordinal_type ldr,
+                  Scalar A[],
+                  const ordinal_type lda,
+                  Scalar tau[],
+                  Scalar work[]) const
     {
       default_.factor_inner (m, n, R, ldr, A, lda, tau, work);
     }
 
     void
     factor_pair (const ordinal_type n,
-		 Scalar R_top[],
-		 const ordinal_type ldr_top,
-		 Scalar R_bot[],
-		 const ordinal_type ldr_bot,
-		 Scalar tau[],
-		 Scalar work[]) const
+                 Scalar R_top[],
+                 const ordinal_type ldr_top,
+                 Scalar R_bot[],
+                 const ordinal_type ldr_bot,
+                 Scalar tau[],
+                 Scalar work[]) const
     {
       default_.factor_pair (n, R_top, ldr_top, R_bot, ldr_bot, tau, work);
     }
-    
+
     void
     apply_pair (const ApplyType& apply_type,
-		const ordinal_type ncols_C, 
-		const ordinal_type ncols_Q, 
-		const Scalar R_bot[], 
-		const ordinal_type ldr_bot,
-		const Scalar tau[], 
-		Scalar C_top[], 
-		const ordinal_type ldc_top, 
-		Scalar C_bot[], 
-		const ordinal_type ldc_bot, 
-		Scalar work[]) const
+                const ordinal_type ncols_C,
+                const ordinal_type ncols_Q,
+                const Scalar R_bot[],
+                const ordinal_type ldr_bot,
+                const Scalar tau[],
+                Scalar C_top[],
+                const ordinal_type ldc_top,
+                Scalar C_bot[],
+                const ordinal_type ldc_bot,
+                Scalar work[]) const
     {
-      default_.apply_pair (apply_type, ncols_C, ncols_Q, 
-			   R_bot, ldr_bot, tau, 
-			   C_top, ldc_top, C_bot, ldc_bot, work);
+      default_.apply_pair (apply_type, ncols_C, ncols_Q,
+                           R_bot, ldr_bot, tau,
+                           C_top, ldc_top, C_bot, ldc_bot, work);
     }
 
   private:

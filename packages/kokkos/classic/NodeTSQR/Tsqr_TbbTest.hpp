@@ -47,13 +47,13 @@
 #include <Tsqr_Random_NormalGenerator.hpp>
 
 #include <Tsqr_Blas.hpp>
-#include <Tsqr_Lapack.hpp>
 #include <Tsqr_LocalVerify.hpp>
 #include <Tsqr_Matrix.hpp>
 #include <Tsqr_Util.hpp>
 #include <Tsqr_ScalarTraits.hpp>
 #include <TbbTsqr.hpp>
 
+#include <Teuchos_LAPACK.hpp>
 #include <Teuchos_Time.hpp>
 
 #include <algorithm>
