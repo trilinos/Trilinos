@@ -75,9 +75,11 @@ namespace TSQR {
     typedef Teuchos::LAPACK<Ordinal, Scalar> lapack_type;
 
   public:
+    typedef Ordinal ordinal_type;
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
-    typedef Ordinal ordinal_type;
+    typedef ConstMatView<Ordinal, Scalar> const_mat_view_type;
+    typedef MatView<Ordinal, Scalar> mat_view_type;
 
     CombineDefault () {}
 
@@ -161,24 +163,22 @@ namespace TSQR {
                  const Ordinal ldc_bot,
                  Scalar work[])
     {
-      typedef ConstMatView< Ordinal, Scalar > const_matview_type;
-      typedef MatView< Ordinal, Scalar > matview_type;
       const Ordinal numRows = m + ncols_Q;
 
       A_buf_.reshape (numRows, ncols_Q);
       A_buf_.fill (Scalar(0));
-      const_matview_type A_bot (m, ncols_Q, A, lda);
-      matview_type A_buf_bot (m, ncols_Q, &A_buf_(ncols_Q, 0), A_buf_.lda());
-      A_buf_bot.copy (A_bot);
+      const_mat_view_type A_bot (m, ncols_Q, A, lda);
+      mat_view_type A_buf_bot (m, ncols_Q, &A_buf_(ncols_Q, 0), A_buf_.lda());
+      deep_copy (A_buf_bot, A_bot);
 
       C_buf_.reshape (numRows, ncols_C);
       C_buf_.fill (Scalar(0));
-      matview_type C_buf_top (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.lda());
-      matview_type C_buf_bot (m, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.lda());
-      matview_type C_top_view (ncols_Q, ncols_C, C_top, ldc_top);
-      matview_type C_bot_view (m, ncols_C, C_bot, ldc_bot);
-      C_buf_top.copy (C_top_view);
-      C_buf_bot.copy (C_bot_view);
+      mat_view_type C_buf_top (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.lda());
+      mat_view_type C_buf_bot (m, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.lda());
+      mat_view_type C_top_view (ncols_Q, ncols_C, C_top, ldc_top);
+      mat_view_type C_bot_view (m, ncols_C, C_bot, ldc_bot);
+      deep_copy (C_buf_top, C_top_view);
+      deep_copy (C_buf_bot, C_bot_view);
 
       int info = 0;
       lapack_.UNM2R ('L', (apply_type.toString ().c_str ())[0],
@@ -193,8 +193,8 @@ namespace TSQR {
         throw std::logic_error (os.str());
       }
       // Copy back the results.
-      C_top_view.copy (C_buf_top);
-      C_bot_view.copy (C_buf_bot);
+      deep_copy (C_top_view, C_buf_top);
+      deep_copy (C_bot_view, C_buf_bot);
     }
 
     void

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -70,9 +70,13 @@ namespace TSQR {
   ///   without affecting other Teuchos users.
   template<class Ordinal, class Scalar>
   class Matrix {
+  public:
+    typedef MatView<Ordinal, Scalar> mat_view_type;
+    typedef ConstMatView<Ordinal, Scalar> const_mat_view_type;
+
   private:
-    static bool 
-    fits_in_size_t (const Ordinal& ord) 
+    static bool
+    fits_in_size_t (const Ordinal& ord)
     {
       const Ordinal result = static_cast< Ordinal > (static_cast< size_t > (ord));
       return (ord == result);
@@ -91,33 +95,33 @@ namespace TSQR {
     /// \return num_rows*num_cols
     size_t
     verified_alloc_size (const Ordinal num_rows,
-			 const Ordinal num_cols) const 
+                         const Ordinal num_cols) const
     {
       if (! std::numeric_limits< Ordinal >::is_integer)
-	throw std::logic_error("Ordinal must be an integer type");
+        throw std::logic_error("Ordinal must be an integer type");
 
       // Quick exit also checks for zero num_cols (which prevents
       // division by zero in the tests below).
       if (num_rows == 0 || num_cols == 0)
-	return size_t(0);
+        return size_t(0);
 
       // If Ordinal is signed, make sure that num_rows and num_cols
       // are nonnegative.
       if (std::numeric_limits< Ordinal >::is_signed)
-	{
-	  if (num_rows < 0)
-	    {
-	      std::ostringstream os;
-	      os << "# rows (= " << num_rows << ") < 0";
-	      throw std::logic_error (os.str());
-	    }
-	  else if (num_cols < 0)
-	    {
-	      std::ostringstream os;
-	      os << "# columns (= " << num_cols << ") < 0";
-	      throw std::logic_error (os.str());
-	    }
-	}
+        {
+          if (num_rows < 0)
+            {
+              std::ostringstream os;
+              os << "# rows (= " << num_rows << ") < 0";
+              throw std::logic_error (os.str());
+            }
+          else if (num_cols < 0)
+            {
+              std::ostringstream os;
+              os << "# columns (= " << num_cols << ") < 0";
+              throw std::logic_error (os.str());
+            }
+        }
 
       // If Ordinal is bigger than a size_t, do special range
       // checking.  The compiler warns (comparison of signed and
@@ -129,46 +133,46 @@ namespace TSQR {
       // definitely can't return a size_t product of num_rows and
       // num_cols.
       if (! fits_in_size_t (num_rows))
-	{
-	  std::ostringstream os;
-	  os << "# rows (= " << num_rows << ") > max size_t value (= " 
-	     << std::numeric_limits<size_t>::max() << ")";
-	  throw std::range_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "# rows (= " << num_rows << ") > max size_t value (= "
+             << std::numeric_limits<size_t>::max() << ")";
+          throw std::range_error (os.str());
+        }
       else if (! fits_in_size_t (num_cols))
-	{
-	  std::ostringstream os;
-	  os << "# columns (= " << num_cols << ") > max size_t value (= "
-	     << std::numeric_limits<size_t>::max() << ")";
-	  throw std::range_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "# columns (= " << num_cols << ") > max size_t value (= "
+             << std::numeric_limits<size_t>::max() << ")";
+          throw std::range_error (os.str());
+        }
 
       // Both num_rows and num_cols fit in a size_t, and are
       // nonnegative.  Now check whether their product also fits in a
-      // size_t.  
+      // size_t.
       //
       // Note: This may throw a SIGFPE (floating-point exception) if
       // num_cols is zero.  Be sure to check first (above).
-      if (static_cast<size_t>(num_rows) > 
-	  std::numeric_limits<size_t>::max() / static_cast<size_t>(num_cols))
-	{
-	  std::ostringstream os;
-	  os << "num_rows (= " << num_rows << ") * num_cols (= "
-	     << num_cols << ") > max size_t value (= " 
-	     << std::numeric_limits<size_t>::max() << ")";
-	  throw std::range_error (os.str());
-	}
+      if (static_cast<size_t>(num_rows) >
+          std::numeric_limits<size_t>::max() / static_cast<size_t>(num_cols))
+        {
+          std::ostringstream os;
+          os << "num_rows (= " << num_rows << ") * num_cols (= "
+             << num_cols << ") > max size_t value (= "
+             << std::numeric_limits<size_t>::max() << ")";
+          throw std::range_error (os.str());
+        }
       return static_cast<size_t>(num_rows) * static_cast<size_t>(num_cols);
     }
-    
+
   public:
     typedef Scalar scalar_type;
     typedef Ordinal ordinal_type;
     typedef Scalar* pointer_type;
 
     //! Constructor with dimensions.
-    Matrix (const Ordinal num_rows, 
-	    const Ordinal num_cols) :
+    Matrix (const Ordinal num_rows,
+            const Ordinal num_cols) :
       nrows_ (num_rows),
       ncols_ (num_cols),
       A_ (verified_alloc_size (num_rows, num_cols))
@@ -176,8 +180,8 @@ namespace TSQR {
 
     //! Constructor with dimensions and fill datum.
     Matrix (const Ordinal num_rows,
-	    const Ordinal num_cols,
-	    const Scalar& value) :
+            const Ordinal num_cols,
+            const Scalar& value) :
       nrows_ (num_rows),
       ncols_ (num_cols),
       A_ (verified_alloc_size (num_rows, num_cols), value)
@@ -194,14 +198,14 @@ namespace TSQR {
       A_ (verified_alloc_size (in.nrows(), in.ncols()))
     {
       if (! in.empty())
-	copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
+        copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
     }
 
     //! Default constructor (constructs an empty matrix).
     Matrix () : nrows_(0), ncols_(0), A_(0) {}
 
     //! Trivial destructor.
-    ~Matrix () {} 
+    ~Matrix () {}
 
     /// \brief "Copy constructor" from a matrix view type.
     ///
@@ -216,32 +220,11 @@ namespace TSQR {
       A_ (verified_alloc_size (in.nrows(), in.ncols()))
     {
       if (A_.size() != 0)
-	copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
-    }
-
-    /// \brief Copy the matrix B into this matrix.
-    ///
-    /// \param B [in] A matrix with the same dimensions (numbers of
-    ///   rows and columns) as this matrix.
-    template<class MatrixViewType>
-    void 
-    copy (MatrixViewType& B)
-    {
-      const typename MatrixViewType::ordinal_type num_rows = B.nrows();
-      const typename MatrixViewType::ordinal_type num_cols = B.ncols();
-      if (num_rows != nrows() || num_cols != ncols())
-	{
-	  std::ostringstream os;
-	  os << "Matrix::Copy: incompatible dimensions: attempt to assign " 
-	     << num_rows << " x " << num_cols << " matrix to an " 
-	     << (nrows()) << " x " << (ncols()) << "matrix";
-	  throw std::logic_error (os.str());
-	}
-      copy_matrix (nrows(), ncols(), get(), lda(), B.get(), B.lda());
+        copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
     }
 
     //! Fill all entries of the matrix with the given value.
-    void 
+    void
     fill (const Scalar value)
     {
       fill_matrix (nrows(), ncols(), get(), lda(), value);
@@ -273,11 +256,11 @@ namespace TSQR {
     /// The test is templated so that B may have a different Ordinal
     /// type or even a different Scalar type than *this.
     template<class MatrixViewType>
-    bool operator== (const MatrixViewType& B) const 
+    bool operator== (const MatrixViewType& B) const
     {
       if (nrows() != B.nrows() || ncols() != B.ncols())
-	return false;
-    
+        return false;
+
       typedef typename MatrixViewType::ordinal_type second_ordinal_type;
       typedef typename MatrixViewType::scalar_type second_scalar_type;
 
@@ -289,9 +272,9 @@ namespace TSQR {
       const second_scalar_type* B_j = B.get();
 
       for (ordinal_type j = 0; j < A_ncols; ++j, A_j += A_lda, B_j += B_lda)
-	for (ordinal_type i = 0; i < A_nrows; ++i)
-	  if (A_j[i] != B_j[i])
-	    return false;
+        for (ordinal_type i = 0; i < A_nrows; ++i)
+          if (A_j[i] != B_j[i])
+            return false;
       return true;
     }
 
@@ -308,35 +291,34 @@ namespace TSQR {
     bool empty() const { return nrows() == 0 || ncols() == 0; }
 
     //! A non-const pointer to the matrix data.
-    Scalar* 
-    get() 
-    { 
+    Scalar*
+    get()
+    {
       if (A_.size() > 0)
-	return &A_[0]; 
+        return &A_[0];
       else
-	return static_cast<Scalar*> (NULL);
+        return static_cast<Scalar*> (NULL);
     }
 
     //! A const pointer to the matrix data.
-    const Scalar* 
+    const Scalar*
     get() const
-    { 
+    {
       if (A_.size() > 0)
-	return &A_[0]; 
+        return &A_[0];
       else
-	return static_cast<const Scalar*> (NULL);
+        return static_cast<const Scalar*> (NULL);
     }
 
     //! A non-const view of the matrix.
-    MatView<Ordinal, Scalar> view () {
-      return MatView<Ordinal, Scalar> (nrows(), ncols(), get(), lda());
+    mat_view_type view () {
+      return mat_view_type (nrows(), ncols(), get(), lda());
     }
 
     //! A const view of the matrix.
-    ConstMatView<Ordinal, Scalar> const_view () const {
-      typedef ConstMatView<Ordinal, Scalar> const_view_type;
-      return const_view_type (nrows(), ncols(), 
-			      const_cast<const Scalar*> (get()), lda());
+    const_mat_view_type const_view () const {
+      return const_mat_view_type (nrows(), ncols(),
+                                  const_cast<const Scalar*> (get()), lda());
     }
 
     /// Change the dimensions of the matrix.  Reallocate if necessary.
@@ -353,7 +335,7 @@ namespace TSQR {
     reshape (const Ordinal num_rows, const Ordinal num_cols)
     {
       if (num_rows == nrows() && num_cols == ncols())
-	return; // no need to reallocate or do anything else
+        return; // no need to reallocate or do anything else
 
       const size_t alloc_size = verified_alloc_size (num_rows, num_cols);
       nrows_ = num_rows;

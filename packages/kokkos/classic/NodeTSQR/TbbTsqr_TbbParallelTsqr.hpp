@@ -78,11 +78,11 @@ namespace TSQR {
     template<class LocalOrdinal, class Scalar, class TimerType>
     class TbbParallelTsqr {
     private:
-      typedef MatView<LocalOrdinal, Scalar> mat_view;
-      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view;
-      typedef std::pair<mat_view, mat_view> split_t;
-      typedef std::pair<const_mat_view, const_mat_view> const_split_t;
-      typedef std::pair<const_mat_view, mat_view> top_blocks_t;
+      typedef MatView<LocalOrdinal, Scalar> mat_view_type;
+      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
+      typedef std::pair<mat_view_type, mat_view_type> split_t;
+      typedef std::pair<const_mat_view_type, const_mat_view_type> const_split_t;
+      typedef std::pair<const_mat_view_type, mat_view_type> top_blocks_t;
       typedef std::vector<top_blocks_t> array_top_blocks_t;
 
       template<class MatrixViewType>
@@ -310,11 +310,11 @@ namespace TSQR {
       {
         using tbb::task;
 
-        mat_view A_view (nrows, ncols, A, lda);
+        mat_view_type A_view (nrows, ncols, A, lda);
         // A_top will be modified in place by exactly one task, to
         // indicate the partition from which we may extract the R
         // factor after finishing the factorization.
-        mat_view A_top;
+        mat_view_type A_top;
 
         std::vector<SeqOutput> seq_output (ntasks());
         ParOutput par_output (ntasks(), std::vector<Scalar>(ncols));
@@ -386,8 +386,8 @@ namespace TSQR {
         if (apply_type.transposed())
           throw std::logic_error ("Applying Q^T and Q^H not implemented");
 
-        const_mat_view Q_view (nrows, ncols_Q, Q, ldq);
-        mat_view C_view (nrows, ncols_C, C, ldc);
+        const_mat_view_type Q_view (nrows, ncols_Q, Q, ldq);
+        mat_view_type C_view (nrows, ncols_C, C, ldc);
         if (! apply_type.transposed())
           {
             array_top_blocks_t top_blocks (ntasks());
@@ -437,7 +437,7 @@ namespace TSQR {
       {
         using tbb::task;
 
-        mat_view Q_out_view (nrows, ncols_Q_out, Q_out, ldq_out);
+        mat_view_type Q_out_view (nrows, ncols_Q_out, Q_out, ldq_out);
         try {
           typedef ExplicitQTask< LocalOrdinal, Scalar > explicit_Q_task_t;
           explicit_Q_task_t& root_task = *new( task::allocate_root() )
@@ -480,8 +480,8 @@ namespace TSQR {
           using tbb::task;
           typedef RevealRankTask<LocalOrdinal, Scalar> rrtask_type;
 
-          mat_view Q_view (nrows, ncols, Q, ldq);
-          const_mat_view B_view (ncols, ncols, B, ldb);
+          mat_view_type Q_view (nrows, ncols, Q, ldq);
+          const_mat_view_type B_view (ncols, ncols, B, ldb);
 
           rrtask_type& root_task = *new( task::allocate_root() )
             rrtask_type (0, ntasks()-1, Q_view, B_view, seq_,
@@ -566,11 +566,11 @@ namespace TSQR {
       {
         using tbb::task;
 
-        const_mat_view A_in_view (nrows, ncols, A_in, lda_in);
+        const_mat_view_type A_in_view (nrows, ncols, A_in, lda_in);
         // A_out won't have leading dimension lda_in, but that's OK,
         // as long as all the routines are told that A_out is
         // cache-blocked.
-        mat_view A_out_view (nrows, ncols, A_out, lda_in);
+        mat_view_type A_out_view (nrows, ncols, A_out, lda_in);
         try {
           typedef CacheBlockTask< LocalOrdinal, Scalar > cache_block_task_t;
           cache_block_task_t& root_task = *new( task::allocate_root() )
@@ -598,8 +598,8 @@ namespace TSQR {
         // A_in doesn't have leading dimension lda_out, but that's OK,
         // as long as all the routines are told that A_in is cache-
         // blocked.
-        const_mat_view A_in_view (nrows, ncols, A_in, lda_out);
-        mat_view A_out_view (nrows, ncols, A_out, lda_out);
+        const_mat_view_type A_in_view (nrows, ncols, A_in, lda_out);
+        mat_view_type A_out_view (nrows, ncols, A_out, lda_out);
         try {
           typedef UnCacheBlockTask< LocalOrdinal, Scalar > un_cache_block_task_t;
           un_cache_block_task_t& root_task = *new( task::allocate_root() )
@@ -631,7 +631,7 @@ namespace TSQR {
                        const bool contiguous_cache_blocks) const
       {
         using tbb::task;
-        mat_view C_view (nrows, ncols, C, ldc);
+        mat_view_type C_view (nrows, ncols, C, ldc);
 
         try {
           typedef FillWithZerosTask< LocalOrdinal, Scalar > fill_task_t;
@@ -663,65 +663,59 @@ namespace TSQR {
       build_partition_array (const size_t P_first,
                              const size_t P_last,
                              array_top_blocks_t& top_blocks,
-                             const_mat_view& Q,
-                             mat_view& C,
+                             const_mat_view_type& Q,
+                             mat_view_type& C,
                              const bool contiguous_cache_blocks = false) const
       {
-        if (P_first > P_last)
+        if (P_first > P_last) {
           return;
-        else if (P_first == P_last)
-          {
-            const_mat_view Q_top = seq_.top_block (Q, contiguous_cache_blocks);
-            mat_view C_top = seq_.top_block (C, contiguous_cache_blocks);
+        }
+        else if (P_first == P_last) {
+          const_mat_view_type Q_top = seq_.top_block (Q, contiguous_cache_blocks);
+          mat_view_type C_top = seq_.top_block (C, contiguous_cache_blocks);
+          top_blocks[P_first] =
+            std::make_pair (const_mat_view_type (Q_top.ncols(), Q_top.ncols(),
+                                                 Q_top.get(), Q_top.lda()),
+                            mat_view_type (C_top.ncols(), C_top.ncols(),
+                                           C_top.get(), C_top.lda()));
+        }
+        else {
+          // Recurse on two intervals: [P_first, P_mid] and [P_mid+1, P_last]
+          const size_t P_mid = (P_first + P_last) / 2;
+          const_split_t Q_split =
+            partitioner_.split (Q, P_first, P_mid, P_last,
+                                contiguous_cache_blocks);
+          split_t C_split =
+            partitioner_.split (C, P_first, P_mid, P_last,
+                                contiguous_cache_blocks);
+          // The partitioner may decide that the current blocks Q
+          // and C have too few rows to be worth splitting.  (The
+          // partitioner should split both Q and C in the same way.)
+          // In that case, Q_split.first should be the same block as
+          // Q, and Q_split.second (the bottom block) will be empty.
+          // Ditto for C_split.  We deal with this in the same way
+          // as the base case (P_first == P_last) above.
+          if (Q_split.second.empty() || Q_split.second.nrows() == 0) {
+            const_mat_view_type Q_top =
+              seq_.top_block (Q, contiguous_cache_blocks);
+            mat_view_type C_top = seq_.top_block (C, contiguous_cache_blocks);
             top_blocks[P_first] =
-              std::make_pair (const_mat_view (Q_top.ncols(), Q_top.ncols(),
-                                              Q_top.get(), Q_top.lda()),
-                              mat_view (C_top.ncols(), C_top.ncols(),
-                                        C_top.get(), C_top.lda()));
+              std::make_pair (const_mat_view_type (Q_top.ncols(), Q_top.ncols(),
+                                                   Q_top.get(), Q_top.lda()),
+                              mat_view_type (C_top.ncols(), C_top.ncols(),
+                                             C_top.get(), C_top.lda()));
           }
-        else
-          {
-            // Recurse on two intervals: [P_first, P_mid] and [P_mid+1, P_last]
-            const size_t P_mid = (P_first + P_last) / 2;
-            const_split_t Q_split =
-              partitioner_.split (Q, P_first, P_mid, P_last,
-                                  contiguous_cache_blocks);
-            split_t C_split =
-              partitioner_.split (C, P_first, P_mid, P_last,
-                                  contiguous_cache_blocks);
-            // The partitioner may decide that the current blocks Q
-            // and C have too few rows to be worth splitting.  (The
-            // partitioner should split both Q and C in the same way.)
-            // In that case, Q_split.first should be the same block as
-            // Q, and Q_split.second (the bottom block) will be empty.
-            // Ditto for C_split.  We deal with this in the same way
-            // as the base case (P_first == P_last) above.
-            if (Q_split.second.empty() || Q_split.second.nrows() == 0)
-              {
-                const_mat_view Q_top =
-                  seq_.top_block (Q, contiguous_cache_blocks);
-                mat_view C_top = seq_.top_block (C, contiguous_cache_blocks);
-                top_blocks[P_first] =
-                  std::make_pair (const_mat_view (Q_top.ncols(), Q_top.ncols(),
-                                                  Q_top.get(), Q_top.lda()),
-                                  mat_view (C_top.ncols(), C_top.ncols(),
-                                            C_top.get(), C_top.lda()));
-              }
-            else
-              {
-                build_partition_array (P_first, P_mid, top_blocks,
-                                       Q_split.first, C_split.first,
-                                       contiguous_cache_blocks);
-                build_partition_array (P_mid+1, P_last, top_blocks,
-                                       Q_split.second, C_split.second,
-                                       contiguous_cache_blocks);
-              }
+          else {
+            build_partition_array (P_first, P_mid, top_blocks,
+                                   Q_split.first, C_split.first,
+                                   contiguous_cache_blocks);
+            build_partition_array (P_mid+1, P_last, top_blocks,
+                                   Q_split.second, C_split.second,
+                                   contiguous_cache_blocks);
           }
+        }
       }
-
-
     };
-
   } // namespace TBB
 } // namespace TSQR
 

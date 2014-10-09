@@ -407,8 +407,8 @@ namespace TSQR {
         // Copy the test problem input into R, since the factorization
         // will overwrite it in place with the final R factor.
         R.reshape (numCols, numCols);
-        R.fill (Scalar(0));
-        R.copy (A_local);
+        R.fill (Scalar (0));
+        deep_copy (R, A_local);
 
         // Prepare space in which to construct the explicit Q factor
         // (local component on this processor)
@@ -766,7 +766,7 @@ namespace TSQR {
         // Copy the test problem input into R, since the factorization
         // will overwrite it in place with the final R factor.
         R.reshape (numCols, numCols);
-        R.copy (A_local);
+        deep_copy (R, A_local);
 
         // Prepare space in which to construct the explicit Q factor
         // (local component on this processor)

@@ -187,8 +187,8 @@ namespace TSQR {
                        const Ordinal lda,
                        const magnitude_type singular_values[])
       {
-        typedef Matrix< Ordinal, Scalar > matrix_type;
-        typedef MatView< Ordinal, Scalar > matrix_view_type;
+        typedef Matrix<Ordinal, Scalar> matrix_type;
+        typedef MatView<Ordinal, Scalar> mat_view_type;
 
         matrix_type U (nrows, ncols, Scalar(0));
         matrix_type V (ncols, ncols, Scalar(0));
@@ -197,7 +197,7 @@ namespace TSQR {
 
         // Fill A with zeros, and then make its diagonal the given set
         // of singular values.
-        matrix_view_type A_view (nrows, ncols, A, lda);
+        mat_view_type A_view (nrows, ncols, A, lda);
         A_view.fill (Scalar (0));
         for (Ordinal j = 0; j < ncols; ++j)
           // Promote magnitude_type to Scalar here.

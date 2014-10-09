@@ -139,7 +139,7 @@ namespace TSQR {
       // specified, rearrange the data in A_copy so that the data in
       // each cache block is contiguously stored.
       if (! contiguous_cache_blocks) {
-        A_copy.copy (A);
+        deep_copy (A_copy, A);
         if (b_debug) {
           cerr << "-- Copied test problem from A into A_copy" << endl;
         }
@@ -192,7 +192,7 @@ namespace TSQR {
       if (contiguous_cache_blocks) {
         // Use A_copy as temporary storage for un-cache-blocking Q.
         actor.un_cache_block (nrows, ncols, A_copy.get(), A_copy.lda(), Q.get());
-        Q.copy (A_copy);
+        deep_copy (Q, A_copy);
         if (b_debug) {
           cerr << "-- Un-cache-blocked output Q factor" << endl;
         }
@@ -316,7 +316,7 @@ namespace TSQR {
         actor.cache_block (nrows, ncols, A_copy.get(), A.get(), A.lda());
       }
       else {
-        A_copy.copy (A);
+        deep_copy (A_copy, A);
       }
 
       // Do a few timing runs and throw away the results, just to warm

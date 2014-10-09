@@ -190,52 +190,50 @@ namespace TSQR {
       // Create a test problem
       nodeTestProblem (generator, nrows, ncols, A.get(), A.lda(), true);
 
-      if (save_matrices)
-        {
-          string filename = "A_" + shortDatatype + ".txt";
-          if (b_debug)
-            cerr << "-- Saving test problem to \"" << filename << "\"" << endl;
-          std::ofstream fileOut (filename.c_str());
-          print_local_matrix (fileOut, nrows, ncols, A.get(), A.lda());
-          fileOut.close();
-        }
+      if (save_matrices) {
+        string filename = "A_" + shortDatatype + ".txt";
+        if (b_debug)
+          cerr << "-- Saving test problem to \"" << filename << "\"" << endl;
+        std::ofstream fileOut (filename.c_str());
+        print_local_matrix (fileOut, nrows, ncols, A.get(), A.lda());
+        fileOut.close();
+      }
 
-      if (b_debug)
+      if (b_debug) {
         cerr << "-- Generated test problem" << endl;
+      }
 
       // Copy A into A_copy, since TSQR overwrites the input.  If
       // specified, rearrange the data in A_copy so that the data in
       // each cache block is contiguously stored.
-      if (! contiguous_cache_blocks)
-        {
-          A_copy.copy (A);
-          if (b_debug)
-            cerr << "-- Copied test problem from A into A_copy" << endl;
+      if (! contiguous_cache_blocks) {
+        deep_copy (A_copy, A);
+        if (b_debug) {
+          cerr << "-- Copied test problem from A into A_copy" << endl;
         }
-      else
-        {
-          actor.cache_block (nrows, ncols, A_copy.get(), A.get(), A.lda());
-          if (b_debug)
-            cerr << "-- Reorganized test matrix to have contiguous "
-              "cache blocks" << endl;
-
-          // Verify cache blocking, when in debug mode.
-          if (b_debug)
-            {
-              Matrix< Ordinal, Scalar > A2 (nrows, ncols);
-              if (std::numeric_limits<Scalar>::has_quiet_NaN)
-                A2.fill (std::numeric_limits<Scalar>::quiet_NaN());
-
-              actor.un_cache_block (nrows, ncols, A2.get(), A2.lda(), A_copy.get());
-              if (A == A2)
-                {
-                  if (b_debug)
-                    cerr << "-- Cache blocking test succeeded!" << endl;
-                }
-              else
-                throw std::logic_error ("Cache blocking failed");
-            }
+      }
+      else {
+        actor.cache_block (nrows, ncols, A_copy.get(), A.get(), A.lda());
+        if (b_debug) {
+          cerr << "-- Reorganized test matrix to have contiguous "
+            "cache blocks" << endl;
         }
+
+        // Verify cache blocking, when in debug mode.
+        if (b_debug) {
+          Matrix< Ordinal, Scalar > A2 (nrows, ncols);
+          if (std::numeric_limits<Scalar>::has_quiet_NaN)
+            A2.fill (std::numeric_limits<Scalar>::quiet_NaN());
+
+          actor.un_cache_block (nrows, ncols, A2.get(), A2.lda(), A_copy.get());
+          if (A == A2) {
+            if (b_debug)
+              cerr << "-- Cache blocking test succeeded!" << endl;
+          }
+          else
+            throw std::logic_error ("Cache blocking failed");
+        }
+      }
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
@@ -278,32 +276,31 @@ namespace TSQR {
       // "Un"-cache-block the output, if contiguous cache blocks were
       // used.  This is only necessary because local_verify() doesn't
       // currently support contiguous cache blocks.
-      if (contiguous_cache_blocks)
-        {
-          // Use A_copy as temporary storage for un-cache-blocking Q.
-          actor.un_cache_block (nrows, ncols, A_copy.get(), A_copy.lda(), Q.get());
-          Q.copy (A_copy);
-          if (b_debug)
-            cerr << "-- Un-cache-blocked output Q factor" << endl;
+      if (contiguous_cache_blocks) {
+        // Use A_copy as temporary storage for un-cache-blocking Q.
+        actor.un_cache_block (nrows, ncols, A_copy.get(), A_copy.lda(), Q.get());
+        deep_copy (Q, A_copy);
+        if (b_debug) {
+          cerr << "-- Un-cache-blocked output Q factor" << endl;
         }
+      }
 
-      if (save_matrices)
-        {
-          string filename = "Q_" + shortDatatype + ".txt";
-          if (b_debug)
-            cerr << "-- Saving Q factor to \"" << filename << "\"" << endl;
-          std::ofstream fileOut (filename.c_str());
-          print_local_matrix (fileOut, nrows, ncols, Q.get(), Q.lda());
-          fileOut.close();
+      if (save_matrices) {
+        string filename = "Q_" + shortDatatype + ".txt";
+        if (b_debug) {
+          cerr << "-- Saving Q factor to \"" << filename << "\"" << endl;
         }
+        std::ofstream fileOut (filename.c_str());
+        print_local_matrix (fileOut, nrows, ncols, Q.get(), Q.lda());
+        fileOut.close();
+      }
 
       // Print out the R factor
-      if (false && b_debug)
-        {
-          cerr << endl << "-- R factor:" << endl;
-          print_local_matrix (cerr, ncols, ncols, R.get(), R.lda());
-          cerr << endl;
-        }
+      if (false && b_debug) {
+        cerr << endl << "-- R factor:" << endl;
+        print_local_matrix (cerr, ncols, ncols, R.get(), R.lda());
+        cerr << endl;
+      }
 
       // Validate the factorization
       vector< magnitude_type > results =
@@ -489,9 +486,10 @@ namespace TSQR {
         cerr << "-- Generated test problem" << endl;
 
       // Copy A into A_copy, since LAPACK QR overwrites the input.
-      A_copy.copy (A);
-      if (b_debug)
+      deep_copy (A_copy, A);
+      if (b_debug) {
         cerr << "-- Copied test problem from A into A_copy" << endl;
+      }
 
       // Now determine the required workspace for the factorization.
       const Ordinal lwork = lworkQueryLapackQr (lapack, nrows, ncols, A_copy.lda());
@@ -526,7 +524,7 @@ namespace TSQR {
 
       // The explicit Q factor will be computed in place, so copy the
       // result of the factorization into Q.
-      Q.copy (A_copy);
+      deep_copy (Q, A_copy);
 
       // Compute the explicit Q factor
       lapack.UNGQR (nrows, ncols, ncols, Q.get(), ldq, &tau[0], &work[0], lwork, &info);
@@ -705,7 +703,7 @@ namespace TSQR {
         // occurs in place.  This doesn't work with TSQR.  To give
         // LAPACK QR the fullest possible advantage over TSQR, we don't
         // allocate an A_copy here (as we would when benchmarking TSQR).
-        Q.copy (A);
+        deep_copy (Q, A);
 
         // Determine the required workspace for the factorization
         const Ordinal lwork = lworkQueryLapackQr (lapack_, numRows, numCols, lda);
@@ -962,7 +960,7 @@ namespace TSQR {
         nodeTestProblem (gen_, numRows, numCols, A.get(), lda, false);
 
         // Copy A into A_copy, since TSQR overwrites the input
-        A_copy.copy (A);
+        deep_copy (A_copy, A);
 
         // Benchmark sequential TSQR for numTrials trials.
         //

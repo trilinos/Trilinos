@@ -69,8 +69,8 @@ namespace TSQR {
   template<class LocalOrdinal, class Scalar>
   class SequentialCholeskyQR {
   private:
-    typedef MatView< LocalOrdinal, Scalar > mat_view;
-    typedef ConstMatView< LocalOrdinal, Scalar > const_mat_view;
+    typedef MatView< LocalOrdinal, Scalar > mat_view_type;
+    typedef ConstMatView< LocalOrdinal, Scalar > const_mat_view_type;
     typedef Teuchos::BLAS<LocalOrdinal, Scalar> blas_type;
     typedef Teuchos::LAPACK<LocalOrdinal, Scalar> lapack_type;
 
@@ -150,10 +150,10 @@ namespace TSQR {
           // the matrix left to process; at the beginning, the "remaining"
           // part is the whole matrix, but that will change as the
           // algorithm progresses.
-          mat_view A_rest (nrows, ncols, A, lda);
+          mat_view_type A_rest (nrows, ncols, A, lda);
           // This call modifies A_rest (but not the actual matrix
           // entries; just the dimensions and current position).
-          mat_view A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+          mat_view_type A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
           // Process the first cache block: ATA := A_cur^T * A_cur
           //
           // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
@@ -205,9 +205,9 @@ namespace TSQR {
         using Teuchos::RIGHT_SIDE;
         using Teuchos::UPPER_TRI;
 
-        mat_view A_rest (nrows, ncols, A, lda);
+        mat_view_type A_rest (nrows, ncols, A, lda);
         // This call modifies A_rest.
-        mat_view A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+        mat_view_type A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
 
         // Compute A_cur / R (Matlab notation for A_cur * R^{-1}) in place.
         blas.TRSM (RIGHT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG,
@@ -244,23 +244,22 @@ namespace TSQR {
                                "does not work if ncols_C != ncols_Q");
       const LocalOrdinal ncols = ncols_Q;
 
-      if (contiguous_cache_blocks)
-        {
-          CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
-          mat_view C_rest (nrows, ncols, C, ldc);
-          const_mat_view Q_rest (nrows, ncols, Q, ldq);
+      if (contiguous_cache_blocks) {
+        CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
+        mat_view_type C_rest (nrows, ncols, C, ldc);
+        const_mat_view_type Q_rest (nrows, ncols, Q, ldq);
 
-          mat_view C_cur = blocker.split_top_block (C_rest, contiguous_cache_blocks);
-          const_mat_view Q_cur = blocker.split_top_block (Q_rest, contiguous_cache_blocks);
+        mat_view_type C_cur = blocker.split_top_block (C_rest, contiguous_cache_blocks);
+        const_mat_view_type Q_cur = blocker.split_top_block (Q_rest, contiguous_cache_blocks);
 
-          while (! C_rest.empty())
-            Q_cur.copy (C_cur);
+        while (! C_rest.empty ()) {
+          deep_copy (Q_cur, C_cur);
         }
-      else
-        {
-          mat_view C_view (nrows, ncols, C, ldc);
-          C_view.copy (const_mat_view (nrows, ncols, Q, ldq));
-        }
+      }
+      else {
+        mat_view_type C_view (nrows, ncols, C, ldc);
+        deep_copy (C_view, const_mat_view_type (nrows, ncols, Q, ldq));
+      }
     }
 
 
@@ -289,7 +288,7 @@ namespace TSQR {
       blocker.un_cache_block (nrows, ncols, A_out, lda_out, A_in);
     }
 
-    /// Fill the nrows by ncols matrix A with zeros.
+    //! Fill the nrows by ncols matrix A with zeros.
     void
     fill_with_zeros (const LocalOrdinal nrows,
                      const LocalOrdinal ncols,
@@ -301,13 +300,15 @@ namespace TSQR {
       blocker.fill_with_zeros (nrows, ncols, A, lda, contiguous_cache_blocks);
     }
 
-    /// Return a view of the topmost cache block (on this node) of the
-    /// given matrix C.  NOTE that this is not necessarily square,
-    /// though it must have at least as many rows as columns.  For a
-    /// square ncols by ncols block, as needed in TSQR::Tsqr::apply(),
-    /// if the output is ret, do MatView< LocalOrdinal, Scalar >
-    /// (ncols, ncols, ret.get(), ret.lda()) to get an ncols by ncols
-    /// block.
+    /// \brief Return a view of the topmost cache block (on the
+    ///   calling MPI process, if in an MPI parallel mode) of the
+    ///   given matrix C.
+    ///
+    /// \note The returned view is not necessarily square, though it
+    ///   must have at least as many rows as columns.  For a square
+    ///   ncols by ncols block, as needed in TSQR::Tsqr::apply(), if
+    ///   the output is ret, do mat_view_type(ncols, ncols, ret.get(),
+    ///   ret.lda()) to get an ncols by ncols block.
     template< class MatrixViewType >
     MatrixViewType
     top_block (const MatrixViewType& C,

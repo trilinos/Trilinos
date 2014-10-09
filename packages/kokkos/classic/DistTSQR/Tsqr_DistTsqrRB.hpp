@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -64,7 +64,7 @@ namespace TSQR {
   /// \namespace details
   /// \brief TSQR implementation details.
   /// \author Mark Hoemmen
-  /// 
+  ///
   /// \warning TSQR users should not use anything in this namespace.
   ///   They should not even assume that the namespace will continue
   ///   to exist between releases.  The namespace's name itself or
@@ -79,11 +79,11 @@ namespace TSQR {
     template<class LocalOrdinal, class Scalar, bool isComplex>
     class NonnegDiagForcer {
     public:
+      typedef MatView<LocalOrdinal, Scalar> mat_view_type;
+
       // Force the diagonal of R_mine to be nonnegative, where
       // Q_mine*R_mine is a QR factorization.
-      void
-      force (MatView<LocalOrdinal, Scalar> Q_mine, 
-	     MatView<LocalOrdinal, Scalar> R_mine);
+      void force (mat_view_type Q_mine, mat_view_type R_mine);
     };
 
     // The complex-arithmetic specialization does nothing, since
@@ -92,12 +92,11 @@ namespace TSQR {
     template<class LocalOrdinal, class Scalar>
     class NonnegDiagForcer<LocalOrdinal, Scalar, true> {
     public:
-      void
-      force (MatView<LocalOrdinal, Scalar> Q_mine, 
-	     MatView<LocalOrdinal, Scalar> R_mine)
-      {
-	(void) Q_mine;
-	(void) R_mine;
+      typedef MatView<LocalOrdinal, Scalar> mat_view_type;
+
+      void force (mat_view_type Q_mine, mat_view_type R_mine) {
+        (void) Q_mine;
+        (void) R_mine;
       }
     };
 
@@ -105,31 +104,30 @@ namespace TSQR {
     template<class LocalOrdinal, class Scalar>
     class NonnegDiagForcer<LocalOrdinal, Scalar, false> {
     public:
-      void
-      force (MatView<LocalOrdinal, Scalar> Q_mine, 
-	     MatView<LocalOrdinal, Scalar> R_mine)
-      {
-	typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef MatView<LocalOrdinal, Scalar> mat_view_type;
 
-	if (Q_mine.nrows() > 0 && Q_mine.ncols() > 0) {
-	  for (int k = 0; k < R_mine.ncols(); ++k) {
-	    if (R_mine(k,k) < STS::zero()) {
-	      // Scale column k of Q_mine.  We use a raw pointer since
-	      // typically there are many rows in Q_mine, so this
-	      // operation should be fast.
-	      Scalar* const Q_k = &Q_mine(0,k);
-	      for (int i = 0; i < Q_mine.nrows(); ++i) {
-		Q_k[i] = -Q_k[i];
-	      }
-	      // Scale row k of R_mine.  R_mine is upper triangular,
-	      // so we only have to scale right of (and including) the
-	      // diagonal entry.
-	      for (int j = k; j < R_mine.ncols(); ++j) {
-		R_mine(k,j) = -R_mine(k,j);
-	      }
-	    }
-	  }
-	}
+      void force (mat_view_type Q_mine, mat_view_type R_mine) {
+        typedef Teuchos::ScalarTraits<Scalar> STS;
+
+        if (Q_mine.nrows() > 0 && Q_mine.ncols() > 0) {
+          for (int k = 0; k < R_mine.ncols(); ++k) {
+            if (R_mine(k,k) < STS::zero()) {
+              // Scale column k of Q_mine.  We use a raw pointer since
+              // typically there are many rows in Q_mine, so this
+              // operation should be fast.
+              Scalar* const Q_k = &Q_mine(0,k);
+              for (int i = 0; i < Q_mine.nrows(); ++i) {
+                Q_k[i] = -Q_k[i];
+              }
+              // Scale row k of R_mine.  R_mine is upper triangular,
+              // so we only have to scale right of (and including) the
+              // diagonal entry.
+              for (int j = k; j < R_mine.ncols(); ++j) {
+                R_mine(k,j) = -R_mine(k,j);
+              }
+            }
+          }
+        }
       }
     };
   } // namespace details
@@ -156,7 +154,7 @@ namespace TSQR {
     typedef LocalOrdinal ordinal_type;
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
-    typedef MatView<ordinal_type, scalar_type> matview_type;
+    typedef MatView<ordinal_type, scalar_type> mat_view_type;
     typedef Matrix<ordinal_type, scalar_type> matrix_type;
     typedef int rank_type;
     typedef Combine<ordinal_type, scalar_type> combine_type;
@@ -237,9 +235,9 @@ namespace TSQR {
     ///   factors) in order to force the R factor to have a
     ///   nonnegative diagonal.
     void
-    factorExplicit (matview_type R_mine, 
-		    matview_type Q_mine,
-		    const bool forceNonnegativeDiagonal=false)
+    factorExplicit (mat_view_type R_mine,
+                    mat_view_type Q_mine,
+                    const bool forceNonnegativeDiagonal=false)
     {
       StatTimeMonitor totalMonitor (*totalTime_, totalStats_);
 
@@ -250,24 +248,24 @@ namespace TSQR {
       // columns.  (It depends on how many columns of the explicit Q
       // factor we want to compute.)
       if (R_mine.nrows() < R_mine.ncols())
-	{
-	  std::ostringstream os;
-	  os << "R factor input has fewer rows (" << R_mine.nrows() 
-	     << ") than columns (" << R_mine.ncols() << ")";
-	  // This is a logic error because TSQR users should not be
-	  // calling this method directly.
-	  throw std::logic_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "R factor input has fewer rows (" << R_mine.nrows()
+             << ") than columns (" << R_mine.ncols() << ")";
+          // This is a logic error because TSQR users should not be
+          // calling this method directly.
+          throw std::logic_error (os.str());
+        }
       else if (Q_mine.nrows() != R_mine.ncols())
-	{
-	  std::ostringstream os;
-	  os << "Q factor input must have the same number of rows as the R "
-	    "factor input has columns.  Q has " << Q_mine.nrows() 
-	     << " rows, but R has " << R_mine.ncols() << " columns.";
-	  // This is a logic error because TSQR users should not be
-	  // calling this method directly.
-	  throw std::logic_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "Q factor input must have the same number of rows as the R "
+            "factor input has columns.  Q has " << Q_mine.nrows()
+             << " rows, but R has " << R_mine.ncols() << " columns.";
+          // This is a logic error because TSQR users should not be
+          // calling this method directly.
+          throw std::logic_error (os.str());
+        }
 
       // The factorization is a recursion over processors [P_first, P_last].
       const rank_type P_mine = messenger_->rank();
@@ -281,7 +279,7 @@ namespace TSQR {
       // factorReduce().  Different MPI processes will have different
       // numbers of elements in these arrays.  In fact, on some
       // processes these arrays may be empty on output.  This is a
-      // feature, not a bug!  
+      // feature, not a bug!
       //
       // Even though QFactors and tauArrays have the same type has the
       // first resp. second elements of DistTsqr::FactorOutput, they
@@ -298,203 +296,203 @@ namespace TSQR {
       std::vector< std::vector< scalar_type > > tauArrays;
 
       {
-	StatTimeMonitor reduceMonitor (*reduceTime_, reduceStats_);
-	factorReduce (R_mine, P_mine, P_first, P_last, QFactors, tauArrays);
+        StatTimeMonitor reduceMonitor (*reduceTime_, reduceStats_);
+        factorReduce (R_mine, P_mine, P_first, P_last, QFactors, tauArrays);
       }
 
       if (QFactors.size() != tauArrays.size())
-	{
-	  std::ostringstream os;
-	  os << "QFactors and tauArrays should have the same number of element"
-	    "s after factorReduce() returns, but they do not.  QFactors has " 
-	     << QFactors.size() << " elements, but tauArrays has " 
-	     << tauArrays.size() << " elements.";
-	  throw std::logic_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "QFactors and tauArrays should have the same number of element"
+            "s after factorReduce() returns, but they do not.  QFactors has "
+             << QFactors.size() << " elements, but tauArrays has "
+             << tauArrays.size() << " elements.";
+          throw std::logic_error (os.str());
+        }
 
       Q_mine.fill (scalar_type (0));
       if (messenger_->rank() == 0)
-	{
-	  for (ordinal_type j = 0; j < Q_mine.ncols(); ++j)
-	    Q_mine(j, j) = scalar_type (1);
-	}
+        {
+          for (ordinal_type j = 0; j < Q_mine.ncols(); ++j)
+            Q_mine(j, j) = scalar_type (1);
+        }
       // Scratch space for computing results to send to other processors.
       matrix_type Q_other (Q_mine.nrows(), Q_mine.ncols(), scalar_type (0));
       const rank_type numSteps = QFactors.size() - 1;
 
       {
-	StatTimeMonitor bcastMonitor (*bcastTime_, bcastStats_);
-	explicitQBroadcast (R_mine, Q_mine, Q_other.view(), 
-			    P_mine, P_first, P_last,
-			    numSteps, QFactors, tauArrays);
+        StatTimeMonitor bcastMonitor (*bcastTime_, bcastStats_);
+        explicitQBroadcast (R_mine, Q_mine, Q_other.view(),
+                            P_mine, P_first, P_last,
+                            numSteps, QFactors, tauArrays);
       }
 
       if (forceNonnegativeDiagonal &&
-	  ! QR_produces_R_factor_with_nonnegative_diagonal()) {
-	typedef Teuchos::ScalarTraits<Scalar> STS;
-	details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
-	forcer.force (Q_mine, R_mine);
+          ! QR_produces_R_factor_with_nonnegative_diagonal()) {
+        typedef Teuchos::ScalarTraits<Scalar> STS;
+        details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
+        forcer.force (Q_mine, R_mine);
       }
     }
 
   private:
 
     void
-    factorReduce (matview_type R_mine,
-		  const rank_type P_mine, 
-		  const rank_type P_first,
-		  const rank_type P_last,
-		  std::vector< matrix_type >& QFactors,
-		  std::vector< std::vector< scalar_type > >& tauArrays)
+    factorReduce (mat_view_type R_mine,
+                  const rank_type P_mine,
+                  const rank_type P_first,
+                  const rank_type P_last,
+                  std::vector< matrix_type >& QFactors,
+                  std::vector< std::vector< scalar_type > >& tauArrays)
     {
       if (P_last < P_first)
-	{
-	  std::ostringstream os;
-	  os << "Programming error in factorReduce() recursion: interval "
-	    "[P_first, P_last] is invalid: P_first = " << P_first 
-	     << ", P_last = " << P_last << ".";
-	  throw std::logic_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "Programming error in factorReduce() recursion: interval "
+            "[P_first, P_last] is invalid: P_first = " << P_first
+             << ", P_last = " << P_last << ".";
+          throw std::logic_error (os.str());
+        }
       else if (P_mine < P_first || P_mine > P_last)
-	{
-	  std::ostringstream os;
-	  os << "Programming error in factorReduce() recursion: P_mine (= " 
-	     << P_mine << ") is not in current process rank interval " 
-	     << "[P_first = " << P_first << ", P_last = " << P_last << "]";
-	  throw std::logic_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "Programming error in factorReduce() recursion: P_mine (= "
+             << P_mine << ") is not in current process rank interval "
+             << "[P_first = " << P_first << ", P_last = " << P_last << "]";
+          throw std::logic_error (os.str());
+        }
       else if (P_last == P_first)
-	return; // skip singleton intervals (see explanation below)
+        return; // skip singleton intervals (see explanation below)
       else
-	{
-	  // Recurse on two intervals: [P_first, P_mid-1] and [P_mid,
-	  // P_last].  For example, if [P_first, P_last] = [0, 9],
-	  // P_mid = floor( (0+9+1)/2 ) = 5 and the intervals are
-	  // [0,4] and [5,9].  
-	  // 
-	  // If [P_first, P_last] = [4,6], P_mid = floor( (4+6+1)/2 )
-	  // = 5 and the intervals are [4,4] (a singleton) and [5,6].
-	  // The latter case shows that singleton intervals may arise.
-	  // We treat them as a base case in the recursion.  Process 4
-	  // won't be skipped completely, though; it will get combined
-	  // with the result from [5,6].
+        {
+          // Recurse on two intervals: [P_first, P_mid-1] and [P_mid,
+          // P_last].  For example, if [P_first, P_last] = [0, 9],
+          // P_mid = floor( (0+9+1)/2 ) = 5 and the intervals are
+          // [0,4] and [5,9].
+          //
+          // If [P_first, P_last] = [4,6], P_mid = floor( (4+6+1)/2 )
+          // = 5 and the intervals are [4,4] (a singleton) and [5,6].
+          // The latter case shows that singleton intervals may arise.
+          // We treat them as a base case in the recursion.  Process 4
+          // won't be skipped completely, though; it will get combined
+          // with the result from [5,6].
 
-	  // Adding 1 and doing integer division works like "ceiling."
-	  const rank_type P_mid = (P_first + P_last + 1) / 2;
+          // Adding 1 and doing integer division works like "ceiling."
+          const rank_type P_mid = (P_first + P_last + 1) / 2;
 
-	  if (P_mine < P_mid) // Interval [P_first, P_mid-1]
-	    factorReduce (R_mine, P_mine, P_first, P_mid - 1,
-			  QFactors, tauArrays);
-	  else // Interval [P_mid, P_last]
-	    factorReduce (R_mine, P_mine, P_mid, P_last,
-			  QFactors, tauArrays);
+          if (P_mine < P_mid) // Interval [P_first, P_mid-1]
+            factorReduce (R_mine, P_mine, P_first, P_mid - 1,
+                          QFactors, tauArrays);
+          else // Interval [P_mid, P_last]
+            factorReduce (R_mine, P_mine, P_mid, P_last,
+                          QFactors, tauArrays);
 
-	  // This only does anything if P_mine is either P_first or P_mid.
-	  if (P_mine == P_first)
-	    {
-	      const ordinal_type numCols = R_mine.ncols();
-	      matrix_type R_other (numCols, numCols);
-	      recv_R (R_other, P_mid);
+          // This only does anything if P_mine is either P_first or P_mid.
+          if (P_mine == P_first)
+            {
+              const ordinal_type numCols = R_mine.ncols();
+              matrix_type R_other (numCols, numCols);
+              recv_R (R_other, P_mid);
 
-	      std::vector< scalar_type > tau (numCols);
-	      // Don't shrink the workspace array; doing so may
-	      // require expensive reallocation every time we send /
-	      // receive data.
-	      resizeWork (numCols);
-	      combine_.factor_pair (numCols, R_mine.get(), R_mine.lda(), 
-				    R_other.get(), R_other.lda(), 
-				    &tau[0], &work_[0]);
-	      QFactors.push_back (R_other);
-	      tauArrays.push_back (tau);
-	    }
-	  else if (P_mine == P_mid)
-	    send_R (R_mine, P_first);
-	}
+              std::vector< scalar_type > tau (numCols);
+              // Don't shrink the workspace array; doing so may
+              // require expensive reallocation every time we send /
+              // receive data.
+              resizeWork (numCols);
+              combine_.factor_pair (numCols, R_mine.get(), R_mine.lda(),
+                                    R_other.get(), R_other.lda(),
+                                    &tau[0], &work_[0]);
+              QFactors.push_back (R_other);
+              tauArrays.push_back (tau);
+            }
+          else if (P_mine == P_mid)
+            send_R (R_mine, P_first);
+        }
     }
 
     void
-    explicitQBroadcast (matview_type R_mine,
-			matview_type Q_mine,
-			matview_type Q_other, // workspace
-			const rank_type P_mine, 
-			const rank_type P_first,
-			const rank_type P_last,
-			const rank_type curpos,
-			std::vector< matrix_type >& QFactors,
-			std::vector< std::vector< scalar_type > >& tauArrays)
+    explicitQBroadcast (mat_view_type R_mine,
+                        mat_view_type Q_mine,
+                        mat_view_type Q_other, // workspace
+                        const rank_type P_mine,
+                        const rank_type P_first,
+                        const rank_type P_last,
+                        const rank_type curpos,
+                        std::vector< matrix_type >& QFactors,
+                        std::vector< std::vector< scalar_type > >& tauArrays)
     {
       if (P_last < P_first)
-	{
-	  std::ostringstream os;
-	  os << "Programming error in explicitQBroadcast() recursion: interval"
-	    " [P_first, P_last] is invalid: P_first = " << P_first 
-	     << ", P_last = " << P_last << ".";
-	  throw std::logic_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "Programming error in explicitQBroadcast() recursion: interval"
+            " [P_first, P_last] is invalid: P_first = " << P_first
+             << ", P_last = " << P_last << ".";
+          throw std::logic_error (os.str());
+        }
       else if (P_mine < P_first || P_mine > P_last)
-	{
-	  std::ostringstream os;
-	  os << "Programming error in explicitQBroadcast() recursion: P_mine "
-	    "(= " << P_mine << ") is not in current process rank interval " 
-	     << "[P_first = " << P_first << ", P_last = " << P_last << "]";
-	  throw std::logic_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "Programming error in explicitQBroadcast() recursion: P_mine "
+            "(= " << P_mine << ") is not in current process rank interval "
+             << "[P_first = " << P_first << ", P_last = " << P_last << "]";
+          throw std::logic_error (os.str());
+        }
       else if (P_last == P_first)
-	return; // skip singleton intervals
+        return; // skip singleton intervals
       else
-	{
-	  // Adding 1 and integer division works like "ceiling."
-	  const rank_type P_mid = (P_first + P_last + 1) / 2;
-	  rank_type newpos = curpos;
-	  if (P_mine == P_first)
-	    {
-	      if (curpos < 0)
-		{
-		  std::ostringstream os;
-		  os << "Programming error: On the current P_first (= " 
-		     << P_first << ") proc: curpos (= " << curpos << ") < 0";
-		  throw std::logic_error (os.str());
-		}
-	      // Q_impl, tau: implicitly stored local Q factor.
-	      matrix_type& Q_impl = QFactors[curpos];
-	      std::vector< scalar_type >& tau = tauArrays[curpos];
-	      
-	      // Apply implicitly stored local Q factor to 
-	      //   [Q_mine; 
-	      //    Q_other]
-	      // where Q_other = zeros(Q_mine.nrows(), Q_mine.ncols()).
-	      // Overwrite both Q_mine and Q_other with the result.
-	      Q_other.fill (scalar_type (0));
-	      combine_.apply_pair (ApplyType::NoTranspose, 
-				   Q_mine.ncols(), Q_impl.ncols(),
-				   Q_impl.get(), Q_impl.lda(), &tau[0],
-				   Q_mine.get(), Q_mine.lda(),
-				   Q_other.get(), Q_other.lda(), &work_[0]);
-	      // Send the resulting Q_other, and the final R factor, to P_mid.
-	      send_Q_R (Q_other, R_mine, P_mid);
-	      newpos = curpos - 1;
-	    }
-	  else if (P_mine == P_mid)
-	    // P_first computed my explicit Q factor component.
-	    // Receive it, and the final R factor, from P_first.
-	    recv_Q_R (Q_mine, R_mine, P_first);
+        {
+          // Adding 1 and integer division works like "ceiling."
+          const rank_type P_mid = (P_first + P_last + 1) / 2;
+          rank_type newpos = curpos;
+          if (P_mine == P_first)
+            {
+              if (curpos < 0)
+                {
+                  std::ostringstream os;
+                  os << "Programming error: On the current P_first (= "
+                     << P_first << ") proc: curpos (= " << curpos << ") < 0";
+                  throw std::logic_error (os.str());
+                }
+              // Q_impl, tau: implicitly stored local Q factor.
+              matrix_type& Q_impl = QFactors[curpos];
+              std::vector< scalar_type >& tau = tauArrays[curpos];
 
-	  if (P_mine < P_mid) // Interval [P_first, P_mid-1]
-	    explicitQBroadcast (R_mine, Q_mine, Q_other, 
-				P_mine, P_first, P_mid - 1,
-				newpos, QFactors, tauArrays);
-	  else // Interval [P_mid, P_last]
-	    explicitQBroadcast (R_mine, Q_mine, Q_other, 
-				P_mine, P_mid, P_last,
-				newpos, QFactors, tauArrays);
-	}
+              // Apply implicitly stored local Q factor to
+              //   [Q_mine;
+              //    Q_other]
+              // where Q_other = zeros(Q_mine.nrows(), Q_mine.ncols()).
+              // Overwrite both Q_mine and Q_other with the result.
+              Q_other.fill (scalar_type (0));
+              combine_.apply_pair (ApplyType::NoTranspose,
+                                   Q_mine.ncols(), Q_impl.ncols(),
+                                   Q_impl.get(), Q_impl.lda(), &tau[0],
+                                   Q_mine.get(), Q_mine.lda(),
+                                   Q_other.get(), Q_other.lda(), &work_[0]);
+              // Send the resulting Q_other, and the final R factor, to P_mid.
+              send_Q_R (Q_other, R_mine, P_mid);
+              newpos = curpos - 1;
+            }
+          else if (P_mine == P_mid)
+            // P_first computed my explicit Q factor component.
+            // Receive it, and the final R factor, from P_first.
+            recv_Q_R (Q_mine, R_mine, P_first);
+
+          if (P_mine < P_mid) // Interval [P_first, P_mid-1]
+            explicitQBroadcast (R_mine, Q_mine, Q_other,
+                                P_mine, P_first, P_mid - 1,
+                                newpos, QFactors, tauArrays);
+          else // Interval [P_mid, P_last]
+            explicitQBroadcast (R_mine, Q_mine, Q_other,
+                                P_mine, P_mid, P_last,
+                                newpos, QFactors, tauArrays);
+        }
     }
 
     template< class ConstMatrixType1, class ConstMatrixType2 >
     void
     send_Q_R (const ConstMatrixType1& Q,
-	      const ConstMatrixType2& R,
-	      const rank_type destProc) 
+              const ConstMatrixType2& R,
+              const rank_type destProc)
     {
       StatTimeMonitor bcastCommMonitor (*bcastCommTime_, bcastCommStats_);
 
@@ -509,8 +507,8 @@ namespace TSQR {
       resizeWork (numElts);
 
       // Pack the Q data into the workspace array.
-      matview_type Q_contig (Q.nrows(), Q.ncols(), &work_[0], Q.nrows());
-      Q_contig.copy (Q);
+      mat_view_type Q_contig (Q.nrows(), Q.ncols(), &work_[0], Q.nrows());
+      deep_copy (Q_contig, Q);
       // Pack the R data into the workspace array.
       pack_R (R, &work_[Q_size]);
       messenger_->send (&work_[0], numElts, destProc, 0);
@@ -518,9 +516,9 @@ namespace TSQR {
 
     template< class MatrixType1, class MatrixType2 >
     void
-    recv_Q_R (MatrixType1& Q, 
-	      MatrixType2& R, 
-	      const rank_type srcProc)
+    recv_Q_R (MatrixType1& Q,
+              MatrixType2& R,
+              const rank_type srcProc)
     {
       StatTimeMonitor bcastCommMonitor (*bcastCommTime_, bcastCommStats_);
 
@@ -537,7 +535,7 @@ namespace TSQR {
       messenger_->recv (&work_[0], numElts, srcProc, 0);
 
       // Unpack the C data from the workspace array.
-      Q.copy (matview_type (Q.nrows(), Q.ncols(), &work_[0], Q.nrows()));
+      deep_copy (Q, mat_view_type (Q.nrows(), Q.ncols(), &work_[0], Q.nrows()));
       // Unpack the R data from the workspace array.
       unpack_R (R, &work_[Q_size]);
     }
@@ -579,29 +577,29 @@ namespace TSQR {
     }
 
     template< class MatrixType >
-    static void 
+    static void
     unpack_R (MatrixType& R, const scalar_type buf[])
     {
       ordinal_type curpos = 0;
       for (ordinal_type j = 0; j < R.ncols(); ++j)
-	{
-	  scalar_type* const R_j = &R(0, j);
-	  for (ordinal_type i = 0; i <= j; ++i)
-	    R_j[i] = buf[curpos++];
-	}
+        {
+          scalar_type* const R_j = &R(0, j);
+          for (ordinal_type i = 0; i <= j; ++i)
+            R_j[i] = buf[curpos++];
+        }
     }
 
     template< class ConstMatrixType >
-    static void 
+    static void
     pack_R (const ConstMatrixType& R, scalar_type buf[])
     {
       ordinal_type curpos = 0;
       for (ordinal_type j = 0; j < R.ncols(); ++j)
-	{
-	  const scalar_type* const R_j = &R(0, j);
-	  for (ordinal_type i = 0; i <= j; ++i)
-	    buf[curpos++] = R_j[i];
-	}
+        {
+          const scalar_type* const R_j = &R(0, j);
+          for (ordinal_type i = 0; i <= j; ++i)
+            buf[curpos++] = R_j[i];
+        }
     }
 
     void

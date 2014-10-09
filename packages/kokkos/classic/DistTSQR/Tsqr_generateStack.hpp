@@ -83,6 +83,8 @@ namespace TSQR {
                    const int numProcs,
                    const Ordinal numCols)
     {
+      typedef MatView<Ordinal, Scalar> mat_view_type;
+
       TSQR::Random::MatrixGenerator<Ordinal, Scalar, Generator> matGen (generator);
       const Ordinal numRows = numProcs * numCols;
       A_global.reshape (numRows, numCols);
@@ -91,7 +93,7 @@ namespace TSQR {
       for (int p = 0; p < numProcs; ++p)
         {
           Scalar* const curptr = A_global.get() + p*numCols;
-          MatView<Ordinal, Scalar> R_cur (numCols, numCols, curptr, numRows);
+          mat_view_type R_cur (numCols, numCols, curptr, numRows);
           matGen.fill_random_R (numCols, R_cur.get(), numRows, singularValues);
         }
     }

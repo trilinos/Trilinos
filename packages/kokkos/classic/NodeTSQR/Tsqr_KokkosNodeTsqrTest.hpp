@@ -114,6 +114,7 @@ namespace TSQR {
       typedef typename STS::magnitudeType magnitude_type;
       // typedef Teuchos::Time timer_type;
       typedef Matrix<Ordinal, Scalar> matrix_type;
+      typedef MatView<Ordinal, Scalar> mat_view_type;
 
       const std::string scalarTypeName = TypeNameTraits<Scalar>::name();
 
@@ -172,141 +173,132 @@ namespace TSQR {
       // Copy A into A_copy, since TSQR overwrites the input.  If
       // specified, rearrange the data in A_copy so that the data in
       // each cache block is contiguously stored.
-      if (! contiguousCacheBlocks)
-        {
-          A_copy.copy (A);
-          if (debug)
-            {
-              cerr << "-- Copied test problem from A into A_copy" << endl;
-              // Don't print the matrix if it's too big.
-              if (A_copy.nrows() <= 30)
-                {
-                  cerr << "A_copy = " << endl;
-                  print_local_matrix (cerr, A_copy.nrows(), A_copy.ncols(),
-                                      A_copy.get(), A_copy.lda());
-                  cerr << endl << endl;
-                }
-            }
+      if (! contiguousCacheBlocks) {
+        deep_copy (A_copy, A);
+        if (debug) {
+          cerr << "-- Copied test problem from A into A_copy" << endl;
+          // Don't print the matrix if it's too big.
+          if (A_copy.nrows() <= 30) {
+            cerr << "A_copy = " << endl;
+            print_local_matrix (cerr, A_copy.nrows(), A_copy.ncols(),
+                                A_copy.get(), A_copy.lda());
+            cerr << endl << endl;
+          }
         }
-      else
-        {
-          actor.cache_block (numRows, numCols, A_copy.get(), A.get(), A.lda());
-          if (debug)
-            {
-              cerr << "-- Reorganized test matrix to have contiguous "
-                "cache blocks" << endl;
-              // Don't print the matrix if it's too big.
-              if (A_copy.nrows() <= 30)
-                {
-                  cerr << "A_copy = " << endl;
-                  print_local_matrix (cerr, A_copy.nrows(), A_copy.ncols(),
-                                      A_copy.get(), A_copy.lda());
-                  cerr << endl << endl;
-                }
-            }
-
-          // Verify cache blocking, when in debug mode.
-          if (debug)
-            {
-              matrix_type A2 (numRows, numCols);
-              if (std::numeric_limits<Scalar>::has_quiet_NaN)
-                A2.fill (std::numeric_limits<Scalar>::quiet_NaN());
-
-              actor.un_cache_block (numRows, numCols, A2.get(), A2.lda(), A_copy.get());
-              if (A == A2)
-                {
-                  if (debug)
-                    cerr << "-- Cache blocking test succeeded!" << endl;
-                }
-              else
-                {
-                  if (debug)
-                    {
-                      cerr << "*** Cache blocking test failed! A != A2 ***"
-                           << endl << endl;
-                      // Don't print the matrices if they are too big.
-                      if (A.nrows() <= 30 && A2.nrows() <= 30)
-                        {
-                          cerr << "A = " << endl;
-                          print_local_matrix (cerr, A.nrows(), A.ncols(),
-                                              A.get(), A.lda());
-                          cerr << endl << "A2 = " << endl;
-                          print_local_matrix (cerr, A2.nrows(), A2.ncols(),
-                                              A2.get(), A2.lda());
-                          cerr << endl;
-                        }
-                    }
-                  throw std::logic_error ("Cache blocking failed");
-                }
-            }
+      }
+      else {
+        actor.cache_block (numRows, numCols, A_copy.get(), A.get(), A.lda());
+        if (debug) {
+          cerr << "-- Reorganized test matrix to have contiguous "
+            "cache blocks" << endl;
+          // Don't print the matrix if it's too big.
+          if (A_copy.nrows() <= 30) {
+            cerr << "A_copy = " << endl;
+            print_local_matrix (cerr, A_copy.nrows(), A_copy.ncols(),
+                                A_copy.get(), A_copy.lda());
+            cerr << endl << endl;
+          }
         }
+
+        // Verify cache blocking, when in debug mode.
+        if (debug) {
+          matrix_type A2 (numRows, numCols);
+          if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+            A2.fill (std::numeric_limits<Scalar>::quiet_NaN());
+          }
+
+          actor.un_cache_block (numRows, numCols, A2.get(), A2.lda(), A_copy.get());
+          if (A == A2) {
+            if (debug)
+              cerr << "-- Cache blocking test succeeded!" << endl;
+          }
+          else {
+            if (debug) {
+              cerr << "*** Cache blocking test failed! A != A2 ***"
+                   << endl << endl;
+              // Don't print the matrices if they are too big.
+              if (A.nrows() <= 30 && A2.nrows() <= 30) {
+                cerr << "A = " << endl;
+                print_local_matrix (cerr, A.nrows(), A.ncols(),
+                                    A.get(), A.lda());
+                cerr << endl << "A2 = " << endl;
+                print_local_matrix (cerr, A2.nrows(), A2.ncols(),
+                                    A2.get(), A2.lda());
+                cerr << endl;
+              }
+            }
+            throw std::logic_error ("Cache blocking failed");
+          }
+        }
+      }
 
       // Fill R with zeros, since the factorization may not
       // necessarily overwrite the strict lower triangle of R.
-      if (debug)
+      if (debug) {
         cerr << "-- Filling R with zeros" << endl;
+      }
       R.fill (STS::zero());
 
-      if (debug)
+      if (debug) {
         cerr << "-- Calling factor()" << endl;
+      }
 
       // Factor the matrix and compute the explicit Q factor
       factor_output_type factor_output =
         actor.factor (numRows, numCols, A_copy.get(), A_copy.lda(),
                       R.get(), R.lda(), contiguousCacheBlocks);
-      if (debug)
-        {
-          cerr << "-- Finished factor()" << endl;
-          cerr << "-- Calling explicit_Q()" << endl;
-        }
+      if (debug) {
+        cerr << "-- Finished factor()" << endl;
+        cerr << "-- Calling explicit_Q()" << endl;
+      }
 
       // KokkosNodeTsqr isn't designed to be used by itself, so we
       // have to help it along by filling the top ncols x ncols
       // entries with the first ncols columns of the identity matrix.
       {
-        typedef MatView<Ordinal, Scalar> view_type;
-        view_type Q_top = actor.top_block (Q.view(), contiguousCacheBlocks);
-        view_type Q_top_square (Q_top.ncols(), Q_top.ncols(),
-                                Q_top.get(), Q_top.lda());
-        Q_top_square.fill (STS::zero());
-        for (Ordinal j = 0; j < Q_top_square.ncols(); ++j)
-          Q_top_square(j,j) = STS::one();
+        mat_view_type Q_top =
+          actor.top_block (Q.view (), contiguousCacheBlocks);
+        mat_view_type Q_top_square (Q_top.ncols(), Q_top.ncols(),
+                                    Q_top.get(), Q_top.lda());
+        Q_top_square.fill (STS::zero ());
+        for (Ordinal j = 0; j < Q_top_square.ncols(); ++j) {
+          Q_top_square(j,j) = STS::one ();
+        }
       }
       actor.explicit_Q (numRows, numCols, A_copy.get(), A_copy.lda(),
                         factor_output, numCols, Q.get(), Q.lda(),
                         contiguousCacheBlocks);
-      if (debug)
+      if (debug) {
         cerr << "-- Finished explicit_Q()" << endl;
+      }
 
       // "Un"-cache-block the output Q (the explicit Q factor), if
       // contiguous cache blocks were used.  This is only necessary
       // because local_verify() doesn't currently support contiguous
       // cache blocks.
-      if (contiguousCacheBlocks)
-        {
-          // Use A_copy as temporary storage for un-cache-blocking Q.
-          actor.un_cache_block (numRows, numCols, A_copy.get(),
-                                A_copy.lda(), Q.get());
-          Q.copy (A_copy);
-          if (debug)
-            cerr << "-- Un-cache-blocked output Q factor" << endl;
+      if (contiguousCacheBlocks) {
+        // Use A_copy as temporary storage for un-cache-blocking Q.
+        actor.un_cache_block (numRows, numCols, A_copy.get(),
+                              A_copy.lda(), Q.get());
+        deep_copy (Q, A_copy);
+        if (debug) {
+          cerr << "-- Un-cache-blocked output Q factor" << endl;
         }
+      }
 
       // Print out the Q and R factors in debug mode.
-      if (debug)
-        {
-          // Don't print the matrix if it's too big.
-          if (Q.nrows() <= 30)
-            {
-              cerr << endl << "-- Q factor:" << endl;
-              print_local_matrix (cerr, Q.nrows(), Q.ncols(),
-                                  Q.get(), Q.lda());
-              cerr << endl << endl;
-            }
-          cerr << endl << "-- R factor:" << endl;
-          print_local_matrix (cerr, numCols, numCols, R.get(), R.lda());
-          cerr << endl;
+      if (debug) {
+        // Don't print the matrix if it's too big.
+        if (Q.nrows() <= 30) {
+          cerr << endl << "-- Q factor:" << endl;
+          print_local_matrix (cerr, Q.nrows(), Q.ncols(),
+                              Q.get(), Q.lda());
+          cerr << endl << endl;
         }
+        cerr << endl << "-- R factor:" << endl;
+        print_local_matrix (cerr, numCols, numCols, R.get(), R.lda());
+        cerr << endl;
+      }
 
       // Validate the factorization
       std::vector<magnitude_type> results =
@@ -316,7 +308,7 @@ namespace TSQR {
         cerr << "-- Finished local_verify" << endl;
 
       // Print the results
-      if (humanReadable)
+      if (humanReadable) {
         cout << "KokkosNodeTsqr:" << endl
              << "Scalar type: " << scalarTypeName << endl
              << "# rows: " << numRows << endl
@@ -331,38 +323,36 @@ namespace TSQR {
              << "Test matrix norm $\\| A \\|_F$: "
              << results[2] << endl
              << endl;
-      else
-        {
-          if (printFieldNames)
-            {
-              const char prefix[] = "%";
-              cout << prefix
-                   << "method"
-                   << ",scalarType"
-                   << ",numRows"
-                   << ",numCols"
-                   << ",numPartitions"
-                   << ",cacheSizeHint"
-                   << ",contiguousCacheBlocks"
-                   << ",absFrobResid"
-                   << ",absFrobOrthog"
-                   << ",frobA"
-                   << endl;
-            }
-          cout << "KokkosNodeTsqr"
-               << "," << scalarTypeName
-               << "," << numRows
-               << "," << numCols
-               << "," << numPartitions
-               << "," << actor.cache_size_hint()
-               << "," << contiguousCacheBlocks
-               << "," << results[0]
-               << "," << results[1]
-               << "," << results[2]
+      }
+      else {
+        if (printFieldNames) {
+          const char prefix[] = "%";
+          cout << prefix
+               << "method"
+               << ",scalarType"
+               << ",numRows"
+               << ",numCols"
+               << ",numPartitions"
+               << ",cacheSizeHint"
+               << ",contiguousCacheBlocks"
+               << ",absFrobResid"
+               << ",absFrobOrthog"
+               << ",frobA"
                << endl;
         }
+        cout << "KokkosNodeTsqr"
+             << "," << scalarTypeName
+             << "," << numRows
+             << "," << numCols
+             << "," << numPartitions
+             << "," << actor.cache_size_hint()
+             << "," << contiguousCacheBlocks
+             << "," << results[0]
+             << "," << results[1]
+             << "," << results[2]
+             << endl;
+      }
     }
-
 
     /// \fn benchmarkKokkosNodeTsqr
     /// \brief Test performance of KokkosNodeTsqr's QR factorization.
@@ -447,98 +437,94 @@ namespace TSQR {
       // Copy A into A_copy, since TSQR overwrites the input.  If
       // specified, rearrange the data in A_copy so that the data in
       // each cache block is contiguously stored.
-      if (contiguousCacheBlocks)
+      if (contiguousCacheBlocks) {
         actor.cache_block (numRows, numCols, A_copy.get(), A.get(), A.lda());
-      else
-        A_copy.copy (A);
+      } else {
+        deep_copy (A_copy, A);
+      }
 
       // Do a few timing runs and throw away the results, just to warm
       // up any libraries that do autotuning.
       const int numWarmupRuns = 5;
-      for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun)
-        {
-          // Factor the matrix in-place in A_copy, and extract the
-          // resulting R factor into R.
-          factor_output_type factor_output =
-            actor.factor (numRows, numCols, A_copy.get(), A_copy.lda(),
-                          R.get(), R.lda(), contiguousCacheBlocks);
-          // Compute the explicit Q factor (which was stored
-          // implicitly in A_copy and factor_output) and store in Q.
-          // We don't need to un-cache-block the output, because we
-          // aren't verifying it here.
-          actor.explicit_Q (numRows, numCols, A_copy.get(), A_copy.lda(),
-                            factor_output, numCols, Q.get(), Q.lda(),
-                            contiguousCacheBlocks);
-        }
+      for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun) {
+        // Factor the matrix in-place in A_copy, and extract the
+        // resulting R factor into R.
+        factor_output_type factor_output =
+          actor.factor (numRows, numCols, A_copy.get(), A_copy.lda(),
+                        R.get(), R.lda(), contiguousCacheBlocks);
+        // Compute the explicit Q factor (which was stored
+        // implicitly in A_copy and factor_output) and store in Q.
+        // We don't need to un-cache-block the output, because we
+        // aren't verifying it here.
+        actor.explicit_Q (numRows, numCols, A_copy.get(), A_copy.lda(),
+                          factor_output, numCols, Q.get(), Q.lda(),
+                          contiguousCacheBlocks);
+      }
 
       // Benchmark intranode TSQR for numTrials trials.
       //
       // Name of timer doesn't matter here; we only need the timing.
       timer_type timer("KokkosNodeTsqr");
       timer.start();
-      for (int trialNum = 0; trialNum < numTrials; ++trialNum)
-        {
-          // Factor the matrix in-place in A_copy, and extract the
-          // resulting R factor into R.
-          factor_output_type factor_output =
-            actor.factor (numRows, numCols, A_copy.get(), A_copy.lda(),
-                          R.get(), R.lda(), contiguousCacheBlocks);
-          // Compute the explicit Q factor (which was stored
-          // implicitly in A_copy and factor_output) and store in Q.
-          // We don't need to un-cache-block the output, because we
-          // aren't verifying it here.
-          actor.explicit_Q (numRows, numCols, A_copy.get(), A_copy.lda(),
-                            factor_output, numCols, Q.get(), Q.lda(),
-                            contiguousCacheBlocks);
-        }
+      for (int trialNum = 0; trialNum < numTrials; ++trialNum) {
+        // Factor the matrix in-place in A_copy, and extract the
+        // resulting R factor into R.
+        factor_output_type factor_output =
+          actor.factor (numRows, numCols, A_copy.get(), A_copy.lda(),
+                        R.get(), R.lda(), contiguousCacheBlocks);
+        // Compute the explicit Q factor (which was stored
+        // implicitly in A_copy and factor_output) and store in Q.
+        // We don't need to un-cache-block the output, because we
+        // aren't verifying it here.
+        actor.explicit_Q (numRows, numCols, A_copy.get(), A_copy.lda(),
+                          factor_output, numCols, Q.get(), Q.lda(),
+                          contiguousCacheBlocks);
+      }
       const double timing = timer.stop();
 
       // Print the results
-      if (humanReadable)
-        {
-          cout << "KokkosNodeTsqr cumulative timings:" << endl
-               << "Scalar type: " << scalarTypeName << endl
-               << "# rows = " << numRows << endl
-               << "# columns = " << numCols << endl
-               << "# partitions: " << numPartitions << endl
-               << "Cache size hint (in bytes) = " << actor.cache_size_hint() << endl
-               << "Contiguous cache blocks? " << contiguousCacheBlocks << endl
-               << "# trials = " << numTrials << endl
-               << "Total time (s) = " << timing << endl;
-        }
-      else
-        {
-          if (printFieldNames)
-            {
-              const char prefix[] = "%";
-              cout << prefix
-                   << "method"
-                   << ",scalarType"
-                   << ",numRows"
-                   << ",numCols"
-                   << ",numPartitions"
-                   << ",cacheSizeHint"
-                   << ",contiguousCacheBlocks"
-                   << ",numTrials"
-                   << ",timing"
-                   << endl;
-            }
-
-          // We don't include {min,max}_seq_apply_timing() here, because
-          // those times don't benefit from the accuracy of benchmarking
-          // for numTrials > 1.  Thus, it's misleading to include them
-          // with tbb_tsqr_timing, the total time over numTrials trials.
-          cout << "KokkosNodeTsqr"
-               << "," << scalarTypeName
-               << "," << numRows
-               << "," << numCols
-               << "," << numPartitions
-               << "," << actor.cache_size_hint()
-               << "," << contiguousCacheBlocks
-               << "," << numTrials
-               << "," << timing
+      if (humanReadable) {
+        cout << "KokkosNodeTsqr cumulative timings:" << endl
+             << "Scalar type: " << scalarTypeName << endl
+             << "# rows = " << numRows << endl
+             << "# columns = " << numCols << endl
+             << "# partitions: " << numPartitions << endl
+             << "Cache size hint (in bytes) = " << actor.cache_size_hint() << endl
+             << "Contiguous cache blocks? " << contiguousCacheBlocks << endl
+             << "# trials = " << numTrials << endl
+             << "Total time (s) = " << timing << endl;
+      }
+      else {
+        if (printFieldNames) {
+          const char prefix[] = "%";
+          cout << prefix
+               << "method"
+               << ",scalarType"
+               << ",numRows"
+               << ",numCols"
+               << ",numPartitions"
+               << ",cacheSizeHint"
+               << ",contiguousCacheBlocks"
+               << ",numTrials"
+               << ",timing"
                << endl;
         }
+
+        // We don't include {min,max}_seq_apply_timing() here, because
+        // those times don't benefit from the accuracy of benchmarking
+        // for numTrials > 1.  Thus, it's misleading to include them
+        // with tbb_tsqr_timing, the total time over numTrials trials.
+        cout << "KokkosNodeTsqr"
+             << "," << scalarTypeName
+             << "," << numRows
+             << "," << numCols
+             << "," << numPartitions
+             << "," << actor.cache_size_hint()
+             << "," << contiguousCacheBlocks
+             << "," << numTrials
+             << "," << timing
+             << endl;
+      }
     }
   } // namespace Test
 } // namespace TSQR
