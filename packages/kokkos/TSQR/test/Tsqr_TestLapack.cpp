@@ -51,9 +51,9 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Tsqr_SeqTest.hpp"
 
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
 #  include <complex>
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
 #include <sstream>
 #include <stdexcept>
@@ -80,9 +80,9 @@ namespace TSQR {
           numRows (1000),
           numCols (10),
           numTrials (10),
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
           testComplex (true),
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
           printFieldNames (true),
           printTrilinosTestStuff (true),
           humanReadable (false),
@@ -91,9 +91,9 @@ namespace TSQR {
 
         bool verify, benchmark;
         int numRows, numCols, numTrials;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
         bool testComplex;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
         std::string additionalFieldNames, additionalData;
         bool printFieldNames, printTrilinosTestStuff, humanReadable, debug;
       };
@@ -102,11 +102,11 @@ namespace TSQR {
         benchmark (std::ostream& out,
             const LapackTestParameters& params)
         {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
           const bool testComplex = params.testComplex;
 #else
           const bool testComplex = false;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
           using TSQR::Test::benchmarkLapack;
           benchmarkLapack (out,
@@ -124,11 +124,11 @@ namespace TSQR {
         verify (std::ostream& out,
             const LapackTestParameters& params)
         {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
           const bool testComplex = params.testComplex;
 #else
           const bool testComplex = false;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
           using TSQR::Test::verifyLapack;
           verifyLapack (out,
@@ -189,12 +189,12 @@ namespace TSQR {
             cmdLineProc.setOption ("ntrials",
                 &params.numTrials,
                 "Number of trials (only used when \"--benchmark\"");
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
             cmdLineProc.setOption ("complex",
                 "nocomplex",
                 &params.testComplex,
                 "Test complex arithmetic, as well as real");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
             cmdLineProc.setOption ("field-names",
                 &params.additionalFieldNames,
                 "Any additional field name(s) (comma-delimited "

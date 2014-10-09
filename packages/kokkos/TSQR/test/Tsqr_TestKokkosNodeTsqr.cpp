@@ -52,9 +52,9 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include <Tsqr_KokkosNodeTsqrTest.hpp>
 
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
 #  include <complex>
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
 
 namespace {
@@ -96,9 +96,9 @@ namespace {
       numCols (10),
       numTrials (10),
       testReal (true),
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
       testComplex (false),
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
       cacheSizeHint (0),
       contiguousCacheBlocks (false),
       printFieldNames (true),
@@ -114,9 +114,9 @@ namespace {
       numCols (10),
       numTrials (10),
       testReal (true),
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
       testComplex (false),
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
       cacheSizeHint (0),
       contiguousCacheBlocks (false),
       printFieldNames (true),
@@ -127,9 +127,9 @@ namespace {
     bool verify, benchmark;
     int numPartitions, numRows, numCols, numTrials;
     bool testReal;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
     bool testComplex;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
     size_t cacheSizeHint;
     bool contiguousCacheBlocks, printFieldNames, humanReadable, debug;
   };
@@ -261,9 +261,9 @@ namespace {
       // of verbose obscurity.  NullCons gets to define NodeType for all
       // the Cons elements "above" it in the recursion.
       typedef Cons<float, Cons<double, NullCons<NodeType> > > real_tests;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
       typedef Cons<std::complex<float>, Cons<std::complex<double>, NullCons<NodeType> > > complex_tests;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
       // Length-4 seed for the pseudorandom number generator.  The last
       // entry must be an odd number.  There are other restrictions on
@@ -281,11 +281,11 @@ namespace {
         if (params.testReal) {
           real_tests::verify (node, seed, params, printFieldNames);
         }
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
         if (params.testComplex) {
           complex_tests::verify (node, seed, params, printFieldNames);
         }
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
       }
       // Reset this, since the first call of verify() sets it to false.
       printFieldNames = params.printFieldNames;
@@ -293,11 +293,11 @@ namespace {
         if (params.testReal) {
           real_tests::benchmark (node, seed, params, printFieldNames);
         }
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
         if (params.testComplex) {
           complex_tests::benchmark (node, seed, params, printFieldNames);
         }
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
       }
     }
 
@@ -362,12 +362,12 @@ namespace {
             "noTestReal",
             &params.testReal,
             "Test real arithmetic");
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
         cmdLineProc.setOption ("testComplex",
             "noTestComplex",
             &params.testComplex,
             "Test complex arithmetic");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
         cmdLineProc.setOption ("numPartitions",
             &params.numPartitions,
             "Number of partitions to use (max available parallelism)");

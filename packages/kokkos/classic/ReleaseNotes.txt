@@ -1,6 +1,15 @@
------------------------------------------
-Release Notes for Trilinos Package Kokkos
------------------------------------------
+------------------------------------------------
+Release Notes for Trilinos Package KokkosClassic
+------------------------------------------------
+
+Trilinos 11.13
+--------------
+
+* Non-backwards compatible change: The TSQR implementation has been
+  moved out of the NodeTSQR and DistTSQR subdirectories of the
+  KokkosClassic subpackage, into the new TSQR subpackage of Kokkos.
+  Macros for testing for the existence of TSQR, and for various
+  implementation options, have been changed accordingly.
 
 Trilinos 11.6
 -------------

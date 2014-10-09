@@ -46,9 +46,9 @@
 #include <Tsqr_CombineBenchmarker.hpp>
 #include <Tsqr_CombineDefault.hpp>
 #include <Tsqr_CombineNative.hpp>
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_FORTRAN
+#ifdef HAVE_KOKKOSTSQR_FORTRAN
 #  include <Tsqr_CombineFortran.hpp>
-#endif // HAVE_KOKKOSCLASSIC_TSQR_FORTRAN
+#endif // HAVE_KOKKOSTSQR_FORTRAN
 
 #include <algorithm>
 #include <iostream>
@@ -337,7 +337,7 @@ namespace TSQR {
                            << ".");
       }
 
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_FORTRAN
+#ifdef HAVE_KOKKOSTSQR_FORTRAN
       std::vector<double> fortranTimings;
       {
         typedef CombineFortran<Scalar> combine_type;
@@ -366,7 +366,7 @@ namespace TSQR {
                            << " > the allowed fraction " << params.allowance
                            << ".");
       }
-#endif // HAVE_KOKKOSCLASSIC_TSQR_FORTRAN
+#endif // HAVE_KOKKOSTSQR_FORTRAN
     }
 
 
@@ -397,7 +397,7 @@ namespace TSQR {
         }
       if (params.testComplex)
         {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
           using std::complex;
 
           dataTypeName = "complex<float>";
@@ -407,9 +407,9 @@ namespace TSQR {
           benchmarkAllCombineTypes<complex<double>, TimerType> (out, dataTypeName,
                                                                 params, timerResolution);
 
-#else // Don't HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#else // Don't HAVE_KOKKOSTSQR_COMPLEX
           throw std::logic_error("TSQR not built with complex arithmetic support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
         }
     }
 

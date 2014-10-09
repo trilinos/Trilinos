@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -46,17 +46,17 @@
 ///
 /// \warning Trilinos users should _not_ include this file directly.
 
-#include "Kokkos_ConfigDefs.hpp" // HAVE_KOKKOSCLASSIC_TBB
+#include "KokkosTSQR_config.h"
 
-#ifdef HAVE_KOKKOSCLASSIC_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
 #  include "TbbTsqr.hpp"
-#endif // HAVE_KOKKOSCLASSIC_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
 
 
 namespace TSQR {
   namespace Trilinos {
 
-#ifdef HAVE_KOKKOSCLASSIC_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
     /// \class TbbTsqrFactory
     /// \brief Subclass of TsqrFactory that uses \c TSQR::TBB::TbbTsqr.
     /// \author Mark Hoemmen
@@ -84,7 +84,7 @@ namespace TSQR {
       TbbTsqrFactory () {}
       virtual ~TbbTsqrFactory () {}
     };
-#endif // HAVE_KOKKOSCLASSIC_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
 
   } // namespace Trilinos
 } // namespace TSQR

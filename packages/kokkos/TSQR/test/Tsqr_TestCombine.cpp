@@ -53,9 +53,9 @@
 #include "Tsqr_CombineBenchmark.hpp"
 #include "Tsqr_CombineTest.hpp"
 
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
 #  include <complex>
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
 #include <fstream>
 #include <sstream>
@@ -87,9 +87,9 @@ namespace {
       calibrate (false),
       averageTimings (true),
       testReal (true),
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
       testComplex (true),
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
       printFieldNames (true),
       printTrilinosTestStuff (true),
       strictPerfTests (false),
@@ -115,12 +115,12 @@ namespace {
     bool averageTimings;
     // Whether to test real-arithmetic routines.
     bool testReal;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
     // Whether to test complex-arithmetic routines.  We don't let this
     // option exist unless TSQR was built with complex arithmetic
     // support.
     bool testComplex;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
     // Whether to print column (field) names.
     bool printFieldNames;
     // Whether to print output that the Trilinos test framework
@@ -167,11 +167,11 @@ namespace {
       testParams.numRows = params.numRows;
       testParams.numCols = params.numCols;
       testParams.testReal = params.testReal;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
       testParams.testComplex = params.testComplex;
 #else
       testParams.testComplex = false;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
       testParams.numTrials = params.numTrials;
       testParams.calibrate = params.calibrate;
       testParams.averageTimings = params.averageTimings;
@@ -207,11 +207,11 @@ namespace {
 
       const ordinal_type numRows = params.numRows;
       const ordinal_type numCols = params.numCols;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
       const bool testComplex = params.testComplex;
 #else
       const bool testComplex = false;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
       const bool printFieldNames = params.printFieldNames;
       const bool simulateSequentialTsqr = false;
       const bool debug = false;
@@ -293,14 +293,14 @@ namespace {
             "noTestReal",
             &params.testReal,
             "Test real-arithmetic routines.");
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
         cmdLineProc.setOption ("testComplex",
             "noTestComplex",
             &params.testComplex,
             "Test complex-arithmetic routines.  This option "
             "may only be set if Trilinos was built with "
             "complex arithmetic support.");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
         cmdLineProc.setOption ("strictPerfTests",
             "noStrictPerfTests",
             &params.strictPerfTests,

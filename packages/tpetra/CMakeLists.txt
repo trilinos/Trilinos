@@ -257,13 +257,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_TSQR
-  HAVE_TPETRA_TSQR
-  "Enable TSQR support in Tpetra."
-  ${KokkosClassic_ENABLE_TSQR}
-  )
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_USE_MURMUR_HASH
   TPETRA_USE_MURMUR_HASH
   "Use the Murmur hash function in Tpetra::Map for global-to-local index lookups, rather than the default hash function.  Murmur hash is more expensive to evaluate, but does a better job of avoiding hash table collisions for Maps that do not look like local permutations of contiguous Maps."

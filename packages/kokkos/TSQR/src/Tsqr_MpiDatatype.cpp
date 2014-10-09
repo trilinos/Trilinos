@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -43,43 +43,41 @@
 #include <Tsqr_MpiDatatype.hpp>
 
 #ifdef HAVE_MPI // #defined (or not) via Teuchos_ConfigDefs.hpp
-#  ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#  ifdef HAVE_KOKKOSTSQR_COMPLEX
 #    include <complex>
-#  endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#  endif // HAVE_KOKKOSTSQR_COMPLEX
 #  include <utility> // std::pair
 
 
 namespace TSQR {
   namespace MPI {
 
-    MPI_Datatype 
+    MPI_Datatype
     cloneRawDatatype (MPI_Datatype in, const bool needsFree)
     {
       MPI_Datatype out;
-      if (needsFree)
-	{
-	  // Non-simple MPI_Datatype objects (i.e., those on which
-	  // we need to call MPI_Type_free() after we're done using
-	  // them) cannot be copied directly.  Instead, we clone
-	  // them using MPI_Type_contiguous() with a count argument
-	  // of 1.
-	  const int err = MPI_Type_contiguous (1, in, &out);
-	  if (err != MPI_SUCCESS)
-	    throw std::runtime_error("Failed to clone MPI_Datatype object");
-	}
-      else
-	{
-	  // Simple MPI_Datatype objects can be copied directly.
-	  // Here, "simple" means that we don't have to call
-	  // MPI_Type_free() on them when we are done using them.
-	  out = in;
-	}
+      if (needsFree) {
+        // Non-simple MPI_Datatype objects (i.e., those on which
+        // we need to call MPI_Type_free() after we're done using
+        // them) cannot be copied directly.  Instead, we clone
+        // them using MPI_Type_contiguous() with a count argument
+        // of 1.
+        const int err = MPI_Type_contiguous (1, in, &out);
+        if (err != MPI_SUCCESS)
+          throw std::runtime_error("Failed to clone MPI_Datatype object");
+      }
+      else {
+        // Simple MPI_Datatype objects can be copied directly.
+        // Here, "simple" means that we don't have to call
+        // MPI_Type_free() on them when we are done using them.
+        out = in;
+      }
       return out;
     }
 
     /// Return a new MPI_Datatype, corresponding to a pair of
     /// contiguously placed objects, each of which is represented by
-    /// the MPI_Datatype "in".  
+    /// the MPI_Datatype "in".
     ///
     /// \warning MPI_Type_free() needs to be called on the return
     /// value, once you're done using it.
@@ -99,13 +97,14 @@ namespace TSQR {
       // for keeping track of these things.
       MPI_Datatype new_type;
       int err = MPI_Type_contiguous (2, in, &new_type);
-      if (err != MPI_SUCCESS)
-	throw std::logic_error ("Failed to create MPI_Datatype");
+      if (err != MPI_SUCCESS) {
+        throw std::logic_error ("Failed to create MPI_Datatype");
+      }
       return new_type;
     }
 
     template<>
-    MpiDatatype< double >::MpiDatatype () : 
+    MpiDatatype< double >::MpiDatatype () :
       type_ (MPI_DOUBLE),
       needsFree_ (false)
     {}
@@ -117,18 +116,18 @@ namespace TSQR {
     {}
 
     template<>
-    MpiDatatype< std::pair< double, double > >::MpiDatatype () : 
+    MpiDatatype< std::pair< double, double > >::MpiDatatype () :
       type_ (mpi_pair_of (MPI_DOUBLE)),
       needsFree_ (true)
     {}
 
     template<>
-    MpiDatatype< std::pair< float, float > >::MpiDatatype () : 
+    MpiDatatype< std::pair< float, float > >::MpiDatatype () :
       type_ (mpi_pair_of (MPI_FLOAT)),
       needsFree_ (true)
     {}
 
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
     template<>
     MpiDatatype< std::complex<double> >::MpiDatatype () :
       type_ (mpi_pair_of (MPI_DOUBLE)),
@@ -140,28 +139,28 @@ namespace TSQR {
       type_ (mpi_pair_of (MPI_FLOAT)),
       needsFree_ (true)
     {}
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
     template<>
-    MpiDatatype< int >::MpiDatatype () : 
+    MpiDatatype< int >::MpiDatatype () :
       type_ (MPI_INT),
       needsFree_ (false)
     {}
 
     template<>
-    MpiDatatype< std::pair<int, int> >::MpiDatatype () : 
+    MpiDatatype< std::pair<int, int> >::MpiDatatype () :
       type_ (MPI_2INT),
       needsFree_ (false)
     {}
 
     template<>
-    MpiDatatype< unsigned long >::MpiDatatype () : 
+    MpiDatatype< unsigned long >::MpiDatatype () :
       type_ (MPI_UNSIGNED_LONG),
       needsFree_ (false)
     {}
 
     template<>
-    MpiDatatype< std::pair< unsigned long, unsigned long > >::MpiDatatype () : 
+    MpiDatatype< std::pair< unsigned long, unsigned long > >::MpiDatatype () :
       type_ (mpi_pair_of (MPI_UNSIGNED_LONG)),
       needsFree_ (true)
     {}

@@ -12,6 +12,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Example               example           EX       OPTIONAL
   MpiComm               mpicomm           EX       OPTIONAL
   Task                  task              EX       OPTIONAL
+  TSQR                  TSQR              PS       OPTIONAL
   )
 
 SET(LIB_REQUIRED_DEP_PACKAGES )

@@ -95,7 +95,8 @@ namespace TSQR {
       // A workspace query appropriate for computing the explicit Q
       // factor (nrows x ncols) in place, from the QR factorization of
       // an nrows x ncols matrix with leading dimension lda.
-      lapack.UNGQR (nrows, ncols, ncols, NULL, lda, NULL, &d_lwork_orgqr, -1, &INFO);
+      lapack.UNGQR (nrows, ncols, ncols, NULL, lda, NULL, &d_lwork_orgqr,
+                    -1, &INFO);
       if (INFO != 0) {
         ostringstream os;
         os << "LAPACK _UNGQR workspace size query failed: INFO = " << INFO;
@@ -163,26 +164,25 @@ namespace TSQR {
       SequentialTsqr< Ordinal, Scalar > actor (cache_size_hint);
       Ordinal numCacheBlocks;
 
-      if (b_debug)
-        {
-          cerr << "Sequential TSQR test problem:" << endl
-               << "* " << nrows << " x " << ncols << endl
-               << "* Cache size hint of " << actor.cache_size_hint() << " bytes" << endl;
-          if (contiguous_cache_blocks)
-            cerr << "* Contiguous cache blocks" << endl;
+      if (b_debug) {
+        cerr << "Sequential TSQR test problem:" << endl
+             << "* " << nrows << " x " << ncols << endl
+             << "* Cache size hint of " << actor.cache_size_hint() << " bytes" << endl;
+        if (contiguous_cache_blocks) {
+          cerr << "* Contiguous cache blocks" << endl;
         }
+      }
 
       Matrix< Ordinal, Scalar > A (nrows, ncols);
       Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
       Matrix< Ordinal, Scalar > Q (nrows, ncols);
       Matrix< Ordinal, Scalar > R (ncols, ncols);
-      if (std::numeric_limits<Scalar>::has_quiet_NaN)
-        {
-          A.fill (std::numeric_limits< Scalar>::quiet_NaN());
-          A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
-          Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
-          R.fill (std::numeric_limits<Scalar>::quiet_NaN());
-        }
+      if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+        A.fill (std::numeric_limits< Scalar>::quiet_NaN());
+        A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
+        Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
+        R.fill (std::numeric_limits<Scalar>::quiet_NaN());
+      }
       const Ordinal lda = nrows;
       const Ordinal ldq = nrows;
       const Ordinal ldr = ncols;
@@ -192,8 +192,9 @@ namespace TSQR {
 
       if (save_matrices) {
         string filename = "A_" + shortDatatype + ".txt";
-        if (b_debug)
+        if (b_debug) {
           cerr << "-- Saving test problem to \"" << filename << "\"" << endl;
+        }
         std::ofstream fileOut (filename.c_str());
         print_local_matrix (fileOut, nrows, ncols, A.get(), A.lda());
         fileOut.close();
@@ -222,22 +223,25 @@ namespace TSQR {
         // Verify cache blocking, when in debug mode.
         if (b_debug) {
           Matrix< Ordinal, Scalar > A2 (nrows, ncols);
-          if (std::numeric_limits<Scalar>::has_quiet_NaN)
-            A2.fill (std::numeric_limits<Scalar>::quiet_NaN());
-
-          actor.un_cache_block (nrows, ncols, A2.get(), A2.lda(), A_copy.get());
-          if (matrix_equal (A, A2)) {
-            if (b_debug)
-              cerr << "-- Cache blocking test succeeded!" << endl;
+          if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+            A2.fill (std::numeric_limits<Scalar>::quiet_NaN ());
           }
-          else
+          actor.un_cache_block (nrows, ncols, A2.get (), A2.lda (),
+                                A_copy.get ());
+          if (matrix_equal (A, A2)) {
+            if (b_debug) {
+              cerr << "-- Cache blocking test succeeded!" << endl;
+            }
+          }
+          else {
             throw std::logic_error ("Cache blocking failed");
+          }
         }
       }
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
-      R.fill (Scalar(0));
+      R.fill (Scalar (0));
 
       // Count the number of cache blocks that factor() will use.
       // This is only for diagnostic purposes.
@@ -245,9 +249,10 @@ namespace TSQR {
         actor.factor_num_cache_blocks (nrows, ncols, A_copy.get(),
                                        A_copy.lda(), contiguous_cache_blocks);
       // In debug mode, report how many cache blocks factor() will use.
-      if (b_debug)
+      if (b_debug) {
         cerr << "-- Number of cache blocks factor() will use: "
              << numCacheBlocks << endl << endl;
+      }
 
       // Factor the matrix and compute the explicit Q factor
       typedef typename SequentialTsqr< Ordinal, Scalar >::FactorOutput
@@ -255,23 +260,24 @@ namespace TSQR {
       factor_output_type factorOutput =
         actor.factor (nrows, ncols, A_copy.get(), A_copy.lda(),
                       R.get(), R.lda(), contiguous_cache_blocks);
-      if (b_debug)
+      if (b_debug) {
         cerr << "-- Finished SequentialTsqr::factor" << endl;
-
-      if (save_matrices)
-        {
-          string filename = "R_" + shortDatatype + ".txt";
-          if (b_debug)
-            cerr << "-- Saving R factor to \"" << filename << "\"" << endl;
-          std::ofstream fileOut (filename.c_str());
-          print_local_matrix (fileOut, ncols, ncols, R.get(), R.lda());
-          fileOut.close();
+      }
+      if (save_matrices) {
+        string filename = "R_" + shortDatatype + ".txt";
+        if (b_debug) {
+          cerr << "-- Saving R factor to \"" << filename << "\"" << endl;
         }
+        std::ofstream fileOut (filename.c_str ());
+        print_local_matrix (fileOut, ncols, ncols, R.get (), R.lda ());
+        fileOut.close ();
+      }
 
       actor.explicit_Q (nrows, ncols, A_copy.get(), lda, factorOutput,
                         ncols, Q.get(), Q.lda(), contiguous_cache_blocks);
-      if (b_debug)
+      if (b_debug) {
         cerr << "-- Finished SequentialTsqr::explicit_Q" << endl;
+      }
 
       // "Un"-cache-block the output, if contiguous cache blocks were
       // used.  This is only necessary because local_verify() doesn't
@@ -305,11 +311,12 @@ namespace TSQR {
       // Validate the factorization
       vector< magnitude_type > results =
         local_verify (nrows, ncols, A.get(), lda, Q.get(), ldq, R.get(), ldr);
-      if (b_debug)
+      if (b_debug) {
         cerr << "-- Finished local_verify" << endl;
+      }
 
       // Print the results
-      if (human_readable)
+      if (human_readable) {
         out << "Sequential cache-blocked TSQR:" << endl
             << "Scalar type: " << datatype << endl
             << "Matrix dimensions: " << nrows << " by " << ncols << endl
@@ -320,38 +327,38 @@ namespace TSQR {
             << "Absolute orthogonality $\\| I - Q^* Q \\|_F$: " << results[1] << endl
             << "Test matrix norm $\\| A \\|_F$: " << results[2] << endl
             << endl << endl;
-      else
-        {
-          if (printFieldNames)
-            {
-              const char prefix[] = "%";
-              out << prefix
-                  << "method"
-                  << ",scalarType"
-                  << ",numRows"
-                  << ",numCols"
-                  << ",cacheSizeHint"
-                  << ",contiguousCacheBlocks"
-                  << ",absFrobResid"
-                  << ",absFrobOrthog"
-                  << ",frobA";
-              if (! additionalFieldNames.empty())
-                out << "," << additionalFieldNames;
-              out << endl;
-            }
-          out << "SeqTSQR"
-              << "," << datatype
-              << "," << nrows
-              << "," << ncols
-              << "," << actor.cache_size_hint()
-              << "," << contiguous_cache_blocks
-              << "," << results[0]
-              << "," << results[1]
-              << "," << results[2];
-          if (! additionalData.empty())
-            out << "," << additionalData;
+      }
+      else {
+        if (printFieldNames) {
+          const char prefix[] = "%";
+          out << prefix
+              << "method"
+              << ",scalarType"
+              << ",numRows"
+              << ",numCols"
+              << ",cacheSizeHint"
+              << ",contiguousCacheBlocks"
+              << ",absFrobResid"
+              << ",absFrobOrthog"
+              << ",frobA";
+          if (! additionalFieldNames.empty())
+            out << "," << additionalFieldNames;
           out << endl;
         }
+        out << "SeqTSQR"
+            << "," << datatype
+            << "," << nrows
+            << "," << ncols
+            << "," << actor.cache_size_hint()
+            << "," << contiguous_cache_blocks
+            << "," << results[0]
+            << "," << results[1]
+            << "," << results[2];
+        if (! additionalData.empty ()) {
+          out << "," << additionalData;
+        }
+        out << endl;
+      }
     }
 
 
@@ -370,9 +377,9 @@ namespace TSQR {
                    const bool b_debug)
     {
       using TSQR::Random::NormalGenerator;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
       using std::complex;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
       using std::string;
       using std::vector;
 
@@ -410,31 +417,31 @@ namespace TSQR {
                              cache_size_hint, contiguous_cache_blocks,
                              save_matrices, additionalFieldNames, additionalData,
                              printFieldNames, human_readable, b_debug);
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-      if (test_complex_arithmetic)
-        {
-          normgenD.getSeed (iseed);
-          NormalGenerator< int, complex<float> > normgenC (iseed);
-          datatype = "complex<float>";
-          shortDatatype = "C";
-          verifySeqTsqrTemplate (out, normgenC, datatype, shortDatatype, nrows, ncols,
-                                 cache_size_hint, contiguous_cache_blocks,
-                                 save_matrices, additionalFieldNames, additionalData,
-                                 printFieldNames, human_readable, b_debug);
-          normgenC.getSeed (iseed);
-          NormalGenerator< int, complex<double> > normgenZ (iseed);
-          datatype = "complex<double>";
-          shortDatatype = "Z";
-          verifySeqTsqrTemplate (out, normgenZ, datatype, shortDatatype, nrows, ncols,
-                                 cache_size_hint, contiguous_cache_blocks,
-                                 save_matrices, additionalFieldNames, additionalData,
-                                 printFieldNames, human_readable, b_debug);
-        }
-#else // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-      if (test_complex_arithmetic)
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
+      if (test_complex_arithmetic) {
+        normgenD.getSeed (iseed);
+        NormalGenerator< int, complex<float> > normgenC (iseed);
+        datatype = "complex<float>";
+        shortDatatype = "C";
+        verifySeqTsqrTemplate (out, normgenC, datatype, shortDatatype, nrows, ncols,
+                               cache_size_hint, contiguous_cache_blocks,
+                               save_matrices, additionalFieldNames, additionalData,
+                               printFieldNames, human_readable, b_debug);
+        normgenC.getSeed (iseed);
+        NormalGenerator< int, complex<double> > normgenZ (iseed);
+        datatype = "complex<double>";
+        shortDatatype = "Z";
+        verifySeqTsqrTemplate (out, normgenZ, datatype, shortDatatype, nrows, ncols,
+                               cache_size_hint, contiguous_cache_blocks,
+                               save_matrices, additionalFieldNames, additionalData,
+                               printFieldNames, human_readable, b_debug);
+      }
+#else // HAVE_KOKKOSTSQR_COMPLEX
+      if (test_complex_arithmetic) {
         throw std::logic_error ("Trilinos was not built with "
                                 "complex arithmetic support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+      }
+#endif // HAVE_KOKKOSTSQR_COMPLEX
     }
 
 
@@ -460,30 +467,31 @@ namespace TSQR {
       // Initialize LAPACK.
       Teuchos::LAPACK< Ordinal, Scalar > lapack;
 
-      if (b_debug)
+      if (b_debug) {
         cerr << "LAPACK test problem:" << endl
              << "* " << nrows << " x " << ncols << endl;
+      }
 
       Matrix< Ordinal, Scalar > A (nrows, ncols);
       Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
       Matrix< Ordinal, Scalar > Q (nrows, ncols);
       Matrix< Ordinal, Scalar > R (ncols, ncols);
-      if (std::numeric_limits<Scalar>::has_quiet_NaN)
-        {
-          A.fill (std::numeric_limits< Scalar>::quiet_NaN());
-          A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
-          Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
-          R.fill (std::numeric_limits<Scalar>::quiet_NaN());
-        }
+      if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+        A.fill (std::numeric_limits< Scalar>::quiet_NaN());
+        A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
+        Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
+        R.fill (std::numeric_limits<Scalar>::quiet_NaN());
+      }
       const Ordinal lda = nrows;
       const Ordinal ldq = nrows;
       const Ordinal ldr = ncols;
 
       // Create a test problem
-      nodeTestProblem (generator, nrows, ncols, A.get(), A.lda(), true);
+      nodeTestProblem (generator, nrows, ncols, A.get (), A.lda (), true);
 
-      if (b_debug)
+      if (b_debug) {
         cerr << "-- Generated test problem" << endl;
+      }
 
       // Copy A into A_copy, since LAPACK QR overwrites the input.
       deep_copy (A_copy, A);
@@ -492,35 +500,34 @@ namespace TSQR {
       }
 
       // Now determine the required workspace for the factorization.
-      const Ordinal lwork = lworkQueryLapackQr (lapack, nrows, ncols, A_copy.lda());
+      const Ordinal lwork =
+        lworkQueryLapackQr (lapack, nrows, ncols, A_copy.lda ());
       std::vector<Scalar> work (lwork);
       std::vector<Scalar> tau (ncols);
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
-      R.fill (Scalar(0));
+      R.fill (Scalar (0));
 
       // Compute the QR factorization
       int info = 0; // INFO is always an int
       lapack.GEQRF (nrows, ncols, A_copy.get(), A_copy.lda(),
                     &tau[0], &work[0], lwork, &info);
-      if (info != 0)
-        {
-          ostringstream os;
-          os << "LAPACK QR factorization (_GEQRF) failed: INFO = " << info;
-          throw std::runtime_error (os.str());
-        }
+      if (info != 0) {
+        ostringstream os;
+        os << "LAPACK QR factorization (_GEQRF) failed: INFO = " << info;
+        throw std::runtime_error (os.str());
+      }
 
       // Copy out the R factor from A_copy (where we computed the QR
       // factorization in place) into R.
       copy_upper_triangle (ncols, ncols, R.get(), ldr, A_copy.get(), lda);
 
-      if (b_debug)
-        {
-          cerr << endl << "-- R factor:" << endl;
-          print_local_matrix (cerr, ncols, ncols, R.get(), R.lda());
-          cerr << endl;
-        }
+      if (b_debug) {
+        cerr << endl << "-- R factor:" << endl;
+        print_local_matrix (cerr, ncols, ncols, R.get(), R.lda());
+        cerr << endl;
+      }
 
       // The explicit Q factor will be computed in place, so copy the
       // result of the factorization into Q.
@@ -539,45 +546,46 @@ namespace TSQR {
         local_verify (nrows, ncols, A.get(), lda, Q.get(), ldq, R.get(), ldr);
 
       // Print the results
-      if (human_readable)
+      if (human_readable) {
         out << "LAPACK QR (DGEQRF and DUNGQR):" << endl
             << "Scalar type: " << datatype << endl
             << "Absolute residual $\\| A - QR \\|_F$: " << results[0] << endl
             << "Absolute orthogonality $\\| I - Q^* Q \\|_F$: " << results[1] << endl
             << "Test matrix norm $\\| A \\|_F$: " << results[2] << endl
             << endl << endl;
-      else
-        {
-          if (printFieldNames)
-            {
-              const char prefix[] = "%";
-              out << prefix
-                  << "method"
-                  << ",scalarType"
-                  << ",numRows"
-                  << ",numCols"
-                  << ",cacheSizeHint"
-                  << ",contiguousCacheBlocks"
-                  << ",absFrobResid"
-                  << ",absFrobOrthog"
-                  << ",frobA";
-              if (! additionalFieldNames.empty())
-                out << "," << additionalFieldNames;
-              out << endl;
-            }
-          out << "LAPACK"
-              << "," << datatype
-              << "," << nrows
-              << "," << ncols
-              << "," << size_t(0) // cache_size_hint
-              << "," << false     // contiguous_cache_blocks
-              << "," << results[0]
-              << "," << results[1]
-              << "," << results[2];
-          if (! additionalData.empty())
-            out << "," << additionalData;
+      }
+      else {
+        if (printFieldNames) {
+          const char prefix[] = "%";
+          out << prefix
+              << "method"
+              << ",scalarType"
+              << ",numRows"
+              << ",numCols"
+              << ",cacheSizeHint"
+              << ",contiguousCacheBlocks"
+              << ",absFrobResid"
+              << ",absFrobOrthog"
+              << ",frobA";
+          if (! additionalFieldNames.empty ()) {
+            out << "," << additionalFieldNames;
+          }
           out << endl;
         }
+        out << "LAPACK"
+            << "," << datatype
+            << "," << nrows
+            << "," << ncols
+            << "," << size_t(0) // cache_size_hint
+            << "," << false     // contiguous_cache_blocks
+            << "," << results[0]
+            << "," << results[1]
+            << "," << results[2];
+        if (! additionalData.empty ()) {
+          out << "," << additionalData;
+        }
+        out << endl;
+      }
     }
 
 
@@ -593,9 +601,9 @@ namespace TSQR {
                   const bool b_debug)
     {
       using TSQR::Random::NormalGenerator;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
       using std::complex;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
       using std::string;
       using std::vector;
 
@@ -626,27 +634,27 @@ namespace TSQR {
       verifyLapackTemplate (out, normgenD, datatype, nrows, ncols,
                             additionalFieldNames, additionalData,
                             false, human_readable, b_debug);
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-      if (test_complex_arithmetic)
-        {
-          normgenD.getSeed (iseed);
-          NormalGenerator< int, complex<float> > normgenC (iseed);
-          datatype = "complex<float>";
-          verifyLapackTemplate (out, normgenC, datatype, nrows, ncols,
-                                additionalFieldNames, additionalData,
-                                false, human_readable, b_debug);
-          normgenC.getSeed (iseed);
-          NormalGenerator< int, complex<double> > normgenZ (iseed);
-          datatype = "complex<double>";
-          verifyLapackTemplate (out, normgenZ, datatype, nrows, ncols,
-                                additionalFieldNames, additionalData,
-                                false, human_readable, b_debug);
-        }
-#else // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-      if (test_complex_arithmetic)
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
+      if (test_complex_arithmetic) {
+        normgenD.getSeed (iseed);
+        NormalGenerator< int, complex<float> > normgenC (iseed);
+        datatype = "complex<float>";
+        verifyLapackTemplate (out, normgenC, datatype, nrows, ncols,
+                              additionalFieldNames, additionalData,
+                              false, human_readable, b_debug);
+        normgenC.getSeed (iseed);
+        NormalGenerator< int, complex<double> > normgenZ (iseed);
+        datatype = "complex<double>";
+        verifyLapackTemplate (out, normgenZ, datatype, nrows, ncols,
+                              additionalFieldNames, additionalData,
+                              false, human_readable, b_debug);
+      }
+#else // HAVE_KOKKOSTSQR_COMPLEX
+      if (test_complex_arithmetic) {
         throw std::logic_error ("Trilinos was not built with "
                                 "complex arithmetic support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+      }
+#endif // HAVE_KOKKOSTSQR_COMPLEX
     }
 
     /// \class LapackBenchmarker
@@ -715,33 +723,30 @@ namespace TSQR {
         // Name of timer doesn't matter here; we only need the timing.
         TimerType timer("LAPACK");
         timer.start();
-        for (int trialNum = 0; trialNum < numTrials; ++trialNum)
-          {
-            // Compute the QR factorization
-            int info = 0; // INFO is always an int
-            lapack_.GEQRF (numRows, numCols, Q.get(), ldq, &tau[0], &work[0], lwork, &info);
-            if (info != 0)
-              {
-                std::ostringstream os;
-                os << "LAPACK QR factorization (_GEQRF) failed: INFO = " << info;
-                throw std::runtime_error (os.str());
-              }
-
-            // Extract the upper triangular factor R from Q (where it
-            // was computed in place by GEQRF), since UNGQR will
-            // overwrite all of Q with the explicit Q factor.
-            copy_upper_triangle (numRows, numCols, R.get(), ldr, Q.get(), ldq);
-
-            // Compute the explicit Q factor
-            lapack_.UNGQR (numRows, numCols, numCols, Q.get(), ldq,
-                          &tau[0], &work[0], lwork, &info);
-            if (info != 0)
-              {
-                std::ostringstream os;
-                os << "LAPACK explicit Q computation (_UNGQR) failed: INFO = " << info;
-                throw std::runtime_error (os.str());
-              }
+        for (int trialNum = 0; trialNum < numTrials; ++trialNum) {
+          // Compute the QR factorization
+          int info = 0; // INFO is always an int
+          lapack_.GEQRF (numRows, numCols, Q.get(), ldq, &tau[0], &work[0], lwork, &info);
+          if (info != 0) {
+            std::ostringstream os;
+            os << "LAPACK QR factorization (_GEQRF) failed: INFO = " << info;
+            throw std::runtime_error (os.str());
           }
+
+          // Extract the upper triangular factor R from Q (where it
+          // was computed in place by GEQRF), since UNGQR will
+          // overwrite all of Q with the explicit Q factor.
+          copy_upper_triangle (numRows, numCols, R.get(), ldr, Q.get(), ldq);
+
+          // Compute the explicit Q factor
+          lapack_.UNGQR (numRows, numCols, numCols, Q.get(), ldq,
+                         &tau[0], &work[0], lwork, &info);
+          if (info != 0) {
+            std::ostringstream os;
+            os << "LAPACK explicit Q computation (_UNGQR) failed: INFO = " << info;
+            throw std::runtime_error (os.str ());
+          }
+        }
         const double lapackTiming = timer.stop();
         reportResults (numTrials, numRows, numCols, lapackTiming,
                        additionalFieldNames, additionalData, printFieldNames);
@@ -848,59 +853,61 @@ namespace TSQR {
       // Only print field names (if at all) for the first data type tested.
       bool printedFieldNames = false;
 
-      if (testReal)
-        {
-          { // Scalar=float
-            typedef LapackBenchmarker< int, float, timer_type > benchmark_type;
-            string scalarTypeName ("float");
-            benchmark_type widget (scalarTypeName, out, humanReadable);
-            widget.benchmark (numTrials, numRows, numCols,
-                              additionalFieldNames, additionalData,
-                              printFieldNames && ! printedFieldNames);
-            if (printFieldNames && ! printedFieldNames)
-              printedFieldNames = true;
-          }
-          { // Scalar=double
-            typedef LapackBenchmarker< int, double, timer_type > benchmark_type;
-            string scalarTypeName ("double");
-            benchmark_type widget (scalarTypeName, out, humanReadable);
-            widget.benchmark (numTrials, numRows, numCols,
-                              additionalFieldNames, additionalData,
-                              printFieldNames && ! printedFieldNames);
-            if (printFieldNames && ! printedFieldNames)
-              printedFieldNames = true;
+      if (testReal) {
+        { // Scalar=float
+          typedef LapackBenchmarker< int, float, timer_type > benchmark_type;
+          string scalarTypeName ("float");
+          benchmark_type widget (scalarTypeName, out, humanReadable);
+          widget.benchmark (numTrials, numRows, numCols,
+                            additionalFieldNames, additionalData,
+                            printFieldNames && ! printedFieldNames);
+          if (printFieldNames && ! printedFieldNames) {
+            printedFieldNames = true;
           }
         }
+        { // Scalar=double
+          typedef LapackBenchmarker< int, double, timer_type > benchmark_type;
+          string scalarTypeName ("double");
+          benchmark_type widget (scalarTypeName, out, humanReadable);
+          widget.benchmark (numTrials, numRows, numCols,
+                            additionalFieldNames, additionalData,
+                            printFieldNames && ! printedFieldNames);
+          if (printFieldNames && ! printedFieldNames) {
+            printedFieldNames = true;
+          }
+        }
+      }
 
-      if (testComplex)
-        {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-          using std::complex;
-          { // Scalar=complex<float>
-            typedef LapackBenchmarker< int, complex<float>, timer_type > benchmark_type;
-            string scalarTypeName ("complex<float>");
-            benchmark_type widget (scalarTypeName, out, humanReadable);
-            widget.benchmark (numTrials, numRows, numCols,
-                              additionalFieldNames, additionalData,
-                              printFieldNames && ! printedFieldNames);
-            if (printFieldNames && ! printedFieldNames)
-              printedFieldNames = true;
+      if (testComplex) {
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
+        using std::complex;
+        { // Scalar=complex<float>
+          typedef LapackBenchmarker< int, complex<float>, timer_type > benchmark_type;
+          string scalarTypeName ("complex<float>");
+          benchmark_type widget (scalarTypeName, out, humanReadable);
+          widget.benchmark (numTrials, numRows, numCols,
+                            additionalFieldNames, additionalData,
+                            printFieldNames && ! printedFieldNames);
+          if (printFieldNames && ! printedFieldNames) {
+            printedFieldNames = true;
           }
-          { // Scalar=complex<double>
-            typedef LapackBenchmarker<int, complex<double>, timer_type> benchmark_type;
-            string scalarTypeName ("complex<double>");
-            benchmark_type widget (scalarTypeName, out, humanReadable);
-            widget.benchmark (numTrials, numRows, numCols,
-                              additionalFieldNames, additionalData,
-                              printFieldNames && ! printedFieldNames);
-            if (printFieldNames && ! printedFieldNames)
-              printedFieldNames = true;
-          }
-#else // Don't HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-          throw std::logic_error ("Trilinos was not built with "
-                                  "complex arithmetic support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
         }
+        { // Scalar=complex<double>
+          typedef LapackBenchmarker<int, complex<double>, timer_type> benchmark_type;
+          string scalarTypeName ("complex<double>");
+          benchmark_type widget (scalarTypeName, out, humanReadable);
+          widget.benchmark (numTrials, numRows, numCols,
+                            additionalFieldNames, additionalData,
+                            printFieldNames && ! printedFieldNames);
+          if (printFieldNames && ! printedFieldNames) {
+            printedFieldNames = true;
+          }
+        }
+#else // Don't HAVE_KOKKOSTSQR_COMPLEX
+        throw std::logic_error ("Trilinos was not built with "
+                                "complex arithmetic support");
+#endif // HAVE_KOKKOSTSQR_COMPLEX
+      }
     }
 
 
@@ -967,21 +974,20 @@ namespace TSQR {
         // Name of timer doesn't matter here; we only need the timing.
         TimerType timer("SeqTSQR");
         timer.start();
-        for (int trialNum = 0; trialNum < numTrials; ++trialNum)
-          {
-            // Factor the matrix and extract the resulting R factor
-            typedef typename SequentialTsqr<Ordinal, Scalar>::FactorOutput
-              factor_output_type;
-            factor_output_type factorOutput =
-              actor.factor (numRows, numCols, A_copy.get(), lda,
-                            R.get(), R.lda(), contiguousCacheBlocks);
-            // Compute the explicit Q factor.  Unlike with LAPACK QR,
-            // this doesn't happen in place: the implicit Q factor is
-            // stored in A_copy, and the explicit Q factor is written to
-            // Q.
-            actor.explicit_Q (numRows, numCols, A_copy.get(), lda, factorOutput,
-                              numCols, Q.get(), ldq, contiguousCacheBlocks);
-          }
+        for (int trialNum = 0; trialNum < numTrials; ++trialNum) {
+          // Factor the matrix and extract the resulting R factor
+          typedef typename SequentialTsqr<Ordinal, Scalar>::FactorOutput
+            factor_output_type;
+          factor_output_type factorOutput =
+            actor.factor (numRows, numCols, A_copy.get(), lda,
+                          R.get(), R.lda(), contiguousCacheBlocks);
+          // Compute the explicit Q factor.  Unlike with LAPACK QR,
+          // this doesn't happen in place: the implicit Q factor is
+          // stored in A_copy, and the explicit Q factor is written to
+          // Q.
+          actor.explicit_Q (numRows, numCols, A_copy.get(), lda, factorOutput,
+                            numCols, Q.get(), ldq, contiguousCacheBlocks);
+        }
         const double seqTsqrTiming = timer.stop();
         reportResults (numTrials, numRows, numCols, actor.cache_size_hint(),
                        contiguousCacheBlocks, seqTsqrTiming,
@@ -1020,7 +1026,7 @@ namespace TSQR {
                      const bool printFieldNames)
       {
         using std::endl;
-        if (humanReadable_)
+        if (humanReadable_) {
           out_ << "Sequential (cache-blocked) TSQR:" << endl
                << "Scalar type = " << scalarTypeName_ << endl
                << "# rows = " << numRows << endl
@@ -1030,36 +1036,37 @@ namespace TSQR {
                << "# trials = " << numTrials << endl
                << "Total time (s) = " << seqTsqrTiming << endl
                << endl;
-        else
-          {
-            if (printFieldNames)
-              {
-                const char prefix[] = "%";
-                out_ << prefix
-                     << "method"
-                     << ",scalarType"
-                     << ",numRows"
-                     << ",numCols"
-                     << ",cacheSizeHint"
-                     << ",contiguousCacheBlocks"
-                     << ",numTrials"
-                     << ",timing";
-                if (! additionalFieldNames.empty())
-                  out_ << "," << additionalFieldNames;
-                out_ << endl;
-              }
-            out_ << "SeqTSQR"
-                 << "," << scalarTypeName_
-                 << "," << numRows
-                 << "," << numCols
-                 << "," << actualCacheSizeHint
-                 << "," << contiguousCacheBlocks
-                 << "," << numTrials
-                 << "," << seqTsqrTiming;
-            if (! additionalData.empty())
-              out_ << "," << additionalData;
+        }
+        else {
+          if (printFieldNames) {
+            const char prefix[] = "%";
+            out_ << prefix
+                 << "method"
+                 << ",scalarType"
+                 << ",numRows"
+                 << ",numCols"
+                 << ",cacheSizeHint"
+                 << ",contiguousCacheBlocks"
+                 << ",numTrials"
+                 << ",timing";
+            if (! additionalFieldNames.empty ()) {
+              out_ << "," << additionalFieldNames;
+            }
             out_ << endl;
           }
+          out_ << "SeqTSQR"
+               << "," << scalarTypeName_
+               << "," << numRows
+               << "," << numCols
+               << "," << actualCacheSizeHint
+               << "," << contiguousCacheBlocks
+               << "," << numTrials
+               << "," << seqTsqrTiming;
+          if (! additionalData.empty ()) {
+            out_ << "," << additionalData;
+          }
+          out_ << endl;
+        }
       }
     };
 
@@ -1084,63 +1091,65 @@ namespace TSQR {
       // Only print field names (if at all) for the first data type tested.
       bool printedFieldNames = false;
 
-      if (testReal)
-        {
-          { // Scalar=float
-            typedef SeqTsqrBenchmarker<int, float, timer_type> benchmark_type;
-            string scalarTypeName ("float");
-            benchmark_type widget (scalarTypeName, out, humanReadable);
-            widget.benchmark (numTrials, numRows, numCols, cacheSizeHint,
-                              contiguousCacheBlocks,
-                              additionalFieldNames, additionalData,
-                              printFieldNames && ! printedFieldNames);
-            if (printFieldNames && ! printedFieldNames)
-              printedFieldNames = true;
-          }
-          { // Scalar=double
-            typedef SeqTsqrBenchmarker< int, double, timer_type > benchmark_type;
-            string scalarTypeName ("double");
-            benchmark_type widget (scalarTypeName, out, humanReadable);
-            widget.benchmark (numTrials, numRows, numCols, cacheSizeHint,
-                              contiguousCacheBlocks,
-                              additionalFieldNames, additionalData,
-                              printFieldNames && ! printedFieldNames);
-            if (printFieldNames && ! printedFieldNames)
-              printedFieldNames = true;
+      if (testReal) {
+        { // Scalar=float
+          typedef SeqTsqrBenchmarker<int, float, timer_type> benchmark_type;
+          string scalarTypeName ("float");
+          benchmark_type widget (scalarTypeName, out, humanReadable);
+          widget.benchmark (numTrials, numRows, numCols, cacheSizeHint,
+                            contiguousCacheBlocks,
+                            additionalFieldNames, additionalData,
+                            printFieldNames && ! printedFieldNames);
+          if (printFieldNames && ! printedFieldNames) {
+            printedFieldNames = true;
           }
         }
+        { // Scalar=double
+          typedef SeqTsqrBenchmarker< int, double, timer_type > benchmark_type;
+          string scalarTypeName ("double");
+          benchmark_type widget (scalarTypeName, out, humanReadable);
+          widget.benchmark (numTrials, numRows, numCols, cacheSizeHint,
+                            contiguousCacheBlocks,
+                            additionalFieldNames, additionalData,
+                            printFieldNames && ! printedFieldNames);
+          if (printFieldNames && ! printedFieldNames) {
+            printedFieldNames = true;
+          }
+        }
+      }
 
-      if (testComplex)
-        {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-          using std::complex;
-          { // Scalar=complex<float>
-            typedef SeqTsqrBenchmarker< int, complex<float>, timer_type > benchmark_type;
-            string scalarTypeName ("complex<float>");
-            benchmark_type widget (scalarTypeName, out, humanReadable);
-            widget.benchmark (numTrials, numRows, numCols, cacheSizeHint,
-                              contiguousCacheBlocks,
-                              additionalFieldNames, additionalData,
-                              printFieldNames && ! printedFieldNames);
-            if (printFieldNames && ! printedFieldNames)
-              printedFieldNames = true;
+      if (testComplex) {
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
+        using std::complex;
+        { // Scalar=complex<float>
+          typedef SeqTsqrBenchmarker< int, complex<float>, timer_type > benchmark_type;
+          string scalarTypeName ("complex<float>");
+          benchmark_type widget (scalarTypeName, out, humanReadable);
+          widget.benchmark (numTrials, numRows, numCols, cacheSizeHint,
+                            contiguousCacheBlocks,
+                            additionalFieldNames, additionalData,
+                            printFieldNames && ! printedFieldNames);
+          if (printFieldNames && ! printedFieldNames) {
+            printedFieldNames = true;
           }
-          { // Scalar=complex<double>
-            typedef SeqTsqrBenchmarker< int, complex<double>, timer_type > benchmark_type;
-            string scalarTypeName ("complex<double>");
-            benchmark_type widget (scalarTypeName, out, humanReadable);
-            widget.benchmark (numTrials, numRows, numCols, cacheSizeHint,
-                              contiguousCacheBlocks,
-                              additionalFieldNames, additionalData,
-                              printFieldNames && ! printedFieldNames);
-            if (printFieldNames && ! printedFieldNames)
-              printedFieldNames = true;
-          }
-#else // Don't HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-          throw std::logic_error ("Trilinos was not built with "
-                                  "complex arithmetic support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
         }
+        { // Scalar=complex<double>
+          typedef SeqTsqrBenchmarker< int, complex<double>, timer_type > benchmark_type;
+          string scalarTypeName ("complex<double>");
+          benchmark_type widget (scalarTypeName, out, humanReadable);
+          widget.benchmark (numTrials, numRows, numCols, cacheSizeHint,
+                            contiguousCacheBlocks,
+                            additionalFieldNames, additionalData,
+                            printFieldNames && ! printedFieldNames);
+          if (printFieldNames && ! printedFieldNames) {
+            printedFieldNames = true;
+          }
+        }
+#else // Don't HAVE_KOKKOSTSQR_COMPLEX
+        throw std::logic_error ("Trilinos was not built with "
+                                "complex arithmetic support");
+#endif // HAVE_KOKKOSTSQR_COMPLEX
+      }
     }
 
 

@@ -48,13 +48,12 @@
 #endif // HAVE_MPI
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_Time.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#include "Tsqr_TbbTest.hpp"
+#include "Tsqr_SeqTest.hpp"
 
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
 #  include <complex>
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
 #include <sstream>
 #include <stdexcept>
@@ -65,217 +64,93 @@ namespace TSQR {
   namespace Trilinos {
     namespace Test {
 
-      const char docString[] = "This program tests TSQR::TbbTsqr, "
-        "which implements the Intel TBB intranode parallel version of TSQR.  "
+      const char docString[] = "This program tests TSQR::SequentialTsqr, "
+        "which implements the sequential cache-blocked version of TSQR.  "
         "Accuracy and performance tests are included.";
 
       using Teuchos::RCP;
       using Teuchos::Tuple;
 
-      /// \class TbbTestParameters
+      /// \class SeqTestParameters
       /// \brief Encapsulates values of command-line parameters
       ///
-      struct TbbTestParameters {
-        TbbTestParameters () :
+      struct SeqTestParameters {
+        SeqTestParameters () :
           verify (false),
           benchmark (false),
-          numCores (1),
           numRows (1000),
           numCols (10),
           numTrials (10),
-          testReal (true),
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-          testComplex (false),
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-          cacheSizeHint (0),
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
+          testComplex (true),
+#endif // HAVE_KOKKOSTSQR_COMPLEX
+          cacheSizeHint (0), // choose a reasonable default
           contiguousCacheBlocks (false),
           printFieldNames (true),
+          printTrilinosTestStuff (true),
           humanReadable (false),
           debug (false)
           {}
 
         bool verify, benchmark;
-        int numCores, numRows, numCols, numTrials;
-        bool testReal;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+        int numRows, numCols, numTrials;
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
         bool testComplex;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
         size_t cacheSizeHint;
-        bool contiguousCacheBlocks, printFieldNames, humanReadable, debug;
+        bool contiguousCacheBlocks;
+        std::string additionalFieldNames, additionalData;
+        bool printFieldNames, printTrilinosTestStuff, humanReadable, debug;
       };
 
       static void
-        benchmark (const TbbTestParameters& params)
+        benchmark (std::ostream& out,
+            const SeqTestParameters& params)
         {
-          typedef Teuchos::Time timer_type;
-          using TSQR::Test::benchmarkTbbTsqr;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-          using std::complex;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
+          const bool testComplex = params.testComplex;
+#else
+          const bool testComplex = false;
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
-          // Only print field names (if at all) for the first data type tested.
-          bool printedFieldNames = false;
-
-          if (params.testReal)
-          {
-            {
-              std::string scalarTypeName ("float");
-              benchmarkTbbTsqr< int, float > (scalarTypeName,
-                  params.numTrials,
-                  params.numRows,
-                  params.numCols,
-                  params.numCores,
-                  params.cacheSizeHint,
-                  params.contiguousCacheBlocks,
-                  params.printFieldNames && ! printedFieldNames,
-                  params.humanReadable);
-              if (params.printFieldNames && ! printedFieldNames)
-                printedFieldNames = true;
-            }
-            {
-              std::string scalarTypeName ("double");
-              benchmarkTbbTsqr< int, double > (scalarTypeName,
-                  params.numTrials,
-                  params.numRows,
-                  params.numCols,
-                  params.numCores,
-                  params.cacheSizeHint,
-                  params.contiguousCacheBlocks,
-                  params.printFieldNames && ! printedFieldNames,
-                  params.humanReadable);
-              if (params.printFieldNames && ! printedFieldNames)
-                printedFieldNames = true;
-            }
-          }
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-          if (params.testComplex)
-          {
-            {
-              std::string scalarTypeName ("complex<float>");
-              benchmarkTbbTsqr< int, complex<float> > (scalarTypeName,
-                  params.numTrials,
-                  params.numRows,
-                  params.numCols,
-                  params.numCores,
-                  params.cacheSizeHint,
-                  params.contiguousCacheBlocks,
-                  params.printFieldNames && ! printedFieldNames,
-                  params.humanReadable);
-              if (params.printFieldNames && ! printedFieldNames)
-                printedFieldNames = true;
-            }
-            {
-              std::string scalarTypeName ("complex<double>");
-              benchmarkTbbTsqr< int, complex<double> > (scalarTypeName,
-                  params.numTrials,
-                  params.numRows,
-                  params.numCols,
-                  params.numCores,
-                  params.cacheSizeHint,
-                  params.contiguousCacheBlocks,
-                  params.printFieldNames && ! printedFieldNames,
-                  params.humanReadable);
-              if (params.printFieldNames && ! printedFieldNames)
-                printedFieldNames = true;
-            }
-          }
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+          using TSQR::Test::benchmarkSeqTsqr;
+          benchmarkSeqTsqr (out,
+              params.numRows,
+              params.numCols,
+              params.numTrials,
+              params.cacheSizeHint,
+              params.contiguousCacheBlocks,
+              testComplex,
+              params.additionalFieldNames,
+              params.additionalData,
+              params.printFieldNames,
+              params.humanReadable);
         }
 
       static void
-        verify (const TbbTestParameters& params)
+        verify (std::ostream& out,
+            const SeqTestParameters& params)
         {
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
+          const bool testComplex = params.testComplex;
+#else
+          const bool testComplex = false;
+#endif // HAVE_KOKKOSTSQR_COMPLEX
+          const bool saveMatrices = false;
 
-          using TSQR::Test::verifyTbbTsqr;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-          using std::complex;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-
-          std::vector<int> seed(4);
-          seed[0] = 0;
-          seed[1] = 0;
-          seed[2] = 0;
-          seed[3] = 1;
-
-          // Only print field names (if at all) for the first data type tested.
-          bool printedFieldNames = false;
-
-          if (params.testReal)
-          {
-            {
-              TSQR::Random::NormalGenerator< int, float > gen (seed);
-              std::string scalarTypeName ("float");
-              verifyTbbTsqr< int, float > (scalarTypeName,
-                  gen,
-                  params.numRows,
-                  params.numCols,
-                  params.numCores,
-                  params.cacheSizeHint,
-                  params.contiguousCacheBlocks,
-                  params.printFieldNames && ! printedFieldNames,
-                  params.humanReadable,
-                  params.debug);
-              if (params.printFieldNames && ! printedFieldNames)
-                printedFieldNames = true;
-              gen.getSeed (seed);
-            }
-            {
-              TSQR::Random::NormalGenerator< int, double > gen (seed);
-              std::string scalarTypeName ("double");
-              verifyTbbTsqr< int, double > (scalarTypeName,
-                  gen,
-                  params.numRows,
-                  params.numCols,
-                  params.numCores,
-                  params.cacheSizeHint,
-                  params.contiguousCacheBlocks,
-                  params.printFieldNames && ! printedFieldNames,
-                  params.humanReadable,
-                  params.debug);
-              if (params.printFieldNames && ! printedFieldNames)
-                printedFieldNames = true;
-              gen.getSeed (seed);
-            }
-          } // if (params.testReal)
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-          if (params.testComplex)
-          {
-            {
-              TSQR::Random::NormalGenerator< int, complex<float> > gen (seed);
-              std::string scalarTypeName ("complex<float>");
-              verifyTbbTsqr< int, complex<float> > (scalarTypeName,
-                  gen,
-                  params.numRows,
-                  params.numCols,
-                  params.numCores,
-                  params.cacheSizeHint,
-                  params.contiguousCacheBlocks,
-                  params.printFieldNames && ! printedFieldNames,
-                  params.humanReadable,
-                  params.debug);
-              if (params.printFieldNames && ! printedFieldNames)
-                printedFieldNames = true;
-              gen.getSeed (seed);
-            }
-            {
-              TSQR::Random::NormalGenerator< int, complex<double> > gen (seed);
-              std::string scalarTypeName ("complex<double>");
-              verifyTbbTsqr< int, complex<double> > (scalarTypeName,
-                  gen,
-                  params.numRows,
-                  params.numCols,
-                  params.numCores,
-                  params.cacheSizeHint,
-                  params.contiguousCacheBlocks,
-                  params.printFieldNames && ! printedFieldNames,
-                  params.humanReadable,
-                  params.debug);
-              if (params.printFieldNames && ! printedFieldNames)
-                printedFieldNames = true;
-              gen.getSeed (seed);
-            }
-          }
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+          using TSQR::Test::verifySeqTsqr;
+          verifySeqTsqr (out,
+              params.numRows,
+              params.numCols,
+              params.cacheSizeHint,
+              testComplex,
+              saveMatrices,
+              params.contiguousCacheBlocks,
+              params.additionalFieldNames,
+              params.additionalData,
+              params.printFieldNames,
+              params.humanReadable,
+              params.debug);
         }
 
       /// \brief Parse command-line options for this test
@@ -288,7 +163,7 @@ namespace TSQR {
       ///   "help" display (summary of command-line options)
       ///
       /// \return Encapsulation of command-line options
-      static TbbTestParameters
+      static SeqTestParameters
         parseOptions (int argc,
             char* argv[],
             const bool allowedToPrint,
@@ -300,7 +175,7 @@ namespace TSQR {
           printedHelp = false;
 
           // Command-line parameters, set to their default values.
-          TbbTestParameters params;
+          SeqTestParameters params;
           /// We really want the cache block size as a size_t, but
           /// Teuchos::CommandLineProcessor doesn't offer that option.
           /// So we read it in as an int, which means negative inputs
@@ -332,19 +207,12 @@ namespace TSQR {
             cmdLineProc.setOption ("ntrials",
                 &params.numTrials,
                 "Number of trials (only used when \"--benchmark\"");
-            cmdLineProc.setOption ("real",
-                "noreal",
-                &params.testReal,
-                "Test real arithmetic");
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
             cmdLineProc.setOption ("complex",
                 "nocomplex",
                 &params.testComplex,
-                "Test complex arithmetic");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-            cmdLineProc.setOption ("ncores",
-                &params.numCores,
-                "Number of cores to use for Intel TBB");
+                "Test complex arithmetic, as well as real");
+#endif // HAVE_KOKKOSTSQR_COMPLEX
             cmdLineProc.setOption ("cache-block-size",
                 &cacheSizeHintAsInt,
                 "Cache size hint in bytes (0 means pick a reasonable default)");
@@ -352,10 +220,29 @@ namespace TSQR {
                 "noncontiguous-cache-blocks",
                 &params.contiguousCacheBlocks,
                 "Whether cache blocks should be stored contiguously");
+            cmdLineProc.setOption ("field-names",
+                &params.additionalFieldNames,
+                "Any additional field name(s) (comma-delimited "
+                "string) to add to the benchmark output.  Empty "
+                "by default.  Good for things known when invoking "
+                "the benchmark executable, but not (easily) known "
+                "inside the benchmark -- e.g., environment "
+                "variables.");
+            cmdLineProc.setOption ("output-data",
+                &params.additionalData,
+                "Any additional data to add to the output, "
+                "corresponding to the above field name(s). "
+                "Empty by default.");
             cmdLineProc.setOption ("print-field-names",
                 "no-print-field-names",
                 &params.printFieldNames,
                 "Print field names (for machine-readable output only)");
+            cmdLineProc.setOption ("print-trilinos-test-stuff",
+                "no-print-trilinos-test-stuff",
+                &params.printTrilinosTestStuff,
+                "Print output that makes the Trilinos test "
+                "framework happy (but makes benchmark results "
+                "parsing scripts unhappy)");
             cmdLineProc.setOption ("human-readable",
                 "machine-readable",
                 &params.humanReadable,
@@ -387,14 +274,12 @@ namespace TSQR {
             throw std::invalid_argument ("Number of rows must be >= number of columns");
           else if (params.benchmark && params.numTrials < 1)
             throw std::invalid_argument ("\"--benchmark\" option requires numTrials >= 1");
-          else if (params.numCores < 1)
-            throw std::invalid_argument ("\"--ncores\" option must be >= 1");
           else
           {
             if (cacheSizeHintAsInt < 0)
               throw std::invalid_argument ("Cache size hint must be nonnegative");
             else
-              params.cacheSizeHint = static_cast<size_t> (cacheSizeHintAsInt);
+              params.cacheSizeHint = static_cast< size_t > (cacheSizeHintAsInt);
           }
           return params;
         }
@@ -411,7 +296,7 @@ namespace TSQR {
 main (int argc, char *argv[])
 {
   using Teuchos::RCP;
-  using TSQR::Trilinos::Test::TbbTestParameters;
+  using TSQR::Trilinos::Test::SeqTestParameters;
   using TSQR::Trilinos::Test::parseOptions;
 
 #ifdef HAVE_MPI
@@ -438,7 +323,7 @@ main (int argc, char *argv[])
 
   // Fetch command-line parameters.
   bool printedHelp = false;
-  TbbTestParameters params =
+  SeqTestParameters params =
     parseOptions (argc, argv, allowedToPrint, printedHelp);
   if (printedHelp)
     return 0;
@@ -450,22 +335,20 @@ main (int argc, char *argv[])
     {
       using std::endl;
 
+      if (params.benchmark)
+        TSQR::Trilinos::Test::benchmark (out, params);
+
       // We allow the same run to do both benchmark and verify.
       if (params.verify)
-        TSQR::Trilinos::Test::verify (params);
-      if (params.benchmark)
-        TSQR::Trilinos::Test::benchmark (params);
+        TSQR::Trilinos::Test::verify (out, params);
 
       success = true;
 
-      // The Trilinos test framework expects a message like this.
-      // Obviously we haven't tested anything, but eventually we
-      // will include accuracy integration tests.
-      out << "\nEnd Result: TEST PASSED" << endl;
+      if (params.printTrilinosTestStuff)
+        // The Trilinos test framework expects a message like this.
+        out << "\nEnd Result: TEST PASSED" << endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
-
-

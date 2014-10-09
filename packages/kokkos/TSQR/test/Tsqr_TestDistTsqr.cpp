@@ -55,9 +55,9 @@
 #include <Tsqr_ParTest.hpp>
 #include <Tsqr_TeuchosMessenger.hpp>
 
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
 #  include <complex>
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
 #include <sstream>
 #include <stdexcept>
@@ -157,9 +157,9 @@ struct DistTsqrTestParameters {
     verify (false),
     benchmark (false),
     testReal (true),
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
     testComplex (true),
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
     testFactorExplicit (true),
     testFactorImplicit (true),
     printFieldNames (true),
@@ -173,9 +173,9 @@ struct DistTsqrTestParameters {
   int numCols, numTrials;
   bool verify, benchmark;
   bool testReal;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
   bool testComplex;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
   bool testFactorExplicit, testFactorImplicit;
   bool printFieldNames, printTrilinosTestStuff;
   bool humanReadable, printMatrices, debug;
@@ -190,11 +190,11 @@ verify (RCP< const Teuchos::Comm<int> > comm,
     const bool useSeed)
 {
   const bool testReal = params.testReal;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
   const bool testComplex = params.testComplex;
-#else // Don't HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#else // Don't HAVE_KOKKOSTSQR_COMPLEX
   const bool testComplex = false;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
   const int numCols = params.numCols;
   const bool testFactorExplicit = params.testFactorExplicit;
@@ -218,16 +218,16 @@ verify (RCP< const Teuchos::Comm<int> > comm,
   }
   if (testComplex)
   {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
     using std::complex;
 
     TSQR_TEST_DIST_TSQR( complex<float>, "complex<float>" );
     TSQR_TEST_DIST_TSQR( complex<double>, "complex<double>" );
 
-#else // Don't HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#else // Don't HAVE_KOKKOSTSQR_COMPLEX
     throw std::logic_error("TSQR was not built with complex "
         "arithmetic support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
   }
 }
 
@@ -243,11 +243,11 @@ benchmark (RCP< const Teuchos::Comm<int> > comm,
   typedef Teuchos::Time timer_type;
 
   const bool testReal = params.testReal;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
   const bool testComplex = params.testComplex;
-#else // Don't HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#else // Don't HAVE_KOKKOSTSQR_COMPLEX
   const bool testComplex = false;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
   const int numCols = params.numCols;
   const int numTrials = params.numTrials;
@@ -274,16 +274,16 @@ benchmark (RCP< const Teuchos::Comm<int> > comm,
   }
   if (testComplex)
   {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
     using std::complex;
 
     TSQR_BENCHMARK_DIST_TSQR( complex<float>, "complex<float>" );
     TSQR_BENCHMARK_DIST_TSQR( complex<double>, "complex<double>" );
 
-#else // Don't HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#else // Don't HAVE_KOKKOSTSQR_COMPLEX
     throw std::logic_error("TSQR was not built with complex "
         "arithmetic support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
   }
 }
 
@@ -381,12 +381,12 @@ parseOptions (int argc,
         "noreal",
         &params.testReal,
         "Test real arithmetic routines");
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
     cmdLineProc.setOption ("complex",
         "nocomplex",
         &params.testComplex,
         "Test complex arithmetic routines");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
     cmdLineProc.parse (argc, argv);
   }
   catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) {

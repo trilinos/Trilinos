@@ -45,9 +45,9 @@
 #include <Kokkos_ConfigDefs.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
-#ifdef HAVE_KOKKOSCLASSIC_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
 #  include <TbbTsqr.hpp>
-#endif // HAVE_KOKKOSCLASSIC_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
 
 #include <Tsqr_KokkosNodeTsqr.hpp>
 #include <Tsqr_SequentialTsqr.hpp>
@@ -139,7 +139,7 @@ namespace TSQR {
     }
   };
 
-#ifdef HAVE_KOKKOSCLASSIC_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
   //
   // Specialization of NodeTsqrFactory for KokkosClassic::TBBNode.
   //
@@ -185,7 +185,7 @@ namespace TSQR {
       (void) node;
     }
   };
-#endif // HAVE_KOKKOSCLASSIC_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   //

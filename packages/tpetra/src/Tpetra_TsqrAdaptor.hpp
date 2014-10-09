@@ -46,9 +46,9 @@
 /// \brief Adaptor from Tpetra::MultiVector to TSQR
 /// \author Mark Hoemmen
 
-#include <Tpetra_ConfigDefs.hpp> // HAVE_TPETRA_TSQR, etc.
+#include <Tpetra_ConfigDefs.hpp>
 
-#ifdef HAVE_TPETRA_TSQR
+#ifdef HAVE_TPETRA_KOKKOSTSQR
 #  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
 #  include <Tsqr.hpp> // full (internode + intranode) TSQR
 #  include <Tsqr_DistTsqr.hpp> // internode TSQR
@@ -373,7 +373,7 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_TSQR
+#endif // HAVE_TPETRA_KOKKOSTSQR
 
 #endif // __Tpetra_TsqrAdaptor_hpp
 

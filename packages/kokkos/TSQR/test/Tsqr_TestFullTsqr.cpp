@@ -49,9 +49,9 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
 #  include <complex>
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
 namespace {
   //
@@ -79,9 +79,9 @@ namespace {
       printResults (testParams->get<bool> ("printResults")),
       failIfInaccurate (testParams->get<bool> ("failIfInaccurate")),
       debug (testParams->get<bool> ("debug")),
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
       testComplex (false),
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
       testReal (false) // default is not to test _anything_
       {}
 
@@ -95,9 +95,9 @@ namespace {
     bool printResults;
     bool failIfInaccurate;
     bool debug;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
     bool testComplex;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
     bool testReal;
 
     // \brief Read command-line options.
@@ -137,12 +137,12 @@ namespace {
               "noTestReal",
               &testReal,
               "Test real Scalar types");
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
           cmdLineProc.setOption ("testComplex",
               "noTestComplex",
               &testComplex,
               "Test complex Scalar types");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
           // CommandLineProcessor takes int arguments, but not size_t
           // arguments, so we have to read in the argument as an int and
           // convert back to size_t later.
@@ -283,9 +283,9 @@ namespace {
     // each of these is tested independently on the command line.
     //
     typedef Cons<float, Cons<double, NullCons> > real_type_list;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
     typedef Cons<std::complex<float>, Cons<std::complex<double>, NullCons> > complex_type_list;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
     //
     // Run the tests.  If the tests are set up to fail on
@@ -299,10 +299,10 @@ namespace {
     //
     if (cmdLineOpts.testReal)
       caller.run<real_type_list> (testParams);
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
     if (cmdLineOpts.testComplex)
       caller.run<complex_type_list> (testParams);
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
 
     return true; // for success
   }

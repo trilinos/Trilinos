@@ -586,9 +586,9 @@ namespace TSQR {
     {
       using TSQR::Random::NormalGenerator;
       using std::cerr;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
       using std::complex;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
       using std::cout;
       using std::endl;
       using std::pair;
@@ -647,7 +647,7 @@ namespace TSQR {
 
           if (testComplex)
             {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
               {
                 NormalGenerator<int, complex<float> > normgenC (iseed);
                 NormalGenerator<int, float> normgenS (iseed);
@@ -674,11 +674,11 @@ namespace TSQR {
                 doPrintFieldNames = false;
                 normgenZ.getSeed (iseed);
               }
-#else // NOT HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#else // NOT HAVE_KOKKOSTSQR_COMPLEX
               TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                                  "Trilinos was not built with "
                                  "complex arithmetic support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
             }
         }
       else // simulateSequentialTsqr
@@ -709,7 +709,7 @@ namespace TSQR {
 
           if (testComplex)
             {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#ifdef HAVE_KOKKOSTSQR_COMPLEX
               {
                 NormalGenerator<int, complex<float> > normgenC (iseed);
                 NormalGenerator<int, float> normgenS (iseed);
@@ -732,11 +732,11 @@ namespace TSQR {
                 doPrintFieldNames = false;
                 normgenZ.getSeed (iseed);
               }
-#else // NOT HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#else // NOT HAVE_KOKKOSTSQR_COMPLEX
               TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                                  "Trilinos was not built with "
                                  "complex arithmetic support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
+#endif // HAVE_KOKKOSTSQR_COMPLEX
             }
         }
     }

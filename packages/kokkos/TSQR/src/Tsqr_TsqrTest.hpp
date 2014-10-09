@@ -43,9 +43,9 @@
 #define __TSQR_Test_TsqrTest_hpp
 
 #include <Tsqr.hpp>
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
 #  include <TbbTsqr.hpp>
-#endif // HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
 #include <Tsqr_TestSetup.hpp>
 #include <Tsqr_GlobalVerify.hpp>
 #include <Tsqr_printGlobalMatrix.hpp>
@@ -276,7 +276,7 @@ namespace TSQR {
 
       if (which == "MpiTbbTSQR")
         {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
           using Teuchos::RCP;
           typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
           typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
@@ -294,7 +294,7 @@ namespace TSQR {
           actual_cache_size_hint = tsqr.cache_size_hint();
 #else
           throw std::logic_error("TSQR not built with Intel TBB support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
         }
       else if (which == "MpiSeqTSQR")
         {
@@ -357,11 +357,11 @@ namespace TSQR {
                 human_readable_name = "MPI parallel / cache-blocked TSQR";
               else if (which == "MpiTbbTSQR")
                 {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
                   human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
 #else
                   throw std::logic_error("TSQR not built with Intel TBB support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
                 }
               else
                 throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
@@ -371,10 +371,10 @@ namespace TSQR {
                    << "# rows: " << nrows_global << endl
                    << "# columns: " << ncols << endl
                    << "# MPI processes: " << nprocs << endl;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
               if (which == "MpiTbbTSQR")
                 cout << "# cores per process = " << num_cores << endl;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
               cout << "Cache size hint in bytes: " << actual_cache_size_hint << endl
                    << "Contiguous cache blocks? " << contiguousCacheBlocks << endl
                    << "Absolute residual $\\| A - Q R \\|_2: "
@@ -408,14 +408,14 @@ namespace TSQR {
                    << "," << nrows_global
                    << "," << ncols
                    << "," << nprocs;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
               if (which == "MpiTbbTSQR")
                 cout << "," << num_cores;
               else
                 cout << ",1";
 #else
               cout << ",1" << endl;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
               cout << "," << actual_cache_size_hint
                    << "," << contiguousCacheBlocks
                    << "," << results[0]
@@ -666,7 +666,7 @@ namespace TSQR {
 
       if (which == "MpiTbbTSQR")
         {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
           using Teuchos::RCP;
           typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
           typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
@@ -687,7 +687,7 @@ namespace TSQR {
           actual_cache_size_hint = tsqr.cache_size_hint();
 #else
           throw std::logic_error("TSQR not built with Intel TBB support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
         }
       else if (which == "MpiSeqTSQR")
         {
@@ -728,11 +728,11 @@ namespace TSQR {
                 human_readable_name = "MPI parallel / cache-blocked TSQR";
               else if (which == "MpiTbbTSQR")
                 {
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
                   human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
 #else
                   throw std::logic_error("TSQR not built with Intel TBB support");
-#endif // HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
                 }
               else
                 throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
@@ -743,10 +743,10 @@ namespace TSQR {
                    << "# columns: " << ncols << endl
                    << "# MPI processes: " << nprocs << endl;
 
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
               if (which == "MpiTbbTSQR")
                 cout << "# cores per process: " << num_cores << endl;
-#endif // HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
 
               cout << "Cache size hint in bytes: " << actual_cache_size_hint << endl
                    << "contiguous cache blocks? " << contiguousCacheBlocks << endl
@@ -780,14 +780,14 @@ namespace TSQR {
                    << "," << nrows_global
                    << "," << ncols
                    << "," << nprocs;
-#ifdef HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#ifdef HAVE_KOKKOSTSQR_TBB
               if (which == "MpiTbbTSQR")
                 cout << "," << num_cores;
               else
                 cout << ",1";
 #else
               cout << ",1";
-#endif // HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
+#endif // HAVE_KOKKOSTSQR_TBB
               cout << "," << actual_cache_size_hint
                    << "," << contiguousCacheBlocks
                    << "," << ntrials
