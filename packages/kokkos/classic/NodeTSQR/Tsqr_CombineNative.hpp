@@ -45,11 +45,11 @@
 #ifndef __TSQR_CombineNative_hpp
 #define __TSQR_CombineNative_hpp
 
+#include <Teuchos_BLAS.hpp>
 #include <Teuchos_LAPACK.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 #include "Tsqr_ApplyType.hpp"
-#include "Tsqr_Blas.hpp"
 #include "Tsqr_CombineDefault.hpp"
 
 
@@ -79,9 +79,9 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
 
   private:
-    typedef BLAS< ordinal_type, scalar_type > blas_type;
-    typedef Teuchos::LAPACK< ordinal_type, scalar_type > lapack_type;
-    typedef CombineDefault< ordinal_type, scalar_type > combine_default_type;
+    typedef Teuchos::BLAS<ordinal_type, scalar_type> blas_type;
+    typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
+    typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
   public:
 
@@ -188,9 +188,9 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
 
   private:
-    typedef BLAS< ordinal_type, scalar_type > blas_type;
-    typedef Teuchos::LAPACK< ordinal_type, scalar_type > lapack_type;
-    typedef CombineDefault< ordinal_type, scalar_type > combine_default_type;
+    typedef Teuchos::BLAS<ordinal_type, scalar_type> blas_type;
+    typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
+    typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
   public:
     CombineNative () {}
@@ -289,9 +289,9 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
 
   private:
-    typedef BLAS< ordinal_type, scalar_type > blas_type;
-    typedef Teuchos::LAPACK< ordinal_type, scalar_type > lapack_type;
-    typedef CombineDefault< ordinal_type, scalar_type > combine_default_type;
+    typedef Teuchos::BLAS<ordinal_type, scalar_type> blas_type;
+    typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
+    typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
   public:
     CombineNative () {}
@@ -423,7 +423,9 @@ namespace TSQR {
       Scalar* const A_1kp1 = &A[ 0 + (k+1) * lda ];
 
       lapack.LARFG (m + 1, &R_kk, A_1k, 1, &tau[k]);
-      blas.GEMV ("T", m, n-k-1, ONE, A_1kp1, lda, A_1k, 1, ZERO, work, 1);
+      // FIXME (mfh 08 Oct 2014) Should this be TRANS or CONJ_TRANS?
+      // It was "T" before.
+      blas.GEMV (Teuchos::TRANS, m, n-k-1, ONE, A_1kp1, lda, A_1k, 1, ZERO, work, 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
         Scalar& R_kj = R[ k + j*ldr ];
@@ -476,24 +478,24 @@ namespace TSQR {
         j_end = ncols_Q; // exclusive
         j_step = +1;
       }
-    for (Ordinal j = j_start; j != j_end; j += j_step)
-      {
-        const Scalar* const A_1j = &A[ 0 + j*lda ];
+    for (Ordinal j = j_start; j != j_end; j += j_step) {
+      const Scalar* const A_1j = &A[ 0 + j*lda ];
 
-        //blas.GEMV ("T", m, ncols_C, ONE, C_bot, ldc_bot, A_1j, 1, ZERO, &y[0], 1);
-        for (Ordinal i = 0; i < ncols_C; ++i)
-          {
-            work[i] = ZERO;
-            for (Ordinal k = 0; k < m; ++k)
-              work[i] += A_1j[k] * C_bot[ k + i*ldc_bot ];
+      //blas.GEMV ("T", m, ncols_C, ONE, C_bot, ldc_bot, A_1j, 1, ZERO, &y[0], 1);
+      for (Ordinal i = 0; i < ncols_C; ++i) {
+        work[i] = ZERO;
+        for (Ordinal k = 0; k < m; ++k) {
+          work[i] += A_1j[k] * C_bot[ k + i*ldc_bot ];
+        }
 
-            work[i] += C_top[ j + i*ldc_top ];
-          }
-        for (Ordinal k = 0; k < ncols_C; ++k)
-          C_top[ j + k*ldc_top ] -= tau[j] * work[k];
-
-        blas.GER (m, ncols_C, -tau[j], A_1j, 1, work, 1, C_bot, ldc_bot);
+        work[i] += C_top[ j + i*ldc_top ];
       }
+      for (Ordinal k = 0; k < ncols_C; ++k) {
+        C_top[ j + k*ldc_top ] -= tau[j] * work[k];
+      }
+
+      blas.GER (m, ncols_C, -tau[j], A_1j, 1, work, 1, C_bot, ldc_bot);
+    }
   }
 
 
@@ -512,30 +514,33 @@ namespace TSQR {
     lapack_type lapack;
     blas_type blas;
 
-    for (Ordinal k = 0; k < n; ++k)
+    for (Ordinal k = 0; k < n; ++k) {
       work[k] = ZERO;
+    }
 
-    for (Ordinal k = 0; k < n-1; ++k)
-      {
-        Scalar& R_top_kk = R_top[ k + k * ldr_top ];
-        Scalar* const R_bot_1k = &R_bot[ 0 + k * ldr_bot ];
-        Scalar* const R_bot_1kp1 = &R_bot[ 0 + (k+1) * ldr_bot ];
+    for (Ordinal k = 0; k < n-1; ++k) {
+      Scalar& R_top_kk = R_top[ k + k * ldr_top ];
+      Scalar* const R_bot_1k = &R_bot[ 0 + k * ldr_bot ];
+      Scalar* const R_bot_1kp1 = &R_bot[ 0 + (k+1) * ldr_bot ];
 
-        // k+2: 1 element in R_top (R_top(k,k)), and k+1 elements in
-        // R_bot (R_bot(1:k,k), in 1-based indexing notation).
-        lapack.LARFG (k+2, &R_top_kk, R_bot_1k, 1, &tau[k]);
-        // One-based indexing, Matlab version of the GEMV call below:
-        // work(1:k) := R_bot(1:k,k+1:n)' * R_bot(1:k,k)
-        blas.GEMV ("T", k+1, n-k-1, ONE, R_bot_1kp1, ldr_bot, R_bot_1k, 1, ZERO, work, 1);
+      // k+2: 1 element in R_top (R_top(k,k)), and k+1 elements in
+      // R_bot (R_bot(1:k,k), in 1-based indexing notation).
+      lapack.LARFG (k+2, &R_top_kk, R_bot_1k, 1, &tau[k]);
+      // One-based indexing, Matlab version of the GEMV call below:
+      // work(1:k) := R_bot(1:k,k+1:n)' * R_bot(1:k,k)
 
-        for (Ordinal j = k+1; j < n; ++j)
-          {
-            Scalar& R_top_kj = R_top[ k + j*ldr_top ];
-            work[j-k-1] += R_top_kj;
-            R_top_kj -= tau[k] * work[j-k-1];
-          }
-        blas.GER (k+1, n-k-1, -tau[k], R_bot_1k, 1, work, 1, R_bot_1kp1, ldr_bot);
+      // FIXME (mfh 08 Oct 2014) Should this be TRANS or CONJ_TRANS?
+      // It was "T" before.
+      blas.GEMV (Teuchos::TRANS, k+1, n-k-1, ONE, R_bot_1kp1, ldr_bot,
+                 R_bot_1k, 1, ZERO, work, 1);
+
+      for (Ordinal j = k+1; j < n; ++j) {
+        Scalar& R_top_kj = R_top[ k + j*ldr_top ];
+        work[j-k-1] += R_top_kj;
+        R_top_kj -= tau[k] * work[j-k-1];
       }
+      blas.GER (k+1, n-k-1, -tau[k], R_bot_1k, 1, work, 1, R_bot_1kp1, ldr_bot);
+    }
     Scalar& R_top_nn = R_top[ (n-1) + (n-1)*ldr_top ];
     Scalar* const R_bot_1n = &R_bot[ 0 + (n-1)*ldr_bot ];
 

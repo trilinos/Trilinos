@@ -929,20 +929,21 @@ namespace TSQR {
       bool contiguousCacheBlocks_;
 
       void
-      multBlock (BLAS<LocalOrdinal, Scalar>& blas,
+      multBlock (Teuchos::BLAS<LocalOrdinal, Scalar>& blas,
                  const view_type& Q_cur,
                  Matrix<LocalOrdinal, Scalar>& Q_temp)
       {
-        const LocalOrdinal numCols = Q_cur.ncols();
+        using Teuchos::NO_TRANS;
+        const LocalOrdinal numCols = Q_cur.ncols ();
 
         // GEMM doesn't like aliased arguments, so we use a copy.  We
         // only copy the current cache block, rather than all of Q;
         // this saves memory.
-        Q_temp.reshape (Q_cur.nrows(), numCols);
+        Q_temp.reshape (Q_cur.nrows (), numCols);
         Q_temp.copy (Q_cur);
 
         // Q_cur := Q_temp * B.
-        blas.GEMM ("N", "N", Q_cur.nrows(), numCols, numCols,
+        blas.GEMM (NO_TRANS, NO_TRANS, Q_cur.nrows(), numCols, numCols,
                    Teuchos::ScalarTraits<Scalar>::one(),
                    Q_temp.get(), Q_temp.lda(), B_.get(), B_.lda(),
                    Scalar(0), Q_cur.get(), Q_cur.lda());
@@ -962,7 +963,7 @@ namespace TSQR {
         // routine (which forbids aliasing of any input argument and
         // the output argument).
         Matrix<LocalOrdinal, Scalar> Q_temp;
-        BLAS<LocalOrdinal, Scalar> blas;
+        Teuchos::BLAS<LocalOrdinal, Scalar> blas;
         while (iter != end)
           {
             view_type Q_cur = *iter;

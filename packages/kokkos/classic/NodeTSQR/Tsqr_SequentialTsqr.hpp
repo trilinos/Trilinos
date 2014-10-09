@@ -134,6 +134,7 @@ namespace TSQR {
     typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view;
     typedef std::pair<mat_view, mat_view> block_pair_type;
     typedef std::pair<const_mat_view, const_mat_view> const_block_pair_type;
+    typedef Teuchos::BLAS<LocalOrdinal, Scalar> blas_type;
 
     /// \brief Factor the first cache block of the matrix.
     ///
@@ -752,12 +753,15 @@ namespace TSQR {
                const LocalOrdinal ldb,
                const bool contiguous_cache_blocks) const
     {
+      using Teuchos::NO_TRANS;
+
       // We don't do any other error checking here (e.g., matrix
       // dimensions), though it would be a good idea to do so.
 
       // Take the easy exit if available.
-      if (ncols == 0 || nrows == 0)
+      if (ncols == 0 || nrows == 0) {
         return;
+      }
 
       // Compute Q := Q*B by iterating through cache blocks of Q.
       // This iteration works much like iteration through cache blocks
@@ -766,25 +770,24 @@ namespace TSQR {
       // restructuring of this code would parallelize nicely using
       // OpenMP.
       CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
-      BLAS< LocalOrdinal, Scalar > blas;
+      blas_type blas;
       mat_view Q_rest (nrows, ncols, Q, ldq);
-      Matrix< LocalOrdinal, Scalar >
+      Matrix<LocalOrdinal, Scalar>
         Q_cur_copy (LocalOrdinal(0), LocalOrdinal(0)); // will be resized
-      while (! Q_rest.empty())
-        {
-          mat_view Q_cur =
-            blocker.split_top_block (Q_rest, contiguous_cache_blocks);
+      while (! Q_rest.empty ()) {
+        mat_view Q_cur =
+          blocker.split_top_block (Q_rest, contiguous_cache_blocks);
 
-          // GEMM doesn't like aliased arguments, so we use a copy.
-          // We only copy the current cache block, rather than all of
-          // Q; this saves memory.
-          Q_cur_copy.reshape (Q_cur.nrows(), ncols);
-          Q_cur_copy.copy (Q_cur);
-          // Q_cur := Q_cur_copy * B.
-          blas.GEMM ("N", "N", Q_cur.nrows(), ncols, ncols, Scalar(1),
-                     Q_cur_copy.get(), Q_cur_copy.lda(), B, ldb,
-                     Scalar(0), Q_cur.get(), Q_cur.lda());
-        }
+        // GEMM doesn't like aliased arguments, so we use a copy.
+        // We only copy the current cache block, rather than all of
+        // Q; this saves memory.
+        Q_cur_copy.reshape (Q_cur.nrows (), ncols);
+        Q_cur_copy.copy (Q_cur);
+        // Q_cur := Q_cur_copy * B.
+        blas.GEMM (NO_TRANS, NO_TRANS, Q_cur.nrows (), ncols, ncols,
+                   Scalar (1), Q_cur_copy.get (), Q_cur_copy.lda (), B, ldb,
+                   Scalar (0), Q_cur.get (), Q_cur.lda ());
+      }
     }
 
     /// \brief Cache block A_in into A_out.

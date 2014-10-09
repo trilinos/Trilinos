@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -43,9 +43,8 @@
 #define __TSQR_Tsqr_LocalVerify_hpp
 
 #include <Tsqr_ScalarTraits.hpp>
-#include <Tsqr_Blas.hpp>
 #include <Tsqr_Util.hpp>
-
+#include <Teuchos_BLAS.hpp>
 #include <cmath>
 #include <limits>
 #include <utility> // std::pair, std::make_pair
@@ -58,24 +57,24 @@ namespace TSQR {
 
   template< class Ordinal, class Scalar >
   typename ScalarTraits< Scalar >::magnitude_type
-  local_frobenius_norm (const Ordinal nrows_local, 
-			const Ordinal ncols,
-			const Scalar  A_local[],
-			const Ordinal lda_local)
+  local_frobenius_norm (const Ordinal nrows_local,
+                        const Ordinal ncols,
+                        const Scalar  A_local[],
+                        const Ordinal lda_local)
   {
     typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
-    
+
     // FIXME (mfh 22 Apr 2010) This function does no scaling of
     // intermediate quantities, so it might overflow unnecessarily.
     magnitude_type result (0);
     for (Ordinal j = 0; j < ncols; j++)
       {
-	const Scalar* const cur_col = &A_local[j*lda_local];
-	for (Ordinal i = 0; i < nrows_local; ++i)
-	  {
-	    const magnitude_type abs_xi = ScalarTraits< Scalar >::abs (cur_col[i]);
-	    result = result + abs_xi * abs_xi;
-	  }
+        const Scalar* const cur_col = &A_local[j*lda_local];
+        for (Ordinal i = 0; i < nrows_local; ++i)
+          {
+            const magnitude_type abs_xi = ScalarTraits< Scalar >::abs (cur_col[i]);
+            result = result + abs_xi * abs_xi;
+          }
       }
     return sqrt (result);
   }
@@ -83,10 +82,10 @@ namespace TSQR {
 
   template< class Ordinal, class Scalar >
   bool
-  NaN_in_matrix (const Ordinal nrows, 
-		 const Ordinal ncols, 
-		 const Scalar A[], 
-		 const Ordinal lda)
+  NaN_in_matrix (const Ordinal nrows,
+                 const Ordinal ncols,
+                 const Scalar A[],
+                 const Ordinal lda)
   {
     // Testing whether a NaN is present in A only makes sense if it is
     // possible for NaNs not to signal.  Otherwise the NaNs would have
@@ -96,17 +95,17 @@ namespace TSQR {
     // all.
     if (std::numeric_limits<Scalar>::has_quiet_NaN)
       {
-	for (Ordinal j = 0; j < ncols; j++)
-	  for (Ordinal i = 0; i < nrows; i++)
-	    {
+        for (Ordinal j = 0; j < ncols; j++)
+          for (Ordinal i = 0; i < nrows; i++)
+            {
 #ifdef __CUDACC__
               if (isnan (A[i + j*lda]))
 #else
-	      if (std::isnan (A[i + j*lda]))
+              if (std::isnan (A[i + j*lda]))
 #endif
-		return true;
-	    }
-	return false;
+                return true;
+            }
+        return false;
       }
     else
       return false;
@@ -115,10 +114,10 @@ namespace TSQR {
 
   template< class Ordinal, class Scalar >
   bool
-  NaN_in_matrix (const Ordinal nrows, 
-		 const Ordinal ncols, 
-		 const std::vector<Scalar>& A, 
-		 const Ordinal lda)
+  NaN_in_matrix (const Ordinal nrows,
+                 const Ordinal ncols,
+                 const std::vector<Scalar>& A,
+                 const Ordinal lda)
   {
     const Scalar* const A_ptr = &A[0];
     return NaN_in_matrix (nrows, ncols, A_ptr, lda);
@@ -129,68 +128,70 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   typename ScalarTraits< Scalar >::magnitude_type
   localOrthogonality (const Ordinal nrows,
-		      const Ordinal ncols,
-		      const Scalar Q[],
-		      const Ordinal ldq)
+                      const Ordinal ncols,
+                      const Scalar Q[],
+                      const Ordinal ldq)
   {
     const Scalar ZERO (0);
     const Scalar ONE (1);
 
-    BLAS<Ordinal, Scalar> blas;
-  
+    Teuchos::BLAS<Ordinal, Scalar> blas;
+
     std::vector<Scalar> AbsOrthog (ncols * ncols, std::numeric_limits<Scalar>::quiet_NaN());
     const Ordinal AbsOrthog_stride = ncols;
 
     // Compute AbsOrthog := Q' * Q - I.  First, compute Q' * Q:
     if (ScalarTraits< Scalar >::is_complex)
-      blas.GEMM ("C", "N", ncols, ncols, nrows, ONE, Q, ldq, Q, ldq, 
-		 ZERO, &AbsOrthog[0], AbsOrthog_stride);
+      blas.GEMM (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ncols, ncols, nrows,
+                 ONE, Q, ldq, Q, ldq, ZERO, &AbsOrthog[0], AbsOrthog_stride);
     else
-      blas.GEMM ("T", "N", ncols, ncols, nrows, ONE, Q, ldq, Q, ldq, 
-		 ZERO, &AbsOrthog[0], AbsOrthog_stride);
+      blas.GEMM (Teuchos::TRANS, Teuchos::NO_TRANS, ncols, ncols, nrows,
+                 ONE, Q, ldq, Q, ldq, ZERO, &AbsOrthog[0], AbsOrthog_stride);
 
     // Now, compute (Q^T*Q) - I.
-    for (Ordinal j = 0; j < ncols; j++)
+    for (Ordinal j = 0; j < ncols; ++j) {
       AbsOrthog[j + j*AbsOrthog_stride] = AbsOrthog[j + j*AbsOrthog_stride] - ONE;
+    }
 
     // Now AbsOrthog == Q^T * Q - I.  Compute and return its Frobenius norm.
     return local_frobenius_norm (ncols, ncols, &AbsOrthog[0], AbsOrthog_stride);
   }
 
 
-  
+
   template< class Ordinal, class Scalar >
   typename ScalarTraits< Scalar >::magnitude_type
   local_relative_orthogonality (const Ordinal nrows,
-				const Ordinal ncols,
-				const Scalar Q[],
-				const Ordinal ldq,
-				const typename ScalarTraits< Scalar >::magnitude_type A_norm_F)
+                                const Ordinal ncols,
+                                const Scalar Q[],
+                                const Ordinal ldq,
+                                const typename ScalarTraits< Scalar >::magnitude_type A_norm_F)
   {
     typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
     const Scalar ZERO (0);
     const Scalar ONE (1);
 
     const bool relative = false; // whether to scale $\|I-Q^T*Q\|_F$ by $\|A\|_F$
-    BLAS<Ordinal, Scalar> blas;
-  
+    Teuchos::BLAS<Ordinal, Scalar> blas;
+
     std::vector<Scalar> AbsOrthog (ncols * ncols, std::numeric_limits<Scalar>::quiet_NaN());
     const Ordinal AbsOrthog_stride = ncols;
 
     // Compute AbsOrthog := Q' * Q - I.  First, compute Q' * Q:
     if (ScalarTraits< Scalar >::is_complex)
-      blas.GEMM ("C", "N", ncols, ncols, nrows, ONE, Q, ldq, Q, ldq, 
-		 ZERO, &AbsOrthog[0], AbsOrthog_stride);
+      blas.GEMM (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ncols, ncols, nrows,
+                 ONE, Q, ldq, Q, ldq, ZERO, &AbsOrthog[0], AbsOrthog_stride);
     else
-      blas.GEMM ("T", "N", ncols, ncols, nrows, ONE, Q, ldq, Q, ldq, 
-		 ZERO, &AbsOrthog[0], AbsOrthog_stride);
+      blas.GEMM (Teuchos::TRANS, Teuchos::NO_TRANS, ncols, ncols, nrows,
+                 ONE, Q, ldq, Q, ldq, ZERO, &AbsOrthog[0], AbsOrthog_stride);
 
     // Now, compute (Q^T*Q) - I.
-    for (Ordinal j = 0; j < ncols; j++)
+    for (Ordinal j = 0; j < ncols; ++j) {
       AbsOrthog[j + j*AbsOrthog_stride] = AbsOrthog[j + j*AbsOrthog_stride] - ONE;
+    }
 
     // Now AbsOrthog == Q^T * Q - I.  Compute its Frobenius norm.
-    const magnitude_type AbsOrthog_norm_F = 
+    const magnitude_type AbsOrthog_norm_F =
       local_frobenius_norm (ncols, ncols, &AbsOrthog[0], AbsOrthog_stride);
 
     // Return the orthogonality measure
@@ -200,26 +201,27 @@ namespace TSQR {
 
   template< class Ordinal, class Scalar >
   typename ScalarTraits< Scalar >::magnitude_type
-  localResidual (const Ordinal nrows, 
-		 const Ordinal ncols,
-		 const Scalar A[],
-		 const Ordinal lda,
-		 const Scalar Q[],
-		 const Ordinal ldq,
-		 const Scalar R[],
-		 const Ordinal ldr)
+  localResidual (const Ordinal nrows,
+                 const Ordinal ncols,
+                 const Scalar A[],
+                 const Ordinal lda,
+                 const Scalar Q[],
+                 const Ordinal ldq,
+                 const Scalar R[],
+                 const Ordinal ldr)
   {
+    using Teuchos::NO_TRANS;
     typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
 
     std::vector< Scalar > AbsResid (nrows * ncols, std::numeric_limits< Scalar >::quiet_NaN());
     const Ordinal AbsResid_stride = nrows;
-    BLAS< Ordinal, Scalar > blas;
+    Teuchos::BLAS<Ordinal, Scalar> blas;
     const magnitude_type ONE (1);
 
     // A_copy := A_copy - Q * R
     copy_matrix (nrows, ncols, &AbsResid[0], AbsResid_stride, A, lda);
-    blas.GEMM ("N", "N", nrows, ncols, ncols, -ONE, Q, ldq, R, ldr, 
-	       ONE, &AbsResid[0], AbsResid_stride);
+    blas.GEMM (NO_TRANS, NO_TRANS, nrows, ncols, ncols, -ONE, Q, ldq, R, ldr,
+               ONE, &AbsResid[0], AbsResid_stride);
 
     return local_frobenius_norm (nrows, ncols, &AbsResid[0], AbsResid_stride);
   }
@@ -227,21 +229,22 @@ namespace TSQR {
 
   template< class Ordinal, class Scalar >
   typename ScalarTraits< Scalar >::magnitude_type
-  local_relative_residual (const Ordinal nrows, 
-			   const Ordinal ncols,
-			   const Scalar A[],
-			   const Ordinal lda,
-			   const Scalar Q[],
-			   const Ordinal ldq,
-			   const Scalar R[],
-			   const Ordinal ldr,
-			   const typename ScalarTraits< Scalar >::magnitude_type A_norm_F)
+  local_relative_residual (const Ordinal nrows,
+                           const Ordinal ncols,
+                           const Scalar A[],
+                           const Ordinal lda,
+                           const Scalar Q[],
+                           const Ordinal ldq,
+                           const Scalar R[],
+                           const Ordinal ldr,
+                           const typename ScalarTraits< Scalar >::magnitude_type A_norm_F)
   {
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    using Teuchos::NO_TRANS;
+    typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
 
-    std::vector< Scalar > AbsResid (nrows * ncols, std::numeric_limits< Scalar >::quiet_NaN());
+    std::vector<Scalar> AbsResid (nrows * ncols, std::numeric_limits<Scalar>::quiet_NaN ());
     const Ordinal AbsResid_stride = nrows;
-    BLAS< Ordinal, Scalar > blas;
+    Teuchos::BLAS<Ordinal, Scalar> blas;
     const magnitude_type ONE (1);
 
     // if (b_debug)
@@ -259,13 +262,13 @@ namespace TSQR {
     // if (NaN_in_matrix (nrows, ncols, AbsResid, AbsResid_stride))
     //   cerr << "relative_residual: matrix AbsResid := A contains a NaN" << endl;
 
-    blas.GEMM ("N", "N", nrows, ncols, ncols, -ONE, Q, ldq, R, ldr, 
-	       ONE, &AbsResid[0], AbsResid_stride);
+    blas.GEMM (NO_TRANS, NO_TRANS, nrows, ncols, ncols, -ONE, Q, ldq, R, ldr,
+               ONE, &AbsResid[0], AbsResid_stride);
 
     // if (NaN_in_matrix (nrows, ncols, AbsResid, AbsResid_stride))
     //   cerr << "relative_residual: matrix AbsResid := A - Q*R contains a NaN" << endl;
 
-    const magnitude_type absolute_residual = 
+    const magnitude_type absolute_residual =
       local_frobenius_norm (nrows, ncols, &AbsResid[0], AbsResid_stride);
 
     // if (b_debug)
@@ -291,14 +294,14 @@ namespace TSQR {
   /// \param Q [in] Column-oriented nrows by ncols matrix with leading
   ///   dimension ldq; computed Q factor of A
   /// \param ldq [in] Leading dimension of the matrix Q; ldq >= nrows
-  /// \param R [in] Column-oriented upper triangular ncols by ncols 
+  /// \param R [in] Column-oriented upper triangular ncols by ncols
   ///   matrix with leading dimension ldr; computed R factor of A
   /// \param ldr [in] Leading dimension of the matrix R; ldr >= ncols
   /// \return $\| A - Q R \|_F$, $\| I - Q^* Q \|_F$, and $\|A\|_F$.
-  ///   The first is the residual of the QR factorization, the second 
+  ///   The first is the residual of the QR factorization, the second
   ///   a measure of the orthogonality of the resulting Q factor, and
-  ///   the third an appropriate scaling factor if we want to compute 
-  ///   the relative residual.  All are measured in the Frobenius 
+  ///   the third an appropriate scaling factor if we want to compute
+  ///   the relative residual.  All are measured in the Frobenius
   ///   (square root of (sum of squares of the matrix entries) norm.
   ///
   /// \note The reason for the elaborate "magnitude_type" construction
@@ -312,14 +315,14 @@ namespace TSQR {
   /// complex numbers (that are isomorphic to pairs of real numbers).
   template< class Ordinal, class Scalar >
   std::vector< typename ScalarTraits< Scalar >::magnitude_type >
-  local_verify (const Ordinal nrows, 
-		const Ordinal ncols, 
-		const Scalar* const A, 
-		const Ordinal lda,
-		const Scalar* const Q, 
-		const Ordinal ldq, 
-		const Scalar* const R, 
-		const Ordinal ldr)
+  local_verify (const Ordinal nrows,
+                const Ordinal ncols,
+                const Scalar* const A,
+                const Ordinal lda,
+                const Scalar* const Q,
+                const Ordinal ldq,
+                const Scalar* const R,
+                const Ordinal ldr)
   {
     typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
     std::vector< magnitude_type > results(3);

@@ -42,20 +42,14 @@
 #ifndef __TSQR_Random_MatrixGenerator_hpp
 #define __TSQR_Random_MatrixGenerator_hpp
 
-#include <Tsqr_Blas.hpp>
 #include <Tsqr_Matrix.hpp>
 #include <Tsqr_ScalarTraits.hpp>
-
 #include <Teuchos_LAPACK.hpp>
-
 #include <algorithm>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Random {
@@ -76,12 +70,12 @@ namespace TSQR {
                    Scalar A[],
                    const Ordinal lda)
       {
-        for (Ordinal j = 0; j < ncols; ++j)
-          {
-            Scalar* const A_j = &A[j*lda];
-            for (Ordinal i = 0; i < nrows; ++i)
-              A_j[i] = gen_();
+        for (Ordinal j = 0; j < ncols; ++j) {
+          Scalar* const A_j = &A[j*lda];
+          for (Ordinal i = 0; i < nrows; ++i) {
+            A_j[i] = gen_ ();
           }
+        }
       }
 
       /// Fill the nrows by ncols matrix Q (in column-major order, with
@@ -101,8 +95,8 @@ namespace TSQR {
         this->fill_random (nrows, ncols, Q, ldq);
 
         // Get ready for QR factorization
-        Teuchos::LAPACK< Ordinal, Scalar > lapack;
-        std::vector< Scalar > tau (std::min(nrows, ncols));
+        Teuchos::LAPACK<Ordinal, Scalar> lapack;
+        std::vector<Scalar> tau (std::min(nrows, ncols));
 
         // Workspace query
         Scalar _lwork1, _lwork2;
@@ -120,7 +114,7 @@ namespace TSQR {
         // you can't compare it using max.
         const Ordinal lwork = checkedCast (std::max (ScalarTraits< Scalar >::abs (_lwork1),
                                                      ScalarTraits< Scalar >::abs (_lwork2)));
-        std::vector< Scalar > work (lwork);
+        std::vector<Scalar> work (lwork);
 
         // Factor the input matrix
         lapack.GEQRF (nrows, ncols, Q, ldq, &tau[0], &work[0], lwork, &info);

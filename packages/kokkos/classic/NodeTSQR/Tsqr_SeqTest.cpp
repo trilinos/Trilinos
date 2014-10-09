@@ -45,7 +45,6 @@
 #include <Tsqr_nodeTestProblem.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
 
-#include <Tsqr_Blas.hpp>
 #include <Tsqr_LocalVerify.hpp>
 #include <Tsqr_Matrix.hpp>
 #include <Tsqr_ScalarTraits.hpp>
@@ -83,30 +82,28 @@ namespace TSQR {
       Scalar d_lwork_geqrf = Scalar (0);
       int INFO = 0;
       lapack.GEQRF (nrows, ncols, NULL, lda, NULL, &d_lwork_geqrf, -1, &INFO);
-      if (INFO != 0)
-        {
-          ostringstream os;
-          os << "LAPACK _GEQRF workspace size query failed: INFO = " << INFO;
-          // It's a logic error and not a runtime error, because the
-          // LWORK query should only fail if the input parameters have
-          // invalid (e.g., out of range) values.
-          throw std::logic_error (os.str());
-        }
+      if (INFO != 0) {
+        ostringstream os;
+        os << "LAPACK _GEQRF workspace size query failed: INFO = " << INFO;
+        // It's a logic error and not a runtime error, because the
+        // LWORK query should only fail if the input parameters have
+        // invalid (e.g., out of range) values.
+        throw std::logic_error (os.str ());
+      }
 
       Scalar d_lwork_orgqr = Scalar (0);
       // A workspace query appropriate for computing the explicit Q
       // factor (nrows x ncols) in place, from the QR factorization of
       // an nrows x ncols matrix with leading dimension lda.
       lapack.UNGQR (nrows, ncols, ncols, NULL, lda, NULL, &d_lwork_orgqr, -1, &INFO);
-      if (INFO != 0)
-        {
-          ostringstream os;
-          os << "LAPACK _UNGQR workspace size query failed: INFO = " << INFO;
-          // It's a logic error and not a runtime error, because the
-          // LWORK query should only fail if the input parameters have
-          // invalid (e.g., out of range) values.
-          throw std::logic_error (os.str());
-        }
+      if (INFO != 0) {
+        ostringstream os;
+        os << "LAPACK _UNGQR workspace size query failed: INFO = " << INFO;
+        // It's a logic error and not a runtime error, because the
+        // LWORK query should only fail if the input parameters have
+        // invalid (e.g., out of range) values.
+        throw std::logic_error (os.str());
+      }
 
       // LAPACK workspace queries do return their results as a
       // double-precision floating-point value, but LAPACK promises
@@ -116,24 +113,22 @@ namespace TSQR {
       // checks for later reference.
       const magnitude_type lwork_geqrf_test =
         static_cast< magnitude_type > (static_cast<Ordinal> (ScalarTraits<Scalar>::abs (d_lwork_geqrf)));
-      if (lwork_geqrf_test != ScalarTraits<Scalar>::abs (d_lwork_geqrf))
-        {
-          ostringstream os;
-          os << "LAPACK _GEQRF workspace query returned a result, "
-             << d_lwork_geqrf << ", bigger than the max Ordinal value, "
-             << std::numeric_limits<Ordinal>::max();
-          throw std::range_error (os.str());
-        }
+      if (lwork_geqrf_test != ScalarTraits<Scalar>::abs (d_lwork_geqrf)) {
+        ostringstream os;
+        os << "LAPACK _GEQRF workspace query returned a result, "
+           << d_lwork_geqrf << ", bigger than the max Ordinal value, "
+           << std::numeric_limits<Ordinal>::max ();
+        throw std::range_error (os.str ());
+      }
       const Scalar lwork_orgqr_test =
-        static_cast< magnitude_type > (static_cast<Ordinal> (ScalarTraits<Scalar>::abs ((d_lwork_orgqr))));
-      if (lwork_orgqr_test != ScalarTraits<Scalar>::abs (d_lwork_orgqr))
-        {
-          ostringstream os;
-          os << "LAPACK _UNGQR workspace query returned a result, "
-             << d_lwork_orgqr << ", bigger than the max Ordinal value, "
-             << std::numeric_limits<Ordinal>::max();
-          throw std::range_error (os.str());
-        }
+        static_cast<magnitude_type> (static_cast<Ordinal> (ScalarTraits<Scalar>::abs ((d_lwork_orgqr))));
+      if (lwork_orgqr_test != ScalarTraits<Scalar>::abs (d_lwork_orgqr)) {
+        ostringstream os;
+        os << "LAPACK _UNGQR workspace query returned a result, "
+           << d_lwork_orgqr << ", bigger than the max Ordinal value, "
+           << std::numeric_limits<Ordinal>::max();
+        throw std::range_error (os.str());
+      }
       return std::max (static_cast<Ordinal> (ScalarTraits<Scalar>::abs (d_lwork_geqrf)),
                        static_cast<Ordinal> (ScalarTraits<Scalar>::abs (d_lwork_orgqr)));
     }

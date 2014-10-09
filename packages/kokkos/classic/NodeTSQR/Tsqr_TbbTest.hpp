@@ -46,7 +46,7 @@
 #include <Tsqr_verifyTimerConcept.hpp>
 #include <Tsqr_Random_NormalGenerator.hpp>
 
-#include <Tsqr_Blas.hpp>
+
 #include <Tsqr_LocalVerify.hpp>
 #include <Tsqr_Matrix.hpp>
 #include <Tsqr_Util.hpp>

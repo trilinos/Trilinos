@@ -43,20 +43,17 @@
 #define __TSQR_Tsqr_SequentialCholeskyQR_hpp
 
 #include <Tsqr_MatView.hpp>
-#include <Tsqr_Blas.hpp>
 #include <Tsqr_CacheBlockingStrategy.hpp>
 #include <Tsqr_CacheBlocker.hpp>
 #include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>
 
+#include <Teuchos_BLAS.hpp>
 #include <Teuchos_LAPACK.hpp>
 
 #include <string>
 #include <utility>
 #include <vector>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
@@ -74,6 +71,8 @@ namespace TSQR {
   private:
     typedef MatView< LocalOrdinal, Scalar > mat_view;
     typedef ConstMatView< LocalOrdinal, Scalar > const_mat_view;
+    typedef Teuchos::BLAS<LocalOrdinal, Scalar> blas_type;
+    typedef Teuchos::LAPACK<LocalOrdinal, Scalar> lapack_type;
 
   public:
     typedef Scalar scalar_type;
@@ -133,11 +132,13 @@ namespace TSQR {
             const LocalOrdinal ldr,
             const bool contiguous_cache_blocks = false)
     {
-      CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
-      LAPACK< LocalOrdinal, Scalar > lapack;
-      BLAS< LocalOrdinal, Scalar > blas;
-      std::vector< Scalar > work (ncols);
-      Matrix< LocalOrdinal, Scalar > ATA (ncols, ncols, Scalar(0));
+      using Teuchos::NO_TRANS;
+      CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
+      blas_type blas;
+      lapack_type lapack;
+
+      std::vector<Scalar> work (ncols);
+      Matrix<LocalOrdinal, Scalar> ATA (ncols, ncols, Scalar(0));
       FactorOutput retval (0);
 
       if (contiguous_cache_blocks)
@@ -154,24 +155,30 @@ namespace TSQR {
           // entries; just the dimensions and current position).
           mat_view A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
           // Process the first cache block: ATA := A_cur^T * A_cur
-          blas.GEMM ("T", "N", ncols, ncols, A_cur.nrows(),
-                     Scalar(1), A_cur.get(), A_cur.lda(), A_cur.get(), A_cur.lda(),
-                     Scalar(0), ATA.get(), ATA.lda());
+          //
+          // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
+          blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, A_cur.nrows (),
+                     Scalar (1), A_cur.get (), A_cur.lda (), A_cur.get (),
+                     A_cur.lda (), Scalar (0), ATA.get (), ATA.lda ());
           // Process the remaining cache blocks in order.
-          while (! A_rest.empty())
-            {
-              A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
-              // ATA := ATA + A_cur^T * A_cur
-              blas.GEMM ("T", "N", ncols, ncols, A_cur.nrows(),
-                         Scalar(1), A_cur.get(), A_cur.lda(), A_cur.get(), A_cur.lda(),
-                         Scalar(1), ATA.get(), ATA.lda());
-            }
+          while (! A_rest.empty ()) {
+            A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+            // ATA := ATA + A_cur^T * A_cur
+            //
+            // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
+            blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, A_cur.nrows (),
+                       Scalar (1), A_cur.get (), A_cur.lda (), A_cur.get (),
+                       A_cur.lda (), Scalar (1), ATA.get (), ATA.lda ());
+          }
         }
-      else
+      else {
         // Compute ATA := A^T * A, using a single BLAS call.
-        blas.GEMM ("T", "N", ncols, ncols, nrows,
-                   Scalar(1), A, lda, A, lda,
-                   Scalar(0), ATA.get(), ATA.lda());
+        //
+        // FIXME (mfh 08 Oct 2014) Shouldn't this be CONJ_TRANS?
+        blas.GEMM (Teuchos::TRANS, NO_TRANS, ncols, ncols, nrows,
+                   Scalar (1), A, lda, A, lda,
+                   Scalar (0), ATA.get (), ATA.lda ());
+      }
 
       // Compute the Cholesky factorization of ATA in place, so that
       // A^T * A = R^T * R, where R is ncols by ncols upper
@@ -193,21 +200,27 @@ namespace TSQR {
       // BLAS' TRSM with the R factor (form POTRF) stored in the upper
       // triangle of ATA.
       {
+        using Teuchos::NO_TRANS;
+        using Teuchos::NON_UNIT_DIAG;
+        using Teuchos::RIGHT_SIDE;
+        using Teuchos::UPPER_TRI;
+
         mat_view A_rest (nrows, ncols, A, lda);
         // This call modifies A_rest.
         mat_view A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
 
         // Compute A_cur / R (Matlab notation for A_cur * R^{-1}) in place.
-        blas.TRSM ("R", "U", "N", "N", A_cur.nrows(), ncols,
-                   Scalar(1), ATA.get(), ATA.lda(), A_cur.get(), A_cur.lda());
+        blas.TRSM (RIGHT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG,
+                   A_cur.nrows (), ncols, Scalar (1), ATA.get (), ATA.lda (),
+                   A_cur.get (), A_cur.lda ());
 
         // Process the remaining cache blocks in order.
-        while (! A_rest.empty())
-          {
-            A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
-            blas.TRSM ("R", "U", "N", "N", A_cur.nrows(), ncols,
-                       Scalar(1), ATA.get(), ATA.lda(), A_cur.get(), A_cur.lda());
-          }
+        while (! A_rest.empty ()) {
+          A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+          blas.TRSM (RIGHT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG,
+                     A_cur.nrows (), ncols, Scalar (1), ATA.get (), ATA.lda (),
+                     A_cur.get (), A_cur.lda ());
+        }
       }
 
       return retval;
