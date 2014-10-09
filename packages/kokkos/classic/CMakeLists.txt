@@ -139,18 +139,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "${Teuchos_ENABLE_COMPLEX}" 
   )
 
-# Whether to enable TSQR's Fortran backend (TSQR::CombineFortran).
-#
-# Defaults to off, even if Trilinos is built with Fortran support.
-# This is because TSQR's Fortran backend must support the Fortran 2003
-# language standard.
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  KokkosClassic_ENABLE_TSQR_Fortran
-  HAVE_KOKKOSCLASSIC_TSQR_FORTRAN
-  "For TSQR: Enable the Fortran back end option for local kernels.  This requires Fortran 90 support, so it is disabled by default, even if you have enabled Fortran in your build.  TSQR will work fine without the Fortran back end, though it may perform better on some platforms.  This option is mainly only of interest to performance tuners."
-  OFF
-  )
-
 # Whether to build TbbTsqr and related classes.
 #
 # Enabled by default (unless disabled explicitly at the command line)

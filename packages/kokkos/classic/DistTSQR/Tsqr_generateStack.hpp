@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,16 +34,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_generateStack_hpp
 #define __TSQR_Test_generateStack_hpp
 
-#include <Tsqr_Blas.hpp>
-#include <Tsqr_Lapack.hpp>
 #include <Tsqr_Matrix.hpp>
 #include <Tsqr_Util.hpp>
 #include <Tsqr_Random_MatrixGenerator.hpp>
@@ -80,10 +78,10 @@ namespace TSQR {
     template<class Ordinal, class Scalar, class Generator>
     static void
     generateStack (Generator& generator,
-		   Matrix<Ordinal, Scalar>& A_global,
-		   const typename Teuchos::ScalarTraits<Scalar>::magnitudeType singularValues[],
-		   const int numProcs,
-		   const Ordinal numCols)
+                   Matrix<Ordinal, Scalar>& A_global,
+                   const typename Teuchos::ScalarTraits<Scalar>::magnitudeType singularValues[],
+                   const int numProcs,
+                   const Ordinal numCols)
     {
       TSQR::Random::MatrixGenerator<Ordinal, Scalar, Generator> matGen (generator);
       const Ordinal numRows = numProcs * numCols;
@@ -91,11 +89,11 @@ namespace TSQR {
       A_global.fill (Scalar(0));
 
       for (int p = 0; p < numProcs; ++p)
-	{
-	  Scalar* const curptr = A_global.get() + p*numCols;
-	  MatView<Ordinal, Scalar> R_cur (numCols, numCols, curptr, numRows);
-	  matGen.fill_random_R (numCols, R_cur.get(), numRows, singularValues);
-	}
+        {
+          Scalar* const curptr = A_global.get() + p*numCols;
+          MatView<Ordinal, Scalar> R_cur (numCols, numCols, curptr, numRows);
+          matGen.fill_random_R (numCols, R_cur.get(), numRows, singularValues);
+        }
     }
 
     /// \brief Generate a random test problem for the distributed-memory part of TSQR.
@@ -111,7 +109,7 @@ namespace TSQR {
     ///
     /// \param A_local [out] ncols by ncols upper triangular matrix
     ///   (on each MPI process)
-    /// 
+    ///
     /// \param A_global [out] Empty on all procs but Proc 0, where it
     ///   starts empty (not required, but this is more efficient) and
     ///   gets resized here
@@ -127,29 +125,29 @@ namespace TSQR {
     template<class Ordinal, class Scalar, class Generator>
     void
     par_tsqr_test_problem (Generator& generator,
-			   Matrix<Ordinal, Scalar>& A_local,
-			   Matrix<Ordinal, Scalar>& A_global, 
-			   const Ordinal ncols,
-			   const Teuchos::RCP<MessengerBase<Scalar> >& messenger)
+                           Matrix<Ordinal, Scalar>& A_local,
+                           Matrix<Ordinal, Scalar>& A_global,
+                           const Ordinal ncols,
+                           const Teuchos::RCP<MessengerBase<Scalar> >& messenger)
     {
       const int nprocs = messenger->size();
       const int my_rank = messenger->rank();
       A_local.reshape (ncols, ncols);
 
       if (my_rank == 0)
-	{
-	  typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
+        {
+          typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
 
-	  std::vector< magnitude_type > singular_values (ncols);
-	  singular_values[0] = magnitude_type(1);
-	  for (Ordinal k = 1; k < ncols; ++k)
-	    singular_values[k] = singular_values[k-1] / magnitude_type(2);
+          std::vector< magnitude_type > singular_values (ncols);
+          singular_values[0] = magnitude_type(1);
+          for (Ordinal k = 1; k < ncols; ++k)
+            singular_values[k] = singular_values[k-1] / magnitude_type(2);
 
-	  generateStack (generator, A_global, &singular_values[0], nprocs, ncols);
-	  scatterStack (A_global, A_local, messenger);
-	}
+          generateStack (generator, A_global, &singular_values[0], nprocs, ncols);
+          scatterStack (A_global, A_local, messenger);
+        }
       else
-	scatterStack (A_global, A_local, messenger);
+        scatterStack (A_global, A_local, messenger);
     }
 
 
