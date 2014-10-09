@@ -152,9 +152,9 @@ Thyra::create_VectorSpace(
   const Ordinal localSubDim = epetra_map->NumMyElements();
   RCP<DefaultSpmdVectorSpace<double> > vs =
     defaultSpmdVectorSpace<double>(
-      comm, localSubDim, epetra_map->NumGlobalElements(),
+      comm, localSubDim, epetra_map->NumGlobalElements64(),
       !epetra_map->DistributedGlobal());
-  TEUCHOS_ASSERT_EQUALITY(vs->dim(), as<Ordinal>(epetra_map->NumGlobalElements()));
+  TEUCHOS_ASSERT_EQUALITY(vs->dim(), as<Ordinal>(epetra_map->NumGlobalElements64()));
   // NOTE: It is impossible to trigger the above exception unless
   // NumGlobalElemenets() overflows 'int'.  However, this is a nice sanity
   // check to stop the code early in case we seen an overflow in practice.
