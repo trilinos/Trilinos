@@ -101,8 +101,8 @@ namespace TSQR {
            class NodeTsqrType = SequentialTsqr<LocalOrdinal, Scalar> >
   class Tsqr {
   public:
-    typedef MatView<LocalOrdinal, Scalar> matview_type;
-    typedef ConstMatView<LocalOrdinal, Scalar> const_matview_type;
+    typedef MatView<LocalOrdinal, Scalar> mat_view_type;
+    typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
     typedef Matrix<LocalOrdinal, Scalar> matrix_type;
 
     typedef Scalar scalar_type;
@@ -296,9 +296,9 @@ namespace TSQR {
       nodeTsqr_->fill_with_zeros (Q_numRows, Q_numCols,
                                   Q_ptr.getRawPtr(), Q_stride,
                                   contiguousCacheBlocks);
-      matview_type Q_rawView (Q_numRows, Q_numCols,
+      mat_view_type Q_rawView (Q_numRows, Q_numCols,
                               Q_ptr.getRawPtr(), Q_stride);
-      matview_type Q_top_block =
+      mat_view_type Q_top_block =
         nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
       if (Q_top_block.nrows() < R.numCols()) {
         std::ostringstream os;
@@ -310,9 +310,9 @@ namespace TSQR {
         throw std::logic_error (os.str());
       }
       {
-        matview_type Q_top (R.numCols(), Q_numCols, Q_top_block.get(),
+        mat_view_type Q_top (R.numCols(), Q_numCols, Q_top_block.get(),
                             Q_top_block.lda());
-        matview_type R_view (R.numRows(), R.numCols(), R.values(), R.stride());
+        mat_view_type R_view (R.numRows(), R.numCols(), R.values(), R.stride());
         distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
       }
       nodeTsqr_->apply (ApplyType::NoTranspose,
@@ -324,8 +324,8 @@ namespace TSQR {
       if (forceNonnegativeDiagonal &&
           ! QR_produces_R_factor_with_nonnegative_diagonal()) {
         details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
-        matview_type Q_mine (Q_numRows, Q_numCols, Q_ptr.getRawPtr(), Q_stride);
-        matview_type R_mine (R.numRows(), R.numCols(), R.values(), R.stride());
+        mat_view_type Q_mine (Q_numRows, Q_numCols, Q_ptr.getRawPtr(), Q_stride);
+        mat_view_type R_mine (R.numRows(), R.numCols(), R.values(), R.stride());
         forcer.force (Q_mine, R_mine);
       }
 
@@ -435,12 +435,12 @@ namespace TSQR {
       nodeTsqr_->fill_with_zeros (numRows, numCols, Q, LDQ,
                                   contiguousCacheBlocks);
       // Wrap the output matrix Q in a "view."
-      matview_type Q_rawView (numRows, numCols, Q, LDQ);
+      mat_view_type Q_rawView (numRows, numCols, Q, LDQ);
       // Wrap the uppermost cache block of Q.  We will need to extract
       // its numCols x numCols uppermost block below.  We can't just
       // extract the numCols x numCols top block from all of Q, in
       // case Q is arranged using contiguous cache blocks.
-      matview_type Q_top_block =
+      mat_view_type Q_top_block =
         nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
       if (Q_top_block.nrows () < numCols) {
         std::ostringstream os;
@@ -455,9 +455,9 @@ namespace TSQR {
       // factor (computed above) to compute the distributed-memory
       // part of the QR factorization.
       {
-        matview_type Q_top (numCols, numCols, Q_top_block.get(),
+        mat_view_type Q_top (numCols, numCols, Q_top_block.get(),
                             Q_top_block.lda());
-        matview_type R_view (numCols, numCols, R, LDR);
+        mat_view_type R_view (numCols, numCols, R, LDR);
         distTsqr_->factorExplicit (R_view, Q_top, forceNonnegativeDiagonal);
       }
       // Apply the local part of the Q factor to the result of the
@@ -473,8 +473,8 @@ namespace TSQR {
       if (forceNonnegativeDiagonal &&
           ! QR_produces_R_factor_with_nonnegative_diagonal ()) {
         details::NonnegDiagForcer<LocalOrdinal, Scalar, STS::isComplex> forcer;
-        matview_type Q_mine (numRows, numCols, Q, LDQ);
-        matview_type R_mine (numCols, numCols, R, LDR);
+        mat_view_type Q_mine (numRows, numCols, Q, LDQ);
+        mat_view_type R_mine (numCols, numCols, R, LDR);
         forcer.force (Q_mine, R_mine);
       }
     }
@@ -531,7 +531,7 @@ namespace TSQR {
             const LocalOrdinal ldr,
             const bool contiguousCacheBlocks = false)
     {
-      MatView< LocalOrdinal, Scalar > R_view (ncols, ncols, R, ldr);
+      mat_view_type R_view (ncols, ncols, R, ldr);
       R_view.fill (STS::zero());
       NodeOutput nodeResults =
         nodeTsqr_->factor (nrows_local, ncols, A_local, lda_local,
@@ -598,7 +598,7 @@ namespace TSQR {
       const bool transposed = applyType.transposed();
 
       // View of this node's local part of the matrix C.
-      matview_type C_view (nrows_local, ncols_C, C_local, ldc_local);
+      mat_view_type C_view (nrows_local, ncols_C, C_local, ldc_local);
 
       // Identify top ncols_C by ncols_C block of C_local.
       // top_block() will set C_top_view to have the correct leading
@@ -608,55 +608,53 @@ namespace TSQR {
       // C_top_view is the topmost cache block of C_local.  It has at
       // least as many rows as columns, but it likely has more rows
       // than columns.
-      matview_type C_view_top_block =
+      mat_view_type C_view_top_block =
         nodeTsqr_->top_block (C_view, contiguousCacheBlocks);
 
       // View of the topmost ncols_C by ncols_C block of C.
-      matview_type C_top_view (ncols_C, ncols_C, C_view_top_block.get(),
-                               C_view_top_block.lda());
+      mat_view_type C_top_view (ncols_C, ncols_C, C_view_top_block.get(),
+                                C_view_top_block.lda());
 
-      if (! transposed)
-        {
-          // C_top (small compact storage) gets a deep copy of the top
-          // ncols_C by ncols_C block of C_local.
-          matrix_type C_top (C_top_view);
+      if (! transposed) {
+        // C_top (small compact storage) gets a deep copy of the top
+        // ncols_C by ncols_C block of C_local.
+        matrix_type C_top (C_top_view);
 
-          // Compute in place on all processors' C_top blocks.
-          distTsqr_->apply (applyType, C_top.ncols(), ncols_Q, C_top.get(),
-                            C_top.lda(), factor_output.second);
+        // Compute in place on all processors' C_top blocks.
+        distTsqr_->apply (applyType, C_top.ncols(), ncols_Q, C_top.get(),
+                          C_top.lda(), factor_output.second);
 
-          // Copy the result from C_top back into the top ncols_C by
-          // ncols_C block of C_local.
-          C_top_view.copy (C_top);
+        // Copy the result from C_top back into the top ncols_C by
+        // ncols_C block of C_local.
+        deep_copy (C_top_view, C_top);
 
-          // Apply the local Q factor (in Q_local and
-          // factor_output.first) to C_local.
-          nodeTsqr_->apply (applyType, nrows_local, ncols_Q,
-                            Q_local, ldq_local, factor_output.first,
-                            ncols_C, C_local, ldc_local,
-                            contiguousCacheBlocks);
-        }
-      else
-        {
-          // Apply the (transpose of the) local Q factor (in Q_local
-          // and factor_output.first) to C_local.
-          nodeTsqr_->apply (applyType, nrows_local, ncols_Q,
-                            Q_local, ldq_local, factor_output.first,
-                            ncols_C, C_local, ldc_local,
-                            contiguousCacheBlocks);
+        // Apply the local Q factor (in Q_local and
+        // factor_output.first) to C_local.
+        nodeTsqr_->apply (applyType, nrows_local, ncols_Q,
+                          Q_local, ldq_local, factor_output.first,
+                          ncols_C, C_local, ldc_local,
+                          contiguousCacheBlocks);
+      }
+      else {
+        // Apply the (transpose of the) local Q factor (in Q_local
+        // and factor_output.first) to C_local.
+        nodeTsqr_->apply (applyType, nrows_local, ncols_Q,
+                          Q_local, ldq_local, factor_output.first,
+                          ncols_C, C_local, ldc_local,
+                          contiguousCacheBlocks);
 
-          // C_top (small compact storage) gets a deep copy of the top
-          // ncols_C by ncols_C block of C_local.
-          matrix_type C_top (C_top_view);
+        // C_top (small compact storage) gets a deep copy of the top
+        // ncols_C by ncols_C block of C_local.
+        matrix_type C_top (C_top_view);
 
-          // Compute in place on all processors' C_top blocks.
-          distTsqr_->apply (applyType, ncols_C, ncols_Q, C_top.get(),
-                            C_top.lda(), factor_output.second);
+        // Compute in place on all processors' C_top blocks.
+        distTsqr_->apply (applyType, ncols_C, ncols_Q, C_top.get(),
+                          C_top.lda(), factor_output.second);
 
-          // Copy the result from C_top back into the top ncols_C by
-          // ncols_C block of C_local.
-          C_top_view.copy (C_top);
-        }
+        // Copy the result from C_top back into the top ncols_C by
+        // ncols_C block of C_local.
+        deep_copy (C_top_view, C_top);
+      }
     }
 
     /// \brief Compute the explicit Q factor from factor()
@@ -707,22 +705,22 @@ namespace TSQR {
                                   ldq_local_out, contiguousCacheBlocks);
       // "Rank" here means MPI rank, not linear algebra rank.
       const rank_type myRank = distTsqr_->rank();
-      if (myRank == 0)
-        {
-          // View of this node's local part of the matrix Q_out.
-          matview_type Q_out_view (nrows_local, ncols_Q_out,
-                                   Q_local_out, ldq_local_out);
+      if (myRank == 0) {
+        // View of this node's local part of the matrix Q_out.
+        mat_view_type Q_out_view (nrows_local, ncols_Q_out,
+                                  Q_local_out, ldq_local_out);
 
-          // View of the topmost cache block of Q_out.  It is
-          // guaranteed to have at least as many rows as columns.
-          matview_type Q_out_top =
-            nodeTsqr_->top_block (Q_out_view, contiguousCacheBlocks);
+        // View of the topmost cache block of Q_out.  It is
+        // guaranteed to have at least as many rows as columns.
+        mat_view_type Q_out_top =
+          nodeTsqr_->top_block (Q_out_view, contiguousCacheBlocks);
 
-          // Fill (topmost cache block of) Q_out with the first
-          // ncols_Q_out columns of the identity matrix.
-          for (ordinal_type j = 0; j < ncols_Q_out; ++j)
-            Q_out_top(j, j) = Scalar(1);
+        // Fill (topmost cache block of) Q_out with the first
+        // ncols_Q_out columns of the identity matrix.
+        for (ordinal_type j = 0; j < ncols_Q_out; ++j) {
+          Q_out_top(j, j) = Scalar (1);
         }
+      }
       apply ("N", nrows_local,
              ncols_Q_in, Q_local_in, ldq_local_in, factorOutput,
              ncols_Q_out, Q_local_out, ldq_local_out,

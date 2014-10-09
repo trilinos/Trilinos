@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -63,7 +63,7 @@ namespace TSQR {
   /// in a way that respects cache blocks) or for \c SequentialTsqr
   /// (whose factor() routine iterates top-down through cache blocks,
   /// and whose apply() and explicit_Q() routines iterate bottom-up
-  /// through cache blocks).  
+  /// through cache blocks).
   ///
   /// The cache blocking strategy is formulated in terms of \c
   /// SequentialTsqr.  All intranode parallel TSQR implementations use
@@ -109,14 +109,14 @@ namespace TSQR {
     ///   <it>not</it> work for arbitrary-precision types whose
     ///   storage is dynamically allocated, even if the amount of
     ///   storage is a constant.  In the latter case, you should
-    ///   specify a nondefault value.  
+    ///   specify a nondefault value.
     ///
     /// \note If Scalar is an arbitrary-precision type whose
     ///   representation length can change at runtime, you should
     ///   construct a new CacheBlockingStrategy object whenever the
     ///   representation length changes.
     CacheBlockingStrategy (const size_t cacheSizeHint = 0,
-			   const size_t sizeOfScalar = sizeof(Scalar)) :
+                           const size_t sizeOfScalar = sizeof(Scalar)) :
       size_of_scalar_ (sizeOfScalar),
       cache_size_hint_ (default_cache_size_hint (cacheSizeHint, sizeOfScalar))
     {}
@@ -135,15 +135,15 @@ namespace TSQR {
     }
 
     /// \brief The cache size hint in bytes.
-    /// 
+    ///
     /// Same as \c cache_size_hint().  This method is deprecated; use
     /// \c cache_size_hint() instead (which returns the same thing.)
-    size_t TEUCHOS_DEPRECATED cache_block_size () const { 
-      return cache_size_hint_; 
+    size_t TEUCHOS_DEPRECATED cache_block_size () const {
+      return cache_size_hint_;
     }
 
     /// \brief The cache size hint in bytes.
-    /// 
+    ///
     /// This may not necessarily equal the suggested cache size (input
     /// to the constructor).  We treat that as a hint rather than a
     /// command.
@@ -161,7 +161,7 @@ namespace TSQR {
     size_t cache_size_hint () const { return cache_size_hint_; }
 
     /// \brief Size of a Scalar object in bytes.
-    /// 
+    ///
     /// See the constructor documentation for an explanation of why
     /// this may not necessarily be sizeof(Scalar).  It should be in
     /// most cases, however.
@@ -169,14 +169,14 @@ namespace TSQR {
 
     //! True if and only if the two strategies are the same.
     bool operator== (const CacheBlockingStrategy& rhs) const {
-      return cache_size_hint() == rhs.cache_size_hint() && 
-	size_of_scalar() == rhs.size_of_scalar();
+      return cache_size_hint() == rhs.cache_size_hint() &&
+        size_of_scalar() == rhs.size_of_scalar();
     }
 
     //! True if and only if the two strategies are not the same.
     bool operator!= (const CacheBlockingStrategy& rhs) const {
       return cache_size_hint() != rhs.cache_size_hint() ||
-	size_of_scalar() != rhs.size_of_scalar();
+        size_of_scalar() != rhs.size_of_scalar();
     }
 
     /// \brief Pointer offset for the cache block with the given index.
@@ -188,25 +188,25 @@ namespace TSQR {
     /// \param index [in] Zero-based index of the cache block.
     /// \param nrows [in] Number of rows in the matrix.
     /// \param ncols [in] Number of columns in the matrix.
-    /// \param nrows_cache_block [in] The value returned by 
+    /// \param nrows_cache_block [in] The value returned by
     ///   \c cache_block_num_rows().
-    /// \param contiguous_cache_blocks [in] Whether the cache 
+    /// \param contiguous_cache_blocks [in] Whether the cache
     ///   blocks in the matrix are stored contiguously.
     LocalOrdinal
     cache_block_offset (const LocalOrdinal index,
-			const LocalOrdinal nrows,
-			const LocalOrdinal ncols,
-			const LocalOrdinal nrows_cache_block,
-			const bool contiguous_cache_blocks) const
+                        const LocalOrdinal nrows,
+                        const LocalOrdinal ncols,
+                        const LocalOrdinal nrows_cache_block,
+                        const bool contiguous_cache_blocks) const
     {
       // Suppress compiler warning for the unused argument.
       (void) nrows;
 
       const LocalOrdinal my_row_start = index * nrows_cache_block;
-      if (contiguous_cache_blocks) 
-	return my_row_start * ncols;
+      if (contiguous_cache_blocks)
+        return my_row_start * ncols;
       else // the common case
-	return my_row_start;
+        return my_row_start;
     }
 
     /// \brief Leading dimension (a.k.a. stride) of the cache block.
@@ -218,28 +218,28 @@ namespace TSQR {
     /// \param index [in] Zero-based index of the cache block.
     /// \param nrows [in] Number of rows in the matrix.
     /// \param ncols [in] Number of columns in the matrix.
-    /// \param lda [in] Leading dimension (a.k.a. stride) of 
+    /// \param lda [in] Leading dimension (a.k.a. stride) of
     ///   the matrix.
-    /// \param nrows_cache_block [in] The value returned by 
+    /// \param nrows_cache_block [in] The value returned by
     ///   \c cache_block_num_rows().
-    /// \param contiguous_cache_blocks [in] Whether the cache 
+    /// \param contiguous_cache_blocks [in] Whether the cache
     ///   blocks in the matrix are stored contiguously.
     LocalOrdinal
     cache_block_stride (const LocalOrdinal index,
-			const LocalOrdinal nrows,
-			const LocalOrdinal ncols,
-			const LocalOrdinal lda,
-			const LocalOrdinal nrows_cache_block,
-			const bool contiguous_cache_blocks) const
+                        const LocalOrdinal nrows,
+                        const LocalOrdinal ncols,
+                        const LocalOrdinal lda,
+                        const LocalOrdinal nrows_cache_block,
+                        const bool contiguous_cache_blocks) const
     {
       if (contiguous_cache_blocks)
-	{
-	  std::pair<LocalOrdinal, LocalOrdinal> result = 
-	    cache_block (index, nrows, ncols, nrows_cache_block);
-	  return result.second; // Number of rows in the cache block
-	}
+        {
+          std::pair<LocalOrdinal, LocalOrdinal> result =
+            cache_block (index, nrows, ncols, nrows_cache_block);
+          return result.second; // Number of rows in the cache block
+        }
       else
-	return lda;
+        return lda;
     }
 
     /// \brief Start and size of cache block number \c index.
@@ -247,7 +247,7 @@ namespace TSQR {
     /// \param index [in] Zero-based index of the cache block.
     /// \param nrows [in] Number of rows in the whole matrix.
     /// \param ncols [in] Number of columns in the whole matrix.
-    /// \param nrows_cache_block [in] The value returned by 
+    /// \param nrows_cache_block [in] The value returned by
     ///   \c cache_block_num_rows().
     ///
     /// \return If the input \c index is in range: The starting row
@@ -256,9 +256,9 @@ namespace TSQR {
     ///   range, then (nrows, 0).
     std::pair<LocalOrdinal, LocalOrdinal>
     cache_block (const LocalOrdinal index,
-		 const LocalOrdinal nrows,
-		 const LocalOrdinal ncols,
-		 const LocalOrdinal nrows_cache_block) const
+                 const LocalOrdinal nrows,
+                 const LocalOrdinal ncols,
+                 const LocalOrdinal nrows_cache_block) const
     {
       // See the comments in num_cache_blocks() for an explanation how
       // the number of cache blocks is computed, so that no cache
@@ -269,83 +269,82 @@ namespace TSQR {
 
       my_row_start = index * nrows_cache_block;
       if (quotient == 0)
-	{ // There is only one cache block.
-	  if (index == 0)
-	    my_nrows = remainder;
-	  else
-	    my_nrows = 0; // Out-of-range block, therefore empty
-	}
+        { // There is only one cache block.
+          if (index == 0)
+            my_nrows = remainder;
+          else
+            my_nrows = 0; // Out-of-range block, therefore empty
+        }
       else if (remainder < ncols)
-	{ // There are quotient cache blocks.
-	  if (index < 0)
-	    my_nrows = 0; // Out-of-range block, therefore empty
-	  else if (index < quotient - 1)
-	    my_nrows = nrows_cache_block;
-	  else if (index == quotient - 1)
-	    // The last cache block gets the leftover rows, so that no
-	    // cache block has fewer than ncols rows.
-	    my_nrows = nrows_cache_block + remainder;
-	  else
-	    my_nrows = 0; // Out-of-range block, therefore empty
-	}
-      else 
-	{ // There are quotient+1 cache blocks.
-	  if (index < 0)
-	    my_nrows = 0; // Out-of-range block, therefore empty
-	  else if (index < quotient)
-	    my_nrows = nrows_cache_block;
-	  else if (index == quotient)
-	    // The last cache block has the leftover rows, which are
-	    // >= ncols and < nrows_cache_block.
-	    my_nrows = remainder;
-	  else
-	    my_nrows = 0; // Out-of-range block, therefore empty
-	}
+        { // There are quotient cache blocks.
+          if (index < 0)
+            my_nrows = 0; // Out-of-range block, therefore empty
+          else if (index < quotient - 1)
+            my_nrows = nrows_cache_block;
+          else if (index == quotient - 1)
+            // The last cache block gets the leftover rows, so that no
+            // cache block has fewer than ncols rows.
+            my_nrows = nrows_cache_block + remainder;
+          else
+            my_nrows = 0; // Out-of-range block, therefore empty
+        }
+      else
+        { // There are quotient+1 cache blocks.
+          if (index < 0)
+            my_nrows = 0; // Out-of-range block, therefore empty
+          else if (index < quotient)
+            my_nrows = nrows_cache_block;
+          else if (index == quotient)
+            // The last cache block has the leftover rows, which are
+            // >= ncols and < nrows_cache_block.
+            my_nrows = remainder;
+          else
+            my_nrows = 0; // Out-of-range block, therefore empty
+        }
       return std::make_pair (my_row_start, my_nrows);
     }
 
     /// \brief Complete description of the cache block.
     ///
     /// "Complete" means that it includes the location as well as the
-    /// layout of the cache block.  This lets you construct a view
-    /// (e.g., \c MatView) of the cache block right away, given a view
-    /// of the whole matrix.
+    /// layout of the cache block.  This lets you construct a view of
+    /// the cache block right away, given a view of the whole matrix.
     ///
     /// \param index [in] Zero-based index of the cache block.
     /// \param nrows [in] Number of rows in the whole matrix.
     /// \param ncols [in] Number of columns in the whole matrix.
-    /// \param lda [in] Leading dimension (a.k.a. stride) of 
+    /// \param lda [in] Leading dimension (a.k.a. stride) of
     ///   the whole matrix.
-    /// \param nrows_cache_block [in] The value returned by 
+    /// \param nrows_cache_block [in] The value returned by
     ///   \c cache_block_num_rows().
-    /// \param contiguous_cache_blocks [in] Whether the cache 
+    /// \param contiguous_cache_blocks [in] Whether the cache
     ///   blocks in the matrix are stored contiguously.
     ///
     /// \return Four LocalOrdinals: The starting row index, the number
     ///   of rows in the cache block, the pointer offset of the cache
     ///   block, and leading dimension of the cache block.
-    /// 
+    ///
     /// \note This method has an \f$O(1)\f$ cost, so that
     ///   parallelization by calling this method repeatedly for a
     ///   sequence of cache block indices is not expensive.
     ///
     std::vector<LocalOrdinal>
     cache_block_details (const LocalOrdinal index,
-			 const LocalOrdinal nrows,
-			 const LocalOrdinal ncols,
-			 const LocalOrdinal lda,
-			 const LocalOrdinal nrows_cache_block,
-			 const bool contiguous_cache_blocks) const
+                         const LocalOrdinal nrows,
+                         const LocalOrdinal ncols,
+                         const LocalOrdinal lda,
+                         const LocalOrdinal nrows_cache_block,
+                         const bool contiguous_cache_blocks) const
     {
-      const std::pair<LocalOrdinal, LocalOrdinal> result = 
-	cache_block (index, nrows, ncols, nrows_cache_block);
+      const std::pair<LocalOrdinal, LocalOrdinal> result =
+        cache_block (index, nrows, ncols, nrows_cache_block);
       const LocalOrdinal my_row_start = result.first;
       const LocalOrdinal my_nrows = result.second;
 
-      const LocalOrdinal offset = 
-	contiguous_cache_blocks ? my_row_start * ncols : my_row_start;
-      const LocalOrdinal stride = 
-	contiguous_cache_blocks ? my_nrows : lda;
+      const LocalOrdinal offset =
+        contiguous_cache_blocks ? my_row_start * ncols : my_row_start;
+      const LocalOrdinal stride =
+        contiguous_cache_blocks ? my_nrows : lda;
 
       std::vector<LocalOrdinal> retval (4);
       retval[0] = my_row_start;
@@ -364,31 +363,31 @@ namespace TSQR {
     ///
     /// \param nrows [in] Number of rows in the matrix.
     /// \param ncols [in] Number of columns in the matrix.
-    /// \param nrows_cache_block [in] The value returned by 
+    /// \param nrows_cache_block [in] The value returned by
     ///   \c cache_block_num_rows().
     ///
     /// \return Total number of cache blocks in the matrix.
     ///
-    LocalOrdinal 
+    LocalOrdinal
     num_cache_blocks (const LocalOrdinal nrows,
-		      const LocalOrdinal ncols,
-		      const LocalOrdinal nrows_cache_block) const
+                      const LocalOrdinal ncols,
+                      const LocalOrdinal nrows_cache_block) const
     {
-      const LocalOrdinal quotient = nrows / nrows_cache_block; 
+      const LocalOrdinal quotient = nrows / nrows_cache_block;
       const LocalOrdinal remainder = nrows - nrows_cache_block * quotient;
 
       if (quotient == 0)
-	// If nrows < nrows_cache_block, then there is only one cache
-	// block, which gets all the rows.
-	return static_cast<LocalOrdinal>(1);
+        // If nrows < nrows_cache_block, then there is only one cache
+        // block, which gets all the rows.
+        return static_cast<LocalOrdinal>(1);
       else if (remainder < ncols)
-	// Don't let the last cache block have fewer than ncols rows.
-	// If it would, merge it with the cache block above it.
-	return quotient;
+        // Don't let the last cache block have fewer than ncols rows.
+        // If it would, merge it with the cache block above it.
+        return quotient;
       else
-	// The last cache block has the leftover rows, which are >=
-	// ncols and < nrows_cache_block.
-	return quotient + 1;
+        // The last cache block has the leftover rows, which are >=
+        // ncols and < nrows_cache_block.
+        return quotient + 1;
     }
 
     /// \brief Number of rows in the top cache block.
@@ -397,7 +396,7 @@ namespace TSQR {
     /// A_bot] with A_top being a cache block and A_bot being the rest
     /// of the matrix, return the number of rows that A_top should
     /// have.
-    /// 
+    ///
     /// \param nrows [in] "Current" number of rows in the matrix.  We
     ///   write "current" because this method is meant to be called
     ///   recursively over the "rest" of the matrix, until the "rest"
@@ -405,14 +404,14 @@ namespace TSQR {
     ///
     /// \param ncols [in] Number of columns in the matrix.
     ///
-    /// \param nrows_cache_block [in] The value returned by 
+    /// \param nrows_cache_block [in] The value returned by
     ///   \c cache_block_num_rows().
-    /// 
+    ///
     /// \return # of rows in top cache block A_top
     LocalOrdinal
     top_block_split_nrows (const LocalOrdinal nrows,
-			   const LocalOrdinal ncols,
-			   const LocalOrdinal nrows_cache_block) const
+                           const LocalOrdinal ncols,
+                           const LocalOrdinal nrows_cache_block) const
     {
       // We want to partition the nrows by ncols matrix A into [A_top;
       // A_bot], where A_top has nrows_cache_block rows.  However, we
@@ -420,11 +419,11 @@ namespace TSQR {
       // then we partition A so that A_top has nrows rows and A_bot is
       // empty.
       if (nrows < nrows_cache_block + ncols)
-	return nrows;
+        return nrows;
       else
-	// Don't ask for a bigger cache block than there are rows in
-	// the matrix left to process.
-	return std::min (nrows_cache_block, nrows);
+        // Don't ask for a bigger cache block than there are rows in
+        // the matrix left to process.
+        return std::min (nrows_cache_block, nrows);
     }
 
     /// \brief Number of rows in the bottom cache block.
@@ -433,20 +432,20 @@ namespace TSQR {
     /// A_bot] with A_bot being a cache block and A_top being the rest
     /// of the matrix, return the number of rows that A_bot should
     /// have.
-    /// 
+    ///
     /// \param nrows [in] "Current" number of rows in the matrix.  We
     ///   write "current" because this method is meant to be called
     ///   recursively over the "rest" of the matrix, until the "rest"
     ///   of the matrix has no more rows (is "empty").
     /// \param ncols [in] Number of columns in the matrix.
-    /// \param nrows_cache_block [in] The value returned by 
+    /// \param nrows_cache_block [in] The value returned by
     ///   \c cache_block_num_rows().
-    /// 
+    ///
     /// \return # of rows in top cache block A_bot
     LocalOrdinal
     bottom_block_split_nrows (const LocalOrdinal nrows,
-			      const LocalOrdinal ncols,
-			      const LocalOrdinal nrows_cache_block) const
+                              const LocalOrdinal ncols,
+                              const LocalOrdinal nrows_cache_block) const
     {
       // We split off the bottom block using the same splitting as if
       // we had split off as many top blocks of nrows_cache_block rows
@@ -459,13 +458,13 @@ namespace TSQR {
 
       LocalOrdinal nrows_bottom;
       if (quotient == 0)
-	nrows_bottom = remainder;
+        nrows_bottom = remainder;
       else if (remainder < ncols)
-	nrows_bottom = nrows_cache_block + remainder;
+        nrows_bottom = nrows_cache_block + remainder;
       else if (remainder >= ncols)
-	nrows_bottom = remainder;
+        nrows_bottom = remainder;
       else
-	throw std::logic_error("Should never get here!");
+        throw std::logic_error("Should never get here!");
       return nrows_bottom;
     }
 
@@ -484,9 +483,9 @@ namespace TSQR {
     /// \param sizeOfScalar [in] Size of the Scalar type in bytes.
     ///
     /// \return Default or revised cache size hint in bytes.
-    size_t 
+    size_t
     default_cache_size_hint (const size_t suggested_cache_size,
-			     const size_t sizeOfScalar) const
+                             const size_t sizeOfScalar) const
     {
       // This is a somewhat arbitrary minimum.  However, our TSQR
       // implementation was optimized for matrices with 20 or fewer
@@ -509,13 +508,13 @@ namespace TSQR {
       // compiler can decide which specialization of std::max to use
       // (the one for size_t, in this case, rather than the one for
       // int, which is the implicit type of the integer constant).
-      const size_t default_cache_size = 
-	std::max (min_cache_size, static_cast<size_t> (65536));
+      const size_t default_cache_size =
+        std::max (min_cache_size, static_cast<size_t> (65536));
 
       // If the suggested cache size is less than the minimum, ignore
       // the suggestion and pick the minimum.
-      return (suggested_cache_size == 0) ? 
-	default_cache_size : std::max (suggested_cache_size, min_cache_size);
+      return (suggested_cache_size == 0) ?
+        default_cache_size : std::max (suggested_cache_size, min_cache_size);
     }
 
     /// \brief "Typical" number of rows per cache block.
@@ -536,7 +535,7 @@ namespace TSQR {
     /// \param ncols [in] Number of columns in the matrix whose QR
     ///   factorization is to be computed using an intranode TSQR
     ///   implementation.
-    LocalOrdinal 
+    LocalOrdinal
     cache_block_num_rows (const LocalOrdinal ncols) const
     {
       // Suppose the cache can hold W words (of size size_of_scalar_
@@ -563,10 +562,10 @@ namespace TSQR {
       // 3. C_cur block: nrows_cache_block by ncols
       // 4. tau array of length ncols
       // 5. workspace array of length ncols
-      // 
+      //
       // That means nrows_cache_block should be <= (W/(2*N) - N/2 -
       // 1).  Obviously this is smaller than for the factorization, so
-      // we use this formula to pick nrows_cache_block.  It should also 
+      // we use this formula to pick nrows_cache_block.  It should also
       // be at least ncols.
 
       const size_t W = cache_size_hint() / size_of_scalar_;
@@ -583,41 +582,41 @@ namespace TSQR {
       const size_t term2 = ncols / 2 + 1;
 
       if (term1 <= term2)
-	{
-	  // The cache must be very small.  Just make the cache blocks
-	  // square.  That will be inefficient, but wil result in
-	  // correct behavior.
-	  return ncols;
-	}
-      else 
-	{
-	  // The compiler can easily prove that term1 - term2 > 0,
-	  // since we've gotten to this point.  Of course that's
-	  // assuming that C++ compilers are smart...
-	  const size_t nrows_cache_block = 
-	    std::max (term1 - term2, static_cast<size_t>(ncols));
+        {
+          // The cache must be very small.  Just make the cache blocks
+          // square.  That will be inefficient, but wil result in
+          // correct behavior.
+          return ncols;
+        }
+      else
+        {
+          // The compiler can easily prove that term1 - term2 > 0,
+          // since we've gotten to this point.  Of course that's
+          // assuming that C++ compilers are smart...
+          const size_t nrows_cache_block =
+            std::max (term1 - term2, static_cast<size_t>(ncols));
 
-	  // Make sure that nrows_cache_block fits in a LocalOrdinal
-	  // type.  We do so by casting the size_t to a LocalOrdinal
-	  // and then back into a size_t.  This should work in the
-	  // typical case of LocalOrdinal=int, and also whenever
-	  // LocalOrdinal's binary representation has no more bits
-	  // than that of size_t.
-	  const LocalOrdinal nrows_cache_block_as_lo = 
-	    static_cast<LocalOrdinal> (nrows_cache_block);
-	  if (static_cast<size_t>(nrows_cache_block_as_lo) != nrows_cache_block)
-	    {
-	      std::ostringstream os;
-	      os << "Error:  While deciding on the number of rows in a cache "
-		"block for sequential TSQR, the decided-upon number of rows "
-		 << nrows_cache_block << " does not fit in a LocalOrdinal "
-		"type, whose max value is " 
-		 << std::numeric_limits<LocalOrdinal>::max() << ".";
-	      throw std::range_error (os.str());
-	    }
-	  else
-	    return static_cast<LocalOrdinal> (nrows_cache_block);
-	}
+          // Make sure that nrows_cache_block fits in a LocalOrdinal
+          // type.  We do so by casting the size_t to a LocalOrdinal
+          // and then back into a size_t.  This should work in the
+          // typical case of LocalOrdinal=int, and also whenever
+          // LocalOrdinal's binary representation has no more bits
+          // than that of size_t.
+          const LocalOrdinal nrows_cache_block_as_lo =
+            static_cast<LocalOrdinal> (nrows_cache_block);
+          if (static_cast<size_t>(nrows_cache_block_as_lo) != nrows_cache_block)
+            {
+              std::ostringstream os;
+              os << "Error:  While deciding on the number of rows in a cache "
+                "block for sequential TSQR, the decided-upon number of rows "
+                 << nrows_cache_block << " does not fit in a LocalOrdinal "
+                "type, whose max value is "
+                 << std::numeric_limits<LocalOrdinal>::max() << ".";
+              throw std::range_error (os.str());
+            }
+          else
+            return static_cast<LocalOrdinal> (nrows_cache_block);
+        }
     }
 
   private:

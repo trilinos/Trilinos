@@ -4,7 +4,7 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
-    
+
   ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
   IF(Teuchos_ENABLE_COMPLEX)
 
@@ -12,7 +12,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       gcrodr_complex_hb
-      SOURCES test_gcrodr_complex_hb.cpp 
+      SOURCES test_gcrodr_complex_hb.cpp
       ARGS
         "--verbose --filename=mhd1280b.cua"
       )

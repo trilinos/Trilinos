@@ -459,7 +459,7 @@ namespace MueLu {
                             std::map<std::pair<BoostVertex, BoostVertex>, std::string>&  edges,
                             BoostProperties&                                             dp,
                             BoostGraph&                                                  graph) const {
-      s)ize_t vind = vindices.size();
+      size_t vind = vindices.size();
 
       for (TwoKeyMap::const_iterator it1 = map_.begin(); it1 != map_.end(); it1++) {
         if (vindices.find(it1->first) == vindices.end()) {

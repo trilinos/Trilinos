@@ -42,11 +42,12 @@
 #ifndef __Tsqr_Random_GlobalMatrix_hpp
 #define __Tsqr_Random_GlobalMatrix_hpp
 
-#include "Tsqr_Blas.hpp"
 #include "Tsqr_Matrix.hpp"
 #include "Tsqr_Random_MatrixGenerator.hpp"
-#include "Teuchos_ScalarTraits.hpp"
 #include "Tsqr_RMessenger.hpp"
+
+#include <Teuchos_BLAS.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <algorithm>
 #include <functional>
@@ -95,16 +96,18 @@ namespace TSQR {
                         MessengerBase< typename MatrixViewType::ordinal_type >* const ordinalMessenger,
                         MessengerBase< typename MatrixViewType::scalar_type >* const scalarMessenger)
     {
+      using Teuchos::NO_TRANS;
+      using std::vector;
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       typedef typename MatrixViewType::scalar_type scalar_type;
-      using std::vector;
+
 
       const bool b_local_debug = false;
 
       const int rootProc = 0;
       const int nprocs = ordinalMessenger->size();
       const int myRank = ordinalMessenger->rank();
-      BLAS< ordinal_type, scalar_type > blas;
+      Teuchos::BLAS<ordinal_type, scalar_type> blas;
 
       const ordinal_type nrowsLocal = A_local.nrows();
       const ordinal_type ncols = A_local.ncols();
@@ -151,7 +154,7 @@ namespace TSQR {
           scaleMatrix (Q_local, P);
 
           // A_local := Q_local * R
-          blas.GEMM ("N", "N", nrowsLocal, ncols, ncols,
+          blas.GEMM (NO_TRANS, NO_TRANS, nrowsLocal, ncols, ncols,
                      scalar_type(1), Q_local.get(), Q_local.lda(),
                      R.get(), R.lda(),
                      scalar_type(0), A_local.get(), A_local.lda());
@@ -214,7 +217,7 @@ namespace TSQR {
           scaleMatrix (Q_local, P);
 
           // A_local := Q_local * R
-          blas.GEMM ("N", "N", nrowsLocal, ncols, ncols,
+          blas.GEMM (NO_TRANS, NO_TRANS, nrowsLocal, ncols, ncols,
                      scalar_type(1), Q_local.get(), Q_local.lda(),
                      R.get(), R.lda(),
                      scalar_type(0), A_local.get(), A_local.lda());

@@ -33,7 +33,7 @@ APPEND_SET(HEADERS
     TriKota_DirectApplicInterface.hpp
     TriKota_ThyraDirectApplicInterface.hpp
     TriKota_Driver.hpp
-  ) 
+  )
 
 APPEND_SET(SOURCES
     TriKota_DirectApplicInterface.cpp

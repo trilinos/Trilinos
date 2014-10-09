@@ -46,11 +46,11 @@
 #define __TSQR_Tsqr_NodeTsqr_hpp
 
 #include <Tsqr_ApplyType.hpp>
-#include <Tsqr_Lapack.hpp>
 #include <Tsqr_Matrix.hpp>
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_Describable.hpp>
+#include <Teuchos_LAPACK.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
@@ -98,6 +98,8 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
     typedef Scalar scalar_type;
     typedef FactorOutputType factor_output_type;
+    typedef MatView<Ordinal, Scalar> mat_view_type;
+    typedef ConstMatView<Ordinal, Scalar> const_mat_view_type;
 
     //! Constructor
     NodeTsqr() {}
@@ -346,10 +348,10 @@ namespace TSQR {
     /// follows:
     /// \code
     /// MatrixViewType top = this->top_block (C, contig);
-    /// MatView< Ordinal, Scalar > square (ncols, ncols, top.get(), top.lda());
+    /// mat_view_type square (ncols, ncols, top.get(), top.lda());
     /// \endcode
-    virtual ConstMatView<Ordinal, Scalar>
-    const_top_block (const ConstMatView<Ordinal, Scalar>& C,
+    virtual const_mat_view_type
+    const_top_block (const const_mat_view_type& C,
                      const bool contiguousCacheBlocks) const = 0;
 
   public:
@@ -367,13 +369,13 @@ namespace TSQR {
     /// Tsqr::apply() need, do the following:
     /// \code
     /// MatrixViewType top = this->top_block (C, contig);
-    /// MatView<Ordinal, Scalar> square (ncols, ncols, top.get(), top.lda());
+    /// mat_view_type square (ncols, ncols, top.get(), top.lda());
     /// \endcode
     ///
-    /// Models for MatrixViewType are \c MatView and \c ConstMatView.
+    /// Models for MatrixViewType are MatView and ConstMatView.
     /// MatrixViewType must have member functions nrows(), ncols(),
     /// get(), and lda(), and its constructor must take the same four
-    /// arguments as the constructor of \c ConstMatView.
+    /// arguments as the constructor of ConstMatView.
     template<class MatrixViewType>
     MatrixViewType
     top_block (const MatrixViewType& C,
@@ -384,9 +386,8 @@ namespace TSQR {
       // method.  The only cast from const to nonconst may be in the
       // return value, but there it's legitimate since we're just
       // using the same constness as C has.
-      ConstMatView<Ordinal, Scalar> C_view (C.nrows(), C.ncols(),
-                                            C.get(), C.lda());
-      ConstMatView<Ordinal, Scalar> C_top =
+      const_mat_view_type C_view (C.nrows(), C.ncols(), C.get(), C.lda());
+      const_mat_view_type C_top =
         const_top_block (C_view, contiguous_cache_blocks);
       TEUCHOS_TEST_FOR_EXCEPTION(C_top.nrows() < C_top.ncols(), std::logic_error,
                          "The subclass of NodeTsqr has a bug in const_top_block"
@@ -509,10 +510,10 @@ namespace TSQR {
     // factor is full rank (expected to be the common case), we need
     // to leave it alone (so that it stays upper triangular).
     //
-    LAPACK<Ordinal, Scalar> lapack;
-    MatView<Ordinal, Scalar> R_view (ncols, ncols, R, ldr);
+    Teuchos::LAPACK<Ordinal, Scalar> lapack;
+    mat_view_type R_view (ncols, ncols, R, ldr);
     Matrix<Ordinal, Scalar> B (R_view); // B := R (deep copy)
-    MatView<Ordinal, Scalar> U_view (ncols, ncols, U, ldu);
+    mat_view_type U_view (ncols, ncols, U, ldu);
     Matrix<Ordinal, Scalar> VT (ncols, ncols, Scalar(0));
 
     // Set up workspace for the SVD.
@@ -533,7 +534,7 @@ namespace TSQR {
         "developers.";
 
       Scalar svd_lwork_scalar = STS::zero ();
-      lapack.GESVD ("A", "A", ncols, ncols, B.get(), B.lda(),
+      lapack.GESVD ('A', 'A', ncols, ncols, B.get(), B.lda(),
                     &singular_values[0], U_view.get(), U_view.lda(),
                     VT.get(), VT.lda(), &svd_lwork_scalar, svd_lwork,
                     &svd_rwork[0], &svd_info);
@@ -583,7 +584,7 @@ namespace TSQR {
     // Compute SVD $B := U \Sigma V^*$.  B is overwritten, which is
     // why we copied R into B (so that we don't overwrite R if R is
     // full rank).
-    lapack.GESVD ("A", "A", ncols, ncols, B.get(), B.lda(),
+    lapack.GESVD ('A', 'A', ncols, ncols, B.get(), B.lda(),
                   &singular_values[0], U_view.get(), U_view.lda(),
                   VT.get(), VT.lda(), &svd_work[0], svd_lwork,
                   &svd_rwork[0], &svd_info);

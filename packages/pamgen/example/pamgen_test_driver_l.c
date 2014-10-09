@@ -231,7 +231,7 @@ int main(int argc, char** argv)
   size = ftell(infile);
   fseek(infile, 0, SEEK_SET);
   file_char_array = (char *)malloc(size + 1);
-  file_char_array[size] = '\0';
+  file_char_array[0] = '\0';
   fread(file_char_array, sizeof(char), size, infile);
   fclose(infile);
 

@@ -176,7 +176,7 @@ namespace TSQR {
         using Teuchos::rcp_const_cast;
         using Teuchos::rcp_implicit_cast;
         typedef Matrix<ordinal_type, scalar_type> matrix_type;
-        typedef MatView<ordinal_type, scalar_type> view_type;
+        typedef MatView<ordinal_type, scalar_type> mat_view_type;
         typedef typename tsqr_type::FactorOutput factor_output_type;
 
         const int myRank = Teuchos::rank (*comm);
@@ -250,11 +250,11 @@ namespace TSQR {
           // This part has O(P) communication for P MPI processes.
           using TSQR::Random::randomGlobalMatrix;
           // Help the C++ compiler with type inference.
-          view_type A_local_view (A_local.nrows(), A_local.ncols(), A_local.get(), A_local.lda());
+          mat_view_type A_local_view (A_local.nrows(), A_local.ncols(), A_local.get(), A_local.lda());
           const magnitude_type* const singVals = (numCols == 0) ? NULL : &singularValues[0];
-          randomGlobalMatrix<view_type, generator_type> (&gen, A_local_view, singVals,
-                                                         ordinalMessenger.getRawPtr(),
-                                                         scalarMessenger.getRawPtr());
+          randomGlobalMatrix<mat_view_type, generator_type> (&gen, A_local_view, singVals,
+                                                             ordinalMessenger.getRawPtr(),
+                                                             scalarMessenger.getRawPtr());
         }
         // Save the pseudorandom number generator's seed for any later
         // tests.  The generator keeps its own copy of the seed and
@@ -266,19 +266,18 @@ namespace TSQR {
         // A_copy.  The factorization overwrites the input matrix, so
         // we have to make a copy in order to validate the final
         // result.
-        if (contiguousCacheBlocks)
-          {
-            tsqr->cache_block (numRowsLocal, numCols, A_copy.get(),
-                               A_local.get(), A_local.lda());
-            if (debug)
-              {
-                Teuchos::barrier (*comm);
-                if (myRank == 0)
-                  cerr << "-- Finished Tsqr::cache_block" << endl;
-              }
+        if (contiguousCacheBlocks) {
+          tsqr->cache_block (numRowsLocal, numCols, A_copy.get(),
+                             A_local.get(), A_local.lda());
+          if (debug) {
+            Teuchos::barrier (*comm);
+            if (myRank == 0)
+              cerr << "-- Finished Tsqr::cache_block" << endl;
           }
-        else
-          A_copy.copy (A_local);
+        }
+        else {
+          deep_copy (A_copy, A_local);
+        }
 
         // "factorExplicit" is an alternate, hopefully faster way of
         // factoring the matrix, when only the explicit Q factor is
@@ -389,7 +388,7 @@ namespace TSQR {
           tsqr->un_cache_block (numRowsLocal, numCols, A_copy.get(),
                                 A_copy.lda(), Q_local.get());
           // Overwrite Q_local with the un-cache-blocked Q factor.
-          Q_local.copy (A_copy);
+          deep_copy (Q_local, A_copy);
           if (debug) {
             Teuchos::barrier (*comm);
             if (myRank == 0)

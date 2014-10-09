@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -48,7 +48,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <Tsqr_ApplyType.hpp>
-#include <Tsqr_Lapack.hpp>
+#include <Teuchos_LAPACK.hpp>
 #include <Tsqr_Matrix.hpp>
 
 #include <algorithm>
@@ -72,12 +72,14 @@ namespace TSQR {
   template<class Ordinal, class Scalar>
   class CombineDefault {
   private:
-    typedef LAPACK< Ordinal, Scalar > lapack_type;
+    typedef Teuchos::LAPACK<Ordinal, Scalar> lapack_type;
 
   public:
+    typedef Ordinal ordinal_type;
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
-    typedef Ordinal ordinal_type;
+    typedef ConstMatView<Ordinal, Scalar> const_mat_view_type;
+    typedef MatView<Ordinal, Scalar> mat_view_type;
 
     CombineDefault () {}
 
@@ -90,17 +92,17 @@ namespace TSQR {
     /// promises to compute an R factor whose diagonal entries are all
     /// nonnegative.
     static bool QR_produces_R_factor_with_nonnegative_diagonal()
-    { 
-      return lapack_type::QR_produces_R_factor_with_nonnegative_diagonal();
+    {
+      return false; // lapack_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     void
     factor_first (const Ordinal nrows,
-		  const Ordinal ncols,
-		  Scalar A[],
-		  const Ordinal lda,
-		  Scalar tau[],
-		  Scalar work[])
+                  const Ordinal ncols,
+                  Scalar A[],
+                  const Ordinal lda,
+                  Scalar tau[],
+                  Scalar work[])
     {
       // info must be an int, not a LocalOrdinal, since LAPACK
       // routines always (???) use int for the INFO output argument,
@@ -109,25 +111,25 @@ namespace TSQR {
       int info = 0;
       lapack_.GEQR2 (nrows, ncols, A, lda, tau, work, &info);
       if (info != 0)
-	{
-	  std::ostringstream os;
-	  os << "TSQR::CombineDefault::factor_first(): LAPACK\'s "
-	     << "GEQR2 failed with INFO = " << info;
-	  throw std::logic_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "TSQR::CombineDefault::factor_first(): LAPACK\'s "
+             << "GEQR2 failed with INFO = " << info;
+          throw std::logic_error (os.str());
+        }
     }
 
     void
     apply_first (const ApplyType& applyType,
-		 const Ordinal nrows,
-		 const Ordinal ncols_C,
-		 const Ordinal ncols_A,
-		 const Scalar A[],
-		 const Ordinal lda,
-		 const Scalar tau[],
-		 Scalar C[],
-		 const Ordinal ldc,
-		 Scalar work[])
+                 const Ordinal nrows,
+                 const Ordinal ncols_C,
+                 const Ordinal ncols_A,
+                 const Scalar A[],
+                 const Ordinal lda,
+                 const Scalar tau[],
+                 Scalar C[],
+                 const Ordinal ldc,
+                 Scalar work[])
     {
       int info = 0;
       // LAPACK has the nice feature that it only reads the first
@@ -135,79 +137,75 @@ namespace TSQR {
       // to which to apply the operator, or whether to apply the
       // transpose.  That means we can make the strings more verbose,
       // as in "Left" here for the SIDE parameter.
-      lapack_.ORM2R ("Left", applyType.toString().c_str(), 
-		     nrows, ncols_C, ncols_A,
-		     A, lda, tau, 
-		     C, ldc, work, &info);
-      if (info != 0)
-	{
-	  std::ostringstream os;
-	  os << "TSQR::CombineDefault::apply_first(): LAPACK\'s "
-	     << "ORM2R failed with INFO = " << info;
-	  throw std::logic_error (os.str());
-	}
+      lapack_.UNM2R ('L', (applyType.toString ().c_str ())[0],
+                     nrows, ncols_C, ncols_A,
+                     A, lda, tau,
+                     C, ldc, work, &info);
+      if (info != 0) {
+        std::ostringstream os;
+        os << "TSQR::CombineDefault::apply_first(): LAPACK\'s "
+           << "UNM2R failed with INFO = " << info;
+        throw std::logic_error (os.str());
+      }
     }
 
     void
     apply_inner (const ApplyType& apply_type,
-		 const Ordinal m,
-		 const Ordinal ncols_C,
-		 const Ordinal ncols_Q,
-		 const Scalar A[],
-		 const Ordinal lda,
-		 const Scalar tau[],
-		 Scalar C_top[],
-		 const Ordinal ldc_top,
-		 Scalar C_bot[],
-		 const Ordinal ldc_bot,
-		 Scalar work[])
+                 const Ordinal m,
+                 const Ordinal ncols_C,
+                 const Ordinal ncols_Q,
+                 const Scalar A[],
+                 const Ordinal lda,
+                 const Scalar tau[],
+                 Scalar C_top[],
+                 const Ordinal ldc_top,
+                 Scalar C_bot[],
+                 const Ordinal ldc_bot,
+                 Scalar work[])
     {
-      typedef ConstMatView< Ordinal, Scalar > const_matview_type;
-      typedef MatView< Ordinal, Scalar > matview_type;
       const Ordinal numRows = m + ncols_Q;
 
       A_buf_.reshape (numRows, ncols_Q);
       A_buf_.fill (Scalar(0));
-      const_matview_type A_bot (m, ncols_Q, A, lda);
-      matview_type A_buf_bot (m, ncols_Q, &A_buf_(ncols_Q, 0), A_buf_.lda());
-      A_buf_bot.copy (A_bot);
+      const_mat_view_type A_bot (m, ncols_Q, A, lda);
+      mat_view_type A_buf_bot (m, ncols_Q, &A_buf_(ncols_Q, 0), A_buf_.lda());
+      deep_copy (A_buf_bot, A_bot);
 
       C_buf_.reshape (numRows, ncols_C);
       C_buf_.fill (Scalar(0));
-      matview_type C_buf_top (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.lda());
-      matview_type C_buf_bot (m, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.lda());
-      matview_type C_top_view (ncols_Q, ncols_C, C_top, ldc_top);
-      matview_type C_bot_view (m, ncols_C, C_bot, ldc_bot);
-      C_buf_top.copy (C_top_view);
-      C_buf_bot.copy (C_bot_view);
+      mat_view_type C_buf_top (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.lda());
+      mat_view_type C_buf_bot (m, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.lda());
+      mat_view_type C_top_view (ncols_Q, ncols_C, C_top, ldc_top);
+      mat_view_type C_bot_view (m, ncols_C, C_bot, ldc_bot);
+      deep_copy (C_buf_top, C_top_view);
+      deep_copy (C_buf_bot, C_bot_view);
 
       int info = 0;
-      lapack_.ORM2R ("Left", apply_type.toString().c_str(), 
-		     numRows, ncols_C, ncols_Q,
-		     A_buf_.get(), A_buf_.lda(), tau,
-		     C_buf_.get(), C_buf_.lda(),
-		     work, &info);
-      if (info != 0)
-	{
-	  std::ostringstream os;
-	  os << "TSQR::CombineDefault::apply_inner(): LAPACK\'s "
-	     << "ORM2R failed with INFO = " << info;
-	  throw std::logic_error (os.str());
-	}
+      lapack_.UNM2R ('L', (apply_type.toString ().c_str ())[0],
+                     numRows, ncols_C, ncols_Q,
+                     A_buf_.get(), A_buf_.lda(), tau,
+                     C_buf_.get(), C_buf_.lda(),
+                     work, &info);
+      if (info != 0) {
+        std::ostringstream os;
+        os << "TSQR::CombineDefault::apply_inner(): LAPACK\'s "
+           << "UNM2R failed with INFO = " << info;
+        throw std::logic_error (os.str());
+      }
       // Copy back the results.
-      C_top_view.copy (C_buf_top);
-      C_bot_view.copy (C_buf_bot);
+      deep_copy (C_top_view, C_buf_top);
+      deep_copy (C_bot_view, C_buf_bot);
     }
 
     void
     factor_inner (const Ordinal m,
-		  const Ordinal n,
-		  Scalar R[],
-		  const Ordinal ldr,
-		  Scalar A[],
-		  const Ordinal lda,
-		  Scalar tau[],
-		  Scalar work[])
+                  const Ordinal n,
+                  Scalar R[],
+                  const Ordinal ldr,
+                  Scalar A[],
+                  const Ordinal lda,
+                  Scalar tau[],
+                  Scalar work[])
     {
       const Ordinal numRows = m + n;
 
@@ -223,7 +221,7 @@ namespace TSQR {
       int info = 0;
       lapack_.GEQR2 (numRows, n, A_buf_.get(), A_buf_.lda(), tau, work, &info);
       if (info != 0)
-	throw std::logic_error ("TSQR::CombineDefault: GEQR2 failed");
+        throw std::logic_error ("TSQR::CombineDefault: GEQR2 failed");
 
       // Copy back the results.  R might be a view of the upper
       // triangle of a cache block, so only copy into the upper
@@ -234,12 +232,12 @@ namespace TSQR {
 
     void
     factor_pair (const Ordinal n,
-		 Scalar R_top[],
-		 const Ordinal ldr_top,
-		 Scalar R_bot[],
-		 const Ordinal ldr_bot,
-		 Scalar tau[],
-		 Scalar work[])
+                 Scalar R_top[],
+                 const Ordinal ldr_top,
+                 Scalar R_bot[],
+                 const Ordinal ldr_bot,
+                 Scalar tau[],
+                 Scalar work[])
     {
       const Ordinal numRows = Ordinal(2) * n;
 
@@ -256,12 +254,12 @@ namespace TSQR {
       int info = 0;
       lapack_.GEQR2 (numRows, n, A_buf_.get(), A_buf_.lda(), tau, work, &info);
       if (info != 0)
-	{
-	  std::ostringstream os;
-	  os << "TSQR::CombineDefault::factor_pair(): "
-	     << "GEQR2 failed with INFO = " << info;
-	  throw std::logic_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "TSQR::CombineDefault::factor_pair(): "
+             << "GEQR2 failed with INFO = " << info;
+          throw std::logic_error (os.str());
+        }
 
       // Copy back the results.  Only read the upper triangles of the
       // two n by n row blocks of A_buf_ (this means we don't have to
@@ -270,39 +268,42 @@ namespace TSQR {
       copy_upper_triangle (n, n, R_top, ldr_top, &A_buf_(0, 0), A_buf_.lda());
       copy_upper_triangle (n, n, R_bot, ldr_bot, &A_buf_(n, 0), A_buf_.lda());
     }
-    
+
     void
     apply_pair (const ApplyType& apply_type,
-		const Ordinal ncols_C, 
-		const Ordinal ncols_Q, 
-		const Scalar R_bot[], 
-		const Ordinal ldr_bot,
-		const Scalar tau[], 
-		Scalar C_top[], 
-		const Ordinal ldc_top, 
-		Scalar C_bot[], 
-		const Ordinal ldc_bot, 
-		Scalar work[]) 
+                const Ordinal ncols_C,
+                const Ordinal ncols_Q,
+                const Scalar R_bot[],
+                const Ordinal ldr_bot,
+                const Scalar tau[],
+                Scalar C_top[],
+                const Ordinal ldc_top,
+                Scalar C_bot[],
+                const Ordinal ldc_bot,
+                Scalar work[])
     {
       const Ordinal numRows = Ordinal(2) * ncols_Q;
 
       A_buf_.reshape (numRows, ncols_Q);
       A_buf_.fill (Scalar(0));
-      copy_upper_triangle (ncols_Q, ncols_Q, 
-			   &A_buf_(ncols_Q, 0), A_buf_.lda(), 
-			   R_bot, ldr_bot);
+      copy_upper_triangle (ncols_Q, ncols_Q,
+                           &A_buf_(ncols_Q, 0), A_buf_.lda(),
+                           R_bot, ldr_bot);
       C_buf_.reshape (numRows, ncols_C);
       copy_matrix (ncols_Q, ncols_C, &C_buf_(0, 0), C_buf_.lda(), C_top, ldc_top);
       copy_matrix (ncols_Q, ncols_C, &C_buf_(ncols_Q, 0), C_buf_.lda(), C_bot, ldc_bot);
 
       int info = 0;
-      lapack_.ORM2R ("Left", apply_type.toString().c_str(), 
-		     numRows, ncols_C, ncols_Q,
-		     A_buf_.get(), A_buf_.lda(), tau,
-		     C_buf_.get(), C_buf_.lda(),
-		     work, &info);
-      if (info != 0)
-	throw std::logic_error ("TSQR::CombineDefault: ORM2R failed");
+      lapack_.UNM2R ('L', (apply_type.toString ().c_str ())[0],
+                     numRows, ncols_C, ncols_Q,
+                     A_buf_.get(), A_buf_.lda(), tau,
+                     C_buf_.get(), C_buf_.lda(),
+                     work, &info);
+      if (info != 0) {
+        std::ostringstream os;
+        os << "TSQR::CombineDefault: UNM2R failed with INFO = " << info;
+        throw std::logic_error (os.str ());
+      }
 
       // Copy back the results.
       copy_matrix (ncols_Q, ncols_C, C_top, ldc_top, &C_buf_(0, 0), C_buf_.lda());
@@ -310,9 +311,9 @@ namespace TSQR {
     }
 
   private:
-    LAPACK< Ordinal, Scalar > lapack_;
-    Matrix< Ordinal, Scalar > A_buf_;
-    Matrix< Ordinal, Scalar > C_buf_;
+    lapack_type lapack_;
+    Matrix<Ordinal, Scalar> A_buf_;
+    Matrix<Ordinal, Scalar> C_buf_;
   };
 
 

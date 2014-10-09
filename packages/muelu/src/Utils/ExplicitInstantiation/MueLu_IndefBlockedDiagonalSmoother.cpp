@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-
-
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_IndefBlockedDiagonalSmoother_def.hpp"
@@ -70,4 +70,4 @@ template class MueLu::IndefBlockedDiagonalSmoother<std::complex<double>, int, in
 # endif
 #endif
 
-
+#endif

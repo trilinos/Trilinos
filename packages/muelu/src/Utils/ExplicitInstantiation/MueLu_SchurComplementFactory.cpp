@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-
-
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_SchurComplementFactory_def.hpp"
@@ -70,4 +70,4 @@ template class MueLu::SchurComplementFactory<std::complex<double>, int, int>;
 # endif
 #endif
 
-
+#endif

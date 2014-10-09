@@ -1,31 +1,29 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -44,13 +42,13 @@ namespace Sacado {
      * mixes-in the GeneralFad interface and the expression template
      * interface.
      */
-    template <typename T, typename Storage> 
+    template <typename T, typename Storage>
     class Expr< GeneralFad<T,Storage> > : public GeneralFad<T,Storage> {
 
     public:
 
       //! Typename of values
-      typedef T value_type;
+      typedef typename GeneralFad<T,Storage>::value_type value_type;
 
       //! Typename of base-expressions
       typedef GeneralFad<T,Storage> base_expr_type;
@@ -62,22 +60,25 @@ namespace Sacado {
       static const bool is_linear = true;
 
       //! Default constructor
-      Expr() : 
-	GeneralFad<T,Storage>() {}
+      KOKKOS_INLINE_FUNCTION
+      Expr() :
+        GeneralFad<T,Storage>() {}
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      Expr(const T & x) : 
-	GeneralFad<T,Storage>(x) {}
+      KOKKOS_INLINE_FUNCTION
+      Expr(const T & x) :
+        GeneralFad<T,Storage>(x) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      Expr(const int sz, const T & x) : 
-	GeneralFad<T,Storage>(sz,x) {}
+      KOKKOS_INLINE_FUNCTION
+      Expr(const int sz, const T & x) :
+        GeneralFad<T,Storage>(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -85,70 +86,90 @@ namespace Sacado {
        * as row \c i of the identity matrix, i.e., sets derivative component
        * \c i to 1 and all other's to zero.
        */
-      Expr(const int sz, const int i, const T & x) : 
-	GeneralFad<T,Storage>(sz,i,x) {}
+      KOKKOS_INLINE_FUNCTION
+      Expr(const int sz, const int i, const T & x) :
+        GeneralFad<T,Storage>(sz,i,x) {}
+
+      //! Constructor with supplied storage \c s
+      KOKKOS_INLINE_FUNCTION
+      Expr(const Storage& s) :
+        GeneralFad<T,Storage>(s) {}
 
       //! Copy constructor
-      Expr(const Expr& x) : 
-	GeneralFad<T,Storage>(static_cast<const GeneralFad<T,Storage>&>(x)) {}
+      KOKKOS_INLINE_FUNCTION
+      Expr(const Expr& x) :
+        GeneralFad<T,Storage>(static_cast<const GeneralFad<T,Storage>&>(x)) {}
 
       //! Copy constructor from any Expression object
-      template <typename S> Expr(const Expr<S>& x) :
-	GeneralFad<T,Storage>(x) {}
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      Expr(const Expr<S>& x) :
+        GeneralFad<T,Storage>(x) {}
 
       //! Destructor
+      KOKKOS_INLINE_FUNCTION
       ~Expr() {}
 
       //! Return partials w.r.t. arguments
-      void computePartials(const T& bar, T partials[]) const { 
-	partials[0] = bar; 
+      KOKKOS_INLINE_FUNCTION
+      void computePartials(const T& bar, value_type partials[]) const {
+        partials[0] = bar;
       }
 
       //! Return tangent component \c i of arguments
-      void getTangents(int i, T dots[]) const { 
-	if (i<this->size())
-	  dots[0] = this->fastAccessDx(i);
-	else
-	  dots[0] = 0.0;
+      KOKKOS_INLINE_FUNCTION
+      void getTangents(int i, value_type dots[]) const {
+        if (i<this->size())
+          dots[0] = this->fastAccessDx(i);
+        else
+          dots[0] = 0.0;
       }
 
       //! Return whether argument is active
       template <int Arg>
+      KOKKOS_INLINE_FUNCTION
       bool isActive() const { return this->size() > 0; }
 
       //! Return whether argument is active
+      KOKKOS_INLINE_FUNCTION
       bool isActive2(int j) const { return this->size() > 0; }
 
       //! Return whether expression is linear
+      KOKKOS_INLINE_FUNCTION
       bool isLinear() const { return true; }
 
       //! Return tangent component \c i of argument \c Arg
       template <int Arg>
+      KOKKOS_INLINE_FUNCTION
       const T& getTangent(int i) const { return this->fastAccessDx(i); }
 
       //! Get dx array
+      KOKKOS_INLINE_FUNCTION
       const T* getDx(int j) const { return this->dx(); }
 
+      KOKKOS_INLINE_FUNCTION
       const base_expr_type& getArg(int j) const { return *this; }
 
+      KOKKOS_INLINE_FUNCTION
       int numActiveArgs() const {
-	return this->size() > 0 ? 1 : 0;
+        return this->size() > 0 ? 1 : 0;
       }
 
       //! Return partials w.r.t. arguments
-      void computeActivePartials(const T& bar, T *partials) const { 
-	if (this->size() > 0)
-	  partials[0] = bar; 
+      KOKKOS_INLINE_FUNCTION
+      void computeActivePartials(const T& bar, value_type *partials) const {
+        if (this->size() > 0)
+          partials[0] = bar;
       }
 
     }; // class Expr<GeneralFad>
-    
+
     //! Specialization of %ExprPromote to GeneralFad types
     template <typename T, typename S>
     struct ExprPromote< GeneralFad<T,S>, T > {
       typedef GeneralFad<T,S> type;
     };
-    
+
     //! Specialization of %ExprPromote to GeneralFad types
     template <typename T, typename S>
     struct ExprPromote< T, GeneralFad<T,S> > {

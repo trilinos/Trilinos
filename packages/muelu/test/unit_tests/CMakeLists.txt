@@ -18,7 +18,6 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
   Aggregates.cpp
-  BlockedPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
 # CoupledAggregationFactory.cpp
@@ -39,13 +38,19 @@ APPEND_SET(SOURCES
   SaPFactory.cpp
   Smoothers/SmootherFactory.cpp
   Smoothers/MueLu_TestHelpersSmoothers.cpp
-  SubBlockAFactory.cpp
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
   TransPFactory.cpp
   Utilities
   VariableContainer.cpp
 )
+
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  APPEND_SET(SOURCES
+    BlockedPFactory.cpp
+    SubBlockAFactory.cpp
+  )
+ENDIF()
 
 ### Tests that require other Trilinos packages
 

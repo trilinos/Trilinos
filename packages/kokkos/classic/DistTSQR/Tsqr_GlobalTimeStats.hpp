@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -45,9 +45,6 @@
 #define __TSQR_GlobalTimeStats_hpp
 
 #include <Tsqr_TimeStats.hpp>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
@@ -61,10 +58,9 @@ namespace TSQR {
   /// \param localStats [in] Local (to this process) time statistics
   ///
   /// \return Global (over all processes) time statistics
-  ///
   TimeStats
-  globalTimeStats (const Teuchos::RCP< MessengerBase< double > >& comm,
-		   const TimeStats& localStats);
+  globalTimeStats (MessengerBase<double>& comm,
+                   const TimeStats& localStats);
 
 } // namespace TSQR
 

@@ -120,7 +120,11 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
       global_node_vector);
 
   long long err_code = imd->Calc_Coord_Vectors();
-  if(err_code){return NULL;}
+  if(err_code){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
 
   imd->Populate_Coords(nemesis_db->Coord(),
       global_node_vector,
@@ -131,8 +135,12 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
       global_node_list.size(),
       dim);
 
-  if(!imd->getErrorString().empty()){return NULL;}
-
+  if(!imd->getErrorString().empty()){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
+  
   imd->Customize_Coords(nemesis_db->Coord(),
       global_node_list.size(),
       dim);
@@ -160,8 +168,16 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
       nemesis_db->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_NODES),
       nemesis_db->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_NODE_COUNTER));
 
-  if(!imd->getErrorString().empty()){return NULL;}
-  if(err_code){return NULL;}
+  if(!imd->getErrorString().empty()){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
+  if(err_code){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
 
   nsct = 0;
 
@@ -174,7 +190,11 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
   imd->Populate_Nodeset_Info(nemesis_db->getMSPP(ms_lt::Mesh_Specification::NODE_SET_NODES),//Node_Set_Nodes(),
       global_node_map);
-  if(!imd->getErrorString().empty()){return NULL;}
+  if(!imd->getErrorString().empty()){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
   //CONNECTIVITY
   for(long long i = 0;i <nemesis_db->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);i++ ){
     nemesis_db->Specify_Block_Information(i,//index
@@ -187,7 +207,11 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
   imd->Populate_Connectivity(nemesis_db->getMSPP(ms_lt::Mesh_Specification::ELMT_NODE_LINKAGE),
       global_node_map);
-  if(!imd->getErrorString().empty()){return NULL;}
+  if(!imd->getErrorString().empty()){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
 
 
 

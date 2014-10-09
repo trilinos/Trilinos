@@ -1,12 +1,15 @@
+/*
 //@HEADER
 // ************************************************************************
-// 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
-// 
+//
+//                             Kokkos
+//         Manycore Performance-Portable Multidimensional Arrays
+//
+//              Copyright (2012) Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,86 +37,40 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
+*/
 
-#ifndef __TSQR_TsqrBlas_hpp
-#define __TSQR_TsqrBlas_hpp
+#include <Kokkos_Core.hpp>
+#include <cstdio>
 
-#include <Tsqr_ConfigDefs.hpp>
+// Using default execution space:
+typedef Kokkos::TeamPolicy<>              team_policy ;
+typedef typename team_policy::member_type team_member ;
 
-namespace TSQR {
+struct hello_world {
+  typedef int value_type; //Specify value type for reduction target, sum
+  KOKKOS_INLINE_FUNCTION
+  void operator() ( const team_member & thread, int& sum) const {
+    sum+=1;
+    // With each team run a parallel for with its threads
+    thread.team_par_for(31, [&] (const int& i) {
+       printf("Hello World: (%i , %i) executed loop %i \n",thread.league_rank(),thread.team_rank(),i);
+    });
+  }
+};
 
-  /// \class BLAS
-  /// \brief Wrappers for BLAS routines used by the Tall Skinny QR factorization.
-  ///
-  template<class Ordinal, class Scalar>
-  class BLAS {
-  public:
-    BLAS () {}
+int main(int narg, char* args[]) {
+  Kokkos::initialize(narg,args);
 
-    void 
-    GEMV (const char* const trans, 
-	  const Ordinal m, 
-	  const Ordinal n,
-	  const Scalar alpha,
-	  const Scalar A[],
-	  const Ordinal lda,
-	  const Scalar x[],
-	  const Ordinal incx,
-	  const Scalar beta,
-	  Scalar y[],
-	  const Ordinal incy);
+  // 3 teams of the maximum number of threads per team
+  const team_policy policy( 3 , team_policy::execution_space::team_max() );
+  
+  int sum = 0;
+  Kokkos::parallel_reduce( policy , hello_world() , sum );
+  printf("Result %i\n",sum);
 
-    void
-    GEMM (const char* const transa,
-	  const char* const transb,
-	  const Ordinal m,
-	  const Ordinal n,
-	  const Ordinal k,
-	  const Scalar alpha,
-	  const Scalar A[],
-	  const Ordinal lda,
-	  const Scalar B[],
-	  const Ordinal ldb,
-	  const Scalar beta,
-	  Scalar C[],
-	  const Ordinal ldc);
-
-    ///
-    /// If ScalarTraits< Scalar >::is_complex, calls _GERC.
-    /// Otherwise, calls _GER.
-    void
-    GER (const Ordinal m,
-	 const Ordinal n,
-	 const Scalar alpha,
-	 const Scalar x[],
-	 const Ordinal incx,
-	 const Scalar y[],
-	 const Ordinal incy,
-	 Scalar A[],
-	 const Ordinal lda);
-
-    void
-    TRSM (const char* const side,
-	  const char* const uplo,
-	  const char* const transa,
-	  const char* const diag,
-	  const Ordinal m,
-	  const Ordinal n,
-	  const Scalar alpha,
-	  const Scalar A[],
-	  const Ordinal lda,
-	  Scalar B[],
-	  const Ordinal ldb);
-
-  private:
-    BLAS (const BLAS&);
-    BLAS& operator= (const BLAS&);
-  };
-
-} // namespace TSQR
-
-#endif // __TSQR_TsqrBlas_hpp
+  Kokkos::finalize();
+}

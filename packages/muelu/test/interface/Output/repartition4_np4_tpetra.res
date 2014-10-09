@@ -76,7 +76,6 @@ Level 1
   repartition: start level = 2   [default]
   repartition: min rows per proc = 800   [default]
   repartition: max imbalance = 1.2   [default]
-  repartition: keep proc 0 = 1   [default]
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
@@ -176,7 +175,6 @@ Level 2
   repartition: start level = 2   [default]
   repartition: min rows per proc = 800   [default]
   repartition: max imbalance = 1.2   [default]
-  repartition: keep proc 0 = 1   [default]
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
@@ -198,10 +196,6 @@ Level 2
 
  Computing Ac (MueLu::RebalanceAcFactory)
  useSubcomm = 1   [default]
-
- Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
- presmoother ->
-  [empty list]
 
 
 --------------------------------------------------------------------------------

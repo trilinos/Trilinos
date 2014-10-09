@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,20 +34,17 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Random_NormalGenerator_hpp
 #define __TSQR_Random_NormalGenerator_hpp
 
-#include <Tsqr_Lapack.hpp>
+#include <Teuchos_LAPACK.hpp>
 #include <algorithm>
 #include <vector>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Random {
@@ -55,8 +52,10 @@ namespace TSQR {
     /// \class NormalGenerator
     /// \brief (Pseudo)random normal(0,1) floating-point number generator.
     ///
-    /// Implemented using LAPACK's _LARNV routines.
-    ///
+    /// \note The implementation currently depends on LAPACK's _LARNV
+    ///   routines.  These are test routines and are not guaranteed to
+    ///   be in the LAPACK library.  They will be if you build LAPACK
+    ///   from source.
     template< class Ordinal, class Scalar >
     class NormalGenerator {
     private:
@@ -78,16 +77,15 @@ namespace TSQR {
       ///   at one time.  If you know how many outputs you want, set
       ///   this accordingly, so that all the expense of generation
       ///   happens at construction.
-      ///
       NormalGenerator (const std::vector<int>& iseed,
-		       const int bufferLength = defaultBufferLength()) :
-	iseed_ (4),
-	buffer_ (bufferLength),
-	buffer_length_ (bufferLength),
-	cur_pos_ (0)
+                       const int bufferLength = defaultBufferLength()) :
+        iseed_ (4),
+        buffer_ (bufferLength),
+        buffer_length_ (bufferLength),
+        cur_pos_ (0)
       {
-	std::copy (iseed.begin(), iseed.end(), iseed_.begin());
-	fill_buffer ();
+        std::copy (iseed.begin(), iseed.end(), iseed_.begin());
+        fill_buffer ();
       }
 
       /// \brief Constructor with default seed.
@@ -101,18 +99,18 @@ namespace TSQR {
       ///   at construction.
       ///
       NormalGenerator (const int bufferLength = defaultBufferLength()) :
-	iseed_ (4),
-	buffer_ (bufferLength),
-	buffer_length_ (bufferLength),
-	cur_pos_ (0)
+        iseed_ (4),
+        buffer_ (bufferLength),
+        buffer_length_ (bufferLength),
+        cur_pos_ (0)
       {
-	iseed_[0] = 0;
-	iseed_[1] = 0;
-	iseed_[2] = 0;
-	iseed_[3] = 1;
-	fill_buffer ();
+        iseed_[0] = 0;
+        iseed_[1] = 0;
+        iseed_[2] = 0;
+        iseed_[3] = 1;
+        fill_buffer ();
       }
-      
+
       /// \brief Get the next pseudorandom number.
       ///
       /// If the buffer length is > 0, the buffer is first filled with
@@ -123,7 +121,7 @@ namespace TSQR {
       /// you don't like this behavior, use a buffer length of 1.
       Scalar operator() () { return next(); }
 
-      /// \brief Get the current seed.  
+      /// \brief Get the current seed.
       ///
       /// The seed consists of four integers, according to the
       /// requirements of LAPACK's _LARNV routines.  This can be used
@@ -132,12 +130,12 @@ namespace TSQR {
       ///
       /// \param iseed [out] Vector of length exactly four.  Resized
       ///   if necessary.
-      void 
+      void
       getSeed (std::vector<int>& iseed) const
       {
-	if (iseed.size() != iseed_.size())
-	  iseed.resize (iseed_.size());
-	std::copy (iseed_.begin(), iseed_.end(), iseed.begin());
+        if (iseed.size() != iseed_.size())
+          iseed.resize (iseed_.size());
+        std::copy (iseed_.begin(), iseed_.end(), iseed.begin());
       }
 
     private:
@@ -146,33 +144,33 @@ namespace TSQR {
       int buffer_length_, cur_pos_;
 
       void
-      fill_buffer () 
+      fill_buffer ()
       {
-	LAPACK<Ordinal, Scalar> lapack;
+        Teuchos::LAPACK<Ordinal, Scalar> lapack;
 
-	// LAPACK's _LARNV routine defines this "enum" (just an
-	// integer, because it's Fortran) that lets users choose from
-	// one of three different pseudorandom distributions:
-	// uniform(0,1), uniform(-1,1), and normal(0,1).
-	enum distribution_type { 
-	  uniform_0_1 = 1, 
-	  uniform_m1_1 = 2, 
-	  normal_0_1 = 3 
-	};
-	lapack.LARNV (normal_0_1, &iseed_[0], buffer_length_, &buffer_[0]);
+        // LAPACK's _LARNV routine defines this "enum" (just an
+        // integer, because it's Fortran) that lets users choose from
+        // one of three different pseudorandom distributions:
+        // uniform(0,1), uniform(-1,1), and normal(0,1).
+        enum distribution_type {
+          uniform_0_1 = 1,
+          uniform_m1_1 = 2,
+          normal_0_1 = 3
+        };
+        lapack.LARNV (normal_0_1, &iseed_[0], buffer_length_, &buffer_[0]);
       }
 
-      Scalar 
-      next () 
-      { 
-	// It's impossible to take the greater-than branch, but we
-	// check for robustness' sake.
-	if (cur_pos_ >= buffer_length_) 
-	  {
-	    fill_buffer ();
-	    cur_pos_ = 0;
-	  }
-	return buffer_[cur_pos_++];
+      Scalar
+      next ()
+      {
+        // It's impossible to take the greater-than branch, but we
+        // check for robustness' sake.
+        if (cur_pos_ >= buffer_length_)
+          {
+            fill_buffer ();
+            cur_pos_ = 0;
+          }
+        return buffer_[cur_pos_++];
       }
     };
   } // namespace Random

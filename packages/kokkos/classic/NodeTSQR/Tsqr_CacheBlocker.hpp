@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -55,12 +55,12 @@ namespace TSQR {
   /// \class CacheBlocker
   /// \brief Break a tall skinny matrix by rows into cache blocks.
   /// \author Mark Hoemmen
-  /// 
+  ///
   /// A CacheBlocker uses a particular cache blocking strategy to
   /// partition an nrows by ncols matrix by rows into cache blocks.
   /// The entries in a cache block may be stored contiguously, or as
   /// non-contiguous partitions of a matrix stored conventionally (in
-  /// column-major order).  
+  /// column-major order).
   ///
   /// The CacheBlocker blocks any matrix with the same number of rows
   /// in the same way, regardless of the number of columns (the cache
@@ -71,21 +71,21 @@ namespace TSQR {
   template<class Ordinal, class Scalar>
   class CacheBlocker {
   private:
-    typedef MatView<Ordinal, Scalar> mat_view;
-    typedef ConstMatView<Ordinal, Scalar> const_mat_view;
+    typedef MatView<Ordinal, Scalar> mat_view_type;
+    typedef ConstMatView<Ordinal, Scalar> const_mat_view_type;
 
     void
-    validate () 
+    validate ()
     {
       if (nrows_cache_block_ < ncols_)
-	{
-	  std::ostringstream os;
-	  os << "The typical cache block size is too small.  Only " 
-	     << nrows_cache_block_ << " rows fit, but every cache block needs "
-	    "at least as many rows as the number of columns " << ncols_ 
-	     << " in the matrix.";
-	  throw std::logic_error (os.str());
-	}
+        {
+          std::ostringstream os;
+          os << "The typical cache block size is too small.  Only "
+             << nrows_cache_block_ << " rows fit, but every cache block needs "
+            "at least as many rows as the number of columns " << ncols_
+             << " in the matrix.";
+          throw std::logic_error (os.str());
+        }
     }
 
   public:
@@ -102,10 +102,10 @@ namespace TSQR {
     ///   all such matrices in the same way (at the same row indices).
     ///   This is useful for TSQR's apply() and explicit_Q() methods.
     CacheBlocker (const Ordinal num_rows,
-		  const Ordinal num_cols,
-		  const CacheBlockingStrategy<Ordinal, Scalar>& strategy) :
-      nrows_ (num_rows), 
-      ncols_ (num_cols), 
+                  const Ordinal num_cols,
+                  const CacheBlockingStrategy<Ordinal, Scalar>& strategy) :
+      nrows_ (num_rows),
+      ncols_ (num_cols),
       strategy_ (strategy),
       nrows_cache_block_ (strategy_.cache_block_num_rows (ncols()))
     {
@@ -113,16 +113,16 @@ namespace TSQR {
     }
 
     //! Default constructor, so that CacheBlocker is DefaultConstructible.
-    CacheBlocker () : 
-      nrows_ (0), 
-      ncols_ (0), 
+    CacheBlocker () :
+      nrows_ (0),
+      ncols_ (0),
       nrows_cache_block_ (strategy_.cache_block_num_rows (ncols()))
     {}
 
     //! Copy constructor
     CacheBlocker (const CacheBlocker& rhs) :
-      nrows_ (rhs.nrows()), 
-      ncols_ (rhs.ncols()), 
+      nrows_ (rhs.nrows()),
+      ncols_ (rhs.ncols()),
       strategy_ (rhs.strategy_),
       nrows_cache_block_ (rhs.nrows_cache_block_)
     {}
@@ -140,8 +140,8 @@ namespace TSQR {
     ///
     /// This method is deprecated, because the name is misleading.
     /// Please call \c cache_size_hint() instead.
-    size_t TEUCHOS_DEPRECATED cache_block_size () const { 
-      return strategy_.cache_size_hint(); 
+    size_t TEUCHOS_DEPRECATED cache_block_size () const {
+      return strategy_.cache_size_hint();
     }
 
     //! Cache size hint (in bytes).
@@ -160,7 +160,7 @@ namespace TSQR {
     ///
     /// \param A [in/out] On input: view of the matrix to split.
     ///   On output: the "rest" of the matrix.  If there is only
-    ///   one cache block, A_top contains all of the matrix and 
+    ///   one cache block, A_top contains all of the matrix and
     ///   A is empty on output.
     /// \param contiguous_cache_blocks [in] Whether cache blocks in
     ///   the matrix A are stored contiguously (default is false).
@@ -178,9 +178,9 @@ namespace TSQR {
     split_top_block (MatrixViewType& A, const bool contiguous_cache_blocks) const
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
-      const ordinal_type nrows_top = 
-	strategy_.top_block_split_nrows (A.nrows(), ncols(), 
-					 nrows_cache_block());
+      const ordinal_type nrows_top =
+        strategy_.top_block_split_nrows (A.nrows(), ncols(),
+                                         nrows_cache_block());
       // split_top() sets A to A_rest, and returns A_top.
       return A.split_top (nrows_top, contiguous_cache_blocks);
     }
@@ -201,9 +201,9 @@ namespace TSQR {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       // Ignore the number of columns in A, since we want to block all
       // matrices using the same cache blocking strategy.
-      const ordinal_type nrows_top = 
-	strategy_.top_block_split_nrows (A.nrows(), ncols(), 
-					 nrows_cache_block());
+      const ordinal_type nrows_top =
+        strategy_.top_block_split_nrows (A.nrows(), ncols(),
+                                         nrows_cache_block());
       MatrixViewType A_copy (A);
       return A_copy.split_top (nrows_top, contiguous_cache_blocks);
     }
@@ -229,9 +229,9 @@ namespace TSQR {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       // Ignore the number of columns in A, since we want to block all
       // matrices using the same cache blocking strategy.
-      const ordinal_type nrows_bottom = 
-	strategy_.bottom_block_split_nrows (A.nrows(), ncols(), 
-					    nrows_cache_block());
+      const ordinal_type nrows_bottom =
+        strategy_.bottom_block_split_nrows (A.nrows(), ncols(),
+                                            nrows_cache_block());
       // split_bottom() sets A to A_rest, and returns A_bot.
       return A.split_bottom (nrows_bottom, contiguous_cache_blocks);
     }
@@ -252,19 +252,19 @@ namespace TSQR {
     template<class MatrixViewType>
     void
     fill_with_zeros (MatrixViewType A,
-		     const bool contiguous_cache_blocks) const
+                     const bool contiguous_cache_blocks) const
     {
       // Note: if the cache blocks are stored contiguously, A.lda()
       // won't be the correct leading dimension of A, but it won't
       // matter: we only ever operate on A_cur here, and A_cur's
       // leading dimension is set correctly by split_top_block().
       while (! A.empty())
-	{
-	  // This call modifies the matrix view A, but that's OK since
-	  // we passed the input view by copy, not by reference.
-	  MatrixViewType A_cur = split_top_block (A, contiguous_cache_blocks);
-	  A_cur.fill (Scalar(0));
-	}
+        {
+          // This call modifies the matrix view A, but that's OK since
+          // we passed the input view by copy, not by reference.
+          MatrixViewType A_cur = split_top_block (A, contiguous_cache_blocks);
+          A_cur.fill (Scalar(0));
+        }
     }
 
     /// \brief Fill the matrix A with zeros, respecting cache blocks.
@@ -285,10 +285,10 @@ namespace TSQR {
     ///   in A are stored contiguously.
     void
     fill_with_zeros (const Ordinal num_rows,
-		     const Ordinal num_cols,
-		     Scalar A[],
-		     const Ordinal lda, 
-		     const bool contiguous_cache_blocks) const
+                     const Ordinal num_cols,
+                     Scalar A[],
+                     const Ordinal lda,
+                     const bool contiguous_cache_blocks) const
     {
       // We say "A_rest" because it points to the remaining part of
       // the matrix left to process; at the beginning, the "remaining"
@@ -299,14 +299,14 @@ namespace TSQR {
       // be the correct leading dimension of A, but it won't matter:
       // we only ever operate on A_cur here, and A_cur's leading
       // dimension is set correctly by A_rest.split_top().
-      mat_view A_rest (num_rows, num_cols, A, lda);
+      mat_view_type A_rest (num_rows, num_cols, A, lda);
 
       while (! A_rest.empty())
-	{
-	  // This call modifies A_rest.
-	  mat_view A_cur = split_top_block (A_rest, contiguous_cache_blocks);
-	  A_cur.fill (Scalar(0));
-	}
+        {
+          // This call modifies A_rest.
+          mat_view_type A_cur = split_top_block (A_rest, contiguous_cache_blocks);
+          A_cur.fill (Scalar(0));
+        }
     }
 
     /// \brief Cache-block the given A_in matrix into A_out.
@@ -328,42 +328,42 @@ namespace TSQR {
     /// \param lda_in [in] Leading dimension of the matrix A_in
     void
     cache_block (const Ordinal num_rows,
-		 const Ordinal num_cols,
-		 Scalar A_out[],
-		 const Scalar A_in[],
-		 const Ordinal lda_in) const
+                 const Ordinal num_cols,
+                 Scalar A_out[],
+                 const Scalar A_in[],
+                 const Ordinal lda_in) const
     {
       // We say "*_rest" because it points to the remaining part of
       // the matrix left to cache block; at the beginning, the
       // "remaining" part is the whole matrix, but that will change as
       // the algorithm progresses.
-      const_mat_view A_in_rest (num_rows, num_cols, A_in, lda_in);
+      const_mat_view_type A_in_rest (num_rows, num_cols, A_in, lda_in);
       // Leading dimension doesn't matter since A_out will be cache blocked.
-      mat_view A_out_rest (num_rows, num_cols, A_out, lda_in);
+      mat_view_type A_out_rest (num_rows, num_cols, A_out, lda_in);
 
       while (! A_in_rest.empty())
-	{
-	  if (A_out_rest.empty())
-	    throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
+        {
+          if (A_out_rest.empty())
+            throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
 
-	  // This call modifies A_in_rest.
-	  const_mat_view A_in_cur = split_top_block (A_in_rest, false);
+          // This call modifies A_in_rest.
+          const_mat_view_type A_in_cur = split_top_block (A_in_rest, false);
 
-	  // This call modifies A_out_rest.
-	  mat_view A_out_cur = split_top_block (A_out_rest, true);
+          // This call modifies A_out_rest.
+          mat_view_type A_out_cur = split_top_block (A_out_rest, true);
 
-	  copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.get(), 
-		       A_out_cur.lda(), A_in_cur.get(), A_in_cur.lda());
-	}
+          copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.get(),
+                       A_out_cur.lda(), A_in_cur.get(), A_in_cur.lda());
+        }
     }
 
     //! "Un"-cache-block the given A_in matrix into A_out.
     void
     un_cache_block (const Ordinal num_rows,
-		    const Ordinal num_cols,
-		    Scalar A_out[],
-		    const Ordinal lda_out,		    
-		    const Scalar A_in[]) const
+                    const Ordinal num_cols,
+                    Scalar A_out[],
+                    const Ordinal lda_out,
+                    const Scalar A_in[]) const
     {
       // We say "*_rest" because it points to the remaining part of
       // the matrix left to cache block; at the beginning, the
@@ -371,30 +371,30 @@ namespace TSQR {
       // the algorithm progresses.
       //
       // Leading dimension doesn't matter since A_in is cache blocked.
-      const_mat_view A_in_rest (num_rows, num_cols, A_in, lda_out);
-      mat_view A_out_rest (num_rows, num_cols, A_out, lda_out);
+      const_mat_view_type A_in_rest (num_rows, num_cols, A_in, lda_out);
+      mat_view_type A_out_rest (num_rows, num_cols, A_out, lda_out);
 
       while (! A_in_rest.empty())
-	{
-	  if (A_out_rest.empty())
-	    throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
+        {
+          if (A_out_rest.empty())
+            throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
 
-	  // This call modifies A_in_rest.
-	  const_mat_view A_in_cur = split_top_block (A_in_rest, true);
+          // This call modifies A_in_rest.
+          const_mat_view_type A_in_cur = split_top_block (A_in_rest, true);
 
-	  // This call modifies A_out_rest.
-	  mat_view A_out_cur = split_top_block (A_out_rest, false);
+          // This call modifies A_out_rest.
+          mat_view_type A_out_cur = split_top_block (A_out_rest, false);
 
-	  copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.get(), 
-		       A_out_cur.lda(), A_in_cur.get(), A_in_cur.lda());
-	}
+          copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.get(),
+                       A_out_cur.lda(), A_in_cur.get(), A_in_cur.lda());
+        }
     }
 
     /// \brief Return the cache block with index \c cache_block_index.
     ///
     /// \param A [in] The original matrix.
     /// \param cache_block_index [in] Zero-based index of the cache block.
-    ///   If the index is out of bounds, silently return an empty matrix 
+    ///   If the index is out of bounds, silently return an empty matrix
     ///   view.
     /// \param contiguous_cache_blocks [in] Whether cache blocks are
     ///   stored contiguously.
@@ -403,40 +403,40 @@ namespace TSQR {
     ///   matrix view if the index is out of bounds.
     ///
     /// \note This method is templated on MatrixViewType, so that it
-    ///   works with both MatView and ConstMatView.
+    ///   works with any matrix view type.
     template<class MatrixViewType>
-    MatrixViewType 
+    MatrixViewType
     get_cache_block (MatrixViewType A,
-		     const typename MatrixViewType::ordinal_type cache_block_index,
-		     const bool contiguous_cache_blocks) const
+                     const typename MatrixViewType::ordinal_type cache_block_index,
+                     const bool contiguous_cache_blocks) const
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
 
       // Total number of cache blocks.
-      const ordinal_type num_cache_blocks = 
-	strategy_.num_cache_blocks (A.nrows(), A.ncols(), nrows_cache_block());
+      const ordinal_type num_cache_blocks =
+        strategy_.num_cache_blocks (A.nrows(), A.ncols(), nrows_cache_block());
 
       if (cache_block_index >= num_cache_blocks)
-	return MatrixViewType (0, 0, NULL, 0); // empty
+        return MatrixViewType (0, 0, NULL, 0); // empty
 
       // result[0] = starting row index of the cache block
       // result[1] = number of rows in the cache block
       // result[2] = pointer offset (A.get() + result[2])
       // result[3] = leading dimension (a.k.a. stride) of the cache block
-      std::vector<Ordinal> result = 
-	strategy_.cache_block_details (cache_block_index, A.nrows(), A.ncols(),
-				       A.lda(), nrows_cache_block(), 
-				       contiguous_cache_blocks);
+      std::vector<Ordinal> result =
+        strategy_.cache_block_details (cache_block_index, A.nrows(), A.ncols(),
+                                       A.lda(), nrows_cache_block(),
+                                       contiguous_cache_blocks);
       if (result[1] == 0)
-	// For some reason, the cache block is empty.  	
-	return MatrixViewType (0, 0, NULL, 0);
+        // For some reason, the cache block is empty.
+        return MatrixViewType (0, 0, NULL, 0);
 
       // We expect that ordinal_type is signed, so adding signed
       // (ordinal_type) to unsigned (pointer) may raise compiler
       // warnings.
-      return MatrixViewType (result[1], A.ncols(), 
-			     A.get() + static_cast<size_t>(result[2]), 
-			     result[3]);
+      return MatrixViewType (result[1], A.ncols(),
+                             A.get() + static_cast<size_t>(result[2]),
+                             result[3]);
     }
 
     /// \brief Equality operator.
@@ -447,9 +447,9 @@ namespace TSQR {
     bool
     operator== (const CacheBlockingStrategy<Ordinal, Scalar>& rhs) const
     {
-      return nrows() == rhs.nrows() && 
-	ncols() == rhs.ncols() &&
-	strategy_ == rhs.strategy_;
+      return nrows() == rhs.nrows() &&
+        ncols() == rhs.ncols() &&
+        strategy_ == rhs.strategy_;
     }
 
   private:
@@ -458,7 +458,7 @@ namespace TSQR {
 
     //! Number of columns in the matrix to block.
     Ordinal ncols_;
-    
+
     //! Strategy used to break the matrix into cache blocks.
     CacheBlockingStrategy<Ordinal, Scalar> strategy_;
 
@@ -489,8 +489,8 @@ namespace TSQR {
   /// cache blocks, as interpreted by the CacheBlocker object, are
   /// contiguous.
   template<class MatrixViewType>
-  class CacheBlockRangeIterator : 
-    public std::iterator<std::forward_iterator_tag, MatrixViewType> 
+  class CacheBlockRangeIterator :
+    public std::iterator<std::forward_iterator_tag, MatrixViewType>
   {
   public:
     typedef MatrixViewType view_type;
@@ -498,7 +498,7 @@ namespace TSQR {
     typedef typename MatrixViewType::scalar_type scalar_type;
 
     /// \brief Default constructor.
-    /// 
+    ///
     /// \note To implementers: We only implement a default constructor
     ///   because all iterators (e.g., TrivialIterator) must be
     ///   DefaultConstructible.
@@ -521,22 +521,22 @@ namespace TSQR {
     /// \param contiguousCacheBlocks [in] Whether cache blocks in the
     ///   matrix A are stored contiguously.
     CacheBlockRangeIterator (const MatrixViewType& A,
-			     const CacheBlockingStrategy<ordinal_type, scalar_type>& strategy,
-			     const ordinal_type currentIndex,
-			     const bool reverse,
-			     const bool contiguousCacheBlocks) :
-      A_ (A), 
-      blocker_ (A_.nrows(), A_.ncols(), strategy), 
+                             const CacheBlockingStrategy<ordinal_type, scalar_type>& strategy,
+                             const ordinal_type currentIndex,
+                             const bool reverse,
+                             const bool contiguousCacheBlocks) :
+      A_ (A),
+      blocker_ (A_.nrows(), A_.ncols(), strategy),
       curInd_ (currentIndex),
       reverse_ (reverse),
       contiguousCacheBlocks_ (contiguousCacheBlocks)
     {}
 
     //! Copy constructor.
-    CacheBlockRangeIterator (const CacheBlockRangeIterator& rhs) : 
-      A_ (rhs.A_), 
-      blocker_ (rhs.blocker_), 
-      curInd_ (rhs.curInd_), 
+    CacheBlockRangeIterator (const CacheBlockRangeIterator& rhs) :
+      A_ (rhs.A_),
+      blocker_ (rhs.blocker_),
+      curInd_ (rhs.curInd_),
       reverse_ (rhs.reverse_),
       contiguousCacheBlocks_ (rhs.contiguousCacheBlocks_)
     {}
@@ -555,9 +555,9 @@ namespace TSQR {
     //! Prefix increment operator.
     CacheBlockRangeIterator& operator++() {
       if (reverse_)
-	--curInd_;
+        --curInd_;
       else
-	++curInd_;
+        ++curInd_;
       return *this;
     }
 
@@ -624,8 +624,7 @@ namespace TSQR {
   /// iteration in the reverse direction (decreasing cache block
   /// index).
   ///
-  /// This class is templated so that it works with either a \c
-  /// MatView or a \c ConstMatView.
+  /// This class is templated so that it works with any matrix view.
   template<class MatrixViewType>
   class CacheBlockRange {
   public:
@@ -638,7 +637,7 @@ namespace TSQR {
     typedef CacheBlockRangeIterator<MatrixViewType> iterator;
 
     /// \brief Constructor
-    /// 
+    ///
     /// \param A [in] View of the matrix to factor.
     /// \param strategy [in] Cache blocking strategy to use (copied
     ///   on input).
@@ -650,18 +649,18 @@ namespace TSQR {
     /// \param contiguousCacheBlocks [in] Whether cache blocks in the
     ///   matrix A are stored contiguously.
     CacheBlockRange (MatrixViewType A,
-		     const CacheBlockingStrategy<ordinal_type, scalar_type>& strategy,
-		     const ordinal_type startIndex,
-		     const ordinal_type endIndex,
-		     const bool contiguousCacheBlocks) :
-      A_ (A), 
+                     const CacheBlockingStrategy<ordinal_type, scalar_type>& strategy,
+                     const ordinal_type startIndex,
+                     const ordinal_type endIndex,
+                     const bool contiguousCacheBlocks) :
+      A_ (A),
       startIndex_ (startIndex),
       endIndex_ (endIndex),
       strategy_ (strategy),
       contiguousCacheBlocks_ (contiguousCacheBlocks)
     {}
 
-    bool empty() const { 
+    bool empty() const {
       return startIndex_ >= endIndex_;
     }
 
@@ -701,7 +700,7 @@ namespace TSQR {
 
       //! Cache blocking strategy for a matrix with the same number of rows as A_.
       CacheBlockingStrategy<ordinal_type, scalar_type> strategy_;
-      
+
       //! Whether the cache blocks of the matrix A_ are stored contiguously.
       bool contiguousCacheBlocks_;
     };

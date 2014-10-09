@@ -123,7 +123,7 @@ namespace MueLu {
       Partitions are assigned to processes in order to minimize data movement.  The basic idea is that a good choice for partition
       owner is to choose the pid that already has the greatest number of nonzeros for a particular partition.
     */
-    void DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions, bool keepProc0) const;
+    void DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions) const;
 
   }; // class RepartitionFactory
 

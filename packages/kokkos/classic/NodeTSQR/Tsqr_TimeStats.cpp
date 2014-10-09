@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -44,12 +44,9 @@
 #include <Tsqr_TimeStats.hpp>
 #include <limits>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 namespace TSQR {
 
-  TimeStats::TimeStats() { init(); }
+  TimeStats::TimeStats () { init (); }
 
   void
   TimeStats::init () {
@@ -78,54 +75,52 @@ namespace TSQR {
   }
 
   void
-  TimeStats::print (std::ostream& out, 
-		    const bool humanReadable,
-		    const std::string& label,
-		    const std::string& labelLabel,
-		    const bool printHeaders) const
+  TimeStats::print (std::ostream& out,
+                    const bool humanReadable,
+                    const std::string& label,
+                    const std::string& labelLabel,
+                    const bool printHeaders) const
   {
     using std::endl;
 
-    if (humanReadable)
-      {
-	const char prefix[] = "-- ";
-	out << label << ":" << endl;
-	if (count() == 0)
-	  out << prefix << "No values collected" << endl;
-	else if (count() == 1)
-	  out << prefix << "One value collected: " << min() << endl;
-	else
-	  {
-	    out << prefix << "Count: " << count() << endl
-		<< prefix << "Min:   " << min() << endl
-		<< prefix << "Mean:  " << mean() << endl
-		<< prefix << "Max:   " << max() << endl
-		<< prefix << "Total: " << total() << endl;
-	  }
+    if (humanReadable) {
+      const char prefix[] = "-- ";
+      out << label << ":" << endl;
+      if (count() == 0) {
+        out << prefix << "No values collected" << endl;
       }
-    else
-      {
-	// "%" identifies this line as a "comment" line to filter out.
-	// First print field labels on one line, then print field
-	// values on the next line.
-	if (printHeaders)
-	  {
-	    out << "%" << labelLabel
-		<< "," << "count"
-		<< "," << "min"
-		<< "," << "mean"
-		<< "," << "max"
-		<< "," << "total" 
-		<< endl;
-	  }
-	out << label
-	    << "," << count() 
-	    << "," << min() 
-	    << "," << mean()
-	    << "," << max()
-	    << "," << total()
-	    << endl;
+      else if (count() == 1) {
+        out << prefix << "One value collected: " << min() << endl;
       }
+      else {
+        out << prefix << "Count: " << count() << endl
+            << prefix << "Min:   " << min() << endl
+            << prefix << "Mean:  " << mean() << endl
+            << prefix << "Max:   " << max() << endl
+            << prefix << "Total: " << total() << endl;
+      }
+    }
+    else {
+      // "%" identifies this line as a "comment" line to filter out.
+      // First print field labels on one line, then print field
+      // values on the next line.
+      if (printHeaders) {
+        out << "%" << labelLabel
+            << "," << "count"
+            << "," << "min"
+            << "," << "mean"
+            << "," << "max"
+            << "," << "total"
+            << endl;
+      }
+      out << label
+          << "," << count()
+          << "," << min()
+          << "," << mean()
+          << "," << max()
+          << "," << total()
+          << endl;
+    }
   }
 
 } // namespace TSQR
