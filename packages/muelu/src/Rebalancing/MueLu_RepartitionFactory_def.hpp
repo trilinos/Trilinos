@@ -550,7 +550,7 @@ namespace MueLu {
     // Do matching
     std::map<int,int> match;
     std::vector<char> matchedRanks(numProcs, 0), matchedParts(numProcs, 0);
-    int lastMatchedPart = -1, numMatched = 0;
+    int numMatched = 0;
     for (typename std::vector<Triplet<int,int> >::const_iterator it = gEdges.begin(); it != gEdges.end(); it++) {
       GO rank = it->i;
       GO part = it->j;
@@ -558,8 +558,6 @@ namespace MueLu {
         matchedRanks[rank] = 1;
         matchedParts[part] = 1;
         match[part] = rank;
-
-        lastMatchedPart = part;
         numMatched++;
       }
     }
