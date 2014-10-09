@@ -1,5 +1,7 @@
 <ParameterList name="MueLu">
 
+  <Parameter name="verbosity"                           type="string"   value="medium"/>
+
   <Parameter name="multigrid algorithm"                 type="string"   value="sa"/>
 
   <Parameter name="coarse: max size"                    type="int"      value="500"/>
@@ -10,5 +12,19 @@
   <Parameter name="repartition: max imbalance"          type="double"   value="1.1"/>
   <Parameter name="repartition: partitioner"            type="string"   value="zoltan2"/>
   <Parameter name="repartition: remap parts"            type="bool"     value="false"/>
+
+  <Parameter name="smoother: type"                      type="string"   value="RELAXATION"/>
+  <ParameterList name="smoother: params">
+    <Parameter name="relaxation: type"                  type="string"   value="Symmetric Gauss-Seidel"/>
+    <Parameter name="relaxation: sweeps"                type="int"      value="2"/>
+    <Parameter name="relaxation: damping factor"        type="double"   value="1"/>
+  </ParameterList>
+
+  <Parameter name="coarse: type"                        type="string"   value="RELAXATION"/>
+  <ParameterList name="coarse: params">
+    <Parameter name="relaxation: type"                  type="string"   value="Symmetric Gauss-Seidel"/>
+    <Parameter name="relaxation: sweeps"                type="int"      value="2"/>
+    <Parameter name="relaxation: damping factor"        type="double"   value="1"/>
+  </ParameterList>
 
 </ParameterList>
