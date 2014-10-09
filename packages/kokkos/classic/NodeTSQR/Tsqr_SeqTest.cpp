@@ -226,7 +226,7 @@ namespace TSQR {
             A2.fill (std::numeric_limits<Scalar>::quiet_NaN());
 
           actor.un_cache_block (nrows, ncols, A2.get(), A2.lda(), A_copy.get());
-          if (A == A2) {
+          if (matrix_equal (A, A2)) {
             if (b_debug)
               cerr << "-- Cache blocking test succeeded!" << endl;
           }

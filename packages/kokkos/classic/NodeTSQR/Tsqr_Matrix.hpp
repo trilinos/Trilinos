@@ -251,31 +251,15 @@ namespace TSQR {
       return A_[i];
     }
 
-    /// \brief Equality test: compares dimensions and entries.
-    ///
-    /// The test is templated so that B may have a different Ordinal
-    /// type or even a different Scalar type than *this.
+    //! Equality: ONLY compares dimensions and pointers (shallow).
     template<class MatrixViewType>
     bool operator== (const MatrixViewType& B) const
     {
-      if (nrows() != B.nrows() || ncols() != B.ncols())
+      if (get() != B.get() || nrows() != B.nrows() || ncols() != B.ncols() || lda() != B.lda()) {
         return false;
-
-      typedef typename MatrixViewType::ordinal_type second_ordinal_type;
-      typedef typename MatrixViewType::scalar_type second_scalar_type;
-
-      const ordinal_type A_nrows = nrows();
-      const ordinal_type A_lda = lda();
-      const ordinal_type A_ncols = ncols();
-      const second_ordinal_type B_lda = B.lda();
-      const scalar_type* A_j = get();
-      const second_scalar_type* B_j = B.get();
-
-      for (ordinal_type j = 0; j < A_ncols; ++j, A_j += A_lda, B_j += B_lda)
-        for (ordinal_type i = 0; i < A_nrows; ++i)
-          if (A_j[i] != B_j[i])
-            return false;
-      return true;
+      } else {
+        return true;
+      }
     }
 
     //! Number of rows in the matrix.

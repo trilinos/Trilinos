@@ -208,7 +208,7 @@ namespace TSQR {
           }
 
           actor.un_cache_block (numRows, numCols, A2.get(), A2.lda(), A_copy.get());
-          if (A == A2) {
+          if (matrix_equal (A, A2)) {
             if (debug)
               cerr << "-- Cache blocking test succeeded!" << endl;
           }
