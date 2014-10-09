@@ -46,6 +46,8 @@
 #ifndef MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DEF_HPP_
 #define MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DEF_HPP_
 
+#ifdef HAVE_MUELU_EXPERIMENTAL
+
 #include <Teuchos_Tuple.hpp>
 
 #include "Xpetra_Vector.hpp"
@@ -334,4 +336,5 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 
 } // namespace MueLu
 
+#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif /* MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DEF_HPP_ */

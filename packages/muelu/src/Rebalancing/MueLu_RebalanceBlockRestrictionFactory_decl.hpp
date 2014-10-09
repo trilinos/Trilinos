@@ -46,6 +46,8 @@
 #ifndef MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DECL_HPP_
 #define MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DECL_HPP_
 
+#ifdef HAVE_MUELU_EXPERIMENTAL
+
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MapExtractor_fwd.hpp>
@@ -124,4 +126,5 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_SHORT
+#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif /* MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DECL_HPP_ */

@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-
-
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #if defined(HAVE_MUELU_EXPLICIT_INSTANTIATION)
@@ -64,4 +64,4 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 #endif
 
-
+#endif

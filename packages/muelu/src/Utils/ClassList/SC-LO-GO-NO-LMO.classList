@@ -3,13 +3,13 @@ AggregationExportFactory
 AmalgamationFactory
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 AlgebraicPermutationStrategy
-BlockedCoarseMapFactory
-BlockedDirectSolver
-BlockedGaussSeidelSmoother
-BlockedPFactory
-BlockedRAPFactory
+BlockedCoarseMapFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+BlockedDirectSolver - #ifdef HAVE_MUELU_EXPERIMENTAL
+BlockedGaussSeidelSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
+BlockedPFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+BlockedRAPFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 BrickAggregationFactory
-BraessSarazinSmoother
+BraessSarazinSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 CGSolver
 CoalesceDropFactory
 CoarseMapFactory
@@ -29,10 +29,10 @@ Hierarchy
 HierarchyManager
 HierarchyFactory
 Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
-IndefBlockedDiagonalSmoother
+IndefBlockedDiagonalSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 LocalPermutationStrategy
 MapTransferFactory
-MergedBlockedMatrixFactory
+MergedBlockedMatrixFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 MergedSmoother
 MLParameterListInterpreter
 MultiVectorTransferFactory
@@ -50,26 +50,26 @@ ProjectorSmoother
 RAPFactory
 RAPShiftFactory
 RebalanceAcFactory
-RebalanceBlockAcFactory
-RebalanceBlockInterpolationFactory
-RebalanceBlockRestrictionFactory
+RebalanceBlockAcFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+RebalanceBlockInterpolationFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+RebalanceBlockRestrictionFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 RebalanceTransferFactory
 RefMaxwell - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
-SchurComplementFactory
+SchurComplementFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 SchwarzSmoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2) && defined(HAVE_MUELU_IFPACK2)
 ShiftedLaplacian
 ShiftedLaplacianOperator
-SimpleSmoother
+SimpleSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 Smoother
 SmootherBase
 SmootherFactory
 SmootherPrototype
 SolverBase
 SteepestDescentSolver
-SubBlockAFactory
+SubBlockAFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 TentativePFactory
 ThresholdAFilterFactory
 TpetraOperator
@@ -77,4 +77,4 @@ TransPFactory
 TrilinosSmoother
 UserPFactory
 SemiCoarsenPFactory
-UzawaSmoother
+UzawaSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
