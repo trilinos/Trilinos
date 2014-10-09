@@ -99,57 +99,53 @@ class MessengerPairMaker {
 };
 
 
-#define TSQR_TEST_DIST_TSQR( ScalarType, typeString )			\
-  do {							         	\
-    typedef int ordinal_type;						\
-    typedef ScalarType scalar_type;					\
+#define TSQR_TEST_DIST_TSQR( ScalarType, typeString )                   \
+  do {                                                                  \
+    typedef int ordinal_type;                                           \
+    typedef ScalarType scalar_type;                                     \
     typedef MessengerPairMaker<ordinal_type, scalar_type>::pair_type pair_type; \
-    typedef DistTsqrVerifier<int, scalar_type> verifier_type;		\
+    typedef DistTsqrVerifier<int, scalar_type> verifier_type;           \
     \
-    std::string scalarTypeName (typeString);				\
+    std::string scalarTypeName (typeString);                            \
     pair_type messPair = MessengerPairMaker< ordinal_type, scalar_type >::makePair (comm); \
-    verifier_type verifier (messPair.first, messPair.second, seed,	\
-        scalarTypeName, out, err, 			\
-        testFactorExplicit, testFactorImplicit,	\
-        humanReadable, printMatrices, debug);		\
-    verifier.verify (numCols, params.additionalFieldNames,		\
-        params.additionalData, params.printFieldNames);	\
-    verifier.getSeed (seed);						\
-  } while(false)
-
-
-#define TSQR_BENCHMARK_DIST_TSQR( theType, typeString )			\
-  do {									\
-    typedef theType scalar_type;						\
-    typedef MessengerBase< scalar_type > base_messenger_type;	        \
-    typedef RCP< base_messenger_type > base_messenger_ptr;		\
-    typedef TeuchosMessenger< scalar_type > derived_messenger_type;       \
-    typedef RCP< derived_messenger_type > derived_messenger_ptr;		\
-    typedef DistTsqrBenchmarker<int, scalar_type, timer_type>		\
-    benchmarker_type;							\
-    \
-    std::string scalarTypeName (typeString);				\
-    derived_messenger_ptr scalarCommDerived (new derived_messenger_type (comm)); \
-    base_messenger_ptr scalarComm =					\
-    rcp_implicit_cast< base_messenger_type > (scalarCommDerived);	\
-    benchmarker_type benchmarker (scalarComm, doubleComm, seed,		\
-        scalarTypeName, out, err,		\
+    verifier_type verifier (messPair.first, messPair.second, seed,      \
+        scalarTypeName, out, err,                       \
         testFactorExplicit, testFactorImplicit, \
-        humanReadable, debug);			\
-    benchmarker.benchmark (numTrials, numCols,				\
-        params.additionalFieldNames,			\
-        params.additionalData,				\
-        params.printFieldNames);			\
-    benchmarker.getSeed (seed);						\
+        humanReadable, printMatrices, debug);           \
+    verifier.verify (numCols, params.additionalFieldNames,              \
+        params.additionalData, params.printFieldNames); \
+    verifier.getSeed (seed);                                            \
+  } while(false)
+
+
+#define TSQR_BENCHMARK_DIST_TSQR( theType, typeString )                 \
+  do {                                                                  \
+    typedef theType scalar_type;                                                \
+    typedef MessengerBase< scalar_type > base_messenger_type;           \
+    typedef RCP< base_messenger_type > base_messenger_ptr;              \
+    typedef TeuchosMessenger< scalar_type > derived_messenger_type;       \
+    typedef RCP< derived_messenger_type > derived_messenger_ptr;                \
+    typedef DistTsqrBenchmarker<int, scalar_type, timer_type>           \
+    benchmarker_type;                                                   \
+    \
+    std::string scalarTypeName (typeString);                            \
+    derived_messenger_ptr scalarCommDerived (new derived_messenger_type (comm)); \
+    base_messenger_ptr scalarComm =                                     \
+    rcp_implicit_cast< base_messenger_type > (scalarCommDerived);       \
+    benchmarker_type benchmarker (scalarComm, doubleComm, seed,         \
+        scalarTypeName, out, err,               \
+        testFactorExplicit, testFactorImplicit, \
+        humanReadable, debug);                  \
+    benchmarker.benchmark (numTrials, numCols,                          \
+        params.additionalFieldNames,                    \
+        params.additionalData,                          \
+        params.printFieldNames);                        \
+    benchmarker.getSeed (seed);                                         \
   } while(false)
 
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-
-const char docString[] = "This program tests TSQR::DistTsqr, which "
-"implements the internode-parallel part of TSQR (TSQR::Tsqr).  "
-"Accuracy and performance tests are included.";
 
 /// \class DistTsqrTestParameters
 /// \brief Encapsulates values of command-line parameters
@@ -318,6 +314,10 @@ parseOptions (int argc,
   try {
     Teuchos::CommandLineProcessor cmdLineProc (/* throwExceptions=*/ true,
         /* recognizeAllOptions=*/ true);
+
+    const char docString[] = "This program tests TSQR::DistTsqr, which "
+      "implements the internode-parallel part of TSQR (TSQR::Tsqr).  "
+      "Accuracy and performance tests are included.";
     cmdLineProc.setDocString (docString);
     cmdLineProc.setOption ("verify",
         "noverify",
