@@ -118,7 +118,7 @@ private:
     // Solve state equation if not done already
     this->solve_state_equation(x,tol);
     // Solve state sensitivity equation
-    Teuchos::RCP<Vector<Real> > Bv = (this->state_)->clone();
+    Teuchos::RCP<Vector<Real> > Bv = (this->adjoint_)->clone();
     (this->con_)->applyJacobian_2(*Bv,v,*(this->state_),x,tol);
     Bv->scale(-1.0);
     (this->con_)->applyInverseJacobian_1(s,*Bv,*(this->state_),x,tol);
