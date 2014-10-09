@@ -26,8 +26,8 @@ if file_in.find("/tribits/") != -1 or file_in.find("/TriBITS/") != -1:
   sys.exit(0)
 
 if os.path.islink(file_in):
-       print "Ignoring soft link: ", file_in
-       sys.exit(0)
+  print "Ignoring soft link: ", file_in
+  sys.exit(0)
 
 file_in_str = open(file_in, 'r').read()
 file_out_str = ""

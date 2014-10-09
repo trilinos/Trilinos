@@ -49,7 +49,7 @@ INCLUDE(ParseVariableArguments)
 
 ###
 ### WARNING: See "NOTES TO DEVELOPERS" at the bottom of the file
-### TribitsPackageMacros.cmake!
+### TribitsPackageMacros.cmake before trying to change anything in this file!
 ###
 
 
@@ -76,6 +76,7 @@ INCLUDE(ParseVariableArguments)
 #     [LINKER_LANGUAGE (C|CXX|Fortran)]
 #     [DEFINES -D<define0> -D<define1> ...]
 #     [INSTALLABLE]
+#     [ADDED_EXE_TARGET_NAME_OUT <exeTargetName>]
 #     )
 #
 # *Sections:*
@@ -123,7 +124,7 @@ INCLUDE(ParseVariableArguments)
 #     directory (or can contain the relative path or absolute path).  If
 #     ``<srci>`` is an absolute path, then that full file path is used.  This
 #     list of sources (with adjusted directory path) are passed into
-#     ``ADD_EXECUTABLE(<fullExeName> ... )``.  After calling this function,
+#     ``ADD_EXECUTABLE(<exeTargetName> ... )``.  After calling this function,
 #     the properties of the source files can be altered using the built-in
 #     CMake command ``SET_SOURCE_FILE_PROPERTIES()``.
 #
@@ -220,6 +221,15 @@ INCLUDE(ParseVariableArguments)
 #     executable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory (see
 #     `Install Target (TRIBITS_ADD_EXECUTABLE())`_).
 #
+#   ``ADDED_EXE_TARGET_NAME_OUT <exeTargetName>``
+#
+#     If specified, then on output the variable ``<exeTargetName>`` will be
+#     set with the name of the executable target passed to
+#     ``ADD_EXECUTABLE(<exeTargetName> ... )``.  Having this name allows the
+#     calling ``CMakeLists.txt`` file access and set additional target
+#     propeties (see `Additional Executable and Source File Properties
+#     (TRIBITS_ADD_EXECUTABLE())`_).
+#
 # .. _Executable and Target Name (TRIBITS_ADD_EXECUTABLE()):
 #
 # **Executable and Target Name (TRIBITS_ADD_EXECUTABLE())**
@@ -227,13 +237,13 @@ INCLUDE(ParseVariableArguments)
 # By default, the full name of the executable and target name
 # is::
 #
-#   <fullExecName> = ${PACKAGE_NAME}_<exeRootName>
+#   <exeTargetName> = ${PACKAGE_NAME}_<exeRootName>
 #
 # If ``ADD_DIR_TO_NAME`` is set, then the directory path relative to the
 # package base directory (with "/" replaced with "_"), or ``<relDirName>``, is
 # added to the executable name to form::
 #
-#   <fullExecName> = ${PACKAGE_NAME}_<relDirName>_<exeRootName>
+#   <exeTargetName> = ${PACKAGE_NAME}_<relDirName>_<exeRootName>
 #
 # If the option ``NOEXEPREFIX`` is passed in, then the prefix
 # ``${PACKAGE_NAME}_`` is removed.
@@ -257,21 +267,28 @@ INCLUDE(ParseVariableArguments)
 #
 # **Additional Executable and Source File Properties (TRIBITS_ADD_EXECUTABLE())**
 #
-# Once ``ADD_EXECUTABLE(<fullExeName> ... )`` is called and this function
-# exists, one can set and change properties on the ``<fullExeName>``
+# Once ``ADD_EXECUTABLE(<exeTargetName> ... )`` is called and this function
+# exists, one can set and change properties on the ``<exeTargetName>``
 # executable target using the built-in ``SET_TARGET_PROPERTIES()`` command as
 # well as properties on any of the source files listed in ``SOURCES`` using
 # the built-in ``SET_SOURCE_FILE_PROPERTIES()`` command just like in any CMake
-# project.
+# project.  IF the executable is added, its name will be returned by the
+# argument ``ADDED_EXE_TARGET_NAME_OUT <exeTargetName>``.  For example::
+#
+#   TRIBITS_ADD_EXECUTABLE( someExe ...
+#     ADDED_EXE_TARGET_NAME_OUT  someExe_TARGET_NAME )
+#
+#   SET_TARGET_PROPERTIES( ${someExe_TARGET_NAME}
+#     PROPERTIES  LINKER_LANGUAGE  CXX )
 #
 # .. _Install Target (TRIBITS_ADD_EXECUTABLE()):
 #
 # **Install Target (TRIBITS_ADD_EXECUTABLE())**
 #
 # If ``INSTALLABLE`` is passed in, then an install target using the built-in
-# CMake command ``INSTALL(TARGETS <fullExeName> ...)`` is added to install the
-# built executable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory (actual
-# install directory path is determined by
+# CMake command ``INSTALL(TARGETS <exeTargetName> ...)`` is added to install
+# the built executable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory
+# (actual install directory path is determined by
 # ``${PROJECT_NAME}_INSTALL_RUNTIME_DIR``, see `Setting the install prefix at
 # configure time`_) .
 #
@@ -290,14 +307,14 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     #prefix
     PARSE
     #lists
-    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;DEFINES;ADDED_EXEC_TARGET_NAME_OUT"
+    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;DEFINES;ADDED_EXE_TARGET_NAME_OUT"
     #options
     "NOEXEPREFIX;NOEXESUFFIX;ADD_DIR_TO_NAME;INSTALLABLE"
     ${ARGN}
     )
 
-  IF(PARSE_ADDED_EXEC_TARGET_NAME_OUT)
-    SET(${PARSE_ADDED_EXEC_TARGET_NAME_OUT} PARENT_SCOPE)
+  IF(PARSE_ADDED_EXE_TARGET_NAME_OUT)
+    SET(${PARSE_ADDED_EXE_TARGET_NAME_OUT} PARENT_SCOPE)
   ENDIF()
   #
   # B) Exclude building the test executable based on some several criteria
@@ -455,10 +472,11 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     MESSAGE("TRIBITS_ADD_EXECUTABLE: ADD_EXECUTABLE(${EXE_BINARY_NAME} ${EXE_SOURCES})")
   ENDIF()
   ADD_EXECUTABLE(${EXE_BINARY_NAME} ${EXE_SOURCES})
-  IF(PARSE_ADDED_EXEC_TARGET_NAME_OUT)
-    SET(${PARSE_ADDED_EXEC_TARGET_NAME_OUT} ${EXE_BINARY_NAME} PARENT_SCOPE)
-  ENDIF()
   APPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_ALL_TARGETS ${EXE_BINARY_NAME})
+
+  IF(PARSE_ADDED_EXE_TARGET_NAME_OUT)
+    SET(${PARSE_ADDED_EXE_TARGET_NAME_OUT} ${EXE_BINARY_NAME} PARENT_SCOPE)
+  ENDIF()
 
   IF(PARSE_NOEXESUFFIX AND NOT WIN32)
     SET_TARGET_PROPERTIES(${EXE_BINARY_NAME} PROPERTIES SUFFIX "")
@@ -521,8 +539,8 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     LIST(APPEND LINK_LIBS last_lib)
   ENDIF()
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    PRINT_VAR(LINK_LIBS)
+  IF (${PROJECT_NAME}_DUMP_LINK_LIBS)
+      MESSAGE("-- ${EXE_NAME}:LINK_LIBS='${LINK_LIBS}'")
   ENDIF()
 
   TARGET_LINK_LIBRARIES(${EXE_BINARY_NAME} ${LINK_LIBS})

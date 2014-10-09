@@ -38,7 +38,6 @@
 # @HEADER
 
 
-INCLUDE(TribitsAddAdvancedTest)
 
 INCLUDE(ParseVariableArguments)
 INCLUDE(AdvancedSet)

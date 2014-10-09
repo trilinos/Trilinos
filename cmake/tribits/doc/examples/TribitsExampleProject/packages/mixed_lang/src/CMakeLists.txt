@@ -20,7 +20,7 @@ APPEND_SET(SOURCES
   )
 
 TRIBITS_ADD_LIBRARY(
-  mixedlanguage
+  mixedlang
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

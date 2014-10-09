@@ -38,7 +38,6 @@
 # @HEADER
 
 
-INCLUDE(TribitsAddAdvancedTest)
 
 
 IF (PYTHON_EXECUTABLE)

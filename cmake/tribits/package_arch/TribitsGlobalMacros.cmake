@@ -47,6 +47,7 @@ INCLUDE(TribitsSetupMPI)
 INCLUDE(TribitsTestCategories)
 INCLUDE(TribitsGeneralMacros)
 INCLUDE(TribitsAddTestHelpers)
+INCLUDE(TribitsVerbosePrintVar)
 
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(AdvancedOption)
@@ -291,6 +292,10 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     CACHE BOOL
     "Make the ${PROJECT_NAME} configure process verbose."
     )
+
+  ADVANCED_OPTION(${PROJECT_NAME}_DUMP_LINK_LIBS
+    "Dump the link libraries for every library and executable created."
+    "${${PROJECT_NAME}_VERBOSE_CONFIGURE}" )
 
   ADVANCED_SET(${PROJECT_NAME}_TRACE_FILE_PROCESSING
     ${${PROJECT_NAME}_VERBOSE_CONFIGURE}
@@ -2449,18 +2454,6 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
         )
     ENDIF()
 
-  ENDIF()
-
-  # Export the library dependencies. This will let client projects
-  # refer to all TPLs used by ${PROJECT_NAME}. (KRL, 26 Nov 2009)
-  #
-
-  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
-    MESSAGE("")
-    MESSAGE("Exporting library dependencies ...")
-    MESSAGE("")
-    EXPORT_LIBRARY_DEPENDENCIES(
-      ${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}LibraryDepends.cmake )
   ENDIF()
 
 ENDMACRO()

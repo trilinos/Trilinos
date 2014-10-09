@@ -48,9 +48,6 @@
 #
 
 
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddTest)
-INCLUDE(TribitsAddAdvancedTest)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_MPI)
 IF (${PACKAGE_NAME}_ENABLE_MPI)

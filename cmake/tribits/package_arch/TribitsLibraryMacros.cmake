@@ -360,7 +360,13 @@ ENDFUNCTION()
 # using the built-in CMake command ``SET_TARGET_PROPERTIES()`` as well as set
 # and change properties on any of the source files listed in ``SOURCES`` using
 # the built-in CMake command ``SET_SOURCE_FILE_PROPERTIES()`` just like in any
-# CMake project.
+# CMake project.  For example::
+#
+#   TRIBITS_ADD_LIBRARY( somelib ...
+#     ADDED_LIB_TARGET_NAME_OUT  somelib_TARGET_NAME )
+#
+#   SET_TARGET_PROPERTIES( ${somelib_TARGET_NAME}
+#     PROPERTIES  LINKER_LANGUAGE  CXX )
 #
 # .. _Miscellaneous Notes (TRIBITS_ADD_LIBRARY()):
 #
@@ -677,8 +683,8 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_LIB_TARGETS ${LIBRARY_NAME})
     PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_ALL_TARGETS ${LIBRARY_NAME})
 
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("${LIBRARY_NAME}_LINK_LIBS='${LINK_LIBS}'")
+    IF (${PROJECT_NAME}_DUMP_LINK_LIBS)
+      MESSAGE("-- ${LIBRARY_NAME_IN}:LINK_LIBS='${LINK_LIBS}'")
     ENDIF()
 
     TARGET_LINK_LIBRARIES(${LIBRARY_NAME}  ${LINK_LIBS})

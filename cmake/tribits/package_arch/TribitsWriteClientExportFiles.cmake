@@ -127,9 +127,9 @@ ENDFUNCTION()
 #     PACKAGE_NAME <pakageName>
 #     [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
 #     [WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>]
-#     [WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>]
+#     [WRITE_EXPORT_MAKEFILE <exportMakefileFileFullPath>]
 #     [WRITE_INSTALL_CMAKE_CONFIG_FILE]
-#     [WRITE_INSTALL_EXPORT_MAKLEFILE]
+#     [WRITE_INSTALL_EXPORT_MAKEFILE]
 #     )
 #
 # The arguments are:
@@ -152,7 +152,7 @@ ENDFUNCTION()
 #     the file ``<cmakeConfigFileFullPath>``.  NOTE: the argument should be
 #     the full path!
 #
-#   ``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
+#   ``WRITE_EXPORT_MAKEFILE <exportMakefileFileFullPath>``
 #
 #     If specified, then the package's (``<packageName>``) export makefile for
 #     use by external Makefile client projects will be created in the file
@@ -165,7 +165,7 @@ ENDFUNCTION()
 #     configured export file will be installed in to the install tree as well.
 #     The name and location of this file is hard-coded.
 #
-#   ``WRITE_INSTALL_EXPORT_MAKLEFILE``
+#   ``WRITE_INSTALL_EXPORT_MAKEFILE``
 #
 #     If specified, then the package's (``<packageName>``) install export
 #     makefile to be installed into the install tree as well.  The name and
@@ -199,9 +199,9 @@ FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
      #prefix
      PARSE
      #lists
-     "PACKAGE_NAME;WRITE_CMAKE_CONFIG_FILE;WRITE_EXPORT_MAKLEFILE;EXPORT_FILE_VAR_PREFIX"
+     "PACKAGE_NAME;WRITE_CMAKE_CONFIG_FILE;WRITE_EXPORT_MAKEFILE;EXPORT_FILE_VAR_PREFIX"
      #options
-     "WRITE_INSTALL_CMAKE_CONFIG_FILE;WRITE_INSTALL_EXPORT_MAKLEFILE"
+     "WRITE_INSTALL_CMAKE_CONFIG_FILE;WRITE_INSTALL_EXPORT_MAKEFILE"
      ${ARGN}
      )
 
@@ -435,7 +435,7 @@ INCLUDE(\"${PROJECT_BINARY_DIR}/${PACKAGE_NAME}Targets.cmake\")"
   # it can be directly imported into a Makefile.
   #
 
-  IF(PARSE_WRITE_EXPORT_MAKLEFILE)
+  IF(PARSE_WRITE_EXPORT_MAKEFILE)
 
     TRIBITS_LIST_TO_STRING("${FULL_LIBRARY_SET}" ${CMAKE_LINK_LIBRARY_FLAG} MAKEFILE_FULL_LIBRARY_SET)
     TRIBITS_LIST_TO_STRING("${FULL_LIBRARY_DIRS_SET}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_LIBRARY_DIRS)
@@ -460,7 +460,7 @@ INCLUDE(\"${PROJECT_BINARY_DIR}/${PACKAGE_NAME}Targets.cmake\")"
     ASSERT_DEFINED(${PROJECT_NAME}_TRIBITS_DIR)
     CONFIGURE_FILE(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.export.in
-      "${PARSE_WRITE_EXPORT_MAKLEFILE}"
+      "${PARSE_WRITE_EXPORT_MAKEFILE}"
       )
   ENDIF()
 
@@ -540,7 +540,7 @@ INCLUDE(\"\${CMAKE_CURRENT_LIST_DIR}/${PACKAGE_NAME}Targets.cmake\")"
   # I) Write the export makefile for the install tree
   #
 
-  IF (PARSE_WRITE_INSTALL_EXPORT_MAKLEFILE)
+  IF (PARSE_WRITE_INSTALL_EXPORT_MAKEFILE)
 
     # Generated Make imports must use CMAKE_INSTALL_PREFIX, rather
     # than the more platform friendly method of locating the libraries
@@ -626,14 +626,14 @@ FUNCTION(TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES PACKAGE_NAME)
   ENDIF()
 
   IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
-    SET(WRITE_EXPORT_MAKLEFILE
+    SET(WRITE_EXPORT_MAKEFILE
       ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PACKAGE_NAME})
     IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("For package ${PACKAGE_NAME} creating ${WRITE_EXPORT_MAKLEFILE}")
+      MESSAGE("For package ${PACKAGE_NAME} creating ${WRITE_EXPORT_MAKEFILE}")
     ENDIF()
     APPEND_SET(EXPORT_FILES_ARGS
-      WRITE_EXPORT_MAKLEFILE "${WRITE_EXPORT_MAKLEFILE}"
-      WRITE_INSTALL_EXPORT_MAKLEFILE)
+      WRITE_EXPORT_MAKEFILE "${WRITE_EXPORT_MAKEFILE}"
+      WRITE_INSTALL_EXPORT_MAKEFILE)
   ENDIF()
 
   TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(${EXPORT_FILES_ARGS})

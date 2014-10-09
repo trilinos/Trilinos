@@ -556,7 +556,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
       ARGS ${CTEST_BUILD_FLAGS}
       PASS_REGULAR_EXPRESSION_ALL
         "Built target simplecxx"
-        "Built target mixedlanguage"
+        "Built target mixedlang"
         "Built target pws_a"
         "Built target pws_b"
         "Built target pws_c"
@@ -610,7 +610,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
       ARGS ${CTEST_BUILD_FLAGS}
       PASS_REGULAR_EXPRESSION_ALL
         "Built target tep_simplecxx"
-        "Built target tep_mixedlanguage"
+        "Built target tep_mixedlang"
         "Built target tep_pws_a"
         "Built target tep_pws_b"
         "Built target tep_pws_c"
@@ -1063,7 +1063,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
     MESSAGE "Rebuild only exteranl_func"
     PASS_REGULAR_EXPRESSION_ALL
       "Built target simplecxx"
-      "Built target mixedlanguage"
+      "Built target mixedlang"
       "Built target pws_a"
       "Generating external_func/libexternal_func.a"
       "Linking CXX executable WrapExternal_run_external_func.exe"
@@ -1111,7 +1111,6 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
 TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
-  CATEGORIES CONTINUOUS
 
   TEST_0
     MESSSAGE "Do a verbose configure and check that the packages coupling variables are correct."
@@ -1156,4 +1155,73 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_NoFortran_WrapExternal_Verb
       "WrapExternal_LIBRARY_DIRS=''"
       "WrapExternal_LIBRARIES='external_func.pws_a'"
 
+      "pws_b_TARGET_NAME='pws_b'"
+      "b_test_TARGET_NAME='WithSubpackagesB_b_test'"
+      "test_of_b_TEST_NAME='WithSubpackagesB_test_of_b'"
+      "c_util_TEST_NAME='WithSubpackagesC_test_of_c_util${TEST_MPI_1_SUFFIX}'"
+
+      "-- simplecxx:LINK_LIBS=''"
+      "-- HelloWorldTests:LINK_LIBS='simplecxx'"
+      "-- pws_a:LINK_LIBS='simplecxx'"
+      "-- a_test:LINK_LIBS='pws_a'"
+      "-- pws_b:LINK_LIBS='pws_a[;]simplecxx'"
+      "-- b_test:LINK_LIBS='pws_b'"
+      "-- c_util:LINK_LIBS='pws_b[;]pws_a'"
+      "-- pws_c:LINK_LIBS='pws_b[;]pws_a'"
+      "-- c_test:LINK_LIBS='pws_c'"
+      "-- run_external_func:LINK_LIBS='external_func[;]pws_a'"
+
   )
+
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_WrapExternal_VerboseConfigure
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+
+  TEST_0
+    MESSSAGE "Do a verbose configure and check that the packages coupling variables are correct."
+    CMND ${CMAKE_COMMAND}
+    ARGS
+      ${COMMON_ENV_ARGS_PASSTHROUGH}
+      -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -DTribitsExProj_ENABLE_Fortran=ON
+      -DTribitsExProj_ENABLE_DEBUG=OFF
+      -DTribitsExProj_ENABLE_EXPORT_MAKEFILES=OFF
+      -DTribitsExProj_ENABLE_INSTALL_CMAKE_CONFIG_FILES=OFF
+      -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
+      -DTribitsExProj_ENABLE_SECONDARY_TESTED_CODE=ON
+      -DTribitsExProj_ENABLE_TESTS=ON
+      -DTribitsExProj_VERBOSE_CONFIGURE=ON
+      ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
+    PASS_REGULAR_EXPRESSION_ALL
+      "Final set of enabled packages:  SimpleCxx MixedLang WithSubpackages WrapExternal 4"
+      "Final set of enabled SE packages:  SimpleCxx MixedLang WithSubpackagesA WithSubpackagesB WithSubpackagesC WithSubpackages WrapExternal 7"
+
+      # ToDo Fill in more checks for libs, variables, etc. 
+
+      "-- pws_b_TARGET_NAME='pws_b'"
+      "-- b_test_TARGET_NAME='WithSubpackagesB_b_test'"
+      "-- test_of_b_TEST_NAME='WithSubpackagesB_test_of_b'"
+      "-- c_util_TEST_NAME='WithSubpackagesC_test_of_c_util${TEST_MPI_1_SUFFIX}'"
+      "-- test_of_c_b_mixed_lang_TARGET_NAME='WithSubpackagesC_test_of_c_b_mixed_lang'"
+      "-- test_of_c_b_mixed_lang_TEST_NAME='WithSubpackagesC_test_of_c_b_mixed_lang${TEST_MPI_1_SUFFIX}'"
+
+      "-- simplecxx:LINK_LIBS=''"
+      "-- HelloWorldTests:LINK_LIBS='simplecxx'"
+      "-- mixedlang:LINK_LIBS=''"
+      "-- RayTracerTests:LINK_LIBS='mixedlang'"
+      "-- pws_a:LINK_LIBS='simplecxx'"
+      "-- a_test:LINK_LIBS='pws_a'"
+      "-- pws_b:LINK_LIBS='pws_a[;]simplecxx'"
+      "-- b_test:LINK_LIBS='pws_b[;]mixedlang'"
+      "-- b_mixed_lang:LINK_LIBS='pws_b[;]mixedlang'"
+      "-- test_of_b_mixed_lang:LINK_LIBS='b_mixed_lang[;]pws_b[;]mixedlang'"
+      "-- c_util:LINK_LIBS='pws_b[;]pws_a'"
+      "-- pws_c:LINK_LIBS='pws_b[;]pws_a'"
+      "-- c_test:LINK_LIBS='pws_c'"
+      "-- c_b_mixed_lang:LINK_LIBS='pws_c[;]b_mixed_lang'"
+      "-- test_of_c_b_mixed_lang:LINK_LIBS='c_b_mixed_lang[;]pws_c'"
+      "-- run_external_func:LINK_LIBS='external_func[;]pws_a'"
+
+  )
+

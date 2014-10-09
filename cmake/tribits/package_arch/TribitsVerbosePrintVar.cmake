@@ -37,32 +37,36 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(AssertDefined)
-INCLUDE(AppendStringVarWithSep)
+
+IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
 
 #
-# @FUNCTION: PRINT_NONEMPTY_VAR_WITH_SPACES()
+# @FUNCTION: TRIBITS_VERBOSE_PRINT_VAR()
 #
-# Print a defined variable giving its name then value printed with spaces
-# instead of ``';'`` but only if it is not empty.
+# print a variable giving its name then value if
+# ``${PROJECT_NAME}_VERBOSE_CONFIGURE=TRUE``.
 #
 # Usage::
 #
-#    PRINT_NONEMPTY_VAR_WITH_SPACES(<varName>  <printedVarInOut>)
+#   TRIBITS_VERBOSE_PRINT_VAR(<varName>)
 #
-# Prints the variable as::
+# This prints::
 #
-#    <varName>: <ele0> <ele1> ...
+#   MESSAGE("-- " "${VARIBLE_NAME}='${${VARIBLE_NAME}}'")
 #
-# If ``$<printedVarInOut>`` is ``TRUE`` on input, then the varible is not
-# touched. If however, the varible ``$<printedVarInOut>`` is not ``TRUE`` on
-# input, then it is set to ``TRUE`` on output.
+# The variable ``<varName>`` can be defined or undefined or empty.  This uses
+# an explicit "-- " line prefix so that it prints nice even on Windows CMake.
 #
-FUNCTION(PRINT_NONEMPTY_VAR_WITH_SPACES  VARIBLE_NAME  PRINTED_VAR_OUT)
-  ASSERT_DEFINED(VARIBLE_NAME)
-  IF (NOT "${${VARIBLE_NAME}}" STREQUAL "")
-    STRING(REPLACE ";" " " OUTSTR "${${VARIBLE_NAME}}")
-    MESSAGE("-- ${VARIBLE_NAME}: ${OUTSTR}")
-    SET(${PRINTED_VAR_OUT} TRUE PARENT_SCOPE)
-  ENDIF()
+FUNCTION(TRIBITS_VERBOSE_PRINT_VAR VARIBLE_NAME)
+  MESSAGE("-- " "${VARIBLE_NAME}='${${VARIBLE_NAME}}'")
 ENDFUNCTION()
+
+
+ELSE() # ${PROJECT_NAME}_VERBOSE_CONFIGURE
+
+
+FUNCTION(TRIBITS_VERBOSE_PRINT_VAR VARIBLE_NAME)
+ENDFUNCTION()
+
+
+ENDIF() # ${PROJECT_NAME}_VERBOSE_CONFIGURE

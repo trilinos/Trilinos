@@ -983,12 +983,28 @@ a) **Trace file processing during configure:**
 
 b) **Getting verbose output from TriBITS configure:**
 
-  ::
+  To do a complete debug dump for the TriBITS configure process, use::
 
     -D <Project>_VERBOSE_CONFIGURE:BOOL=ON
 
   This produces a *lot* of output but can be very useful when debugging
   configuration problems.
+
+  To just dump the package and TPL dependencies, use::
+
+    -D <Project>_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON
+
+  To just dump the link libraries for each library and executable created,
+  use::
+
+    -D <Project>_DUMP_LINK_LIBS:BOOL=ON
+
+  Of course ``<Project>_DUMP_PACKAGE_DEPENDENCIES`` and
+  ``<Project>_DUMP_LINK_LIBS`` can be used together.  Also, note that
+  ``<Project>_DUMP_PACKAGE_DEPENDENCIES`` and ``<Project>_DUMP_LINK_LIBS``
+  both default t ``ON`` when ``<Project>_VERBOSE_CONFIGURE=ON`` on the first
+  configure.
+ 
 
 c) **Getting verbose output from the makefile:**
 
@@ -1338,27 +1354,32 @@ of the number of packages in the project.
 To additionally add timing for the configure of individual packages, configure
 with::
 
+  -D <Project>_ENABLE_CONFIGURE_TIMING:BOOL=ON \
   -D <Project>_ENABLE_PACKAGE_CONFIGURE_TIMING:BOOL=ON
 
-If you configuring a large number of packages (perhaps by including a lot of
-add-on packages in extra repos) then you might not want to enable
-package-by-package timing since it can some significant overhead to the
+If you are configuring a large number of packages (perhaps by including a lot
+of add-on packages in extra repos) then you might not want to enable
+package-by-package timing since it can add some significant overhead to the
 configure times.
 
 If you just want to time individual packages instead, you can enable that
 with::
 
+  -D <Project>_ENABLE_CONFIGURE_TIMING:BOOL=ON \
   -D <TRIBITS_PACKAGE_0>_PACKAGE_CONFIGURE_TIMING:BOOL=ON \
   -D <TRIBITS_PACKAGE_1>_PACKAGE_CONFIGURE_TIMING:BOOL=ON \
   ...
 
 NOTES:
+
 * This requires that you are running on a Linux/Unix system that has the
   standard shell command ``date``.  CMake does not have built-in timing
-  functions so you have to query the system.  This will report timings to
-  0.001 seconds but not that the overall configure time will go up due to the
-  increased overhead of calling ``date``.
-* Because this feature has to call the ``data`` using CMake's
+  functions so this system command needs to be used instead.  This will report
+  timings to 0.001 seconds but note that the overall configure time will go up
+  due to the increased overhead of calling ``date`` as a process shell
+  command.
+
+* '''WARNING:''' Because this feature has to call the ``data`` using CMake's
   ``EXECUTE_PROCESS()`` command, it can be expensive.  Therefore, this should
   really only be turned on for large projects (where the extra overhead is
   small) or for smaller projects for extra informational purposes.
@@ -1380,21 +1401,24 @@ In addition, this will install versions of these files into the install tree.
 
 To confiugre Makefile export files, configure with::
 
-   -D <Project>_ENABLE_EXPORT_MAKEFILES:BOOL=ON
+  -D <Project>_ENABLE_EXPORT_MAKEFILES:BOOL=ON
 
 which will generate the file ``Makefile.export.<Project>`` for the project and
 the files ``Makefile.export.<Package>`` for each enabled package in the build
-tree.  In addition, this will install versions of these files into the install tree.
+tree.  In addition, this will install versions of these files into the install
+tree.
 
-The list of export files generated can be reduced by specifying the exact
-list of packages the files are requested for with::
+The list of export files generated can be reduced by specifying the exact list
+of packages the files are requested for with::
 
   -D <Project>_GENERATE_EXPORT_FILES_FOR_ONLY_LISTED_SE_PACKAGES="<pkg0>;<pkg1>"
 
 NOTES:
+
 * Only enabled packages will have their export files generated.
+
 * One would only want to limit the export files generated for very large
-projects where the cost my be high for doing so.
+  projects where the cost my be high for doing so.
 
 
 Generating a project repo version file
