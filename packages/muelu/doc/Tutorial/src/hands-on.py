@@ -39,7 +39,7 @@ def clearWindow():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def waitForKey():
-    os.system('read -s -n 1 -p "Press any key to continue..."')
+    os.system("""bash -c 'read -s -n 1 -p "Press any key to continue..."'""")
     print
  
 def is_number(s):
@@ -88,7 +88,7 @@ class ProblemHandler():
     
     self.isDirty = True                   # flag to store, whether problem has to be rerun or not
 
-    self.editor = "kwrite"    # TODO replace me by local editor...
+    self.editor = "gedit"    # TODO replace me by local editor...
     
   def main(self):
     self.printMainMenu()
@@ -131,6 +131,28 @@ class ProblemHandler():
     self.meshx      = 50
     self.meshy      = 50 
     self.runLaplaceProblem() # we can use the same routine as for Laplace...    
+    
+  def doChallenge1(self):
+    m = MueLu_XMLChallengeMode()
+    m.numProcs      = 1      # number of processors
+    m.globalNumDofs = 16641   # number of DOFs
+    m.nDofsPerNode  = 1      # DOFs per node
+    m.solver        = "gmres"        # AztecOO solver
+    m.tol           = 1e-12       # solver tolerance
+    m.executable    = "./MueLu_Challenge_XML.exe" # executable
+    m.problem       = "condif2d"   # string describing problem
+    m.main()
+    
+  def doChallenge2(self):
+    m = MueLu_XMLChallengeMode()
+    m.numProcs      = 1      # number of processors
+    m.globalNumDofs = 7020   # number of DOFs
+    m.nDofsPerNode  = 2      # DOFs per node
+    m.solver        = "cg"        # AztecOO solver
+    m.tol           = 1e-12       # solver tolerance
+    m.executable    = "./MueLu_Challenge_XML.exe" # executable
+    m.problem       = "stru2d"   # string describing problem    
+    m.main()    
     
   def runLaplaceProblem(self):
     # check whether xml file exists
@@ -246,7 +268,7 @@ class ProblemHandler():
       waitForKey()
       return
       
-    if os.path.isfile("aggs_level0_proc0.txt") == False:
+    if os.path.isfile("aggs_level0_proc0.out") == False:
       print bcolors.FAIL+"No aggregation debug output found. Do not forget to turn on the AggregationExport factory in your xml file." + bcolors.ENDC
       waitForKey()
       return
@@ -285,8 +307,8 @@ class ProblemHandler():
     editor = subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, )
 
   def printProblemSelectionMenu(self):
-    options = ['Laplace 2D (50x50)', 'Laplace 2D', 'Recirc 2D (50x50)', 'Recirc 2D', 'Exit']
-    callbacks = [self.doLaplace2D50,self.doLaplace2Dn,self.doRecirc2D50,self.doRecirc2Dn, self.doExitProgram]
+    options = ['Laplace 2D (50x50)', 'Laplace 2D', 'Recirc 2D (50x50)', 'Recirc 2D', 'Challenge: Convection diffusion', 'Challenge: Elasticity problem', 'Exit']
+    callbacks = [self.doLaplace2D50,self.doLaplace2Dn,self.doRecirc2D50,self.doRecirc2Dn,self.doChallenge1,self.doChallenge2, self.doExitProgram]
     while True:
       self.runMenu(options,callbacks)
   
@@ -343,7 +365,199 @@ class ProblemHandler():
     print bcolors.WARNING+"Number of Multigrid solving sweeps: "+bcolors.ENDC + str(self.mgsweeps)
     print bcolors.HEADER+"***************************   PROBLEM   ****************************"+bcolors.ENDC
 
+class MueLu_XMLChallengeMode():
+  """ Menu and options for challenge mode """
+ 
+  def __init__(self):
+    
+    self.numProcs      = 1      # number of processors
+    self.globalNumDofs = 7020   # number of DOFs
+    self.nDofsPerNode  = 2      # DOFs per node
+    self.solver        = "cg"        # AztecOO solver
+    self.tol           = 1e-12       # solver tolerance
+    self.executable    = "./MueLu_Challenge_XML.exe" # executable
+    self.problem       = "stru2d"   # string describing problem
+    self.xmlReferenceFileName = ""
+    self.xmlFileName   = ""
+    self.isDirty       = True  # dirty flag
+    self.editor        = "gedit" ### fix me
+    
+    self.proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    
+  def main(self):
+    # generate results for reference xml files
+    self.xmlReferenceFileName = "challenges/" + self.problem + "_reference.xml"
+    
+    # copy file with reference parameters for this example
+    cmd = "cp challenges/" + self.problem + "_reference.xml " + self.problem + "_parameters.xml"
+    runCommand(cmd)
+    
+    self.xmlFileName   = self.problem + "_parameters.xml"     # xml parameter file
+ 
+    self.doRunReference()
+  
+    while True:
+      self.printMainMenu()
+
+  def runMenu(self,options,callbacks):
+    for i,option in enumerate(options):
+      print('%s. %s' % (i, option)) # display all options
+    choice = raw_input('your choice? ')
+    if is_number(str(choice)) and int(choice) < len(options):
+      callbacks[int(choice)]() # call correspondending function
       
+  # print main menu for challenge mode   
+  def printMainMenu(self):
+    clearWindow()    
+    self.printSettings()
+    print ""
+    if self.isDirty == True:
+      print bcolors.FAIL+ "DO NOT FORGET TO RUN THE EXAMPLE (option 0)" + bcolors.ENDC
+    else:
+      print bcolors.OKDARKGREEN + "Results up to date!" + bcolors.ENDC
+      print ""
+      self.printResults()
+    print ""
+
+    options = ['Run example','Show screen output', 'Change XML parameter file', 'Open xml file', 'Change procs', 'Change linear solver', 'Plot residual', 'Exit']
+    callbacks = [self.doRunExample,self.printScreenOutput,self.changeSolver,self.openXMLfile,self.changeProcs, self.doSolverMenu,self.doPlotResidual, self.doExitProgram]
+    
+    self.runMenu(options,callbacks)      
+  
+  def printSettings(self):
+    ## print out all made settings for xml file
+    print bcolors.HEADER+"***************************   PROBLEM   ****************************"+bcolors.ENDC
+    print bcolors.WARNING+"Problem type:          "+bcolors.ENDC + str(self.problem)
+    print bcolors.WARNING+"Problem size:          "+bcolors.ENDC + str(self.globalNumDofs)
+    print ""
+    if self.xmlFileName == "" or not os.path.isfile(self.xmlFileName) or not os.access(self.xmlFileName, os.R_OK):
+      print bcolors.FAIL+"Solver xml parameters: "+bcolors.ENDC + str(self.xmlFileName) + bcolors.FAIL + " invalid" + bcolors.ENDC
+    else:
+      print bcolors.WARNING+"Solver xml parameters:              "+bcolors.ENDC + str(self.xmlFileName)
+    print bcolors.WARNING+"Number of processors:               "+bcolors.ENDC + str(self.numProcs)
+    print bcolors.WARNING+"Solver (Tolerance): "+bcolors.ENDC + str(self.solver) + " (" + str(self.tol) + ")"
+    print bcolors.HEADER+"***************************   PROBLEM   ****************************"+bcolors.ENDC  
+  
+  def printResults(self):
+    cmd = "grep 'total iterations:' output.log"
+    iter = runCommand(cmd)
+    cmd = "grep 'Solution time:' output.log"
+    time = runCommand(cmd)
+    cmd = "grep 'total iterations:' reference.log"
+    refiter = runCommand(cmd)
+    cmd = "grep 'Solution time:' reference.log"
+    reftime = runCommand(cmd)
+    print bcolors.HEADER+"***************************   RESULTS   ****************************"+bcolors.ENDC
+    print "Reference settings:"
+    print str(refiter)
+    print str(reftime)
+    print "Your settings:"
+    print str(iter)
+    print str(time)
+    print bcolors.HEADER+"***************************   RESULTS   ****************************"+bcolors.ENDC
+  
+  def doRunReference(self):
+    print "Please wait..."
+    # runs example
+    cmd = "rm -f *.vtp *.mat example*.txt output.log output.res reference.log reference.res aggs*.txt nodes*.txt"
+    runCommand(cmd)
+    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlReferenceFileName + " --problem=challenges/" + str(self.problem) + " | tee reference.log 2>&1"
+    runCommand(cmd)
+    self.isDirty = False
+
+    
+  def doRunExample(self):
+    # runs example
+    print "PREPARE SIMULATON"
+    cmd = "rm -f *.vtp *.mat example*.txt output.log output.res aggs*.txt nodes*.txt"
+    runCommand(cmd)
+    print "RUN EXAMPLE"
+    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlFileName + " --problem=challenges/" + str(self.problem) + " | tee output.log 2>&1"
+    print cmd
+    runCommand(cmd)
+    runCommand("echo 'Press q to return.' >> output.log")
+    print "POSTPROCESSING..."
+    runCommand("cat example*.txt > example.txt")
+    print "COMPLETE"
+    self.isDirty = False
+    waitForKey()    
+
+  def printScreenOutput(self):
+    clearWindow()
+    if not os.path.isfile("output.log") or not os.access("output.log", os.R_OK):
+      print bcolors.FAIL+"Screen output not available."+bcolors.ENDC
+    else: 
+      print runCommand("less output.log")
+    waitForKey()
+
+  def changeSolver(self):
+    self.xmlFileName = raw_input("XML file name: ")
+    self.isDirty = True
+    while self.xmlFileName == "" or not os.path.isfile(self.xmlFileName) or not os.access(self.xmlFileName, os.R_OK):
+      print bcolors.FAIL+"Solver xml parameters: "+bcolors.ENDC + str(self.xmlFileName) + bcolors.FAIL + " invalid" + bcolors.ENDC
+      m = MueLu_XMLgenerator()
+      m.xmlFileName=self.xmlFileName
+      m.generateXMLfile()
+      m.askForSolver()
+      m.generateXMLfile()
+      self.xmlFileName = m.xmlFileName # store xml file  
+
+  def openXMLfile(self):
+    editor = subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, )
+    
+  def changeProcs(self):
+    self.numProcs = raw_input("Number of processors: ")
+    while not is_number(str(self.numProcs)):
+      self.numProcs = raw_input("Number of processors: ")
+    self.isDirty = True
+    self.doRunReference()
+   
+  def doCGIteration(self):
+    self.solver = "cg"
+    self.isDirty = True  
+    self.doRunReference()
+  def doGMRESIteration(self):
+    self.solver = "gmres"
+    self.isDirty = True  
+    self.doRunReference()
+  
+  def doSolverMenu(self):
+    options = ['CG method', 'GMRES method']
+    callbacks = [self.doCGIteration,self.doGMRESIteration]
+    #while self.exitLoop == False:
+    self.runMenu(options,callbacks)
+    #self.exitLoop=True #False
+    
+  def doPlotResidual(self):
+    
+    # prepare residual output file
+    cmd = "grep iter: output.log > output.res"
+    runCommand(cmd)
+    
+    # prepare reference data
+    cmd = "grep iter: reference.log > reference.res"
+    runCommand(cmd)
+    self.proc1.stdin.write("set term x11 1\n")
+    self.proc1.stdin.write("set title \"Residual of " + str(self.solver) + " method\"\n")
+    self.proc1.stdin.write("set style data lines\n")
+    self.proc1.stdin.write("set xlabel \"# iterations\"\n")
+    self.proc1.stdin.write("set ylabel \"Relative residual\"\n")
+    self.proc1.stdin.write("set autoscale\n")
+    self.proc1.stdin.write("set logscale y\n")
+    printcmd = "plot \"reference.res\" using 5 w linespoints title \"REFERENCE\", \"output.res\" using 5 w linespoints title \"" + str(self.xmlFileName) + "\"\n"
+    self.proc1.stdin.write(printcmd)
+    
+    self.proc1.stdin.flush()
+    
+  def doExitProgram(self):
+    runCommand("rm output.log reference.log output.res reference.res")
+    sys.exit() # terminate full program
+
+    
+    # gnuplot commands
+    # set logscale y
+    # plot "temp.log" using 5 w linespoints
+    
 class MueLu_XMLgenerator():
   """Simple generator for MueLu xml files."""
     

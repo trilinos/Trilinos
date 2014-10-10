@@ -53,9 +53,6 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Map.h>
 
-// Teuchos
-#include <Teuchos_StandardCatchMacros.hpp>
-
 // Galeri
 #include <Galeri_Maps.h>
 #include <Galeri_CrsMatrices.h>
@@ -94,136 +91,132 @@ int main(int argc, char *argv[]) {
   // MPI initialization using Teuchos
   // =========================================================================
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+  RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  int MyPID   = comm->getRank();
+  int NumProc = comm->getSize();
 
-  bool success = false;
-  bool verbose = true;
-  try {
-    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    int MyPID   = comm->getRank();
-    int NumProc = comm->getSize();
+  const Teuchos::RCP<Epetra_Comm> epComm = Teuchos::rcp_const_cast<Epetra_Comm>(Xpetra::toEpetra(comm));
 
-    const Teuchos::RCP<Epetra_Comm> epComm = Teuchos::rcp_const_cast<Epetra_Comm>(Xpetra::toEpetra(comm));
+  // =========================================================================
+  // Convenient definitions
+  // =========================================================================
+  //SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
-    // =========================================================================
-    // Convenient definitions
-    // =========================================================================
-    //SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
-
-    // Instead of checking each time for rank, create a rank 0 stream
-    RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    Teuchos::FancyOStream& fancyout = *fancy;
-    fancyout.setOutputToRootOnly(0);
+  // Instead of checking each time for rank, create a rank 0 stream
+  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Teuchos::FancyOStream& fancyout = *fancy;
+  fancyout.setOutputToRootOnly(0);
 
 
 
-    // =========================================================================
-    // Parameters initialization
-    // =========================================================================
-    Teuchos::CommandLineProcessor clp(false);
-    GO nx = 100, ny = 100;
-    clp.setOption("nx",                   &nx,              "mesh size in x direction");
-    clp.setOption("ny",                   &ny,              "mesh size in y direction");
-    std::string xmlFileName = "xml/s3a.xml"; clp.setOption("xml", &xmlFileName,     "read parameters from a file. Otherwise, this example uses by default 'tutorial1a.xml'");
-    int mgridSweeps = 1; clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
-    std::string printTimings = "no";   clp.setOption("timings", &printTimings,     "print timings to screen [yes/no]");
-    double tol               = 1e-12;  clp.setOption("tol",                   &tol,              "solver convergence tolerance");
+  // =========================================================================
+  // Parameters initialization
+  // =========================================================================
+  Teuchos::CommandLineProcessor clp(false);
+  GO nx = 100, ny = 100;
+  clp.setOption("nx",                   &nx,              "mesh size in x direction");
+  clp.setOption("ny",                   &ny,              "mesh size in y direction");
+  std::string xmlFileName = "xml/s3a.xml"; clp.setOption("xml", &xmlFileName,     "read parameters from a file. Otherwise, this example uses by default 'tutorial1a.xml'");
+  int mgridSweeps = 1; clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
+  std::string printTimings = "no";   clp.setOption("timings", &printTimings,     "print timings to screen [yes/no]");
+  double tol               = 1e-12;  clp.setOption("tol",                   &tol,              "solver convergence tolerance");
 
-    switch (clp.parse(argc,argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  switch (clp.parse(argc,argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  }
+
+  // =========================================================================
+  // Problem construction
+  // =========================================================================
+  RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time"))), tm;
+
+  comm->barrier();
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
+
+  Teuchos::ParameterList GaleriList;
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", ny);
+  GaleriList.set("mx", epComm->NumProc());
+  GaleriList.set("my", 1);
+  GaleriList.set("lx", 1.0); // length of x-axis
+  GaleriList.set("ly", 1.0); // length of y-axis
+  GaleriList.set("diff", 1e-5);
+  GaleriList.set("conv", 1.0);
+
+  // create map
+  Teuchos::RCP<Epetra_Map> epMap = Teuchos::rcp(Galeri::CreateMap("Cartesian2D", *epComm, GaleriList));
+
+  // create coordinates
+  Teuchos::RCP<Epetra_MultiVector> epCoord = Teuchos::rcp(Galeri::CreateCartesianCoordinates("2D", epMap.get(), GaleriList));
+
+  // create matrix
+  Teuchos::RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(Galeri::CreateCrsMatrix("Recirc2D", epMap.get(), GaleriList));
+
+  // Epetra -> Xpetra
+  Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+  Teuchos::RCP<CrsMatrixWrap> exAWrap = Teuchos::rcp(new CrsMatrixWrap(exA));
+
+  RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(exAWrap);
+  int numPDEs = 1;
+  A->SetFixedBlockSize(numPDEs);
+
+  // set rhs and solution vector
+  RCP<Epetra_Vector> B = Teuchos::rcp(new Epetra_Vector(*epMap));
+  RCP<Epetra_Vector> X = Teuchos::rcp(new Epetra_Vector(*epMap));
+  B->PutScalar(1.0);
+  X->PutScalar(0.0);
+
+  // Epetra -> Xpetra
+  RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVector(B));
+  RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVector(X));
+
+  xX->setSeed(100);
+  xX->randomize();
+
+  // build null space vector
+  RCP<const Map> map = A->getRowMap();
+  RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, numPDEs);
+
+  for (int i=0; i<numPDEs; ++i) {
+    Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
+    int numBlocks = nsValues.size() / numPDEs;
+    for (int j=0; j< numBlocks; ++j) {
+      nsValues[j*numPDEs + i] = 1.0;
     }
+  }
 
-    // =========================================================================
-    // Problem construction
-    // =========================================================================
-    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time"))), tm;
+  comm->barrier();
+  tm = Teuchos::null;
 
-    comm->barrier();
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
+  fancyout << "========================================================\nGaleri complete.\n========================================================" << std::endl;
 
-    Teuchos::ParameterList GaleriList;
-    GaleriList.set("nx", nx);
-    GaleriList.set("ny", ny);
-    GaleriList.set("mx", epComm->NumProc());
-    GaleriList.set("my", 1);
-    GaleriList.set("lx", 1.0); // length of x-axis
-    GaleriList.set("ly", 1.0); // length of y-axis
-    GaleriList.set("diff", 1e-5);
-    GaleriList.set("conv", 1.0);
+  // =========================================================================
+  // Preconditioner construction
+  // =========================================================================
+  comm->barrier();
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
+  ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
+  comm->barrier();
+  tm = Teuchos::null;
 
-    // create map
-    Teuchos::RCP<Epetra_Map> epMap = Teuchos::rcp(Galeri::CreateMap("Cartesian2D", *epComm, GaleriList));
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
-    // create coordinates
-    Teuchos::RCP<Epetra_MultiVector> epCoord = Teuchos::rcp(Galeri::CreateCartesianCoordinates("2D", epMap.get(), GaleriList));
+  RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
 
-    // create matrix
-    Teuchos::RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(Galeri::CreateCrsMatrix("Recirc2D", epMap.get(), GaleriList));
+  H->GetLevel(0)->Set("A",           A);
+  H->GetLevel(0)->Set("Nullspace",   nullspace);
 
-    // Epetra -> Xpetra
-    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-    Teuchos::RCP<CrsMatrixWrap> exAWrap = Teuchos::rcp(new CrsMatrixWrap(exA));
+  mueLuFactory.SetupHierarchy(*H);
 
-    RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(exAWrap);
-    int numPDEs = 1;
-    A->SetFixedBlockSize(numPDEs);
+  comm->barrier();
+  tm = Teuchos::null;
 
-    // set rhs and solution vector
-    RCP<Epetra_Vector> B = Teuchos::rcp(new Epetra_Vector(*epMap));
-    RCP<Epetra_Vector> X = Teuchos::rcp(new Epetra_Vector(*epMap));
-    B->PutScalar(1.0);
-    X->PutScalar(0.0);
-
-    // Epetra -> Xpetra
-    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVector(B));
-    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVector(X));
-
-    xX->setSeed(100);
-    xX->randomize();
-
-    // build null space vector
-    RCP<const Map> map = A->getRowMap();
-    RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, numPDEs);
-
-    for (int i=0; i<numPDEs; ++i) {
-      Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
-      int numBlocks = nsValues.size() / numPDEs;
-      for (int j=0; j< numBlocks; ++j) {
-        nsValues[j*numPDEs + i] = 1.0;
-      }
-    }
-
-    comm->barrier();
-    tm = Teuchos::null;
-
-    fancyout << "========================================================\nGaleri complete.\n========================================================" << std::endl;
-
-    // =========================================================================
-    // Preconditioner construction
-    // =========================================================================
-    comm->barrier();
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
-    ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
-    comm->barrier();
-    tm = Teuchos::null;
-
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
-
-    RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
-
-    H->GetLevel(0)->Set("A",           A);
-    H->GetLevel(0)->Set("Nullspace",   nullspace);
-
-    mueLuFactory.SetupHierarchy(*H);
-
-    comm->barrier();
-    tm = Teuchos::null;
-
-    // =========================================================================
-    // System solution (Ax = b)
-    // =========================================================================
+  // =========================================================================
+  // System solution (Ax = b)
+  // =========================================================================
 
     //
     // generate exact solution using a direct solver
@@ -382,17 +375,13 @@ int main(int argc, char *argv[]) {
     ////////////
     myfile.close();
 
-    comm->barrier();
-    tm = Teuchos::null;
-    globalTimeMonitor = Teuchos::null;
+  comm->barrier();
+  tm = Teuchos::null;
+  globalTimeMonitor = Teuchos::null;
 
-    if (printTimings == "yes") {
-      TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
-    }
-
-    success = true;
+  if (printTimings == "yes") {
+    TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return 0;
 } //main
