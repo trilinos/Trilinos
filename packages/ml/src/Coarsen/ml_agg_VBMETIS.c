@@ -527,6 +527,7 @@ including the ghost blocks
 
      if (block_size > 1) {
         Nneigh    = ML_CommInfoOP_Get_Nneighbors(Amat->getrow->pre_comm);
+        if(neighbors != NULL) free(neighbors);
         neighbors = ML_CommInfoOP_Get_neighbors(Amat->getrow->pre_comm);
 
 

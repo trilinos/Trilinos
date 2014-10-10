@@ -4194,6 +4194,8 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
      if (LayDiff      != NULL) free(LayDiff);
      if (Layerdofs    != NULL) free(Layerdofs);
      if (Col2Dof      != NULL) free(Col2Dof);
+     if (Pvals        != NULL) free(Pvals);
+     if (Pptr         != NULL) free(Pptr);
      return -1;
   }
 
