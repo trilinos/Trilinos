@@ -1,0 +1,23 @@
+<ParameterList name="MueLu">
+
+  <Parameter name="verbosity" type="string" value="high"/>
+
+  <Parameter name="max levels" type="int" value="3"/>
+  <Parameter name="coarse: max size" type="int" value="10"/>
+
+  <Parameter name="multigrid algorithm" type="string" value="pg"/>
+  <Parameter name="sa: damping factor"  type="double" value="1.33333"/>
+
+  <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+  <ParameterList name="smoother: params">
+    <Parameter name="relaxation: type"  type="string" value="Gauss-Seidel"/>
+    <Parameter name="relaxation: sweeps" type="int" value="3"/>
+    <Parameter name="relaxation: damping factor" type="double" value="0.7"/>
+  </ParameterList>
+
+  <!-- Aggregation -->
+  <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+  <Parameter name="aggregation: min agg size" type="int" value="3"/>
+  <Parameter name="aggregation: max agg size" type="int" value="9"/>
+
+</ParameterList>

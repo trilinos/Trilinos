@@ -1,10 +1,5 @@
 <ParameterList name="MueLu">
 
-  <!-- Configuration of the Xpetra operator (fine level) -->
-  <ParameterList name="Matrix">
-    <Parameter name="number of equations"                   type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
-  </ParameterList>
-
   <!-- Factory collection -->
   <ParameterList name="Factories">
 
@@ -12,8 +7,8 @@
 
     <ParameterList name="UncoupledAggregationFact">
       <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
-      <Parameter name="aggregation: ordering"                            type="string" value="natural"/>
-      <Parameter name="aggregation: max selected neighbors"             type="int"    value="0"/>
+      <Parameter name="aggregation: ordering"               type="string" value="natural"/>
+      <Parameter name="aggregation: max selected neighbors" type="int"    value="0"/>
       <Parameter name="aggregation: min agg size"           type="int"    value="4"/>
     </ParameterList>
 
@@ -23,33 +18,29 @@
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"                             type="string" value="SaPFactory"/>
       <Parameter name="P"                                   type="string" value="myTentativePFact"/>
+      <Parameter name="sa: damping factor"                  type="double" value="1.0"/>
     </ParameterList>
-    <ParameterList name="myRestrictorFact">
+    <ParameterList name="myTentRestrictorFact">
+      <Parameter name="factory"                             type="string" value="TransPFactory"/>
+      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
+    </ParameterList>
+    <ParameterList name="mySymRestrictorFact">
       <Parameter name="factory"                             type="string" value="TransPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
-      <!--<Parameter name="P"                                   type="string" value="myTentativePFact"/>-->
-      <!--<Parameter name="factory"                             type="string" value="GenericRFactory"/>-->
+    </ParameterList>
+    <ParameterList name="myNonsymRestrictorFact">
+      <Parameter name="factory"                             type="string" value="GenericRFactory"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
     </ParameterList>
 
-    <!-- =======================  SMOOTHERS  ======================= -->
-
-    <ParameterList name="myJacobi">
-      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
-      <Parameter name="type"                                type="string" value="RELAXATION"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type"                  type="string" value="Jacobi"/>
-        <Parameter name="relaxation: sweeps"                type="int"    value="3"/>
-        <Parameter name="relaxation: damping factor"        type="double" value="1.0"/>
-      </ParameterList>
-    </ParameterList>
-
+    
     <ParameterList name="SymGaussSeidel">
       <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
       <Parameter name="type"                                type="string" value="RELAXATION"/>
       <ParameterList name="ParameterList">
         <Parameter name="relaxation: type"                  type="string" value="Symmetric Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps"                type="int"    value="1"/>
-        <Parameter name="relaxation: damping factor"        type="double" value="1.0"/>
+        <Parameter name="relaxation: sweeps"                type="int"    value="10"/>
+        <Parameter name="relaxation: damping factor"        type="double" value="0.8"/>
       </ParameterList>
     </ParameterList>
 
@@ -58,17 +49,17 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="max levels"                            type="int"      value="10"/> <!-- Max number of levels -->
-    <Parameter name="coarse: max size"                      type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="max levels"                            type="int"      value="10"/>
+    <Parameter name="coarse: max size"                      type="int"      value="10"/>
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
     <ParameterList name="All">
-      <Parameter name="Smoother"                            type="string"   value="SymGaussSeidel"/>
-      <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
-      <Parameter name="Nullspace"                           type="string"   value="myTentativePFact"/>
-      <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
-      <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
-      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
+      <Parameter name="Smoother"                    type="string"   value="SymGaussSeidel"/>
+      <Parameter name="Aggregates"                  type="string"   value="UncoupledAggregationFact"/>
+      <Parameter name="Nullspace"                   type="string"   value="myTentativePFact"/>
+      <Parameter name="P"                           type="string"   value="myProlongatorFact"/>
+      <Parameter name="R"                           type="string"   value="mySymRestrictorFact"/>
+      <Parameter name="CoarseSolver"                type="string"   value="DirectSolver"/>
     </ParameterList>
 
   </ParameterList>
