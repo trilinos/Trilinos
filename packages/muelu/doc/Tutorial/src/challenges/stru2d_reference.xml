@@ -1,0 +1,55 @@
+<ParameterList name="MueLu">
+
+  <!-- Configuration of the Xpetra operator (fine level) -->
+  <ParameterList name="Matrix">
+    <Parameter name="number of equations" type="int" value="2"/> <!-- Number of PDE equations at each grid node.-->
+  </ParameterList>
+
+  <!-- Factory collection
+       - Factories defined here can be used later on the 'Hierarchy' parameter list.
+       - A factory that do not appear on the 'Hierarchy' parameter list is not used to build the hierarchy.
+  -->
+  <ParameterList name="Factories">
+    <ParameterList name="LevelSmoother">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+
+      <Parameter name="type"                         type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"           type="string" value="Jacobi"/>
+        <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="0.8"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="myTentativePFact">
+      <Parameter name="factory"                             type="string" value="TentativePFactory"/>
+    </ParameterList>
+
+  </ParameterList>
+
+  <!-- Definition of the multigrid preconditioner -->
+
+  <!--
+       Some notes about how this list is parsed.
+       Each sublist takes effect in turn.  By default, each sublist is
+       active for one level.  If you want it to be active for more than
+       one level, you must specify "numDesiredLevels" and "repartition: start level".
+
+       Note that "startLevel" must be consistent with the level number
+       that the previous sublist controlled.
+  -->
+  <ParameterList name="Hierarchy">
+
+    <!-- Max number of levels -->
+    <Parameter name="max levels" type="int" value="10"/>
+    <Parameter name="coarse: max size"                      type="int"      value="200"/>
+
+    <ParameterList name="Levels">
+      <Parameter name="Smoother"   type="string" value="LevelSmoother"/>
+      <Parameter name="P"          type="string" value="myTentativePFact"/>
+      <Parameter name="Nullspace"          type="string" value="myTentativePFact"/>
+      <Parameter name="CoarseSolver" type="string" value="DirectSolver"/>
+    </ParameterList>
+
+  </ParameterList>
+</ParameterList>

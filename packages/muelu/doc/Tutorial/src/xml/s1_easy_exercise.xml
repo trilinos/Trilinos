@@ -1,0 +1,20 @@
+<ParameterList name="MueLu">
+
+  <Parameter name="verbosity" type="string" value="low"/>
+
+  <Parameter name="max levels" type="int" value="3"/>
+  <Parameter name="coarse: max size" type="int" value="10"/>
+  <Parameter name="multigrid algorithm" type="string" value="sa"/>
+
+  <!-- Jacobi -->
+  <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+  <ParameterList name="smoother: params">
+    <Parameter name="relaxation: type"  type="string" value="Jacobi"/>
+    <Parameter name="relaxation: sweeps" type="int" value="1"/>
+    <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+  </ParameterList>
+
+  <!-- Jacobi -->
+  <Parameter name="coarse: type" type="string" value="DIRECT"/>
+
+</ParameterList>
