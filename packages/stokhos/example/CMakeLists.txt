@@ -171,6 +171,7 @@ IF (Stokhos_ENABLE_EpetraExt)
     HEADERS epetra/twoD_diffusion_ME.hpp
     SOURCES epetra/twoD_diffusion_ME.cpp
     TESTONLY
+    DEPLIBS stokhos
     )
 
   IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML AND Stokhos_ENABLE_Ifpack)

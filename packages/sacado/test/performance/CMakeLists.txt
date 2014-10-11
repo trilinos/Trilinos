@@ -35,6 +35,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     fe_jac_fill_funcs
     HEADERS fe_jac_fill_funcs.hpp
     SOURCES fe_jac_fill_funcs.cpp
+    DEPLIBS teuchoscore
     TESTONLY
     )
 
