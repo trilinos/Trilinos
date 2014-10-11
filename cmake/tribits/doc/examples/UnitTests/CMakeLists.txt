@@ -1011,7 +1011,9 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
 
-  TEST_0 CMND cp
+  TEST_0
+    MESSAGE "Copy TribitsExampleProject so that we can modify it."
+    CMND cp
     ARGS -r ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject .
 
   TEST_1 CMND ${CMAKE_COMMAND}
@@ -1107,6 +1109,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_WrapExternal
       "Built target WrapExternal_run_external_func"
 
   )
+
 
 TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_NoFortran_WrapExternal_VerboseConfigure
   OVERALL_WORKING_DIRECTORY TEST_NAME
@@ -1224,4 +1227,85 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_WrapExternal_VerboseConfigu
       "-- run_external_func:LINK_LIBS='external_func[;]pws_a'"
 
   )
+
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+
+  TEST_0
+    MESSAGE "Copy TribitsExampleProject so that we can modify it."
+    CMND cp
+    ARGS -r ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject .
+
+  TEST_1
+    MESSAGE "Copy the with_subpackages package dir to base dir."
+    CMND cp
+    ARGS -r TribitsExampleProject/packages/with_subpackages/
+      TribitsExampleProject/.
+
+  TEST_2
+    MESSAGE "Remove the packages/with_subpackages package dir."
+    CMND rm
+    ARGS -r TribitsExampleProject/packages/with_subpackages/
+
+  TEST_3
+    MESSSAGE "Override with_packages/ source dir and configure"
+    CMND ${CMAKE_COMMAND}
+    ARGS
+      ${COMMON_ENV_ARGS_PASSTHROUGH}
+      -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -DTribitsExProj_ENABLE_Fortran=OFF
+      -DTribitsExProj_ENABLE_DEBUG=OFF
+      -DTribitsExProj_ENABLE_EXPORT_MAKEFILES=OFF
+      -DTribitsExProj_ENABLE_INSTALL_CMAKE_CONFIG_FILES=OFF
+      -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
+      -DTribitsExProj_ENABLE_SECONDARY_TESTED_CODE=ON
+      -DTribitsExProj_ENABLE_TESTS=ON
+      -DTribitsExProj_VERBOSE_CONFIGURE=ON
+      -DWithSubpackages_SOURCE_DIR_OVERRIDE=with_subpackages
+      TribitsExampleProject
+    PASS_REGULAR_EXPRESSION_ALL
+      "Final set of enabled packages:  SimpleCxx WithSubpackages WrapExternal 3"
+      "Final set of enabled SE packages:  SimpleCxx WithSubpackagesA WithSubpackagesB WithSubpackagesC WithSubpackages WrapExternal 6"
+      "-- NOTE: WithSubpackages_SOURCE_DIR_OVERRIDE='with_subpackages' is overriding default path 'packages/with_subpackages'"
+      "-- TribitsExProj_PACKAGE_DIRS='packages/simple_cxx[;]packages/mixed_lang[;]with_subpackages[;]packages/wrap_external'"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/cmake/Dependencies[.]cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/a/cmake/Dependencies[.]cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/b/cmake/Dependencies[.]cmake"
+      "-- File Trace: PACKAGE    INCLUDE    .*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/c/cmake/Dependencies[.]cmake"
+      "-- WithSubpackages_BINARY_DIR='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages'"
+      "-- WithSubpackages_SOURCE_DIR='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages'"
+      "-- WithSubpackages_BINARY_DIR='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages'"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/CMakeLists[.]txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/a/CMakeLists[.]txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/a/tests/CMakeLists[.]txt"
+      "-- WithSubpackagesA_INCLUDE_DIRS='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/a[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/packages/simple_cxx/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/packages/simple_cxx/src'"
+      "-- WithSubpackagesA_LIBRARY_DIRS='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/a[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/packages/simple_cxx/src'"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/b/CMakeLists[.]txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/b/tests/CMakeLists[.]txt"
+      "-- WithSubpackagesB_INCLUDE_DIRS='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/b/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/b/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/a[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/packages/simple_cxx/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/packages/simple_cxx/src'"
+      "-- WithSubpackagesB_LIBRARY_DIRS='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/b/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/a[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/packages/simple_cxx/src'"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/c/CMakeLists[.]txt"
+      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/c/tests/CMakeLists[.]txt"
+      "-- WithSubpackagesC_INCLUDE_DIRS='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/b/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/b/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/a[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/packages/simple_cxx/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/packages/simple_cxx/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/c'"
+      "-- WithSubpackagesC_LIBRARY_DIRS='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/b/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/a[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/packages/simple_cxx/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/c'"
+      "-- WithSubpackages_INCLUDE_DIRS='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/b/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/b/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/a[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/packages/simple_cxx/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/packages/simple_cxx/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/TribitsExampleProject/with_subpackages/c'"
+      "-- WithSubpackages_LIBRARY_DIRS='.*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/b/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/a[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/packages/simple_cxx/src[;].*/TriBITS_TribitsExampleProject_ALL_NoFortran_OverridePackageSourceDir/with_subpackages/c'"
+
+  TEST_4 CMND make
+    ARGS ${CTEST_BUILD_FLAGS}
+    PASS_REGULAR_EXPRESSION_ALL
+      "Built target WithSubpackagesC_c_test"
+
+  TEST_5 CMND ${CMAKE_CTEST_COMMAND}
+    PASS_REGULAR_EXPRESSION_ALL
+      "100% tests passed, 0 tests failed out of 6"
+
+  )
+
+
+
+
+
 

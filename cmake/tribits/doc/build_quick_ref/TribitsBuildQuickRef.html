@@ -6,7 +6,7 @@
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>Generic TriBITS Project, Build, Test, and Install Quick Reference Guide</title>
 <meta name="author" content="Roscoe A. Bartlett" />
-<meta name="date" content="2014-10-09" />
+<meta name="date" content="2014-10-11" />
 <style type="text/css">
 
 /*
@@ -317,9 +317,9 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference external" href="mailto:bartlett.roscoe&#64;gmail.com">bartlett.roscoe&#64;gmail.com</a></td></tr>
 <tr><th class="docinfo-name">Date:</th>
-<td>2014-10-09</td></tr>
+<td>2014-10-11</td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>TriBITS Development at 2014-10-09</td></tr>
+<td>TriBITS Development at 2014-10-11</td></tr>
 </tbody>
 </table>
 <table class="docutils field-list" frame="void" rules="none">
@@ -524,8 +524,8 @@ as shown above.</p>
 EXTRA_ARGS=$&#64;
 
 cmake \
-  -D CMAKE_BUILD_TYPE:STRING=DEBUG \
-  -D &lt;Project&gt;_ENABLE_TESTS:BOOL=ON \
+  -D CMAKE_BUILD_TYPE=DEBUG \
+  -D &lt;Project&gt;_ENABLE_TESTS=ON \
   $EXTRA_ARGS \
   ${SOURCE_BASE}
 </pre>
@@ -557,7 +557,7 @@ EXTRA_ARGS=$&#64;
 
 cmake \
   -D &lt;Project&gt;_CONFIGURE_OPTIONS_FILE:FILEPATH=MyConfigureOptions.cmake \
-  -D &lt;Project&gt;_ENABLE_TESTS:BOOL=ON \
+  -D &lt;Project&gt;_ENABLE_TESTS=ON \
   $EXTRA_ARGS \
   ${SOURCE_BASE}
 </pre>
@@ -625,7 +625,7 @@ full list of defined packages, run:</p>
 ./do-configure 2&gt;&amp;1 | grep &quot;Final set of .*enabled SE packages&quot;
 </pre>
 <p>Any of the packages shown on those lines can potentially be enabled using <tt class="docutils literal"><span class="pre">-D</span>
-<span class="pre">&lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=ON</span></tt> (unless they are set to disabled
+<span class="pre">&lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON</span></tt> (unless they are set to disabled
 for some reason, see the CMake output for package disable warnings).</p>
 <p>Another way to see the full list of SE packages that can be enabled is to
 configure with <a class="reference internal" href="#project-dump-package-dependencies">&lt;Project&gt;_DUMP_PACKAGE_DEPENDENCIES</a> = <tt class="docutils literal">ON</tt> and then grep
@@ -639,12 +639,12 @@ for <tt class="docutils literal">&lt;Project&gt;_SE_PACKAGES</tt> using, for exa
 <p>The set of package dependencies in a project will be printed in the <tt class="docutils literal">cmake</tt>
 STDOUT by setting:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON
+-D &lt;Project&gt;_DUMP_PACKAGE_DEPENDENCIES=ON
 </pre>
 <p>This will print the basic backward dependencies for each SE package.  To also
 see the direct forward dependencies for each SE package, also include:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_DUMP_FORWARD_PACKAGE_DEPENDENCIES:BOOL=ON
+-D &lt;Project&gt;_DUMP_FORWARD_PACKAGE_DEPENDENCIES=ON
 </pre>
 <p>Both of these variables are automatically enabled when
 <a class="reference internal" href="#project-verbose-configure">&lt;Project&gt;_VERBOSE_CONFIGURE</a> = <tt class="docutils literal">ON</tt>.</p>
@@ -654,9 +654,9 @@ see the direct forward dependencies for each SE package, also include:</p>
 <p>To enable an SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> (and optionally also its tests
 and examples), configure with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=ON \
--D &lt;Project&gt;_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
--D &lt;Project&gt;_ENABLE_TESTS:BOOL=ON \
+-D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON \
+-D &lt;Project&gt;_ENABLE_ALL_OPTIONAL_PACKAGES=ON \
+-D &lt;Project&gt;_ENABLE_TESTS=ON \
 </pre>
 <p>This set of arguments allows a user to turn on <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> as well
 as all packages that <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can use.  All of the package's
@@ -667,21 +667,30 @@ optional &quot;can use&quot; upstream dependent packages are enabled with
 <p>If a TriBITS package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> has subpackages (e.g. <tt class="docutils literal">&lt;A&gt;</tt>,
 <tt class="docutils literal">&lt;B&gt;</tt>, etc.), then enabling the package is equivalent to setting:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;A&gt;:BOOL=ON \
--D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;B&gt;:BOOL=ON \
+-D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;A&gt;=ON \
+-D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;B&gt;=ON \
  ...
 </pre>
 <p>However, a TriBITS subpackage will only be enabled if it is not already
 disabled either explicitly or implicitly.</p>
+<p>NOTE: The CMake cache variable type for all <tt class="docutils literal">XXX_ENABLE_YYY</tt> variables is
+actually <tt class="docutils literal">STRING</tt> and not <tt class="docutils literal">BOOL</tt>.  That is because these enable variables
+take on the string enum values of <tt class="docutils literal">&quot;ON&quot;</tt>, <tt class="docutils literal">&quot;OFF&quot;</tt>, end empty <tt class="docutils literal">&quot;&quot;</tt>.  An
+empty enable means that the TriBITS dependency system is allowed to decide if
+an enable should be turned on or off based on logic.  The CMake GUI will
+enforce the values of <tt class="docutils literal">&quot;ON&quot;</tt>, <tt class="docutils literal">&quot;OFF&quot;</tt>, end empty <tt class="docutils literal">&quot;&quot;</tt> but it will not
+enforce this if you set the value on the command line or in a SET() statement
+in an input <tt class="docutils literal"><span class="pre">`*.cmake</span></tt> options files.  For example, setting
+<tt class="docutils literal"><span class="pre">-DXXX_ENABLE_YYY=TRUE</span></tt> will result in a configure error.</p>
 </div>
 <div class="section" id="enable-to-test-all-effects-of-changing-a-given-package-s">
 <h3><a class="toc-backref" href="#id15">4.3.4&nbsp;&nbsp;&nbsp;Enable to test all effects of changing a given package(s)</a></h3>
 <p>To enable an SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> to test it and all of its
 down-stream packages, configure with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=ON \
--D &lt;Project&gt;_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON \
--D &lt;Project&gt;_ENABLE_TESTS:BOOL=ON \
+-D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON \
+-D &lt;Project&gt;_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON \
+-D &lt;Project&gt;_ENABLE_TESTS=ON \
 </pre>
 <p>The above set of arguments will result in package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> and
 all packages that depend on <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> to be enabled and have all
@@ -694,19 +703,19 @@ pre-push testing.</p>
 <p>To enable all SE packages (and optionally also their tests and examples), add
 the configure options:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_ALL_PACKAGES:BOOL=ON \
--D &lt;Project&gt;_ENABLE_TESTS:BOOL=ON \
+-D &lt;Project&gt;_ENABLE_ALL_PACKAGES=ON \
+-D &lt;Project&gt;_ENABLE_TESTS=ON \
 </pre>
 <p>Specific packages can be disabled with
-<tt class="docutils literal"><span class="pre">&lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=OFF</span></tt>.  This will also disable all
+<tt class="docutils literal"><span class="pre">&lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;=OFF</span></tt>.  This will also disable all
 packages that depend on <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt>.</p>
 <p>All examples are also enabled by default when setting
-<tt class="docutils literal">&lt;Project&gt;_ENABLE_TESTS:BOOL=ON</tt>.</p>
+<tt class="docutils literal">&lt;Project&gt;_ENABLE_TESTS=ON</tt>.</p>
 <p>By default, setting <tt class="docutils literal">&lt;Project&gt;_ENABLE_ALL_PACKAGES=ON</tt> only enables primary
 tested (PT) code.  To have this also enable all secondary tested (ST) code,
 one must also set <tt class="docutils literal">&lt;Project&gt;_ENABLE_SECONDARY_TESTED_CODE=ON</tt>.</p>
 <p>NOTE: If the project is a &quot;meta-project&quot;, then
-<tt class="docutils literal">&lt;Project&gt;_ENABLE_ALL_PACKAGES:BOOL=ON</tt> may not enable <em>all</em> the SE packages
+<tt class="docutils literal">&lt;Project&gt;_ENABLE_ALL_PACKAGES=ON</tt> may not enable <em>all</em> the SE packages
 but only the project's primary meta-project packages.  See <a class="reference external" href="../developers_guide/TribitsDevelopersGuide.html#package-dependencies-and-enable-disable-logic">Package
 Dependencies and Enable/Disable Logic</a> and <a class="reference external" href="../developers_guide/TribitsDevelopersGuide.html#tribits-dependency-handling-behaviors">TriBITS Dependency Handling
 Behaviors</a> for details.</p>
@@ -716,21 +725,21 @@ Behaviors</a> for details.</p>
 <p>To disable an SE package and all of the packages that depend on it, add the
 configure options:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=OFF
+-D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;=OFF
 </pre>
 <p>For example:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_&lt;PACKAGE_A&gt;:BOOL=ON \
--D &lt;Project&gt;_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
--D &lt;Project&gt;_ENABLE_&lt;PACKAGE_B&gt;:BOOL=ON \
+-D &lt;Project&gt;_ENABLE_&lt;PACKAGE_A&gt;=ON \
+-D &lt;Project&gt;_ENABLE_ALL_OPTIONAL_PACKAGES=ON \
+-D &lt;Project&gt;_ENABLE_&lt;PACKAGE_B&gt;=ON \
 </pre>
 <p>will enable <tt class="docutils literal">&lt;PACKAGE_A&gt;</tt> and all of the packages that it depends on except
 for <tt class="docutils literal">&lt;PACKAGE_B&gt;</tt> and all of its forward dependencies.</p>
 <p>If a TriBITS package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> has subpackages (e.g. <tt class="docutils literal">&lt;A&gt;</tt>,
 <tt class="docutils literal">&lt;B&gt;</tt>, etc.), then disabling the package is equivalent to setting:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;A&gt;:BOOL=OFF \
--D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;B&gt;:BOOL=OFF \
+-D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;A&gt;=OFF \
+-D &lt;Project&gt;_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;B&gt;=OFF \
 ...
 </pre>
 <p>The disable of the subpackage is this case will override any enables.</p>
@@ -745,7 +754,7 @@ will continue.</p>
 <p>To wipe the set of pakage enables in the CMakeCache.txt file so they can be
 reset again from scratch, configure with:</p>
 <pre class="literal-block">
-$ ./-do-confiugre -D &lt;Project&gt;_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+$ ./-do-confiugre -D &lt;Project&gt;_UNENABLE_ENABLED_PACKAGES=TRUE
 </pre>
 <p>This option will set to empty '' all package enables, leaving all other cache
 variables as they are.  You can then reconfigure with a new set of package
@@ -790,13 +799,13 @@ these flags are not set.  These flags get set internally into the variables
 <blockquote>
 <p>To build a debug version, pass into 'cmake':</p>
 <pre class="literal-block">
--D CMAKE_BUILD_TYPE:STRING=DEBUG
+-D CMAKE_BUILD_TYPE=DEBUG
 </pre>
 <p>This will result in debug flags getting passed to the compiler according to
 what is set in <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_DEBUG</tt>.</p>
 <p>To build a release (optimized) version, pass into 'cmake':</p>
 <pre class="literal-block">
--D CMAKE_BUILD_TYPE:STRING=RELEASE
+-D CMAKE_BUILD_TYPE=RELEASE
 </pre>
 <p>This will result in optimized flags getting passed to the compiler according
 to what is in <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_RELEASE</tt>.</p>
@@ -808,7 +817,7 @@ to what is in <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_RELEASE</tt>
 <p>To append arbitrary compiler flags to <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS</tt> (which may be
 set internally by TriBITS) that apply to all build types, configure with:</p>
 <pre class="literal-block">
--D CMAKE_&lt;LANG&gt;_FLAGS:STRING=&quot;&lt;EXTRA_COMPILER_OPTIONS&gt;&quot;
+-D CMAKE_&lt;LANG&gt;_FLAGS=&quot;&lt;EXTRA_COMPILER_OPTIONS&gt;&quot;
 </pre>
 <p>where <tt class="docutils literal">&lt;EXTRA_COMPILER_OPTIONS&gt;</tt> are your extra compiler options like
 <tt class="docutils literal"><span class="pre">&quot;-DSOME_MACRO_TO_DEFINE</span> <span class="pre">-funroll-loops&quot;</span></tt>.  These options will get
@@ -816,7 +825,7 @@ appended to (i.e. come after) other internally defined compiler option and
 therefore override them.</p>
 <p>Options can also be targeted to a specific TriBITS package using:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_&lt;LANG&gt;_FLAGS:STRING=&quot;&lt;EXTRA_COMPILER_OPTIONS&gt;&quot;
+-D &lt;TRIBITS_PACKAGE&gt;_&lt;LANG&gt;_FLAGS=&quot;&lt;EXTRA_COMPILER_OPTIONS&gt;&quot;
 </pre>
 <p>The package-specific options get appened to those already in
 <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS</tt> and therefore override (but not replace) those set
@@ -851,17 +860,17 @@ options, see <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_&lt;CMAKE_BUI
 <p>To override the default CMake-set options in
 <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_&lt;CMAKE_BUILD_TYPE&gt;</tt>, use:</p>
 <pre class="literal-block">
--D CMAKE_&lt;LANG&gt;_FLAGS_&lt;CMAKE_BUILD_TYPE&gt;_OVERRIDE:STRING=&quot;&lt;OPTIONS_TO_OVERRIDE&gt;&quot;
+-D CMAKE_&lt;LANG&gt;_FLAGS_&lt;CMAKE_BUILD_TYPE&gt;_OVERRIDE=&quot;&lt;OPTIONS_TO_OVERRIDE&gt;&quot;
 </pre>
 <p>For example, to default debug options use:</p>
 <pre class="literal-block">
--D CMAKE_C_FLAGS_DEBUG_OVERRIDE:STRING=&quot;-g -O1&quot; \
--D CMAKE_CXX_FLAGS_DEBUG_OVERRIDE:STRING=&quot;-g -O1&quot;
+-D CMAKE_C_FLAGS_DEBUG_OVERRIDE=&quot;-g -O1&quot; \
+-D CMAKE_CXX_FLAGS_DEBUG_OVERRIDE=&quot;-g -O1&quot;
 </pre>
 <p>and to override default release options use:</p>
 <pre class="literal-block">
--D CMAKE_C_FLAGS_RELEASE_OVERRIDE:STRING=&quot;-O3 -funroll-loops&quot; \
--D CMAKE_CXX_FLAGS_RELEASE_OVERRIDE:STRING=&quot;-03 -fexceptions&quot;
+-D CMAKE_C_FLAGS_RELEASE_OVERRIDE=&quot;-O3 -funroll-loops&quot; \
+-D CMAKE_CXX_FLAGS_RELEASE_OVERRIDE=&quot;-03 -fexceptions&quot;
 </pre>
 <p>NOTES: The TriBITS CMake cache variable
 <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_&lt;CMAKE_BUILD_TYPE&gt;_OVERRIDE</tt> is used and not
@@ -876,8 +885,8 @@ explicit.</p>
 <p>In order to append any set of arbitrary libraries and link flags to your
 executables use:</p>
 <pre class="literal-block">
--D&lt;Project&gt;_EXTRA_LINK_FLAGS:STRING=&quot;&lt;EXTRA_LINK_LIBRARIES&gt;&quot; \
--DCMAKE_EXE_LINKER_FLAGS:STRING=&quot;&lt;EXTRA_LINK_FLAGG&gt;&quot;
+-D&lt;Project&gt;_EXTRA_LINK_FLAGS=&quot;&lt;EXTRA_LINK_LIBRARIES&gt;&quot; \
+-DCMAKE_EXE_LINKER_FLAGS=&quot;&lt;EXTRA_LINK_FLAGG&gt;&quot;
 </pre>
 <p>Above, you can pass any type of library and they will always be the last
 libraries listed, even after all of the TPLs.</p>
@@ -898,7 +907,7 @@ requirements.</p>
 <p>To turn off strong warnings (for all langauges) for a given TriBITS
 package, set:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_DISABLE_STRONG_WARNINGS:BOOL=ON
+-D &lt;TRIBITS_PACKAGE&gt;_DISABLE_STRONG_WARNINGS=ON
 </pre>
 <p>This will only affect the compilation of the sources for
 <tt class="docutils literal">&lt;TRIBITS_PACKAGES&gt;</tt>, not warnings generated from the header files in
@@ -915,14 +924,14 @@ therefore not have strong warning options enabled.</p>
 <p>To override all compiler options, including both strong warning options
 and debug/release options, configure with:</p>
 <pre class="literal-block">
--D CMAKE_C_FLAGS:STRING=&quot;-O3 -funroll-loops&quot; \
--D CMAKE_CXX_FLAGS:STRING=&quot;-03 -fexceptions&quot; \
--D CMAKE_BUILD_TYPE:STRING=NONE \
--D &lt;Project&gt;_ENABLE_STRONG_C_COMPILE_WARNINGS:BOOL=OFF \
--D &lt;Project&gt;_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=OFF \
--D &lt;Project&gt;_ENABLE_SHADOW_WARNINGS:BOOL=OFF \
--D &lt;Project&gt;_ENABLE_COVERAGE_TESTING:BOOL=OFF \
--D &lt;Project&gt;_ENABLE_CHECKED_STL:BOOL=OFF \
+-D CMAKE_C_FLAGS=&quot;-O3 -funroll-loops&quot; \
+-D CMAKE_CXX_FLAGS=&quot;-03 -fexceptions&quot; \
+-D CMAKE_BUILD_TYPE=NONE \
+-D &lt;Project&gt;_ENABLE_STRONG_C_COMPILE_WARNINGS=OFF \
+-D &lt;Project&gt;_ENABLE_STRONG_CXX_COMPILE_WARNINGS=OFF \
+-D &lt;Project&gt;_ENABLE_SHADOW_WARNINGS=OFF \
+-D &lt;Project&gt;_ENABLE_COVERAGE_TESTING=OFF \
+-D &lt;Project&gt;_ENABLE_CHECKED_STL=OFF \
 </pre>
 <p>NOTE: Options like <tt class="docutils literal">&lt;Project&gt;_ENABLE_SHADOW_WARNINGS</tt>,
 <tt class="docutils literal">&lt;Project&gt;_ENABLE_COVERAGE_TESTING</tt>, and <tt class="docutils literal">&lt;Project&gt;_ENABLE_CHECKED_STL</tt>
@@ -939,12 +948,12 @@ be all that is passed in.</p>
 <p>To enable shadowing warnings for all &lt;Project&gt; packages (that don't already
 have them turned on) then use:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_SHADOW_WARNINGS:BOOL=ON
+-D &lt;Project&gt;_ENABLE_SHADOW_WARNINGS=ON
 </pre>
 <p>To disable shadowing warnings for all &lt;Project&gt; packages (even those that
 have them turned on by default) then use:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_SHADOW_WARNINGS:BOOL=OFF
+-D &lt;Project&gt;_ENABLE_SHADOW_WARNINGS=OFF
 </pre>
 <p>NOTE: The default value is empty '' which lets each &lt;Project&gt; package
 decide for itself if shadowing warnings will be turned on or off for that
@@ -958,7 +967,7 @@ package.</p>
 applied to compile CLEANED packages like Teuchos, set the following when
 configuring:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_WARNINGS_AS_ERRORS_FLAGS:STRING=&quot;&quot;
+-D &lt;Project&gt;_WARNINGS_AS_ERRORS_FLAGS=&quot;&quot;
 </pre>
 </blockquote>
 <ol class="lowerroman simple">
@@ -967,7 +976,7 @@ configuring:</p>
 <blockquote>
 <p>To get the compiler to add debug symbols to the build, configure with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_DEBUG_SYMBOLS:BOOL=ON
+-D &lt;Project&gt;_ENABLE_DEBUG_SYMBOLS=ON
 </pre>
 <p>This will add <tt class="docutils literal"><span class="pre">-g</span></tt> on most compilers.  NOTE: One does <strong>not</strong> generally
 need to create a fully debug build to get debug symbols on most compilers.</p>
@@ -978,7 +987,7 @@ need to create a fully debug build to get debug symbols on most compilers.</p>
 <p>To enable support for C++11 in packages that support C++11 (either optionally
 or required), configure with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_CXX11:BOOL=ON
+-D &lt;Project&gt;_ENABLE_CXX11=ON
 </pre>
 <p>By default, the system will try to automatically find compiler flags that will
 enable C++11 features.  If it finds flags that allow a test C++11 program to
@@ -988,7 +997,7 @@ and support will be disabled if all of these features are not supported.</p>
 <p>In order to pre-set and/or override the C++11 compiler flags used, set the
 cache variable:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_CXX11_FLAGS:STRING=&quot;&lt;compiler flags&gt;&quot;
+-D &lt;Project&gt;_CXX11_FLAGS=&quot;&lt;compiler flags&gt;&quot;
 </pre>
 </div>
 <div class="section" id="disabling-the-fortran-compiler-and-all-fortran-code">
@@ -996,7 +1005,7 @@ cache variable:</p>
 <p>To disable the Fortran compiler and all &lt;Project&gt; code that depends on Fortran
 set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_Fortran:BOOL=OFF
+-D &lt;Project&gt;_ENABLE_Fortran=OFF
 </pre>
 <p>NOTE: The fortran compiler may be disabled automatically by default on
 systems like MS Windows.</p>
@@ -1025,7 +1034,7 @@ options).</p>
 passed to the compiler by default while <tt class="docutils literal">&lt;Project&gt;_ENABLE_DEBUG</tt>
 controls what defines are set in config.h files that control ifdefed debug
 checks.</li>
-<li>Setting <tt class="docutils literal"><span class="pre">-DCMAKE_BUILD_TYPE:STRING=DEBUG</span></tt> will automatically set the
+<li>Setting <tt class="docutils literal"><span class="pre">-DCMAKE_BUILD_TYPE=DEBUG</span></tt> will automatically set the
 default <tt class="docutils literal">&lt;Project&gt;_ENABLE_DEBUG=ON</tt>.</li>
 </ul>
 </blockquote>
@@ -1035,7 +1044,7 @@ default <tt class="docutils literal">&lt;Project&gt;_ENABLE_DEBUG=ON</tt>.</li>
 <blockquote>
 <p>To turn on the checked STL implementation set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_CHECKED_STL:BOOL=ON
+-D &lt;Project&gt;_ENABLE_CHECKED_STL=ON
 </pre>
 <p>NOTES:</p>
 <ul class="simple">
@@ -1051,18 +1060,18 @@ without -D_GLIBCXX_DEBUG.</li>
 <h2><a class="toc-backref" href="#id23">4.8&nbsp;&nbsp;&nbsp;Configuring with MPI support</a></h2>
 <p>To enable MPI support you must minimally set:</p>
 <pre class="literal-block">
--D TPL_ENABLE_MPI:BOOL=ON
+-D TPL_ENABLE_MPI=ON
 </pre>
 <p>There is built-in logic to try to find the various MPI components on your
 system but you can override (or make suggestions) with:</p>
 <pre class="literal-block">
--D MPI_BASE_DIR:PATH=&quot;path&quot;
+-D MPI_BASE_DIR=&quot;path&quot;
 </pre>
 <p>(Base path of a standard MPI installation which has the subdirs 'bin', 'libs',
 'include' etc.)</p>
 <p>or:</p>
 <pre class="literal-block">
--D MPI_BIN_DIR:PATH=&quot;path1;path2;...;pathn&quot;
+-D MPI_BIN_DIR=&quot;path1;path2;...;pathn&quot;
 </pre>
 <p>which sets the paths where the MPI executables (e.g. mpiCC, mpicc, mpirun,
 mpiexec) can be found.  By default this is set to <tt class="docutils literal"><span class="pre">${MPI_BASE_DIR}/bin</span></tt> if
@@ -1101,16 +1110,16 @@ then pass in all of the other information that will be used to compile and
 link your code.</p>
 <p>To turn off the MPI compiler wrappers, set:</p>
 <pre class="literal-block">
--D MPI_USE_COMPILER_WRAPPERS:BOOL=OFF
+-D MPI_USE_COMPILER_WRAPPERS=OFF
 </pre>
 <p>You will then need to manually pass in the compile and link lines needed to
 compile and link MPI programs.  The compile flags can be set through:</p>
 <pre class="literal-block">
--D CMAKE_[C,CXX,Fortran]_FLAGS:STRING=&quot;$EXTRA_COMPILE_FLAGS&quot;
+-D CMAKE_[C,CXX,Fortran]_FLAGS=&quot;$EXTRA_COMPILE_FLAGS&quot;
 </pre>
 <p>The link and library flags must be set through:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_EXTRA_LINK_FLAGS:STRING=&quot;$EXTRA_LINK_FLAGS&quot;
+-D &lt;Project&gt;_EXTRA_LINK_FLAGS=&quot;$EXTRA_LINK_FLAGS&quot;
 </pre>
 <p>Above, you can pass any type of library or other linker flags in and they
 will always be the last libraries listed, even after all of the TPLs.</p>
@@ -1150,13 +1159,13 @@ the MPI program.  This can be just the name of the program in which case
 the full path will be looked for in <tt class="docutils literal">${MPI_BIN_DIR}</tt> as described above.
 If it is an absolute path, it will be used without modification.)</p>
 <pre class="literal-block">
--D MPI_EXEC_DEFAULT_NUMPROCS:STRING=4
+-D MPI_EXEC_DEFAULT_NUMPROCS=4
 </pre>
 <p>(The default number of processes to use when setting up and running
 MPI test and example executables.  The default is set to '4' and only
 needs to be changed when needed or desired.)</p>
 <pre class="literal-block">
--D MPI_EXEC_MAX_NUMPROCS:STRING=4
+-D MPI_EXEC_MAX_NUMPROCS=4
 </pre>
 <p>(The maximum number of processes to allow when setting up and running MPI
 test and example executables.  The default is set to '4' but should be set
@@ -1164,18 +1173,18 @@ to the largest number that can be tolerated for the given machine.  Tests
 with more processes than this are excluded from the test suite at configure
 time.)</p>
 <pre class="literal-block">
--D MPI_EXEC_NUMPROCS_FLAG:STRING=-np
+-D MPI_EXEC_NUMPROCS_FLAG=-np
 </pre>
 <p>(The command-line option just before the number of processes to use
 <tt class="docutils literal">&lt;NP&gt;</tt>.  The default value is based on the name of <tt class="docutils literal">${MPI_EXEC}</tt>, for
 example, which is <tt class="docutils literal"><span class="pre">-np</span></tt> for OpenMPI.)</p>
 <pre class="literal-block">
--D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING=&quot;arg1;arg2;...;argn&quot;
+-D MPI_EXEC_PRE_NUMPROCS_FLAGS=&quot;arg1;arg2;...;argn&quot;
 </pre>
 <p>(Other command-line arguments that must come <em>before</em> the numprocs
 argument.  The default is empty &quot;&quot;.)</p>
 <pre class="literal-block">
--D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING=&quot;arg1;arg2;...;argn&quot;
+-D MPI_EXEC_POST_NUMPROCS_FLAGS=&quot;arg1;arg2;...;argn&quot;
 </pre>
 <p>(Other command-line arguments that must come <em>after</em> the numprocs
 argument.  The default is empty &quot;&quot;.)</p>
@@ -1188,7 +1197,7 @@ these variables are interpreted as CMake arrays.</p>
 <h2><a class="toc-backref" href="#id24">4.9&nbsp;&nbsp;&nbsp;Configuring for OpenMP support</a></h2>
 <p>To enable OpenMP support, one must set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_OpenMP:BOOL=ON
+-D &lt;Project&gt;_ENABLE_OpenMP=ON
 </pre>
 <p>Note that if you enable OpenMP directly through a compiler option (e.g.,
 <tt class="docutils literal"><span class="pre">-fopenmp</span></tt>), you will NOT enable OpenMP inside &lt;Project&gt; source code.</p>
@@ -1197,7 +1206,7 @@ these variables are interpreted as CMake arrays.</p>
 <h2><a class="toc-backref" href="#id25">4.10&nbsp;&nbsp;&nbsp;Building shared libraries</a></h2>
 <p>To configure to build shared libraries, set:</p>
 <pre class="literal-block">
--D BUILD_SHARED_LIBS:BOOL=ON
+-D BUILD_SHARED_LIBS=ON
 </pre>
 <p>The above option will result in all shared libraries to be build on all
 systems (i.e., <tt class="docutils literal">.so</tt> on Unix/Linux systems, <tt class="docutils literal">.dylib</tt> on Mac OS X, and
@@ -1207,14 +1216,14 @@ systems (i.e., <tt class="docutils literal">.so</tt> on Unix/Linux systems, <tt 
 <h2><a class="toc-backref" href="#id26">4.11&nbsp;&nbsp;&nbsp;Building static libraries and executables</a></h2>
 <p>To build static libraries, turn off the shared library support:</p>
 <pre class="literal-block">
--D BUILD_SHARED_LIBS:BOOL=OFF
+-D BUILD_SHARED_LIBS=OFF
 </pre>
 <p>Some machines, such as the Cray XT5, require static executables.  To build
 &lt;Project&gt; executables as static objects, a number of flags must be set:</p>
 <pre class="literal-block">
--D BUILD_SHARED_LIBS:BOOL=OFF \
--D TPL_FIND_SHARED_LIBS:BOOL=OFF \
--D &lt;Project&gt;_LINK_SEARCH_START_STATIC:BOOL=ON
+-D BUILD_SHARED_LIBS=OFF \
+-D TPL_FIND_SHARED_LIBS=OFF \
+-D &lt;Project&gt;_LINK_SEARCH_START_STATIC=ON
 </pre>
 <p>The first flag tells cmake to build static versions of the &lt;Project&gt;
 libraries.  The second flag tells cmake to locate static library versions of
@@ -1229,7 +1238,7 @@ of cmake.</p>
 <h2><a class="toc-backref" href="#id27">4.12&nbsp;&nbsp;&nbsp;Enabling support for an optional Third-Party Library (TPL)</a></h2>
 <p>To enable a given TPL, set:</p>
 <pre class="literal-block">
--D TPL_ENABLE_&lt;TPLNAME&gt;:BOOL=ON
+-D TPL_ENABLE_&lt;TPLNAME&gt;=ON
 </pre>
 <p>where <tt class="docutils literal">&lt;TPLNAME&gt;</tt> = <tt class="docutils literal">Boost</tt>, <tt class="docutils literal">ParMETIS</tt>, etc.</p>
 <p>The headers, libraries, and library directories can then be specified with
@@ -1238,7 +1247,7 @@ the input cache variables:</p>
 <li><p class="first"><tt class="docutils literal">&lt;TPLNAME&gt;_INCLUDE_DIRS:PATH</tt>: List of paths to the header include
 directories.  For example:</p>
 <pre class="literal-block">
--D Boost_INCLUDE_DIRS:PATH=/usr/local/boost/include
+-D Boost_INCLUDE_DIRS=/usr/local/boost/include
 </pre>
 </li>
 <li><p class="first"><tt class="docutils literal">&lt;TPLNAME&gt;_LIBRARY_NAMES:STRING</tt>: List of unadorned library names, in the
@@ -1246,13 +1255,13 @@ order of the link line.  The platform-specific prefixes (e.g.. 'lib') and
 postfixes (e.g. '.a', '.lib', or '.dll') will be added automatically by
 CMake.  For example:</p>
 <pre class="literal-block">
--D BLAS_LIBRARY_NAMES:STRING=&quot;blas;gfortran&quot;
+-D BLAS_LIBRARY_NAMES=&quot;blas;gfortran&quot;
 </pre>
 </li>
 <li><p class="first"><tt class="docutils literal">&lt;TPLNAME&gt;_LIBRARY_DIRS:PATH</tt>: The list of directories where the library
 files can be found.  For example:</p>
 <pre class="literal-block">
--D BLAS_LIBRARY_DIRS:PATH=/usr/local/blas
+-D BLAS_LIBRARY_DIRS=/usr/local/blas
 </pre>
 </li>
 </ul>
@@ -1274,17 +1283,17 @@ libraries.</p>
 <p>In order to allow a TPL that normally requires one or more libraries to ignore
 the libraries, one can set <tt class="docutils literal">&lt;TPLNAME&gt;_LIBRARY_NAMES</tt>, for example:</p>
 <pre class="literal-block">
--D BLAS_LIBRARY_NAMES:STRING=&quot;&quot;
+-D BLAS_LIBRARY_NAMES=&quot;&quot;
 </pre>
 <p>Optional package-specific support for a TPL can be turned off by setting:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;TPLNAME&gt;:BOOL=OFF
+-D &lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;TPLNAME&gt;=OFF
 </pre>
 <p>This gives the user full control over what TPLs are supported by which package
 independently.</p>
 <p>Support for an optional TPL can also be turned on implicitly by setting:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;TPLNAME&gt;:BOOL=ON
+-D &lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;TPLNAME&gt;=ON
 </pre>
 <p>where <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> is a TriBITS package that has an optional
 dependency on <tt class="docutils literal">&lt;TPLNAME&gt;</tt>.  That will result in setting
@@ -1292,7 +1301,7 @@ dependency on <tt class="docutils literal">&lt;TPLNAME&gt;</tt>.  That will resu
 <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TPLNAME&gt;=OFF</span></tt> is not already set.</p>
 <p>WARNING: Do <em>not</em> try to hack the system and set:</p>
 <pre class="literal-block">
-TPL_BLAS_LIBRARIES:PATH=&quot;-L/some/dir -llib1 -llib2 ...&quot;
+TPL_BLAS_LIBRARIES=&quot;-L/some/dir -llib1 -llib2 ...&quot;
 </pre>
 <p>This is not compatible with proper CMake usage and it not guaranteed
 to be supported.</p>
@@ -1301,7 +1310,7 @@ to be supported.</p>
 <h2><a class="toc-backref" href="#id28">4.13&nbsp;&nbsp;&nbsp;Disabling support for a Third-Party Library (TPL)</a></h2>
 <p>Disabling a TPL explicitly can be done using:</p>
 <pre class="literal-block">
--D TPL_ENABLE_&lt;TPLNAME&gt;:BOOL=OFF
+-D TPL_ENABLE_&lt;TPLNAME&gt;=OFF
 </pre>
 <p>NOTE: If a disabled TPL is a required dependency of some explicitly enabled
 downstream package, then the configure will error out if
@@ -1313,7 +1322,7 @@ continue.</p>
 <h2><a class="toc-backref" href="#id29">4.14&nbsp;&nbsp;&nbsp;Disabling tentatively enabled TPLs</a></h2>
 <p>To disable a tentatively enabled TPL, set:</p>
 <pre class="literal-block">
--D TPL_ENABLE_&lt;TPLNAME&gt;:BOOL=OFF
+-D TPL_ENABLE_&lt;TPLNAME&gt;=OFF
 </pre>
 <p>where <tt class="docutils literal">&lt;TPLNAME&gt;</tt> = <tt class="docutils literal">BinUtils</tt>, <tt class="docutils literal">Boost</tt>, etc.</p>
 <p>NOTE: Some TPLs in &lt;Project&gt; are always tentatively enabled (e.g. BinUtils
@@ -1339,7 +1348,7 @@ when they occur:</p>
 </ol>
 <blockquote>
 <pre class="literal-block">
--D &lt;Project&gt;_TRACE_FILE_PROCESSING:BOOL=ON
+-D &lt;Project&gt;_TRACE_FILE_PROCESSING=ON
 </pre>
 <p>This will cause TriBITS to print out a trace for all of the project's,
 repositorie's, and package's files get processed on lines using the prefix
@@ -1357,18 +1366,18 @@ when <a class="reference internal" href="#project-verbose-configure">&lt;Project
 <blockquote>
 <p>To do a complete debug dump for the TriBITS configure process, use:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_VERBOSE_CONFIGURE:BOOL=ON
+-D &lt;Project&gt;_VERBOSE_CONFIGURE=ON
 </pre>
 <p>This produces a <em>lot</em> of output but can be very useful when debugging
 configuration problems.</p>
 <p>To just dump the package and TPL dependencies, use:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON
+-D &lt;Project&gt;_DUMP_PACKAGE_DEPENDENCIES=ON
 </pre>
 <p>To just dump the link libraries for each library and executable created,
 use:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_DUMP_LINK_LIBS:BOOL=ON
+-D &lt;Project&gt;_DUMP_LINK_LIBS=ON
 </pre>
 <p>Of course <tt class="docutils literal">&lt;Project&gt;_DUMP_PACKAGE_DEPENDENCIES</tt> and
 <tt class="docutils literal">&lt;Project&gt;_DUMP_LINK_LIBS</tt> can be used together.  Also, note that
@@ -1381,7 +1390,7 @@ configure.</p>
 </ol>
 <blockquote>
 <pre class="literal-block">
--D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
+-D CMAKE_VERBOSE_MAKEFILE=TRUE
 </pre>
 <p>NOTE: It is generally better to just pass in <tt class="docutils literal">VERBOSE=</tt> when directly
 calling <tt class="docutils literal">make</tt> after configuration is finihsed.  See <a class="reference internal" href="#building-with-verbose-output-without-reconfiguring">Building with
@@ -1392,7 +1401,7 @@ verbose output without reconfiguring</a>.</p>
 </ol>
 <blockquote>
 <pre class="literal-block">
--D &lt;Project&gt;_VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
+-D &lt;Project&gt;_VERBOSE_CONFIGURE=ON --debug-output --trace
 </pre>
 <p>NOTE: This will print a complete stack trace to show exactly where you are.</p>
 </blockquote>
@@ -1401,13 +1410,13 @@ verbose output without reconfiguring</a>.</p>
 <h2><a class="toc-backref" href="#id31">4.16&nbsp;&nbsp;&nbsp;Enabling/disabling deprecated warnings</a></h2>
 <p>To turn off all deprecated warnings, set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
+-D &lt;Project&gt;_SHOW_DEPRECATED_WARNINGS=OFF
 </pre>
 <p>This will disable, by default, all deprecated warnings in packages in
 &lt;Project&gt;.  By default, deprecated warnings are enabled.</p>
 <p>To enable/disable deprecated warnings for a single &lt;Project&gt; package, set:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
+-D &lt;TRIBITS_PACKAGE&gt;_SHOW_DEPRECATED_WARNINGS=OFF
 </pre>
 <p>This will override the global behavior set by
 <tt class="docutils literal">&lt;Project&gt;_SHOW_DEPRECATED_WARNINGS</tt> for individual package
@@ -1418,7 +1427,7 @@ verbose output without reconfiguring</a>.</p>
 <p>To actually disable and remove deprecated code from being included in
 compilation, set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_HIDE_DEPRECATED_CODE:BOOL=ON
+-D &lt;Project&gt;_HIDE_DEPRECATED_CODE=ON
 </pre>
 <p>and a subset of deprecated code will actually be removed from the build.  This
 is to allow testing of downstream client code that might otherwise ignore
@@ -1426,7 +1435,7 @@ deprecated warnings.  This allows one to certify that a downstream client code
 is free of calling deprecated code.</p>
 <p>To hide deprecated code for a single &lt;Project&gt; package set:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_HIDE_DEPRECATED_CODE:BOOL=ON
+-D &lt;TRIBITS_PACKAGE&gt;_HIDE_DEPRECATED_CODE=ON
 </pre>
 <p>This will override the global behavior set by
 <tt class="docutils literal">&lt;Project&gt;_HIDE_DEPRECATED_CODE</tt> for individual package
@@ -1467,7 +1476,7 @@ Python is enabled.</li>
 <h2><a class="toc-backref" href="#id34">4.19&nbsp;&nbsp;&nbsp;Enabling different test categories</a></h2>
 <p>To turn on a set a given set of tests by test category, set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_TEST_CATEGORIES:STRING=&quot;&lt;CATEGORY0&gt;;&lt;CATEGORY1&gt;;...&quot;
+-D &lt;Project&gt;_TEST_CATEGORIES=&quot;&lt;CATEGORY0&gt;;&lt;CATEGORY1&gt;;...&quot;
 </pre>
 <p>Valid categories include <tt class="docutils literal">BASIC</tt>, <tt class="docutils literal">CONTINUOUS</tt>, <tt class="docutils literal">NIGHTLY</tt>, <tt class="docutils literal">WEEKLY</tt>
 and <tt class="docutils literal">PERFORMANCE</tt>.  <tt class="docutils literal">BASIC</tt> tests get built and run for pre-push testing,
@@ -1482,7 +1491,7 @@ testing.</p>
 <p>Any TriBTS added ctest test (i.e. listed in <tt class="docutils literal">ctest <span class="pre">-N</span></tt>) can be disabled at
 configure time by setting:</p>
 <pre class="literal-block">
--D &lt;fullTestName&gt;_DISABLE:BOOL=ON
+-D &lt;fullTestName&gt;_DISABLE=ON
 </pre>
 <p>where <tt class="docutils literal">&lt;fulltestName&gt;</tt> must exactly match the test listed out by <tt class="docutils literal">ctest
 <span class="pre">-N</span></tt>.  Of course specific tests can also be excluded from <tt class="docutils literal">ctest</tt> using the
@@ -1493,7 +1502,7 @@ configure time by setting:</p>
 <p>A maximum default time limit for any single test can be set at configure time
 by setting:</p>
 <pre class="literal-block">
--D DART_TESTING_TIMEOUT:STRING=&lt;maxSeconds&gt;
+-D DART_TESTING_TIMEOUT=&lt;maxSeconds&gt;
 </pre>
 <p>where <tt class="docutils literal">&lt;maxSeconds&gt;</tt> is the number of wall-clock seconds.  By default there
 is no timeout limit so it is a good idea to set some limit just so tests don't
@@ -1519,7 +1528,7 @@ timeouts for the individual tests that have their own timeout set (through the
 <tt class="docutils literal">TIMEOUT</tt> argument for each individual test) can be scaled by a constant
 factor <tt class="docutils literal">&lt;testTimeoutScaleFactor&gt;</tt> by configuring with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT:STRING=&lt;testTimeoutScaleFactor&gt;
+-D &lt;Project&gt;_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT=&lt;testTimeoutScaleFactor&gt;
 </pre>
 <p>Here, <tt class="docutils literal">&lt;testTimeoutScaleFactor&gt;</tt> can be an integral number like <tt class="docutils literal">5</tt> or can
 be fractional number like <tt class="docutils literal">1.5</tt>.</p>
@@ -1544,7 +1553,7 @@ DartConfiguration.tcl file will be scaled.</li>
 <h2><a class="toc-backref" href="#id38">4.23&nbsp;&nbsp;&nbsp;Enabling support for coverage testing</a></h2>
 <p>To turn on support for coverage testing set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_COVERAGE_TESTING:BOOL=ON
+-D &lt;Project&gt;_ENABLE_COVERAGE_TESTING=ON
 </pre>
 <p>This will set compile and link options -fprofile-arcs -ftest-coverage for GCC.
 Use 'make dashboard' (see below) to submit coverage results to CDash</p>
@@ -1558,7 +1567,7 @@ Use 'make dashboard' (see below) to submit coverage results to CDash</p>
 <pre class="literal-block">
 $ cd $BUILD_DIR
 $ rm -rf CMakeCache.txt CMakeFiles/
-$ cmake -LAH -D &lt;Project&gt;_ENABLE_ALL_PACKAGES:BOOL=ON \
+$ cmake -LAH -D &lt;Project&gt;_ENABLE_ALL_PACKAGES=ON \
   $SOURCE_BASE
 </pre>
 <p>You can also just look at the text file CMakeCache.txt after configure which
@@ -1590,7 +1599,7 @@ $ cmake -LA $SOURCE_BASE
 <p id="project-extra-repositories">To configure &lt;Project&gt; with an extra set of packages in extra TriBITS
 repositories, configure with:</p>
 <pre class="literal-block">
--D&lt;Project&gt;_EXTRA_REPOSITORIES:STRING=&quot;&lt;REPO0&gt;,&lt;REPO1&gt;,...&quot;
+-D&lt;Project&gt;_EXTRA_REPOSITORIES=&quot;&lt;REPO0&gt;,&lt;REPO1&gt;,...&quot;
 </pre>
 <p>Here, <tt class="docutils literal">&lt;REPOi&gt;</tt> is the name of an extra repository that typically has been
 cloned under the main &lt;Project&gt; source directory as:</p>
@@ -1602,7 +1611,7 @@ cloned under the main &lt;Project&gt; source directory as:</p>
 $ cd $SOURCE_BASE_DIR
 $ git clone some_url.com/some/dir/SomeExtraRepo
 $ cd $BUILD_DIR
-$ ./do-configure -D&lt;Project&gt;_EXTRA_REPOSITORIES:STRING=SomeExtraRepo \
+$ ./do-configure -D&lt;Project&gt;_EXTRA_REPOSITORIES=SomeExtraRepo \
    [Other Options]
 </pre>
 <p>After that, all of the extra packages defined in <tt class="docutils literal">SomeExtraRepo</tt> will appear
@@ -1680,15 +1689,15 @@ managling determination, and other CMake-specific information.</p>
 <h2><a class="toc-backref" href="#id44">4.29&nbsp;&nbsp;&nbsp;Adding configure timers</a></h2>
 <p>To add timers to various configure steps, configure with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_CONFIGURE_TIMING:BOOL=ON
+-D &lt;Project&gt;_ENABLE_CONFIGURE_TIMING=ON
 </pre>
 <p>This will do baulk timing for the major configure steps which is independent
 of the number of packages in the project.</p>
 <p>To additionally add timing for the configure of individual packages, configure
 with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_CONFIGURE_TIMING:BOOL=ON \
--D &lt;Project&gt;_ENABLE_PACKAGE_CONFIGURE_TIMING:BOOL=ON
+-D &lt;Project&gt;_ENABLE_CONFIGURE_TIMING=ON \
+-D &lt;Project&gt;_ENABLE_PACKAGE_CONFIGURE_TIMING=ON
 </pre>
 <p>If you are configuring a large number of packages (perhaps by including a lot
 of add-on packages in extra repos) then you might not want to enable
@@ -1697,9 +1706,9 @@ configure times.</p>
 <p>If you just want to time individual packages instead, you can enable that
 with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_CONFIGURE_TIMING:BOOL=ON \
--D &lt;TRIBITS_PACKAGE_0&gt;_PACKAGE_CONFIGURE_TIMING:BOOL=ON \
--D &lt;TRIBITS_PACKAGE_1&gt;_PACKAGE_CONFIGURE_TIMING:BOOL=ON \
+-D &lt;Project&gt;_ENABLE_CONFIGURE_TIMING=ON \
+-D &lt;TRIBITS_PACKAGE_0&gt;_PACKAGE_CONFIGURE_TIMING=ON \
+-D &lt;TRIBITS_PACKAGE_1&gt;_PACKAGE_CONFIGURE_TIMING=ON \
 ...
 </pre>
 <p>NOTES:</p>
@@ -1723,14 +1732,14 @@ external Makefile projects.  These export files provide the lists of
 libraries, include directories, compilers and compiler options, etc.</p>
 <p>To configure to generate CMake export files for the project, configure with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_INSTALL_CMAKE_CONFIG_FILES:BOOL=ON
+-D &lt;Project&gt;_ENABLE_INSTALL_CMAKE_CONFIG_FILES=ON
 </pre>
 <p>This will generate the file <tt class="docutils literal">&lt;Project&gt;Config.cmake</tt> for the project and the
 files <tt class="docutils literal">&lt;Package&gt;Config.cmake</tt> for each enabled package in the build tree.
 In addition, this will install versions of these files into the install tree.</p>
 <p>To confiugre Makefile export files, configure with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_EXPORT_MAKEFILES:BOOL=ON
+-D &lt;Project&gt;_ENABLE_EXPORT_MAKEFILES=ON
 </pre>
 <p>which will generate the file <tt class="docutils literal"><span class="pre">Makefile.export.&lt;Project&gt;</span></tt> for the project and
 the files <tt class="docutils literal"><span class="pre">Makefile.export.&lt;Package&gt;</span></tt> for each enabled package in the build
@@ -1754,7 +1763,7 @@ projects where the cost my be high for doing so.</li>
 can generate a &lt;Project&gt;RepoVersion.txt file which lists all of the repos and
 their current versions using:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_GENERATE_REPO_VERSION_FILE:BOOL=ON
+-D &lt;Project&gt;_GENERATE_REPO_VERSION_FILE=ON
 </pre>
 <p>This will cause a &lt;Project&gt;RepoVersion.txt file to get created in the binary
 directory, get installed in the install directory, and get included in the
@@ -1764,7 +1773,7 @@ source distribution tarball.</p>
 <h2><a class="toc-backref" href="#id47">4.32&nbsp;&nbsp;&nbsp;CMake configure-time development mode and debug checking</a></h2>
 <p>To turn off CMake configure-time development-mode checking, set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_DEVELOPMENT_MODE:BOOL=OFF
+-D &lt;Project&gt;_ENABLE_DEVELOPMENT_MODE=OFF
 </pre>
 <p>This turns off a number of CMake configure-time checks for the &lt;Project&gt;
 TriBITS/CMake files including checking the package dependencies.  These checks
@@ -1779,7 +1788,7 @@ may be purposefully missing (see <cite>Creating a tarball of the source tree</ci
 must be ignored.  When building from a reduced tarball created from the
 development sources, set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ASSERT_MISSING_PACKAGES:BOOL=OFF
+-D &lt;Project&gt;_ASSERT_MISSING_PACKAGES=OFF
 </pre>
 <p>Setting this off will cause the TriBITS CMake configure to simply ignore any
 missing packages and turn off all dependencies on these missing packages.</p>
@@ -2015,15 +2024,15 @@ after the build and testing is complete.</p>
 <p>In order to set up for the install, the install prefix should be set up at
 configure time by setting, for example:</p>
 <pre class="literal-block">
--D CMAKE_INSTALL_PREFIX:PATH=$HOME/install/&lt;Project&gt;/mpi/opt
+-D CMAKE_INSTALL_PREFIX=$HOME/install/&lt;Project&gt;/mpi/opt
 </pre>
 <p>The default location for the installation of libraries, headers, and
 executables is given by the variables (with defaults):</p>
 <pre class="literal-block">
--D &lt;Project&gt;_INSTALL_INCLUDE_DIR:STRING=&quot;include&quot; \
--D &lt;Project&gt;_INSTALL_LIB_DIR:STRING=&quot;lib&quot; \
--D &lt;Project&gt;_INSTALL_RUNTIME_DIR:STRING=&quot;bin&quot; \
--D &lt;Project&gt;_INSTALL_EXAMPLE_DIR:STRING=&quot;example&quot;
+-D &lt;Project&gt;_INSTALL_INCLUDE_DIR=&quot;include&quot; \
+-D &lt;Project&gt;_INSTALL_LIB_DIR=&quot;lib&quot; \
+-D &lt;Project&gt;_INSTALL_RUNTIME_DIR=&quot;bin&quot; \
+-D &lt;Project&gt;_INSTALL_EXAMPLE_DIR=&quot;example&quot;
 </pre>
 <p>If these paths are relative (i.e. don't start with &quot;/&quot; and use type
 <tt class="docutils literal">STRING</tt>) then they are relative to <tt class="docutils literal">${CMAKE_INSTALL_PREFIX}</tt>.  Otherwise
@@ -2031,10 +2040,10 @@ the paths can be absolute (use type <tt class="docutils literal">PATH</tt>) and 
 <tt class="docutils literal">${CMAKE_INSTALL_PREFIX}</tt>.  For example, to install each part in any
 abritrary location use:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_INSTALL_INCLUDE_DIR:PATH=&quot;/usr/trilinos_include&quot; \
--D &lt;Project&gt;_INSTALL_LIB_DIR:PATH=&quot;/usr/trilinos_lib&quot; \
--D &lt;Project&gt;_INSTALL_RUNTIME_DIR:PATH=&quot;/usr/trilinos_bin&quot; \
--D &lt;Project&gt;_INSTALL_EXAMPLE_DIR:PATH=&quot;/usr/share/trilinos/examples&quot;
+-D &lt;Project&gt;_INSTALL_INCLUDE_DIR=&quot;/usr/trilinos_include&quot; \
+-D &lt;Project&gt;_INSTALL_LIB_DIR=&quot;/usr/trilinos_lib&quot; \
+-D &lt;Project&gt;_INSTALL_RUNTIME_DIR=&quot;/usr/trilinos_bin&quot; \
+-D &lt;Project&gt;_INSTALL_EXAMPLE_DIR=&quot;/usr/share/trilinos/examples&quot;
 </pre>
 <p>NOTE: The defaults for the above include paths will be set by the standard
 CMake module <tt class="docutils literal">GNUInstallDirs</tt> if <tt class="docutils literal">&lt;Project&gt;_USE_GNUINSTALLDIRS=TRUE</tt> is
@@ -2053,7 +2062,7 @@ absolute paths, use the data type <tt class="docutils literal">PATH</tt> as show
 <tt class="docutils literal">&lt;Project&gt;_INSTALL_LIB_DIR</tt>.  However, if the primary desire is to install
 executables only, then the user can set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_INSTALL_LIBRARIES_AND_HEADERS:BOOL=ON
+-D &lt;Project&gt;_INSTALL_LIBRARIES_AND_HEADERS=ON
 </pre>
 <p>which, if in addition static libraries are being built
 (i.e. <tt class="docutils literal">BUILD_SHARED_LIBS=OFF</tt>), this this option will result in no libraries
@@ -2089,7 +2098,7 @@ CPack.</p>
 <p>To create a source tarball of the project, first configure with the list of
 desired packages (see <a class="reference internal" href="#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a>) and pass in</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ENABLE_CPACK_PACKAGING:BOOL=ON
+-D &lt;Project&gt;_ENABLE_CPACK_PACKAGING=ON
 </pre>
 <p>To actually generate the distribution files, use:</p>
 <pre class="literal-block">
@@ -2115,20 +2124,20 @@ enable them or their outer package so they will be included in the source
 tarball.  To get a printout of set regular expresions that will be used to
 match files to exclude, set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_DUMP_CPACK_SOURCE_IGNORE_FILES:BOOL=ON
+-D &lt;Project&gt;_DUMP_CPACK_SOURCE_IGNORE_FILES=ON
 </pre>
 <p>While a set of default CPack source generator types is defined for this
 project (see the <tt class="docutils literal">CMakeCache.txt</tt> file), it can be overridden using, for
 example:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_CPACK_SOURCE_GENERATOR:STRING=&quot;TGZ;TBZ2&quot;
+-D &lt;Project&gt;_CPACK_SOURCE_GENERATOR=&quot;TGZ;TBZ2&quot;
 </pre>
 <p>(see CMake documentation to find out the types of supported CPack source
 generators on your system).</p>
 <p>NOTE: When configuring from an untarred source tree that has missing packages,
 one must configure with:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_ASSERT_MISSING_PACKAGES:BOOL=OFF
+-D &lt;Project&gt;_ASSERT_MISSING_PACKAGES=OFF
 </pre>
 <p>Otherwise, TriBITS will error out complaining about missing packages.  (Note
 that <tt class="docutils literal">&lt;Project&gt;_ASSERT_MISSING_PACKAGES</tt> will default to <tt class="docutils literal">`OFF`</tt> in
@@ -2141,7 +2150,7 @@ release mode, i.e. <tt class="docutils literal"><span class="pre">&lt;Project&gt
 test, coverage, memcheck results to the project's CDash dashboard.</p>
 <p>First, configure as normal but add the build and test parallel levels with:</p>
 <pre class="literal-block">
--DCTEST_BUILD_FLAGS:STRING=-j4 -DCTEST_PARALLEL_LEVEL:STRING=4
+-DCTEST_BUILD_FLAGS=-j4 -DCTEST_PARALLEL_LEVEL=4
 </pre>
 <p>(or with some other <tt class="docutils literal"><span class="pre">-j&lt;N&gt;</span></tt>).  Then, invoke the build, test and submit
 with:</p>
@@ -2214,7 +2223,7 @@ CMake targets 'Experimental*' that run standard dashboards with CTest
 without the custom package-by-package driver in
 TribitsCTestDriverCore.cmake.  The package-by-package extended CTest
 driver is more appropriate for &lt;Project&gt;.</p>
-<p>NOTE: Once you configure with -D&lt;Project&gt;_ENABLE_COVERAGE_TESTING:BOOL=ON, the
+<p>NOTE: Once you configure with -D&lt;Project&gt;_ENABLE_COVERAGE_TESTING=ON, the
 environment variable CTEST_DO_COVERAGE_TESTING=TRUE is automatically set by the
 target 'dashboard' so you don't have to set this yourself.</p>
 <p>NOTE: Doing a memory check with Valgrind requires that you set
@@ -2226,7 +2235,7 @@ $ env CTEST_DO_MEMORY_TESTING=TRUE make dashboard
 cmake configure line in order to pass additional arguments to 'ctest -S' when
 invoking the package-by-package CTest driver.  For example:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_DASHBOARD_CTEST_ARGS:STRING=&quot;-VV&quot;
+-D &lt;Project&gt;_DASHBOARD_CTEST_ARGS=&quot;-VV&quot;
 </pre>
 <p>will set verbose output with CTest.</p>
 </div>
