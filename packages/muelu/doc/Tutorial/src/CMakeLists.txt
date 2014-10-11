@@ -62,11 +62,26 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
     SOURCE_FILES ScalingTest.cpp ScalingTestParamList.cpp
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     Challenge_XML
     SOURCES Challenge.cpp
+    COMM mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    Challenge_XML
+    NAME "Challenge_convectiondiffusion"
+    ARGS "--globalNumDofs=16641 --nDofsPerNode=1 --solver=gmres --tol=1e-12 --xml=challenges/condif2d_reference.xml --problem=challenges/condif2d"
     NUM_MPI_PROCS 2
-    COMM mpi serial
+    COMM mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    Challenge_XML
+    NAME "Challenge_structure"
+    ARGS "--globalNumDofs=7020 --nDofsPerNode=2 --solver=cg --tol=1e-12 --xml=challenges/stru2d_reference.xml --problem=challenges/stru2d"
+    NUM_MPI_PROCS 2
+    COMM mpi
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(userguide_challenge_cp
