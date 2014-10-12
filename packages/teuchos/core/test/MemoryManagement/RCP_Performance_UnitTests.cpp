@@ -64,7 +64,7 @@ int maxArraySize = 10000;
 double maxRcpRawCreateDestroyRatio = 10.0;
 double maxRcpRawAdjustRefCountRatio = 100.0;
 double maxRcpSpAdjustRefCountRatio = 5.0;
-double maxRcpRawObjAccessRatio = 10.0;
+double maxRcpRawObjAccessRatio = 13.5;
 
 const int intPrec = 8;
 const int dblPrec = 6;
