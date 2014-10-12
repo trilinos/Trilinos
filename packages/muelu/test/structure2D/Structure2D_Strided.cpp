@@ -60,6 +60,7 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 // Epetra
 #include <EpetraExt_CrsMatrixIn.h>
@@ -332,69 +333,71 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-  std::vector<size_t> stridingInfo;
-  stridingInfo.push_back(3);
+  bool success = false;
+  try {
+    std::vector<size_t> stridingInfo;
+    stridingInfo.push_back(3);
 
-  // no striding, just one block of size 3, no offset
-  Teuchos::RCP<Vector> ref = runExample(stridingInfo, -1, 0);
+    // no striding, just one block of size 3, no offset
+    Teuchos::RCP<Vector> ref = runExample(stridingInfo, -1, 0);
 
-  int cnt_errors = 0;
+    int cnt_errors = 0;
 
-  stridingInfo.push_back(1);
-  // striding (3,1), use block 0, no offset
-  Teuchos::RCP<Vector> lsg2 = runExample(stridingInfo, 0, 0);
-  lsg2->update(-1.0, *ref, 1.0);
-  if(lsg2->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
+    stridingInfo.push_back(1);
+    // striding (3,1), use block 0, no offset
+    Teuchos::RCP<Vector> lsg2 = runExample(stridingInfo, 0, 0);
+    lsg2->update(-1.0, *ref, 1.0);
+    if(lsg2->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
 
-  stridingInfo.push_back(4);
-  // striding (3,1,4), use block 0, no offset
-  Teuchos::RCP<Vector> lsg3 = runExample(stridingInfo, 0, 0);
-  lsg3->update(-1.0, *ref, 1.0);
-  if(lsg3->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
+    stridingInfo.push_back(4);
+    // striding (3,1,4), use block 0, no offset
+    Teuchos::RCP<Vector> lsg3 = runExample(stridingInfo, 0, 0);
+    lsg3->update(-1.0, *ref, 1.0);
+    if(lsg3->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
 
-  stridingInfo.push_back(3);
-  // striding (3,1,4,3), use block 3, no offset
-  Teuchos::RCP<Vector> lsg4 = runExample(stridingInfo, 3, 0);
-  lsg4->update(-1.0, *ref, 1.0);
-  if(lsg4->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
+    stridingInfo.push_back(3);
+    // striding (3,1,4,3), use block 3, no offset
+    Teuchos::RCP<Vector> lsg4 = runExample(stridingInfo, 3, 0);
+    lsg4->update(-1.0, *ref, 1.0);
+    if(lsg4->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
 
-  ////////////////////////////////////////////// test with offset
-  stridingInfo.clear();
-  stridingInfo.push_back(3);
+    ////////////////////////////////////////////// test with offset
+    stridingInfo.clear();
+    stridingInfo.push_back(3);
 
-  // no striding, just one block of size 3, offset 35
-  Teuchos::RCP<Vector> lsg5 = runExample(stridingInfo, -1, 35);
-  lsg5->update(-1.0, *ref, 1.0);
-  if(lsg5->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
+    // no striding, just one block of size 3, offset 35
+    Teuchos::RCP<Vector> lsg5 = runExample(stridingInfo, -1, 35);
+    lsg5->update(-1.0, *ref, 1.0);
+    if(lsg5->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
 
-  // no striding, use block 0, offset 35
-  Teuchos::RCP<Vector> lsg6 = runExample(stridingInfo, 0, 35);
-  lsg6->update(-1.0, *ref, 1.0);
-  if(lsg6->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
+    // no striding, use block 0, offset 35
+    Teuchos::RCP<Vector> lsg6 = runExample(stridingInfo, 0, 35);
+    lsg6->update(-1.0, *ref, 1.0);
+    if(lsg6->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
 
-  stridingInfo.push_back(1);
-  //striding (3,1), use block 0, offset 35
-  Teuchos::RCP<Vector> lsg7 = runExample(stridingInfo, 0, 35);
-  lsg7->update(-1.0, *ref, 1.0);
-  if(lsg7->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
+    stridingInfo.push_back(1);
+    //striding (3,1), use block 0, offset 35
+    Teuchos::RCP<Vector> lsg7 = runExample(stridingInfo, 0, 35);
+    lsg7->update(-1.0, *ref, 1.0);
+    if(lsg7->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
 
-  stridingInfo.push_back(3);
-  //striding (3,1,3), use block 2, offset 35
-  Teuchos::RCP<Vector> lsg8 = runExample(stridingInfo, 2, 35);
-  lsg8->update(-1.0, *ref, 1.0);
-  if(lsg8->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
+    stridingInfo.push_back(3);
+    //striding (3,1,3), use block 2, offset 35
+    Teuchos::RCP<Vector> lsg8 = runExample(stridingInfo, 2, 35);
+    lsg8->update(-1.0, *ref, 1.0);
+    if(lsg8->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
 
-  //striding (3,1,3), use block 2, offset 36
-  Teuchos::RCP<Vector> lsg9 = runExample(stridingInfo, 2, 36);
-  lsg9->update(-1.0, *ref, 1.0);
-  if(lsg9->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
+    //striding (3,1,3), use block 2, offset 36
+    Teuchos::RCP<Vector> lsg9 = runExample(stridingInfo, 2, 36);
+    lsg9->update(-1.0, *ref, 1.0);
+    if(lsg9->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
 
-  if(cnt_errors>0) {
-    std::cout << "results do not match. Error" << std::endl;
-    return EXIT_FAILURE;
+    success = (cnt_errors == 0);
+    if(!success) {
+      std::cout << "results do not match. Error" << std::endl;
+    }
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
-  return EXIT_SUCCESS;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
-
-

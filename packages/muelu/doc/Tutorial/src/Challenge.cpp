@@ -61,6 +61,7 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 // Epetra
 #include <EpetraExt_CrsMatrixIn.h>
@@ -110,130 +111,137 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  out->setOutputToRootOnly(0);
+  bool success = false;
+  try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setOutputToRootOnly(0);
 
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
-  *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
+    *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 
-  // =========================================================================
-  // Parameters initialization
-  // =========================================================================
-  Teuchos::CommandLineProcessor clp(false);
+    // =========================================================================
+    // Parameters initialization
+    // =========================================================================
+    Teuchos::CommandLineProcessor clp(false);
 
-  std::string xmlFileName = "xml/muelu_ParameterList.xml"; clp.setOption("xml", &xmlFileName, "read parameters from a file [default = 'xml/muelu_ParameterList.xml']");
+    std::string xmlFileName = "xml/muelu_ParameterList.xml"; clp.setOption("xml", &xmlFileName, "read parameters from a file [default = 'xml/muelu_ParameterList.xml']");
 
-  int globalNumDofs = 0; //7020;
-  clp.setOption("globalNumDofs", &globalNumDofs, "global number of degrees of freedom [has to be set by user, default = 0 -> error]");
-  int nDofsPerNode = 1;
-  clp.setOption("nDofsPerNode", &nDofsPerNode, "number of degrees of freedom per node [has to be set by user, default = 1]");
-  int nProcs = comm->getSize();
-  std::string dsolveType = "cg";
-  clp.setOption("solver", &dsolveType, "solve type: (none | cg | gmres | standalone) [default = cg]");
-  double dtol = 1e-12;
-  clp.setOption("tol", &dtol, "solver convergence tolerance [default = 1e-12]");
-  std::string problemFile = "stru2d";
-  clp.setOption("problem", &problemFile, "string for problem file (e.g. 'stru2d' expects 'stru2d_A.txt', 'stru2d_b.txt' and 'stru2d_ns.txt')");
+    int globalNumDofs = 0; //7020;
+    clp.setOption("globalNumDofs", &globalNumDofs, "global number of degrees of freedom [has to be set by user, default = 0 -> error]");
+    int nDofsPerNode = 1;
+    clp.setOption("nDofsPerNode", &nDofsPerNode, "number of degrees of freedom per node [has to be set by user, default = 1]");
+    int nProcs = comm->getSize();
+    std::string dsolveType = "cg";
+    clp.setOption("solver", &dsolveType, "solve type: (none | cg | gmres | standalone) [default = cg]");
+    double dtol = 1e-12;
+    clp.setOption("tol", &dtol, "solver convergence tolerance [default = 1e-12]");
+    std::string problemFile = "stru2d";
+    clp.setOption("problem", &problemFile, "string for problem file (e.g. 'stru2d' expects 'stru2d_A.txt', 'stru2d_b.txt' and 'stru2d_ns.txt')");
 
-  switch (clp.parse(argc, argv)) {
-    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
-    case Teuchos::CommandLineProcessor::PARSE_ERROR:
-    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
-  }
+    switch (clp.parse(argc, argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    }
 
-  if(globalNumDofs == 0) {
-    std::cout << "Please specify '--globalNumDofs'! Simulation cannot run without that parameter correctly set" << std::endl;
-    return EXIT_FAILURE;
-  }
+    if(globalNumDofs == 0) {
+      std::cout << "Please specify '--globalNumDofs'! Simulation cannot run without that parameter correctly set" << std::endl;
+      return EXIT_FAILURE;
+    }
 
-  int nLocalDofs = (int) globalNumDofs / nProcs;
-  nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
-  int nCumulatedDofs = 0;
-  sumAll(comm,nLocalDofs, nCumulatedDofs);
+    int nLocalDofs = (int) globalNumDofs / nProcs;
+    nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
+    int nCumulatedDofs = 0;
+    sumAll(comm,nLocalDofs, nCumulatedDofs);
 
-  if(comm->getRank() == nProcs-1) {
-    nLocalDofs += globalNumDofs - nCumulatedDofs;
-  }
+    if(comm->getRank() == nProcs-1) {
+      nLocalDofs += globalNumDofs - nCumulatedDofs;
+    }
 
-  // read in problem
-  Epetra_Map emap (globalNumDofs, nLocalDofs, 0, *Xpetra::toEpetra(comm));
-  Epetra_CrsMatrix * ptrA = 0;
-  Epetra_Vector * ptrf = 0;
-  Epetra_MultiVector* ptrNS = 0;
+    // read in problem
+    Epetra_Map emap (globalNumDofs, nLocalDofs, 0, *Xpetra::toEpetra(comm));
+    Epetra_CrsMatrix * ptrA = 0;
+    Epetra_Vector * ptrf = 0;
+    Epetra_MultiVector* ptrNS = 0;
 
-  std::cout << "Reading matrix market file" << std::endl;
+    std::cout << "Reading matrix market file" << std::endl;
 
-  std::stringstream ssA, ssB, ssNS;
-  ssA  << problemFile << "_A.txt";
-  ssB  << problemFile << "_b.txt";
-  ssNS << problemFile << "_ns.txt";
-  std::string fileA = ssA.str();
-  std::string fileB = ssB.str();
-  std::string fileNS = ssNS.str();
-  EpetraExt::MatrixMarketFileToCrsMatrix(fileA.c_str(),emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector(fileB.c_str(),emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector(fileNS.c_str(), emap, ptrNS);
-  RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
-  RCP<Epetra_Vector> epB = Teuchos::rcp(ptrf);
-  RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
+    std::stringstream ssA, ssB, ssNS;
+    ssA  << problemFile << "_A.txt";
+    ssB  << problemFile << "_b.txt";
+    ssNS << problemFile << "_ns.txt";
+    std::string fileA = ssA.str();
+    std::string fileB = ssB.str();
+    std::string fileNS = ssNS.str();
+    EpetraExt::MatrixMarketFileToCrsMatrix(fileA.c_str(),emap,emap,emap,ptrA);
+    EpetraExt::MatrixMarketFileToVector(fileB.c_str(),emap,ptrf);
+    EpetraExt::MatrixMarketFileToMultiVector(fileNS.c_str(), emap, ptrNS);
+    RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
+    RCP<Epetra_Vector> epB = Teuchos::rcp(ptrf);
+    RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
 
-  // Epetra_CrsMatrix -> Xpetra::Matrix
-  RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-  RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
-  RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
-  Op->SetFixedBlockSize(nDofsPerNode);
+    // Epetra_CrsMatrix -> Xpetra::Matrix
+    RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+    RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
+    RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
+    Op->SetFixedBlockSize(nDofsPerNode);
 
-  RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
+    RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
 
-  // Epetra_Map -> Xpetra::Map
-  const RCP< const Map> map = Xpetra::toXpetra<GO>(emap);
+    // Epetra_Map -> Xpetra::Map
+    const RCP< const Map> map = Xpetra::toXpetra<GO>(emap);
 
-  ParameterListInterpreter mueLuFactory(xmlFileName,*comm);
-  RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
-  RCP<MueLu::Level> Finest = H->GetLevel(0);
-  Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->Set("A",Op);
-  Finest->Set("Nullspace",xNS);
+    ParameterListInterpreter mueLuFactory(xmlFileName,*comm);
+    RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+    RCP<MueLu::Level> Finest = H->GetLevel(0);
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+    Finest->Set("A",Op);
+    Finest->Set("Nullspace",xNS);
 
-  mueLuFactory.SetupHierarchy(*H);
+    mueLuFactory.SetupHierarchy(*H);
 
 
 #ifdef HAVE_MUELU_AZTECOO
 
-  H->IsPreconditioner(true);
-  MueLu::EpetraOperator mueluPrec(H); // Wrap MueLu preconditioner into an Epetra Operator
+    H->IsPreconditioner(true);
+    MueLu::EpetraOperator mueluPrec(H); // Wrap MueLu preconditioner into an Epetra Operator
 
-  // create a solution vector
-  RCP<Epetra_Vector> epX = rcp(new Epetra_Vector(epA->RowMap()));
-  epX->PutScalar((Scalar) 0.0);
+    // create a solution vector
+    RCP<Epetra_Vector> epX = rcp(new Epetra_Vector(epA->RowMap()));
+    epX->PutScalar((Scalar) 0.0);
 
-  Epetra_LinearProblem eProblem(epA.get(), epX.get(), epB.get());
+    Epetra_LinearProblem eProblem(epA.get(), epX.get(), epB.get());
 
-  // AMG as preconditioner within AztecOO
-  AztecOO solver(eProblem);
-  solver.SetPrecOperator(&mueluPrec);
-  if (dsolveType == "cg")
-    solver.SetAztecOption(AZ_solver, AZ_cg);
-  else if (dsolveType == "gmres")
-    solver.SetAztecOption(AZ_solver, AZ_gmres);
-  else { // use fix point method instead
-    solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
-  }
-  solver.SetAztecOption(AZ_output, 1);
+    // AMG as preconditioner within AztecOO
+    AztecOO solver(eProblem);
+    solver.SetPrecOperator(&mueluPrec);
+    if (dsolveType == "cg")
+      solver.SetAztecOption(AZ_solver, AZ_cg);
+    else if (dsolveType == "gmres")
+      solver.SetAztecOption(AZ_solver, AZ_gmres);
+    else { // use fix point method instead
+      solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
+    }
+    solver.SetAztecOption(AZ_output, 1);
 
-  solver.Iterate(500, dtol);
+    solver.Iterate(500, dtol);
 
-  { //TODO: simplify this
-    RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(epX));
-    RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(epB));
-    // Print relative residual norm
-    Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*Op, *mueluX, *mueluB)[0];
-    if (comm->getRank() == 0)
-      std::cout << "||Residual|| = " << residualNorms << std::endl;
-  }
+    { //TODO: simplify this
+      RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(epX));
+      RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(epB));
+      // Print relative residual norm
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*Op, *mueluX, *mueluB)[0];
+      if (comm->getRank() == 0)
+        std::cout << "||Residual|| = " << residualNorms << std::endl;
+    }
 #endif // HAVE_MUELU_AZTECOO
-  return EXIT_SUCCESS;
+
+    success = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

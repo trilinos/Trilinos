@@ -60,6 +60,7 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 // Epetra
 #include <EpetraExt_CrsMatrixIn.h>
@@ -124,322 +125,328 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  out->setOutputToRootOnly(0);
-  *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
+  bool success = false;
+  try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setOutputToRootOnly(0);
+    *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
-  // Timing
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor m(myTime);
+    // Timing
+    Teuchos::Time myTime("global");
+    Teuchos::TimeMonitor m(myTime);
 
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
-  *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
+    *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 
-  //
-  // SET TEST PARAMETERS
-  //
-  // Note: use --help to list available options.
-  Teuchos::CommandLineProcessor clp(false);
-
-  // - Levels
-  LO  optMaxLevels     = 4;              clp.setOption("maxLevels",      &optMaxLevels,          "maximum number of levels allowed");
-  int optMaxCoarseSize = 1;              clp.setOption("maxCoarseSize",  &optMaxCoarseSize,      "maximum #dofs in coarse operator"); //FIXME clp doesn't like long long int
-
-  // - Repartitioning
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
-  int    optRepartition    = 1;             clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
-  LO     optMinRowsPerProc = 50;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
-  double optNnzImbalance   = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
-#else
-  int optRepartition = 0;
-#endif
-
-  switch (clp.parse(argc, argv)) {
-    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-    case Teuchos::CommandLineProcessor::PARSE_ERROR:
-    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
-  }
-
-
-  /////////////////////////////////////////////
-  // custom parameters
-  LO maxLevels = optMaxLevels;
-
-  GO maxCoarseSize=optMaxCoarseSize;
-  std::string aggOrdering = "natural";
-  int minPerAgg=3;
-  int maxNbrAlreadySelected=0;
-
-  int globalNumDofs = 8898;
-  int nProcs = comm->getSize();
-  int nDofsPerNode = 3;
-
-  int nLocalDofs = (int) globalNumDofs / nProcs;
-  nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
-  int nCumulatedDofs = 0;
-  sumAll(comm,nLocalDofs, nCumulatedDofs);
-  //Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM, 1, nLocalDofs, &nCumulatedDofs );
-
-  if(comm->getRank() == nProcs-1) {
-    nLocalDofs += globalNumDofs - nCumulatedDofs;
-  }
-
-  std::cout << "PROC: " << comm->getRank() << " numLocalDofs=" << nLocalDofs << std::endl;
-
-  // read in problem
-  Epetra_Map emap (globalNumDofs, nLocalDofs, 0, *Xpetra::toEpetra(comm));
-  Epetra_CrsMatrix * ptrA = 0;
-  Epetra_Vector * ptrf = 0;
-  Epetra_MultiVector* ptrNS = 0;
-
-  std::cout << "Reading matrix market file" << std::endl;
-  EpetraExt::MatrixMarketFileToCrsMatrix("A5932_re1000.txt",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("b5932_re1000.txt",emap,ptrf);
-  //EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
-  RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
-  RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
-  RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
-
-  // Epetra_CrsMatrix -> Xpetra::Matrix
-  RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-  RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
-  RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
-
-  Op->SetFixedBlockSize(nDofsPerNode);   // 2 velocity dofs and 1 pressure dof per node.
-
-  // Epetra_Vector -> Xpetra::Vector
-  RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
-
-  RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
-
-  // Epetra_Map -> Xpetra::Map
-  const RCP< const Map> map = Xpetra::toXpetra<GO>(emap);
-
-  RCP<Hierarchy> H = rcp ( new Hierarchy() );
-  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  H->SetMaxCoarseSize(maxCoarseSize);
-
-  // build finest Level
-  RCP<MueLu::Level> Finest = H->GetLevel();
-  Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->Set("A",Op);
-  //Finest->Set("Nullspace",xNS);
-
-  if (optRepartition==1) {
-    // create null space
-
-    RCP<MultiVector> nullspace;
-    // determine numPDEs
-    LocalOrdinal numPDEs = 1;
-    if(Op->IsView("stridedMaps")==true) {
-      Xpetra::viewLabel_t oldView = Op->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-      //TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap()) == Teuchos::null, Exceptions::BadCast, "cast to strided row map failed.");
-      numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap())->getFixedBlockSize();
-      oldView = Op->SwitchToView(oldView);
-    }
-
-    //GetOStream(Runtime1, 0) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
-    nullspace = MultiVectorFactory::Build(Op->getDomainMap(), numPDEs);
-
-    for (int i=0; i<numPDEs; ++i) {
-      Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
-      int numBlocks = nsValues.size() / numPDEs;
-      for (int j=0; j< numBlocks; ++j) {
-        nsValues[j*numPDEs + i] = 1.0;
-      }
-    }
-    Finest->Set("Nullspace",nullspace);
-  }
-
-  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
-  dropFact->SetVerbLevel(MueLu::Extreme);
-
-  //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
-  //dropFact->SetPreDropFunction(predrop);
-  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-  CoupledAggFact->SetFactory("Graph", dropFact);
-  *out << "========================= Aggregate option summary  =========================" << std::endl;
-  *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
-  *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-  CoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-  CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-  std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
-  if (aggOrdering == "natural" || aggOrdering == "random" || aggOrdering == "graph") {
-    *out << "aggregate ordering :                    " << aggOrdering << std::endl;
-    CoupledAggFact->SetOrdering(aggOrdering);
-  } else {
-    std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
-    throw(MueLu::Exceptions::RuntimeError(msg));
-  }
-  CoupledAggFact->SetPhase3AggCreation(0.5);
-  *out << "=============================================================================" << std::endl;
-
-  // build non-rebalanced transfer operators
-  RCP<PgPFactory> Pfact = rcp( new PgPFactory() );
-  RCP<Factory> Rfact  = rcp( new GenericRFactory());
-  //RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
-  //RCP<Factory>   Rfact  = rcp( new TransPFactory() );
-  RCP<RAPFactory> Acfact = rcp( new RAPFactory() );
-  Acfact->setVerbLevel(Teuchos::VERB_HIGH);
-
-  // build level smoothers
-  RCP<SmootherPrototype> smooProto;
-  std::string ifpackType;
-  Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: sweeps", (LO) 3);
-  ifpackList.set("relaxation: damping factor", (SC) 0.6); // 0.7
-  ifpackType = "RELAXATION";
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
-
-  smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
-  RCP<SmootherFactory> SmooFact;
-  if (maxLevels > 1)
-    SmooFact = rcp( new SmootherFactory(smooProto) );
-
-  // create coarsest smoother
-  RCP<SmootherPrototype> coarsestSmooProto;
-  std::string type = "";
-  Teuchos::ParameterList coarsestSmooList;
-#if defined(HAVE_AMESOS_SUPERLU)
-  coarsestSmooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
-#else
-  coarsestSmooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
-#endif
-  RCP<SmootherFactory> coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
-
-  FactoryManager M;
-  M.SetFactory("Graph", dropFact);
-  //M.SetFactory("UnAmalgamationInfo", amalgFact);
-  M.SetFactory("Aggregates", CoupledAggFact);
-  M.SetFactory("Smoother", SmooFact);
-  M.SetFactory("CoarseSolver", coarsestSmooFact);
-
-  if(optRepartition == 0) {
-    // no rebalancing
-    M.SetFactory("P", Pfact);
-    M.SetFactory("R", Rfact);
-    M.SetFactory("A", Acfact);
-  } else {
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
-    // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
-    // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
-    Rfact->SetFactory("P", Pfact);
     //
-    Acfact->SetFactory("P", Pfact);
-    Acfact->SetFactory("R", Rfact);
+    // SET TEST PARAMETERS
+    //
+    // Note: use --help to list available options.
+    Teuchos::CommandLineProcessor clp(false);
 
-    // define rebalancing factory for coarse block matrix A(1,1)
-    RCP<AmalgamationFactory> rebAmalgFact = rcp(new AmalgamationFactory());
-    rebAmalgFact->SetFactory("A", Acfact);
+    // - Levels
+    LO  optMaxLevels     = 4;              clp.setOption("maxLevels",      &optMaxLevels,          "maximum number of levels allowed");
+    int optMaxCoarseSize = 1;              clp.setOption("maxCoarseSize",  &optMaxCoarseSize,      "maximum #dofs in coarse operator"); //FIXME clp doesn't like long long int
 
-    // create amalgamated "Partition"
-    RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
-    isoInterface->SetFactory("A", Acfact);
-    isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
-
-    // create "Partition" by unamalgamtion
-    RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
-    repInterface->SetFactory("A", Acfact);
-    repInterface->SetFactory("AmalgamatedPartition", isoInterface);
-
-    // Repartitioning (creates "Importer" from "Partition")
-    RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
-    {
-      Teuchos::ParameterList paramList;
-      paramList.set("repartition: min rows per proc", optMinRowsPerProc);
-      paramList.set("repartition: max imbalance", optNnzImbalance);
-      RepartitionFact->SetParameterList(paramList);
-    }
-    RepartitionFact->SetFactory("A", Acfact);
-    RepartitionFact->SetFactory("Partition", repInterface);
-
-    // Reordering of the transfer operators
-    RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
-    RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
-    RebalancedPFact->SetFactory("P", Pfact);
-    RebalancedPFact->SetFactory("Nullspace", M.GetFactory("Ptent"));
-
-    RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
-    RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
-    RebalancedRFact->SetFactory("R", Rfact);
-    //RebalancedRFact->SetFactory("Coordinates", TransferCoordinatesFact);
-
-    // Compute Ac from rebalanced P and R
-    RCP<Factory> RebalancedAFact = rcp(new RebalanceAcFactory());
-    RebalancedAFact->SetFactory("A", Acfact);
-
-    // Configure FactoryManager
-    M.SetFactory("A", RebalancedAFact);
-    M.SetFactory("P", RebalancedPFact);
-    M.SetFactory("R", RebalancedRFact);
-    M.SetFactory("Nullspace",   RebalancedPFact);
-    M.SetFactory("Importer",    RepartitionFact);
+    // - Repartitioning
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
+    int    optRepartition    = 1;             clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
+    LO     optMinRowsPerProc = 50;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
+    double optNnzImbalance   = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
 #else
-    // no re-balancing available
-    M.SetFactory("P", Pfact);
-    M.SetFactory("R", Rfact);
-    M.SetFactory("A", Acfact);
+    int optRepartition = 0;
 #endif
-  }
 
-  H->Setup(M, 0, maxLevels);
-
-  { // some debug output
-    // print out content of levels
-    std::cout << "FINAL CONTENT of multigrid levels" << std::endl;
-    for(LO l = 0; l < H->GetNumLevels(); l++) {
-      RCP<Level> coarseLevel = H->GetLevel(l);
-      coarseLevel->print(*out);
+    switch (clp.parse(argc, argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
-    std::cout << "END FINAL CONTENT of multigrid levels" << std::endl;
-  } // end debug output
 
-  RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);
 
-  // Use AMG directly as an iterative method
-  {
-    xLsg->putScalar( (SC) 0.0);
+    /////////////////////////////////////////////
+    // custom parameters
+    LO maxLevels = optMaxLevels;
 
-    // calculate initial (absolute) residual
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
-    xRhs->norm2(norms);
-    *out << "||x_0|| = " << norms[0] << std::endl;
+    GO maxCoarseSize=optMaxCoarseSize;
+    std::string aggOrdering = "natural";
+    int minPerAgg=3;
+    int maxNbrAlreadySelected=0;
 
-    // apply ten multigrid iterations
-    H->Iterate(*xRhs,*xLsg,10);
+    int globalNumDofs = 8898;
+    int nProcs = comm->getSize();
+    int nDofsPerNode = 3;
 
-    // calculate and print residual
-    RCP<MultiVector> xTmp = MultiVectorFactory::Build(map,1);
-    Op->apply(*xLsg,*xTmp,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-    xRhs->update((SC)-1.0,*xTmp,(SC)1.0);
-    xRhs->norm2(norms);
-    *out << "||x|| = " << norms[0] << std::endl;
+    int nLocalDofs = (int) globalNumDofs / nProcs;
+    nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
+    int nCumulatedDofs = 0;
+    sumAll(comm,nLocalDofs, nCumulatedDofs);
+    //Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM, 1, nLocalDofs, &nCumulatedDofs );
 
+    if(comm->getRank() == nProcs-1) {
+      nLocalDofs += globalNumDofs - nCumulatedDofs;
+    }
+
+    std::cout << "PROC: " << comm->getRank() << " numLocalDofs=" << nLocalDofs << std::endl;
+
+    // read in problem
+    Epetra_Map emap (globalNumDofs, nLocalDofs, 0, *Xpetra::toEpetra(comm));
+    Epetra_CrsMatrix * ptrA = 0;
+    Epetra_Vector * ptrf = 0;
+    Epetra_MultiVector* ptrNS = 0;
+
+    std::cout << "Reading matrix market file" << std::endl;
+    EpetraExt::MatrixMarketFileToCrsMatrix("A5932_re1000.txt",emap,emap,emap,ptrA);
+    EpetraExt::MatrixMarketFileToVector("b5932_re1000.txt",emap,ptrf);
+    //EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
+    RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
+    RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
+    RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
+
+    // Epetra_CrsMatrix -> Xpetra::Matrix
+    RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+    RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
+    RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
+
+    Op->SetFixedBlockSize(nDofsPerNode);   // 2 velocity dofs and 1 pressure dof per node.
+
+    // Epetra_Vector -> Xpetra::Vector
+    RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
+
+    RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
+
+    // Epetra_Map -> Xpetra::Map
+    const RCP< const Map> map = Xpetra::toXpetra<GO>(emap);
+
+    RCP<Hierarchy> H = rcp ( new Hierarchy() );
+    H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+    H->SetMaxCoarseSize(maxCoarseSize);
+
+    // build finest Level
+    RCP<MueLu::Level> Finest = H->GetLevel();
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+    Finest->Set("A",Op);
+    //Finest->Set("Nullspace",xNS);
+
+    if (optRepartition==1) {
+      // create null space
+
+      RCP<MultiVector> nullspace;
+      // determine numPDEs
+      LocalOrdinal numPDEs = 1;
+      if(Op->IsView("stridedMaps")==true) {
+        Xpetra::viewLabel_t oldView = Op->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+        //TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap()) == Teuchos::null, Exceptions::BadCast, "cast to strided row map failed.");
+        numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap())->getFixedBlockSize();
+        oldView = Op->SwitchToView(oldView);
+      }
+
+      //GetOStream(Runtime1, 0) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
+      nullspace = MultiVectorFactory::Build(Op->getDomainMap(), numPDEs);
+
+      for (int i=0; i<numPDEs; ++i) {
+        Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
+        int numBlocks = nsValues.size() / numPDEs;
+        for (int j=0; j< numBlocks; ++j) {
+          nsValues[j*numPDEs + i] = 1.0;
+        }
+      }
+      Finest->Set("Nullspace",nullspace);
+    }
+
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetVerbLevel(MueLu::Extreme);
+
+    //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
+    //dropFact->SetPreDropFunction(predrop);
+    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+    CoupledAggFact->SetFactory("Graph", dropFact);
+    *out << "========================= Aggregate option summary  =========================" << std::endl;
+    *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
+    *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
+    CoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+    CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+    std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
+    if (aggOrdering == "natural" || aggOrdering == "random" || aggOrdering == "graph") {
+      *out << "aggregate ordering :                    " << aggOrdering << std::endl;
+      CoupledAggFact->SetOrdering(aggOrdering);
+    } else {
+      std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
+      throw(MueLu::Exceptions::RuntimeError(msg));
+    }
+    CoupledAggFact->SetPhase3AggCreation(0.5);
+    *out << "=============================================================================" << std::endl;
+
+    // build non-rebalanced transfer operators
+    RCP<PgPFactory> Pfact = rcp( new PgPFactory() );
+    RCP<Factory> Rfact  = rcp( new GenericRFactory());
+    //RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
+    //RCP<Factory>   Rfact  = rcp( new TransPFactory() );
+    RCP<RAPFactory> Acfact = rcp( new RAPFactory() );
+    Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+    // build level smoothers
+    RCP<SmootherPrototype> smooProto;
+    std::string ifpackType;
+    Teuchos::ParameterList ifpackList;
+    ifpackList.set("relaxation: sweeps", (LO) 3);
+    ifpackList.set("relaxation: damping factor", (SC) 0.6); // 0.7
+    ifpackType = "RELAXATION";
+    ifpackList.set("relaxation: type", "Gauss-Seidel");
+
+    smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
+    RCP<SmootherFactory> SmooFact;
+    if (maxLevels > 1)
+      SmooFact = rcp( new SmootherFactory(smooProto) );
+
+    // create coarsest smoother
+    RCP<SmootherPrototype> coarsestSmooProto;
+    std::string type = "";
+    Teuchos::ParameterList coarsestSmooList;
+#if defined(HAVE_AMESOS_SUPERLU)
+    coarsestSmooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
+#else
+    coarsestSmooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
+#endif
+    RCP<SmootherFactory> coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
+
+    FactoryManager M;
+    M.SetFactory("Graph", dropFact);
+    //M.SetFactory("UnAmalgamationInfo", amalgFact);
+    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Smoother", SmooFact);
+    M.SetFactory("CoarseSolver", coarsestSmooFact);
+
+    if(optRepartition == 0) {
+      // no rebalancing
+      M.SetFactory("P", Pfact);
+      M.SetFactory("R", Rfact);
+      M.SetFactory("A", Acfact);
+    } else {
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
+      // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
+      // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
+      Rfact->SetFactory("P", Pfact);
+      //
+      Acfact->SetFactory("P", Pfact);
+      Acfact->SetFactory("R", Rfact);
+
+      // define rebalancing factory for coarse block matrix A(1,1)
+      RCP<AmalgamationFactory> rebAmalgFact = rcp(new AmalgamationFactory());
+      rebAmalgFact->SetFactory("A", Acfact);
+
+      // create amalgamated "Partition"
+      RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
+      isoInterface->SetFactory("A", Acfact);
+      isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
+
+      // create "Partition" by unamalgamtion
+      RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
+      repInterface->SetFactory("A", Acfact);
+      repInterface->SetFactory("AmalgamatedPartition", isoInterface);
+
+      // Repartitioning (creates "Importer" from "Partition")
+      RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
+      {
+        Teuchos::ParameterList paramList;
+        paramList.set("repartition: min rows per proc", optMinRowsPerProc);
+        paramList.set("repartition: max imbalance", optNnzImbalance);
+        RepartitionFact->SetParameterList(paramList);
+      }
+      RepartitionFact->SetFactory("A", Acfact);
+      RepartitionFact->SetFactory("Partition", repInterface);
+
+      // Reordering of the transfer operators
+      RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
+      RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
+      RebalancedPFact->SetFactory("P", Pfact);
+      RebalancedPFact->SetFactory("Nullspace", M.GetFactory("Ptent"));
+
+      RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
+      RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
+      RebalancedRFact->SetFactory("R", Rfact);
+      //RebalancedRFact->SetFactory("Coordinates", TransferCoordinatesFact);
+
+      // Compute Ac from rebalanced P and R
+      RCP<Factory> RebalancedAFact = rcp(new RebalanceAcFactory());
+      RebalancedAFact->SetFactory("A", Acfact);
+
+      // Configure FactoryManager
+      M.SetFactory("A", RebalancedAFact);
+      M.SetFactory("P", RebalancedPFact);
+      M.SetFactory("R", RebalancedRFact);
+      M.SetFactory("Nullspace",   RebalancedPFact);
+      M.SetFactory("Importer",    RepartitionFact);
+#else
+      // no re-balancing available
+      M.SetFactory("P", Pfact);
+      M.SetFactory("R", Rfact);
+      M.SetFactory("A", Acfact);
+#endif
+    }
+
+    H->Setup(M, 0, maxLevels);
+
+    { // some debug output
+      // print out content of levels
+      std::cout << "FINAL CONTENT of multigrid levels" << std::endl;
+      for(LO l = 0; l < H->GetNumLevels(); l++) {
+        RCP<Level> coarseLevel = H->GetLevel(l);
+        coarseLevel->print(*out);
+      }
+      std::cout << "END FINAL CONTENT of multigrid levels" << std::endl;
+    } // end debug output
+
+    RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);
+
+    // Use AMG directly as an iterative method
+    {
+      xLsg->putScalar( (SC) 0.0);
+
+      // calculate initial (absolute) residual
+      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      xRhs->norm2(norms);
+      *out << "||x_0|| = " << norms[0] << std::endl;
+
+      // apply ten multigrid iterations
+      H->Iterate(*xRhs,*xLsg,10);
+
+      // calculate and print residual
+      RCP<MultiVector> xTmp = MultiVectorFactory::Build(map,1);
+      Op->apply(*xLsg,*xTmp,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+      xRhs->update((SC)-1.0,*xTmp,(SC)1.0);
+      xRhs->norm2(norms);
+      *out << "||x|| = " << norms[0] << std::endl;
+
+    }
+
+    // TODO: don't forget to add Aztec as prerequisite in CMakeLists.txt!
+    //
+    // Solve Ax = b using AMG as a preconditioner in AztecOO
+    //
+    {
+      RCP<Epetra_Vector> X = rcp(new Epetra_Vector(epv->Map()));
+      X->PutScalar(0.0);
+      Epetra_LinearProblem epetraProblem(epA.get(), X.get(), epv.get());
+
+      AztecOO aztecSolver(epetraProblem);
+      aztecSolver.SetAztecOption(AZ_solver, AZ_gmres);
+
+      MueLu::EpetraOperator aztecPrec(H);
+      aztecSolver.SetPrecOperator(&aztecPrec);
+
+      int maxIts = 50;
+      double tol = 1e-8;
+
+      aztecSolver.Iterate(maxIts, tol);
+    }
+
+    success = true;
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  // TODO: don't forget to add Aztec as prerequisite in CMakeLists.txt!
-  //
-  // Solve Ax = b using AMG as a preconditioner in AztecOO
-  //
-  {
-    RCP<Epetra_Vector> X = rcp(new Epetra_Vector(epv->Map()));
-    X->PutScalar(0.0);
-    Epetra_LinearProblem epetraProblem(epA.get(), X.get(), epv.get());
-
-    AztecOO aztecSolver(epetraProblem);
-    aztecSolver.SetAztecOption(AZ_solver, AZ_gmres);
-
-    MueLu::EpetraOperator aztecPrec(H);
-    aztecSolver.SetPrecOperator(&aztecPrec);
-
-    int maxIts = 50;
-    double tol = 1e-8;
-
-    aztecSolver.Iterate(maxIts, tol);
-  }
-
-  return EXIT_SUCCESS;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

@@ -1,5 +1,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 #include "MueLu_ParameterListAcceptor.hpp"
 
@@ -115,45 +116,51 @@ int main(int argc, char* argv[]) {
   using Teuchos::ParameterList;
   using MueLu::MyFactory;
 
-  //
-  // Documentation
-  //
-  std::cout << "\n#\n# Documentation\n#\n" << std::endl;
-  MyFactory dummy; dummy.GetDocumentation(std::cout);
+  bool success = false;
+  try {
+    //
+    // Documentation
+    //
+    std::cout << "\n#\n# Documentation\n#\n" << std::endl;
+    MyFactory dummy; dummy.GetDocumentation(std::cout);
 
-  //
+    //
 
-  std::cout << "#\n# main()\n#\n" << std::endl;
+    std::cout << "#\n# main()\n#\n" << std::endl;
 
-  //
-  // User parameter list
-  //
+    //
+    // User parameter list
+    //
 
-  ParameterList paramList;
-  // paramList.set("Solver", "ILUK");
+    ParameterList paramList;
+    // paramList.set("Solver", "ILUK");
 
-  std::cout << "# Input parameter list:" << std::endl;
-  std::cout << paramList << std::endl << std::endl;
+    std::cout << "# Input parameter list:" << std::endl;
+    std::cout << paramList << std::endl << std::endl;
 
-  //
-  // Validation of the user parameter list
-  //
+    //
+    // Validation of the user parameter list
+    //
 
-  MyFactory f;
-  f.SetParameterList(paramList);
+    MyFactory f;
+    f.SetParameterList(paramList);
 
-  std::cout << "# Parameter list after validation:" << std::endl;
-  std::cout << paramList << std::endl << std::endl;
+    std::cout << "# Parameter list after validation:" << std::endl;
+    std::cout << paramList << std::endl << std::endl;
 
-  //
-  // Algorithm
-  //
+    //
+    // Algorithm
+    //
 
-  f.Build();
+    f.Build();
 
-  std::cout << "# Parameter list after algorithm (flag used/unused):" << std::endl;
+    std::cout << "# Parameter list after algorithm (flag used/unused):" << std::endl;
 
-  std::cout << f.GetParameterList() << std::endl << std::endl;
+    std::cout << f.GetParameterList() << std::endl << std::endl;
 
-  return 0;
+    success = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

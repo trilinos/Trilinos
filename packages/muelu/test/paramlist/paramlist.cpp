@@ -1,5 +1,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 // I'm trying to figure out what is the best way to use parameter list in MueLu.
 // ParameterList provides a lot of capabilities but it's not always obvious how to use this class properly as
@@ -65,57 +66,63 @@ int main(int argc, char* argv[]) {
   using Teuchos::ParameterList;
   using MueLu::MyFactory;
 
-  //
-  // Documentation
-  //
-  std::cout << "\n#\n# Documentation\n#\n" << std::endl;
-  MyFactory dummy; dummy.GetDocumentation(std::cout);
+  bool success = false;
+  try {
+    //
+    // Documentation
+    //
+    std::cout << "\n#\n# Documentation\n#\n" << std::endl;
+    MyFactory dummy; dummy.GetDocumentation(std::cout);
 
-  //
+    //
 
-  std::cout << "#\n# main()\n#\n" << std::endl;
+    std::cout << "#\n# main()\n#\n" << std::endl;
 
-  //
-  // User parameter list
-  //
+    //
+    // User parameter list
+    //
 
-  // Note: users can also directly modify the validParamList list but this is not really useful.
+    // Note: users can also directly modify the validParamList list but this is not really useful.
 
-  ParameterList paramList;
-  paramList.set("ParamA", 0.001);
-  paramList.set("ParamB", 0.002);
+    ParameterList paramList;
+    paramList.set("ParamA", 0.001);
+    paramList.set("ParamB", 0.002);
 
-  std::cout << "# Input parameter list:" << std::endl;
-  std::cout << paramList << std::endl << std::endl;
-
-  //
-  // Validation of the user parameter list
-  //
-
-  MyFactory f;
-  f.SetParameterList(paramList);
-
-  if (0) {// if users want to keep their list untouched:
-    ParameterList tmp(paramList);
-    f.SetParameterList(tmp);
-  }
-
-  std::cout << "# Parameter list after validation:" << std::endl;
-  std::cout << paramList << std::endl << std::endl;
-
-  //
-  // Algorithm
-  //
-
-  f.Build();
-
-  std::cout << "# Parameter list after algorithm (flag used/unused):" << std::endl;
-  if (0) // do not work with my design: flags used/unused are not set for the initial parameter list
+    std::cout << "# Input parameter list:" << std::endl;
     std::cout << paramList << std::endl << std::endl;
 
-  std::cout << f.GetParameterList() << std::endl << std::endl;
+    //
+    // Validation of the user parameter list
+    //
 
-  // See also ~MyFactory()
+    MyFactory f;
+    f.SetParameterList(paramList);
 
-  return 0;
+    if (0) {// if users want to keep their list untouched:
+      ParameterList tmp(paramList);
+      f.SetParameterList(tmp);
+    }
+
+    std::cout << "# Parameter list after validation:" << std::endl;
+    std::cout << paramList << std::endl << std::endl;
+
+    //
+    // Algorithm
+    //
+
+    f.Build();
+
+    std::cout << "# Parameter list after algorithm (flag used/unused):" << std::endl;
+    if (0) // do not work with my design: flags used/unused are not set for the initial parameter list
+      std::cout << paramList << std::endl << std::endl;
+
+    std::cout << f.GetParameterList() << std::endl << std::endl;
+
+    success = true;
+
+    // See also ~MyFactory()
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
