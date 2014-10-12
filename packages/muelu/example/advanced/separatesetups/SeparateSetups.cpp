@@ -96,7 +96,6 @@ int main(int argc, char *argv[]) {
     //
     // Process command line arguments
     //
-
     Teuchos::CommandLineProcessor  clp(false);
     Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 81); // manage parameters of the test case
     Xpetra::Parameters             xpetraParameters(clp);     // manage parameters of xpetra
@@ -216,8 +215,11 @@ int main(int argc, char *argv[]) {
     //
 
     Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
-    if (comm->getRank() == 0)
+    if (comm->getRank() == 0) {
+      std::ios::fmtflags f(cout.flags());
       std::cout << "||Residual|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorms << std::endl;
+       cout.flags(f);
+    }
 
     success = true;
   }

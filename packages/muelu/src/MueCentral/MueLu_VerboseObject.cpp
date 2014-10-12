@@ -57,8 +57,9 @@
 
 namespace MueLu {
 
-  VerboseObject::VerboseObject()
-    : verbLevel_(NotSpecified) // = use global verbose level by default
+  VerboseObject::VerboseObject():
+    verbLevel_(NotSpecified), // = use global verbose level by default
+    numProcs_(0)
   {
     // Note: using MPI_COMM_RANK is bad idea (because a subcommunicator may be used to run MueLu)
     // Belos have the same problem in the class BelosOutputManager.
