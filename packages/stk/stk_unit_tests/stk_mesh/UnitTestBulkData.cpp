@@ -2619,14 +2619,14 @@ TEST(UnitTestingOfBulkData, testChangeEntityOwnerWithChangingSharedAndGhosted3Pr
             stk::mesh::PairIterEntityComm comm_pit = mesh.entity_comm_map(key);
             int gold_length = gold_entity_comm_after[key].size();
             ASSERT_EQ(std::distance(comm_pit.first, comm_pit.second), gold_length);
-            int index = 0;
+            int commindex = 0;
             for(; comm_pit.first != comm_pit.second; ++comm_pit)
             {
                 unsigned ghost_id = comm_pit.first->ghost_id;
                 int proc = comm_pit.first->proc;
-                EXPECT_EQ( ghost_id, gold_entity_comm_after[key][index].ghost_id);
-                EXPECT_EQ( proc, gold_entity_comm_after[key][index].proc);
-                ++index;
+                EXPECT_EQ( ghost_id, gold_entity_comm_after[key][commindex].ghost_id);
+                EXPECT_EQ( proc, gold_entity_comm_after[key][commindex].proc);
+                ++commindex;
             }
         }
     }
