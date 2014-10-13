@@ -101,11 +101,11 @@ SET(HEADERS ${HEADERS}
 #
 # Core PyTrilinos headers and sources
 LIST(APPEND HEADERS
-  numpy_include.h
-  PyTrilinos_NumPyImporter.h
-  PyTrilinos_PythonException.h
-  PyTrilinos_Util.h
-  PyTrilinos_FILEstream.h
+  numpy_include.hpp
+  PyTrilinos_NumPyImporter.hpp
+  PyTrilinos_PythonException.hpp
+  PyTrilinos_Util.hpp
+  PyTrilinos_FILEstream.hpp
   PyTrilinos_DAP.hpp
   )
 
@@ -122,7 +122,7 @@ LIST(APPEND SOURCES
 IF(PyTrilinos_ENABLE_Teuchos)
 
   LIST(APPEND HEADERS
-    PyTrilinos_Teuchos_Util.h
+    PyTrilinos_Teuchos_Util.hpp
     )
 
   LIST(APPEND SOURCES
@@ -136,16 +136,16 @@ ENDIF(PyTrilinos_ENABLE_Teuchos)
 IF(PyTrilinos_ENABLE_Epetra)
 
   LIST(APPEND HEADERS
-    Epetra_NumPyFEVector.h
-    Epetra_NumPyIntSerialDenseMatrix.h
-    Epetra_NumPyIntSerialDenseVector.h
-    Epetra_NumPyIntVector.h
-    Epetra_NumPyMultiVector.h
-    Epetra_NumPySerialDenseMatrix.h
-    Epetra_NumPySerialSymDenseMatrix.h
-    Epetra_NumPySerialDenseVector.h
-    Epetra_NumPyVector.h
-    PyTrilinos_Epetra_Util.h
+    Epetra_NumPyFEVector.hpp
+    Epetra_NumPyIntSerialDenseMatrix.hpp
+    Epetra_NumPyIntSerialDenseVector.hpp
+    Epetra_NumPyIntVector.hpp
+    Epetra_NumPyMultiVector.hpp
+    Epetra_NumPySerialDenseMatrix.hpp
+    Epetra_NumPySerialSymDenseMatrix.hpp
+    Epetra_NumPySerialDenseVector.hpp
+    Epetra_NumPyVector.hpp
+    PyTrilinos_Epetra_Util.hpp
     )
 
   LIST(APPEND SOURCES
@@ -168,7 +168,7 @@ ENDIF(PyTrilinos_ENABLE_Epetra)
 IF(PyTrilinos_ENABLE_EpetraExt)
 
   LIST(APPEND HEADERS
-    PyTrilinos_EpetraExt_Util.h
+    PyTrilinos_EpetraExt_Util.hpp
     )
 
   LIST(APPEND SOURCES
@@ -182,7 +182,7 @@ ENDIF(PyTrilinos_ENABLE_EpetraExt)
 IF(PyTrilinos_ENABLE_ML)
 
   LIST(APPEND HEADERS
-    PyTrilinos_ML_Util.h
+    PyTrilinos_ML_Util.hpp
     )
 
 ENDIF(PyTrilinos_ENABLE_ML)
