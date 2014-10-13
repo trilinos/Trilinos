@@ -29,7 +29,7 @@
 #ifndef PYTRILINOS_NUMPYIMPORTER_H
 #define PYTRILINOS_NUMPYIMPORTER_H
 
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
 namespace PyTrilinos
 {

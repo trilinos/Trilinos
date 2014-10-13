@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "PyTrilinos_FILEstream.h"
+#include "PyTrilinos_FILEstream.hpp"
 
 #include <algorithm>
 #include <cstring>

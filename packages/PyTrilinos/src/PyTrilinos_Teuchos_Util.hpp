@@ -31,7 +31,7 @@
 
 // Include Python and NumPy headers
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
 #endif
