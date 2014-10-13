@@ -60,7 +60,7 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 
-#if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_KOKKOSTSQR)
+#if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
 #include <Epetra_ConfigDefs.h> // EPETRA_MPI
 #include <Epetra_Comm.h>
@@ -154,7 +154,7 @@ namespace TSQR {
   } // namespace Epetra
 } // namespace TSQR
 
-#endif // defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_KOKKOSTSQR)
+#endif // defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
 #endif // __Epetra_TsqrMessenger_hpp
 

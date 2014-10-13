@@ -40,8 +40,18 @@
 /* Define if want to build tpetra-print_abuse_warnings */
 #cmakedefine HAVE_TPETRA_PRINT_ABUSE_WARNINGS
 
-/* Define when building Tpetra with TSQR support */
+/* Define when building Tpetra with the KokkosTSQR subpackage enabled.
+   The HAVE_TPETRA_TSQR macro tells you whether it is safe to use TSQR
+   in Tpetra (and downstream packages).  TSQR is enabled by default in
+   Tpetra if KokkosTSQR is enabled, but users may turn off TSQR by
+   setting Tpetra_ENABLE_TSQR to OFF. */
 #cmakedefine HAVE_TPETRA_KOKKOSTSQR
+
+/* Define when building Tpetra with TSQR enabled.  TSQR is enabled by
+   default in Tpetra if the KokkosTSQR subpackage is enabled.  Users
+   may turn off TSQR even if KokkosTSQR is enabled, by setting
+   Tpetra_ENABLE_TSQR to OFF. */
+#cmakedefine HAVE_TPETRA_TSQR
 
 /* Define when enabling the Murmur hash function in Tpetra */
 #cmakedefine TPETRA_USE_MURMUR_HASH

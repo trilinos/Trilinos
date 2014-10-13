@@ -58,7 +58,7 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 
-#if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_KOKKOSTSQR)
+#if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
 #include <Kokkos_DefaultNode.hpp> // Include minimal Kokkos Node types
 #include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
@@ -425,7 +425,7 @@ namespace Epetra {
 
 } // namespace Epetra
 
-#endif // defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_KOKKOSTSQR)
+#endif // defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
 #endif // __Epetra_TsqrAdaptor_hpp
 

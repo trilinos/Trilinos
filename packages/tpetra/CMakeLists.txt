@@ -59,6 +59,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_TSQR
+  HAVE_TPETRA_TSQR
+  "Whether to build Tpetra with TSQR support.  This is enabled by default if the KokkosTSQR subpackage is enabled.  You may turn off TSQR support if you like, but leaving it enabled is fine."
+  ${${PROJECT_NAME}_ENABLE_KokkosTSQR}
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_OpenMP
   HAVE_TPETRA_OPENMP
   "Enabling OpenMP in Tpetra"
