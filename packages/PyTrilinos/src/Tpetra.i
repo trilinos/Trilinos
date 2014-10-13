@@ -128,6 +128,12 @@ import numpy
 // Include Tpetra documentation
 %include "Tpetra_dox.i"
 
+// Define a shortcut for the default Kokkos node
+%inline
+%{
+  typedef KokkosClassic::DefaultNode::DefaultNodeType KokkosDefaultNode;
+%}
+
 ////////////////////////////
 // Tpetra version support //
 ////////////////////////////
@@ -314,15 +320,16 @@ Map = Map_default
 // Tpetra Transfer support //
 /////////////////////////////
 %include "Tpetra_Details_Transfer.hpp"
-%teuchos_rcp(Tpetra::Details::Transfer< long, long, KokkosClassic::DefaultNode::DefaultNodeType >)
-%template(Transfer_default) Tpetra::Details::Transfer< long, long, KokkosClassic::DefaultNode::DefaultNodeType >;
+%teuchos_rcp(Tpetra::Details::Transfer< long, long, KokkosDefaultNode >)
+%template(Transfer_default)
+    Tpetra::Details::Transfer< long, long, KokkosDefaultNode >;
 
 ///////////////////////////
 // Tpetra Export support //
 ///////////////////////////
 %include "Tpetra_Export_decl.hpp"
-%teuchos_rcp(Tpetra::Export< long, long, KokkosClassic::DefaultNode::DefaultNodeType >)
-%template(Export_default) Tpetra::Export< long, long, KokkosClassic::DefaultNode::DefaultNodeType >;
+%teuchos_rcp(Tpetra::Export< long, long, KokkosDefaultNode >)
+%template(Export_default) Tpetra::Export< long, long, KokkosDefaultNode >;
 %pythoncode
 {
 Export = Export_default
@@ -332,8 +339,8 @@ Export = Export_default
 // Tpetra Import support //
 ///////////////////////////
 %include "Tpetra_Import_decl.hpp"
-%teuchos_rcp(Tpetra::Import< long, long, KokkosClassic::DefaultNode::DefaultNodeType >)
-%template(Import_default) Tpetra::Import< long, long, KokkosClassic::DefaultNode::DefaultNodeType >;
+%teuchos_rcp(Tpetra::Import< long, long, KokkosDefaultNode >)
+%template(Import_default) Tpetra::Import< long, long, KokkosDefaultNode >;
 %pythoncode
 {
 Import = Import_default
@@ -350,15 +357,109 @@ Import = Import_default
 ///////////////////////////////
 %ignore Tpetra::removeEmptyProcessesInPlace;
 %include "Tpetra_DistObject_decl.hpp"
-%teuchos_rcp(Tpetra::DistObject< int, long, long >)
-%template(DistObject_int) Tpetra::DistObject< int, long, long >;
 
 ////////////////////////////////
 // Tpetra MultiVector support //
 ////////////////////////////////
-// %include "Tpetra_MultiVector_decl.hpp"
-// %teuchos_rcp(Tpetra::MultiVector< int, long, long >)
-// %template(MultiVector_int) Tpetra::MultiVector< int, long, long >;
+%ignore Tpetra::MultiVector::getLocalMV;
+%ignore Tpetra::MultiVector::getLocalMVNonConst;
+%typemap(in)
+  (const Teuchos::ArrayView<const Scalar> & A, size_t LDA, size_t NumVectors)
+  (PyArrayObject * array=NULL, int is_new=0)
+{
+  array =
+    obj_to_array_contiguous_allow_conversion($input,
+                                             PyTrilinos::NumPy_TypeCode<Scalar>(),
+                                             &is_new);
+  if (!array || !require_dimensions(array, 2))
+    SWIG_fail;
+  $2 = array_stride(array, 0);
+  $3 = array_size(array, 1);
+  $1 = Teuchos::arrayView((Scalar*)array_data(array), $2, $3)
+}
+%typemap(freearg)
+  (const Teuchos::ArrayView<const Scalar> & A, size_t LDA, size_t NumVectors)
+{
+  if (is_new$argnum && array$argnum)
+  {
+    Py_DECREF(array$argnum);
+  }
+}
+%feature("notabstract") Tpetra::MultiVector;
+%include "Tpetra_MultiVector_decl.hpp"
+
+///////////////////////////
+// Tpetra Vector support //
+///////////////////////////
+// %ignore Tpetra::Vector::getLocalMV;
+// %ignore Tpetra::Vector::getLocalMVNonConst;
+%warnfilter(302) Tpetra::createVectorFromView;
+%feature("notabstract") Tpetra::Vector;
+%include "Tpetra_Vector_decl.hpp"
+
+/////////////////////////////////////
+// Explicit template instantiation //
+/////////////////////////////////////
+%define %tpetra_class( CLASS, SCALAR, SCALAR_NAME )
+    %warnfilter(315) Tpetra::CLASS< SCALAR, long, long, KokkosDefaultNode >;
+    %teuchos_rcp(Tpetra::CLASS< SCALAR, long, long, KokkosDefaultNode >)
+    %template(CLASS ## _ ## SCALAR_NAME)
+        Tpetra::CLASS< SCALAR, long, long, KokkosDefaultNode >;
+%enddef
+
+%define %tpetra_scalars( SCALAR, SCALAR_NAME)
+    %tpetra_class( DistObject , SCALAR, SCALAR_NAME )
+    %tpetra_class( MultiVector, SCALAR, SCALAR_NAME )
+    %tpetra_class( Vector     , SCALAR, SCALAR_NAME )
+%enddef
+
+//////////////////////////////////////////////
+// Concrete scalar types for Tpetra classes //
+//////////////////////////////////////////////
+%tpetra_scalars(int   , int   )
+%tpetra_scalars(long  , long  )
+%tpetra_scalars(float , float )
+%tpetra_scalars(double, double)
+
+/////////////////////////////////////////////////////
+// Python code that consolidates templated classes //
+/////////////////////////////////////////////////////
+%pythoncode
+{
+  def MultiVector(*args, **kwargs):
+    dtype = kwargs.get("dtype", "int64")
+    if type(dtype) == str:
+      dtype = numpy.dtype(dtype)
+    if dtype.type is numpy.int32:
+      result = MultiVector_int(*args)
+    elif dtype.type is numpy.int64:
+      result = MultiVector_long(*args)
+    elif dtype.type is numpy.float32:
+      result = MultiVector_float(*args)
+    elif dtype.type is numpy.flat64:
+      result = MultiVector_double(*args)
+    else:
+      raise TypeError("Unsupported or unrecognized dtype = %s" %
+                      str(dtype))
+    return result
+
+  def Vector(*args, **kwargs):
+    dtype = kwargs.get("dtype", "int64")
+    if type(dtype) == str:
+      dtype = numpy.dtype(dtype)
+    if dtype.type is numpy.int32:
+      result = Vector_int(*args)
+    elif dtype.type is numpy.int64:
+      result = Vector_long(*args)
+    elif dtype.type is numpy.float32:
+      result = Vector_float(*args)
+    elif dtype.type is numpy.flat64:
+      result = Vector_double(*args)
+    else:
+      raise TypeError("Unsupported or unrecognized dtype = %s" %
+                      str(dtype))
+    return result
+}
 
 // Turn off exception handling
 %exception;
