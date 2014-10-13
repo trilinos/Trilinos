@@ -74,6 +74,7 @@ class ProblemHandler():
   
   def __init__(self):
     self.problem    = "Laplace 2D"
+    self.solver     = "cg"
     self.executable = "MueLu_tutorial_laplace2d.exe"
     self.meshx      = 50
     self.meshy      = 50
@@ -85,6 +86,7 @@ class ProblemHandler():
     self.proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
     self.proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
     self.proc4 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    self.proc5 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
     
     self.isDirty = True                   # flag to store, whether problem has to be rerun or not
 
@@ -107,6 +109,7 @@ class ProblemHandler():
   def doLaplace2Dn(self):
     self.problem    = "Laplace 2D"
     self.executable = "MueLu_tutorial_laplace2d.exe"
+    self.solver     = "cg"
     self.meshx      = raw_input("Mesh: Elements in x direction = ")
     self.meshy      = raw_input("Mesh: Elements in y direction = ")
     self.runLaplaceProblem()
@@ -114,6 +117,7 @@ class ProblemHandler():
   def doLaplace2D50(self):
     self.problem    = "Laplace 2D"
     self.executable = "MueLu_tutorial_laplace2d.exe"
+    self.solver     = "cg"
     self.meshx      = 50
     self.meshy      = 50 
     self.runLaplaceProblem()
@@ -121,6 +125,7 @@ class ProblemHandler():
   def doRecirc2Dn(self):
     self.problem    = "Recirc 2D"
     self.executable = "MueLu_tutorial_recirc2d.exe"
+    self.solver     = "gmres"
     self.meshx      = raw_input("Mesh: Elements in x direction = ")
     self.meshy      = raw_input("Mesh: Elements in y direction = ")
     self.runLaplaceProblem() # we can use the same routine as for Laplace...
@@ -128,6 +133,7 @@ class ProblemHandler():
   def doRecirc2D50(self):
     self.problem    = "Recirc 2D"
     self.executable = "MueLu_tutorial_recirc2d.exe"
+    self.solver     = "gmres"
     self.meshx      = 50
     self.meshy      = 50 
     self.runLaplaceProblem() # we can use the same routine as for Laplace...    
@@ -169,8 +175,8 @@ class ProblemHandler():
   def printActionMenu(self):
     #options = ['Rerun example', 'Show screen output', 'Change solver', 'Change processors', 'Exit']
     #callbacks = [self.runExample,self.printScreenOutput,self.changeSolver,self.changeProcs,self.doExitProgram]
-    options = ['Rerun simulation', 'Show screen output', 'Change solver', 'Open xml file', 'Change procs', 'Change MG sweeps','Plot solution','Postprocess aggregates', 'Exit']
-    callbacks = [self.runExample,self.printScreenOutput,self.changeSolver,self.openXMLfile,self.changeProcs, self.changeMGsweeps,self.plotSolution, self.postprocessAggregates, self.doExitProgram]
+    options = ['Rerun simulation', 'Show screen output', 'Change solver', 'Open xml file', 'Change procs', 'Change MG sweeps','Plot solution','Plot residual norm over ' + self.solver + ' solver iterations','Postprocess aggregates', 'Exit']
+    callbacks = [self.runExample,self.printScreenOutput,self.changeSolver,self.openXMLfile,self.changeProcs, self.changeMGsweeps,self.plotSolution,self.doPlotResidual, self.postprocessAggregates, self.doExitProgram]
     while True:
       clearWindow()    
       self.printSettings()
@@ -219,7 +225,10 @@ class ProblemHandler():
 
     #proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
     self.proc2.stdin.write("set term x11 2\n") #wxt
-    self.proc2.stdin.write("set title \"Multigrid solution\"\n")    
+    if (self.mgsweeps==1):
+      self.proc2.stdin.write("set title \"Multigrid solution after " + str(self.mgsweeps) + " multigrid sweep\"\n")    
+    else:
+      self.proc2.stdin.write("set title \"Multigrid solution after " + str(self.mgsweeps) + " multigrid sweeps\"\n")    	
     self.proc2.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
     self.proc2.stdin.write("set style data lines\n")
     self.proc2.stdin.write("set nolabel\n")
@@ -231,7 +240,10 @@ class ProblemHandler():
     
     #proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
     self.proc3.stdin.write("set term x11 3\n")
-    self.proc3.stdin.write("set title \"Error (Exact vs. Multigrid)\"\n")    
+    if (self.mgsweeps==1):
+      self.proc3.stdin.write("set title \"Error (Exact vs. " + str(self.mgsweeps) + " multigrid sweep)\"\n")
+    else: 
+      self.proc3.stdin.write("set title \"Error (Exact vs. " + str(self.mgsweeps) + " multigrid sweeps)\"\n")    
     self.proc3.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
     self.proc3.stdin.write("set style data lines\n")
     self.proc3.stdin.write("set palette model RGB defined ( 0 'black', 1 'white')\n")
@@ -335,7 +347,24 @@ class ProblemHandler():
     while not is_number(str(self.mgsweeps)):
       self.mgsweeps = raw_input("Number of Multigrid sweeps: ")
     self.isDirty = True
-		       
+	
+  def doPlotResidual(self):
+    
+    # prepare residual output file
+    cmd = "grep iter: output.log > output.res"
+    runCommand(cmd)
+    
+    self.proc5.stdin.write("set term x11 1\n")
+    self.proc5.stdin.write("set title \"Residual norm over " + str(self.solver) + " iterations\"\n")
+    self.proc5.stdin.write("set style data lines\n")
+    self.proc5.stdin.write("set xlabel \"# iterations\"\n")
+    self.proc5.stdin.write("set ylabel \"Relative residual\"\n")
+    self.proc5.stdin.write("set autoscale\n")
+    self.proc5.stdin.write("set logscale y\n")
+    printcmd = "plot \"output.res\" using 5 w linespoints title \"" + str(self.xmlFileName) + "\"\n"
+    self.proc5.stdin.write(printcmd)   
+    self.proc5.stdin.flush()	
+    
   def printMainMenu(self):
     clearWindow()
     self.printSettings()
@@ -538,7 +567,7 @@ class MueLu_XMLChallengeMode():
     cmd = "grep iter: reference.log > reference.res"
     runCommand(cmd)
     self.proc1.stdin.write("set term x11 1\n")
-    self.proc1.stdin.write("set title \"Residual of " + str(self.solver) + " method\"\n")
+    self.proc1.stdin.write("set title \"Residual norm over " + str(self.solver) + " iterations\"\n")
     self.proc1.stdin.write("set style data lines\n")
     self.proc1.stdin.write("set xlabel \"# iterations\"\n")
     self.proc1.stdin.write("set ylabel \"Relative residual\"\n")
