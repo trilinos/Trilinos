@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
 
     success = true;
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
