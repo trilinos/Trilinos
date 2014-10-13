@@ -46,6 +46,11 @@
 /// \brief Declarations for the class Tpetra::VbrMatrix.
 
 #include <Tpetra_ConfigDefs.hpp>
+
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
+#else
+
 #include <Tpetra_DistObject_decl.hpp>
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_VbrUtils.hpp>
@@ -672,5 +677,6 @@ public:
 //
 //----------------------------------------------------------------------------
 
-#endif //TPETRA_VBRMATRIX_DECL_HPP
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRA_VBRMATRIX_DECL_HPP
 
