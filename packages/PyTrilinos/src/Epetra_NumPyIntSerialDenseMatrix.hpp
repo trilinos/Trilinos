@@ -30,9 +30,9 @@
 #define EPETRA_NUMPYINTSERIALDENSEMATRIX_H
 
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_PythonException.hpp"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
 #endif
