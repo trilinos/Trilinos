@@ -4327,7 +4327,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 #endif
 
 
-  internal_modification_end(regenerate_aura, mod_optimization);
+  internal_modification_end_for_change_entity_owner(regenerate_aura, mod_optimization);
 }
 
 //----------------------------------------------------------------------
@@ -6210,6 +6210,105 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
                         m_entity_comm_list.end() , IsInvalid() );
     m_entity_comm_list.erase( i , m_entity_comm_list.end() );
   }
+}
+
+bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt )
+{
+  Trace_("stk::mesh::BulkData::internal_modification_end");
+
+  // The two states are MODIFIABLE and SYNCHRONiZED
+  if ( m_sync_state == SYNCHRONIZED ) { return false ; }
+
+  ThrowAssertMsg(check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+
+  ThrowAssertMsg(add_fmwk_data() || check_no_shared_elements_or_higher(*this)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+
+  if (parallel_size() > 1) {
+    // Resolve modification or deletion of shared entities
+    // which can cause deletion of ghost entities.
+
+    //passes np1 segfaults (np2-np4) if not called
+    internal_resolve_shared_modify_delete();
+
+    // Resolve modification or deletion of ghost entities
+    // by destroying ghost entities that have been touched.
+
+    //doesn't fail if not called (np1-np4)
+    //internal_resolve_ghosted_modify_delete();
+
+    //passes np1 segfaults np2-np4 if not called
+    update_comm_list_based_on_changes_in_comm_map();
+
+    // Resolve creation of entities: discover sharing and set unique ownership.
+    //passes np1 fails on 10 tests np2, 3 tests np3, segfaults np4
+    internal_resolve_parallel_create();
+
+    // Resolve part membership for shared entities.
+    // This occurs after resolving creation so created and shared
+    // entities are resolved along with previously existing shared entities.
+
+    //doesn't fail if not called (np1-np4)
+    //internal_resolve_shared_membership();
+
+    // Regenerate the ghosting aura around all shared mesh entities.
+    if ( regenerate_aura )
+    {
+      //passes on np1 hangs on np2-np4 if not called
+      internal_regenerate_aura();
+    }
+
+    // ------------------------------
+    // Verify parallel consistency of mesh entities.
+    // Unique ownership, communication lists, sharing part membership,
+    // application part membership consistency.
+#ifndef NDEBUG
+    std::ostringstream msg ;
+    bool is_consistent = true;
+    is_consistent = comm_mesh_verify_parallel_consistency( *this , msg );
+    ThrowErrorMsgIf( !is_consistent, msg.str() );
+#endif
+  }
+  else {
+      std::vector<Entity> shared_modified ;
+      //doesn't fail if not called (np1-np4)
+      //internal_update_distributed_index( shared_modified );
+  }
+
+  // ------------------------------
+  // Now sort the bucket entities.
+  // This does not change the entities, relations, or field data.
+  // However, it insures that the ordering of entities and buckets
+  // is independent of the order in which a set of changes were
+  // performed.
+  //
+  //optimize_buckets combines multiple buckets in a bucket-family into
+  //a single larger bucket, and also does a sort.
+  //If optimize_buckets has not been requested, still do the sort.
+
+  if ( opt == MOD_END_COMPRESS_AND_SORT ) {
+    //doesn't fail if not called (np1-np4)
+    //m_bucket_repository.optimize_buckets();
+  }
+  else {
+    //doesn't fail if not called (np1-np4)
+    //m_bucket_repository.internal_sort_bucket_entities();
+  }
+
+  // ------------------------------
+
+  //doesn't fail if not called (np1-np4)
+  //m_bucket_repository.internal_modification_end();
+
+  //doesn't fail if not called (np1-np4)
+  //internal_update_fast_comm_maps();
+
+  m_sync_state = SYNCHRONIZED ;
+  m_add_node_sharing_called = false;
+
+  //doesn't fail if not called (np1-np4)
+  //update_deleted_entities_container();
+
+  return true ;
 }
 
 bool BulkData::internal_modification_end( bool regenerate_aura, modification_optimization opt )

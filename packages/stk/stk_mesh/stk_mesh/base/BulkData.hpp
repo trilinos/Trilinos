@@ -1436,6 +1436,7 @@ private:
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
+  bool internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt );
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
 
 protected:
