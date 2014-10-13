@@ -64,14 +64,14 @@ following classes:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // LOCA includes
 #include "LOCA.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Configuration and optional includes
@@ -80,7 +80,7 @@ following classes:
 %{
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
-#include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyVector.hpp"
 %}
 #endif
 

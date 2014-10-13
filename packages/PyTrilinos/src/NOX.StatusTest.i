@@ -66,7 +66,7 @@ NOX.StatusTest provides the following user-level classes:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // NOX includes
 #include "NOX_StatusTest_Generic.H"
@@ -82,7 +82,7 @@ NOX.StatusTest provides the following user-level classes:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Standard exception handling

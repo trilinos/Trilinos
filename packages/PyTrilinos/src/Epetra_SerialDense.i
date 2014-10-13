@@ -30,11 +30,11 @@
 
 %{
 // Local interface includes
-#include "Epetra_NumPyIntSerialDenseMatrix.h"
-#include "Epetra_NumPyIntSerialDenseVector.h"
-#include "Epetra_NumPySerialDenseMatrix.h"
-#include "Epetra_NumPySerialSymDenseMatrix.h"
-#include "Epetra_NumPySerialDenseVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
+#include "Epetra_NumPyIntSerialDenseVector.hpp"
+#include "Epetra_NumPySerialDenseMatrix.hpp"
+#include "Epetra_NumPySerialSymDenseMatrix.hpp"
+#include "Epetra_NumPySerialDenseVector.hpp"
 
 // Epetra includes
 #include "Epetra_IntSerialDenseMatrix.h"
@@ -77,7 +77,7 @@
 // Epetra_NumPyIntSerialDenseMatrix support //
 //////////////////////////////////////////////
 %rename(NumPyIntSerialDenseMatrix) PyTrilinos::Epetra_NumPyIntSerialDenseMatrix;
-%include "Epetra_NumPyIntSerialDenseMatrix.h"
+%include "Epetra_NumPyIntSerialDenseMatrix.hpp"
 %pythoncode
 %{
 class IntSerialDenseMatrix(UserArray,NumPyIntSerialDenseMatrix):
@@ -168,7 +168,7 @@ _Epetra.NumPyIntSerialDenseMatrix_swigregister(IntSerialDenseMatrix)
 // Epetra_NumPyIntSerialDenseVector support //
 //////////////////////////////////////////////
 %rename(NumPyIntSerialDenseVector) PyTrilinos::Epetra_NumPyIntSerialDenseVector;
-%include "Epetra_NumPyIntSerialDenseVector.h"
+%include "Epetra_NumPyIntSerialDenseVector.hpp"
 %pythoncode
 %{
 class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
@@ -258,7 +258,7 @@ _Epetra.NumPyIntSerialDenseVector_swigregister(IntSerialDenseVector)
 // Epetra_NumPySerialDenseMatrix support //
 ///////////////////////////////////////////
 %rename(NumPySerialDenseMatrix) PyTrilinos::Epetra_NumPySerialDenseMatrix;
-%include "Epetra_NumPySerialDenseMatrix.h"
+%include "Epetra_NumPySerialDenseMatrix.hpp"
 %pythoncode
 %{
 class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
@@ -347,7 +347,7 @@ _Epetra.NumPySerialDenseMatrix_swigregister(SerialDenseMatrix)
 // Epetra_NumPySerialSymDenseMatrix support //
 ///////////////////////////////////////////
 %rename(NumPySerialSymDenseMatrix) PyTrilinos::Epetra_NumPySerialSymDenseMatrix;
-%include "Epetra_NumPySerialSymDenseMatrix.h"
+%include "Epetra_NumPySerialSymDenseMatrix.hpp"
 %pythoncode
 %{
 class SerialSymDenseMatrix(UserArray,NumPySerialSymDenseMatrix):
@@ -437,7 +437,7 @@ _Epetra.NumPySerialSymDenseMatrix_swigregister(SerialSymDenseMatrix)
 // Epetra_NumPySerialDenseVector support //
 ///////////////////////////////////////////
 %rename(NumPySerialDenseVector) PyTrilinos::Epetra_NumPySerialDenseVector;
-%include "Epetra_NumPySerialDenseVector.h"
+%include "Epetra_NumPySerialDenseVector.hpp"
 %pythoncode
 %{
 class SerialDenseVector(UserArray,NumPySerialDenseVector):

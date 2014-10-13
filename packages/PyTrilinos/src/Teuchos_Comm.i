@@ -43,7 +43,7 @@ using Teuchos::OpaqueWrapper;
 
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_PythonException.hpp"
 %}
 
 // Convey the PyTrilinos configuration to SWIG

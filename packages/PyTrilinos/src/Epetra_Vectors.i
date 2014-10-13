@@ -36,10 +36,10 @@
 #include "Epetra_IntVector.h"
 
 // Local includes
-#include "Epetra_NumPyIntVector.h"
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPyVector.h"
-#include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntVector.hpp"
+#include "Epetra_NumPyMultiVector.hpp"
+#include "Epetra_NumPyVector.hpp"
+#include "Epetra_NumPyFEVector.hpp"
 %}
 
 // PyTrilinos configuration
@@ -281,7 +281,7 @@ Epetra_NumPyIntVector::Values
 %ignore Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap&, bool);
 %ignore Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap&, PyObject*);
 }  // Namespace PyTrilinos
-%include "Epetra_NumPyIntVector.h"
+%include "Epetra_NumPyIntVector.hpp"
 %pythoncode
 %{
 class IntVector(UserArray,NumPyIntVector):
@@ -439,7 +439,7 @@ Epetra_NumPyMultiVector::MeanValue
 "Return a numpy.ndarray of the mean values of the MultiVector."
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;
 }  // Namespace PyTrilinos
-%include "Epetra_NumPyMultiVector.h"
+%include "Epetra_NumPyMultiVector.hpp"
 %pythoncode
 %{
 class MultiVector(UserArray,NumPyMultiVector):
@@ -876,7 +876,7 @@ Epetra_NumPyVector::SumIntoMyValues
 %ignore Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap&, PyObject*);
 %ignore Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess, const Epetra_Vector&);
 }
-%include "Epetra_NumPyVector.h"
+%include "Epetra_NumPyVector.hpp"
 %pythoncode
 %{
 class Vector(UserArray,NumPyVector):
@@ -1080,7 +1080,7 @@ Epetra_NumPyFEVector::SumIntoGlobalValues
 "Sum into global values at specified indices (and offset)"
 %rename(NumPyFEVector) Epetra_NumPyFEVector;
 }  // Namespace PyTrilinos
-%include "Epetra_NumPyFEVector.h"
+%include "Epetra_NumPyFEVector.hpp"
 %pythoncode
 %{
 class FEVector(UserArray,NumPyFEVector):

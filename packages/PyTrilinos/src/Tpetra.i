@@ -49,13 +49,13 @@ operators, and dense and sparse matrices.
 %{
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
-#include "PyTrilinos_PythonException.h"
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_PythonException.hpp"
+#include "PyTrilinos_Teuchos_Util.hpp"
 #include "PyTrilinos_NumPy_Util.hpp"
 
 // Import the numpy interface
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"

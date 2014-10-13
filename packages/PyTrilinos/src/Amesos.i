@@ -115,7 +115,7 @@ exAmesos_Factory.py.
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 #endif
 
 // Amesos includes
@@ -154,17 +154,17 @@ exAmesos_Factory.py.
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 #ifdef HAVE_EPETRA
-#include "Epetra_NumPyIntSerialDenseMatrix.h"
-#include "Epetra_NumPyIntSerialDenseVector.h"
-#include "Epetra_NumPySerialDenseMatrix.h"
-#include "Epetra_NumPySerialSymDenseMatrix.h"
-#include "Epetra_NumPySerialDenseVector.h"
-#include "Epetra_NumPyIntVector.h"
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPyVector.h"
-#include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
+#include "Epetra_NumPyIntSerialDenseVector.hpp"
+#include "Epetra_NumPySerialDenseMatrix.hpp"
+#include "Epetra_NumPySerialSymDenseMatrix.hpp"
+#include "Epetra_NumPySerialDenseVector.hpp"
+#include "Epetra_NumPyIntVector.hpp"
+#include "Epetra_NumPyMultiVector.hpp"
+#include "Epetra_NumPyVector.hpp"
+#include "Epetra_NumPyFEVector.hpp"
 #endif
 
 %}

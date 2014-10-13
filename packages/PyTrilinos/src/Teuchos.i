@@ -96,7 +96,7 @@ ParameterList will accept a python dictionary.
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
 // Namespace flattening
 using std::string;

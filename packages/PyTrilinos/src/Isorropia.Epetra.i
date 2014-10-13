@@ -92,17 +92,17 @@ The purpose of Isorropia.Epetra is to ....
 // Local includes
 #define NO_IMPORT_ARRAY
 #define SWIG_FILE_WITH_INIT
-#include "numpy_include.h"
-#include "Epetra_NumPyFEVector.h"
-#include "Epetra_NumPyIntSerialDenseMatrix.h"
-#include "Epetra_NumPyIntSerialDenseVector.h"
-#include "Epetra_NumPyIntVector.h"
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPySerialDenseMatrix.h"
-#include "Epetra_NumPySerialSymDenseMatrix.h"
-#include "Epetra_NumPySerialDenseVector.h"
-#include "Epetra_NumPyVector.h"
-#include "PyTrilinos_Teuchos_Util.h"
+#include "numpy_include.hpp"
+#include "Epetra_NumPyFEVector.hpp"
+#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
+#include "Epetra_NumPyIntSerialDenseVector.hpp"
+#include "Epetra_NumPyIntVector.hpp"
+#include "Epetra_NumPyMultiVector.hpp"
+#include "Epetra_NumPySerialDenseMatrix.hpp"
+#include "Epetra_NumPySerialSymDenseMatrix.hpp"
+#include "Epetra_NumPySerialDenseVector.hpp"
+#include "Epetra_NumPyVector.hpp"
+#include "PyTrilinos_Teuchos_Util.hpp"
 %}
 
 // Configuration
