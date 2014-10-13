@@ -2801,7 +2801,10 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
         pr_error("Error: I/O error.\n");
   }
   comm.Broadcast(&ok,1,0);
-  if (!ok) return 0;
+  if (!ok) {
+    if (fp != NULL) fclose(fp);
+    return 0;
+  }
   else numeq_total = ok;
 
   int* gupdate = new int[numeq_total];
@@ -2837,6 +2840,7 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
 
   map = new Epetra_Map(numeq_total,numeq,update,0,comm);
 
+  if(update != NULL) free(update);
   return map;
 }
 
@@ -2897,6 +2901,7 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
       if (!ok)
       {
          delete A;
+         if(fp != NULL) fclose(fp);
          return 0;
       }
       if (activeproc==proc)
@@ -3297,8 +3302,12 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   if (!ok)
   {
      delete [] gvalues;
+     if (fin != NULL)
+       fclose(fin);
      if (foutr != NULL)
        fclose(foutr);
+     if (foutm != NULL)
+       fclose(foutm);
      return false;
   }
 

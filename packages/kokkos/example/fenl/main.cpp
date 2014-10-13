@@ -11,20 +11,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_hwloc.hpp>
-
-#if defined( KOKKOS_HAVE_PTHREAD )
-#include <Kokkos_Threads.hpp>
-#endif
-
-#if defined( KOKKOS_HAVE_CUDA )
-#include <Kokkos_Cuda.hpp>
-#endif
-
-#if defined( KOKKOS_HAVE_OPENMP )
-#include <Kokkos_OpenMP.hpp>
-#endif
+#include <Kokkos_Core.hpp>
 
 #include <WrapMPI.hpp>
 #include <fenl.hpp>

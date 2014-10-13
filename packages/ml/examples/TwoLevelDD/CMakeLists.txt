@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ml_2level_DD

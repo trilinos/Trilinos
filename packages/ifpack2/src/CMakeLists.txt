@@ -1,4 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 # Function to generate ETI files from a template and list of class names
@@ -63,16 +62,23 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_config.h )
 
-# Auto generate ETI files for new Tpetra nodes
+# Automatically generate ETI (explicit template instanatiation) files
+# for Node types that use the (new) Kokkos Devices.
 SET(IFPACK2_CPP_SOURCES "")
 SET(IFPACK2_CU_SOURCES "")
 IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
+  # Set the list of Ifpack2 classes templated on <Scalar, LO, GO,
+  # Node> for which we want to do ETI using this system.  These
+  # classes usually operate on sparse matrices (instances of
+  # Tpetra::CrsMatrix or Tpetra::RowMatrix, which also take these
+  # template parameters).
   GLOBAL_SET(IFPACK2_ETI_CLASSES
     AdditiveSchwarz
     BlockRelaxation
     BorderedOperator
     Chebyshev
     DenseContainer
+    TriDiContainer
     Diagonal
     DiagonalFilter
     Factory
@@ -97,12 +103,39 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       Details::Amesos2Wrapper
       )
   ENDIF()
+
+  # Set the list of Ifpack2 classes templated on <LO, GO, Node> for
+  # which we want to do ETI using this system.  These classes usually
+  # operate on sparse graphs (instances of Tpetra::CrsGraph or
+  # Tpetra::RowGraph, which also take these template parameters).
   GLOBAL_SET(IFPACK2_ETI_LO_GO_CLASSES
     LinearPartitioner
     OverlappingPartitioner
     Details::OverlappingRowGraph
     )
-  IF (Kokkos_ENABLE_Pthread)
+
+  # ETI for the Kokkos::Serial device.
+  #
+  # FIXME (mfh 02 Oct 2014) There's currently no CMake variable
+  # "Kokkos_ENABLE_Serial" to test if the Kokkos::Serial device is
+  # enabled.  It would make sense to use that variable here.
+  IF (KokkosClassic_ENABLE_KokkosCompat)
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_CLASSES}"
+      Ifpack2_ETI_SC_LO_GO_Serial.tmpl
+      "Ifpack2_CLASS_FILE_NAME_Serial.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_LO_GO_CLASSES}"
+      Ifpack2_ETI_LO_GO_Serial.tmpl
+      "Ifpack2_CLASS_FILE_NAME_Serial.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+  ENDIF()
+
+  # ETI for the Kokkos::Threads device.
+  IF (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Pthread)
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_CLASSES}"
       Ifpack2_ETI_SC_LO_GO_Threads.tmpl
@@ -116,7 +149,9 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       IFPACK2_SRCS)
     LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
   ENDIF()
-  IF (Kokkos_ENABLE_OpenMP)
+
+  # ETI for the Kokkos::OpenMP device.
+  IF (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_OpenMP)
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_CLASSES}"
       Ifpack2_ETI_SC_LO_GO_OpenMP.tmpl
@@ -130,6 +165,8 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       IFPACK2_SRCS)
     LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
   ENDIF()
+
+  # ETI for the Kokkos::Cuda device.
   IF (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda)
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_CLASSES}"

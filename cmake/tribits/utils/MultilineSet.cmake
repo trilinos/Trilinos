@@ -40,7 +40,7 @@
 
 #
 # @FUNCTION: MULTILINE_SET()
-# 
+#
 # Function to set a single string by concatenating a list of separate strings
 #
 # Usage::
@@ -62,7 +62,7 @@
 # exist :-(
 #
 FUNCTION(MULTILINE_SET VARAIBLE_NAME)
-  
+
   SET(MULTILINE_SET_LOCAL_STR "")
 
   FOREACH(LINE_STR ${ARGN})

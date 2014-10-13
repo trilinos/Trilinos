@@ -52,7 +52,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 
 /** \brief Macro that adds <<std member comp>> attributes to any class
- * 
+ *
  * For example, if you want to include a <<std member comp>> attribute
  * as a member object of type MyClass with the name my_attribute you
  * would include the macro in the public section of YourClass

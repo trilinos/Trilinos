@@ -55,7 +55,7 @@ RCP<Condition> BoolLogicConditionConverter::convertXML(
     conditions.push_back(
       ConditionXMLConverterDB::convertXML(xmlObj.getChild(i), entryIDsMap));
   }
-  return getSpecificBoolLogicCondition(conditions); 
+  return getSpecificBoolLogicCondition(conditions);
 }
 
 void BoolLogicConditionConverter::convertCondition(
@@ -63,7 +63,7 @@ void BoolLogicConditionConverter::convertCondition(
   XMLObject& xmlObj,
   const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const
 {
-  RCP<const BoolLogicCondition> castedCon = 
+  RCP<const BoolLogicCondition> castedCon =
     rcp_dynamic_cast<const BoolLogicCondition>(condition, true);
 
   const Condition::ConstConditionList conditions = castedCon->getConditions();
@@ -72,29 +72,29 @@ void BoolLogicConditionConverter::convertCondition(
     it != conditions.end();
     ++it)
   {
-    xmlObj.addChild(ConditionXMLConverterDB::convertCondition(*it, entryIDsMap));    
+    xmlObj.addChild(ConditionXMLConverterDB::convertCondition(*it, entryIDsMap));
   }
 }
 
-RCP<BoolLogicCondition> 
+RCP<BoolLogicCondition>
 OrConditionConverter::getSpecificBoolLogicCondition(
   Condition::ConstConditionList& conditions) const
 {
-  return rcp( new OrCondition(conditions));    
+  return rcp( new OrCondition(conditions));
 }
 
-RCP<BoolLogicCondition> 
+RCP<BoolLogicCondition>
 AndConditionConverter::getSpecificBoolLogicCondition(
   Condition::ConstConditionList& conditions) const
 {
-  return rcp( new AndCondition(conditions));    
+  return rcp( new AndCondition(conditions));
 }
 
-RCP<BoolLogicCondition> 
+RCP<BoolLogicCondition>
 EqualsConditionConverter::getSpecificBoolLogicCondition(
   Condition::ConstConditionList& conditions) const
 {
-  return rcp( new EqualsCondition(conditions));    
+  return rcp( new EqualsCondition(conditions));
 }
 
 RCP<Condition> NotConditionConverter::convertXML(
@@ -120,7 +120,7 @@ RCP<Condition> ParameterConditionConverter::convertXML(
     const XMLObject& xmlObj,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap) const
 {
-  ParameterEntry::ParameterEntryID paramID = 
+  ParameterEntry::ParameterEntryID paramID =
     xmlObj.getRequired<ParameterEntry::ParameterEntryID>(
       getParameterEntryIdAttributeName());
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -133,11 +133,11 @@ RCP<Condition> ParameterConditionConverter::convertXML(
 }
 
 void ParameterConditionConverter::convertCondition(
-  const RCP<const Condition> condition, 
-  XMLObject& xmlObj, 
+  const RCP<const Condition> condition,
+  XMLObject& xmlObj,
   const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const
 {
-  RCP<const ParameterCondition> castedCondition = 
+  RCP<const ParameterCondition> castedCondition =
     rcp_dynamic_cast<const ParameterCondition>(condition, true);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -149,11 +149,11 @@ void ParameterConditionConverter::convertCondition(
   xmlObj.addAttribute(
     getParameterEntryIdAttributeName(),
     entryIDsMap.find(castedCondition->getParameter())->second);
-  
+
   addSpecificXMLTraits(castedCondition, xmlObj);
 }
 
-RCP<ParameterCondition> 
+RCP<ParameterCondition>
 StringConditionConverter::getSpecificParameterCondition(
   const XMLObject& xmlObj,
   RCP<ParameterEntry> parameterEntry) const
@@ -176,7 +176,7 @@ StringConditionConverter::getSpecificParameterCondition(
 }
 
 void StringConditionConverter::addSpecificXMLTraits(
-  RCP<const ParameterCondition> condition, XMLObject& xmlObj) const             
+  RCP<const ParameterCondition> condition, XMLObject& xmlObj) const
 {
   RCP<const StringCondition> castedCon =
     rcp_dynamic_cast<const StringCondition>(condition, true);
@@ -193,8 +193,8 @@ void StringConditionConverter::addSpecificXMLTraits(
   }
   xmlObj.addChild(valueTag);
 }
- 
-RCP<ParameterCondition> 
+
+RCP<ParameterCondition>
 BoolConditionConverter::getSpecificParameterCondition(
   const XMLObject& xmlObj,
   RCP<ParameterEntry> parameterEntry) const
@@ -203,9 +203,9 @@ BoolConditionConverter::getSpecificParameterCondition(
 }
 
 void BoolConditionConverter::addSpecificXMLTraits(
-  RCP<const ParameterCondition> condition, XMLObject& xmlObj) const             
+  RCP<const ParameterCondition> condition, XMLObject& xmlObj) const
 {}
- 
+
 
 } //namespace Teuchos
 

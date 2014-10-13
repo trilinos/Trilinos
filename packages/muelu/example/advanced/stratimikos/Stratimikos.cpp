@@ -48,11 +48,11 @@
 /*
    Call MueLu via the Stratimikos interface.
 
-   Usage:
-    ./MueLu_Stratimikos.exe : use xml configuration file stratimikos_ParameterList.xml
+Usage:
+./MueLu_Stratimikos.exe : use xml configuration file stratimikos_ParameterList.xml
 
-   Note:
-    The source code is not MueLu specific and can be used with any Stratimikos strategy.
+Note:
+The source code is not MueLu specific and can be used with any Stratimikos strategy.
 */
 
 // Teuchos includes
@@ -60,6 +60,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 // Epetra includes
 #ifdef HAVE_MPI
@@ -101,96 +102,104 @@ int main(int argc,char * argv[]) {
   //
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  // build global communicator TODO: convert from Teuchos::Comm
+  bool success = false;
+  bool verbose = true;
+  try {
+    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+    // build global communicator TODO: convert from Teuchos::Comm
 #ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+    Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm Comm;
+    Epetra_SerialComm Comm;
 #endif
 
-  //
-  // Parameters
-  //
+    //
+    // Parameters
+    //
 
-  Teuchos::CommandLineProcessor clp(false);
+    Teuchos::CommandLineProcessor clp(false);
 
-  Galeri::Xpetra::Parameters<int> matrixParameters(clp, 256); // manage parameters of the test case
-  // Xpetra::Parameters              xpetraParameters(clp);   // manage parameters of xpetra
-  Xpetra::UnderlyingLib lib = Xpetra::UseEpetra; // Epetra only for the moment
+    Galeri::Xpetra::Parameters<int> matrixParameters(clp, 256); // manage parameters of the test case
+    // Xpetra::Parameters              xpetraParameters(clp);   // manage parameters of xpetra
+    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra; // Epetra only for the moment
 
-  std::string xmlFileName = "stratimikos_ParameterList.xml"; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'stratimikos_ParameterList.xml'.");
+    std::string xmlFileName = "stratimikos_ParameterList.xml"; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'stratimikos_ParameterList.xml'.");
 
-  switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
-  }
+    switch (clp.parse(argc,argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    }
 
-  // Read in parameter list
-  Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
+    // Read in parameter list
+    Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  //
-  // Construct the problem
-  //
+    //
+    // Construct the problem
+    //
 
-  //   // Read in the matrix, store pointer as an RCP
-  //   Epetra_CrsMatrix * ptrA = 0;
-  //   EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac_test.mm",Comm,ptrA);
-  //   RCP<Epetra_CrsMatrix> A = rcp(ptrA);
-  //
-  //   // read in the RHS vector
-  //   Epetra_Vector * ptrb = 0;
-  //   EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",A->MatrixRangeMap(),ptrb);
-  //   RCP<const Epetra_Vector> b = rcp(ptrb);
+    //   // Read in the matrix, store pointer as an RCP
+    //   Epetra_CrsMatrix * ptrA = 0;
+    //   EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac_test.mm",Comm,ptrA);
+    //   RCP<Epetra_CrsMatrix> A = rcp(ptrA);
+    //
+    //   // read in the RHS vector
+    //   Epetra_Vector * ptrb = 0;
+    //   EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",A->MatrixRangeMap(),ptrb);
+    //   RCP<const Epetra_Vector> b = rcp(ptrb);
 
-  RCP<const Map> map = MapFactory::createUniformContigMap(lib, matrixParameters.GetNumGlobalElements(), comm);
-  RCP<Galeri::Xpetra::Problem<Map,Xpetra::EpetraCrsMatrix,MultiVector> > Pr =
+    RCP<const Map> map = MapFactory::createUniformContigMap(lib, matrixParameters.GetNumGlobalElements(), comm);
+    RCP<Galeri::Xpetra::Problem<Map,Xpetra::EpetraCrsMatrix,MultiVector> > Pr =
       Galeri::Xpetra::BuildProblem<double, int, int, Map,  Xpetra::EpetraCrsMatrix, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-  RCP<const Epetra_CrsMatrix> A = Pr->BuildMatrix()->getEpetra_CrsMatrix();
+    RCP<const Epetra_CrsMatrix> A = Pr->BuildMatrix()->getEpetra_CrsMatrix();
 
-  //
-  // Allocate vectors
-  //
+    //
+    // Allocate vectors
+    //
 
-  RCP<Epetra_Vector> X = rcp(new Epetra_Vector(A->DomainMap()));
-  X->PutScalar(0.0);
+    RCP<Epetra_Vector> X = rcp(new Epetra_Vector(A->DomainMap()));
+    X->PutScalar(0.0);
 
-  RCP<Epetra_Vector> B = rcp(new Epetra_Vector(A->DomainMap()));
-  B->SetSeed(846930886); B->Random();
+    RCP<Epetra_Vector> B = rcp(new Epetra_Vector(A->DomainMap()));
+    B->SetSeed(846930886); B->Random();
 
-  //
-  // Build Thyra linear algebra objects
-  //
+    //
+    // Build Thyra linear algebra objects
+    //
 
-  RCP<const Thyra::LinearOpBase<double> > thyraA = Thyra::epetraLinearOp(A);
-  RCP<const Thyra::VectorBase<double> >   thyraB = Thyra::create_Vector(B, thyraA->range());
-  RCP<Thyra::VectorBase<double> >         thyraX = Thyra::create_Vector(X, thyraA->domain());
+    RCP<const Thyra::LinearOpBase<double> > thyraA = Thyra::epetraLinearOp(A);
+    RCP<const Thyra::VectorBase<double> >   thyraB = Thyra::create_Vector(B, thyraA->range());
+    RCP<Thyra::VectorBase<double> >         thyraX = Thyra::create_Vector(X, thyraA->domain());
 
-  //
-  // Build Stratimikos solver
-  //
+    //
+    // Build Stratimikos solver
+    //
 
-  Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
-  Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);     // Register MueLu as a Stratimikos preconditioner strategy.
-  linearSolverBuilder.setParameterList(paramList);              // Setup solver parameters using a Stratimikos parameter list.
+    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
+    Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);     // Register MueLu as a Stratimikos preconditioner strategy.
+    linearSolverBuilder.setParameterList(paramList);              // Setup solver parameters using a Stratimikos parameter list.
 
-  // Build a new "solver factory" according to the previously specified parameter list.
-  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
+    // Build a new "solver factory" according to the previously specified parameter list.
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
 
-  // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
+    // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
+    Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
 
-  //
-  // Solve Ax = b.
-  //
+    //
+    // Solve Ax = b.
+    //
 
-  Thyra::SolveStatus<double> status = Thyra::solve<double>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
-  std::cout << status << std::endl;
+    Thyra::SolveStatus<double> status = Thyra::solve<double>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
+    std::cout << status << std::endl;
 
-  return (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED) ? EXIT_SUCCESS : EXIT_FAILURE;
+    success = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
 // Thyra::assign(thyraX.ptr(), 0.0);

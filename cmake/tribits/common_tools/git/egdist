@@ -2,6 +2,8 @@
 
 usageHelp = r"""egdist [egdist options] [OPTIONS]
 
+WARNING: egdist is deprecated.  Use gitdist instead!
+
 Run eg/git recursively over extra repos
 
 Instead of typing
@@ -502,6 +504,8 @@ if __name__ == '__main__':
         print "*** Changing to directory "+baseDir
       os.chdir(baseDir)
   
+  print ""
+  print "WARNING: egdist is deprecated.  Use gitdist instead!"
   print ""
   sys.stdout.flush()
   

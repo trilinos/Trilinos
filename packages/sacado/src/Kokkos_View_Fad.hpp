@@ -36,7 +36,7 @@
 
 #include "Sacado_Traits.hpp"
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Error.hpp"
 #if defined(__CUDACC__) && defined(__CUDA_ARCH__)
 #include "Cuda/Kokkos_Cuda_abort.hpp"

@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos KokkosClassic)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos KokkosClassic KokkosTSQR)
 SET(LIB_OPTIONAL_DEP_PACKAGES Epetra KokkosCore KokkosCompat KokkosLinAlg KokkosContainers KokkosAlgorithms KokkosMpiComm)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES)

@@ -50,7 +50,7 @@
 #include <typeinfo>
 #include <string>
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Cuda/Kokkos_Cuda_abort.hpp>
 
@@ -96,6 +96,14 @@ public:
    *          Reference counting only occurs on the master thread.
    */
   static void decrement( const void * );
+
+  /** \brief  Get the reference count of the block of memory
+   *          in which the input pointer resides.  If the reference
+   *          count is zero the memory region is not tracked.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static int count( const void * );
 
   /** \brief  Print all tracked memory to the output stream. */
   static void print_memory_view( std::ostream & );
@@ -169,6 +177,14 @@ public:
    */
   static void decrement( const void * );
 
+  /** \brief  Get the reference count of the block of memory
+   *          in which the input pointer resides.  If the reference
+   *          count is zero the memory region is not tracked.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static int count( const void * );
+
   /** \brief  Print all tracked memory to the output stream. */
   static void print_memory_view( std::ostream & );
 
@@ -228,6 +244,14 @@ public:
    *          Reference counting only occurs on the master thread.
    */
   static void increment( const void * );
+
+  /** \brief  Get the reference count of the block of memory
+   *          in which the input pointer resides.  If the reference
+   *          count is zero the memory region is not tracked.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static int count( const void * );
 
   /** \brief  Decrement the reference count of the block of memory
    *          in which the input pointer resides.  If the reference
@@ -356,6 +380,7 @@ namespace Impl {
 template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::HostSpace >
 {
+  enum {value = 0};
   KOKKOS_INLINE_FUNCTION static void verify( void )
     { Kokkos::cuda_abort("Cuda code attempted to access HostSpace memory"); }
 
@@ -367,6 +392,7 @@ struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::HostSpac
 template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::CudaUVMSpace >
 {
+  enum {value = 1};
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 };
@@ -375,6 +401,7 @@ struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::CudaUVMS
 template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::CudaHostPinnedSpace >
 {
+  enum {value = 1};
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 };
@@ -385,6 +412,7 @@ struct VerifyExecutionCanAccessMemorySpace<
   typename enable_if< ! is_same<Kokkos::CudaSpace,OtherSpace>::value , Kokkos::CudaSpace >::type ,
   OtherSpace >
 {
+  enum {value = 0};
   KOKKOS_INLINE_FUNCTION static void verify( void )
     { Kokkos::cuda_abort("Cuda code attempted to access unknown Space memory"); }
 
@@ -398,9 +426,11 @@ template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaSpace >
 {
 #if defined( KOKKOS_USE_CUDA_UVM )
+  enum {value = 1};
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 #else
+  enum {value = 0};
   inline static void verify( void ) { CudaSpace::access_error(); }
   inline static void verify( const void * p ) { CudaSpace::access_error(p); }
 #endif
@@ -410,6 +440,7 @@ struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaSpac
 template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaUVMSpace >
 {
+  enum {value = 1};
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 };
@@ -418,6 +449,7 @@ struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaUVMS
 template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaHostPinnedSpace >
 {
+  enum {value = 1};
   KOKKOS_INLINE_FUNCTION static void verify( void ) {}
   KOKKOS_INLINE_FUNCTION static void verify( const void * ) {}
 };

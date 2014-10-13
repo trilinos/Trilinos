@@ -1206,6 +1206,7 @@ namespace MueLu {
       std::cout << "** Enter a character to continue > " << std::endl;
       char go = ' ';
       int r = scanf("%c", &go);
+      (void)r;
       assert(r > 0);
     }
     comm->barrier();

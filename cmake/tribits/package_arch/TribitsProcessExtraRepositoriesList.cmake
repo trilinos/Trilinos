@@ -120,7 +120,7 @@ INCLUDE(TribitsSortListAccordingToMasterList)
 # dependencies.  That is, all of the packages listed in repository ``i`` must
 # have upstream TPL and SE package dependencies listed before this package in
 # this repository or in upstream repositories ``i-1``, ``i-2``, etc.
-# 
+#
 # NOTE: This module just sets the local variable::
 #
 #  ${PROJECT_NAME}_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
@@ -134,7 +134,7 @@ INCLUDE(TribitsSortListAccordingToMasterList)
 #   ``${PROJECT_NAME}_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY``.  If
 #   one misspells the name of a macro, it is an immediate error in CMake.  A
 #   misspelled set variable is just ignored.
-# 
+#
 MACRO(TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES)
   ASSERT_DEFINED(PROJECT_NAME)
   IF ("${ARGN}" STREQUAL "")
@@ -188,7 +188,7 @@ ENDFUNCTION()
 #
 MACRO(TRIBITS_PROCESS_EXTRAREPOS_LISTS)
 
-  # A) Get the total number of extrarepos defined  
+  # A) Get the total number of extrarepos defined
 
   IF (TRIBITS_PROCESS_EXTRAREPOS_LISTS_DEBUG)
     PRINT_VAR(${PROJECT_NAME}_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY)
@@ -489,7 +489,7 @@ MACRO(TRIBITS_FILTER_OR_ASSERT_EXTRA_REPOS)
     ENDIF()
 
     #PRINT_VAR(ADD_EXTRAREPO)
-    
+
     # A.2) Determine if the repo exists
     IF (ADD_EXTRAREPO AND ${PROJECT_NAME}_CHECK_EXTRAREPOS_EXIST)
 
@@ -516,7 +516,7 @@ MACRO(TRIBITS_FILTER_OR_ASSERT_EXTRA_REPOS)
       ENDIF()
 
     ENDIF()
-    
+
     #PRINT_VAR(ADD_EXTRAREPO)
 
     # A.3) Conditionally copy the info for the extra repo
@@ -532,7 +532,7 @@ MACRO(TRIBITS_FILTER_OR_ASSERT_EXTRA_REPOS)
 
     MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
 
-  ENDFOREACH()  
+  ENDFOREACH()
 
   # B) Copy over extra repos arrays with filtered arrays
   SET(${PROJECT_NAME}_EXTRA_REPOSITORIES ${EXTRA_REPOSITORIES_TMP})
@@ -565,30 +565,30 @@ MACRO(TRIBITS_GET_AND_PROCESS_EXTRA_REPOSITORIES_LISTS)
   #
   # A) Read in the extra repos list variable and process the list
   #
-  
+
   IF (${PROJECT_NAME}_EXTRAREPOS_FILE AND ${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE)
 
     MESSAGE("")
     MESSAGE("Reading the list of extra repositories from ${${PROJECT_NAME}_EXTRAREPOS_FILE}")
     MESSAGE("")
-    
+
     INCLUDE(${${PROJECT_NAME}_EXTRAREPOS_FILE})
-    
+
     TRIBITS_PROCESS_EXTRAREPOS_LISTS()
     # Above sets ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT
-    
+
     #
     # B) Sort and assert the list of extra repos according to the list read into the file
     #
-    
+
     IF (${PROJECT_NAME}_EXTRA_REPOSITORIES AND ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT)
       TRIBITS_EXTRA_REPOSITORIES_ASSERT_SUBSET_AND_ORDER_WRT_FILE()
     ENDIF()
-  
+
     #
     # C) Filter out the missing extra repos or assert errors
     #
-    
+
     IF (NOT UNITTEST_SKIP_FILTER_OR_ASSERT_EXTRA_REPOS)
       MESSAGE("")
       MESSAGE("Filtering and asserting existance (or ignore missing) extra repos ...")

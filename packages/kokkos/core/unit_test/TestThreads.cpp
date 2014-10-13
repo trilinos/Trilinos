@@ -48,9 +48,6 @@
 #if defined( KOKKOS_HAVE_PTHREAD )
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_hwloc.hpp>
-
-#include <Kokkos_View.hpp>
 
 #include <Kokkos_CrsArray.hpp>
 
@@ -72,6 +69,7 @@
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
 
 namespace Test {
 
@@ -301,6 +299,11 @@ TEST_F( threads , compiler_macros )
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Threads >() ) );
 }
 
+TEST_F( threads , memory_space )
+{
+  TestMemorySpace< Kokkos::Threads >();
+}
+
 
 //----------------------------------------------------------------------------
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
@@ -323,6 +326,7 @@ TEST_F( threads , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(3) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(5) ) );
 }
 #endif
 } // namespace Test

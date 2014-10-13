@@ -72,7 +72,7 @@ public:
 };
 
 
-/** \brief Partial specialization for std::reverse_iterator. 
+/** \brief Partial specialization for std::reverse_iterator.
  *
  * \ingroup teuchos_mem_mng_grp
  */

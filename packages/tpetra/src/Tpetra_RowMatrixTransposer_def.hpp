@@ -46,9 +46,7 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Map.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
-#ifdef DOXYGEN_USE_ONLY
-  // #include "Tpetra_RowMatrixtransposer_decl.hpp"
-#endif
+#include "Tpetra_RowMatrixTransposer_decl.hpp"
 
 namespace Tpetra {
 

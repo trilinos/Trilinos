@@ -75,7 +75,6 @@ Level 1
   repartition: start level = 1
   repartition: min rows per proc = 2000
   repartition: max imbalance = 1.327
-  repartition: keep proc 0 = 1
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
   repartition: remap num values = 4   [default]
@@ -174,7 +173,6 @@ Level 2
   repartition: start level = 1
   repartition: min rows per proc = 2000
   repartition: max imbalance = 1.327
-  repartition: keep proc 0 = 1
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
   repartition: remap num values = 4   [default]
@@ -273,7 +271,6 @@ Level 3
   repartition: start level = 1
   repartition: min rows per proc = 2000
   repartition: max imbalance = 1.327
-  repartition: keep proc 0 = 1
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
   repartition: remap num values = 4   [default]
@@ -301,26 +298,24 @@ Level 3
   [empty list]
 
 
- --------------------------------------------------------------------------------
- ---                            Multigrid Summary                             ---
- --------------------------------------------------------------------------------
- Number of levels    = 4
- Operator complexity = 1.48
- Max Coarse Size     = 1000
- Implicit Transpose  = false
+--------------------------------------------------------------------------------
+---                            Multigrid Summary                             ---
+--------------------------------------------------------------------------------
+Number of levels    = 4
+Operator complexity = 1.48
 
- matrix rows    nnz  nnz/row procs
- A 0    9999  29995     3.00  1
- A 1    3333   9997     3.00  1
- A 2    1111   3331     3.00  1
- A 3     371   1111     2.99  1
+matrix rows    nnz  nnz/row procs
+A 0    9999  29995     3.00  1
+A 1    3333   9997     3.00  1
+A 2    1111   3331     3.00  1
+A 3     371   1111     2.99  1
 
- Smoother (level 0) both : MueLu::IfpackSmoother{type = Chebyshev}
+Smoother (level 0) both : MueLu::IfpackSmoother{type = Chebyshev}
 
- Smoother (level 1) both : MueLu::IfpackSmoother{type = Chebyshev}
+Smoother (level 1) both : MueLu::IfpackSmoother{type = Chebyshev}
 
- Smoother (level 2) both : MueLu::IfpackSmoother{type = Chebyshev}
+Smoother (level 2) both : MueLu::IfpackSmoother{type = Chebyshev}
 
- Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Superlu}
- Smoother (level 3) post : no smoother
+Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 3) post : no smoother
 

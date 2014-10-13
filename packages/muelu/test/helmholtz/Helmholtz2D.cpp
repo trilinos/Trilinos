@@ -46,6 +46,9 @@
 #include <iostream>
 #include <complex>
 
+// Teuchos
+#include <Teuchos_StandardCatchMacros.hpp>
+
 // Xpetra and Galeri
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Galeri_XpetraParameters.hpp>
@@ -74,157 +77,166 @@ int main(int argc, char *argv[]) {
   using Teuchos::TimeMonitor;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  Teuchos::CommandLineProcessor clp(false);
 
-  //***********************//
-  //   Galeri Parameters   //
-  //***********************//
+  bool success = false;
+  bool verbose = true;
+  try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    Teuchos::CommandLineProcessor clp(false);
 
-  GO nx,ny,nz;
-  int mx, my, mz;
-  double stretchx, stretchy, stretchz, h, delta;
-  int PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR;
-  double omega, shift;
-  int model;
+    //***********************//
+    //   Galeri Parameters   //
+    //***********************//
 
-  std::ifstream inputfile;
-  inputfile.open("helm2D.xml");
-  inputfile >> nx       >> ny       >> nz ;
-  if(comm->getRank()==0)
-    std::cout<<"nx: "<<nx<<"  ny: "<<ny<<"  nz: "<<nz<<std::endl;
-  inputfile >> stretchx >> stretchy >> stretchz ;
-  if(comm->getRank()==0)
-    std::cout<<"stretchx: "<<stretchx<<"  stretchy: "<<stretchy<<"  stretchz: "<<stretchz<<std::endl;
-  inputfile >> h        >> delta ;
-  if(comm->getRank()==0)
-    std::cout<<"h: "<<h<<"  delta: "<<delta<<std::endl;
-  inputfile >> PMLXL    >> PMLXR ;
-  if(comm->getRank()==0)
-    std::cout<<"PMLXL: "<<PMLXL<<"  PMLXR: "<<PMLXR<<std::endl;
-  inputfile >> PMLYL    >> PMLYR ;
-  if(comm->getRank()==0)
-    std::cout<<"PMLYL: "<<PMLYL<<"  PMLYR: "<<PMLYR<<std::endl;
-  inputfile >> PMLZL    >> PMLZR ;
-  if(comm->getRank()==0)
-    std::cout<<"PMLZL: "<<PMLZL<<"  PMLZR: "<<PMLZR<<std::endl;
-  inputfile >> omega    >> shift ;
-  if(comm->getRank()==0)
-    std::cout<<"omega: "<<omega<<"  shift: "<<shift<<std::endl;
-  inputfile >> mx       >> my       >> mz ;
-  if(comm->getRank()==0)
-    std::cout<<"mx: "<<mx<<"  my: "<<my<<"  mz: "<<mz<<std::endl;
-  inputfile >> model ;
-  if(comm->getRank()==0)
-    std::cout<<"velocity model: "<<model<<std::endl;
+    GO nx,ny,nz;
+    int mx, my, mz;
+    double stretchx, stretchy, stretchz, h, delta;
+    int PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR;
+    double omega, shift;
+    int model;
 
-  Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
-							    h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0, mx, my, mz, model);
-  Galeri::Xpetra::Parameters<GO> matrixParameters_shifted(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
-							  h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift, mx, my, mz, model);
-  Xpetra::Parameters             xpetraParameters(clp);
+    std::ifstream inputfile;
+    inputfile.open("helm2D.xml");
+    inputfile >> nx       >> ny       >> nz ;
+    if(comm->getRank()==0)
+      std::cout<<"nx: "<<nx<<"  ny: "<<ny<<"  nz: "<<nz<<std::endl;
+    inputfile >> stretchx >> stretchy >> stretchz ;
+    if(comm->getRank()==0)
+      std::cout<<"stretchx: "<<stretchx<<"  stretchy: "<<stretchy<<"  stretchz: "<<stretchz<<std::endl;
+    inputfile >> h        >> delta ;
+    if(comm->getRank()==0)
+      std::cout<<"h: "<<h<<"  delta: "<<delta<<std::endl;
+    inputfile >> PMLXL    >> PMLXR ;
+    if(comm->getRank()==0)
+      std::cout<<"PMLXL: "<<PMLXL<<"  PMLXR: "<<PMLXR<<std::endl;
+    inputfile >> PMLYL    >> PMLYR ;
+    if(comm->getRank()==0)
+      std::cout<<"PMLYL: "<<PMLYL<<"  PMLYR: "<<PMLYR<<std::endl;
+    inputfile >> PMLZL    >> PMLZR ;
+    if(comm->getRank()==0)
+      std::cout<<"PMLZL: "<<PMLZL<<"  PMLZR: "<<PMLZR<<std::endl;
+    inputfile >> omega    >> shift ;
+    if(comm->getRank()==0)
+      std::cout<<"omega: "<<omega<<"  shift: "<<shift<<std::endl;
+    inputfile >> mx       >> my       >> mz ;
+    if(comm->getRank()==0)
+      std::cout<<"mx: "<<mx<<"  my: "<<my<<"  mz: "<<mz<<std::endl;
+    inputfile >> model ;
+    if(comm->getRank()==0)
+      std::cout<<"velocity model: "<<model<<std::endl;
+
+    Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
+        h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0, mx, my, mz, model);
+    Galeri::Xpetra::Parameters<GO> matrixParameters_shifted(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
+        h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift, mx, my, mz, model);
+    Xpetra::Parameters             xpetraParameters(clp);
 
 
-  //****************************************//
-  //   Setup Galeri Problems and Matrices   //
-  //****************************************//
+    //****************************************//
+    //   Setup Galeri Problems and Matrices   //
+    //****************************************//
 
-  RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
-  RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
+    RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
+    RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
-  Teuchos::ParameterList pl = matrixParameters_helmholtz.GetParameterList();
-  RCP<MultiVector> coordinates;
-  Teuchos::ParameterList galeriList;
-  galeriList.set("nx", pl.get("nx", nx));
-  galeriList.set("ny", pl.get("ny", ny));
-  galeriList.set("nz", pl.get("nz", nz));
-  RCP<const Map> map;
+    Teuchos::ParameterList pl = matrixParameters_helmholtz.GetParameterList();
+    RCP<MultiVector> coordinates;
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", pl.get("nx", nx));
+    galeriList.set("ny", pl.get("ny", ny));
+    galeriList.set("nz", pl.get("nz", nz));
+    RCP<const Map> map;
 
-  if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz1D") {
-    map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters_helmholtz.GetNumGlobalElements(), 0, comm);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters_helmholtz.GetParameterList());
-  }
-  else if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz2D") {
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters_helmholtz.GetParameterList());
-  }
-  else if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz3D") {
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters_helmholtz.GetParameterList());
-  }
+    if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz1D") {
+      map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters_helmholtz.GetNumGlobalElements(), 0, comm);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters_helmholtz.GetParameterList());
+    }
+    else if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz2D") {
+      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters_helmholtz.GetParameterList());
+    }
+    else if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz3D") {
+      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters_helmholtz.GetParameterList());
+    }
 
-  RCP<const Tpetra::Map<LO, GO, NO> > tmap = Xpetra::toTpetra(map);
+    RCP<const Tpetra::Map<LO, GO, NO> > tmap = Xpetra::toTpetra(map);
 
-  Teuchos::ParameterList matrixParams_helmholtz = matrixParameters_helmholtz.GetParameterList();
-  Teuchos::ParameterList matrixParams_shifted   = matrixParameters_shifted.GetParameterList();
+    Teuchos::ParameterList matrixParams_helmholtz = matrixParameters_helmholtz.GetParameterList();
+    Teuchos::ParameterList matrixParams_shifted   = matrixParameters_shifted.GetParameterList();
 
-  RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_helmholtz =
+    RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_helmholtz =
       Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_helmholtz.GetMatrixType(), map, matrixParams_helmholtz);
-  RCP<Matrix> Kmat, Mmat;
-  std::pair< RCP<Matrix>, RCP<Matrix> > system = Pr_helmholtz->BuildMatrices();
-  Kmat = system.first;
-  Mmat = system.second;
-  RCP<Matrix> Amat = Pr_helmholtz->BuildMatrix();
+    RCP<Matrix> Kmat, Mmat;
+    std::pair< RCP<Matrix>, RCP<Matrix> > system = Pr_helmholtz->BuildMatrices();
+    Kmat = system.first;
+    Mmat = system.second;
+    RCP<Matrix> Amat = Pr_helmholtz->BuildMatrix();
 
-  RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_shifted =
+    RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_shifted =
       Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_shifted.GetMatrixType(), map, matrixParams_shifted);
-  RCP<Matrix> Pmat = Pr_shifted->BuildMatrix();
- 
-  comm->barrier();
+    RCP<Matrix> Pmat = Pr_shifted->BuildMatrix();
 
-  tm = Teuchos::null;
+    comm->barrier();
 
-  //*************************************************************//
-  //   Setup Shifted Laplacian Preconditioner and Belos Solver   //
-  //*************************************************************//
+    tm = Teuchos::null;
 
-  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
+    //*************************************************************//
+    //   Setup Shifted Laplacian Preconditioner and Belos Solver   //
+    //*************************************************************//
 
-  RCP<ShiftedLaplacian> SLSolver = rcp( new ShiftedLaplacian );
-  SLSolver -> setstiff(Kmat);
-  SLSolver -> setmass(Mmat);
-  SLSolver -> setProblemMatrix(Amat);
-  SLSolver -> setPreconditioningMatrix(Pmat);
-  // determine shifts for RAPShiftFactory
-  std::vector<SC> shifts;
-  int maxLevels=5;
-  for(int i=0; i<maxLevels; i++) {
-    double alpha=1.0;
-    double beta=shift+((double) i)*0.2;
-    SC curshift(alpha,beta);
-    shifts.push_back(-curshift);
+    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
+
+    RCP<ShiftedLaplacian> SLSolver = rcp( new ShiftedLaplacian );
+    SLSolver -> setstiff(Kmat);
+    SLSolver -> setmass(Mmat);
+    SLSolver -> setProblemMatrix(Amat);
+    SLSolver -> setPreconditioningMatrix(Pmat);
+    // determine shifts for RAPShiftFactory
+    std::vector<SC> shifts;
+    int maxLevels=5;
+    for(int i=0; i<maxLevels; i++) {
+      double alpha=1.0;
+      double beta=shift+((double) i)*0.2;
+      SC curshift(alpha,beta);
+      shifts.push_back(-curshift);
+    }
+    SLSolver -> setLevelShifts(shifts);
+    SLSolver -> initialize();
+    SLSolver -> setupSlowRAP();
+
+    tm = Teuchos::null;
+
+    //************************************//
+    //   Solve linear system with Belos   //
+    //************************************//
+
+    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
+
+    RCP<TMV> X = Tpetra::createMultiVector<SC,LO,GO,NO>(tmap,1);
+    RCP<TMV> B = Tpetra::createMultiVector<SC,LO,GO,NO>(tmap,1);
+    X->putScalar((SC) 0.0);
+    B->putScalar((SC) 0.0);
+    int pointsourceid=nx*ny/2+nx/2;
+    if(map->isNodeGlobalElement(pointsourceid)==true) {
+      B->replaceGlobalValue(pointsourceid, 0, (SC) 1.0);
+    }
+
+    tm = Teuchos::null;
+
+    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Belos Solve")));
+
+    SLSolver -> solve(B,X);
+
+    tm = Teuchos::null;
+
+    globalTimeMonitor = Teuchos::null;
+
+    TimeMonitor::summarize();
+
+    success = true;
   }
-  SLSolver -> setLevelShifts(shifts);
-  SLSolver -> initialize();
-  SLSolver -> setupSlowRAP();
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  tm = Teuchos::null;
-  
-  //************************************//
-  //   Solve linear system with Belos   //
-  //************************************//
-
-  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
-
-  RCP<TMV> X = Tpetra::createMultiVector<SC,LO,GO,NO>(tmap,1);
-  RCP<TMV> B = Tpetra::createMultiVector<SC,LO,GO,NO>(tmap,1);  
-  X->putScalar((SC) 0.0);
-  B->putScalar((SC) 0.0);
-  int pointsourceid=nx*ny/2+nx/2;
-  if(map->isNodeGlobalElement(pointsourceid)==true) {
-    B->replaceGlobalValue(pointsourceid, 0, (SC) 1.0);
-  }
-
-  tm = Teuchos::null;
-
-  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Belos Solve")));
-
-  SLSolver -> solve(B,X);
-
-  tm = Teuchos::null;
-
-  globalTimeMonitor = Teuchos::null;
-
-  TimeMonitor::summarize();
-
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } //main

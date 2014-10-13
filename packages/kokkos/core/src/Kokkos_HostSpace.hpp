@@ -48,7 +48,7 @@
 #include <typeinfo>
 #include <string>
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Traits.hpp>
 
@@ -107,6 +107,14 @@ public:
    */
   static void decrement( const void * );
 
+  /** \brief  Get the reference count of the block of memory
+   *          in which the input pointer resides.  If the reference
+   *          count is zero the memory region is not tracked.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static int count( const void * );
+
   /*--------------------------------*/
 
   /** \brief  Print all tracked memory to the output stream. */
@@ -123,17 +131,6 @@ public:
   static void register_in_parallel( int (*)() );
 };
 
-//----------------------------------------------------------------------------
-
-template< class ExecutionSpace , class DataSpace >
-struct VerifyExecutionSpaceCanAccessDataSpace ;
-
-template<>
-struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , HostSpace >
-{
-  inline static void verify(void) {}
-  inline static void verify(const void *) {}
-};
 
 } // namespace Kokkos
 

@@ -50,7 +50,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>

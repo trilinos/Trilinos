@@ -69,7 +69,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Functions, AdditionTests){
   AdditionFunction<double> doubleTester(5.5);
   TEST_ASSERT(doubleTester.runFunction(10) == 15.5);
 }
-  
+
 /**
  * Tests for multiplication functions
  */
@@ -81,7 +81,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Functions, MultiplicationTests){
   MultiplicationFunction<double> doubleTester(5.5);
   TEST_ASSERT(doubleTester.runFunction(10) == 55);
 }
-  
+
 /**
  * Tests for division functions
  */
@@ -93,7 +93,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Functions, DivisionTests){
   DivisionFunction<double> doubleTester(2);
   TEST_ASSERT(doubleTester.runFunction(7.5) == 3.75);
 }
-  
+
 
 
 } //namespace Teuchos

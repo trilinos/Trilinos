@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,22 +34,25 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
 #ifndef TPETRAEXT_BLOCKEXTRACTION_DECL_HPP
 #define TPETRAEXT_BLOCKEXTRACTION_DECL_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
+/// \file TpetraExt_BlockExtraction_decl.hpp
+/// \brief Methods for block extraction of data from Tpetra objects.
+
+#include <Tpetra_ConfigDefs.hpp>
+
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_VBR set to ON, and rebuild Trilinos."
+#else
+
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_BlockMap.hpp"
-
-/*! \file TpetraExt_BlockExtraction_decl.hpp 
-
-    Methods for block extraction of data from Tpetra objects.
- */
 
 namespace Tpetra {
   namespace Ext {
@@ -74,7 +77,7 @@ namespace Tpetra {
       */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void
-    extractBlockDiagonals(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix, 
+    extractBlockDiagonals(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix,
                           const Teuchos::ArrayView<const LocalOrdinal> &first_points,
                           Teuchos::ArrayRCP<Scalar>       &out_diags,
                           Teuchos::ArrayRCP<LocalOrdinal> &out_offsets);
@@ -93,14 +96,14 @@ namespace Tpetra {
 
         \post - <tt>out_offsets.size() == block_sizes.size()</tt>
         \post - the non-trivial <tt>b</tt>-th block is stored contiguously (column-major) in <tt>out_diags( out_offsets[b], block_map.getLocalBlockSize(b) )</tt>
-      
+
         Calls extractBlockDiagonals().
 
         \relatesalso Tpetra::CrsMatrix
       */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void
-    extractBlockDiagonals(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix, 
+    extractBlockDiagonals(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix,
                           const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>         &block_map,
                           Teuchos::ArrayRCP<Scalar>       &out_diags,
                           Teuchos::ArrayRCP<LocalOrdinal> &out_offsets);
@@ -127,7 +130,7 @@ namespace Tpetra {
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void
     extractBlockRow(LocalOrdinal localBlockRow,
-                    const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix, 
+                    const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix,
                     const BlockMap<LocalOrdinal,GlobalOrdinal,Node> &block_row_map,
                     const BlockMap<LocalOrdinal,GlobalOrdinal,Node> &block_col_map,
                     ArrayRCP<ArrayRCP<Scalar> >      &out_block_entries,
@@ -136,9 +139,10 @@ namespace Tpetra {
   }
 }
 
-/** 
+/**
   \example CrsMatrix_BlockExtraction.cpp
   An example for using the block extraction methods Tpetra::Ext::extractBlockDiagonals() and Tpetra::Ext::extractBlockRow().
  */
 
-#endif // TPETRAEXT_BLOCKEXTRACTION_DECL_HPP
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRAEXT_BLOCKEXTRACTION_DECL_HPP

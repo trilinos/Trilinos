@@ -52,7 +52,7 @@
 
 namespace Teuchos {
 
-/** \brief Thrown when no dependes of a dependency can't be found 
+/** \brief Thrown when no dependes of a dependency can't be found
  * when converting the dependency to or from XML.
  */
 class MissingDependeeException : public std::logic_error{
@@ -69,7 +69,7 @@ public:
 
 };
 
-/** \brief Thrown when a dependent of a dependency cant be found 
+/** \brief Thrown when a dependent of a dependency cant be found
  * when converting the dependency to or from XML.
  */
 class MissingDependentException : public std::logic_error{
@@ -132,7 +132,7 @@ public:
    *
    * @param what_arg The error message to be associated with this error.
    */
-  TooManyDependeesException( 
+  TooManyDependeesException(
     const std::string& what_arg):std::logic_error(what_arg){}
 
 };
@@ -189,7 +189,7 @@ public:
 
 };
 
-/** \brief Thrown when no condtion tag is found when converting a 
+/** \brief Thrown when no condtion tag is found when converting a
  * ConditionVisualDependency from XML.
  */
 class MissingConditionTagException : public std::logic_error{
@@ -206,7 +206,7 @@ public:
 
 };
 
-/** \brief Thrown when converting a dependency that has validaotrs to 
+/** \brief Thrown when converting a dependency that has validaotrs to
  * and from XML. This excetpion indicates that a specified validator
  * could not be found*/
 class MissingValidatorException : public std::logic_error{

@@ -49,10 +49,7 @@
 #include <omp.h>
 
 #ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-#  include "KokkosCore_config.h"
-#  ifdef KOKKOS_HAVE_OPENMP
-#    include "Kokkos_OpenMP.hpp"
-#  endif
+#  include "Kokkos_Core.hpp"
 #endif
 
 

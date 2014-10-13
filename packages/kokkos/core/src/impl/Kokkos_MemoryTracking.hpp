@@ -181,7 +181,7 @@ public:
                   ? memory_tracking_upper_bound( & m_tracking_end[0] , m_tracking_end.size() , alloc_end )
                   : -1 ;
 
-      const bool ok_range = ( 0 <= i ) && ( alloc_end < reinterpret_cast<ptrdiff_t>( m_tracking[i]->m_alloc_ptr ) );
+      const bool ok_range = ( 0 <= i ) && ( alloc_end <= reinterpret_cast<ptrdiff_t>( m_tracking[i]->m_alloc_ptr ) );
 
       // allocate the new entry only if the vector inserts succeed.
       const bool ok_insert =

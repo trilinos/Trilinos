@@ -40,7 +40,7 @@
 //@HEADER
 
 #include "Kokkos_ArithTraitsTest.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 #include <iostream>
 
 bool

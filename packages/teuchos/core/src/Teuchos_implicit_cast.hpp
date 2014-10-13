@@ -56,7 +56,7 @@ namespace Teuchos {
     {
       return Teuchos::implicit_cast<TypeTo>(a);
     }
- \endcode 
+ \endcode
 
  *
  * This function will only compile for types where an implicit conversion from
@@ -90,7 +90,7 @@ inline TypeTo implicit_cast( const TypeFrom& t ) { return t; }
     {
       return Teuchos::implicit_ref_cast<TypeTo>(ref1);
     }
- \endcode 
+ \endcode
 
  * This function will only compile for types where an implicit conversion from
  * references of type <tt>TypeFrom&</tt> to references of <tt>TypeTo&</tt>
@@ -125,7 +125,7 @@ inline TypeTo& implicit_ref_cast( TypeFrom& t ) { return t; }
     {
       return Teuchos::implicit_ptr_cast<TypeTo>(ptr1);
     }
- \endcode 
+ \endcode
 
  * This function will only compile for types where an implicit conversion from
  * pointers of type <tt>TypeFrom*</tt> to pointers of type <tt>TypeTo*</tt>

@@ -266,6 +266,7 @@ class TraceMinBaseSolMgr : public SolverManager<ScalarType,MV,OP> {
   std::string shiftNorm_;
   
   // Other variables
+  int maxKrylovIter_;
   std::string ortho_, which_;
   enum SaddleSolType saddleSolType_;
   bool projectAllVecs_, projectLockedVecs_, computeAllRes_, useRHSR_;
@@ -544,6 +545,11 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
   TEUCHOS_TEST_FOR_EXCEPTION(projectLockedVecs_ && ! projectAllVecs_, std::invalid_argument,
          "Anasazi::TraceMinBaseSolMgr: If you want to project out the locked vectors, you should really project out ALL the vectors of X.");
 
+  // Maximum number of inner iterations
+  maxKrylovIter_ = pl.get("Maximum Krylov Iterations", 1000);
+  TEUCHOS_TEST_FOR_EXCEPTION(maxKrylovIter_ < 1, std::invalid_argument,
+         "Anasazi::TraceMinBaseSolMgr: \"Maximum Krylov Iterations\" must be greater than 0.");
+		 
   // Which eigenvalues we want to get
   which_ = pl.get("Which", "SM");
   TEUCHOS_TEST_FOR_EXCEPTION(which_ != "SM" && which_ != "LM", std::invalid_argument,
@@ -1347,6 +1353,7 @@ void TraceMinBaseSolMgr<ScalarType,MV,OP>::setParameters(Teuchos::ParameterList 
   pl.set("Project Locked Vectors", projectLockedVecs_);
   pl.set("Compute All Residuals", computeAllRes_);
   pl.set("Use Residual as RHS", useRHSR_);
+  pl.set("Maximum Krylov Iterations", maxKrylovIter_);
 }
 
 

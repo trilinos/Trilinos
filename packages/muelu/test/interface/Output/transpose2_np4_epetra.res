@@ -65,7 +65,6 @@ Level 1
   repartition: start level = 2   [default]
   repartition: min rows per proc = 800   [default]
   repartition: max imbalance = 1.2   [default]
-  repartition: keep proc 0 = 1   [default]
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
@@ -146,7 +145,6 @@ Level 2
   repartition: start level = 2   [default]
   repartition: min rows per proc = 800   [default]
   repartition: max imbalance = 1.2   [default]
-  repartition: keep proc 0 = 1   [default]
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
@@ -161,28 +159,22 @@ Level 2
  Computing Ac (MueLu::RebalanceAcFactory)
  useSubcomm = 1   [default]
 
- Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
- presmoother ->
-  [empty list]
 
+--------------------------------------------------------------------------------
+---                            Multigrid Summary                             ---
+--------------------------------------------------------------------------------
+Number of levels    = 3
+Operator complexity = 1.45
 
- --------------------------------------------------------------------------------
- ---                            Multigrid Summary                             ---
- --------------------------------------------------------------------------------
- Number of levels    = 3
- Operator complexity = 1.45
- Max Coarse Size     = 2000
- Implicit Transpose  = true
+matrix rows    nnz  nnz/row procs
+A 0    9999  29995     3.00  4
+A 1    3335  10015     3.00  4
+A 2    1112   3340     3.00  1
 
- matrix rows    nnz  nnz/row procs
- A 0    9999  29995     3.00  4
- A 1    3335  10015     3.00  4
- A 2    1112   3340     3.00  1
+Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
- Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
- Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
-
- Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
- Smoother (level 2) post : no smoother
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 2) post : no smoother
 

@@ -47,7 +47,7 @@
 #include "Kokkos_CrsMatrix.hpp"
 #include "Kokkos_MV_MP_Vector.hpp" // for some utilities
 
-#include "Kokkos_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 #include "Stokhos_Multiply.hpp"
 
 #include "Teuchos_TestForException.hpp"

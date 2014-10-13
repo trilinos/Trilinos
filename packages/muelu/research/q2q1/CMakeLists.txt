@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF( (${PACKAGE_NAME}_ENABLE_Tpetra                                      AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR
@@ -7,7 +6,6 @@ IF( (${PACKAGE_NAME}_ENABLE_Tpetra                                      AND ${PA
     TRIBITS_ADD_EXECUTABLE(
       Q2Q1
       SOURCES Q2Q1.cpp MueLu_Q2Q1PFactory.hpp
-      DEPLIBS muelu xpetra
       COMM serial mpi
       )
 

@@ -63,7 +63,7 @@ public:
 
   /** \name Public types */
   //@{
-  
+
   /** \brief . */
   enum EFieldType { DOUBLE, INT, STRING };
   enum { numFieldTypes = 3 };
@@ -194,16 +194,16 @@ public: // Should be hidden
     {
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(numLoops_ == -1);
-#endif      
+#endif
       timer_.stop();
-      const double relTime = 
+      const double relTime =
         adjustTime(timer_.totalElapsedTime()) / numLoops_;
       numLoops_ = -1;
       return relTime;
     }
 
 private:
-  
+
   // Not defined and not to be called!
   TabularOutputter();
 
@@ -264,7 +264,7 @@ void TabularOutputter::outputField( const T& t )
 #endif
 
   FieldSpec &fieldSpec = fieldSpecs_[currFieldIdx_];
-  
+
   *out_ << fieldSpacer_ << std::setprecision(fieldSpec.precision);
 
   switch(fieldSpec.fieldJustification) {
@@ -294,7 +294,7 @@ void TabularOutputter::outputField( const T& t )
   *out_ << setw(fieldSpec.outputWidth) << t;
 
   ++currFieldIdx_;
-  
+
 }
 
 

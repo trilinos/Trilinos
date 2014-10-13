@@ -491,7 +491,8 @@ SerialBandDenseSolver<OrdinalType,ScalarType>::SerialBandDenseSolver()
     COLCND_(ScalarTraits<MagnitudeType>::zero()),
     AMAX_(ScalarTraits<MagnitudeType>::zero()),
     A_(0),
-    AF_(0)
+    AF_(0),
+    ANORM_(0.0)
 {
   resetMatrix();
 }

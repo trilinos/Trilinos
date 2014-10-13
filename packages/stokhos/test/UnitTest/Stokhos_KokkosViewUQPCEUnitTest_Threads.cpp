@@ -45,8 +45,7 @@
 
 #include "Stokhos_KokkosViewUQPCEUnitTest.hpp"
 
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Threads.hpp"
+#include "Kokkos_Core.hpp"
 
 // Instantiate test for Threads device
 using Kokkos::Threads;

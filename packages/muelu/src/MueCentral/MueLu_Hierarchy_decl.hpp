@@ -149,7 +149,10 @@ namespace MueLu {
     //! Retrieve a certain level from hierarchy.
     RCP<Level> & GetLevel(const int levelID = 0);
 
-    LO GetNumLevels() const;
+    int    GetNumLevels() const;
+    int    GetGlobalNumLevels() const;
+
+    // This function is global
     double GetOperatorComplexity() const;
 
     //! Indicate that Iterate should use transpose of prolongator for restriction operations.
@@ -268,11 +271,11 @@ namespace MueLu {
         @param[in] out The Teuchos::FancyOstream.
         @param[in] verbLevel Controls amount of output.
     */
-    //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
-    Teuchos::ParameterList print(Teuchos::FancyOStream &out=*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)),
-                                 const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
-    void print(std::ostream& out, const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
+    void describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
+    void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
+
+    // Hierarchy::print is local hierarchy function, thus the statistics can be different from global ones
+    void print(std::ostream& out = std::cout, const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
 
     /*! Indicate whether the multigrid method is a preconditioner or a solver.
 
@@ -286,10 +289,6 @@ namespace MueLu {
       isDumpingEnabled_ = true;
       dumpLevel_ = levelID;
       dumpFile_  = filename;
-    }
-
-    int GetNumberOfLevels() {
-      return Teuchos::as<int>(Levels_.size());
     }
 
     template<class Node2>

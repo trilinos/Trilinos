@@ -44,7 +44,6 @@
 #include <gtest/gtest.h>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_hwloc.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>
 

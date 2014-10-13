@@ -44,9 +44,7 @@
 #ifndef TPETRA_DETAILS_FIXEDHASHTABLE_DEF_HPP
 #define TPETRA_DETAILS_FIXEDHASHTABLE_DEF_HPP
 
-#ifdef DOXYGEN_USE_ONLY
-  #include "Tpetra_Details_FixedHashTable_decl.hpp"
-#endif
+#include "Tpetra_Details_FixedHashTable_decl.hpp"
 
 #include <Teuchos_as.hpp>
 #include "MurmurHash3.hpp"

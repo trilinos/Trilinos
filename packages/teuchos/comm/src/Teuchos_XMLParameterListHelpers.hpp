@@ -55,8 +55,8 @@
 namespace Teuchos {
 
 
-/** \brief On processor rank = 0, reads XML parameters from a file 
- * and broadcasts them to all other processors. Then updates the 
+/** \brief On processor rank = 0, reads XML parameters from a file
+ * and broadcasts them to all other processors. Then updates the
  * given parameter list with these values.
  *
  * \param xmlFileName [in] The file name containing XML parameter list

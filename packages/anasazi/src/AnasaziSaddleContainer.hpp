@@ -316,8 +316,8 @@ void SaddleContainer<ScalarType, MV>::MvPrint (std::ostream &os) const
   int ncols = Y_->numCols();
 
   os << "Object SaddleContainer" << std::endl;
-  std::cout << "X\n";
-  X_->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
+  os << "X\n";
+//  X_->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
 //  os << "X\n" << *X_ << std::endl;
   
   os << "Y\n";

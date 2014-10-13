@@ -44,7 +44,7 @@
 
 MESSAGE("")
 MESSAGE("*******************************")
-MESSAGE("*** TribitsCTestDriverCore ***") 
+MESSAGE("*** TribitsCTestDriverCore ***")
 MESSAGE("*******************************")
 MESSAGE("")
 
@@ -61,7 +61,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11 FATAL_ERROR)
 # We must locate the source code root directory before processing this
 # file. Once the root directory is located, we can make good guesses
 # at other properties, but this file is a CTest script that is always
-# executed outside of the context of the project's CMake build. 
+# executed outside of the context of the project's CMake build.
 #
 # We allow the environment variable TRIBITS_PROJECT_ROOT to locate the
 # root directory. If the variable doesn't exist, we fall back on the
@@ -72,7 +72,7 @@ IF (NOT TRIBITS_PROJECT_ROOT)
 ENDIF()
 #MESSAGE("TRIBITS_PROJECT_ROOT (after env) = '${TRIBITS_PROJECT_ROOT}'")
 IF (NOT TRIBITS_PROJECT_ROOT)
-  # Fall back on the default convention, in which this file is located at: 
+  # Fall back on the default convention, in which this file is located at:
   #   <root>/cmake/tribits/ctest.
   GET_FILENAME_COMPONENT(CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
   SET(TRIBITS_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../..")
@@ -95,7 +95,7 @@ ENDIF()
 # Include the ProjectName.cmake file and get PROJECT_NAME
 INCLUDE(${TRIBITS_PROJECT_NAME_INCLUDE})
 IF(NOT PROJECT_NAME)
-  MESSAGE(FATAL_ERROR 
+  MESSAGE(FATAL_ERROR
     "The project name has not been set!"
     "  It should be set in ${TRIBITS_PROJECT_ROOT}/ProjectName.cmake.")
 ENDIF()
@@ -507,7 +507,7 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
        ${EXTRAREPO_IDX} EXTRAREPO_DIR )
     LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS
       ${EXTRAREPO_IDX} EXTRAREPO_PACKSTAT )
- 
+
     # For now, only look for changes if it has packages.  Later, we need to
     # generalize this for the general extra repo case with deeper directory
     # and other than GIT (e.g. SVN with Dakota).  For example, we would like
@@ -517,10 +517,10 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
       SET(EXTRAREPO_SRC_DIR "${CTEST_SOURCE_DIRECTORY}/${EXTRAREPO_DIR}")
       SET(EXTRAREPO_MODIFIED_FILES_FILE_NAME
         "${CTEST_BINARY_DIRECTORY}/modifiedFiles.${EXTRAREPO_NAME}.txt")
-  
+
       TRIBITS_GET_MODIFIED_FILES("${EXTRAREPO_SRC_DIR}"
         "${EXTRAREPO_MODIFIED_FILES_FILE_NAME}")
-  
+
       FILE(STRINGS ${EXTRAREPO_MODIFIED_FILES_FILE_NAME} EXTRAREPO_MODIFIED_FILES_STR)
       SET(EXTRAREPO_FILES_STR "")
       FOREACH(STR_LINE ${EXTRAREPO_MODIFIED_FILES_STR})
@@ -568,7 +568,7 @@ MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
   # iteration and keep enabling and testing them until they do pass!
 
   IF (EXISTS "${FAILED_PACKAGES_FILE_NAME}")
-    FILE(READ "${FAILED_PACKAGES_FILE_NAME}" FAILING_PACKAGES_LIST) 
+    FILE(READ "${FAILED_PACKAGES_FILE_NAME}" FAILING_PACKAGES_LIST)
     STRING(STRIP "${FAILING_PACKAGES_LIST}" FAILING_PACKAGES_LIST)
     PRINT_VAR(FAILING_PACKAGES_LIST)
   ENDIF()
@@ -646,7 +646,7 @@ MACRO(SELECT_FINAL_SET_OF_PACKAGES_TO_PROCESS)
       )
       SET(PROCESS_THE_PACKAGE  TRUE)
     ENDIF()
-    
+
     IF(PROCESS_THE_PACKAGE)
       APPEND_SET(${PROJECT_NAME}_PACKAGES_TO_PROCESS  ${TRIBITS_PACKAGE})
     ENDIF()
@@ -727,7 +727,7 @@ ENDMACRO()
 #
 
 MACRO(CTEST_SUBMIT)
- 
+
   # If using a recent enough ctest with RETRY_COUNT, use it to overcome
   # failed submits:
   #
@@ -840,10 +840,10 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   MESSAGE("")
   MESSAGE("******************************")
-  MESSAGE("*** TRIBITS_CTEST_DRIVER() ***") 
+  MESSAGE("*** TRIBITS_CTEST_DRIVER() ***")
   MESSAGE("******************************")
   MESSAGE("")
-  
+
   INITIALIZE_ERROR_QUEUE()
 
   # The name of the source directory. Defaults to project name, but
@@ -857,18 +857,18 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "\n***\n")
 
   SET_DEFAULT_AND_FROM_ENV( CTEST_CONFIGURATION_UNIT_TESTING OFF )
-  
+
   # The type of test (e.g. Nightly, Experimental, Continuous)
   SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Experimental )
-  
+
   # The default track to send the build to. This can be changed to send
   # the data to a different nightly grouping on the dashboard.
   # If the test type is set to Experimental though the track is forced
-  # to "Experimental" this is so that we can have experimental tests 
+  # to "Experimental" this is so that we can have experimental tests
   # on branches.
   IF(${PROJECT_NAME}_TESTING_TRACK)
     SET(${PROJECT_NAME}_TRACK_DEFAULT ${${PROJECT_NAME}_TESTING_TRACK})
-  ELSE()  
+  ELSE()
     SET(${PROJECT_NAME}_TRACK_DEFAULT "")
   ENDIF()
   print_var(${PROJECT_NAME}_TRACK_DEFAULT)
@@ -878,7 +878,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     MESSAGE("-- Test type is Experimental. Forcing ${PROJECT_NAME}_TRACK to Experimental")
     PRINT_VAR(${PROJECT_NAME}_TRACK)
   ENDIF()
- 
+
   # The name of the site in the dashboard (almost never need to override this)
   SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
 
@@ -895,13 +895,13 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Set the default compiler version
   SET_DEFAULT_AND_FROM_ENV(COMPILER_VERSION UNKNOWN)
 
-  # The name of the build that appears in the dashbaord 
+  # The name of the build that appears in the dashbaord
   SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_NAME
     "${HOST_TYPE}-${COMPILER_VERSION}-${BUILD_DIR_NAME}" )
- 
+
   # Remove the entire build directory if it exists or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE )
- 
+
   # Remove an existing CMakeCache.txt file or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_WIPE_CACHE TRUE )
 
@@ -911,7 +911,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # Do the Git updates or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_UPDATES TRUE )
- 
+
   # Generate the XML dependency output files or not in the inner CMake
   # configure.  There is really no reason to do this.  This option is
   # maintained for backward compatibility.
@@ -932,7 +932,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # Do the build or use an existing build
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_BUILD TRUE )
-  
+
   # Do the tests or not (Note: must be true for coverage testing)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
 
@@ -946,19 +946,19 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # Turn off or change warnings-as-errors flag(s) (i.e. -Werror)
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS "" )
-  
+
   # Do coverage testing or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
 
   # Command to run to get coverage results
   SET_DEFAULT_AND_FROM_ENV( CTEST_COVERAGE_COMMAND gcov )
-  
+
   # Do memory testing (i.e. valgrind) or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
 
   # Command used to perform the memory testing (i.e. valgrind)
   SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND "" )
- 
+
   # Generate the basic package dependencies XML file in the outer CTest
   # program.  This XML file is used to match up modified files with with
   # changed TriBITS packages.  This file only needs to be generated in CI
@@ -969,7 +969,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # Generate and submit the CDash subprojects XML file
   SET_DEFAULT_AND_FROM_ENV( CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE TRUE )
-   
+
   # Submit the results to the dashboard or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
 
@@ -987,7 +987,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # that, you will have to disable them in the variable
   # EXTRA_CONFIGURE_OPTIONS (set in your driver script.
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_EXCLUDE_PACKAGES "" )
-  
+
   IF(${PROJECT_NAME}_REPOSITORY_BRANCH)
     SET(${PROJECT_NAME}_BRANCH_DEFAULT ${${PROJECT_NAME}_REPOSITORY_BRANCH})
   ELSE()
@@ -1011,7 +1011,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_PACKAGES "" )
   SET(${PROJECT_NAME}_PACKAGES_USER_SELECTED ${${PROJECT_NAME}_PACKAGES})
   SPLIT("${${PROJECT_NAME}_PACKAGES_USER_SELECTED}" ","
-    ${PROJECT_NAME}_PACKAGES_USER_SELECTED) 
+    ${PROJECT_NAME}_PACKAGES_USER_SELECTED)
   SET(${PROJECT_NAME}_PACKAGES "")
   # Note: above, we have to keep the name ${PROJECT_NAME}_PACKAGES to maintain
   # backward compatibility of this CTest script but we want to let
@@ -1065,7 +1065,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   IF ("${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT ON)
   ENDIF()
-  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES 
+  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES
     ${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT})
 
   MESSAGE(
@@ -1121,7 +1121,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   #
   # Some platform-independent setup
   #
-  
+
   INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
   SET(CMAKE_CACHE_CLEAN_FILE "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
   SET(CTEST_USE_LAUNCHERS 1)
@@ -1147,7 +1147,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     # from that file will set the defaults for the coverage options.
 
   ENDIF()
-  
+
   #
   # Setup for the VC update
   #
@@ -1167,7 +1167,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     ELSE()
       MESSAGE("${CTEST_SOURCE_DIRECTORY} exists so skipping the initial checkout.")
     ENDIF()
-  ENDIF() 
+  ENDIF()
 
 
   #
@@ -1210,7 +1210,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     CTEST_START(${CTEST_TEST_TYPE})
   ENDIF()
 
-  
+
   MESSAGE(
     "\n***"
     "\n*** Update the source code repositories ..."
@@ -1347,7 +1347,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   TRIBITS_PRINT_ENABLED_PACKAGE_LIST(
     "\nFinal set of packages to be explicitly processed by CTest/CDash" ON FALSE)
-  
+
   MESSAGE(
     "\n***"
     "\n*** Determine if to go ahead with configure, build, test ..."
@@ -1383,7 +1383,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   #
   # Delete the CMakeCache.txt file and the CMakeFiles directory for a clean
-  # reconfigure. 
+  # reconfigure.
   #
 
   IF (CTEST_WIPE_CACHE)
@@ -1425,7 +1425,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # packages to enable or not and otherwise exit the script!
 
   IF (UPDATE_FAILED)
-    MESSAGE("The VC update failed so submitting update and stopping ...") 
+    MESSAGE("The VC update failed so submitting update and stopping ...")
     IF (CTEST_DO_SUBMIT)
       CTEST_SUBMIT( PARTS update notes )
     ENDIF()
@@ -1440,17 +1440,17 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     MESSAGE("\nSkipping submitted subproject dependencies XML file on request!")
   ENDIF()
 
-  
+
   MESSAGE(
     "\n***"
     "\n*** Loop through ${PROJECT_NAME} packages to configure, build, and test ..."
     "\n***")
-  
+
   SET(${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
   SET(${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES)
   SET(${PROJECT_NAME}_FAILED_PACKAGES)
   SET(PACKAGE_IDX 0)
-  
+
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
 
     MESSAGE("")
@@ -1461,13 +1461,13 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
     SET_PROPERTY(GLOBAL PROPERTY SubProject ${TRIBITS_PACKAGE})
     SET_PROPERTY(GLOBAL PROPERTY Label ${TRIBITS_PACKAGE})
- 
+
     #
     # A) Configure the package and its dependent packages
     #
-  
+
     MESSAGE("Configuring TRIBITS_PACKAGE='${TRIBITS_PACKAGE}'")
-  
+
     # Create CONFIGURE_OPTIONS for this TRIBITS_PACKAGE
     SET( CONFIGURE_OPTIONS
 	"-D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}"
@@ -1528,13 +1528,13 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     #
 
     IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-  
+
       CTEST_CONFIGURE(
         BUILD "${CTEST_BINARY_DIRECTORY}"
         OPTIONS "${CONFIGURE_OPTIONS}" # New option!
         RETURN_VALUE CONFIGURE_RETURN_VAL
         )
-  
+
       MESSAGE("Generating the file CMakeCache.clean.txt ...")
       FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
       MESSAGE("CMAKE_CACHE_CLEAN_FILE = ${CMAKE_CACHE_CLEAN_FILE}")
@@ -1546,7 +1546,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         ENDIF()
       ENDFOREACH()
       FILE(WRITE "${CMAKE_CACHE_CLEAN_FILE}" ${CMAKE_CACHE_CLEAN_FILE_STR})
-  
+
       # If the configure failed, add the package to the list
       # of failed packages
       IF (NOT "${CONFIGURE_RETURN_VAL}" EQUAL "0")
@@ -1566,27 +1566,27 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE}")
       ENDIF()
       PRINT_VAR(CTEST_NOTES_FILES)
-    
-      # Submit configure results and the notes to the dashboard 
+
+      # Submit configure results and the notes to the dashboard
       IF (CTEST_DO_SUBMIT)
         MESSAGE("\nSubmitting configure and notes ...")
         CTEST_SUBMIT( PARTS configure notes )
       ENDIF()
 
     ENDIF()
-    
+
     #
     # C) If configure passed then try the build.  Otherwise, move on to
     # to the next package.
     #
-  
+
     IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0" AND
       NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING AND
       NOT CTEST_CONFIGURATION_UNIT_TESTING
       )
-  
+
       # Start by trying to build just the libraries for the current package
-  
+
       SET( CTEST_BUILD_TARGET ${TRIBITS_PACKAGE}_libs )
       MESSAGE("\nBuilding target: '${CTEST_BUILD_TARGET}' ...\n")
       CTEST_BUILD(
@@ -1597,9 +1597,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         )
       MESSAGE("Build return: RETURN_VALUE=${BUILD_LIBS_RETURN_VAL},"
         " NUMBER_ERRORS=${BUILD_LIBS_NUM_ERRORS}")
-  
+
       # Determine if the build failed or not.
-  
+
       SET(BUILD_LIBS_SUCCESS FALSE)
       IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" AND
         "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
@@ -1610,20 +1610,20 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       # if there are errors the build should fail, so both
       # BUILD_LIBS_RETURN_VAL and BUILD_LIBS_NUM_ERRORS should be 0 for a
       # good build and for the all target to be built.
-  
+
       # Submit the library build results to the dashboard
-  
+
       IF (CTEST_DO_SUBMIT)
         CTEST_SUBMIT( PARTS build )
       ENDIF()
-  
+
       # If the build of the libraries passed, then go on the build
       # the tests/examples and run them.
 
       IF (BUILD_LIBS_SUCCESS)
 
         SET(BUILD_OR_TEST_FAILED FALSE)
-  
+
         # Build the ALL target, but append the results to the last build.xml
         SET(CTEST_BUILD_TARGET)
         MESSAGE("\nBuild ALL target for '${TRIBITS_PACKAGE}' ...\n")
@@ -1635,7 +1635,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
           )
         MESSAGE("Build all: BUILD_ALL_NUM_ERRORS='${BUILD_ALL_NUM_ERRORS}',"
           "BUILD_ALL_RETURN_VAL='${BUILD_ALL_RETURN_VAL}'" )
-  
+
         IF (NOT "${BUILD_LIBS_NUM_ERRORS}" EQUAL "0" OR
           NOT "${BUILD_LIBS_RETURN_VAL}" EQUAL "0"
           )
@@ -1646,7 +1646,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         IF (CTEST_DO_SUBMIT)
           CTEST_SUBMIT( PARTS build )
         ENDIF()
-  
+
         IF (CTEST_DO_TEST)
           # Remove the LastTestsFailed log so we can detect if there are any
           # failed tests.
@@ -1655,7 +1655,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
           FOREACH(logfile ${logfiles})
             FILE(REMOVE "${logfile}")
           ENDFOREACH()
-          # Run the tests that match the ${TRIBITS_PACKAGE} name 
+          # Run the tests that match the ${TRIBITS_PACKAGE} name
           MESSAGE("\nRunning test for package '${TRIBITS_PACKAGE}' ...\n")
           CTEST_TEST(
             BUILD "${CTEST_BINARY_DIRECTORY}"
@@ -1670,7 +1670,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
           IF (FAILED_TEST_LOG_FILE)
             SET(BUILD_OR_TEST_FAILED TRUE)
           ENDIF()
-          # 2009/12/05: ToDo: We need to add an argument to CTEST_TEST(...) 
+          # 2009/12/05: ToDo: We need to add an argument to CTEST_TEST(...)
           # called something like 'NUMBER_FAILED numFailedTests' to allow us
           # to detect when the tests have filed.
           #IF (TEST_NUM_FAILED GREATER 0)
@@ -1690,8 +1690,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
           IF (CTEST_DO_SUBMIT)
             CTEST_SUBMIT( PARTS Coverage )
           ENDIF()
-        ENDIF() 
- 
+        ENDIF()
+
         IF (CTEST_DO_MEMORY_TESTING)
           MESSAGE("\nRunning memory testing for package '${TRIBITS_PACKAGE}' ...\n")
           PRINT_VAR(CTEST_MEMORYCHECK_COMMAND)
@@ -1709,15 +1709,15 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         IF (BUILD_OR_TEST_FAILED)
           LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
         ENDIF()
-  
+
       ELSE()
-  
+
         MESSAGE("FAILED library build for package '${TRIBITS_PACKAGE}'")
         LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
         LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
-  
+
       ENDIF()
-  
+
     ENDIF()
 
     IF (CTEST_DO_SUBMIT)
@@ -1728,7 +1728,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     MATH(EXPR PACKAGE_IDX "${PACKAGE_IDX}+1")
 
   ENDFOREACH(TRIBITS_PACKAGE)
-  
+
   IF(${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES)
     MESSAGE(
       "\nFinal set packages that failed to configure or have the libraries build:"
@@ -1747,7 +1747,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # This is no longer necessary with CMake 2.8.1
   #MESSAGE("\nKill all hanging Zoltan processes ...")
   #EXECUTE_PROCESS(COMMAND killall -s 9 zdrive.exe)
-  
+
   MESSAGE("\nDone with the incremental building and testing of ${PROJECT_NAME} packages!\n")
 
   REPORT_QUEUED_ERRORS()

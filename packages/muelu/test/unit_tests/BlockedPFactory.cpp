@@ -122,10 +122,10 @@ namespace MueLuTests {
       Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
       mtx->insertGlobalValues(rangemap->getGlobalElement(i), iv, av);
 
-        // Put in the diagonal entry
-        mtx->insertGlobalValues(grid,
-            Teuchos::tuple<GlobalOrdinal>(offset + rangemap->getMinGlobalIndex() + i),
-            Teuchos::tuple<Scalar>(a) );
+      // Put in the diagonal entry
+      mtx->insertGlobalValues(grid,
+          Teuchos::tuple<GlobalOrdinal>(offset + rangemap->getMinGlobalIndex() + i),
+          Teuchos::tuple<Scalar>(a) );
     }
 
     mtx->fillComplete(domainmap,rangemap);

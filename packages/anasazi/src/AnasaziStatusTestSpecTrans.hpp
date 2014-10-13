@@ -205,7 +205,7 @@ namespace Experimental {
     if(scaled_)
     {
       for(size_t i=0; i<nvecs; i++)
-        res[i] /= std::abs((*state.T)[i]);
+        res[i] /= std::abs(evals[i]);
     }
 
     // test the norms

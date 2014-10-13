@@ -1601,6 +1601,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 #endif
   ML_memory_check("reitz end");
 
+  if(encoded_dir_edge != NULL) free(encoded_dir_edge);
   return(Nlevels_nodal);
 }
 

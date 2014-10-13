@@ -52,7 +52,7 @@
 #ifndef KOKKOS_DUALVIEW_HPP
 #define KOKKOS_DUALVIEW_HPP
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Error.hpp>
 
 namespace Kokkos {

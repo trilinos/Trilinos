@@ -161,27 +161,6 @@ std::string command_line( Machine machine , const int argc , const char * const 
 #endif /* ! defined( KOKKOS_HAVE_MPI ) */
 
 //------------------------------------------------------------------------
-//------------------------------------------------------------------------
-// The "host" execution space for use cases.
-
-#if defined( KOKKOS_HAVE_PTHREAD )
-
-typedef Kokkos::Threads HostExecSpace ;
-#include <Kokkos_Threads.hpp>
-
-#elif defined( KOKKOS_HAVE_OPENMP )
-
-typedef Kokkos::OpenMP HostExecSpace ;
-#include <Kokkos_OpenMP.hpp>
-
-#else
-
-typedef Kokkos::Serial HostExecSpace ;
-#include <Kokkos_Serial.hpp>
-
-#endif
-
-//------------------------------------------------------------------------
 
 #endif /* #ifndef PARALLELCOMM_HPP */
 

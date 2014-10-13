@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
 #if defined( KOKKOS_HAVE_PTHREAD ) || defined( KOKKOS_HAVE_WINTHREAD )
 
@@ -624,6 +624,7 @@ void ThreadsExec::initialize( unsigned thread_count ,
         s_threads_process.m_pool_rank     = thread_count - 1 ; // Reversed for scan-compatible reductions
         s_threads_process.m_pool_size     = thread_count ;
         s_threads_process.m_pool_fan_size = fan_size( s_threads_process.m_pool_rank , s_threads_process.m_pool_size );
+        s_threads_pid[ s_threads_process.m_pool_rank ] = pthread_self();
       }
       else {
         s_threads_process.m_pool_base = 0 ;

@@ -3,4 +3,3 @@ ADD_SUBDIRECTORY(basic)
 
 ADD_SUBDIRECTORY(ParameterList)
 ADD_SUBDIRECTORY(Misc/Aggregation)
-ADD_SUBDIRECTORY(Tutorial)

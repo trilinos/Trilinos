@@ -45,8 +45,7 @@
 
 #include "Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp"
 
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_OpenMP.hpp"
+#include "Kokkos_Core.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
 // Instantiate tests for threads node

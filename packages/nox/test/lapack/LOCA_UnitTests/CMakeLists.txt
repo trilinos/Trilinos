@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -14,7 +13,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
     SOURCES BorderedSolve.C
     COMM serial mpi
     NUM_MPI_PROCS 1
-    DEPLIBS noxtestutils localapacktestproblems
+    TESTONLYLIBS noxtestutils localapacktestproblems
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 
@@ -23,7 +22,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
     SOURCES TransposeBorderedSolve.C
     COMM serial mpi
     NUM_MPI_PROCS 1
-    DEPLIBS noxtestutils localapacktestproblems
+    TESTONLYLIBS noxtestutils localapacktestproblems
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 
@@ -34,7 +33,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
       SOURCES AnasaziJacobianInverse.C
       COMM serial mpi
       NUM_MPI_PROCS 1
-      DEPLIBS noxtestutils localapacktestproblems
+      TESTONLYLIBS noxtestutils localapacktestproblems
       PASS_REGULAR_EXPRESSION "All tests passed"
       )
 
@@ -43,7 +42,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
       SOURCES AnasaziNotConverged.C
       COMM serial mpi
       NUM_MPI_PROCS 1
-      DEPLIBS noxtestutils localapacktestproblems
+      TESTONLYLIBS noxtestutils localapacktestproblems
       PASS_REGULAR_EXPRESSION "All tests passed"
       )
 

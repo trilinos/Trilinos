@@ -41,7 +41,7 @@
 # CMakeLists.txt body used by the TriBITS driver job.
 #
 
-# The base directory is the parent of the binary directory.  
+# The base directory is the parent of the binary directory.
 # FIXME This is duplicated information. The base directory is set in
 # tdd_driver.py. We need to go through two separate CTest invocations
 # to get to this point from there. Since environment variables are the

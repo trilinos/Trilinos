@@ -8,6 +8,8 @@
 
 namespace SimpleCxx {
 
+/** \brief . */
+std::string deps();
 
 /* \brief Simple hello world class.
  */

@@ -43,7 +43,7 @@ INCLUDE(CheckCSourceCompiles)
 IF (NOT MATH_LIBRARY_IS_SUPPLIED AND NOT MATH_LIBRARY_IS_SET)
 
   SET(CMAKE_REQUIRED_LIBRARIES ${${PROJECT_NAME}_EXTRA_LINK_FLAGS})
-  
+
   CHECK_C_SOURCE_COMPILES(
     "
 #include <math.h>
@@ -53,19 +53,19 @@ int main()
   double val2 = log10(2.0);
   double val3 = log(2.0);
   return 0;
-} 
+}
     "
     MATH_LIBRARY_IS_SUPPLIED
     )
-  
+
   SET(CMAKE_REQUIRED_LIBRARIES)
-  
+
   IF (NOT MATH_LIBRARY_IS_SUPPLIED)
 
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       MESSAGE(STATUS "Searching for -lm ...")
     ENDIF()
-  
+
     SET(MATH_LIBRARY NOTFOUND)
     FIND_LIBRARY(MATH_LIBRARY m)
 
@@ -87,7 +87,7 @@ int main()
         "Error, the math library for C programs could not be found!"
         )
     ENDIF()
-  
+
   ENDIF()
 
 ENDIF()

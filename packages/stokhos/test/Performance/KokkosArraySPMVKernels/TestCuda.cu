@@ -28,8 +28,7 @@
 
 #include "TestStochastic.hpp"
 
-#include "Kokkos_Cuda.hpp"
-#include "Kokkos_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Cuda_CrsMatrix.hpp"
 #include "Stokhos_Cuda_BlockCrsMatrix.hpp"

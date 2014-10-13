@@ -45,7 +45,7 @@
 #include "Sacado_MP_Vector.hpp"
 #include "Sacado_MP_VectorTraits.hpp"
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 #include "Kokkos_AnalyzeSacadoShape.hpp"
 #include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_MP_Vector_Utils.hpp"

@@ -2,7 +2,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TrilinosFramework   cmake                           PT
   Teuchos             packages/teuchos                PT
   RTOp                packages/rtop                   PT
-  Epetra              packages/epetra                 PT 
+  Epetra              packages/epetra                 PT
   Zoltan              packages/zoltan                 PT
   Shards              packages/shards                 PT
   Triutils            packages/triutils               PT

@@ -85,7 +85,10 @@ namespace Xpetra {
 #ifdef HAVE_MPI
     try {
       const Epetra_MpiComm& mpiComm = dynamic_cast<const Epetra_MpiComm&>(comm);
-      return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm.Comm())));
+      // We need to pass some tag to the Teuchos::MpiComm constructor. We
+      // cannot use Epetra's GetMpiTag() as that increases the tag counter.
+      const int MAGIC_TAG = 26077;
+      return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm.Comm()), MAGIC_TAG));
     } catch (std::bad_cast & /*b*/) {}
 #endif
     try {

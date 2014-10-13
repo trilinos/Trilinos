@@ -51,8 +51,7 @@
 #include "Stokhos_Sparse3Tensor.hpp"
 
 // For computing DeviceConfig
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Helper functions
 template< typename IntType >

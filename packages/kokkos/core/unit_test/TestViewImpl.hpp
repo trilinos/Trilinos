@@ -47,7 +47,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
@@ -8,14 +6,12 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson_NoFE
     SOURCES example_Poisson_NoFE.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
     NUM_MPI_PROCS 1
     )
 IF(Trilinos_ENABLE_SEACAS)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson
     SOURCES example_Poisson.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
     NUM_MPI_PROCS 1
     )
 ENDIF()
@@ -23,20 +19,17 @@ ENDIF()
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson_BlockMaterials
     SOURCES example_Poisson_BlockMaterials.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
     NUM_MPI_PROCS 1
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson2D
     SOURCES example_Poisson2D.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
     NUM_MPI_PROCS 1
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Maxwell
     SOURCES example_Maxwell.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
     NUM_MPI_PROCS 1
     )
 
@@ -56,25 +49,21 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Darcy
     SOURCES example_Darcy.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml ifpack teko
     NUM_MPI_PROCS 1
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_DivLSFEM
     SOURCES example_DivLSFEM.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
     NUM_MPI_PROCS 1
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_CurlLSFEM
     SOURCES example_CurlLSFEM.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
     NUM_MPI_PROCS 1
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_StabilizatedADR
     SOURCES example_StabilizedADR.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
     NUM_MPI_PROCS 1
     )
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
@@ -97,7 +86,6 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_STK
     SOURCES example_Poisson_stk.cpp
-    DEPLIBS epetra epetraext aztecoo amesos ml
     )
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMeshFiles
   SOURCE_FILES unit_cube_10int_hex.exo
@@ -122,7 +110,6 @@ IF(Trilinos_ENABLE_Belos AND
     Example_Poisson_NoFE_Tpetra
     SOURCES example_Poisson_NoFE_Tpetra.cpp
     COMM serial mpi
-    DEPLIBS belos intrepid pamgen tpetra
     )
 ENDIF()
 
@@ -142,7 +129,6 @@ IF(Trilinos_ENABLE_AztecOO AND
     Example_Poisson_NoFE_Epetra
     SOURCES example_Poisson_NoFE_Epetra.cpp
     COMM serial mpi
-    DEPLIBS aztecoo epetra epetraext intrepid ml pamgen
     )
 ENDIF()
 
@@ -165,7 +151,6 @@ IF(Trilinos_ENABLE_Belos AND
       TrilinosCouplings_TpetraIntrepidPoissonExample.cpp
       TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
     COMM serial mpi
-    DEPLIBS belos intrepid pamgen tpetra
     )
 ENDIF()
 
@@ -187,7 +172,6 @@ IF(Trilinos_ENABLE_Belos AND
       TrilinosCouplings_EpetraIntrepidPoissonExample.cpp
       TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithBelos.cpp
     COMM serial mpi
-    DEPLIBS belos intrepid pamgen epetra
     )
 ENDIF()
 
@@ -204,7 +188,6 @@ IF(Trilinos_ENABLE_AztecOO AND
       TrilinosCouplings_EpetraIntrepidPoissonExample.cpp
       TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithAztecOO.cpp
     COMM serial mpi
-    DEPLIBS aztecoo intrepid pamgen epetra
     )
 ENDIF()
 
@@ -226,6 +209,5 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_Tpetra AND
     epetraTpetraImportBenchmark
     SOURCES epetraTpetraImportBenchmark.cpp
     COMM serial mpi
-    DEPLIBS tpetra epetra
     )
 ENDIF()

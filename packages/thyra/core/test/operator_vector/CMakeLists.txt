@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 
 SET(NUM_MPI_PROCS_SET 2 3 4)

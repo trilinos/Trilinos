@@ -233,6 +233,7 @@ TEST_F( defaultdevicetype , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(3) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(5) ) );
 }
 #endif
 } // namespace test

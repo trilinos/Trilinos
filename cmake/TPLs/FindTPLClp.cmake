@@ -53,7 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( Clp
   REQUIRED_HEADERS coin/ClpConfig.h

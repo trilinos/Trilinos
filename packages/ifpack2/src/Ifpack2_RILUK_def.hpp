@@ -44,6 +44,7 @@
 #define IFPACK2_CRSRILUK_DEF_HPP
 
 #include <Ifpack2_LocalFilter.hpp>
+#include <Ifpack2_RILUK.hpp>
 
 namespace Ifpack2 {
 

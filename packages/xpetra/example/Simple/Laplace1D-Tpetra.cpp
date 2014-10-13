@@ -61,11 +61,11 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
   bool success = false;
   bool verbose = false;
   try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
     GlobalOrdinal numGlobalElements = 256; // problem size
 
     RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal> > map = Tpetra::createUniformContigMap<LocalOrdinal, GlobalOrdinal>(numGlobalElements, comm);

@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 set(read_test_EXEDEPS "")
 

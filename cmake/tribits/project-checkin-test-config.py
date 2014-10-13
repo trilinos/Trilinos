@@ -25,6 +25,7 @@ configuration = {
                 '-DTPL_ENABLE_MPI:BOOL=ON',
                 '-DCMAKE_BUILD_TYPE:STRING=DEBUG',
                 '-DTriBITSProj_ENABLE_DEBUG:BOOL=ON',
+                '-DTriBITSProj_ENABLE_Fortran:BOOL=ON',
                 ]),
 
             # Options for the SERIAL_RELEASE build.

@@ -191,7 +191,7 @@ ENDFUNCTION()
 #     <inputFileName>
 #     REGEX_STRINGS "<str1>" "<str2>" ...
 #     )
-# 
+#
 # The contents of ``<inputFileName>`` are read into a string and then passed
 # to `UNITTEST_STRING_REGEX()`_ to assess pass/fail.
 #
@@ -232,7 +232,7 @@ ENDFUNCTION()
 FUNCTION(UNITTEST_FINAL_RESULT  EXPECTED_NUMPASSED)
    MESSAGE("\nFinal UnitTests Result: num_run = ${UNITTEST_OVERALL_NUMRUN}\n")
   IF (UNITTEST_OVERALL_PASS)
-    IF (UNITTEST_OVERALL_NUMPASSED EQUAL ${EXPECTED_NUMPASSED})  
+    IF (UNITTEST_OVERALL_NUMPASSED EQUAL ${EXPECTED_NUMPASSED})
       MESSAGE("Final UnitTests Result: PASSED"
         " (num_passed = ${UNITTEST_OVERALL_NUMPASSED})")
     ELSE()

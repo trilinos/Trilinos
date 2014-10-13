@@ -65,7 +65,7 @@ public:
    * \ingroup Teuchos_CWrapperSupport_grp
    */
   static void setPrintErrorOStream(const RCP<FancyOStream> &errorOStream);
-  
+
   /** \brief Get the ostream that will be printed when errors occur.
    *
    * \ingroup Teuchos_CWrapperSupport_grp
@@ -82,7 +82,7 @@ public:
   /** \brief Get if the stacktrace should be shown on every caught exception.
    */
   static bool getShowStackTraceOnException();
-  
+
 
 }; // class CWrapperErrorHandling
 

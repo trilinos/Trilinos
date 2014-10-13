@@ -40,7 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
-#include <Kokkos_Parallel.hpp>
+#include <Kokkos_Core.hpp>
+
 namespace TestCXX11 {
 
 template<class DeviceType>

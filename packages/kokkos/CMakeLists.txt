@@ -1,4 +1,3 @@
-INCLUDE(TribitsPackageMacros)
 
 #
 # A) Forward delcare the package so that certain options are also defined for
@@ -110,7 +109,6 @@ TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 TRIBITS_EXCLUDE_FILES(
   classic/doc
-  classic/DistTSQR/doc
   classic/LinAlg/doc/CrsRefactorNotesMay2012
   )
 

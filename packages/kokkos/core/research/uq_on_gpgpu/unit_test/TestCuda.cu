@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <Kokkos_LegendrePolynomial.hpp>
 #include <Kokkos_SymmetricDiagonalSpec.hpp>

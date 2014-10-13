@@ -46,8 +46,7 @@
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"
 
-#include "KokkosCore_config.h"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace Kokkos {
   namespace Compat {

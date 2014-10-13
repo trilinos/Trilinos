@@ -48,8 +48,8 @@ INCLUDE(PrintVar)
 INCLUDE(PrependSet)
 INCLUDE(PrependGlobalSet)
 INCLUDE(RemoveGlobalDuplicates)
-INCLUDE(TribitsAddOptionAndDefine)
 
+INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TribitsAddExecutable)
 INCLUDE(TribitsAddExecutableAndTest)
@@ -148,12 +148,12 @@ ENDMACRO()
 #     turned off, if they are not already turned off by global cache
 #     variables.  Strong warnings are turned on by default in development
 #     mode.
-#  
+#
 #   ``CLEANED``
 #
 #     If specified, then warnings will be promoted to errors for compiling the
 #     package's sources for all defined warnings.
-#  
+#
 #   ``DISABLE_CIRCULAR_REF_DETECTION_FAILURE``
 #
 #     If specified, then the standard grep looking for RCPNode circular
@@ -187,7 +187,7 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nTRIBITS_PACKAGE_DECL: ${PACKAGE_NAME_IN}")
   ENDIF()
-   
+
   #
   # A) Parse the input arguments
   #
@@ -220,7 +220,7 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   #
 
   TRIBITS_SET_COMMON_VARS(${PACKAGE_NAME_IN})
-  
+
   SET(${PACKAGE_NAME_IN}_DISABLE_STRONG_WARNINGS OFF
      CACHE BOOL
      "If set to true, then strong warnings for package ${PACKAGE_NAME_IN} will be disabled."
@@ -240,8 +240,8 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
   TRIBITS_DEFINE_TARGET_VARS(${PACKAGE_NAME})
 
   #
-  # Append the local package's cmake directory in order to help pull in 
-  # configure-time testing macros  
+  # Append the local package's cmake directory in order to help pull in
+  # configure-time testing macros
   #
 
   PREPEND_SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -286,7 +286,7 @@ MACRO(TRIBITS_PACKAGE_DEF)
     ENDIF()
     RETURN()
   ENDIF()
-  
+
   # Reset in case were changed by subpackages
   TRIBITS_SET_COMMON_VARS(${PACKAGE_NAME})
 
@@ -443,7 +443,7 @@ ENDMACRO()
 
 #
 # @MACRO: TRIBITS_ADD_EXAMPLE_DIRECTORIES()
-#  
+#
 # Macro called to conditionally add a set of example directories for an SE
 # package.
 #
@@ -489,28 +489,45 @@ FUNCTION(TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS)
     # A package with subpackages should get all of its dependency vars from
     # its enabled subpackages.
 
-    GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS)
-    GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS)
-    GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES)
+    SET(PARENT_PACKAGE_INCLUDE_DIRS)
+    SET(PARENT_PACKAGE_LIBRARY_DIRS)
+    SET(PARENT_PACKAGE_LIBRARIES)
 
     SET(SUBPACKAGE_IDX 0)
     FOREACH(TRIBITS_SUBPACKAGE ${${PARENT_PACKAGE_NAME}_SUBPACKAGES})
-  
+
       SET(SUBPACKAGE_NAME ${TRIBITS_SUBPACKAGE})
       SET(SUBPACKAGE_FULLNAME ${PARENT_PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
-  
+
       IF (${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
-        PREPEND_GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS
+        PREPEND_SET(PARENT_PACKAGE_INCLUDE_DIRS
           ${${SUBPACKAGE_FULLNAME}_INCLUDE_DIRS})
-        PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS
+        PREPEND_SET(PARENT_PACKAGE_LIBRARY_DIRS
           ${${SUBPACKAGE_FULLNAME}_LIBRARY_DIRS})
-        PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES
+        PREPEND_SET(PARENT_PACKAGE_LIBRARIES
           ${${SUBPACKAGE_FULLNAME}_LIBRARIES})
       ENDIF()
-  
+
       MATH(EXPR SUBPACKAGE_IDX "${SUBPACKAGE_IDX}+1")
-  
+
     ENDFOREACH()
+
+    IF (PARENT_PACKAGE_INCLUDE_DIRS)
+      LIST(REMOVE_DUPLICATES PARENT_PACKAGE_INCLUDE_DIRS)
+    ENDIF()
+    IF (PARENT_PACKAGE_LIBRARY_DIRS)
+      LIST(REMOVE_DUPLICATES PARENT_PACKAGE_LIBRARY_DIRS)
+    ENDIF()
+    # NOTE: Above, in the rare case that none of the subpackages contain any
+    # libraries or any include directories, we need to not call
+    # LIST(REMOVE_DUPLICATES ...).
+
+    # NOTE: There can't be any dupicate libraries in PARENT_PACKAGE_LIBRARIES
+    # so no need to remove them.
+
+    GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS "${PARENT_PACKAGE_INCLUDE_DIRS}")
+    GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS "${PARENT_PACKAGE_LIBRARY_DIRS}")
+    GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES "${PARENT_PACKAGE_LIBRARIES}")
 
   ELSEIF(NOT ${PACKAGE_NAME}_INCLUDE_DIRS)
 
@@ -518,7 +535,7 @@ FUNCTION(TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS)
     # them based on this package's dependencies.
 
     TRIBITS_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS(
-      ${PACKAGE_NAME}  LIB  LINK_LIBS) 
+      ${PACKAGE_NAME}  LIB  LINK_LIBS)
 
     TRIBITS_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
       ${PACKAGE_NAME}  LIB  LINK_LIBS)
@@ -551,11 +568,11 @@ MACRO(TRIBITS_PACKAGE_POSTPROCESS_COMMON)
     ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES
     )
     # Create the configure file so external projects can find packages with a
-    # call to find_package(<package_name>)
-    # This also creates the Makefile.export.* files.
+    # call to find_package(<package_name>).  This also creates the
+    # Makefile.export.* files.
     TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES(${PACKAGE_NAME})
   ENDIF()
-  
+
   SET(${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE TRUE
     CACHE INTERNAL "")
 
@@ -564,7 +581,7 @@ ENDMACRO()
 
 #
 # @MACRO: TRIBITS_PACKAGE_POSTPROCESS()
-#  
+#
 # Macro called at the very end of a package's top-level
 # `<packageDir>/CMakeLists.txt`_ file that performs some critical
 # post-processing activities.
@@ -592,7 +609,7 @@ MACRO(TRIBITS_PACKAGE_POSTPROCESS)
   TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS()
   TRIBITS_PACKAGE_POSTPROCESS_COMMON()
 
-  # NOTE: This package is only able 
+  # NOTE: This package is only able
 
 ENDMACRO()
 
@@ -627,12 +644,10 @@ MACRO(TRIBITS_PROCESS_SUBPACKAGES)
     #PRINT_VAR(SUBPACKAGE_FULLNAME)
 
     IF (${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
-      
+
       LIST(GET ${PARENT_PACKAGE_NAME}_SUBPACKAGE_DIRS ${SUBPACKAGE_IDX} SUBPACKAGE_DIR)
       #PRINT_VAR(SUBPACKAGE_DIR)
 
-      DUAL_SCOPE_SET(${SUBPACKAGE_FULLNAME}_SOURCE_DIR
-        ${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/${SUBPACKAGE_DIR})
       DUAL_SCOPE_SET(${SUBPACKAGE_FULLNAME}_BINARY_DIR
         ${${PARENT_PACKAGE_NAME}_BINARY_DIR}/${SUBPACKAGE_DIR})
 
@@ -661,13 +676,12 @@ ENDMACRO()
 #   ${PACKAGE_NAME}_LIBRARY_DIRS
 #   ${PACKAGE_NAME}_LIBRARIES
 #   ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES
-#   ${PACKAGE_NAME}_FULL_EXPORT_DEP_PACKAGES
+#   ${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES
 #   ${PARENT_PACKAGE_NAME}_LIB_TARGETS
 #   ${PARENT_PACKAGE_NAME}_ALL_TARGETS
 #
 # without carefully studying the documentation in README.DEPENENCIES and then
 # carefully studying all of the code and issues that modify these variables!
 #
-# ToDo: Write some good unit tests that pin down the behavior of all of all
-# of this!
+# ToDo: Write some good unit tests that pin down the behavior of all of this!
 #

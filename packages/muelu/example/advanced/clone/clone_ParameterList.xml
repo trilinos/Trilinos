@@ -2,31 +2,31 @@
 
   <!-- Configuration of the Xpetra operator (fine level) -->
   <ParameterList name="Matrix">
-    <Parameter name="PDE equations" type="int" value="2"/> <!-- Number of PDE equations at each grid node.-->
+    <Parameter          name="PDE equations"                type="int"      value="2"/> <!-- Number of PDE equations at each grid node.-->
   </ParameterList>
 
   <!-- Factory collection
        - Factories defined here can be used later on the 'Hierarchy' parameter list.
        - A factory that do not appear on the 'Hierarchy' parameter list is not used to build the hierarchy.
   -->
-  <ParameterList name="Factories">
-    <ParameterList name="SymGaussSeidel">
-      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+  <ParameterList        name="Factories">
+    <ParameterList      name="SymGaussSeidel">
+      <Parameter        name="factory"                      type="string"   value="TrilinosSmoother"/>
 
-      <Parameter name="type"                         type="string" value="RELAXATION"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type"           type="string" value="Symmetric Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
-        <Parameter name="relaxation: damping factor" type="double" value="1"/>
+      <Parameter        name="type"                         type="string"   value="RELAXATION"/>
+      <ParameterList    name="ParameterList">
+        <Parameter      name="relaxation: type"             type="string"   value="Symmetric Gauss-Seidel"/>
+        <Parameter      name="relaxation: sweeps"           type="int"      value="1"/>
+        <Parameter      name="relaxation: damping factor"   type="double"   value="1"/>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="ILUT">
-      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+    <ParameterList      name="ILUT">
+      <Parameter        name="factory"                      type="string"   value="TrilinosSmoother"/>
 
-      <Parameter name="type"                         type="string" value="ILUT"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="fact: ilut level-of-fill"   type="double" value="1.0"/>
+      <Parameter        name="type"                         type="string"   value="ILUT"/>
+      <ParameterList    name="ParameterList">
+        <Parameter      name="fact: ilut level-of-fill"     type="double"   value="1.0"/>
       </ParameterList>
     </ParameterList>
 
@@ -45,27 +45,13 @@
   -->
   <ParameterList name="Hierarchy">
 
-    <!-- Max number of levels -->
-    <Parameter name="numDesiredLevel" type="int" value="10"/>
-
     <!-- active for levels 0 and 1 -->
-    <ParameterList name="FineLevel">
-      <Parameter name="startLevel" type="int" value="0"/>
-      <Parameter name="Smoother"   type="string" value="None"/>
-      <Parameter name="numDesiredLevel" type="int" value="2"/>
-    </ParameterList>
+    <ParameterList      name="FineLevel">
+      <Parameter        name="startLevel"                   type="int"      value="0"/>
 
-    <!-- active for levels 2,3,...,L-1 -->
-    <ParameterList name="OtherLevels">
-      <Parameter name="startLevel" type="int" value="2"/>
-      <Parameter name="P"          type="string" value="SaPFactory"/>
-      <Parameter name="Smoother"   type="string" value="None"/>
-    </ParameterList>
-
-    <!-- active for level L -->
-    <ParameterList name="CoarsestLevel">
-      <Parameter name="startLevel"   type="int" value="-1"/>
-      <Parameter name="CoarseSolver" type="string" value="None"/>
+      <Parameter        name="P"                            type="string"   value="SaPFactory"/>
+      <Parameter        name="Smoother"                     type="string"   value="None"/>
+      <Parameter        name="CoarseSolver"                 type="string"   value="None"/>
     </ParameterList>
 
   </ParameterList>

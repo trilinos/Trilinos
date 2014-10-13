@@ -122,27 +122,27 @@ int main(int argc, char *argv[]) {
   // Parameters initialization
   // =========================================================================
   Teuchos::CommandLineProcessor clp(false);
-  
+
   std::string xmlFileName = "xml/muelu_ParameterList.xml"; clp.setOption("xml", &xmlFileName, "read parameters from a file [default = 'xml/muelu_ParameterList.xml']");
-  
+
   int globalNumDofs = 0; //7020;
   clp.setOption("globalNumDofs", &globalNumDofs, "global number of degrees of freedom [has to be set by user, default = 0 -> error]");
   int nDofsPerNode = 1;
   clp.setOption("nDofsPerNode", &nDofsPerNode, "number of degrees of freedom per node [has to be set by user, default = 1]");
   int nProcs = comm->getSize();
-  std::string dsolveType = "cg";   
+  std::string dsolveType = "cg";
   clp.setOption("solver", &dsolveType, "solve type: (none | cg | gmres | standalone) [default = cg]");
   double dtol = 1e-12;
   clp.setOption("tol", &dtol, "solver convergence tolerance [default = 1e-12]");
   std::string problemFile = "stru2d";
   clp.setOption("problem", &problemFile, "string for problem file (e.g. 'stru2d' expects 'stru2d_A.txt', 'stru2d_b.txt' and 'stru2d_ns.txt')");
-  
+
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
-  }  
+  }
 
   if(globalNumDofs == 0) {
     std::cout << "Please specify '--globalNumDofs'! Simulation cannot run without that parameter correctly set" << std::endl;
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector* ptrNS = 0;
 
   std::cout << "Reading matrix market file" << std::endl;
-  
+
   std::stringstream ssA, ssB, ssNS;
   ssA  << problemFile << "_A.txt";
   ssB  << problemFile << "_b.txt";
@@ -190,28 +190,28 @@ int main(int argc, char *argv[]) {
 
   // Epetra_Map -> Xpetra::Map
   const RCP< const Map> map = Xpetra::toXpetra<GO>(emap);
- 
+
   ParameterListInterpreter mueLuFactory(xmlFileName,*comm);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
   RCP<MueLu::Level> Finest = H->GetLevel(0);
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   Finest->Set("A",Op);
   Finest->Set("Nullspace",xNS);
-  
+
   mueLuFactory.SetupHierarchy(*H);
 
-  
+
 #ifdef HAVE_MUELU_AZTECOO
-  
+
   H->IsPreconditioner(true);
   MueLu::EpetraOperator mueluPrec(H); // Wrap MueLu preconditioner into an Epetra Operator
-      
+
   // create a solution vector
   RCP<Epetra_Vector> epX = rcp(new Epetra_Vector(epA->RowMap()));
   epX->PutScalar((Scalar) 0.0);
-  
+
   Epetra_LinearProblem eProblem(epA.get(), epX.get(), epB.get());
-  
+
   // AMG as preconditioner within AztecOO
   AztecOO solver(eProblem);
   solver.SetPrecOperator(&mueluPrec);
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
     Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*Op, *mueluX, *mueluB)[0];
     if (comm->getRank() == 0)
       std::cout << "||Residual|| = " << residualNorms << std::endl;
-  } 
+  }
 #endif // HAVE_MUELU_AZTECOO
   return EXIT_SUCCESS;
 }

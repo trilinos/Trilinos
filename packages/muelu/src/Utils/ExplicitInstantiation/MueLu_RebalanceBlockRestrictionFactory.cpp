@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-
-
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_RebalanceBlockRestrictionFactory_def.hpp"
@@ -70,4 +70,4 @@ template class MueLu::RebalanceBlockRestrictionFactory<std::complex<double>, int
 # endif
 #endif
 
-
+#endif

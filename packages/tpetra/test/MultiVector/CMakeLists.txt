@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsAddExecutable)
 
 IF(Kokkos_ENABLE_Cuda)
   MESSAGE("CUDA is enabled")

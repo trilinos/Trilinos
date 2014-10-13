@@ -42,7 +42,7 @@
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_Assert.hpp"
 
-/** We throw a m_bad_cast, which is a subclass of bad_cast.  
+/** We throw a m_bad_cast, which is a subclass of bad_cast.
 	This is necessary, since bad_cast lacks the appropriate
 	constructor for use with the TEUCHOS_TEST_FOR_EXCEPTION macro.
 */

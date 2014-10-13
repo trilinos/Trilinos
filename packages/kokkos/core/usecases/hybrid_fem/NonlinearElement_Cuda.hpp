@@ -6,8 +6,7 @@
 #include <cstdlib>
 #include <cmath>
 
-#include <Kokkos_Cuda.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <HexElement.hpp>
 #include <FEMesh.hpp>
 

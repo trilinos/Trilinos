@@ -44,21 +44,24 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "KokkosClassic_DefaultNode_config.h"
-#include "Kokkos_SerialNode.hpp"
+
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+#  include "Kokkos_SerialNode.hpp"
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-#include "Kokkos_TBBNode.hpp"
+#  include "Kokkos_TBBNode.hpp"
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
+#  include "Kokkos_TPINode.hpp"
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include "Kokkos_OpenMPNode.hpp"
+#  include "Kokkos_OpenMPNode.hpp"
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
+#  include "Kokkos_ThrustGPUNode.hpp"
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#  include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #endif
 
 #include <Teuchos_ParameterList.hpp>
@@ -107,7 +110,7 @@ namespace Details {
     */
   class DefaultNode {
     public:
-#if   defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
+#if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
       typedef TPINode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
       typedef TBBNode DefaultNodeType;
@@ -123,12 +126,18 @@ namespace Details {
       typedef ::Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
       typedef ::Kokkos::Compat::KokkosThreadsWrapperNode DefaultNodeType;
-#  else
+#  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
+      typedef ::Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_SERIAL)
       typedef SerialNode DefaultNodeType;
+#  else
+#    error "No default Kokkos Node type specified.  Please set the CMake option KokkosClassic_DefaultNode to a valid Node type."
 #  endif // defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
-#else
+#elif defined(HAVE_KOKKOSCLASSIC_SERIAL)
       //! Typedef specifying the default node type.
       typedef SerialNode DefaultNodeType;
+#else
+#  error "No default Kokkos Node type specified.  Please set the CMake option KokkosClassic_DefaultNode to a valid Node type."
 #endif
 
       //! \brief Return a pointer to the default node.

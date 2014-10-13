@@ -825,37 +825,52 @@ long long Inline_Mesh_Desc::Check_Block_BC_Sets()
   std::list < PG_BC_Specification * > ::iterator setit;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++){
     for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
-    if((*setit)->the_locs[ict].block_boundary_set){
-      long long bid = (*setit)->the_locs[ict].block_id;
-      long long bmax = numBlocks();
-      if (bid < 1 || bid > bmax){
-        error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
-        error_stream << bid ;
-        error_stream << " is outside the range of blocks present in the mesh  1 to ";
-        error_stream << bmax;
-        error_stream << ".";
-	return 1;
+      if((*setit)->the_locs[ict].block_boundary_set){
+	long long bid = (*setit)->the_locs[ict].block_id;
+	long long bmax = numBlocks();
+	if (bid < 1 || bid > bmax){
+	  error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
+	  error_stream << bid ;
+	  error_stream << " is outside the range of blocks present in the mesh  1 to ";
+	  error_stream << bmax;
+	  error_stream << ".";
+	  return 1;
+	}
+	/*check if block suppressed*/
+	if(isBlockSuppressed(bid)){
+	  error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
+	  error_stream << bid ;
+	  error_stream << " is suppressed and may not accept nodesets.";
+	  return 1;
+	}
       }
     }
-    }
   }
+
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++){
     for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
-
-    if((*setit)->the_locs[ict].block_boundary_set){
-      long long bid = (*setit)->the_locs[ict].block_id;
-      long long bmax = numBlocks();
-      if (bid < 1 || bid > bmax){
-        error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
-        error_stream << bid ;
-        error_stream << " is outside the range of blocks present in the mesh  1 to ";
-        error_stream << bmax;
-        error_stream << ".";
-	return 1;
-       }
-    }
+      if((*setit)->the_locs[ict].block_boundary_set){
+	long long bid = (*setit)->the_locs[ict].block_id;
+	long long bmax = numBlocks();
+	if (bid < 1 || bid > bmax){
+	  error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
+	  error_stream << bid ;
+	  error_stream << " is outside the range of blocks present in the mesh  1 to ";
+	  error_stream << bmax;
+	  error_stream << ".";
+	  return 1;
+	}
+	/*check if block suppressed*/
+	if(isBlockSuppressed(bid)){
+	  error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
+	  error_stream << bid ;
+	  error_stream << " is suppressed and may not accept sidesets.";
+	  return 1;
+	}
+      }
     }
   }
+
   return Rename_Block_BC_Sets();
 }
 
@@ -870,6 +885,18 @@ long long Inline_Mesh_Desc::Check_Blocks()
     error_stream << " inline_b[2] " << inline_b[2];
     return 1;
   }
+  /*check suppressed blocks are properly clled out*/
+  long long bmax = numBlocks();
+  std::set<long long >::iterator sit;
+  for(sit = suppressed_blocks.begin();sit != suppressed_blocks.end();sit ++){
+    if(*sit < 0 || (*sit)>bmax){
+      error_stream << "Terminating from Inline_Mesh_Desc::Check_Blocks block ";
+      error_stream << *sit ;
+      error_stream << " may not be suppressed as it does not exist.";
+      return 1;
+    }
+  }
+
   return 0;
 }
 

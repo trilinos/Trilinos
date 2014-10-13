@@ -354,20 +354,6 @@ namespace MueLu {
     return out.str();
   }
 
-  void Level::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
-    RCP<Teuchos::FancyOStream> out0 = Teuchos::rcpFromRef(out);
-    int previousSetting = out0->getOutputToRootOnly();
-    out0->setShowProcRank(true);
-
-    std::ostringstream ss;
-    print(ss, verbLevel);
-
-    out0->setOutputToRootOnly(-1);
-    *out0 << ss.str() << std::endl;
-    out0->setOutputToRootOnly(previousSetting);
-    out0->setShowProcRank(false);
-  }
-
   void Level::print(std::ostream& out, const VerbLevel verbLevel) const {
     if (!(verbLevel & Debug))
       return;

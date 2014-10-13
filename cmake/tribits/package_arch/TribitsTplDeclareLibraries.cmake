@@ -48,7 +48,7 @@ INCLUDE(ParseVariableArguments)
 
 #
 # @FUNCTION: TRIBITS_TPL_DECLARE_LIBRARIES()
-# 
+#
 # Function that sets up cache variables for users to specify where to find a
 # `TriBITS TPL`_'s headers and libraries.  This function is typically called
 # inside of a ``FindTPL<tplName>.cmake`` file (see `${TPL_NAME}_FINDMOD`_).
@@ -179,7 +179,7 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
   IF (PARSE_REQUIRED_LIBS_NAMES)
 
     # Library directories
-  
+
     MULTILINE_SET(DOCSTR
       "List of semi-colon separated paths to look for the TPL ${TPL_NAME}"
       " libraries.  This list of paths will be passed into a FIND_LIBRARY(...)"
@@ -196,7 +196,7 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
     ENDIF()
 
     # Libraries
-  
+
     MULTILINE_SET(DOCSTR
       "List of semi-colon separated names of libraries needed to link to for"
       " the TPL ${TPL_NAME}.  This list of libraries will be search for in"
@@ -204,7 +204,7 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
       " ${TPL_NAME}_LIBRARY_DIRS.  NOTE: This is not the final list of libraries"
       " used for linking.  That is specified by TPL_${TPL_NAME}_LIBRARIES!"
       )
-    ADVANCED_SET(${TPL_NAME}_LIBRARY_NAMES ${PARSE_REQUIRED_LIBS_NAMES} 
+    ADVANCED_SET(${TPL_NAME}_LIBRARY_NAMES ${PARSE_REQUIRED_LIBS_NAMES}
       CACHE STRING ${DOCSTR})
 
     # Let the user override what the names of the libraries which might
@@ -219,7 +219,7 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
   ELSE()
 
     SET(${TPL_NAME}_LIBRARY_DIRS) # Just to ignore below!
-  
+
   ENDIF()
 
   # Include directories
@@ -233,7 +233,7 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
       )
     ADVANCED_SET(${TPL_NAME}_INCLUDE_DIRS ${${TPL_NAME}_LIBRARY_DIRS}
       CACHE PATH ${DOCSTR})
-  
+
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       PRINT_VAR(${TPL_NAME}_LIBRARY_DIRS)
       PRINT_VAR(${TPL_NAME}_INCLUDE_DIRS)
@@ -276,7 +276,7 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
   IF (PARSE_REQUIRED_LIBS_NAMES)
 
     # Libraries
-  
+
     IF (NOT TPL_${TPL_NAME}_LIBRARIES)
 
       IF (PARSE_MUST_FIND_ALL_LIBS)
@@ -286,30 +286,30 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
       IF (${TPL_NAME}_LIBRARY_DIRS)
         MESSAGE(STATUS "  ${TPL_NAME}_LIBRARY_DIRS='${${TPL_NAME}_LIBRARY_DIRS}'")
       ENDIF()
-  
+
       SET(LIBRARIES_FOUND)
-  
+
       FOREACH(LIBNAME_SET ${${TPL_NAME}_LIBRARY_NAMES})
-  
+
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           PRINT_VAR(LIBNAME_SET)
         ENDIF()
-  
+
         SET(LIBNAME_LIST ${LIBNAME_SET})
         SEPARATE_ARGUMENTS(LIBNAME_LIST)
-  
+
         SET(LIBNAME_SET_LIB)
-  
+
         FOREACH(LIBNAME ${LIBNAME_LIST})
 
           MESSAGE(STATUS "  Searching for library '${LIBNAME}' ...")
-    
+
           IF (${TPL_NAME}_LIBRARY_DIRS)
             SET(PATHS_ARG PATHS ${${TPL_NAME}_LIBRARY_DIRS})
           ELSE()
             SET(PATHS_ARG PATHS)
           ENDIF()
-    
+
           SET_NOTFOUND(_${TPL_NAME}_${LIBNAME}_LIBRARY)
           FIND_LIBRARY( _${TPL_NAME}_${LIBNAME}_LIBRARY
             NAMES ${LIBNAME}
@@ -317,19 +317,19 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
           FIND_LIBRARY( _${TPL_NAME}_${LIBNAME}_LIBRARY
             NAMES ${LIBNAME} )
           MARK_AS_ADVANCED(_${TPL_NAME}_${LIBNAME}_LIBRARY)
-  
+
           IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
             PRINT_VAR(_${TPL_NAME}_${LIBNAME}_LIBRARY)
           ENDIF()
-    
+
           IF (_${TPL_NAME}_${LIBNAME}_LIBRARY)
             MESSAGE(STATUS "    Found ${TPL_NAME} TPL library: ${_${TPL_NAME}_${LIBNAME}_LIBRARY}")
             SET(LIBNAME_SET_LIB ${_${TPL_NAME}_${LIBNAME}_LIBRARY})
             BREAK()
           ENDIF()
-    
+
         ENDFOREACH()
-  
+
         IF (NOT LIBNAME_SET_LIB)
           MULTILINE_SET(ERRMSG
             "Could not find a library in the set \"${LIBNAME_SET}\" for"
@@ -343,11 +343,11 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
             MESSAGE(STATUS "  Warning: ${ERRMSG}")
           ENDIF()
         ENDIF()
-  
+
         APPEND_SET(LIBRARIES_FOUND ${LIBNAME_SET_LIB})
-  
+
       ENDFOREACH()
-  
+
       MULTILINE_SET(DOCSTR
         "List of semi-colon separated full paths to the libraries for the TPL"
         " ${TPL_NAME}.  This is the final variable that is used in the link"
@@ -357,7 +357,7 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
         )
       ADVANCED_SET( TPL_${TPL_NAME}_LIBRARIES ${LIBRARIES_FOUND}
         CACHE FILEPATH ${DOCSTR} )
-    
+
       IF (NOT TPL_${TPL_NAME}_LIBRARIES)
         MULTILINE_SET(ERRMSG
           "Could not find the ${TPL_NAME} Library!  Please manually set"
@@ -367,24 +367,24 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
         MESSAGE(${ERROR_MSG_MODE} ${ERRMSG})
         PRINT_VAR(_${TPL_NAME}_ENABLE_SUCCESS)
       ENDIF()
-  
+
     ENDIF()
-  
+
     # Print the final value to be used *always*
     MESSAGE(STATUS "  TPL_${TPL_NAME}_LIBRARIES='${TPL_${TPL_NAME}_LIBRARIES}'")
 
   ELSE()
-  
+
     # There are no libraries so set the libraries to null but don't
     # change the cache which should not even have this varaible in it.
     # This set command is only to follow the standards for the package
     # support CMake code.
     GLOBAL_NULL_SET(TPL_${TPL_NAME}_LIBRARIES)
-        
+
   ENDIF()
 
   # Include directories
-  
+
   IF (PARSE_REQUIRED_HEADERS)
 
     IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
@@ -392,23 +392,23 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
       IF (PARSE_MUST_FIND_ALL_HEADERS)
         MESSAGE(STATUS "  Must find all headers in \"${PARSE_REQUIRED_HEADERS}\"")
       ENDIF()
-    
+
       FOREACH(INCLUDE_FILE_SET ${PARSE_REQUIRED_HEADERS})
 
         IF (PARSE_MUST_FIND_ALL_HEADERS)
           MESSAGE(STATUS "  Searching for headers \"${INCLUDE_FILE_SET}\"")
         ENDIF()
-        
+
         SET(INCLUDE_FILE_LIST ${INCLUDE_FILE_SET})
         SEPARATE_ARGUMENTS(INCLUDE_FILE_LIST)
         SET(INCLUDE_FILE_SET_PATH) # Start out as empty list
-        
+
         FOREACH(INCLUDE_FILE ${INCLUDE_FILE_LIST})
 
           IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
             PRINT_VAR(INCLUDE_FILE)
           ENDIF()
-          
+
           SET_NOTFOUND(_${TPL_NAME}_${INCLUDE_FILE}_PATH)
           FIND_PATH( _${TPL_NAME}_${INCLUDE_FILE}_PATH
             NAMES ${INCLUDE_FILE}
@@ -417,11 +417,11 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
           FIND_PATH( _${TPL_NAME}_${INCLUDE_FILE}_PATH
             NAMES ${INCLUDE_FILE} )
           MARK_AS_ADVANCED(_${TPL_NAME}_${INCLUDE_FILE}_PATH)
-          
+
           IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
             PRINT_VAR(_${TPL_NAME}_${INCLUDE_FILE}_PATH)
           ENDIF()
-          
+
           IF(_${TPL_NAME}_${INCLUDE_FILE}_PATH)
             MESSAGE(STATUS "    Found ${TPL_NAME} TPL header: ${_${TPL_NAME}_${INCLUDE_FILE}_PATH}/${INCLUDE_FILE}")
             APPEND_SET(INCLUDE_FILE_SET_PATH ${_${TPL_NAME}_${INCLUDE_FILE}_PATH})
@@ -440,7 +440,7 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
           ENDIF()
 
         ENDFOREACH()
-        
+
         IF(NOT INCLUDE_FILE_SET_PATH)
           MULTILINE_SET(ERRMSG
             "Warning: Could not find a header in the set \"${INCLUDE_FILE_SET}\" for"
@@ -452,7 +452,7 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
         APPEND_SET(INCLUDES_FOUND ${INCLUDE_FILE_SET_PATH})
 
       ENDFOREACH(INCLUDE_FILE_SET ${PARSE_REQUIRED_HEADERS})
-    
+
       IF (INCLUDES_FOUND)
         LIST(REMOVE_DUPLICATES INCLUDES_FOUND)
       ENDIF()
@@ -464,10 +464,10 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
         " is used to look for the given headers first but is just a suggestion."
         " This variable, however, is the final value and will not be touched."
         )
-      
+
       ADVANCED_SET(TPL_${TPL_NAME}_INCLUDE_DIRS ${INCLUDES_FOUND}
         CACHE PATH ${DOCSTR})
-        
+
       IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
         MULTILINE_SET(ERRMSG
           "Could not find the ${TPL_NAME} headers include directory!"
@@ -478,7 +478,7 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
         MESSAGE(${ERROR_MSG_MODE} ${ERRMSG})
         PRINT_VAR(_${TPL_NAME}_ENABLE_SUCCESS)
       ENDIF()
-    
+
       IF (TPL_${TPL_NAME}_INCLUDE_DIRS)
         MESSAGE(STATUS "  Found ${TPL_NAME} TPL header path: ${TPL_${TPL_NAME}_INCLUDE_DIRS}")
       ENDIF()
@@ -489,7 +489,7 @@ FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
     ENDIF()
 
   ELSE()
-  
+
     IF (${TPL_NAME}_INCLUDE_DIRS)
       ADVANCED_SET(TPL_${TPL_NAME}_INCLUDE_DIRS ${${TPL_NAME}_INCLUDE_DIRS} CACHE PATH "User provided include dirs in the absence of include files.")
     ELSE()

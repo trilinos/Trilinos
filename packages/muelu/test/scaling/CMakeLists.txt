@@ -11,7 +11,6 @@ ASSERT_DEFINED(
 # Executable
 #
 
-INCLUDE(TribitsAddExecutable)
 
 #TODO: how to remove that?
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -46,21 +45,18 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     ReadMatrix
     SOURCES ReadMatrix.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
     )
 
   TRIBITS_ADD_EXECUTABLE(
     MatrixMatrixMultiply
     SOURCES MatrixMatrixMultiply.cpp
     COMM mpi
-    DEPLIBS muelu xpetra muelu-adapters
     )
 
   TRIBITS_ADD_EXECUTABLE(
     ${MueLu_ScalingTestName}  #TODO: Suffix Int/LongInt when done in the source code
     SOURCES ScalingTest.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
     )
 
 
@@ -68,7 +64,6 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     Driver
     SOURCES Driver.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters galeri
     )
 
   # not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
@@ -77,7 +72,6 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
       Reuse
       SOURCES Reuse.cpp
       COMM serial mpi
-      DEPLIBS muelu xpetra muelu-adapters galeri
     )
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Reuse_cp
       SOURCE_FILES reuse.xml

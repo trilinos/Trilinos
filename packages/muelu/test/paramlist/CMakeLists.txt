@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
@@ -12,7 +11,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES paramlist.cpp
   ARGS ""
   COMM serial mpi
-  DEPLIBS muelu xpetra
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -20,5 +18,4 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES paramlistAdv.cpp
   ARGS ""
   COMM serial mpi
-  DEPLIBS muelu xpetra
   )

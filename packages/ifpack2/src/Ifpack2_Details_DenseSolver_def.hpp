@@ -46,6 +46,7 @@
 #include "Ifpack2_Condest.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Ifpack2_Details_DenseSolver.hpp"
 
 #ifdef HAVE_MPI
 #  include <mpi.h>

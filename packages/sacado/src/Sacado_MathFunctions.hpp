@@ -30,6 +30,8 @@
 #ifndef SACADO_MATHFUNCTIONS_HPP
 #define SACADO_MATHFUNCTIONS_HPP
 
+#include <cmath>
+
 #include "Sacado_ConfigDefs.h"
 
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
@@ -50,6 +52,7 @@ namespace Sacado {                                                      \
     template <typename T> class FADOP;                                  \
     template <typename T> class Expr;                                   \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
   }                                                                     \
                                                                         \
@@ -57,6 +60,7 @@ namespace Sacado {                                                      \
     template <typename T> class FADOP;                                  \
     template <typename T> class Expr;                                   \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
   }                                                                     \
                                                                         \
@@ -64,6 +68,7 @@ namespace Sacado {                                                      \
     template <typename T> class FADOP;                                  \
     template <typename T> class Expr;                                   \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
   }                                                                     \
                                                                         \
@@ -173,18 +178,22 @@ namespace Sacado {                                                      \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
     template <typename T1, typename T2>                                 \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T1>, Expr<T2> > >                                 \
     OP (const Expr<T1>&, const Expr<T2>&);                              \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, Expr<T> > >                                   \
     OP (const Expr<T>&, const Expr<T>&);                                \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >   \
     OP (const typename Expr<T>::value_type&, const Expr<T>&);           \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
     OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
   }                                                                     \
@@ -194,18 +203,22 @@ namespace Sacado {                                                      \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
     template <typename T1, typename T2>                                 \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T1>, Expr<T2> > >                                 \
     OP (const Expr<T1>&, const Expr<T2>&);                              \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, Expr<T> > >                                   \
     OP (const Expr<T>&, const Expr<T>&);                                \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >   \
     OP (const typename Expr<T>::value_type&, const Expr<T>&);           \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
     OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
   }                                                                     \
@@ -215,18 +228,22 @@ namespace Sacado {                                                      \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
     template <typename T1, typename T2>                                 \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T1>, Expr<T2> > >                                 \
     OP (const Expr<T1>&, const Expr<T2>&);                              \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, Expr<T> > >                                   \
     OP (const Expr<T>&, const Expr<T>&);                                \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >   \
     OP (const typename Expr<T>::value_type&, const Expr<T>&);           \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
     OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
   }                                                                     \

@@ -1,10 +1,12 @@
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <TestBoxMeshFixture.hpp>
 #include <Implicit.hpp>
 #include <Nonlinear.hpp>
 #include <Explicit.hpp>
+
+#define BUILD_FROM_CU_FILE
 #include <SparseLinearSystem.hpp>
 
 //----------------------------------------------------------------------------

@@ -7,12 +7,7 @@
 #include <limits.h>
 #include <cmath>
 
-#ifdef _OPENMP
-#  include <Kokkos_OpenMP.hpp>
-#else
-#  include <Kokkos_Threads.hpp>
-#endif
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_MV.hpp>
 #include <Kokkos_CrsMatrix.hpp>
 #ifndef DEVICE

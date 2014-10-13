@@ -602,6 +602,7 @@ int ML_selection_dsort(double *vals, int length, int *cols, int limit)
 
    ML_free(darray);
    ML_free(treeArray);
+   ML_free(treeIArray);
    ML_free(treeLengs);
    return 0;
 }

@@ -1051,6 +1051,8 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
     log_level debug_level = rpc_debug_level;
     NNTI_status_t status;
 
+    int retries=0;
+
     trios_declare_timer(total_time);
     trios_declare_timer(call_time);
 
@@ -1058,65 +1060,150 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
 
     switch (req->status) {
 
-    case NSSI_REQUEST_NULL:
-        return rc;
+        case NSSI_REQUEST_NULL:
 
-    case NSSI_REQUEST_ERROR:
-        log_debug(rpc_debug_level,"timedwait finished");
-        *remote_rc = req->error_code;
+            goto request_null;
 
-        goto cleanup;
+        case NSSI_REQUEST_ERROR:
+            log_debug(rpc_debug_level,"timedwait finished");
+            *remote_rc = req->error_code;
 
-//        break;
+            goto request_error;
 
-    case NSSI_REQUEST_COMPLETE:
-        log_debug(rpc_debug_level,"timedwait finished");
-        *remote_rc = NSSI_OK;
+        case NSSI_REQUEST_COMPLETE:
+            log_debug(rpc_debug_level,"timedwait finished");
+            *remote_rc = NSSI_OK;
 
-        goto cleanup;
+            goto request_complete;
 
-//        break;
+        default:
+            log_debug(debug_level, "calling NNTI_wait for request");
+            /* Times out after DEFAULT_RPC_TIMEOUT */
+            do {
+                trios_start_timer(call_time);
+                rc=NNTI_wait(
+                        &req->short_request_wr,
+                        timeout,
+                        &status);
+                trios_stop_timer("NNTI_wait - send req", call_time);
+                if (status.result == NNTI_EDROPPED) {
+                    log_debug(LOG_ALL, "request dropped");
+                }
+            } while((status.result == NNTI_EDROPPED) && (retries++ < 3));
+            if (rc == NNTI_ETIMEDOUT) {
+                log_info(rpc_debug_level, "send request timed out");
 
-    default:
-        log_debug(debug_level, "calling NNTI_wait for result");
-        trios_start_timer(call_time);
-        NNTI_create_work_request(
-                req->short_result_hdl,
-                &req->short_result_wr);
-        rc=NNTI_wait(
-        		&req->short_result_wr,
-                timeout,
-                &status);
-        trios_stop_timer("NNTI_wait - short result", call_time);
-        if (status.result == NNTI_ETIMEDOUT) {
-            log_info(debug_level, "NNTI_wait for result timed out");
-            rc = status.result;
-            return rc;
-        }
-        if (status.result != NNTI_OK) {
-            log_info(debug_level, "NNTI_wait for result failed");
-            rc = status.result;
-            req->status = NSSI_REQUEST_ERROR;
-            break;
-        }
+                goto wait_timedout;
+            }
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed waiting for send: %s",
+                        nnti_err_str(rc));
 
-        log_debug(debug_level, "Processing result status.offset=%d", status.offset);
+                goto wait_failed;
+            }
 
-        /* we are now ready to process the result */
-        req->status = NSSI_PROCESSING_RESULT;
-        rc = process_result((char *)status.start+status.offset, req);
-        if (rc != NSSI_OK) {
-            log_fatal(debug_level,"unable to process result");
-            fprint_NNTI_status(logger_get_file(), "status", "FATAL", &status);
-            return rc;
-        }
+            /* the service is processing the request. */
+            req->status = NSSI_PROCESSING_REQUEST;
 
-        NNTI_destroy_work_request(
-        		&req->short_result_wr);
+            log_debug(debug_level, "calling NNTI_wait for result");
+            trios_start_timer(call_time);
+            NNTI_create_work_request(
+                    req->short_result_hdl,
+                    &req->short_result_wr);
+            rc=NNTI_wait(
+                    &req->short_result_wr,
+                    timeout,
+                    &status);
+            trios_stop_timer("NNTI_wait - short result", call_time);
+            if (status.result == NNTI_ETIMEDOUT) {
+                log_info(debug_level, "NNTI_wait for result timed out");
+                rc = status.result;
 
-        break;
+                goto wait_timedout;
+            }
+            if (status.result != NNTI_OK) {
+                log_info(debug_level, "NNTI_wait for result failed");
+                rc = status.result;
+                req->status = NSSI_REQUEST_ERROR;
+
+                goto wait_failed;
+            }
+
+            log_debug(debug_level, "Processing result status.offset=%d", status.offset);
+
+            /* we are now ready to process the result */
+            req->status = NSSI_PROCESSING_RESULT;
+
+            rc = process_result((char *)status.start+status.offset, req);
+            if (rc != NSSI_OK) {
+                log_fatal(debug_level,"unable to process result");
+                fprint_NNTI_status(logger_get_file(), "status", "FATAL", &status);
+
+                goto wait_failed;
+            }
+
+            NNTI_destroy_work_request(
+                    &req->short_result_wr);
+
+            goto wait_success;
     }
 
+
+
+
+request_null:
+    return rc;
+
+request_error:
+    return rc;
+
+request_bad_status:
+    /* this should only execute if something went wrong */
+    log_fatal(debug_level,"invalid request status %d",req->status);
+    return NSSI_EBADRPC;
+
+request_complete:
+    if (req->is_responseless == TRUE) {
+        return rc;
+    }
+    goto buffer_cleanup;
+
+wait_timedout:
+    return rc;
+
+wait_failed:
+    /* check for an error */
+    *remote_rc = req->error_code;
+    return rc;
+
+wait_success:
+    /* call the callback function associated with the request */
+    log_debug(debug_level, "calling callback for wait(): op=%d", req->opcode);
+    if (req->callback) {
+        req->callback(req);
+    }
+
+    /* check for completion */
+    log_debug(debug_level,"timedwait finished");
+    *remote_rc = NSSI_OK;
+    goto buffer_cleanup;
+
+buffer_cleanup:
+    if (req->app_pinned_short_request == FALSE) {
+        log_debug(debug_level, "Cleanup short request");
+        rc = teardown_short_request(req);
+        if (rc != NSSI_OK) {
+            log_error(debug_level, "failed to cleanup long args");
+        }
+    }
+
+    if (req->app_pinned_short_result == FALSE) {
+        log_debug(debug_level, "Cleanup short result");
+        rc = teardown_short_result(req);
+        if (rc != NSSI_OK) {
+            log_error(debug_level, "failed to cleanup long args");
+        }
+    }
 
     if (req->use_long_args) {
         log_debug(debug_level, "Cleanup long args");
@@ -1124,26 +1211,7 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
         rc = teardown_long_args(req);
         if (rc != NSSI_OK) {
             log_error(debug_level, "failed to cleanup long args");
-            return NSSI_EBADRPC;
         }
-    }
-
-
-cleanup:
-
-    /* Did we get here because of an error in this code? */
-    if (rc != NSSI_OK) {
-        return rc;
-    }
-
-    /* call the callback function associated with the request */
-    log_debug(debug_level, "calling callback for wait(): op=%d", req->opcode);
-    if (req->callback) {
-        req->callback(req);
-    }
-
-    if (req->app_pinned_short_result == FALSE) {
-        teardown_short_result(req);
     }
 
     /* If the request has data associated with it, the data should
@@ -1163,28 +1231,14 @@ cleanup:
                 memcpy(req->data, NNTI_BUFFER_C_POINTER(req->bulk_data_hdl), req->data_size);
                 trios_stop_timer("memcpy bq to target buf", call_time);
             }
+            log_debug(debug_level, "Cleanup bulk data");
             teardown_bulk_data(req);
         }
     }
 
     trios_stop_timer("nssi_timedwait - total", total_time);
 
-    /* check for an error */
-    if (req->status == NSSI_REQUEST_ERROR) {
-        *remote_rc = req->error_code;
-        return rc;
-    }
-
-    /* check for completion */
-    if (req->status == NSSI_REQUEST_COMPLETE) {
-        log_debug(debug_level,"timedwait finished");
-        *remote_rc = NSSI_OK;
-        return rc;
-    }
-
-    /* this should only execute if something went wrong */
-    log_fatal(debug_level,"invalid request status %d",req->status);
-    return NSSI_EBADRPC;
+    return rc;
 }
 
 int nssi_wait(nssi_request *req, int *rc)
@@ -1236,16 +1290,21 @@ int nssi_waitany(
 			case NSSI_REQUEST_COMPLETE:
 				work_requests[i]=NULL;
 				break;
-			default:
+            case NSSI_SENDING_REQUEST:
+                work_requests[i]=&req_array[i].short_request_wr;
+                break;
+            case NSSI_PROCESSING_REQUEST:
     	        nnti_rc = NNTI_create_work_request(
-    	        		req_array[i].short_result_hdl,
-    	        		&req_array[i].short_result_wr);
+                                req_array[i].short_result_hdl,
+                                &req_array[i].short_result_wr);
 				work_requests[i]=&req_array[i].short_result_wr;
-
 				break;
+            default:
+                break;
         }
     }
 
+wait_again:
     nnti_rc=NNTI_waitany(
     		work_requests,
     		req_count,
@@ -1264,6 +1323,18 @@ int nssi_waitany(
         log_info(debug_level, "NNTI_wait for result failed");
         rc = status.result;
         req_array[*which].status = NSSI_REQUEST_ERROR;
+    }
+
+    if (req_array[*which].status == NSSI_SENDING_REQUEST) {
+        /* the send is complete.  now wait for the result. */
+        req_array[*which].status = NSSI_PROCESSING_REQUEST;
+
+        nnti_rc = NNTI_create_work_request(
+                        req_array[*which].short_result_hdl,
+                        &req_array[*which].short_result_wr);
+        work_requests[*which]=&req_array[*which].short_result_wr;
+
+        goto wait_again;
     }
 
     log_debug(debug_level, "Processing result status.offset=%d", status.offset);
@@ -1290,7 +1361,7 @@ int nssi_waitany(
 cleanup:
 
 	for (i=0;i<req_count;i++) {
-		if (work_requests[i]) {
+		if ((work_requests[i]) && (work_requests[i] == &req_array[i].short_result_wr)) {
 			NNTI_destroy_work_request(work_requests[i]);
 		}
 	}
@@ -1395,18 +1466,23 @@ int nssi_waitall(
 			case NSSI_REQUEST_COMPLETE:
 				work_requests[i]=NULL;
 				break;
-			default:
-    	        nnti_rc = NNTI_create_work_request(
-    	        		req_array[i].short_result_hdl,
-    	        		&req_array[i].short_result_wr);
-				work_requests[i]=&req_array[i].short_result_wr;
-
-				break;
+            case NSSI_SENDING_REQUEST:
+                work_requests[i]=&req_array[i].short_request_wr;
+                break;
+            case NSSI_PROCESSING_REQUEST:
+                nnti_rc = NNTI_create_work_request(
+                                req_array[i].short_result_hdl,
+                                &req_array[i].short_result_wr);
+                work_requests[i]=&req_array[i].short_result_wr;
+                break;
+            default:
+                break;
         }
     }
 
     for (i=0;i<req_count;i++) {
-    	nnti_rc=NNTI_waitany(
+wait_again:
+        nnti_rc=NNTI_waitany(
     			work_requests,
     			req_count,
     			timeout,
@@ -1424,6 +1500,18 @@ int nssi_waitall(
             req_array[which].status = NSSI_REQUEST_ERROR;
             errors++;
             continue;
+        }
+
+        if (req_array[which].status == NSSI_SENDING_REQUEST) {
+            /* the send is complete.  now wait for the result. */
+            req_array[which].status = NSSI_PROCESSING_REQUEST;
+
+            nnti_rc = NNTI_create_work_request(
+                            req_array[which].short_result_hdl,
+                            &req_array[which].short_result_wr);
+            work_requests[which]=&req_array[which].short_result_wr;
+
+            goto wait_again;
         }
 
         log_debug(debug_level, "Processing result status.offset=%d", status.offset);
@@ -1839,8 +1927,6 @@ int nssi_send_request(
     nssi_request_header header;   /* the request header */
     char *buf;
 
-    int retries=0;
-
     trios_declare_timer(total_time);
     trios_declare_timer(call_time);
 
@@ -1923,47 +2009,36 @@ int nssi_send_request(
     /* send the encoded short request buffer to the server */
     log_debug(rpc_debug_level,"sending short request, id=%lu, len=%d", header.id, len);
 
-    /* Times out after DEFAULT_RPC_TIMEOUT */
-    do {
-    	trios_start_timer(call_time);
-    	rc=NNTI_send(
-    			&request->svc->svc_host,
-    			request->short_request_hdl,
-    			&request->svc->req_addr,
-    			&request->short_request_wr);
-    	trios_stop_timer("NNTI_send - send req", call_time);
-    	if (rc != NNTI_OK) {
-    		log_error(rpc_debug_level, "failed sending short request: %s",
-    				nnti_err_str(rc));
-    	} else {
-    		trios_start_timer(call_time);
-    		rc=NNTI_wait(
-    				&request->short_request_wr,
-    				-1,
-    				&status);
-    		trios_stop_timer("NNTI_wait - send req", call_time);
-    		if (status.result == NNTI_EDROPPED) {
-    			log_debug(LOG_ALL, "request dropped");
-    		}
-    	}
-    } while((status.result == NNTI_EDROPPED) && (retries++ < 3));
+    trios_start_timer(call_time);
+    rc=NNTI_send(
+            &request->svc->svc_host,
+            request->short_request_hdl,
+            &request->svc->req_addr,
+            &request->short_request_wr);
+    trios_stop_timer("NNTI_send - send req", call_time);
     if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed waiting for send: %s",
+        log_error(rpc_debug_level, "failed sending short request: %s",
                 nnti_err_str(rc));
-    }
-    if (rc == NNTI_ETIMEDOUT) {
-        log_info(rpc_debug_level, "put request timed out");
-        goto cleanup;
-    }
-    if (rc != NNTI_OK) {
-        log_info(rpc_debug_level,""
-        "unable to PUT the short request");
         goto cleanup;
     }
     log_debug(rpc_debug_level,"message sent");
 
-    /* change the state of the pending request */
-    request->status = NSSI_PROCESSING_REQUEST;
+    if (request->is_responseless == TRUE) {
+        trios_start_timer(call_time);
+        rc=NNTI_wait(
+                &request->short_request_wr,
+                -1,
+                &status);
+        trios_stop_timer("NNTI_wait - send req", call_time);
+        if (status.result == NNTI_EDROPPED) {
+            log_debug(rpc_debug_level, "request dropped");
+        }
+        if (rc != NNTI_OK) {
+            log_debug(rpc_debug_level, "failed waiting for send: %s",
+                    nnti_err_str(rc));
+            goto cleanup;
+        }
+    }
 
     if (request->is_sync == TRUE) {
         int remote_rc=NSSI_OK;
@@ -1974,7 +2049,14 @@ cleanup:
     log_debug(rpc_debug_level, "finished nssi_send_request (req.opcode=%d, req.id=%d)",
             request->opcode, request->id);
 
-    if (rc != NSSI_OK) {
+    if (rc == NSSI_OK) {
+        if (request->is_responseless == TRUE) {
+            request->status = NSSI_REQUEST_COMPLETE;
+        }
+    } else {
+        /* change the state of the pending request */
+        request->status = NSSI_REQUEST_ERROR;
+
         if (request->app_pinned_short_request == FALSE) {
             teardown_short_request(request);
         }

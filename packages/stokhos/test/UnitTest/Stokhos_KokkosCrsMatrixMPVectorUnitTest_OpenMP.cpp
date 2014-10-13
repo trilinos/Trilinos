@@ -45,8 +45,7 @@
 
 #include "Stokhos_KokkosCrsMatrixMPVectorUnitTest.hpp"
 
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_OpenMP.hpp"
+#include "Kokkos_Core.hpp"
 
 // Instantiate test for OpenMP device
 using Kokkos::OpenMP;

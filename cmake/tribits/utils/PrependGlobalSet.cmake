@@ -52,7 +52,7 @@ INCLUDE(AssertDefined)
 #
 # The variable ``<varName>`` must exist before calling this function.  To set
 # it empty initially use `GLOBAL_NULL_SET()`_.
-# 
+#
 MACRO(PREPEND_GLOBAL_SET VARNAME)
   ASSERT_DEFINED(${VARNAME})
   GLOBAL_SET(${VARNAME} ${ARGN} ${${VARNAME}})

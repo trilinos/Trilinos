@@ -53,6 +53,8 @@
 #ifndef MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_
 #define MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_
 
+#ifdef HAVE_MUELU_EXPERIMENTAL
+
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Teuchos_ParameterList.hpp>
@@ -131,4 +133,5 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_SCHURCOMPLEMENTFACTORY_SHORT
+#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif /* MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_ */

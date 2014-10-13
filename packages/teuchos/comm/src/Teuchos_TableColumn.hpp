@@ -63,15 +63,15 @@ namespace Teuchos
     TableColumn() : data_() {;}
 
     /** \brief  Form a column of std::string entries */
-    TableColumn(const Array<std::string>& vals); 
+    TableColumn(const Array<std::string>& vals);
 
     /** \brief  Form a column of double entries */
-    TableColumn(const Array<double>& vals, int precision); 
+    TableColumn(const Array<double>& vals, int precision);
 
     /** \brief  Form a column of compound entries written as "first(second)" */
     TableColumn(const Array<double>& first, const Array<double>& second,
                 int precision,
-                bool spaceBeforeParentheses); 
+                bool spaceBeforeParentheses);
 
     /** */
     int numRows() const {return data_.size();}

@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/utils)
@@ -20,7 +18,6 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
   Aggregates.cpp
-  BlockedPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
 # CoupledAggregationFactory.cpp
@@ -41,13 +38,19 @@ APPEND_SET(SOURCES
   SaPFactory.cpp
   Smoothers/SmootherFactory.cpp
   Smoothers/MueLu_TestHelpersSmoothers.cpp
-  SubBlockAFactory.cpp
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
   TransPFactory.cpp
   Utilities
   VariableContainer.cpp
 )
+
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  APPEND_SET(SOURCES
+    BlockedPFactory.cpp
+    SubBlockAFactory.cpp
+  )
+ENDIF()
 
 ### Tests that require other Trilinos packages
 
@@ -104,7 +107,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     UnitTests
     SOURCES ${SOURCES}
     COMM serial mpi
-    DEPLIBS muelu muelu-adapters xpetra
     )
 
   IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt

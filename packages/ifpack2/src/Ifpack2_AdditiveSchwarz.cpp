@@ -58,7 +58,6 @@
 // #  include "Ifpack2_SupportGraph_def.hpp"
 // #endif
 #include "Ifpack2_ETIHelperMacros.h"
-#include "KokkosClassic_config.h"
 
 // mfh 06 Jan 2014: AdditiveSchwarz's second template parameter, the
 // type of the subdomain solver, is being deprecated.  It's possible
@@ -96,7 +95,8 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_ADDITIVE_SCHWARZ_ILUT )
 
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode>,
                                  Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > >;
@@ -105,7 +105,7 @@ namespace Ifpack2 {
                                  Ifpack2::ILUT<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > >;
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>,
                                  Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > >;
@@ -113,6 +113,7 @@ namespace Ifpack2 {
   template class AdditiveSchwarz<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>,
                                  Ifpack2::ILUT<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> > >;
 #endif
+#endif // HAVE_TPETRA_INST_DOUBLE
 
 }
 

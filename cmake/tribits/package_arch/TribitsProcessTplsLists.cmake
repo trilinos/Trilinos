@@ -154,15 +154,15 @@ MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
 
     MATH(EXPR ${REPOSITORY_NAME}_LAST_TPL_IDX
       "${${REPOSITORY_NAME}_CURR_NUM_TPLS}-1")
-  
+
     FOREACH(TPL_IDX RANGE ${${REPOSITORY_NAME}_LAST_TPL_IDX})
 
       IF (TRIBITS_PROCESS_TPLS_LISTS_DEBUG)
         PRINT_VAR(TPL_IDX)
       ENDIF()
- 
+
       # Get fields for this TPL
-  
+
       MATH(EXPR TPL_NAME_IDX
         "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_NAME_OFFSET}")
       LIST(GET ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_NAME_IDX}
@@ -170,7 +170,7 @@ MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
       IF (TRIBITS_PROCESS_TPLS_LISTS_DEBUG)
         PRINT_VAR(TPL_NAME)
       ENDIF()
-  
+
       MATH(EXPR TPL_FINDMOD_IDX
         "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_FINDMOD_OFFSET}")
       LIST(GET ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_FINDMOD_IDX}
@@ -178,7 +178,7 @@ MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
       IF (TRIBITS_PROCESS_TPLS_LISTS_DEBUG)
         PRINT_VAR(TPL_FINDMOD)
       ENDIF()
-  
+
       MATH(EXPR TPL_CLASSIFICATION_IDX
         "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_CLASSIFICATION_OFFSET}")
       LIST(GET ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_CLASSIFICATION_IDX}
@@ -191,23 +191,23 @@ MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
       SET(TPL_TESTGROUP ${TPL_CLASSIFICATION})
 
       TRIBITS_UPDATE_PS_PT_SS_ST(TPL  ${TPL_NAME}  TPL_TESTGROUP)
-  
+
       # Update TPLS list (unless the TPL already exists)
-   
+
       IF (${TPL_NAME}_FINDMOD)
         # If the variable ${TPL_NAME}_FINDMOD already exists, then this TPL
         # has already been defined in a previous repository.  In this case, we
         # will just leave the TPL in its current position.
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE("-- " "NOTE: The TPL ${TPL_NAME} has already been defined so leaving it"
-            " in the same location and not adding it again!") 
+            " in the same location and not adding it again!")
         ENDIF()
       ELSE()
         LIST(APPEND ${PROJECT_NAME}_TPLS ${TPL_NAME})
-      ENDIF() 
- 
+      ENDIF()
+
       # Set ${TPL_NAME}_TESTGROUP
-  
+
       IF (TPL_TESTGROUP STREQUAL PT
         OR TPL_TESTGROUP STREQUAL ST
         OR TPL_TESTGROUP STREQUAL TT
@@ -217,11 +217,11 @@ MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
         MESSAGE(FATAL_ERROR "Error the TPL classification '${TPL_TESTGROUP}'"
           " for the TPL ${TPL_NAME} is not a valid classification." )
       ENDIF()
-  
+
       IF (NOT ${TPL_NAME}_TESTGROUP) # Allow for testing override
         SET(${TPL_NAME}_TESTGROUP ${TPL_TESTGROUP})
       ENDIF()
-  
+
       # Set ${TPL_NAME}_FINDMOD
 
       #PRINT_VAR(REPOSITORY_DIR)
@@ -253,24 +253,24 @@ MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
         PRINT_VAR(${TPL_NAME}_FINDMOD)
       ENDIF()
-  
+
       # Set the enable cache variable for ${TPL_NAME}
-  
+
       MULTILINE_SET(DOCSTR
         "Enable support for the TPL ${TPL_NAME} in all supported ${PROJECT_NAME} packages."
         "  This can be set to 'ON', 'OFF', or left empty ''."
         )
       SET_CACHE_ON_OFF_EMPTY( TPL_ENABLE_${TPL_NAME} "" ${DOCSTR} )
-  
+
       # 2008/11/25: rabartl: Above, we use the prefix TPL_ instead of
       # ${PROJECT_NAME}_ in order to make it clear that external TPLs are
       # different from packages so users don't get confused and
       # think that the project actually includes some TPL when it does not!
-  
+
     ENDFOREACH()
 
   ENDIF()
-  
+
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     PRINT_VAR(${PROJECT_NAME}_TPLS)
   ENDIF()
@@ -279,9 +279,9 @@ MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
 
   LIST(LENGTH ${PROJECT_NAME}_TPLS ${PROJECT_NAME}_NUM_TPLS)
   PRINT_VAR(${PROJECT_NAME}_NUM_TPLS)
-  
+
   # Create a reverse list for later use
-  
+
   IF (${PROJECT_NAME}_TPLS)
     SET(${PROJECT_NAME}_REVERSE_TPLS ${${PROJECT_NAME}_TPLS})
     LIST(REVERSE ${PROJECT_NAME}_REVERSE_TPLS)

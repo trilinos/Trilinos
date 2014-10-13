@@ -75,7 +75,7 @@
 // Macro that marks a function as "possibly unused," in order to
 // suppress build warnings.
 #if ! defined(TRILINOS_UNUSED_FUNCTION)
-#  if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#  if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_MSC_VER))
 #    define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
 #  elif defined(__clang__)
 #    if __has_attribute(unused)

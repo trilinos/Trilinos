@@ -42,12 +42,13 @@
 #ifndef TPETRA_BLOCKMAP_DEF_HPP
 #define TPETRA_BLOCKMAP_DEF_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Distributor.hpp"
+#include <Tpetra_ConfigDefs.hpp>
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
+#else
 
-#ifdef DOXYGEN_USE_ONLY
+#include "Tpetra_Distributor.hpp"
 #include "Tpetra_BlockMap_decl.hpp"
-#endif
 
 namespace Tpetra {
 
@@ -473,7 +474,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getFirstGlobalPointInLocalBlock(Local
   return pointMap_->getGlobalElement(view_firstPointInBlock_[localBlockID]);
 }
 
-}//namespace Tpetra
+} // namespace Tpetra
 
 //
 // Explicit instantiation macro
@@ -485,4 +486,5 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getFirstGlobalPointInLocalBlock(Local
   \
   template class BlockMap< LO , GO , NODE >;
 
-#endif
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRA_BLOCKMAP_DEF_HPP

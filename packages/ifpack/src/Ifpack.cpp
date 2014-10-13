@@ -52,6 +52,7 @@
 #include "Ifpack_SPARSKIT.h"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_DenseContainer.h"
+#include "Ifpack_TriDiContainer.h"
 #include "Ifpack_SparseContainer.h"
 #ifdef HAVE_IFPACK_AMESOS
 #include "Ifpack_Amesos.h"
@@ -136,6 +137,8 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
   ,KRYLOV
   ,IHSS
   ,SORA
+  ,TRIDI_RELAXATION
+  ,TRIDI_RELAXATION_STAND_ALONE
 };
 
 //==============================================================================
@@ -188,6 +191,8 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
   ,"Krylov"
   ,"IHSS"
   ,"SORa"
+  ,"tridi relaxation"
+  ,"tridi relaxation stand-alone"
 };
 
 //==============================================================================
@@ -240,6 +245,8 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
   ,true  // KRYLOV
   ,true  // IHSS
   ,true  // SORa
+  ,true  // tridi relaxation
+  ,true  // tridi relaxation standalone
 };
 
 //==============================================================================
@@ -363,6 +370,14 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
     case SORA:
       return(new Ifpack_SORa(Matrix));  
 #endif
+    case TRIDI_RELAXATION:
+     if (serial && !overrideSerialDefault)
+      return(new Ifpack_BlockRelaxation<Ifpack_TriDiContainer>(Matrix));
+     else
+      return(new Ifpack_AdditiveSchwarz<
+             Ifpack_BlockRelaxation<Ifpack_TriDiContainer> >(Matrix,Overlap));
+    case TRIDI_RELAXATION_STAND_ALONE:
+      return(new Ifpack_BlockRelaxation<Ifpack_TriDiContainer>(Matrix));
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
       // The only way to get here is if some code developer does a cast like

@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST( Ptr, rcpFromPtr_weakRef )
   TEST_THROW(a_ptr.getRawPtr(), DanglingReferenceError);
   TEST_THROW(a_rcp2.getRawPtr(), DanglingReferenceError);
 #endif
-  
+
 }
 
 

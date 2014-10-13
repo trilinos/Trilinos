@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(XpetraAddTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -13,7 +11,6 @@ KokkosClassic_ENABLE_Thrust)
     SOURCES Clone-Tpetra.cpp
     NUM_MPI_PROCS 1
     COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
     )
 
 ENDIF()

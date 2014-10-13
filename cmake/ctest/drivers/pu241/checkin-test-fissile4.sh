@@ -31,7 +31,7 @@ TRILINOS_BASE_DIR_ABS=$(readlink -f $TRILINOS_BASE_DIR)
 DRIVERS_BASE_DIR="$TRILINOS_BASE_DIR_ABS/Trilinos/cmake/ctest/drivers/pu241"
 
 # Packages in Trilinos to disable (mostly for auotmated CI server)
-DISABLE_PACKAGES=CTrilinos,ForTrilinos,PyTrilinos,Didasko,Mesquite,Phdmesh,Pliris,Claps,Amesos2,STK,FEApp
+DISABLE_PACKAGES=CTrilinos,ForTrilinos,PyTrilinos,Didasko,Mesquite,Phdmesh,Pliris,Claps,Amesos2,STK,FEApp,TriKota
 
 # Check to make sure that the env has been loaded correctly
 if [ "$LOADED_VERA_DEV_ENV" != "gcc461" ] ; then

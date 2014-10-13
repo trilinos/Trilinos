@@ -50,9 +50,8 @@
 #include <typeinfo>
 #include <stdexcept>
 
-#include <Kokkos_Serial.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Task.hpp>
-#include <Kokkos_View.hpp>
 #include <impl/Kokkos_IntPool.hpp>
 
 //----------------------------------------------------------------------------

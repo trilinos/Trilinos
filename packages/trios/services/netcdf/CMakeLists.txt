@@ -40,7 +40,6 @@
 #  *************************************************************************
 # @HEADER
 
- INCLUDE(TribitsSubPackageMacros)
 
 
 TRIBITS_SUBPACKAGE(netcdf-service)

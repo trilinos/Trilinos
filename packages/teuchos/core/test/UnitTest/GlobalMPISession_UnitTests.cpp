@@ -67,7 +67,7 @@ void globalReduceSuccess(bool &success, FancyOStream &out)
   int globalSumSuccessInt = -1;
   int localSuccessInt = (success ? 0 : 1);
   MPI_Allreduce(&localSuccessInt, &globalSumSuccessInt, 1,
-    MPI_INT, MPI_SUM, MPI_COMM_WORLD); 
+    MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   TEST_EQUALITY_CONST(globalSumSuccessInt, 0);
 #endif
 }

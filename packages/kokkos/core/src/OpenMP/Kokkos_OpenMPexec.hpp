@@ -318,6 +318,23 @@ public:
   inline Type team_scan( const Type & value ) const
     { return this-> template team_scan<Type>( value , 0 ); }
 
+#ifdef KOKKOS_HAVE_CXX11
+
+  /** \brief  Inter-thread parallel for. Executes op(iType i) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all threads of the the calling thread team.
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation>
+  KOKKOS_INLINE_FUNCTION void team_par_for(const iType n, const Operation & op) const {
+    const int chunk = ((n+m_team_size-1)/m_team_size);
+    const int start = chunk*m_team_rank;
+    const int end = start+chunk<n?start+chunk:n;
+    for(int i=start; i<end ; i++) {
+      op(i);
+    }
+  }
+#endif
+
   //----------------------------------------
   // Private for the driver
 
@@ -657,10 +674,10 @@ private:
 
 public:
 
-  template< class WorkArgTag >
+  template< class Arg0 , class Arg1 >
   inline
   OpenMPexecTeamVectorMember( Impl::OpenMPexec & exec
-                      , const TeamVectorPolicy< VectorLength, execution_space , WorkArgTag > & team
+                      , const TeamVectorPolicy< VectorLength, Arg0, Arg1, Kokkos::OpenMP> & team
                       , const int shmem_size
                       )
     : m_exec( exec )

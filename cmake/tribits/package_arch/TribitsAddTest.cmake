@@ -69,6 +69,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     [WILL_FAIL]
 #     [ENVIRONMENT <var0>=<value0> <var1>=<value1> ...]
 #     [TIMEOUT <maxSeconds>]
+#     [ADDED_TESTS_NAMES_OUT <testsNames>]
 #     )
 #
 # *Sections:*
@@ -116,14 +117,14 @@ INCLUDE(TribitsAddTestHelpers)
 #     is to allow multiple tests to be defined for the same executable.  CTest
 #     requires all test names to be globally unique in a single project.  See
 #     `Determining the Full Test Name (TRIBITS_ADD_TEST())`_.
-#  
+#
 #   ``NAME_POSTFIX <testNamePostfix>``
 #
 #     If specified, gives a postfix that will be added to the standard test
 #     name based on ``<exeRootName>`` (appended as ``_<NAME_POSTFIX>``).  If
 #     the ``NAME <testRootName>`` argument is given, this argument is ignored.
 #     See `Determining the Full Test Name (TRIBITS_ADD_TEST())`_.
-#  
+#
 #   ``DIRECTORY <dir>``
 #
 #     If specified, then the executable is assumed to be in the directory
@@ -131,7 +132,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     absolute path.  If not specified, the executable is assumed to be in the
 #     current binary directory ``${CMAKE_CURRENT_BINARY_DIR}``.  See
 #     `Determining the Executable or Command to Run (TRIBITS_ADD_TEST())`_.
-#   
+#
 #   ``ADD_DIR_TO_NAME``
 #
 #     If specified, then the directory name that this test resides in will be
@@ -141,7 +142,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     base directory stripped off so only the unique part of the test
 #     directory will be used.  All directory separators ``"/"`` will be
 #     changed into underscores ``"_"``.
-#  
+#
 #   ``RUN_SERIAL``
 #
 #     If specified then no other tests will be allowed to run while this test
@@ -149,7 +150,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     exclusive access for processes/threads.  This just sets the CTest test
 #     property ``RUN_SERIAL`` using the built-in CMake function
 #     ``SET_TESTS_PROPERTIES()``.
-#  
+#
 #   ``ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...``
 #
 #     If specified, then a set of arguments can be passed in quotes.  If
@@ -163,18 +164,18 @@ INCLUDE(TribitsAddTestHelpers)
 #     arguments passed to a single test invocation must be quoted or multiple
 #     tests taking single arguments will be created instead!  See `Adding
 #     Multiple Tests (TRIBITS_ADD_TEST())`_ for more details and exmaples.
-#  
+#
 #   ``POSTFIX_AND_ARGS_<IDX> <postfix> <arg0> <arg1> ...``
 #
 #     If specified, gives a sequence of sets of test postfix names and
 #     arguments lists for different tests (up to ``POSTFIX_AND_ARGS_19``).
 #     For example, a set of three different tests with argument lists can be
 #     specified as::
-#       
+#
 #       POSTIFX_AND_ARGS_0 postfix0 --arg1 --arg2="dummy"
 #       POSTIFX_AND_ARGS_1 postfix1  --arg2="fly"
 #       POSTIFX_AND_ARGS_2 postfix2  --arg2="bags"
-#  
+#
 #     This will create three different test cases with the postfix names
 #     ``postfix0``, ``postfix1``, and ``postfix2``.  The indexes must be
 #     consecutive starting a ``0`` and going up to (currently) ``19``.  The
@@ -183,7 +184,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     specify multiple arguments without having to quote them and one can
 #     allow long argument lists to span multiple lines.  See `Adding Multiple
 #     Tests (TRIBITS_ADD_TEST())`_ for more details and exmaples.
-#  
+#
 #   ``COMM [serial] [mpi]``
 #
 #     If specified, determines if the test will be added in serial and/or MPI
@@ -194,7 +195,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     the test will **not** be added if ``TPL_ENABLE_MPI=ON``.  If ``COMM
 #     serial mpi`` or ``COMM mpi serial`` is passed in, then the value of
 #     ``TPL_ENABLE_MPI`` does not determine if the test is added or not.
-#  
+#
 #   ``NUM_MPI_PROCS <numProcs>``
 #
 #     If specified, gives the number of MPI processes used to run the test
@@ -235,7 +236,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     of ``${PROJECT_NAME}_HOSTNAME`` gets printed out in the TriBITS cmake
 #     output under the section ``Probing the environment`` (see `Full
 #     Processing of TriBITS Project Files`_).
-#  
+#
 #   ``XHOST <host0> <host1> ...``
 #
 #     If specified, gives a list of hostnames (see ``HOST`` argument) on which
@@ -276,7 +277,9 @@ INCLUDE(TribitsAddTestHelpers)
 #     regular expressions ``<regex0>``, ``<regex1>`` etc. match the output
 #     send to stdout.  Otherwise, the test will fail.  This is set using the
 #     built-in CTest property ``PASS_REGULAR_EXPRESSION``.  Consult standard
-#     CMake documentation for full behavior.
+#     CMake documentation for full behavior.  TIPS: Replace ';' with '[;]' or
+#     CMake will interpretet this as a array eleemnt boundary.  To match '.',
+#     use '[.]'.
 #
 #   ``FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
 #
@@ -284,7 +287,8 @@ INCLUDE(TribitsAddTestHelpers)
 #     expressions ``<regex0>``, ``<regex1>`` etc. match the output send to
 #     stdout.  Otherwise, the test will pass.  This is set using the built-in
 #     CTest property ``FAIL_REGULAR_EXPRESSION``.  Consult standard CMake
-#     documentation for full behavior.
+#     documentation for full behavior (and see above tips for
+#     ``PASS_REGULAR_EXPRESSION``).
 #
 #   ``WILL_FAIL``
 #
@@ -310,6 +314,15 @@ INCLUDE(TribitsAddTestHelpers)
 #     to being run less often (i.e. set ``CATEGORIES NIGHTLY`` or even
 #     ``WEEKLY`` for extremely expensive tests).  Expensive tests are one of
 #     the worse forms of technical debt that a project can have!
+#
+#   ``ADDED_TESTS_NAMES_OUT <testsNames>``
+#
+#     If specified, then on output the variable ``<testsNames>`` will be set
+#     with the name(S) of the tests passed to ``ADD_TEST()``.  If more than
+#     one test is added, then this will be a list of test names.  Having this
+#     name allows the calling ``CMakeLists.txt`` file access and set
+#     additional test propeties (see `Setting additional test properties
+#     (TRIBITS_ADD_TEST())`_).
 #
 # In the end, this function just calls the built-in CMake commands
 # ``ADD_TEST(${TEST_NAME} ...)`` and ``SET_TESTS_PROPERTIES(${TEST_NAME}
@@ -349,7 +362,7 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # By default, this executable is assumed to be in the current CMake binary
 # directory ``${CMAKE_CURRENT_BINARY_DIR}`` but the directory location can be
-# changed using the ``DIRECTORY <dir>`` argument.  
+# changed using the ``DIRECTORY <dir>`` argument.
 #
 # If an arbitrary executable is to be run (i.e. not build inside of the
 # project), then pass in ``NOEXEPREFIX`` and ``NOEXESUFFIX`` and set
@@ -475,9 +488,27 @@ INCLUDE(TribitsAddTestHelpers)
 # directly supported and passed through this wrapper function can be set in
 # the outer ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_TEST()``.
 #
-# ToDo: Describe how to use new variable ``ADDED_TESTS_OUT`` to get the list
-# of tests actually added (if they are added) in order to make it easy to set
-# additional test properties.
+# If tests are added, then the names of those tests will be returned in the
+# varible ``ADDED_TESTS_NAMES_OUT <testsNames>``.  This can be used, for
+# example, to override the ``PROCESSORS`` property for the tests with::
+#
+#   TRIBITS_ADD_TEST( someTest ...
+#     ADDED_TESTS_NAMES_OUT  someTest_TEST_NAME )
+#
+#   IF (someTest_TEST_NAME)
+#     SET_TESTS_PROPERTIES( ${someTest_TEST_NAME}
+#       PROPERTIES ATTACHED_FILES someTest.log )
+#   ENDIF()
+#
+# where the test writes a log file ``someTest.log`` that we want to submit to
+# CDash also.
+#
+# This appraoch will work no matter what TriBITS names the individual test(s)
+# or whether the test(s) are added or not (depending on other arguments like
+# ``COMM``, ``XHOST``, etc.).
+#
+# There are many other test properties that one may want to set also and this
+# is the way it needs to be done.
 #
 # .. _Running multiple tests at the same time (TRIBITS_ADD_TEST()):
 #
@@ -539,10 +570,12 @@ INCLUDE(TribitsAddTestHelpers)
 # For example, if one runs an MPI program that uses 4 processes and 6 threads
 # per process, one would call::
 #
-#   TRIBITS_ADD_TEST(myProg ... NUM_MPI_PROCS 4 ...)
-#   SET_TESTS_PROPERTIES(${PACKAGE_NAME}_myProg PROPERTIES PROCESSORS 12)
+#   TRIBITS_ADD_TEST(myProg ... NUM_MPI_PROCS 4 ...
+#     ADDED_TESTS_NAMES_OUT  myProg_TEST_NAME)
 #
-# ToDo: Update above example to use loop over ``ADDED_TESTS_OUT``.
+#   IF (myProg_TEST_NAME)
+#     SET_TESTS_PROPERTIES(${myProg_TEST_NAME} PROPERTIES PROCESSORS 12)
+#   ENDIF()
 #
 # .. _Debugging and Examining Test Generation (TRIBITS_ADD_TEST()):
 #
@@ -586,7 +619,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
 
   GLOBAL_SET(TRIBITS_ADD_TEST_ADD_TEST_INPUT "")
   GLOBAL_SET(TRIBITS_SET_TEST_PROPERTIES_INPUT)
-   
+
   #
   # A) Parse the input arguments
   #
@@ -604,7 +637,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
      #prefix
      PARSE
      #lists
-     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT"
+     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TESTS_NAMES_OUT"
      #options
      "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;RUN_SERIAL"
      ${ARGN}
@@ -625,7 +658,13 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
     MESSAGE("")
     MESSAGE("TRIBITS_ADD_TEST: EXE_NAME = ${EXE_NAME}")
   ENDIF()
-  
+
+  IF(PARSE_ADDED_TESTS_NAMES_OUT)
+    SET(${PARSE_ADDED_TESTS_NAMES_OUT} "" PARENT_SCOPE )
+  ENDIF()
+
+  SET(ADDED_TESTS_NAMES_OUT)
+
   #
   # B) Add or don't add tests based on a number of criteria
   #
@@ -646,9 +685,13 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   # C) Set the name and path of the binary that will be run
   #
 
-  TRIBITS_ADD_TEST_GET_EXE_BINARY_NAME( "${EXE_NAME}"
-    ${PARSE_NOEXEPREFIX} ${PARSE_NOEXESUFFIX} ${PARSE_ADD_DIR_TO_NAME} EXE_BINARY_NAME )
-  
+  TRIBITS_ADD_TEST_GET_EXE_BINARY_NAME(
+    "${EXE_NAME}"
+    ${PARSE_NOEXEPREFIX}
+    ${PARSE_NOEXESUFFIX}
+    ${PARSE_ADD_DIR_TO_NAME} EXE_BINARY_NAME
+    )
+
   # If requested create a modifier for the name that will be inserted between
   # the package name and the given name or exe_name for the test
   SET(DIRECTORY_NAME "")
@@ -658,13 +701,13 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   ENDIF()
 
   #MESSAGE("TRIBITS_ADD_TEST: ${EXE_NAME}: EXE_BINARY_NAME = ${EXE_BINARY_NAME}")
-  
+
   IF (PARSE_NAME)
     SET(TEST_NAME "${DIRECTORY_NAME}${PARSE_NAME}")
   ELSEIF (PARSE_NAME_POSTFIX)
-    SET(TEST_NAME "${DIRECTORY_NAME}${EXE_NAME}_${PARSE_NAME_POSTFIX}")  
+    SET(TEST_NAME "${DIRECTORY_NAME}${EXE_NAME}_${PARSE_NAME_POSTFIX}")
   ELSE()
-    SET(TEST_NAME "${DIRECTORY_NAME}${EXE_NAME}")  
+    SET(TEST_NAME "${DIRECTORY_NAME}${EXE_NAME}")
   ENDIF()
 
   TRIBITS_ADD_TEST_ADJUST_DIRECTORY( ${EXE_BINARY_NAME} "${PARSE_DIRECTORY}"
@@ -682,7 +725,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   #
   # E) Get the MPI options
   #
-    
+
   TRIBITS_ADD_TEST_GET_NUM_PROCS_USED("${PARSE_NUM_MPI_PROCS}" NUM_PROCS_USED)
   IF (NUM_PROCS_USED LESS 0)
     SET(ADD_MPI_TEST FALSE)
@@ -705,11 +748,11 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   IF (PARSE_ARGS)
 
     # F.1) Add tests with simple lists of arguments
-  
+
     SET(COUNTER 0)
-  
+
     FOREACH(PARSE_ARG ${PARSE_ARGS})
-  
+
       IF(${NUM_PARSE_ARGS} EQUAL 1)
         SET(TEST_NAME_INSTANCE "${TEST_NAME}${MPI_NAME_POSTFIX}")
       ELSE()
@@ -718,7 +761,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
       IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
         MESSAGE(STATUS "TEST_NAME = ${TEST_NAME_INSTANCE}")
       ENDIF()
-  
+
       TRIBITS_CONVERT_CMND_ARG_STRING_TO_ADD_TEST_ARG_ARRAY(${PARSE_ARG} INARGS)
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
         PRINT_VAR(INARGS)
@@ -726,10 +769,13 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
 
       TRIBITS_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
         "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}"
-        ${PARSE_RUN_SERIAL} ${INARGS} )
-  
+        ${PARSE_RUN_SERIAL}  ADDED_TEST_NAME  ${INARGS} )
+      IF(PARSE_ADDED_TESTS_NAMES_OUT AND ADDED_TEST_NAME)
+        LIST(APPEND ADDED_TESTS_NAMES_OUT ${ADDED_TEST_NAME})
+      ENDIF()
+
       MATH(EXPR COUNTER ${COUNTER}+1 )
-  
+
     ENDFOREACH()
 
   ELSEIF (PARSE_POSTFIX_AND_ARGS_0)
@@ -755,11 +801,19 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
       SET(TEST_NAME_INSTANCE "${TEST_NAME}_${POSTFIX}${MPI_NAME_POSTFIX}")
 
       TRIBITS_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
-        "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}" ${PARSE_CREATE_WORKING_DIR}
-        ${PARSE_RUN_SERIAL} ${INARGS} )
+        "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}"  ${PARSE_CREATE_WORKING_DIR}
+        ${PARSE_RUN_SERIAL}   ADDED_TEST_NAME  ${INARGS} )
+      IF(PARSE_ADDED_TESTS_NAMES_OUT AND ADDED_TEST_NAME)
+        LIST(APPEND ADDED_TESTS_NAMES_OUT ${ADDED_TEST_NAME})
+      ENDIF()
 
     ENDFOREACH()
 
   ENDIF()
-  
+
+  IF(PARSE_ADDED_TESTS_NAMES_OUT)
+    SET(${PARSE_ADDED_TESTS_NAMES_OUT} "${ADDED_TESTS_NAMES_OUT}"
+      PARENT_SCOPE )
+  ENDIF()
+
 ENDFUNCTION()

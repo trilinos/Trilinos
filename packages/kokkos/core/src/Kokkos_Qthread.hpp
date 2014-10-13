@@ -46,25 +46,12 @@
 
 #include <cstddef>
 #include <iosfwd>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_ExecPolicy.hpp>
 #include <impl/Kokkos_Tags.hpp>
-
-/*--------------------------------------------------------------------------*/
-
-#if defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
-#include <Kokkos_OpenMP.hpp>
-#elif defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
-#include <Kokkos_Threads.hpp>
-#elif defined( KOKKOS_HAVE_OPENMP )
-#include <Kokkos_OpenMP.hpp>
-#elif defined( KOKKOS_HAVE_PTHREAD )
-#include <Kokkos_Threads.hpp>
-#else
-#include <Kokkos_Serial.hpp>
-#endif
 
 /*--------------------------------------------------------------------------*/
 

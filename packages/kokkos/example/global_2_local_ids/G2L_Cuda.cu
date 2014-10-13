@@ -42,7 +42,7 @@
 */
 
 #include <G2L.hpp>
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <iostream>
 
 namespace G2L {

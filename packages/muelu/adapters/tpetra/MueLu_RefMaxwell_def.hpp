@@ -328,6 +328,11 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
     A11_=Matrix1;
   }
   else {
+    // catch a failure
+    TEUCHOS_TEST_FOR_EXCEPTION(M0inv_Matrix_==Teuchos::null,std::invalid_argument,
+                               "MueLu::RefMaxwell::formCoarseMatrix(): Inverse of "
+                               "lumped mass matrix required for add-on (i.e. M0inv_Matrix is null)");
+
     // coarse matrix for add-on, i.e P11* (M1 D0 M0inv D0* M1) P11
     Teuchos::RCP<XMat> Zaux = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
     Teuchos::RCP<XMat> Z = MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
@@ -486,6 +491,52 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::Mul
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
   return false;
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+initialize(const Teuchos::RCP<TCRS> & D0_Matrix,
+           const Teuchos::RCP<TCRS> & M0inv_Matrix,
+           const Teuchos::RCP<TCRS> & M1_Matrix,
+           const Teuchos::RCP<TMV>  & Nullspace,
+           const Teuchos::RCP<TMV>  & Coords,
+           Teuchos::ParameterList& List)
+{
+  // some pre-conditions
+  TEUCHOS_ASSERT(D0_Matrix!=Teuchos::null);
+  TEUCHOS_ASSERT(M1_Matrix!=Teuchos::null);
+
+  Hierarchy11_ = Teuchos::null;
+  Hierarchy22_ = Teuchos::null;
+  parameterList_ = List;
+  disable_addon_ = false;
+  MaxCoarseSize_ = 1000;
+  MaxLevels_ = 5;
+  Cycles_ = 1;
+  precType11_ = "CHEBYSHEV";
+  precType22_ = "CHEBYSHEV";
+  mode_ = "additive";
+
+  // set parameters
+  setParameters(List);
+
+  // convert Tpetra matrices to Xpetra
+  Teuchos::RCP<XCRS> D0_tmp = Teuchos::rcp( new XTCRS(D0_Matrix) );
+  D0_Matrix_ = Teuchos::rcp( new XCrsWrap(D0_tmp) );
+
+  if(M0inv_Matrix != Teuchos::null) {
+    Teuchos::RCP<XCRS> M0inv_tmp = Teuchos::rcp( new XTCRS(M0inv_Matrix) );
+    M0inv_Matrix_ = Teuchos::rcp( new XCrsWrap(M0inv_tmp) );
+  }
+
+  Teuchos::RCP<XCRS> M1_tmp = Teuchos::rcp( new XTCRS(M1_Matrix) );
+  M1_Matrix_ = Teuchos::rcp( new XCrsWrap(M1_tmp) );
+
+  // convert Tpetra MultiVector to Xpetra
+  if(Coords != Teuchos::null)
+    Coords_ = Xpetra::toXpetra(Coords);
+  if(Nullspace != Teuchos::null)
+    Nullspace_ = Xpetra::toXpetra(Nullspace);
 }
 
 } // namespace

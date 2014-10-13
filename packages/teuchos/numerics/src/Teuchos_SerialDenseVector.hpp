@@ -48,7 +48,7 @@
 */
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_Object.hpp" 
+#include "Teuchos_Object.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 /*! \class Teuchos::SerialDenseVector
@@ -58,10 +58,10 @@ namespace Teuchos {
 
   template<typename OrdinalType, typename ScalarType>
   class SerialDenseVector : public SerialDenseMatrix<OrdinalType,ScalarType> {
-    
+
   public:
     //! @name Constructor/Destructor methods.
-  //@{ 
+  //@{
 
     //! Default Constructor
     /*! Creates an empty vector of no length.  The Sizing methods should be used to size this matrix.  Values of this matrix should be set using the [] or the () operators.
@@ -94,7 +94,7 @@ namespace Teuchos {
   //@}
 
   //! @name Sizing methods.
-  //@{ 
+  //@{
 
     //! Size method for changing the size of a SerialDenseVector, initializing entries to zero.
     /*!
@@ -117,7 +117,7 @@ namespace Teuchos {
 	This allows the user to redefine the length of a SerialDenseVector at any point.
 	This method can be called at any point after construction.  Any values previously in
 	this object will be copied to the resized vector.
-    */	
+    */
     int resize(OrdinalType length_in)
       {return(SerialDenseMatrix<OrdinalType,ScalarType>::reshape(length_in, 1));}
   //@}
@@ -133,7 +133,7 @@ namespace Teuchos {
   //@}
 
   //! @name Comparison methods.
-  //@{ 
+  //@{
     //! Equality of two matrices.
     /*! \return True if \e this vector and \c Operand are of the same length and have the same entries, else False will be returned.
     */
@@ -146,7 +146,7 @@ namespace Teuchos {
   //@}
 
   //! @name Set methods.
-  //@{ 
+  //@{
 
     //! Copies values from one vector to another.
     /*!
@@ -159,14 +159,14 @@ namespace Teuchos {
   //@}
 
   //! @name Accessor methods.
-  //@{ 
+  //@{
     //! Element access method (non-const).
     /*! Returns the ith element if x(i) is specified, the expression x[i] will return the same element.
 	\return (*this)(index)
 	\warning The validity of \c index will only be checked if Teuchos is configured with --enable-teuchos-abc.
     */
     ScalarType& operator () (OrdinalType index);
-    
+
     //! Element access method (const).
     /*! Returns the ith element if x(i) is specified, the expression x[i] will return the same element.
 	\return (*this)(index)
@@ -191,19 +191,19 @@ namespace Teuchos {
   //@}
 
   //! @name Mathematical methods.
-  //@{ 
+  //@{
     //! Compute the dot product of \c this vector and \c x.
     ScalarType dot( const SerialDenseVector<OrdinalType,ScalarType> &x) const;
   //@}
 
   //! @name Attribute methods.
-  //@{ 
+  //@{
     //! Returns the length of this vector.
     OrdinalType length() const {return(this->numRows_);}
   //@}
 
   //! @name I/O methods.
-  //@{ 
+  //@{
     //! Print method.  Define the behavior of the std::ostream << operator inherited from the Object class.
     virtual void print(std::ostream& os) const;
   //@}
@@ -216,7 +216,7 @@ namespace Teuchos {
   SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector( OrdinalType length_in, bool zeroOut ) : SerialDenseMatrix<OrdinalType,ScalarType>( length_in, 1, zeroOut ) {}
 
   template<typename OrdinalType, typename ScalarType>
-  SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector(DataAccess CV, ScalarType* values_in, OrdinalType length_in) : 
+  SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector(DataAccess CV, ScalarType* values_in, OrdinalType length_in) :
     SerialDenseMatrix<OrdinalType,ScalarType>( CV, values_in, length_in, length_in, 1 ) {}
 
   template<typename OrdinalType, typename ScalarType>
@@ -225,16 +225,16 @@ namespace Teuchos {
 
   template<typename OrdinalType, typename ScalarType>
   SerialDenseVector<OrdinalType, ScalarType>::~SerialDenseVector() {}
-  
+
   template<typename OrdinalType, typename ScalarType>
-  SerialDenseVector<OrdinalType, ScalarType>& SerialDenseVector<OrdinalType,ScalarType>::operator = (const SerialDenseVector<OrdinalType, ScalarType>& Source) 
+  SerialDenseVector<OrdinalType, ScalarType>& SerialDenseVector<OrdinalType,ScalarType>::operator = (const SerialDenseVector<OrdinalType, ScalarType>& Source)
   {
-    SerialDenseMatrix<OrdinalType,ScalarType>::operator=(Source); 
+    SerialDenseMatrix<OrdinalType,ScalarType>::operator=(Source);
     return(*this);
   }
 
   template<typename OrdinalType, typename ScalarType>
-  bool SerialDenseVector<OrdinalType, ScalarType>::operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand) const 
+  bool SerialDenseVector<OrdinalType, ScalarType>::operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand) const
   {
     bool result = 1;
     if(this->numRows_ != Operand.numRows_)
@@ -264,12 +264,12 @@ namespace Teuchos {
   ScalarType SerialDenseVector<OrdinalType, ScalarType>::dot( const SerialDenseVector<OrdinalType, ScalarType> &x) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(this->numRows_!= x.numRows_, std::invalid_argument,
-    "SerialDenseVector<T>::dot : " << 
+    "SerialDenseVector<T>::dot : " <<
     "Number of rows " << this->numRows_ << " not equal to x.numRows_ "<< x.numRows() );
-   
-    // Compute the dot product and return the result. 
-    return BLAS<OrdinalType, ScalarType>::DOT(this->numRows_, this->values(), 1, x.values(), 1); 
-  } 
+
+    // Compute the dot product and return the result.
+    return BLAS<OrdinalType, ScalarType>::DOT(this->numRows_, this->values(), 1, x.values(), 1);
+  }
 
   template<typename OrdinalType, typename ScalarType>
   void SerialDenseVector<OrdinalType, ScalarType>::print(std::ostream& os) const
@@ -279,19 +279,19 @@ namespace Teuchos {
       os << "Values_copied : yes" << std::endl;
     else
       os << "Values_copied : no" << std::endl;
-      os << "Length : " << this->numRows_ << std::endl;
+    os << "Length : " << this->numRows_ << std::endl;
     if(this->numRows_ == 0) {
       os << "(std::vector is empty, no values to display)" << std::endl;
     } else {
       for(OrdinalType i = 0; i < this->numRows_; i++) {
-	  os << (*this)(i) << " ";
+        os << (*this)(i) << " ";
       }
       os << std::endl;
     }
   }
 
   //----------------------------------------------------------------------------------------------------
-  //   Accessor methods 
+  //   Accessor methods
   //----------------------------------------------------------------------------------------------------
 
   template<typename OrdinalType, typename ScalarType>
@@ -302,7 +302,7 @@ namespace Teuchos {
 #endif
     return(this->values_[index]);
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   inline const ScalarType& SerialDenseVector<OrdinalType, ScalarType>::operator () (OrdinalType index) const
   {
@@ -311,7 +311,7 @@ namespace Teuchos {
 #endif
     return(this->values_[index]);
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   inline const ScalarType& SerialDenseVector<OrdinalType, ScalarType>::operator [] (OrdinalType index) const
   {
@@ -320,7 +320,7 @@ namespace Teuchos {
 #endif
     return(this->values_[index]);
   }
-  
+
   template<typename OrdinalType, typename ScalarType>
   inline ScalarType& SerialDenseVector<OrdinalType, ScalarType>::operator [] (OrdinalType index)
   {

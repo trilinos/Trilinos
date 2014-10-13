@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(XpetraAddTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -16,7 +14,6 @@ IF((${PACKAGE_NAME}_ENABLE_Stratimikos) AND
   TRIBITS_ADD_EXECUTABLE(
     Stratimikos
     SOURCES Stratimikos.cpp
-    DEPLIBS muelu xpetra muelu-adapters
     COMM serial mpi
     )
 

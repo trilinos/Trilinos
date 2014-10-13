@@ -2,9 +2,19 @@
 
 #Default settings: change those according to your machine
 #For example have two different wrappers with icpc and g++  as backend
+#The defaults can be overwritte by using the usual arguments 
+#(eg -arch=sm_30 -ccbin icpc)
+
+#default_arch="sm_20"
 default_arch="sm_35"
+#default_arch="sm_50"
+
 #default_compiler="/usr/local/gcc/4.8.3/bin/g++"
 default_compiler="g++"
+#default_compiler="icpc"
+
+
+
 
 #Internal variables
 cpp_files=""
@@ -32,16 +42,19 @@ do
     cpp_files="$cpp_files $1"
     ;;
   #Handle known nvcc args
-  -O*|-D*|-arch*|-gencode*|-c|-I*|-L*|-l*|-g|--help|--version|--dryrun|--verbose|--std=c++11)
+  -O*|-D*|-gencode*|-c|-I*|-L*|-l*|-g|--help|--version|--dryrun|--verbose|--std=c++11|--keep-dir|-E|-M|-G|--relocatable-device-code*)
     cuda_args="$cuda_args $1"
     ;;
   #Handle known nvcc args that have an argument
-  -o|-rdc)
+  -o|-rdc|-maxrregcount)
     cuda_args="$cuda_args $1 $2"
     shift
     ;;
   #strip of pedantic because it produces endless warnings about #LINE added by the preprocessor
   -pedantic)
+    ;;
+  #strip -Xcompiler because we add it
+  -Xcompiler)
     ;;
   #strip of "-x cu" because we add that
   -x)

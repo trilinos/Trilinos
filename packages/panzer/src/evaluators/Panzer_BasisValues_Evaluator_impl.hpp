@@ -58,7 +58,10 @@ PHX_EVALUATOR_CTOR(BasisValues_Evaluator,p)
      = p.get< Teuchos::RCP<const panzer::PointRule> >("Point Rule");
   Teuchos::RCP<const panzer::PureBasis> inBasis
      = p.get<Teuchos::RCP<const panzer::PureBasis> >("Basis");
-  bool derivativesRequired = p.get<bool>("Derivatives Required");
+
+  bool derivativesRequired = true;
+  if(p.isType<bool>("Derivatives Required"))
+    derivativesRequired = p.get<bool>("Derivatives Required");
 
   initialize(pointRule,inBasis,derivativesRequired);
 }

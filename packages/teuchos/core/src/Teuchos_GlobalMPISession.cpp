@@ -92,7 +92,7 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
     }
     std::terminate();
   }
-  
+
   initialize(out); // Get NProc_ and rank_
 
   int nameLen;
@@ -106,12 +106,12 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
     }
     std::terminate();
   }
-  
+
   oss << "Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name "
       << procName << " and rank " << rank_ << "!" << std::endl;
 
 #else
-  
+
   oss << "Teuchos::GlobalMPISession::GlobalMPISession(): started serial run"
       << std::endl;
 
@@ -195,7 +195,7 @@ int GlobalMPISession::sum(int localVal)
   justInTimeInitialize();
 #ifdef HAVE_MPI
   int globalSum = -1;
-  MPI_Allreduce(&localVal, &globalSum, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); 
+  MPI_Allreduce(&localVal, &globalSum, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   return globalSum;
 #else
   return localVal;
@@ -209,7 +209,7 @@ void GlobalMPISession::allGather(int localVal, const ArrayView<int> &allVals)
   TEUCHOS_ASSERT_EQUALITY(allVals.size(), getNProc());
 #ifdef HAVE_MPI
   MPI_Allgather( &localVal, 1, MPI_INT, allVals.getRawPtr(), 1, MPI_INT,
-    MPI_COMM_WORLD); 
+    MPI_COMM_WORLD);
 #else
   allVals[0] = localVal;
 #endif

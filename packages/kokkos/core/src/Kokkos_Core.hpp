@@ -49,7 +49,7 @@
 //----------------------------------------------------------------------------
 // Include the execution space header files for the enabled execution spaces.
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
 #if defined( KOKKOS_HAVE_CUDA )
 #include <Kokkos_Cuda.hpp>
@@ -65,6 +65,7 @@
 
 #include <Kokkos_Serial.hpp>
 
+#include <Kokkos_Pair.hpp>
 #include <Kokkos_View.hpp>
 #include <Kokkos_Vectorization.hpp>
 #include <Kokkos_Atomic.hpp>
@@ -75,7 +76,13 @@
 namespace Kokkos {
   void initialize();
 
-  void initialize(int narg, char* arg[]);
+  void initialize(int& narg, char* arg[]);
+
+  void initialize(const int arg1);
+
+  void initialize(const int arg1, const int arg2);
+
+  void initialize(const int arg1, const int arg2, const int arg3);
 
   void finalize();
   

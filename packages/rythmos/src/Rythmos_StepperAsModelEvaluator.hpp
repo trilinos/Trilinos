@@ -269,7 +269,6 @@ void StepperAsModelEvaluator<Scalar>::evalModelImpl(
 
   using Teuchos::as;
   using Teuchos::describe;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Teuchos::VerboseObjectTempState<InterpolationBufferBase<Scalar> > VOTSSB;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(

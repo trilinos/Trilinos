@@ -47,10 +47,7 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Distributor.hpp"
-
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_DistObject_decl.hpp"
-#endif // DOXYGEN_USE_ONLY
+#include "Tpetra_DistObject_decl.hpp"
 
 
 namespace Tpetra {

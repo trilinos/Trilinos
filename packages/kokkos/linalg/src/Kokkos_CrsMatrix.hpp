@@ -1877,9 +1877,9 @@ inline
 mv_multiply_team_policy( const int nrow , const int rows_per_thread, const int increment )
 {
 #ifdef KOKKOS_HAVE_CUDA
-  const int teamsize = Impl::is_same< DeviceType , Kokkos::Cuda>::value ? 256 : hwloc::get_available_threads_per_core() ;
+  const int teamsize = Impl::is_same< DeviceType , Kokkos::Cuda>::value ? 256 : 1;//hwloc::get_available_threads_per_core() ;
 #else
-  const int teamsize = hwloc::get_available_threads_per_core();
+  const int teamsize = 1;//hwloc::get_available_threads_per_core();
 #endif
   const int nteams = (((nrow+rows_per_thread-1)/rows_per_thread)
                       *increment+teamsize-1)/teamsize;

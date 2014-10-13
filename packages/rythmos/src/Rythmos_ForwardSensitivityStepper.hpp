@@ -1370,7 +1370,6 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Teuchos::VerboseObjectTempState<InterpolationBufferBase<Scalar> > VOTSIBB;
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -1478,9 +1477,7 @@ Scalar ForwardSensitivityStepper<Scalar>::takeDecoupledStep(
   RYTHMOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: decoupled");
 
   using Teuchos::as;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Teuchos::VerboseObjectTempState<InterpolationBufferBase<Scalar> > VOTSIBB;
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();

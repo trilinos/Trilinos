@@ -46,7 +46,7 @@
 #define _TEUCHOS_ORDINALTRAITS_HPP_
 
 /*! \file Teuchos_OrdinalTraits.hpp
-  \brief Defines basic traits for the ordinal field type 
+  \brief Defines basic traits for the ordinal field type
 */
 
 #include "Teuchos_ConfigDefs.hpp"
@@ -89,8 +89,8 @@ struct OrdinalTraits {
   //! Returns representation of one for this ordinal type.
   static inline T one()                      { return UndefinedOrdinalTraits<T>::notDefined(); }
 
-  //! \brief Returns a value designating the maximum value accessible by code using OrdinalTraits. 
-  /*! For a signed ordinal, this will typically be the maximum positive value. However, for an unsigned ordinal, this will typically be one less than the 
+  //! \brief Returns a value designating the maximum value accessible by code using OrdinalTraits.
+  /*! For a signed ordinal, this will typically be the maximum positive value. However, for an unsigned ordinal, this will typically be one less than the
    *  maximum value, because the maximum value will typically be reserved for designating an invalid value.
    */
   static inline T max()                  { return UndefinedOrdinalTraits<T>::notDefined(); }

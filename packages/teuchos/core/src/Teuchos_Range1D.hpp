@@ -59,7 +59,7 @@ namespace Teuchos {
 
 
 /** \brief Subregion Index Range Class.
- * 
+ *
  * The class <tt>%Range1D</tt> encapsulates a 1-D, zero-based, range of
  * non-negative indexes.  It is used to index into vectors and matrices and
  * return subregions of them respectively.
@@ -173,12 +173,12 @@ private:
 
   Ordinal lbound_;
   Ordinal ubound_;
-  
+
   inline void assert_valid_range(Ordinal lbound, Ordinal ubound) const;
-  
+
 }; // end class Range1D
 
-  
+
 /** \brief rng1 == rng2.
  *
  * @return Returns <tt>rng1.lbound() == rng2.ubound() && rng1.ubound() == rng2.ubound()</tt>.
@@ -190,7 +190,7 @@ inline bool operator==(const Range1D& rng1, const Range1D& rng2 )
   return rng1.lbound() == rng2.lbound() && rng1.ubound() == rng2.ubound();
 }
 
-  
+
 /** \brief rng1 == rng2.
  *
  * @return Returns <tt>rng1.lbound() == rng2.ubound() && rng1.ubound() == rng2.ubound()</tt>.
@@ -256,7 +256,7 @@ inline Range1D operator-(const Range1D &rng_rhs, Range1D::Ordinal i)
 
 /** \brief Return a bounded index range from a potentially unbounded index
   * range.
-  * 
+  *
   * Return a index range of lbound to ubound if rng.full_range() == true
   * , otherwise just return a copy of rng.
   *
@@ -272,7 +272,7 @@ inline Range1D operator-(const Range1D &rng_rhs, Range1D::Ordinal i)
 inline Range1D full_range(const Range1D &rng, Range1D::Ordinal lbound, Range1D::Ordinal ubound)
 {	return rng.full_range() ? Range1D(lbound,ubound) : rng; }
 
-  
+
 /** \brief Print out to ostream.
  *
  * \relates Range1D

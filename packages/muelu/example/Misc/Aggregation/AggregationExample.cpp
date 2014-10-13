@@ -53,6 +53,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_FancyOStream.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 // Xpetra
 #include <Xpetra_Parameters.hpp>
@@ -75,7 +76,7 @@ namespace MueLuExamples {
 
 #include "MueLu_UseShortNames.hpp"
 
-void dumpAggregates(Aggregates & aggregates);
+  void dumpAggregates(Aggregates & aggregates);
 
 }
 
@@ -88,93 +89,101 @@ int main(int argc, char *argv[]) {
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  /**********************************************************************************/
-  /* SET TEST PARAMETERS                                                            */
-  /**********************************************************************************/
-  // Note: use --help to list available options.
-  Teuchos::CommandLineProcessor clp(false);
+  bool success = false;
+  bool verbose = true;
+  try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp); // manage parameters of the test case
-  Xpetra::Parameters xpetraParameters(clp);       // manage parameters of xpetra
+    /**********************************************************************************/
+    /* SET TEST PARAMETERS                                                            */
+    /**********************************************************************************/
+    // Note: use --help to list available options.
+    Teuchos::CommandLineProcessor clp(false);
 
-  switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
-  }
+    Galeri::Xpetra::Parameters<GO> matrixParameters(clp); // manage parameters of the test case
+    Xpetra::Parameters xpetraParameters(clp);       // manage parameters of xpetra
 
-  matrixParameters.check();
-  xpetraParameters.check();
+    switch (clp.parse(argc,argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    }
 
-  if (comm->getRank() == 0) {
-    std::cout << xpetraParameters << matrixParameters;
-  }
+    matrixParameters.check();
+    xpetraParameters.check();
 
-  /**********************************************************************************/
-  /* CREATE INITAL MATRIX                                                           */
-  /**********************************************************************************/
-  const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+    if (comm->getRank() == 0) {
+      std::cout << xpetraParameters << matrixParameters;
+    }
+
+    /**********************************************************************************/
+    /* CREATE INITAL MATRIX                                                           */
+    /**********************************************************************************/
+    const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
       Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
-  RCP<Matrix> Op = Pr->BuildMatrix();
-  /**********************************************************************************/
-  /*                                                                                */
-  /**********************************************************************************/
+    RCP<Matrix> Op = Pr->BuildMatrix();
+    /**********************************************************************************/
+    /*                                                                                */
+    /**********************************************************************************/
 
-  int currentPrintLevel=10;
-  int printFlag=6;
+    int currentPrintLevel=10;
+    int printFlag=6;
 
-  /**********************************************************************************/
-  /*                                                                                */
-  /**********************************************************************************/
+    /**********************************************************************************/
+    /*                                                                                */
+    /**********************************************************************************/
 
-  if (comm->getRank() == 0 && printFlag < currentPrintLevel)
-    printf("main() Aggregate_CoarsenUncoupled : \n");
+    if (comm->getRank() == 0 && printFlag < currentPrintLevel)
+      printf("main() Aggregate_CoarsenUncoupled : \n");
 
-  RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
+    RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
 
-  RCP<CoupledAggregationFactory> AggFact = rcp(new CoupledAggregationFactory());
-  AggFact->SetMinNodesPerAggregate(2);
-  AggFact->SetMaxNeighAlreadySelected(5);
-  AggFact->SetOrdering("graph");
-  //AggFact->SetPhase3AggCreation(0.5); TODO: error with explicit instantiation. I don't know why
+    RCP<CoupledAggregationFactory> AggFact = rcp(new CoupledAggregationFactory());
+    AggFact->SetMinNodesPerAggregate(2);
+    AggFact->SetMaxNeighAlreadySelected(5);
+    AggFact->SetOrdering("graph");
+    //AggFact->SetPhase3AggCreation(0.5); TODO: error with explicit instantiation. I don't know why
+
+    success = true;
 
 #ifdef JG_TO_UPDATE
-//   RCP<Aggregates> aggregates = rcp(new Aggregates(*graph, "UC"));
-//   AggFact->Build(*graph, *aggregates);
+    //   RCP<Aggregates> aggregates = rcp(new Aggregates(*graph, "UC"));
+    //   AggFact->Build(*graph, *aggregates);
 
-  /**********************************************************************************/
-  /*                                                                                */
-  /**********************************************************************************/
+    /**********************************************************************************/
+    /*                                                                                */
+    /**********************************************************************************/
 
-  RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates->GetVertex2AggId()->getMap() );
+    RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates->GetVertex2AggId()->getMap() );
 
-  {
-    Teuchos::ArrayRCP<LO> Final = Final_->getDataNonConst(0);
-    Teuchos::ArrayRCP<const LO> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<const LO> procWinner   = aggregates->GetProcWinner()->getData(0);
+    {
+      Teuchos::ArrayRCP<LO> Final = Final_->getDataNonConst(0);
+      Teuchos::ArrayRCP<const LO> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
+      Teuchos::ArrayRCP<const LO> procWinner   = aggregates->GetProcWinner()->getData(0);
 
-    for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
-      Final[i] = vertex2AggId[i] + procWinner[i]*1000;
-  }
+      for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
+        Final[i] = vertex2AggId[i] + procWinner[i]*1000;
+    }
 
-  if (comm->getRank() == 0)
+    if (comm->getRank() == 0)
       printf("finals\n");
-  //cout << *Final_ << endl; sleep(2);
+    //cout << *Final_ << endl; sleep(2);
 
 
-  RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+    RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
 
-  Final_->describe(*out, Teuchos::VERB_EXTREME);
+    Final_->describe(*out, Teuchos::VERB_EXTREME);
 
-  // dumpAggregates(*aggregates);
+    // dumpAggregates(*aggregates);
 
 #endif
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  return EXIT_SUCCESS;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
 
@@ -185,23 +194,23 @@ namespace MueLuExamples {
 
 #include "MueLu_UseShortNames.hpp"
 
-void dumpAggregates(Aggregates & aggregates) {
-  using Teuchos::RCP;
+  void dumpAggregates(Aggregates & aggregates) {
+    using Teuchos::RCP;
 
-  int myPid = aggregates.GetMap()->getComm()->getRank();
+    int myPid = aggregates.GetMap()->getComm()->getRank();
 
-  Teuchos::ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
-  Teuchos::ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
-  size_t n = aggregates.GetVertex2AggId()->getMap()->getNodeNumElements();
-  RCP<const Map> map = aggregates.GetVertex2AggId()->getMap();
+    Teuchos::ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+    Teuchos::ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
+    size_t n = aggregates.GetVertex2AggId()->getMap()->getNodeNumElements();
+    RCP<const Map> map = aggregates.GetVertex2AggId()->getMap();
 
 
-  char filename[200];
-  snprintf(filename, 200, "aggregates-%d.data", myPid);
-  std::ofstream out(filename);
-  if (!out.is_open())
-    std::cout << "Unable to open file";
-  else
+    char filename[200];
+    snprintf(filename, 200, "aggregates-%d.data", myPid);
+    std::ofstream out(filename);
+    if (!out.is_open())
+      std::cout << "Unable to open file";
+    else
     {
 
       for (size_t i = 0; i < n; i++)
@@ -210,6 +219,6 @@ void dumpAggregates(Aggregates & aggregates) {
       out.close();
     }
 
-}
+  }
 
 }

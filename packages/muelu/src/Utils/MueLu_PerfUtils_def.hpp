@@ -49,6 +49,10 @@
 #include <algorithm>
 #include <string>
 
+#ifdef HAVE_MPI
+#include <Teuchos_CommHelpers.hpp>
+#endif
+
 #include <Xpetra_Export.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -124,53 +128,77 @@ namespace MueLu {
     // Create communicator only for active processes
     RCP<const Teuchos::Comm<int> > origComm = A.getRowMap()->getComm();
 #ifdef HAVE_MPI
+    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(origComm);
+    int numProc = origComm->getSize();
+    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
+
+    std::vector<size_t> numRowsPerProc(numProc);
+    Teuchos::gatherAll(*origComm, 1, &numMyRows, numProc, &numRowsPerProc[0]);
+
+    int root = 0;
+    for (int i = 0; i < numProc; i++)
+      if (numRowsPerProc[i]) {
+        root = i;
+        break;
+      }
+
     RCP<const Teuchos::Comm<int> >     comm = origComm->split((numMyRows > 0) ? 0 : MPI_UNDEFINED, 0);
 #else
     RCP<const Teuchos::Comm<int> >     comm = origComm->split((numMyRows > 0) ? 0 : -1, 0);
 #endif
 
-    if (comm.is_null())
-      return ss.str();
+    std::string outstr;
+    if (!comm.is_null()) {
+      ParameterList absList;
+      absList.set("print abs", true);
 
-    ParameterList absList;
-    absList.set("print abs", true);
-
-    if (printLoadBalanceInfo) {
-      ss << msgTag << " Load balancing info"    << std::endl;
-      ss << msgTag << "   # active processes: " << comm->getSize() << "/" << origComm->getSize() << std::endl;
-      ss << msgTag << "   # rows per proc   : " << stringStats<global_size_t>(comm, numMyRows) << std::endl;
-      ss << msgTag << "   #  nnz per proc   : " << stringStats<global_size_t>(comm,  numMyNnz) << std::endl;
-    }
-
-    if (printCommInfo) {
-      typedef std::map<int,size_t> map_type;
-      map_type neighMap;
-      if (!importer.is_null()) {
-        ArrayView<const int> exportPIDs = importer->getExportPIDs();
-        if (exportPIDs.size())
-          for (int i = 0; i < exportPIDs.size(); i++)
-            neighMap[exportPIDs[i]]++;
+      if (printLoadBalanceInfo) {
+        ss << msgTag << " Load balancing info"    << std::endl;
+        ss << msgTag << "   # active processes: " << comm->getSize() << "/" << origComm->getSize() << std::endl;
+        ss << msgTag << "   # rows per proc   : " << stringStats<global_size_t>(comm, numMyRows) << std::endl;
+        ss << msgTag << "   #  nnz per proc   : " << stringStats<global_size_t>(comm,  numMyNnz) << std::endl;
       }
 
-      // Communication volume
-      size_t numExportSend = (!exporter.is_null() ? exporter->getNumExportIDs() : 0);
-      size_t numImportSend = (!importer.is_null() ? importer->getNumExportIDs() : 0);
-      size_t numMsgs       = neighMap.size();
+      if (printCommInfo && comm->getSize() != 1) {
+        typedef std::map<int,size_t> map_type;
+        map_type neighMap;
+        if (!importer.is_null()) {
+          ArrayView<const int> exportPIDs = importer->getExportPIDs();
+          if (exportPIDs.size())
+            for (int i = 0; i < exportPIDs.size(); i++)
+              neighMap[exportPIDs[i]]++;
+        }
 
-      map_type::const_iterator it = std::min_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>);
-      size_t minMsg        = (it != neighMap.end() ? it->second : 0);
-      it = std::max_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>);
-      size_t maxMsg        = (it != neighMap.end() ? it->second : 0);
+        // Communication volume
+        size_t numExportSend = (!exporter.is_null() ? exporter->getNumExportIDs() : 0);
+        size_t numImportSend = (!importer.is_null() ? importer->getNumExportIDs() : 0);
+        size_t numMsgs       = neighMap.size();
 
-      ss << msgTag << " Communication info"     << std::endl;
-      ss << msgTag << "   # num export send : " << stringStats<global_size_t>(comm, numExportSend)                      << std::endl;
-      ss << msgTag << "   # num import send : " << stringStats<global_size_t>(comm, numImportSend)                      << std::endl;
-      ss << msgTag << "   # num msgs        : " << stringStats<global_size_t>(comm,       numMsgs, rcpFromRef(absList)) << std::endl;
-      ss << msgTag << "   # min msg size    : " << stringStats<global_size_t>(comm,        minMsg)                      << std::endl;
-      ss << msgTag << "   # max msg size    : " << stringStats<global_size_t>(comm,        maxMsg)                      << std::endl;
+        map_type::const_iterator it = std::min_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>);
+        size_t minMsg        = (it != neighMap.end() ? it->second : 0);
+        it = std::max_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>);
+        size_t maxMsg        = (it != neighMap.end() ? it->second : 0);
+
+        ss << msgTag << " Communication info"     << std::endl;
+        ss << msgTag << "   # num export send : " << stringStats<global_size_t>(comm, numExportSend)                      << std::endl;
+        ss << msgTag << "   # num import send : " << stringStats<global_size_t>(comm, numImportSend)                      << std::endl;
+        ss << msgTag << "   # num msgs        : " << stringStats<global_size_t>(comm,       numMsgs, rcpFromRef(absList)) << std::endl;
+        ss << msgTag << "   # min msg size    : " << stringStats<global_size_t>(comm,        minMsg)                      << std::endl;
+        ss << msgTag << "   # max msg size    : " << stringStats<global_size_t>(comm,        maxMsg)                      << std::endl;
+      }
+
+      outstr = ss.str();
     }
 
-    return ss.str();
+#ifdef HAVE_MPI
+    int strLength = outstr.size();
+    MPI_Bcast(&strLength, 1, MPI_INT, root, rawComm);
+    if (origComm->getRank() != root)
+      outstr.resize(strLength+1);
+    MPI_Bcast(&outstr[0], strLength, MPI_CHAR, root, rawComm);
+#endif
+
+    return outstr;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

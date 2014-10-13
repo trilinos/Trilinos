@@ -45,7 +45,7 @@
 /*! \file Teuchos_ScalarTraitsDecl.hpp
     \brief Declaration and default implementation for basic traits for the scalar field type.
 */
- 
+
 #include "Teuchos_ConfigDefs.hpp"
 
 
@@ -70,19 +70,19 @@ struct UndefinedScalarTraits
  * Scalar traits are an essential part of templated codes.  This structure offers
  * the basic traits of the templated scalar type, like defining zero and one,
  * and basic functions on the templated scalar type, like performing a square root.
- * 
+ *
  * The functions in the templated base unspecialized struct are designed not to
  * compile (giving a nice compile-time error message) and therefore specializations
  * must be written for Scalar types actually used.
- * 
+ *
  * \note <ol>
- * 
+ *
  * <li> The default defined specializations are provided for \c int, \c float, and \c double.
- * 
+ *
  * <li> If Teuchos is configured with </tt>Teuchos_ENABLE_COMPLEX=ON</tt> then
  * ScalarTraits also has a partial specialization for all
  * <tt>std::complex</tt> numbers of the form <tt>std::complex<T></tt>.
- * 
+ *
  * </ol>
 */
 
@@ -148,13 +148,13 @@ struct ScalarTraits
   static inline T random()                   { return UndefinedScalarTraits<T>::notDefined(); }
   //! Returns the name of this scalar type.
   static inline std::string name()           { (void)UndefinedScalarTraits<T>::notDefined(); return 0; }
-  //! Returns a number of magnitudeType that is the square root of this scalar type \c x. 
+  //! Returns a number of magnitudeType that is the square root of this scalar type \c x.
   static inline T squareroot(T x) { return UndefinedScalarTraits<T>::notDefined(); }
   //! Returns the result of raising one scalar \c x to the power \c y.
   static inline T pow(T x, T y) { return UndefinedScalarTraits<T>::notDefined(); }
 };
 
-  
+
 } // Teuchos namespace
 
 

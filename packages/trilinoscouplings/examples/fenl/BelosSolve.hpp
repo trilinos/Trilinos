@@ -68,12 +68,45 @@
 namespace Kokkos {
 namespace Example {
 
-template <class SM, class SV, class LO, class GO, class N>
+// Functor to copy the nodal coordinates out of the mesh fixture into
+// a multi-vector.  This functor is necessary because the respective views
+// have potentially different layouts.
+template <typename coords_type, typename coords_vec_type>
+struct FillCoords {
+  typedef typename coords_type::device_type device_type;
+  typedef typename coords_type::size_type size_type;
+
+  const coords_type m_coords;
+  const coords_vec_type m_coords_vec;
+  const size_type m_dim;
+
+  FillCoords( const coords_type& coords, const coords_vec_type& coords_vec )
+    : m_coords(coords), m_coords_vec(coords_vec), m_dim(coords.dimension_1())
+  {
+    Kokkos::parallel_for( m_coords.dimension_0(), *this );
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type i) const
+  {
+    for (size_type j=0; j<m_dim; ++j)
+      m_coords_vec(i,j) = m_coords(i,j);
+  }
+};
+
+template <typename coords_type, typename coords_vec_type>
+void fill_coords( const coords_type& coords,
+                  const coords_vec_type& coords_vec ) {
+  FillCoords<coords_type,coords_vec_type>(coords, coords_vec);
+}
+
+template <class SM, class SV, class LO, class GO, class N, class Mesh>
 result_struct
 belos_solve(
   const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
+  const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,
   const unsigned max_iter = 200,
@@ -107,14 +140,23 @@ belos_solve(
 
   if (use_muelu) {
     Teuchos::TimeMonitor timeMon(*time_prec_setup);
+
+    // Create tpetra-vector storing coordinates for repartitioning
+    typename Mesh::node_coord_type node_coords = mesh.node_coord();
+    Teuchos::RCP<VectorType> coords =
+      Teuchos::rcp(new VectorType(x->getMap(), node_coords.dimension_1()));
+    fill_coords(node_coords, coords->getDualView().d_view);
+
     std::string xmlFileName="muelu.xml";
     if (use_mean_based) {
-      preconditioner = rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
-      precOp = preconditioner->setupPreconditioner(A, xmlFileName);
+      preconditioner =
+        Teuchos::rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
+      precOp = preconditioner->setupPreconditioner(A, xmlFileName, coords);
     }
     else {
-      preconditioner = rcp(new MueLuPreconditioner<SM, LO, GO, N>());
-      precOp = preconditioner->setupPreconditioner(A, xmlFileName);
+      preconditioner =
+        Teuchos::rcp(new MueLuPreconditioner<SM, LO, GO, N>());
+      precOp = preconditioner->setupPreconditioner(A, xmlFileName, coords);
     }
   }
 
@@ -175,12 +217,13 @@ belos_solve(
 namespace Kokkos {
 namespace Example {
 
-template <class SM, class SV, class LO, class GO, class N>
+template <class SM, class SV, class LO, class GO, class N, class Mesh>
 result_struct
 belos_solve(
   const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
+  const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,
   const unsigned max_iter = 200,

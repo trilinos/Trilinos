@@ -378,9 +378,11 @@ protected:
           const ArrayRCP<Scalar> &view,
           EPrivateHostViewConstructor /* dummy tag */);
 
+  /* Commenting out since constructor not defined in source.
   //! Advanced constructor accepting parallel buffer view, used by MultiVector to break off Vector objects
   Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
           const ArrayRCP<Scalar> & data);
+  */
 
   //! Advanced constructor accepting parallel buffer view, used by MultiVector to break off Vector objects
   Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,

@@ -44,17 +44,7 @@
 
 #include "Sacado_Traits.hpp"
 
-#include "KokkosCore_config.h"
-#include "Kokkos_Serial.hpp"
-#ifdef KOKKOS_HAVE_PTHREAD
-#include "Kokkos_Threads.hpp"
-#endif
-#ifdef KOKKOS_HAVE_OPENMP
-#include "Kokkos_OpenMP.hpp"
-#endif
-#ifdef KOKKOS_HAVE_CUDA
-#include "Kokkos_Cuda.hpp"
-#endif
+#include "Kokkos_Core.hpp"
 
 namespace Sacado {
 

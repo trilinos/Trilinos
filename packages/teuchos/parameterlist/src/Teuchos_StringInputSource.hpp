@@ -43,7 +43,7 @@
 #define Teuchos_STRINGINPUTSOURCE_H
 
 /*! \file Teuchos_StringInputSource.hpp
-    \brief Definition of XMLInputSource derived class for reading XML from 
+    \brief Definition of XMLInputSource derived class for reading XML from
 	a std::string
 */
 

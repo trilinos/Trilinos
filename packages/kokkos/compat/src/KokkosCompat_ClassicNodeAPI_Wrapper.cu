@@ -1,5 +1,5 @@
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#include <Kokkos_HostSpace.hpp>
+#include <Kokkos_Core.hpp>
 #include <cstdio>
 
 namespace Kokkos {

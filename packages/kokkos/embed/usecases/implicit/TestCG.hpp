@@ -47,7 +47,7 @@
 #include <cmath>
 #include <istream>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Array.hpp>
 #include <impl/Kokkos_ArrayAnalyzeShape.hpp>
 #include <impl/Kokkos_ArrayViewDefault.hpp>

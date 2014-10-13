@@ -60,15 +60,12 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_SLG(LCLINST)
 
-  // FIXME (mfh 24 May 2014) This will result in a duplicate symbol if
-  // the default Node type is TPINode.  See the definition of LCLINST
-  // above.
-#  if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
 
   template class DenseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, double >;
   template class DenseContainer<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, double >;
 
-#  endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+#endif
 
 }
 

@@ -55,6 +55,7 @@
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_VerboseObject.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -69,12 +70,12 @@
 
 
 /*
-  This driver simply generates a Tpetra matrix, prints it to screen, and exits.
+   This driver simply generates a Tpetra matrix, prints it to screen, and exits.
 
-  THIS EXAMPLE DOES NOT USE XPETRA.
+   THIS EXAMPLE DOES NOT USE XPETRA.
 
-  Use the "--help" option to get verbose help.
-*/
+   Use the "--help" option to get verbose help.
+   */
 
 int main(int argc, char** argv)
 {
@@ -86,52 +87,60 @@ int main(int argc, char** argv)
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  /**********************************************************************************/
-  /* SET TEST PARAMETERS                                                            */
-  /**********************************************************************************/
-  // Note: use --help to list available options.
-  Teuchos::CommandLineProcessor clp(false);
+  bool success = false;
+  bool verbose = true;
+  try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp);   // manage parameters of the test case
+    /**********************************************************************************/
+    /* SET TEST PARAMETERS                                                            */
+    /**********************************************************************************/
+    // Note: use --help to list available options.
+    Teuchos::CommandLineProcessor clp(false);
 
-  switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
-  }
+    Galeri::Xpetra::Parameters<GO> matrixParameters(clp);   // manage parameters of the test case
 
-  matrixParameters.check();
-  std::cout << matrixParameters;
+    switch (clp.parse(argc,argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    }
 
-  /**********************************************************************************/
-  /* CREATE INITAL MATRIX                                                           */
-  /**********************************************************************************/
-  RCP<const Tpetra::Map<LO,GO> > map = Teuchos::rcp( new Tpetra::Map<LO,GO>(matrixParameters.GetNumGlobalElements(), 0, comm) );
-  RCP<Galeri::Xpetra::Problem<Tpetra::Map<LO,GO>,Tpetra::CrsMatrix<SC,LO,GO>,Tpetra::MultiVector<SC,LO,GO> > > problem =
+    matrixParameters.check();
+    std::cout << matrixParameters;
+
+    /**********************************************************************************/
+    /* CREATE INITAL MATRIX                                                           */
+    /**********************************************************************************/
+    RCP<const Tpetra::Map<LO,GO> > map = Teuchos::rcp( new Tpetra::Map<LO,GO>(matrixParameters.GetNumGlobalElements(), 0, comm) );
+    RCP<Galeri::Xpetra::Problem<Tpetra::Map<LO,GO>,Tpetra::CrsMatrix<SC,LO,GO>,Tpetra::MultiVector<SC,LO,GO> > > problem =
       Galeri::Xpetra::BuildProblem<SC, LO, GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO>, Tpetra::MultiVector<SC,LO,GO> >
       (matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-  RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = problem->BuildMatrix();
+    RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = problem->BuildMatrix();
 
-  /**********************************************************************************/
-  /*                                                                                */
-  /**********************************************************************************/
+    /**********************************************************************************/
+    /*                                                                                */
+    /**********************************************************************************/
 
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  if (comm->getRank() == 0)
-    std::cout << "\n================ MAP =====================================================\n" << std::endl;
-  map->describe(*out, Teuchos::VERB_EXTREME);
-  comm->barrier();
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    if (comm->getRank() == 0)
+      std::cout << "\n================ MAP =====================================================\n" << std::endl;
+    map->describe(*out, Teuchos::VERB_EXTREME);
+    comm->barrier();
 #ifdef _MSC_VER
-  Sleep(1000);
+    Sleep(1000);
 #else
-  sleep(1);
+    sleep(1);
 #endif
-  if (comm->getRank() == 0)
-    std::cout << "\n================ MATRIX ==================================================\n" << std::endl;
-  A->describe(*out, Teuchos::VERB_EXTREME);
+    if (comm->getRank() == 0)
+      std::cout << "\n================ MATRIX ==================================================\n" << std::endl;
+    A->describe(*out, Teuchos::VERB_EXTREME);
 
-  return EXIT_SUCCESS;
+    success = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

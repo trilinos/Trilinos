@@ -10,12 +10,12 @@
       yblock 1 18. interval 18
       yblock 2 18. interval 18
     end
-   set assign
-      block nodeset, jlo, 1 1
-      block nodeset, jlo, 2 2
-      block sideset, jlo, 1 1
-      block sideset, jlo, 2 2
-    end
+$    set assign
+$      block nodeset, jlo, 1 1
+$      block nodeset, jlo, 2 2
+$      block sideset, jlo, 1 1
+$      block sideset, jlo, 2 2
+$    end
     topology modification
     suppress block, 1
     suppress block, 2

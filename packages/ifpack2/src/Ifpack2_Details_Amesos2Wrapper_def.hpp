@@ -43,14 +43,16 @@
 #ifndef IFPACK2_DETAILS_AMESOS2WRAPPER_DEF_HPP
 #define IFPACK2_DETAILS_AMESOS2WRAPPER_DEF_HPP
 
+#ifdef HAVE_IFPACK2_AMESOS2
+
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
 #include <Ifpack2_Heap.hpp>
 #include <Ifpack2_Condest.hpp>
 #include <Ifpack2_LocalFilter.hpp>
+#include <Ifpack2_Details_Amesos2Wrapper.hpp>
 
-#ifdef HAVE_IFPACK2_AMESOS2
 #include <Amesos2.hpp>
 
 namespace Ifpack2 {
@@ -619,6 +621,10 @@ describe (Teuchos::FancyOStream& out,
 #define IFPACK2_DETAILS_AMESOS2WRAPPER_INSTANT(S,LO,GO,N) \
   template class Ifpack2::Details::Amesos2Wrapper< Tpetra::RowMatrix<S, LO, GO, N> >; \
   template class Ifpack2::Details::Amesos2Wrapper< Tpetra::CrsMatrix<S, LO, GO, N> >;
+
+#else
+
+#define IFPACK2_DETAILS_AMESOS2WRAPPER_INSTANT(S,LO,GO,N)
 
 #endif // HAVE_IFPACK2_AMESOS2
 #endif // IFPACK2_DETAILS_AMESOS2WRAPPER_DEF_HPP

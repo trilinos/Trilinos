@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <feint.hpp>
 
 namespace Kokkos {

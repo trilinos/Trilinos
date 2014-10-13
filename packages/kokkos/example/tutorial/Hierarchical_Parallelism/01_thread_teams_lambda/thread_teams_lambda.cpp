@@ -47,7 +47,7 @@
 #include <cstdio>
 
 // Using default execution space:
-typedef  Kokkos::TeamPolicy<>              team_policy ;
+typedef Kokkos::TeamPolicy<>               team_policy ;
 typedef typename team_policy::member_type  team_member ;
 
 int main(int narg, char* args[]) {
@@ -57,12 +57,10 @@ int main(int narg, char* args[]) {
   const team_policy policy( 12 , team_policy::execution_space::team_max() );
   
   int sum = 0;
-  Kokkos::parallel_reduce(
-      policy ,
-      [=](const team_member & dev, int& lsum) {
+  Kokkos::parallel_reduce( policy , [=](const team_member & thread, int& lsum) {
           lsum+=1;
-          printf("Hello World: %i %i // %i %i\n",dev.league_rank(),dev.team_rank(),dev.league_size(),dev.team_size());
-        },sum);
+          printf("Hello World: %i %i // %i %i\n",thread.league_rank(),thread.team_rank(),thread.league_size(),thread.team_size());
+  },sum);
   printf("Result %i\n",sum);
 
   Kokkos::finalize();

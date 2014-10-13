@@ -88,7 +88,7 @@ namespace Sacado {
       /*!
        * Initializes all components to zero
        */
-      Taylor(int d);
+      explicit Taylor(int d);
 
       //! Copy constructor
       Taylor(const Taylor& x);

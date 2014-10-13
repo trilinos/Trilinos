@@ -83,10 +83,12 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    MapTransferFactory(std::string mapName, Teuchos::RCP<const FactoryBase> mapFact = Teuchos::null);
+    MapTransferFactory();
 
     //! Destructor.
     virtual ~MapTransferFactory() {}
+
+    RCP<const ParameterList> GetValidParameterList() const;
     //@}
 
     //! Input
@@ -106,8 +108,8 @@ namespace MueLu {
 
   private:
 
-    std::string              mapName_;   ///< name of input and output variable
-    RCP<const FactoryBase>   mapFact_;   ///< generating factory of input variable
+    //std::string              mapName_;      ///< name of input and output variable
+    mutable RCP<const FactoryBase>   mapFact_;      ///< generating factory of input variable
 
   }; // class MapTransferFactory
 

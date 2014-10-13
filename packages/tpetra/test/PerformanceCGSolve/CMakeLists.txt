@@ -1,6 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 SET(HEADERS "")
 SET(SOURCES "")

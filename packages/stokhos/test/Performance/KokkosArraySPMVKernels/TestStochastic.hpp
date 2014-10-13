@@ -44,8 +44,7 @@
 
 #include "Teuchos_ScalarTraitsCUDA.hpp"
 
-#include "Kokkos_Cuda.hpp"
-#include "Kokkos_Threads.hpp"
+#include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
 #include "Stokhos_Update.hpp"
@@ -1728,7 +1727,7 @@ void performance_test_driver_poly_deg( const int nvar ,
                                        const bool symmetric )
 {
   bool do_flat_sparse =
-    Kokkos::Impl::is_same<Device,Kokkos::Threads>::value ;
+    Kokkos::Impl::is_same<typename Device::memory_space,Kokkos::HostSpace>::value ;
 
   std::cout.precision(8);
 

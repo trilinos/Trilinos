@@ -50,7 +50,7 @@
 
 // Kokkos includes
 #include "KokkosClassic_config.h"
-#include "Kokkos_Serial.hpp"
+#include "Kokkos_Core.hpp"
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
 #include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"

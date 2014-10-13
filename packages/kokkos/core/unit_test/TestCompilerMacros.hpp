@@ -41,8 +41,7 @@
 //@HEADER
 */
 
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #define KOKKOS_PRAGMA_UNROLL(a)
 

@@ -47,8 +47,7 @@
 #include <stdio.h>
 #include <utility>
 
-#include <Kokkos_View.hpp>
-#include <Kokkos_Parallel.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <HexElement.hpp>
 #include <BoxElemPart.hpp>

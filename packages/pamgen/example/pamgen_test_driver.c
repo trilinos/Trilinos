@@ -132,7 +132,7 @@ struct mesh_storage_struct{
 
 /*****************************************************************************/
 int main(int argc, char** argv)
-/*****************************************************************************/
+  /*****************************************************************************/
 {
 
   struct options opts[] =
@@ -162,49 +162,49 @@ int main(int argc, char** argv)
 
   if(argc == 1){
     getopts_usage(argv[0],opts);
-    return 1;
+    return EXIT_FAILURE;
   }
 
   while ((c = getopts(argc, argv, opts, &args)) != 0) { switch(c)
+    {
+      /* Special Case: Recognize options that we didn't set above. */
+      case -2:
+        printf("Unknown Option: \n");/* <<  args << std::endl;*/
+        getopts_usage(argv[0],opts);
+        return 1;
+        break;
+        /* Special Case: getopts() can't allocate memory.
+           Should probably exit() here */
+      case -1:
+        printf("Unabled to allocate memory from getopts().\n");
+        break;
+      case 1:
+        rank = atoi(args);
+        break;
+      case 2:
+        num_procs = atoi(args);
+        break;
+      case 3:
+        all = TRUE;
+        break;
+      case 4:
+        dimension = atoi(args);
+        break;
+      case 5:
         {
-	  /* Special Case: Recognize options that we didn't set above. */
-	case -2:
-	  printf("Unknown Option: \n");/* <<  args << std::endl;*/
-	  getopts_usage(argv[0],opts);
-	  return 1;
-	  break;
-	  /* Special Case: getopts() can't allocate memory.
-	     Should probably exit() here */
-	case -1:
-	  printf("Unabled to allocate memory from getopts().\n");
-	  break;
-	case 1:
-	  rank = atoi(args);
-	  break;
-        case 2:
-	  num_procs = atoi(args);
-	  break;
-        case 3:
-	  all = TRUE;
-	  break;
-        case 4:
-	  dimension = atoi(args);
-	  break;
-        case 5:
-	  {
-	    int sl = strlen(args);
-	    file_name = (char *)malloc(sl+1);
-	    file_name[sl] = '\0';
-	    strcpy(file_name,args);
-	  }
-	  break;
-	default:
-	  break;
+          int sl = strlen(args);
+          file_name = (char *)malloc(sl+1);
+          file_name[sl] = '\0';
+          strcpy(file_name,args);
         }
-/*   This free() is required since getopts() automagically allocates space */
-/*     for "args" everytime it's called.  */
-      free(args);
+        break;
+      default:
+        break;
     }
+    /*   This free() is required since getopts() automagically allocates space */
+    /*     for "args" everytime it's called.  */
+    free(args);
+  }
 
   if(rank < 0 || rank >= num_procs){
     getopts_usage(argv[0],opts);
@@ -227,14 +227,19 @@ int main(int argc, char** argv)
   infile = fopen(file_name,"r");
   if(!infile){
     printf("unable to open input file ");
-    return 1;
+    return EXIT_FAILURE;
   }
   fseek(infile, 0, SEEK_END);
   size = ftell(infile);
   fseek(infile, 0, SEEK_SET);
   file_char_array = (char *)malloc(size + 1);
-  file_char_array[size] = '\0';
-  fread(file_char_array, sizeof(char), size, infile);
+  file_char_array[0] = '\0';
+  if (fread(file_char_array, sizeof(char), size, infile) != size) {
+    printf("\nERROR Failure to create Mesh_Specification\n");
+    fclose(infile);
+    return EXIT_FAILURE;
+  }
+
   fclose(infile);
 
   /*create the out_file_name*/
@@ -245,10 +250,10 @@ int main(int argc, char** argv)
     sprintf(out_file_name,"%s.exo.%i.%i",file_name,num_procs,rank);
 
     cr_result = Create_Pamgen_Mesh(file_char_array,
-				   dimension,
-				   rank,
-				   num_procs,
-				   INT_MAX);
+        dimension,
+        rank,
+        num_procs,
+        INT_MAX);
 
 
     if (cr_result == ERROR_PARSING_DEFINITION){
@@ -260,7 +265,7 @@ int main(int argc, char** argv)
       if(echo_char_array)printf("%s",echo_char_array);
       if(cr_result == ERROR_CREATING_IMD)printf("ERROR Failure to create Inline_Mesh_Desc creation\n");
       if(echo_char_array)free(echo_char_array);
-      return 1;
+      return EXIT_FAILURE;
     }
 
     if(cr_result == ERROR_CREATING_MS){
@@ -271,19 +276,19 @@ int main(int argc, char** argv)
       if(error_char_array)printf("%s",error_char_array);
       printf("\nERROR Failure to create Mesh_Specification\n");
       if(error_char_array)free(error_char_array);
-      return 1;
+      return EXIT_FAILURE;
     }
 
 
     {
       int wssz = getPamgenWarningStreamSize();
       if(wssz){
-	char * warning_char_array = (char *)malloc(wssz+1);
-	warning_char_array[wssz] = '\0';
-	warning_char_array = getPamgenWarningStream(warning_char_array);
-	printf("WARNING Records\n");
-	printf("%s",warning_char_array);
-	free(warning_char_array);
+        char * warning_char_array = (char *)malloc(wssz+1);
+        warning_char_array[wssz] = '\0';
+        warning_char_array = getPamgenWarningStream(warning_char_array);
+        printf("WARNING Records\n");
+        printf("%s",warning_char_array);
+        free(warning_char_array);
       }
     }
 
@@ -291,12 +296,12 @@ int main(int argc, char** argv)
     {
       issz = getPamgenInfoStreamSize();
       if(issz){
-	char * info_char_array = (char *)malloc(issz+1);
-	info_char_array[issz] = '\0';
-	info_char_array = getPamgenInfoStream(info_char_array);
-	printf("INFO Records\n");
-	printf("%s",info_char_array);
-	free(info_char_array);
+        char * info_char_array = (char *)malloc(issz+1);
+        info_char_array[issz] = '\0';
+        info_char_array = getPamgenInfoStream(info_char_array);
+        printf("INFO Records\n");
+        printf("%s",info_char_array);
+        free(info_char_array);
       }
     }
 
@@ -316,12 +321,12 @@ int main(int argc, char** argv)
   if(out_file_name)free(out_file_name);
   if(file_name)free(file_name);
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 /*****************************************************************************/
 void free_memory()
-/*****************************************************************************/
+  /*****************************************************************************/
 {
   int i;
   int j;
@@ -371,9 +376,9 @@ void free_memory()
     if(mss.num_node_sets){
 
       for(i = 0; i < mss.num_node_sets; i ++){
-	if(mss.num_nodes_in_node_set[i]) {
-	  free(mss.node_set_nodes[i]);
-	}
+        if(mss.num_nodes_in_node_set[i]) {
+          free(mss.node_set_nodes[i]);
+        }
       }
       free(mss.node_set_id);
       free(mss.num_nodes_in_node_set);
@@ -387,8 +392,8 @@ void free_memory()
 
       for(i = 0; i < mss.num_side_sets; i ++){
 
-	free(mss.side_set_elements[i]);
-	free(mss.side_set_faces[i]);
+        free(mss.side_set_elements[i]);
+        free(mss.side_set_faces[i]);
 
       }
       free(mss.side_set_id);
@@ -401,7 +406,7 @@ void free_memory()
 
     if(mss.num_info_records) {
       for(i = 0; i < mss.num_info_records; i ++){
-	free(mss.info_records[i]);
+        free(mss.info_records[i]);
       }
       free(mss.info_records);
     }
@@ -430,16 +435,16 @@ void free_memory()
     if(mss.num_node_comm_maps > 0){
 
       for(j = 0; j < mss.num_node_comm_maps; j++) {
-	free(mss.comm_node_ids[j]);
-	free(mss.comm_node_proc_ids[j]);
+        free(mss.comm_node_ids[j]);
+        free(mss.comm_node_proc_ids[j]);
 
       }
 
 
       for(j = 0; j < mss.num_elem_comm_maps; j++) {
-	free(mss.comm_elem_ids[j]);
-	free(mss.comm_side_ids[j]);
-	free(mss.comm_elem_proc_ids[j]);
+        free(mss.comm_elem_ids[j]);
+        free(mss.comm_side_ids[j]);
+        free(mss.comm_elem_proc_ids[j]);
 
 
 
@@ -464,7 +469,7 @@ void free_memory()
 
 /*****************************************************************************/
 void read_mesh_to_memory()
-/*****************************************************************************/
+  /*****************************************************************************/
 {
   int idum = 0;
   float fdum;
@@ -484,25 +489,25 @@ void read_mesh_to_memory()
 
 
   error += im_ex_get_init (  id,
-			     mss.title,
-			     &mss.num_dim,
-			     &(mss.num_nodes),
-			     &mss.num_elem,
-			     &mss.num_elem_blk,
-			     &mss.num_node_sets,
-			     &mss.num_side_sets);
+      mss.title,
+      &mss.num_dim,
+      &(mss.num_nodes),
+      &mss.num_elem,
+      &mss.num_elem_blk,
+      &mss.num_node_sets,
+      &mss.num_side_sets);
 
 
   error += im_ex_inquire(id, IM_EX_INQ_NS_NODE_LEN, (int*)&mss.num_node_set_nodes,
-			 &fdum, cdum);
+      &fdum, cdum);
   error += im_ex_inquire(id, IM_EX_INQ_NS_DF_LEN,   (int*)&mss.num_node_set_dfs,
-			 &fdum, cdum);
+      &fdum, cdum);
   error += im_ex_inquire(id, IM_EX_INQ_SS_ELEM_LEN, (int*)&mss.num_side_set_elements,
-			 &fdum, cdum);
+      &fdum, cdum);
   error += im_ex_inquire(id, IM_EX_INQ_SS_NODE_LEN, (int*)&mss.num_side_set_nodes,
-			 &fdum, cdum);
+      &fdum, cdum);
   error += im_ex_inquire(id, IM_EX_INQ_SS_DF_LEN,   (int*)&mss.num_side_set_dfs,
-			 &fdum, cdum);
+      &fdum, cdum);
 
   /* get version number */
 
@@ -517,10 +522,10 @@ void read_mesh_to_memory()
   error += im_ex_inquire(id, IM_EX_INQ_EB_PROP, (int*)&mss.num_block_properties, &fdum, cdum);
 
   error += im_ex_inquire(id, IM_EX_INQ_NS_PROP, (int*)&mss.num_node_set_properties,
-			 &fdum, cdum);
+      &fdum, cdum);
 
   error += im_ex_inquire(id, IM_EX_INQ_SS_PROP, (int*)&mss.num_side_set_properties,
-			 &fdum, cdum);
+      &fdum, cdum);
 
   mss.coord = (double *)malloc(mss.num_nodes*mss.num_dim*sizeof(double));
 
@@ -558,11 +563,11 @@ void read_mesh_to_memory()
     for(i = 0; i < mss.num_elem_blk; i ++){
       mss.element_types[i] = (char *)malloc((MAX_STR_LENGTH + 1)*sizeof(char));
       error += im_ex_get_elem_block(id,
-				    mss.block_id[i],
-				    mss.element_types[i],
-				    (int*)&(mss.elements[i]),
-				    (int*)&(mss.nodes_per_element[i]),
-				    (int*)&(mss.element_attributes[i]));
+          mss.block_id[i],
+          mss.element_types[i],
+          (int*)&(mss.elements[i]),
+          (int*)&(mss.nodes_per_element[i]),
+          (int*)&(mss.element_attributes[i]));
     }
 
     /*connectivity*/
@@ -582,16 +587,16 @@ void read_mesh_to_memory()
 
 
       for(i = 0; i < mss.num_node_sets; i ++){
-	error += im_ex_get_node_set_param(id, mss.node_set_id[i],
-					  (int*)&mss.num_nodes_in_node_set[i],
-					  (int*)&mss.num_df_in_node_set[i]);
+        error += im_ex_get_node_set_param(id, mss.node_set_id[i],
+            (int*)&mss.num_nodes_in_node_set[i],
+            (int*)&mss.num_df_in_node_set[i]);
 
-      	mss.node_set_nodes[i] = NULL;
+        mss.node_set_nodes[i] = NULL;
 
-	if(mss.num_nodes_in_node_set[i]) {
-	  mss.node_set_nodes[i] = (int *)malloc(mss.num_nodes_in_node_set[i]*sizeof(int));
-	  error += im_ex_get_node_set(id, mss.node_set_id[i], mss.node_set_nodes[i]);
-	}
+        if(mss.num_nodes_in_node_set[i]) {
+          mss.node_set_nodes[i] = (int *)malloc(mss.num_nodes_in_node_set[i]*sizeof(int));
+          error += im_ex_get_node_set(id, mss.node_set_id[i], mss.node_set_nodes[i]);
+        }
       }
     }
 
@@ -605,20 +610,20 @@ void read_mesh_to_memory()
 
       error += im_ex_get_side_set_ids(id, mss.side_set_id);
       for(i = 0; i < mss.num_side_sets; i ++){
-	int ne = 0;
-	error += im_ex_get_side_set_param(id, mss.side_set_id[i],
-					  (int*)&mss.num_elements_in_side_set[i],
-					  (int*)&mss.num_df_in_side_set[i]);
+        int ne = 0;
+        error += im_ex_get_side_set_param(id, mss.side_set_id[i],
+            (int*)&mss.num_elements_in_side_set[i],
+            (int*)&mss.num_df_in_side_set[i]);
 
-	ne = mss.num_elements_in_side_set[i];
-	mss.side_set_elements[i] = (int*)malloc(ne*sizeof(int));
-	mss.side_set_faces[i] = (int*)malloc(ne*sizeof(int));
-	if(ne){
-	  error += im_ex_get_side_set(id, mss.side_set_id[i],
-				      mss.side_set_elements[i],
-				      mss.side_set_faces[i]);
+        ne = mss.num_elements_in_side_set[i];
+        mss.side_set_elements[i] = (int*)malloc(ne*sizeof(int));
+        mss.side_set_faces[i] = (int*)malloc(ne*sizeof(int));
+        if(ne){
+          error += im_ex_get_side_set(id, mss.side_set_id[i],
+              mss.side_set_elements[i],
+              mss.side_set_faces[i]);
 
-	}
+        }
       }
     }
 
@@ -631,7 +636,7 @@ void read_mesh_to_memory()
     if(mss.num_info_records) {
       mss.info_records = (char **)malloc(mss.num_info_records*sizeof(char *));/*new std::string[num_info_records];*/
       for(i = 0; i < mss.num_info_records; i ++){
-	mss.info_records[i] = (char *)malloc(MAX_STR_LENGTH+1);
+        mss.info_records[i] = (char *)malloc(MAX_STR_LENGTH+1);
       }
       error += im_ex_get_info(id, mss.info_records);
     }
@@ -640,8 +645,8 @@ void read_mesh_to_memory()
     /*nemesis data
       global info*/
     if ( im_ne_get_init_global(id, &mss.num_nodes_global, &mss.num_elems_global,
-			       &mss.num_elm_blks_global, &mss.num_node_sets_global,
-			       &mss.num_side_sets_global) < 0 )
+          &mss.num_elm_blks_global, &mss.num_node_sets_global,
+          &mss.num_side_sets_global) < 0 )
       ++error;
 
 
@@ -665,24 +670,24 @@ void read_mesh_to_memory()
 
     if ( mss.num_node_sets_global > 0 ) {
       if ( im_ne_get_ns_param_global(id,mss.ns_ids_global,mss.ns_cnts_global,
-				     mss.ns_df_cnts_global) < 0 )++error;
+            mss.ns_df_cnts_global) < 0 )++error;
     }
 
     if ( mss.num_side_sets_global > 0 ) {
       if ( im_ne_get_ss_param_global(id,mss.ss_ids_global,mss.ss_cnts_global,
-				     mss.ss_df_cnts_global) < 0 )  ++error;
+            mss.ss_df_cnts_global) < 0 )  ++error;
     }
 
     /*parallel info*/
     if ( im_ne_get_loadbal_param( id,
-				  &mss.num_internal_nodes,
-				  &mss.num_border_nodes,
-				  &mss.num_external_nodes,
-				  &mss.num_internal_elems,
-				  &mss.num_border_elems,
-				  &mss.num_node_comm_maps,
-				  &mss.num_elem_comm_maps,
-				  0/*unused*/ ) < 0 )++error;
+          &mss.num_internal_nodes,
+          &mss.num_border_nodes,
+          &mss.num_external_nodes,
+          &mss.num_internal_elems,
+          &mss.num_border_elems,
+          &mss.num_node_comm_maps,
+          &mss.num_elem_comm_maps,
+          0/*unused*/ ) < 0 )++error;
 
     mss.internal_elements = (int *)malloc(mss.num_internal_elems*sizeof(int));
     mss.border_elements   = (int *)malloc(mss.num_border_elems*sizeof(int));
@@ -691,15 +696,15 @@ void read_mesh_to_memory()
     mss.external_nodes    = (int *)malloc(mss.num_external_nodes*sizeof(int));
 
     if ( im_ne_get_elem_map( id,
-			     mss.internal_elements,
-			     mss.border_elements,
-			     0/* not used proc_id*/ ) < 0 )++error;
+          mss.internal_elements,
+          mss.border_elements,
+          0/* not used proc_id*/ ) < 0 )++error;
 
     if ( im_ne_get_node_map( id,
-			     mss.internal_nodes,
-			     mss.border_nodes,
-			     mss.external_nodes,
-			     0/* not used proc_id*/ ) < 0 )++error;
+          mss.internal_nodes,
+          mss.border_nodes,
+          mss.external_nodes,
+          0/* not used proc_id*/ ) < 0 )++error;
 
 
     if(mss.num_node_comm_maps > 0){
@@ -716,35 +721,35 @@ void read_mesh_to_memory()
       mss.comm_elem_proc_ids  = (int**)malloc(mss.num_elem_comm_maps*sizeof(int*));
 
       if ( im_ne_get_cmap_params( id,
-				  mss.node_cmap_ids,
-				  (int*)mss.node_cmap_node_cnts,
-				  mss.elem_cmap_ids,
-				  (int*)mss.elem_cmap_elem_cnts,
-				  0/*not used proc_id*/ ) < 0 )++error;
+            mss.node_cmap_ids,
+            (int*)mss.node_cmap_node_cnts,
+            mss.elem_cmap_ids,
+            (int*)mss.elem_cmap_elem_cnts,
+            0/*not used proc_id*/ ) < 0 )++error;
 
       for(j = 0; j < mss.num_node_comm_maps; j++) {
-	mss.comm_node_ids[j]       = (int *)malloc(mss.node_cmap_node_cnts[j]*sizeof(int));
-	mss.comm_node_proc_ids[j]  = (int *)malloc(mss.node_cmap_node_cnts[j]*sizeof(int));
-	if ( im_ne_get_node_cmap( id,
-				  mss.node_cmap_ids[j],
-				  mss.comm_node_ids[j],
-				  mss.comm_node_proc_ids[j],
-				  0/*not used proc_id*/ ) < 0 )++error;
+        mss.comm_node_ids[j]       = (int *)malloc(mss.node_cmap_node_cnts[j]*sizeof(int));
+        mss.comm_node_proc_ids[j]  = (int *)malloc(mss.node_cmap_node_cnts[j]*sizeof(int));
+        if ( im_ne_get_node_cmap( id,
+              mss.node_cmap_ids[j],
+              mss.comm_node_ids[j],
+              mss.comm_node_proc_ids[j],
+              0/*not used proc_id*/ ) < 0 )++error;
 
       }
 
 
 
       for(j = 0; j < mss.num_elem_comm_maps; j++) {
-	mss.comm_elem_ids[j]       = (int *)malloc(mss.elem_cmap_elem_cnts[j]*sizeof(int));
-	mss.comm_side_ids[j]       = (int *)malloc(mss.elem_cmap_elem_cnts[j]*sizeof(int));
-	mss.comm_elem_proc_ids[j]  = (int *)malloc(mss.elem_cmap_elem_cnts[j]*sizeof(int));
-	if ( im_ne_get_elem_cmap( id,
-				  mss.elem_cmap_ids[j],
-				  mss.comm_elem_ids[j],
-				  mss.comm_side_ids[j],
-				  mss.comm_elem_proc_ids[j],
-				  0 /*not used proc_id*/ ) < 0 )++error;
+        mss.comm_elem_ids[j]       = (int *)malloc(mss.elem_cmap_elem_cnts[j]*sizeof(int));
+        mss.comm_side_ids[j]       = (int *)malloc(mss.elem_cmap_elem_cnts[j]*sizeof(int));
+        mss.comm_elem_proc_ids[j]  = (int *)malloc(mss.elem_cmap_elem_cnts[j]*sizeof(int));
+        if ( im_ne_get_elem_cmap( id,
+              mss.elem_cmap_ids[j],
+              mss.comm_elem_ids[j],
+              mss.comm_side_ids[j],
+              mss.comm_elem_proc_ids[j],
+              0 /*not used proc_id*/ ) < 0 )++error;
 
 
       }/*loop over num_elem_co*/
@@ -756,22 +761,22 @@ void read_mesh_to_memory()
 
 /*****************************************************************************/
 void write_mesh_to_stdout()
-/*****************************************************************************/
+  /*****************************************************************************/
 {
-int i;
-int j;
-int b;
-int ict;
-int nct;
+  int i;
+  int j;
+  int b;
+  int ict;
+  int nct;
 
-    printf("\nExodus header info:\nTitle: %s\nDimension %i \nNumber of Nodes %i \nNumber of Elements %i \nNumber of Element Blocks %i \nNumber of Node Sets %i \nNumber of Side Sets %i \n\n",
-	   mss.title,
-	   mss.num_dim,
-	   mss.num_nodes,
-	   mss.num_elem,
-	   mss.num_elem_blk,
-	   mss.num_node_sets,
-	   mss.num_side_sets);
+  printf("\nExodus header info:\nTitle: %s\nDimension %i \nNumber of Nodes %i \nNumber of Elements %i \nNumber of Element Blocks %i \nNumber of Node Sets %i \nNumber of Side Sets %i \n\n",
+      mss.title,
+      mss.num_dim,
+      mss.num_nodes,
+      mss.num_elem,
+      mss.num_elem_blk,
+      mss.num_node_sets,
+      mss.num_side_sets);
 
 
   printf("num node set nodes %i\n",mss.num_node_set_nodes);
@@ -825,21 +830,21 @@ int nct;
     /*connectivity*/
     for(b = 0; b < mss.num_elem_blk; b++){
       for(ict = 0; ict < mss.elements[b] && ict < 10;ict++){
-	printf("block %i element %i connectivty ",mss.block_id[b],ict);
-	for(nct = 0; nct < mss.nodes_per_element[b]; nct++){
-	  printf("%i ",mss.elmt_node_linkage[b][nct+ict*mss.nodes_per_element[b]]);
-	}
-	printf("\n");
+        printf("block %i element %i connectivty ",mss.block_id[b],ict);
+        for(nct = 0; nct < mss.nodes_per_element[b]; nct++){
+          printf("%i ",mss.elmt_node_linkage[b][nct+ict*mss.nodes_per_element[b]]);
+        }
+        printf("\n");
       }
     }
 
 
     if(mss.num_node_sets){
       for(i = 0; i < mss.num_node_sets; i ++){
-	printf("Nodeset i = %i id = %i has %i nodes\n",i,mss.node_set_id[i],mss.num_nodes_in_node_set[i]);
-	for(j = 0; j < mss.num_nodes_in_node_set[i] && j < 10; j ++){
-	  printf("nodeset node i=%i = %i\n",j,mss.node_set_nodes[i][j]);
-	}
+        printf("Nodeset i = %i id = %i has %i nodes\n",i,mss.node_set_id[i],mss.num_nodes_in_node_set[i]);
+        for(j = 0; j < mss.num_nodes_in_node_set[i] && j < 10; j ++){
+          printf("nodeset node i=%i = %i\n",j,mss.node_set_nodes[i][j]);
+        }
       }
     }
 
@@ -847,13 +852,13 @@ int nct;
     if(mss.num_side_sets){
       for(i = 0; i < mss.num_side_sets; i ++){
         int ne = 0;
-	printf("Side set index %i id %i has %i elements\n",i,mss.side_set_id[i],mss.num_elements_in_side_set[i]);
-	ne = mss.num_elements_in_side_set[i];
-	if(ne){
-	  for(j = 0; j < ne && j < 10; j ++){
-	    printf("element %i and face %i\n",mss.side_set_elements[i][j],mss.side_set_faces[i][j]);
-	  }
-	}
+        printf("Side set index %i id %i has %i elements\n",i,mss.side_set_id[i],mss.num_elements_in_side_set[i]);
+        ne = mss.num_elements_in_side_set[i];
+        if(ne){
+          for(j = 0; j < ne && j < 10; j ++){
+            printf("element %i and face %i\n",mss.side_set_elements[i][j],mss.side_set_faces[i][j]);
+          }
+        }
       }
     }
 
@@ -861,16 +866,16 @@ int nct;
 
     for(i = 0; i < mss.num_qa_records; i ++){
       printf("\nQA Record %i\n %s\n%s\n",
-	     i,
-	     mss.qaRecord[i][0],
-	     mss.qaRecord[i][1]);
+          i,
+          mss.qaRecord[i][0],
+          mss.qaRecord[i][1]);
     }
 
     printf("Num Info Records %i\n",mss.num_info_records);
     if(mss.num_info_records) {
       printf("Info Records\n");
       for(i = 0; i < mss.num_info_records; i ++){
-	printf("%s",mss.info_records[i]);
+        printf("%s",mss.info_records[i]);
       }
     }
 
@@ -893,13 +898,13 @@ int nct;
 
     if ( mss.num_node_sets_global > 0 ) {
       for(i = 0; i < mss.num_node_sets_global;i ++){
-	printf("global ns info for ns index %i id %i num_nodes = %i num_ns_df = %i\n",i,mss.ns_ids_global[i],mss.ns_cnts_global[i],mss.ns_df_cnts_global[i]);
+        printf("global ns info for ns index %i id %i num_nodes = %i num_ns_df = %i\n",i,mss.ns_ids_global[i],mss.ns_cnts_global[i],mss.ns_df_cnts_global[i]);
       }
     }
 
     if ( mss.num_side_sets_global > 0 ) {
       for(i = 0; i < mss.num_side_sets_global;i ++){
-	printf("global ss info for ss index %i id %i num_elements = %i num_ss_df = %i\n",i,mss.ss_ids_global[i],mss.ss_cnts_global[i],mss.ss_df_cnts_global[i]);
+        printf("global ss info for ss index %i id %i num_elements = %i num_ss_df = %i\n",i,mss.ss_ids_global[i],mss.ss_cnts_global[i],mss.ss_df_cnts_global[i]);
       }
 
     }
@@ -907,13 +912,13 @@ int nct;
     /*parallel info*/
 
     printf("Loadbal params:\nnum_internal_nodes %i\nnum_border_nodes%i\nnum_external_nodes%i\nnum_internal_elems%i\nnum_border_elems%i\nnum_node_comm_maps%i\nnum_elem_comm_maps%i\n",
-	   mss.num_internal_nodes,
-	   mss.num_border_nodes,
-	   mss.num_external_nodes,
-	   mss.num_internal_elems,
-	   mss.num_border_elems,
-	   mss.num_node_comm_maps,
-	   mss.num_elem_comm_maps);
+        mss.num_internal_nodes,
+        mss.num_border_nodes,
+        mss.num_external_nodes,
+        mss.num_internal_elems,
+        mss.num_border_elems,
+        mss.num_node_comm_maps,
+        mss.num_elem_comm_maps);
 
     for(i = 0; i < mss.num_internal_nodes && i < 10; i ++)printf("internal node i=%i = %i\n",i,mss.internal_nodes[i]);
     for(i = 0; i < mss.num_border_nodes && i < 10;   i ++)printf("border node i=%i = %i\n",i,  mss.border_nodes[i]);
@@ -924,31 +929,31 @@ int nct;
     if(mss.num_node_comm_maps > 0){
 
       for(i =0; i < mss.num_node_comm_maps; i ++){
-	printf("node_cmap_id i = %i node_cmap_id = %i node_cmap_node_cnts = %i\n",i,mss.node_cmap_ids[i],mss.node_cmap_node_cnts[i]);
+        printf("node_cmap_id i = %i node_cmap_id = %i node_cmap_node_cnts = %i\n",i,mss.node_cmap_ids[i],mss.node_cmap_node_cnts[i]);
       }
       for(i =0; i < mss.num_elem_comm_maps; i ++){
-	printf("elem_cmap_id i = %i elem_cmap_id = %i elem_cmap_elem_cnts = %i\n",i,mss.elem_cmap_ids[i],mss.elem_cmap_elem_cnts[i]);
+        printf("elem_cmap_id i = %i elem_cmap_id = %i elem_cmap_elem_cnts = %i\n",i,mss.elem_cmap_ids[i],mss.elem_cmap_elem_cnts[i]);
       }
 
       for(j = 0; j < mss.num_node_comm_maps; j++) {
-	for(i = 0; i < mss.node_cmap_node_cnts[j] && i < 10;i ++){
-	  printf("node_cmap_id i=%i = %i comm_node_ids = %i comm_node_proc_ids = %i\n",
-		 i,
-		 mss.node_cmap_ids[j],
-		 mss.comm_node_ids[j][i],
-		 mss.comm_node_proc_ids[j][i]);
-	}
+        for(i = 0; i < mss.node_cmap_node_cnts[j] && i < 10;i ++){
+          printf("node_cmap_id i=%i = %i comm_node_ids = %i comm_node_proc_ids = %i\n",
+              i,
+              mss.node_cmap_ids[j],
+              mss.comm_node_ids[j][i],
+              mss.comm_node_proc_ids[j][i]);
+        }
       }
 
       for(j = 0; j < mss.num_elem_comm_maps; j++) {
-	for(i = 0; i < mss.elem_cmap_elem_cnts[j] && i < 10;i ++){
-	  printf("elem_cmap_id i=%i = %i comm_elem_ids = %i comm_side_ids = %i comm_elem_proc_ids = %i\n",
-		 i,
-		 mss.elem_cmap_ids[j],
-		 mss.comm_elem_ids[j][i],
-		 mss.comm_side_ids[j][i],
-		 mss.comm_elem_proc_ids[j][i]);
-	}
+        for(i = 0; i < mss.elem_cmap_elem_cnts[j] && i < 10;i ++){
+          printf("elem_cmap_id i=%i = %i comm_elem_ids = %i comm_side_ids = %i comm_elem_proc_ids = %i\n",
+              i,
+              mss.elem_cmap_ids[j],
+              mss.comm_elem_ids[j][i],
+              mss.comm_side_ids[j][i],
+              mss.comm_elem_proc_ids[j][i]);
+        }
 
       }/*loop over num_elem_co*/
     }
@@ -964,7 +969,7 @@ int nct;
 #define PERROR ;
 /*****************************************************************************/
 void write_to_exodus(int rank, int num_procs, char * out_file_name)
-/*****************************************************************************/
+  /*****************************************************************************/
 {
 
   int exo_access = EX_CLOBBER;
@@ -977,7 +982,7 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
   int error = 0;
 
   out_id = ex_create(out_file_name, exo_access, &cpu_word_size,
-		 &io_word_size);
+      &io_word_size);
 
   if (out_id < 0){
     printf("error opening file");
@@ -1010,19 +1015,19 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
     ++error;
   PERROR;
 
-/*now write parallel global information*/
+  /*now write parallel global information*/
 
   if ( ne_put_init_global( out_id,
-			   mss.num_nodes_global,
-			   mss.num_elems_global,
-                           mss.num_elm_blks_global,
-			   mss.num_node_sets_global,
-                           mss.num_side_sets_global ) < 0 )
+        mss.num_nodes_global,
+        mss.num_elems_global,
+        mss.num_elm_blks_global,
+        mss.num_node_sets_global,
+        mss.num_side_sets_global ) < 0 )
     ++error;
   PERROR;
 
   if ( ne_put_init_info( out_id, mss.num_total_proc, mss.num_proc_in_file,
-                         mss.type ) < 0 )
+        mss.type ) < 0 )
     ++error;
   PERROR;
 
@@ -1032,66 +1037,66 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
 
   if ( mss.num_node_sets_global > 0 ) {
     if ( ne_put_ns_param_global( out_id,
-				 mss.ns_ids_global,
-				 mss.ns_cnts_global,
-                                 mss.ns_df_cnts_global ) < 0 )
+          mss.ns_ids_global,
+          mss.ns_cnts_global,
+          mss.ns_df_cnts_global ) < 0 )
       ++error;
   }
   PERROR;
 
   if ( mss.num_side_sets_global > 0 ) {
     if ( ne_put_ss_param_global( out_id,
-				 mss.ss_ids_global,
-				 mss.ss_cnts_global,
-                                 mss.ss_df_cnts_global ) < 0 )
+          mss.ss_ids_global,
+          mss.ss_cnts_global,
+          mss.ss_df_cnts_global ) < 0 )
       ++error;
   }
   PERROR;
 
   /*writingparallel info*/
   if ( ne_put_loadbal_param( out_id,
-                             mss.num_internal_nodes,
-                             mss.num_border_nodes,
-                             mss.num_external_nodes,
-                             mss.num_internal_elems,
-                             mss.num_border_elems,
-                             mss.num_node_comm_maps,
-                             mss.num_elem_comm_maps,
-                             rank ) < 0 )
+        mss.num_internal_nodes,
+        mss.num_border_nodes,
+        mss.num_external_nodes,
+        mss.num_internal_elems,
+        mss.num_border_elems,
+        mss.num_node_comm_maps,
+        mss.num_elem_comm_maps,
+        rank ) < 0 )
     ++error;
   PERROR;
 
   if ( ne_put_cmap_params( out_id,
-                           mss.node_cmap_ids,
-                           (int*)mss.node_cmap_node_cnts,
-                           mss.elem_cmap_ids,
-                           (int*)mss.elem_cmap_elem_cnts,
-                           rank ) < 0 )
+        mss.node_cmap_ids,
+        (int*)mss.node_cmap_node_cnts,
+        mss.elem_cmap_ids,
+        (int*)mss.elem_cmap_elem_cnts,
+        rank ) < 0 )
     ++error;
   PERROR;
 
   if ( ne_put_elem_map( out_id,
-                        mss.internal_elements,
-                        mss.border_elements,
-                        rank ) < 0 )
+        mss.internal_elements,
+        mss.border_elements,
+        rank ) < 0 )
     ++error;
   PERROR;
 
 
   if ( ne_put_node_map( out_id,
-                        mss.internal_nodes,
-                        mss.border_nodes,
-                        mss.external_nodes,
-                        rank ) < 0 )
+        mss.internal_nodes,
+        mss.border_nodes,
+        mss.external_nodes,
+        rank ) < 0 )
     ++error;
   PERROR;
 
   for (i = 0; i < mss.num_node_comm_maps; i++) {
     if ( ne_put_node_cmap( out_id,
-                           mss.node_cmap_ids[i],
-                           mss.comm_node_ids[i],
-                           mss.comm_node_proc_ids[i],
-                           rank ) < 0 )
+          mss.node_cmap_ids[i],
+          mss.comm_node_ids[i],
+          mss.comm_node_proc_ids[i],
+          rank ) < 0 )
       ++error;
   }
   PERROR;
@@ -1099,11 +1104,11 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
 
   for (i = 0; i < mss.num_elem_comm_maps; i++) {
     if ( ne_put_elem_cmap( out_id,
-                           mss.elem_cmap_ids[i],
-                           mss.comm_elem_ids[i],
-                           mss.comm_side_ids[i],
-                           mss.comm_elem_proc_ids[i],
-                           rank ) < 0 )
+          mss.elem_cmap_ids[i],
+          mss.comm_elem_ids[i],
+          mss.comm_side_ids[i],
+          mss.comm_elem_proc_ids[i],
+          rank ) < 0 )
       ++error;
   }
 
@@ -1130,17 +1135,17 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
     int gpe = 0;
     int fpe = 0;
     error += ex_put_block( out_id,
-                           EX_ELEM_BLOCK,
-                           mss.block_id[b],
-                           mss.element_types[b],
-                           mss.elements[b],
-                           mss.nodes_per_element[b],
-                           gpe, fpe,
-                           mss.element_attributes[b] );  /* num attr */
+        EX_ELEM_BLOCK,
+        mss.block_id[b],
+        mss.element_types[b],
+        mss.elements[b],
+        mss.nodes_per_element[b],
+        gpe, fpe,
+        mss.element_attributes[b] );  /* num attr */
     PERROR;
   }
 
-/* write element connectivity information */
+  /* write element connectivity information */
 
   for (b = 0; b < mss.num_elem_blk; b++) {
     if ( mss.elements[b] > 0 ){
@@ -1150,12 +1155,12 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
   }
 
 
-/* write in nodal boundary sets for the body. */
+  /* write in nodal boundary sets for the body. */
 
   for(i = 0; i < mss.num_node_sets; i++) {
     error += ex_put_node_set_param(out_id, mss.node_set_id[i],
-                                  mss.num_nodes_in_node_set[i],
-                                  mss.num_df_in_node_set[i]);
+        mss.num_nodes_in_node_set[i],
+        mss.num_df_in_node_set[i]);
     PERROR;
     if(mss.num_nodes_in_node_set[i])
       error += ex_put_node_set(out_id, mss.node_set_id[i], mss.node_set_nodes[i]);
@@ -1165,19 +1170,19 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
 
   for(i = 0; i < mss.num_side_sets; i++) {
     error += ex_put_side_set_param(out_id, mss.side_set_id[i],
-                                  mss.num_elements_in_side_set[i],
-                                  mss.num_df_in_side_set[i]);
+        mss.num_elements_in_side_set[i],
+        mss.num_df_in_side_set[i]);
 
     PERROR;
     if(mss.num_elements_in_side_set[i])
       error += ex_put_side_set(out_id, mss.side_set_id[i],
-                              mss.side_set_elements[i],
-                              mss.side_set_faces[i]);
+          mss.side_set_elements[i],
+          mss.side_set_faces[i]);
     PERROR;
   }
 
-    error += ex_put_qa(out_id, mss.num_qa_records, mss.qaRecord);
-    PERROR;
+  error += ex_put_qa(out_id, mss.num_qa_records, mss.qaRecord);
+  PERROR;
 
   ex_close(out_id);
 

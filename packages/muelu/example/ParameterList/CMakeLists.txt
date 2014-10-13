@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(XpetraAddTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -19,7 +17,6 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
   TRIBITS_ADD_EXECUTABLE(
     MLParameterList
     SOURCES MLParameterList.cpp
-    DEPLIBS muelu xpetra
     COMM serial mpi
     )
 
@@ -39,7 +36,7 @@ ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos)
   XPETRA_ADD_TEST_EPETRA(MLParameterList 1-4)
-  
+
   TRIBITS_ADD_TEST(
     MLParameterList
     NAME MLParameterList_Repartition-Epetra

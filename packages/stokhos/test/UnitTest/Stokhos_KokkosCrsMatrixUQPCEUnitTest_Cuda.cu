@@ -45,7 +45,7 @@
 
 #include "Stokhos_KokkosCrsMatrixUQPCEUnitTest.hpp"
 
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Instantiate test for Cuda device
 using Kokkos::Cuda;

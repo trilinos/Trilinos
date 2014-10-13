@@ -52,9 +52,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #if TPETRA_USE_KOKKOS_DISTOBJECT
 
-#include "Kokkos_View.hpp"
-#include "Kokkos_Parallel.hpp"
-#include "Kokkos_Atomic.hpp"
+#include "Kokkos_Core.hpp"
 
 // Don't include Teuchos_ScalarTraits.hpp here because we want a different
 // version for CPU versus GPU

@@ -1880,6 +1880,7 @@ NNTI_result_t NNTI_ib_send (
     ib_mem_hdl->wr_queue.push_back(ib_wr);
     nthread_unlock(&ib_mem_hdl->wr_queue_lock);
 
+    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
     nthread_lock(&nnti_wrmap_lock);
     assert(wrmap.find(ib_wr->key) == wrmap.end());
     wrmap[ib_wr->key] = ib_wr;
@@ -2061,6 +2062,7 @@ NNTI_result_t NNTI_ib_put (
     ib_mem_hdl->wr_queue.push_back(ib_wr);
     nthread_unlock(&ib_mem_hdl->wr_queue_lock);
 
+    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
     nthread_lock(&nnti_wrmap_lock);
     assert(wrmap.find(ib_wr->key) == wrmap.end());
     wrmap[ib_wr->key] = ib_wr;
@@ -2264,6 +2266,7 @@ NNTI_result_t NNTI_ib_get (
     ib_mem_hdl->wr_queue.push_back(ib_wr);
     nthread_unlock(&ib_mem_hdl->wr_queue_lock);
 
+    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
     nthread_lock(&nnti_wrmap_lock);
     assert(wrmap.find(ib_wr->key) == wrmap.end());
     wrmap[ib_wr->key] = ib_wr;
@@ -2446,6 +2449,7 @@ NNTI_result_t NNTI_ib_atomic_fop (
 
     log_debug(nnti_debug_level, "pushing ib_wr=%p", ib_wr);
 
+    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
     nthread_lock(&nnti_wrmap_lock);
     assert(wrmap.find(ib_wr->key) == wrmap.end());
     wrmap[ib_wr->key] = ib_wr;
@@ -2550,6 +2554,7 @@ NNTI_result_t NNTI_ib_atomic_cswap (
 
     log_debug(nnti_debug_level, "pushing ib_wr=%p", ib_wr);
 
+    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
     nthread_lock(&nnti_wrmap_lock);
     assert(wrmap.find(ib_wr->key) == wrmap.end());
     wrmap[ib_wr->key] = ib_wr;
@@ -2927,7 +2932,7 @@ NNTI_result_t NNTI_ib_wait (
             nthread_lock(&nnti_wrmap_lock);
             wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
             if (m_victim != wrmap.end()) {
-                log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", ib_wr, ib_wr->key);
+                log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lx) from the wrmap", ib_wr, ib_wr->key);
                 wrmap.erase(m_victim);
             }
             nthread_unlock(&nnti_wrmap_lock);
@@ -2972,7 +2977,7 @@ NNTI_result_t NNTI_ib_wait (
                 nthread_lock(&nnti_wrmap_lock);
                 wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
                 if (m_victim != wrmap.end()) {
-                    log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", ib_wr, ib_wr->key);
+                    log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lx) from the wrmap", ib_wr, ib_wr->key);
                     wrmap.erase(m_victim);
                 }
                 nthread_unlock(&nnti_wrmap_lock);
@@ -3162,7 +3167,7 @@ NNTI_result_t NNTI_ib_waitany (
             nthread_lock(&nnti_wrmap_lock);
             wrmap_iter_t m_victim=wrmap.find(IB_WORK_REQUEST(wr_list[*which])->key);
             if (m_victim != wrmap.end()) {
-                log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", IB_WORK_REQUEST(wr_list[*which]), IB_WORK_REQUEST(wr_list[*which])->key);
+                log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lx) from the wrmap", IB_WORK_REQUEST(wr_list[*which]), IB_WORK_REQUEST(wr_list[*which])->key);
                 wrmap.erase(m_victim);
             }
             nthread_unlock(&nnti_wrmap_lock);
@@ -3352,7 +3357,7 @@ NNTI_result_t NNTI_ib_waitall (
                 nthread_lock(&nnti_wrmap_lock);
                 wrmap_iter_t m_victim=wrmap.find(IB_WORK_REQUEST(wr_list[i])->key);
                 if (m_victim != wrmap.end()) {
-                    log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", IB_WORK_REQUEST(wr_list[i]), IB_WORK_REQUEST(wr_list[i])->key);
+                    log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lx) from the wrmap", IB_WORK_REQUEST(wr_list[i]), IB_WORK_REQUEST(wr_list[i])->key);
                     wrmap.erase(m_victim);
                 }
                 nthread_unlock(&nnti_wrmap_lock);
@@ -4263,6 +4268,7 @@ static NNTI_result_t post_recv_work_request(
     ib_mem_hdl->wr_queue.push_back(ib_wr);
     nthread_unlock(&ib_mem_hdl->wr_queue_lock);
 
+    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
     nthread_lock(&nnti_wrmap_lock);
     assert(wrmap.find(ib_wr->key) == wrmap.end());
     wrmap[ib_wr->key] = ib_wr;
@@ -4361,6 +4367,7 @@ static NNTI_result_t post_ack_recv_work_request(
     ib_mem_hdl->wr_queue.push_back(ib_wr);
     nthread_unlock(&ib_mem_hdl->wr_queue_lock);
 
+    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
     nthread_lock(&nnti_wrmap_lock);
     assert(wrmap.find(ib_wr->key) == wrmap.end());
     wrmap[ib_wr->key] = ib_wr;
@@ -4435,10 +4442,11 @@ static NNTI_result_t repost_recv_work_request(
     nthread_lock(&nnti_wrmap_lock);
     wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
     if (m_victim != wrmap.end()) {
-        log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", ib_wr, ib_wr->key);
+        log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lx) from the wrmap", ib_wr, ib_wr->key);
         wrmap.erase(m_victim);
     }
 //    ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
+    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
     assert(wrmap.find(ib_wr->key) == wrmap.end());
     wrmap[ib_wr->key] = ib_wr;
     nthread_unlock(&nnti_wrmap_lock);
@@ -4513,10 +4521,11 @@ static NNTI_result_t repost_ack_recv_work_request(
     nthread_lock(&nnti_wrmap_lock);
     wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
     if (m_victim != wrmap.end()) {
-        log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lu) from the wrmap", ib_wr, ib_wr->key);
+        log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lx) from the wrmap", ib_wr, ib_wr->key);
         wrmap.erase(m_victim);
     }
     ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
+    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
     assert(wrmap.find(ib_wr->key) == wrmap.end());
     wrmap[ib_wr->key] = ib_wr;
     nthread_unlock(&nnti_wrmap_lock);

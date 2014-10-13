@@ -46,7 +46,7 @@
 
 #include <cmath>
 #include <limits>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_CrsMatrix.hpp>
 #include <Kokkos_MV.hpp>
 #include <impl/Kokkos_Timer.hpp>

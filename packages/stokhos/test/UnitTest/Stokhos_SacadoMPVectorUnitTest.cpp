@@ -47,7 +47,7 @@
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-#include <Kokkos_Threads.hpp>
+#include <Kokkos_Core.hpp>
 
 //
 // Currently this doesn't test:

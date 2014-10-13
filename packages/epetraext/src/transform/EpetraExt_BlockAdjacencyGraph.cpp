@@ -102,7 +102,7 @@ namespace EpetraExt {
     if( matProc == -1)
       { std::cout << "FAIL for Global!  All CrsGraph entries must be on one processor!\n"; abort(); }
 
-    int i= 0, j = 0, k, l = 0, p, pm, q = -1, ns;
+    int i= 0, j = 0, k, l = 0, p, pm, q = -1, ns = 0;
     int tree_height;
     int error = -1;    /* error detected, possibly a problem with the input */
     (void) error; // silence "set but not used" warning
@@ -113,10 +113,14 @@ namespace EpetraExt {
     int* bstree = 0;   /* binary search tree */
     std::vector<int_type> Mi, Mj, Mnum(nbrr+1,0);
     nrr = B.NumMyRows();
-    if ( matProc == myPID && verbose )
-      std::printf(" Matrix Size = %d      Number of Blocks = %d\n",nrr, nbrr);
+    if ( matProc == myPID )
+    {
+      if ( verbose ) { std::printf(" Matrix Size = %d      Number of Blocks = %d\n",nrr, nbrr); }
+    }
     else
+    {
       nrr = -1;     /* Prevent processor from doing any computations */
+    }
     bstree = csr_bst(nbrr);  /* 0 : nbrr-1 */
     tree_height = ceil31log2(nbrr) + 1;
     error = -1;

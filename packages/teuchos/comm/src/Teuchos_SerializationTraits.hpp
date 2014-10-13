@@ -58,7 +58,7 @@ namespace Teuchos {
 
 /// \class UndefinedSerializationTraits
 /// \brief Report an error if a specialization of \c SerializationTraits is missing.
-/// 
+///
 /// This class reports a compile-time error if you attempt to
 /// instantiate it.  We use this class to make it easy to detect a
 /// missing specialization of \c SerializationTraits.
@@ -69,7 +69,7 @@ struct UndefinedSerializationTraits {
 };
 
 
-/** \class SerializationTraits 
+/** \class SerializationTraits
  * \brief Serialization traits class for types T that use value semantics.
  *
  * This traits class describes how to convert between arrays of T, and
@@ -83,7 +83,7 @@ struct UndefinedSerializationTraits {
  *   received.
  *
  * \tparam T The type of the objects that this class shows how to
- *   serialize.  
+ *   serialize.
  *
  * Teuchos defines specializations of this class for many commonly
  * used types in distributed-memory communication, such as char, int
@@ -98,7 +98,7 @@ struct UndefinedSerializationTraits {
  * \note Before defining specializations of this class, make sure that
  *   they do not duplicate specializations already present in
  *   PyTrilinos (see packages/PyTrilinos/src/Teuchos_Traits.i)
- * 
+ *
  * There are two different serialization modes: direct and indirect.
  * "Direct" serialization means that you can convert directly between
  * an object of type T and an array of char, of a specific length
@@ -125,8 +125,8 @@ struct UndefinedSerializationTraits {
 template <typename Ordinal, typename T>
 class SerializationTraits {
 public:
-  
-  //! @name Serialization type selection 
+
+  //! @name Serialization type selection
   //@{
 
   /// \brief Whether the type T supports direct serialization.
@@ -137,62 +137,62 @@ public:
 
   //@}
 
-  //! @name Direct serialization functions (not defined if supportsDirectSerialization==false) 
+  //! @name Direct serialization functions (not defined if supportsDirectSerialization==false)
   //@{
 
   /** \brief Return the number of bytes for <tt>count</tt> objects. */
-  static Ordinal fromCountToDirectBytes(const Ordinal count) { 
-    (void)count; 
-    UndefinedSerializationTraits<T>::notDefined(); 
-    return 0; 
+  static Ordinal fromCountToDirectBytes(const Ordinal count) {
+    (void)count;
+    UndefinedSerializationTraits<T>::notDefined();
+    return 0;
   }
 
   /** \brief Convert the pointer type to <tt>char*</tt>. */
-  static char* convertToCharPtr( T* ptr ) { 
-    (void)ptr; 
-    UndefinedSerializationTraits<T>::notDefined(); 
-    return 0; 
+  static char* convertToCharPtr( T* ptr ) {
+    (void)ptr;
+    UndefinedSerializationTraits<T>::notDefined();
+    return 0;
   }
 
   /** \brief Convert the pointer type to <tt>const char*</tt>. */
-  static const char* convertToCharPtr( const T* ptr ) { 
-    (void)ptr; 
-    UndefinedSerializationTraits<T>::notDefined(); 
-    return 0; 
+  static const char* convertToCharPtr( const T* ptr ) {
+    (void)ptr;
+    UndefinedSerializationTraits<T>::notDefined();
+    return 0;
   }
 
   /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
-  static Ordinal fromDirectBytesToCount(const Ordinal bytes) { 
-    (void)bytes; 
-    UndefinedSerializationTraits<T>::notDefined(); 
-    return 0; 
+  static Ordinal fromDirectBytesToCount(const Ordinal bytes) {
+    (void)bytes;
+    UndefinedSerializationTraits<T>::notDefined();
+    return 0;
   }
 
   /** \brief Convert the pointer type from <tt>char*</tt>. */
-  static T* convertFromCharPtr( char* ptr ) { 
-    (void)ptr; 
-    UndefinedSerializationTraits<T>::notDefined(); 
-    return 0; 
+  static T* convertFromCharPtr( char* ptr ) {
+    (void)ptr;
+    UndefinedSerializationTraits<T>::notDefined();
+    return 0;
   }
 
   /** \brief Convert the pointer type from <tt>char*</tt>. */
-  static const T* convertFromCharPtr( const char* ptr ) { 
-    (void)ptr; 
-    UndefinedSerializationTraits<T>::notDefined(); 
-    return 0; 
+  static const T* convertFromCharPtr( const char* ptr ) {
+    (void)ptr;
+    UndefinedSerializationTraits<T>::notDefined();
+    return 0;
   }
 
   //@}
 
-  //! @name Indirect serialization functions (always defined and supported) 
+  //! @name Indirect serialization functions (always defined and supported)
   //@{
 
   /** \brief Return the number of bytes for <tt>count</tt> objects. */
-  static Ordinal fromCountToIndirectBytes(const Ordinal count, 
-					  const T buffer[]) { 
-    (void)count; (void)buffer; 
-    UndefinedSerializationTraits<T>::notDefined(); 
-    return 0; 
+  static Ordinal fromCountToIndirectBytes(const Ordinal count,
+					  const T buffer[]) {
+    (void)count; (void)buffer;
+    UndefinedSerializationTraits<T>::notDefined();
+    return 0;
   }
 
   /** \brief Serialize to an indirect <tt>char[]</tt> buffer.
@@ -210,21 +210,21 @@ public:
    * <li><tt>bytes==fromCountToIndirectBytes(count)</tt>
    * </ul>
    */
-  static void serialize (const Ordinal count, 
-			 const T buffer[], 
-			 const Ordinal bytes, 
+  static void serialize (const Ordinal count,
+			 const T buffer[],
+			 const Ordinal bytes,
 			 char charBuffer[])
-  { 
-    (void)count; (void)buffer; (void)bytes; (void)charBuffer; 
-    UndefinedSerializationTraits<T>::notDefined(); 
+  {
+    (void)count; (void)buffer; (void)bytes; (void)charBuffer;
+    UndefinedSerializationTraits<T>::notDefined();
   }
 
   /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
-  static Ordinal fromIndirectBytesToCount(const Ordinal bytes, 
-					  const char charBuffer[]) { 
-    (void)bytes; (void)charBuffer; 
-    UndefinedSerializationTraits<T>::notDefined(); 
-    return 0; 
+  static Ordinal fromIndirectBytesToCount(const Ordinal bytes,
+					  const char charBuffer[]) {
+    (void)bytes; (void)charBuffer;
+    UndefinedSerializationTraits<T>::notDefined();
+    return 0;
   }
 
   /** \brief Deserialize from an indirect <tt>char[]</tt> buffer.
@@ -237,20 +237,20 @@ public:
    *           [in] The number of objects to deserialize.
    * \param  buffer
    *           [out] The deserialized objects.
-   
+
    * <b>Preconditions:</b><ul>
    * <li><tt>count==fromIndirectBytesToCount(bytes)</tt>
    * </ul>
    */
-  static void deserialize (const Ordinal bytes, 
-			   const char charBuffer[], 
-			   const Ordinal count, 
+  static void deserialize (const Ordinal bytes,
+			   const char charBuffer[],
+			   const Ordinal count,
 			   T buffer[])
-  { 
+  {
     (void)bytes; (void)charBuffer; (void)count; (void)buffer;
-    UndefinedSerializationTraits<T>::notDefined(); 
+    UndefinedSerializationTraits<T>::notDefined();
   }
-  
+
   //@}
 
 };
@@ -279,11 +279,11 @@ class ValueTypeSerializer : public Teuchos::SerializationTraits<Ordinal,T> {};
 /// length dependent only on the type T and not on the particular
 /// instance.  Specifically, it means you can
 ///
-/// 1. reinterpret_cast a pointer to an instance of T into an 
-///    array of char (which array has length dependent only on 
+/// 1. reinterpret_cast a pointer to an instance of T into an
+///    array of char (which array has length dependent only on
 ///    the type T and not on the specific T instance),
 /// 2. serialize the resulting array of char, and finally
-/// 3. deserialize by reading in the array of char and doing a 
+/// 3. deserialize by reading in the array of char and doing a
 ///    reinterpret_cast back into a T.
 ///
 /// "Indirect" serialization is defined as any serialization method
@@ -301,7 +301,7 @@ class ValueTypeSerializer : public Teuchos::SerializationTraits<Ordinal,T> {};
 ///   received.
 ///
 /// \tparam T The type of the objects that this class shows how to
-///   serialize.  
+///   serialize.
 ///
 template <typename Ordinal, typename T>
 class DirectSerializationTraits {
@@ -333,8 +333,8 @@ public:
       const char *_buffer = convertToCharPtr(buffer);
       std::copy(_buffer,_buffer+bytes,charBuffer);
     }
-  static Ordinal fromIndirectBytesToCount(const Ordinal bytes, 
-					  const char charBuffer[]) 
+  static Ordinal fromIndirectBytesToCount(const Ordinal bytes,
+					  const char charBuffer[])
     { return fromDirectBytesToCount(bytes); }
   static void deserialize(
     const Ordinal bytes, const char charBuffer[], const Ordinal count, T buffer[]
@@ -443,9 +443,9 @@ class SerializationTraits<Ordinal,std::complex<double> >
 #if defined(HAVE_TEUCHOS_LONG_LONG_INT)
 
 // Partial specialization for long long.
-// On platforms with sizeof(ptrdiff_t) <= sizeof(long long), 
+// On platforms with sizeof(ptrdiff_t) <= sizeof(long long),
 // this should take care of the ptrdiff_t specialization as well,
-// since we've covered all built-in signed integer types above 
+// since we've covered all built-in signed integer types above
 // with size <= sizeof(long long).
 template<typename Ordinal>
 class SerializationTraits<Ordinal, long long int>
@@ -453,9 +453,9 @@ class SerializationTraits<Ordinal, long long int>
 {};
 
 // Partial specialization for unsigned long long.
-// On platforms with sizeof(size_t) <= sizeof(unsigned long long), 
+// On platforms with sizeof(size_t) <= sizeof(unsigned long long),
 // this should take care of the size_t specialization as well,
-// since we've covered all built-in unsigned integer types above 
+// since we've covered all built-in unsigned integer types above
 // with size <= sizeof(unsigned long long).
 template<typename Ordinal>
 class SerializationTraits<Ordinal, unsigned long long int>
@@ -486,21 +486,6 @@ class SerializationTraits<Ordinal, ptrdiff_t>
 {};
 
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
-
-#ifdef HAVE_TEUCHOS___INT64
-
-template<typename Ordinal>
-class SerializationTraits<Ordinal, __int64>
-  : public DirectSerializationTraits<Ordinal, __int64>
-{};
-
-template<typename Ordinal>
-class SerializationTraits<Ordinal, unsigned __int64>
-  : public DirectSerializationTraits<Ordinal, unsigned __int64>
-{};
-
-#endif // HAVE_TEUCHOS___INT64
-
 
 } // namespace Teuchos
 

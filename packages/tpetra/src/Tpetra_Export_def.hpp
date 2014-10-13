@@ -42,9 +42,7 @@
 #ifndef TPETRA_EXPORT_DEF_HPP
 #define TPETRA_EXPORT_DEF_HPP
 
-#ifdef DOXYGEN_USE_ONLY
-#  include <Tpetra_Export_decl.hpp>
-#endif // DOXYGEN_USE_ONLY
+#include <Tpetra_Export_decl.hpp>
 
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Map.hpp>

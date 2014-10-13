@@ -57,7 +57,7 @@ typedef Teuchos::SerialSymDenseMatrix<OTYPE, STYPE> SDMatrix;
 typedef Teuchos::SerialDenseMatrix<OTYPE, STYPE> DMatrix;
 typedef Teuchos::SerialDenseVector<OTYPE, STYPE> DVector;
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
 
   int i;
@@ -104,18 +104,18 @@ int main(int argc, char* argv[])
   SDMatrix Con2Test1ExpRes;
   Con2Test1ExpRes.shape(3);
   Con2Test1ExpRes(0, 0) = 0;
-  Con2Test1ExpRes(1, 0) = 1;  Con2Test1ExpRes(1, 1) = 4; 
+  Con2Test1ExpRes(1, 0) = 1;  Con2Test1ExpRes(1, 1) = 4;
   Con2Test1ExpRes(2, 0) = 2;  Con2Test1ExpRes(2, 1) = 5;  Con2Test1ExpRes(2, 2) = 8;
-  
+
   // Create another lower triangular matrix with a view of 'a'.
   SDMatrix Con2Test1(Teuchos::View, false, a, 3, 3);
   numberFailedTests += PrintTestResults("constructor 2 -- construct matrix from array subrange", Con2Test1, Con2Test1ExpRes, verbose);
-  
-  
+
+
   // constructor 3 (copy constructor)
 
   SDMatrix Con3TestCopy( Con2Test1ExpRes );
-  if(verbose) std::cout <<"constructor 3 -- copy constructor "; 
+  if(verbose) std::cout <<"constructor 3 -- copy constructor ";
   if ( Con3TestCopy != Con2Test1ExpRes ) {
 	if (verbose) std::cout << "unsuccessful."<<std::endl;
 	numberFailedTests++;
@@ -125,20 +125,20 @@ int main(int argc, char* argv[])
 
   SDMatrix Con3TestCopyTrans( Con2Test1ExpRes );
   Con3TestCopyTrans.setUpper();
-  if(verbose) std::cout <<"constructor 3 -- copy constructor (upper active storage) "; 
+  if(verbose) std::cout <<"constructor 3 -- copy constructor (upper active storage) ";
   if ( Con3TestCopyTrans(2, 0) != Con2Test1ExpRes(2, 0) ) {
 	if (verbose) std::cout << "unsuccessful."<<std::endl;
 	numberFailedTests++;
   } else {
 	if (verbose) std::cout << "successful."<<std::endl;
-  }  
+  }
 
   // constructor 4 (submatrix)
 
   SDMatrix Con4TestOrig(Teuchos::Copy, false, a, 3, 3);
   SDMatrix Con4TestSubmatrix;
   Con4TestSubmatrix.shape( 2 );
-  Con4TestSubmatrix(0, 0) = 4;  
+  Con4TestSubmatrix(0, 0) = 4;
   Con4TestSubmatrix(1, 0) = 5; Con4TestSubmatrix(1, 1) = 8;
   SDMatrix Con4TestCopy1(Teuchos::Copy, Con4TestOrig, 2, 1);
   numberFailedTests += PrintTestResults("constructor 4 -- submatrix copy", Con4TestCopy1, Con4TestSubmatrix, verbose);
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
   //  Check assignment operator.
   SDMatrix CCC2( 5 );
   CCC2.assign( CCC );
-  if (verbose) std::cout <<  "assign() -- copy the values of an input matrix ";  
+  if (verbose) std::cout <<  "assign() -- copy the values of an input matrix ";
   if ( CCC( 3, 4 ) == Teuchos::ScalarTraits<STYPE>::one() ) {
     if (verbose) std::cout<< "successful" <<std::endl;
   } else {
@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
     numberFailedTests++;
   }
   //  Create a view into a submatrix of CCC
-  SDMatrix CCCview( Teuchos::View, CCC, 3 );   
+  SDMatrix CCCview( Teuchos::View, CCC, 3 );
   SDMatrix CCCtest1( 2 );
   CCCtest1 = CCCview;
   if (verbose) std::cout << "operator= -- small(empty) = large(view) ";
@@ -239,9 +239,9 @@ int main(int argc, char* argv[])
     if(verbose) std::cout<<"successful" <<std::endl;
   } else {
     if (verbose) std::cout<<"unsuccessful"<<std::endl;
-    numberFailedTests++;   
-  }  
-  
+    numberFailedTests++;
+  }
+
   SDMatrix CCCtest3( CCCview );
   CCCtest1 += CCCtest3;
   if (verbose) std::cout << "operator+= -- add two matrices of the same size, but different leading dimension ";
@@ -249,16 +249,16 @@ int main(int argc, char* argv[])
     if(verbose) std::cout<<"successful" <<std::endl;
   } else {
     if (verbose) std::cout<<"unsuccessful"<<std::endl;
-    numberFailedTests++;   
-  }  
+    numberFailedTests++;
+  }
   if (verbose) std::cout << "operator+= -- add two matrices of different size (nothing should change) ";
   CCCtest1 += CCC;
   if (CCCtest1(1,1)==2.0) {
     if(verbose) std::cout<<"successful" <<std::endl;
   } else {
     if (verbose) std::cout<<"unsuccessful"<<std::endl;
-    numberFailedTests++;   
-  }  
+    numberFailedTests++;
+  }
 
   //  Scale Tests.
 
@@ -299,7 +299,7 @@ int main(int argc, char* argv[])
   STYPE C2result = 3.0*Teuchos::ScalarTraits<STYPE>::one();
   Teuchos::symMatTripleProduct<OTYPE,STYPE>( Teuchos::TRANS, alpha, A2, W, C2upper );
   Teuchos::symMatTripleProduct<OTYPE,STYPE>( Teuchos::TRANS, alpha, A2, W, C2lower );
- 
+
   if (verbose) std::cout << "triple product -- compute C = W'*A*W or C = W*A*W' ";
   if (C1upper(2,1)==C1result && C1lower(1,2)==C1result && C2upper(1,0)==C2result && C2lower(0,1)==C2result) {
         if (verbose) std::cout<< "successful." <<std::endl;
@@ -313,8 +313,8 @@ int main(int argc, char* argv[])
   //
   // If a test failed output the number of failed tests.
   //
-  if(numberFailedTests > 0) 
-	{ 
+  if(numberFailedTests > 0)
+	{
 	    if (verbose) {
 		std::cout << "Number of failed tests: " << numberFailedTests << std::endl;
                 std::cout << "End Result: TEST FAILED" << std::endl;
@@ -325,7 +325,7 @@ int main(int argc, char* argv[])
     std::cout << "End Result: TEST PASSED" << std::endl;
 
   return 0;
-}  
+}
 
 template<typename TYPE>
 int PrintTestResults(std::string testName, TYPE calculatedResult, TYPE expectedResult, bool verbose)

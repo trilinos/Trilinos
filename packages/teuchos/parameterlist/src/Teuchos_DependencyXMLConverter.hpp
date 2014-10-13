@@ -66,7 +66,7 @@ public:
 
   /** \name Converter Functions */
   //@{
-  
+
   /** \brief Converts a given XMLObject to a Dependency.
    *
    * @param xmlObj The XMLObject to convert to a Dependency.
@@ -95,7 +95,7 @@ public:
    * @return The converted Dependency.
    */
   virtual RCP<Dependency> convertXML(
-    const XMLObject& xmlObj, 
+    const XMLObject& xmlObj,
     const Dependency::ConstParameterEntryList dependees,
     const Dependency::ParameterEntryList dependets,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
@@ -114,7 +114,7 @@ public:
     const RCP<const Dependency> dependency,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
     ValidatortoIDMap& validatorIDsMap) const;
-  
+
   /** \brief Preforms any and all special dependency conversion that is
    * specific to a particlar Dependency.
    *
@@ -128,11 +128,11 @@ public:
    * @return An XML representation of the given Dependency.
    */
   virtual void convertDependency(
-    const RCP<const Dependency> dependency, 
+    const RCP<const Dependency> dependency,
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
     ValidatortoIDMap& validatorIDsMap) const = 0;
-  
+
   //@}
 
   //! \name Attribute/Query Functions
@@ -161,7 +161,7 @@ public:
     static const std::string parameterIdAtrributeName = "parameterId";
     return parameterIdAtrributeName;
   }
- 
+
   /**
    * \brief Returns the string to be used for the type attribute.
    */
@@ -169,7 +169,7 @@ public:
     static const std::string typeAttributeName = "type";
     return typeAttributeName;
   }
- 
+
   //@}
 
 };

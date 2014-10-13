@@ -42,9 +42,6 @@
 # @HEADER
 
 
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 
 #

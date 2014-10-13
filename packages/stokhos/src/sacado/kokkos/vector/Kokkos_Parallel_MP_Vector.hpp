@@ -43,11 +43,7 @@
 #define KOKKOS_PARALLEL_MP_VECTOR_HPP
 
 #include "Sacado_MP_Vector.hpp"
-#include "Kokkos_Parallel.hpp"
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_OpenMP.hpp"
-#include "Kokkos_Serial.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 //----------------------------------------------------------------------------
 // Kokkos execution policies useful for Sacado::MP::Vector scalar type

@@ -1,6 +1,3 @@
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddAdvancedTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/equation_set)

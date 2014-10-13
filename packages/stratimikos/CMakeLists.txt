@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
 
 TRIBITS_PACKAGE(Stratimikos)
 

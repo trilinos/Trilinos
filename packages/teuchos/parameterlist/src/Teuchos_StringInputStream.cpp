@@ -44,7 +44,7 @@
 using namespace Teuchos;
 
 
-unsigned int StringInputStream::readBytes(unsigned char* const toFill, 
+unsigned int StringInputStream::readBytes(unsigned char* const toFill,
 																					const unsigned int maxToRead)
 {
 	if (pos_ == text_.length()) return 0;

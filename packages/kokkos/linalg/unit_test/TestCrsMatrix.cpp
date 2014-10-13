@@ -41,8 +41,7 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Serial.hpp>
-#include <Kokkos_MemoryTraits.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_CrsMatrix.hpp>
 #include <stdexcept>
 

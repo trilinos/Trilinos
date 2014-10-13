@@ -56,7 +56,7 @@ SET(CMAKE_MODULE_PATH
 
 IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
   MESSAGE("CMAKE_MODULE_PATH='${CMAKE_MODULE_PATH}'")
-ENDIF() 
+ENDIF()
 
 INCLUDE(TribitsIncludeDirectories)
 
@@ -79,11 +79,11 @@ MACRO(TRIBITS_PROJECT_IMPL)
   #
   # A) Basic top-level TriBITS project stuff
   #
-  
+
   MESSAGE("")
   MESSAGE("Configuring ${PROJECT_NAME} build directory")
   MESSAGE("")
- 
+
   # A.1) Set some basic system vars and info you can't change
   TRIBITS_ASSERT_AND_SETUP_PROJECT_AND_STATIC_SYSTEM_VARS()
 
@@ -96,7 +96,7 @@ MACRO(TRIBITS_PROJECT_IMPL)
   # configuration
   TRIBITS_SETUP_BASIC_SYSTEM_VARS()
   TRIBITS_FIND_PYTHON_INTERP()
-  
+
   #
   # A.4) Read in the Project's version file
   #
@@ -105,21 +105,21 @@ MACRO(TRIBITS_PROJECT_IMPL)
   # many of these options.
   #
   TRIBITS_PROJECT_READ_VERSION_FILE(${PROJECT_SOURCE_DIR})
-  
+
   # Since the version header file is now configured the root build
   # dir needs to be on the include path
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-  
+
   #
   # B) Set up user options and global variables that will be used throughout
   #
-  
+
   MESSAGE("")
   MESSAGE("Setting up major user options ...")
   MESSAGE("")
-  
+
   TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()
-  
+
   # Have to start timing after we read in the major options since that
   # determines the timing option var.
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
@@ -131,15 +131,15 @@ MACRO(TRIBITS_PROJECT_IMPL)
   TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS()
 
   TRIBITS_PROCESS_EXTRA_REPOS_OPTIONS_FILES()
-  
+
   INCLUDE(TribitsInstallationTestingMacros)
   TRIBITS_FIND_PROJECT_INSTALL()
-  
+
   #
   # C) Generate version info file and read in ${PROJECT_NAME} packages and
   # TPLs and process dependencies
   #
-  
+
   TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL()
 
   # Read in and process all of the project's package, TPL, listss and
@@ -155,39 +155,39 @@ MACRO(TRIBITS_PROJECT_IMPL)
   #   parent package's dependenices.
   #
   TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
-  
+
   #
   # D) Apply dependency logic to enable and disable TriBITS packages packages
   # and tests
   #
-  
+
   TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
-  
+
   #
   # E) Stop after all dependencies handling is finished if asked.
   #
-  
+
   IF (${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
     MESSAGE("")
     MESSAGE("Shortcircuiting after dependency tracking ...")
     RETURN()
   ENDIF()
-  
+
   #
   # F) Set up the environment on this computer
   #
-  
+
   MESSAGE("")
   MESSAGE("Probing the environment ...")
   MESSAGE("")
-  
+
   IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
     TRIBITS_SETUP_ENV()
   ELSE()
     MESSAGE("-- Skipping env setup due to"
       " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
-  ENDIF() 
- 
+  ENDIF()
+
 
   #
   # F2) The compilers are set, the environment is known to CMake.
@@ -198,42 +198,42 @@ MACRO(TRIBITS_PROJECT_IMPL)
   #
   # G) Go get the information for all enabled TPLS
   #
-  
+
   MESSAGE("")
   MESSAGE("Getting information for all enabled TPLs ...")
   MESSAGE("")
-  
+
   TRIBITS_PROCESS_ENABLED_TPLS()
-  
+
   #
   # H) Set up for testing with CTest and ${PROJECT_NAME} test harness
   #
-  
+
   MESSAGE("")
   MESSAGE("Setting up testing support ...")
   MESSAGE("")
-  
+
   IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
     TRIBITS_INCLUDE_CTEST_SUPPORT()
   ELSE()
     MESSAGE("-- Skipping testing support setup due to"
       " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
   ENDIF()
-  
+
   #
   # I) Add the 'dashboard' target
   #
   # NOTE: Must come after setting up for testing
   #
-  
+
   IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
     TRIBITS_ADD_DASHBOARD_TARGET()
   ENDIF()
-  
+
   #
   # J) Configure individual packages
-  # 
-  
+  #
+
   MESSAGE("")
   MESSAGE("Configuring individual enabled ${PROJECT_NAME} packages ...")
   MESSAGE("")
@@ -242,9 +242,9 @@ MACRO(TRIBITS_PROJECT_IMPL)
     TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES(
       ${${PROJECT_NAME}_ALL_REPOSITORIES})
   ENDIF()
-  
+
   TRIBITS_CONFIGURE_ENABLED_PACKAGES()
-  
+
   #
   # K) Setup for packaging and distribution
   #
@@ -265,15 +265,15 @@ MACRO(TRIBITS_PROJECT_IMPL)
       " ${PROJECT_NAME}_ENABLE_CPACK_PACKAGING=OFF")
     MESSAGE("")
   ENDIF()
- 
+
   #
   # L) Set up for installation
   #
-  
+
   IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
     TRIBITS_SETUP_FOR_INSTALLATION()
   ENDIF()
-  
+
   #
   # M) Show final timing and end
   #
@@ -286,5 +286,5 @@ MACRO(TRIBITS_PROJECT_IMPL)
     TIMER_PRINT_REL_TIME(${GLOBAL_TIME_START_SECONDS}  ${GLOBAL_TIME_STOP_SECONDS}
       "Total time to configure ${PROJECT_NAME}")
   ENDIF()
-  
+
 ENDMACRO()

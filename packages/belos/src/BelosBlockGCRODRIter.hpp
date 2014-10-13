@@ -790,6 +790,8 @@ namespace Belos{
 	const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 	const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
 
+    using Teuchos::rcp;
+
 	// Get correct dimension based on input "dim"
 	// Remember that ortho failures result in an exit before updateLSQR() is called.
 	// Therefore, it is possible that dim == curDim_.

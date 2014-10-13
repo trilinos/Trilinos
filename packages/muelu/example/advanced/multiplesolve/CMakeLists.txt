@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 #
@@ -13,14 +12,12 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra  AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     TRIBITS_ADD_EXECUTABLE(
       FixedMatrixPattern
       SOURCES FixedMatrixPattern.cpp
-      DEPLIBS muelu xpetra
       COMM serial mpi
       )
 
     TRIBITS_ADD_EXECUTABLE(
       StandardReuse
       SOURCES StandardReuse.cpp
-      DEPLIBS muelu xpetra
       COMM serial mpi
       )
   ENDIF()
