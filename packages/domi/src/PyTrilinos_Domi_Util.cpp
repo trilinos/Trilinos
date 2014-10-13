@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "PyTrilinos_Domi_Util.hpp"
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_PythonException.hpp"
 
 ////////////////////////////////////////////////////////////////////////
 
