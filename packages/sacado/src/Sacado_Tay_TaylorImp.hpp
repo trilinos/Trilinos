@@ -497,9 +497,12 @@ resizeCoeffs(int len)
 
 template <typename T>
 Taylor<T>
-operator+(const Taylor<T>& a,
-          const Taylor<T>& b)
+operator+(const Base< Taylor<T> >& aa,
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
+
   int da = a.degree();
   int db = b.degree();
   int dc = da > db ? da : db;
@@ -534,8 +537,11 @@ operator+(const Taylor<T>& a,
 
 template <typename T>
 Taylor<T>
-operator+(const typename Taylor<T>::value_type& a, const Taylor<T>& b)
+operator+(const typename Taylor<T>::value_type& a,
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
+
   int dc = b.degree();
 
   Taylor<T> c(dc);
@@ -551,8 +557,11 @@ operator+(const typename Taylor<T>::value_type& a, const Taylor<T>& b)
 
 template <typename T>
 Taylor<T>
-operator+(const Taylor<T>& a, const typename Taylor<T>::value_type& b)
+operator+(const Base< Taylor<T> >& aa,
+          const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
+
   int dc = a.degree();
 
   Taylor<T> c(dc);
@@ -568,9 +577,12 @@ operator+(const Taylor<T>& a, const typename Taylor<T>::value_type& b)
 
 template <typename T>
 Taylor<T>
-operator-(const Taylor<T>& a,
-          const Taylor<T>& b)
+operator-(const Base< Taylor<T> >& aa,
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
+
   int da = a.degree();
   int db = b.degree();
   int dc = da > db ? da : db;
@@ -605,8 +617,11 @@ operator-(const Taylor<T>& a,
 
 template <typename T>
 Taylor<T>
-operator-(const typename Taylor<T>::value_type& a, const Taylor<T>& b)
+operator-(const typename Taylor<T>::value_type& a,
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
+
   int dc = b.degree();
 
   Taylor<T> c(dc);
@@ -622,8 +637,11 @@ operator-(const typename Taylor<T>::value_type& a, const Taylor<T>& b)
 
 template <typename T>
 Taylor<T>
-operator-(const Taylor<T>& a, const typename Taylor<T>::value_type& b)
+operator-(const Base< Taylor<T> >& aa,
+          const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
+
   int dc = a.degree();
 
   Taylor<T> c(dc);
@@ -639,9 +657,12 @@ operator-(const Taylor<T>& a, const typename Taylor<T>::value_type& b)
 
 template <typename T>
 Taylor<T>
-operator*(const Taylor<T>& a,
-          const Taylor<T>& b)
+operator*(const Base< Taylor<T> >& aa,
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
+
   int da = a.degree();
   int db = b.degree();
   int dc = da > db ? da : db;
@@ -679,8 +700,11 @@ operator*(const Taylor<T>& a,
 
 template <typename T>
 Taylor<T>
-operator*(const typename Taylor<T>::value_type& a, const Taylor<T>& b)
+operator*(const typename Taylor<T>::value_type& a,
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
+
   int dc = b.degree();
 
   Taylor<T> c(dc);
@@ -695,8 +719,11 @@ operator*(const typename Taylor<T>::value_type& a, const Taylor<T>& b)
 
 template <typename T>
 Taylor<T>
-operator*(const Taylor<T>& a, const typename Taylor<T>::value_type& b)
+operator*(const Base< Taylor<T> >& aa,
+          const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
+
   int dc = a.degree();
 
   Taylor<T> c(dc);
@@ -711,9 +738,12 @@ operator*(const Taylor<T>& a, const typename Taylor<T>::value_type& b)
 
 template <typename T>
 Taylor<T>
-operator/(const Taylor<T>& a,
-          const Taylor<T>& b)
+operator/(const Base< Taylor<T> >& aa,
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
+
   int da = a.degree();
   int db = b.degree();
   int dc = da > db ? da : db;
@@ -757,8 +787,11 @@ operator/(const Taylor<T>& a,
 
 template <typename T>
 Taylor<T>
-operator/(const typename Taylor<T>::value_type& a, const Taylor<T>& b)
+operator/(const typename Taylor<T>::value_type& a,
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
+
   int dc = b.degree();
 
   Taylor<T> c(dc);
@@ -779,8 +812,11 @@ operator/(const typename Taylor<T>::value_type& a, const Taylor<T>& b)
 
 template <typename T>
 Taylor<T>
-operator/(const Taylor<T>& a, const typename Taylor<T>::value_type& b)
+operator/(const Base< Taylor<T> >& aa,
+          const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
+
   int dc = a.degree();
 
   Taylor<T> c(dc);
@@ -795,8 +831,9 @@ operator/(const Taylor<T>& a, const typename Taylor<T>::value_type& b)
 
 template <typename T>
 Taylor<T>
-exp(const Taylor<T>& a)
+exp(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   int dc = a.degree();
 
   Taylor<T> c(dc);
@@ -817,8 +854,9 @@ exp(const Taylor<T>& a)
 
 template <typename T>
 Taylor<T>
-log(const Taylor<T>& a)
+log(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   int dc = a.degree();
 
   Taylor<T> c(dc);
@@ -839,15 +877,17 @@ log(const Taylor<T>& a)
 
 template <typename T>
 Taylor<T>
-log10(const Taylor<T>& a)
+log10(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   return log(a) / std::log(10.0);
 }
 
 template <typename T>
 Taylor<T>
-sqrt(const Taylor<T>& a)
+sqrt(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   int dc = a.degree();
 
   Taylor<T> c(dc);
@@ -868,34 +908,39 @@ sqrt(const Taylor<T>& a)
 
 template <typename T>
 Taylor<T>
-pow(const Taylor<T>& a,
-    const Taylor<T>& b)
+pow(const Base< Taylor<T> >& aa,
+    const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
   return exp(b*log(a));
 }
 
 template <typename T>
 Taylor<T>
 pow(const typename Taylor<T>::value_type& a,
-    const Taylor<T>& b)
+    const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
   return exp(b*std::log(a));
 }
 
 template <typename T>
 Taylor<T>
-pow(const Taylor<T>& a,
+pow(const Base< Taylor<T> >& aa,
     const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
   return exp(b*log(a));
 }
 
 template <typename T>
 void
-sincos(const Taylor<T>& a,
+sincos(const Base< Taylor<T> >& aa,
        Taylor<T>& s,
        Taylor<T>& c)
 {
+  const Taylor<T>& a = aa.derived();
   int dc = a.degree();
   if (s.degree() != dc)
     s.resize(dc, false);
@@ -924,8 +969,9 @@ sincos(const Taylor<T>& a,
 
 template <typename T>
 Taylor<T>
-sin(const Taylor<T>& a)
+sin(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   int dc = a.degree();
   Taylor<T> s(dc);
   Taylor<T> c(dc);
@@ -936,8 +982,9 @@ sin(const Taylor<T>& a)
 
 template <typename T>
 Taylor<T>
-cos(const Taylor<T>& a)
+cos(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   int dc = a.degree();
   Taylor<T> s(dc);
   Taylor<T> c(dc);
@@ -948,8 +995,9 @@ cos(const Taylor<T>& a)
 
 template <typename T>
 Taylor<T>
-tan(const Taylor<T>& a)
+tan(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   int dc = a.degree();
   Taylor<T> s(dc);
   Taylor<T> c(dc);
@@ -961,10 +1009,11 @@ tan(const Taylor<T>& a)
 
 template <typename T>
 void
-sinhcosh(const Taylor<T>& a,
+sinhcosh(const Base< Taylor<T> >& aa,
          Taylor<T>& s,
          Taylor<T>& c)
 {
+  const Taylor<T>& a = aa.derived();
   int dc = a.degree();
   if (s.degree() != dc)
     s.resize(dc, false);
@@ -993,8 +1042,9 @@ sinhcosh(const Taylor<T>& a,
 
 template <typename T>
 Taylor<T>
-sinh(const Taylor<T>& a)
+sinh(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   int dc = a.degree();
   Taylor<T> s(dc);
   Taylor<T> c(dc);
@@ -1005,8 +1055,9 @@ sinh(const Taylor<T>& a)
 
 template <typename T>
 Taylor<T>
-cosh(const Taylor<T>& a)
+cosh(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   int dc = a.degree();
   Taylor<T> s(dc);
   Taylor<T> c(dc);
@@ -1017,8 +1068,9 @@ cosh(const Taylor<T>& a)
 
 template <typename T>
 Taylor<T>
-tanh(const Taylor<T>& a)
+tanh(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   int dc = a.degree();
   Taylor<T> s(dc);
   Taylor<T> c(dc);
@@ -1031,9 +1083,11 @@ tanh(const Taylor<T>& a)
 template <typename T>
 Taylor<T>
 quad(const typename Taylor<T>::value_type& c0,
-     const Taylor<T>& a,
-     const Taylor<T>& b)
+     const Base< Taylor<T> >& aa,
+     const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
   int dc = a.degree();
 
   Taylor<T> c(dc);
@@ -1055,33 +1109,39 @@ quad(const typename Taylor<T>::value_type& c0,
 
 template <typename T>
 Taylor<T>
-acos(const Taylor<T>& a)
+acos(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   Taylor<T> b = -1.0 / sqrt(1.0 - a*a);
   return quad(std::acos(a.coeff(0)), a, b);
 }
 
 template <typename T>
 Taylor<T>
-asin(const Taylor<T>& a)
+asin(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   Taylor<T> b = 1.0 / sqrt(1.0 - a*a);
   return quad(std::asin(a.coeff(0)), a, b);
 }
 
 template <typename T>
 Taylor<T>
-atan(const Taylor<T>& a)
+atan(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   Taylor<T> b = 1.0 / (1.0 + a*a);
   return quad(std::atan(a.coeff(0)), a, b);
 }
 
 template <typename T>
 Taylor<T>
-atan2(const Taylor<T>& a,
-      const Taylor<T>& b)
+atan2(const Base< Taylor<T> >& aa,
+      const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
+
   Taylor<T> c = atan(a/b);
   c.fastAccessCoeff(0) = atan2(a.coeff(0),b.coeff(0));
   return c;
@@ -1090,8 +1150,10 @@ atan2(const Taylor<T>& a,
 template <typename T>
 Taylor<T>
 atan2(const typename Taylor<T>::value_type& a,
-      const Taylor<T>& b)
+      const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
+
   Taylor<T> c = atan(a/b);
   c.fastAccessCoeff(0) = atan2(a,b.coeff(0));
   return c;
@@ -1099,9 +1161,11 @@ atan2(const typename Taylor<T>::value_type& a,
 
 template <typename T>
 Taylor<T>
-atan2(const Taylor<T>& a,
+atan2(const Base< Taylor<T> >& aa,
       const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
+
   Taylor<T> c = atan(a/b);
   c.fastAccessCoeff(0) = atan2(a.coeff(0),b);
   return c;
@@ -1109,32 +1173,36 @@ atan2(const Taylor<T>& a,
 
 template <typename T>
 Taylor<T>
-acosh(const Taylor<T>& a)
+acosh(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   Taylor<T> b = -1.0 / sqrt(1.0 - a*a);
   return quad(acosh(a.coeff(0)), a, b);
 }
 
 template <typename T>
 Taylor<T>
-asinh(const Taylor<T>& a)
+asinh(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   Taylor<T> b = 1.0 / sqrt(a*a - 1.0);
   return quad(asinh(a.coeff(0)), a, b);
 }
 
 template <typename T>
 Taylor<T>
-atanh(const Taylor<T>& a)
+atanh(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   Taylor<T> b = 1.0 / (1.0 - a*a);
   return quad(atanh(a.coeff(0)), a, b);
 }
 
 template <typename T>
 Taylor<T>
-fabs(const Taylor<T>& a)
+fabs(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   if (a.coeff(0) >= 0)
     return a;
   else
@@ -1143,8 +1211,9 @@ fabs(const Taylor<T>& a)
 
 template <typename T>
 Taylor<T>
-abs(const Taylor<T>& a)
+abs(const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   if (a.coeff(0) >= 0)
     return a;
   else
@@ -1153,9 +1222,12 @@ abs(const Taylor<T>& a)
 
 template <typename T>
 Taylor<T>
-max(const Taylor<T>& a,
-    const Taylor<T>& b)
+max(const Base< Taylor<T> >& aa,
+    const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
+
   if (a.coeff(0) >= b.coeff(0))
     return a;
   else
@@ -1165,8 +1237,10 @@ max(const Taylor<T>& a,
 template <typename T>
 Taylor<T>
 max(const typename Taylor<T>::value_type& a,
-    const Taylor<T>& b)
+    const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
+
   if (a >= b.coeff(0))
     return Taylor<T>(b.degree(), a);
   else
@@ -1175,9 +1249,11 @@ max(const typename Taylor<T>::value_type& a,
 
 template <typename T>
 Taylor<T>
-max(const Taylor<T>& a,
+max(const Base< Taylor<T> >& aa,
     const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
+
   if (a.coeff(0) >= b)
     return a;
   else
@@ -1186,9 +1262,12 @@ max(const Taylor<T>& a,
 
 template <typename T>
 Taylor<T>
-min(const Taylor<T>& a,
-    const Taylor<T>& b)
+min(const Base< Taylor<T> >& aa,
+    const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
+
   if (a.coeff(0) <= b.coeff(0))
     return a;
   else
@@ -1198,8 +1277,10 @@ min(const Taylor<T>& a,
 template <typename T>
 Taylor<T>
 min(const typename Taylor<T>::value_type& a,
-    const Taylor<T>& b)
+    const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
+
   if (a <= b.coeff(0))
     return Taylor<T>(b.degree(), a);
   else
@@ -1208,9 +1289,11 @@ min(const typename Taylor<T>::value_type& a,
 
 template <typename T>
 Taylor<T>
-min(const Taylor<T>& a,
+min(const Base< Taylor<T> >& aa,
     const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
+
   if (a.coeff(0) <= b)
     return a;
   else
@@ -1219,145 +1302,169 @@ min(const Taylor<T>& a,
 
 template <typename T>
 bool
-operator==(const Taylor<T>& a,
-           const Taylor<T>& b)
+operator==(const Base< Taylor<T> >& aa,
+           const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
   return a.coeff(0) == b.coeff(0);
 }
 
 template <typename T>
 bool
 operator==(const typename Taylor<T>::value_type& a,
-           const Taylor<T>& b)
+           const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
   return a == b.coeff(0);
 }
 
 template <typename T>
 bool
-operator==(const Taylor<T>& a,
+operator==(const Base< Taylor<T> >& aa,
            const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
   return a.coeff(0) == b;
 }
 
 template <typename T>
 bool
-operator!=(const Taylor<T>& a,
-           const Taylor<T>& b)
+operator!=(const Base< Taylor<T> >& aa,
+           const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
   return a.coeff(0) != b.coeff(0);
 }
 
 template <typename T>
 bool
 operator!=(const typename Taylor<T>::value_type& a,
-           const Taylor<T>& b)
+           const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
   return a != b.coeff(0);
 }
 
 template <typename T>
 bool
-operator!=(const Taylor<T>& a,
+operator!=(const Base< Taylor<T> >& aa,
            const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
   return a.coeff(0) != b;
 }
 
 template <typename T>
 bool
-operator<=(const Taylor<T>& a,
-           const Taylor<T>& b)
+operator<=(const Base< Taylor<T> >& aa,
+           const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
   return a.coeff(0) <= b.coeff(0);
 }
 
 template <typename T>
 bool
 operator<=(const typename Taylor<T>::value_type& a,
-           const Taylor<T>& b)
+           const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
   return a <= b.coeff(0);
 }
 
 template <typename T>
 bool
-operator<=(const Taylor<T>& a,
+operator<=(const Base< Taylor<T> >& aa,
            const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
   return a.coeff(0) <= b;
 }
 
 template <typename T>
 bool
-operator>=(const Taylor<T>& a,
-           const Taylor<T>& b)
+operator>=(const Base< Taylor<T> >& aa,
+           const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
   return a.coeff(0) >= b.coeff(0);
 }
 
 template <typename T>
 bool
 operator>=(const typename Taylor<T>::value_type& a,
-           const Taylor<T>& b)
+           const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
   return a >= b.coeff(0);
 }
 
 template <typename T>
 bool
-operator>=(const Taylor<T>& a,
+operator>=(const Base< Taylor<T> >& aa,
            const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
   return a.coeff(0) >= b;
 }
 
 template <typename T>
 bool
-operator<(const Taylor<T>& a,
-          const Taylor<T>& b)
+operator<(const Base< Taylor<T> >& aa,
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
   return a.coeff(0) < b.coeff(0);
 }
 
 template <typename T>
 bool
 operator<(const typename Taylor<T>::value_type& a,
-          const Taylor<T>& b)
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
   return a < b.coeff(0);
 }
 
 template <typename T>
 bool
-operator<(const Taylor<T>& a,
+operator<(const Base< Taylor<T> >& aa,
           const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
   return a.coeff(0) < b;
 }
 
 template <typename T>
 bool
-operator>(const Taylor<T>& a,
-          const Taylor<T>& b)
+operator>(const Base< Taylor<T> >& aa,
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& a = aa.derived();
+  const Taylor<T>& b = bb.derived();
   return a.coeff(0) > b.coeff(0);
 }
 
 template <typename T>
 bool
 operator>(const typename Taylor<T>::value_type& a,
-          const Taylor<T>& b)
+          const Base< Taylor<T> >& bb)
 {
+  const Taylor<T>& b = bb.derived();
   return a > b.coeff(0);
 }
 
 template <typename T>
 bool
-operator>(const Taylor<T>& a,
+operator>(const Base< Taylor<T> >& aa,
           const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& a = aa.derived();
   return a.coeff(0) > b;
 }
 
@@ -1371,50 +1478,63 @@ bool toBool(const Taylor<T>& x) {
 
 template <typename T>
 inline bool
-operator && (const Taylor<T>& x1, const Taylor<T>& x2)
+operator && (const Base< Taylor<T> >& xx1, const Base< Taylor<T> >& xx2)
 {
+  const Taylor<T>& x1 = xx1.derived();
+  const Taylor<T>& x2 = xx2.derived();
   return toBool(x1) && toBool(x2);
 }
 
 template <typename T>
 inline bool
-operator && (const typename Taylor<T>::value_type& a, const Taylor<T>& x2)
+operator && (const typename Taylor<T>::value_type& a,
+             const Base< Taylor<T> >& xx2)
 {
+  const Taylor<T>& x2 = xx2.derived();
   return a && toBool(x2);
 }
 
 template <typename T>
 inline bool
-operator && (const Taylor<T>& x1, const typename Taylor<T>::value_type& b)
+operator && (const Base< Taylor<T> >& xx1,
+             const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& x1 = xx1.derived();
   return toBool(x1) && b;
 }
 
 template <typename T>
 inline bool
-operator || (const Taylor<T>& x1, const Taylor<T>& x2)
+operator || (const Base< Taylor<T> >& xx1, const Base< Taylor<T> >& xx2)
 {
+  const Taylor<T>& x1 = xx1.derived();
+  const Taylor<T>& x2 = xx2.derived();
   return toBool(x1) || toBool(x2);
 }
 
 template <typename T>
 inline bool
-operator || (const typename Taylor<T>::value_type& a, const Taylor<T>& x2)
+operator || (const typename Taylor<T>::value_type& a,
+             const Base< Taylor<T> >& xx2)
 {
+  const Taylor<T>& x2 = xx2.derived();
   return a || toBool(x2);
 }
 
 template <typename T>
 inline bool
-operator || (const Taylor<T>& x1, const typename Taylor<T>::value_type& b)
+operator || (const Base< Taylor<T> >& xx1,
+             const typename Taylor<T>::value_type& b)
 {
+  const Taylor<T>& x1 = xx1.derived();
   return toBool(x1) || b;
 }
 
 template <typename T>
 std::ostream&
-operator << (std::ostream& os, const Taylor<T>& a)
+operator << (std::ostream& os, const Base< Taylor<T> >& aa)
 {
+  const Taylor<T>& a = aa.derived();
   os << "[ ";
 
   for (int i=0; i<=a.degree(); i++) {

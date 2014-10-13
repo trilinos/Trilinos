@@ -267,6 +267,7 @@ SET(HEADERS ${HEADERS}
   Sacado_MathFunctions.hpp
   Sacado_cmath.hpp
   Sacado_dummy_arg.hpp
+  Sacado_Base.hpp
   )
 
 #
