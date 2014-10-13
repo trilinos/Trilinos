@@ -357,7 +357,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void grow_non_thread_safe (const size_t& growSize) const {
     if (growSize>max_segments_*segment_length_) {
-      printf ("Exceeding maxSize: %i %i\n", growSize, max_segments_*segment_length_);
+      printf ("Exceeding maxSize: %lu %lu\n", growSize, max_segments_*segment_length_);
       return;
     }
     bool too_small = growSize > segment_length_ * nsegments_();
