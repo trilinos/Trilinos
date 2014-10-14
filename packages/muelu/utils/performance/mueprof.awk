@@ -74,8 +74,14 @@ BEGIN {
             foundTimersToReport=1;
             factAndLevel = substr($0,1,RSTART-1+RLENGTH);
             alltimes = substr($0,RSTART+RLENGTH);
-            cutCmd="cut -f3 -d')' | cut -f1 -d'('"
-            maxtime = ExtractTime(alltimes,cutCmd);
+            if (match(alltimes, "[(].*[)].*[(].*[)]")) {
+              # parallel timer, multiple times
+              cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+            } else {
+              # serial time, single time
+              cutCmd="cut -f1 -d')' | cut -f1 -d'('"
+            }
+            maxtime = ExtractTime(alltimes, cutCmd);
             if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
               #TODO figure out which solve labels to pull out
               solveLabels[factAndLevel] = factAndLevel;
@@ -98,7 +104,13 @@ BEGIN {
         if (match($0,possibleTotalLabels[i])) {
           pattern = substr($0,RSTART,RLENGTH);
           alltimes = substr($0,RSTART+RLENGTH);
-          cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+          if (match(alltimes, "[(].*[)].*[(].*[)]")) {
+            # parallel timer, multiple times
+            cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+          } else {
+            # serial time, single time
+            cutCmd="cut -f1 -d')' | cut -f1 -d'('"
+          }
           TotalSetup[pattern,FILENAME] = ExtractTime(alltimes,cutCmd);
         }
       }
