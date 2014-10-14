@@ -2212,271 +2212,6 @@ TEST(BulkData, testChangeEntityOwnerWithChangingSharedAndGhosted)
     }
 }
 
-TEST(BulkData, testChangeEntityOwnerWithChangingSharedAndGhostedNoNodes)
-{
-    //
-    //         P0  P0  P1              P0  P1  P1
-    //        1---3---5---7           1---3---5---7
-    //        | 1 | 2 | 3 |  ----->   | 1 | 2 | 3 |
-    //        2---4---6---8           2---4---6---8
-    //
-    // P0:  Nodes: 1,2,3,4,5,6 and Elements: 1,2
-    // P1:  Nodes: 7,8 and Element: 3
-    // After change entity owner: P0:E2 give to P1
-    // P0:  Nodes: 1,2,3,4,5,6 and Element: 1
-    // P1:  Nodes: 7,8 and Elements: 2,3
-    //
-    //  Ghosted -> Owned:  P1:  N3,N4,E2
-    //  Ghosted -> Shared  P1:  N3,N4
-    //  Shared -> Ghosted  P0:  N5,N6
-    //  Shared -> Owned    P1:  N5,N6
-    //  Owned -> Ghosted   P0:  N5,N6,E2
-    //  Owned -> Shared    P0:  N3,N4
-
-    stk::ParallelMachine pm = MPI_COMM_WORLD;
-
-    // Set up meta and bulk data
-    const unsigned spatial_dim = 2;
-    MetaData meta_data(spatial_dim);
-    Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
-    Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
-    meta_data.commit();
-    BulkData mesh(meta_data, pm);
-    int p_rank = mesh.parallel_rank();
-    int p_size = mesh.parallel_size();
-    const EntityRank node_rank = stk::topology::NODE_RANK;
-    const EntityRank elem_rank = stk::topology::ELEMENT_RANK;
-
-    if(p_size != 2)
-    {
-        return;
-    }
-
-    // Begin modification cycle so we can create the entities and relations
-    mesh.modification_begin();
-
-    EntityVector nodes;
-    EntityVector elements;
-    if(p_rank == 0)
-    {
-        nodes.push_back(mesh.declare_entity(node_rank, 1, node_part));
-        nodes.push_back(mesh.declare_entity(node_rank, 2, node_part));
-        nodes.push_back(mesh.declare_entity(node_rank, 3, node_part));
-        nodes.push_back(mesh.declare_entity(node_rank, 4, node_part));
-        nodes.push_back(mesh.declare_entity(node_rank, 5, node_part));
-        nodes.push_back(mesh.declare_entity(node_rank, 6, node_part));
-        elements.push_back(mesh.declare_entity(elem_rank, 1, elem_part));
-        elements.push_back(mesh.declare_entity(elem_rank, 2, elem_part));
-        mesh.declare_relation(elements[0], nodes[0], 0);
-        mesh.declare_relation(elements[0], nodes[1], 1);
-        mesh.declare_relation(elements[0], nodes[2], 2);
-        mesh.declare_relation(elements[0], nodes[3], 3);
-
-        mesh.declare_relation(elements[1], nodes[2], 0);
-        mesh.declare_relation(elements[1], nodes[3], 1);
-        mesh.declare_relation(elements[1], nodes[4], 2);
-        mesh.declare_relation(elements[1], nodes[5], 3);
-
-        mesh.add_node_sharing(nodes[4], 1);
-        mesh.add_node_sharing(nodes[5], 1);
-    }
-    else
-    { // p_rank == 1
-        nodes.push_back(mesh.declare_entity(node_rank, 5, node_part));
-        nodes.push_back(mesh.declare_entity(node_rank, 6, node_part));
-        nodes.push_back(mesh.declare_entity(node_rank, 7, node_part));
-        nodes.push_back(mesh.declare_entity(node_rank, 8, node_part));
-        elements.push_back(mesh.declare_entity(elem_rank, 3, elem_part));
-        mesh.declare_relation(elements[0], nodes[0], 0);
-        mesh.declare_relation(elements[0], nodes[1], 1);
-        mesh.declare_relation(elements[0], nodes[2], 2);
-        mesh.declare_relation(elements[0], nodes[3], 3);
-
-        mesh.add_node_sharing(nodes[0], 0);
-        mesh.add_node_sharing(nodes[1], 0);
-    }
-
-    mesh.modification_end();
-
-    typedef std::vector<EntityKey> EntityKeyVector;
-    EntityKeyVector node_keys(9);
-    EntityKeyVector element_keys(4);
-    //0 purposefully left blank
-    node_keys[1] = EntityKey(stk::topology::NODE_RANK, 1);
-    node_keys[2] = EntityKey(stk::topology::NODE_RANK, 2);
-    node_keys[3] = EntityKey(stk::topology::NODE_RANK, 3);
-    node_keys[4] = EntityKey(stk::topology::NODE_RANK, 4);
-    node_keys[5] = EntityKey(stk::topology::NODE_RANK, 5);
-    node_keys[6] = EntityKey(stk::topology::NODE_RANK, 6);
-    node_keys[7] = EntityKey(stk::topology::NODE_RANK, 7);
-    node_keys[8] = EntityKey(stk::topology::NODE_RANK, 8);
-    element_keys[1] = EntityKey(stk::topology::ELEMENT_RANK, 1);
-    element_keys[2] = EntityKey(stk::topology::ELEMENT_RANK, 2);
-    element_keys[3] = EntityKey(stk::topology::ELEMENT_RANK, 3);
-    EntityKeyVector commlist_keys(8);
-    commlist_keys[0] = node_keys[3];
-    commlist_keys[1] = node_keys[4];
-    commlist_keys[2] = node_keys[5];
-    commlist_keys[3] = node_keys[6];
-    commlist_keys[4] = node_keys[7];
-    commlist_keys[5] = node_keys[8];
-    commlist_keys[6] = element_keys[2];
-    commlist_keys[7] = element_keys[3];
-
-    //  Verify comm_map and comm_list are correct
-    std::map<EntityKey, std::vector<stk::mesh::EntityCommInfo> > gold_entity_comm;
-    if(p_rank == 0)
-    {
-        gold_entity_comm[node_keys[1]].clear();
-        gold_entity_comm[node_keys[2]].clear();
-        gold_entity_comm[node_keys[3]].push_back(stk::mesh::EntityCommInfo(1, 1));
-        gold_entity_comm[node_keys[4]].push_back(stk::mesh::EntityCommInfo(1, 1));
-        gold_entity_comm[node_keys[5]].push_back(stk::mesh::EntityCommInfo(0, 1));
-        gold_entity_comm[node_keys[6]].push_back(stk::mesh::EntityCommInfo(0, 1));
-        gold_entity_comm[node_keys[7]].push_back(stk::mesh::EntityCommInfo(1, 1));
-        gold_entity_comm[node_keys[8]].push_back(stk::mesh::EntityCommInfo(1, 1));
-        gold_entity_comm[element_keys[1]].clear();
-        gold_entity_comm[element_keys[2]].push_back(stk::mesh::EntityCommInfo(1, 1));
-        gold_entity_comm[element_keys[3]].push_back(stk::mesh::EntityCommInfo(1, 1));
-    }
-    else
-    { // p_rank == 1
-        gold_entity_comm[node_keys[1]].clear();
-        gold_entity_comm[node_keys[2]].clear();
-        gold_entity_comm[node_keys[3]].push_back(stk::mesh::EntityCommInfo(1, 0));
-        gold_entity_comm[node_keys[4]].push_back(stk::mesh::EntityCommInfo(1, 0));
-        gold_entity_comm[node_keys[5]].push_back(stk::mesh::EntityCommInfo(0, 0));
-        gold_entity_comm[node_keys[6]].push_back(stk::mesh::EntityCommInfo(0, 0));
-        gold_entity_comm[node_keys[7]].push_back(stk::mesh::EntityCommInfo(1, 0));
-        gold_entity_comm[node_keys[8]].push_back(stk::mesh::EntityCommInfo(1, 0));
-        gold_entity_comm[element_keys[1]].clear();
-        gold_entity_comm[element_keys[2]].push_back(stk::mesh::EntityCommInfo(1, 0));
-        gold_entity_comm[element_keys[3]].push_back(stk::mesh::EntityCommInfo(1, 0));
-    }
-    //gold list made, here are the checks
-    for(EntityRank rank = stk::topology::NODE_RANK; rank != stk::topology::END_RANK; rank++)
-    {
-        BulkData::const_entity_iterator entity_it = mesh.begin_entities(rank);
-        for(; entity_it != mesh.end_entities(rank); entity_it++)
-        {
-            EntityKey key = entity_it->first;
-            stk::mesh::PairIterEntityComm comm_pit = mesh.entity_comm_map(key);
-            ASSERT_LE( std::distance(comm_pit.first,comm_pit.second), 1);
-            for(; comm_pit.first != comm_pit.second; ++comm_pit)
-            {
-                unsigned ghost_id = comm_pit.first->ghost_id;
-                int proc = comm_pit.first->proc;
-                EXPECT_EQ( ghost_id, gold_entity_comm[key][0].ghost_id);
-                EXPECT_EQ( proc, gold_entity_comm[key][0].proc);
-            }
-        }
-    }
-    const stk::mesh::EntityCommListInfoVector & entity_comm_list = mesh.comm_list();
-    int index = 0;
-    for(stk::mesh::EntityCommListInfoVector::const_iterator i = entity_comm_list.begin(); i != entity_comm_list.end(); ++i)
-    {
-        ASSERT_EQ(i->key, commlist_keys[index]);
-        const stk::mesh::EntityCommInfoVector & comm_map = i->entity_comm->comm_map;
-        stk::mesh::EntityCommInfoVector::const_iterator comm_map_it = comm_map.begin();
-        ASSERT_EQ( std::distance(comm_map_it, comm_map.end()), 1);
-        for(; comm_map_it != comm_map.end(); ++comm_map_it)
-        {
-            unsigned ghost_id = comm_map_it->ghost_id;
-            int proc = comm_map_it->proc;
-            EXPECT_EQ(ghost_id, gold_entity_comm[i->key][0].ghost_id);
-            EXPECT_EQ(proc, gold_entity_comm[i->key][0].proc);
-        }
-        ++index;
-    }
-
-    std::vector<EntityProc> change;
-    if(p_rank == 0)
-    {
-        change.push_back(EntityProc(elements[1], 1));
-        change.push_back(EntityProc(nodes[2], 1));
-        change.push_back(EntityProc(nodes[3], 1));
-        change.push_back(EntityProc(nodes[4], 1));
-        change.push_back(EntityProc(nodes[5], 1));
-    }
-
-    mesh.change_entity_owner(change);
-
-    //   Verify comm_map and comm_lists are correct
-    std::map<EntityKey, std::vector<stk::mesh::EntityCommInfo> > gold_entity_comm_after;
-    if(p_rank == 0)
-    {
-        gold_entity_comm_after[node_keys[1]].push_back(stk::mesh::EntityCommInfo(1, 1));
-        gold_entity_comm_after[node_keys[2]].push_back(stk::mesh::EntityCommInfo(1, 1));
-        gold_entity_comm_after[node_keys[3]].push_back(stk::mesh::EntityCommInfo(0, 1));
-        gold_entity_comm_after[node_keys[4]].push_back(stk::mesh::EntityCommInfo(0, 1));
-        gold_entity_comm_after[node_keys[5]].push_back(stk::mesh::EntityCommInfo(1, 1));
-        gold_entity_comm_after[node_keys[6]].push_back(stk::mesh::EntityCommInfo(1, 1));
-        gold_entity_comm_after[node_keys[7]].clear();
-        gold_entity_comm_after[node_keys[8]].clear();
-        gold_entity_comm_after[element_keys[1]].push_back(stk::mesh::EntityCommInfo(1, 1));
-        gold_entity_comm_after[element_keys[2]].push_back(stk::mesh::EntityCommInfo(1, 1));
-        gold_entity_comm_after[element_keys[3]].clear();
-    }
-    else
-    { // p_rank == 1
-        gold_entity_comm_after[node_keys[1]].push_back(stk::mesh::EntityCommInfo(1, 0));
-        gold_entity_comm_after[node_keys[2]].push_back(stk::mesh::EntityCommInfo(1, 0));
-        gold_entity_comm_after[node_keys[3]].push_back(stk::mesh::EntityCommInfo(0, 0));
-        gold_entity_comm_after[node_keys[4]].push_back(stk::mesh::EntityCommInfo(0, 0));
-        gold_entity_comm_after[node_keys[5]].push_back(stk::mesh::EntityCommInfo(1, 0));
-        gold_entity_comm_after[node_keys[6]].push_back(stk::mesh::EntityCommInfo(1, 0));
-        gold_entity_comm_after[node_keys[7]].clear();
-        gold_entity_comm_after[node_keys[8]].clear();
-        gold_entity_comm_after[element_keys[1]].push_back(stk::mesh::EntityCommInfo(1, 0));
-        gold_entity_comm_after[element_keys[2]].push_back(stk::mesh::EntityCommInfo(1, 0));
-        gold_entity_comm_after[element_keys[3]].clear();
-    }
-    EntityKeyVector commlist_after_keys(8);
-    commlist_after_keys[0] = node_keys[1];
-    commlist_after_keys[1] = node_keys[2];
-    commlist_after_keys[2] = node_keys[3];
-    commlist_after_keys[3] = node_keys[4];
-    commlist_after_keys[4] = node_keys[5];
-    commlist_after_keys[5] = node_keys[6];
-    commlist_after_keys[6] = element_keys[1];
-    commlist_after_keys[7] = element_keys[2];
-    //new gold list made, here are the checks
-    for(EntityRank rank = stk::topology::NODE_RANK; rank != stk::topology::END_RANK; rank++)
-    {
-        BulkData::const_entity_iterator entity_it = mesh.begin_entities(rank);
-        for(; entity_it != mesh.end_entities(rank); entity_it++)
-        {
-            EntityKey key = entity_it->first;
-            stk::mesh::PairIterEntityComm comm_pit = mesh.entity_comm_map(key);
-            ASSERT_LE( std::distance(comm_pit.first,comm_pit.second), 1);
-            for(; comm_pit.first != comm_pit.second; ++comm_pit)
-            {
-                unsigned ghost_id = comm_pit.first->ghost_id;
-                int proc = comm_pit.first->proc;
-                EXPECT_EQ( ghost_id, gold_entity_comm_after[key][0].ghost_id);
-                EXPECT_EQ( proc, gold_entity_comm_after[key][0].proc);
-            }
-        }
-    }
-    const stk::mesh::EntityCommListInfoVector & entity_comm_list_after = mesh.comm_list();
-    index = 0;
-    for(stk::mesh::EntityCommListInfoVector::const_iterator i = entity_comm_list_after.begin(); i != entity_comm_list_after.end(); ++i)
-    {
-        ASSERT_EQ(i->key, commlist_after_keys[index]);
-        const stk::mesh::EntityCommInfoVector & comm_map = i->entity_comm->comm_map;
-        stk::mesh::EntityCommInfoVector::const_iterator comm_map_it = comm_map.begin();
-        ASSERT_EQ( std::distance(comm_map_it, comm_map.end()), 1);
-        for(; comm_map_it != comm_map.end(); ++comm_map_it)
-        {
-            unsigned ghost_id = comm_map_it->ghost_id;
-            int proc = comm_map_it->proc;
-            EXPECT_EQ(ghost_id, gold_entity_comm_after[i->key][0].ghost_id);
-            EXPECT_EQ(proc, gold_entity_comm_after[i->key][0].proc);
-        }
-        ++index;
-    }
-}
-
 TEST(BulkData, testChangeEntityOwnerWithChangingSharedAndGhosted3Proc)
 {
     //
@@ -5240,22 +4975,452 @@ TEST(BulkData, change_entity_owner_2Elem2ProcFlip)
 
 }
 
+TEST(BulkData, change_entity_owner_3Elem2ProcMoveRight)
+{
+  //   id/owner_proc
+  //
+  //   1/0---3/0---5/0---7/1         1/0---3/0---5/1---7/1
+  //    |     |     |     |           |     |     |     |
+  //    | 1/0 | 2/0 | 3/1 |     =>    | 1/0 | 2/1 | 3/1 |
+  //    |     |     |     |           |     |     |     |
+  //   2/0---4/0---6/0---8/1         2/0---4/0---6/1---8/1
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  // Set up meta and bulk data
+  const unsigned spatial_dim = 2;
+  MetaData meta_data(spatial_dim);
+  Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
+  Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
+  meta_data.commit();
+
+  BulkData mesh(meta_data, pm);
+  int p_rank = mesh.parallel_rank();
+  int p_size = mesh.parallel_size();
+
+  if(p_size != 2)
+  {
+    return;
+  }
+
+  // Begin modification cycle so we can create the entities and relations
+  mesh.modification_begin();
+
+  EntityVector nodes;
+  EntityVector elements;
+  if (p_rank == 0) {
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 1, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 2, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 3, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 4, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 5, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 6, node_part));
+    elements.push_back(mesh.declare_entity(ELEM_RANK, 1, elem_part));
+    elements.push_back(mesh.declare_entity(ELEM_RANK, 2, elem_part));
+
+    mesh.declare_relation(elements[0], nodes[0], 0);
+    mesh.declare_relation(elements[0], nodes[1], 1);
+    mesh.declare_relation(elements[0], nodes[2], 2);
+    mesh.declare_relation(elements[0], nodes[3], 3);
+
+    mesh.declare_relation(elements[1], nodes[2], 0);
+    mesh.declare_relation(elements[1], nodes[3], 1);
+    mesh.declare_relation(elements[1], nodes[4], 2);
+    mesh.declare_relation(elements[1], nodes[5], 3);
+
+    mesh.add_node_sharing(nodes[4], 1);
+    mesh.add_node_sharing(nodes[5], 1);
+  }
+  else if (p_rank == 1) {
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 5, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 6, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 7, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 8, node_part));
+    elements.push_back(mesh.declare_entity(ELEM_RANK, 3, elem_part));
+
+    mesh.declare_relation(elements[0], nodes[0], 0);
+    mesh.declare_relation(elements[0], nodes[1], 1);
+    mesh.declare_relation(elements[0], nodes[2], 2);
+    mesh.declare_relation(elements[0], nodes[3], 3);
+
+    mesh.add_node_sharing(nodes[0], 0);
+    mesh.add_node_sharing(nodes[1], 0);
+  }
+
+  mesh.modification_end();
 
 
+  if (p_rank == 0) {
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 1) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED,  1) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_SHARED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_GHOSTED,  1) );
+  }
+  else if (p_rank == 1) {
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_VALID) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 1) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_VALID) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_VALID) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_SHARED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED) );
+  }
 
 
+  std::vector<EntityProc> change;
+  if(p_rank == 0)
+  {
+    change.push_back(EntityProc(elements[1], 1));
+    change.push_back(EntityProc(nodes[4], 1));
+    change.push_back(EntityProc(nodes[5], 1));
+  }
+
+  mesh.change_entity_owner(change);
 
 
+  if (p_rank == 0) {
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_VALID) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED,  1) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_VALID) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_VALID) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_SHARED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_GHOSTED,  1) );
+  }
+  else if (p_rank == 1) {
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 1) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_SHARED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED) );
+  }
+}
+
+TEST(BulkData, change_entity_owner_3Elem2ProcMoveLeft)
+{
+  //   id/owner_proc
+  //
+  //   1/0---3/0---5/1---7/1         1/0---3/0---5/0---7/1
+  //    |     |     |     |           |     |     |     |
+  //    | 1/0 | 2/1 | 3/1 |     =>    | 1/0 | 2/0 | 3/1 |
+  //    |     |     |     |           |     |     |     |
+  //   2/0---4/0---6/1---8/1         2/0---4/0---6/0---8/1
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  // Set up meta and bulk data
+  const unsigned spatial_dim = 2;
+  MetaData meta_data(spatial_dim);
+  Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
+  Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
+  meta_data.commit();
+
+  BulkData mesh(meta_data, pm);
+  int p_rank = mesh.parallel_rank();
+  int p_size = mesh.parallel_size();
+
+  if(p_size != 2)
+  {
+    return;
+  }
+
+  // Begin modification cycle so we can create the entities and relations
+  mesh.modification_begin();
+
+  EntityVector nodes;
+  EntityVector elements;
+  if (p_rank == 0) {
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 1, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 2, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 3, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 4, node_part));
+    elements.push_back(mesh.declare_entity(ELEM_RANK, 1, elem_part));
+
+    mesh.declare_relation(elements[0], nodes[0], 0);
+    mesh.declare_relation(elements[0], nodes[1], 1);
+    mesh.declare_relation(elements[0], nodes[2], 2);
+    mesh.declare_relation(elements[0], nodes[3], 3);
+
+    mesh.add_node_sharing(nodes[2], 1);
+    mesh.add_node_sharing(nodes[3], 1);
+  }
+  else if (p_rank == 1) {
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 3, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 4, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 5, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 6, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 7, node_part));
+    nodes.push_back(mesh.declare_entity(NODE_RANK, 8, node_part));
+    elements.push_back(mesh.declare_entity(ELEM_RANK, 2, elem_part));
+    elements.push_back(mesh.declare_entity(ELEM_RANK, 3, elem_part));
+
+    mesh.declare_relation(elements[0], nodes[0], 0);
+    mesh.declare_relation(elements[0], nodes[1], 1);
+    mesh.declare_relation(elements[0], nodes[2], 2);
+    mesh.declare_relation(elements[0], nodes[3], 3);
+
+    mesh.declare_relation(elements[1], nodes[2], 0);
+    mesh.declare_relation(elements[1], nodes[3], 1);
+    mesh.declare_relation(elements[1], nodes[4], 2);
+    mesh.declare_relation(elements[1], nodes[5], 3);
+
+    mesh.add_node_sharing(nodes[0], 0);
+    mesh.add_node_sharing(nodes[1], 0);
+  }
+
+  mesh.modification_end();
 
 
+  if (p_rank == 0) {
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_VALID) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED,  1) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_VALID) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_VALID) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_SHARED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_GHOSTED,  1) );
+  }
+  else if (p_rank == 1) {
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 1) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_SHARED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED) );
+  }
+
+  std::vector<EntityProc> change;
+  if(p_rank == 1)
+  {
+    change.push_back(EntityProc(elements[0], 0));
+    change.push_back(EntityProc(nodes[2], 0));
+    change.push_back(EntityProc(nodes[3], 0));
+  }
+
+  mesh.change_entity_owner(change);
 
 
+  if (p_rank == 0) {
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 1) );
 
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED,  1) );
 
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1) );
 
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_SHARED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED) );
 
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_GHOSTED,  1) );
+  }
+  else if (p_rank == 1) {
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_VALID) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 1) );
 
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED) );
 
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_VALID) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_VALID) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1) );
 
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_SHARED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED) );
+
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED) );
+  }
+
+}
 
 }
