@@ -43,8 +43,8 @@
 #define __TSQR_Random_MatrixGenerator_hpp
 
 #include <Tsqr_Matrix.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Teuchos_LAPACK.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include <algorithm>
 #include <limits>
 #include <sstream>
@@ -56,10 +56,13 @@ namespace TSQR {
 
     template< class Ordinal, class Scalar, class Generator >
     class MatrixGenerator {
+    private:
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+
     public:
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
       typedef Generator generator_type;
 
       MatrixGenerator (Generator& generator) : gen_ (generator) {}
@@ -112,8 +115,8 @@ namespace TSQR {
         // Allocate workspace.  abs() returns a magnitude_type, and we
         // can compare those using std::max.  If Scalar is complex,
         // you can't compare it using max.
-        const Ordinal lwork = checkedCast (std::max (ScalarTraits< Scalar >::abs (_lwork1),
-                                                     ScalarTraits< Scalar >::abs (_lwork2)));
+        const Ordinal lwork = checkedCast (std::max (STS::magnitude (_lwork1),
+                                                     STS::magnitude (_lwork2)));
         std::vector<Scalar> work (lwork);
 
         // Factor the input matrix
@@ -163,7 +166,7 @@ namespace TSQR {
           throw std::logic_error("LAPACK GEQRF LWORK query failed");
 
         // Allocate workspace.
-        const Ordinal lwork = checkedCast (ScalarTraits< Scalar >::abs (_lwork1));
+        const Ordinal lwork = checkedCast (STS::magnitude (_lwork1));
         std::vector< Scalar > work (lwork);
 
         // Factor the input matrix
@@ -222,18 +225,21 @@ namespace TSQR {
              << lda << ", WORK, -1, &INFO)";
           throw std::logic_error(os.str());
         }
-        if (ScalarTraits< Scalar >::is_complex)
+        if (STS::isComplex) {
           lapack.UNMQR ('R', 'C', nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0],
                         A, lda, &_lwork2, -1, &info);
-        else
+        }
+        else {
           lapack.UNMQR ('R', 'T', nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0],
                         A, lda, &_lwork2, -1, &info);
-        if (info != 0)
+        }
+        if (info != 0) {
           throw std::logic_error("LAPACK ORMQR LWORK query failed");
+        }
 
         // Allocate workspace.
-        Ordinal lwork = checkedCast (std::max (ScalarTraits< Scalar >::abs (_lwork1),
-                                               ScalarTraits< Scalar >::abs (_lwork2)));
+        Ordinal lwork = checkedCast (std::max (STS::magnitude (_lwork1),
+                                               STS::magnitude (_lwork2)));
         std::vector< Scalar > work (lwork);
 
         // Apply U to the left side of A, and V^H to the right side of A.
@@ -241,14 +247,17 @@ namespace TSQR {
                       A, lda, &work[0], lwork, &info);
         if (info != 0)
           throw std::runtime_error("LAPACK ORMQR failed (first time)");
-        if (ScalarTraits< Scalar >::is_complex)
+        if (STS::isComplex) {
           lapack.UNMQR ('R', 'C', nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0],
                         A, lda, &work[0], lwork, &info);
-        else
+        }
+        else {
           lapack.UNMQR ('R', 'T', nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0],
                         A, lda, &work[0], lwork, &info);
-        if (info != 0)
+        }
+        if (info != 0) {
           throw std::runtime_error("LAPACK ORMQR failed (second time)");
+        }
       }
 
 
@@ -289,7 +298,7 @@ namespace TSQR {
           throw std::logic_error("LAPACK GEQRF LWORK query failed");
 
         // Allocate workspace
-        Ordinal lwork = checkedCast (ScalarTraits< Scalar >::abs (_lwork1));
+        Ordinal lwork = checkedCast (STS::magnitude (_lwork1));
         std::vector< Scalar > work (lwork);
 
         // Compute QR factorization (implicit representation in place).

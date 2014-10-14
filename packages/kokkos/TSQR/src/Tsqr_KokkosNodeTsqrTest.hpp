@@ -47,9 +47,9 @@
 #include <Tsqr_Random_NormalGenerator.hpp>
 #include <Tsqr_LocalVerify.hpp>
 #include <Tsqr_Matrix.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_KokkosNodeTsqr.hpp>
 
+#include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 

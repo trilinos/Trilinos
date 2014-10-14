@@ -45,7 +45,6 @@
 #include <Tsqr_MatView.hpp>
 #include <Tsqr_CacheBlockingStrategy.hpp>
 #include <Tsqr_CacheBlocker.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>
 
 #include <Teuchos_BLAS.hpp>

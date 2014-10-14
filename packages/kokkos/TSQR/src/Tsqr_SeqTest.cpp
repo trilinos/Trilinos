@@ -47,7 +47,6 @@
 
 #include <Tsqr_LocalVerify.hpp>
 #include <Tsqr_Matrix.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_SequentialTsqr.hpp>
 #include <Tsqr_Util.hpp>
 
@@ -75,7 +74,8 @@ namespace TSQR {
                         const Ordinal ncols,
                         const Ordinal lda)
     {
-      typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename STS::magnitudeType magnitude_type;
       using std::ostringstream;
       using std::endl;
 
@@ -113,8 +113,8 @@ namespace TSQR {
       // just to be "bulletproof" and also to show how to do the
       // checks for later reference.
       const magnitude_type lwork_geqrf_test =
-        static_cast< magnitude_type > (static_cast<Ordinal> (ScalarTraits<Scalar>::abs (d_lwork_geqrf)));
-      if (lwork_geqrf_test != ScalarTraits<Scalar>::abs (d_lwork_geqrf)) {
+        static_cast< magnitude_type > (static_cast<Ordinal> (STS::magnitude (d_lwork_geqrf)));
+      if (lwork_geqrf_test != STS::magnitude (d_lwork_geqrf)) {
         ostringstream os;
         os << "LAPACK _GEQRF workspace query returned a result, "
            << d_lwork_geqrf << ", bigger than the max Ordinal value, "
@@ -122,16 +122,16 @@ namespace TSQR {
         throw std::range_error (os.str ());
       }
       const Scalar lwork_orgqr_test =
-        static_cast<magnitude_type> (static_cast<Ordinal> (ScalarTraits<Scalar>::abs ((d_lwork_orgqr))));
-      if (lwork_orgqr_test != ScalarTraits<Scalar>::abs (d_lwork_orgqr)) {
+        static_cast<magnitude_type> (static_cast<Ordinal> (STS::magnitude ((d_lwork_orgqr))));
+      if (lwork_orgqr_test != STS::magnitude (d_lwork_orgqr)) {
         ostringstream os;
         os << "LAPACK _UNGQR workspace query returned a result, "
            << d_lwork_orgqr << ", bigger than the max Ordinal value, "
            << std::numeric_limits<Ordinal>::max();
         throw std::range_error (os.str());
       }
-      return std::max (static_cast<Ordinal> (ScalarTraits<Scalar>::abs (d_lwork_geqrf)),
-                       static_cast<Ordinal> (ScalarTraits<Scalar>::abs (d_lwork_orgqr)));
+      return std::max (static_cast<Ordinal> (STS::magnitude (d_lwork_geqrf)),
+                       static_cast<Ordinal> (STS::magnitude (d_lwork_orgqr)));
     }
 
     /// Test the accuracy of sequential TSQR on an nrows by ncols
@@ -154,7 +154,8 @@ namespace TSQR {
                            const bool human_readable,
                            const bool b_debug)
     {
-      typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename STS::magnitudeType magnitude_type;
       using std::cerr;
       using std::endl;
       using std::pair;
@@ -459,7 +460,8 @@ namespace TSQR {
                           const bool human_readable,
                           const bool b_debug)
     {
-      typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename STS::magnitudeType magnitude_type;
       using std::ostringstream;
       using std::cerr;
       using std::endl;

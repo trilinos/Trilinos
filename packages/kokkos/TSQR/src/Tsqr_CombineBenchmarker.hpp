@@ -49,7 +49,6 @@
 
 #include <Tsqr_ApplyType.hpp>
 #include <Tsqr_Matrix.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>
 
 #include <algorithm>
@@ -135,24 +134,23 @@ namespace TSQR {
 
       } while (theTime == 0 && count < maxCount && numTrials < maxNumTrials);
 
-      if (theTime == 0)
-        {
-          std::ostringstream os;
-          os << "Maximum number of loops " << maxCount << " exceeded when "
-            "computing timer resolution.  Largest timing loop length tried: "
-             << numTrials << ".";
-          throw std::logic_error (os.str());
-        }
-      else if (numTrials >= maxNumTrials)
-        {
-          std::ostringstream os;
-          os << "Maximum number of timing loop iterations " << maxNumTrials
-             << " exceeded when computing timer resolution.  Largest timing "
-            "loop length tried: " << numTrials << ".";
-          throw std::logic_error (os.str());
-        }
-      else
+      if (theTime == 0) {
+        std::ostringstream os;
+        os << "Maximum number of loops " << maxCount << " exceeded when "
+          "computing timer resolution.  Largest timing loop length tried: "
+           << numTrials << ".";
+        throw std::logic_error (os.str());
+      }
+      else if (numTrials >= maxNumTrials) {
+        std::ostringstream os;
+        os << "Maximum number of timing loop iterations " << maxNumTrials
+           << " exceeded when computing timer resolution.  Largest timing "
+          "loop length tried: " << numTrials << ".";
+        throw std::logic_error (os.str());
+      }
+      else {
         return theTime;
+      }
     }
 
     /// \class CombineBenchmarker
