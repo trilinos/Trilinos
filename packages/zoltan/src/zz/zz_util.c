@@ -481,12 +481,12 @@ void Zoltan_write_linux_meminfo(int append, char *msg, int committedOnly)
   }
   else{
     if (msg != NULL){
-      if (write(f, msg, strlen(msg)) != strlen(msg))
+      if (write(f, msg, strlen(msg)) != (ssize_t)strlen(msg))
         ZOLTAN_PRINT_ERROR(rank, yo, "I/O error.");
     }
   }
 
-  if (write(f,buf,fsize) != fsize)
+  if (write(f,buf,fsize) != (ssize_t)fsize)
     ZOLTAN_PRINT_ERROR(rank, yo, "I/O error.");
 
   fsync(f);
