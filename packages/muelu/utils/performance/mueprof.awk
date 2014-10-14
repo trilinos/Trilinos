@@ -143,9 +143,9 @@ function PrintTotalSetupTime()
   if (etDeltaTotal != 0)
     printf("%90s          delta total=%5.1f\n"," ",etDeltaTotal);
   for (i in TotalSetup) {
-    split(i,sep,SUBSEP); #breaks multiarray index i up into its constituent parts.
-                         #we only want the first one, sep[1]
-    printf("%60s  ==>   %6.3f seconds       \n",sep[1],TotalSetup[i]);
+    split(i, sep, SUBSEP); # breaks multiarray index i up into its constituent parts.
+                           # we only want the first one, sep[1]
+    printf("%60s  ==>   %6.3f seconds\n", sep[1], TotalSetup[i]);
   }
 }
 
@@ -258,7 +258,7 @@ END {
       DumpLabelsAndTimers(setupLabels,setupTimes,linalg);
       print "============================="
     }
-    PrintHeader("Setup times (level specific) excluding child calls ",linalg);
+    PrintHeader("Setup times (level specific) excluding child calls", linalg);
     SortAndReportTimings(sortByLib,setupLabels,setupTimes,linalg);
     PrintTotalSetupTime();
   } else {
