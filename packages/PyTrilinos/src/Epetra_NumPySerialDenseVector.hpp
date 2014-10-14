@@ -2,7 +2,7 @@
 // ***********************************************************************
 //
 //              PyTrilinos: Python Interface to Trilinos
-//                 Copyright (2010) Sandia Corporation
+//                 Copyright (2005) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -26,44 +26,44 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EPETRA_NUMPYSERIALSYMDENSEMATRIX_H
-#define EPETRA_NUMPYSERIALSYMDENSEMATRIX_H
+#ifndef EPETRA_NUMPYSERIALDENSEVECTOR_H
+#define EPETRA_NUMPYSERIALDENSEVECTOR_H
 
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_PythonException.hpp"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
 #endif
 #ifdef HAVE_STDINT_H
 #undef HAVE_STDINT_H
 #endif
-#include "Epetra_SerialSymDenseMatrix.h"
+#include "Epetra_SerialDenseVector.h"
 
 namespace PyTrilinos
 {
 
-class Epetra_NumPySerialSymDenseMatrix : public Epetra_SerialSymDenseMatrix
+class Epetra_NumPySerialDenseVector : public Epetra_SerialDenseVector
 {
 public:
 
   // Constructors
-  Epetra_NumPySerialSymDenseMatrix();
-  Epetra_NumPySerialSymDenseMatrix(PyObject * pyObject);
-  Epetra_NumPySerialSymDenseMatrix(const Epetra_SerialSymDenseMatrix & src);
+  Epetra_NumPySerialDenseVector();
+  Epetra_NumPySerialDenseVector(int length);
+  Epetra_NumPySerialDenseVector(PyObject * pyObject);
+  Epetra_NumPySerialDenseVector(const Epetra_SerialDenseVector & src);
 
   // Destructor
-  ~Epetra_NumPySerialSymDenseMatrix();
+  ~Epetra_NumPySerialDenseVector();
 
-  // Overridden Epetra_SerialSymDenseMatrix methods.  These are overriden
+  // Overridden Epetra_SerialDenseVector methods.  These are overriden
   // for one of two reasons: (1) to provide a more python-like
   // signature, or (2) to maintain synchronization between the
-  // Epetra_SerialSymDenseMatrix and the numpy array.
-  double     operator() (int rowIndex, int colIndex);
-  int        Shape(  int numRowsCols);
-  int        Reshape(int numRowsCols);
-  PyObject * A();
+  // Epetra_SerialDenseVector and the numpy array.
+  int        Size(int length);
+  int        Resize(int length);
+  PyObject * Values() const;
 
   // Static cleanup function, to be called when python exceptions are
   // encountered
@@ -71,25 +71,24 @@ public:
 
 private:
 
-  // These private static pointers are for use with constructors only.
-  // Outside of a constructor, they should be NULL.  they should only
-  // be set by the static helper functions below, and when a
-  // constructor sets these pointers, it should reset them to NULL
-  // when done.
+  // This private static pointer is for use with constructors only.
+  // Outside of a constructor, it should be NULL.  It should only be
+  // set by the static helper functions below, and when a constructor
+  // sets this pointer, it should reset it to NULL when done.
   static PyArrayObject * tmp_array;
 
   // Static helper functions.  These are intended to be called from
   // the constructors, specifically to compute arguments in the
-  // Epetra_SerialSymDenseMatrix constructors called in the constructor
+  // Epetra_SerialDenseVector constructors called in the constructor
   // initialization lists.  They all assume that if tmp_array is
   // already set, it has been set by the same PyObject.
-  static double * getArray(  PyObject *);
-  static int      getNumRows(PyObject *);
+  static double * getArray(     PyObject *);
+  static int      getVectorSize(PyObject *);
 
   // Private method.  This method is typically called after an
-  // Epetra_SerialSymDenseMatrix constructor has been called to
+  // Epetra_SerialDenseVector constructor has been called to
   // synchronize the internal PyArrayObject.
-  void setArray(bool copy=false);
+  void setArray();
 
   // Private data
   PyArrayObject * array;

@@ -87,8 +87,8 @@ and classes:
 #include <sstream>
 
 // PyTrilinos includes
-#include "PyTrilinos_PythonException.h"
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_PythonException.hpp"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
@@ -106,7 +106,7 @@ and classes:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Ignore/renames

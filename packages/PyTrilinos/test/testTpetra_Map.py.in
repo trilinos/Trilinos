@@ -1,0 +1,325 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2014) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+#
+# System imports
+import numpy
+import sys
+import unittest
+
+#
+# Parse the command-line arguments
+from optparse import *
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Teuchos = fromPyTrilinosImport('Teuchos', options.testharness)
+Tpetra  = fromPyTrilinosImport('Tpetra' , options.testharness)
+
+##########################################################################
+
+class TpetraMapTestCase(unittest.TestCase):
+    "TestCase class for Map objects"
+
+    def setUp(self):
+        self.comm             = Teuchos.DefaultComm.getComm()
+        self.numProc          = self.comm.getSize()
+        self.myPID            = self.comm.getRank()
+        self.numMyElConst     = 4
+        self.numMyEl          = self.numMyElConst + self.myPID
+        self.numGlobalElConst = self.numMyElConst * self.numProc
+        self.numGlobalEl      = self.comm.reduceAll(Teuchos.REDUCE_SUM,
+                                                    self.numMyEl)
+        self.elSize           = 1
+        self.indexBase        = 0
+        globalEls             = range(self.numGlobalEl)
+        globalEls.reverse()  # Force this to be different from the linear distribution
+        self.start            = 4*self.myPID + self.myPID*(self.myPID-1)/2
+        self.myGlobalEls      = globalEls[self.start:self.start+self.numMyEl]
+
+        self.map1             = Tpetra.Map(self.numGlobalElConst,
+                                           self.indexBase,
+                                           self.comm)
+
+        self.map2             = Tpetra.Map(self.numGlobalEl,
+                                           self.numMyEl,
+                                           self.indexBase,
+                                           self.comm)
+
+        self.map3             = Tpetra.Map(self.numGlobalEl,
+                                           self.myGlobalEls,
+                                           self.indexBase,
+                                           self.comm)
+
+        self.comm.barrier()
+
+    def tearDown(self):
+        self.comm.barrier()
+
+    def testConstructor1(self):
+        "Test Tpetra.Map uniform, linear constructor"
+        self.assertEqual(self.map1.description()[:11],     "Tpetra::Map"        )
+        self.assertEqual(self.map1.getGlobalNumElements(), self.numGlobalElConst)
+        self.assertEqual(self.map1.getIndexBase(),         self.indexBase       )
+
+    def testConstructor2(self):
+        "Test Tpetra.Map nonuniform, linear constructor"
+        self.assertEqual(self.map2.description()[:11],     "Tpetra::Map"   )
+        self.assertEqual(self.map2.getGlobalNumElements(), self.numGlobalEl)
+        self.assertEqual(self.map2.getMaxLocalIndex()+1,   self.numMyEl    )
+        self.assertEqual(self.map2.getIndexBase(),         self.indexBase  )
+
+    def testConstructor3(self):
+        "Test Tpetra.Map nonuniform, arbitrary constructor"
+        self.assertEqual(self.map3.description()[:11],     "Tpetra::Map"   )
+        self.assertEqual(self.map3.getGlobalNumElements(), self.numGlobalEl)
+        self.assertEqual(self.map3.getMaxLocalIndex()+1,   self.numMyEl    )
+        self.assertEqual(self.map3.getIndexBase(),         self.indexBase  )
+
+    def testConstructor4(self):
+        "Test Tpetra.Map nonuniform, arbitrary constructor, bad list"
+        self.myGlobalEls[-1] = "pi"
+        self.assertRaises(ValueError, Tpetra.Map, self.numGlobalEl,
+                          self.myGlobalEls, self.indexBase, self.comm)
+
+    def testIsOneToOne(self):
+        "Test Tpetra.Map isOneToOne method"
+        self.assert_(self.map1.isOneToOne())
+        self.assert_(self.map2.isOneToOne())
+        self.assert_(self.map3.isOneToOne())
+
+    def testGetGlobalNumElements(self):
+        "Test Tpetra.Map getGlobalNumElements method"
+        self.assertEqual(self.map1.getGlobalNumElements(), self.numGlobalElConst)
+        self.assertEqual(self.map2.getGlobalNumElements(), self.numGlobalEl     )
+        self.assertEqual(self.map3.getGlobalNumElements(), self.numGlobalEl     )
+
+    def testGetNodeNumElements(self):
+        "Test Tpetra.Map getNodeNumElements method"
+        self.assertEqual(self.map1.getNodeNumElements(), self.numMyElConst)
+        self.assertEqual(self.map2.getNodeNumElements(), self.numMyEl     )
+        self.assertEqual(self.map3.getNodeNumElements(), self.numMyEl     )
+
+    def testGetIndexBase(self):
+        "Test Tpetra.Map getIndexBase method"
+        self.assertEqual(self.map1.getIndexBase(), self.indexBase)
+        self.assertEqual(self.map2.getIndexBase(), self.indexBase)
+        self.assertEqual(self.map3.getIndexBase(), self.indexBase)
+
+    def testGetMinLocalIndex(self):
+        "Test Tpetra.Map getMinLocalIndex method"
+        self.assertEqual(self.map1.getMinLocalIndex(), self.indexBase)
+        self.assertEqual(self.map2.getMinLocalIndex(), self.indexBase)
+        self.assertEqual(self.map3.getMinLocalIndex(), self.indexBase)
+
+    def testGetMaxLocalIndex(self):
+        "Test Tpetra.Map getMaxLocalIndex method"
+        self.assertEqual(self.map1.getMaxLocalIndex(), self.numMyElConst-1)
+        self.assertEqual(self.map2.getMaxLocalIndex(), self.numMyEl-1     )
+        self.assertEqual(self.map3.getMaxLocalIndex(), self.numMyEl-1     )
+
+    def testGetMinGlobalIndex(self):
+        "Test Tpetra.Map getMinGlobalIndex method"
+        self.assertEqual(self.map1.getMinGlobalIndex(), self.myPID*self.numMyElConst)
+        self.assertEqual(self.map2.getMinGlobalIndex(), self.start                  )
+        self.assertEqual(self.map3.getMinGlobalIndex(), min(self.myGlobalEls)       )
+
+    def testGetMaxGlobalIndex(self):
+        "Test Tpetra.Map getMaxGlobalIndex method"
+        self.assertEqual(self.map1.getMaxGlobalIndex(), (self.myPID+1)*self.numMyElConst-1)
+        self.assertEqual(self.map2.getMaxGlobalIndex(), self.start+self.numMyEl-1         )
+        self.assertEqual(self.map3.getMaxGlobalIndex(), max(self.myGlobalEls)             )
+
+    def testGetMinAllGlobalIndex(self):
+        "Test Tpetra.Map getMinAllGlobalIndex method"
+        self.assertEqual(self.map1.getMinAllGlobalIndex(), self.indexBase)
+        self.assertEqual(self.map2.getMinAllGlobalIndex(), self.indexBase)
+        self.assertEqual(self.map3.getMinAllGlobalIndex(), self.indexBase)
+
+    def testGetMaxAllGlobalIndex(self):
+        "Test Tpetra.Map getMaxAllGlobalIndex method"
+        self.assertEqual(self.map1.getMaxAllGlobalIndex(), self.numGlobalElConst-1)
+        self.assertEqual(self.map2.getMaxAllGlobalIndex(), self.numGlobalEl     -1)
+        self.assertEqual(self.map3.getMaxAllGlobalIndex(), self.numGlobalEl     -1)
+
+    def testGetLocalElement(self):
+        "Test Tpetra.Map getLocalElement method"
+        for gid in range(self.map3.getGlobalNumElements()):
+            if gid in self.myGlobalEls:
+                lid = self.myGlobalEls.index(gid)
+            else:
+                lid = None
+            self.assertEqual(self.map3.getLocalElement(gid),lid)
+
+    def testGetGlobalElement(self):
+        "Test Tpetra.Map getGlobalElement method"
+        for lid in range(self.map3.getMaxLocalIndex()):
+            self.assertEqual(self.map3.getGlobalElement(lid), self.myGlobalEls[lid])
+
+    def testGetRemoteIndexList(self):
+        "Test Tpetra.Map getRemoteIndexList method for variable element size"
+        gidList  = range(self.numGlobalEl)
+        gidList.reverse()  # Match the setUp pattern
+        pidList  = numpy.zeros( self.numGlobalEl)
+        lidList  = numpy.arange(self.numGlobalEl)
+        for p in range(1,self.numProc):
+            start  = 4*p + p*(p-1)/2
+            length = 4 + p
+            pidList[start:] += 1
+            lidList[start:start+length] = range(length)
+        result = self.map3.getRemoteIndexList(gidList)
+        self.failUnless((result[0] == pidList).all())
+        self.failUnless((result[1] == lidList).all())
+        self.assertEqual(result[2], Tpetra.AllIDsPresent)
+
+    def testGetNodeElementList(self):
+        "Test Tpetra.Map getNodeElementList method"
+        result = self.map3.getNodeElementList()
+        self.failUnless((result == self.myGlobalEls).all())
+
+    def testIsNodeLocalElement(self):
+        "Test Tpetra.Map isNodeLocalElement method"
+        for gid in range(self.map3.getGlobalNumElements()):
+            if gid in self.myGlobalEls:
+                lid = self.myGlobalEls.index(gid)
+            else:
+                lid = -1
+            self.assertEqual(self.map3.isNodeLocalElement(lid), (lid != -1))
+
+    def testIsNodeGlobalElement(self):
+        "Test Tpetra.Map isNodeGlobalElement method"
+        for gid in range(self.map3.getGlobalNumElements()):
+            if gid in self.myGlobalEls:
+                lid = self.myGlobalEls.index(gid)
+            else:
+                lid = -1
+            self.assertEqual(self.map3.isNodeGlobalElement(gid), (lid != -1))
+
+    def testIsUniform(self):
+        "Test Tpetra.Map isUniform method"
+        self.assertTrue( self.map1.isUniform())
+        self.assertFalse(self.map2.isUniform())
+        self.assertFalse(self.map3.isUniform())
+
+    def testIsContiguous(self):
+        "Test Tpetra.Map isContiguous method"
+        self.assertTrue( self.map1.isContiguous())
+        self.assertTrue( self.map2.isContiguous())
+        self.assertFalse(self.map3.isContiguous())
+
+    def testIsDistributed(self):
+        "Test Tpetra.Map isDistributed method"
+        distributed = (self.numProc > 1)
+        self.assertEqual(self.map1.isDistributed(), distributed)
+        self.assertEqual(self.map2.isDistributed(), distributed)
+        self.assertEqual(self.map3.isDistributed(), distributed)
+
+    def testIsCompatible(self):
+        "Test Tpetra.Map isCompatible method"
+        self.assertEqual(self.map1.isCompatible(self.map1), True           )
+        self.assertEqual(self.map1.isCompatible(self.map2), self.numProc==1)
+        self.assertEqual(self.map1.isCompatible(self.map3), self.numProc==1)
+        self.assertEqual(self.map2.isCompatible(self.map2), True           )
+        self.assertEqual(self.map2.isCompatible(self.map3), True           )
+        self.assertEqual(self.map3.isCompatible(self.map3), True           )
+
+    def testIsSameAs(self):
+        "Test Tpetra.Map isSameAs method"
+        self.assertEqual(self.map1.isSameAs(self.map1), True           )
+        self.assertEqual(self.map1.isSameAs(self.map2), self.numProc==1)
+        self.assertEqual(self.map1.isSameAs(self.map3), False          )
+        self.assertEqual(self.map2.isSameAs(self.map2), True           )
+        self.assertEqual(self.map2.isSameAs(self.map3), False          )
+        self.assertEqual(self.map3.isSameAs(self.map3), True           )
+
+    def testLocallySameAs(self):
+        "Test Tpetra.Map locallySameAs method"
+        self.assertEqual(self.map1.locallySameAs(self.map1), True         )
+        self.assertEqual(self.map1.locallySameAs(self.map2), self.myPID==0)
+        self.assertEqual(self.map1.locallySameAs(self.map3), False        )
+        self.assertEqual(self.map2.locallySameAs(self.map2), True         )
+        self.assertEqual(self.map2.locallySameAs(self.map3), False        )
+        self.assertEqual(self.map3.locallySameAs(self.map3), True         )
+
+    def testStr(self):
+        "Test Tpetra.Map __str__ method"
+        self.assertEquals(self.map1.__str__(), self.map1.description())
+        self.assertEquals(self.map2.__str__(), self.map2.description())
+        self.assertEquals(self.map3.__str__(), self.map3.description())
+
+    def testComm(self):
+        "Test Tpetra.Map Comm method"
+        comms = [self.map1.getComm(),
+                 self.map2.getComm(),
+                 self.map3.getComm()]
+        for comm in comms:
+            self.assertEqual(comm.getSize(), self.comm.getSize())
+            self.assertEqual(comm.getRank(), self.comm.getRank())
+
+##########################################################################
+
+if __name__ == "__main__":
+
+    # Create the test suite object
+    suite = unittest.TestSuite()
+
+    # Add the test cases to the test suite
+    suite.addTest(unittest.makeSuite(TpetraMapTestCase))
+
+    # Create a communicator
+    comm    = Teuchos.DefaultComm.getComm()
+    iAmRoot = comm.getRank() == 0
+
+    # Run the test suite
+    if iAmRoot: print >>sys.stderr, \
+       "\n******************\nTesting Tpetra.Map\n******************\n"
+    v = options.verbosity * int(iAmRoot)
+    result = unittest.TextTestRunner(verbosity=v).run(suite)
+
+    # Compute the total number of errors and failures
+    errsPlusFails = comm.reduceAll(Teuchos.REDUCE_SUM,
+                                   len(result.errors) + len(result.failures))
+    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
+    sys.exit(errsPlusFails)

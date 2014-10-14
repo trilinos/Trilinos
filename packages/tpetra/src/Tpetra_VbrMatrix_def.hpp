@@ -42,6 +42,10 @@
 #ifndef TPETRA_VBRMATRIX_DEF_HPP
 #define TPETRA_VBRMATRIX_DEF_HPP
 
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
+#else
+
 #include <Tpetra_BlockMap.hpp>
 #include <Tpetra_BlockCrsGraph.hpp>
 #include <Tpetra_DistObject.hpp>
@@ -52,7 +56,6 @@
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <algorithm>
 #include <sstream>
-
 
 namespace Tpetra {
 
@@ -1430,5 +1433,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStrea
   \
   template class VbrMatrix< SCALAR , LO , GO , NODE >;
 
-#endif //TPETRA_VBRMATRIX_DEF_HPP
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRA_VBRMATRIX_DEF_HPP
 

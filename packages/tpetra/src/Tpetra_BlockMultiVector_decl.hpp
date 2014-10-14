@@ -42,20 +42,30 @@
 #ifndef TPETRA_BLOCKMULTIVECTOR_DECL_HPP
 #define TPETRA_BLOCKMULTIVECTOR_DECL_HPP
 
+/// \file Tpetra_BlockMultiVector_decl.hpp
+/// \brief Declarations for the class Tpetra::BlockMultiVector.
+
+#include <Tpetra_ConfigDefs.hpp>
+
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
+#else
+
 #include "Tpetra_BlockMap.hpp"
 #include "Tpetra_MultiVector.hpp"
 
-/** \file Tpetra_BlockMultiVector_decl.hpp
-
-  Declarations for the class Tpetra::BlockMultiVector.
-*/
 namespace Tpetra {
 
-/** \brief Block-entry specialization of Tpetra::MultiVector.
-
-  This class inherits (is-a) Tpetra::MultiVector, adding block-entry
-  functionality for referencing/accessing data.
-*/
+/// \class BlockMultiVector
+/// \brief Block-entry specialization of Tpetra::MultiVector.
+///
+/// This class inherits (is-a) Tpetra::MultiVector, adding block-entry
+/// functionality for referencing/accessing data.
+///
+/// \warning Please consider this class DEPRECATED.  There are known
+///   outstanding bugs with the current implementations of
+///   variable-block-size sparse matrices and related classes in
+///   Tpetra.
 template <class Scalar = MultiVector<>::scalar_type,
           class LocalOrdinal = MultiVector<>::local_ordinal_type,
           class GlobalOrdinal = typename MultiVector<LocalOrdinal>::global_ordinal_type,
@@ -115,11 +125,12 @@ public:
 
   //@}
 
- private:
-  LocalOrdinal getLocalPointIndex(GlobalOrdinal globalBlockRow, LocalOrdinal blockOffset) const;
+private:
+  LocalOrdinal getLocalPointIndex (GlobalOrdinal globalBlockRow, LocalOrdinal blockOffset) const;
   Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blockMap_;
-};//class BlockMultiVector
-}//namespace Tpetra
+};
 
-#endif
+} // namespace Tpetra
 
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRA_BLOCKMULTIVECTOR_DECL_HPP

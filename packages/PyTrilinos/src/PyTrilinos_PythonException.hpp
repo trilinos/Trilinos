@@ -38,7 +38,7 @@
 // When a python error is detected, or if the code sets a python
 // error, this should be followed with
 //
-//     throw PythonException();
+//     throw PyTrilinos::PythonException();
 //
 // The PythonException will extract the information it needs directly
 // from the python API.
@@ -53,7 +53,7 @@
 //    {
 //      $action
 //    }
-//    catch (PythonException &e)
+//    catch (PyTrilinos::PythonException &e)
 //    {
 //       e.restore();
 //       SWIG_fail;

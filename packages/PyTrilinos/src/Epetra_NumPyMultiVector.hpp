@@ -26,13 +26,13 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EPETRA_NUMPYVECTOR_H
-#define EPETRA_NUMPYVECTOR_H
+#ifndef EPETRA_NUMPYMULTIVECTOR_H
+#define EPETRA_NUMPYMULTIVECTOR_H
 
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_PythonException.hpp"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
 #endif
@@ -42,45 +42,40 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
-#include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 
 namespace PyTrilinos
 {
 
-class Epetra_NumPyVector : public Epetra_Vector
+class Epetra_NumPyMultiVector : public Epetra_MultiVector
 {
 public:
 
   // Constructors
-  Epetra_NumPyVector(const Epetra_BlockMap & blockMap, bool zeroOut=true);
-  Epetra_NumPyVector(const Epetra_Vector & source);
-  Epetra_NumPyVector(const Epetra_BlockMap & blockMap, PyObject * pyObject);
-  Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_Vector & source);
-  Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_MultiVector & source, int index);
-  Epetra_NumPyVector(PyObject * pyObject);
+  Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap, int numVectors,
+			  bool zeroOut=true);
+  Epetra_NumPyMultiVector(const Epetra_MultiVector & source);
+  Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap, PyObject * pyObject);
+  Epetra_NumPyMultiVector(Epetra_DataAccess CV, const Epetra_NumPyMultiVector & source,
+			  PyObject * range = NULL);
+  Epetra_NumPyMultiVector(Epetra_DataAccess CV, const Epetra_MultiVector & source,
+			  PyObject * range = NULL);
+  Epetra_NumPyMultiVector(PyObject * pyObject);
 
   // Destructor
-  ~Epetra_NumPyVector();
+  virtual ~Epetra_NumPyMultiVector();
 
-  // Overridden Epetra_Vector methods with more python-like signatures
+  // Overridden Epetra_MultiVector methods with more python-like signatures
   PyObject * ExtractCopy() const;
   PyObject * ExtractView() const;
-  double     Dot(const Epetra_Vector & A) const;
-  double     Norm1() const;
-  double     Norm2() const;
-  double     NormInf() const;
-  double     NormWeighted(const Epetra_Vector & weights) const;
-  double     MinValue() const;
-  double     MaxValue() const;
-  double     MeanValue() const;
-  int        ReplaceGlobalValues(PyObject * values, PyObject * indices);
-  int        ReplaceGlobalValues(int blockOffset, PyObject * values, PyObject * indices);
-  int        ReplaceMyValues(PyObject * values, PyObject * indices);
-  int        ReplaceMyValues(int blockOffset, PyObject * values, PyObject * indices);
-  int        SumIntoGlobalValues(PyObject * values, PyObject * indices);
-  int        SumIntoGlobalValues(int blockOffset, PyObject * values, PyObject * indices);
-  int        SumIntoMyValues(PyObject * values, PyObject * indices);
-  int        SumIntoMyValues(int blockOffset, PyObject * values, PyObject * indices);
+  PyObject * Dot(const Epetra_MultiVector & a) const;
+  PyObject * Norm1() const;
+  PyObject * Norm2() const;
+  PyObject * NormInf() const;
+  PyObject * NormWeighted(const Epetra_MultiVector & weights) const;
+  PyObject * MinValue() const;
+  PyObject * MaxValue() const;
+  PyObject * MeanValue() const;
 
   // Static cleanup function, to be called when python exceptions are
   // encountered
@@ -89,10 +84,10 @@ public:
 private:
 
   // Private method thus not callable
-  Epetra_NumPyVector();
+  Epetra_NumPyMultiVector();
 
   // This static private constant is the default communicator for any
-  // Epetra_NumPyVector constructed without specifying an
+  // Epetra_NumPyMultiVector constructed without specifying an
   // Epetra_BlockMap
   static const Epetra_SerialComm defaultComm;
 
@@ -103,16 +98,22 @@ private:
   // NULL when done.
   static PyArrayObject * tmp_array;
   static Epetra_Map    * tmp_map;
+  static PyArrayObject * tmp_range;
 
   // Static helper functions.  These are intended to be called from
   // the constructors, specifically to compute arguments in the
-  // Epetra_Vector constructors called in the constructor
-  // initialization lists.  They all assume that if tmp_array or
-  // tmp_map is already set, they have been set by the same PyObject.
+  // Epetra_MultiVector constructors called in the constructor
+  // initialization lists.  They all assume that if tmp_array, tmp_map
+  // or tmp_range is already set, they have been set by the same
+  // PyObject.
   static double     * getArray(     PyObject *);
   static Epetra_Map & getMap(       PyObject *);
+  static int          getNumVectors(PyObject *);
   static int          getVectorSize(PyObject *);
-  static double     * getArray(const Epetra_BlockMap &, PyObject *);
+  static int        * getRange(     PyObject *, const Epetra_MultiVector &);
+  static int          getRangeLen(  PyObject *, const Epetra_MultiVector &);
+  static double     * getArray(     const Epetra_BlockMap &, PyObject *);
+  static int          getNumVectors(const Epetra_BlockMap &, PyObject *);
 
   // Private data
   Epetra_BlockMap * map;

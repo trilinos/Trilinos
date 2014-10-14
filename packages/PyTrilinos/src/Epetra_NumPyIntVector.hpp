@@ -26,45 +26,44 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EPETRA_NUMPYSERIALDENSEMATRIX_H
-#define EPETRA_NUMPYSERIALDENSEMATRIX_H
+#ifndef EPETRA_NUMPYINTVECTOR_H
+#define EPETRA_NUMPYINTVECTOR_H
 
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_PythonException.hpp"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
 #endif
 #ifdef HAVE_STDINT_H
 #undef HAVE_STDINT_H
 #endif
-#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialComm.h"
+#include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
+#include "Epetra_IntVector.h"
 
 namespace PyTrilinos
 {
 
-class Epetra_NumPySerialDenseMatrix : public Epetra_SerialDenseMatrix
+class Epetra_NumPyIntVector : public Epetra_IntVector
 {
 public:
 
   // Constructors
-  Epetra_NumPySerialDenseMatrix(int set_object_label=1);
-  Epetra_NumPySerialDenseMatrix(int numRows, int numCols, int set_object_label=1);
-  Epetra_NumPySerialDenseMatrix(PyObject * pyObject, int set_object_label=1);
-  Epetra_NumPySerialDenseMatrix(const Epetra_SerialDenseMatrix & src);
+  Epetra_NumPyIntVector(const Epetra_BlockMap  & blockMap, bool zeroOut=true);
+  Epetra_NumPyIntVector(const Epetra_IntVector & source);
+  Epetra_NumPyIntVector(const Epetra_BlockMap  & blockMap, PyObject * pyObject);
+  Epetra_NumPyIntVector(PyObject * pyObject);
 
   // Destructor
-  ~Epetra_NumPySerialDenseMatrix();
+  ~Epetra_NumPyIntVector();
 
-  // Overridden Epetra_SerialDenseMatrix methods.  These are overriden
-  // for one of two reasons: (1) to provide a more python-like
-  // signature, or (2) to maintain synchronization between the
-  // Epetra_SerialDenseMatrix and the numpy array.
-  double     operator() (int rowIndex, int colIndex);
-  int        Shape(  int numRows, int numCols);
-  int        Reshape(int numRows, int numCols);
-  PyObject * A();
+  // Overridden Epetra_IntVector methods with more python-like signatures
+  PyObject * ExtractCopy() const;
+  PyObject * ExtractView() const;
+  PyObject * Values() const;
 
   // Static cleanup function, to be called when python exceptions are
   // encountered
@@ -72,34 +71,37 @@ public:
 
 private:
 
+  // Private method thus not callable
+  Epetra_NumPyIntVector();
+
+  // This static private constant is the default communicator for any
+  // Epetra_NumPyIntVector constructed without specifying an
+  // Epetra_BlockMap
+  static const Epetra_SerialComm defaultComm;
+
   // These private static pointers are for use with constructors only.
-  // Outside of a constructor, they should be NULL.  they should only
+  // Outside of a constructor, they should be NULL.  They should only
   // be set by the static helper functions below, and when a
-  // constructor sets these pointers, it should reset them to NULL
-  // when done.
+  // constructor sets any of these pointers, it should reset it to
+  // NULL when done.
   static PyArrayObject * tmp_array;
-  static bool            tmp_bool;
+  static Epetra_Map    * tmp_map;
 
   // Static helper functions.  These are intended to be called from
   // the constructors, specifically to compute arguments in the
-  // Epetra_SerialDenseMatrix constructors called in the constructor
-  // initialization lists.  They all assume that if tmp_array is
-  // already set, it has been set by the same PyObject.
-  static double * getArray(  PyObject *, int);
-  static int      getNumRows(PyObject *, int);
-  static int      getNumCols(PyObject *, int);
-  static bool     getBool(   PyObject *, int);
-
-  // Private method.  This method is typically called after an
-  // Epetra_SerialDenseMatrix constructor has been called to
-  // synchronize the internal PyArrayObject.
-  void setArray(bool copy=false);
+  // Epetra_IntVector constructors called in the constructor
+  // initialization lists.  They all assume that if tmp_array or
+  // tmp_map is already set, they have been set by the same PyObject.
+  static int        * getArray(PyObject *);
+  static Epetra_Map & getMap(  PyObject *);
+  static int        * getArray(const Epetra_BlockMap &, PyObject *);
 
   // Private data
-  PyArrayObject * array;
+  Epetra_BlockMap * map;
+  PyArrayObject   * array;
 
 };
 
-}  // Namespace PyTrilinos
+}  // Namepace PyTrilinos
 
 #endif

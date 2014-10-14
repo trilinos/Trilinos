@@ -344,11 +344,11 @@ ul.auto-toc {
 <li><a class="reference internal" href="#basic-configuration" id="id12">5.2&nbsp;&nbsp;&nbsp;Basic configuration</a></li>
 <li><a class="reference internal" href="#selecting-the-list-of-packages-to-enable" id="id13">5.3&nbsp;&nbsp;&nbsp;Selecting the list of packages to enable</a><ul class="auto-toc">
 <li><a class="reference internal" href="#determine-the-list-of-packages-that-can-be-enabled" id="id14">5.3.1&nbsp;&nbsp;&nbsp;Determine the list of packages that can be enabled</a></li>
-<li><a class="reference internal" href="#enable-a-set-of-packages" id="id15">5.3.2&nbsp;&nbsp;&nbsp;Enable a set of packages</a></li>
-<li><a class="reference internal" href="#enable-to-test-all-effects-of-changing-a-given-package-s" id="id16">5.3.3&nbsp;&nbsp;&nbsp;Enable to test all effects of changing a given package(s)</a></li>
-<li><a class="reference internal" href="#enable-all-packages-with-tests-and-examples" id="id17">5.3.4&nbsp;&nbsp;&nbsp;Enable all packages with tests and examples</a></li>
-<li><a class="reference internal" href="#disable-a-package-and-all-its-dependencies" id="id18">5.3.5&nbsp;&nbsp;&nbsp;Disable a package and all its dependencies</a></li>
-<li><a class="reference internal" href="#print-package-dependencies" id="id19">5.3.6&nbsp;&nbsp;&nbsp;Print package dependencies</a></li>
+<li><a class="reference internal" href="#print-package-dependencies" id="id15">5.3.2&nbsp;&nbsp;&nbsp;Print package dependencies</a></li>
+<li><a class="reference internal" href="#enable-a-set-of-packages" id="id16">5.3.3&nbsp;&nbsp;&nbsp;Enable a set of packages</a></li>
+<li><a class="reference internal" href="#enable-to-test-all-effects-of-changing-a-given-package-s" id="id17">5.3.4&nbsp;&nbsp;&nbsp;Enable to test all effects of changing a given package(s)</a></li>
+<li><a class="reference internal" href="#enable-all-packages-with-tests-and-examples" id="id18">5.3.5&nbsp;&nbsp;&nbsp;Enable all packages with tests and examples</a></li>
+<li><a class="reference internal" href="#disable-a-package-and-all-its-dependencies" id="id19">5.3.6&nbsp;&nbsp;&nbsp;Disable a package and all its dependencies</a></li>
 <li><a class="reference internal" href="#remove-all-package-enables-in-the-cache" id="id20">5.3.7&nbsp;&nbsp;&nbsp;Remove all package enables in the cache</a></li>
 </ul>
 </li>
@@ -378,40 +378,41 @@ ul.auto-toc {
 <li><a class="reference internal" href="#reconfiguring-completely-from-scratch" id="id44">5.27&nbsp;&nbsp;&nbsp;Reconfiguring completely from scratch</a></li>
 <li><a class="reference internal" href="#viewing-configure-errors" id="id45">5.28&nbsp;&nbsp;&nbsp;Viewing configure errors</a></li>
 <li><a class="reference internal" href="#adding-configure-timers" id="id46">5.29&nbsp;&nbsp;&nbsp;Adding configure timers</a></li>
-<li><a class="reference internal" href="#generating-a-project-repo-version-file" id="id47">5.30&nbsp;&nbsp;&nbsp;Generating a project repo version file</a></li>
-<li><a class="reference internal" href="#cmake-configure-time-development-mode-and-debug-checking" id="id48">5.31&nbsp;&nbsp;&nbsp;CMake configure-time development mode and debug checking</a></li>
+<li><a class="reference internal" href="#generating-export-files" id="id47">5.30&nbsp;&nbsp;&nbsp;Generating export files</a></li>
+<li><a class="reference internal" href="#generating-a-project-repo-version-file" id="id48">5.31&nbsp;&nbsp;&nbsp;Generating a project repo version file</a></li>
+<li><a class="reference internal" href="#cmake-configure-time-development-mode-and-debug-checking" id="id49">5.32&nbsp;&nbsp;&nbsp;CMake configure-time development mode and debug checking</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#building-makefile-generator" id="id49">6&nbsp;&nbsp;&nbsp;Building (Makefile generator)</a><ul class="auto-toc">
-<li><a class="reference internal" href="#building-all-targets" id="id50">6.1&nbsp;&nbsp;&nbsp;Building all targets</a></li>
-<li><a class="reference internal" href="#discovering-what-targets-are-available-to-build" id="id51">6.2&nbsp;&nbsp;&nbsp;Discovering what targets are available to build</a></li>
-<li><a class="reference internal" href="#building-all-of-the-targets-for-a-package" id="id52">6.3&nbsp;&nbsp;&nbsp;Building all of the targets for a package</a></li>
-<li><a class="reference internal" href="#building-all-of-the-libraries-for-a-package" id="id53">6.4&nbsp;&nbsp;&nbsp;Building all of the libraries for a package</a></li>
-<li><a class="reference internal" href="#building-all-of-the-libraries-for-all-enabled-packages" id="id54">6.5&nbsp;&nbsp;&nbsp;Building all of the libraries for all enabled packages</a></li>
-<li><a class="reference internal" href="#building-a-single-object-file" id="id55">6.6&nbsp;&nbsp;&nbsp;Building a single object file</a></li>
-<li><a class="reference internal" href="#building-with-verbose-output-without-reconfiguring" id="id56">6.7&nbsp;&nbsp;&nbsp;Building with verbose output without reconfiguring</a></li>
-<li><a class="reference internal" href="#relink-a-target-without-considering-dependencies" id="id57">6.8&nbsp;&nbsp;&nbsp;Relink a target without considering dependencies</a></li>
+<li><a class="reference internal" href="#building-makefile-generator" id="id50">6&nbsp;&nbsp;&nbsp;Building (Makefile generator)</a><ul class="auto-toc">
+<li><a class="reference internal" href="#building-all-targets" id="id51">6.1&nbsp;&nbsp;&nbsp;Building all targets</a></li>
+<li><a class="reference internal" href="#discovering-what-targets-are-available-to-build" id="id52">6.2&nbsp;&nbsp;&nbsp;Discovering what targets are available to build</a></li>
+<li><a class="reference internal" href="#building-all-of-the-targets-for-a-package" id="id53">6.3&nbsp;&nbsp;&nbsp;Building all of the targets for a package</a></li>
+<li><a class="reference internal" href="#building-all-of-the-libraries-for-a-package" id="id54">6.4&nbsp;&nbsp;&nbsp;Building all of the libraries for a package</a></li>
+<li><a class="reference internal" href="#building-all-of-the-libraries-for-all-enabled-packages" id="id55">6.5&nbsp;&nbsp;&nbsp;Building all of the libraries for all enabled packages</a></li>
+<li><a class="reference internal" href="#building-a-single-object-file" id="id56">6.6&nbsp;&nbsp;&nbsp;Building a single object file</a></li>
+<li><a class="reference internal" href="#building-with-verbose-output-without-reconfiguring" id="id57">6.7&nbsp;&nbsp;&nbsp;Building with verbose output without reconfiguring</a></li>
+<li><a class="reference internal" href="#relink-a-target-without-considering-dependencies" id="id58">6.8&nbsp;&nbsp;&nbsp;Relink a target without considering dependencies</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#testing-with-ctest" id="id58">7&nbsp;&nbsp;&nbsp;Testing with CTest</a><ul class="auto-toc">
-<li><a class="reference internal" href="#running-all-tests" id="id59">7.1&nbsp;&nbsp;&nbsp;Running all tests</a></li>
-<li><a class="reference internal" href="#only-running-tests-for-a-single-package" id="id60">7.2&nbsp;&nbsp;&nbsp;Only running tests for a single package</a></li>
-<li><a class="reference internal" href="#running-a-single-test-with-full-output-to-the-console" id="id61">7.3&nbsp;&nbsp;&nbsp;Running a single test with full output to the console</a></li>
-<li><a class="reference internal" href="#overridding-test-timeouts" id="id62">7.4&nbsp;&nbsp;&nbsp;Overridding test timeouts</a></li>
-<li><a class="reference internal" href="#running-memory-checking" id="id63">7.5&nbsp;&nbsp;&nbsp;Running memory checking</a></li>
+<li><a class="reference internal" href="#testing-with-ctest" id="id59">7&nbsp;&nbsp;&nbsp;Testing with CTest</a><ul class="auto-toc">
+<li><a class="reference internal" href="#running-all-tests" id="id60">7.1&nbsp;&nbsp;&nbsp;Running all tests</a></li>
+<li><a class="reference internal" href="#only-running-tests-for-a-single-package" id="id61">7.2&nbsp;&nbsp;&nbsp;Only running tests for a single package</a></li>
+<li><a class="reference internal" href="#running-a-single-test-with-full-output-to-the-console" id="id62">7.3&nbsp;&nbsp;&nbsp;Running a single test with full output to the console</a></li>
+<li><a class="reference internal" href="#overridding-test-timeouts" id="id63">7.4&nbsp;&nbsp;&nbsp;Overridding test timeouts</a></li>
+<li><a class="reference internal" href="#running-memory-checking" id="id64">7.5&nbsp;&nbsp;&nbsp;Running memory checking</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#installing" id="id64">8&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
-<li><a class="reference internal" href="#setting-the-install-prefix-at-configure-time" id="id65">8.1&nbsp;&nbsp;&nbsp;Setting the install prefix at configure time</a></li>
-<li><a class="reference internal" href="#avoiding-installing-libraries-and-headers" id="id66">8.2&nbsp;&nbsp;&nbsp;Avoiding installing libraries and headers</a></li>
-<li><a class="reference internal" href="#installing-the-software" id="id67">8.3&nbsp;&nbsp;&nbsp;Installing the software</a></li>
+<li><a class="reference internal" href="#installing" id="id65">8&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
+<li><a class="reference internal" href="#setting-the-install-prefix-at-configure-time" id="id66">8.1&nbsp;&nbsp;&nbsp;Setting the install prefix at configure time</a></li>
+<li><a class="reference internal" href="#avoiding-installing-libraries-and-headers" id="id67">8.2&nbsp;&nbsp;&nbsp;Avoiding installing libraries and headers</a></li>
+<li><a class="reference internal" href="#installing-the-software" id="id68">8.3&nbsp;&nbsp;&nbsp;Installing the software</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#packaging" id="id68">9&nbsp;&nbsp;&nbsp;Packaging</a><ul class="auto-toc">
-<li><a class="reference internal" href="#creating-a-tarball-of-the-source-tree" id="id69">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></li>
+<li><a class="reference internal" href="#packaging" id="id69">9&nbsp;&nbsp;&nbsp;Packaging</a><ul class="auto-toc">
+<li><a class="reference internal" href="#creating-a-tarball-of-the-source-tree" id="id70">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#dashboard-submissions" id="id70">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></li>
+<li><a class="reference internal" href="#dashboard-submissions" id="id71">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
@@ -449,12 +450,12 @@ or CMake will automatically assume it is relative to the build dir!)</p>
 <div class="section" id="getting-set-up-to-use-cmake">
 <h1><a class="toc-backref" href="#id4">3&nbsp;&nbsp;&nbsp;Getting set up to use CMake</a></h1>
 <p>Before one can configure Trilinos to be built, one must first obtain a
-version of CMake on the system newer than 2.8.1 This guide assumes
+version of CMake on the system newer than 2.8.11 This guide assumes
 that once CMake is installed that it will be in the default path with the name
 <tt class="docutils literal">cmake</tt>.</p>
 <div class="section" id="installing-a-binary-release-of-cmake-casual-users">
 <h2><a class="toc-backref" href="#id5">3.1&nbsp;&nbsp;&nbsp;Installing a binary release of CMake [casual users]</a></h2>
-<p>Download and install the binary (version 2.8.1 or greater is
+<p>Download and install the binary (version 2.8.11 or greater is
 recommended) from:</p>
 <blockquote>
 <a class="reference external" href="http://www.cmake.org/cmake/resources/software.html">http://www.cmake.org/cmake/resources/software.html</a></blockquote>
@@ -535,8 +536,8 @@ as shown above.</p>
 EXTRA_ARGS=$&#64;
 
 cmake \
-  -D CMAKE_BUILD_TYPE:STRING=DEBUG \
-  -D Trilinos_ENABLE_TESTS:BOOL=ON \
+  -D CMAKE_BUILD_TYPE=DEBUG \
+  -D Trilinos_ENABLE_TESTS=ON \
   $EXTRA_ARGS \
   ${SOURCE_BASE}
 </pre>
@@ -568,7 +569,7 @@ EXTRA_ARGS=$&#64;
 
 cmake \
   -D Trilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=MyConfigureOptions.cmake \
-  -D Trilinos_ENABLE_TESTS:BOOL=ON \
+  -D Trilinos_ENABLE_TESTS=ON \
   $EXTRA_ARGS \
   ${SOURCE_BASE}
 </pre>
@@ -611,10 +612,11 @@ in the GUI.</blockquote>
 <h2><a class="toc-backref" href="#id13">5.3&nbsp;&nbsp;&nbsp;Selecting the list of packages to enable</a></h2>
 <p>The Trilinos project is broken up into a set of packages that can be enabled
 (or disbled).  For details and generic examples, see <a class="reference external" href="../developers_guide/TribitsDevelopersGuide.html#package-dependencies-and-enable-disable-logic">Package Dependencies and
-Enable/Disable Logic</a>.</p>
+Enable/Disable Logic</a> and <a class="reference external" href="../developers_guide/TribitsDevelopersGuide.html#tribits-dependency-handling-behaviors">TriBITS Dependency Handling Behaviors</a>.</p>
 <p>See the following use cases:</p>
 <ul class="simple">
 <li><a class="reference internal" href="#determine-the-list-of-packages-that-can-be-enabled">Determine the list of packages that can be enabled</a></li>
+<li><a class="reference internal" href="#print-package-dependencies">Print package dependencies</a></li>
 <li><a class="reference internal" href="#enable-a-set-of-packages">Enable a set of packages</a></li>
 <li><a class="reference internal" href="#enable-to-test-all-effects-of-changing-a-given-package-s">Enable to test all effects of changing a given package(s)</a></li>
 <li><a class="reference internal" href="#enable-all-packages-with-tests-and-examples">Enable all packages with tests and examples</a></li>
@@ -625,7 +627,7 @@ Enable/Disable Logic</a>.</p>
 <h3><a class="toc-backref" href="#id14">5.3.1&nbsp;&nbsp;&nbsp;Determine the list of packages that can be enabled</a></h3>
 <p>In order to see the list of available Trilinos SE Packages to enable, just
 run a basic CMake configure, enabling nothing, and then grep the output to see
-what packages are avaiable to enable.  The full set of defined packages is
+what packages are available to enable.  The full set of defined packages is
 contained the lines starting with <tt class="docutils literal">'Final set of enabled SE packages'</tt> and
 <tt class="docutils literal">'Final set of <span class="pre">non-enabled</span> SE packages'</tt>.  If no SE packages are enabled by
 default (which is base behavior), the full list of packages will be listed on
@@ -635,17 +637,38 @@ full list of defined packages, run:</p>
 ./do-configure 2&gt;&amp;1 | grep &quot;Final set of .*enabled SE packages&quot;
 </pre>
 <p>Any of the packages shown on those lines can potentially be enabled using <tt class="docutils literal"><span class="pre">-D</span>
-<span class="pre">Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=ON</span></tt> (unless they are forcabily
-disabled for some reason, see the CMake ouptut for package disable warnings).</p>
+<span class="pre">Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON</span></tt> (unless they are set to disabled
+for some reason, see the CMake output for package disable warnings).</p>
+<p>Another way to see the full list of SE packages that can be enabled is to
+configure with <a class="reference internal" href="#trilinos-dump-package-dependencies">Trilinos_DUMP_PACKAGE_DEPENDENCIES</a> = <tt class="docutils literal">ON</tt> and then grep
+for <tt class="docutils literal">Trilinos_SE_PACKAGES</tt> using, for example:</p>
+<pre class="literal-block">
+./do-configure 2&gt;&amp;1 | grep &quot;Trilinos_SE_PACKAGES: &quot;
+</pre>
+</div>
+<div class="section" id="print-package-dependencies">
+<span id="trilinos-dump-package-dependencies"></span><h3><a class="toc-backref" href="#id15">5.3.2&nbsp;&nbsp;&nbsp;Print package dependencies</a></h3>
+<p>The set of package dependencies in a project will be printed in the <tt class="docutils literal">cmake</tt>
+STDOUT by setting:</p>
+<pre class="literal-block">
+-D Trilinos_DUMP_PACKAGE_DEPENDENCIES=ON
+</pre>
+<p>This will print the basic backward dependencies for each SE package.  To also
+see the direct forward dependencies for each SE package, also include:</p>
+<pre class="literal-block">
+-D Trilinos_DUMP_FORWARD_PACKAGE_DEPENDENCIES=ON
+</pre>
+<p>Both of these variables are automatically enabled when
+<a class="reference internal" href="#trilinos-verbose-configure">Trilinos_VERBOSE_CONFIGURE</a> = <tt class="docutils literal">ON</tt>.</p>
 </div>
 <div class="section" id="enable-a-set-of-packages">
-<h3><a class="toc-backref" href="#id15">5.3.2&nbsp;&nbsp;&nbsp;Enable a set of packages</a></h3>
+<h3><a class="toc-backref" href="#id16">5.3.3&nbsp;&nbsp;&nbsp;Enable a set of packages</a></h3>
 <p>To enable an SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> (and optionally also its tests
 and examples), configure with:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=ON \
--D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
--D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON \
+-D Trilinos_ENABLE_TESTS=ON \
 </pre>
 <p>This set of arguments allows a user to turn on <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> as well
 as all packages that <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can use.  All of the package's
@@ -656,21 +679,30 @@ optional &quot;can use&quot; upstream dependent packages are enabled with
 <p>If a TriBITS package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> has subpackages (e.g. <tt class="docutils literal">&lt;A&gt;</tt>,
 <tt class="docutils literal">&lt;B&gt;</tt>, etc.), then enabling the package is equivalent to setting:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;A&gt;:BOOL=ON \
--D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;B&gt;:BOOL=ON \
+-D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;A&gt;=ON \
+-D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;B&gt;=ON \
  ...
 </pre>
 <p>However, a TriBITS subpackage will only be enabled if it is not already
 disabled either explicitly or implicitly.</p>
+<p>NOTE: The CMake cache variable type for all <tt class="docutils literal">XXX_ENABLE_YYY</tt> variables is
+actually <tt class="docutils literal">STRING</tt> and not <tt class="docutils literal">BOOL</tt>.  That is because these enable variables
+take on the string enum values of <tt class="docutils literal">&quot;ON&quot;</tt>, <tt class="docutils literal">&quot;OFF&quot;</tt>, end empty <tt class="docutils literal">&quot;&quot;</tt>.  An
+empty enable means that the TriBITS dependency system is allowed to decide if
+an enable should be turned on or off based on logic.  The CMake GUI will
+enforce the values of <tt class="docutils literal">&quot;ON&quot;</tt>, <tt class="docutils literal">&quot;OFF&quot;</tt>, end empty <tt class="docutils literal">&quot;&quot;</tt> but it will not
+enforce this if you set the value on the command line or in a SET() statement
+in an input <tt class="docutils literal"><span class="pre">`*.cmake</span></tt> options files.  For example, setting
+<tt class="docutils literal"><span class="pre">-DXXX_ENABLE_YYY=TRUE</span></tt> will result in a configure error.</p>
 </div>
 <div class="section" id="enable-to-test-all-effects-of-changing-a-given-package-s">
-<h3><a class="toc-backref" href="#id16">5.3.3&nbsp;&nbsp;&nbsp;Enable to test all effects of changing a given package(s)</a></h3>
+<h3><a class="toc-backref" href="#id17">5.3.4&nbsp;&nbsp;&nbsp;Enable to test all effects of changing a given package(s)</a></h3>
 <p>To enable an SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> to test it and all of its
 down-stream packages, configure with:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=ON \
--D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON \
--D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON \
+-D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON \
+-D Trilinos_ENABLE_TESTS=ON \
 </pre>
 <p>The above set of arguments will result in package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> and
 all packages that depend on <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> to be enabled and have all
@@ -679,42 +711,47 @@ depend on <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> in this case
 pre-push testing.</p>
 </div>
 <div class="section" id="enable-all-packages-with-tests-and-examples">
-<h3><a class="toc-backref" href="#id17">5.3.4&nbsp;&nbsp;&nbsp;Enable all packages with tests and examples</a></h3>
+<h3><a class="toc-backref" href="#id18">5.3.5&nbsp;&nbsp;&nbsp;Enable all packages with tests and examples</a></h3>
 <p>To enable all SE packages (and optionally also their tests and examples), add
 the configure options:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
--D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_ALL_PACKAGES=ON \
+-D Trilinos_ENABLE_TESTS=ON \
 </pre>
 <p>Specific packages can be disabled with
-<tt class="docutils literal"><span class="pre">Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=OFF</span></tt>.  This will also disable all
+<tt class="docutils literal"><span class="pre">Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;=OFF</span></tt>.  This will also disable all
 packages that depend on <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt>.</p>
-<p>All examples are enabled by default when setting
-<tt class="docutils literal">Trilinos_ENABLE_TESTS:BOOL=ON</tt>.</p>
+<p>All examples are also enabled by default when setting
+<tt class="docutils literal">Trilinos_ENABLE_TESTS=ON</tt>.</p>
 <p>By default, setting <tt class="docutils literal">Trilinos_ENABLE_ALL_PACKAGES=ON</tt> only enables primary
 tested (PT) code.  To have this also enable all secondary tested (ST) code,
 one must also set <tt class="docutils literal">Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON</tt>.</p>
+<p>NOTE: If the project is a &quot;meta-project&quot;, then
+<tt class="docutils literal">Trilinos_ENABLE_ALL_PACKAGES=ON</tt> may not enable <em>all</em> the SE packages
+but only the project's primary meta-project packages.  See <a class="reference external" href="../developers_guide/TribitsDevelopersGuide.html#package-dependencies-and-enable-disable-logic">Package
+Dependencies and Enable/Disable Logic</a> and <a class="reference external" href="../developers_guide/TribitsDevelopersGuide.html#tribits-dependency-handling-behaviors">TriBITS Dependency Handling
+Behaviors</a> for details.</p>
 </div>
 <div class="section" id="disable-a-package-and-all-its-dependencies">
-<h3><a class="toc-backref" href="#id18">5.3.5&nbsp;&nbsp;&nbsp;Disable a package and all its dependencies</a></h3>
+<h3><a class="toc-backref" href="#id19">5.3.6&nbsp;&nbsp;&nbsp;Disable a package and all its dependencies</a></h3>
 <p>To disable an SE package and all of the packages that depend on it, add the
 configure options:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;:BOOL=OFF
+-D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;=OFF
 </pre>
 <p>For example:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_&lt;PACKAGE_A&gt;:BOOL=ON \
--D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
--D Trilinos_ENABLE_&lt;PACKAGE_B&gt;:BOOL=ON \
+-D Trilinos_ENABLE_&lt;PACKAGE_A&gt;=ON \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON \
+-D Trilinos_ENABLE_&lt;PACKAGE_B&gt;=ON \
 </pre>
 <p>will enable <tt class="docutils literal">&lt;PACKAGE_A&gt;</tt> and all of the packages that it depends on except
 for <tt class="docutils literal">&lt;PACKAGE_B&gt;</tt> and all of its forward dependencies.</p>
 <p>If a TriBITS package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> has subpackages (e.g. <tt class="docutils literal">&lt;A&gt;</tt>,
 <tt class="docutils literal">&lt;B&gt;</tt>, etc.), then disabling the package is equivalent to setting:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;A&gt;:BOOL=OFF \
--D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;B&gt;:BOOL=OFF \
+-D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;A&gt;=OFF \
+-D Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;&lt;B&gt;=OFF \
 ...
 </pre>
 <p>The disable of the subpackage is this case will override any enables.</p>
@@ -724,20 +761,12 @@ downstream package, then the configure will error out if
 will be printed and the downstream package will be disabled and configuration
 will continue.</p>
 </div>
-<div class="section" id="print-package-dependencies">
-<h3><a class="toc-backref" href="#id19">5.3.6&nbsp;&nbsp;&nbsp;Print package dependencies</a></h3>
-<p>The set of package dependenices in a project will be printed in the <tt class="docutils literal">cmake</tt>
-STDOUT by setting:</p>
-<pre class="literal-block">
--D Trilinos_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON
-</pre>
-</div>
 <div class="section" id="remove-all-package-enables-in-the-cache">
 <h3><a class="toc-backref" href="#id20">5.3.7&nbsp;&nbsp;&nbsp;Remove all package enables in the cache</a></h3>
 <p>To wipe the set of pakage enables in the CMakeCache.txt file so they can be
 reset again from scratch, configure with:</p>
 <pre class="literal-block">
-$ ./-do-confiugre -D Trilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+$ ./-do-confiugre -D Trilinos_UNENABLE_ENABLED_PACKAGES=TRUE
 </pre>
 <p>This option will set to empty '' all package enables, leaving all other cache
 variables as they are.  You can then reconfigure with a new set of package
@@ -782,13 +811,13 @@ these flags are not set.  These flags get set internally into the variables
 <blockquote>
 <p>To build a debug version, pass into 'cmake':</p>
 <pre class="literal-block">
--D CMAKE_BUILD_TYPE:STRING=DEBUG
+-D CMAKE_BUILD_TYPE=DEBUG
 </pre>
 <p>This will result in debug flags getting passed to the compiler according to
 what is set in <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_DEBUG</tt>.</p>
 <p>To build a release (optimized) version, pass into 'cmake':</p>
 <pre class="literal-block">
--D CMAKE_BUILD_TYPE:STRING=RELEASE
+-D CMAKE_BUILD_TYPE=RELEASE
 </pre>
 <p>This will result in optimized flags getting passed to the compiler according
 to what is in <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_RELEASE</tt>.</p>
@@ -800,7 +829,7 @@ to what is in <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_RELEASE</tt>
 <p>To append arbitrary compiler flags to <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS</tt> (which may be
 set internally by TriBITS) that apply to all build types, configure with:</p>
 <pre class="literal-block">
--D CMAKE_&lt;LANG&gt;_FLAGS:STRING=&quot;&lt;EXTRA_COMPILER_OPTIONS&gt;&quot;
+-D CMAKE_&lt;LANG&gt;_FLAGS=&quot;&lt;EXTRA_COMPILER_OPTIONS&gt;&quot;
 </pre>
 <p>where <tt class="docutils literal">&lt;EXTRA_COMPILER_OPTIONS&gt;</tt> are your extra compiler options like
 <tt class="docutils literal"><span class="pre">&quot;-DSOME_MACRO_TO_DEFINE</span> <span class="pre">-funroll-loops&quot;</span></tt>.  These options will get
@@ -808,7 +837,7 @@ appended to (i.e. come after) other internally defined compiler option and
 therefore override them.</p>
 <p>Options can also be targeted to a specific TriBITS package using:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_&lt;LANG&gt;_FLAGS:STRING=&quot;&lt;EXTRA_COMPILER_OPTIONS&gt;&quot;
+-D &lt;TRIBITS_PACKAGE&gt;_&lt;LANG&gt;_FLAGS=&quot;&lt;EXTRA_COMPILER_OPTIONS&gt;&quot;
 </pre>
 <p>The package-specific options get appened to those already in
 <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS</tt> and therefore override (but not replace) those set
@@ -843,17 +872,17 @@ options, see <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_&lt;CMAKE_BUI
 <p>To override the default CMake-set options in
 <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_&lt;CMAKE_BUILD_TYPE&gt;</tt>, use:</p>
 <pre class="literal-block">
--D CMAKE_&lt;LANG&gt;_FLAGS_&lt;CMAKE_BUILD_TYPE&gt;_OVERRIDE:STRING=&quot;&lt;OPTIONS_TO_OVERRIDE&gt;&quot;
+-D CMAKE_&lt;LANG&gt;_FLAGS_&lt;CMAKE_BUILD_TYPE&gt;_OVERRIDE=&quot;&lt;OPTIONS_TO_OVERRIDE&gt;&quot;
 </pre>
 <p>For example, to default debug options use:</p>
 <pre class="literal-block">
--D CMAKE_C_FLAGS_DEBUG_OVERRIDE:STRING=&quot;-g -O1&quot; \
--D CMAKE_CXX_FLAGS_DEBUG_OVERRIDE:STRING=&quot;-g -O1&quot;
+-D CMAKE_C_FLAGS_DEBUG_OVERRIDE=&quot;-g -O1&quot; \
+-D CMAKE_CXX_FLAGS_DEBUG_OVERRIDE=&quot;-g -O1&quot;
 </pre>
 <p>and to override default release options use:</p>
 <pre class="literal-block">
--D CMAKE_C_FLAGS_RELEASE_OVERRIDE:STRING=&quot;-O3 -funroll-loops&quot; \
--D CMAKE_CXX_FLAGS_RELEASE_OVERRIDE:STRING=&quot;-03 -fexceptions&quot;
+-D CMAKE_C_FLAGS_RELEASE_OVERRIDE=&quot;-O3 -funroll-loops&quot; \
+-D CMAKE_CXX_FLAGS_RELEASE_OVERRIDE=&quot;-03 -fexceptions&quot;
 </pre>
 <p>NOTES: The TriBITS CMake cache variable
 <tt class="docutils literal">CMAKE_&lt;LANG&gt;_FLAGS_&lt;CMAKE_BUILD_TYPE&gt;_OVERRIDE</tt> is used and not
@@ -868,8 +897,8 @@ explicit.</p>
 <p>In order to append any set of arbitrary libraries and link flags to your
 executables use:</p>
 <pre class="literal-block">
--DTrilinos_EXTRA_LINK_FLAGS:STRING=&quot;&lt;EXTRA_LINK_LIBRARIES&gt;&quot; \
--DCMAKE_EXE_LINKER_FLAGS:STRING=&quot;&lt;EXTRA_LINK_FLAGG&gt;&quot;
+-DTrilinos_EXTRA_LINK_FLAGS=&quot;&lt;EXTRA_LINK_LIBRARIES&gt;&quot; \
+-DCMAKE_EXE_LINKER_FLAGS=&quot;&lt;EXTRA_LINK_FLAGG&gt;&quot;
 </pre>
 <p>Above, you can pass any type of library and they will always be the last
 libraries listed, even after all of the TPLs.</p>
@@ -890,7 +919,7 @@ requirements.</p>
 <p>To turn off strong warnings (for all langauges) for a given TriBITS
 package, set:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_DISABLE_STRONG_WARNINGS:BOOL=ON
+-D &lt;TRIBITS_PACKAGE&gt;_DISABLE_STRONG_WARNINGS=ON
 </pre>
 <p>This will only affect the compilation of the sources for
 <tt class="docutils literal">&lt;TRIBITS_PACKAGES&gt;</tt>, not warnings generated from the header files in
@@ -907,14 +936,14 @@ therefore not have strong warning options enabled.</p>
 <p>To override all compiler options, including both strong warning options
 and debug/release options, configure with:</p>
 <pre class="literal-block">
--D CMAKE_C_FLAGS:STRING=&quot;-O3 -funroll-loops&quot; \
--D CMAKE_CXX_FLAGS:STRING=&quot;-03 -fexceptions&quot; \
--D CMAKE_BUILD_TYPE:STRING=NONE \
--D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS:BOOL=OFF \
--D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=OFF \
--D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF \
--D Trilinos_ENABLE_COVERAGE_TESTING:BOOL=OFF \
--D Trilinos_ENABLE_CHECKED_STL:BOOL=OFF \
+-D CMAKE_C_FLAGS=&quot;-O3 -funroll-loops&quot; \
+-D CMAKE_CXX_FLAGS=&quot;-03 -fexceptions&quot; \
+-D CMAKE_BUILD_TYPE=NONE \
+-D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS=OFF \
+-D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS=OFF \
+-D Trilinos_ENABLE_SHADOW_WARNINGS=OFF \
+-D Trilinos_ENABLE_COVERAGE_TESTING=OFF \
+-D Trilinos_ENABLE_CHECKED_STL=OFF \
 </pre>
 <p>NOTE: Options like <tt class="docutils literal">Trilinos_ENABLE_SHADOW_WARNINGS</tt>,
 <tt class="docutils literal">Trilinos_ENABLE_COVERAGE_TESTING</tt>, and <tt class="docutils literal">Trilinos_ENABLE_CHECKED_STL</tt>
@@ -931,12 +960,12 @@ be all that is passed in.</p>
 <p>To enable shadowing warnings for all Trilinos packages (that don't already
 have them turned on) then use:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=ON
+-D Trilinos_ENABLE_SHADOW_WARNINGS=ON
 </pre>
 <p>To disable shadowing warnings for all Trilinos packages (even those that
 have them turned on by default) then use:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF
+-D Trilinos_ENABLE_SHADOW_WARNINGS=OFF
 </pre>
 <p>NOTE: The default value is empty '' which lets each Trilinos package
 decide for itself if shadowing warnings will be turned on or off for that
@@ -950,7 +979,7 @@ package.</p>
 applied to compile CLEANED packages like Teuchos, set the following when
 configuring:</p>
 <pre class="literal-block">
--D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=&quot;&quot;
+-D Trilinos_WARNINGS_AS_ERRORS_FLAGS=&quot;&quot;
 </pre>
 </blockquote>
 <ol class="lowerroman simple">
@@ -959,7 +988,7 @@ configuring:</p>
 <blockquote>
 <p>To get the compiler to add debug symbols to the build, configure with:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_DEBUG_SYMBOLS:BOOL=ON
+-D Trilinos_ENABLE_DEBUG_SYMBOLS=ON
 </pre>
 <p>This will add <tt class="docutils literal"><span class="pre">-g</span></tt> on most compilers.  NOTE: One does <strong>not</strong> generally
 need to create a fully debug build to get debug symbols on most compilers.</p>
@@ -970,7 +999,7 @@ need to create a fully debug build to get debug symbols on most compilers.</p>
 <p>To enable support for C++11 in packages that support C++11 (either optionally
 or required), configure with:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_CXX11:BOOL=ON
+-D Trilinos_ENABLE_CXX11=ON
 </pre>
 <p>By default, the system will try to automatically find compiler flags that will
 enable C++11 features.  If it finds flags that allow a test C++11 program to
@@ -980,7 +1009,7 @@ and support will be disabled if all of these features are not supported.</p>
 <p>In order to pre-set and/or override the C++11 compiler flags used, set the
 cache variable:</p>
 <pre class="literal-block">
--D Trilinos_CXX11_FLAGS:STRING=&quot;&lt;compiler flags&gt;&quot;
+-D Trilinos_CXX11_FLAGS=&quot;&lt;compiler flags&gt;&quot;
 </pre>
 </div>
 <div class="section" id="disabling-the-fortran-compiler-and-all-fortran-code">
@@ -988,7 +1017,7 @@ cache variable:</p>
 <p>To disable the Fortran compiler and all Trilinos code that depends on Fortran
 set:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_Fortran:BOOL=OFF
+-D Trilinos_ENABLE_Fortran=OFF
 </pre>
 <p>NOTE: The fortran compiler may be disabled automatically by default on
 systems like MS Windows.</p>
@@ -1017,7 +1046,7 @@ options).</p>
 passed to the compiler by default while <tt class="docutils literal">Trilinos_ENABLE_DEBUG</tt>
 controls what defines are set in config.h files that control ifdefed debug
 checks.</li>
-<li>Setting <tt class="docutils literal"><span class="pre">-DCMAKE_BUILD_TYPE:STRING=DEBUG</span></tt> will automatically set the
+<li>Setting <tt class="docutils literal"><span class="pre">-DCMAKE_BUILD_TYPE=DEBUG</span></tt> will automatically set the
 default <tt class="docutils literal">Trilinos_ENABLE_DEBUG=ON</tt>.</li>
 </ul>
 </blockquote>
@@ -1027,7 +1056,7 @@ default <tt class="docutils literal">Trilinos_ENABLE_DEBUG=ON</tt>.</li>
 <blockquote>
 <p>To turn on the checked STL implementation set:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_CHECKED_STL:BOOL=ON
+-D Trilinos_ENABLE_CHECKED_STL=ON
 </pre>
 <p>NOTES:</p>
 <ul class="simple">
@@ -1043,18 +1072,18 @@ without -D_GLIBCXX_DEBUG.</li>
 <h2><a class="toc-backref" href="#id25">5.8&nbsp;&nbsp;&nbsp;Configuring with MPI support</a></h2>
 <p>To enable MPI support you must minimally set:</p>
 <pre class="literal-block">
--D TPL_ENABLE_MPI:BOOL=ON
+-D TPL_ENABLE_MPI=ON
 </pre>
 <p>There is built-in logic to try to find the various MPI components on your
 system but you can override (or make suggestions) with:</p>
 <pre class="literal-block">
--D MPI_BASE_DIR:PATH=&quot;path&quot;
+-D MPI_BASE_DIR=&quot;path&quot;
 </pre>
 <p>(Base path of a standard MPI installation which has the subdirs 'bin', 'libs',
 'include' etc.)</p>
 <p>or:</p>
 <pre class="literal-block">
--D MPI_BIN_DIR:PATH=&quot;path1;path2;...;pathn&quot;
+-D MPI_BIN_DIR=&quot;path1;path2;...;pathn&quot;
 </pre>
 <p>which sets the paths where the MPI executables (e.g. mpiCC, mpicc, mpirun,
 mpiexec) can be found.  By default this is set to <tt class="docutils literal"><span class="pre">${MPI_BASE_DIR}/bin</span></tt> if
@@ -1093,16 +1122,16 @@ then pass in all of the other information that will be used to compile and
 link your code.</p>
 <p>To turn off the MPI compiler wrappers, set:</p>
 <pre class="literal-block">
--D MPI_USE_COMPILER_WRAPPERS:BOOL=OFF
+-D MPI_USE_COMPILER_WRAPPERS=OFF
 </pre>
 <p>You will then need to manually pass in the compile and link lines needed to
 compile and link MPI programs.  The compile flags can be set through:</p>
 <pre class="literal-block">
--D CMAKE_[C,CXX,Fortran]_FLAGS:STRING=&quot;$EXTRA_COMPILE_FLAGS&quot;
+-D CMAKE_[C,CXX,Fortran]_FLAGS=&quot;$EXTRA_COMPILE_FLAGS&quot;
 </pre>
 <p>The link and library flags must be set through:</p>
 <pre class="literal-block">
--D Trilinos_EXTRA_LINK_FLAGS:STRING=&quot;$EXTRA_LINK_FLAGS&quot;
+-D Trilinos_EXTRA_LINK_FLAGS=&quot;$EXTRA_LINK_FLAGS&quot;
 </pre>
 <p>Above, you can pass any type of library or other linker flags in and they
 will always be the last libraries listed, even after all of the TPLs.</p>
@@ -1142,13 +1171,13 @@ the MPI program.  This can be just the name of the program in which case
 the full path will be looked for in <tt class="docutils literal">${MPI_BIN_DIR}</tt> as described above.
 If it is an absolute path, it will be used without modification.)</p>
 <pre class="literal-block">
--D MPI_EXEC_DEFAULT_NUMPROCS:STRING=4
+-D MPI_EXEC_DEFAULT_NUMPROCS=4
 </pre>
 <p>(The default number of processes to use when setting up and running
 MPI test and example executables.  The default is set to '4' and only
 needs to be changed when needed or desired.)</p>
 <pre class="literal-block">
--D MPI_EXEC_MAX_NUMPROCS:STRING=4
+-D MPI_EXEC_MAX_NUMPROCS=4
 </pre>
 <p>(The maximum number of processes to allow when setting up and running MPI
 test and example executables.  The default is set to '4' but should be set
@@ -1156,18 +1185,18 @@ to the largest number that can be tolerated for the given machine.  Tests
 with more processes than this are excluded from the test suite at configure
 time.)</p>
 <pre class="literal-block">
--D MPI_EXEC_NUMPROCS_FLAG:STRING=-np
+-D MPI_EXEC_NUMPROCS_FLAG=-np
 </pre>
 <p>(The command-line option just before the number of processes to use
 <tt class="docutils literal">&lt;NP&gt;</tt>.  The default value is based on the name of <tt class="docutils literal">${MPI_EXEC}</tt>, for
 example, which is <tt class="docutils literal"><span class="pre">-np</span></tt> for OpenMPI.)</p>
 <pre class="literal-block">
--D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING=&quot;arg1;arg2;...;argn&quot;
+-D MPI_EXEC_PRE_NUMPROCS_FLAGS=&quot;arg1;arg2;...;argn&quot;
 </pre>
 <p>(Other command-line arguments that must come <em>before</em> the numprocs
 argument.  The default is empty &quot;&quot;.)</p>
 <pre class="literal-block">
--D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING=&quot;arg1;arg2;...;argn&quot;
+-D MPI_EXEC_POST_NUMPROCS_FLAGS=&quot;arg1;arg2;...;argn&quot;
 </pre>
 <p>(Other command-line arguments that must come <em>after</em> the numprocs
 argument.  The default is empty &quot;&quot;.)</p>
@@ -1180,7 +1209,7 @@ these variables are interpreted as CMake arrays.</p>
 <h2><a class="toc-backref" href="#id26">5.9&nbsp;&nbsp;&nbsp;Configuring for OpenMP support</a></h2>
 <p>To enable OpenMP support, one must set:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_OpenMP:BOOL=ON
+-D Trilinos_ENABLE_OpenMP=ON
 </pre>
 <p>Note that if you enable OpenMP directly through a compiler option (e.g.,
 <tt class="docutils literal"><span class="pre">-fopenmp</span></tt>), you will NOT enable OpenMP inside Trilinos source code.</p>
@@ -1189,7 +1218,7 @@ these variables are interpreted as CMake arrays.</p>
 <h2><a class="toc-backref" href="#id27">5.10&nbsp;&nbsp;&nbsp;Building shared libraries</a></h2>
 <p>To configure to build shared libraries, set:</p>
 <pre class="literal-block">
--D BUILD_SHARED_LIBS:BOOL=ON
+-D BUILD_SHARED_LIBS=ON
 </pre>
 <p>The above option will result in all shared libraries to be build on all
 systems (i.e., <tt class="docutils literal">.so</tt> on Unix/Linux systems, <tt class="docutils literal">.dylib</tt> on Mac OS X, and
@@ -1199,14 +1228,14 @@ systems (i.e., <tt class="docutils literal">.so</tt> on Unix/Linux systems, <tt 
 <h2><a class="toc-backref" href="#id28">5.11&nbsp;&nbsp;&nbsp;Building static libraries and executables</a></h2>
 <p>To build static libraries, turn off the shared library support:</p>
 <pre class="literal-block">
--D BUILD_SHARED_LIBS:BOOL=OFF
+-D BUILD_SHARED_LIBS=OFF
 </pre>
 <p>Some machines, such as the Cray XT5, require static executables.  To build
 Trilinos executables as static objects, a number of flags must be set:</p>
 <pre class="literal-block">
--D BUILD_SHARED_LIBS:BOOL=OFF \
--D TPL_FIND_SHARED_LIBS:BOOL=OFF \
--D Trilinos_LINK_SEARCH_START_STATIC:BOOL=ON
+-D BUILD_SHARED_LIBS=OFF \
+-D TPL_FIND_SHARED_LIBS=OFF \
+-D Trilinos_LINK_SEARCH_START_STATIC=ON
 </pre>
 <p>The first flag tells cmake to build static versions of the Trilinos
 libraries.  The second flag tells cmake to locate static library versions of
@@ -1221,7 +1250,7 @@ of cmake.</p>
 <h2><a class="toc-backref" href="#id29">5.12&nbsp;&nbsp;&nbsp;Enabling support for an optional Third-Party Library (TPL)</a></h2>
 <p>To enable a given TPL, set:</p>
 <pre class="literal-block">
--D TPL_ENABLE_&lt;TPLNAME&gt;:BOOL=ON
+-D TPL_ENABLE_&lt;TPLNAME&gt;=ON
 </pre>
 <p>where <tt class="docutils literal">&lt;TPLNAME&gt;</tt> = <tt class="docutils literal">Boost</tt>, <tt class="docutils literal">ParMETIS</tt>, etc.</p>
 <p>The headers, libraries, and library directories can then be specified with
@@ -1230,7 +1259,7 @@ the input cache variables:</p>
 <li><p class="first"><tt class="docutils literal">&lt;TPLNAME&gt;_INCLUDE_DIRS:PATH</tt>: List of paths to the header include
 directories.  For example:</p>
 <pre class="literal-block">
--D Boost_INCLUDE_DIRS:PATH=/usr/local/boost/include
+-D Boost_INCLUDE_DIRS=/usr/local/boost/include
 </pre>
 </li>
 <li><p class="first"><tt class="docutils literal">&lt;TPLNAME&gt;_LIBRARY_NAMES:STRING</tt>: List of unadorned library names, in the
@@ -1238,13 +1267,13 @@ order of the link line.  The platform-specific prefixes (e.g.. 'lib') and
 postfixes (e.g. '.a', '.lib', or '.dll') will be added automatically by
 CMake.  For example:</p>
 <pre class="literal-block">
--D BLAS_LIBRARY_NAMES:STRING=&quot;blas;gfortran&quot;
+-D BLAS_LIBRARY_NAMES=&quot;blas;gfortran&quot;
 </pre>
 </li>
 <li><p class="first"><tt class="docutils literal">&lt;TPLNAME&gt;_LIBRARY_DIRS:PATH</tt>: The list of directories where the library
 files can be found.  For example:</p>
 <pre class="literal-block">
--D BLAS_LIBRARY_DIRS:PATH=/usr/local/blas
+-D BLAS_LIBRARY_DIRS=/usr/local/blas
 </pre>
 </li>
 </ul>
@@ -1266,17 +1295,17 @@ libraries.</p>
 <p>In order to allow a TPL that normally requires one or more libraries to ignore
 the libraries, one can set <tt class="docutils literal">&lt;TPLNAME&gt;_LIBRARY_NAMES</tt>, for example:</p>
 <pre class="literal-block">
--D BLAS_LIBRARY_NAMES:STRING=&quot;&quot;
+-D BLAS_LIBRARY_NAMES=&quot;&quot;
 </pre>
 <p>Optional package-specific support for a TPL can be turned off by setting:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;TPLNAME&gt;:BOOL=OFF
+-D &lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;TPLNAME&gt;=OFF
 </pre>
 <p>This gives the user full control over what TPLs are supported by which package
 independently.</p>
 <p>Support for an optional TPL can also be turned on implicitly by setting:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;TPLNAME&gt;:BOOL=ON
+-D &lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;TPLNAME&gt;=ON
 </pre>
 <p>where <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> is a TriBITS package that has an optional
 dependency on <tt class="docutils literal">&lt;TPLNAME&gt;</tt>.  That will result in setting
@@ -1284,7 +1313,7 @@ dependency on <tt class="docutils literal">&lt;TPLNAME&gt;</tt>.  That will resu
 <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TPLNAME&gt;=OFF</span></tt> is not already set.</p>
 <p>WARNING: Do <em>not</em> try to hack the system and set:</p>
 <pre class="literal-block">
-TPL_BLAS_LIBRARIES:PATH=&quot;-L/some/dir -llib1 -llib2 ...&quot;
+TPL_BLAS_LIBRARIES=&quot;-L/some/dir -llib1 -llib2 ...&quot;
 </pre>
 <p>This is not compatible with proper CMake usage and it not guaranteed
 to be supported.</p>
@@ -1293,7 +1322,7 @@ to be supported.</p>
 <h2><a class="toc-backref" href="#id30">5.13&nbsp;&nbsp;&nbsp;Disabling support for a Third-Party Library (TPL)</a></h2>
 <p>Disabling a TPL explicitly can be done using:</p>
 <pre class="literal-block">
--D TPL_ENABLE_&lt;TPLNAME&gt;:BOOL=OFF
+-D TPL_ENABLE_&lt;TPLNAME&gt;=OFF
 </pre>
 <p>NOTE: If a disabled TPL is a required dependency of some explicitly enabled
 downstream package, then the configure will error out if
@@ -1305,7 +1334,7 @@ continue.</p>
 <h2><a class="toc-backref" href="#id31">5.14&nbsp;&nbsp;&nbsp;Disabling tentatively enabled TPLs</a></h2>
 <p>To disable a tentatively enabled TPL, set:</p>
 <pre class="literal-block">
--D TPL_ENABLE_&lt;TPLNAME&gt;:BOOL=OFF
+-D TPL_ENABLE_&lt;TPLNAME&gt;=OFF
 </pre>
 <p>where <tt class="docutils literal">&lt;TPLNAME&gt;</tt> = <tt class="docutils literal">BinUtils</tt>, <tt class="docutils literal">Boost</tt>, etc.</p>
 <p>NOTE: Some TPLs in Trilinos are always tentatively enabled (e.g. BinUtils
@@ -1331,7 +1360,7 @@ when they occur:</p>
 </ol>
 <blockquote>
 <pre class="literal-block">
--D Trilinos_TRACE_FILE_PROCESSING:BOOL=ON
+-D Trilinos_TRACE_FILE_PROCESSING=ON
 </pre>
 <p>This will cause TriBITS to print out a trace for all of the project's,
 repositorie's, and package's files get processed on lines using the prefix
@@ -1341,24 +1370,39 @@ just grep out the lines starting with <tt class="docutils literal"><span class="
 helpful in debugging configure problems without generating too much extra
 output.</p>
 <p>Note that <a class="reference internal" href="#trilinos-trace-file-processing">Trilinos_TRACE_FILE_PROCESSING</a> is set to <tt class="docutils literal">ON</tt> automatically
-when <tt class="docutils literal">Trilinos_VERBOSE_CONFIGURE:BOOL=ON</tt>.</p>
+when <a class="reference internal" href="#trilinos-verbose-configure">Trilinos_VERBOSE_CONFIGURE</a>  = <tt class="docutils literal">ON</tt>.</p>
 </blockquote>
-<ol class="loweralpha simple" start="2">
+<ol class="loweralpha simple" id="trilinos-verbose-configure" start="2">
 <li><strong>Getting verbose output from TriBITS configure:</strong></li>
 </ol>
 <blockquote>
+<p>To do a complete debug dump for the TriBITS configure process, use:</p>
 <pre class="literal-block">
--D Trilinos_VERBOSE_CONFIGURE:BOOL=ON
+-D Trilinos_VERBOSE_CONFIGURE=ON
 </pre>
 <p>This produces a <em>lot</em> of output but can be very useful when debugging
 configuration problems.</p>
+<p>To just dump the package and TPL dependencies, use:</p>
+<pre class="literal-block">
+-D Trilinos_DUMP_PACKAGE_DEPENDENCIES=ON
+</pre>
+<p>To just dump the link libraries for each library and executable created,
+use:</p>
+<pre class="literal-block">
+-D Trilinos_DUMP_LINK_LIBS=ON
+</pre>
+<p>Of course <tt class="docutils literal">Trilinos_DUMP_PACKAGE_DEPENDENCIES</tt> and
+<tt class="docutils literal">Trilinos_DUMP_LINK_LIBS</tt> can be used together.  Also, note that
+<tt class="docutils literal">Trilinos_DUMP_PACKAGE_DEPENDENCIES</tt> and <tt class="docutils literal">Trilinos_DUMP_LINK_LIBS</tt>
+both default t <tt class="docutils literal">ON</tt> when <tt class="docutils literal">Trilinos_VERBOSE_CONFIGURE=ON</tt> on the first
+configure.</p>
 </blockquote>
 <ol class="loweralpha simple" start="3">
 <li><strong>Getting verbose output from the makefile:</strong></li>
 </ol>
 <blockquote>
 <pre class="literal-block">
--D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
+-D CMAKE_VERBOSE_MAKEFILE=TRUE
 </pre>
 <p>NOTE: It is generally better to just pass in <tt class="docutils literal">VERBOSE=</tt> when directly
 calling <tt class="docutils literal">make</tt> after configuration is finihsed.  See <a class="reference internal" href="#building-with-verbose-output-without-reconfiguring">Building with
@@ -1369,7 +1413,7 @@ verbose output without reconfiguring</a>.</p>
 </ol>
 <blockquote>
 <pre class="literal-block">
--D Trilinos_VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
+-D Trilinos_VERBOSE_CONFIGURE=ON --debug-output --trace
 </pre>
 <p>NOTE: This will print a complete stack trace to show exactly where you are.</p>
 </blockquote>
@@ -1378,13 +1422,13 @@ verbose output without reconfiguring</a>.</p>
 <h2><a class="toc-backref" href="#id33">5.16&nbsp;&nbsp;&nbsp;Enabling/disabling deprecated warnings</a></h2>
 <p>To turn off all deprecated warnings, set:</p>
 <pre class="literal-block">
--D Trilinos_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
+-D Trilinos_SHOW_DEPRECATED_WARNINGS=OFF
 </pre>
 <p>This will disable, by default, all deprecated warnings in packages in
 Trilinos.  By default, deprecated warnings are enabled.</p>
 <p>To enable/disable deprecated warnings for a single Trilinos package, set:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
+-D &lt;TRIBITS_PACKAGE&gt;_SHOW_DEPRECATED_WARNINGS=OFF
 </pre>
 <p>This will override the global behavior set by
 <tt class="docutils literal">Trilinos_SHOW_DEPRECATED_WARNINGS</tt> for individual package
@@ -1395,7 +1439,7 @@ Trilinos.  By default, deprecated warnings are enabled.</p>
 <p>To actually disable and remove deprecated code from being included in
 compilation, set:</p>
 <pre class="literal-block">
--D Trilinos_HIDE_DEPRECATED_CODE:BOOL=ON
+-D Trilinos_HIDE_DEPRECATED_CODE=ON
 </pre>
 <p>and a subset of deprecated code will actually be removed from the build.  This
 is to allow testing of downstream client code that might otherwise ignore
@@ -1403,7 +1447,7 @@ deprecated warnings.  This allows one to certify that a downstream client code
 is free of calling deprecated code.</p>
 <p>To hide deprecated code for a single Trilinos package set:</p>
 <pre class="literal-block">
--D &lt;TRIBITS_PACKAGE&gt;_HIDE_DEPRECATED_CODE:BOOL=ON
+-D &lt;TRIBITS_PACKAGE&gt;_HIDE_DEPRECATED_CODE=ON
 </pre>
 <p>This will override the global behavior set by
 <tt class="docutils literal">Trilinos_HIDE_DEPRECATED_CODE</tt> for individual package
@@ -1444,7 +1488,7 @@ Python is enabled.</li>
 <h2><a class="toc-backref" href="#id36">5.19&nbsp;&nbsp;&nbsp;Enabling different test categories</a></h2>
 <p>To turn on a set a given set of tests by test category, set:</p>
 <pre class="literal-block">
--D Trilinos_TEST_CATEGORIES:STRING=&quot;&lt;CATEGORY0&gt;;&lt;CATEGORY1&gt;;...&quot;
+-D Trilinos_TEST_CATEGORIES=&quot;&lt;CATEGORY0&gt;;&lt;CATEGORY1&gt;;...&quot;
 </pre>
 <p>Valid categories include <tt class="docutils literal">BASIC</tt>, <tt class="docutils literal">CONTINUOUS</tt>, <tt class="docutils literal">NIGHTLY</tt>, <tt class="docutils literal">WEEKLY</tt>
 and <tt class="docutils literal">PERFORMANCE</tt>.  <tt class="docutils literal">BASIC</tt> tests get built and run for pre-push testing,
@@ -1459,7 +1503,7 @@ testing.</p>
 <p>Any TriBTS added ctest test (i.e. listed in <tt class="docutils literal">ctest <span class="pre">-N</span></tt>) can be disabled at
 configure time by setting:</p>
 <pre class="literal-block">
--D &lt;fullTestName&gt;_DISABLE:BOOL=ON
+-D &lt;fullTestName&gt;_DISABLE=ON
 </pre>
 <p>where <tt class="docutils literal">&lt;fulltestName&gt;</tt> must exactly match the test listed out by <tt class="docutils literal">ctest
 <span class="pre">-N</span></tt>.  Of course specific tests can also be excluded from <tt class="docutils literal">ctest</tt> using the
@@ -1470,7 +1514,7 @@ configure time by setting:</p>
 <p>A maximum default time limit for any single test can be set at configure time
 by setting:</p>
 <pre class="literal-block">
--D DART_TESTING_TIMEOUT:STRING=&lt;maxSeconds&gt;
+-D DART_TESTING_TIMEOUT=&lt;maxSeconds&gt;
 </pre>
 <p>where <tt class="docutils literal">&lt;maxSeconds&gt;</tt> is the number of wall-clock seconds.  By default there
 is no timeout limit so it is a good idea to set some limit just so tests don't
@@ -1496,7 +1540,7 @@ timeouts for the individual tests that have their own timeout set (through the
 <tt class="docutils literal">TIMEOUT</tt> argument for each individual test) can be scaled by a constant
 factor <tt class="docutils literal">&lt;testTimeoutScaleFactor&gt;</tt> by configuring with:</p>
 <pre class="literal-block">
--D Trilinos_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT:STRING=&lt;testTimeoutScaleFactor&gt;
+-D Trilinos_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT=&lt;testTimeoutScaleFactor&gt;
 </pre>
 <p>Here, <tt class="docutils literal">&lt;testTimeoutScaleFactor&gt;</tt> can be an integral number like <tt class="docutils literal">5</tt> or can
 be fractional number like <tt class="docutils literal">1.5</tt>.</p>
@@ -1521,7 +1565,7 @@ DartConfiguration.tcl file will be scaled.</li>
 <h2><a class="toc-backref" href="#id40">5.23&nbsp;&nbsp;&nbsp;Enabling support for coverage testing</a></h2>
 <p>To turn on support for coverage testing set:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_COVERAGE_TESTING:BOOL=ON
+-D Trilinos_ENABLE_COVERAGE_TESTING=ON
 </pre>
 <p>This will set compile and link options -fprofile-arcs -ftest-coverage for GCC.
 Use 'make dashboard' (see below) to submit coverage results to CDash</p>
@@ -1535,7 +1579,7 @@ Use 'make dashboard' (see below) to submit coverage results to CDash</p>
 <pre class="literal-block">
 $ cd $BUILD_DIR
 $ rm -rf CMakeCache.txt CMakeFiles/
-$ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+$ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES=ON \
   $SOURCE_BASE
 </pre>
 <p>You can also just look at the text file CMakeCache.txt after configure which
@@ -1567,7 +1611,7 @@ $ cmake -LA $SOURCE_BASE
 <p id="trilinos-extra-repositories">To configure Trilinos with an extra set of packages in extra TriBITS
 repositories, configure with:</p>
 <pre class="literal-block">
--DTrilinos_EXTRA_REPOSITORIES:STRING=&quot;&lt;REPO0&gt;,&lt;REPO1&gt;,...&quot;
+-DTrilinos_EXTRA_REPOSITORIES=&quot;&lt;REPO0&gt;,&lt;REPO1&gt;,...&quot;
 </pre>
 <p>Here, <tt class="docutils literal">&lt;REPOi&gt;</tt> is the name of an extra repository that typically has been
 cloned under the main Trilinos source directory as:</p>
@@ -1579,7 +1623,7 @@ Trilinos/&lt;REPOi&gt;/
 $ cd $SOURCE_BASE_DIR
 $ git clone some_url.com/some/dir/SomeExtraRepo
 $ cd $BUILD_DIR
-$ ./do-configure -DTrilinos_EXTRA_REPOSITORIES:STRING=SomeExtraRepo \
+$ ./do-configure -DTrilinos_EXTRA_REPOSITORIES=SomeExtraRepo \
    [Other Options]
 </pre>
 <p>After that, all of the extra packages defined in <tt class="docutils literal">SomeExtraRepo</tt> will appear
@@ -1657,33 +1701,91 @@ managling determination, and other CMake-specific information.</p>
 <h2><a class="toc-backref" href="#id46">5.29&nbsp;&nbsp;&nbsp;Adding configure timers</a></h2>
 <p>To add timers to various configure steps, configure with:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_CONFIGURE_TIMING:BOOL=ON
+-D Trilinos_ENABLE_CONFIGURE_TIMING=ON
 </pre>
-<p>If you configuring a large number of packages (perhaps including add-on
-packages in extra repos) then the configure time might be excessive and
-therefore you might want to be able to add configuration timing to see where
-the time is being spent.</p>
-<p>NOTE: This requires that you are running on a Linux/Unix system that has the
-stanard command 'date'.  CMake does not have built-in timing functions so you
-have to query the system.</p>
+<p>This will do baulk timing for the major configure steps which is independent
+of the number of packages in the project.</p>
+<p>To additionally add timing for the configure of individual packages, configure
+with:</p>
+<pre class="literal-block">
+-D Trilinos_ENABLE_CONFIGURE_TIMING=ON \
+-D Trilinos_ENABLE_PACKAGE_CONFIGURE_TIMING=ON
+</pre>
+<p>If you are configuring a large number of packages (perhaps by including a lot
+of add-on packages in extra repos) then you might not want to enable
+package-by-package timing since it can add some significant overhead to the
+configure times.</p>
+<p>If you just want to time individual packages instead, you can enable that
+with:</p>
+<pre class="literal-block">
+-D Trilinos_ENABLE_CONFIGURE_TIMING=ON \
+-D &lt;TRIBITS_PACKAGE_0&gt;_PACKAGE_CONFIGURE_TIMING=ON \
+-D &lt;TRIBITS_PACKAGE_1&gt;_PACKAGE_CONFIGURE_TIMING=ON \
+...
+</pre>
+<p>NOTES:</p>
+<ul class="simple">
+<li>This requires that you are running on a Linux/Unix system that has the
+standard shell command <tt class="docutils literal">date</tt>.  CMake does not have built-in timing
+functions so this system command needs to be used instead.  This will report
+timings to 0.001 seconds but note that the overall configure time will go up
+due to the increased overhead of calling <tt class="docutils literal">date</tt> as a process shell
+command.</li>
+<li>'''WARNING:''' Because this feature has to call the <tt class="docutils literal">data</tt> using CMake's
+<tt class="docutils literal">EXECUTE_PROCESS()</tt> command, it can be expensive.  Therefore, this should
+really only be turned on for large projects (where the extra overhead is
+small) or for smaller projects for extra informational purposes.</li>
+</ul>
+</div>
+<div class="section" id="generating-export-files">
+<h2><a class="toc-backref" href="#id47">5.30&nbsp;&nbsp;&nbsp;Generating export files</a></h2>
+<p>The project Trilinos can generate export files for external CMake projects or
+external Makefile projects.  These export files provide the lists of
+libraries, include directories, compilers and compiler options, etc.</p>
+<p>To configure to generate CMake export files for the project, configure with:</p>
+<pre class="literal-block">
+-D Trilinos_ENABLE_INSTALL_CMAKE_CONFIG_FILES=ON
+</pre>
+<p>This will generate the file <tt class="docutils literal">TrilinosConfig.cmake</tt> for the project and the
+files <tt class="docutils literal">&lt;Package&gt;Config.cmake</tt> for each enabled package in the build tree.
+In addition, this will install versions of these files into the install tree.</p>
+<p>To confiugre Makefile export files, configure with:</p>
+<pre class="literal-block">
+-D Trilinos_ENABLE_EXPORT_MAKEFILES=ON
+</pre>
+<p>which will generate the file <tt class="docutils literal">Makefile.export.Trilinos</tt> for the project and
+the files <tt class="docutils literal"><span class="pre">Makefile.export.&lt;Package&gt;</span></tt> for each enabled package in the build
+tree.  In addition, this will install versions of these files into the install
+tree.</p>
+<p>The list of export files generated can be reduced by specifying the exact list
+of packages the files are requested for with:</p>
+<pre class="literal-block">
+-D Trilinos_GENERATE_EXPORT_FILES_FOR_ONLY_LISTED_SE_PACKAGES=&quot;&lt;pkg0&gt;;&lt;pkg1&gt;&quot;
+</pre>
+<p>NOTES:</p>
+<ul class="simple">
+<li>Only enabled packages will have their export files generated.</li>
+<li>One would only want to limit the export files generated for very large
+projects where the cost my be high for doing so.</li>
+</ul>
 </div>
 <div class="section" id="generating-a-project-repo-version-file">
-<h2><a class="toc-backref" href="#id47">5.30&nbsp;&nbsp;&nbsp;Generating a project repo version file</a></h2>
+<h2><a class="toc-backref" href="#id48">5.31&nbsp;&nbsp;&nbsp;Generating a project repo version file</a></h2>
 <p>In development mode working with local git repos for the project sources, on
 can generate a TrilinosRepoVersion.txt file which lists all of the repos and
 their current versions using:</p>
 <pre class="literal-block">
--D Trilinos_GENERATE_REPO_VERSION_FILE:BOOL=ON
+-D Trilinos_GENERATE_REPO_VERSION_FILE=ON
 </pre>
 <p>This will cause a TrilinosRepoVersion.txt file to get created in the binary
 directory, get installed in the install directory, and get included in the
 source distribution tarball.</p>
 </div>
 <div class="section" id="cmake-configure-time-development-mode-and-debug-checking">
-<h2><a class="toc-backref" href="#id48">5.31&nbsp;&nbsp;&nbsp;CMake configure-time development mode and debug checking</a></h2>
+<h2><a class="toc-backref" href="#id49">5.32&nbsp;&nbsp;&nbsp;CMake configure-time development mode and debug checking</a></h2>
 <p>To turn off CMake configure-time development-mode checking, set:</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF
+-D Trilinos_ENABLE_DEVELOPMENT_MODE=OFF
 </pre>
 <p>This turns off a number of CMake configure-time checks for the Trilinos
 TriBITS/CMake files including checking the package dependencies.  These checks
@@ -1698,20 +1800,20 @@ may be purposefully missing (see <cite>Creating a tarball of the source tree</ci
 must be ignored.  When building from a reduced tarball created from the
 development sources, set:</p>
 <pre class="literal-block">
--D Trilinos_ASSERT_MISSING_PACKAGES:BOOL=OFF
+-D Trilinos_ASSERT_MISSING_PACKAGES=OFF
 </pre>
 <p>Setting this off will cause the TriBITS CMake configure to simply ignore any
 missing packages and turn off all dependencies on these missing packages.</p>
 </div>
 </div>
 <div class="section" id="building-makefile-generator">
-<h1><a class="toc-backref" href="#id49">6&nbsp;&nbsp;&nbsp;Building (Makefile generator)</a></h1>
+<h1><a class="toc-backref" href="#id50">6&nbsp;&nbsp;&nbsp;Building (Makefile generator)</a></h1>
 <p>This section described building using the default CMake Makefile generator.
 TriBITS supports other CMake generators such as Visual Studio on Windows,
 XCode on Macs, and Eclipe project files but using those build systems are not
 documented here.</p>
 <div class="section" id="building-all-targets">
-<h2><a class="toc-backref" href="#id50">6.1&nbsp;&nbsp;&nbsp;Building all targets</a></h2>
+<h2><a class="toc-backref" href="#id51">6.1&nbsp;&nbsp;&nbsp;Building all targets</a></h2>
 <p>To build all targets use:</p>
 <pre class="literal-block">
 $ make [-jN]
@@ -1719,7 +1821,7 @@ $ make [-jN]
 <p>where <tt class="docutils literal">N</tt> is the number of processes to use (i.e. 2, 4, 16, etc.) .</p>
 </div>
 <div class="section" id="discovering-what-targets-are-available-to-build">
-<h2><a class="toc-backref" href="#id51">6.2&nbsp;&nbsp;&nbsp;Discovering what targets are available to build</a></h2>
+<h2><a class="toc-backref" href="#id52">6.2&nbsp;&nbsp;&nbsp;Discovering what targets are available to build</a></h2>
 <p>CMake generates Makefiles with a 'help' target!  To see the targets at the
 current directory level type:</p>
 <pre class="literal-block">
@@ -1735,7 +1837,7 @@ be used as a target for <tt class="docutils literal">make <span class="pre">&lt;
 building a single object file, for example.</p>
 </div>
 <div class="section" id="building-all-of-the-targets-for-a-package">
-<h2><a class="toc-backref" href="#id52">6.3&nbsp;&nbsp;&nbsp;Building all of the targets for a package</a></h2>
+<h2><a class="toc-backref" href="#id53">6.3&nbsp;&nbsp;&nbsp;Building all of the targets for a package</a></h2>
 <p>To build only the targets for a given TriBITS package, one can use:</p>
 <pre class="literal-block">
 $ make &lt;TRIBITS_PACKAGE&gt;_all
@@ -1749,14 +1851,14 @@ $ make
 its required upstream targets.</p>
 </div>
 <div class="section" id="building-all-of-the-libraries-for-a-package">
-<h2><a class="toc-backref" href="#id53">6.4&nbsp;&nbsp;&nbsp;Building all of the libraries for a package</a></h2>
+<h2><a class="toc-backref" href="#id54">6.4&nbsp;&nbsp;&nbsp;Building all of the libraries for a package</a></h2>
 <p>To build only the libraries for given TriBITS package, use:</p>
 <pre class="literal-block">
 $ make &lt;TRIBITS_PACKAGE&gt;_libs
 </pre>
 </div>
 <div class="section" id="building-all-of-the-libraries-for-all-enabled-packages">
-<h2><a class="toc-backref" href="#id54">6.5&nbsp;&nbsp;&nbsp;Building all of the libraries for all enabled packages</a></h2>
+<h2><a class="toc-backref" href="#id55">6.5&nbsp;&nbsp;&nbsp;Building all of the libraries for all enabled packages</a></h2>
 <p>To build only the libraries for all enabled TriBITS packages, use:</p>
 <pre class="literal-block">
 $ make libs
@@ -1766,7 +1868,7 @@ enabled <tt class="docutils literal">Trilinos</tt> packages.  You can also use t
 <tt class="docutils literal">'Trilinos_libs</tt>.</p>
 </div>
 <div class="section" id="building-a-single-object-file">
-<h2><a class="toc-backref" href="#id55">6.6&nbsp;&nbsp;&nbsp;Building a single object file</a></h2>
+<h2><a class="toc-backref" href="#id56">6.6&nbsp;&nbsp;&nbsp;Building a single object file</a></h2>
 <p>To build just a single object file (i.e. to debug a compile problem), first,
 look for the target name for the object file build based on the source file,
 for example for the source file <tt class="docutils literal">SomeSourceFile.cpp</tt>, use:</p>
@@ -1810,7 +1912,7 @@ building object files as shown above so you need to always delete the object
 file first to make sure that it gets rebuilt correctly.</p>
 </div>
 <div class="section" id="building-with-verbose-output-without-reconfiguring">
-<h2><a class="toc-backref" href="#id56">6.7&nbsp;&nbsp;&nbsp;Building with verbose output without reconfiguring</a></h2>
+<h2><a class="toc-backref" href="#id57">6.7&nbsp;&nbsp;&nbsp;Building with verbose output without reconfiguring</a></h2>
 <p>One can get CMake to generate verbose make output at build type by just
 setting the Makefile variable <tt class="docutils literal">VERBOSE=1</tt>, for example, as:</p>
 <pre class="literal-block">
@@ -1821,7 +1923,7 @@ raw compile and link lines.  See <a class="reference internal" href="#building-a
 details.</p>
 </div>
 <div class="section" id="relink-a-target-without-considering-dependencies">
-<h2><a class="toc-backref" href="#id57">6.8&nbsp;&nbsp;&nbsp;Relink a target without considering dependencies</a></h2>
+<h2><a class="toc-backref" href="#id58">6.8&nbsp;&nbsp;&nbsp;Relink a target without considering dependencies</a></h2>
 <p>CMake provides a way to rebuild a target without considering its dependencies
 using:</p>
 <pre class="literal-block">
@@ -1830,13 +1932,13 @@ $ make &lt;SOME_TARGET&gt;/fast
 </div>
 </div>
 <div class="section" id="testing-with-ctest">
-<h1><a class="toc-backref" href="#id58">7&nbsp;&nbsp;&nbsp;Testing with CTest</a></h1>
+<h1><a class="toc-backref" href="#id59">7&nbsp;&nbsp;&nbsp;Testing with CTest</a></h1>
 <p>This section assumes one is using the CMake Makefile generator described
 above.  Also, the <tt class="docutils literal">ctest</tt> does not consider make dependencies when running
 so the software must be completely built before running <tt class="docutils literal">ctest</tt> as described
 here.</p>
 <div class="section" id="running-all-tests">
-<h2><a class="toc-backref" href="#id59">7.1&nbsp;&nbsp;&nbsp;Running all tests</a></h2>
+<h2><a class="toc-backref" href="#id60">7.1&nbsp;&nbsp;&nbsp;Running all tests</a></h2>
 <p>To run all of the defined tests (i.e. created using <tt class="docutils literal">TRIBITS_ADD_TEST()</tt> or
 <tt class="docutils literal">TRIBITS_ADD_ADVANCED_TEST()</tt>) use:</p>
 <pre class="literal-block">
@@ -1861,7 +1963,7 @@ than <tt class="docutils literal">&lt;N&gt;</tt> processes, set the cache variab
 <a class="reference internal" href="#configuring-with-mpi-support">Configuring with MPI support</a>).</p>
 </div>
 <div class="section" id="only-running-tests-for-a-single-package">
-<h2><a class="toc-backref" href="#id60">7.2&nbsp;&nbsp;&nbsp;Only running tests for a single package</a></h2>
+<h2><a class="toc-backref" href="#id61">7.2&nbsp;&nbsp;&nbsp;Only running tests for a single package</a></h2>
 <p>Tests for just a single TriBITS package can be run with:</p>
 <pre class="literal-block">
 $ ctest -j4 -L &lt;TRIBITS_PACKAGE&gt;
@@ -1879,7 +1981,7 @@ other approaches as well.  See <tt class="docutils literal">ctest <span class="p
 experiment for more details.</p>
 </div>
 <div class="section" id="running-a-single-test-with-full-output-to-the-console">
-<h2><a class="toc-backref" href="#id61">7.3&nbsp;&nbsp;&nbsp;Running a single test with full output to the console</a></h2>
+<h2><a class="toc-backref" href="#id62">7.3&nbsp;&nbsp;&nbsp;Running a single test with full output to the console</a></h2>
 <p>To run just a single test and send detailed output directly to the console,
 one can run:</p>
 <pre class="literal-block">
@@ -1895,7 +1997,7 @@ working directory.  To run the test exactly as <tt class="docutils literal">ctes
 shown working directory and run the shown command.</p>
 </div>
 <div class="section" id="overridding-test-timeouts">
-<h2><a class="toc-backref" href="#id62">7.4&nbsp;&nbsp;&nbsp;Overridding test timeouts</a></h2>
+<h2><a class="toc-backref" href="#id63">7.4&nbsp;&nbsp;&nbsp;Overridding test timeouts</a></h2>
 <p>The configured test timeout described in <tt class="docutils literal">Setting test timeouts at configure
 time</tt> can be overridden on the CTest command-line as:</p>
 <pre class="literal-block">
@@ -1906,7 +2008,7 @@ $ ctest --timeout &lt;maxSeconds&gt;
 ignore the argument!</p>
 </div>
 <div class="section" id="running-memory-checking">
-<h2><a class="toc-backref" href="#id63">7.5&nbsp;&nbsp;&nbsp;Running memory checking</a></h2>
+<h2><a class="toc-backref" href="#id64">7.5&nbsp;&nbsp;&nbsp;Running memory checking</a></h2>
 <p>To run the memory tests for just a single package, from the <em>base</em> build
 directory, run:</p>
 <pre class="literal-block">
@@ -1923,26 +2025,26 @@ work.  You have to run them from the base build directory and then use <tt class
 </div>
 </div>
 <div class="section" id="installing">
-<h1><a class="toc-backref" href="#id64">8&nbsp;&nbsp;&nbsp;Installing</a></h1>
+<h1><a class="toc-backref" href="#id65">8&nbsp;&nbsp;&nbsp;Installing</a></h1>
 <p>After a build and test of the software is complete, the software can be
 installed.  Actually, to get ready for the install, the install directory must
 be specified at configure time by setting the variable
 <tt class="docutils literal">CMAKE_INSTALL_PREFIX</tt>.  The other commands described below can all be run
 after the build and testing is complete.</p>
 <div class="section" id="setting-the-install-prefix-at-configure-time">
-<h2><a class="toc-backref" href="#id65">8.1&nbsp;&nbsp;&nbsp;Setting the install prefix at configure time</a></h2>
+<h2><a class="toc-backref" href="#id66">8.1&nbsp;&nbsp;&nbsp;Setting the install prefix at configure time</a></h2>
 <p>In order to set up for the install, the install prefix should be set up at
 configure time by setting, for example:</p>
 <pre class="literal-block">
--D CMAKE_INSTALL_PREFIX:PATH=$HOME/install/Trilinos/mpi/opt
+-D CMAKE_INSTALL_PREFIX=$HOME/install/Trilinos/mpi/opt
 </pre>
 <p>The default location for the installation of libraries, headers, and
 executables is given by the variables (with defaults):</p>
 <pre class="literal-block">
--D Trilinos_INSTALL_INCLUDE_DIR:STRING=&quot;include&quot; \
--D Trilinos_INSTALL_LIB_DIR:STRING=&quot;lib&quot; \
--D Trilinos_INSTALL_RUNTIME_DIR:STRING=&quot;bin&quot; \
--D Trilinos_INSTALL_EXAMPLE_DIR:STRING=&quot;example&quot;
+-D Trilinos_INSTALL_INCLUDE_DIR=&quot;include&quot; \
+-D Trilinos_INSTALL_LIB_DIR=&quot;lib&quot; \
+-D Trilinos_INSTALL_RUNTIME_DIR=&quot;bin&quot; \
+-D Trilinos_INSTALL_EXAMPLE_DIR=&quot;example&quot;
 </pre>
 <p>If these paths are relative (i.e. don't start with &quot;/&quot; and use type
 <tt class="docutils literal">STRING</tt>) then they are relative to <tt class="docutils literal">${CMAKE_INSTALL_PREFIX}</tt>.  Otherwise
@@ -1950,10 +2052,10 @@ the paths can be absolute (use type <tt class="docutils literal">PATH</tt>) and 
 <tt class="docutils literal">${CMAKE_INSTALL_PREFIX}</tt>.  For example, to install each part in any
 abritrary location use:</p>
 <pre class="literal-block">
--D Trilinos_INSTALL_INCLUDE_DIR:PATH=&quot;/usr/trilinos_include&quot; \
--D Trilinos_INSTALL_LIB_DIR:PATH=&quot;/usr/trilinos_lib&quot; \
--D Trilinos_INSTALL_RUNTIME_DIR:PATH=&quot;/usr/trilinos_bin&quot; \
--D Trilinos_INSTALL_EXAMPLE_DIR:PATH=&quot;/usr/share/trilinos/examples&quot;
+-D Trilinos_INSTALL_INCLUDE_DIR=&quot;/usr/trilinos_include&quot; \
+-D Trilinos_INSTALL_LIB_DIR=&quot;/usr/trilinos_lib&quot; \
+-D Trilinos_INSTALL_RUNTIME_DIR=&quot;/usr/trilinos_bin&quot; \
+-D Trilinos_INSTALL_EXAMPLE_DIR=&quot;/usr/share/trilinos/examples&quot;
 </pre>
 <p>NOTE: The defaults for the above include paths will be set by the standard
 CMake module <tt class="docutils literal">GNUInstallDirs</tt> if <tt class="docutils literal">Trilinos_USE_GNUINSTALLDIRS=TRUE</tt> is
@@ -1965,14 +2067,14 @@ current binary directory for the base path.  Otherwise, if you want to specify
 absolute paths, use the data type <tt class="docutils literal">PATH</tt> as shown above.</p>
 </div>
 <div class="section" id="avoiding-installing-libraries-and-headers">
-<h2><a class="toc-backref" href="#id66">8.2&nbsp;&nbsp;&nbsp;Avoiding installing libraries and headers</a></h2>
+<h2><a class="toc-backref" href="#id67">8.2&nbsp;&nbsp;&nbsp;Avoiding installing libraries and headers</a></h2>
 <p>By default, any libraries and header files defined by in the TriBITS project
 Trilinos will get installed into the installation directories specified by
 <tt class="docutils literal">CMAKE_INSTALL_PREFIX</tt>, <tt class="docutils literal">Trilinos_INSTALL_INCLUDE_DIR</tt> and
 <tt class="docutils literal">Trilinos_INSTALL_LIB_DIR</tt>.  However, if the primary desire is to install
 executables only, then the user can set:</p>
 <pre class="literal-block">
--D Trilinos_INSTALL_LIBRARIES_AND_HEADERS:BOOL=ON
+-D Trilinos_INSTALL_LIBRARIES_AND_HEADERS=ON
 </pre>
 <p>which, if in addition static libraries are being built
 (i.e. <tt class="docutils literal">BUILD_SHARED_LIBS=OFF</tt>), this this option will result in no libraries
@@ -1983,7 +2085,7 @@ installed in <tt class="docutils literal"><span class="pre">&lt;install&gt;/lib/
 executables can't run without the shared libraries being installed.</p>
 </div>
 <div class="section" id="installing-the-software">
-<h2><a class="toc-backref" href="#id67">8.3&nbsp;&nbsp;&nbsp;Installing the software</a></h2>
+<h2><a class="toc-backref" href="#id68">8.3&nbsp;&nbsp;&nbsp;Installing the software</a></h2>
 <p>To install the software, type:</p>
 <pre class="literal-block">
 $ make install
@@ -2000,15 +2102,15 @@ installing.</p>
 </div>
 </div>
 <div class="section" id="packaging">
-<h1><a class="toc-backref" href="#id68">9&nbsp;&nbsp;&nbsp;Packaging</a></h1>
+<h1><a class="toc-backref" href="#id69">9&nbsp;&nbsp;&nbsp;Packaging</a></h1>
 <p>Packaged source and binary distributions can also be created using CMake and
 CPack.</p>
 <div class="section" id="creating-a-tarball-of-the-source-tree">
-<h2><a class="toc-backref" href="#id69">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></h2>
+<h2><a class="toc-backref" href="#id70">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></h2>
 <p>To create a source tarball of the project, first configure with the list of
 desired packages (see <a class="reference internal" href="#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a>) and pass in</p>
 <pre class="literal-block">
--D Trilinos_ENABLE_CPACK_PACKAGING:BOOL=ON
+-D Trilinos_ENABLE_CPACK_PACKAGING=ON
 </pre>
 <p>To actually generate the distribution files, use:</p>
 <pre class="literal-block">
@@ -2034,20 +2136,20 @@ enable them or their outer package so they will be included in the source
 tarball.  To get a printout of set regular expresions that will be used to
 match files to exclude, set:</p>
 <pre class="literal-block">
--D Trilinos_DUMP_CPACK_SOURCE_IGNORE_FILES:BOOL=ON
+-D Trilinos_DUMP_CPACK_SOURCE_IGNORE_FILES=ON
 </pre>
 <p>While a set of default CPack source generator types is defined for this
 project (see the <tt class="docutils literal">CMakeCache.txt</tt> file), it can be overridden using, for
 example:</p>
 <pre class="literal-block">
--D Trilinos_CPACK_SOURCE_GENERATOR:STRING=&quot;TGZ;TBZ2&quot;
+-D Trilinos_CPACK_SOURCE_GENERATOR=&quot;TGZ;TBZ2&quot;
 </pre>
 <p>(see CMake documentation to find out the types of supported CPack source
 generators on your system).</p>
 <p>NOTE: When configuring from an untarred source tree that has missing packages,
 one must configure with:</p>
 <pre class="literal-block">
--D Trilinos_ASSERT_MISSING_PACKAGES:BOOL=OFF
+-D Trilinos_ASSERT_MISSING_PACKAGES=OFF
 </pre>
 <p>Otherwise, TriBITS will error out complaining about missing packages.  (Note
 that <tt class="docutils literal">Trilinos_ASSERT_MISSING_PACKAGES</tt> will default to <tt class="docutils literal">`OFF`</tt> in
@@ -2055,12 +2157,12 @@ release mode, i.e. <tt class="docutils literal"><span class="pre">Trilinos_ENABL
 </div>
 </div>
 <div class="section" id="dashboard-submissions">
-<h1><a class="toc-backref" href="#id70">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></h1>
+<h1><a class="toc-backref" href="#id71">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></h1>
 <p>You can use the TriBITS scripting code to submit package-by-package build,
 test, coverage, memcheck results to the project's CDash dashboard.</p>
 <p>First, configure as normal but add the build and test parallel levels with:</p>
 <pre class="literal-block">
--DCTEST_BUILD_FLAGS:STRING=-j4 -DCTEST_PARALLEL_LEVEL:STRING=4
+-DCTEST_BUILD_FLAGS=-j4 -DCTEST_PARALLEL_LEVEL=4
 </pre>
 <p>(or with some other <tt class="docutils literal"><span class="pre">-j&lt;N&gt;</span></tt>).  Then, invoke the build, test and submit
 with:</p>
@@ -2133,7 +2235,7 @@ CMake targets 'Experimental*' that run standard dashboards with CTest
 without the custom package-by-package driver in
 TribitsCTestDriverCore.cmake.  The package-by-package extended CTest
 driver is more appropriate for Trilinos.</p>
-<p>NOTE: Once you configure with -DTrilinos_ENABLE_COVERAGE_TESTING:BOOL=ON, the
+<p>NOTE: Once you configure with -DTrilinos_ENABLE_COVERAGE_TESTING=ON, the
 environment variable CTEST_DO_COVERAGE_TESTING=TRUE is automatically set by the
 target 'dashboard' so you don't have to set this yourself.</p>
 <p>NOTE: Doing a memory check with Valgrind requires that you set
@@ -2145,7 +2247,7 @@ $ env CTEST_DO_MEMORY_TESTING=TRUE make dashboard
 cmake configure line in order to pass additional arguments to 'ctest -S' when
 invoking the package-by-package CTest driver.  For example:</p>
 <pre class="literal-block">
--D Trilinos_DASHBOARD_CTEST_ARGS:STRING=&quot;-VV&quot;
+-D Trilinos_DASHBOARD_CTEST_ARGS=&quot;-VV&quot;
 </pre>
 <p>will set verbose output with CTest.</p>
 </div>

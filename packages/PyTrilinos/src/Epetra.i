@@ -101,7 +101,7 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 
 // Import the numpy interface
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Global swig features

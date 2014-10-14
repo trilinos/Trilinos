@@ -42,25 +42,36 @@
 #ifndef TPETRA_BLOCKCRSGRAPH_DECL_HPP
 #define TPETRA_BLOCKCRSGRAPH_DECL_HPP
 
-#include "Tpetra_CrsGraph.hpp"
-#include "Tpetra_BlockMap.hpp"
+/// \file Tpetra_BlockCrsGraph_decl.hpp
+/// \brief Declarations for the class Tpetra::BlockCrsGraph.
 
-/** \file Tpetra_BlockCrsGraph_decl.hpp
+#include <Tpetra_ConfigDefs.hpp>
 
-  Declarations for the class Tpetra::BlockCrsGraph.
-*/
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
+#else
+
+#include <Tpetra_CrsGraph.hpp>
+#include <Tpetra_BlockMap.hpp>
+
 namespace Tpetra {
 
-/** \brief Block-entry counterpart to Tpetra::CrsGraph.
-
-  BlockCrsGraph doesn't inherit Tpetra::CrsGraph, but always holds a
-  Tpetra::CrsGraph as a class-member attribute.
-
-  The reason BlockCrsGraph exists is to create and hold the block-versions
-  (Tpetra::BlockMap) of the Tpetra::Map objects that CrsGraph holds.
-
-  BlockCrsGraph is used by Tpetra::VbrMatrix (variable block row matrix).
-*/
+/// \class BlockCrsGraph
+/// \brief Block-entry counterpart to Tpetra::CrsGraph.
+///
+/// BlockCrsGraph doesn't inherit from Tpetra::CrsGraph, but always
+/// holds a Tpetra::CrsGraph as an instance variable.
+///
+/// The reason BlockCrsGraph exists is to create and hold the block
+/// versions (Tpetra::BlockMap) of the Tpetra::Map objects that
+/// CrsGraph holds.
+///
+/// BlockCrsGraph is used by Tpetra::VbrMatrix (variable block row matrix).
+///
+/// \warning Please consider this class DEPRECATED.  There are known
+///   outstanding bugs with the current implementations of
+///   variable-block-size sparse matrices and related classes in
+///   Tpetra.
 template <class LocalOrdinal = CrsGraph<>::local_ordinal_type,
           class GlobalOrdinal = typename CrsGraph<LocalOrdinal>::global_ordinal_type,
           class Node = typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
@@ -185,5 +196,6 @@ class BlockCrsGraph : public Teuchos::Describable {
 };//class BlockCrsGraph
 }//namespace Tpetra
 
-#endif
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRA_BLOCKCRSGRAPH_DECL_HPP
 

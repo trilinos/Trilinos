@@ -33,6 +33,9 @@
 #include <cmath>
 
 #include "Sacado_ConfigDefs.h"
+#include "Sacado_Base.hpp"
+#include "Sacado_mpl_disable_if.hpp"
+#include "Sacado_mpl_is_same.hpp"
 
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
 namespace Sacado {                                                      \
@@ -81,20 +84,20 @@ namespace Sacado {                                                      \
                                                                         \
   namespace Tay {                                                       \
     template <typename T> class Taylor;                                 \
-    template <typename T> Taylor<T> OP (const Taylor<T>&);              \
+    template <typename T> Taylor<T> OP (const Base< Taylor<T> >&);      \
   }                                                                     \
                                                                         \
   namespace FlopCounterPack {                                           \
     template <typename T> class ScalarFlopCounter;                      \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const ScalarFlopCounter<T>&);              \
+    ScalarFlopCounter<T> OP (const Base< ScalarFlopCounter<T> >&);      \
   }                                                                     \
                                                                         \
   namespace Rad {                                                       \
     template <typename T> class ADvari;                                 \
     template <typename T> class IndepADvar;                             \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&);         \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&); \
   }                                                                     \
 }                                                                       \
                                                                         \
@@ -271,77 +274,84 @@ namespace Sacado {                                                      \
                                                                         \
   namespace Tay {                                                       \
     template <typename T> class Taylor;                                 \
-    template <typename T> Taylor<T> OP (const Taylor<T>&,               \
-                                        const Taylor<T>&);              \
-    template <typename T> Taylor<T> OP (const typename Taylor<T>::value_type&, \
-                                        const Taylor<T>&);              \
-    template <typename T> Taylor<T> OP (const Taylor<T>&,               \
-                                        const typename Taylor<T>::value_type&); \
+    template <typename T> Taylor<T> OP (                                \
+      const Base< Taylor<T> >&,                                         \
+      const Base< Taylor<T> >&);                                        \
+    template <typename T> Taylor<T> OP (                                \
+      const typename Taylor<T>::value_type&,                            \
+      const Base< Taylor<T> >&);                                        \
+    template <typename T> Taylor<T> OP (                                \
+      const Base< Taylor<T> >&,                                         \
+      const typename Taylor<T>::value_type&);                           \
   }                                                                     \
                                                                         \
   namespace FlopCounterPack {                                           \
     template <typename T> class ScalarFlopCounter;                      \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const ScalarFlopCounter<T>&,               \
-                             const ScalarFlopCounter<T>&);              \
+    ScalarFlopCounter<T> OP (                                           \
+      const Base< ScalarFlopCounter<T> >&,                              \
+      const Base< ScalarFlopCounter<T> >&);                             \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const T&,                                  \
-                             const ScalarFlopCounter<T>);               \
+    ScalarFlopCounter<T> OP (                                           \
+      const typename ScalarFlopCounter<T>::value_type&,                 \
+      const Base< ScalarFlopCounter<T> >&);                             \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const ScalarFlopCounter<T>&,               \
-                             const T&);                                 \
+    ScalarFlopCounter<T> OP (                                           \
+      const Base< ScalarFlopCounter<T> >&,                              \
+      const typename ScalarFlopCounter<T>::value_type&);                \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const int&,                                \
-                             const ScalarFlopCounter<T>);               \
+    ScalarFlopCounter<T> OP (                                           \
+      const int&,                                                       \
+      const Base< ScalarFlopCounter<T> >&);                             \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const ScalarFlopCounter<T>&,               \
-                             const int&);                               \
+    ScalarFlopCounter<T> OP (                                           \
+      const Base< ScalarFlopCounter<T> >&,                              \
+      const int&);                                                      \
   }                                                                     \
                                                                         \
   namespace Rad {                                                       \
     template <typename T> class ADvari;                                 \
     template <typename T> class IndepADvar;                             \
-    template <typename T> class DoubleAvoid;                            \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
-                                         const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
-                                         const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (T,                             \
-                                         const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype, \
-                                         const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (int,                           \
-                                         const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (long,                          \
-                                         const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
-                                         const IndepADvar<T>&);         \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
-                                         T);                            \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
-                                         typename DoubleAvoid<T>::dtype); \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
-                                         int);                          \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
-                                         long);                         \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
-                                         const IndepADvar<T>&);         \
-    template <typename T> ADvari<T>& OP (T,                             \
-                                         const IndepADvar<T>&);         \
-    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype, \
-                                         const IndepADvar<T>&);         \
-    template <typename T> ADvari<T>& OP (int,                           \
-                                         const IndepADvar<T>&);         \
-    template <typename T> ADvari<T>& OP (long,                          \
-                                         const IndepADvar<T>&);         \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
-                                         T);                            \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
-                                         typename DoubleAvoid<T>::dtype); \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
-                                         int);                          \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
-                                         long);                         \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
+                                         const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
+                                         const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (typename ADvari<T>::value_type,          \
+                                         const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,double >, double >::type,                        \
+                                         const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,int >, int >::type,                           \
+                                         const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,long >, long >::type,                          \
+                                         const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
+                                         const Base< IndepADvar<T> >&); \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
+                                         typename ADvari<T>::value_type); \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
+                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,double >, double >::type);                       \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
+                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,int >, int >::type);                          \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
+                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,long >, long >::type);                         \
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
+                                         const Base< IndepADvar<T> >&); \
+    template <typename T> ADvari<T>& OP (typename IndepADvar<T>::value_type, \
+                                         const Base< IndepADvar<T> >&); \
+    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,double >, double >::type,                        \
+                                         const Base< IndepADvar<T> >&); \
+    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,int >, int >::type,                           \
+                                         const Base< IndepADvar<T> >&); \
+    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,long >, long >::type,                              \
+                                         const Base< IndepADvar<T> >&); \
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
+                                         typename IndepADvar<T>::value_type); \
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
+                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,double >, double >::type);                       \
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
+                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,int >, int >::type);                          \
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
+                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,long >, long >::type);                         \
   }                                                                     \
                                                                         \
 }                                                                       \

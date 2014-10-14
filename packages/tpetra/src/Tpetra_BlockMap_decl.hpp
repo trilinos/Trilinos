@@ -42,36 +42,45 @@
 #ifndef TPETRA_BLOCKMAP_DECL_HPP
 #define TPETRA_BLOCKMAP_DECL_HPP
 
+/// \file Tpetra_BlockMap_decl.hpp
+/// \brief Declarations for the class Tpetra::BlockMap.
+
+#include <Tpetra_ConfigDefs.hpp>
+
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
+#else
+
 #include <map>
+#include <Tpetra_Map.hpp>
 
-#include "Tpetra_Map.hpp"
-
-/** \file Tpetra_BlockMap_decl.hpp
-
-  Declarations for the class Tpetra::BlockMap.
-*/
 namespace Tpetra {
 
 /** \brief Block-entry counterpart to Tpetra::Map.
 
-  BlockMap doesn't inherit Tpetra::Map, but always holds a Tpetra::Map as
-  a class-member attribute.
+  BlockMap doesn't inherit Tpetra::Map, but always holds a Tpetra::Map
+  as a class-member attribute.
 
-  Tpetra::BlockMap essentially holds information about how the point-entries
-  in Tpetra::Map are grouped together in blocks. A block-entry consists of
-  1 or more point-entries.
+  Tpetra::BlockMap holds information about how the point entries in
+  Tpetra::Map are grouped together in blocks. A block entry consists
+  of 1 or more point entries.
 
-  Example usage: If a solution-space consists of multiple degrees-of-freedom
-  at each finite-element node in a mesh, such as a displacement vector, it
-  might be described as having a block of size 3 (in 3D) at each mesh node.
-  Thus for a mesh with N nodes, the point-entry map will have N*3 entries,
-  whereas the block-map will have N blocks, each of size 3.
+  Example usage: If a solution space consists of multiple
+  degrees-of-freedom at each finite-element node in a mesh, such as a
+  displacement vector, it might be described as having a block of size
+  3 (in 3D) at each mesh node.  Thus for a mesh with N nodes, the
+  point-entry map will have N*3 entries, whereas the block-map will
+  have N blocks, each of size 3.
+
+  \warning Please consider this class DEPRECATED.  There are known
+    outstanding bugs with the current implementations of
+    variable-block-size sparse matrices and related classes in Tpetra.
 */
 template <class LocalOrdinal = Map<>::local_ordinal_type,
           class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
           class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
 class BlockMap : public Teuchos::Describable {
- public:
+public:
   typedef LocalOrdinal  local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node          node_type;
@@ -184,7 +193,7 @@ class BlockMap : public Teuchos::Describable {
                           const Teuchos::ArrayView<LocalOrdinal>& blockSizes) const;
   //@}
 
- private:
+private:
   void setup_noncontig_mapping();
 
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > pointMap_;
@@ -198,24 +207,29 @@ class BlockMap : public Teuchos::Describable {
   ///
   /// TODO: Use Tpetra::Details::HashTable here instead.
   std::map<GlobalOrdinal,LocalOrdinal> map_global_to_local_;
-};//class BlockMap
+};
 
-//-----------------------------------------------------------------
+
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 convertBlockMapToPointMap(const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>& blockMap)
 {
+  using Teuchos::rcp;
+  typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
   global_size_t numGlobalElems = Teuchos::OrdinalTraits<global_size_t>::invalid();
   GlobalOrdinal indexBase = blockMap.getPointMap()->getIndexBase();
   const Teuchos::RCP<const Teuchos::Comm<int> >& comm = blockMap.getPointMap()->getComm();
   const Teuchos::RCP<Node>& node = blockMap.getPointMap()->getNode();
 
-  //Create a point-entry map where each point
-  //corresponds to a block in the block-map:
-  return Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElems, blockMap.getNodeBlockIDs(), indexBase, comm, node));
+  // Create a point-entry map where each point
+  // corresponds to a block in the block map.
+  return rcp (new map_type (numGlobalElems, blockMap.getNodeBlockIDs (),
+                            indexBase, comm, node));
 }
 
-}//namespace Tpetra
+} // namespace Tpetra
 
-#endif
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRA_BLOCKMAP_DECL_HPP
 

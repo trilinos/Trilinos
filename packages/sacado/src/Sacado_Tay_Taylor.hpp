@@ -30,6 +30,7 @@
 #ifndef SACADO_TAY_TAYLOR_HPP
 #define SACADO_TAY_TAYLOR_HPP
 
+#include "Sacado_Base.hpp"
 #include "Sacado_Handle.hpp"
 #include <cmath>
 #include <algorithm>    // for std::min and std::max
@@ -47,7 +48,7 @@ namespace Sacado {
      * no expression templating.
      */
     template <typename T>
-    class Taylor {
+    class Taylor : public Base< Taylor<T> > {
     public:
 
       //! Turn Taylor into a meta-function class usable with mpl::apply
@@ -303,117 +304,117 @@ namespace Sacado {
     }
 
     // Operations
-    template <typename T> Taylor<T> operator+(const Taylor<T>& a,
-                                              const Taylor<T>& b);
+    template <typename T> Taylor<T> operator+(const Base< Taylor<T> >& a,
+                                              const Base< Taylor<T> >& b);
     template <typename T> Taylor<T> operator+(const typename Taylor<T>::value_type& a,
-                                              const Taylor<T>& b);
-    template <typename T> Taylor<T> operator+(const Taylor<T>& a,
+                                              const Base< Taylor<T> >& b);
+    template <typename T> Taylor<T> operator+(const Base< Taylor<T> >& a,
                                               const typename Taylor<T>::value_type& b);
-    template <typename T> Taylor<T> operator-(const Taylor<T>& a,
-                                              const Taylor<T>& b);
+    template <typename T> Taylor<T> operator-(const Base< Taylor<T> >& a,
+                                              const Base< Taylor<T> >& b);
     template <typename T> Taylor<T> operator-(const typename Taylor<T>::value_type& a,
-                                              const Taylor<T>& b);
-    template <typename T> Taylor<T> operator-(const Taylor<T>& a,
+                                              const Base< Taylor<T> >& b);
+    template <typename T> Taylor<T> operator-(const Base< Taylor<T> >& a,
                                               const typename Taylor<T>::value_type& b);
-    template <typename T> Taylor<T> operator*(const Taylor<T>& a,
-                                              const Taylor<T>& b);
+    template <typename T> Taylor<T> operator*(const Base< Taylor<T> >& a,
+                                              const Base< Taylor<T> >& b);
     template <typename T> Taylor<T> operator*(const typename Taylor<T>::value_type& a,
-                                              const Taylor<T>& b);
-    template <typename T> Taylor<T> operator*(const Taylor<T>& a,
+                                              const Base< Taylor<T> >& b);
+    template <typename T> Taylor<T> operator*(const Base< Taylor<T> >& a,
                                               const typename Taylor<T>::value_type& b);
-    template <typename T> Taylor<T> operator/(const Taylor<T>& a,
-                                              const Taylor<T>& b);
+    template <typename T> Taylor<T> operator/(const Base< Taylor<T> >& a,
+                                              const Base< Taylor<T> >& b);
     template <typename T> Taylor<T> operator/(const typename Taylor<T>::value_type& a,
-                                              const Taylor<T>& b);
-    template <typename T> Taylor<T> operator/(const Taylor<T>& a,
+                                              const Base< Taylor<T> >& b);
+    template <typename T> Taylor<T> operator/(const Base< Taylor<T> >& a,
                                               const typename Taylor<T>::value_type& b);
-    template <typename T> Taylor<T> exp(const Taylor<T>& a);
-    template <typename T> Taylor<T> log(const Taylor<T>& a);
-    template <typename T> Taylor<T> log10(const Taylor<T>& a);
-    template <typename T> Taylor<T> sqrt(const Taylor<T>& a);
-    template <typename T> Taylor<T> pow(const Taylor<T>& a,
-                                        const Taylor<T>& b);
+    template <typename T> Taylor<T> exp(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> log(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> log10(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> sqrt(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> pow(const Base< Taylor<T> >& a,
+                                        const Base< Taylor<T> >& b);
     template <typename T> Taylor<T> pow(const typename Taylor<T>::value_type& a,
-                                        const Taylor<T>& b);
-    template <typename T> Taylor<T> pow(const Taylor<T>& a,
+                                        const Base< Taylor<T> >& b);
+    template <typename T> Taylor<T> pow(const Base< Taylor<T> >& a,
                                         const typename Taylor<T>::value_type& b);
-    template <typename T> void sincos(const Taylor<T>& a,
+    template <typename T> void sincos(const Base< Taylor<T> >& a,
                                       Taylor<T>& s, Taylor<T>& c);
-    template <typename T> Taylor<T> cos(const Taylor<T>& a);
-    template <typename T> Taylor<T> sin(const Taylor<T>& a);
-    template <typename T> Taylor<T> tan(const Taylor<T>& a);
-    template <typename T> void sinhcosh(const Taylor<T>& a,
+    template <typename T> Taylor<T> cos(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> sin(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> tan(const Base< Taylor<T> >& a);
+    template <typename T> void sinhcosh(const Base< Taylor<T> >& a,
                                         Taylor<T>& s, Taylor<T>& c);
-    template <typename T> Taylor<T> cosh(const Taylor<T>& a);
-    template <typename T> Taylor<T> sinh(const Taylor<T>& a);
-    template <typename T> Taylor<T> tanh(const Taylor<T>& a);
+    template <typename T> Taylor<T> cosh(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> sinh(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> tanh(const Base< Taylor<T> >& a);
     template <typename T> Taylor<T> quad(const typename Taylor<T>::value_type& c0,
-                                         const Taylor<T>& a,
-                                         const Taylor<T>& b);
-    template <typename T> Taylor<T> acos(const Taylor<T>& a);
-    template <typename T> Taylor<T> asin(const Taylor<T>& a);
-    template <typename T> Taylor<T> atan(const Taylor<T>& a);
-    template <typename T> Taylor<T> atan2(const Taylor<T>& a,
-                                          const Taylor<T>& b);
+                                         const Base< Taylor<T> >& a,
+                                         const Base< Taylor<T> >& b);
+    template <typename T> Taylor<T> acos(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> asin(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> atan(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> atan2(const Base< Taylor<T> >& a,
+                                          const Base< Taylor<T> >& b);
     template <typename T> Taylor<T> atan2(const typename Taylor<T>::value_type& a,
-                                          const Taylor<T>& b);
-    template <typename T> Taylor<T> atan2(const Taylor<T>& a,
+                                          const Base< Taylor<T> >& b);
+    template <typename T> Taylor<T> atan2(const Base< Taylor<T> >& a,
                                           const typename Taylor<T>::value_type& b);
-    template <typename T> Taylor<T> acosh(const Taylor<T>& a);
-    template <typename T> Taylor<T> asinh(const Taylor<T>& a);
-    template <typename T> Taylor<T> atanh(const Taylor<T>& a);
-    template <typename T> Taylor<T> abs(const Taylor<T>& a);
-    template <typename T> Taylor<T> fabs(const Taylor<T>& a);
-    template <typename T> Taylor<T> max(const Taylor<T>& a,
-                                        const Taylor<T>& b);
+    template <typename T> Taylor<T> acosh(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> asinh(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> atanh(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> abs(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> fabs(const Base< Taylor<T> >& a);
+    template <typename T> Taylor<T> max(const Base< Taylor<T> >& a,
+                                        const Base< Taylor<T> >& b);
     template <typename T> Taylor<T> max(const typename Taylor<T>::value_type& a,
-                                        const Taylor<T>& b);
-    template <typename T> Taylor<T> max(const Taylor<T>& a,
+                                        const Base< Taylor<T> >& b);
+    template <typename T> Taylor<T> max(const Base< Taylor<T> >& a,
                                         const typename Taylor<T>::value_type& b);
-    template <typename T> Taylor<T> min(const Taylor<T>& a,
-                                        const Taylor<T>& b);
+    template <typename T> Taylor<T> min(const Base< Taylor<T> >& a,
+                                        const Base< Taylor<T> >& b);
     template <typename T> Taylor<T> min(const typename Taylor<T>::value_type& a,
-                                        const Taylor<T>& b);
-    template <typename T> Taylor<T> min(const Taylor<T>& a,
+                                        const Base< Taylor<T> >& b);
+    template <typename T> Taylor<T> min(const Base< Taylor<T> >& a,
                                         const typename Taylor<T>::value_type& b);
-    template <typename T> bool operator==(const Taylor<T>& a,
-                                          const Taylor<T>& b);
+    template <typename T> bool operator==(const Base< Taylor<T> >& a,
+                                          const Base< Taylor<T> >& b);
     template <typename T> bool operator==(const typename Taylor<T>::value_type& a,
-                                          const Taylor<T>& b);
-    template <typename T> bool operator==(const Taylor<T>& a,
+                                          const Base< Taylor<T> >& b);
+    template <typename T> bool operator==(const Base< Taylor<T> >& a,
                                           const typename Taylor<T>::value_type& b);
-    template <typename T> bool operator!=(const Taylor<T>& a,
-                                          const Taylor<T>& b);
+    template <typename T> bool operator!=(const Base< Taylor<T> >& a,
+                                          const Base< Taylor<T> >& b);
     template <typename T> bool operator!=(const typename Taylor<T>::value_type& a,
-                                          const Taylor<T>& b);
-    template <typename T> bool operator!=(const Taylor<T>& a,
+                                          const Base< Taylor<T> >& b);
+    template <typename T> bool operator!=(const Base< Taylor<T> >& a,
                                           const typename Taylor<T>::value_type& b);
-    template <typename T> bool operator<=(const Taylor<T>& a,
-                                          const Taylor<T>& b);
+    template <typename T> bool operator<=(const Base< Taylor<T> >& a,
+                                          const Base< Taylor<T> >& b);
     template <typename T> bool operator<=(const typename Taylor<T>::value_type& a,
-                                          const Taylor<T>& b);
-    template <typename T> bool operator<=(const Taylor<T>& a,
+                                          const Base< Taylor<T> >& b);
+    template <typename T> bool operator<=(const Base< Taylor<T> >& a,
                                           const typename Taylor<T>::value_type& b);
-    template <typename T> bool operator>=(const Taylor<T>& a,
-                                          const Taylor<T>& b);
+    template <typename T> bool operator>=(const Base< Taylor<T> >& a,
+                                          const Base< Taylor<T> >& b);
     template <typename T> bool operator>=(const typename Taylor<T>::value_type& a,
-                                          const Taylor<T>& b);
-    template <typename T> bool operator>=(const Taylor<T>& a,
+                                          const Base< Taylor<T> >& b);
+    template <typename T> bool operator>=(const Base< Taylor<T> >& a,
                                           const typename Taylor<T>::value_type& b);
-    template <typename T> bool operator<(const Taylor<T>& a,
-                                         const Taylor<T>& b);
+    template <typename T> bool operator<(const Base< Taylor<T> >& a,
+                                         const Base< Taylor<T> >& b);
     template <typename T> bool operator<(const typename Taylor<T>::value_type& a,
-                                         const Taylor<T>& b);
-    template <typename T> bool operator<(const Taylor<T>& a,
+                                         const Base< Taylor<T> >& b);
+    template <typename T> bool operator<(const Base< Taylor<T> >& a,
                                          const typename Taylor<T>::value_type& b);
-    template <typename T> bool operator>(const Taylor<T>& a,
-                                         const Taylor<T>& b);
+    template <typename T> bool operator>(const Base< Taylor<T> >& a,
+                                         const Base< Taylor<T> >& b);
     template <typename T> bool operator>(const typename Taylor<T>::value_type& a,
-                                         const Taylor<T>& b);
-    template <typename T> bool operator>(const Taylor<T>& a,
+                                         const Base< Taylor<T> >& b);
+    template <typename T> bool operator>(const Base< Taylor<T> >& a,
                                          const typename Taylor<T>::value_type& b);
     template <typename T> std::ostream& operator << (std::ostream& os,
-                                                     const Taylor<T>& a);
+                                                     const Base< Taylor<T> >& a);
 
   } // namespace Tay
 

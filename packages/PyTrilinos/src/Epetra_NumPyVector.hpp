@@ -26,13 +26,13 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EPETRA_NUMPYFEVECTOR_H
-#define EPETRA_NUMPYFEVECTOR_H
+#ifndef EPETRA_NUMPYVECTOR_H
+#define EPETRA_NUMPYVECTOR_H
 
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_PythonException.hpp"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
 #endif
@@ -42,37 +42,45 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
-#include "Epetra_FEVector.h"
+#include "Epetra_Vector.h"
 
 namespace PyTrilinos
 {
 
-class Epetra_NumPyFEVector : public Epetra_FEVector
+class Epetra_NumPyVector : public Epetra_Vector
 {
 public:
 
   // Constructors
-  Epetra_NumPyFEVector(const Epetra_BlockMap & blockMap,
-		       int numVectors,
-		       bool ignoreNonLocalEntries=false);
-  Epetra_NumPyFEVector(const Epetra_FEVector & source);
+  Epetra_NumPyVector(const Epetra_BlockMap & blockMap, bool zeroOut=true);
+  Epetra_NumPyVector(const Epetra_Vector & source);
+  Epetra_NumPyVector(const Epetra_BlockMap & blockMap, PyObject * pyObject);
+  Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_Vector & source);
+  Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_MultiVector & source, int index);
+  Epetra_NumPyVector(PyObject * pyObject);
 
   // Destructor
-  ~Epetra_NumPyFEVector();
+  ~Epetra_NumPyVector();
 
-  // Overridden Epetra_FEVector methods with more python-like signatures
+  // Overridden Epetra_Vector methods with more python-like signatures
   PyObject * ExtractCopy() const;
   PyObject * ExtractView() const;
-  double     Dot(const Epetra_FEVector & A) const;
+  double     Dot(const Epetra_Vector & A) const;
   double     Norm1() const;
   double     Norm2() const;
   double     NormInf() const;
-  double     NormWeighted(const Epetra_FEVector & weights) const;
+  double     NormWeighted(const Epetra_Vector & weights) const;
   double     MinValue() const;
   double     MaxValue() const;
   double     MeanValue() const;
-  int        ReplaceGlobalValues(PyObject * indices, PyObject * values);
-  int        SumIntoGlobalValues(PyObject * indices, PyObject * values);
+  int        ReplaceGlobalValues(PyObject * values, PyObject * indices);
+  int        ReplaceGlobalValues(int blockOffset, PyObject * values, PyObject * indices);
+  int        ReplaceMyValues(PyObject * values, PyObject * indices);
+  int        ReplaceMyValues(int blockOffset, PyObject * values, PyObject * indices);
+  int        SumIntoGlobalValues(PyObject * values, PyObject * indices);
+  int        SumIntoGlobalValues(int blockOffset, PyObject * values, PyObject * indices);
+  int        SumIntoMyValues(PyObject * values, PyObject * indices);
+  int        SumIntoMyValues(int blockOffset, PyObject * values, PyObject * indices);
 
   // Static cleanup function, to be called when python exceptions are
   // encountered
@@ -81,10 +89,10 @@ public:
 private:
 
   // Private method thus not callable
-  Epetra_NumPyFEVector();
+  Epetra_NumPyVector();
 
   // This static private constant is the default communicator for any
-  // Epetra_NumPyFEVector constructed without specifying an
+  // Epetra_NumPyVector constructed without specifying an
   // Epetra_BlockMap
   static const Epetra_SerialComm defaultComm;
 
@@ -98,7 +106,7 @@ private:
 
   // Static helper functions.  These are intended to be called from
   // the constructors, specifically to compute arguments in the
-  // Epetra_FEVector constructors called in the constructor
+  // Epetra_Vector constructors called in the constructor
   // initialization lists.  They all assume that if tmp_array or
   // tmp_map is already set, they have been set by the same PyObject.
   static double     * getArray(     PyObject *);

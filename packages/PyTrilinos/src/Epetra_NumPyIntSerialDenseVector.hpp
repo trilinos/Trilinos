@@ -26,45 +26,44 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EPETRA_NUMPYINTSERIALDENSEMATRIX_H
-#define EPETRA_NUMPYINTSERIALDENSEMATRIX_H
+#ifndef EPETRA_NUMPYINTSERIALDENSEVECTOR_H
+#define EPETRA_NUMPYINTSERIALDENSEVECTOR_H
 
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_PythonException.hpp"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
 #endif
 #ifdef HAVE_STDINT_H
 #undef HAVE_STDINT_H
 #endif
-#include "Epetra_IntSerialDenseMatrix.h"
+#include "Epetra_IntSerialDenseVector.h"
 
 namespace PyTrilinos
 {
 
-class Epetra_NumPyIntSerialDenseMatrix : public Epetra_IntSerialDenseMatrix
+class Epetra_NumPyIntSerialDenseVector : public Epetra_IntSerialDenseVector
 {
 public:
 
   // Constructors
-  Epetra_NumPyIntSerialDenseMatrix();
-  Epetra_NumPyIntSerialDenseMatrix(int numRows, int numCols);
-  Epetra_NumPyIntSerialDenseMatrix(PyObject * pyObject);
-  Epetra_NumPyIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix & src);
+  Epetra_NumPyIntSerialDenseVector();
+  Epetra_NumPyIntSerialDenseVector(int length);
+  Epetra_NumPyIntSerialDenseVector(PyObject * pyObject);
+  Epetra_NumPyIntSerialDenseVector(const Epetra_IntSerialDenseVector & src);
 
   // Destructor
-  ~Epetra_NumPyIntSerialDenseMatrix();
+  ~Epetra_NumPyIntSerialDenseVector();
 
-  // Overridden Epetra_IntSerialDenseMatrix methods.  These are
+  // Overridden Epetra_IntSerialDenseVector methods.  These are
   // overriden for one of two reasons: (1) to provide a more
   // python-like signature, or (2) to maintain synchronization between
-  // the Epetra_SerialDenseMatrix and the numpy array.
-  int        operator() (int rowIndex, int colIndex);
-  int        Shape(  int numRows, int numCols);
-  int        Reshape(int numRows, int numCols);
-  PyObject * A();
+  // the Epetra_SerialDenseVector and the numpy array.
+  int        Size(int length);
+  int        Resize(int length);
+  PyObject * Values() const;
 
   // Static cleanup function, to be called when python exceptions are
   // encountered
@@ -80,17 +79,16 @@ private:
 
   // Static helper functions.  These are intended to be called from
   // the constructors, specifically to compute arguments in the
-  // Epetra_SerialDenseMatrix constructors called in the constructor
+  // Epetra_SerialDenseVector constructors called in the constructor
   // initialization lists.  They all assume that if tmp_array is
   // already set, it has been set by the same PyObject.
-  static int * getArray(  PyObject *);
-  static int   getNumCols(PyObject *);
-  static int   getNumRows(PyObject *);
+  static int * getArray(     PyObject *);
+  static int   getVectorSize(PyObject *);
 
   // Private method.  This method is typically called after an
-  // Epetra_IntSerialDenseMatrix constructor has been called to
+  // Epetra_SerialDenseVector constructor has been called to
   // synchronize the internal PyArrayObject.
-  void setArray(bool copy=false);
+  void setArray();
 
   // Private data
   PyArrayObject * array;

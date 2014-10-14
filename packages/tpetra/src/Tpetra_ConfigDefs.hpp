@@ -264,28 +264,6 @@ namespace Tpetra {
     }
   };
 
-  /// \class firstArg
-  /// \brief DEPRECATED; please use project1st instead.
-  template <class Arg1, class Arg2>
-  class TEUCHOS_DEPRECATED firstArg : std::binary_function<Arg1,Arg2,Arg1> {
-    public:
-    typedef Arg1 first_argument_type;
-    typedef Arg2 second_argument_type;
-    typedef Arg1 result_type;
-    inline Arg1 operator()(const Arg1 &arg1, const Arg2 &arg2) {return arg1;}
-  };
-
-  /// \class secondArg
-  /// \brief DEPRECATED; please use project2nd instead.
-  template <class Arg1, class Arg2>
-  class TEUCHOS_DEPRECATED secondArg : std::binary_function<Arg1,Arg2,Arg2> {
-    public:
-    typedef Arg1 first_argument_type;
-    typedef Arg2 second_argument_type;
-    typedef Arg2 result_type;
-    inline Arg2 operator()(const Arg1 &arg1, const Arg2 &arg2) {return arg2;}
-  };
-
 } // end of Tpetra namespace
 
 

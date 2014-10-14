@@ -27,11 +27,11 @@
 // @HEADER
 
 // Local includes
-#include "PyTrilinos_Epetra_Util.h"
+#include "PyTrilinos_Epetra_Util.hpp"
 #include "PyTrilinos_config.h"
-#include "PyTrilinos_Util.h"
-#include "PyTrilinos_EpetraExt_Util.h"
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_Util.hpp"
+#include "PyTrilinos_EpetraExt_Util.hpp"
+#include "PyTrilinos_PythonException.hpp"
 #include "swigpyrun.h"
 
 // Teuchos include
