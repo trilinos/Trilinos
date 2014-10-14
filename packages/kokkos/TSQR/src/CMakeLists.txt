@@ -23,6 +23,7 @@ ENDIF ()
 # Add all other headers and sources (those not related to TBB) to the
 # lists of this subpackage's headers resp. sources.
 APPEND_GLOB(HEADERS ${DIR}/Tsqr*.hpp)
+APPEND_GLOB(HEADERS ${DIR}/KokkosTSQR*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/Tsqr*.cpp)
 
 TRIBITS_ADD_LIBRARY(

@@ -42,11 +42,13 @@
 #ifndef __TSQR_NodeTsqrFactory_hpp
 #define __TSQR_NodeTsqrFactory_hpp
 
-#include <Kokkos_ConfigDefs.hpp>
+#include <KokkosTSQR_ConfigDefs.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
 #ifdef HAVE_KOKKOSTSQR_TBB
 #  include <TbbTsqr.hpp>
+#else
+#  error "HAVE_KOKKOSTSQR_TBB is not defined!"
 #endif // HAVE_KOKKOSTSQR_TBB
 
 #include <Tsqr_KokkosNodeTsqr.hpp>

@@ -39,7 +39,7 @@
 // ************************************************************************
 //@HEADER
 
-#include <Tsqr_ConfigDefs.hpp>
+#include <KokkosTSQR_ConfigDefs.hpp>
 
 #ifdef HAVE_MPI
 #  include <Teuchos_GlobalMPISession.hpp>

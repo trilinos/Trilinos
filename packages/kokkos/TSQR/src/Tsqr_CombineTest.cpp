@@ -39,7 +39,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "Tsqr_ConfigDefs.hpp"
+#include <KokkosTSQR_ConfigDefs.hpp>
 #include "Tsqr_CombineTest.hpp"
 
 #include <Teuchos_Assert.hpp>

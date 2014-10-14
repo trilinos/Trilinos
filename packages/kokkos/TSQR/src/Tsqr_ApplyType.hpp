@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -45,7 +45,7 @@
 #ifndef __TSQR_TsqrApplyType_hpp
 #define __TSQR_TsqrApplyType_hpp
 
-#include <Tsqr_ConfigDefs.hpp>
+#include <KokkosTSQR_ConfigDefs.hpp>
 #include <string>
 
 
@@ -132,11 +132,11 @@ namespace TSQR {
 
     /// For a given ApplyType_ enum value, return the corresponding
     /// canonical LAPACK string.
-    static std::string 
+    static std::string
     enumToLapackString (const ApplyType::ApplyType_ theType);
 
     //! Return true if op[0] == 'T', 'C', or 'H', false otherwise.
-    bool 
+    bool
     decide_transposed (const std::string& op) const;
 
     /// Return the ApplyType_ enum value corresponding to the given

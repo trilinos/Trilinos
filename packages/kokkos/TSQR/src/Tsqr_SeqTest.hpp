@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,15 +34,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 #ifndef __TSQR_Test_SeqTest_hpp
 #define __TSQR_Test_SeqTest_hpp
 
-#include <Tsqr_ConfigDefs.hpp>
+#include <KokkosTSQR_ConfigDefs.hpp>
 
 #include <cstring> // size_t definition
 #include <string>
@@ -60,17 +60,17 @@ namespace TSQR {
     /// output stream out.
     void
     verifySeqTsqr (std::ostream& out,
-		   const int nrows, 
-		   const int ncols, 
-		   const size_t cache_size_hint,
-		   const bool test_complex_arithmetic,
-		   const bool save_matrices,
-		   const bool contiguous_cache_blocks,
-		   const std::string& additionalFieldNames,
-		   const std::string& additionalData,
-		   const bool printFieldNames,
-		   const bool human_readable = false,
-		   const bool b_debug = false);
+                   const int nrows,
+                   const int ncols,
+                   const size_t cache_size_hint,
+                   const bool test_complex_arithmetic,
+                   const bool save_matrices,
+                   const bool contiguous_cache_blocks,
+                   const std::string& additionalFieldNames,
+                   const std::string& additionalData,
+                   const bool printFieldNames,
+                   const bool human_readable = false,
+                   const bool b_debug = false);
 
     /// \brief Test accuracy of LAPACK's QR factorization.
     ///
@@ -79,14 +79,14 @@ namespace TSQR {
     /// the given output stream out.
     void
     verifyLapack (std::ostream& out,
-		  const int nrows, 
-		  const int ncols, 
-		  const bool test_complex_arithmetic,
-		  const std::string& additionalFieldNames,
-		  const std::string& additionalData,
-		  const bool printFieldNames,
-		  const bool human_readable,
-		  const bool b_debug = false);
+                  const int nrows,
+                  const int ncols,
+                  const bool test_complex_arithmetic,
+                  const std::string& additionalFieldNames,
+                  const std::string& additionalData,
+                  const bool printFieldNames,
+                  const bool human_readable,
+                  const bool b_debug = false);
 
     /// \brief Test performance of SequentialTsqr.
     ///
@@ -100,16 +100,16 @@ namespace TSQR {
     ///   abbreviated format suitable for automatic processing.
     void
     benchmarkSeqTsqr (std::ostream& out,
-		      const int numRows,
-		      const int numCols,
-		      const int numTrials,
-		      const size_t cacheSizeHint,
-		      const bool contiguousCacheBlocks,
-		      const bool testComplex,
-		      const std::string& additionalFieldNames,
-		      const std::string& additionalData,
-		      const bool printFieldNames,
-		      const bool humanReadable);
+                      const int numRows,
+                      const int numCols,
+                      const int numTrials,
+                      const size_t cacheSizeHint,
+                      const bool contiguousCacheBlocks,
+                      const bool testComplex,
+                      const std::string& additionalFieldNames,
+                      const std::string& additionalData,
+                      const bool printFieldNames,
+                      const bool humanReadable);
 
     /// \brief Test performance of LAPACK's QR factorization.
     ///
@@ -123,14 +123,14 @@ namespace TSQR {
     ///   suitable for automatic processing.
     void
     benchmarkLapack (std::ostream& out,
-		     const int numRows,
-		     const int numCols,
-		     const int numTrials,
-		     const bool testComplex,
-		     const std::string& additionalFieldNames,
-		     const std::string& additionalData,
-		     const bool printFieldNames,
-		     const bool humanReadable);
+                     const int numRows,
+                     const int numCols,
+                     const int numTrials,
+                     const bool testComplex,
+                     const std::string& additionalFieldNames,
+                     const std::string& additionalData,
+                     const bool printFieldNames,
+                     const bool humanReadable);
 
   } // namespace Test
 } // namespace TSQR

@@ -39,55 +39,52 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef __TSQR_Trilinos_TsqrFactory_TbbTsqr_hpp
-#define __TSQR_Trilinos_TsqrFactory_TbbTsqr_hpp
+#ifndef KOKKOS_TSQR_CONFIGDEFS_HPP
+#define KOKKOS_TSQR_CONFIGDEFS_HPP
 
-/// \file TsqrFactory_TbbTsqr.hpp
+/// \file KokkosTSQR_ConfigDefs.hpp
+/// \brief Include this header to get KokkosTSQR's configuration options.
+
+#include <KokkosTSQR_config.h>
+
+/// \namespace TSQR
+/// \brief Implementation of the Tall Skinny QR (TSQR) factorization.
 ///
-/// \warning Trilinos users should _not_ include this file directly.
-
-#include <KokkosTSQR_ConfigDefs.hpp>
-
-#ifdef HAVE_KOKKOSTSQR_TBB
-#  include "TbbTsqr.hpp"
-#endif // HAVE_KOKKOSTSQR_TBB
-
-
+/// This namespace contains a full hybrid-parallel (MPI + Kokkos)
+/// implementation of the Tall Skinny QR (TSQR) factorization.  The
+/// following paper describes the implementation:
+///
+/// Mark Hoemmen.  "A communication-avoiding, hybrid-parallel,
+/// rank-revealing orthogonalization method."  IEEE International
+/// Parallel and Distributed Processing Symposium (IPDPS), April 2011.
+///
+/// For further details, see the following:
+///
+/// Marghoob Mohiyuddin, Mark Hoemmen, James Demmel, and Kathy Yelick.
+/// "Minimizing Communication in Sparse Matrix Solvers."  In
+/// Proceedings of Supercomputing 2009, November 2009.
+///
+/// James Demmel, Laura Grigori, Mark Frederick Hoemmen, and Julien
+/// Langou.  "Communication-optimal parallel and sequential QR and LU
+/// factorizations."  Technical report, UCB/EECS-2008-89, August 2008.
 namespace TSQR {
-  namespace Trilinos {
+  //
+  // We declare the TSQR namespace here so that Doxygen will find it
+  // and pull in all its documentation.
+  //
 
-#ifdef HAVE_KOKKOSTSQR_TBB
-    /// \class TbbTsqrFactory
-    /// \brief Subclass of TsqrFactory that uses \c TSQR::TBB::TbbTsqr.
-    /// \author Mark Hoemmen
-    ///
-    /// \tparam LO "LocalOrdinal": the type of indices into the
-    ///   node-local part of the matrix.
-    ///
-    /// \tparam S "Scalar": the type of entries in the node-local part
-    ///   of the matrix.
-    ///
-    /// All of this class' public methods, other than the constructor
-    /// and destructor, are implemented in the parent class.
-    template<class LO, class S>
-    class TbbTsqrFactory :
-      public TsqrFactory<LO, S, TSQR::TBB::TbbTsqr<LO, S>, DistTsqr<LO, S> > {
-    public:
-      // Help C++ pull in the typedefs from the base class.  C++ needs
-      // help when both the base and the derived classes are
-      // templated.
-      typedef typename base_type::node_tsqr_type node_tsqr_type;
-      typedef typename base_type::dist_tsqr_type dist_tsqr_type;
-      typedef typename base_type::tsqr_type tsqr_type;
-      typedef typename base_type::scalar_messenger_type scalar_messenger_type;
+  /// \namespace TSQR::Test
+  /// \brief Accuracy and performance tests for TSQR.
+  ///
+  /// The classes and routines here are not intended for consumers of
+  /// TSQR, but may be helpful as examples.
+  namespace Test {
+    //
+    // We declare the TSQR::Test namespace here so that Doxygen will
+    // find it and pull in all its documentation.
+    //
+  } // namespace Test
 
-      TbbTsqrFactory () {}
-      virtual ~TbbTsqrFactory () {}
-    };
-#endif // HAVE_KOKKOSTSQR_TBB
-
-  } // namespace Trilinos
 } // namespace TSQR
 
-
-#endif // __TSQR_Trilinos_TsqrFactory_TbbTsqr_hpp
+#endif // KOKKOS_TSQR_CONFIGDEFS_HPP

@@ -42,7 +42,7 @@
 #ifndef __TSQR_Test_DistTest_hpp
 #define __TSQR_Test_DistTest_hpp
 
-#include <Tsqr_ConfigDefs.hpp>
+#include <KokkosTSQR_ConfigDefs.hpp>
 #include <Tsqr_Random_NormalGenerator.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
 

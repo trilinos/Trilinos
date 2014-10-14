@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -45,7 +45,7 @@
 /// \file TsqrAdaptor.hpp
 /// \brief Abstract interface between TSQR and multivector type
 ///
-#include <Tsqr_ConfigDefs.hpp>
+#include <KokkosTSQR_ConfigDefs.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <TsqrTypeAdaptor.hpp>
 #include <TsqrCommFactory.hpp>
@@ -149,7 +149,7 @@ namespace TSQR {
       virtual ~TsqrAdaptor() {}
 
       /// \brief Compute explicit "thin" QR factorization of A.
-      /// 
+      ///
       /// \param A [in/out] On input, the multivector to factor.
       ///   Overwritten with nonuseful data on output.
       ///
@@ -166,16 +166,16 @@ namespace TSQR {
       ///   in column-major order, with leading dimension >= the
       ///   number of rows in the row block.
       void
-      factorExplicit (multivector_type& A, 
-		      multivector_type& Q, 
-		      dense_matrix_type& R,
-		      const bool contiguousCacheBlocks = false)
+      factorExplicit (multivector_type& A,
+                      multivector_type& Q,
+                      dense_matrix_type& R,
+                      const bool contiguousCacheBlocks = false)
       {
-	// Lazily init the intranode part of TSQR if necessary.
-	initNodeTsqr (A);
+        // Lazily init the intranode part of TSQR if necessary.
+        initNodeTsqr (A);
 
-	factor_output_type output = factor (A, R, contiguousCacheBlocks);
-	explicitQ (A, output, Q, contiguousCacheBlocks);
+        factor_output_type output = factor (A, R, contiguousCacheBlocks);
+        explicitQ (A, output, Q, contiguousCacheBlocks);
       }
 
       /// \brief Compute QR factorization of the multivector A.
@@ -215,29 +215,29 @@ namespace TSQR {
       /// fetchNonConstView(A) does not require copying the contents
       /// of A (e.g., from GPU memory to CPU memory).
       virtual factor_output_type
-      factor (multivector_type& A, 
-	      dense_matrix_type& R,
-	      const bool contiguousCacheBlocks = false)
+      factor (multivector_type& A,
+              dense_matrix_type& R,
+              const bool contiguousCacheBlocks = false)
       {
-	// Lazily init the intranode part of TSQR if necessary.
-	initNodeTsqr (A);
+        // Lazily init the intranode part of TSQR if necessary.
+        initNodeTsqr (A);
 
-	local_ordinal_type nrowsLocal, ncols, LDA;
-	fetchDims (A, nrowsLocal, ncols, LDA);
-	// This is guaranteed to be _correct_ for any Node type, but
-	// won't necessary be efficient.  The desired model is that
-	// A_local requires no copying.
-	Teuchos::ArrayRCP< scalar_type > A_local = fetchNonConstView (A);
+        local_ordinal_type nrowsLocal, ncols, LDA;
+        fetchDims (A, nrowsLocal, ncols, LDA);
+        // This is guaranteed to be _correct_ for any Node type, but
+        // won't necessary be efficient.  The desired model is that
+        // A_local requires no copying.
+        Teuchos::ArrayRCP< scalar_type > A_local = fetchNonConstView (A);
 
-	// Reshape R if necessary.  This operation zeros out all the
-	// entries of R, which is what we want anyway.
-	if (R.numRows() != ncols || R.numCols() != ncols)
-	  {
-	    if (0 != R.shape (ncols, ncols))
-	      throw std::runtime_error ("Failed to reshape matrix R");
-	  }
-	return pTsqr_->factor (nrowsLocal, ncols, A_local.get(), LDA, 
-			       R.values(), R.stride(), contiguousCacheBlocks);
+        // Reshape R if necessary.  This operation zeros out all the
+        // entries of R, which is what we want anyway.
+        if (R.numRows() != ncols || R.numCols() != ncols)
+          {
+            if (0 != R.shape (ncols, ncols))
+              throw std::runtime_error ("Failed to reshape matrix R");
+          }
+        return pTsqr_->factor (nrowsLocal, ncols, A_local.get(), LDA,
+                               R.values(), R.stride(), contiguousCacheBlocks);
       }
 
       /// \brief Compute the explicit Q factor.
@@ -248,7 +248,7 @@ namespace TSQR {
       /// returned by factor().
       ///
       /// \param Q_in [in] Same as the "A" input of factor()
-      /// \param factorOutput [in] Return value of factor() 
+      /// \param factorOutput [in] Return value of factor()
       ///   corresponding to Q_in
       /// \param Q_out [out] Explicit "thin" representation of the Q
       ///   factor.  "Explicit" means as a regular matrix (in the same
@@ -266,37 +266,37 @@ namespace TSQR {
       /// fetchNonConstView(Q_out) and fetchConstView(Q_in) do not
       /// require copying (e.g., from GPU memory to CPU memory) the
       /// contents of their respective multivector inputs.
-      virtual void 
-      explicitQ (const multivector_type& Q_in, 
-		 const factor_output_type& factorOutput,
-		 multivector_type& Q_out, 
-		 const bool contiguousCacheBlocks = false)
+      virtual void
+      explicitQ (const multivector_type& Q_in,
+                 const factor_output_type& factorOutput,
+                 multivector_type& Q_out,
+                 const bool contiguousCacheBlocks = false)
       {
-	using Teuchos::ArrayRCP;
+        using Teuchos::ArrayRCP;
 
-	// Lazily init the intranode part of TSQR if necessary.
-	initNodeTsqr (Q_in);
+        // Lazily init the intranode part of TSQR if necessary.
+        initNodeTsqr (Q_in);
 
-	local_ordinal_type nrowsLocal, ncols_in, LDQ_in;
-	fetchDims (Q_in, nrowsLocal, ncols_in, LDQ_in);
-	local_ordinal_type nrowsLocal_out, ncols_out, LDQ_out;
-	fetchDims (Q_out, nrowsLocal_out, ncols_out, LDQ_out);
+        local_ordinal_type nrowsLocal, ncols_in, LDQ_in;
+        fetchDims (Q_in, nrowsLocal, ncols_in, LDQ_in);
+        local_ordinal_type nrowsLocal_out, ncols_out, LDQ_out;
+        fetchDims (Q_out, nrowsLocal_out, ncols_out, LDQ_out);
 
-	if (nrowsLocal_out != nrowsLocal)
-	  {
-	    std::ostringstream os;
-	    os << "TSQR explicit Q: input Q factor\'s node-local part has a di"
-	      "fferent number of rows (" << nrowsLocal << ") than output Q fac"
-	      "tor\'s node-local part (" << nrowsLocal_out << ").";
-	    throw std::runtime_error (os.str());
-	  }
-	ArrayRCP< const scalar_type > pQin = fetchConstView (Q_in);
-	ArrayRCP< scalar_type > pQout = fetchNonConstView (Q_out);
-	pTsqr_->explicit_Q (nrowsLocal, 
-			    ncols_in, pQin.get(), LDQ_in, 
-			    factorOutput,
-			    ncols_out, pQout.get(), LDQ_out,
-			    contiguousCacheBlocks);
+        if (nrowsLocal_out != nrowsLocal)
+          {
+            std::ostringstream os;
+            os << "TSQR explicit Q: input Q factor\'s node-local part has a di"
+              "fferent number of rows (" << nrowsLocal << ") than output Q fac"
+              "tor\'s node-local part (" << nrowsLocal_out << ").";
+            throw std::runtime_error (os.str());
+          }
+        ArrayRCP< const scalar_type > pQin = fetchConstView (Q_in);
+        ArrayRCP< scalar_type > pQout = fetchNonConstView (Q_out);
+        pTsqr_->explicit_Q (nrowsLocal,
+                            ncols_in, pQin.get(), LDQ_in,
+                            factorOutput,
+                            ncols_out, pQout.get(), LDQ_out,
+                            contiguousCacheBlocks);
       }
 
       /// \brief Rank-revealing decomposition.
@@ -325,24 +325,24 @@ namespace TSQR {
       ///
       local_ordinal_type
       revealRank (multivector_type& Q,
-		  dense_matrix_type& R,
-		  const magnitude_type relativeTolerance,
-		  const bool contiguousCacheBlocks = false) const
+                  dense_matrix_type& R,
+                  const magnitude_type relativeTolerance,
+                  const bool contiguousCacheBlocks = false) const
       {
-	using Teuchos::ArrayRCP;
+        using Teuchos::ArrayRCP;
 
-	// Lazily init the intranode part of TSQR if necessary.
-	initNodeTsqr (Q);
+        // Lazily init the intranode part of TSQR if necessary.
+        initNodeTsqr (Q);
 
-	local_ordinal_type nrowsLocal, ncols, ldqLocal;
-	fetchDims (Q, nrowsLocal, ncols, ldqLocal);
+        local_ordinal_type nrowsLocal, ncols, ldqLocal;
+        fetchDims (Q, nrowsLocal, ncols, ldqLocal);
 
-	ArrayRCP< scalar_type > Q_ptr = fetchNonConstView (Q);
-	return pTsqr_->reveal_rank (nrowsLocal, ncols, 
-				    Q_ptr.get(), ldqLocal,
-				    R.values(), R.stride(), 
-				    relativeTolerance, 
-				    contiguousCacheBlocks);
+        ArrayRCP< scalar_type > Q_ptr = fetchNonConstView (Q);
+        return pTsqr_->reveal_rank (nrowsLocal, ncols,
+                                    Q_ptr.get(), ldqLocal,
+                                    R.values(), R.stride(),
+                                    relativeTolerance,
+                                    contiguousCacheBlocks);
       }
 
       /// \brief Cache-block A_in into A_out.
@@ -355,40 +355,40 @@ namespace TSQR {
       ///   Another way to say this is that the multivector object may
       ///   not be aware that its data has been reorganized underneath
       ///   it.
-      virtual void 
-      cacheBlock (const multivector_type& A_in, 
-		  multivector_type& A_out)
+      virtual void
+      cacheBlock (const multivector_type& A_in,
+                  multivector_type& A_out)
       {
-	using Teuchos::ArrayRCP;
+        using Teuchos::ArrayRCP;
 
-	// Lazily init the intranode part of TSQR if necessary.
-	initNodeTsqr (A_in);
+        // Lazily init the intranode part of TSQR if necessary.
+        initNodeTsqr (A_in);
 
-	local_ordinal_type nrowsLocal, ncols, LDA_in;
-	fetchDims (A_in, nrowsLocal, ncols, LDA_in);
-	local_ordinal_type nrowsLocal_out, ncols_out, LDA_out;
-	fetchDims (A_out, nrowsLocal_out, ncols_out, LDA_out);
+        local_ordinal_type nrowsLocal, ncols, LDA_in;
+        fetchDims (A_in, nrowsLocal, ncols, LDA_in);
+        local_ordinal_type nrowsLocal_out, ncols_out, LDA_out;
+        fetchDims (A_out, nrowsLocal_out, ncols_out, LDA_out);
 
-	if (nrowsLocal_out != nrowsLocal)
-	  {
-	    std::ostringstream os;
-	    os << "TSQR cache block: the input matrix\'s node-local part has a"
-	      " different number of rows (" << nrowsLocal << ") than the outpu"
-	      "t matrix\'s node-local part (" << nrowsLocal_out << ").";
-	    throw std::runtime_error (os.str());
-	  }
-	else if (ncols_out != ncols)
-	  {
-	    std::ostringstream os;
-	    os << "TSQR cache block: the input matrix\'s node-local part has a"
-	      " different number of columns (" << ncols << ") than the output "
-	      "matrix\'s node-local part (" << ncols_out << ").";
-	    throw std::runtime_error (os.str());
-	  }
-	ArrayRCP< const scalar_type > pA_in = fetchConstView (A_in);
-	ArrayRCP< scalar_type > pA_out = fetchNonConstView (A_out);
-	pTsqr_->cache_block (nrowsLocal, ncols, pA_out.get(), 
-			     pA_in.get(), LDA_in);
+        if (nrowsLocal_out != nrowsLocal)
+          {
+            std::ostringstream os;
+            os << "TSQR cache block: the input matrix\'s node-local part has a"
+              " different number of rows (" << nrowsLocal << ") than the outpu"
+              "t matrix\'s node-local part (" << nrowsLocal_out << ").";
+            throw std::runtime_error (os.str());
+          }
+        else if (ncols_out != ncols)
+          {
+            std::ostringstream os;
+            os << "TSQR cache block: the input matrix\'s node-local part has a"
+              " different number of columns (" << ncols << ") than the output "
+              "matrix\'s node-local part (" << ncols_out << ").";
+            throw std::runtime_error (os.str());
+          }
+        ArrayRCP< const scalar_type > pA_in = fetchConstView (A_in);
+        ArrayRCP< scalar_type > pA_out = fetchNonConstView (A_out);
+        pTsqr_->cache_block (nrowsLocal, ncols, pA_out.get(),
+                             pA_in.get(), LDA_in);
       }
 
       /// \brief Un-cache-block A_in into A_out.
@@ -396,45 +396,45 @@ namespace TSQR {
       /// Undo the transformation performed by \c cacheBlock(), by
       /// copying the contiguously cache blocked data in A_in into the
       /// conventionally stored A_out.
-      virtual void 
-      unCacheBlock (const multivector_type& A_in, 
-		    multivector_type& A_out)
+      virtual void
+      unCacheBlock (const multivector_type& A_in,
+                    multivector_type& A_out)
       {
-	using Teuchos::ArrayRCP;
+        using Teuchos::ArrayRCP;
 
-	// Lazily init the intranode part of TSQR if necessary.
-	initNodeTsqr (A_in);
+        // Lazily init the intranode part of TSQR if necessary.
+        initNodeTsqr (A_in);
 
-	local_ordinal_type nrowsLocal, ncols, LDA_in;
-	fetchDims (A_in, nrowsLocal, ncols, LDA_in);
-	local_ordinal_type nrowsLocal_out, ncols_out, LDA_out;
-	fetchDims (A_out, nrowsLocal_out, ncols_out, LDA_out);
+        local_ordinal_type nrowsLocal, ncols, LDA_in;
+        fetchDims (A_in, nrowsLocal, ncols, LDA_in);
+        local_ordinal_type nrowsLocal_out, ncols_out, LDA_out;
+        fetchDims (A_out, nrowsLocal_out, ncols_out, LDA_out);
 
-	if (nrowsLocal_out != nrowsLocal)
-	  {
-	    std::ostringstream os;
-	    os << "TSQR un-cache-block: the input matrix\'s node-local part ha"
-	      "s a different number of rows (" << nrowsLocal << ") than the ou"
-	      "tput matrix\'s node-local part (" << nrowsLocal_out << ").";
-	    throw std::runtime_error (os.str());
-	  }
-	else if (ncols_out != ncols)
-	  {
-	    std::ostringstream os;
-	    os << "TSQR cache block: the input matrix\'s node-local part has a"
-	      " different number of columns (" << ncols << ") than the output "
-	      "matrix\'s node-local part (" << ncols_out << ").";
-	    throw std::runtime_error (os.str());
-	  }
-	ArrayRCP< const scalar_type > pA_in = fetchConstView (A_in);
-	ArrayRCP< scalar_type > pA_out = fetchNonConstView (A_out);
-	pTsqr_->un_cache_block (nrowsLocal, ncols, pA_out.get(), 
-				LDA_out, pA_in.get());
+        if (nrowsLocal_out != nrowsLocal)
+          {
+            std::ostringstream os;
+            os << "TSQR un-cache-block: the input matrix\'s node-local part ha"
+              "s a different number of rows (" << nrowsLocal << ") than the ou"
+              "tput matrix\'s node-local part (" << nrowsLocal_out << ").";
+            throw std::runtime_error (os.str());
+          }
+        else if (ncols_out != ncols)
+          {
+            std::ostringstream os;
+            os << "TSQR cache block: the input matrix\'s node-local part has a"
+              " different number of columns (" << ncols << ") than the output "
+              "matrix\'s node-local part (" << ncols_out << ").";
+            throw std::runtime_error (os.str());
+          }
+        ArrayRCP< const scalar_type > pA_in = fetchConstView (A_in);
+        ArrayRCP< scalar_type > pA_out = fetchNonConstView (A_out);
+        pTsqr_->un_cache_block (nrowsLocal, ncols, pA_out.get(),
+                                LDA_out, pA_in.get());
       }
-      
+
       /// \brief Verify the result of the "thin" QR factorization \f$A = QR\f$.
       ///
-      /// This method returns a list of three magnitudes: 
+      /// This method returns a list of three magnitudes:
       /// - \f$\| A - QR \|_F\f$
       /// - \f$\|I - Q^* Q\|_F\f$
       /// - \f$\|A\|_F\f$
@@ -445,30 +445,30 @@ namespace TSQR {
       /// or not scale the residual \f$\|A - QR\|\f$ as you prefer.
       virtual std::vector< magnitude_type >
       verify (const multivector_type& A,
-	      const multivector_type& Q,
-	      const Teuchos::SerialDenseMatrix< local_ordinal_type, scalar_type >& R)
+              const multivector_type& Q,
+              const Teuchos::SerialDenseMatrix< local_ordinal_type, scalar_type >& R)
       {
-	using Teuchos::ArrayRCP;
+        using Teuchos::ArrayRCP;
 
-	local_ordinal_type nrowsLocal_A, ncols_A, LDA;
-	local_ordinal_type nrowsLocal_Q, ncols_Q, LDQ;
-	fetchDims (A, nrowsLocal_A, ncols_A, LDA);
-	fetchDims (Q, nrowsLocal_Q, ncols_Q, LDQ);
-	if (nrowsLocal_A != nrowsLocal_Q)
-	  throw std::runtime_error ("A and Q must have same number of rows");
-	else if (ncols_A != ncols_Q)
-	  throw std::runtime_error ("A and Q must have same number of columns");
-	else if (ncols_A != R.numCols())
-	  throw std::runtime_error ("A and R must have same number of columns");
-	else if (R.numRows() < R.numCols())
-	  throw std::runtime_error ("R must have no fewer rows than columns");
+        local_ordinal_type nrowsLocal_A, ncols_A, LDA;
+        local_ordinal_type nrowsLocal_Q, ncols_Q, LDQ;
+        fetchDims (A, nrowsLocal_A, ncols_A, LDA);
+        fetchDims (Q, nrowsLocal_Q, ncols_Q, LDQ);
+        if (nrowsLocal_A != nrowsLocal_Q)
+          throw std::runtime_error ("A and Q must have same number of rows");
+        else if (ncols_A != ncols_Q)
+          throw std::runtime_error ("A and Q must have same number of columns");
+        else if (ncols_A != R.numCols())
+          throw std::runtime_error ("A and R must have same number of columns");
+        else if (R.numRows() < R.numCols())
+          throw std::runtime_error ("R must have no fewer rows than columns");
 
-	// Const views suffice for verification
-	ArrayRCP< const scalar_type > A_ptr = fetchConstView (A);
-	ArrayRCP< const scalar_type > Q_ptr = fetchConstView (Q);
-	return global_verify (nrowsLocal_A, ncols_A, A_ptr.get(), LDA,
-			      Q_ptr.get(), LDQ, R.values(), R.stride(), 
-			      pScalarMessenger_.get());
+        // Const views suffice for verification
+        ArrayRCP< const scalar_type > A_ptr = fetchConstView (A);
+        ArrayRCP< const scalar_type > Q_ptr = fetchConstView (Q);
+        return global_verify (nrowsLocal_A, ncols_A, A_ptr.get(), LDA,
+                              Q_ptr.get(), LDQ, R.values(), R.stride(),
+                              pScalarMessenger_.get());
       }
 
     protected:
@@ -481,16 +481,16 @@ namespace TSQR {
       /// constructor of a pure virtual class.  ("Call the constructor
       /// of" is a synonym for "instantiate," and you can't
       /// instantiate an instance of a pure virtual class.)
-      void 
+      void
       init (const multivector_type& mv,
-	    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+            const Teuchos::RCP<Teuchos::ParameterList>& plist)
       {
-	// This is done in a multivector type - dependent way.
-	fetchMessengers (mv, pScalarMessenger_, pOrdinalMessenger_);
+        // This is done in a multivector type - dependent way.
+        fetchMessengers (mv, pScalarMessenger_, pOrdinalMessenger_);
 
-	factory_type factory;
-	// plist and pScalarMessenger_ are inputs.  Construct *pTsqr_.
-	factory.makeTsqr (plist, pScalarMessenger_, pTsqr_);
+        factory_type factory;
+        // plist and pScalarMessenger_ are inputs.  Construct *pTsqr_.
+        factory.makeTsqr (plist, pScalarMessenger_, pTsqr_);
       }
 
       // Lazily init the intranode part of TSQR if necessary.
@@ -507,16 +507,16 @@ namespace TSQR {
       /// this process).
       ///
       /// \param A [in] The multivector object
-      /// \param nrowsLocal [out] Number of rows of A stored locally 
+      /// \param nrowsLocal [out] Number of rows of A stored locally
       ///   on this process
       /// \param ncols [out] Number of columns of A
-      /// \param LDA [out] Leading dimension of this process' row 
+      /// \param LDA [out] Leading dimension of this process' row
       ///   block of A
-      virtual void 
-      fetchDims (const multivector_type& A, 
-		 local_ordinal_type& nrowsLocal, 
-		 local_ordinal_type& ncols, 
-		 local_ordinal_type& LDA) const = 0;
+      virtual void
+      fetchDims (const multivector_type& A,
+                 local_ordinal_type& nrowsLocal,
+                 local_ordinal_type& ncols,
+                 local_ordinal_type& LDA) const = 0;
 
       /// \brief Get nonconst pointer to the node-local data in A.
       ///
@@ -525,7 +525,7 @@ namespace TSQR {
       ///   not necessarily efficient) for all multivector types.  (It
       ///   may not be efficient if the \c Teuchos::ArrayRCP copies
       ///   between different memory spaces.)
-      virtual Teuchos::ArrayRCP<scalar_type> 
+      virtual Teuchos::ArrayRCP<scalar_type>
       fetchNonConstView (multivector_type& A) const = 0;
 
       /// \brief Get const pointer to the node-local data in A.
@@ -535,7 +535,7 @@ namespace TSQR {
       ///   not necessarily efficient) for all multivector types.  (It
       ///   may not be efficient if the \c Teuchos::ArrayRCP copies
       ///   between different memory spaces.)
-      virtual Teuchos::ArrayRCP<const scalar_type> 
+      virtual Teuchos::ArrayRCP<const scalar_type>
       fetchConstView (const multivector_type& A) const = 0;
 
       /// \brief Get "messenger" objects associated with the given multivector.
@@ -553,8 +553,8 @@ namespace TSQR {
       ///   multivector type.
       virtual void
       fetchMessengers (const multivector_type& mv,
-		       scalar_messenger_ptr& pScalarMessenger,
-		       ordinal_messenger_ptr& pOrdinalMessenger) const = 0;
+                       scalar_messenger_ptr& pScalarMessenger,
+                       ordinal_messenger_ptr& pOrdinalMessenger) const = 0;
 
       /// Object that knows how to communicate scalar_type objects.
       scalar_messenger_ptr pScalarMessenger_;
