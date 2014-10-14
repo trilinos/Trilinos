@@ -284,7 +284,6 @@ namespace TSQR {
       using std::endl;
 
       typedef Teuchos::Time timer_type;
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
       typedef Matrix< ordinal_type, scalar_type > matrix_type;

@@ -106,7 +106,6 @@ namespace Test {
   static void
   benchmark (const TbbTestParameters& params)
   {
-    typedef Teuchos::Time timer_type;
     using TSQR::Test::benchmarkTbbTsqr;
 #ifdef HAVE_KOKKOSTSQR_COMPLEX
     using std::complex;
