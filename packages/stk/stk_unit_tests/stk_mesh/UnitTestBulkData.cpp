@@ -5147,36 +5147,63 @@ TEST(BulkData, testChangeEntityOwnerShared_2EltsChown1ChownUncommonNodesFlip)
   }
   bulk.change_entity_owner(entity_procs_flip);
 
-  //now do checks for flip
-  elem1 = bulk.get_entity(stk::topology::ELEM_RANK, 1);
-  elem2 = bulk.get_entity(stk::topology::ELEM_RANK, 2);
-  stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
-  node3 = bulk.get_entity(stk::topology::NODE_RANK, 3);
-  node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
-  EXPECT_TRUE(bulk.is_valid(elem1));
-  EXPECT_TRUE(bulk.is_valid(elem2));
-  EXPECT_TRUE(bulk.is_valid(node1));
-  EXPECT_TRUE(bulk.is_valid(node3));
-  EXPECT_TRUE(bulk.is_valid(node5));
   if (p_rank == 0) {
-      EXPECT_TRUE(bulk.bucket_ptr(elem2) && bulk.bucket_ptr(elem2)->owned());
-      EXPECT_TRUE(bulk.bucket_ptr(elem1) && !bulk.bucket_ptr(elem1)->owned());
-      EXPECT_TRUE(bulk.bucket_ptr(node3) && bulk.bucket_ptr(node3)->owned());
-      EXPECT_TRUE(bulk.bucket_ptr(node3) && bulk.bucket_ptr(node3)->shared());
-      EXPECT_TRUE(bulk.bucket_ptr(node5) && bulk.bucket_ptr(node5)->owned());
-      EXPECT_TRUE(bulk.bucket_ptr(node5) && !bulk.bucket_ptr(node5)->shared());
-      EXPECT_TRUE(bulk.bucket_ptr(node1) && !bulk.bucket_ptr(node1)->owned());
-      EXPECT_TRUE(bulk.bucket_ptr(node1) && !bulk.bucket_ptr(node1)->shared());
-    } else {
-      EXPECT_TRUE(bulk.bucket_ptr(elem2) && !bulk.bucket_ptr(elem2)->owned());
-      EXPECT_TRUE(bulk.bucket_ptr(elem1) && bulk.bucket_ptr(elem1)->owned());
-      EXPECT_TRUE(bulk.bucket_ptr(node3) && !bulk.bucket_ptr(node3)->owned());
-      EXPECT_TRUE(bulk.bucket_ptr(node3) && bulk.bucket_ptr(node3)->shared());
-      EXPECT_TRUE(bulk.bucket_ptr(node5) && !bulk.bucket_ptr(node5)->owned());
-      EXPECT_TRUE(bulk.bucket_ptr(node5) && !bulk.bucket_ptr(node5)->shared());
-      EXPECT_TRUE(bulk.bucket_ptr(node1) && bulk.bucket_ptr(node1)->owned());
-      EXPECT_TRUE(bulk.bucket_ptr(node1) && !bulk.bucket_ptr(node1)->shared());
-    }
+    EXPECT_TRUE( check_state(bulk, EntityKey(ELEM_RANK, 1), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(ELEM_RANK, 2), STATE_OWNED, 0) );
+
+    EXPECT_TRUE( check_state(bulk, EntityKey(ELEM_RANK, 1), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED) );
+
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 1), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 2), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 3), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 4), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 5), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 6), STATE_OWNED, 0) );
+
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 3), STATE_SHARED,  1) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 4), STATE_SHARED,  1) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED) );
+
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 1), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 2), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED) );
+  }
+  else if (p_rank == 1) {
+    EXPECT_TRUE( check_state(bulk, EntityKey(ELEM_RANK, 1), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(ELEM_RANK, 2), STATE_OWNED, 0) );
+
+    EXPECT_TRUE( check_state(bulk, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(ELEM_RANK, 2), STATE_GHOSTED,  0) );
+
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 1), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 2), STATE_OWNED, 1) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 3), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 4), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 5), STATE_OWNED, 0) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 6), STATE_OWNED, 0) );
+
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 3), STATE_SHARED,  0) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 4), STATE_SHARED,  0) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED) );
+
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 5), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( check_state(bulk, EntityKey(NODE_RANK, 6), STATE_GHOSTED,  0) );
+  }
+
 }
 
 
