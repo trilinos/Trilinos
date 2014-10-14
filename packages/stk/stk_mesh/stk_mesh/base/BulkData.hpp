@@ -706,14 +706,19 @@ public:
 
   /** \brief  Entity Comm functions that are now moved to BulkData
    */
-  PairIterEntityComm entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
-  PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }
-  PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
+  PairIterEntityComm entity_comm_map(const EntityKey & key) const
+  { return m_entity_comm_map.comm(key); }
+  PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const
+  { return m_entity_comm_map.shared_comm_info(key); }
+  PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const
+  { return m_entity_comm_map.comm(key,sub); }
+
   bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity)); }
   bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
   bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
   void entity_comm_map_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
   void entity_comm_map_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
+
   int entity_comm_map_owner(const EntityKey & key) const;
 
   // Comm-related convenience methods
@@ -2222,6 +2227,7 @@ void internal_get_processor_dependencies_shared_or_ghosted(
 void internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,
   std::vector<EntityProc> & local_change );
+
 
 } // namespace mesh
 } // namespace stk

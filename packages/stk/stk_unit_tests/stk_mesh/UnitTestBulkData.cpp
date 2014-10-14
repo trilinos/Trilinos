@@ -53,6 +53,7 @@
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
 #include <unit_tests/Setup8Quad4ProcMesh.hpp>
+#include "unit_tests/UnitTestMeshUtils.hpp"
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
@@ -4036,31 +4037,6 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
 
 } // empty namespace
 
-//====================
-extern int gl_argc;
-extern char** gl_argv;
-
-inline std::string getOption(const std::string& option, const std::string defaultString = "no")
-{
-    std::string returnValue = defaultString;
-    if(gl_argv != 0)
-    {
-        for(int i = 0; i < gl_argc; i++)
-        {
-            std::string input_argv(gl_argv[i]);
-            if(option == input_argv)
-            {
-                if((i + 1) < gl_argc)
-                {
-                    returnValue = std::string(gl_argv[i + 1]);
-                }
-                break;
-            }
-        }
-    }
-    return returnValue;
-}
-
 namespace
 {
 
@@ -4090,6 +4066,8 @@ public:
         return m_closure_count[entity.local_offset()];
     }
 };
+
+} // namespace
 
 TEST(BulkData, ModificationEnd)
 {
@@ -4170,6 +4148,8 @@ TEST(BulkData, ModificationEnd)
         delete stkMeshBulkData;
     }
 }
+
+
 
 TEST(BulkData, verify_closure_count_is_correct)
 {
@@ -5095,9 +5075,9 @@ TEST(BulkData, change_entity_owner_4Elem4ProcEdge)
   //
   //         id/proc                             id/proc
   //        1/0---3/0---5/1---7/2---9/3         1/0---3/0---5/1---7/0---9/3
-  //        |      |     |    {|     |          |      |     |    {|     |
-  //        | 1/0  | 2/1 | 3/2{| 4/3 |          | 1/0  | 2/1 | 3/0{| 4/3 |
-  //        |      |     |    {|     |          |      |     |    {|     |
+  //        |      |     |    ||     |          |      |     |    ||     |
+  //        | 1/0  | 2/1 | 3/2|| 4/3 |          | 1/0  | 2/1 | 3/0|| 4/3 |
+  //        |      |     |    ||     |          |      |     |    ||     |
   //        2/0---4/0---6/1---8/2---10/3        2/0---4/0---6/1---8/0---10/3
   //  this edge moves to p0 --^
   //  element 3 moves to proc 0.
@@ -6098,5 +6078,4 @@ TEST(BulkData, change_entity_owner_8Elem4ProcMoveTop)
   }
 }
 
-}
 

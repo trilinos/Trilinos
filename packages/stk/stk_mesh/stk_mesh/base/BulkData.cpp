@@ -71,6 +71,7 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
 #include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
@@ -3455,112 +3456,39 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
 
 //----------------------------------------------------------------------
 
-namespace {
 
-// Given an entity, if it's a ghost, insert the closure of the entity
-// into work_list.
-void insert_closure_ghost(const BulkData& mesh, Entity const entity ,
-                           const int proc_local ,
-                           std::set<EntityKey> & work_list )
+
+struct StoreEntityKeyInSet
 {
-  bool entityIsAGhost = ! in_owned_closure( mesh, entity , proc_local );
-  if ( entityIsAGhost ) {
-    // This entity is a ghost, put it on the work_list
-    // along with all ghosts in its closure
+    StoreEntityKeyInSet(const BulkData & mesh_in) : mesh(mesh_in) {}
+    void operator()(Entity entity) {
+       entity_key_set.insert(mesh.entity_key(entity));
+    }
+    std::set<EntityKey> entity_key_set;
+    const BulkData & mesh;
+};
 
-    const bool was_inserted = work_list.insert(mesh.entity_key(entity)).second;
+struct StoreEntityProcInSet
+{
+    StoreEntityProcInSet(const BulkData & mesh_in)
+    :mesh(mesh_in)
+    ,entity_proc_set(EntityLess(mesh_in))
+    ,target(-1) {}
 
-    if ( was_inserted ) {
-      // This ghost entity is new to the list, traverse its closure.
-
-      const unsigned erank = mesh.entity_rank(entity);
-
-      // Recurse over downward relations
-      for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
-      {
-        Entity const *irels_j = mesh.begin(entity, irank);
-        Entity const *irels_e = mesh.end(entity, irank);
-        for (; irels_j != irels_e; ++irels_j)
-        {
-          insert_closure_ghost(mesh, *irels_j, proc_local, work_list);
+    bool operator()(Entity entity) {
+        EntityProc ep(entity,target);
+        if (entity_proc_set.find(ep) == entity_proc_set.end()) {
+            entity_proc_set.insert(ep);
+            return true;
         }
-      }
+        return false;
     }
-  }
-}
+    const BulkData & mesh;
+    std::set<EntityProc,EntityLess> entity_proc_set;
+    int target;
+};
 
-
-// Given an entity, insert the closures of every entity that has this entity
-// in its closure. Only ghosts will be inserted.
-void insert_transitive_ghost(const BulkData& mesh, Entity const entity ,
-                              const int proc_local ,
-                              std::set<EntityKey> & work_list )
-{
-  insert_closure_ghost(mesh, entity , proc_local , work_list );
-
-  // Transitive:
-  // If this entity is a member of another entity's closure
-  // then that other entity is part of the traversal.
-
-  const EntityRank erank = mesh.entity_rank(entity);
-
-  // Recurse over upward relations
-  const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
-  EntityVector temp_entities;
-  Entity const* rels = NULL;
-  int num_rels = 0;
-  for (EntityRank irank = static_cast<EntityRank>(erank + 1); irank < end_rank; ++irank)
-  {
-    if (mesh.connectivity_map().valid(erank, irank)) {
-      num_rels = mesh.num_connectivity(entity, irank);
-      rels     = mesh.begin(entity, irank);
-    }
-    else {
-      num_rels = get_connectivity( mesh, entity, irank, temp_entities);
-      rels     = &*temp_entities.begin();
-    }
-
-    for (int r = 0; r < num_rels; ++r)
-    {
-      insert_transitive_ghost(mesh, rels[r] , proc_local , work_list );
-    }
-  }
-}
-
-// Add EntityProc pairs to send_list for every entity in the closure of the
-// entity in send_entry. All these entities will be sent to the same proc as
-// the original send_entry.
-void insert_closure_send(
-  const BulkData &mesh,
-  const EntityProc                  send_entry ,
-  std::set<EntityProc,EntityLess> & send_list )
-{
-  ThrowRequireMsg( mesh.is_valid(send_entry.first),
-                   "Cannot send destroyed entity");
-
-  std::pair< std::set<EntityProc,EntityLess>::iterator , bool >
-    result = send_list.insert( send_entry );
-
-  if ( result.second ) {
-    // First time this entity was inserted into the send_list.
-
-    const unsigned erank  = mesh.entity_rank(send_entry.first);
-    const Bucket &ebucket = mesh.bucket(send_entry.first);
-    const Ordinal ebordinal = mesh.bucket_ordinal(send_entry.first);
-
-    // Recurse over downward relations
-    for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
-    {
-      Entity const *rels_itr = ebucket.begin(ebordinal, irank);
-      Entity const *rels_end= ebucket.end(ebordinal, irank);
-      for (; rels_itr != rels_end; ++rels_itr)
-      {
-        const EntityProc rel_send_entry( *rels_itr, send_entry.second );
-        insert_closure_send(mesh, rel_send_entry , send_list );
-      }
-    }
-  }
-}
+namespace {
 
 //----------------------------------------------------------------------
 
@@ -4128,14 +4056,15 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
   // then that ghost must be deleted.
   // Request that all ghost entities in the closure of the ghost be deleted.
 
-  typedef std::set<EntityProc,EntityLess> EntityProcSet;
+  StoreEntityProcInSet store_entity_proc_in_set(*this);
 
   // Compute the closure of all the locally changing entities
-  std::set<EntityProc,EntityLess> send_closure(EntityLess(*this)) ;
   for ( std::vector<EntityProc>::iterator
         i = local_change.begin() ; i != local_change.end() ; ++i ) {
-    insert_closure_send(*this, *i , send_closure );
+      store_entity_proc_in_set.target = i->second;
+      impl::VisitClosureGeneral(*this,i->first,store_entity_proc_in_set,store_entity_proc_in_set);
   }
+  std::set<EntityProc,EntityLess> & send_closure = store_entity_proc_in_set.entity_proc_set;
 
 
   // Calculate all the ghosts that are impacted by the set of ownership
@@ -4143,22 +4072,19 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
   // that are either in the closure of the changing entity, or have the
   // changing entity in their closure. All modified ghosts will be removed.
   {
-    std::set<EntityKey> modified_ghosts;
+      impl::OnlyVisitGhostsOnce only_visit_ghosts_once(*this);
+      StoreEntityKeyInSet store_entity_key(*this);
+      for ( std::vector<EntityProc>::const_iterator i = ghosted_change.begin() ; i != ghosted_change.end() ; ++i) {
+          impl::VisitAuraClosureGeneral(*this,i->first,store_entity_key,only_visit_ghosts_once);
+      }
+      for ( std::vector<EntityProc>::const_iterator i = shared_change.begin() ; i != shared_change.end() ; ++i) {
+          impl::VisitAuraClosureGeneral(*this,i->first,store_entity_key,only_visit_ghosts_once);
+      }
+      for ( std::set<EntityProc,EntityLess>::const_iterator i = send_closure.begin() ; i != send_closure.end() ; ++i) {
+          impl::VisitAuraClosureGeneral(*this,i->first,store_entity_key,only_visit_ghosts_once);
+      }
 
-    for ( std::vector<EntityProc>::const_iterator
-          i = ghosted_change.begin() ; i != ghosted_change.end() ; ++i ) {
-      insert_transitive_ghost(*this, i->first , m_parallel_rank , modified_ghosts );
-    }
-
-    for ( std::vector<EntityProc>::const_iterator
-          i = shared_change.begin() ; i != shared_change.end() ; ++i ) {
-      insert_transitive_ghost(*this, i->first , m_parallel_rank , modified_ghosts );
-    }
-
-    for ( EntityProcSet::iterator
-          i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
-      insert_transitive_ghost(*this, i->first , m_parallel_rank , modified_ghosts );
-    }
+    std::set<EntityKey> & modified_ghosts = store_entity_key.entity_key_set;
 
     // The ghosted change list will become invalid
     ghosted_change.clear();
