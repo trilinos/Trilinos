@@ -38,8 +38,6 @@
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_trad_Traits.hpp"
 #include "Sacado_Base.hpp"
-#include "Sacado_mpl_disable_if.hpp"
-#include "Sacado_mpl_is_same.hpp"
 
 #if defined(RAD_DEBUG_BLOCKKEEP) && !defined(HAVE_SACADO_UNINIT)
 #undef RAD_DEBUG_BLOCKKEEP
@@ -176,28 +174,38 @@ struct UninitType< std::complex<T> > {
 DoubleAvoid {
  public:
         typedef double  dtype;
+        typedef long    ltype;
+        typedef int     itype;
         typedef T       ttype;
         };
  template<> class
 DoubleAvoid<double> {
  public:
         typedef RAD_DoubleIgnore &dtype;
+        typedef long              ltype;
+        typedef int               itype;
         typedef RAD_DoubleIgnore &ttype;
         };
 template<> class
 DoubleAvoid<int> {
  public:
-        typedef RAD_DoubleIgnore &dtype;
+        typedef double            dtype;
+        typedef long              ltype;
+        typedef RAD_DoubleIgnore &itype;
         typedef RAD_DoubleIgnore &ttype;
         };
 template<> class
 DoubleAvoid<long> {
  public:
-        typedef RAD_DoubleIgnore &dtype;
+        typedef double            dtype;
+        typedef RAD_DoubleIgnore &ltype;
+        typedef int               itype;
         typedef RAD_DoubleIgnore &ttype;
         };
 
 #define Dtype typename DoubleAvoid<Double>::dtype
+#define Ltype typename DoubleAvoid<Double>::ltype
+#define Itype typename DoubleAvoid<Double>::itype
 #define Ttype typename DoubleAvoid<Double>::ttype
 
  template<typename Double> class IndepADvar;
@@ -316,44 +324,31 @@ ADcontext<Double>::new_Derp(const Double *a, const ADvari<Double> *b, const ADva
 
 // Now we use #define to overcome bad design in the C++ templating system
 
-template <typename T1, typename T2>
-struct RadDisable {
-  typedef typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T1,T2 >,
-                                            T2 >::type type;
-};
-
 #define Ai const Base< ADvari<Double> >&
 #define AI const Base< IndepADvar<Double> >&
 #define T template<typename Double>
-#define DAI typename IndepADvar<Double>::value_type
-#define DAi typename ADvari<Double>::value_type
-// #define double_disable typename RadDisable< Double, double >::type
-// #define long_disable typename RadDisable< Double, long >::type
-// #define int_disable typename RadDisable< Double, int >::type
-#define double_disable typename Sacado::mpl::disable_if< Sacado::mpl::is_same< Double,double >, double >::type
-#define long_disable typename Sacado::mpl::disable_if< Sacado::mpl::is_same< Double,long >, long >::type
-#define int_disable typename Sacado::mpl::disable_if< Sacado::mpl::is_same< Double,int >, int >::type
+#define D Double
 #define T1(f) \
 T F f (AI); \
 T F f (Ai);
 #define T2(r,f) \
  T r f(Ai,Ai); \
- T r f(Ai,DAi); \
- T r f(Ai,double_disable); \
- T r f(Ai,long_disable); \
- T r f(Ai,int_disable); \
- T r f(DAi,Ai); \
- T r f(double_disable,Ai); \
- T r f(long_disable,Ai); \
- T r f(int_disable,Ai); \
- T r f(AI,DAI); \
- T r f(AI,double_disable); \
- T r f(AI,long_disable); \
- T r f(AI,int_disable); \
- T r f(DAI,AI); \
- T r f(double_disable,AI);   \
- T r f(long_disable,AI); \
- T r f(int_disable,AI); \
+ T r f(Ai,D); \
+ T r f(Ai,Dtype); \
+ T r f(Ai,Ltype); \
+ T r f(Ai,Itype); \
+ T r f(D,Ai); \
+ T r f(Dtype,Ai); \
+ T r f(Ltype,Ai); \
+ T r f(Itype,Ai); \
+ T r f(AI,D); \
+ T r f(AI,Dtype); \
+ T r f(AI,Ltype); \
+ T r f(AI,Itype); \
+ T r f(D,AI); \
+ T r f(Dtype,AI);   \
+ T r f(Ltype,AI); \
+ T r f(Itype,AI); \
  T r f(Ai,AI);\
  T r f(AI,Ai);\
  T r f(AI,AI);
@@ -400,8 +395,7 @@ T F copy(Ai);
 #undef F
 #undef T2
 #undef T1
-#undef DAI
-#undef DAi
+#undef D
 #undef T
 #undef AI
 #undef Ai
@@ -493,11 +487,12 @@ ADvari : public Base< ADvari<Double> > {        // implementation of an ADvar
 #define F friend
 #define R ADvari&
 #define Ai const Base< ADvari >&
+#define D Double
 #define T1(r,f) F r f <>(Ai);
 #define T2(r,f) \
 F r f <>(Ai,Ai); \
-F r f <>(Ai,value_type);       \
-F r f <>(value_type,Ai);
+F r f <>(Ai,D);       \
+F r f <>(D,Ai);
         T1(R,operator+)
         T2(R,operator+)
         T1(R,operator-)
@@ -533,6 +528,7 @@ F r f <>(value_type,Ai);
         T2(int,operator!=)
         T2(int,operator>=)
         T2(int,operator>)
+#undef D
 #undef T2
 #undef T1
 #undef Ai
@@ -793,8 +789,8 @@ IndepADvar: protected IndepADvar_base<Double>, public Base< IndepADvar<Double> >
  r f <>(AI,AI);\
  r f <>(Ai,AI);\
  r f <>(AI,Ai);\
- r f <>(value_type,AI);\
- r f <>(AI,value_type);
+ r f <>(D,AI);\
+ r f <>(AI,D);
 #define T1(f) friend ADVari& f<> (AI);
 
 #define F friend ADVari&
@@ -837,10 +833,10 @@ T1(tanh)
 T1(fabs)
 T1(copy)
 
+#undef D
 #undef F
 #undef T1
 #undef T2
-#undef D
 #undef AI
 #undef Ai
 
@@ -1272,12 +1268,12 @@ template<typename Double>
   return L.Val < R.Val;
 }
 template<typename Double>
-inline int operator<(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+inline int operator<(const Base< ADvari<Double> > &LL, Double R) {
   const ADvari<Double>& L = LL.derived();
   return L.Val < R;
 }
 template<typename Double>
- inline int operator<(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+ inline int operator<(Double L, const Base< ADvari<Double> > &RR) {
   const ADvari<Double>& R = RR.derived();
   return L < R.Val;
 }
@@ -1289,12 +1285,12 @@ template<typename Double>
   return L.Val <= R.Val;
 }
 template<typename Double>
- inline int operator<=(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+ inline int operator<=(const Base< ADvari<Double> > &LL, Double R) {
   const ADvari<Double>& L = LL.derived();
   return L.Val <= R;
 }
 template<typename Double>
- inline int operator<=(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+ inline int operator<=(Double L, const Base< ADvari<Double> > &RR) {
   const ADvari<Double>& R = RR.derived();
   return L <= R.Val;
 }
@@ -1306,12 +1302,12 @@ template<typename Double>
   return L.Val == R.Val;
 }
 template<typename Double>
- inline int operator==(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+ inline int operator==(const Base< ADvari<Double> > &LL, Double R) {
   const ADvari<Double>& L = LL.derived();
   return L.Val == R;
 }
 template<typename Double>
- inline int operator==(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+ inline int operator==(Double L, const Base< ADvari<Double> > &RR) {
   const ADvari<Double>& R = RR.derived();
   return L == R.Val;
 }
@@ -1323,12 +1319,12 @@ template<typename Double>
   return L.Val != R.Val;
 }
 template<typename Double>
- inline int operator!=(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+ inline int operator!=(const Base< ADvari<Double> > &LL, Double R) {
   const ADvari<Double>& L = LL.derived();
   return L.Val != R;
 }
 template<typename Double>
- inline int operator!=(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+ inline int operator!=(Double L, const Base< ADvari<Double> > &RR) {
   const ADvari<Double>& R = RR.derived();
   return L != R.Val;
 }
@@ -1340,12 +1336,12 @@ template<typename Double>
   return L.Val >= R.Val;
 }
 template<typename Double>
- inline int operator>=(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+ inline int operator>=(const Base< ADvari<Double> > &LL, Double R) {
   const ADvari<Double>& L = LL.derived();
   return L.Val >= R;
 }
 template<typename Double>
- inline int operator>=(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+ inline int operator>=(Double L, const Base< ADvari<Double> > &RR) {
   const ADvari<Double>& R = RR.derived();
   return L >= R.Val;
 }
@@ -1357,12 +1353,12 @@ template<typename Double>
   return L.Val > R.Val;
 }
 template<typename Double>
- inline int operator>(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+ inline int operator>(const Base< ADvari<Double> > &LL, Double R) {
   const ADvari<Double>& L = LL.derived();
   return L.Val > R;
 }
 template<typename Double>
- inline int operator>(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+ inline int operator>(Double L, const Base< ADvari<Double> > &RR) {
   const ADvari<Double>& R = RR.derived();
   return L > R.Val;
 }
@@ -2122,7 +2118,7 @@ ADvar<Double>::operator+=(const ADVari &R) {
 
  template<typename Double>
  ADvari<Double>&
-operator+(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+operator+(const Base< ADvari<Double> > &LL, Double R) {
    const ADvari<Double>& L = LL.derived();
    return *(new ADvar1<Double>(L.Val + R, &L.adc.One, &L));
  }
@@ -2140,7 +2136,7 @@ ADvar<Double>::operator+=(Double R) {
 
  template<typename Double>
  ADvari<Double>&
-operator+(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+operator+(Double L, const Base< ADvari<Double> > &RR) {
    const ADvari<Double>& R = RR.derived();
    return *(new ADvar1<Double>(L + R.Val, &R.adc.One, &R));
  }
@@ -2166,7 +2162,7 @@ ADvar<Double>::operator-=(const ADVari &R) {
 
  template<typename Double>
  ADvari<Double>&
-operator-(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+operator-(const Base< ADvari<Double> > &LL, Double R) {
    const ADvari<Double>& L = LL.derived();
    return *(new ADvar1<Double>(L.Val - R, &L.adc.One, &L));
  }
@@ -2184,7 +2180,7 @@ ADvar<Double>::operator-=(Double R) {
 
  template<typename Double>
  ADvari<Double>&
-operator-(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+operator-(Double L, const Base< ADvari<Double> > &RR) {
    const ADvari<Double>& R = RR.derived();
    return *(new ADvar1<Double>(L - R.Val, &R.adc.negOne, &R));
  }
@@ -2210,7 +2206,7 @@ ADvar<Double>::operator*=(const ADVari &R) {
 
  template<typename Double>
  ADvari<Double>&
-operator*(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+operator*(const Base< ADvari<Double> > &LL, Double R) {
    const ADvari<Double>& L = LL.derived();
    return *(new ADvar1s<Double>(L.Val * R, R, &L));
  }
@@ -2228,7 +2224,7 @@ ADvar<Double>::operator*=(Double R) {
 
  template<typename Double>
  ADvari<Double>&
-operator*(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+operator*(Double L, const Base< ADvari<Double> > &RR) {
    const ADvari<Double>& R = RR.derived();
    return *(new ADvar1s<Double>(L * R.Val, L, &R));
  }
@@ -2256,14 +2252,14 @@ ADvar<Double>::operator/=(const ADVari &R) {
 
  template<typename Double>
  ADvari<Double>&
-operator/(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+operator/(const Base< ADvari<Double> > &LL, Double R) {
    const ADvari<Double>& L = LL.derived();
    return *(new ADvar1s<Double>(L.Val / R, 1./R, &L));
  }
 
  template<typename Double>
  ADvari<Double>&
-operator/(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+operator/(Double L, const Base< ADvari<Double> > &RR) {
    const ADvari<Double>& R = RR.derived();
    Double recip = 1. / R.Val;
    Double q = L * recip;
@@ -2344,7 +2340,7 @@ atan2(const Base< ADvari<Double> > &LL, const Base< ADvari<Double> > &RR) {
 
  template<typename Double>
  ADvari<Double>&
-atan2(typename ADvari<Double>::value_type x, const Base< ADvari<Double> > &RR) {
+atan2(Double x, const Base< ADvari<Double> > &RR) {
    const ADvari<Double>& R = RR.derived();
    Double y = R.Val, t = x*x + y*y;
    return *(new ADvar1s<Double>(std::atan2(x,y), -x/t, &R));
@@ -2352,7 +2348,7 @@ atan2(typename ADvari<Double>::value_type x, const Base< ADvari<Double> > &RR) {
 
  template<typename Double>
  ADvari<Double>&
-atan2(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type y) {
+atan2(const Base< ADvari<Double> > &LL, Double y) {
    const ADvari<Double>& L = LL.derived();
    Double x = L.Val, t = x*x + y*y;
    return *(new ADvar1s<Double>(std::atan2(x,y), y/t, &L));
@@ -2369,7 +2365,7 @@ max(const Base< ADvari<Double> > &LL, const Base< ADvari<Double> > &RR) {
 
  template<typename Double>
  ADvari<Double>&
-max(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+max(Double L, const Base< ADvari<Double> > &RR) {
    const ADvari<Double>& R = RR.derived();
    if (L >= R.Val)
      return *(new ADvari<Double>(L));
@@ -2378,7 +2374,7 @@ max(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
 
  template<typename Double>
  ADvari<Double>&
-max(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+max(const Base< ADvari<Double> > &LL, Double R) {
    const ADvari<Double>& L = LL.derived();
    if (L.Val >= R)
      return *(new ADvar1<Double>(L.Val, &L.adc.One, &L));
@@ -2396,7 +2392,7 @@ min(const Base< ADvari<Double> > &LL, const Base< ADvari<Double> > &RR) {
 
  template<typename Double>
  ADvari<Double>&
-min(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
+min(Double L, const Base< ADvari<Double> > &RR) {
    const ADvari<Double>& R = RR.derived();
    if (L <= R.Val)
      return *(new ADvari<Double>(L));
@@ -2405,7 +2401,7 @@ min(typename ADvari<Double>::value_type L, const Base< ADvari<Double> > &RR) {
 
  template<typename Double>
  ADvari<Double>&
-min(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type R) {
+min(const Base< ADvari<Double> > &LL, Double R) {
    const ADvari<Double>& L = LL.derived();
    if (L.Val <= R)
      return *(new ADvar1<Double>(L.Val, &L.adc.One, &L));
@@ -2469,7 +2465,7 @@ pow(const Base< ADvari<Double> > &LL, const Base< ADvari<Double> > &RR) {
 
  template<typename Double>
  ADvari<Double>&
-pow(typename ADvari<Double>::value_type x, const Base< ADvari<Double> > &RR) {
+pow(Double x, const Base< ADvari<Double> > &RR) {
    const ADvari<Double>& R = RR.derived();
    Double t = std::pow(x,R.Val);
    return *(new ADvar1s<Double>(t, t*std::log(x), &R));
@@ -2477,7 +2473,7 @@ pow(typename ADvari<Double>::value_type x, const Base< ADvari<Double> > &RR) {
 
  template<typename Double>
  ADvari<Double>&
-pow(const Base< ADvari<Double> > &LL, typename ADvari<Double>::value_type y) {
+pow(const Base< ADvari<Double> > &LL, Double y) {
    const ADvari<Double>& L = LL.derived();
    Double x = L.Val, t = std::pow(x,y);
    return *(new ADvar1s<Double>(t, y*t/x, &L));
@@ -2615,28 +2611,27 @@ val(const ADvari<Double> &x) {
 #define F ADvari<Double>&
 #define Ai const Base< ADvari<Double> >&
 #define AI const Base< IndepADvar<Double> >&
-#define DAi typename ADvari<Double>::value_type
-#define DAI typename IndepADvar<Double>::value_type
+#define D Double
 #define CAI(x,y) const IndepADvar<Double> & x = y.derived()
 #define CAi(x,y) const ADvari<Double> & x = y.derived()
 #define T2(r,f) \
  T r f(Ai LL, AI RR) { CAi(L,LL); CAI(R,RR); RAD_cvchk(R) return f(L, C(R.cv)); } \
  T r f(AI LL, Ai RR) { CAI(L,LL); CAi(R,RR); RAD_cvchk(L) return f(C(L.cv), R); }\
  T r f(AI LL, AI RR) { CAI(L,LL); CAI(R,RR); RAD_cvchk(L) RAD_cvchk(R) return f(C(L.cv), C(R.cv)); }\
- T r f(AI LL, DAI R) { CAI(L,LL); RAD_cvchk(L) return f(C(L.cv), R); } \
- T r f(DAI L, AI RR) { CAI(R,RR); RAD_cvchk(R) return f(L, C(R.cv)); } \
- T r f(Ai L, double_disable R) { return f(L, (DAi)R); }\
- T r f(AI L, double_disable R) { return f(L, (DAI)R); }\
- T r f(Ai L, long_disable R) { return f(L, (DAi)R); }\
- T r f(AI L, long_disable R) { return f(L, (DAI)R); }\
- T r f(Ai L, int_disable R) { return f(L, (DAi)R); }\
- T r f(AI L, int_disable R) { return f(L, (DAI)R); }\
- T r f(double_disable L, Ai R) { return f((DAi)L, R); }\
- T r f(double_disable L, AI R) {return f((DAI)L, R); }\
- T r f(long_disable L, Ai R) { return f((DAi)L, R); }\
- T r f(long_disable L, AI R) { return f((DAI)L, R); }\
- T r f(int_disable L, Ai R) { return f((DAi)L, R); }\
- T r f(int_disable L, AI R) { return f((DAI)L, R); }
+ T r f(AI LL, D R) { CAI(L,LL); RAD_cvchk(L) return f(C(L.cv), R); } \
+ T r f(D  L,  AI RR) { CAI(R,RR); RAD_cvchk(R) return f(L, C(R.cv)); } \
+ T r f(Ai L,  Dtype R) { return f(L, (D)R); }\
+ T r f(AI L,  Dtype R) { return f(L, (D)R); }\
+ T r f(Ai L,  Ltype R) { return f(L, (D)R); }\
+ T r f(AI L,  Ltype R) { return f(L, (D)R); }\
+ T r f(Ai L,  Itype R) { return f(L, (D)R); }\
+ T r f(AI L,  Itype R) { return f(L, (D)R); }\
+ T r f(Dtype L, Ai R) { return f((D)L, R); }\
+ T r f(Dtype L, AI R) {return f((D)L, R); }\
+ T r f(Ltype L, Ai R) { return f((D)L, R); }\
+ T r f(Ltype L, AI R) { return f((D)L, R); }\
+ T r f(Itype L, Ai R) { return f((D)L, R); }\
+ T r f(Itype L, AI R) { return f((D)L, R); }
 
 T2(F, operator+)
 T2(F, operator-)
@@ -2698,15 +2693,13 @@ T F copy(Ai xx)
 #undef T
 #undef A
 #undef C
-#undef double_disable
-#undef long_disable
-#undef int_disable
 #undef Ttype
 #undef Dtype
+#undef Ltype
+#undef Itype
 #undef CAI
 #undef CAi
-#undef DAI
-#undef DAi
+#undef D
 
 } /* namespace Rad */
 } /* namespace Sacado */

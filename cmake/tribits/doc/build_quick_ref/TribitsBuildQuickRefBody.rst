@@ -270,11 +270,12 @@ NOTE: The CMake cache variable type for all ``XXX_ENABLE_YYY`` variables is
 actually ``STRING`` and not ``BOOL``.  That is because these enable variables
 take on the string enum values of ``"ON"``, ``"OFF"``, end empty ``""``.  An
 empty enable means that the TriBITS dependency system is allowed to decide if
-an enable should be turned on or off based on logic.  The CMake GUI will
-enforce the values of ``"ON"``, ``"OFF"``, end empty ``""`` but it will not
-enforce this if you set the value on the command line or in a SET() statement
-in an input ```*.cmake`` options files.  For example, setting
-``-DXXX_ENABLE_YYY=TRUE`` will result in a configure error.
+an enable should be turned on or off based on various logic.  The CMake GUI
+will enforce the values of ``"ON"``, ``"OFF"``, and empty ``""`` but it will
+not enforce this if you set the value on the command line or in a SET()
+statement in an input ```*.cmake`` options files.  However, setting
+``-DXXX_ENABLE_YYY=TRUE`` and ``-DXXX_ENABLE_YYY=FALSE`` is allowed and will
+be interpreted correctly..
 
 Enable to test all effects of changing a given package(s)
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++

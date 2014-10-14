@@ -1,0 +1,32 @@
+/*! \page partitionPage Partitioning and Load-Balancing
+
+
+\section partition_functionality Partitioning Functionality
+
+Partitioning functionality that is available now is:
+<ul>
+<li> \ref blockPage for simple weighted identifiers (really created as a sample algorithm).
+<li> \ref mjPage Multi-jagged for weighted geometric coordinates.
+<li> \ref rcbPage for weighted geometric coordinates.
+<li> \ref scotchPartPage for undirected weighted graphs.
+</ul>
+These algorithms are all parallel.
+
+<hr>
+
+
+\section z2_main_examples_partitioning Partitioning examples
+
+Examples include the following:
+
+- Block partitioning (block.cpp)
+- RCB partitioning for a C++ novice (rcb_C.cpp)
+
+
+\subsection z2_main_overview_metrics Obtaining partition quality 
+
+\subsection z2_main_overview_repartitioning Repartitioning
+
+
+
+*/

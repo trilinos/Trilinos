@@ -34,8 +34,6 @@
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_Base.hpp"
-#include "Sacado_mpl_disable_if.hpp"
-#include "Sacado_mpl_is_same.hpp"
 
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
 namespace Sacado {                                                      \
@@ -312,46 +310,47 @@ namespace Sacado {                                                      \
   namespace Rad {                                                       \
     template <typename T> class ADvari;                                 \
     template <typename T> class IndepADvar;                             \
+    template <typename T> class DoubleAvoid;                            \
     template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
                                          const Base< ADvari<T> >&);     \
     template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
                                          const Base< ADvari<T> >&);     \
-    template <typename T> ADvari<T>& OP (typename ADvari<T>::value_type,          \
+    template <typename T> ADvari<T>& OP (T,                             \
                                          const Base< ADvari<T> >&);     \
-    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,double >, double >::type,                        \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype,\
                                          const Base< ADvari<T> >&);     \
-    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,int >, int >::type,                           \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::itype,\
                                          const Base< ADvari<T> >&);     \
-    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,long >, long >::type,                          \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::ltype,\
                                          const Base< ADvari<T> >&);     \
     template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
                                          const Base< IndepADvar<T> >&); \
     template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
-                                         typename ADvari<T>::value_type); \
+                                         T);                            \
     template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
-                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,double >, double >::type);                       \
+                                         typename DoubleAvoid<T>::dtype);\
     template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
-                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,int >, int >::type);                          \
+                                         typename DoubleAvoid<T>::itype);\
     template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
-                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,long >, long >::type);                         \
+                                         typename DoubleAvoid<T>::ltype);\
     template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
                                          const Base< IndepADvar<T> >&); \
-    template <typename T> ADvari<T>& OP (typename IndepADvar<T>::value_type, \
+    template <typename T> ADvari<T>& OP (T,                             \
                                          const Base< IndepADvar<T> >&); \
-    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,double >, double >::type,                        \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype,\
                                          const Base< IndepADvar<T> >&); \
-    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,int >, int >::type,                           \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::itype,\
                                          const Base< IndepADvar<T> >&); \
-    template <typename T> ADvari<T>& OP (typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,long >, long >::type,                              \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::ltype,\
                                          const Base< IndepADvar<T> >&); \
     template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
-                                         typename IndepADvar<T>::value_type); \
+                                         T);                            \
     template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
-                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,double >, double >::type);                       \
+                                         typename DoubleAvoid<T>::dtype);\
     template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
-                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,int >, int >::type);                          \
+                                         typename DoubleAvoid<T>::itype);\
     template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
-                                         typename Sacado::mpl::disable_if< Sacado::mpl::is_same< T,long >, long >::type);                         \
+                                         typename DoubleAvoid<T>::ltype);\
   }                                                                     \
                                                                         \
 }                                                                       \

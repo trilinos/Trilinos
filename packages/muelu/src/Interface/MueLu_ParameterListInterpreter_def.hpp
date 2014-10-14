@@ -88,12 +88,12 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(Teuchos::ParameterList& paramList) {
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(Teuchos::ParameterList& paramList,Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
     SetParameterList(paramList);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm) {
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm,Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), comm);
     SetParameterList(paramList);
@@ -783,6 +783,10 @@ namespace MueLu {
     if (paramList.isSublist("Matrix"))
       blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", 1);
 
+    // create new FactoryFactory object if necessary
+    if (factFact_ == Teuchos::null) 
+      factFact_ = Teuchos::rcp(new FactoryFactory());
+
     // Parameter List Parsing:
     // ---------
     //   <ParameterList name="MueLu">
@@ -953,7 +957,7 @@ namespace MueLu {
       if (paramValue.isList()) {
         Teuchos::ParameterList paramList1 = Teuchos::getValue<Teuchos::ParameterList>(paramValue);
         if (paramList1.isParameter("factory")) { // default: just a factory definition
-          factoryMapOut[paramName] = FactoryFactory().BuildFactory(paramValue, factoryMapIn, factoryManagers);
+          factoryMapOut[paramName] = factFact_->BuildFactory(paramValue, factoryMapIn, factoryManagers);
 
         } else if (paramList1.isParameter("group")) { // definitiion of a factory group (for a factory manager)
           std::string groupType = paramList1.get<std::string>("group");
@@ -977,7 +981,7 @@ namespace MueLu {
         }
       } else {
         // default: just a factory (no parameter list)
-        factoryMapOut[paramName] = FactoryFactory().BuildFactory(paramValue, factoryMapIn, factoryManagers);
+        factoryMapOut[paramName] = factFact_->BuildFactory(paramValue, factoryMapIn, factoryManagers);
       }
     }
   }
