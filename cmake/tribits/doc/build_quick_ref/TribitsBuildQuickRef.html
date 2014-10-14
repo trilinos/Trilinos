@@ -6,7 +6,7 @@
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>Generic TriBITS Project, Build, Test, and Install Quick Reference Guide</title>
 <meta name="author" content="Roscoe A. Bartlett" />
-<meta name="date" content="2014-10-11" />
+<meta name="date" content="2014-10-14" />
 <style type="text/css">
 
 /*
@@ -317,9 +317,9 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference external" href="mailto:bartlett.roscoe&#64;gmail.com">bartlett.roscoe&#64;gmail.com</a></td></tr>
 <tr><th class="docinfo-name">Date:</th>
-<td>2014-10-11</td></tr>
+<td>2014-10-14</td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>TriBITS Development at 2014-10-11</td></tr>
+<td>TriBITS Development at 2014-10-14</td></tr>
 </tbody>
 </table>
 <table class="docutils field-list" frame="void" rules="none">
@@ -677,11 +677,12 @@ disabled either explicitly or implicitly.</p>
 actually <tt class="docutils literal">STRING</tt> and not <tt class="docutils literal">BOOL</tt>.  That is because these enable variables
 take on the string enum values of <tt class="docutils literal">&quot;ON&quot;</tt>, <tt class="docutils literal">&quot;OFF&quot;</tt>, end empty <tt class="docutils literal">&quot;&quot;</tt>.  An
 empty enable means that the TriBITS dependency system is allowed to decide if
-an enable should be turned on or off based on logic.  The CMake GUI will
-enforce the values of <tt class="docutils literal">&quot;ON&quot;</tt>, <tt class="docutils literal">&quot;OFF&quot;</tt>, end empty <tt class="docutils literal">&quot;&quot;</tt> but it will not
-enforce this if you set the value on the command line or in a SET() statement
-in an input <tt class="docutils literal"><span class="pre">`*.cmake</span></tt> options files.  For example, setting
-<tt class="docutils literal"><span class="pre">-DXXX_ENABLE_YYY=TRUE</span></tt> will result in a configure error.</p>
+an enable should be turned on or off based on various logic.  The CMake GUI
+will enforce the values of <tt class="docutils literal">&quot;ON&quot;</tt>, <tt class="docutils literal">&quot;OFF&quot;</tt>, and empty <tt class="docutils literal">&quot;&quot;</tt> but it will
+not enforce this if you set the value on the command line or in a SET()
+statement in an input <tt class="docutils literal"><span class="pre">`*.cmake</span></tt> options files.  However, setting
+<tt class="docutils literal"><span class="pre">-DXXX_ENABLE_YYY=TRUE</span></tt> and <tt class="docutils literal"><span class="pre">-DXXX_ENABLE_YYY=FALSE</span></tt> is allowed and will
+be interpreted correctly..</p>
 </div>
 <div class="section" id="enable-to-test-all-effects-of-changing-a-given-package-s">
 <h3><a class="toc-backref" href="#id15">4.3.4&nbsp;&nbsp;&nbsp;Enable to test all effects of changing a given package(s)</a></h3>
