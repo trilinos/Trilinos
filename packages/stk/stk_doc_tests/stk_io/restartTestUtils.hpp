@@ -66,15 +66,15 @@ inline void checkFileForGlobal(const std::string &exodusFilename, const std::str
     EXPECT_EQ(value, valueOnFile);
 }
 
-inline stk::mesh::FieldBase* declareNodalField(stk::mesh::MetaData &stkMeshMetaData, const std::string &fieldName,
+inline stk::mesh::Field<double> & declareNodalField(stk::mesh::MetaData &stkMeshMetaData, const std::string &fieldName,
 					       int numberOfStates)
 {
     stk::mesh::Field<double> &multiStateField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, numberOfStates);
     stk::mesh::put_field(multiStateField, stkMeshMetaData.universal_part());
-    return &multiStateField;
+    return multiStateField;
 }
 
-inline stk::mesh::FieldBase* declareTriStateNodalField(stk::mesh::MetaData &stkMeshMetaData, const std::string &fieldName)
+inline stk::mesh::Field<double> & declareTriStateNodalField(stk::mesh::MetaData &stkMeshMetaData, const std::string &fieldName)
 {
     const int numberOfStates = 3;
     return declareNodalField(stkMeshMetaData, fieldName, numberOfStates);
@@ -134,13 +134,13 @@ inline void setupMeshAndFieldsForTest(stk::io::StkMeshIoBroker &stkMeshIoBroker,
     stkMeshIoBroker.create_input_mesh();
 
     const int numberOfStates = 1;
-    stk::mesh::FieldBase *displacementField = declareNodalField(stkMeshIoBroker.meta_data(), displacementFieldName, numberOfStates);
-    stk::mesh::FieldBase *velocityField = declareNodalField(stkMeshIoBroker.meta_data(), velocityFieldName, numberOfStates);
+    stk::mesh::Field<double> &displacementField = declareNodalField(stkMeshIoBroker.meta_data(), displacementFieldName, numberOfStates);
+    stk::mesh::Field<double> &velocityField = declareNodalField(stkMeshIoBroker.meta_data(), velocityFieldName, numberOfStates);
 
     stkMeshIoBroker.populate_bulk_data();
 
-    putDataOnTestField(stkMeshIoBroker.bulk_data(), displacementValue, *displacementField);
-    putDataOnTestField(stkMeshIoBroker.bulk_data(), velocityValue, *velocityField);
+    putDataOnTestField(stkMeshIoBroker.bulk_data(), displacementValue, displacementField);
+    putDataOnTestField(stkMeshIoBroker.bulk_data(), velocityValue, velocityField);
 }
 
 inline void testMultistateFieldWroteCorrectlyToRestart(const std::string &restartFilename,
@@ -156,18 +156,18 @@ inline void testMultistateFieldWroteCorrectlyToRestart(const std::string &restar
     stkIo.create_input_mesh();
 
     stk::mesh::MetaData &restartedMetaData = stkIo.meta_data();
-    stk::mesh::FieldBase *triStateField =
+    stk::mesh::Field<double> &triStateField =
             declareTriStateNodalField(restartedMetaData, fieldName);
 
-    stkIo.add_input_field(stk::io::MeshField(*triStateField));
+    stkIo.add_input_field(stk::io::MeshField(triStateField));
     stkIo.populate_bulk_data();
     stkIo.read_defined_input_fields(time);
 
     stk::mesh::FieldBase *statedFieldNp1 =
-            triStateField->field_state(stk::mesh::StateNP1);
+            triStateField.field_state(stk::mesh::StateNP1);
     testDataOnField(stkIo.bulk_data(), stateNp1Value, *statedFieldNp1);
     stk::mesh::FieldBase *statedFieldN =
-            triStateField->field_state(stk::mesh::StateN);
+            triStateField.field_state(stk::mesh::StateN);
     testDataOnField(stkIo.bulk_data(), stateNValue, *statedFieldN);
 }
 
@@ -187,18 +187,18 @@ inline void testMultistateFieldWroteCorrectly(const std::string &resultsFilename
     stkIo.create_input_mesh();
 
     stk::mesh::MetaData &resultsedMetaData = stkIo.meta_data();
-    stk::mesh::FieldBase *FieldNp1 = declareNodalField(resultsedMetaData, np1Name, 1);
-    stk::mesh::FieldBase *FieldN   = declareNodalField(resultsedMetaData, nName, 1);
-    stk::mesh::FieldBase *FieldNm1 = declareNodalField(resultsedMetaData, nm1Name, 1);
+    stk::mesh::Field<double> &FieldNp1 = declareNodalField(resultsedMetaData, np1Name, 1);
+    stk::mesh::Field<double> &FieldN   = declareNodalField(resultsedMetaData, nName, 1);
+    stk::mesh::Field<double> &FieldNm1 = declareNodalField(resultsedMetaData, nm1Name, 1);
 
-    stkIo.add_input_field(stk::io::MeshField(*FieldNp1, np1Name));
-    stkIo.add_input_field(stk::io::MeshField(*FieldN,   nName));
-    stkIo.add_input_field(stk::io::MeshField(*FieldNm1, nm1Name));
+    stkIo.add_input_field(stk::io::MeshField(FieldNp1, np1Name));
+    stkIo.add_input_field(stk::io::MeshField(FieldN,   nName));
+    stkIo.add_input_field(stk::io::MeshField(FieldNm1, nm1Name));
 
     stkIo.populate_bulk_data();
     stkIo.read_defined_input_fields(time);
 
-    testDataOnField(stkIo.bulk_data(), stateNp1Value, *FieldNp1);
-    testDataOnField(stkIo.bulk_data(), stateNValue,   *FieldN);
-    testDataOnField(stkIo.bulk_data(), stateNm1Value, *FieldNm1);
+    testDataOnField(stkIo.bulk_data(), stateNp1Value, FieldNp1);
+    testDataOnField(stkIo.bulk_data(), stateNValue,   FieldN);
+    testDataOnField(stkIo.bulk_data(), stateNm1Value, FieldNm1);
 }
