@@ -51,10 +51,12 @@
 #include <numpy/arrayobject.h>
 
 #if NPY_API_VERSION < 0x00000007
-#define NPY_ANYORDER      PyArray_ANYORDER
-#define NPY_DOUBLE        PyArray_DOUBLE
-#define NPY_INT           PyArray_INT
-#define NPY_ARRAY_FARRAY  NPY_FARRAY
+#define NPY_ANYORDER         PyArray_ANYORDER
+#define NPY_DOUBLE           PyArray_DOUBLE
+#define NPY_INT              PyArray_INT
+#define NPY_ARRAY_FARRAY     NPY_FARRAY
+#define NPY_ARRAY_DEFAULT    NPY_DEFAULT
+#define NPY_ARRAY_NOTSWAPPED NPY_NOTSWAPPED
 #endif
 
 #endif // NUMPY_INCLUDE_H
