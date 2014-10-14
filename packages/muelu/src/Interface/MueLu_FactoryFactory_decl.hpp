@@ -152,7 +152,7 @@ namespace MueLu {
     //       ...
     //     </ParameterList>
     //
-    RCP<const FactoryBase> BuildFactory(const Teuchos::ParameterEntry& param, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+    virtual RCP<const FactoryBase> BuildFactory(const Teuchos::ParameterEntry& param, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       // Find factory
       std::string            factoryName;
       Teuchos::ParameterList paramList;
