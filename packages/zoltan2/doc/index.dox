@@ -3,9 +3,8 @@
 \section mainpage_contents Contents
 <ul>
 <li> \ref z2_main_intro
-<li> \ref z2_main_overview
-<li> \ref z2_main_examples_partitioning
 <li> \ref z2_main_building
+<li> \ref z2_main_overview
 </ul>
 
 
@@ -24,36 +23,63 @@ a complete redesign/refactoring of the well known
 library into C++ in order to support template programming,
 to scale to larger problems, and to support architecture aware partitioning.
 This library is currently under active development.
-The capabilities in Zoltan2 roughly fall within these areas:
+The capabilities in Zoltan2 roughly fall within the following areas (click on the link for a full description
+of an area and how Zoltan2 can be used in this context):
 <ul>
-<li> Partitioning and load-balancing
-<li> Ordering and permutations
-<li> Graph coloring 
+<li> \ref partitionPage 
+<li> \ref orderingPage
+<li> \ref coloringPage  
 </ul>
 
-Partitioning functionality that is available now is:
-<ul>
-<li> \ref blockPage for simple weighted identifiers (really created as a sample algorithm).
-<li> \ref mjPage Multi-jagged for weighted geometric coordinates.
-<li> \ref rcbPage for weighted geometric coordinates.
-<li> \ref scotchPartPage for undirected weighted graphs.
-</ul>
-These algorithms are all parallel.
 
-Ordering methods currently available:
-<ul>
-<li> \ref amdPage for fill-reducing ordering.
-<li> random ordering
-<li> \ref rcmPage for bandwidth-reducing ordering.
-<li> sorted_degree ordering
-</ul>
-These are all serial.
+<hr>
 
-Graph coloring currently supported:
-<ul>
-<li> Distance-1 vertex coloring
-</ul>
-Currently serial; multithreaded coloring is planned for a future release.
+\section z2_main_building Building and Installing Zoltan2
+
+Zoltan2 is part of the Trilinos framework and uses the Trilinos CMake build system for
+configuration and builiding.  In order to build Zoltan2, you need to use the Trilinos_ENABLE_Zoltan2
+cmake directive.  The most basic way to build Zoltan2 is to execute the following two commands in
+your build directory (typically distinct from the source directory):
+
+<ol>
+<li>	cmake -D Trilinos_ENABLE_Zoltan2:BOOL=ON /path/to/Trilinos/src/directory
+<li>    make
+</ol>
+
+The first statement is the cmake configuration step that configures the build, creates Makefiles, etc.
+The second statement builds the Zoltan2 library and all required libraries.
+Zoltan2 requires several of the other Trilinos packages to be built. 
+(Tpetra, KokkosClassic, Epetra, Teuchos, Xpetra and the packages that are required for those). The
+Trilinos framework should automatically enable these required packages during the configuration process
+if Zoltan2 is enabled.
+
+
+
+
+
+
+Zoltan2 configuration refers to these CMake directives:
+
+  \li \c Trilinos_ENABLE_OpenMP if enabled, use OpenMP for multithreaded execution. (Note not all of Zoltan2 is thread-safe.)
+  \li \c Trilinos_ENABLE_Zoltan if enabled Zoltan2 will build a test that compares the performance of Zoltan1 and Zoltan2
+  \li \c Zoltan2_ENABLE_Experimental if enabled, code which is still under development will be available for use
+  \li \c Explicit Instantiation if explicit instantiation is on, all Zoltan2 tests will be compiled with the instantiated types
+  \li \c Zoltan2_ENABLE_Scotch for graph partitioning using the Scotch package
+  \li \c Zoltan2_ENABLE_OVIS
+  \li \c Zoltan2_ENABLE_AMD
+
+These are some of the compilation flags used by Zoltan2:
+
+  \li \c Z2_OMIT_ALL_STATUS_MESSAGES The \ref debug_level parameter controls the verbosity of status messages.  When compiled with this option, the checks for \ref debug_level are bypassed and all status output code is ignored.
+  \li \c Z2_OMIT_ALL_PROFILING Checks are done at runtime to determine whether any of the memory or timer parameters were set, prior to checking memory in use or to start or stop a ttimer.  When compiled with this option, those checks are bypassed.
+  \li \c Z2_OMIT_ALL_ERROR_CHECKING  The \ref error_check_level parameter controls the amount of error checking done at runtime.  When this flag is set, all error checking code is compiled out.
+
+
+<hr>
+
+
+\section z2_main_build2 Building Projects with Zoltan
+
 
 <hr>
 
@@ -82,40 +108,7 @@ Zoltan2::MeshInput will be available soon.
 
 5. Obtain a Zoltan2::PartitioningSolution object from the Zoltan2::PartitioningProblem.
 
-\subsection z2_main_overview_metrics Obtaining partition quality 
 
-\subsection z2_main_overview_repartitioning Repartitioning
-
-<hr>
-
-\section z2_main_examples_partitioning Partitioning examples
-
-Examples include the following:
-
-- Block partitioning (block.cpp)
-- RCB partitioning for a C++ novice (rcb_C.cpp)
-
-<hr>
-
-\section z2_main_building Building Zoltan2
-
-Zoltan2 is part of the Trilinos framework and requires several of the other Trilinos libraries to build.  
-
-Zoltan2 configuration refers to these CMake directives:
-
-  \li \c Trilinos_ENABLE_OpenMP if enabled, use OpenMP for multithreaded execution. (Note not all of Zoltan2 is thread-safe.)
-  \li \c Trilinos_ENABLE_Zoltan if enabled Zoltan2 will build a test that compares the performance of Zoltan1 and Zoltan2
-  \li \c Zoltan2_ENABLE_Experimental if enabled, code which is still under development will be available for use
-  \li \c Explicit Instantiation if explicit instantiation is on, all Zoltan2 tests will be compiled with the instantiated types
-  \li \c Zoltan2_ENABLE_Scotch for graph partitioning using the Scotch package
-  \li \c Zoltan2_ENABLE_OVIS
-  \li \c Zoltan2_ENABLE_AMD
-
-These are some of the compilation flags used by Zoltan2:
-
-  \li \c Z2_OMIT_ALL_STATUS_MESSAGES The \ref debug_level parameter controls the verbosity of status messages.  When compiled with this option, the checks for \ref debug_level are bypassed and all status output code is ignored.
-  \li \c Z2_OMIT_ALL_PROFILING Checks are done at runtime to determine whether any of the memory or timer parameters were set, prior to checking memory in use or to start or stop a ttimer.  When compiled with this option, those checks are bypassed.
-  \li \c Z2_OMIT_ALL_ERROR_CHECKING  The \ref error_check_level parameter controls the amount of error checking done at runtime.  When this flag is set, all error checking code is compiled out.
 
 
 */
