@@ -4834,10 +4834,15 @@ TEST(BulkData, change_entity_owner_2Elem2ProcFlip)
   mesh.modification_begin();
   if (p_rank == 0) {
     elems.push_back(stk::mesh::declare_element(mesh, elem_part, element_ids[0], elem_node_ids[0] ) );
+    mesh.add_node_sharing(mesh.get_entity(EntityKey(NODE_RANK, 3)), 1);
+    mesh.add_node_sharing(mesh.get_entity(EntityKey(NODE_RANK, 4)), 1);
   }
   else if (p_rank == 1) {
     elems.push_back(stk::mesh::declare_element(mesh, elem_part, element_ids[1], elem_node_ids[1] ) );
+    mesh.add_node_sharing(mesh.get_entity(EntityKey(NODE_RANK, 3)), 0);
+    mesh.add_node_sharing(mesh.get_entity(EntityKey(NODE_RANK, 4)), 0);
   }
+
   mesh.modification_end();
 
   if (p_rank == 0) {
