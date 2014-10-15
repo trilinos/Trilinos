@@ -766,18 +766,6 @@ public:
 
   bool has_no_relations(Entity entity) const;
 
-  void entity_setter_debug_check(Entity entity) const
-  {
-    // The 0-th local_offset is special, it represents the invalid, 0-initialized entity.
-    // Client should never try to set properties on this entity even though it's in the index range.
-    ThrowAssert(entity.local_offset() > 0);
-  }
-
-  void entity_getter_debug_check(Entity entity) const
-  {
-    ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_states.size() - 1);
-  }
-
   //
   // Entity getters
   //
@@ -976,22 +964,6 @@ public:
     m_mark_entity[entity.local_offset()] = NOT_MARKED;
   }
 
-  bool internal_set_parallel_owner_rank(Entity entity, int in_owner_rank)
-  {
-    TraceIfWatching("stk::mesh::BulkData::set_entity_owner_rank", LOG_ENTITY, entity_key(entity));
-    DiagIfWatching(LOG_ENTITY, entity_key(entity), "new owner: " << in_owner_rank);
-
-    entity_setter_debug_check(entity);
-
-    int &nonconst_processor_rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];
-    if ( in_owner_rank != nonconst_processor_rank ) {
-      nonconst_processor_rank = in_owner_rank;
-      mark_entity_and_upward_related_entities_as_modified(entity);
-      return true;
-    }
-    return false;
-  }
-
   void set_synchronized_count(Entity entity, size_t sync_count)
   {
     entity_setter_debug_check(entity);
@@ -1039,15 +1011,6 @@ public:
   void internal_verify_initialization_invariant(Entity entity);
 
 #endif
-
-  /**
-   * Mark this entity as modified (only changes from Unchanged
-   * to Modified). Propagates the modification to higher-ranking
-   * entities related to this entity. In other words, based on our
-   * modification model, all entities that have modified_entity in their
-   * closure must also be marked as modified.
-   */
-  void mark_entity_and_upward_related_entities_as_modified(Entity entity);
 
   //
   // Connectivity getter methods. For each entity, you can get connected entities
@@ -1150,6 +1113,22 @@ public:
   //reserves space for a new entity, or reclaims space from a previously-deleted entity
   size_t generate_next_local_offset(size_t preferred_offset = 0);
 
+  bool only_call_from_fmwk_set_parallel_owner_rank(Entity entity, int in_owner_rank)
+  {
+    TraceIfWatching("stk::mesh::BulkData::set_entity_owner_rank", LOG_ENTITY, entity_key(entity));
+    DiagIfWatching(LOG_ENTITY, entity_key(entity), "new owner: " << in_owner_rank);
+
+    entity_setter_debug_check(entity);
+
+    int &nonconst_processor_rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];
+    if ( in_owner_rank != nonconst_processor_rank ) {
+      nonconst_processor_rank = in_owner_rank;
+      mark_entity_and_upward_related_entities_as_modified(entity);
+      return true;
+    }
+    return false;
+  }
+
 #ifdef SIERRA_MIGRATION
   //strictly a transition aid!!! don't add new usage of this!
   void set_fmwk_bulk_data(const sierra::Fmwk::MeshBulkData* fmwk_bulk_ptr)
@@ -1219,6 +1198,27 @@ public:
   void get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const;
 
 private:
+
+  /**
+   * Mark this entity as modified (only changes from Unchanged
+   * to Modified). Propagates the modification to higher-ranking
+   * entities related to this entity. In other words, based on our
+   * modification model, all entities that have modified_entity in their
+   * closure must also be marked as modified.
+   */
+  void mark_entity_and_upward_related_entities_as_modified(Entity entity);
+
+  void entity_setter_debug_check(Entity entity) const
+  {
+    // The 0-th local_offset is special, it represents the invalid, 0-initialized entity.
+    // Client should never try to set properties on this entity even though it's in the index range.
+    ThrowAssert(entity.local_offset() > 0);
+  }
+
+  void entity_getter_debug_check(Entity entity) const
+  {
+    ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_states.size() - 1);
+  }
 
   void update_deleted_entities_container();
   void addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
