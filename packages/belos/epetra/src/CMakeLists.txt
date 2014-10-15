@@ -40,5 +40,4 @@ TRIBITS_ADD_LIBRARY(
   belosepetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS belos
   )
