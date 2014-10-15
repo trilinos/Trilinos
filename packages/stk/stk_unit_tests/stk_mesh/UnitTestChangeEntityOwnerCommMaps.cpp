@@ -240,14 +240,14 @@ TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
 
             createSerialSubMesh(stkMeshMetaData, stkMeshBulkData, stkMeshBulkData.mesh_meta_data().universal_part(), newMetaData, nBulkData);
 
-            FieldMgr fieldMgr(newMetaData);
-            fieldMgr.storeFieldPointers();
+            FieldMgr fieldMgrSubMesh(newMetaData);
+            fieldMgrSubMesh.storeFieldPointers();
 
             std::ostringstream oss;
             oss << "testSingleBefore_" << stkMeshBulkData.parallel_rank() << ".exo";
             std::string filename = oss.str();
 
-            writeCommInfoFields(nBulkData, fieldMgr, filename,  time);
+            writeCommInfoFields(nBulkData, fieldMgrSubMesh, filename,  time);
 
             unlink(filename.c_str());
         }
@@ -266,14 +266,14 @@ TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
 
             createSerialSubMesh(stkMeshMetaData, stkMeshBulkData, stkMeshBulkData.mesh_meta_data().universal_part(), newMetaData, nBulkData);
 
-            FieldMgr fieldMgr(newMetaData);
-            fieldMgr.storeFieldPointers();
+            FieldMgr fieldMgrSubMesh(newMetaData);
+            fieldMgrSubMesh.storeFieldPointers();
 
             std::ostringstream oss;
             oss << "testSingleAfter_" << stkMeshBulkData.parallel_rank() << ".exo";
             std::string filename = oss.str();
 
-            writeCommInfoFields(nBulkData, fieldMgr, filename,  time);
+            writeCommInfoFields(nBulkData, fieldMgrSubMesh, filename,  time);
 
             unlink(filename.c_str());
         }
