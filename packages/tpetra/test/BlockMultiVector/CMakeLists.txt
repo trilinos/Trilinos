@@ -23,7 +23,6 @@ IF (${PACKAGE_NAME}_ENABLE_CLASSIC_VBR)
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     STANDARD_PASS_OUTPUT
-    DEPLIBS kokkos kokkoslinalg kokkosnodeapi
     )
 ENDIF ()
 
@@ -35,7 +34,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -46,7 +44,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -57,5 +54,4 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
