@@ -1,9 +1,13 @@
-
-
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   GMRES
   SOURCES cxx_main.cpp
-  COMM serial mpi
   PASS_REGULAR_EXPRESSION "All tests passed"
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  RecursiveIterate
+  SOURCES aztecoo_recursive_iterate.cpp
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "ALL TESTS PASSED"
+  )
+
