@@ -40,6 +40,7 @@
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 #include <stk_util/parallel/DistributedIndex.hpp>
+#include <stk_util/parallel/MPI.hpp>
 #include <fstream>
 #include <stdint.h>
 
@@ -409,10 +410,10 @@ void getIdUsageAcrossAllProcs(std::vector< std::vector<uint64_t> > &idsToComm, s
                 if ( j != mpiInfo.getProcId() )
                 {
                     uint64_t numItemsToComm = idsToComm[j].size();
-                    MPI_Send(&numItemsToComm, 1, MPI_UNSIGNED_LONG_LONG, j, mpiInfo.getNumProcs()*i+j, mpiInfo.getMpiComm());
+                    MPI_Send(&numItemsToComm, 1, sierra::MPI::Datatype<uint64_t>::type(), j, mpiInfo.getNumProcs()*i+j, mpiInfo.getMpiComm());
                     if ( numItemsToComm > 0 )
                     {
-                        MPI_Send(&idsToComm[j][0], numItemsToComm, MPI_UNSIGNED_LONG_LONG, j, mpiInfo.getNumProcs()*i+j, mpiInfo.getMpiComm());
+                        MPI_Send(&idsToComm[j][0], numItemsToComm, sierra::MPI::Datatype<uint64_t>::type(), j, mpiInfo.getNumProcs()*i+j, mpiInfo.getMpiComm());
                     }
                 }
             }
@@ -421,12 +422,12 @@ void getIdUsageAcrossAllProcs(std::vector< std::vector<uint64_t> > &idsToComm, s
         {
             uint64_t numItemsToReceive=0;
             MPI_Status status1;
-            MPI_Recv(&numItemsToReceive, 1, MPI_UNSIGNED_LONG_LONG, i, mpiInfo.getNumProcs()*i+mpiInfo.getProcId(), mpiInfo.getMpiComm(), &status1);
+            MPI_Recv(&numItemsToReceive, 1, sierra::MPI::Datatype<uint64_t>::type(), i, mpiInfo.getNumProcs()*i+mpiInfo.getProcId(), mpiInfo.getMpiComm(), &status1);
             if ( numItemsToReceive > 0 )
             {
                 std::vector<uint64_t> idsFromOtherProc(numItemsToReceive,0);
                 MPI_Request request;
-                MPI_Irecv(&idsFromOtherProc[0], numItemsToReceive, MPI_UNSIGNED_LONG_LONG, i, mpiInfo.getNumProcs()*i+mpiInfo.getProcId(), mpiInfo.getMpiComm(), &request);
+                MPI_Irecv(&idsFromOtherProc[0], numItemsToReceive, sierra::MPI::Datatype<uint64_t>::type(), i, mpiInfo.getNumProcs()*i+mpiInfo.getProcId(), mpiInfo.getMpiComm(), &request);
                 MPI_Status status2;
                 MPI_Wait(&request, &status2);
                 idsInUseAcrossAllProcsInMyRange.insert(idsInUseAcrossAllProcsInMyRange.end(), idsFromOtherProc.begin(), idsFromOtherProc.end());
@@ -505,13 +506,13 @@ INTMPI whichProcOwnsId(const uint64_t maxId, const uint64_t id, INTMPI numProcs)
 
 bool sendIdToCheck(const INTMPI root, uint64_t id, MPI_Comm comm)
 {
-    MPI_Bcast(&id, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
+    MPI_Bcast(&id, 1, sierra::MPI::Datatype<uint64_t>::type(), root, comm);
     bool goodId = true;
     if ( id != 0 )
     {
         uint64_t good = 0;
         uint64_t received = 0;
-        MPI_Reduce(&good, &received, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, root, comm);
+        MPI_Reduce(&good, &received, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, root, comm);
 
         if ( received > 0 )
         {
@@ -529,7 +530,7 @@ void receiveIdAndCheck(const int root, const std::vector<uint64_t> &idsInUse, MP
 
     while( true )
     {
-        MPI_Bcast(&id, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
+        MPI_Bcast(&id, 1, sierra::MPI::Datatype<uint64_t>::type(), root, comm);
         if ( id == 0) break;
 
         bool found = std::binary_search(idsInUse.begin(), idsInUse.end(), id);
@@ -538,7 +539,7 @@ void receiveIdAndCheck(const int root, const std::vector<uint64_t> &idsInUse, MP
         {
             result = 1;
         }
-        MPI_Reduce(&result, &result, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, root, comm);
+        MPI_Reduce(&result, &result, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, root, comm);
     }
 }
 
@@ -551,10 +552,10 @@ void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_
 
     while( true )
     {
-        MPI_Bcast(&id, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
+        MPI_Bcast(&id, 1, sierra::MPI::Datatype<uint64_t>::type(), root, comm);
         if ( id == 0) break;
         uint64_t numIdsToGet=0;
-        MPI_Bcast(&numIdsToGet, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
+        MPI_Bcast(&numIdsToGet, 1, sierra::MPI::Datatype<uint64_t>::type(), root, comm);
 
         std::vector<int> areIdsBeingused(numIdsToGet,0);
         for (size_t i=0;i<areIdsBeingused.size();i++)
@@ -573,10 +574,10 @@ void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_
 
 void retrieveIds(const INTMPI root, uint64_t id, MPI_Comm comm, uint64_t numIdsToGetPerProc, std::vector<int>& areIdsBeingUsed)
 {
-    MPI_Bcast(&id, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
+    MPI_Bcast(&id, 1, sierra::MPI::Datatype<uint64_t>::type(), root, comm);
     if ( id != 0 )
     {
-        MPI_Bcast(&numIdsToGetPerProc, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
+        MPI_Bcast(&numIdsToGetPerProc, 1, sierra::MPI::Datatype<uint64_t>::type(), root, comm);
         std::vector<uint64_t> zeroids(numIdsToGetPerProc,0);
         MPI_Reduce(&zeroids[0], &areIdsBeingUsed[0], numIdsToGetPerProc, MPI_INT, MPI_SUM, root, comm);
     }
@@ -927,7 +928,7 @@ void terminateIdRequestForThisProc(INTMPI root, MPI_Comm comm)
 void getAvailableIds(const std::vector<uint64_t> &myIds, uint64_t numIdsNeeded, std::vector<uint64_t> &idsObtained, uint64_t &startingIdToSearchForNewIds, const uint64_t maxId, const MpiInfo& mpiInfo)
 {
     std::vector<uint64_t> receivedInfo(mpiInfo.getNumProcs(),0);
-    MPI_Allgather(&numIdsNeeded, 1, MPI_UNSIGNED_LONG_LONG, &receivedInfo[0], 1, MPI_UNSIGNED_LONG_LONG, mpiInfo.getMpiComm());
+    MPI_Allgather(&numIdsNeeded, 1, sierra::MPI::Datatype<uint64_t>::type(), &receivedInfo[0], 1, sierra::MPI::Datatype<uint64_t>::type(), mpiInfo.getMpiComm());
 
     std::vector<uint64_t> sortedIds(myIds.begin(), myIds.end());
     std::sort(sortedIds.begin(), sortedIds.end());
@@ -949,7 +950,7 @@ void getAvailableIds(const std::vector<uint64_t> &myIds, uint64_t numIdsNeeded, 
                 respondToRootProcessorAboutIdsOwnedOnThisProc(procIndex, maxId, sortedIds, mpiInfo.getMpiComm());
             }
             // updated starting id across all procs
-            MPI_Bcast(&startingIdToSearchForNewIds, 1, MPI_UNSIGNED_LONG_LONG, procIndex, mpiInfo.getMpiComm());
+            MPI_Bcast(&startingIdToSearchForNewIds, 1, sierra::MPI::Datatype<uint64_t>::type(), procIndex, mpiInfo.getMpiComm());
         }
     }
 }
@@ -958,7 +959,7 @@ void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeed
 {
     INTMPI numprocs = mpiInfo.getNumProcs();
     std::vector<uint64_t> receivedInfo(numprocs,0);
-    MPI_Allgather(&numIdsNeeded, 1, MPI_UNSIGNED_LONG_LONG, &receivedInfo[0], 1, MPI_UNSIGNED_LONG_LONG, mpiInfo.getMpiComm());
+    MPI_Allgather(&numIdsNeeded, 1, sierra::MPI::Datatype<uint64_t>::type(), &receivedInfo[0], 1, sierra::MPI::Datatype<uint64_t>::type(), mpiInfo.getMpiComm());
 
     std::vector<uint64_t> sortedIds(myIds.begin(), myIds.end());
     std::sort(sortedIds.begin(), sortedIds.end());
@@ -966,7 +967,7 @@ void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeed
     uint64_t largestIdHere = sortedIds.back();
     uint64_t largestIdEverywhere = 0;
 
-    MPI_Allreduce(&largestIdHere, &largestIdEverywhere, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, mpiInfo.getMpiComm());
+    MPI_Allreduce(&largestIdHere, &largestIdEverywhere, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_MAX, mpiInfo.getMpiComm());
 
     uint64_t totalNumberOfIdsNeeded = 0;
     uint64_t offsetId=0;
@@ -1007,7 +1008,7 @@ void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeed
                     respondToRootProcessorAboutIdsOwnedOnThisProc(procIndex, maxId, sortedIds, mpiInfo.getMpiComm());
                 }
                 // updated starting id across all procs
-                MPI_Bcast(&startingIdToSearchForNewIds, 1, MPI_UNSIGNED_LONG_LONG, procIndex, mpiInfo.getMpiComm());
+                MPI_Bcast(&startingIdToSearchForNewIds, 1, sierra::MPI::Datatype<uint64_t>::type(), procIndex, mpiInfo.getMpiComm());
             }
         }
     }
