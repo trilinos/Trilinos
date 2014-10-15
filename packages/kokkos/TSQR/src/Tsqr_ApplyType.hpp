@@ -45,7 +45,7 @@
 #ifndef __TSQR_TsqrApplyType_hpp
 #define __TSQR_TsqrApplyType_hpp
 
-#include <KokkosTSQR_ConfigDefs.hpp>
+#include <Tsqr_ConfigDefs.hpp>
 #include <string>
 
 

@@ -42,7 +42,7 @@
 #ifndef __TSQR_NodeTsqrFactory_hpp
 #define __TSQR_NodeTsqrFactory_hpp
 
-#include <KokkosTSQR_ConfigDefs.hpp>
+#include <Tsqr_ConfigDefs.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
 #ifdef HAVE_KOKKOSTSQR_TBB

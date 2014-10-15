@@ -50,7 +50,7 @@
 #ifndef __TSQR_Test_CombineTest_hpp
 #define __TSQR_Test_CombineTest_hpp
 
-#include <KokkosTSQR_ConfigDefs.hpp>
+#include <Tsqr_ConfigDefs.hpp>
 
 
 namespace TSQR {

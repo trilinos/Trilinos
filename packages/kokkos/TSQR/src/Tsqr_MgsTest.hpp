@@ -42,7 +42,7 @@
 #ifndef __TSQR_Test_MgsTest_hpp
 #define __TSQR_Test_MgsTest_hpp
 
-#include <KokkosTSQR_ConfigDefs.hpp>
+#include <Tsqr_ConfigDefs.hpp>
 
 #include <Tsqr_Mgs.hpp>
 #ifdef HAVE_KOKKOSTSQR_TBB

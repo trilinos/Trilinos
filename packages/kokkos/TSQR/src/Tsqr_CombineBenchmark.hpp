@@ -42,7 +42,7 @@
 #ifndef __TSQR_Test_CombineBenchmark_hpp
 #define __TSQR_Test_CombineBenchmark_hpp
 
-#include <KokkosTSQR_ConfigDefs.hpp>
+#include <Tsqr_ConfigDefs.hpp>
 #include <Tsqr_CombineBenchmarker.hpp>
 #include <Tsqr_CombineDefault.hpp>
 #include <Tsqr_CombineNative.hpp>

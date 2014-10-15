@@ -39,7 +39,7 @@
 // ************************************************************************
 //@HEADER
 
-#include <KokkosTSQR_ConfigDefs.hpp>
+#include <Tsqr_ConfigDefs.hpp>
 #include "Tsqr_CombineTest.hpp"
 
 #include <Tsqr_Random_NormalGenerator.hpp>

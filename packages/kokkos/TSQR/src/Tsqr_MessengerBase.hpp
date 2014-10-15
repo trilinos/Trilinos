@@ -42,7 +42,7 @@
 #ifndef __TSQR_Tsqr_MessengerBase_hpp
 #define __TSQR_Tsqr_MessengerBase_hpp
 
-#include <KokkosTSQR_ConfigDefs.hpp>
+#include <Tsqr_ConfigDefs.hpp>
 
 
 namespace TSQR {

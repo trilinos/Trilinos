@@ -45,7 +45,7 @@
 /// \file TsqrAdaptor.hpp
 /// \brief Abstract interface between TSQR and multivector type
 ///
-#include <KokkosTSQR_ConfigDefs.hpp>
+#include <Tsqr_ConfigDefs.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <TsqrTypeAdaptor.hpp>
 #include <TsqrCommFactory.hpp>
