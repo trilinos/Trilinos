@@ -467,6 +467,11 @@ MDMap = MDMap_default
   {
     return self->getDataNonConst(includePadding);
   }
+
+  PyObject * __distarray__()
+  {
+    return PyTrilinos::convertToDistArray(*self);
+  }
 }
 %ignore Domi::MDVector::getDataNonConst;
 %ignore Domi::MDVector::getData;
