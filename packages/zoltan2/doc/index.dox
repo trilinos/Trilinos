@@ -4,6 +4,7 @@
 <ul>
 <li> \ref z2_main_intro
 <li> \ref z2_main_building
+<li> \ref z2_main_build2
 <li> \ref z2_main_overview
 </ul>
 
@@ -36,15 +37,18 @@ of an area and how Zoltan2 can be used in this context):
 
 \section z2_main_building Building and Installing Zoltan2
 
+\subsection z2_main_build_basics Zoltan2 Build Basics
+
 Zoltan2 is part of the Trilinos framework and uses the Trilinos CMake build system for
 configuration and builiding.  In order to build Zoltan2, you need to use the Trilinos_ENABLE_Zoltan2
 cmake directive.  The most basic way to build Zoltan2 is to execute the following two commands in
 your build directory (typically distinct from the source directory):
 
-<ol>
-<li>	cmake -D Trilinos_ENABLE_Zoltan2:BOOL=ON /path/to/Trilinos/src/directory
-<li>    make
-</ol>
+    % cmake \
+        -D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+        /path/to/Trilinos/src/directory 
+    % make
+
 
 The first statement is the cmake configuration step that configures the build, creates Makefiles, etc.
 The second statement builds the Zoltan2 library and all required libraries.
@@ -53,12 +57,40 @@ Zoltan2 requires several of the other Trilinos packages to be built.
 Trilinos framework should automatically enable these required packages during the configuration process
 if Zoltan2 is enabled.
 
+Two important Trilinos configurations options of note relate to Fortran and MPI.  If you do not have a fortran 
+compiler installed, you should disable Fortran with the Trilinos_ENABLE_Fortran
+cmake directive.  If you wish to have Zoltan run in a parallel (distributed memory) fashion, it is also important
+to enable MPI using the TPL_ENABLE_MPI directive.  A very simple configure command for users with MPI but without
+Fortran is as follows:
+
+    % cmake \
+        -D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+        -D Trilinos_ENABLE_Fortran:BOOL=OFF \
+        -D TPL_ENABLE_MPI:BOOL=ON \
+        /path/to/Trilinos/src/directory 
+
+It is also important to note that by default the build system will enable all optional dependencies (Anasazi and
+Zoltan for Zoltan2).  In order to reduce the compilation time of the Zoltan2 build, one may wish to disable these
+optional depencies using the Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES directive:
+
+    % cmake \
+        -D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+        -D Trilinos_ENABLE_Fortran:BOOL=OFF \
+        -D TPL_ENABLE_MPI:BOOL=ON \
+        -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
+        /path/to/Trilinos/src/directory 
+
+For more information on the Trilinos cmake build system see the Trilinos CMake Reference document 
+(link can be found at http://trilinos.org/about/documentation/).  
+In the next subsection,
+we discuss some of the Zoltan2 specific cmake directives and other Trilinos directives that directly impact the
+Zoltan2 functionality.
 
 
+\subsection z2_main_build_additional Additional Zoltan2 Related Build Options
 
 
-
-Zoltan2 configuration refers to these CMake directives:
+The following CMake configure directives can also impact Zoltan2 behavior:
 
   \li \c Trilinos_ENABLE_OpenMP if enabled, use OpenMP for multithreaded execution. (Note not all of Zoltan2 is thread-safe.)
   \li \c Trilinos_ENABLE_Zoltan if enabled Zoltan2 will build a test that compares the performance of Zoltan1 and Zoltan2
@@ -75,10 +107,33 @@ These are some of the compilation flags used by Zoltan2:
   \li \c Z2_OMIT_ALL_ERROR_CHECKING  The \ref error_check_level parameter controls the amount of error checking done at runtime.  When this flag is set, all error checking code is compiled out.
 
 
+\subsection z2_main_build_install Zoltan2 Installation
+
+To install Zoltan2 (and the other enabled Trilinos libraries) in a user specified location,
+the cmake directive CMAKE_INSTALL_PREFIX should be used as shown in the below installation
+example:
+
+
+    % cmake \
+        -D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+        -D Trilinos_ENABLE_Fortran:BOOL=OFF \
+        -D TPL_ENABLE_MPI:BOOL=ON \
+        -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
+        -D CMAKE_INSTALL_PREFIX:PATH=/path/to/directory/of/installation \
+        /path/to/Trilinos/src/directory 
+    % make
+    % make install
+
+If "make install" is executed without specifying the installation location, the build system
+will attempt to install the software in a common location (/usr/local at the time this was written).
+
+
+
 <hr>
 
 
 \section z2_main_build2 Building Projects with Zoltan
+
 
 
 <hr>
