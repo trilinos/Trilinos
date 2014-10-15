@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PYTRILINOS_TEUCHOS_UTIL_H
-#define PYTRILINOS_TEUCHOS_UTIL_H
+#ifndef PYTRILINOS_TEUCHOS_UTIL_HPP
+#define PYTRILINOS_TEUCHOS_UTIL_HPP
 
 // Include Python and NumPy headers
 #define NO_IMPORT_ARRAY
@@ -35,6 +35,9 @@
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
 #endif
+
+// Include PyTrilinos::NumPy_TypeCode function
+#include "PyTrilinos_NumPy_Util.hpp"
 
 // Include Teuchos::ParameterList prototypes
 #include "Teuchos_ParameterList.hpp"
@@ -95,8 +98,8 @@ enum ResponseToIllegalParameters {raiseError,
 // type a priori and that the NumPy array is 1D.
 
 template< typename T >
-void CopyNumPyToTeuchos(PyObject * pyArray,
-                        Teuchos::Array< T > & tArray)
+void copyNumPyToTeuchosArray(PyObject * pyArray,
+                             Teuchos::Array< T > & tArray)
 {
   typedef typename Teuchos::Array< T >::size_type size_type;
   size_type length = PyArray_DIM((PyArrayObject*) pyArray, 0);
@@ -111,19 +114,52 @@ void CopyNumPyToTeuchos(PyObject * pyArray,
 
 // Copy the data in a Teuchos::Array into a new 1D NumPy array.  If
 // any errors occur, a Python error will be set and the function will
-// return NULL.  The user must specify the NumPy typecode that
-// corresponds with the template type.
+// return NULL.
 
 template< typename T >
-PyObject * CopyTeuchosToNumPy(Teuchos::Array< T > & tArray,
-                              int typecode)
+PyObject * copyTeuchosArrayToNumPy(Teuchos::Array< T > & tArray)
 {
+  int typecode = PyTrilinos::NumPy_TypeCode< T >();
   npy_intp dims[] = { tArray.size() };
   PyObject * pyArray = PyArray_SimpleNew(1, dims, typecode);
   T * data = (T*) PyArray_DATA((PyArrayObject*) pyArray);
   for (typename Teuchos::Array< T >::iterator it = tArray.begin();
        it != tArray.end(); ++it)
     *(data++) = *it;
+  return pyArray;
+}
+
+// ****************************************************************** //
+
+// Create a new Teuchos::ArrayRCP whose data buffer points to the same
+// data buffer as a given NumPy array.  The user must varify that the
+// NumPy data type is the same as the template type a priori and that
+// the NumPy array is 1D.
+
+template< typename T >
+Teuchos::ArrayRCP< T > convertToTeuchosArray(PyArrayObject * pyArray)
+{
+  typedef typename Teuchos::ArrayRCP< T >::size_type size_type;
+  size_type length = PyArray_DIM(pyArray, 0);
+  T * data = (T*) PyArray_DATA(pyArray);
+  return Teuchos::ArrayRCP< T >(data, 0, length, false);
+}
+
+// ****************************************************************** //
+
+// Return a NumPy array whose data buffer points to the data buffer of
+// the given Teuchos::ArrayRCP.  If any errors occur, a Python error
+// will be set and the function will return NULL.
+
+template< typename T >
+PyObject *
+convertToNumPyArray(const Teuchos::ArrayRCP< T > & teuchosArray)
+{
+  int typecode = PyTrilinos::NumPy_TypeCode< T >();
+  npy_intp dims[] = { teuchosArray.size() };
+  PyObject * pyArray =
+    PyArray_SimpleNewFromData(1, dims, typecode,
+                              (void*) teuchosArray.getRawPtr());
   return pyArray;
 }
 
@@ -236,4 +272,4 @@ parameterListToNewPyDict(const Teuchos::ParameterList & plist,
 
 }    // Namespace PyTrilinos
 
-#endif // PYTRILINOS_TEUCHOS_UTIL_H
+#endif // PYTRILINOS_TEUCHOS_UTIL_HPP
