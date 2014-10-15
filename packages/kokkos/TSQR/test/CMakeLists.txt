@@ -8,7 +8,7 @@
 # Performance and accuracy test suite for TSQR::Combine (which factors
 # cache blocks and combines triangular factors).
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TSQR_Combine
+  Combine
   SOURCES Tsqr_TestCombine.cpp
   COMM serial mpi
   ARGS "--verify --testReal"
@@ -19,7 +19,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # Performance and accuracy test suite for TSQR::SequentialTsqr
 # (sequential cache-blocked TSQR).
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TSQR_SequentialTsqr
+  SequentialTsqr
   SOURCES Tsqr_TestSeqTsqr.cpp
   COMM serial mpi
   ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-blocks"
@@ -32,7 +32,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # algorithm, but it does depend on some TSQR test code (for generating
 # the test matrix and measuring accuracy).
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TSQR_Lapack
+  Lapack
   SOURCES Tsqr_TestLapack.cpp
   COMM serial mpi
   ARGS "--verify --nrows=1000 --ncols=10 --ntrials=10"
@@ -47,7 +47,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # Only build TBB-enabled TSQR if (surprise!) TBB is enabled.
 IF (KokkosTSQR_ENABLE_TBB)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    TSQR_TbbTsqr
+    TbbTsqr
     SOURCES Tsqr_TestTbbTsqr.cpp
     COMM serial mpi
     ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-blocks"
@@ -65,7 +65,7 @@ ENDIF()
 # hardware resources to use (e.g., how many CPU cores, how many
 # threads, ...).
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TSQR_KokkosNodeTsqr
+  KokkosNodeTsqr
   SOURCES Tsqr_TestKokkosNodeTsqr.cpp
   COMM serial mpi
   ARGS "--verify --numRows=100000 --numCols=10 --numPartitions=7 --cacheSizeHint=50000 --contiguousCacheBlocks"
@@ -80,7 +80,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # Performance and accuracy test suite for TSQR::DistTsqr (which
 # combines triangular factors from different MPI processes).
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TSQR_DistTsqr_Accuracy
+  DistTsqr_Accuracy
   SOURCES Tsqr_TestDistTsqr.cpp
   COMM mpi
   ARGS "--verify --ncols=5 --explicit --implicit --real"
@@ -90,7 +90,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 # Accuracy test for TSQR::Tsqr (the full TSQR implementation).
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TSQR_FullTsqr_Accuracy
+  FullTsqr_Accuracy
   SOURCES Tsqr_TestFullTsqr.cpp
   COMM mpi
   ARGS "--numRowsLocal=100 --numCols=5 --testFactorExplicit --testReal"
