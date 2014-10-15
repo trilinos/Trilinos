@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -45,20 +45,7 @@
 #include <Tpetra_ConfigDefs.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterList.hpp>
-
-#include <Kokkos_SerialNode.hpp>
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include <Kokkos_TBBNode.hpp>
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include <Kokkos_TPINode.hpp>
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include <Kokkos_OpenMPNode.hpp>
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include <Kokkos_ThrustGPUNode.hpp>
-#endif
+#include <Kokkos_DefaultNode.hpp>
 
 // This macro is only for use by Tpetra developers.
 // It should only be invoked in the Tpetra namespace,
@@ -68,197 +55,241 @@
 
 namespace Tpetra {
 
-  //! A platform class for hybrid nodes.
-  class HybridPlatform : public Teuchos::Describable {
-  public:
-    //! @name Constructor/Destructor Methods
-    //@{ 
+/// \brief A platform class for hybrid nodes.
+/// \warning Users should consider this class DEPRECATED.
+class HybridPlatform : public Teuchos::Describable {
+public:
+  //! @name Constructor/Destructor Methods
+  //@{
 
-    //! Constructor
-    HybridPlatform (const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
-		    Teuchos::ParameterList& pl);
+  //! Constructor
+  HybridPlatform (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                  Teuchos::ParameterList& pl);
 
-    //! Destructor
-    ~HybridPlatform ();
+  //! Destructor
+  ~HybridPlatform ();
 
-    //@}
-    //! @name Class Query, Creation and Accessor Methods
-    //@{ 
+  //@}
+  //! @name Class Query, Creation and Accessor Methods
+  //@{
 
-      //! Comm Instance
-    Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
+  //! Comm Instance
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
-    //! List of supported nodes and their valid parameters.
-    static Teuchos::RCP<Teuchos::ParameterList> listSupportedNodes ();
+  //! List of supported nodes and their valid parameters.
+  static Teuchos::RCP<Teuchos::ParameterList> listSupportedNodes ();
 
-    //! Whether HybridPlatform supports the given \c Node type.
-    template <class Node>
-    static bool isNodeSupported ();
-
-    /// \brief Run user code with the runtime-selected Node type.
-    ///
-    /// This method assumes that UserCode is a class with a template
-    /// parameter Node, which has a class ("static") method run():
-    /// \code
-    /// template<class Node>
-    /// class UserCode {
-    /// public:
-    ///   static void 
-    ///   run (Teuchos::ParameterList& plist, 
-    ///        Teuchos::RCP<const Teuchos::Comm<int> > comm, 
-    ///        Teuchos::RCP<Node> node);
-    /// };
-    /// \endcode
-    /// Note that this method depends on the "template parameter that
-    /// takes a template parameter" feature of C++11.  Your compiler
-    /// may or may not support this feature.  If it does, you may have
-    /// to use a special compiler flag to enable the feature.
-    template <template <class Node> class UserCode> 
-    void runUserCode ();
-
-    /// \brief Run user code with the runtime-selected Node type.
-    ///
-    /// This method, unlike the version of runUserCode that takes no
-    /// arguments above, assumes that UserCode is a class with an
-    /// <i>instance</i> (not class) method run():
-    /// \code
-    /// class UserCode {
-    /// public:
-    ///   template<class Node>
-    ///   void 
-    ///   run (Teuchos::ParameterList& plist, 
-    ///        Teuchos::RCP<const Teuchos::Comm<int> > comm, 
-    ///        Teuchos::RCP<Node> node);
-    /// };
-    /// \endcode
-    template <class UserCode> 
-    void runUserCode (UserCode &code);
-
-    //@}
-
-  protected:
-    void createNode ();
-
-  private:
-    HybridPlatform(const HybridPlatform &platform); // not supported
-    const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-    Teuchos::ParameterList instList_;
-    Teuchos::RCP<KokkosClassic::SerialNode>    serialNode_;
-    bool nodeCreated_;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-    Teuchos::RCP<KokkosClassic::TBBNode>       tbbNode_;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-    Teuchos::RCP<KokkosClassic::TPINode>       tpiNode_;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-    Teuchos::RCP<KokkosClassic::OpenMPNode>    ompNode_;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-    Teuchos::RCP<KokkosClassic::ThrustGPUNode> thrustNode_;
-#endif
-
-    enum NodeType {
-      SERIALNODE
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-      , TBBNODE
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-      , TPINODE
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-      , OMPNODE
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-      , THRUSTGPUNODE
-#endif        
-    } nodeType_;
-  };
-
+  //! Whether HybridPlatform supports the given \c Node type.
   template <class Node>
-  bool HybridPlatform::isNodeSupported ()
-  {
-    return false;
-  }
-  
+  static bool isNodeSupported ();
+
+  /// \brief Run user code with the runtime-selected Node type.
+  ///
+  /// This method assumes that UserCode is a class with a template
+  /// parameter Node, which has a class ("static") method run():
+  /// \code
+  /// template<class Node>
+  /// class UserCode {
+  /// public:
+  ///   static void
+  ///   run (Teuchos::ParameterList& plist,
+  ///        Teuchos::RCP<const Teuchos::Comm<int> > comm,
+  ///        Teuchos::RCP<Node> node);
+  /// };
+  /// \endcode
+  /// Note that this method depends on the "template parameter that
+  /// takes a template parameter" feature of C++11.  Your compiler
+  /// may or may not support this feature.  If it does, you may have
+  /// to use a special compiler flag to enable the feature.
+  template <template <class Node> class UserCode>
+  void runUserCode ();
+
+  /// \brief Run user code with the runtime-selected Node type.
+  ///
+  /// This method, unlike the version of runUserCode that takes no
+  /// arguments above, assumes that UserCode is a class with an
+  /// <i>instance</i> (not class) method run():
+  /// \code
+  /// class UserCode {
+  /// public:
+  ///   template<class Node>
+  ///   void
+  ///   run (Teuchos::ParameterList& plist,
+  ///        Teuchos::RCP<const Teuchos::Comm<int> > comm,
+  ///        Teuchos::RCP<Node> node);
+  /// };
+  /// \endcode
   template <class UserCode>
-  void HybridPlatform::runUserCode (UserCode& codeobj) {
-    createNode();
-    switch (nodeType_) {
-      case SERIALNODE:
-        codeobj.template run<KokkosClassic::SerialNode>(instList_,comm_, serialNode_);
-        break;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-      case TBBNODE:
-        codeobj.template run<KokkosClassic::TBBNode>(instList_,comm_, tbbNode_);
-        break;
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-      case OMPNODE:
-        codeobj.template run<KokkosClassic::OpenMPNode>(instList_,comm_, ompNode_);
-        break;
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-      case TPINODE:
-        codeobj.template run<KokkosClassic::TPINode>(instList_,comm_, tpiNode_);
-        break;
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-      case THRUSTGPUNODE:
-        codeobj.template run<KokkosClassic::ThrustGPUNode>(instList_,comm_, thrustNode_);
-        break;
-#endif        
-      default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, 
-            Teuchos::typeName(*this) << "::runUserCode(): Invalid node type." << std::endl);
-    } // end of switch
-  }
+  void runUserCode (UserCode &code);
 
-  template <template<class Node> class UserCode>
-  void HybridPlatform::runUserCode() {
-    createNode();
-    switch (nodeType_) {
-      case SERIALNODE:
-        UserCode<KokkosClassic::SerialNode>::run(instList_,comm_, serialNode_);
-        break;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-      case TBBNODE:
-        UserCode<KokkosClassic::TBBNode>::run(instList_,comm_, tbbNode_);
-        break;
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-      case OMPNODE:
-        UserCode<KokkosClassic::OpenMPNode>::run(instList_,comm_, ompNode_);
-        break;
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-      case TPINODE:
-        UserCode<KokkosClassic::TPINode>::run(instList_,comm_, tpiNode_);
-        break;
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-      case THRUSTGPUNODE:
-        UserCode<KokkosClassic::ThrustGPUNode>::run(instList_,comm_, thrustNode_);
-        break;
-#endif        
-      default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, 
-            Teuchos::typeName(*this) << "::runUserCode(): Invalid node type." << std::endl);
-    } // end of switch
-  }
+  //@}
 
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::SerialNode)
+protected:
+  void createNode ();
+
+private:
+  HybridPlatform(const HybridPlatform &platform); // not supported
+  const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+  Teuchos::ParameterList instList_;
+  bool nodeCreated_;
+
+  // DEFAULTNODE is always the default Node type, whatever that
+  // happens to be.  We include this just in case SERIALNODE is not
+  // enabled, so that the syntax won't break (e.g., so that the enum
+  // won't be empty).
+  enum NodeType {
+    DEFAULTNODE
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+    , SERIALNODE
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::TBBNode)
-#endif        
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::OpenMPNode)
-#endif        
+    , TBBNODE
+#endif
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::TPINode)
-#endif        
+    , TPINODE
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+    , OMPNODE
+#endif
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::ThrustGPUNode)
+    , THRUSTGPUNODE
+#endif
+  } nodeType_;
+
+  //! Instance of the default Node type.
+  Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> defaultNode_;
+
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+  Teuchos::RCP<KokkosClassic::SerialNode> serialNode_;
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  Teuchos::RCP<KokkosClassic::TBBNode> tbbNode_;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  Teuchos::RCP<KokkosClassic::TPINode> tpiNode_;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+  Teuchos::RCP<KokkosClassic::OpenMPNode> ompNode_;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+  Teuchos::RCP<KokkosClassic::ThrustGPUNode> thrustNode_;
+#endif
+};
+
+
+template <class Node>
+bool HybridPlatform::isNodeSupported ()
+{
+  return false;
+}
+
+
+template <class UserCode>
+void
+HybridPlatform::runUserCode (UserCode& codeobj)
+{
+  createNode ();
+  switch (nodeType_) {
+  case DEFAULTNODE:
+    codeobj.template run<KokkosClassic::DefaultNode::DefaultNodeType> (instList_,comm_, defaultNode_);
+    break;
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+  case SERIALNODE:
+    codeobj.template run<KokkosClassic::SerialNode> (instList_, comm_, serialNode_);
+    break;
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  case TBBNODE:
+    codeobj.template run<KokkosClassic::TBBNode> (instList_, comm_, tbbNode_);
+    break;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+  case OMPNODE:
+    codeobj.template run<KokkosClassic::OpenMPNode> (instList_, comm_, ompNode_);
+    break;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  case TPINODE:
+    codeobj.template run<KokkosClassic::TPINode> (instList_, comm_, tpiNode_);
+    break;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+  case THRUSTGPUNODE:
+    codeobj.template run<KokkosClassic::ThrustGPUNode> (instList_, comm_, thrustNode_);
+    break;
+#endif
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error, Teuchos::typeName(*this) << "::runUserCode: "
+      "Invalid node type." << std::endl);
+  } // end of switch
+}
+
+template <template<class Node> class UserCode>
+void
+HybridPlatform::runUserCode ()
+{
+  createNode ();
+  switch (nodeType_) {
+  case DEFAULTNODE:
+    UserCode<KokkosClassic::DefaultNode::DefaultNodeType>::run (instList_, comm_, defaultNode_);
+    break;
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+  case SERIALNODE:
+    UserCode<KokkosClassic::SerialNode>::run (instList_, comm_, serialNode_);
+    break;
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  case TBBNODE:
+    UserCode<KokkosClassic::TBBNode>::run (instList_, comm_, tbbNode_);
+    break;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+  case OMPNODE:
+    UserCode<KokkosClassic::OpenMPNode>::run (instList_, comm_, ompNode_);
+    break;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  case TPINODE:
+    UserCode<KokkosClassic::TPINode>::run (instList_, comm_, tpiNode_);
+    break;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+  case THRUSTGPUNODE:
+    UserCode<KokkosClassic::ThrustGPUNode>::run (instList_, comm_, thrustNode_);
+    break;
+#endif
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error, Teuchos::typeName(*this) << "::runUserCode: "
+      "Invalid node type." << std::endl);
+  } // end of switch
+}
+
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::SerialNode)
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
+
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::TBBNode)
+#endif
+
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::OpenMPNode)
+#endif
+
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::TPINode)
+#endif
+
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::ThrustGPUNode)
+#endif
+
+// Make sure that the default Node type is always supported.  We can
+// only do this if it's not any of the Node types listed above.
+#if ! defined(HAVE_KOKKOSCLASSIC_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_TBB) && ! defined(HAVE_KOKKOSCLASSIC_OPENMP) && ! defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_THRUST)
+TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::DefaultNode::DefaultNodeType)
 #endif
 
 } // namespace Tpetra
