@@ -325,14 +325,14 @@ bool check_state(const stk::mesh::BulkData & mesh, const EntityKey & entityKey, 
 
       if (!lists_match) {
         oss << "check_state(): Entity " << entityKey << " was shared with procs (";
-        stk::mesh::PairIterEntityComm comm_it = mesh.entity_comm_map_shared(entityKey);
+        comm_it = mesh.entity_comm_map_shared(entityKey);
         for ( ; comm_it.first != comm_it.second; ++comm_it) {
           int proc = comm_it.first->proc;
           oss << proc << " ";
         }
         oss << ")" << std::endl
             << "               when it was expected to be shared with procs (";
-        std::vector<int>::const_iterator procs_it = procs.begin();
+        procs_it = procs.begin();
         for ( ; procs_it != procs.end(); ++procs_it) {
           oss << *procs_it << " ";
         }
