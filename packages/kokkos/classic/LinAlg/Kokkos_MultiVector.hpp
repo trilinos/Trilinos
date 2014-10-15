@@ -468,6 +468,7 @@ namespace KokkosClassic {
   // methods faster on CPU Nodes.
   //
 
+#if defined (HAVE_KOKKOSCLASSIC_SERIAL)
   // Partial specialization for SerialNode.
   template<class Scalar>
   class MultiVector<Scalar, SerialNode> {
@@ -701,6 +702,7 @@ namespace KokkosClassic {
     size_t origNumRows_;
     size_t origNumCols_;
   };
+#endif // defined (HAVE_KOKKOSCLASSIC_SERIAL)
 
 #if defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
   // Partial specialization for TPINode.

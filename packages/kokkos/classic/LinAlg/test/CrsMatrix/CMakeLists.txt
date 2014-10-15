@@ -65,17 +65,19 @@ IF(NOT __LINUX_COMPILER_PGI)
 ENDIF()
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SerialNodeCrsTiming
-  SOURCES 
+IF (KokkosClassic_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SerialNodeCrsTiming
+    SOURCES 
     NodeTest
     ../../../NodeAPI/test/SerialNodeTest
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
-  XHOSTTYPE Windows
-  )
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    XHOSTTYPE Windows
+    )
+ENDIF ()
 IF (KokkosClassic_ENABLE_TBB)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TBBNodeCrsTiming

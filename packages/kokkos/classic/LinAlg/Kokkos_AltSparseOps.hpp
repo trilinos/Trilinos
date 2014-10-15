@@ -67,7 +67,9 @@
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
 #  include "Kokkos_OpenMPNode.hpp"
 #endif // HAVE_KOKKOSCLASSIC_OPENMP
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
 #include "Kokkos_SerialNode.hpp"
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 /// \file Kokkos_AltSparseOps.hpp
 /// \brief AltSparseOps: Implementation of local sparse kernels.

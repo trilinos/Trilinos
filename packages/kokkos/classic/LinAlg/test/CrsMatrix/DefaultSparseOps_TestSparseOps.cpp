@@ -53,7 +53,6 @@
 
 
 namespace {
-  using KokkosClassic::DefaultNode;
   using Teuchos::arcp;
   using Teuchos::ArrayRCP;
   using Teuchos::null;
@@ -73,12 +72,7 @@ namespace {
 
   typedef double scalar_type;
   typedef int ordinal_type;
-  // mfh 28 Jun 2012: DefaultNodeType is usually TPINode, which may
-  // start threads by default.  We use SerialNode to make absolutely
-  // sure that this is a comparison of sequential kernels.
-  //
-  //typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
-  typedef KokkosClassic::SerialNode node_type;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
   typedef Teuchos::ScalarTraits<double> STM;
 
