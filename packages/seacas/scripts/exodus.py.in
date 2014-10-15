@@ -1,6 +1,6 @@
 EXODUS_PY_COPYRIGHT_AND_LICENSE = """ 
 
-exodus.py v 1.01 (beta) is a python wrapper of some of the exodus II library
+exodus.py v 1.02 (beta) is a python wrapper of some of the exodus II library
 
 Copyright (c) 2013, 2014 Sandia Corporation. Under the terms of
 Contract DE-AC04-94AL85000 with Sandia Corporation, the
@@ -18,11 +18,12 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 """
 
-EXODUS_PY_VERSION = "1.01 (beta)"
+EXODUS_PY_VERSION = "1.02 (beta)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.01 (beta), a python wrapper of some of the exodus II library.
-Copyright (c) 2013,2014 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains certain rights in this software.
+You are using exodus.py v 1.02 (beta), a python wrapper of some of the exodus II library.
+Copyright (c) 2013,2014 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000
+with Sandia Corporation, the U.S. Government retains certain rights in this software.
 """
 
 EXODUS_PY_CONTACTS = """
@@ -68,11 +69,23 @@ def getAccessPath():
   Return the base path of the exodus installation.
   """
   accessPth = "@ACCESSDIR@"
-  if not os.path.isdir(accessPth):
+  if not isinstance(accessPth,str) or not os.path.isdir(accessPth):
     accessPth = os.environ.get('ACCESS')
-    
-  if not os.path.isdir(accessPth):
-    raise Exception, "Invalid $ACCESS path: %s" % accessPth
+
+  if not isinstance(accessPth,str) or not os.path.isdir(accessPth):
+    system = os.environ.get('SIERRA_SYSTEM')
+    if not isinstance(system,str):
+      raise Exception, "Both the $ACCESS path and $SIERRA_SYSTEM are undefined"
+    if   system == 'desktop_rh6': accessPth = '/projects/seacas/linux_rhel6/current'
+    elif system == 'desktop'    : accessPth = '/projects/seacas/linux_rhel5/current'
+    elif system == 'redsky'     : accessPth = '/projects/seacas/redsky/current'
+    elif system == 'tlcc'       : accessPth = '/projects/seacas/tlcc/current'
+    elif system == 'tlcc2'      : accessPth = '/projects/seacas/tlcc2/current'
+    elif system == 'amech'      : accessPth = '/projects/seacas/linux_rhel5/current'
+    else: raise Exception, "Unrecognized $SIERRA_SYSTEM: %s" % system
+    if not os.path.isdir(accessPth):
+      raise Exception, "Invalid $ACCESS path: %s" % accessPth
+
   return accessPth
 
 def findLibExoPath():
@@ -208,8 +221,11 @@ def ex_entity_type(varType):
 class exodus:
   """
     e = exodus('file.e',mode='r') -> open existing exodus file for data extraction
+    e = exodus('file.e',mode='r',array_type='numpy') -> open existing exodus file for data 
+        extraction using numpy arrays
     e = exodus('file.e',mode='a') -> open existing exodus file for data insertion/extraction
     e = exodus('file.e',mode='w',title=title,
+               arrayType=ctype,
                numDims=numDims,numNodes=numNodes
                numElems=numElems,numBlocks=numBlocks,
                numNodeSets=numNodeSets,
@@ -218,14 +234,26 @@ class exodus:
   
   # --------------------------------------------------------------------
 
-  def __init__(self,file,mode=None,title=None,numDims=None,
+  def __init__(self,file,mode=None,array_type='ctype',title=None,numDims=None,
                numNodes=None,numElems=None,numBlocks=None,
                numNodeSets=None,numSideSets=None,io_size=0):
     print EXODUS_PY_COPYRIGHT
     if mode == None:
       mode = 'r'
+    if array_type == 'numpy':
+        #Import numpy to convert from c-type arrays to numpy arrays
+        import numpy as np
+        self.np = np
+        self.use_numpy = True
+        #Warnings module is needed to suppress the invalid warning when 
+        #converting from c-type arrays to numpy arrays
+        #http://stackoverflow.com/questions/4964101/pep-3118-warning-when-using-ctypes-array-as-numpy-array
+        import warnings
+        self.warnings = warnings
+    else:
+        self.use_numpy = False
     self.EXODUS_LIB = EXODUS_LIB
-    self.fileName = file
+    self.fileName = str(file)
     self.basename = basename(file)
     self.modeChar = mode
     self.__open(io_size=io_size)
@@ -250,14 +278,14 @@ class exodus:
                           this copy as a new exodus object
     """
     new = exodus( fileName,
-                  "w",
-                  self.title(),
-                  self.num_dimensions(),
-                  self.num_nodes(),
-                  self.num_elems(),
-                  self.num_blks(),
-                  self.num_node_sets(),
-                  self.num_side_sets() )
+                  mode="w",
+                  title=self.title(),
+                  numDims=self.num_dimensions(),
+                  numNodes=self.num_nodes(),
+                  numElems=self.num_elems(),
+                  numBlocks=self.num_blks(),
+                  numNodeSets=self.num_node_sets(),
+                  numSideSets=self.num_side_sets() )
     self.__copy_file(new)
     return new
 
@@ -410,6 +438,8 @@ class exodus:
       self.times = []
     else:
       self.__ex_get_all_times()
+    if self.use_numpy:
+        self.times = ctype_to_numpy(self, self.times)
     return self.times
 
   # --------------------------------------------------------------------
@@ -419,6 +449,7 @@ class exodus:
       e.put_time(step,value) -> put time step and value into exodus file
     """
     self.__ex_put_time(step,value)
+    self.numTimes = c_int(self.__ex_inquire_int(ex_inquiry("EX_INQ_TIME")))
     return True
 
   #
@@ -467,6 +498,10 @@ class exodus:
       e.get_coords() -> get tuple of lists of coordinates (X,Y,Z) in exodus file
     """
     self.__ex_get_coord()
+    if self.use_numpy:
+        self.coordsX = ctype_to_numpy(self, self.coordsX)
+        self.coordsY = ctype_to_numpy(self, self.coordsY)
+        self.coordsZ = ctype_to_numpy(self, self.coordsZ)
     return (self.coordsX,self.coordsY,self.coordsZ)
 
   # --------------------------------------------------------------------
@@ -492,7 +527,7 @@ class exodus:
   def get_node_num_map(self):
     """ 
       e.get_node_num_map() -> **DEPRECATED** 
-                              use: e.ex_get_node_id_map()
+                              use: e.get_node_id_map()
 
                               get list mapping local node id to global id 
                               in exodus file
@@ -510,6 +545,8 @@ class exodus:
     objType = ex_entity_type("EX_NODE_MAP")
     inqType = ex_inquiry("EX_INQ_NODES")
     nodeIdMap = self.__ex_get_id_map(objType,inqType)
+    if self.use_numpy:
+      nodeIdMap = self.np.array(nodeIdMap)
     return nodeIdMap
 
   # --------------------------------------------------------------------
@@ -580,6 +617,8 @@ class exodus:
     ndType = ex_entity_type("EX_NODAL")
     numVals = self.num_nodes()
     values =  self.__ex_get_var(step,ndType,var_id,0,numVals)
+    if self.use_numpy:
+        values = ctype_to_numpy(self, values)
     return values
 
   # --------------------------------------------------------------------
@@ -612,7 +651,7 @@ class exodus:
   def get_elem_num_map(self):
     """ 
       e.get_elem_num_map() -> **DEPRECATED** 
-                              use: e.ex_get_elem_id_map()
+                              use: e.get_elem_id_map()
 
                               get list mapping local element id to 
                               global id in exodus file
@@ -630,6 +669,8 @@ class exodus:
     objType = ex_entity_type("EX_ELEM_MAP")
     inqType = ex_inquiry("EX_INQ_ELEM")
     elemIdMap = self.__ex_get_id_map(objType,inqType)
+    if self.use_numpy:
+        elemIdMap = self.np.array(elemIdMap)
     return elemIdMap
 
   # --------------------------------------------------------------------
@@ -651,6 +692,8 @@ class exodus:
     """
 
     elemOrderMap = self.__ex_get_elem_order_map()
+    if self.use_numpy:
+        elemOrderMap = ctype_to_numpy(self, elemOrderMap)
     return elemOrderMap
 
   #
@@ -671,7 +714,10 @@ class exodus:
       e.get_elem_blk_ids() -> get list of element block ids in exodus file
     """
     self.__ex_get_elem_blk_ids()
-    return self.elemBlkIds
+    elemBlkIds = self.elemBlkIds    
+    if self.use_numpy:
+        elemBlkIds = ctype_to_numpy(self, elemBlkIds)
+    return elemBlkIds
 
   # --------------------------------------------------------------------
 
@@ -759,6 +805,8 @@ class exodus:
       (elem_block_connectivity,num_elem_this_blk,num_nodes_per_elem)
     """
     (elem_block_connectivity,num_elem_this_blk,num_nodes_per_elem) = self.__ex_get_elem_conn(id);
+    if self.use_numpy:
+        elem_block_connectivity = ctype_to_numpy(self, elem_block_connectivity)
     return (elem_block_connectivity,num_elem_this_blk.value,num_nodes_per_elem.value)
 
   # --------------------------------------------------------------------
@@ -874,6 +922,8 @@ class exodus:
     ebType = ex_entity_type("EX_ELEM_BLOCK")
     numVals = self.num_elems_in_blk(blockId)
     values =  self.__ex_get_var(step,ebType,var_id,blockId,numVals)
+    if self.use_numpy:
+        values = ctype_to_numpy(self, values)
     return values
 
   # --------------------------------------------------------------------
@@ -1008,7 +1058,10 @@ class exodus:
       e.get_node_set_ids() -> get list of node set ids in exodus file
     """
     self.__ex_get_node_set_ids()
-    return list(self.nodeSetIds)
+    nodeSetIds = list(self.nodeSetIds)
+    if self.use_numpy:
+        nodeSetIds = self.np.array(nodeSetIds)
+    return nodeSetIds
 
   # --------------------------------------------------------------------
 
@@ -1072,7 +1125,10 @@ class exodus:
     node_set_ids = self.get_node_set_ids()
     assert id in node_set_ids
     node_set_nodes = self.__ex_get_node_set(id)
-    return list(node_set_nodes)
+    node_set_nodes = list(node_set_nodes)
+    if self.use_numpy:
+        node_set_nodes = self.np.array(node_set_nodes)
+    return node_set_nodes
 
   # --------------------------------------------------------------------
 
@@ -1089,7 +1145,10 @@ class exodus:
       e.get_node_set_nodes(id) -> list of distribution factors for nodes in node set
     """
     node_set_dfs = self.__ex_get_node_set_dist_fact(id)
-    return list(node_set_dfs)
+    node_set_dfs = list(node_set_dfs)
+    if self.use_numpy:  
+        node_set_dfs = self.np.array(node_set_dfs)
+    return node_set_dfs
 
   # --------------------------------------------------------------------
 
@@ -1193,6 +1252,8 @@ class exodus:
     names = self.get_node_set_variable_names()
     var_id = names.index(name) + 1
     values =  self.__ex_get_nset_var(step,var_id,id)
+    if self.use_numpy:
+        values = ctypes_to_numpy(self, values)
     return values
 
   # --------------------------------------------------------------------
@@ -1301,7 +1362,10 @@ class exodus:
       e.get_side_set_ids() -> get list of side set ids in exodus file
     """
     self.__ex_get_side_set_ids()
-    return self.sideSetIds
+    sideSetIds = list(self.sideSetIds)
+    if self.use_numpy:
+        sideSetIds = self.np.array(sideSetIds)
+    return sideSetIds
 
   # --------------------------------------------------------------------
 
@@ -1405,6 +1469,9 @@ class exodus:
       is applied).
     """
     (side_set_elem_list,side_set_side_list) = self.__ex_get_side_set(id)
+    if self.use_numpy:
+        side_set_elem_list = ctype_to_numpy(self, side_set_elem_list)
+        side_set_side_list = ctype_to_numpy(self, side_set_side_list)
     return (side_set_elem_list,side_set_side_list)
 
   # --------------------------------------------------------------------
@@ -1422,8 +1489,10 @@ class exodus:
     """ 
       e.get_side_set_dist_fact(id) ->  list of distribution factors for sides in side set
     """
-    side_set_dfs = self.__ex_get_side_set_dist_fact(id)
-    return list(side_set_dfs)
+    side_set_dfs = list(self.__ex_get_side_set_dist_fact(id))
+    if self.use_numpy:
+        side_set_dfs = self.np.array(side_set_dfs)
+    return side_set_dfs
 
   # --------------------------------------------------------------------
 
@@ -1445,6 +1514,9 @@ class exodus:
       in exodus file
     """
     (side_set_node_cnt_list,side_set_node_list) = self.__ex_get_side_set_node_list(id)
+    if self.use_numpy:
+        side_set_node_cnt_list = ctype_to_numpy(self, side_set_node_cnt_list)
+        side_set_node_list = ctype_to_numpy(self, side_set_node_list)
     return (side_set_node_cnt_list,side_set_node_list)
 
   # --------------------------------------------------------------------
@@ -1541,6 +1613,8 @@ class exodus:
     names = self.get_side_set_variable_names()
     var_id = names.index(name) + 1
     values =  self.__ex_get_sset_var(step,var_id,id)
+    if self.use_numpy:
+        values = ctype_to_numpy(self,values)
     return values
 
   # --------------------------------------------------------------------
@@ -1668,12 +1742,14 @@ class exodus:
     values = []
     for i in xrange(num.value):
       values.append(gvalues[i])
+    if self.use_numpy:
+      values = self.np.array(values)
     return values
 
   # --------------------------------------------------------------------
 
   def put_global_variable_value(self,name,step,value):
-    """ 
+    """
       e.put_global_variable_value("name",step,value) -> put global variable value
       and variable name at time step into exodus file
     """
@@ -1696,7 +1772,7 @@ class exodus:
   # --------------------------------------------------------------------
 
   def put_all_global_variable_values(self,step,values):
-    """ 
+    """
       e.put_all_global_variable_values(step,values) -> put all global variable values
       at time step into exodus file
     """
@@ -1713,8 +1789,8 @@ class exodus:
   # --------------------------------------------------------------------
 
   def get_global_variable_values(self,name):
-    """ 
-      e.get_global_variable_values("name",step) -> get global variable values
+    """
+      e.get_global_variable_values("name") -> get global variable values
       within exodus file
     """
     names = self.get_global_variable_names()
@@ -1725,6 +1801,8 @@ class exodus:
     for i in range(self.numTimes.value):
       gvalues =  self.__ex_get_var(i+1,gbType,0,1,num.value)
       values.append( gvalues[var_id] )
+    if self.use_numpy:
+      values = self.np.array(values)
     return values
 
   # --------------------------------------------------------------------
@@ -2837,50 +2915,25 @@ def collectLocalElemToLocalElems(exodusHandle,connectivity,localNodeToLocalElems
 
 # --------------------------------------------------------------------
 
-def copyTransfer(fromFileName,toFileName,additionalGlobalVariables=[],additionalNodalVariables=[],additionalElementVariables=[]):
+def copy_mesh(fromFileName, toFileName, exoFromObj = None, array_type = 'ctype'):
   """
-    This function creates an exodus file toFileName and copies everything from exodus file fromFileName returning
-    a file handle to toFileName.
-
-    Additional space is allocated for additionalGlobalVariables, additionalNodalVariables and additionalElementVariables if specified.
-
-    additionalGlobalVariables: list of global variable names to add.
-
-    additionalNodalVaraibles: list of nodal variable names to add.
-
-    additionalElementVariables: should be a list of element variable names to add to all blocks or
-                                tuples ( name, blkIds ) where name is the element variable to add
-                                and blkIds is a list of blkIds to add it to.
-    Usage:
-
-    fromFileName = "input.e"
-    toFileName = "output.e"
-    addGlobalVariables = [] ## Do not add any new global variables
-    addNodeVariables = ["node_dummy1","node_dummy2"] ## Add node_dummy1 and node_dummy2 as new node variables
-    addElementVariables = [ ("elem_dummy1",[1,2,3]), "elem_dummy2" ] ## Add elem_dummy1 on blkIds 1,2,3 and elem_dummy2 on all blocks
-
-    toFileHandle = copyTranfer(fromFileName,toFileName,addGlobalVariables,addNodeVariables,addElementVariables)
-
-    ## Fill in new variables
-    
-    toFileHandle.close()
-
+    This function creates an exodus file toFileName and copies only the mesh
+    data from exodus file fromFileName, returning a file handle to toFileName.
+    The user can either supply an exodus filename (fromFileName) or an exodus
+    object (exoFromObj) to copy the mesh data from.
   """
-
   debugPrint = False
-
-  if type(additionalGlobalVariables) is not list:
-    raise Exception, ("ERROR: additionalGlobalVariables is not a list in call to copyTransfer().")
-  if type(additionalNodalVariables) is not list:
-    raise Exception, ("ERROR: additionalNodalVariables is not a list in call to copyTransfer().")
-  if type(additionalElementVariables) is not list:
-    raise Exception, ("ERROR: additionalElementVariables is not a list in call to copyTransfer().")
+  
+  #If the user did not supply a exodus object to copy from, attempt to read an
+  #exodus database with the name "fromFileName"
+  if exoFromObj is None:
+    exoFrom = exodus(fromFileName,"r", array_type = array_type)
+  else:
+    exoFrom = exoFromObj
+  
   if ( os.path.isfile(toFileName) ):
-    raise Exception, ("ERROR: ", toFileName, " file already exists cowardly exiting instead of overwriting in call to copyTransfer().")
-  
-  exoFrom = exodus(fromFileName,"r")
-  
-  if debugPrint: print "Initialize New File"
+    raise Exception, ("ERROR: ", toFileName, " file already exists cowardly exiting instead of overwriting in call to copy_mesh().")
+
   title = exoFrom.title()
   numDim = exoFrom.num_dimensions()
   numNodes = exoFrom.num_nodes()
@@ -2888,18 +2941,16 @@ def copyTransfer(fromFileName,toFileName,additionalGlobalVariables=[],additional
   numBlks = exoFrom.num_blks()
   numNodeSets = exoFrom.num_node_sets()
   numSideSets = exoFrom.num_side_sets()
-  exoTo = exodus( toFileName, "w", title, numDim, numNodes, numElems, numBlks, numNodeSets, numSideSets )
-  
+    
+  exoTo = exodus( toFileName, mode = "w", array_type = array_type, \
+    title = title, numDims =numDim, \
+    numNodes = numNodes, numElems = numElems, numBlocks = numBlks, \
+    numNodeSets = numNodeSets, numSideSets = numSideSets )
+
   if debugPrint: print "Transfer QA records"
   qaRecords = exoFrom.get_qa_records()
   exoTo.put_qa_records( qaRecords )
-  
-  if debugPrint: print "Transfer Info records"
-  numInfoRecs = exoFrom.num_info_records()
-  if numInfoRecs > 0:
-    infoRecs = exoFrom.get_info_records()
-    exoTo.put_info_records( infoRecs )
-  
+
   if debugPrint: print "Transfer Nodal Coordinates and Names"
   exoTo.put_coord_names( exoFrom.get_coord_names() )
   (xCoords,yCoords,zCoords) = exoFrom.get_coords()
@@ -2976,13 +3027,59 @@ def copyTransfer(fromFileName,toFileName,additionalGlobalVariables=[],additional
       else:
         exoTo.put_side_set_property_value(ssId,sideSetProp,propVal)
   
+  #If the user did not supply an exodus object to copy from, then close the
+  #database.
+  if exoFromObj is None:
+    exoFrom.close()
+        
+  return(exoTo)
+
+def transfer_variables(exoFrom, exoTo, array_type = 'ctype', 
+  additionalGlobalVariables=[], additionalNodalVariables=[], \
+  additionalElementVariables=[]):
+  """
+    This function transfers variables from exoFrom to exoTo and allows 
+    additional variables to be added with additionalGlobalVariables,
+    additionalNodalVariables, and additionalElementVariables.  Additional
+    variables values are set to their defaults so that the user can populate 
+    them later.
+    
+    exoFrom: exodus object to transfer from
+
+    exoTo: exodus object to transfer to
+
+    additionalGlobalVariables: list of global variable names to add.
+
+    additionalNodalVaraibles: list of nodal variable names to add.
+
+    additionalElementVariables: should be a list of element variable names to add to all blocks or
+                                tuples ( name, blkIds ) where name is the element variable to add
+                                and blkIds is a list of blkIds to add it to.
+  """
+  ## IDEA: It may make sense to make transfer_variables() strictly transfer
+  ## variables, and use add_variables() to add new variables.
+  
+  debugPrint = False 
+  
+  if type(additionalGlobalVariables) is not list:
+    raise Exception, ("ERROR: additionalGlobalVariables is not a list.")
+  if type(additionalNodalVariables) is not list:
+    raise Exception, ("ERROR: additionalNodalVariables is not a list.")
+  if type(additionalElementVariables) is not list:
+    raise Exception, ("ERROR: additionalElementVariables is not a list.")
+  
+  if debugPrint: print "Transfer Info records"
+  numInfoRecs = exoFrom.num_info_records()
+  if numInfoRecs > 0:
+    infoRecs = exoFrom.get_info_records()
+    exoTo.put_info_records( infoRecs )
   if debugPrint: print "Transfer time values"
   nSteps = exoFrom.num_times()
   timeVals = exoFrom.get_times()
   for step in xrange(nSteps):
     exoTo.put_time( step+1, timeVals[step] )
-  
-  if debugPrint: print "Transfer Global Variables"
+    
+  if debugPrint: print "Add Global Variables"
   nNewGlobalVars = len(additionalGlobalVariables)
   nGlobalVars = exoFrom.get_global_variable_number() + nNewGlobalVars
   defaultNewVarVals = []
@@ -2997,10 +3094,13 @@ def copyTransfer(fromFileName,toFileName,additionalGlobalVariables=[],additional
       exoTo.put_global_variable_name(globalVarName,nameIndex+1)
     for step in xrange(nSteps):
       gValues = exoFrom.get_all_global_variable_values(step+1)
-      gValues.extend( defaultNewVarVals )
+      if array_type == 'numpy':
+        gValues = exoTo.np.append(gValues, defaultNewVarVals)
+      else:
+        gValues.extend( defaultNewVarVals )
       exoTo.put_all_global_variable_values(step+1,gValues)
   
-  if debugPrint: print "Transfer Nodal Variables"
+  if debugPrint: print "Add Nodal Variables"
   nNewNodalVars = len(additionalNodalVariables)
   nOrigNodalVars = exoFrom.get_node_variable_number()
   nNodalVars = nOrigNodalVars + nNewNodalVars
@@ -3017,6 +3117,8 @@ def copyTransfer(fromFileName,toFileName,additionalGlobalVariables=[],additional
           exoTo.put_node_variable_values(nodalVarName,step+1,nValues)
   
   if debugPrint: print "Construct Truth Table for additionalElementVariables"
+  blkIds = exoFrom.get_elem_blk_ids()
+  numBlks = exoFrom.num_blks()  
   newElemVariableNames = []
   newElemVariableBlocks = []
   for item in additionalElementVariables:
@@ -3034,7 +3136,7 @@ def copyTransfer(fromFileName,toFileName,additionalGlobalVariables=[],additional
       print "Warning additionalElementVariable item ", item, " is not right type to add."
       print "should be a string or tuple, skipping"
   
-  if debugPrint: print "Transfer Element Variables"
+  if debugPrint: print "Add Element Variables"
   nNewElemVars = len(newElemVariableNames)
   nOrigElemVars = exoFrom.get_element_variable_number()
   nElemVars = nOrigElemVars + nNewElemVars
@@ -3076,6 +3178,172 @@ def copyTransfer(fromFileName,toFileName,additionalGlobalVariables=[],additional
   
   ## TODO: Transfer Sideset Variables
   
+  return(exoTo)
+  
+def add_variables(exo, global_vars = [], nodal_vars = [], element_vars = [], \
+  array_type = 'ctype'):
+  """
+    This function adds variables to the exodus object.  The values of the variables 
+    are set to their defaults so that the user can populate them later.
+
+    exo: exodus database object
+    
+    global_vars: list of global variable names to add.
+
+    nodal_vars: list of nodal variable names to add.
+
+    element_vars: should be a list of element variable names to add to all blocks or
+                                tuples ( name, blkIds ) where name is the element variable to add
+                                and blkIds is a list of blkIds to add it to.
+  """
+  debugPrint = False 
+  
+  if type(global_vars) is not list:
+    raise Exception, ("ERROR: global_vars is not a list.")
+  if type(nodal_vars) is not list:
+    raise Exception, ("ERROR: nodal_vars is not a list.")
+  if type(element_vars) is not list:
+    raise Exception, ("ERROR: element_vars is not a list.")
+    
+  if exo.modeChar is 'r':
+    raise Exception, ("ERROR: variables cannot be added to an exodus object in read only mode")
+    
+  if debugPrint: print "Add Global Variables"
+  n_new_vars = len(global_vars)
+  n_old_vars = exo.get_global_variable_number()
+  n_vars = n_old_vars + n_new_vars
+  default_vals = [0.0] * n_new_vars
+  if n_new_vars > 0:
+    exo.set_global_variable_number(n_vars)
+    for i, var_name in enumerate(global_vars):
+      exo.put_global_variable_name(var_name, n_old_vars + i + 1)
+    #One might wish to put all the values for a given global variable in the
+    #database at once, but exo.put_global_variable_value() ends up loading
+    #all the global variables for a given step and then putting them all back 
+    #in, so we might as well just use exo.put_all_global_variable_values().
+    nSteps = exo.num_times()
+    for step in xrange(nSteps):
+      gValues = exo.get_all_global_variable_values(step+1)
+      if array_type == 'numpy':
+        gValues = exo.np.append(gValues, default_vals)
+      else:
+        gValues.extend( default_vals )
+      exo.put_all_global_variable_values(step+1, gValues)
+  
+  if debugPrint: print "Add Nodal Variables"
+  n_new_vars = len(nodal_vars)
+  n_old_vars = exo.get_node_variable_number()
+  n_vars = n_old_vars + n_new_vars
+  if n_new_vars > 0:
+    exo.set_node_variable_number(n_vars)
+    for i, var_name in enumerate(nodal_vars):
+      exo.put_node_variable_name(var_name, i + n_old_vars + 1)
+  
+  if debugPrint: print "Construct Truth Table for additionalElementVariables"
+  new_e_var_names = []
+  new_e_var_blks = []
+  blk_ids = exo.get_elem_blk_ids()
+  for item in element_vars:
+    if type(item) is tuple:
+      new_e_var_names.append( item[0] )
+      in_blks = []
+      for blk_id in item[1]:
+        if blk_id in blk_ids:
+          in_blks.append(blk_id)
+      new_e_var_blks.append( in_blks )
+    elif type(item) is str:
+      new_e_var_names.append( item )
+      new_e_var_blks.append( blk_ids )
+    else:
+      print "Warning additionalElementVariable item ", item, " is not right type to add."
+      print "should be a string or tuple, skipping"
+  
+  if debugPrint: print "Add Element Variables"
+  n_new_vars = len(new_e_var_names)
+  n_old_vars = exo.get_element_variable_number()
+  n_vars = n_old_vars + n_new_vars
+  if n_new_vars > 0:
+    exo.set_element_variable_number(n_vars)
+    old_truth_table = []
+    if n_old_vars > 0:
+      old_truth_table = exo.get_element_variable_truth_table()
+    truth_table = []
+    n_blks = exo.num_blks()
+    for j in xrange(n_blks):
+      for k in xrange(n_old_vars):
+        ndx = j * n_old_vars + k
+        truth_table.append( old_truth_table[ndx] )
+      for m in xrange(n_new_vars):
+        if blk_ids[j] in new_e_var_blks[m]:
+          truth_table.append(True)
+        else:
+          truth_table.append(False)
+    exo.set_element_variable_truth_table(truth_table)
+    for i, var_name in enumerate(new_e_var_names):
+      exo.put_element_variable_name(var_name, n_old_vars + i + 1)
+  
+  ## TODO: Add Nodeset Variables
+  
+  ## TODO: Add Sideset Variables
+  
+  return(exo)
+
+# --------------------------------------------------------------------
+
+def copyTransfer(fromFileName, toFileName, array_type = 'ctype', \
+    additionalGlobalVariables=[], additionalNodalVariables=[], additionalElementVariables=[]):
+  """
+    This function creates an exodus file toFileName and copies everything from exodus file fromFileName returning
+    a file handle to toFileName.
+
+    Additional space is allocated for additionalGlobalVariables, additionalNodalVariables and additionalElementVariables if specified.
+
+    additionalGlobalVariables: list of global variable names to add.
+
+    additionalNodalVaraibles: list of nodal variable names to add.
+
+    additionalElementVariables: should be a list of element variable names to add to all blocks or
+                                tuples ( name, blkIds ) where name is the element variable to add
+                                and blkIds is a list of blkIds to add it to.
+    Usage:
+
+    fromFileName = "input.e"
+    toFileName = "output.e"
+    addGlobalVariables = [] ## Do not add any new global variables
+    addNodeVariables = ["node_dummy1","node_dummy2"] ## Add node_dummy1 and node_dummy2 as new node variables
+    addElementVariables = [ ("elem_dummy1",[1,2,3]), "elem_dummy2" ] ## Add elem_dummy1 on blkIds 1,2,3 and elem_dummy2 on all blocks
+
+    toFileHandle = copyTranfer(fromFileName,toFileName,addGlobalVariables,addNodeVariables,addElementVariables)
+
+    ## Fill in new variables
+    
+    toFileHandle.close()
+
+  """
+
+  debugPrint = False
+
+  exoFrom = exodus(fromFileName,"r", array_type = array_type)
+
+  exoTo = copy_mesh(fromFileName, toFileName, exoFromObj = exoFrom, array_type = array_type)
+    
+  exoTo = transfer_variables(exoFrom, exoTo, \
+      additionalGlobalVariables = additionalGlobalVariables, \
+      additionalNodalVariables = additionalNodalVariables, \
+      additionalElementVariables = additionalElementVariables, \
+      array_type = array_type)
+  
   exoFrom.close()
   return exoTo
 
+def ctype_to_numpy(self, c_array):
+    """
+    Converts a c-type array into a numpy array
+    """
+    #ctypes currently produce invalid PEP 3118 type codes, which causes numpy
+    #to issue a warning.  This is a bug and can be ignored.
+    #http://stackoverflow.com/questions/4964101/pep-3118-warning-when-using-ctypes-array-as-numpy-array
+    with self.warnings.catch_warnings():
+        self.warnings.simplefilter('ignore')
+        np_array = self.np.ctypeslib.as_array(c_array)
+    return(np_array)
