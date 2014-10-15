@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PYTRILINOS_PYTHONEXCEPTION_H
-#define PYTRILINOS_PYTHONEXCEPTION_H
+#ifndef PYTRILINOS_PYTHONEXCEPTION_HPP
+#define PYTRILINOS_PYTHONEXCEPTION_HPP
 
 // The purpose of the PythonException class is to convert a python
 // error to a C++ exception.  This is useful, especially in C++

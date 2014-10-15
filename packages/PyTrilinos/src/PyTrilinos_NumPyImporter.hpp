@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PYTRILINOS_NUMPYIMPORTER_H
-#define PYTRILINOS_NUMPYIMPORTER_H
+#ifndef PYTRILINOS_NUMPYIMPORTER_HPP
+#define PYTRILINOS_NUMPYIMPORTER_HPP
 
 #include "numpy_include.hpp"
 
@@ -57,4 +57,4 @@ private:
 
 }  // Namespace PyTrilinos
 
-#endif // PYTRILINOS_NUMPYIMPORTER_H
+#endif // PYTRILINOS_NUMPYIMPORTER_HPP

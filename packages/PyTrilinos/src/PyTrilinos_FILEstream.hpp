@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PYTRILINOS_FILESTREAM_H
-#define PYTRILINOS_FILESTREAM_H
+#ifndef PYTRILINOS_FILESTREAM_HPP
+#define PYTRILINOS_FILESTREAM_HPP
 
 #include <streambuf>
 #include <vector>

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EPETRA_NUMPYSERIALDENSEMATRIX_H
-#define EPETRA_NUMPYSERIALDENSEMATRIX_H
+#ifndef EPETRA_NUMPYSERIALDENSEMATRIX_HPP
+#define EPETRA_NUMPYSERIALDENSEMATRIX_HPP
 
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"

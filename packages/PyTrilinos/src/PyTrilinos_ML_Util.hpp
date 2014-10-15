@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ML_PYMATRIX_H
-#define ML_PYMATRIX_H
+#ifndef ML_PYMATRIX_HPP
+#define ML_PYMATRIX_HPP
 
 #include "ml_common.h"
 #include "MLAPI_BaseOperator.h"

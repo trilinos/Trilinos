@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PYTRILINOS_UTIL_H
-#define PYTRILINOS_UTIL_H
+#ifndef PYTRILINOS_UTIL_HPP
+#define PYTRILINOS_UTIL_HPP
 
 // Include the Python prototypes
 #include "Python.h"
@@ -94,4 +94,4 @@ CONST char * getStringItemObjectAttr(PyObject * object, CONST char * name, int i
 
 }  // Namespace PyTrilinos
 
-#endif // PYTRILINOS_UTIL_H
+#endif // PYTRILINOS_UTIL_HPP

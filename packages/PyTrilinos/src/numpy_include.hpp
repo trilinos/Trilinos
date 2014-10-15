@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef NUMPY_INCLUDE_H
-#define NUMPY_INCLUDE_H
+#ifndef NUMPY_INCLUDE_HPP
+#define NUMPY_INCLUDE_HPP
 
 // This include file takes care of five of the six things necessary
 // when including the numpy header file arrayobject.h.  First, the
@@ -59,4 +59,4 @@
 #define NPY_ARRAY_NOTSWAPPED NPY_NOTSWAPPED
 #endif
 
-#endif // NUMPY_INCLUDE_H
+#endif // NUMPY_INCLUDE_HPP
