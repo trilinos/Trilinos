@@ -29,7 +29,8 @@
 #ifndef PYTRILINOS_DOMI_UTIL_HPP
 #define PYTRILINOS_DOMI_UTIL_HPP
 
-// Include the PyTrilinos Distributed Array Protocol header
+// Include PyTrilinos utilities
+#include "PyTrilinos_NumPy_Util.hpp"
 #include "PyTrilinos_DAP.hpp"
 
 // Include Domi headers
@@ -71,13 +72,17 @@ convertToMDArrayRCP(PyArrayObject * pyArray);
 
 ////////////////////////////////////////////////////////////////////////
 
-// Convert a Domi::MDArrayRCP to a NumPy array.  It is assumes that
-// the user will call this function with the NumPy typecode that
-// corresponds to the template parameter T.
+// Convert a Domi::MDArrayRCP to a NumPy array.
 template< class T >
 PyObject *
-convertToNumPyArray(const Domi::MDArrayRCP< T > & mdArrayRcp,
-                    int typecode);
+convertToNumPyArray(const Domi::MDArrayRCP< T > & mdArrayRcp);
+
+////////////////////////////////////////////////////////////////////////
+
+// Convert a Domi::MDArrayView to a NumPy array.
+template< class T >
+PyObject *
+convertToNumPyArray(const Domi::MDArrayView< T > & mdArrayView);
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -97,12 +102,22 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
+PyObject * convertToDimData(const Teuchos::RCP< const Domi::MDMap<> > mdMap);
+
+////////////////////////////////////////////////////////////////////////
+
 // Given a 'distarray' object returned by the DistArray protocol,
 // convert to an RCP of a Domi MDVector.
 template< class Scalar >
 Teuchos::RCP< Domi::MDVector< Scalar > >
 convertToMDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                   const DistArrayProtocol & distarray);
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar >
+PyObject *
+convertToDistArray(Domi::MDVector< Scalar > & mdVector);
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -142,14 +157,14 @@ convertToMDArrayRCP(PyArrayObject * pyArray)
 
 template< class T >
 PyObject *
-convertToNumPyArray(const Domi::MDArrayRCP< T > & mdArrayRcp,
-                    int typecode)
+convertToNumPyArray(const Domi::MDArrayRCP< T > & mdArrayRcp)
 {
   // Get the number of dimensions and initialize the dimensions and
   // strides arrays
   int numDims = mdArrayRcp.numDims();
   Teuchos::Array< npy_intp > dims(numDims);
   Teuchos::Array< npy_intp > strides(numDims);
+  int typecode = NumPy_TypeCode< T >();
 
   // Set the dimensions and strides
   for (int axis = 0; axis < numDims; ++axis)
@@ -161,6 +176,43 @@ convertToNumPyArray(const Domi::MDArrayRCP< T > & mdArrayRcp,
   // Get the data pointer and flags, based on data layout
   void * data = (void*) mdArrayRcp.getRawPtr();
   int flags = (mdArrayRcp.layout() == Domi::C_ORDER) ? NPY_ARRAY_CARRAY :
+    NPY_ARRAY_FARRAY;
+
+  // Return the result
+  return PyArray_New(&PyArray_Type,
+                     numDims,
+                     dims.getRawPtr(),
+                     typecode,
+                     strides.getRawPtr(),
+                     data,
+                     0,
+                     flags,
+                     NULL);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class T >
+PyObject *
+convertToNumPyArray(const Domi::MDArrayView< T > & mdArrayView)
+{
+  // Get the number of dimensions and initialize the dimensions and
+  // strides arrays
+  int numDims = mdArrayView.numDims();
+  Teuchos::Array< npy_intp > dims(numDims);
+  Teuchos::Array< npy_intp > strides(numDims);
+  int typecode = NumPy_TypeCode< T >();
+
+  // Set the dimensions and strides
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    dims[   axis] = mdArrayView.dimension(axis);
+    strides[axis] = mdArrayView.strides()[axis];
+  }
+  
+  // Get the data pointer and flags, based on data layout
+  void * data = (void*) mdArrayView.getRawPtr();
+  int flags = (mdArrayView.layout() == Domi::C_ORDER) ? NPY_ARRAY_CARRAY :
     NPY_ARRAY_FARRAY;
 
   // Return the result
@@ -196,6 +248,42 @@ convertToMDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 
   // Return the result
   return Teuchos::rcp(new Domi::MDVector< Scalar >(mdMap, mdArrayRcp));
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar >
+PyObject *
+convertToDistArray(Domi::MDVector< Scalar > & mdVector)
+{
+  PyObject * distArrayProtocol;
+  PyObject * buffer;
+  PyObject * dimData;
+
+  distArrayProtocol = PyDict_New();
+  if (!distArrayProtocol) goto fail;
+  if (PyDict_SetItemString(distArrayProtocol, "__version__",
+                           Py_BuildValue("s","0.10.0")) == -1) goto fail;
+
+  buffer = convertToNumPyArray(mdVector.getDataNonConst());
+  if (!buffer) goto fail;
+  if (PyDict_SetItemString(distArrayProtocol, "buffer", buffer) == -1)
+    goto fail;
+
+  dimData = convertToDimData(mdVector.getMDMap());
+  if (!dimData) goto fail;
+  if (PyDict_SetItemString(distArrayProtocol, "dim_data", dimData) == -1)
+    goto fail;
+
+  Py_DECREF(buffer);
+  Py_DECREF(dimData);
+  return distArrayProtocol;
+
+  fail:
+  if (distArrayProtocol) PyDict_Clear(distArrayProtocol);
+  Py_XDECREF(buffer);
+  Py_XDECREF(dimData);
+  return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////

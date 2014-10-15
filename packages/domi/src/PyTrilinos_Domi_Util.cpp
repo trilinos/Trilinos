@@ -160,4 +160,61 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
+PyObject * convertToDimData(const Teuchos::RCP< const Domi::MDMap<> > mdMap)
+{
+  Py_ssize_t numDims = mdMap->numDims();
+  PyObject * dimData = PyTuple_New(numDims);
+  Teuchos::RCP< const Teuchos::Comm< int > > comm = mdMap->getTeuchosComm();
+  Domi::Slice bounds;
+  int loPad;
+  int hiPad;
+  PyObject * periodic;
+  PyObject * dimDict;
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    bounds   = mdMap->getGlobalRankBounds(axis,false);
+    loPad    = mdMap->getLowerPadSize(axis);
+    hiPad    = mdMap->getUpperPadSize(axis);
+    periodic = mdMap->isPeriodic(axis) ? Py_True : Py_False;
+    dimDict  = PyDict_New();
+    if (PyDict_SetItemString(dimDict, "dist_type",
+                             Py_BuildValue("s", "b")) == -1)
+      goto fail;
+    if (PyDict_SetItemString(dimDict, "size",
+                             Py_BuildValue("i", mdMap->getLocalDim(axis,true)))
+        == -1) goto fail;
+    if (PyDict_SetItemString(dimDict, "proc_grid_size",
+                             Py_BuildValue("i", mdMap->getCommDim(axis)))
+        == -1) goto fail;
+    if (PyDict_SetItemString(dimDict, "proc_grid_rank",
+                             Py_BuildValue("i", mdMap->getCommIndex(axis)))
+        == -1) goto fail;
+    if (PyDict_SetItemString(dimDict, "start",
+                             Py_BuildValue("i", bounds.start()-loPad)) == -1)
+      goto fail;
+    if (PyDict_SetItemString(dimDict, "stop",
+                             Py_BuildValue("i", bounds.stop()+hiPad)) == -1)
+      goto fail;
+    if (PyDict_SetItemString(dimDict, "padding",
+                             Py_BuildValue("(ii)", loPad, hiPad)) == -1)
+      goto fail;
+    Py_INCREF(periodic);
+    if (PyDict_SetItemString(dimDict, "periodic", periodic) == -1)
+      goto fail;
+    PyTuple_SET_ITEM(dimData, axis, dimDict);
+  }
+  return dimData;
+
+  fail:
+  if (PyDict_Check(dimDict)) PyDict_Clear(dimDict);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    dimDict = PyTuple_GET_ITEM(dimData, axis);
+    if (dimDict) PyDict_Clear(dimDict);
+  }
+  return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////
+
 }
