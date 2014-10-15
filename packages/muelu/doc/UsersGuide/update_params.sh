@@ -53,6 +53,7 @@ echo '// @HEADER
 // @HEADER
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
+#include "MueLu_Exceptions.hpp"
 #include "MueLu_MasterList.hpp"
 
 namespace MueLu {
@@ -65,10 +66,48 @@ namespace MueLu {
     return masterList_;
   }
 
+  Teuchos::RCP<Teuchos::ParameterList> MasterList::GetProblemSpecificList(std::string const & problemType) {
+
+    if (problemSpecificList_.is_null()) {
+      if (DefaultProblemTypeLists_.find(problemType) != DefaultProblemTypeLists_.end()) {
+        problemSpecificList_ = Teuchos::getParametersFromXmlString(DefaultProblemTypeLists_[problemType]);
+      } else {
+        //TODO provide valid problem types
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Invalid problem type");
+      }
+    }
+    return problemSpecificList_;
+  }
+
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> MasterList::problemSpecificList_ = Teuchos::null;
   const std::string                    MasterList::stringList_ =' > $code_file
 
 xsltproc paramlist.xsl masterList.xml >> $code_file
+
+echo ';' >> $code_file
+
+echo '  std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>' >> $code_file
+
+echo '("Poisson-2D",' >> $code_file
+xsltproc --stringparam prob_type "Poisson-2D" probtypelist.xsl masterList.xml >> $code_file
+echo ')' >> $code_file
+
+echo '("Poisson-3D",' >> $code_file
+xsltproc --stringparam prob_type "Poisson-3D" probtypelist.xsl masterList.xml >> $code_file
+echo ')' >> $code_file
+
+echo '("Elasticity-2D",' >> $code_file
+xsltproc --stringparam prob_type "Elasticity-2D" probtypelist.xsl masterList.xml >> $code_file
+echo ')' >> $code_file
+
+echo '("Elasticity-3D",' >> $code_file
+xsltproc --stringparam prob_type "Elasticity-3D" probtypelist.xsl masterList.xml >> $code_file
+echo ')' >> $code_file
+
+echo '("MHD",' >> $code_file
+xsltproc --stringparam prob_type "MHD" probtypelist.xsl masterList.xml >> $code_file
+echo ')' >> $code_file
 
 echo ';
 

@@ -3,6 +3,13 @@
   <general>
 
     <parameter>
+      <name>problem: type</name>
+      <type>string</type>
+      <default>"unknown"</default>
+      <description>Type of problem to be solved.  Possible values: "unknown", "Poisson-2D", "Poisson-3D", "Elasticity-2D", "Elasticity-3D", "MHD".</description>
+    </parameter>
+
+    <parameter>
       <name>verbosity</name>
       <type>string</type>
       <default>"high"</default>
@@ -13,7 +20,10 @@
       <name>number of equations</name>
       <type>int</type>
       <default>1</default>
-      <description>Number of PDE equations at each gride node. Only constant block size is considered.</description>
+      <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
+      <Elasticity-2D>3</Elasticity-2D>
+      <Elasticity-3D>6</Elasticity-3D>
+      <MHD>8</MHD>
     </parameter>
 
     <parameter>
@@ -52,21 +62,26 @@
       <name>smoother: type</name>
       <type>string</type>
       <default>"gs"</default>
-      <description>Smoother type. Possible values: see Table~\ref{t:smoothers}.</description>
+      <Poisson-2D>"CHEBYSHEV"</Poisson-2D>
+      <Poisson-3D>"CHEBYSHEV"</Poisson-3D>
+      <Elasticity-2D>"CHEBYSHEV"</Elasticity-2D>
+      <Elasticity-3D>"CHEBYSHEV"</Elasticity-3D>
+      <MHD>"SCHWARZ"</MHD>
+      <description>Smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
     </parameter>
 
     <parameter>
       <name>smoother: pre type</name>
       <type>string</type>
       <default>"gs"</default>
-      <description>Pre-smoother type. Possible values: see Table~\ref{t:smoothers}.</description>
+      <description>Pre-smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
     </parameter>
 
     <parameter>
       <name>smoother: post type</name>
       <type>string</type>
       <default>"gs"</default>
-      <description>Post-smoother type. Possible values: see Table~\ref{t:smoothers}.</description>
+      <description>Post-smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
     </parameter>
 
     <parameter>
@@ -119,7 +134,7 @@
       <name>coarse: type</name>
       <type>string</type>
       <default>"SuperLU"</default>
-      <description>Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.</description>
+      <description>Coarse solver. Possible values: see Table~\ref{tab:coarse}.</description>
     </parameter>
 
     <parameter>
@@ -150,7 +165,7 @@
       <name>aggregation: ordering</name>
       <type>string</type>
       <default>"natural"</default>
-      <description>Ordering strategy. Possible values: "natrual", "graph", "random".</description>
+      <description>Ordering strategy. Possible values: "natural", "graph", "random".</description>
     </parameter>
 
     <!--
@@ -196,7 +211,7 @@
       <name>aggregation: max selected neighbors</name>
       <type>int</type>
       <default>0</default>
-      <description>Number of maximum neighbour nodes that are already aggregated already. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.</description>
+      <description>Number of maximum neighbor nodes that are already aggregated already. If a new aggregate has some neighbors that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.</description>
       <visible>false</visible>
     </parameter>
 
@@ -258,6 +273,7 @@
       <name>aggregation: mode</name>
       <type>string</type>
       <default>"old"</default>
+      <MHD>"new"</MHD>
       <description>old = Tobias, new = ML</description>
       <visible>false</visible>
     </parameter>
@@ -290,6 +306,7 @@
       <name>transpose: use implicit</name>
       <type>bool</type>
       <default>false</default>
+      <MHD>true</MHD>
       <description>Use implicit transpose for the restriction operator.</description>
     </parameter>
 
@@ -301,6 +318,7 @@
       <name>multigrid algorithm</name>
       <type>string</type>
       <default>"sa"</default>
+      <MHD>"unsmoothed"</MHD>
       <description>Multigrid method. Possible values: "unsmoothed", "sa", "emin", "pg".</description>
     </parameter>
 
@@ -367,7 +385,7 @@
       <name>emin: iterative method</name>
       <type>string</type>
       <default>"cg"</default>
-      <description>Iterative method to use for energy minimization of intial prolongator in energy-minimization. Possible values: "cg", "sd".</description>
+      <description>Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg", "sd".</description>
     </parameter>
 
     <parameter>
