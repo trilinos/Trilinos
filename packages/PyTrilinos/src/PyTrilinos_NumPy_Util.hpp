@@ -33,14 +33,8 @@
 #include <complex>
 
 // NumPy include
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <numpy/ndarraytypes.h>
-
-// Note: I first attempted to '#include <numpy/arrayobject.h>', but
-// simply including it, but not using it, led to a segmentation fault
-// in the resulting wrapper file.  What I need are the NPY_TYPES
-// enumeration definition, and including just ndarraytypes.h seems to
-// do the trick.
+#define NO_IMPORT_ARRAY
+#include "numpy_include.hpp"
 
 namespace PyTrilinos
 {
