@@ -682,8 +682,8 @@ TEST(BulkData, testBulkDataRankBeginEnd)
     ASSERT_TRUE(iter != end);
     ASSERT_TRUE(std::distance(iter,end) == 1u);
 
-    iter = bulk.begin_entities(stk::topology::FACE_RANK);
-    end = bulk.end_entities(stk::topology::FACE_RANK);
+    iter = bulk.begin_entities(FACE_RANK);
+    end = bulk.end_entities(FACE_RANK);
 
     //insist that there are no faces:
     ASSERT_TRUE(iter == end);
