@@ -45,6 +45,7 @@
 // @HEADER
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
+#include "MueLu_Exceptions.hpp"
 #include "MueLu_MasterList.hpp"
 
 namespace MueLu {
@@ -57,9 +58,24 @@ namespace MueLu {
     return masterList_;
   }
 
+  Teuchos::RCP<Teuchos::ParameterList> MasterList::GetProblemSpecificList(std::string const & problemType) {
+
+    if (problemSpecificList_.is_null()) {
+      if (DefaultProblemTypeLists_.find(problemType) != DefaultProblemTypeLists_.end()) {
+        problemSpecificList_ = Teuchos::getParametersFromXmlString(DefaultProblemTypeLists_[problemType]);
+      } else {
+        //TODO provide valid problem types
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Invalid problem type");
+      }
+    }
+    return problemSpecificList_;
+  }
+
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> MasterList::problemSpecificList_ = Teuchos::null;
   const std::string                    MasterList::stringList_ =
 "<ParameterList name=\"MueLu\">"
+  "<Parameter name=\"problem: type\" type=\"string\" value=\"unknown\"/>"
   "<Parameter name=\"verbosity\" type=\"string\" value=\"high\"/>"
   "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"max levels\" type=\"int\" value=\"10\"/>"
@@ -123,6 +139,55 @@ namespace MueLu {
   "<Parameter name=\"repartition: print partition distribution\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"true\"/>"
 "</ParameterList>"
+;
+  std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>
+("Poisson-2D",
+"<ParameterList name=\"MueLu\">"
+    
+          "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+        
+"</ParameterList>"
+)
+("Poisson-3D",
+"<ParameterList name=\"MueLu\">"
+    
+          "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+        
+"</ParameterList>"
+)
+("Elasticity-2D",
+"<ParameterList name=\"MueLu\">"
+    
+          "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
+        
+          "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+        
+"</ParameterList>"
+)
+("Elasticity-3D",
+"<ParameterList name=\"MueLu\">"
+    
+          "<Parameter name=\"number of equations\" type=\"int\" value=\"6\"/>"
+        
+          "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+        
+"</ParameterList>"
+)
+("MHD",
+"<ParameterList name=\"MueLu\">"
+    
+          "<Parameter name=\"number of equations\" type=\"int\" value=\"8\"/>"
+        
+          "<Parameter name=\"smoother: type\" type=\"string\" value=\"SCHWARZ\"/>"
+        
+          "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
+        
+          "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"true\"/>"
+        
+          "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"unsmoothed\"/>"
+        
+"</ParameterList>"
+)
 ;
 
 }

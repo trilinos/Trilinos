@@ -235,6 +235,13 @@ namespace MueLu {
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
+    std::string problemType = paramList.get<std::string>("problem: type", MasterList::getDefault<std::string>("problem: type"));
+    Teuchos::RCP<Teuchos::ParameterList> newParamList;
+    if (problemType != "unknown") {
+      newParamList = MasterList::GetProblemSpecificList(problemType);
+      newParamList->setParameters(paramList);
+      paramList = *newParamList;
+    }
     UpdateFactoryManager(paramList, ParameterList(), *defaultManager);
     defaultManager->Print();
 
