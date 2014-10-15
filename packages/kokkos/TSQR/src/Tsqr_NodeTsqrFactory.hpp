@@ -47,8 +47,6 @@
 
 #ifdef HAVE_KOKKOSTSQR_TBB
 #  include <TbbTsqr.hpp>
-#else
-#  error "HAVE_KOKKOSTSQR_TBB is not defined!"
 #endif // HAVE_KOKKOSTSQR_TBB
 
 #include <Tsqr_KokkosNodeTsqr.hpp>
