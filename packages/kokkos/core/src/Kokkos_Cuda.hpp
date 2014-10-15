@@ -92,12 +92,9 @@ public:
 
   //! The tag (what type of kokkos_object is this).
   typedef Impl::ExecutionSpaceTag  kokkos_tag ;
-  //! The device type (same as this class).
-  typedef Cuda                  device_type ;
-
-
   //! This is an execution space
   typedef Cuda                  execution_space ;
+  typedef Cuda                  device_type ;
 
 #if defined( KOKKOS_USE_CUDA_UVM )
   //! This execution space's preferred memory space.

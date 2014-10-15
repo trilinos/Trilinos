@@ -273,7 +273,7 @@ public:
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,
@@ -355,7 +355,7 @@ public:
 
   typedef View< typename traits::value_type [ layout::N0 ][ layout::N1 ] ,
                 LayoutLeft ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 MemoryUnmanaged >
     tile_type ;
 

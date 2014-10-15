@@ -94,7 +94,6 @@ private:
 public:
   typedef DataType                                            data_type;
   typedef typename traits::array_layout                       array_layout;
-  typedef typename traits::device_type                        device_type;
   typedef typename traits::execution_space                    execution_space ;
   typedef typename traits::memory_space                       memory_space ;
   typedef SizeType                                            size_type;
