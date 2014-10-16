@@ -51,11 +51,11 @@
 #ifdef PIRO_HAS_TPETRA
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
-#include "Kokkos_SerialNode.hpp"
+#include "Kokkos_DefaultNode.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #else
 #include "Epetra_MultiVector.h"
-#include "Epetra_Map.h" 
+#include "Epetra_Map.h"
 #endif
 
 
@@ -75,7 +75,7 @@ public:
    void resize(const int numSpaceDim, const int numnodes);
 
    //! Set sizes of nullspace etc
-   void setParameters(const int numPDEs, const int numElasticityDim, 
+   void setParameters(const int numPDEs, const int numElasticityDim,
           const int numScalar, const int nullSpaceDim);
 
    //! Set Piro solver parameter list
@@ -86,27 +86,27 @@ public:
 
    //! Access the arrays to store the coordinates
    void getCoordArrays(double **x, double **y, double **z);
-   
+
    //! Access the arrays to store the coordinates -- same as x, y and z but concatenated
    void getCoordArraysMueLu(double **xxyyzz);
 
    //! Is ML used on this problem?
    bool isMLUsed(){ return mlUsed; }
-   
+
    //! Is MueLu used on this problem?
    bool isMueLuUsed(){ return mueLuUsed; }
 
    //! Pass coordinate arrays to ML
    void informML();
-   
+
    //! Pass coordinate arrays to MueLu
 #ifdef PIRO_HAS_TPETRA
    template<class ST, class LO, class GO, class Node>
-   void informMueLu(Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,Node> > Coordinates, 
-                    Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > soln_map); 
+   void informMueLu(Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,Node> > Coordinates,
+                    Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > soln_map);
 #else
-   void informMueLu(Teuchos::RCP<Epetra_MultiVector> Coordinates, 
-                    Teuchos::RCP<const Epetra_Map> soln_map); 
+   void informMueLu(Teuchos::RCP<Epetra_MultiVector> Coordinates,
+                    Teuchos::RCP<const Epetra_Map> soln_map);
 #endif
 
 private:
@@ -119,7 +119,7 @@ private:
     int nullSpaceDim;
     int numSpaceDim;
     bool mlUsed;
-    bool mueLuUsed; 
+    bool mueLuUsed;
     Teuchos::RCP<Teuchos::ParameterList> mlList;
     Teuchos::RCP<Teuchos::ParameterList> mueLuList;
 
@@ -134,45 +134,45 @@ private:
 #ifdef PIRO_HAS_TPETRA
   template<class ST, class LO, class GO, class Node>
   void
-    MLRigidBodyModes::informMueLu(Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,Node> > Coordinates, 
+    MLRigidBodyModes::informMueLu(Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,Node> > Coordinates,
                                   Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > soln_map) {
 
       //numPDEs = # PDEs
       mueLuList->set("Coordinates", Coordinates);
       mueLuList->set("number of equations", numPDEs);
-      
+
 
       if (numElasticityDim > 0 ) {
         Teuchos::RCP<Teuchos::FancyOStream> out(Teuchos::VerboseObjectBase::getDefaultOStream());
 
         *out << "Setting rbms in informMueLu..." << std::endl;
-       
+
        Teuchos::ArrayRCP<ST> xArray, yArray, zArray; //ArrayRCPs to x, y, and z coordinates
-       xArray = Coordinates->getDataNonConst(0); //x 
+       xArray = Coordinates->getDataNonConst(0); //x
        if (Coordinates->getNumVectors() > 1)
-         yArray = Coordinates->getDataNonConst(1); //y  
-       if (Coordinates->getNumVectors() > 2) 
-         zArray = Coordinates->getDataNonConst(2); //z 
- 
-        (void) Piro_ML_Coord2RBM(x.size(), xArray.getRawPtr(), yArray.getRawPtr(), 
+         yArray = Coordinates->getDataNonConst(1); //y
+       if (Coordinates->getNumVectors() > 2)
+         zArray = Coordinates->getDataNonConst(2); //z
+
+        (void) Piro_ML_Coord2RBM(x.size(), xArray.getRawPtr(), yArray.getRawPtr(),
                                  zArray.getRawPtr(), &rr[0], numPDEs, numScalar, nullSpaceDim);
-        
-        //get arrayview of rr 
-        Teuchos::ArrayView<ST> rrAV = Teuchos::arrayView(&rr[0], rr.size()); 
+
+        //get arrayview of rr
+        Teuchos::ArrayView<ST> rrAV = Teuchos::arrayView(&rr[0], rr.size());
 
         //Create Tpetra_MultiVector of the rbms, to pass to MueLu.
-        Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,Node> >Rbm = 
-          Teuchos::rcp(new Tpetra::MultiVector<ST,LO,GO,Node>(soln_map, rrAV, soln_map->getNodeNumElements(), 
+        Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,Node> >Rbm =
+          Teuchos::rcp(new Tpetra::MultiVector<ST,LO,GO,Node>(soln_map, rrAV, soln_map->getNodeNumElements(),
                            nullSpaceDim + numScalar));
 
         //IK, 8/18/14: it looks like  MueLu doesn't know the following 3 things
         //mueLuList->set("null space: type", "pre-computed");
         //mueLuList->set("null space: dimension", nullSpaceDim);
-        //mueLuList->set("null space: add default vectors", false); 
+        //mueLuList->set("null space: add default vectors", false);
         mueLuList->set("Nullspace", Rbm);
-        *out << "...done setting rbms!" << std::endl; 
+        *out << "...done setting rbms!" << std::endl;
         //*out << "Rbm: ";
-        //Rbm->describe(*out, Teuchos::VERB_EXTREME); 
+        //Rbm->describe(*out, Teuchos::VERB_EXTREME);
 
 
       }
