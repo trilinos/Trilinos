@@ -3480,6 +3480,18 @@ TEST(BulkData, verify_closure_count_is_correct)
 }
 
 //==============================================================================
+//These 8 tests thoroughly test change_entity_owner() and consequently:
+//in_receive_ghost()
+//is_valid()
+//parallel_owner_rank() : assuming entity you pass is valid
+//entity_comm_map_shared(): this is called for every possible state
+//entity_comm_map_owner(): haven't explicitly tested for invalid processor condition
+//aura_ghosting:  trivial - returns 1 - no obvious need to unit test
+//declare_element: tested ubiquitously throughout the code - including stk mesh unit tests
+//add_node_sharing: tested ubiquitously throughout the code - including specific add node sharing test in UnitTestBulkDataSharing
+//connectEntityToEdge: exercised through create_edges() and directly within 2 change_entity_owner acceptance tests - not certain what happens if you pass it garbage
+//declare_part_with_topology: exercised ubiquitously and directly throughout the unit tests
+
 
 TEST(BulkData, change_entity_owner_2Elem2ProcMove)
 {
