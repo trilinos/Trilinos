@@ -244,7 +244,7 @@ namespace Kokkos {
  */
 template< class ExecPolicy , class FunctorType >
 inline
-void parallel_reduce( const ExecPolicy  & policy 
+void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorType & functor
                     , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0
                     )
@@ -284,8 +284,8 @@ void parallel_reduce( const size_t        work_count
 // general policy and view ouput
 template< class ExecPolicy , class FunctorType , class ViewType >
 inline
-void parallel_reduce( const ExecPolicy  & policy 
-                    , const FunctorType & functor 
+void parallel_reduce( const ExecPolicy  & policy
+                    , const FunctorType & functor
                     , const ViewType    & result_view
                     , typename Impl::enable_if<
                       ( Impl::is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value
@@ -297,16 +297,18 @@ void parallel_reduce( const ExecPolicy  & policy
 // general policy and pod or array of pod output
 template< class ExecPolicy , class FunctorType >
 inline
-void parallel_reduce( const ExecPolicy  & policy 
-                    , const FunctorType & functor 
+void parallel_reduce( const ExecPolicy  & policy
+                    , const FunctorType & functor
                     , typename Impl::enable_if<
                       ( ! Impl::is_integral< ExecPolicy >::value )
                       , typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type
                       >::type result_ref )
 {
-  typedef typename
-    Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
-      execution_space ;
+  // mfh 16 Oct 2014: Commenting this out to avoid "unused typedef" warnings.
+  //
+  // typedef typename
+  //   Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
+  //     execution_space ;
 
   typedef Kokkos::Impl::ReduceAdapter< FunctorType >  Reduce ;
 
@@ -333,7 +335,7 @@ void parallel_reduce( const ExecPolicy  & policy
 template< class FunctorType , class ViewType >
 inline
 void parallel_reduce( const size_t        work_count
-                    , const FunctorType & functor 
+                    , const FunctorType & functor
                     , const ViewType    & result_view
                     , typename Impl::enable_if<( Impl::is_view<ViewType>::value )>::type * = 0 )
 {
@@ -376,7 +378,7 @@ void parallel_reduce( const size_t        work_count ,
     result_view( Reduce::pointer( result )
                , Reduce::value_count( functor )
                );
-  
+
   (void) Impl::ParallelReduce< FunctorType , policy >( functor , policy(0,work_count) , result_view );
 }
 
@@ -540,8 +542,8 @@ namespace Kokkos {
 ///
 template< class ExecutionPolicy , class FunctorType >
 inline
-void parallel_scan( const ExecutionPolicy & policy 
-                  , const FunctorType     & functor 
+void parallel_scan( const ExecutionPolicy & policy
+                  , const FunctorType     & functor
                   , typename Impl::enable_if< ! Impl::is_integral< ExecutionPolicy >::value >::type * = 0
                   )
 {
