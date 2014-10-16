@@ -1507,12 +1507,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
        {
            stk::mesh::EntityKey key(stk::topology::NODE_RANK, i+1);
            eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
-//           mesh.deleteKeyFromCommList(key);
 
-//           if ( mesh.is_valid(node) )
-//           {
-//               eraseSharingInfo(mesh, node, stk::mesh::BulkData::SHARED);
-//           }
            if ( nodeSharing[i] )
            {
                stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i+1);
@@ -1525,12 +1520,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
        {
            stk::mesh::EntityKey key(stk::topology::EDGE_RANK, i+1);
            eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
-//           mesh.deleteKeyFromCommList(key);
 
-//           if ( mesh.is_valid(edge) )
-//           {
-//               eraseSharingInfo(mesh, edge, stk::mesh::BulkData::SHARED);
-//           }
            if ( edgeSharing[i] )
            {
                stk::mesh::Entity edge = mesh.get_entity(stk::topology::EDGE_RANK, i+1);
@@ -1703,530 +1693,733 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
 
 TEST(CEOME, change_entity_owner_8Elem4ProcMoveTop)
 {
-  //
-  //     id/proc                           id/proc
-  //     11/0--12/0--13/1--14/2--15/3      11/0--12/0--13/3--14/0--15/3
-  //       |     |     |     |     |         |     |     |     |     |
-  //       | 5/0 | 6/1 | 7/2 | 8/3 |         | 5/0 | 6/3 | 7/0 | 8/3 |
-  //       |     |     |     |     |         |     |     |     |     |
-  //      6/0---7/0---8/1---9/2--10/3  -->  6/0---7/0---8/3---9/0--10/3
-  //       |     |     |     |     |         |     |     |     |     |
-  //       | 1/0 | 2/1 | 3/2 | 4/3 |         | 1/0 | 2/1 | 3/2 | 4/3 |
-  //       |     |     |     |     |         |     |     |     |     |
-  //      1/0---2/0---3/1---4/2---5/3       1/0---2/0---3/1---4/2---5/3
-  //
-  // This test moves ownership of elements 6 and 7 (as well as their locally-owned
-  // nodes) to procs 3 and 0, respectively.
-  //
+    //
+    //     id/proc                           id/proc
+    //     11/0--12/0--13/1--14/2--15/3      11/0--12/0--13/3--14/0--15/3
+    //       |     |     |     |     |         |     |     |     |     |
+    //       | 5/0 | 6/1 | 7/2 | 8/3 |         | 5/0 | 6/3 | 7/0 | 8/3 |
+    //       |     |     |     |     |         |     |     |     |     |
+    //      6/0---7/0---8/1---9/2--10/3  -->  6/0---7/0---8/3---9/0--10/3
+    //       |     |     |     |     |         |     |     |     |     |
+    //       | 1/0 | 2/1 | 3/2 | 4/3 |         | 1/0 | 2/1 | 3/2 | 4/3 |
+    //       |     |     |     |     |         |     |     |     |     |
+    //      1/0---2/0---3/1---4/2---5/3       1/0---2/0---3/1---4/2---5/3
+    //
+    // This test moves ownership of elements 6 and 7 (as well as their locally-owned
+    // nodes) to procs 3 and 0, respectively.
+    //
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  int numProcs = stk::parallel_machine_size(pm);
-  if (numProcs != 4)
-  {
-    return;
-  }
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(pm);
+    if(numProcs != 4)
+    {
+        return;
+    }
 
-  unsigned spatialDim = 2;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData mesh(meta, pm);
-  const int p_rank = mesh.parallel_rank();
+    unsigned spatialDim = 2;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+    const int p_rank = mesh.parallel_rank();
 
-  setup8Quad4ProcMesh2D(mesh);
+    setup8Quad4ProcMesh2D(mesh);
 
-  // Check the initial state
-  if (p_rank == 0) {
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_NOT_VALID) );
+    // Check the initial state
+    if(p_rank == 0)
+    {
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_NOT_VALID));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_GHOSTED,  1) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_GHOSTED, 1));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_VALID) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_VALID));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_SHARED) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_SHARED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_SHARED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_SHARED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_SHARED));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_GHOSTED,  1) );
-  }
-  else if (p_rank == 1) {
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_NOT_VALID) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_GHOSTED, 1));
+    }
+    else if(p_rank == 1)
+    {
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_NOT_VALID));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_GHOSTED,  2) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_GHOSTED, 2));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_VALID) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_VALID));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_SHARED) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_SHARED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_SHARED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_SHARED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_SHARED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_SHARED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_SHARED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_SHARED));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_GHOSTED,  2) );
-  }
-  else if (p_rank == 2) {
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_OWNED,  3) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_GHOSTED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_GHOSTED, 2));
+    }
+    else if(p_rank == 2)
+    {
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_OWNED, 3));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_GHOSTED,  3) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_GHOSTED, 3));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_OWNED,  3) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_OWNED, 3));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_SHARED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_SHARED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_SHARED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_SHARED) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_SHARED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_SHARED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_SHARED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_SHARED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_SHARED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_SHARED));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_GHOSTED,  3) );
-  }
-  else if (p_rank == 3) {
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_OWNED,  3) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_GHOSTED, 3));
+    }
+    else if(p_rank == 3)
+    {
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_OWNED, 3));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_NOT_GHOSTED) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_GHOSTED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_NOT_GHOSTED));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_OWNED,  3) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_OWNED, 3));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_SHARED) );
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_SHARED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_SHARED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_SHARED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_SHARED));
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_GHOSTED) );
-  }
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_GHOSTED));
+    }
 
+    std::vector<stk::mesh::EntityProc> entities_to_move;
+    if(mesh.parallel_rank() == 1)
+    {
+        stk::mesh::Entity elem = mesh.get_entity(ELEM_RANK, 6);
+        int dest_proc = 3;
+        entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
+        add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
+    }
+    if(mesh.parallel_rank() == 2)
+    {
+        stk::mesh::Entity elem = mesh.get_entity(ELEM_RANK, 7);
+        int dest_proc = 0;
+        entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
+        add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
+    }
 
-  std::vector<stk::mesh::EntityProc> entities_to_move;
-  if(mesh.parallel_rank() == 1)
-  {
-    stk::mesh::Entity elem = mesh.get_entity(ELEM_RANK, 6);
-    int dest_proc = 3;
-    entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
-    add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
-  }
-  if(mesh.parallel_rank() == 2)
-  {
-    stk::mesh::Entity elem = mesh.get_entity(ELEM_RANK, 7);
-    int dest_proc = 0;
-    entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
-    add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
-  }
+    mesh.change_entity_owner(entities_to_move);
 
-  mesh.change_entity_owner(entities_to_move);
+    ////////////////////////////////////////////////////////////////////////////
 
-  // Check the final state
-  if (p_rank == 0) {
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_OWNED,  3) );
+    //     id/proc                           id/proc
+    //     11/0--12/0--13/1--14/2--15/3      11/0--12/0--13/3--14/0--15/3
+    //       |     |     |     |     |         |     |     |     |     |
+    //       | 5/0 | 6/1 | 7/2 | 8/3 |         | 5/0 | 6/3 | 7/0 | 8/3 |
+    //       |     |     |     |     |         |     |     |     |     |
+    //      6/0---7/0---8/1---9/2--10/3  -->  6/0---7/0---8/3---9/0--10/3
+    //       |     |     |     |     |         |     |     |     |     |
+    //       | 1/0 | 2/1 | 3/2 | 4/3 |         | 1/0 | 2/1 | 3/2 | 4/3 |
+    //       |     |     |     |     |         |     |     |     |     |
+    //      1/0---2/0---3/1---4/2---5/3       1/0---2/0---3/1---4/2---5/3
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_GHOSTED,  3) );
+    size_t numNodes = 15;
+    std::vector<bool> nodeSharing;
+    std::vector<std::vector<int> > nodeSharingProcs(15);
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_OWNED,  3) );
+    std::vector<stk::mesh::Entity> modifiedEntities;
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_SHARED,  1, 3   ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_SHARED,  1, 2, 3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_SHARED,  2, 3   ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_SHARED      ) );
+    if(p_rank == 0)
+    {
+        bool isNodeShared[] = {
+                false, true, false, false, false,
+                false, true, true, true, false,
+                false, true, true, true, false
+        };
+        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_GHOSTED,  3) );
-  }
-  else if (p_rank == 1) {
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_NOT_VALID) );
+        // node 11: nothing
+        // nodes 12, 13, 14
+        {
+            int procsForNodeSharing[] = {3};
+            nodeSharingProcs[12 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+            nodeSharingProcs[13 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+            nodeSharingProcs[14 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+        }
+        // node 15
+        // node 6
+        // node 7
+        {
+            int procsForNodeSharing[] = {1, 3};
+            nodeSharingProcs[7 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
+        }
+        // node 8
+        {
+            int procsForNodeSharing[] = {1, 2, 3};
+            nodeSharingProcs[8 - 1].assign(procsForNodeSharing, procsForNodeSharing + 3);
+        }
+        // node 9
+        {
+            int procsForNodeSharing[] = {2, 3};
+            nodeSharingProcs[9 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
+        }
+        // node 10
+        // node 1
+        // node 2
+        {
+            int procsForNodeSharing[] = {1};
+            nodeSharingProcs[2 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+        }
+        // nodes 3, 4, 5
+    }
+    else if(p_rank == 1)
+    {
+        bool isNodeShared[] = {
+                false, true, true, false, false,
+                false, true, true, false, false,
+                false, false, false, false, false
+        };
+        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_GHOSTED,  0) );
+        // nodes 11-15: nothing
+        // nodes 6, 9, 10: nothing
+        // node 7
+        {
+            int procsForNodeSharing[] = {0, 3};
+            nodeSharingProcs[7 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
+        }
+        // node 8
+        {
+            int procsForNodeSharing[] = {0, 2, 3};
+            nodeSharingProcs[8 - 1].assign(procsForNodeSharing, procsForNodeSharing + 3);
+        }
+        // nodes 1, 4, 5: nothing
+        // node 2
+        {
+            int procsForNodeSharing[] = {0};
+            nodeSharingProcs[2 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+        }
+        // node 3
+        {
+            int procsForNodeSharing[] = {2};
+            nodeSharingProcs[3 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+        }
+    }
+    else if(p_rank == 2)
+    {
+        bool isNodeShared[] = {
+                false, false, true, true, false,
+                false, false, true, true, false,
+                false, false, false, false, false
+        };
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_VALID) );
+        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_SHARED,  2      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_SHARED,  0, 3   ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_SHARED,  0, 2, 3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_SHARED      ) );
+        // nodes 11-15: nothing
+        // nodes 6, 7, 10: nothing
+        // node 8
+        {
+            int procsForNodeSharing[] = {0, 1, 3};
+            nodeSharingProcs[8 - 1].assign(procsForNodeSharing, procsForNodeSharing + 3);
+        }
+        // node 9
+        {
+            int procsForNodeSharing[] = {0, 3};
+            nodeSharingProcs[8 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
+        }
+        // nodes 1, 2, 5: nothing
+        // node 3
+        {
+            int procsForNodeSharing[] = {1};
+            nodeSharingProcs[3 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+        }
+        // node 4
+        {
+            int procsForNodeSharing[] = {3};
+            nodeSharingProcs[4 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+        }
+    }
+    else
+    {
+        bool isNodeShared[] = {
+                false, false, false, true, false,
+                false, true, true, true, false,
+                false, true, true, true, false
+        };
+        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_GHOSTED,  0) );
-  }
-  else if (p_rank == 2) {
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_OWNED,  3) );
+        // nodes 1, 2, 3, 5, 6, 10, 11, 15: nothing
+        // nodes 12, 13, 14
+        {
+            int procsForNodeSharing[] = {0};
+            nodeSharingProcs[12 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+            nodeSharingProcs[13 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+            nodeSharingProcs[14 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+        }
+        // node 7
+        {
+            int procsForNodeSharing[] = {0, 1};
+            nodeSharingProcs[7 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
+        }
+        // node 8
+        {
+            int procsForNodeSharing[] = {0, 1, 2};
+            nodeSharingProcs[8 - 1].assign(procsForNodeSharing, procsForNodeSharing + 3);
+        }
+        // node 9
+        {
+            int procsForNodeSharing[] = {0, 2};
+            nodeSharingProcs[9 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
+        }
+        // node 4
+        {
+            int procsForNodeSharing[] = {2};
+            nodeSharingProcs[4 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
+        }
+    }
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_GHOSTED,  3) );
+    EXPECT_EQ(numNodes, nodeSharing.size());
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_OWNED,  3) );
+    for(size_t i = 0; i < nodeSharing.size(); i++)
+    {
+        stk::mesh::EntityKey key(stk::topology::NODE_RANK, i + 1);
+        eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_SHARED,  0, 1, 3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_SHARED,  0, 3   ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_SHARED      ) );
+        if(nodeSharing[i])
+        {
+            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i + 1);
+            for(size_t j = 0; j < nodeSharingProcs[i].size(); j++)
+            {
+                addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, nodeSharingProcs[i][j]);
+            }
+            modifiedEntities.push_back(node);
+        }
+    }
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_GHOSTED,  3) );
-  }
-  else if (p_rank == 3) {
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_OWNED,  3) );
+    mesh.update_comm_list_based_on_changes_in_comm_map();
+    mesh.update_comm_list(modifiedEntities);
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_NOT_GHOSTED) );
+    mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_OWNED,  3) );
+    mesh.modification_begin();
+    mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_SHARED,  2      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_SHARED,  0, 1   ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_SHARED,  0, 1, 2) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_SHARED,  0, 2   ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_SHARED      ) );
+    ////////////////////////////////////////////////////////////////////////////
 
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  6), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_GHOSTED) );
-  }
+    // Check the final state
+    if(p_rank == 0)
+    {
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_OWNED, 3));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_GHOSTED, 3));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_OWNED, 3));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_SHARED, 1 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_SHARED, 1, 3 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_SHARED, 1, 2, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_SHARED, 2, 3 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_SHARED, 3 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_SHARED, 3 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_SHARED, 3 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_SHARED ));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_GHOSTED, 3));
+    }
+    else if(p_rank == 1)
+    {
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_NOT_VALID));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_GHOSTED, 0));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_VALID));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_SHARED, 0 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_SHARED, 2 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_SHARED, 0, 3 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_SHARED, 0, 2, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_SHARED ));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_GHOSTED, 0));
+    }
+    else if(p_rank == 2)
+    {
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_OWNED, 3));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_GHOSTED, 3));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_VALID));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_OWNED, 3));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_SHARED, 1 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED, 3 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_SHARED, 0, 1, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_SHARED, 0, 3 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_SHARED ));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_GHOSTED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_GHOSTED, 3));
+    }
+    else if(p_rank == 3)
+    {
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_OWNED, 3));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 5), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 6), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 7), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 8), STATE_NOT_GHOSTED));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_OWNED, 3));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_OWNED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_OWNED, 3));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED, 2 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_SHARED, 0, 1 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_SHARED, 0, 1, 2));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_SHARED, 0, 2 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_NOT_SHARED ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_SHARED, 0 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_SHARED, 0 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_SHARED, 0 ));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_SHARED ));
+
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 1), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 2), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED, 1));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 6), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 10), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 11), STATE_GHOSTED, 0));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 12), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 13), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 14), STATE_NOT_GHOSTED));
+        EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(NODE_RANK, 15), STATE_NOT_GHOSTED));
+    }
 }
 
 bool check_state_CEOME(const stk::mesh::BulkData & mesh, const EntityKey & entityKey, EntityStates state,
