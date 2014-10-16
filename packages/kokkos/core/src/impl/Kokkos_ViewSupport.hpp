@@ -226,7 +226,7 @@ struct ViewRemap
     , n7( std::min( (size_t)arg_out.dimension_7() , (size_t)arg_in.dimension_7() ) )
     {
       typedef typename OutputView::execution_space execution_space ;
-      Kokkos::RangePolicy< execution_space > range( 0 , output.dimension_0() );
+      Kokkos::RangePolicy< execution_space > range( 0 , n0 );
       parallel_for( range , *this );
     }
 
