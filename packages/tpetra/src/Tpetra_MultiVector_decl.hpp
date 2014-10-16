@@ -859,7 +859,7 @@ namespace Tpetra {
     ///   time.  Please call getLocalMV() instead.  There was never
     ///   actually a need for a getLocalMVNonConst() method, as far as
     ///   I can tell.
-    TEUCHOS_DEPRECATED
+    TPETRA_DEPRECATED
     KokkosClassic::MultiVector<Scalar,Node>& getLocalMVNonConst ();
 
     //@}

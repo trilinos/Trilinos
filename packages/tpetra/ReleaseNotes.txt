@@ -2,8 +2,76 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Development version (11.11):
+Development version (11.13):
 ----------------------------
+
+* Tpetra: Deprecated variable-block-size classes (like VbrMatrix).
+
+I have deprecated the following classes in the Tpetra namespace:
+
+  - BlockMultiVector (NOT Tpetra::Experimental::BlockMultiVector)
+  - BlockMap
+  - VbrMatrix
+  - BlockCrsGraph
+
+Tpetra::BlockMultiVector (NOT the same as
+Tpetra::Experimental::BlockMultiVector) implements a
+variable-block-size block analogue of MultiVector.  Each row of a
+MultiVector corresponds to a single degree of freedom; each block row
+of a BlockMultiVector corresponds to any number of degrees of freedom.
+"Variable block size" means that different block rows may have
+different numbers of degrees of freedom.  An instance of
+Tpetra::BlockMap represents the block (row) Map of a BlockMultiVector.
+Tpetra::VbrMatrix implements a variable-block-size block sparse matrix
+that corresponds to BlockMultiVector.  Each (block) entry of a
+VbrMatrix is it own dense matrix.  These dense matrices are not
+distributed; they are locally stored and generally "small" (think
+"fits in cache").  An instance of Tpetra::BlockCrsGraph represents the
+block graph of a VbrMatrix.
+
+Here are the reasons why I am deprecating these classes:
+
+  - Their interfaces as well as their implementations need a
+    significant redesign for MPI+X [1].
+  - They are poorly exercised, even in comparison to their Epetra
+    equivalents.
+  - They have poor test coverage, and have outstanding known bugs: see
+    e.g., Bug 6039.
+  - Most users don't need a fully general VBR [2].
+  - I would prefer to name the VBR classes consistently, both to
+    emphasize the V (variable) part and to distinguish them from the
+    new constant-block-size classes.  This would let me move the
+    latter out of the Tpetra::Experimental namespace into the Tpetra
+    namespace.
+  - I don't have time to support these classes _and_ finish the port
+    of the rest of Tpetra to use new Kokkos.
+  - I don't want to leave these classes in place and let users think
+    that they work correctly.
+
+[1] The interfaces will likely change so much that it might not be
+    worth maintaining backwards compatibility, in contrast to the
+    other Tpetra classes, whose interfaces can change gradually.  This
+    is because current and future computer hardware requires
+    exploiting multiple levels of parallelism in order to get best (or
+    even reasonable) performance.  We will have to think hard about
+    how to do this efficiently for sparse matrices with variable block
+    sizes.  I would prefer to focus on the constant-block-size case
+    first, get that right, and then generalize to handle the load
+    balancing issues of the variable-block-size case.
+
+[2] Many users' block matrices have blocks which are all the same
+    size.  They would get best performance by using the new
+    constant-block-size classes that currently live in the
+    Tpetra::Experimental namespace.  Others usually only have a small
+    number of different block sizes per matrix (e.g., 3 degrees of
+    freedom per interior mesh point; 2 for boundary mesh points).  The
+    latter users could get much better performance by a data structure
+    that represents the sparse matrix as a sum of constant-block-size
+    matrices.
+
+
+Trilinos 11.12:
+---------------
 
 * Kokkos refactor version of Tpetra
 

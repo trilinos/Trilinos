@@ -72,71 +72,84 @@ namespace Tpetra {
   point-entry map will have N*3 entries, whereas the block-map will
   have N blocks, each of size 3.
 
-  \warning Please consider this class DEPRECATED.  There are known
-    outstanding bugs with the current implementations of
-    variable-block-size sparse matrices and related classes in Tpetra.
+  \warning This class is DEPRECATED.  There are known outstanding bugs
+    with the current implementations of variable-block-size sparse
+    matrices and related classes in Tpetra.
 */
 template <class LocalOrdinal = Map<>::local_ordinal_type,
           class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
           class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
-class BlockMap : public Teuchos::Describable {
+class TPETRA_DEPRECATED BlockMap : public Teuchos::Describable {
 public:
   typedef LocalOrdinal  local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node          node_type;
+  typedef Map<LocalOrdinal, GlobalOrdinal, Node> point_map_type;
 
   //! @name Constructor/Destructor Methods
   //@{
 
   /*! \brief BlockMap constructor specifying numGlobalBlocks and constant blockSize.
    */
-  BlockMap(global_size_t numGlobalBlocks,
-           LocalOrdinal blockSize,
-           GlobalOrdinal indexBase,
-           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node> &node = defaultArgNode<node_type> ());
+  BlockMap (global_size_t numGlobalBlocks,
+            LocalOrdinal blockSize,
+            GlobalOrdinal indexBase,
+            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+            const Teuchos::RCP<Node> &node = defaultArgNode<node_type> ());
 
-  /*! \brief BlockMap constructor specifying num global and local blocks, and constant blockSize.
-   */
-  BlockMap(global_size_t numGlobalBlocks,
-           size_t numLocalBlocks,
-           LocalOrdinal blockSize,
-           GlobalOrdinal indexBase,
-           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node> &node = defaultArgNode<node_type> ());
+  //! BlockMap constructor specifying num global and local blocks, and constant blockSize.
+  BlockMap (global_size_t numGlobalBlocks,
+            size_t numLocalBlocks,
+            LocalOrdinal blockSize,
+            GlobalOrdinal indexBase,
+            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+            const Teuchos::RCP<Node> &node = defaultArgNode<node_type> ());
 
-  /*! \brief BlockMap constructor specifying numGlobalBlocks and lists of local blocks first-global-point-in-blocks, and blockSizes.
-   */
-  BlockMap(global_size_t numGlobalBlocks,
-      const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
-      const Teuchos::ArrayView<const GlobalOrdinal>& myFirstGlobalPointInBlocks,
-      const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
-      GlobalOrdinal indexBase,
-      const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-      const Teuchos::RCP<Node> &node = defaultArgNode<node_type> ());
+  /// \brief BlockMap constructor specifying numGlobalBlocks and lists
+  ///   of local blocks first-global-point-in-blocks, and blockSizes.
+  BlockMap (const global_size_t numGlobalBlocks,
+            const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
+            const Teuchos::ArrayView<const GlobalOrdinal>& myFirstGlobalPointInBlocks,
+            const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
+            const GlobalOrdinal indexBase,
+            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+            const Teuchos::RCP<Node> &node = defaultArgNode<node_type> ());
 
-  /*! \brief BlockMap constructor which takes a point-entry Map.
-   * The arrays myGlobalBlockIDs and myBlockSizes must be the same length, and
-   * sum(myBlockSizes) must equal pointMap->getNodeNumElements().
-   * If these arrays are different lengths or sum(myBlockSizes) is incorrect,
-   * then std::runtime_error is thrown.
-   */
-  BlockMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointMap,
-           const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
-           const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
-           const Teuchos::RCP<Node> &node = defaultArgNode<node_type> ());
+  /// \brief BlockMap constructor which takes a point-entry Map.
+  ///
+  /// The arrays myGlobalBlockIDs and myBlockSizes must be the same
+  /// length, and sum(myBlockSizes) must equal
+  /// pointMap->getNodeNumElements().
+  BlockMap (const Teuchos::RCP<const point_map_type>& pointMap,
+            const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
+            const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes);
 
-  //! BlockMap destructor.
-  ~BlockMap(){}
+  /// \brief BlockMap constructor which takes a point-entry Map.
+  ///
+  /// The arrays myGlobalBlockIDs and myBlockSizes must be the same
+  /// length, and sum(myBlockSizes) must equal
+  /// pointMap->getNodeNumElements().
+  ///
+  /// \warning This constructor is DEPRECATED, because there is never
+  ///   a reason to use a Node instance other than the one provided by
+  ///   the point Map.
+  TPETRA_DEPRECATED
+  BlockMap (const Teuchos::RCP<const point_map_type>& pointMap,
+            const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
+            const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
+            const Teuchos::RCP<Node>& node);
+
+  //! Destructor.
+  ~BlockMap () {}
 
   //@}
-
   //! @name Attribute Accessor Methods
   //@{
 
-  //! Return this block-map's point-entry map attribute.
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getPointMap () const
-  { return pointMap_; }
+  //! Return this block Map's point-entry Map.
+  Teuchos::RCP<const point_map_type> getPointMap () const {
+    return pointMap_;
+  }
 
   //! Return global number of blocks.
   global_size_t getGlobalNumBlocks() const;
@@ -188,15 +201,22 @@ public:
   GlobalOrdinal getFirstGlobalPointInLocalBlock(LocalOrdinal localBlockID) const;
 
   //! Return the first-global-point-in-block and block-sizes for a list of block-IDs on remote processors.
-  void getRemoteBlockInfo(const Teuchos::ArrayView<const GlobalOrdinal>& GBIDs,
-                          const Teuchos::ArrayView<GlobalOrdinal>& firstGlobalPointInBlocks,
-                          const Teuchos::ArrayView<LocalOrdinal>& blockSizes) const;
+  void
+  getRemoteBlockInfo (const Teuchos::ArrayView<const GlobalOrdinal>& GBIDs,
+                      const Teuchos::ArrayView<GlobalOrdinal>& firstGlobalPointInBlocks,
+                      const Teuchos::ArrayView<LocalOrdinal>& blockSizes) const;
   //@}
 
 private:
+  void
+  initWithPointMap (const Teuchos::RCP<const point_map_type>& pointMap,
+                    const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
+                    const Teuchos::ArrayView<const LocalOrdinal>& blockSizes,
+                    const Teuchos::RCP<Node>& node);
+
   void setup_noncontig_mapping();
 
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > pointMap_;
+  Teuchos::RCP<const point_map_type> pointMap_;
   global_size_t globalNumBlocks_;
   Teuchos::Array<GlobalOrdinal> myGlobalBlockIDs_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_firstPointInBlock_;
@@ -212,20 +232,22 @@ private:
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-convertBlockMapToPointMap(const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>& blockMap)
+convertBlockMapToPointMap (const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>& blockMap)
 {
+  using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+  typedef Map<LocalOrdinal, GlobalOrdinal, Node> point_map_type;
+  typedef global_size_t GST;
 
-  global_size_t numGlobalElems = Teuchos::OrdinalTraits<global_size_t>::invalid();
-  GlobalOrdinal indexBase = blockMap.getPointMap()->getIndexBase();
-  const Teuchos::RCP<const Teuchos::Comm<int> >& comm = blockMap.getPointMap()->getComm();
-  const Teuchos::RCP<Node>& node = blockMap.getPointMap()->getNode();
+  const GST numGlobalElems = Teuchos::OrdinalTraits<GST>::invalid ();
+  const GlobalOrdinal indexBase = blockMap.getPointMap ()->getIndexBase ();
+  RCP<const Teuchos::Comm<int> > comm = blockMap.getPointMap ()->getComm ();
+  RCP<Node> node = blockMap.getPointMap ()->getNode ();
 
   // Create a point-entry map where each point
   // corresponds to a block in the block map.
-  return rcp (new map_type (numGlobalElems, blockMap.getNodeBlockIDs (),
-                            indexBase, comm, node));
+  return rcp (new point_map_type (numGlobalElems, blockMap.getNodeBlockIDs (),
+                                  indexBase, comm, node));
 }
 
 } // namespace Tpetra
