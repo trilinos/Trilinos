@@ -65,28 +65,28 @@ public:
 
     bool entity_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
     {
-        return this->entity_comm_map_insert(entity, val);
+        return BulkData::entity_comm_map_insert(entity, val);
     }
 
     bool entity_comm_map_erase(const stk::mesh::EntityKey& key, const stk::mesh::EntityCommInfo& commInfo)
     {
-        return this->entity_comm_map_erase(key, commInfo);
+        return BulkData::entity_comm_map_erase(key, commInfo);
     }
 
 
     bool entity_comm_map_erase(const stk::mesh::EntityKey& key, const stk::mesh::Ghosting& ghost)
     {
-        return this->entity_comm_map_erase(key, ghost);
+        return BulkData::entity_comm_map_erase(key, ghost);
     }
 
     void entity_comm_map_clear(const stk::mesh::EntityKey& key)
     {
-        this->entity_comm_map_clear(key);
+        BulkData::entity_comm_map_clear(key);
     }
 
     void entity_comm_map_clear_ghosting(const stk::mesh::EntityKey& key)
     {
-        this->entity_comm_map_clear_ghosting(key);
+        BulkData::entity_comm_map_clear_ghosting(key);
     }
 };
 
