@@ -668,6 +668,20 @@ public:
   const EntityCommListInfoVector & comm_list() const
   { return m_entity_comm_list; }
 
+  void deleteKeyFromCommList(stk::mesh::EntityKey key)
+  {
+      stk::mesh::EntityCommListInfoVector::iterator iter = std::lower_bound(m_entity_comm_list.begin(),
+                                                                            m_entity_comm_list.end(), key);
+
+      if ( iter != m_entity_comm_list.end() && key == iter->key )
+      {
+          iter->key = EntityKey();
+          iter = std::remove_if( m_entity_comm_list.begin() ,
+                                 m_entity_comm_list.end() , IsInvalid() );
+          m_entity_comm_list.erase( iter , m_entity_comm_list.end() );
+      }
+  }
+
   VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const
   {
     ThrowAssert(synchronized_state() == SYNCHRONIZED);
@@ -1449,7 +1463,12 @@ private:
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
+
+public:
   bool internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt );
+
+private:
+
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
 
 private:
@@ -1467,6 +1486,7 @@ private:
   void internal_resolve_shared_modify_delete_second_pass();
 
   void internal_resolve_parallel_create();
+  void internal_resolve_parallel_create_exp();
 
 protected:
 
@@ -1489,9 +1509,12 @@ protected:
   void internal_resolve_shared_membership();
   void internal_update_distributed_index(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
   void internal_update_distributed_index(std::vector<stk::mesh::Entity> & shared_new );
+  void internal_update_distributed_index_exp(std::vector<stk::mesh::Entity> & shared_new );
   void fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::KeyTypeVector &local_created_or_modified);
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
+
+public:
   void update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified);
   bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity)); }
   bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
@@ -1536,10 +1559,11 @@ private:
   void internal_verify_change_parts( const MetaData   & meta ,
                                      const Entity entity ,
                                      const std::vector<Part*> & parts ) const;
-
+public:
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
-
   void internal_sync_comm_list_owners();
+
+private:
 
   void internal_update_fast_comm_maps();
 

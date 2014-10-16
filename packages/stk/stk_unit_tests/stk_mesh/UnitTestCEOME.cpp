@@ -124,12 +124,17 @@ void add_nodes_to_move(stk::mesh::BulkData& bulk,
 
 void addSharingInfo(stk::mesh::BulkData& bulkData, stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId, int sharingProc )
 {
-    bulkData.entity_comm_map_insert(entity, stk::mesh::EntityCommInfo(ghostingId, sharingProc));
+    EXPECT_TRUE(bulkData.entity_comm_map_insert(entity, stk::mesh::EntityCommInfo(ghostingId, sharingProc)));
 }
 
 void eraseSharingInfo(stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId )
 {
     stk::mesh::EntityKey key = bulkData.entity_key(entity);
+    bulkData.entity_comm_map_erase(key, *bulkData.ghostings()[ghostingId]);
+}
+
+void eraseSharingInfoUsingKey(stk::mesh::BulkData &bulkData, stk::mesh::EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId )
+{
     bulkData.entity_comm_map_erase(key, *bulkData.ghostings()[ghostingId]);
 }
 
@@ -248,7 +253,7 @@ TEST(CEOME, change_entity_owner_2Elem2ProcMove)
       otherProc = 0;
   }
 
-  bulk.modification_begin();
+//  bulk.modification_begin();
 
   for (size_t i=0;i<nodeSharing.size();i++)
   {
@@ -445,6 +450,44 @@ TEST(CEOME, change_entity_owner_2Elem2ProcFlip)
     entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 6), 0));
   }
   mesh.change_entity_owner(entity_procs_flip);
+
+  ////////////////////////////////////////////////////////////////////////////
+
+
+  std::vector<bool> nodeSharing;
+  if ( p_rank == 0 )
+  {
+      bool isNodeShared[] = { false, false, true, true, false, false };
+      nodeSharing.assign(isNodeShared, isNodeShared+6);
+  }
+  else
+  {
+      bool isNodeShared[] = { false, false, true, true, false, false };
+      nodeSharing.assign(isNodeShared, isNodeShared+6);
+  }
+
+  int otherProc = 1;
+  if ( p_rank == 1 )
+  {
+      otherProc = 0;
+  }
+
+  for (size_t i=0;i<nodeSharing.size();i++)
+  {
+      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i+1);
+      eraseSharingInfo(mesh, node, stk::mesh::BulkData::SHARED);
+      if ( nodeSharing[i] )
+      {
+          addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, otherProc);
+      }
+  }
+
+  mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+
+  mesh.modification_begin();
+  mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+
+  ////////////////////////////////////////////////////////////////////////////
 
   if (p_rank == 0) {
     EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 1) );
@@ -659,6 +702,59 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveRight)
 
   mesh.change_entity_owner(change);
 
+  ////////////////////////////////////////////////////////////////////////////
+
+  //   id/owner_proc
+    //
+    //   1/0---3/0---5/0---7/1         1/0---3/0---5/1---7/1
+    //    |     |     |     |           |     |     |     |
+    //    | 1/0 | 2/0 | 3/1 |     =>    | 1/0 | 2/1 | 3/1 |
+    //    |     |     |     |           |     |     |     |
+    //   2/0---4/0---6/0---8/1         2/0---4/0---6/1---8/1
+
+    size_t numNodes = 8;
+    std::vector<bool> nodeSharing;
+
+    if ( p_rank == 0 )
+    {
+        bool isNodeShared[] = { false, false, true, true, false, false, false, false };
+        nodeSharing.assign(isNodeShared, isNodeShared+numNodes);
+    }
+    else
+    {
+        bool isNodeShared[] = { false, false, true, true, false, false, false, false };
+        nodeSharing.assign(isNodeShared, isNodeShared+numNodes);
+    }
+
+    EXPECT_EQ(numNodes, nodeSharing.size());
+
+    int otherProc = 1;
+    if ( p_rank == 1 )
+    {
+        otherProc = 0;
+    }
+
+    for (size_t i=0;i<nodeSharing.size();i++)
+    {
+        stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i+1);
+        if ( mesh.is_valid(node) )
+        {
+            eraseSharingInfo(mesh, node, stk::mesh::BulkData::SHARED);
+        }
+        if ( nodeSharing[i] )
+        {
+            addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, otherProc);
+        }
+    }
+
+    // mesh.update_comm_list_based_on_changes_in_comm_map();
+
+    mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+
+    mesh.modification_begin();
+    mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+
+    ////////////////////////////////////////////////////////////////////////////
 
   if (p_rank == 0) {
     EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0) );
@@ -882,6 +978,60 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveLeft)
 
   mesh.change_entity_owner(change);
 
+  ////////////////////////////////////////////////////////////////////////////
+
+  //   id/owner_proc
+  //
+  //   1/0---3/0---5/1---7/1         1/0---3/0---5/0---7/1
+  //    |     |     |     |           |     |     |     |
+  //    | 1/0 | 2/1 | 3/1 |     =>    | 1/0 | 2/0 | 3/1 |
+  //    |     |     |     |           |     |     |     |
+  //   2/0---4/0---6/1---8/1         2/0---4/0---6/0---8/1
+
+
+     size_t numNodes = 8;
+     std::vector<bool> nodeSharing;
+
+     if ( p_rank == 0 )
+     {
+         bool isNodeShared[] = { false, false, false, false, true, true, false, false };
+         nodeSharing.assign(isNodeShared, isNodeShared+numNodes);
+     }
+     else
+     {
+         bool isNodeShared[] = { false, false, false, false, true, true, false, false };
+         nodeSharing.assign(isNodeShared, isNodeShared+numNodes);
+     }
+
+     EXPECT_EQ(numNodes, nodeSharing.size());
+
+     int otherProc = 1;
+     if ( p_rank == 1 )
+     {
+         otherProc = 0;
+     }
+
+     for (size_t i=0;i<nodeSharing.size();i++)
+     {
+         stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i+1);
+         if ( mesh.is_valid(node) )
+         {
+             eraseSharingInfo(mesh, node, stk::mesh::BulkData::SHARED);
+         }
+         if ( nodeSharing[i] )
+         {
+             addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, otherProc);
+         }
+     }
+
+     // mesh.update_comm_list_based_on_changes_in_comm_map();
+
+     mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+
+     mesh.modification_begin();
+     mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+
+     ////////////////////////////////////////////////////////////////////////////
 
   if (p_rank == 0) {
     EXPECT_TRUE( check_state_CEOME(mesh, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0) );
@@ -1284,6 +1434,120 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
   }
 
   mesh.change_entity_owner(change);
+
+  ////////////////////////////////////////////////////////////////////////////
+
+  //
+  //         id/proc                             id/proc
+  //        1/0---3/0---5/1---7/2---9/3         1/0---3/0---5/1---7/0---9/3
+  //        |      |     |    {|     |          |      |     |    {|     |
+  //        | 1/0  | 2/1 | 3/2{| 4/3 |          | 1/0  | 2/1 | 3/0{| 4/3 |
+  //        |      |     |    {|     |          |      |     |    {|     |
+  //        2/0---4/0---6/1---8/2---10/3        2/0---4/0---6/1---8/0---10/3
+
+
+       size_t numNodes = 10;
+       std::vector<bool> nodeSharing;
+       std::vector<int>  nodeSharingProcs;
+
+       size_t numEdges = 1;
+       std::vector<bool> edgeSharing;
+       std::vector<int>  edgeSharingProcs;
+
+       std::vector<stk::mesh::Entity> modifiedEntities;
+
+       if ( p_rank == 0 )
+       {
+           bool isNodeShared[] = { false, false, true, true, true, true, true, true, false, false };
+           nodeSharing.assign(isNodeShared, isNodeShared+numNodes);
+           int  procIdsNode[]  = {    -1,    -1,    1,    1,    1,    1,    3,    3,    -1,    -1 };
+           nodeSharingProcs.assign(procIdsNode, procIdsNode+numNodes);
+           bool isEdgeShared[] = { true };
+           int  procIdsEdge[] = { 3 };
+           edgeSharing.assign(isEdgeShared, isEdgeShared+numEdges);
+           edgeSharingProcs.assign(procIdsEdge, procIdsEdge+numEdges);
+       }
+       else if ( p_rank == 1)
+       {
+           bool isNodeShared[] = { false, false, true, true, true, true, false, false, false, false };
+           nodeSharing.assign(isNodeShared, isNodeShared+numNodes);
+           int  procIdsNode[]  = {    -1,    -1,    0,    0,    0,    0,    -1,    -1,    -1,    -1 };
+           nodeSharingProcs.assign(procIdsNode, procIdsNode+numNodes);
+           bool isEdgeShared[] = { false };
+           int  procIdsEdge[] = { -1 };
+           edgeSharing.assign(isEdgeShared, isEdgeShared+numEdges);
+           edgeSharingProcs.assign(procIdsEdge, procIdsEdge+numEdges);
+       }
+       else if ( p_rank == 2)
+       {
+           bool isNodeShared[] = { false, false, false, false, false, false, false, false, false, false };
+           nodeSharing.assign(isNodeShared, isNodeShared+numNodes);
+           int  procIdsNode[]  = {    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 };
+           nodeSharingProcs.assign(procIdsNode, procIdsNode+numNodes);
+           bool isEdgeShared[] = { false };
+           int  procIdsEdge[] = { -1 };
+           edgeSharing.assign(isEdgeShared, isEdgeShared+numEdges);
+           edgeSharingProcs.assign(procIdsEdge, procIdsEdge+numEdges);
+       }
+       else
+       {
+           bool isNodeShared[] = { false, false, false, false, false, false, true, true, false, false };
+           nodeSharing.assign(isNodeShared, isNodeShared+numNodes);
+           int  procIdsNode[]  = {    -1,    -1,    -1,    -1,    -1,    -1,    0,    0,    -1,    -1 };
+           nodeSharingProcs.assign(procIdsNode, procIdsNode+numNodes);
+           bool isEdgeShared[] = { true };
+           int  procIdsEdge[] = { 0 };
+           edgeSharing.assign(isEdgeShared, isEdgeShared+numEdges);
+           edgeSharingProcs.assign(procIdsEdge, procIdsEdge+numEdges);
+       }
+
+       EXPECT_EQ(numNodes, nodeSharing.size());
+
+       for (size_t i=0;i<nodeSharing.size();i++)
+       {
+           stk::mesh::EntityKey key(stk::topology::NODE_RANK, i+1);
+           eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
+//           mesh.deleteKeyFromCommList(key);
+
+//           if ( mesh.is_valid(node) )
+//           {
+//               eraseSharingInfo(mesh, node, stk::mesh::BulkData::SHARED);
+//           }
+           if ( nodeSharing[i] )
+           {
+               stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i+1);
+               addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, nodeSharingProcs[i]);
+               modifiedEntities.push_back(node);
+           }
+       }
+
+       for (size_t i=0;i<edgeSharing.size();i++)
+       {
+           stk::mesh::EntityKey key(stk::topology::EDGE_RANK, i+1);
+           eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
+//           mesh.deleteKeyFromCommList(key);
+
+//           if ( mesh.is_valid(edge) )
+//           {
+//               eraseSharingInfo(mesh, edge, stk::mesh::BulkData::SHARED);
+//           }
+           if ( edgeSharing[i] )
+           {
+               stk::mesh::Entity edge = mesh.get_entity(stk::topology::EDGE_RANK, i+1);
+               addSharingInfo(mesh, edge, stk::mesh::BulkData::SHARED, edgeSharingProcs[i]);
+               modifiedEntities.push_back(edge);
+           }
+       }
+
+       mesh.update_comm_list_based_on_changes_in_comm_map();
+       mesh.update_comm_list(modifiedEntities);
+
+       mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+
+       mesh.modification_begin();
+       mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+
+       ////////////////////////////////////////////////////////////////////////////
 
   //test post condition
   if (p_rank == 0) {
