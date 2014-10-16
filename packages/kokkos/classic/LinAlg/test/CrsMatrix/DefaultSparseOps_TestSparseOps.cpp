@@ -330,16 +330,16 @@ namespace {
     params.set ("Unroll across multivectors", unroll);
     params.set ("Force first-touch allocation", forceFirstTouch);
     if (variant == "all") {
-      std::string variant = "for-for";
-      params.set ("Sparse matrix-vector multiply variant", variant);
+      std::string theVariant = "for-for";
+      params.set ("Sparse matrix-vector multiply variant", theVariant);
       Tester<sparse_ops_type>::test ("AltSparseOps (for-for)", params,
                                      implicitUnitDiagTriMultCorrect);
-      variant = "for-while";
-      params.set ("Sparse matrix-vector multiply variant", variant);
+      theVariant = "for-while";
+      params.set ("Sparse matrix-vector multiply variant", theVariant);
       Tester<sparse_ops_type>::test ("AltSparseOps (for-while)", params,
                                      implicitUnitDiagTriMultCorrect);
-      variant = "for-if";
-      params.set ("Sparse matrix-vector multiply variant", variant);
+      theVariant = "for-if";
+      params.set ("Sparse matrix-vector multiply variant", theVariant);
       Tester<sparse_ops_type>::test ("AltSparseOps (for-if)", params,
                                      implicitUnitDiagTriMultCorrect);
     }

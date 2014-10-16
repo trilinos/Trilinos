@@ -214,7 +214,7 @@ namespace KokkosClassic {
       public:
         ZeroInitKernel (T* const x) : x_ (x) {}
 
-        void execute (const Ordinal i) {
+        void execute (const Ordinal i) const {
           x_[i] = Teuchos::ScalarTraits<T>::zero ();
         }
       };
@@ -230,7 +230,7 @@ namespace KokkosClassic {
           out_ (out), in_ (in)
         {}
 
-        void execute (const int i) {
+        void execute (const int i) const {
           out_[i] = in_[i];
         }
       };
@@ -248,7 +248,7 @@ namespace KokkosClassic {
           val_ (val)
         {}
 
-        void execute (const Ordinal r) {
+        void execute (const Ordinal r) const {
           for (size_t k = ptr_[r]; k < ptr_[r+1]; ++k) {
             val_[k] = Teuchos::ScalarTraits<T>::zero ();
           }
@@ -272,7 +272,7 @@ namespace KokkosClassic {
           inVal_ (inVal)
         {}
 
-        void execute (const Ordinal r) {
+        void execute (const Ordinal r) const {
           for (size_t k = ptr_[r]; k < ptr_[r+1]; ++k) {
             outVal_[k] = inVal_[k];
           }

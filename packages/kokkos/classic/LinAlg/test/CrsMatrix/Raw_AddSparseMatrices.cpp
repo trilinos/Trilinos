@@ -385,8 +385,8 @@ TEUCHOS_UNIT_TEST( KokkosRaw, AddSparseMatrices )
       numRows);
     MT maxDiff = STM::zero ();
     try {
-      ArrayView<const OffsetType> ptr1_view (const_cast<const OffsetType*> (ptr1), numRows+1);
-      const OffsetType numEntries1 = ptr1_view[numRows];
+      ArrayView<const OffsetType> ptr1_view2 (const_cast<const OffsetType*> (ptr1), numRows+1);
+      const OffsetType numEntries1 = ptr1_view2[numRows];
       ArrayView<const OrdinalType> ind1_view (const_cast<const OrdinalType*> (ind1), numEntries1);
       ArrayView<const ScalarType> val1_view (const_cast<const ScalarType*> (val1), numEntries1);
 
