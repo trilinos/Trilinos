@@ -42,10 +42,7 @@
 #ifndef TPETRA_IMPORT_DEF_HPP
 #define TPETRA_IMPORT_DEF_HPP
 
-#ifdef DOXYGEN_USE_ONLY
-#  include <Tpetra_Import_decl.hpp>
-#endif // DOXYGEN_USE_ONLY
-
+#include <Tpetra_Import_decl.hpp>
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_ImportExportData.hpp>
@@ -1391,7 +1388,7 @@ namespace Tpetra {
     // ruins the existing object if we pass things in directly.  Hence
     // we copy them first.
     Teuchos::Array<int> newExportPIDs (getExportPIDs ());
-    Teuchos::Array<int> newExportLIDs (getExportLIDs ());
+    Teuchos::Array<LocalOrdinal> newExportLIDs (getExportLIDs ());
     Teuchos::Array<LocalOrdinal> dummy;
     Distributor newDistor (getDistributor ());
 

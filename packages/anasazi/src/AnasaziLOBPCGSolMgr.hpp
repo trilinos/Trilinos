@@ -244,7 +244,7 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   int lockQuorum_;
   bool recover_;
   Teuchos::RCP<LOBPCGState<ScalarType,MV> > state_;
-  enum StatusTestResNorm<ScalarType,MV,OP>::ResType convNorm_, lockNorm_;
+  enum ResType convNorm_, lockNorm_;
 
   Teuchos::RCP<Teuchos::Time> _timerSolve, _timerLocking;
 
@@ -303,10 +303,10 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   relconvtol_ = pl.get("Relative Convergence Tolerance",relconvtol_);
   strtmp = pl.get("Convergence Norm",std::string("2"));
   if (strtmp == "2") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+    convNorm_ = RES_2NORM;
   }
   else if (strtmp == "M") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+    convNorm_ = RES_ORTH;
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
@@ -322,10 +322,10 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   locktol_ = pl.get("Locking Tolerance",locktol_);
   strtmp = pl.get("Locking Norm",std::string("2"));
   if (strtmp == "2") {
-    lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+    lockNorm_ = RES_2NORM;
   }
   else if (strtmp == "M") {
-    lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+    lockNorm_ = RES_ORTH;
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 

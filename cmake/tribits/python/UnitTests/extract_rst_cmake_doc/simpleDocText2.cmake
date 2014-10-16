@@ -14,5 +14,5 @@ something
 #     )
 #
 FUNCTION(SOME_FUNC_NAME2 ...)
-some other stuff 
+some other stuff
 ...

@@ -200,7 +200,6 @@ int main(int argc, char *argv[]) {
     MV Kvec( K->getRowMap(), MVT::GetNumberVecs( *evecs ) );
 
     OPT::Apply( *K, *evecs, Kvec ); 
-    MVT::MvTransMv( 1.0, Kvec, *evecs, T );
     MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, Kvec );
     MVT::MvNorm( Kvec, normR );
   

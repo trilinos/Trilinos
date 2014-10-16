@@ -42,7 +42,7 @@
 #ifndef STOKHOS_LINEAR_SPARSE_3_TENSOR_HPP
 #define STOKHOS_LINEAR_SPARSE_3_TENSOR_HPP
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"

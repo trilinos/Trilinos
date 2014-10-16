@@ -53,6 +53,7 @@
 #include <Ifpack2_LocalFilter.hpp>
 #include <Ifpack2_Parameters.hpp>
 #include <Tpetra_CrsMatrix_def.hpp>
+#include <Ifpack2_ILUT.hpp>
 
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -838,7 +839,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     // when computing the output.  Otherwise, alias X_temp to X.
     RCP<const MV> X_temp;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      X_temp = rcp (new MV (createCopy(X)));
+      X_temp = rcp (new MV (X, Teuchos::Copy));
     } else {
       X_temp = rcpFromRef (X);
     }
@@ -981,7 +982,14 @@ ILUT<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
 
 }//namespace Ifpack2
 
-#define IFPACK2_ILUT_INSTANT(S,LO,GO,N)                            \
+
+// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
+// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// preconditioners can and should do dynamic casts if they need a type
+// more specific than RowMatrix.
+
+#define IFPACK2_ILUT_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::ILUT< Tpetra::RowMatrix<S, LO, GO, N> >; \
   template class Ifpack2::ILUT< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
 #endif /* IFPACK2_ILUT_DEF_HPP */

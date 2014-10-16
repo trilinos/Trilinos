@@ -2,18 +2,3 @@
  *  \brief Namespace %Tpetra contains the class and methods constituting the %Tpetra library.
  */
 
-/*! @defgroup local_sparse_mat_vec Support for custom sparse mat-vec kernels.
-
-    Tpetra::CrsGraph and Tpetra::CrsMatrix provide support for externally changing the sparse matrix kernels used by the classes.
-    This is done by providing a new sparse kernels class, according to the \ref kokkos_crs_ops "Kokkos CRS kernel API".
-    The Tpetra::CrsGraph and Tpetra::CrsMatrix classes are then templated on the new sparse kernels class, which dictates not 
-    only the kernel for the sparse matrix-vector product, but also any associated storage for the kernel object and the underlying
-    local sparse graph and matrix objects.
-
-    At that point, using the new kernel is as simple as templating the %Tpetra CrsMatrix and CrsGraph objects on the sparse kernel 
-    class. An example of this is in the file tpetra/examples/LocalMatOps/LocalMatOpExample.cpp, included here:
-
-    \include LocalMatOpExample.cpp
-
-*/
-

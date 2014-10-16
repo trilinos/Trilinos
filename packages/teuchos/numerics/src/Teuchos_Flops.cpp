@@ -57,7 +57,7 @@ Flops::Flops(const Flops& flops_in) : flops_(0.0)
 {
 }
 
-Flops::~Flops(void)  
+Flops::~Flops(void)
 {
   flops_ = 0.0;
 }

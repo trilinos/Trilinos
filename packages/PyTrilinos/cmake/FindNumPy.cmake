@@ -81,8 +81,10 @@ ELSE(NOT PYTHON_EXECUTABLE)
     # Handle the QUIETLY and REQUIRED arguments and set NumPy_FOUND to
     # TRUE if all listed variables are TRUE
     INCLUDE(FindPackageHandleStandardArgs)
-    FIND_PACKAGE_HANDLE_STANDARD_ARGS(NumPy DEFAULT_MSG
-      NumPy_VERSION NumPy_INCLUDE_DIR)
+    FIND_PACKAGE_HANDLE_STANDARD_ARGS(NumPy
+      FOUND_VAR     NumPy_FOUND
+      REQUIRED_VARS NumPy_VERSION NumPy_INCLUDE_DIR
+      VERSION_VAR   NumPy_VERSION)
 
     #
     # Version checking: If a version check is requested, compare

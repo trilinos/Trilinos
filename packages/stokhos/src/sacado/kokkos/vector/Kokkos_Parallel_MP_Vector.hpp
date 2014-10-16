@@ -43,11 +43,7 @@
 #define KOKKOS_PARALLEL_MP_VECTOR_HPP
 
 #include "Sacado_MP_Vector.hpp"
-#include "Kokkos_Parallel.hpp"
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_OpenMP.hpp"
-#include "Kokkos_Serial.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 //----------------------------------------------------------------------------
 // Kokkos execution policies useful for Sacado::MP::Vector scalar type
@@ -58,7 +54,12 @@ namespace Kokkos {
 /*!
  * \brief Team-based parallel work configuration for Sacado::MP::Vector
  */
+template< class ExecSpace >
 struct MPVectorWorkConfig {
+
+  typedef MPVectorWorkConfig execution_policy ;
+  typedef ExecSpace          execution_space ;
+
   size_t range;
   size_t team;
   size_t shared;
@@ -68,14 +69,6 @@ struct MPVectorWorkConfig {
                       const size_t shared_ = 0 ) :
     range(range_), team(team_), shared(shared_) {}
 };
-
-template< class FunctorType >
-inline
-void parallel_for( const MPVectorWorkConfig & work_config ,
-                   const FunctorType        & functor )
-{
-  Impl::ParallelFor< FunctorType, MPVectorWorkConfig >( functor, work_config );
-}
 
 namespace Impl {
 
@@ -89,13 +82,13 @@ namespace Impl {
 //   -- laying out the threads differently to use hyperthreads across the
 //      the sacado dimension
 template< class FunctorType >
-class ParallelFor< FunctorType , MPVectorWorkConfig , Threads > {
+class ParallelFor< FunctorType , MPVectorWorkConfig< Threads > > {
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig & work_config )
+               const MPVectorWorkConfig< Threads > & work_config )
   {
     typedef Kokkos::RangePolicy< Threads > Policy ;
-    ParallelFor< FunctorType , Policy , Threads >( functor , Policy( 0, work_config.range ) );
+    ParallelFor< FunctorType , Policy >( functor , Policy( 0, work_config.range ) );
   }
 };
 #endif
@@ -110,13 +103,13 @@ public:
 //   -- laying out the threads differently to use hyperthreads across the
 //      the sacado dimension
 template< class FunctorType >
-class ParallelFor< FunctorType , MPVectorWorkConfig , OpenMP > {
+class ParallelFor< FunctorType , MPVectorWorkConfig< OpenMP > > {
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig & work_config )
+               const MPVectorWorkConfig< OpenMP > & work_config )
   {
     typedef Kokkos::RangePolicy< OpenMP > Policy ;
-    ParallelFor< FunctorType , Policy , OpenMP >( functor , Policy( 0, work_config.range ) );
+    ParallelFor< FunctorType , Policy >( functor , Policy( 0, work_config.range ) );
   }
 };
 #endif
@@ -130,13 +123,13 @@ public:
 //   -- laying out the threads differently to use hyperthreads across the
 //      the sacado dimension
 template< class FunctorType >
-class ParallelFor< FunctorType , MPVectorWorkConfig , Serial > {
+class ParallelFor< FunctorType , MPVectorWorkConfig< Serial > > {
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig & work_config )
+               const MPVectorWorkConfig< Serial > & work_config )
   {
     typedef Kokkos::RangePolicy< Serial > Policy ;
-    ParallelFor< FunctorType , Policy , Serial >( functor , Policy( 0, work_config.range ) );
+    ParallelFor< FunctorType , Policy >( functor , Policy( 0, work_config.range ) );
   }
 };
 
@@ -145,7 +138,7 @@ public:
 // Specialization of ParallelFor<> for MPVectorWorkConfig on Cuda
 // Here we use threadIdx.x for each entry in the specified team-size
 template< class FunctorType >
-class ParallelFor< FunctorType , MPVectorWorkConfig , Cuda > {
+class ParallelFor< FunctorType , MPVectorWorkConfig< Cuda > > {
 public:
 
   const FunctorType m_functor ;
@@ -165,7 +158,7 @@ public:
   }
 
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig & work_config )
+               const MPVectorWorkConfig< Cuda > & work_config )
     : m_functor( functor ) , m_work( work_config.range )
   {
     // To do:  query number of registers used by functor and adjust

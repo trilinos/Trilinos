@@ -101,6 +101,7 @@ namespace { // (anonymous)
     const Scalar ZERO = STS::zero ();
     const Scalar ONE = STS::one ();
     const Scalar FIVE = static_cast<Scalar> (5.0);
+    const bool extraDebug = false; // for extra-verbose output
     int lclSuccess = 0;
     int gblSuccess = 0;
 
@@ -147,6 +148,7 @@ namespace { // (anonymous)
     if (myRank == 0) {
       cerr << "The matrix is now the identity matrix.  Make sure that mat-vec works" << endl;
     }
+    comm->barrier ();
     {
       vec_type x (matrix->getDomainMap ());
       x.putScalar (ONE);
@@ -163,19 +165,29 @@ namespace { // (anonymous)
         const MT expectedNorm1 = static_cast<MT> (y.getGlobalLength ());
         const MT actualNorm1 = y.norm1 ();
         TEST_EQUALITY( actualNorm1, expectedNorm1 );
-        if (actualNorm1 != expectedNorm1 && myRank == 0) {
-          cerr << "  expectedNorm1: " << expectedNorm1
-               << ", actualNorm1: " << actualNorm1 << endl;
+
+        std::ostringstream os;
+        os << "  Proc " << myRank << ": ";
+        if (actualNorm1 != expectedNorm1) {
+          os << "INCORRECT: {expectedNorm1: " << expectedNorm1
+             << ", actualNorm1: " << actualNorm1 << "}" << endl;
+        } else {
+          os << "Correct" << endl;
         }
+        cerr << os.str ();
       }
     }
 
     if (myRank == 0) {
       cerr << "Call resumeFill on the matrix" << endl;
     }
-
     matrix->resumeFill ();
+    comm->barrier ();
+    if (myRank == 0) {
+      cerr << "Got through resumeFill on the matrix" << endl;
+    }
     TEST_ASSERT( ! matrix->isFillComplete () );
+
     // Make sure that all processes got this far.
     lclSuccess = success ? 1 : 0;
     gblSuccess = 0;
@@ -189,7 +201,7 @@ namespace { // (anonymous)
         "and test the result before calling fillComplete" << endl;
     }
     Teuchos::Array<LO> indout (1, 0);
-    Teuchos::Array<Scalar> valout(1, FIVE);
+    Teuchos::Array<Scalar> valout (1, FIVE);
 
     // Every process should have a local row index 0.
     TEST_ASSERT( map->isNodeLocalElement (0) );
@@ -255,6 +267,10 @@ namespace { // (anonymous)
       cerr << "Call fillComplete on matrix for the second time" << endl;
     }
     matrix->fillComplete ();
+    comm->barrier ();
+    if (myRank == 0) {
+      cerr << "Got through fillComplete on matrix for the second time" << endl;
+    }
     TEST_ASSERT( matrix->isFillComplete () );
 
     // Make sure that all processes got this far.
@@ -288,7 +304,7 @@ namespace { // (anonymous)
     }
 
     // Extract and print the diagonal entries of the matrix.
-    {
+    if (extraDebug) {
       if (myRank == 0) {
         cerr << "Diagonal entries of the matrix:" << endl;
       }
@@ -300,7 +316,7 @@ namespace { // (anonymous)
     }
 
     // Print the sparse matrix itself.
-    {
+    if (extraDebug) {
       if (myRank == 0) {
         cerr << "The sparse matrix itself:" << endl;
       }
@@ -311,8 +327,7 @@ namespace { // (anonymous)
     RCP<vec_type> vec = rcp (new vec_type (map));
     vec->putScalar (ONE);
     if (myRank == 0) {
-      cerr << "Test that vec->putScalar(ONE) filled vec with ones, "
-        "using the 2-norm" << endl;
+      cerr << "Test that vec->putScalar(ONE) filled vec with ones:" << endl;
     }
     comm->barrier ();
     {
@@ -320,26 +335,34 @@ namespace { // (anonymous)
       const MT expectedNorm2 = STM::squareroot (N);
       const MT actualNorm2 = vec->norm2 ();
       TEST_EQUALITY( actualNorm2, expectedNorm2 );
-      if (actualNorm2 != expectedNorm2 && myRank == 0) {
-        cerr << "  expectedNorm2: " << expectedNorm2
-             << ", actualNorm2: " << actualNorm2 << endl;
+
+      std::ostringstream os;
+      os << "  Proc " << myRank << ": ";
+      if (actualNorm2 != expectedNorm2) {
+        os << "2-norm INCORRECT: {expectedNorm2: " << expectedNorm2
+           << ", actualNorm2: " << actualNorm2 << "}" << endl;
+      } else {
+        os << "2-norm Correct" << endl;
       }
+      cerr << os.str ();
     }
 
-    if (myRank == 0) {
-      cerr << "Test that vec->putScalar(ONE) filled vec with ones, "
-        "using the 1-norm" << endl;
-    }
     comm->barrier ();
     {
       const MT N = static_cast<MT> (vec->getGlobalLength ());
       const MT expectedNorm1 = N;
       const MT actualNorm1 = vec->norm1 ();
       TEST_EQUALITY( actualNorm1, expectedNorm1 );
-      if (actualNorm1 != expectedNorm1 && myRank == 0) {
-        cerr << "  expectedNorm1: " << expectedNorm1
-             << ", actualNorm1: " << actualNorm1 << endl;
+
+      std::ostringstream os;
+      os << "  Proc " << myRank << ": ";
+      if (actualNorm1 != expectedNorm1) {
+        os << "1-norm INCORRECT: {expectedNorm1: " << expectedNorm1
+             << ", actualNorm1: " << actualNorm1 << "}" << endl;
+      } else {
+        os << "1-norm Correct" << endl;
       }
+      cerr << os.str ();
     }
 
     RCP<const map_type> rangeMap = matrix->getRangeMap ();
@@ -348,34 +371,43 @@ namespace { // (anonymous)
     vec_sol->putScalar (ZERO);
 
     if (myRank == 0) {
-      cerr << "Test that vec_sol->putScalar(ZERO) filled vec with zeros, "
-        "using the 2-norm" << endl;
+      cerr << "Test that vec_sol->putScalar(ZERO) filled vec with zeros:"
+           << endl;
     }
     comm->barrier ();
     {
       const MT expectedNorm2 = STM::zero ();
       const MT actualNorm2 = vec_sol->norm2 ();
       TEST_EQUALITY( actualNorm2, expectedNorm2 );
-      if (actualNorm2 != expectedNorm2 && myRank == 0) {
-        cerr << "  expectedNorm2: " << expectedNorm2
-             << ", actualNorm2: " << actualNorm2 << endl;
+
+      std::ostringstream os;
+      os << "  Proc " << myRank << ": ";
+      if (actualNorm2 != expectedNorm2) {
+        os << "2-norm INCORRECT: {expectedNorm2: " << expectedNorm2
+           << ", actualNorm2: " << actualNorm2 << "}" << endl;
+      } else {
+        os << "2-norm Correct" << endl;
       }
+      cerr << os.str ();
     }
 
-    if (myRank == 0) {
-      cerr << "Test that vec_sol->putScalar(ZERO) filled vec with zeros, "
-        "using the 1-norm" << endl;
-    }
     comm->barrier ();
     {
       const MT expectedNorm1 = STM::zero ();
       const MT actualNorm1 = vec_sol->norm1 ();
       TEST_EQUALITY( actualNorm1, expectedNorm1 );
-      if (actualNorm1 != expectedNorm1 && myRank == 0) {
-        cerr << "  expectedNorm1: " << expectedNorm1
-             << ", actualNorm1: " << actualNorm1 << endl;
+
+      std::ostringstream os;
+      os << "  Proc " << myRank << ": ";
+      if (actualNorm1 != expectedNorm1) {
+        os << "1-norm INCORRECT: {expectedNorm1: " << expectedNorm1
+             << ", actualNorm1: " << actualNorm1 << "}" << endl;
+      } else {
+        os << "1-norm Correct" << endl;
       }
+      cerr << os.str ();
     }
+    comm->barrier ();
 
     // Compute vec_sol := matrix*vec.  The result _should_ be a vector
     // of ones everywhere, except for the entry at local index zero
@@ -390,7 +422,7 @@ namespace { // (anonymous)
     // entry on each process, which should be 5.  Test this using the
     // 1-norm (to avoid rounding error issues with square root).
     if (myRank == 0) {
-      cerr << "Test the 1-norm of vec_sol" << endl;
+      cerr << "Test the 1-norm of vec_sol:" << endl;
     }
     comm->barrier ();
     {
@@ -405,20 +437,26 @@ namespace { // (anonymous)
 
       const MT actualNorm1 = vec_sol->norm1 ();
       TEST_EQUALITY( actualNorm1, expectedNorm1 );
-      if (actualNorm1 != expectedNorm1 && myRank == 0) {
-        cerr << "  expectedNorm1: " << expectedNorm1
-             << ", actualNorm1: " << actualNorm1 << endl;
+
+      std::ostringstream os;
+      os << "  Proc " << myRank << ": ";
+      if (actualNorm1 != expectedNorm1) {
+        os << "INCORRECT: {expectedNorm1: " << expectedNorm1
+           << ", actualNorm1: " << actualNorm1 << "}" << endl;
+      } else {
+        os << "  Correct" << endl;
       }
+      cerr << os.str ();
     }
 
     if (myRank == 0) {
-      cerr << "Test the 2-norm of vec_sol" << endl;
+      cerr << "Test the 2-norm of vec_sol:" << endl;
     }
     comm->barrier ();
     {
       MT lclExpectedNorm2 = STS::magnitude (FIVE) * STS::magnitude (FIVE);
       const size_type numLcl = vec_sol->getLocalLength ();
-      for (size_type k = 2; k < numLcl; ++k) {
+      for (size_type k = 1; k < numLcl; ++k) {
         lclExpectedNorm2 += STS::magnitude (ONE) * STS::magnitude (ONE);
       }
       MT expectedNorm2 = STM::zero ();
@@ -428,10 +466,16 @@ namespace { // (anonymous)
 
       const MT actualNorm2 = vec_sol->norm2 ();
       TEST_EQUALITY( actualNorm2, expectedNorm2 );
-      if (actualNorm2 != expectedNorm2 && myRank == 0) {
-        cerr << "  expectedNorm2: " << expectedNorm2
-             << ", actualNorm2: " << actualNorm2 << endl;
+
+      std::ostringstream os;
+      os << "  Proc " << myRank << ": ";
+      if (actualNorm2 != expectedNorm2) {
+        os << "INCORRECT: {expectedNorm2: " << expectedNorm2
+           << ", actualNorm2: " << actualNorm2 << "}" << endl;
+      } else {
+        os << "Correct" << endl;
       }
+      cerr << os.str ();
     }
 
     if (myRank == 0) {
@@ -445,8 +489,8 @@ namespace { // (anonymous)
 
       // Create the const view.
       Teuchos::ArrayRCP<const Scalar> outData = vec_sol->getData (0);
-      TEST_ASSERT( outData.size () == rangeMap->getNodeNumElements () );
-      if (outData.size () == rangeMap->getNodeNumElements () &&
+      TEST_ASSERT( static_cast<size_t> (outData.size ()) == rangeMap->getNodeNumElements () );
+      if (static_cast<size_t> (outData.size ()) == rangeMap->getNodeNumElements () &&
           outData.size () > static_cast<size_type> (0)) {
         TEST_EQUALITY( outData[0], FIVE );
         if (outData[0] != FIVE) {
@@ -458,7 +502,7 @@ namespace { // (anonymous)
       }
       if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
         bool allOnes = true;
-        for (size_type k = 1; k < rangeMap->getNodeNumElements (); ++k) {
+        for (size_t k = 1; k < rangeMap->getNodeNumElements (); ++k) {
           if (outData[k] != ONE) {
             allOnes = false;
           }
@@ -470,14 +514,14 @@ namespace { // (anonymous)
       outData = Teuchos::null;
       // Create the nonconst view.
       Teuchos::ArrayRCP<Scalar> outDataNonConst = vec_sol->getDataNonConst (0);
-      TEST_ASSERT( outDataNonConst.size () == rangeMap->getNodeNumElements () );
-      if (outDataNonConst.size () == rangeMap->getNodeNumElements () &&
+      TEST_ASSERT( static_cast<size_t> (outDataNonConst.size ()) == rangeMap->getNodeNumElements () );
+      if (static_cast<size_t> (outDataNonConst.size ()) == rangeMap->getNodeNumElements () &&
           outDataNonConst.size () > static_cast<size_type> (0)) {
         TEST_EQUALITY( outDataNonConst[0], FIVE );
       }
       if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
         bool allOnes = true;
-        for (size_type k = 1; k < rangeMap->getNodeNumElements (); ++k) {
+        for (size_t k = 1; k < rangeMap->getNodeNumElements (); ++k) {
           if (outDataNonConst[k] != ONE) {
             allOnes = false;
           }
@@ -504,7 +548,7 @@ namespace { // (anonymous)
       vectestData = Teuchos::null; // as the semantics require
 
       if (myRank == 0) {
-        cerr << "  Test the expected answer vector's 1-norm" << endl;
+        cerr << "Test the expected answer vector's 1-norm:" << endl;
       }
       comm->barrier ();
       {
@@ -518,10 +562,16 @@ namespace { // (anonymous)
                             outArg (expectedNorm1));
         const MT actualNorm1 = vectest->norm1 ();
         TEST_EQUALITY( actualNorm1, expectedNorm1 );
-        if (actualNorm1 != expectedNorm1 && myRank == 0) {
-          cerr << "    expectedNorm1: " << expectedNorm1
-               << ", actualNorm1: " << actualNorm1 << endl;
+
+        std::ostringstream os;
+        os << "  Proc " << myRank << ": ";
+        if (actualNorm1 != expectedNorm1) {
+          os << "INCORRECT: {expectedNorm1: " << expectedNorm1
+             << ", actualNorm1: " << actualNorm1 << "}" << endl;
+        } else {
+          os << "Correct" << endl;
         }
+        cerr << os.str ();
       }
     }
 
@@ -529,17 +579,23 @@ namespace { // (anonymous)
     vec_sol->update (-ONE, *vectest, ONE);
 
     if (myRank == 0) {
-      cerr << "Test the solution error's 1-norm" << endl;
+      cerr << "Test the solution error's 1-norm:" << endl;
     }
     comm->barrier ();
     {
       const MT expectedNorm1 = STM::zero ();
       const MT actualNorm1 = vec_sol->norm1 ();
       TEST_EQUALITY( actualNorm1, expectedNorm1 );
-      if (actualNorm1 != expectedNorm1 && myRank == 0) {
-        cerr << "  expectedNorm1: " << expectedNorm1
-             << ", actualNorm1: " << actualNorm1 << endl;
+
+      std::ostringstream os;
+      os << "  Proc " << myRank << ": ";
+      if (actualNorm1 != expectedNorm1) {
+        os << "INCORRECT: {expectedNorm1: " << expectedNorm1
+           << ", actualNorm1: " << actualNorm1 << "}" << endl;
+      } else {
+        os << "Correct" << endl;
       }
+      cerr << os.str ();
     }
 
     // Make sure that all processes got this far.
@@ -550,7 +606,8 @@ namespace { // (anonymous)
     TEST_EQUALITY_CONST( gblSuccess, 1 );
 
     if (myRank == 0) {
-      cerr << "All done!" << endl;
+      cerr << "All done!  Test " << (gblSuccess ? "succeeded" : "FAILED") << "."
+           << endl;
     }
   }
 

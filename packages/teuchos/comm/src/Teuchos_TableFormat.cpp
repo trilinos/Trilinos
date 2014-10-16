@@ -39,6 +39,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include <iostream>
 
 #include "Teuchos_TableFormat.hpp"
 #include "Teuchos_Assert.hpp"
@@ -87,13 +88,13 @@ int TableFormat::computeRequiredColumnWidth(
   ) const
 {
   int rtn = name.length();
-  
+
   for (int i=0; i<column.numRows(); i++)
   {
     int x = column.entry(i)->toString().length();
     rtn = std::max(rtn, x);
   }
-  
+
   return rtn + columnSpacing_;
 }
 
@@ -103,9 +104,10 @@ void TableFormat::writeRow(
   const Array<RCP<TableEntry> >& entries
   ) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(entries.size() != columnWidths_.size() 
+  TEUCHOS_TEST_FOR_EXCEPT(entries.size() != columnWidths_.size()
     && columnWidths_.size() != 0);
 
+  std::ios::fmtflags f( out.flags() );
   for (Array<RCP<TableEntry> >::size_type i=0; i<entries.size(); i++)
   {
     int cw = defaultColumnWidth();
@@ -114,6 +116,7 @@ void TableFormat::writeRow(
     out << std::left << std::setw(cw) << entries[i]->toString();
   }
   out << std::endl;
+  out.flags(f);
 }
 
 
@@ -128,7 +131,7 @@ void TableFormat::writeRow(
   {
     entries[i] = columns[i].entry(rowIndex);
   }
-  
+
   writeRow(out, entries);
 }
 
@@ -140,6 +143,7 @@ void TableFormat::writeWholeTable(
   const Array<TableColumn>& columns
   ) const
 {
+  std::ios::fmtflags f(out.flags());
 
   /* compute the total width */
   int pgWidth = 0;
@@ -150,7 +154,7 @@ void TableFormat::writeWholeTable(
     pgWidth += cw;
   }
   setPageWidth(std::max(pageWidth_, pgWidth));
-  
+
   /* write the header */
   out << thickline() << std::endl;
   out << std::endl;
@@ -174,18 +178,20 @@ void TableFormat::writeWholeTable(
   {
     TEUCHOS_ASSERT_EQUALITY(columns[i].numRows(), numRows);
   }
-  
+
   /* write the table data */
   for (int i=0; i<numRows; i++)
   {
     if (i % lineInterval_ == 0)
-      out << std::left << thinline() << std::endl;   
+      out << std::left << thinline() << std::endl;
     writeRow(out, i, columns);
   }
-  
+
   /* write the footer */
   out << thickline() << std::endl;
 
+  // Restore flags
+  out.flags(f);
 }
 
 

@@ -45,7 +45,7 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <stdint.h>
 
 #include <iomanip>
@@ -58,13 +58,13 @@ protected:
   static void SetUpTestCase()
   {
     std::cout << std::setprecision(5) << std::scientific;
-    Kokkos::Cuda::host_mirror_device_type::initialize();
+    Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
   }
   static void TearDownTestCase()
   {
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
   }
 };
 
@@ -82,13 +82,14 @@ extern void cuda_test_failed_insert(  uint32_t num_nodes );
 extern void cuda_test_deep_copy(  uint32_t num_nodes );
 extern void cuda_test_vector_combinations(unsigned int size);
 extern void cuda_test_dualview_combinations(unsigned int size);
+extern void cuda_test_segmented_view(unsigned int size);
 
 extern void cuda_test_bitset();
 
-TEST_F( cuda, bitset )
+/*TEST_F( cuda, bitset )
 {
   cuda_test_bitset();
-}
+}*/
 
 #define CUDA_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
   TEST_F( cuda, UnorderedMap_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
@@ -124,6 +125,11 @@ TEST_F( cuda, bitset )
       cuda_test_dualview_combinations(size);                     \
   }
 
+#define CUDA_SEGMENTEDVIEW_TEST( size )                             \
+  TEST_F( cuda, segmentedview_##size##x) {       \
+      cuda_test_segmented_view(size);                     \
+  }
+
 CUDA_DUALVIEW_COMBINE_TEST( 10 )
 CUDA_VECTOR_COMBINE_TEST( 10 )
 CUDA_VECTOR_COMBINE_TEST( 3057 )
@@ -133,6 +139,7 @@ CUDA_INSERT_TEST(close,               100000, 90000, 100, 500)
 CUDA_INSERT_TEST(far,                 100000, 90000, 100, 500)
 CUDA_DEEP_COPY( 10000, 1 )
 CUDA_FAILED_INSERT_TEST( 10000, 1000 )
+CUDA_SEGMENTEDVIEW_TEST( 200 )
 
 
 #undef CUDA_INSERT_TEST
@@ -141,5 +148,6 @@ CUDA_FAILED_INSERT_TEST( 10000, 1000 )
 #undef CUDA_DEEP_COPY
 #undef CUDA_VECTOR_COMBINE_TEST
 #undef CUDA_DUALVIEW_COMBINE_TEST
+#undef CUDA_SEGMENTEDVIEW_TEST
 #endif
 }

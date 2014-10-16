@@ -112,8 +112,8 @@ static string objectives[] = {
 };
 
 
-typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tMatrix_t;
-typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
+typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tMatrix_t;
+typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> vectorAdapter_t;
 typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t,tMVector_t> matrixAdapter_t;
 
@@ -128,7 +128,7 @@ int znumobj(void *data, int *ierr)
   return vec->getLocalLength();
 }
 
-template <typename MV, typename scalar_t>
+template <typename MV, typename zscalar_t>
 void zobjlist(void *data, int ngid, int nlid, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
               int nwgts, float *wgts, int *ierr)
 {
@@ -140,7 +140,7 @@ void zobjlist(void *data, int ngid, int nlid, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR 
     lids[i] = i;
   }
   for (int w = 0; w < nwgts; w++) {
-    ArrayRCP<const scalar_t> wvec = vec->getData(w);
+    ArrayRCP<const zscalar_t> wvec = vec->getData(w);
     for (int i = 0; i < n; i++)
       wgts[i*nwgts+w] = wvec[i];
   }
@@ -154,7 +154,7 @@ int znumgeom(void *data, int *ierr)
   return cvec->getNumVectors();
 }
 
-template <typename MV, typename scalar_t>
+template <typename MV, typename zscalar_t>
 void zgeom(void *data, int ngid, int nlid, int nobj, 
           ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
           int ndim, double *coords, int *ierr)
@@ -162,7 +162,7 @@ void zgeom(void *data, int ngid, int nlid, int nobj,
   *ierr = ZOLTAN_OK;
   MV *vec = (MV *) data;
   for (int d = 0; d < ndim; d++) {
-    ArrayRCP<const scalar_t> cvec = vec->getData(d);
+    ArrayRCP<const zscalar_t> cvec = vec->getData(d);
     for (int i = 0; i < nobj; i++) {
       coords[lids[i]*ndim+d] = cvec[lids[i]];
     }
@@ -357,11 +357,11 @@ int runRCB(
 
   zz.Set_Num_Obj_Fn(znumobj<tMVector_t>, (void *) coords.getRawPtr());
   if (nWeights)
-    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,scalar_t>, (void *) weights.getRawPtr());
+    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,zscalar_t>, (void *) weights.getRawPtr());
   else
-    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,scalar_t>, (void *) coords.getRawPtr());
+    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,zscalar_t>, (void *) coords.getRawPtr());
   zz.Set_Num_Geom_Fn(znumgeom<tMVector_t>, (void *) coords.getRawPtr());
-  zz.Set_Geom_Multi_Fn(zgeom<tMVector_t,scalar_t>, (void *) coords.getRawPtr());
+  zz.Set_Geom_Multi_Fn(zgeom<tMVector_t,zscalar_t>, (void *) coords.getRawPtr());
 
   int changes, ngid, nlid;
   int numd, nump;

@@ -48,10 +48,7 @@
 #include <TPI.h>
 
 #ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-#  include "KokkosCore_config.h"
-#  ifdef KOKKOS_HAVE_PTHREAD
-#    include "Kokkos_Threads.hpp"
-#  endif
+#  include "Kokkos_Core.hpp"
 #endif
 
 
@@ -200,9 +197,19 @@ namespace KokkosClassic {
     int curNumThreads_;
   };
 
+#ifdef _MSC_VER
+#pragma warning(push)
+// destructor could not be generated because a base class destructor is inaccessible
+#pragma warning(disable : 4624)
+#endif
+
   template <> class ArrayOfViewsHelper<TPINode> :
     public ArrayOfViewsHelperTrivialImpl<TPINode>
   {};
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 } // namespace KokkosClassic
 

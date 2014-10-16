@@ -27,7 +27,7 @@
 // @HEADER
 
 // Include files
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 #include "swigpyrun.h"
 
 // Backward compatibility for python < 2.5
@@ -57,22 +57,38 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
     if (value == Py_True) plist.set(name,true );
     else                  plist.set(name,false);
   }
+
   // Integer values
   else if (PyInt_Check(value))
   {
     plist.set(name, (int)PyInt_AsLong(value));
   }
+
   // Floating point values
   else if (PyFloat_Check(value))
   {
     plist.set(name, PyFloat_AsDouble(value));
   }
+
   // String values
   else if (PyString_Check(value))
   {
     plist.set(name, std::string(PyString_AsString(value)));
   }
-  // Dictionary values
+
+  // None object not allowed: this is a python type not usable by
+  // Trilinos solver packages, so we reserve it for the
+  // getPythonParameter() function to indicate that the requested
+  // parameter does not exist in the given Teuchos::ParameterList.
+  // For logic reasons, this check must come before the check for
+  // Teuchos::ParameterList
+  else if (value == Py_None)
+  {
+    return false;
+  }
+
+  // Dictionary values.  This must come before the check for Python
+  // sequences, because the Python ditionary is a sequence.
   else if (PyDict_Check(value))
   {  
     // Convert the python dictionary to a Teuchos::ParameterList
@@ -81,57 +97,6 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
     // Store the Teuchos::ParameterList
     plist.set(name,*sublist);
     delete sublist;
-  }
-  // NumPy arrays and Python sequences
-  else if (PyArray_Check(value) || PySequence_Check(value))
-  {
-    PyObject * pyArray =
-      PyArray_CheckFromAny(value,
-                           NULL,
-                           1,
-                           1,
-                           NPY_ARRAY_DEFAULT | NPY_ARRAY_NOTSWAPPED,
-                           NULL);
-    if (!pyArray) return false;
-    if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_INT)
-    {
-      Teuchos::Array< int > tArray;
-      CopyNumPyToTeuchos(pyArray, tArray);
-      plist.set(name, tArray);
-    }
-    else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_LONG)
-    {
-      Teuchos::Array< long > tArray;
-      CopyNumPyToTeuchos(pyArray, tArray);
-      plist.set(name, tArray);
-    }
-    else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_FLOAT)
-    {
-      Teuchos::Array< float > tArray;
-      CopyNumPyToTeuchos(pyArray, tArray);
-      plist.set(name, tArray);
-    }
-    else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_DOUBLE)
-    {
-      Teuchos::Array< double > tArray;
-      CopyNumPyToTeuchos(pyArray, tArray);
-      plist.set(name, tArray);
-    }
-    else
-    {
-      // Unsupported data type
-      if (pyArray != value) Py_DECREF(pyArray);
-      return false;
-    }
-  }
-
-  // None object not allowed: this is a python type not usable by
-  // Trilinos solver packages, so we reserve it for the
-  // getPythonParameter() function to indicate that the requested
-  // parameter does not exist in the given Teuchos::ParameterList
-  else if (value == Py_None)
-  {
-    return false;
   }
 
   // Teuchos::ParameterList values
@@ -153,6 +118,49 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
       Teuchos::RCP< Teuchos::ParameterList > * smartarg =
 	reinterpret_cast< Teuchos::RCP< Teuchos::ParameterList > * >(argp);
       if (smartarg) plist.set(name, *(smartarg->get()));
+    }
+  }
+
+  // NumPy arrays and non-dictionary Python sequences
+  else if (PyArray_Check(value) || PySequence_Check(value))
+  {
+    PyObject * pyArray =
+      PyArray_CheckFromAny(value,
+                           NULL,
+                           1,
+                           1,
+                           NPY_ARRAY_DEFAULT | NPY_ARRAY_NOTSWAPPED,
+                           NULL);
+    if (!pyArray) return false;
+    if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_INT)
+    {
+      Teuchos::Array< int > tArray;
+      copyNumPyToTeuchosArray(pyArray, tArray);
+      plist.set(name, tArray);
+    }
+    else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_LONG)
+    {
+      Teuchos::Array< long > tArray;
+      copyNumPyToTeuchosArray(pyArray, tArray);
+      plist.set(name, tArray);
+    }
+    else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_FLOAT)
+    {
+      Teuchos::Array< float > tArray;
+      copyNumPyToTeuchosArray(pyArray, tArray);
+      plist.set(name, tArray);
+    }
+    else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_DOUBLE)
+    {
+      Teuchos::Array< double > tArray;
+      copyNumPyToTeuchosArray(pyArray, tArray);
+      plist.set(name, tArray);
+    }
+    else
+    {
+      // Unsupported data type
+      if (pyArray != value) Py_DECREF(pyArray);
+      return false;
     }
   }
 
@@ -227,7 +235,7 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
     {
       Teuchos::Array< int > tArray =
         Teuchos::any_cast< Teuchos::Array< int > >(entry->getAny(false));
-      return CopyTeuchosToNumPy(tArray, NPY_INT);
+      return copyTeuchosArrayToNumPy(tArray);
     }
     catch(Teuchos::bad_any_cast &e)
     {
@@ -235,7 +243,7 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
       {
         Teuchos::Array< long > tArray =
           Teuchos::any_cast< Teuchos::Array< long > >(entry->getAny(false));
-        return CopyTeuchosToNumPy(tArray, NPY_LONG);
+        return copyTeuchosArrayToNumPy(tArray);
       }
       catch(Teuchos::bad_any_cast &e)
       {
@@ -243,7 +251,7 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
         {
           Teuchos::Array< float > tArray =
             Teuchos::any_cast< Teuchos::Array< float > >(entry->getAny(false));
-          return CopyTeuchosToNumPy(tArray, NPY_FLOAT);
+          return copyTeuchosArrayToNumPy(tArray);
         }
         catch(Teuchos::bad_any_cast &e)
         {
@@ -251,7 +259,7 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
           {
             Teuchos::Array< double > tArray =
               Teuchos::any_cast< Teuchos::Array< double > >(entry->getAny(false));
-            return CopyTeuchosToNumPy(tArray, NPY_DOUBLE);
+            return copyTeuchosArrayToNumPy(tArray);
           }
           catch(Teuchos::bad_any_cast &e)
           {

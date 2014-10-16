@@ -27,7 +27,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # Package-specific configuration options
@@ -53,6 +52,9 @@ ENDIF(NOX_ENABLE_EpetraExt)
 
 IF(TPL_ENABLE_MPI)
   SET(HAVE_MPI ON)
+  IF(Mpi4Py_FOUND)
+    SET(HAVE_MPI4PY ON)
+  ENDIF(Mpi4Py_FOUND)
 ENDIF(TPL_ENABLE_MPI)
 
 TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)
@@ -62,18 +64,25 @@ TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)
 # to the pytrilinos library and PyTrilinos extension modules
 SET(EXTRA_LINK_ARGS "${CMAKE_SHARED_LINKER_FLAGS}")
 IF(APPLE)
-  IF((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+  IF((CMAKE_CXX_COMPILER_ID MATCHES "GNU"  ) OR
+     (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
     SET(EXTRA_LINK_ARGS "${EXTRA_LINK_ARGS} -undefined dynamic_lookup")
   ENDIF()
 ENDIF(APPLE)
 
 #
 # Add the current binary and source directories, the python include
-# path, and the NumPy include path to the include directories
+# path, the NumPy include path, and the Mpi4Py include path to the
+# include directories
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
 INCLUDE_DIRECTORIES(${NumPy_INCLUDE_DIR})
+IF(TPL_ENABLE_MPI)
+  IF(Mpi4Py_FOUND)
+    INCLUDE_DIRECTORIES(${Mpi4Py_INCLUDE_DIR})
+  ENDIF(Mpi4Py_FOUND)
+ENDIF(TPL_ENABLE_MPI)
 
 #
 # Copy the pyfragments.swg file to the build directory
@@ -91,11 +100,11 @@ SET(HEADERS ${HEADERS}
 #
 # Core PyTrilinos headers and sources
 LIST(APPEND HEADERS
-  numpy_include.h
-  PyTrilinos_NumPyImporter.h
-  PyTrilinos_PythonException.h
-  PyTrilinos_Util.h
-  PyTrilinos_FILEstream.h
+  numpy_include.hpp
+  PyTrilinos_NumPyImporter.hpp
+  PyTrilinos_PythonException.hpp
+  PyTrilinos_Util.hpp
+  PyTrilinos_FILEstream.hpp
   PyTrilinos_DAP.hpp
   )
 
@@ -112,7 +121,7 @@ LIST(APPEND SOURCES
 IF(PyTrilinos_ENABLE_Teuchos)
 
   LIST(APPEND HEADERS
-    PyTrilinos_Teuchos_Util.h
+    PyTrilinos_Teuchos_Util.hpp
     )
 
   LIST(APPEND SOURCES
@@ -126,16 +135,16 @@ ENDIF(PyTrilinos_ENABLE_Teuchos)
 IF(PyTrilinos_ENABLE_Epetra)
 
   LIST(APPEND HEADERS
-    Epetra_NumPyFEVector.h
-    Epetra_NumPyIntSerialDenseMatrix.h
-    Epetra_NumPyIntSerialDenseVector.h
-    Epetra_NumPyIntVector.h
-    Epetra_NumPyMultiVector.h
-    Epetra_NumPySerialDenseMatrix.h
-    Epetra_NumPySerialSymDenseMatrix.h
-    Epetra_NumPySerialDenseVector.h
-    Epetra_NumPyVector.h
-    PyTrilinos_Epetra_Util.h
+    Epetra_NumPyFEVector.hpp
+    Epetra_NumPyIntSerialDenseMatrix.hpp
+    Epetra_NumPyIntSerialDenseVector.hpp
+    Epetra_NumPyIntVector.hpp
+    Epetra_NumPyMultiVector.hpp
+    Epetra_NumPySerialDenseMatrix.hpp
+    Epetra_NumPySerialSymDenseMatrix.hpp
+    Epetra_NumPySerialDenseVector.hpp
+    Epetra_NumPyVector.hpp
+    PyTrilinos_Epetra_Util.hpp
     )
 
   LIST(APPEND SOURCES
@@ -158,7 +167,7 @@ ENDIF(PyTrilinos_ENABLE_Epetra)
 IF(PyTrilinos_ENABLE_EpetraExt)
 
   LIST(APPEND HEADERS
-    PyTrilinos_EpetraExt_Util.h
+    PyTrilinos_EpetraExt_Util.hpp
     )
 
   LIST(APPEND SOURCES
@@ -172,7 +181,7 @@ ENDIF(PyTrilinos_ENABLE_EpetraExt)
 IF(PyTrilinos_ENABLE_ML)
 
   LIST(APPEND HEADERS
-    PyTrilinos_ML_Util.h
+    PyTrilinos_ML_Util.hpp
     )
 
 ENDIF(PyTrilinos_ENABLE_ML)
@@ -221,7 +230,7 @@ SET_TARGET_PROPERTIES(pytrilinos
 # Define the PyTrilinos swig setup
 SET(CMAKE_SWIG_FLAGS "")
 GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
-  ${CMAKE_CURRENT_SOURCE_DIR}/../doc/Doxygen ABSOLUTE
+  ${CMAKE_CURRENT_BINARY_DIR}/../doc/Doxygen ABSOLUTE
   )
 LIST(APPEND CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
 LIST(APPEND CMAKE_SWIG_FLAGS -noproxydel)
@@ -270,8 +279,11 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   SET_SOURCE_FILES_PROPERTIES(${MODULE}.i PROPERTIES
     CPLUSPLUS ON
     )
+
   # Determine the swig module output directory, name and unique target name
   SWIG_MODULE_GET_OUTDIR_AND_MODULE(${MODULE}.i MODULE_OUTDIR MODULE_NAME)
+
+  # Define the target for this module
   SET(PyTrilinos_TARGET_NAME ${MODULE_NODOT})
   SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
     python
@@ -280,27 +292,29 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
     "${MODULE_NAME}")
   SET_PROPERTY(TARGET ${PyTrilinos_TARGET_NAME} PROPERTY NO_SONAME 1)
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} pytrilinos)
+
   # Add the header file to the list of additional "make clean" files
   LIST(APPEND ADDITIONAL_CLEAN_FILES "${MODULE}PYTHON_wrap.h")
+
   #
   # Choosing the Trilinos libraries to link against, the python module
   # to byte-compile and the installation rules requires a little bit
   # of logic.
   #
-  # PyTrilinos.NOX.NestedEpetra
-  IF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/NestedEpetra")
+  # PyTrilinos.NOX.Epetra
+  IF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
     SET(TRILINOS_LIBS ${NOXEPETRA_LIBRARIES})
     ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
-      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.py')"
-      COMMENT "Byte compiling NOX/NestedEpetra/${MODULE_NAME}.py"
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/Epetra/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling NOX/Epetra/${MODULE_NAME}.py"
       VERBATIM)
     INSTALL(FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.py
-      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.pyc
-      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/NestedEpetra)
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
-      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/NestedEpetra)
-    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/NestedEpetra/${MODULE_NAME}.pyc")
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc")
   #
   # PyTrilinos.NOX
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX")
@@ -362,20 +376,20 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
       DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/TurningPoint)
     LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/LOCA/TurningPoint/${MODULE_NAME}.pyc")
   #
-  # PyTrilinos.LOCA.NestedEpetra
-  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/LOCA/NestedEpetra")
+  # PyTrilinos.LOCA.Epetra
+  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/LOCA/Epetra")
     SET(TRILINOS_LIBS ${LOCAEPETRA_LIBRARIES})
     ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
-      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/LOCA/NestedEpetra/${MODULE_NAME}.py')"
-      COMMENT "Byte compiling LOCA/NestedEpetra/${MODULE_NAME}.py"
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/LOCA/Epetra/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling LOCA/Epetra/${MODULE_NAME}.py"
       VERBATIM)
     INSTALL(FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/NestedEpetra/${MODULE_NAME}.py
-      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/NestedEpetra/${MODULE_NAME}.pyc
-      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/NestedEpetra)
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/Epetra/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/Epetra/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/Epetra)
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
-      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/NestedEpetra)
-    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/LOCA/NestedEpetra/${MODULE_NAME}.pyc")
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA/Epetra)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/LOCA/Epetra/${MODULE_NAME}.pyc")
   #
   # PyTrilinos.LOCA
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/LOCA")
@@ -421,13 +435,13 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
       DESTINATION ${PyTrilinos_INSTALL_DIR})
     LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/${MODULE}.pyc")
-  ENDIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/NestedEpetra")
+  ENDIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
   #
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} ${TRILINOS_LIBS})
   SET_TARGET_PROPERTIES(${PyTrilinos_TARGET_NAME} PROPERTIES
     LINK_FLAGS "${EXTRA_LINK_ARGS}"
     )
-ENDFOREACH(MODULE ${PyTrilinos_MODULES})
+ENDFOREACH(MODULE)
 
 #
 # Add the additional "make clean" files

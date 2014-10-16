@@ -48,7 +48,7 @@
 #include <typeinfo>
 
 // This will run on the respective device in parallel.
-// The used device is Impl::DefaultDeviceType (Cuda, OpenMP, Threads, or Serial)
+// The used device is Kokkos::DefaultExecutionSpace (Cuda, OpenMP, Threads, or Serial)
 struct hello_world {
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& i) const {
@@ -57,14 +57,14 @@ struct hello_world {
 };
 
 int main() {
-  // initialize DefaultDeviceType (and potentially its host_mirror_device_type)
+  // initialize Kokkos::DefaultExecutionSpace (and potentially its HostSpace::execution_space)
   Kokkos::initialize();
-  printf("Hello World running on %s\n",typeid(Kokkos::Impl::DefaultDeviceType).name());
+  printf("Hello World running on %s\n",typeid(Kokkos::DefaultExecutionSpace).name());
 
   // run functor with 15 iterations
   Kokkos::parallel_for(15, hello_world() );
   
-  // finalize DefaultDeviceType (and potentially its host_mirror_device_type)
+  // finalize Kokkos::DefaultExecutionSpace (and potentially its HostSpace::execution_space)
   Kokkos::finalize();
 }
 

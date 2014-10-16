@@ -1,0 +1,21 @@
+   mesh
+   brick
+    numx 2 initial radius 10.
+      xblock 1 2. interval 12
+      xblock 2 2. interval 12
+    numy 2
+      yblock 1 2. interval 12
+      yblock 2 2. interval 12
+    end
+   set assign
+$      block nodeset, jlo, 1 1
+$      block sideset, jlo, 1 1
+    end
+
+   topology modification
+    suppress block, 1
+    suppress block, 4
+    end
+
+  end
+

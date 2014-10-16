@@ -54,9 +54,11 @@
 namespace Xpetra {
 
   // factory class
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = MapExtractor<>::scalar_type,
+            class LocalOrdinal  = typename MapExtractor<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename MapExtractor<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node          = typename MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class MapExtractorFactory {
-    typedef void LocalMatOps;
 #undef XPETRA_MAPEXTRACTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -65,9 +67,15 @@ namespace Xpetra {
     MapExtractorFactory() {}
 
   public:
-    //! Constructor specifying the maps (and indirectly the used LINALG library (Tpetra vs Epetra))
-    static Teuchos::RCP<MapExtractor> Build(const Teuchos::RCP<const Map>& fullmap, const std::vector<Teuchos::RCP<const Map> >& maps) {
-      return rcp(new MapExtractor(fullmap, maps));
+    /// \brief Constructor specifying the Maps.
+    ///
+    /// The Maps indirectly specify the linear algebra library to use
+    /// (Tpetra or Epetra).
+    static Teuchos::RCP<MapExtractor>
+    Build (const Teuchos::RCP<const Map>& fullmap,
+           const std::vector<Teuchos::RCP<const Map> >& maps)
+    {
+      return rcp (new MapExtractor (fullmap, maps));
     }
   };
 

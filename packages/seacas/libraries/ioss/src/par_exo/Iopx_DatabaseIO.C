@@ -94,8 +94,6 @@
 #ifdef HAVE_MPI    
 #include "Ioss_FileInfo.h"
 #undef MPICPP
-#include <zoltan_cpp.h>
-
 #endif
 
 namespace Iopx {
@@ -170,8 +168,8 @@ namespace {
   {
     static int par_mode = 0;
     static int par_mode_default = EX_PNETCDF;  // Default...
-    // static int par_mode_default = EX_MPIIO; 
-    // static int par_mode_default = EX_MPIPOSIX;
+    //    static int par_mode_default = EX_MPIIO; 
+    //    static int par_mode_default = EX_MPIPOSIX;
 
     if (par_mode == 0) {
       if (properties.exists("PARALLEL_IO_MODE")) {
@@ -887,6 +885,9 @@ namespace Iopx {
 
     // See if any coordinate frames exist on mesh.  If so, define them on region.
     add_coordinate_frames(get_file_pointer(), this_region);
+
+    this_region->property_add(Ioss::Property("global_node_count",    (int64_t)decomp->globalNodeCount));
+    this_region->property_add(Ioss::Property("global_element_count", (int64_t)decomp->globalElementCount));
 
     this_region->property_add(Ioss::Property(std::string("title"), info.title));
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"),

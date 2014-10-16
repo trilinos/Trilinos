@@ -31,12 +31,12 @@
 // such as _POSIX_C_SOURCE.
 // Local includes
 #include "PyTrilinos_config.h"
-#include "PyTrilinos_Util.h"
-#include "PyTrilinos_Epetra_Util.h"
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_Util.hpp"
+#include "PyTrilinos_Epetra_Util.hpp"
+#include "PyTrilinos_PythonException.hpp"
 #include "swigpyrun.h"
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyMultiVector.hpp"
+#include "Epetra_NumPyVector.hpp"
 
 // System includes
 #include <algorithm>

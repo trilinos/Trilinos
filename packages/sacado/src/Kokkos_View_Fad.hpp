@@ -36,7 +36,7 @@
 
 #include "Sacado_Traits.hpp"
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Error.hpp"
 #if defined(__CUDACC__) && defined(__CUDA_ARCH__)
 #include "Cuda/Kokkos_Cuda_abort.hpp"
@@ -180,7 +180,7 @@ public:
 
   typedef View< typename traits::data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 void > HostMirror ;
 
   //------------------------------------

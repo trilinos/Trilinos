@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-# Get the directory containing the file currently being processed. 
+# Get the directory containing the file currently being processed.
 #
 # This is equivalent to getting the value of CMAKE_CURRENT_LIST_DIR in
 # cmake versions greater than 2.8.4, but we provide this wrapper macro

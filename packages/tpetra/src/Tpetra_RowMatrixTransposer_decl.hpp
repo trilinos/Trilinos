@@ -1,13 +1,13 @@
 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,64 +35,57 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
 #ifndef TPETRA_ROWMATRIXTRANSPOSER_DECL_HPP
 #define TPETRA_ROWMATRIXTRANSPOSER_DECL_HPP
-#include <Teuchos_RCP.hpp>
-#include <Kokkos_DefaultKernels.hpp>
-#include <Kokkos_DefaultNode.hpp>
-#include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_ConfigDefs.hpp"
 
-//! Tpetra_CrsMatrixTransposer: A class for transposing an Tpetra_CrsMatrix object.
+/// \file Tpetra_RowMatrixTransposer_decl.hpp
+///
+/// Declaration of Tpetra::RowMatrixTransposer.
+
+#include <Tpetra_CrsMatrix.hpp>
 
 namespace Tpetra {
 
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-class Map;
-
-/*! \class RowMatrixTransposer
-    \brief Construct and (optionally) redistribute the transpose of a CrsMatrix.
-
-    This class is based on the EpetraExt version.  It first transposes the matrix to an
-    intermediate version with overlapping row map.  That matrix is then converted to
-    a final version whose row map is "unique", i.e., a row is wholly owned by one process.
-
-    This class takes the same template parameters (with the same
-    default values) as CrsMatrix.
-*/
-template <class Scalar, 
-	  class LocalOrdinal=int, 
-	  class GlobalOrdinal=LocalOrdinal, 
-	  class Node=KokkosClassic::DefaultNode::DefaultNodeType, 
-	  class SpMatOps=typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
+/// \class RowMatrixTransposer
+/// \brief Construct and (optionally) redistribute the explicitly
+///   stored transpose of a CrsMatrix.
+///
+/// This class is based on the EpetraExt version.  It first transposes
+/// the matrix to an intermediate version with overlapping row map.
+/// That matrix is then converted to a final version whose row map is
+/// "unique", i.e., a row is wholly owned by one process.
+///
+/// This class takes the same template parameters (with the same
+/// default values) as CrsMatrix.
+template <class Scalar = CrsMatrix<>::scalar_type,
+          class LocalOrdinal = typename CrsMatrix<Scalar>::local_ordinal_type,
+          class GlobalOrdinal = typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
+          class Node = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
 class RowMatrixTransposer {
 public:
   //! @name Typedefs
-  //@{ 
+  //@{
   typedef Scalar scalar_type;
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node node_type;
-  // These match the two typedefs in CrsMatrix.
-  typedef SpMatOps mat_vec_type;
-  typedef SpMatOps mat_solve_type;
 
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_matrix_type;
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
 
   //@}
-  //! @name Constructor and destructor
-  //@{ 
+  //! @name Constructors
+  //@{
 
   //! Constructor that takes the matrix to transpose.
   RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix);
 
-  /// Constructor that takes the matrix to transpose.
+  /// \brief Constructor that takes the matrix to transpose (DEPRECATED).
   ///
   /// This method is DEPRECATED, because it is not memory safe.  (If
   /// origMatrix falls out of scope, its reference will be
@@ -101,26 +94,23 @@ public:
   TEUCHOS_DEPRECATED RowMatrixTransposer (const crs_matrix_type& origMatrix);
 
   //@}
-  //! @name Forward transformation methods
-  //@{ 
+  //! @name Methods for computing the explicit transpose.
+  //@{
 
-  /// Compute and return the transpose of the matrix given to the constructor.
-  ///
-  ///
+  //! Compute and return the transpose of the matrix given to the constructor.
   Teuchos::RCP<crs_matrix_type> createTranspose();
 
-  /// Compute and return the transpose of the matrix given to the constructor.
-  /// In this call, we (potentially) leave the matrix with an overlapping row map.
-  /// This is a perfectly valid matrix, but won't work correctly with some routines
-  /// in Ifpack or Muelu.
-  /// 
-  /// WARNING: This routine leaves overlapping rows.  Unless you're sure that's OK,
-  /// call createTranspose() instead.
+  /// \brief Compute and return the transpose of the matrix given to the constructor.
   ///
-  Teuchos::RCP<crs_matrix_type> createTransposeLocal();
+  /// In this call, we (potentially) leave the matrix with an
+  /// overlapping row Map.  This is a perfectly valid matrix, but
+  /// won't work correctly with some routines in Ifpack or Muelu.
+  ///
+  /// \warning This routine leaves overlapping rows.  Unless you're
+  /// sure that's OK, call createTranspose() instead.
+  Teuchos::RCP<crs_matrix_type> createTransposeLocal ();
 
-        
-private: 
+private:
   //! The original matrix to be transposed.
   Teuchos::RCP<const crs_matrix_type> origMatrix_;
 };

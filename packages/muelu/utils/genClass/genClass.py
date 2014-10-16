@@ -63,9 +63,9 @@ def main(argv=None):
     BuildName        = "Build(Level &fineLevel, Level &coarseLevel)"
 
   if templateType == "SC-LO-GO-NO-LMO":
-    templateDefinition = "template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>"
-    templateDefShort   = "template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>"
-    templateParameters = "<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>"
+    templateDefinition = "template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>"
+    templateDefShort   = "template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>"
+    templateParameters = "<Scalar, LocalOrdinal, GlobalOrdinal, Node>"
   elif templateType == "SC-LO-GO":
     templateDefinition = "template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>"
     templateDefShort   = "template <class Scalar, class LocalOrdinal, class GlobalOrdinal>"
@@ -75,9 +75,9 @@ def main(argv=None):
     templateDefShort   = "template <class Scalar, class LocalOrdinal>"
     templateParameters = "<Scalar, LocalOrdinal>"
   elif templateType == "LO-GO-NO-LMO":
-    templateDefinition = "template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>"
-    templateDefShort   = "template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>"
-    templateParameters = "<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>"
+    templateDefinition = "template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>"
+    templateDefShort   = "template <class LocalOrdinal, class GlobalOrdinal, class Node>"
+    templateParameters = "<LocalOrdinal, GlobalOrdinal, Node>"
   else:
     print "unknown templateType. Must be either LO-GO-NO-LMO, SC-LO-GO-NO-LMO, SC-LO-GO or SC-LO"
     exit(-1)

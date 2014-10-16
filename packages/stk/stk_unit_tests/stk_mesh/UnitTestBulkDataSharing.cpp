@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <gtest/gtest.h>
 #include <vector>                         // for vector
@@ -78,6 +103,8 @@ TEST(UnitTestingOfBulkData, node_sharing)
   const unsigned spatial_dim = 2;
   std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
   MetaData meta_data(spatial_dim, entity_rank_names);
+  stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
+  stk::mesh::Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
   meta_data.commit();
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -91,19 +118,17 @@ TEST(UnitTestingOfBulkData, node_sharing)
 
   mesh.modification_begin();
 
-  PartVector emptyParts;  // Just add everything to the universal part
-
   // Create the single element and four nodes for this processor.  Nodes
   // on the boundary with other processors will be shared.
   //
-  Entity createdElem = mesh.declare_entity(stk::topology::ELEM_RANK, connInfo[p_rank][0], emptyParts);
+  Entity createdElem = mesh.declare_entity(stk::topology::ELEM_RANK, connInfo[p_rank][0], elem_part);
 
   // Create all 4 nodes for this element
   EntityVector createdNodes;
-  createdNodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, connInfo[p_rank][1], emptyParts) );
-  createdNodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, connInfo[p_rank][2], emptyParts) );
-  createdNodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, connInfo[p_rank][3], emptyParts) );
-  createdNodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, connInfo[p_rank][4], emptyParts) );
+  createdNodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, connInfo[p_rank][1], node_part) );
+  createdNodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, connInfo[p_rank][2], node_part) );
+  createdNodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, connInfo[p_rank][3], node_part) );
+  createdNodes.push_back( mesh.declare_entity(stk::topology::NODE_RANK, connInfo[p_rank][4], node_part) );
 
   // Add relations to nodes
   mesh.declare_relation( createdElem, createdNodes[0], 0 );

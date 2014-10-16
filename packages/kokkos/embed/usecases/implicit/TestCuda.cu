@@ -1,5 +1,5 @@
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <ParallelComm.hpp>
 #include <TestImplicit.hpp>

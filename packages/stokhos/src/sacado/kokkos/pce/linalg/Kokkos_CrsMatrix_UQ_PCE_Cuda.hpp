@@ -53,8 +53,7 @@
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsProductTensor.hpp"
 
-#include "Kokkos_Cuda.hpp"
-#include "Cuda/Kokkos_Cuda_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Cuda_DeviceProp.hpp"
 //#include "Stokhos_Cuda_WarpShuffle.hpp"

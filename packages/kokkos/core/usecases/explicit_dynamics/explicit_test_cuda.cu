@@ -49,11 +49,9 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_MDArray.hpp>
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 
-#include <impl/Kokkos_Cuda_macros.hpp>
 #include <explicit_dynamics_app.hpp>
-#include <impl/Kokkos_Clear_macros.hpp>
 
 __global__ void dummy_kernel(){}
 

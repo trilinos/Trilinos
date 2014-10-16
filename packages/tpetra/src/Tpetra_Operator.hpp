@@ -42,7 +42,7 @@
 #ifndef TPETRA_OPERATOR_HPP
 #define TPETRA_OPERATOR_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_MultiVector_decl.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -54,24 +54,45 @@ namespace Tpetra {
   // declarations.
   //
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Map;
+  // template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  // class Map;
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MultiVector;
+  // template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  // class MultiVector;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  //! \brief Abstract interface for linear operators accepting Tpetra MultiVector objects.
-  /*!  This class is templated on \c Scalar, \c LocalOrdinal, \c GlobalOrdinal and \c Node.
-     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal
-     type, if omitted, defaults to the \c LocalOrdinal type. Node is by default of type KokkosClassic::DefaultNode::DefaultNodeType.
-
-     A Operator object applies a linear operator to a MultiVector, storing the result in another MultiVector. The scalar type \c Scalar
-     of the Operator specifies the scalar field of the input and output MultiVector objects, not that of the underlying linear operator. Operator is an
-     abstract base class, and interfaces exist for this interface from numerous other classes, including sparse matrices, direct solvers, iterative solvers,
-     and preconditioners.
-   */
-  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  /// \class Operator
+  /// \brief Abstract interface for operators (e.g., matrices and
+  ///   preconditioners).
+  ///
+  /// \tparam Scalar The type of the entries of the input and output
+  ///   MultiVector objects.  See the documentation of MultiVector for
+  ///   details and requirements.
+  /// \tparam LocalOrdinal The type of local indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam GlobalOrdinal The type of global indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam Node The Kokkos Node type.  See the documentation of Map
+  ///   for requirements.
+  ///
+  /// An Operator takes a MultiVector as input, and fills a given
+  /// output MultiVector with the result.  The input and output
+  /// MultiVector objects must have the same number of columns
+  /// (vectors).  However, they need not have the same numbers of rows
+  /// or the same parallel distributions.  The <i>domain</i> of the
+  /// Operator describes the parallel distribution of valid input
+  /// MultiVector objects, and the <i>range</i> of the Operator
+  /// describes the parallel distribution of valid output MultiVector
+  /// objects.
+  ///
+  /// Operator is just an interface, not an implementation.  Many
+  /// different classes implement this interface, including sparse
+  /// matrices, direct solvers, iterative solvers, and
+  /// preconditioners.
+  template<class Scalar = MultiVector<>::scalar_type,
+           class LocalOrdinal = typename MultiVector<Scalar>::local_ordinal_type,
+           class GlobalOrdinal = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
+           class Node = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class Operator : virtual public Teuchos::Describable {
   public:
     /** \name Typedefs that give access to the template parameters. */
@@ -107,10 +128,10 @@ namespace Tpetra {
      */
     virtual void
     apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-	   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-	   Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	   Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-	   Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
+           MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+           Teuchos::ETransp mode = Teuchos::NO_TRANS,
+           Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
 
     /// \brief Whether this operator supports applying the transpose or conjugate transpose.
     ///

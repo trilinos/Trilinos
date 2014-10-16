@@ -46,8 +46,7 @@
 
 #include <stdlib.h>
 
-#include <KokkosCore_config.h>
-#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <algorithm>
 
@@ -91,25 +90,31 @@ struct GrowArrayFunctor {
 
   typedef Device device_type ;
 
-  enum { SHIFT = sizeof(int) == 8 ? 6 : 5 };
+  enum { SHIFT = sizeof(int) == 8 ? 6 : 5 }; // 8 or 4 byte int
   enum { MASK  = ( 1 << SHIFT ) - 1 };
 
   const Kokkos::View<int*,Device>  m_search_flags ; // bit flags for values to append
   const Kokkos::View<int*,Device>  m_search_array ; // array to append values
   const Kokkos::View<int,Device>   m_search_count ; // offset
+  const int m_search_total ;
   const int m_search_team_chunk ;
 
   GrowArrayFunctor( int array_length , int search_length , int print = 1 )
-    : m_search_flags( "flags" , ( search_length + MASK ) & ~unsigned(MASK) )
+    : m_search_flags( "flags" , ( search_length + MASK ) >> SHIFT ) // One bit per search entry
     , m_search_array( "array" , array_length )
     , m_search_count( "count" )
+    , m_search_total( search_length )
     , m_search_team_chunk( 2048 )
     {
       typename Kokkos::View<int,Device>::HostMirror  count = Kokkos::create_mirror_view( m_search_count );
       typename Kokkos::View<int*,Device>::HostMirror flags = Kokkos::create_mirror_view( m_search_flags );
 
+      // Set at most 'array_length' random bits over the search length.
       for ( int i = 0 ; i < array_length ; ++i ) {
+        // 'lrand48()' generates random number between [0..2^31]
+        // index = ( lrand48() * search_length ) / ( 2^31 )
         const long int index = ( lrand48() * search_length ) >> 31 ;
+        // set the bit within the flags:
         flags( index >> SHIFT ) |= ( 1 << ( index & MASK ) );
       }
 
@@ -145,9 +150,11 @@ struct GrowArrayFunctor {
           if ( print ) std::cerr << "result( " << i << " : " << index << " )";
           ++result_error_count ;
         }
-        flags( entry ) &= ~bit ;
+        flags( entry ) &= ~bit ; // Clear that verified bit
       }
+
       for ( int i = 0 ; i < int(flags.dimension_0()) ; ++i ) {
+        // If any uncleared bits then an error
         if ( flags(i) ) {
           if ( print ) std::cerr << "flags( " << i << " : " << flags(i) << " )" ;
           ++flags_error_count ;
@@ -168,8 +175,8 @@ struct GrowArrayFunctor {
     {
       // 64 or 32 bit integer:
 
-      const int j = index >> SHIFT ;
-      const int k = 1 << ( index & MASK );
+      const int j = index >> SHIFT ; // which integer flag
+      const int k = 1 << ( index & MASK ); // which bit in that integer
       const int s = ( j < int(m_search_flags.dimension_0()) ) && ( 0 != ( m_search_flags(j) & k ) );
 
       return s ;
@@ -178,38 +185,47 @@ struct GrowArrayFunctor {
   typedef typename Kokkos::TeamPolicy<Device>::member_type team_member ;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const team_member & dev ) const
+  void operator()( const team_member & member ) const
     {
       enum { LOCAL_BUFFER_LENGTH = 16 };
 
       int local_buffer[ LOCAL_BUFFER_LENGTH ] ;
       int local_count = 0 ;
 
-      // Each team searches 'm_search_team_chunk' indices
+      // Each team searches 'm_search_team_chunk' indices.
+      // The threads of a team must iterate together because all
+      // threads in the team must call 'team_scan' to prevent deadlock in the team.
 
-            int search_team_begin = dev.league_rank() * m_search_team_chunk ;
+            int search_team_begin = member.league_rank() * m_search_team_chunk ;
       const int search_team_end   = search_team_begin + m_search_team_chunk ;
 
       int k = 0 ;
 
       while ( search_team_begin < search_team_end ) {
 
-        const int search_index = search_team_begin + dev.team_rank();
+        // This iteration searches [ search_team_begin .. search_team_begin + member.team_size() ]
+        const int thread_search_index = search_team_begin + member.team_rank();
 
-        // If this thread should include the search index.
-        if ( flag_is_set(search_index) ) {
-          local_buffer[ local_count ] = search_index ;
+        // If this thread's search index is in the range
+        // and the flag is set, push into this thread's local buffer.
+        if ( thread_search_index < m_search_total && flag_is_set(thread_search_index) ) {
+          local_buffer[ local_count ] = thread_search_index ;
           ++local_count ;
         }
 
-        search_team_begin += dev.team_size(); // Striding team by team size
+        // Move the team's search range forward
+        search_team_begin += member.team_size(); // Striding team by team size
+
+        // Count number of times a thread's buffer might have grown:
         ++k ;
 
         // Write buffer if end of search or a thread might have filled its buffer.
-        if ( k == LOCAL_BUFFER_LENGTH || ! ( search_team_begin < search_team_end ) ) {
+        if ( k == LOCAL_BUFFER_LENGTH /* A thread in my team might have filled its buffer */ ||
+             ! ( search_team_begin < search_team_end ) /* Team is at the end of its search */ ) {
 
           // Team's exclusive scan of threads' contributions, with global offset.
-          const int team_offset = dev.team_scan( local_count , & *m_search_count );
+          // This thread writes its buffer into [ team_offset .. team_offset + local_count )
+          const int team_offset = member.team_scan( local_count , & *m_search_count );
 
           // Copy locally buffered entries into global array:
           for ( int i = 0 ; i < local_count ; ++i ) {

@@ -46,8 +46,7 @@
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
 // For computing DeviceConfig
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 //
 // Tests various View< Sacado::MP::Vector<...>,...> operations work

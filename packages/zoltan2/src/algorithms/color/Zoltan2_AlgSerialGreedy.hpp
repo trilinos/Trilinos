@@ -65,14 +65,16 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     // Class member variables
     RCP<GraphModel<typename Adapter::base_adapter_t> > model_;
     RCP<Teuchos::ParameterList> pl_;
+    RCP<Environment> env_;
     RCP<Teuchos::Comm<int> > comm_;
   
   public:
   AlgSerialGreedy(
     const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
     const RCP<Teuchos::ParameterList> &pl,
+    const RCP<Environment> &env,
     const RCP<Teuchos::Comm<int> > &comm
-  ) : model_(model), pl_(pl), comm_(comm)
+  ) : model_(model), pl_(pl), env_(env), comm_(comm)
   {
   }
 
@@ -89,7 +91,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     ArrayView<const lno_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts; // Not used; needed by getLocalEdgeList
   
-    const lno_t nVtx = model_->getLocalNumVertices();
+    const lno_t nVtx = model_->getLocalNumVertices(); // Assume (0,nvtx-1)
     model_->getLocalEdgeList(edgeIds, offsets, wgts); // Don't need wgts
   
 #if 0
@@ -108,7 +110,9 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     }
 
     // Let colorCrsGraph do the real work.
+    env_->timerStart(MACRO_TIMERS, "Coloring algorithm");
     colorCrsGraph(nVtx, edgeIds, offsets, colors);
+    env_->timerStop(MACRO_TIMERS, "Coloring algorithm");
     return;
   }
   
@@ -129,13 +133,16 @@ class AlgSerialGreedy : public Algorithm<Adapter>
         maxDegree = offsets[i+1]-offsets[i];
     }
 
-    // First-fit greedy coloring.
+    // Greedy coloring.
     // Use natural order for now. 
     // TODO: Support better orderings (e.g., Smallest-Last)
     int maxColor = 0;
  
     // array of size #colors: forbidden[i]=v means color[v]=i so i is forbidden
     Teuchos::Array<int> forbidden(maxDegree+2, 0);
+      
+    // LeastUsed: need array of size #colors
+    Teuchos::Array<lno_t> numVerticesWithColor(maxDegree+2, 0);
 
     for (lno_t i=0; i<nVtx; i++){
       //std::cout << "Debug: i= " << i << std::endl;
@@ -148,17 +155,84 @@ class AlgSerialGreedy : public Algorithm<Adapter>
           forbidden[colors[nbor]] = v;
         }
       }
-      // Pick first (smallest) available color > 0
-      for (int c=1; c < forbidden.length(); c++){
-        if (forbidden[c] != v){ 
-          colors[v] = c;
-          break;
+
+      // Pick color for v
+      std::string colorChoice = "FirstFit"; // TODO make parameter!
+
+      // Keep colors[v] if possible, otherwise find valid color.
+      if ((colors[v]==0) || ((colors[v]>0) && forbidden[colors[v]] == v)){
+
+        if (colorChoice.compare("FirstFit")){
+          // Pick first (smallest) available color > 0
+          for (int c=1; c <= maxColor+1; c++){
+            if (forbidden[c] != v){ 
+              colors[v] = c;
+              break;
+            }
+          }
         }
-      }
-      if (colors[v]==0) colors[v]=1; // Corner case for first vertex
-      //std::cout << "Debug: colors[i]= " << colors[v] << std::endl;
-      if (colors[v] > maxColor){
-        maxColor = colors[v];
+        else if (colorChoice.compare("Random")){
+          // Pick random available color.
+          // This is slow, please consider RandomFast instead.
+          int numAvail = 0;
+          Teuchos::Array<int> avail(maxColor+1);
+          for (int c=1; c < maxColor+1; c++){
+            if (forbidden[c] != v){ 
+              avail[numAvail++] = c;
+            }
+          }
+          if (numAvail==0)
+            colors[v] = maxColor+1;
+          else
+            colors[v] = avail[rand()%numAvail];
+        }
+        else if (colorChoice.compare("RandomFast")){
+          // Pick random color, then find first available color after that.
+          bool foundColor = false;
+          int r = (rand() % maxColor) +1;
+          for (int c=r; c <= maxColor; c++){
+            if (forbidden[c] != v){ 
+              colors[v] = c;
+              foundColor = true;
+              break;
+            }
+          }
+          if (!foundColor){ // Look for colors in [1, r)
+            for (int c=1; c < r; c++){
+              if (forbidden[c] != v){ 
+                colors[v] = c;
+                foundColor = true;
+                break;
+              }
+            }
+          }
+          if (!foundColor) colors[v] = maxColor+1;
+        }
+        else if (colorChoice.compare("LeastUsed")){
+          // Pick least used available color.
+          // Simple linear algorithm; could maintain a priority queue but not sure any faster?
+          int leastUsedColor = 1;
+          lno_t leastUsedNumber = numVerticesWithColor[1];
+          for (int c=1; c <= maxColor; c++){
+            if (forbidden[c] != v){
+              if (numVerticesWithColor[c] < leastUsedColor){
+                leastUsedColor = c;
+                leastUsedNumber = numVerticesWithColor[c];
+              }
+            }
+          }
+          colors[v] = leastUsedColor;
+
+          // Update color counts
+          numVerticesWithColor[colors[v]]++;
+        }
+  
+        if ((v==0) && colors[v]==0) colors[v]=1; // Corner case for first vertex
+        
+        // If we used a new color, increase maxColor.
+        if (colors[v] > maxColor){
+          maxColor = colors[v];
+        }
       }
     }
   

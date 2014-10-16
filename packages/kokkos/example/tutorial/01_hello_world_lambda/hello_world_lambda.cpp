@@ -48,16 +48,16 @@
 #include <typeinfo>
 
 int main() {
-  // initialize DefaultDeviceType (and potentially its host_mirror_device_type)
+  // initialize DefaultExecutionSpace (and potentially HostSpace::execution_space)
   Kokkos::initialize();
-  printf("Hello World running on %s\n",typeid(Kokkos::Impl::DefaultDeviceType).name());
+  printf("Hello World running on %s\n",typeid(Kokkos::DefaultExecutionSpace).name());
 
-  // run lambda with 15 iterations in parallel on DefaultDeviceType
+  // run lambda with 15 iterations in parallel on DefaultExecutionSpace
   Kokkos::parallel_for(15, [=] (int i) {
     printf("HelloWorld %i\n",i);
   });
   
-  // finalize DefaultDeviceType (and potentially its host_mirror_device_type)
+  // finalize DefaultExecutionSpace (and potentially HostSpace::execution_space)
   Kokkos::finalize();
 }
 

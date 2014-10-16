@@ -138,8 +138,13 @@ namespace panzer_stk_classic {
     paramList->validateParametersAndSetDefaults(*this->getValidParameters());
 
     // add in some addtional defaults that are hard to validate externally (this is because of the "disableRecursiveValidation" calls)
+
+    if(!paramList->sublist("Initial Conditions").isType<bool>("Zero Initial Conditions"))
+      paramList->sublist("Initial Conditions").set<bool>("Zero Initial Conditions",false);
+        
     paramList->sublist("Initial Conditions").sublist("Vector File").validateParametersAndSetDefaults(
       getValidParameters()->sublist("Initial Conditions").sublist("Vector File"));
+
     this->setMyParamList(paramList);
   }
 
@@ -155,13 +160,16 @@ namespace panzer_stk_classic {
       pl->sublist("Boundary Conditions").disableRecursiveValidation();
       pl->sublist("Solution Control").disableRecursiveValidation();
       pl->set<bool>("Use Discrete Adjoint",false);
+
       pl->sublist("Mesh").disableRecursiveValidation();
+
+      pl->sublist("Initial Conditions").set<bool>("Zero Initial Conditions",false);
       pl->sublist("Initial Conditions").sublist("Transient Parameters").disableRecursiveValidation();
       pl->sublist("Initial Conditions").sublist("Vector File");
       pl->sublist("Initial Conditions").sublist("Vector File").set("File Name","");
       pl->sublist("Initial Conditions").sublist("Vector File").set<bool>("Enabled",false);
       pl->sublist("Initial Conditions").disableRecursiveValidation();
-      // pl->sublist("Output").disableRecursiveValidation();
+
       pl->sublist("Output").set("File Name","panzer.exo");
       pl->sublist("Output").set("Write to Exodus",true);
       pl->sublist("Output").sublist("Cell Average Quantities").disableRecursiveValidation();
@@ -179,6 +187,7 @@ namespace panzer_stk_classic {
 	p.set<bool>("Use DOFManager FEI",false);
 	p.set<bool>("Load Balance DOFs",false);
 	p.set<bool>("Use Tpetra",false);
+	p.set<bool>("Lump Explicit Mass",false);
 	p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
@@ -661,7 +670,13 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<panzer::LinearObjContainer> loc = linObjFactory->buildLinearObjContainer();
 
-    if(!p.sublist("Initial Conditions").sublist("Vector File").get<bool>("Enabled")) {
+    if(p.sublist("Initial Conditions").get<bool>("Zero Initial Conditions")) {
+      // zero out the x vector
+      Thyra::ModelEvaluatorBase::InArgs<double> nomValues = thyra_me->getNominalValues();
+
+      Thyra::assign(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()).ptr(),0.0); 
+    }
+    else if(!p.sublist("Initial Conditions").sublist("Vector File").get<bool>("Enabled")) {
       // read from exodus, or compute using field managers
 
       bool write_dot_files = false;
@@ -1013,8 +1028,11 @@ namespace panzer_stk_classic {
       // if you are using explicit RK, make sure to wrap the ME in an explicit model evaluator decorator
       Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > rythmos_me = thyra_me;
       const std::string stepper_type = piro_params->sublist("Rythmos").get<std::string>("Stepper Type");
-      if(stepper_type=="Explicit RK" || stepper_type=="Forward Euler")
-        rythmos_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,false)); 
+      if(stepper_type=="Explicit RK" || stepper_type=="Forward Euler") {
+        const Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
+        bool lumpExplicitMass = assembly_params.get<bool>("Lump Explicit Mass");
+        rythmos_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,lumpExplicitMass)); 
+      }
 
       piro_rythmos->initialize(piro_params, rythmos_me, rythmos_observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory));
 
@@ -1066,9 +1084,10 @@ namespace panzer_stk_classic {
     fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,bc_cm_factory,bc_factory,closure_models,lo_factory,user_data);
 
     // Print Phalanx DAGs
-    if (writeGraph)
+    if (writeGraph){
       fmb->writeVolumeGraphvizDependencyFiles(graphPrefix, physicsBlocks);
-
+      fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
+    }
     return fmb;
   }
 
@@ -1177,8 +1196,11 @@ namespace panzer_stk_classic {
       thyra_me->getNominalValues() = nomVals;
   
       // build an explicit model evaluator
-      if(is_explicit)
-        thyra_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,false)); 
+      if(is_explicit) {
+        const Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
+        bool lumpExplicitMass = assembly_params.get<bool>("Lump Explicit Mass");
+        thyra_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,lumpExplicitMass)); 
+      }
   
       return thyra_me;
     }
@@ -1498,7 +1520,6 @@ namespace panzer_stk_classic {
 
              typedef Tpetra::Map<int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> Map;
              typedef Tpetra::MultiVector<double,int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> MV;
-             typedef Tpetra::CrsMatrix<double,int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> CrsMatrix;
 
              // extract coordinate vectors and modify strat_params to include coordinate vectors
              unsigned dim = mesh->getDimension();

@@ -51,9 +51,9 @@
 #ifndef NOX_SOLVER_TRUSTREGIONBASED_H
 #define NOX_SOLVER_TRUSTREGIONBASED_H
 
-#include "NOX_Solver_Generic.H"            // base class
-#include "Teuchos_ParameterList.hpp"    // class data element
-#include "NOX_Utils.H"                    // class data element
+#include "NOX_Solver_Generic.H"	        // base class
+#include "Teuchos_ParameterList.hpp"	// class data element
+#include "NOX_Utils.H"	                // class data element
 #include "NOX_Solver_PrePostOperator.H" // class data element
 
 // Forward declaration
@@ -130,25 +130,25 @@ An iteration consists of the following steps.
           <li> If \f$\|n\|_2 < \Delta\f$, then take a Newton step by
                setting \f$d = n\f$
 
-      <li> Otherwise if \f$\|c\|_2 > \Delta\f$, then take a Cauchy
+	  <li> Otherwise if \f$\|c\|_2 > \Delta\f$, then take a Cauchy
                step by setting \f$d =
                \displaystyle\frac{\Delta}{\|c\|_2} c\f$
 
-      <li> Otherwise, take a Dog Leg step by setting
+	  <li> Otherwise, take a Dog Leg step by setting
                \f$ d = (1-\gamma) c + \gamma n \f$ where
-           \f$
-           \gamma = \displaystyle\frac
-           {-c^T a + \sqrt{ (c^Ta)^2 - (c^Tc - \Delta^2) a^Ta}}{a^Ta}
-           \f$
-           with \f$a = n-c\f$.
+	       \f$
+	       \gamma = \displaystyle\frac
+	       {-c^T a + \sqrt{ (c^Ta)^2 - (c^Tc - \Delta^2) a^Ta}}{a^Ta}
+	       \f$
+	       with \f$a = n-c\f$.
 
           </ul>
 
      <li> Set \f$x_{\rm new} = x + d\f$ and calculate \f$f_{\rm new}\f$
 
      <li> If \f$f_{\rm new} \geq f\f$, then \f$\rho = -1\f$ Otherwise
-      \f$ \rho = \displaystyle \frac {f - f_{\rm new}} {| d^T J F
-      + \frac{1}{2} (J d)^T (J d)|} \f$
+	  \f$ \rho = \displaystyle \frac {f - f_{\rm new}} {| d^T J F
+	  + \frac{1}{2} (J d)^T (J d)|} \f$
 
      </ul>
 
@@ -255,14 +255,14 @@ public:
     See reset() for description.
   */
   TrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
-           const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
-           const Teuchos::RCP<Teuchos::ParameterList>& params);
+		   const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
+		   const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~TrustRegionBased();
 
   virtual void reset(const NOX::Abstract::Vector& initialGuess,
-             const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   virtual void reset(const NOX::Abstract::Vector& initialGuess);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
@@ -344,6 +344,9 @@ protected:
   //! Minimum improvement ratio to accept step
   double minRatio;
 
+  //! Initial trust region radius
+  double initRadius;
+
   //! Minimum trust region radius
   double minRadius;
 
@@ -408,4 +411,3 @@ protected:
 } // namespace NOX
 
 #endif
-

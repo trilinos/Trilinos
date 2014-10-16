@@ -4,6 +4,11 @@ Generic TriBITS Project, Build, Test, and Install Quick Reference Guide
 
 :Author: Roscoe A. Bartlett
 :Contact: bartlett.roscoe@gmail.com
+:Date: |date|
+:Version: TriBITS Development at |date|
+
+.. |date| date::
+
 :Abstract: This document is generated from the generic template body document ``TribitsBuildQickRefBody.rst`` and provides a general project-independent quick reference on how to configure, build, test, and install a project that uses the TriBITS CMake build system.  The primary audience of this particular build of this document are TriBITS project developers themselves.  A project-specific version of this document should be created and accessed by users of a particular TriBITS-based project.
 
 .. sectnum::

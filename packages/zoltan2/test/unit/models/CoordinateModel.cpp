@@ -86,7 +86,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
   // Input data
   //////////////////////////////////////////////////////////////
 
-  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mv_t;
+  typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> mv_t;
 
   RCP<UserInputForTests> uinput;
 
@@ -114,7 +114,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
 
   TEST_FAIL_AND_EXIT(*comm, coordDim <= 3, "dim 3 at most", 1);
 
-  const scalar_t *x=NULL, *y=NULL, *z=NULL;
+  const zscalar_t *x=NULL, *y=NULL, *z=NULL;
 
   x = coords->getData(0).getRawPtr();
   if (coordDim > 1){
@@ -126,7 +126,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
   // Are these coordinates correct
 
   int nLocalIds = coords->getLocalLength();
-  ArrayView<const gno_t> idList = coords->getMap()->getNodeElementList();
+  ArrayView<const zgno_t> idList = coords->getMap()->getNodeElementList();
 
   int nGlobalIds = 0;
   if (nodeZeroHasAll){
@@ -143,11 +143,11 @@ void testCoordinateModel(std::string &fname, int nWeights,
     nGlobalIds = coords->getGlobalLength();
   }
 
-  Array<ArrayRCP<const scalar_t> > coordWeights(nWeights);
+  Array<ArrayRCP<const zscalar_t> > coordWeights(nWeights);
 
   if (nLocalIds > 0){
     for (int wdim=0; wdim < nWeights; wdim++){
-      scalar_t *w = new scalar_t [nLocalIds];
+      zscalar_t *w = new zscalar_t [nLocalIds];
       for (int i=0; i < nLocalIds; i++){
         w[i] = ((i%2) + 1) + wdim;
       }
@@ -174,7 +174,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
     }
   }
   else{
-    std::vector<const scalar_t *> values, weights;
+    std::vector<const zscalar_t *> values, weights;
     std::vector<int> valueStrides, weightStrides;  // default is 1
     values.push_back(x);
     if (y) {
@@ -203,7 +203,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
   // Create an CoordinateModel with this input
   //////////////////////////////////////////////////////////////
 
-  typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
+  typedef Zoltan2::StridedData<zlno_t, zscalar_t> input_t;
   typedef std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags_t;
   typedef Zoltan2::CoordinateModel<base_ia_t> model_t;
   modelFlags_t modelFlags;
@@ -243,7 +243,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
   if (gfail)
     printFailureCode(comm, fail);
   
-  ArrayView<const gno_t> gids;
+  ArrayView<const zgno_t> gids;
   ArrayView<input_t> xyz;
   ArrayView<input_t> wgts;
   
@@ -260,7 +260,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
   if (!fail && wgts.size() != nWeights)
     fail = 12;
 
-  const scalar_t *vals[3] = {x, y, z};
+  const zscalar_t *vals[3] = {x, y, z};
 
   for (int dim=0; !fail && dim < coordDim; dim++){
     for (int i=0; !fail && i < nLocalIds; i++){
@@ -277,7 +277,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
   }
 
   if (!fail && consecutiveIds){
-    bool inARow = Zoltan2::IdentifierTraits<gno_t>::areConsecutive(
+    bool inARow = Zoltan2::IdentifierTraits<zgno_t>::areConsecutive(
       gids.getRawPtr(), nLocalIds);
 
     if (!inARow)

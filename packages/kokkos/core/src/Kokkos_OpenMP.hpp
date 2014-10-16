@@ -46,7 +46,7 @@
 #ifndef KOKKOS_OPENMP_HPP
 #define KOKKOS_OPENMP_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
 #if defined( KOKKOS_HAVE_OPENMP ) && defined( _OPENMP )
 
@@ -55,17 +55,10 @@
 #include <cstddef>
 #include <iosfwd>
 #include <Kokkos_HostSpace.hpp>
+#include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <impl/Kokkos_Tags.hpp>
-
-/*--------------------------------------------------------------------------*/
-
-namespace Kokkos {
-namespace Impl {
-class OpenMPexec ;
-} // namespace Impl
-} // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
 
@@ -85,9 +78,9 @@ public:
   typedef OpenMP                execution_space ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
-  typedef OpenMP                scratch_memory_space ;
   typedef LayoutRight           array_layout ;
-  typedef OpenMP                host_mirror_device_type ;
+
+  typedef ScratchMemorySpace< OpenMP > scratch_memory_space ;
 
   //@}
   //------------------------------------
@@ -125,29 +118,53 @@ public:
                           unsigned use_cores_per_numa = 0 );
 
   static int is_initialized();
-
-  KOKKOS_FUNCTION static unsigned team_max();
-  KOKKOS_FUNCTION static unsigned team_recommended();
-  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id();
-  KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads();
   //@}
   //------------------------------------
-  //! \name Function for the functor device interface */
+  /** \brief  This execution space has a topological thread pool which can be queried.
+   *
+   *  All threads within a pool have a common memory space for which they are cache coherent.
+   *    depth = 0  gives the number of threads in the whole pool.
+   *    depth = 1  gives the number of threads in a NUMA region, typically sharing L3 cache.
+   *    depth = 2  gives the number of threads at the finest granularity, typically sharing L1 cache.
+   */
+  inline static int thread_pool_size( int depth = 0 );
 
-  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size ) const ;
-
-  explicit KOKKOS_INLINE_FUNCTION OpenMP( Impl::OpenMPexec & );
+  /** \brief  The rank of the executing thread in this thread pool */
+  KOKKOS_INLINE_FUNCTION static int thread_pool_rank();
 
   //------------------------------------
 
-private:
+  inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
+  inline static unsigned team_max()             { return thread_pool_size(1); }
+  inline static unsigned team_recommended()     { return thread_pool_size(2); }
 
-  Impl::OpenMPexec & m_exec ;
-
+  KOKKOS_INLINE_FUNCTION static
+  unsigned hardware_thread_id() { return thread_pool_rank(); }
 };
 
 } // namespace Kokkos
 
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::OpenMP::memory_space
+  , Kokkos::OpenMP::scratch_memory_space
+  >
+{
+  enum { value = true };
+  inline static void verify( void ) { }
+  inline static void verify( const void * ) { }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
 #include <OpenMP/Kokkos_OpenMPexec.hpp>

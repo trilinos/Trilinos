@@ -1364,8 +1364,8 @@ int build_type2_exports(const Epetra_CrsMatrix & SourceMatrix, ImportType & MyIm
   }//end main loop
 
   // Final Sort
-  int *lids = &ExportLID2[last_start];
-  Epetra_Util::Sort(true,current-last_start,&ExportGID2[last_start],0,0,1,&lids,0,0);
+  int *lids = ExportLID2.size() > (std::size_t) last_start ? &ExportLID2[last_start] : 0;
+  Epetra_Util::Sort(true,current-last_start,ExportGID2.size() > (std::size_t) last_start ? &ExportGID2[last_start] : 0,0,0,1,&lids,0,0);
   // Note: we don't need to sort the ExportPIDs since they're the same since last_start
 
   total_length2=current;
@@ -1705,8 +1705,8 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 
     std::vector<int> RecvSizes(MDistor->NumReceives()+1);
     int msg_tag=MpiComm->GetMpiTag();
-    boundary_exchange_varsize<char>(*MpiComm,MPI_CHAR,MDistor->NumSends(),MDistor->ProcsTo(),&SendSizes[0],Exports_,
-				    MDistor->NumReceives(),MDistor->ProcsFrom(),&RecvSizes[0],Imports_,SizeOfPacket,msg_tag);
+    boundary_exchange_varsize<char>(*MpiComm,MPI_CHAR,MDistor->NumSends(),MDistor->ProcsTo(),SendSizes.size() ? &SendSizes[0] : 0,Exports_,
+				    MDistor->NumReceives(),MDistor->ProcsFrom(),RecvSizes.size() ? &RecvSizes[0] : 0,Imports_,SizeOfPacket,msg_tag);
 
     // If the  source matrix doesn't have an importer, then nobody sent data belonging to me in the forward round.
     if(SourceMatrix.Importer()) {
@@ -1722,8 +1722,8 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
       ReverseRecvSizes.resize(MyDistor->NumSends()+1);
       int msg_tag=MpiComm->GetMpiTag();
 	  MPI_Datatype data_type = sizeof(int_type) == 4 ? MPI_INT : MPI_LONG_LONG;
-      boundary_exchange_varsize<int_type>(*MpiComm,data_type,MyDistor->NumReceives(),MyDistor->ProcsFrom(),&ReverseSendSizes[0],&ReverseSendBuffer[0],
-				      MyDistor->NumSends(),MyDistor->ProcsTo(),&ReverseRecvSizes[0],ReverseRecvBuffer,1,msg_tag);      
+      boundary_exchange_varsize<int_type>(*MpiComm,data_type,MyDistor->NumReceives(),MyDistor->ProcsFrom(),ReverseSendSizes.size() ? &ReverseSendSizes[0] : 0, ReverseSendBuffer.size() ? &ReverseSendBuffer[0] : 0,
+				      MyDistor->NumSends(),MyDistor->ProcsTo(),ReverseRecvSizes.size() ? &ReverseRecvSizes[0] : 0,ReverseRecvBuffer,1,msg_tag);      
     }
 #endif
   }
@@ -1797,7 +1797,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 #ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS C-4")));
 #endif
-  if(N>0) Epetra_Util::SortCrsEntries(N, &rowptr_[0], &colind_[0], &vals_[0]);
+  if(N>0) Epetra_Util::SortCrsEntries(N, &rowptr_[0], colind_.size() ? &colind_[0] : 0, vals_.size() ? &vals_[0] : 0);
 
   /********************************************/
   /**** 6) Cleanup                         ****/

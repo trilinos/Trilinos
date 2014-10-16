@@ -110,12 +110,12 @@ int main(int argc, char* argv[])
   } else {
     if (verbose) std::cout << "FAILED (" << dlapy << " != " << flapy << ")" << std::endl;
     numberFailedTests++;
-  }  
+  }
 
 #if ! (defined(__INTEL_COMPILER) && defined(_WIN32) )
-    
+
   // Check ILAENV with similarity transformation routine:  dsytrd
-  // NOTE:  Do not need to put floating point specifier [s,d,c,z] before routine name, 
+  // NOTE:  Do not need to put floating point specifier [s,d,c,z] before routine name,
   //        this is handled through templating.
   if (verbose) std::cout << "ILAENV test ... ";
   int n1 = 100;

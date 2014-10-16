@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Graph) # we need this line because this file is not on the header file List of MueLu
@@ -9,7 +8,6 @@ IF (${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Galeri)
     AggregationExample
     SOURCES AggregationExample.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra
     )
 ENDIF()
 
@@ -18,7 +16,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
       VisualizeAggregates
       SOURCES visualizeAggregates.cpp
       COMM serial mpi
-      DEPLIBS muelu xpetra
       )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(VisualizeAggregates_example_cp

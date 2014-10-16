@@ -54,7 +54,7 @@
 namespace Teuchos {
 
 
-  /** 
+  /**
    * \brief Provides std::string manipulation utilities that are not provided in the
    * standard C++ std::string class.
    */
@@ -138,7 +138,7 @@ public:
   static std::string between(const std::string& str, const std::string& begin,
     const std::string& end, std::string& front, std::string& back);
 
-  /** \brief Returns the substring between two positions. 
+  /** \brief Returns the substring between two positions.
    *
    *  For example, subString("abcdefghij", 2, 5) returns "cde". */
   static std::string subString(const std::string& str, int begin, int end);
@@ -160,10 +160,10 @@ public:
     ,const std::string       &linePrefix
     ,const std::string       &lines
     );
-	  
+	
   /** \brief Removes all the spaces in a string. */
   static std::string removeAllSpaces(std::string stringToClean);
-      
+
 };
 
 

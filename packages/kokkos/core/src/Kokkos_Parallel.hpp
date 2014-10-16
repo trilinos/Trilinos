@@ -48,7 +48,7 @@
 #define KOKKOS_PARALLEL_HPP
 
 #include <cstddef>
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_View.hpp>
 #include <Kokkos_ExecPolicy.hpp>
 #include <impl/Kokkos_Traits.hpp>
@@ -133,22 +133,14 @@ struct ReduceAdapter ;
 ///
 /// This is an implementation detail of parallel_for.  Users should
 /// skip this and go directly to the nonmember function parallel_for.
-template< class FunctorType 
-        , class ExecPolicy 
-        , class ExecSpace = typename FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
-        >
-class ParallelFor ;
+template< class FunctorType , class ExecPolicy > class ParallelFor ;
 
 /// \class ParallelReduce
 /// \brief Implementation detail of parallel_reduce.
 ///
 /// This is an implementation detail of parallel_reduce.  Users should
 /// skip this and go directly to the nonmember function parallel_reduce.
-template< class FunctorType 
-        , class ExecPolicy 
-        , class ExecSpace = typename FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
-        >
-class ParallelReduce ;
+template< class FunctorType , class ExecPolicy > class ParallelReduce ;
 
 /// \class ParallelScan
 /// \brief Implementation detail of parallel_scan.
@@ -156,11 +148,7 @@ class ParallelReduce ;
 /// This is an implementation detail of parallel_scan.  Users should
 /// skip this and go directly to the documentation of the nonmember
 /// template function Kokkos::parallel_scan.
-template< class FunctorType 
-        , class ExecPolicy 
-        , class ExecSpace = typename FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
-        >
-class ParallelScan ;
+template< class FunctorType , class ExecPolicy > class ParallelScan ;
 
 } // namespace Impl
 } // namespace Kokkos
@@ -189,7 +177,7 @@ namespace Kokkos {
  * <tt>operator()</tt> method defines the operation to parallelize,
  * over the range of integer indices <tt>iwork=[0,work_count-1]</tt>.
  * This compares to a single iteration \c iwork of a \c for loop.
- * If \c device_type is not defined DefaultDeviceType will be used.
+ * If \c device_type is not defined DefaultExecutionSpace will be used.
  */
 template< class ExecPolicy , class FunctorType >
 inline
@@ -256,7 +244,7 @@ namespace Kokkos {
  */
 template< class ExecPolicy , class FunctorType >
 inline
-void parallel_reduce( const ExecPolicy  & policy 
+void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorType & functor
                     , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0
                     )
@@ -285,7 +273,7 @@ void parallel_reduce( const size_t        work_count
                                      >::type value_type ;
 
   Kokkos::View< value_type
-              , typename execution_space::host_mirror_device_type
+              , HostSpace
               , Kokkos::MemoryUnmanaged
               >
     result_view ;
@@ -296,8 +284,8 @@ void parallel_reduce( const size_t        work_count
 // general policy and view ouput
 template< class ExecPolicy , class FunctorType , class ViewType >
 inline
-void parallel_reduce( const ExecPolicy  & policy 
-                    , const FunctorType & functor 
+void parallel_reduce( const ExecPolicy  & policy
+                    , const FunctorType & functor
                     , const ViewType    & result_view
                     , typename Impl::enable_if<
                       ( Impl::is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value
@@ -309,16 +297,18 @@ void parallel_reduce( const ExecPolicy  & policy
 // general policy and pod or array of pod output
 template< class ExecPolicy , class FunctorType >
 inline
-void parallel_reduce( const ExecPolicy  & policy 
-                    , const FunctorType & functor 
+void parallel_reduce( const ExecPolicy  & policy
+                    , const FunctorType & functor
                     , typename Impl::enable_if<
                       ( ! Impl::is_integral< ExecPolicy >::value )
                       , typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type
                       >::type result_ref )
 {
-  typedef typename
-    Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
-      execution_space ;
+  // mfh 16 Oct 2014: Commenting this out to avoid "unused typedef" warnings.
+  //
+  // typedef typename
+  //   Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
+  //     execution_space ;
 
   typedef Kokkos::Impl::ReduceAdapter< FunctorType >  Reduce ;
 
@@ -331,7 +321,7 @@ void parallel_reduce( const ExecPolicy  & policy
                                      >::type value_type ;
 
   Kokkos::View< value_type
-              , typename execution_space::host_mirror_device_type
+              , HostSpace
               , Kokkos::MemoryUnmanaged
               >
     result_view( Reduce::pointer( result_ref )
@@ -345,7 +335,7 @@ void parallel_reduce( const ExecPolicy  & policy
 template< class FunctorType , class ViewType >
 inline
 void parallel_reduce( const size_t        work_count
-                    , const FunctorType & functor 
+                    , const FunctorType & functor
                     , const ViewType    & result_view
                     , typename Impl::enable_if<( Impl::is_view<ViewType>::value )>::type * = 0 )
 {
@@ -382,13 +372,13 @@ void parallel_reduce( const size_t        work_count ,
                                      >::type value_type ;
 
   Kokkos::View< value_type
-              , typename execution_space::host_mirror_device_type
+              , HostSpace
               , Kokkos::MemoryUnmanaged
               >
     result_view( Reduce::pointer( result )
                , Reduce::value_count( functor )
                );
-  
+
   (void) Impl::ParallelReduce< FunctorType , policy >( functor , policy(0,work_count) , result_view );
 }
 
@@ -443,12 +433,12 @@ namespace Kokkos {
 /// scan will overwrite that array with [1, 3, 6, 10].
 ///
 /// \code
-/// template<class DeviceType>
+/// template<class SpaceType>
 /// class InclScanFunctor {
 /// public:
-///   typedef DeviceType device_type;
+///   typedef SpaceType device_type;
 ///   typedef int value_type;
-///   typedef typename DeviceType::size_type size_type;
+///   typedef typename SpaceType::size_type size_type;
 ///
 ///   InclScanFunctor (Kokkos::View<value_type*, device_type> x) : x_ (x) {}
 ///
@@ -477,12 +467,12 @@ namespace Kokkos {
 /// will overwrite that array with [0, 1, 3, 6].
 ///
 /// \code
-/// template<class DeviceType>
+/// template<class SpaceType>
 /// class ExclScanFunctor {
 /// public:
-///   typedef DeviceType device_type;
+///   typedef SpaceType device_type;
 ///   typedef int value_type;
-///   typedef typename DeviceType::size_type size_type;
+///   typedef typename SpaceType::size_type size_type;
 ///
 ///   ExclScanFunctor (Kokkos::View<value_type*, device_type> x) : x_ (x) {}
 ///
@@ -513,12 +503,12 @@ namespace Kokkos {
 /// array with [0, 1, 3, 6, 10].
 ///
 /// \code
-/// template<class DeviceType>
+/// template<class SpaceType>
 /// class OffsetScanFunctor {
 /// public:
-///   typedef DeviceType device_type;
+///   typedef SpaceType device_type;
 ///   typedef int value_type;
-///   typedef typename DeviceType::size_type size_type;
+///   typedef typename SpaceType::size_type size_type;
 ///
 ///   // lastIndex_ is the last valid index (zero-based) of x.
 ///   // If x has length zero, then lastIndex_ won't be used anyway.
@@ -552,8 +542,8 @@ namespace Kokkos {
 ///
 template< class ExecutionPolicy , class FunctorType >
 inline
-void parallel_scan( const ExecutionPolicy & policy 
-                  , const FunctorType     & functor 
+void parallel_scan( const ExecutionPolicy & policy
+                  , const FunctorType     & functor
                   , typename Impl::enable_if< ! Impl::is_integral< ExecutionPolicy >::value >::type * = 0
                   )
 {
@@ -604,15 +594,21 @@ struct FunctorHasFinal< FunctorType , typename enable_if< 0 < sizeof( & FunctorT
   : public true_type {};
 
 template< class FunctorType , class Enable = void >
-struct FunctorShmemSize
+struct FunctorTeamShmemSize
 {
-  static inline size_t value( const FunctorType & ) { return 0 ; }
+  static inline size_t value( const FunctorType & , int ) { return 0 ; }
 };
 
 template< class FunctorType >
-struct FunctorShmemSize< FunctorType , typename enable_if< 0 < sizeof( & FunctorType::shmem_size ) >::type >
+struct FunctorTeamShmemSize< FunctorType , typename enable_if< sizeof( & FunctorType::team_shmem_size ) >::type >
 {
-  static inline size_t value( const FunctorType & f ) { return f.shmem_size() ; }
+  static inline size_t value( const FunctorType & f , int team_size ) { return f.team_shmem_size( team_size ) ; }
+};
+
+template< class FunctorType >
+struct FunctorTeamShmemSize< FunctorType , typename enable_if< sizeof( & FunctorType::shmem_size ) >::type >
+{
+  static inline size_t value( const FunctorType & f , int team_size ) { return f.shmem_size( team_size ) ; }
 };
 
 } // namespace Impl
@@ -644,7 +640,7 @@ public:
   typedef typename ReduceAdapterFunctorOperatorArgType< function_pointer_type >::type type ;
 };
 
-#endif
+#endif /* #if defined( KOKKOS_HAVE_CXX11 ) */
 
 template< class FunctorType , class ScalarType >
 struct ReduceAdapter

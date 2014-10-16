@@ -55,7 +55,7 @@ typedef Kokkos::View<int**> idx_type;
 
 template<class Device>
 struct localsum {
-  // Define the execution space for the functor (overrides the DefaultDeviceType)
+  // Define the execution space for the functor (overrides the DefaultExecutionSpace)
   typedef Device device_type;
 
   // Get the view types on the particular device the functor is instantiated for
@@ -116,13 +116,13 @@ int main(int narg, char* arg[]) {
   // when they are accessed the first time during the parallel_for. Due to the latency of a memcpy
   // this gives lower effective bandwidth when doing a manual copy via dual views
   timer.reset();
-  Kokkos::parallel_for(size,localsum<view_type::device_type::host_mirror_device_type>(idx,dest,src));
+  Kokkos::parallel_for(size,localsum<Kokkos::HostSpace::execution_space>(idx,dest,src));
   Kokkos::fence();
   double sec1_host = timer.seconds();
 
   // No data transfers will happen now
   timer.reset();
-  Kokkos::parallel_for(size,localsum<view_type::device_type::host_mirror_device_type>(idx,dest,src));
+  Kokkos::parallel_for(size,localsum<Kokkos::HostSpace::execution_space>(idx,dest,src));
   Kokkos::fence();
   double sec2_host = timer.seconds();
 

@@ -1,16 +1,42 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_mesh_FieldParallel_hpp
 #define stk_mesh_FieldParallel_hpp
 
 #include <stk_util/stk_config.h>
 #include <stk_mesh/base/Types.hpp>      // for EntityProc
+#include <stk_mesh/base/FieldTraits.hpp>  // for FieldTraits
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
@@ -21,8 +47,6 @@
 #include <vector>                       // for vector
 
 namespace stk { namespace mesh { class Ghosting; } }
-
-#include <stk_mesh/base/FieldParallel_helpers.hpp>
 
 namespace stk {
 namespace mesh {
@@ -53,73 +77,6 @@ void copy_owned_to_shared( const BulkData& mesh,
   communicate_field_data(*mesh.ghostings()[0], fields);
 }
 
-
-/** Communicate field data among shared entities.
- * This function is a helper function for the parallel_reduce/sum/max/min functions below.
- * This function sends field-data for each shared entity to each sharing processor. When this
- * function is finished, the communicated data is in the 'sparse' CommAll object, not unpacked yet.
- * The data is then unpacked by the calling parallel_* function which also performs the
- * sum/max/min operation on the data before storing it.
- */
-void communicate_field_data(
-  const BulkData & mesh ,
-  const unsigned field_count ,
-  const FieldBase * const * fields ,
-  CommAll & sparse );
-
-/** debugging function... do we need this?
- */
-void communicate_field_data_verify_read( CommAll & );
-
-//----------------------------------------------------------------------
-/** Parallel reduction of shared entities' field data.
- *
- *  example usage:
- *    parallel_reduce( mesh , sum( field ) );
- *
- *  where the operations are: sum, max, min
- */
-template< class OpField >
-inline
-void parallel_reduce( const BulkData & mesh ,
-                      const OpField  & op )
-{
-  const FieldBase * fields[1] = { & op.field };
-
-  CommAll sparse ;
-
-  communicate_field_data( mesh, 1, fields, sparse );
-
-  op( mesh, sparse );
-
-  // For debugging:
-  // communicate_field_data_verify_read( sparse );
-}
-
-/** Parallel reduction of shared entities' field data.
- *
- *  example usage:
- *    parallel_reduce( mesh , sum( fieldA ) , max( fieldB ) );
- */
-template< class OpField1 , class OpField2 >
-inline
-void parallel_reduce( const BulkData & mesh ,
-                      const OpField1 & op1 ,
-                      const OpField2 & op2 )
-{
-  const FieldBase * fields[2] = { & op1.field , & op2.field };
-
-  CommAll sparse ;
-
-  communicate_field_data( mesh, 2, fields, sparse );
-
-  op1( mesh , sparse );
-  op2( mesh , sparse );
-
-  // For debugging:
-  // communicate_field_data_verify_read( sparse );
-}
-
 //----------------------------------------------------------------------
 
 /** Sum/Max/Min (assemble) field-data for the specified fields on shared entities such that each shared entity
@@ -131,68 +88,8 @@ void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields);
 
 
 //
-//  Parallel_Data_Exchange: General object exchange template with unknown comm plan
-//
-std::vector<int> compute_receive_list(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator);
-
-//
 //  Generalized comm plans
 //
-
-template<typename T>
-void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
-                              std::vector< std::vector<T> > &recv_lists,
-                              MPI_Comm &mpi_communicator )
-{
-  //
-  //  Determine the number of processors involved in this communication
-  //
-#if defined( STK_HAS_MPI)
-  const int msg_tag = 10242;
-  int num_procs = stk::parallel_machine_size(mpi_communicator);
-
-  //PRECONDITION((unsigned int) num_procs == send_lists.size() && (unsigned int) num_procs == recv_lists.size());
-  int class_size = sizeof(T);
-
-  //
-  //  Determine number of items each other processor will send to the current processor
-  //
-  std::vector<int> global_number_to_send(num_procs);
-  for(int iproc=0; iproc<num_procs; ++iproc) {
-    global_number_to_send[iproc] = send_lists[iproc].size();
-  }
-  std::vector<int> numToRecvFrom = compute_receive_list(global_number_to_send, mpi_communicator);
-
-  //
-  //  Send the actual messages as raw byte streams.
-  //
-  std::vector<MPI_Request> recv_handles(num_procs);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    recv_lists[iproc].resize(numToRecvFrom[iproc]);
-    if(recv_lists[iproc].size() > 0) {
-      char* recv_buffer = (char*)&recv_lists[iproc][0];
-      int recv_size = recv_lists[iproc].size()*class_size;
-      MPI_Irecv(recv_buffer, recv_size, MPI_CHAR,
-                iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
-    }
-  }
-  MPI_Barrier(mpi_communicator);
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(send_lists[iproc].size() > 0) {
-      char* send_buffer = (char*)&send_lists[iproc][0];
-      int send_size = send_lists[iproc].size()*class_size;
-      MPI_Send(send_buffer, send_size, MPI_CHAR,
-               iproc, msg_tag, mpi_communicator);
-    }
-  }
-  for(int iproc = 0; iproc < num_procs; ++iproc) {
-    if(recv_lists[iproc].size() > 0) {
-      MPI_Status status;
-      MPI_Wait( &recv_handles[iproc], &status );
-    }
-  }
-#endif
-}
 
 template<typename T>
 void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,

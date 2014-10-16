@@ -112,10 +112,10 @@ int main(int argc, char *argv[]) {
   clp.setOption("coarseSolver",&coarseSolver,"amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
 
   switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
   matrixParameters.check();
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
       gethostname(hostname, sizeof(hostname));
       LO pid = getpid();
       sprintf(buf, "Host: %s\tMPI rank: %d,\tPID: %d\n\tattach %d\n\tcontinue\n",
-              hostname, mypid, pid, pid);
+          hostname, mypid, pid, pid);
       printf("%s\n",buf);
       fflush(stdout);
       sleep(1);
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+    Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
   RCP<Matrix> Op = Pr->BuildMatrix();
   /**********************************************************************************/
   /*                                                                                */
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;
 
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
+  RCP<MueLu::Hierarchy<SC,LO,GO,NO> > H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
   Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
-                                //FIXME is implemented
+  //FIXME is implemented
 
   Finest->Set("NullSpace",nullSpace);
   H->SetLevel(Finest);
@@ -211,12 +211,12 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   /*
-  ifpackList.set("type", "Chebyshev");
-  ifpackList.set("chebyshev: degree", (int) 1);
-  ifpackList.set("chebyshev: max eigenvalue", (double) 2.0);
-  ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
-  ifpackList.set("chebyshev: zero starting solution", false);
-  */
+     ifpackList.set("type", "Chebyshev");
+     ifpackList.set("chebyshev: degree", (int) 1);
+     ifpackList.set("chebyshev: max eigenvalue", (double) 2.0);
+     ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
+     ifpackList.set("chebyshev: zero starting solution", false);
+     */
   if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
     ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
@@ -269,16 +269,16 @@ int main(int argc, char *argv[]) {
 #endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
     } else if(coarseSolver=="ifpack2") {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
-        if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
-        Teuchos::ParameterList ifpack2List;
-        ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
-        ifpack2List.set("fact: drop tolerance", 0);
-        ifpack2List.set("fact: absolute threshold", 0);
-        ifpack2List.set("fact: relative threshold", 0);
-        coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
+      if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
+      Teuchos::ParameterList ifpack2List;
+      ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
+      ifpack2List.set("fact: drop tolerance", 0);
+      ifpack2List.set("fact: absolute threshold", 0);
+      ifpack2List.set("fact: relative threshold", 0);
+      coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
 #else
-        std::cout  << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
-        return EXIT_FAILURE;
+      std::cout  << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
+      return EXIT_FAILURE;
 #endif
     } else {
       std::cout  << "Unknow coarse grid solver (try  --coarseSolver=ifpack2 or --coarseSolver=amesos2)" << std::endl;

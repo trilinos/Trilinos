@@ -47,12 +47,7 @@
 #include <utility>
 #include <iostream>
 
-#include <Kokkos_Macros.hpp>
-#include <HostExecSpace.hpp>
-
-#if defined( KOKKOS_HAVE_CUDA )
-#include <Kokkos_Cuda.hpp>
-#endif
+#include <Kokkos_Core.hpp>
 
 #include <BoxElemPart.hpp>
 #include <BoxElemFixture.hpp>
@@ -125,9 +120,9 @@ void test_fixture()
     decompose = Kokkos::Example::BoxElemPart:: DecomposeElem ; // DecomposeElem | DecomposeNode ;
 
   const unsigned global_size = 256 ;
-  const unsigned global_nx = 100 ;
-  const unsigned global_ny = 120 ;
-  const unsigned global_nz = 140 ;
+  const unsigned global_nx = 400 ;
+  const unsigned global_ny = 400 ;
+  const unsigned global_nz = 400 ;
 
   for ( unsigned my_rank = 0 ; my_rank < global_size ; ++my_rank ) {
 

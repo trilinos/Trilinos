@@ -138,7 +138,8 @@ typedef long default_gno_t;
     \li \c gno (global number) is the integral data type used by Zoltan2 to represent global indices and global counts.
  */  
 
-template <typename scalar, typename gid, typename lno, typename gno>
+template <typename scalar=double, typename gid=int,
+          typename lno=int, typename gno=int>
 class BasicUserTypes{
 };
 
@@ -199,7 +200,7 @@ struct InputTraits {
    *   user uses Ids that are not Teuchos Ordinals, such as
    *   pair<int, int> then this is different.  
    */
-  typedef default_gno_t gid_t;
+  typedef default_gno_t zgid_t;
 
   /*! \brief The data type to represent part numbers.
    */
@@ -226,7 +227,7 @@ struct InputTraits<BasicUserTypes<Scalar, GID, LNO, GNO> >
   typedef Scalar        scalar_t;
   typedef LNO lno_t;
   typedef GNO gno_t;
-  typedef GID gid_t;
+  typedef GID zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "BasicUserTypes";}
@@ -241,7 +242,7 @@ struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Scalar        scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef GlobalOrdinal gid_t;
+  typedef GlobalOrdinal zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::CrsMatrix";}
@@ -256,7 +257,7 @@ struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Scalar        scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef GlobalOrdinal gid_t;
+  typedef GlobalOrdinal zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::CrsMatrix";}
@@ -268,7 +269,7 @@ struct InputTraits<Epetra_CrsMatrix>
   typedef double scalar_t;
   typedef int lno_t;
   typedef int gno_t;
-  typedef int gid_t;
+  typedef int zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
   static inline std::string name() {return "Epetra_CrsMatrix";}
@@ -283,7 +284,7 @@ struct InputTraits<Xpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Scalar        scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef GlobalOrdinal gid_t;
+  typedef GlobalOrdinal zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::RowMatrix";}
@@ -298,7 +299,7 @@ struct InputTraits<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Scalar        scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef GlobalOrdinal gid_t;
+  typedef GlobalOrdinal zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::RowMatrix";}
@@ -312,7 +313,7 @@ struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef default_scalar_t scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef GlobalOrdinal gid_t;
+  typedef GlobalOrdinal zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::CrsGraph";}
@@ -326,7 +327,7 @@ struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef default_scalar_t scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef GlobalOrdinal gid_t;
+  typedef GlobalOrdinal zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::CrsGraph";}
@@ -338,7 +339,7 @@ struct InputTraits<Epetra_CrsGraph>
   typedef double scalar_t;
   typedef int   lno_t;
   typedef int   gno_t;
-  typedef int   gid_t;
+  typedef int   zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
   static inline std::string name() {return "Epetra_CrsGraph";}
@@ -353,7 +354,7 @@ struct InputTraits<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Scalar        scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef GlobalOrdinal gid_t;
+  typedef GlobalOrdinal zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::Vector";}
@@ -371,7 +372,7 @@ struct InputTraits<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Scalar        scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef GlobalOrdinal gid_t;
+  typedef GlobalOrdinal zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::Vector";}
@@ -383,7 +384,7 @@ struct InputTraits<Epetra_Vector>
   typedef double scalar_t;
   typedef int   lno_t;
   typedef int   gno_t;
-  typedef int   gid_t;
+  typedef int   zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
   static inline std::string name() {return "Epetra_Vector";}
@@ -398,7 +399,7 @@ struct InputTraits<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Scalar        scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef GlobalOrdinal gid_t;
+  typedef GlobalOrdinal zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::MultiVector";}
@@ -413,7 +414,7 @@ struct InputTraits<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Scalar        scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
-  typedef GlobalOrdinal gid_t;
+  typedef GlobalOrdinal zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::MultiVector";}
@@ -425,7 +426,7 @@ struct InputTraits<Epetra_MultiVector>
   typedef double scalar_t;
   typedef int   lno_t;
   typedef int   gno_t;
-  typedef int   gid_t;
+  typedef int   zgid_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
   static inline std::string name() {return "Epetra_MultiVector";}

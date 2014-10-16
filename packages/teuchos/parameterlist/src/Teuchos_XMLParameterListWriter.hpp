@@ -58,7 +58,7 @@
 namespace Teuchos {
 
 
-/** \ingroup XML 
+/** \ingroup XML
  * \brief Writes a ParameterList to an XML object
  */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT XMLParameterListWriter {
@@ -71,10 +71,10 @@ public:
   /** \brief . */
   typedef std::map<RCP<const ParameterEntry>,
     ParameterEntry::ParameterEntryID, RCPConstComp> EntryIDsMap;
-  
+
   //@}
 
-  //! @name Constructors 
+  //! @name Constructors
   //@{
   /** Construct a writer */
   XMLParameterListWriter();
@@ -82,7 +82,7 @@ public:
 
   /** Write the given list to an XML object */
   XMLObject toXML(
-    const ParameterList& p, 
+    const ParameterList& p,
     RCP<const DependencySheet> depSheet = null) const;
 
   /** \brief . */
@@ -95,7 +95,7 @@ public:
   static const std::string& getNameAttributeName(){
     static const std::string nameAttributeName = "name";
     return nameAttributeName;
-  } 
+  }
 
   /** \brief . */
   static const std::string& getValidatorsTagName(){
@@ -113,20 +113,20 @@ private:
 
   /** \brief Write the given list to an XML object.  */
   XMLObject convertParameterList(
-      const ParameterList& p, 
-      ParameterEntry::ParameterEntryID& idCounter, 
+      const ParameterList& p,
+      ParameterEntry::ParameterEntryID& idCounter,
       EntryIDsMap& entryIDsMap,
       const ValidatortoIDMap& validatorIDsMap) const;
 
   /** \brief Convert all the validators. */
   XMLObject convertValidators(
-    const ParameterList& p, 
+    const ParameterList& p,
     ValidatortoIDMap& validatorIDsMap) const;
 
   /** \brief Convert all the dependencies. */
   XMLObject convertDependencies(
     RCP<const DependencySheet> depSheet,
-    const EntryIDsMap& entryIDsMap, 
+    const EntryIDsMap& entryIDsMap,
     ValidatortoIDMap& validatorIDsMap) const;
 
   /** \brief Builds up the list of validators to be converted */

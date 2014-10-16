@@ -1,0 +1,25 @@
+/*! \page parmetisPartPage Graph partitioning with ParMETIS
+
+\section parmetisPart_overview Overview
+
+
+\section parmetisPart_input Input
+
+
+\section parmetisPart_parameters Parameters
+
+
+\section parmetisPart_solution Solution
+
+
+\section parmetisPart_quality_measures Quality measures
+
+
+\section parmetisPart_examples Examples
+
+None.
+
+\section scotchPart_source Source
+Zoltan2_AlgParMETIS.hpp is the source file for ParMETIS partitioning.
+
+*/

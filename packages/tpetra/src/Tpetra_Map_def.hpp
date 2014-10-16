@@ -53,9 +53,7 @@
 #include <Teuchos_as.hpp>
 #include <stdexcept>
 
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_Map_decl.hpp"
-#endif
+#include "Tpetra_Map_decl.hpp"
 
 namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1348,15 +1346,21 @@ namespace Tpetra {
 } // Tpetra namespace
 
 template <class LocalOrdinal, class GlobalOrdinal>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal> >
 Tpetra::createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
-  return createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType>(numElements, comm, KokkosClassic::DefaultNode::getDefaultNode());
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef typename ::Tpetra::Map<LO, GO>::node_type NT;
+  return createLocalMapWithNode<LO, GO> (numElements, comm, KokkosClassic::Details::getNode<NT> ());
 }
 
 template <class LocalOrdinal, class GlobalOrdinal>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal> >
 Tpetra::createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
-  return createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType>(numElements, comm, KokkosClassic::DefaultNode::getDefaultNode());
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef typename ::Tpetra::Map<LO, GO>::node_type NT;
+  return createUniformContigMapWithNode<LO, GO> (numElements, comm, KokkosClassic::Details::getNode<NT> ());
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1397,18 +1401,18 @@ Tpetra::createContigMapWithNode(Tpetra::global_size_t numElements, size_t localN
 }
 
 template <class LocalOrdinal, class GlobalOrdinal>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal> >
 Tpetra::createContigMap(Tpetra::global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
-  return Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType>(numElements, localNumElements, comm, KokkosClassic::DefaultNode::getDefaultNode() );
+  return Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(numElements, localNumElements, comm, KokkosClassic::DefaultNode::getDefaultNode() );
 }
 
 
 template <class LocalOrdinal, class GlobalOrdinal>
-Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal> >
 Tpetra::createNonContigMap(const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
                            const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 {
-  return Tpetra::createNonContigMapWithNode<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType>(elementList, comm, KokkosClassic::DefaultNode::getDefaultNode() );
+  return Tpetra::createNonContigMapWithNode<LocalOrdinal,GlobalOrdinal>(elementList, comm, KokkosClassic::DefaultNode::getDefaultNode() );
 }
 
 

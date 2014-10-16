@@ -46,7 +46,7 @@
 #ifdef MPIAPI
 #define CALL_API MPIAPI
 #else
-#define CALL_API 
+#define CALL_API
 #endif
 
 //

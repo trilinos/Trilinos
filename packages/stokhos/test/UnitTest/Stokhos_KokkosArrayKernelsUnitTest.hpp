@@ -59,7 +59,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#include "KokkosCore_config.h"
+#include "Kokkos_Macros.hpp"
 
 #include "Stokhos_Update.hpp"
 #include "Stokhos_CrsMatrix.hpp"
@@ -298,7 +298,7 @@ struct UnitTestSetup {
         (*sg_y_commuted)[i][block] = (*sg_y)[block][i];
     }
 
-    typedef typename Device::host_mirror_device_type host_device;
+    typedef typename Kokkos::ViewTraits<value_type,Device,void,void>::host_mirror_space host_device;
     typedef Stokhos::CrsProductTensor< value_type , host_device > tensor_type;
     typedef Stokhos::StochasticProductTensor< value_type , tensor_type ,
       host_device > stoch_tensor_type ;

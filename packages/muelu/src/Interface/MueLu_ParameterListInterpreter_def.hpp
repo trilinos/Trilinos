@@ -87,20 +87,20 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ParameterListInterpreter(Teuchos::ParameterList& paramList) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(Teuchos::ParameterList& paramList,Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
     SetParameterList(paramList);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm,Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), comm);
     SetParameterList(paramList);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList& paramList) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const Teuchos::ParameterList& paramList) {
     Cycle_     = Hierarchy::GetDefaultCycle();
     blockSize_ = 1;
 
@@ -125,7 +125,7 @@ namespace MueLu {
   varType varName; \
   if      (paramList.isParameter(paramStr))   varName = paramList.get<varType>(paramStr); \
   else if (defaultList.isParameter(paramStr)) varName = defaultList.get<varType>(paramStr); \
-  else                                        varName = paramList.get<varType>(paramStr, defaultValue);
+  else                                        varName = defaultValue;
 
   // This macro check whether the variable is in the list.
   // If it is, it copies its value to the second list, possibly with a new name
@@ -143,8 +143,11 @@ namespace MueLu {
   } \
   else if (defaultList.isParameter(varName)) listWrite.set(varName, defaultList.get<T>(varName));
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetEasyParameterList(const Teuchos::ParameterList& constParamList) {
+#define MUELU_TEST_AND_SET_VAR(var, varName, paramList, T) \
+  (paramList.isParameter(varName) ? var = paramList.get<T>(varName), true : false)
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetEasyParameterList(const Teuchos::ParameterList& constParamList) {
     // Create a non const copy of the parameter list
     // Working with a modifiable list is much much easier than with original one
     ParameterList paramList = constParamList;
@@ -162,8 +165,9 @@ namespace MueLu {
 
     this->maxCoarseSize_    = paramList.get<int> ("coarse: max size",    MasterList::getDefault<int>("coarse: max size"));
     this->numDesiredLevel_  = paramList.get<int> ("max levels",          MasterList::getDefault<int>("max levels"));
-    this->graphOutputLevel_ = paramList.get<int> ("debug: graph level", -1);
     blockSize_              = paramList.get<int> ("number of equations", 1);
+
+    (void)MUELU_TEST_AND_SET_VAR(this->graphOutputLevel_, "debug: graph level", paramList, int);
 
     // Save level data
     if (paramList.isSublist("export data")) {
@@ -221,10 +225,12 @@ namespace MueLu {
     }
 
     // Detect if we do implicit P and R rebalance
+    changedPRrebalance_ = false;
     if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
-      this->doPRrebalance_ = paramList.get<bool>("repartition: rebalance P and R", MasterList::getDefault<bool>("repartition: rebalance P and R"));
+      changedPRrebalance_ = MUELU_TEST_AND_SET_VAR(this->doPRrebalance_, "repartition: rebalance P and R", paramList, bool);
 
-    this->implicitTranspose_ = paramList.get<bool>("transpose: use implicit", MasterList::getDefault<bool>("transpose: use implicit"));
+    // Detect if we use implicit transpose
+    changedImplicitTranspose_ = MUELU_TEST_AND_SET_VAR(this->implicitTranspose_, "transpose: use implicit", paramList, bool);
 
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
@@ -256,10 +262,10 @@ namespace MueLu {
     // FIXME: parameters passed to packages, like Ifpack2, are not touched by us, resulting in "[unused]" flag
     // being displayed. On the other hand, we don't want to simply iterate through them touching. I don't know
     // what a good solution looks like
-    if (!(paramList.isParameter("print initial parameters") && paramList.get<bool>("print initial parameters") == false))
-      this->GetOStream(static_cast<MsgType>(Runtime1 | Test), 0) << paramList << std::endl;
+    if (!paramList.isParameter("print initial parameters") || paramList.get<bool>("print initial parameters") == true)
+      this->GetOStream(static_cast<MsgType>(Runtime1), 0) << paramList << std::endl;
 
-    if (!(paramList.isParameter("print unused parameters") && paramList.get<bool>("print unused parameters") == false)) {
+    if (!paramList.isParameter("print unused parameters") || paramList.get<bool>("print unused parameters") == true) {
       // Check unused parameters
       ParameterList unusedParamList;
 
@@ -298,8 +304,8 @@ namespace MueLu {
 
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UpdateFactoryManager(Teuchos::ParameterList& paramList,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UpdateFactoryManager(Teuchos::ParameterList& paramList,
         const Teuchos::ParameterList& defaultList, FactoryManager& manager) const {
     // NOTE: Factory::SetParameterList must be called prior to Factory::SetFactory, as
     // SetParameterList sets default values for non mentioned parameters, including factories
@@ -344,9 +350,9 @@ namespace MueLu {
       defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
       defaultSmootherParams.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
 
-      RCP<SmootherPrototype> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
-      std::string            preSmootherType,             postSmootherType;
-      ParameterList          preSmootherParams,           postSmootherParams;
+      RCP<SmootherFactory> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
+      std::string          preSmootherType,             postSmootherType;
+      ParameterList        preSmootherParams,           postSmootherParams;
 
       if (paramList.isParameter("smoother: overlap"))
         overlap = paramList.get<int>("smoother: overlap");
@@ -370,7 +376,7 @@ namespace MueLu {
         else if (preSmootherType == "RELAXATION")
           preSmootherParams = defaultSmootherParams;
 
-        preSmoother = rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap));
+        preSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap))));
       }
 
       if (PreOrPost == "post" || PreOrPost == "both") {
@@ -395,10 +401,16 @@ namespace MueLu {
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
         else
-          postSmoother = rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap));
+          postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
       }
 
-      manager.SetFactory("Smoother", rcp(new SmootherFactory(preSmoother, postSmoother)));
+      if (preSmoother == postSmoother)
+        manager.SetFactory("Smoother",     preSmoother);
+      else {
+        manager.SetFactory("PreSmoother",  preSmoother);
+        manager.SetFactory("PostSmoother", postSmoother);
+      }
+
     }
 
     // === Coarse solver ===
@@ -445,8 +457,7 @@ namespace MueLu {
     dropParams.set("lightweight wrap", true);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop scheme",         paramList, defaultList, std::string);
     // Rename classical to original
-    if (dropParams.isParameter("aggregation: drop scheme") && dropParams.get<std::string>("aggregation: drop scheme") == "classical")
-      dropParams.set("aggregation: drop scheme", "original");
+    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop scheme",         paramList, defaultList, std::string);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop tol",            paramList, defaultList, double);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: Dirichlet threshold", paramList, defaultList, double);
 
@@ -576,7 +587,7 @@ namespace MueLu {
     // === RAP ===
     RCP<RAPFactory> RAP = rcp(new RAPFactory());
     ParameterList RAPparams;
-    RAPparams.set("transpose: use implicit", this->implicitTranspose_);
+    MUELU_TEST_AND_SET_PARAM(RAPparams, "transpose: use implicit", paramList, defaultList, bool);
     RAP->SetParameterList(RAPparams);
     RAP->SetFactory("P", manager.GetFactory("P"));
     if (!this->implicitTranspose_)
@@ -655,7 +666,8 @@ namespace MueLu {
       RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
       ParameterList newPparams;
       newPparams.set("type",                           "Interpolation");
-      newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+      if (changedPRrebalance_)
+        newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
@@ -668,8 +680,10 @@ namespace MueLu {
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
       newRparams.set("type",                           "Restriction");
-      newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
-      newRparams.set("transpose: use implicit",        this->implicitTranspose_);
+      if (changedPRrebalance_)
+        newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+      if (changedImplicitTranspose_)
+        newRparams.set("transpose: use implicit",        this->implicitTranspose_);
       newR->  SetParameterList(newRparams);
       newR->  SetFactory("Importer",       manager.GetFactory("Importer"));
       if (!this->implicitTranspose_) {
@@ -694,8 +708,8 @@ namespace MueLu {
 
   int LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t);
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Validate(const Teuchos::ParameterList& constParamList) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Validate(const Teuchos::ParameterList& constParamList) const {
     ParameterList paramList = constParamList;
     const ParameterList& validList = *MasterList::List();
 
@@ -755,8 +769,8 @@ namespace MueLu {
   // =====================================================================================================
   // ==================================== FACTORY interpreter ============================================
   // =====================================================================================================
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactoryParameterList(const Teuchos::ParameterList& constParamList) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactoryParameterList(const Teuchos::ParameterList& constParamList) {
     // Create a non const copy of the parameter list
     // Working with a modifiable list is much much easier than with original one
     ParameterList paramList = constParamList;
@@ -768,6 +782,10 @@ namespace MueLu {
     //   </ParameterList>
     if (paramList.isSublist("Matrix"))
       blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", 1);
+
+    // create new FactoryFactory object if necessary
+    if (factFact_ == Teuchos::null) 
+      factFact_ = Teuchos::rcp(new FactoryFactory());
 
     // Parameter List Parsing:
     // ---------
@@ -812,6 +830,11 @@ namespace MueLu {
         hieraList.remove("repartition: rebalance P and R");
       }
 
+      if (hieraList.isParameter("transpose: use implicit")) {
+        this->implicitTranspose_ = hieraList.get<bool>("transpose: use implicit");
+        hieraList.remove("transpose: use implicit");
+      }
+
       //TODO Move this its own class or MueLu::Utils?
       std::map<std::string,MsgType> verbMap;
       //for developers
@@ -833,6 +856,7 @@ namespace MueLu {
       verbMap["TimingsByLevel"] = TimingsByLevel;
       verbMap["External"]       = External;
       verbMap["Debug"]          = Debug;
+      verbMap["Test"]           = Test;
       //for users and developers
       verbMap["None"]           = None;
       verbMap["Low"]            = Low;
@@ -918,8 +942,8 @@ namespace MueLu {
   //    </ParameterList>
   //
   //TODO: static?
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildFactoryMap(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, FactoryMap& factoryMapOut, FactoryManagerMap& factoryManagers) const {
     for (Teuchos::ParameterList::ConstIterator param = paramList.begin(); param != paramList.end(); ++param) {
       const std::string             & paramName  = paramList.name(param);
@@ -933,7 +957,7 @@ namespace MueLu {
       if (paramValue.isList()) {
         Teuchos::ParameterList paramList1 = Teuchos::getValue<Teuchos::ParameterList>(paramValue);
         if (paramList1.isParameter("factory")) { // default: just a factory definition
-          factoryMapOut[paramName] = FactoryFactory().BuildFactory(paramValue, factoryMapIn, factoryManagers);
+          factoryMapOut[paramName] = factFact_->BuildFactory(paramValue, factoryMapIn, factoryManagers);
 
         } else if (paramList1.isParameter("group")) { // definitiion of a factory group (for a factory manager)
           std::string groupType = paramList1.get<std::string>("group");
@@ -957,7 +981,7 @@ namespace MueLu {
         }
       } else {
         // default: just a factory (no parameter list)
-        factoryMapOut[paramName] = FactoryFactory().BuildFactory(paramValue, factoryMapIn, factoryManagers);
+        factoryMapOut[paramName] = factFact_->BuildFactory(paramValue, factoryMapIn, factoryManagers);
       }
     }
   }
@@ -965,8 +989,8 @@ namespace MueLu {
   // =====================================================================================================
   // ======================================= MISC functions ==============================================
   // =====================================================================================================
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupMatrix(Matrix& A) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupMatrix(Matrix& A) const {
     if (A.GetFixedBlockSize() != blockSize_)
       this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
           << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
@@ -974,8 +998,8 @@ namespace MueLu {
     A.SetFixedBlockSize(blockSize_);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupHierarchy(Hierarchy& H) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy& H) const {
     HierarchyManager::SetupHierarchy(H);
     H.SetCycle(Cycle_);
   }

@@ -46,9 +46,6 @@
 
 
 #include <Kokkos_Core.hpp>
-#ifdef KOKKOS_HAVE_CUDA
-#include <Kokkos_Cuda.hpp>
-#endif
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -522,7 +519,7 @@ namespace Kokkos {
 
   };
 
-  template<class DeviceType = Kokkos::Impl::DefaultDeviceType>
+  template<class DeviceType = Kokkos::DefaultExecutionSpace>
   class Random_XorShift64_Pool {
   private:
     typedef View<int*,DeviceType> lock_type;
@@ -541,6 +538,19 @@ namespace Kokkos {
     Random_XorShift64_Pool(unsigned int seed) {
       num_states_ = 0;
       init(seed,DeviceType::max_hardware_threads());
+    }
+
+    Random_XorShift64_Pool(const Random_XorShift64_Pool& src):
+      locks_(src.locks_),
+      state_(src.state_),
+      num_states_(src.num_states_)
+    {}
+
+    Random_XorShift64_Pool operator = (const Random_XorShift64_Pool& src) {
+      locks_ = src.locks_;
+      state_ = src.state_;
+      num_states_ = src.num_states_;
+      return *this;
     }
 
     void init(unsigned int seed, int num_states) {
@@ -747,7 +757,7 @@ namespace Kokkos {
   };
 
 
-  template<class DeviceType = Kokkos::Impl::DefaultDeviceType>
+  template<class DeviceType = Kokkos::DefaultExecutionSpace>
   class Random_XorShift1024_Pool {
   private:
     typedef View<int*,DeviceType> int_view_type;
@@ -771,6 +781,21 @@ namespace Kokkos {
     Random_XorShift1024_Pool(unsigned int seed){
       num_states_ = 0;
       init(seed,DeviceType::max_hardware_threads());
+    }
+
+    Random_XorShift1024_Pool(const Random_XorShift1024_Pool& src):
+      locks_(src.locks_),
+      state_(src.state_),
+      p_(src.p_),
+      num_states_(src.num_states_)
+    {}
+
+    Random_XorShift1024_Pool operator = (const Random_XorShift1024_Pool& src) {
+      locks_ = src.locks_;
+      state_ = src.state_;
+      p_ = src.p_;
+      num_states_ = src.num_states_;
+      return *this;
     }
 
     inline

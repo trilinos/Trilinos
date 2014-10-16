@@ -46,7 +46,7 @@ INCLUDE(PrintVar)
 
 #
 # @FUNCTION: TRIBITS_ADD_ADVANCED_TEST()
-# 
+#
 # Function that creates an advanced test defined by stringing together one or
 # more executables and/or commands that is run as a ``cmake -P`` script with
 # very flexible pass/fail criteria.
@@ -54,13 +54,14 @@ INCLUDE(PrintVar)
 # Usage::
 #
 #   TRIBITS_ADD_ADVANCED_TEST(
-#     <testName>
+#     <testNameBase>
 #     TEST_0 (EXEC <execTarget0> | CMND <cmndExec0>) ...
 #     [TEST_1 (EXEC <execTarget1> | CMND <cmndExec1>) ...]
 #     ...
 #     [TEST_N (EXEC <execTargetN> | CMND <cmndExecN>) ...]
 #     [OVERALL_WORKING_DIRECTORY (<overallWorkingDir> | TEST_NAME)]
 #     [FAIL_FAST]
+#     [RUN_SERIAL]
 #     [KEYWORDS <keyword1> <keyword2> ...]
 #     [COMM [serial] [mpi]]
 #     [OVERALL_NUM_MPI_PROCS <overallNumProcs>]
@@ -73,6 +74,7 @@ INCLUDE(PrintVar)
 #       FINAL_FAIL_REGULAR_EXPRESSION <regex>]
 #     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
 #     [TIMEOUT <maxSeconds>]
+#     [ADDED_TEST_NAME_OUT <testName>]
 #     )
 #
 # This function allows one to add a single CTest test that is actually a
@@ -108,7 +110,7 @@ INCLUDE(PrintVar)
 # order for the overall test to pass.
 #
 # *Sections:*
-# 
+#
 # * `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
@@ -129,28 +131,27 @@ INCLUDE(PrintVar)
 # listed outside of the ``TEST_<idx>`` blocks, see `Argument Parsing and
 # Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
-#   ``<testName>``
+#   ``<testNameBase>``
 #
-#     The name of the test (which will have ``${PACKAGE_NAME}_`` prepended to
-#     the name) that will be used to name the output CMake script file as well
-#     as the CTest test name passed into ``ADD_TEST()``.  This must be the
-#     first argument to this function.
+#     The base name of the test (which will have ``${PACKAGE_NAME}_``
+#     prepended to the name, see <testName> below) that will be used to name
+#     the output CMake script file as well as the CTest test name passed into
+#     ``ADD_TEST()``.  This must be the first argument to this function.
 #
 #   ``OVERALL_WORKING_DIRECTORY <overallWorkingDir>``
 #
 #     If specified, then the working directory ``<overallWorkingDir>`` will be
 #     created and all of the test commands by default will be run from within
 #     this directory.  If the value ``<overallWorkingDir>=TEST_NAME`` is
-#     given, then the working directory will be given the name
-#     ``${PACKAGE_NAME}_<testName>``.  If the directory
-#     ``<overallWorkingDir>`` exists before the test runs, it will be deleted
-#     and created again.  Therefore, if one wants to preserve the contents of
-#     this directory between test runs then one needs to copy the files it
-#     contains somewhere else.  This is a good option to use if the commands
-#     create intermediate files and one wants to make sure they get deleted
-#     before the test cases are run again.  This is also a very useful option
-#     to use if multiple tests are defined in the same ``CMakeLists.txt`` file
-#     that read/write files with the same name.
+#     given, then the working directory will be given the name ``<testName>``.
+#     If the directory ``<overallWorkingDir>`` exists before the test runs, it
+#     will be deleted and created again.  Therefore, if one wants to preserve
+#     the contents of this directory between test runs then one needs to copy
+#     the files it contains somewhere else.  This is a good option to use if
+#     the commands create intermediate files and one wants to make sure they
+#     get deleted before the test cases are run again.  This is also a very
+#     useful option to use if multiple tests are defined in the same
+#     ``CMakeLists.txt`` file that read/write files with the same name.
 #
 #   ``FAIL_FAST``
 #
@@ -224,8 +225,16 @@ INCLUDE(PrintVar)
 #     to run before being timed-out (see `TRIBITS_ADD_TEST()`_).  This is for
 #     the full CTest test, not individual ``TEST_<idx>`` commands!
 #
+#   ``ADDED_TEST_NAME_OUT <testName>``
+#
+#     If specified, then on output the variable ``<testName>`` will be set
+#     with the name of the test passed to ``ADD_TEST()``.  Having this name
+#     allows the calling ``CMakeLists.txt`` file access and set additional
+#     test propeties (see `Setting additional test properties
+#     (TRIBITS_ADD_ADVANCED_TEST())`_).
+#
 # .. _TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
-# 
+#
 # **TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # Each test command block ``TEST_<idx>`` runs either a package-built test
@@ -258,7 +267,19 @@ INCLUDE(PrintVar)
 #     executable even when configured in MPI mode
 #     (i.e. ``TPL_ENABLE_MPI=ON``).  If one wants to run an arbitrary command
 #     using MPI, use ``EXEC <fullPathToCmndExec> NOEXEPREFIX NOEXESUFFIX``
-#     instead.
+#     instead.  **WARNING:** If you want to run such tests using valgrind, you
+#     have to use the raw executable as the ``<cmndExec>`` argument and *not*
+#     the script.  For example, if you have a python script
+#     ``my_python_test.py`` with ``/usr/bin/env pyhton`` at the top, you can't
+#     just use::
+#
+#       CMND <path>/my_python_test.py ARGS <arg0> <arg1> ...
+#
+#     The same goes for Perl or any other scripting language.
+#
+#     Instead, you have to use::
+#
+#       CMND ${PYTHON_EXECUTABLE} ARGS <path>/my_python_test.py <arg0> <arg1> ...
 #
 # By default, the output (stdout/stderr) for each test command is captured and
 # is then echoed to stdout for the overall test.  This is done in order to be
@@ -283,7 +304,7 @@ INCLUDE(PrintVar)
 #     If specified, then the working directory ``<workingDir>`` will be
 #     created and the test will be run from within this directory.  If the
 #     value ``<workingDir> = TEST_NAME`` is given, then the working directory
-#     will be given the name ``${PACKAGE_NAME}_<testName>``.  If the directory
+#     will be given the name ``<testName>``.  If the directory
 #     ``<workingDir>`` exists before the test runs, it will be deleted and
 #     created again.  Therefore, if one wants to preserve the contents of this
 #     directory between test runs then one needs to copy the given file
@@ -304,6 +325,17 @@ INCLUDE(PrintVar)
 #     ``<outputFile>``.  By default, the contents of this file will **also**
 #     be printed to STDOUT unless ``NO_ECHO_OUT`` is passed as well.
 #
+#     NOTE: Contrary to CMake documentation for EXECUTE_PROCESS(), STDOUT and
+#     STDERR may not get output in the correct order interleaved correctly,
+#     even in serial without MPI.  Therefore, you can't write any tests that
+#     depend on the order of STDOUT and STDERR output in relation to each
+#     other.  Also note that all of STDOUT and STDERR will be first read into
+#     the CTest executable process main memory before the file
+#     ``<outputFile>`` is written.  Therefore, don't run executables or
+#     commands that generate massive amounts of console output or it may
+#     exhaust main memory.  Instead, have the command or executable write
+#     directly to a file instead of going through STDOUT.
+#
 #   ``NO_ECHO_OUTPUT``
 #
 #     If specified, then the output for the test command will not be echoed to
@@ -323,14 +355,17 @@ INCLUDE(PrintVar)
 #   ``PASS_REGULAR_EXPRESSION "<regex>"``
 #
 #     If specified, the test command will be assumed to pass if it matches the
-#     given regular expression.  Otherwise, it is assumed to fail.
+#     given regular expression.  Otherwise, it is assumed to fail.  TIPS:
+#     Replace ';' with '[;]' or CMake will interpretet this as a array eleemnt
+#     boundary.  To match '.', use '[.]'.
 #
 #   ``PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"``
 #
 #     If specified, the test command will be assumed to pass if the output
 #     matches all of the provided regular expressions.  Note that this is not
 #     a capability of raw ctest and represents an extension provided by
-#     TriBITS.
+#     TriBITS.  NOTE: It is critical that you replace ';' with '[;]' or CMake
+#     will interpretet this as a array eleemnt boundary.
 #
 #   ``FAIL_REGULAR_EXPRESSION "<regex>"``
 #
@@ -347,12 +382,12 @@ INCLUDE(PrintVar)
 # `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
 # .. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
-# 
+#
 # **Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # By default, the overall test will be assumed to pass if it prints::
 #
-#   "OVERALL FINAL RESULT: TEST PASSED"
+#   "OVERALL FINAL RESULT: TEST PASSED (<testName>)"
 #
 # However, this can be changed by setting one of the following optional arguments:
 #
@@ -367,7 +402,7 @@ INCLUDE(PrintVar)
 #     ``<regex>``.  Otherwise, it will be assumed to fail.
 #
 # .. _Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST()):
-# 
+#
 # **Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # The basic tool used for parsing the arguments to this function is the macro
@@ -386,7 +421,7 @@ INCLUDE(PrintVar)
 # there are restrictions related to the grouping of overall arguments and
 # ``TEST_<idx>`` blocks which are as follows:
 #
-# * The ``<testName>`` argument must be the first listed (it is the only
+# * The ``<testNameBase>`` argument must be the first listed (it is the only
 #   positional argument).
 #
 # * The test cases ``TEST_<idx>`` must be listed in order (i.e. ``TEST_0
@@ -414,11 +449,10 @@ INCLUDE(PrintVar)
 #
 # Since raw CTest does not support the features provided by this function, the
 # way an advanced test is implemented is that a ``cmake -P`` script with the
-# name ``${PACKAGE_NAME}_<testName>.cmake`` gets created in the current binary
-# directory that then gets added to CTest using::
+# name ``<testName>.cmake`` gets created in the current binary directory that
+# then gets added to CTest using::
 #
-#   ADD_TEST(${PACKAGE_NAME}_<testName>
-#     cmake [other options] -P ${PACKAGE_NAME}_<testName>.cmake)
+#   ADD_TEST(<testName> cmake [other options] -P <testName>.cmake)
 #
 # This ``cmake -P`` script then runs the various test cases and checks the
 # pass/fail for each case to determine overall pass/fail and implement other
@@ -430,10 +464,23 @@ INCLUDE(PrintVar)
 #
 # After this function returns, if the test gets added using ``ADD_TEST()``,
 # then additional properties can be set and changed using
-# ``SET_TEST_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
-# tests properties that are not directly supported by this function and passed
+# ``SET_TESTS_PROPERTIES(<testName> ...)``, where ``<testName>`` is returned
+# using the ``ADDED_TEST_NAME_OUT <testName>`` argument.  Therefore, any tests
+# properties that are not directly supported by this function and passed
 # through the argument list to this wrapper function can be set in the outer
 # ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_ADVANCED_TEST()``.
+# For example::
+#
+#   TRIBITS_ADD_ADVANCED_TEST_TEST( someTest ...
+#     ADDED_TEST_NAME_OUT  someTest_TEST_NAME )
+#
+#   IF (someTest_TEST_NAME)
+#     SET_TESTS_PROPERTIES( ${someTest_TEST_NAME}
+#       PROPERTIES ATTACHED_FILES someTest.log )
+#   ENDIF()
+#
+# where the test writes a log file ``someTest.log`` that we want to submit to
+# CDash also.
 #
 # .. _Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST()):
 #
@@ -450,8 +497,8 @@ INCLUDE(PrintVar)
 # **Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # The test can be disabled externally by setting the CMake cache variable
-# ``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disabled on a
-# case-by-case basis.  The name ``${FULL_TEST_NAME}`` must be the *exact* name
+# ``<testName>_DISABLE=TRUE``.  This allows tests to be disabled on a
+# case-by-case basis.  The name ``<testName>`` must be the *exact* name
 # that shows up in ``ctest -N`` when running the test.
 #
 # .. _Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):
@@ -464,16 +511,17 @@ INCLUDE(PrintVar)
 # of some information about the test getting added or not.
 #
 # Likely the best way to debugging test generation using this function is to
-# examine the generated file ``${PACKAGE_NAME}_<testName>.cmake`` in the
-# current binary directory (see `Implementation Details
-# (TRIBITS_ADD_ADVANCED_TEST())`_) and the generated ``CTestTestfile.cmake``
-# file that should list this test case.
+# examine the generated file ``<testName>.cmake`` in the current binary
+# directory (see `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_) and
+# the generated ``CTestTestfile.cmake`` file that should list this test case.
 #
 FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nPACKAGE_ADD_ADVANCED_TEST: ${TEST_NAME_IN}\n")
   ENDIF()
+
+  GLOBAL_SET(TRIBITS_SET_TEST_PROPERTIES_INPUT)
 
   IF (PACKAGE_NAME)
     SET(TEST_NAME ${PACKAGE_NAME}_${TEST_NAME_IN})
@@ -487,7 +535,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   #
 
   # Allow for a maximum of 20 (0 through 19) test commands
-  SET(MAX_NUM_TEST_CMND_IDX ${PACKAGE_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX})
+  SET(MAX_NUM_TEST_CMND_IDX ${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX})
 
   SET(TEST_IDX_LIST "")
   FOREACH( TEST_CMND_IDX RANGE ${MAX_NUM_TEST_CMND_IDX})
@@ -499,14 +547,16 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
      #prefix
      PARSE
      #lists
-     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT"
+     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
      #options
      "FAIL_FAST;RUN_SERIAL"
      ${ARGN}
      )
-  # NOTE: The TIMEOUT argument is not documented on purpose.  I don't want to
-  # advertise it!
-  
+
+  IF(PARSE_ADDED_TEST_NAME_OUT)
+    SET(${PARSE_ADDED_TEST_NAME_OUT} "" PARENT_SCOPE )
+  ENDIF()
+
   #
   # B) Add or don't add tests based on a number of criteria
   #
@@ -652,12 +702,16 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
       ENDIF()
 
       IF(ADD_THE_TEST)
-        FIND_PROGRAM(CMND_PATH ${PARSE_CMND})
+        IF (NOT TRIBITS_ADD_TEST_ADD_TEST_UNITTEST)
+          FIND_PROGRAM(CMND_PATH ${PARSE_CMND})
+        ELSE()
+          SET(CMND_PATH ${PARSE_CMND})
+        ENDIF()
         LIST(APPEND TEST_EXE_LIST ${CMND_PATH})
       ENDIF()
 
       SET( TEST_CMND_ARRAY ${PARSE_CMND} ${ARGS_STR} )
-    
+
     ELSE()
 
       MESSAGE( FATAL_ERROR
@@ -672,8 +726,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
       "\n"
       "SET( TEST_${TEST_CMND_IDX}_CMND ${TEST_CMND_STR} )\n"
       )
-    IF (PACKAGE_ADD_ADVANCED_TEST_UNITTEST)
-      GLOBAL_SET(PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX}
+    IF (TRIBITS_ADD_ADVANCED_TEST_UNITTEST)
+      GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX}
         "${TEST_CMND_STR}" )
     ENDIF()
 
@@ -752,6 +806,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
   APPEND_STRING_VAR( TEST_SCRIPT_STR
     "\n"
+    "SET(TEST_NAME ${TEST_NAME})\n"
+    "\n"
     "SET(NUM_CMNDS ${NUM_CMNDS})\n"
     "\n"
     "SET(OVERALL_WORKING_DIRECTORY \"${PARSE_OVERALL_WORKING_DIRECTORY}\")\n"
@@ -769,8 +825,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     "DRIVE_ADVANCED_TEST()\n"
     )
 
-  IF (PACKAGE_ADD_ADVANCED_TEST_UNITTEST)
-    GLOBAL_SET(PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS ${NUM_CMNDS})
+  IF (TRIBITS_ADD_ADVANCED_TEST_UNITTEST)
+    GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_NUM_CMNDS ${NUM_CMNDS})
   ENDIF()
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -781,12 +837,12 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
   SET(TEST_SCRIPT_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TEST_NAME}.cmake")
 
-  IF (ADD_THE_TEST AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT)
+  IF (ADD_THE_TEST AND NOT TRIBITS_ADD_ADVANCED_TEST_SKIP_SCRIPT)
 
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       MESSAGE("\nWriting file \"${TEST_SCRIPT_FILE}\" ...")
     ENDIF()
-  
+
     FILE( WRITE "${TEST_SCRIPT_FILE}"
       "${TEST_SCRIPT_STR}" )
 
@@ -796,49 +852,55 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   # F) Set the CTest test to run the new script
   #
 
-  IF (ADD_THE_TEST
-    AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT
-    AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT_ADD_TEST
-    )
+  IF (ADD_THE_TEST)
 
-    # Tell CTest to run our script for this test.  Pass the test-time
-    # configuration name to the script in the TEST_CONFIG variable.
-    ADD_TEST( ${TEST_NAME}
-      ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}"
+    IF(NOT TRIBITS_ADD_TEST_ADD_TEST_UNITTEST)
+      # Tell CTest to run our script for this test.  Pass the test-type
+      # configuration name to the script in the TEST_CONFIG variable.
+      ADD_TEST( ${TEST_NAME}
+        ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}"
         -P "${TEST_SCRIPT_FILE}")
+    ENDIF()
+
+    IF(PARSE_ADDED_TEST_NAME_OUT)
+      SET(${PARSE_ADDED_TEST_NAME_OUT} ${TEST_NAME} PARENT_SCOPE )
+    ENDIF()
+
     LIST(REMOVE_DUPLICATES TEST_EXE_LIST)
-    SET_PROPERTY(TEST ${TEST_NAME} PROPERTY REQUIRED_FILES ${TEST_EXE_LIST})
+    TRIBITS_SET_TEST_PROPERTY(${TEST_NAME} PROPERTY REQUIRED_FILES ${TEST_EXE_LIST})
 
     IF(PARSE_RUN_SERIAL)
-      SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES RUN_SERIAL ON)
+      TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES RUN_SERIAL ON)
     ENDIF()
-  
+
     TRIBITS_PRIVATE_ADD_TEST_ADD_LABEL_AND_KEYWORDS(${TEST_NAME})
-  
+
     #This if clause will set the number of PROCESSORS to reserve during testing
     #to the number requested for the test.
     IF(NUM_PROCS_USED)
-      SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
+      TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
         PROCESSORS "${NUM_PROCS_USED}")
     ENDIF()
-  
+
     IF (PARSE_FINAL_PASS_REGULAR_EXPRESSION)
-      SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
+      TRIBITS_SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
         PASS_REGULAR_EXPRESSION "${PARSE_FINAL_PASS_REGULAR_EXPRESSION}" )
     ELSEIF (PARSE_FINAL_FAIL_REGULAR_EXPRESSION)
-      SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
+      TRIBITS_SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
         FAIL_REGULAR_EXPRESSION "${PARSE_FINAL_FAIL_REGULAR_EXPRESSION}" )
     ELSE()
-      SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
-        PASS_REGULAR_EXPRESSION "OVERALL FINAL RESULT: TEST PASSED" )
+      TRIBITS_SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
+        PASS_REGULAR_EXPRESSION
+        "OVERALL FINAL RESULT: TEST PASSED .${TEST_NAME}." )
     ENDIF()
-  
+
     IF (PARSE_TIMEOUT)
-      SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES TIMEOUT ${PARSE_TIMEOUT})
+      TRIBITS_SCALE_TIMEOUT(${PARSE_TIMEOUT} TIMEOUT_USED)
+      TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES TIMEOUT ${TIMEOUT_USED})
     ENDIF()
 
     IF (PARSE_ENVIRONMENT)
-      SET_PROPERTY(TEST ${TEST_NAME} PROPERTY ENVIRONMENT ${PARSE_ENVIRONMENT})
+      TRIBITS_SET_TEST_PROPERTY(${TEST_NAME} PROPERTY ENVIRONMENT ${PARSE_ENVIRONMENT})
     ENDIF()
 
   ENDIF()

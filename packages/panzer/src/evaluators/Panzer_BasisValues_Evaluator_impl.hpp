@@ -58,7 +58,10 @@ PHX_EVALUATOR_CTOR(BasisValues_Evaluator,p)
      = p.get< Teuchos::RCP<const panzer::PointRule> >("Point Rule");
   Teuchos::RCP<const panzer::PureBasis> inBasis
      = p.get<Teuchos::RCP<const panzer::PureBasis> >("Basis");
-  bool derivativesRequired = p.get<bool>("Derivatives Required");
+
+  bool derivativesRequired = true;
+  if(p.isType<bool>("Derivatives Required"))
+    derivativesRequired = p.get<bool>("Derivatives Required");
 
   initialize(pointRule,inBasis,derivativesRequired);
 }
@@ -125,8 +128,14 @@ void BasisValues_Evaluator<EvalT,TraitsT>::initialize(const Teuchos::RCP<const p
     this->addEvaluatedField(basisValues.curl_basis);          
   }
 
+  if(basis->getElementSpace()==panzer::PureBasis::HDIV && derivativesRequired) {
+    this->addEvaluatedField(basisValues.div_basis_ref);     
+    this->addEvaluatedField(basisValues.div_basis);          
+  }
+
   // inject orientations as needed
-  if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
+  if(   basis->getElementSpace()==panzer::PureBasis::HCURL
+     || basis->getElementSpace()==panzer::PureBasis::HDIV) {
     std::string orientationFieldName = basis->name()+" Orientation";
     orientation = PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS>(orientationFieldName,
                                         basis->functional);
@@ -162,7 +171,13 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator,sd,fm)
     this->utils.setFieldData(basisValues.curl_basis,fm);          
   }
 
-  if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
+  if(basis->getElementSpace()==panzer::PureBasis::HDIV && derivativesRequired_) {
+    this->utils.setFieldData(basisValues.div_basis_ref,fm);     
+    this->utils.setFieldData(basisValues.div_basis,fm);          
+  }
+
+  if(   basis->getElementSpace()==panzer::PureBasis::HCURL
+     || basis->getElementSpace()==panzer::PureBasis::HDIV) {
     this->utils.setFieldData(orientation,fm);        
   }
 }
@@ -176,7 +191,8 @@ PHX_EVALUATE_FIELDS(BasisValues_Evaluator,workset)
                              pointValues.jac_det,
                              pointValues.jac_inv);
 
-  if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
+  if(   basis->getElementSpace()==panzer::PureBasis::HCURL
+     || basis->getElementSpace()==panzer::PureBasis::HDIV) {
     basisValues.applyOrientations(orientation);
   }
 }

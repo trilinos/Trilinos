@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
@@ -8,10 +41,14 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace {
+//-BEGIN
 TEST(stkMeshHowTo, useCustomConnectivityMap)
 {
     const unsigned spatialDimension = 2;
     stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());
+    stk::mesh::Part &tri_part = metaData.declare_part_with_topology("tri_part", stk::topology::TRIANGLE_3_2D);
+    stk::mesh::Part &edge_part = metaData.declare_part_with_topology("edge_part", stk::topology::LINE_2);
+
     metaData.commit();
 
     stk::mesh::ConnectivityMap custom_connectivity = stk::mesh::ConnectivityMap::none();
@@ -39,14 +76,14 @@ TEST(stkMeshHowTo, useCustomConnectivityMap)
     stk::mesh::EntityId elemEdgeIds[] = {6, 7, 8};
     stk::mesh::Entity elemNodes[3];
     stk::mesh::Entity elemEdges[3];
-    stk::mesh::Entity elem = mesh.declare_entity(stk::topology::ELEM_RANK, elemId);
+    stk::mesh::Entity elem = mesh.declare_entity(stk::topology::ELEM_RANK, elemId, tri_part);
     elemNodes[0] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[0]);
     elemNodes[1] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[1]);
     elemNodes[2] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[2]);
 
-    elemEdges[0] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[0]);
-    elemEdges[1] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[1]);
-    elemEdges[2] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[2]);
+    elemEdges[0] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[0], edge_part);
+    elemEdges[1] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[1], edge_part);
+    elemEdges[2] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[2], edge_part);
 
     //downward element -> node connectivity
     mesh.declare_relation(elem, elemNodes[0], 0);
@@ -64,4 +101,6 @@ TEST(stkMeshHowTo, useCustomConnectivityMap)
     unsigned expectedNumEdgesPerNode = 0;//this would be 2 if we didn't disable
     EXPECT_EQ(expectedNumElemsPerEdge, mesh.num_elements(elemEdges[0]));
     EXPECT_EQ(expectedNumEdgesPerNode, mesh.num_edges(elemNodes[0]));
-} }
+}
+//-END
+}

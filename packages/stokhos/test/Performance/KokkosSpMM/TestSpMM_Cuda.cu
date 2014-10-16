@@ -43,8 +43,7 @@
 #include "TestSpMM.hpp"
 
 // Devices
-#include "KokkosCore_config.h"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 template void performance_test_driver< double, int, Kokkos::Cuda>(
   const int nGrid, const int nIter,  const int ensemble_min,

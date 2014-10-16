@@ -46,14 +46,7 @@
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"
 
-#include "KokkosCore_config.h"
-#include "Kokkos_Serial.hpp"
-#if defined(KOKKOS_HAVE_PTHREAD)
-#include "Kokkos_Threads.hpp"
-#endif
-#if defined(KOKKOS_HAVE_OPENMP)
-#include "Kokkos_OpenMP.hpp"
-#endif
+#include "Kokkos_Core.hpp"
 
 namespace Kokkos {
   namespace Compat {
@@ -78,7 +71,8 @@ namespace Kokkos {
 #define COMPAT_INSTANT_ALL(T) \
     COMPAT_INSTANT_SERIAL(T) \
     COMPAT_INSTANT_THREADS(T) \
-    COMPAT_INSTANT_OPENMP(T)
+    COMPAT_INSTANT_OPENMP(T) \
+    COMPAT_INSTANT(T,Kokkos::HostSpace)
 
     COMPAT_INSTANT_ALL(float)
     COMPAT_INSTANT_ALL(double)
@@ -87,6 +81,7 @@ namespace Kokkos {
     COMPAT_INSTANT_ALL(unsigned)
     COMPAT_INSTANT_ALL(unsigned long)
     COMPAT_INSTANT_ALL(char)
+    COMPAT_INSTANT_ALL(short)
 
   } // namespace Compat
 } // namespace Kokkos

@@ -44,15 +44,13 @@
 #ifndef KOKKOS_CUDASPACE_HPP
 #define KOKKOS_CUDASPACE_HPP
 
-#if defined( __CUDACC__ )
-#include <cuda_runtime.h>
-#endif
+#if defined( KOKKOS_HAVE_CUDA )
 
 #include <iosfwd>
 #include <typeinfo>
 #include <string>
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Cuda/Kokkos_Cuda_abort.hpp>
 
@@ -60,7 +58,7 @@
 
 namespace Kokkos {
 
-/** \brief  Cuda memory management */
+/** \brief  Cuda on-device memory management */
 
 class CudaSpace {
 public:
@@ -68,10 +66,7 @@ public:
   typedef Impl::MemorySpaceTag  kokkos_tag ;
   typedef CudaSpace             memory_space ;
   typedef unsigned int          size_type ;
-
-#if defined( KOKKOS_HAVE_CUDA )
-  typedef Kokkos::Cuda  execution_space ;
-#endif
+  typedef Kokkos::Cuda          execution_space ;
 
   /** \brief  Allocate a contiguous block of memory on the Cuda device
    *          with size = scalar_size * scalar_count.
@@ -102,6 +97,14 @@ public:
    */
   static void decrement( const void * );
 
+  /** \brief  Get the reference count of the block of memory
+   *          in which the input pointer resides.  If the reference
+   *          count is zero the memory region is not tracked.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static int count( const void * );
+
   /** \brief  Print all tracked memory to the output stream. */
   static void print_memory_view( std::ostream & );
 
@@ -109,33 +112,259 @@ public:
   static std::string query_label( const void * );
 
   /*--------------------------------*/
-
-  static void access_error();
-  static void access_error( const void * const );
+  /** \brief  Cuda specific function to attached texture object to an allocation.
+   *          Output the texture object, base pointer, and offset from the input pointer.
+   */
+#if defined( __CUDACC__ )
+  static void texture_object_attach( const void            * const arg_ptr
+                                   , ::cudaChannelFormatDesc const & arg_desc
+                                   , ::cudaTextureObject_t * const arg_tex_obj
+                                   , void const           ** const arg_alloc_ptr
+                                   , int                   * const arg_offset
+                                   );
+#endif
 
   /*--------------------------------*/
+  /** \brief  Error reporting for HostSpace attempt to access CudaSpace */
+  static void access_error();
+  static void access_error( const void * const );
 };
 
 } // namespace Kokkos
 
-//----------------------------------------------------------------------------
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+
+/** \brief  Cuda memory that is accessible to Host execution space
+ *          through Cuda's unified virtual memory (UVM) runtime.
+ */
+class CudaUVMSpace {
+public:
+
+  typedef Impl::MemorySpaceTag  kokkos_tag ;
+  typedef CudaUVMSpace          memory_space ;
+  typedef unsigned int          size_type ;
+  typedef Cuda                  execution_space ;
+
+  /** \brief  Allocate a contiguous block of memory on the Cuda device
+   *          with size = scalar_size * scalar_count.
+   *
+   *  The input label is associated with the block of memory.
+   *  The block of memory is tracked via reference counting where
+   *  allocation gives it a reference count of one.
+   *
+   *  Allocation may only occur on the master thread of the process.
+   */
+  static void * allocate( const std::string    & label ,
+                          const std::type_info & scalar_type ,
+                          const size_t           scalar_size ,
+                          const size_t           scalar_count );
+
+  /** \brief  Increment the reference count of the block of memory
+   *          in which the input pointer resides.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static void increment( const void * );
+
+  /** \brief  Decrement the reference count of the block of memory
+   *          in which the input pointer resides.  If the reference
+   *          count falls to zero the memory is deallocated.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static void decrement( const void * );
+
+  /** \brief  Get the reference count of the block of memory
+   *          in which the input pointer resides.  If the reference
+   *          count is zero the memory region is not tracked.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static int count( const void * );
+
+  /** \brief  Print all tracked memory to the output stream. */
+  static void print_memory_view( std::ostream & );
+
+  /** \brief  Retrieve label associated with the input pointer */
+  static std::string query_label( const void * );
+
+  /** \brief  Cuda specific function to attached texture object to an allocation.
+   *          Output the texture object, base pointer, and offset from the input pointer.
+   */
+#if defined( __CUDACC__ )
+  static void texture_object_attach( const void            * const arg_ptr
+                                   , ::cudaChannelFormatDesc const & arg_desc
+                                   , ::cudaTextureObject_t * const arg_tex_obj
+                                   , void const           ** const arg_alloc_ptr
+                                   , int                   * const arg_offset
+                                   );
+#endif
+};
+
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+
+/** \brief  Host memory that is accessible to Cuda execution space
+ *          through Cuda's host-pinned memory allocation.
+ */
+class CudaHostPinnedSpace {
+public:
+
+  typedef Impl::MemorySpaceTag        kokkos_tag ;
+  typedef CudaHostPinnedSpace         memory_space ;
+  typedef unsigned int                size_type ;
+
+  /** \brief  Memory is in HostSpace so use the HostSpace::execution_space */
+  typedef HostSpace::execution_space  execution_space ;
+
+  /** \brief  Allocate a contiguous block of memory on the Cuda device
+   *          with size = scalar_size * scalar_count.
+   *
+   *  The input label is associated with the block of memory.
+   *  The block of memory is tracked via reference counting where
+   *  allocation gives it a reference count of one.
+   *
+   *  Allocation may only occur on the master thread of the process.
+   */
+  static void * allocate( const std::string    & label ,
+                          const std::type_info & scalar_type ,
+                          const size_t           scalar_size ,
+                          const size_t           scalar_count );
+
+  /** \brief  Increment the reference count of the block of memory
+   *          in which the input pointer resides.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static void increment( const void * );
+
+  /** \brief  Get the reference count of the block of memory
+   *          in which the input pointer resides.  If the reference
+   *          count is zero the memory region is not tracked.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static int count( const void * );
+
+  /** \brief  Decrement the reference count of the block of memory
+   *          in which the input pointer resides.  If the reference
+   *          count falls to zero the memory is deallocated.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static void decrement( const void * );
+
+  /** \brief  Print all tracked memory to the output stream. */
+  static void print_memory_view( std::ostream & );
+
+  /** \brief  Retrieve label associated with the input pointer */
+  static std::string query_label( const void * );
+};
+
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
 namespace Impl {
 
-template<>
-struct DeepCopy<HostSpace,CudaSpace> {
-  DeepCopy( void * dst , const void * src , size_t );
+template<> struct DeepCopy< CudaSpace , CudaSpace > { DeepCopy( void * dst , const void * src , size_t ); };
+template<> struct DeepCopy< CudaSpace , HostSpace > { DeepCopy( void * dst , const void * src , size_t ); };
+template<> struct DeepCopy< HostSpace , CudaSpace > { DeepCopy( void * dst , const void * src , size_t ); };
+
+template<> struct DeepCopy< CudaSpace , CudaUVMSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< CudaSpace , CudaSpace >( dst , src , n ); }
 };
 
-template<>
-struct DeepCopy<CudaSpace,HostSpace> {
-  DeepCopy( void * dst , const void * src , size_t );
+template<> struct DeepCopy< CudaSpace , CudaHostPinnedSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< CudaSpace , HostSpace >( dst , src , n ); }
 };
 
-template<>
-struct DeepCopy<CudaSpace,CudaSpace> {
-  DeepCopy( void * dst , const void * src , size_t );
+
+template<> struct DeepCopy< CudaUVMSpace , CudaSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< CudaSpace , CudaSpace >( dst , src , n ); }
+};
+
+template<> struct DeepCopy< CudaUVMSpace , CudaUVMSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< CudaSpace , CudaSpace >( dst , src , n ); }
+};
+
+template<> struct DeepCopy< CudaUVMSpace , CudaHostPinnedSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< CudaSpace , HostSpace >( dst , src , n ); }
+};
+
+template<> struct DeepCopy< CudaUVMSpace , HostSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< CudaSpace , HostSpace >( dst , src , n ); }
+};
+
+
+template<> struct DeepCopy< CudaHostPinnedSpace , CudaSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< HostSpace , CudaSpace >( dst , src , n ); }
+};
+
+template<> struct DeepCopy< CudaHostPinnedSpace , CudaUVMSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< HostSpace , CudaSpace >( dst , src , n ); }
+};
+
+template<> struct DeepCopy< CudaHostPinnedSpace , CudaHostPinnedSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< HostSpace , HostSpace >( dst , src , n ); }
+};
+
+template<> struct DeepCopy< CudaHostPinnedSpace , HostSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< HostSpace , HostSpace >( dst , src , n ); }
+};
+
+
+template<> struct DeepCopy< HostSpace , CudaUVMSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< HostSpace , CudaSpace >( dst , src , n ); }
+};
+
+template<> struct DeepCopy< HostSpace , CudaHostPinnedSpace >
+{
+  inline
+  DeepCopy( void * dst , const void * src , size_t n )
+  { (void) DeepCopy< HostSpace , HostSpace >( dst , src , n ); }
 };
 
 } // namespace Impl
@@ -145,45 +374,88 @@ struct DeepCopy<CudaSpace,CudaSpace> {
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+namespace Impl {
 
-/** \brief  Cuda code accessing Cuda data is good. */
+/** Running in CudaSpace attempting to access HostSpace: error */
 template<>
-struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , CudaSpace >
+struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::HostSpace >
 {
+  enum { value = false };
+  KOKKOS_INLINE_FUNCTION static void verify( void )
+    { Kokkos::cuda_abort("Cuda code attempted to access HostSpace memory"); }
+
+  KOKKOS_INLINE_FUNCTION static void verify( const void * )
+    { Kokkos::cuda_abort("Cuda code attempted to access HostSpace memory"); }
+};
+
+/** Running in CudaSpace accessing CudaUVMSpace: ok */
+template<>
+struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::CudaUVMSpace >
+{
+  enum { value = true };
+  KOKKOS_INLINE_FUNCTION static void verify( void ) { }
+  KOKKOS_INLINE_FUNCTION static void verify( const void * ) { }
+};
+
+/** Running in CudaSpace accessing CudaHostPinnedSpace: ok */
+template<>
+struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::CudaHostPinnedSpace >
+{
+  enum { value = true };
+  KOKKOS_INLINE_FUNCTION static void verify( void ) { }
+  KOKKOS_INLINE_FUNCTION static void verify( const void * ) { }
+};
+
+/** Running in CudaSpace attempting to access an unknown space: error */
+template< class OtherSpace >
+struct VerifyExecutionCanAccessMemorySpace<
+  typename enable_if< ! is_same<Kokkos::CudaSpace,OtherSpace>::value , Kokkos::CudaSpace >::type ,
+  OtherSpace >
+{
+  enum { value = false };
+  KOKKOS_INLINE_FUNCTION static void verify( void )
+    { Kokkos::cuda_abort("Cuda code attempted to access unknown Space memory"); }
+
+  KOKKOS_INLINE_FUNCTION static void verify( const void * )
+    { Kokkos::cuda_abort("Cuda code attempted to access unknown Space memory"); }
+};
+
+//----------------------------------------------------------------------------
+/** Running in HostSpace attempting to access CudaSpace */
+template<>
+struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaSpace >
+{
+  enum { value = false };
+  inline static void verify( void ) { CudaSpace::access_error(); }
+  inline static void verify( const void * p ) { CudaSpace::access_error(p); }
+};
+
+/** Running in HostSpace accessing CudaUVMSpace is OK */
+template<>
+struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaUVMSpace >
+{
+  enum { value = true };
+  inline static void verify( void ) { }
+  inline static void verify( const void * ) { }
+};
+
+/** Running in HostSpace accessing CudaHostPinnedSpace is OK */
+template<>
+struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaHostPinnedSpace >
+{
+  enum { value = true };
   KOKKOS_INLINE_FUNCTION static void verify( void ) {}
   KOKKOS_INLINE_FUNCTION static void verify( const void * ) {}
 };
 
-/** \brief  Cuda code accessing non-Cuda data is bad. */
-template<>
-struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , HostSpace >
-{
-  KOKKOS_INLINE_FUNCTION static void verify(void)
-  { Kokkos::cuda_abort("Cuda code called function restricted to HostSpace"); }
+//----------------------------------------------------------------------------
 
-  KOKKOS_INLINE_FUNCTION static void verify( const void * )
-  { Kokkos::cuda_abort("Cuda code attempted to access HostSpace memory"); }
-};
-
-/** \brief  Produce error message when trying to access Cuda
- *          memory on the host.
- */
-template<>
-struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , CudaSpace >
-{
-#ifdef KOKKOS_USE_CUDA_UVM
-  inline static void verify( void ) { }
-  inline static void verify( const void * p ) { }
-#else
-  inline static void verify( void ) { CudaSpace::access_error(); }
-  inline static void verify( const void * p ) { CudaSpace::access_error(p); }
-#endif
-};
-
+} // namespace Impl
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 #endif /* #define KOKKOS_CUDASPACE_HPP */
 

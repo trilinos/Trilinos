@@ -45,9 +45,7 @@
 /// \file Tpetra_Experimental_BlockCrsMatrix_def.hpp
 /// \brief Definition of Tpetra::Experimental::BlockCrsMatrix
 
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
-#endif
+#include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 
 namespace Tpetra {
 namespace Experimental {
@@ -65,8 +63,10 @@ namespace Experimental {
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
-  {}
+    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
+    computedDiagonalGraph_(false)
+  {
+  }
 
   template<class Scalar, class LO, class GO, class Node>
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -84,12 +84,15 @@ namespace Experimental {
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
+    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
+    computedDiagonalGraph_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
       "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
       "rows (isSorted() is false).  This class assumes sorted rows.");
+
+    graphRCP_ = Teuchos::rcpFromRef(graph_);
 
     // Trick to test whether LO is nonpositive, without a compiler
     // warning in case LO is unsigned (which is generally a bad idea
@@ -129,12 +132,15 @@ namespace Experimental {
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
+    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
+    computedDiagonalGraph_(false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
       "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
       "rows (isSorted() is false).  This class assumes sorted rows.");
+
+    graphRCP_ = Teuchos::rcpFromRef(graph_);
 
     // Trick to test whether LO is nonpositive, without a compiler
     // warning in case LO is unsigned (which is generally a bad idea
@@ -168,6 +174,46 @@ namespace Experimental {
   { // Copy constructor of map_type does a shallow copy.
     // We're only returning by RCP for backwards compatibility.
     return Teuchos::rcp (new map_type (rangePointMap_));
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<const typename BlockCrsMatrix<Scalar, LO, GO, Node>::map_type>
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getRowMap () const
+  {
+    return graph_.getRowMap();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<const typename BlockCrsMatrix<Scalar, LO, GO, Node>::map_type>
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getColMap () const
+  {
+    return graph_.getColMap();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  global_size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalNumRows() const
+  {
+    return graph_.getGlobalNumRows();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNodeNumRows() const
+  {
+    return graph_.getNodeNumRows();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNodeMaxNumRowEntries() const
+  {
+    return graph_.getNodeMaxNumRowEntries();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -319,6 +365,322 @@ namespace Experimental {
     return validCount;
   }
 
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const
+  {
+
+    const map_type& rowMap = * (graph_.getRowMap());
+    const map_type& colMap = * (graph_.getColMap ());
+
+    const size_t myNumRows = rowMeshMap_.getNodeNumElements();
+    if (static_cast<size_t> (offsets.size ()) != myNumRows) {
+      offsets.resize (static_cast<size_t> (myNumRows));
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+    bool allRowMapDiagEntriesInColMap = true;
+    bool allDiagEntriesFound = true;
+#endif // HAVE_TPETRA_DEBUG
+
+    for (size_t r = 0; r < myNumRows; ++r) {
+      const GO rgid = rowMap.getGlobalElement (r);
+      const LO rlid = colMap.getLocalElement (rgid);
+
+#ifdef HAVE_TPETRA_DEBUG
+      if (rlid == Teuchos::OrdinalTraits<LO>::invalid ()) {
+        allRowMapDiagEntriesInColMap = false;
+      }
+#endif // HAVE_TPETRA_DEBUG
+
+      if (rlid != Teuchos::OrdinalTraits<LO>::invalid ()) {
+        RowInfo rowinfo = graph_.getRowInfo (r);
+        if (rowinfo.numEntries > 0) {
+          offsets[r] = graph_.findLocalIndex (rowinfo, rlid);
+        }
+        else {
+          offsets[r] = Teuchos::OrdinalTraits<size_t>::invalid ();
+#ifdef HAVE_TPETRA_DEBUG
+          allDiagEntriesFound = false;
+#endif // HAVE_TPETRA_DEBUG
+        }
+      }
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+    using Teuchos::reduceAll;
+    using std::endl;
+    const char tfecfFuncName[] = "getLocalDiagOffsets";
+
+    const bool localSuccess =
+      allRowMapDiagEntriesInColMap && allDiagEntriesFound;
+    int localResults[3];
+    localResults[0] = allRowMapDiagEntriesInColMap ? 1 : 0;
+    localResults[1] = allDiagEntriesFound ? 1 : 0;
+    // min-all-reduce will compute least rank of all the processes
+    // that didn't succeed.
+    localResults[2] =
+      ! localSuccess ? getComm ()->getRank () : getComm ()->getSize ();
+    int globalResults[3];
+    globalResults[0] = 0;
+    globalResults[1] = 0;
+    globalResults[2] = 0;
+    reduceAll<int, int> (* (getComm ()), Teuchos::REDUCE_MIN,
+                         3, localResults, globalResults);
+    if (globalResults[0] == 0 || globalResults[1] == 0) {
+      std::ostringstream os; // build error message
+      const bool both =
+        globalResults[0] == 0 && globalResults[1] == 0;
+      os << ": At least one process (including Process " << globalResults[2]
+         << ") had the following issue" << (both ? "s" : "") << ":" << endl;
+      if (globalResults[0] == 0) {
+        os << "  - The column Map does not contain at least one diagonal entry "
+          "of the matrix." << endl;
+      }
+      if (globalResults[1] == 0) {
+        os << "  - There is a row on that / those process(es) that does not "
+          "contain a diagonal entry." << endl;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, os.str());
+    }
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  computeDiagonalGraph ()
+  {
+    using Teuchos::rcp;
+
+    if (computedDiagonalGraph_) {
+      // FIXME (mfh 12 Aug 2014) Consider storing the "diagonal graph"
+      // separately from the matrix.  It should really go in the
+      // preconditioner, not here.  We could do this by adding a
+      // method that accepts a nonconst diagonal graph, and updates
+      // it.  btw it would probably be a better idea to use a
+      // BlockMultiVector to store the diagonal, not a graph.
+      return;
+    }
+
+    const size_t maxDiagEntPerRow = 1;
+    // NOTE (mfh 12 Aug 2014) We could also pass in the column Map
+    // here.  However, we still would have to do LID->GID lookups to
+    // make sure that we are using the correct diagonal column
+    // indices, so it probably wouldn't help much.
+    diagonalGraph_ =
+      rcp (new crs_graph_type (graph_.getRowMap (), maxDiagEntPerRow,
+                               Tpetra::StaticProfile));
+    const map_type& meshRowMap = * (graph_.getRowMap ());
+
+    Teuchos::Array<GO> diagGblColInds (maxDiagEntPerRow);
+
+    for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
+         lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
+      const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
+      diagGblColInds[0] = gblRowInd;
+      diagonalGraph_->insertGlobalIndices (gblRowInd, diagGblColInds ());
+    }
+    diagonalGraph_->fillComplete (graph_.getDomainMap (),
+                                  graph_.getRangeMap ());
+    computedDiagonalGraph_ = true;
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<CrsGraph<LO, GO, Node> >
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  getDiagonalGraph () const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! computedDiagonalGraph_, std::runtime_error, "Tpetra::Experimental::"
+      "BlockCrsMatrix::getDiagonalGraph: You must call computeDiagionalGraph() "
+      "before calling this method.");
+    return diagonalGraph_;
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& B,
+                    BlockMultiVector<Scalar, LO, GO, Node>& X,
+                    BlockCrsMatrix<Scalar, LO, GO, Node> & factorizedDiagonal,
+                    const int * factorizationPivots,
+                    const Scalar omega,
+                    const ESweepDirection direction) const
+  {
+    const LO numLocalMeshRows =
+      static_cast<LO> (rowMeshMap_.getNodeNumElements ());
+    const LO numVecs = static_cast<LO> (X.getNumVectors ());
+
+    // If using (new) Kokkos, replace localMem with thread-local
+    // memory.  Note that for larger block sizes, this will affect the
+    // two-level parallelization.  Look to Stokhos for best practice
+    // on making this fast for GPUs.
+    const LO blockSize = getBlockSize ();
+    Teuchos::Array<Scalar> localMem (blockSize);
+    Teuchos::Array<Scalar> localMat (blockSize*blockSize);
+    little_vec_type X_lcl (localMem.getRawPtr (), blockSize, 1);
+
+    const LO * columnIndices;
+    Scalar * Dmat;
+    LO numIndices;
+
+    // FIXME (mfh 12 Aug 2014) This probably won't work if LO is unsigned.
+    LO rowBegin = 0, rowEnd = 0, rowStride = 0;
+    if (direction == Forward) {
+      rowBegin = 1;
+      rowEnd = numLocalMeshRows+1;
+      rowStride = 1;
+    }
+    else if (direction == Backward) {
+      rowBegin = numLocalMeshRows;
+      rowEnd = 0;
+      rowStride = -1;
+    }
+    else if (direction == Symmetric) {
+      this->localGaussSeidel (B, X, factorizedDiagonal, factorizationPivots, omega, Forward);
+      this->localGaussSeidel (B, X, factorizedDiagonal, factorizationPivots, omega, Backward);
+      return;
+    }
+
+    const Scalar one_minus_omega = Teuchos::ScalarTraits<Scalar>::one()-omega;
+    const Scalar     minus_omega = -omega;
+
+    if (numVecs == 1) {
+      for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
+        const LO actlRow = lclRow - 1;
+
+        little_vec_type B_cur = B.getLocalBlock (actlRow, 0);
+        X_lcl.assign (B_cur);
+        X_lcl.scale (omega);
+
+        const size_t meshBeg = ptr_[actlRow];
+        const size_t meshEnd = ptr_[actlRow+1];
+        for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
+          const LO meshCol = ind_[absBlkOff];
+          const_little_block_type A_cur =
+            getConstLocalBlockFromAbsOffset (absBlkOff);
+
+          little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
+
+          // X_lcl += alpha*A_cur*X_cur
+          const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
+          X_lcl.matvecUpdate (alpha, A_cur, X_cur);
+        } // for each entry in the current local row of the matrx
+
+        factorizedDiagonal.getLocalRowView (actlRow, columnIndices,
+                                            Dmat, numIndices);
+        little_block_type D_lcl = getNonConstLocalBlockFromInput (Dmat, 0);
+
+        D_lcl.solve (X_lcl, &factorizationPivots[actlRow*blockSize_]);
+        little_vec_type X_update = X.getLocalBlock (actlRow, 0);
+        X_update.assign(X_lcl);
+      } // for each local row of the matrix
+    }
+    else {
+      for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
+        for (LO j = 0; j < numVecs; ++j) {
+          LO actlRow = lclRow-1;
+
+          little_vec_type B_cur = B.getLocalBlock (actlRow, j);
+          X_lcl.assign (B_cur);
+          X_lcl.scale (omega);
+
+          const size_t meshBeg = ptr_[actlRow];
+          const size_t meshEnd = ptr_[actlRow+1];
+          for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
+            const LO meshCol = ind_[absBlkOff];
+            const_little_block_type A_cur =
+              getConstLocalBlockFromAbsOffset (absBlkOff);
+
+            little_vec_type X_cur = X.getLocalBlock (meshCol, j);
+
+            // X_lcl += alpha*A_cur*X_cur
+            const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
+            X_lcl.matvecUpdate (alpha, A_cur, X_cur);
+          } // for each entry in the current local row of the matrx
+
+          factorizedDiagonal.getLocalRowView (actlRow, columnIndices,
+                                              Dmat, numIndices);
+          little_block_type D_lcl = getNonConstLocalBlockFromInput(Dmat, 0);
+
+          D_lcl.solve (X_lcl, &factorizationPivots[actlRow*blockSize_]);
+
+          little_vec_type X_update = X.getLocalBlock (actlRow, j);
+          X_update.assign(X_lcl);
+        } // for each entry in the current local row of the matrix
+      } // for each local row of the matrix
+    }
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &X,
+                   const MultiVector<Scalar,LO,GO,Node> &B,
+                   const MultiVector<Scalar,LO,GO,Node> &D,
+                   const Scalar& dampingFactor,
+                   const ESweepDirection direction,
+                   const int numSweeps,
+                   const bool zeroInitialGuess) const
+  {
+    // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
+    // interface for block Gauss-Seidel.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+      "gaussSeidelCopy: Not implemented.");
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& X,
+                            const MultiVector<Scalar,LO,GO,Node>& B,
+                            const MultiVector<Scalar,LO,GO,Node>& D,
+                            const ArrayView<LO>& rowIndices,
+                            const Scalar& dampingFactor,
+                            const ESweepDirection direction,
+                            const int numSweeps,
+                            const bool zeroInitialGuess) const
+  {
+    // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
+    // interface for block Gauss-Seidel.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+      "reorderedGaussSeidelCopy: Not implemented.");
+  }
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
+                    const Teuchos::ArrayView<const size_t>& offsets) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
+
+    const size_t myNumRows = rowMeshMap_.getNodeNumElements();
+    const LO* columnIndices;
+    Scalar* vals;
+    LO numColumns;
+    Teuchos::Array<LO> cols(1);
+
+    // FIXME (mfh 12 Aug 2014) Should use a "little block" for this instead.
+    Teuchos::Array<Scalar> zeroMat (blockSize_*blockSize_, ZERO);
+    for (size_t i = 0; i < myNumRows; ++i) {
+      cols[0] = i;
+      if (offsets[i] == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        diag.replaceLocalValues (i, cols.getRawPtr (), zeroMat.getRawPtr (), 1);
+      }
+      else {
+        getLocalRowView (i, columnIndices, vals, numColumns);
+        diag.replaceLocalValues (i, cols.getRawPtr(), &vals[offsets[i]*blockSize_*blockSize_], 1);
+      }
+    }
+  }
+
 
   template<class Scalar, class LO, class GO, class Node>
   LO
@@ -422,6 +784,19 @@ namespace Experimental {
       numInds = ptr_[localRowInd + 1] - absBlockOffsetStart;
       return 0; // indicates no error
     }
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalRowCopy (LO LocalRow,
+                   const ArrayView<LO> &Indices,
+                   const ArrayView<Scalar> &Values,
+                   size_t &NumEntries) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+      "getLocalRowCopy: Copying is not implemented. You should use a view.");
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -572,7 +947,7 @@ namespace Experimental {
 
 
   template<class Scalar, class LO, class GO, class Node>
-  LO
+  size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNumEntriesInLocalRow (const LO localRowInd) const
   {
@@ -796,7 +1171,7 @@ namespace Experimental {
     const size_t numEntriesInRow = absEndOffset - absStartOffset;
 
     // If the hint was correct, then the hint is the offset to return.
-    if (hint < numEntriesInRow && ind_[absStartOffset] == colIndexToFind) {
+    if (hint < numEntriesInRow && ind_[absStartOffset+hint] == colIndexToFind) {
       // Always return the offset relative to the current row.
       return hint;
     }
@@ -911,6 +1286,28 @@ namespace Experimental {
       return getNonConstLocalBlockFromInput (const_cast<Scalar*> (val_),
                                              absPointOffset);
     }
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_type
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalBlock (const LO localRowInd, const LO localColInd) const
+  {
+    const size_t absRowBlockOffset = ptr_[localRowInd];
+
+    size_t hint = 0;
+    const size_t relBlockOffset =
+        findRelOffsetOfColumnIndex (localRowInd, localColInd, hint);
+
+    if (relBlockOffset != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
+      return getNonConstLocalBlockFromAbsOffset (absBlockOffset);
+    }
+    else
+    {
+      return little_block_type (NULL, 0, 0, 0);
+    }
+
   }
 
 
@@ -1700,15 +2097,254 @@ namespace Experimental {
     } // extreme verbosity level (print the whole matrix)
   }
 
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<const Teuchos::Comm<int> >
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getComm() const
+  {
+    return graph_.getComm();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<Node>
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNode() const
+  {
+    return graph_.getNode();
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  global_size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalNumCols() const
+  {
+    return graph_.getGlobalNumCols();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNodeNumCols() const
+  {
+    return graph_.getNodeNumCols();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  GO
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getIndexBase() const
+  {
+    return graph_.getIndexBase();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  global_size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalNumEntries() const
+  {
+    return graph_.getGlobalNumEntries();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNodeNumEntries() const
+  {
+    return graph_.getNodeNumEntries();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNumEntriesInGlobalRow (GO globalRow) const
+  {
+    return graph_.getNumEntriesInGlobalRow(globalRow);
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  global_size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalNumDiags() const
+  {
+    return getGlobalNumDiags();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNodeNumDiags() const
+  {
+    return getNodeNumDiags();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalMaxNumRowEntries() const
+  {
+    return graph_.getGlobalMaxNumRowEntries();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  hasColMap() const
+  {
+    return graph_.hasColMap();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  isLowerTriangular() const
+  {
+    return graph_.isLowerTriangular();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  isUpperTriangular() const
+  {
+    return graph_.isUpperTriangular();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  isLocallyIndexed() const
+  {
+    return graph_.isLocallyIndexed();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  isGloballyIndexed() const
+  {
+    return graph_.isGloballyIndexed();
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  isFillComplete() const
+  {
+    return true;
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  supportsRowViews() const
+  {
+    return true;
+  }
+
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalRowCopy (GO GlobalRow,
+                    const Teuchos::ArrayView<GO> &Indices,
+                    const Teuchos::ArrayView<Scalar> &Values,
+                    size_t &NumEntries) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowCopy: "
+      "This class doesn't support global matrix indexing.");
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalRowView (GO GlobalRow,
+                    ArrayView<const GO> &indices,
+                    ArrayView<const Scalar> &values) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowView: "
+      "This class doesn't support global matrix indexing.");
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalRowView (LO LocalRow,
+                   ArrayView<const LO> &indices,
+                   ArrayView<const Scalar> &values) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowView: "
+      "This class doesn't support global matrix indexing.");
+
+  }
+
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalDiagCopy (Tpetra::Vector<Scalar,LO,GO,Node> &diag) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getLocalDiagCopy: "
+      "not implemented.");
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  leftScale (const Tpetra::Vector<Scalar, LO, GO, Node>& x)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::leftScale: "
+      "not implemented.");
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  rightScale (const Tpetra::Vector<Scalar, LO, GO, Node>& x)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::rightScale: "
+      "not implemented.");
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<const Tpetra::RowGraph<LO, GO, Node> >
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGraph() const
+  {
+    return graphRCP_;
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getFrobeniusNorm () const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getFrobeniusNorm: "
+      "not implemented.");
+  }
+
+
 } // namespace Experimental
 } // namespace Tpetra
 
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra::Experimental namespace!
+// Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_INSTANT(S,LO,GO,NODE) \
-  template class BlockCrsMatrix< S, LO, GO, NODE >;
+  template class Experimental::BlockCrsMatrix< S, LO, GO, NODE >;
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_DEF_HPP

@@ -64,7 +64,7 @@ public:
 template<class T>
 RCPNode* basicRCPNodeNoAlloc(T* p, const bool has_ownership)
 {
-  RCPNodeTmpl<T,DeallocDelete<T> > *rcpNode = 
+  RCPNodeTmpl<T,DeallocDelete<T> > *rcpNode =
     new RCPNodeTmpl<T,DeallocDelete<T> >(p, DeallocDelete<T>(), has_ownership);
   return rcpNode;
 }
@@ -373,7 +373,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, weakPtr_basic_1, T )
   TEST_EQUALITY_CONST( nodeRef1.weak_count(), 1 );
   TEST_EQUALITY_CONST( nodeRef2.strong_count(), 2 );
   TEST_EQUALITY_CONST( nodeRef2.weak_count(), 1 );
-  
+
   MockRCP<T> mockRCP;
   ECHO(nodeRef2.debug_assert_valid_ptr(mockRCP)); // Should not throw!
 
@@ -411,7 +411,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, weakPtr_basic_2, T )
   TEST_EQUALITY_CONST( nodeRef1.weak_count(), 1 );
   TEST_EQUALITY_CONST( nodeRef2.strong_count(), 1 );
   TEST_EQUALITY_CONST( nodeRef2.weak_count(), 1 );
-  
+
   MockRCP<T> mockRCP;
 
   ECHO(nodeRef2.debug_assert_valid_ptr(mockRCP)); // Should not throw!
@@ -523,11 +523,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithoutNodeTracingPrint, 
   const bool has_ownership = true;
   RCPNode *node = new RCPNodeTmpl<T,DeallocDelete<T> >(
     p, DeallocDelete<T>(), has_ownership);
-  
+
   RCPNodeHandle nodeRef(node, p, T_name, concreateT_name, has_ownership);
 
   TEST_EQUALITY_CONST(RCPNodeTracer::numActiveRCPNodes(), 0);
-  
+
   out << "\nMake sure no output is printed when there are no active nodes without tracing ...\n";
   const std::string expendedOutput = "";
   std::ostringstream printActiveRCPNodes_out;
@@ -570,7 +570,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_basic, T )
 
   const int v1 = 2;
   const any a1(v1);
-  nodeRef.set_extra_data(a1, "a1", PRE_DESTROY, true); 
+  nodeRef.set_extra_data(a1, "a1", PRE_DESTROY, true);
 
   any &a2 = nodeRef.get_extra_data(a1.typeName(), "a1");
   TEST_EQUALITY_CONST( a1.same(a2), true );
@@ -592,7 +592,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_basic, T )
   TEST_EQUALITY( &a4, &a2 );
   TEST_EQUALITY( &a4, a3 );
   TEST_EQUALITY( any_cast<int>(a4), v2 );
-  
+
 }
 
 
@@ -603,8 +603,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_basic_const, T )
 
   const int v1 = 2;
   const any a1(v1);
-  nodeRef.set_extra_data(a1, "a1", PRE_DESTROY, true); 
-  
+  nodeRef.set_extra_data(a1, "a1", PRE_DESTROY, true);
+
   const RCPNodeHandle nodeRef2 = nodeRef;
 
   const any &a2 = nodeRef2.get_extra_data(a1.typeName(), "a1");
@@ -615,7 +615,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_basic_const, T )
   TEST_EQUALITY_CONST( a3!=0, true );
   TEST_EQUALITY( &a2, a3 );
   TEST_EQUALITY_CONST( a3->same(a1), true );
-  
+
 }
 
 
@@ -626,7 +626,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_failed, T )
 
   const int v1 = 2;
   const any a1(v1);
-  nodeRef.set_extra_data(a1, "a1", PRE_DESTROY, true); 
+  nodeRef.set_extra_data(a1, "a1", PRE_DESTROY, true);
 
 #ifdef TEUCHOS_DEBUG
 
@@ -643,7 +643,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_failed, T )
 
   any *a3 = nodeRef.get_optional_extra_data(a1.typeName(), "wrong name");
   TEST_EQUALITY_CONST( a3, 0 );
-  
+
 }
 
 
@@ -654,8 +654,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_failed_const, T )
 
   const int v1 = 2;
   const any a1(v1);
-  nodeRef.set_extra_data(a1, "a1", PRE_DESTROY, true); 
-  
+  nodeRef.set_extra_data(a1, "a1", PRE_DESTROY, true);
+
   const RCPNodeHandle nodeRef2 = nodeRef;
 
 #ifdef TEUCHOS_DEBUG
@@ -673,7 +673,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_failed_const, T )
 
   const any *a3 = nodeRef2.get_optional_extra_data(a1.typeName(), "wrong name");
   TEST_EQUALITY_CONST( a3, 0 );
-  
+
 }
 
 
@@ -720,4 +720,4 @@ UNIT_TEST_GROUP(E)
 // in order to test this functionality.
 
 
-} // namespace Teuchos 
+} // namespace Teuchos

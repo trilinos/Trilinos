@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_LIBRARY(
   teuchos_algorithma

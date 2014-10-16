@@ -85,7 +85,7 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef VectorAdapter<User>       base_adapter_t;
@@ -134,7 +134,7 @@ public:
 
   size_t getLocalNumIDs() const { return vector_->getLocalLength();}
 
-  void getIDsView(const gid_t *&ids) const
+  void getIDsView(const zgid_t *&ids) const
   { 
     ids = map_->getNodeElementList().getRawPtr();
   }
@@ -259,13 +259,13 @@ template <typename User>
       const PartitioningSolution<Adapter> &solution) const
 {
   size_t len = solution.getLocalNumberOfIds();
-  const gid_t *gids = solution.getIdList();
+  const zgid_t *gids = solution.getIdList();
   const part_t *parts = solution.getPartList();
-  ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false);
+  ArrayRCP<zgid_t> gidList = arcp(const_cast<zgid_t *>(gids), 0, len, false);
   ArrayRCP<part_t> partList = arcp(const_cast<part_t *>(parts), 0, len, 
     false);
   ArrayRCP<lno_t> dummyIn;
-  ArrayRCP<gid_t> importList;
+  ArrayRCP<zgid_t> importList;
   ArrayRCP<lno_t> dummyOut;
   size_t numNewRows;
 

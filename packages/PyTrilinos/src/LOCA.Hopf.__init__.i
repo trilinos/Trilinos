@@ -71,7 +71,7 @@ and classes:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Configuration and optional includes
@@ -80,7 +80,7 @@ and classes:
 %{
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
-#include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyVector.hpp"
 %}
 #endif
 
@@ -93,9 +93,13 @@ and classes:
 
 // Ignore/renames
 %ignore *::operator=;
+%ignore *::operator[];
+%ignore operator[];
 
 // Trilinos module imports
 %import "Teuchos.i"
+
+// Base class imports
 %pythoncode
 %{
 import sys, os.path as op
@@ -103,7 +107,9 @@ parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
-%import "LOCA.Extended_RelPath.i"
+%import "NOX.Abstract.i"
+%import(module="Extended") "LOCA_Extended_MultiVector.H"
+%import(module="Extended") "LOCA_Extended_Vector.H"
 
 // Import the sub-modules
 %pythoncode
@@ -115,14 +121,8 @@ import MooreSpence
 import MinimallyAugmented
 %}
 
-// Teuchos::RCP support
-// %teuchos_rcp(LOCA::Hopf::ComplexMultiVector)
-// %teuchos_rcp(LOCA::Hopf::ComplexVector)
-
 // LOCA::Hopf ComplexMultiVector class
-//%feature("director") LOCA::Hopf::ComplexMultiVector;
 %include "LOCA_Hopf_ComplexMultiVector.H"
 
 // LOCA::Hopf ComplexVector class
-//%feature("director") LOCA::Hopf::ComplexVector;
 %include "LOCA_Hopf_ComplexVector.H"

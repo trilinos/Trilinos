@@ -42,9 +42,7 @@
 #ifndef TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
 
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
-#endif
+#include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
 
 namespace Tpetra {
 namespace Experimental {
@@ -118,39 +116,53 @@ BlockMultiVector (const mv_type& X_mv,
   mvData_ (NULL), // just for now
   blockSize_ (blockSize)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    X_mv.getCopyOrView () != Teuchos::View, std::invalid_argument,
-    "Tpetra::Experimental::BlockMultiVector constructor: "
-    "The input MultiVector must have view semantics.  "
-    "Call X_mv.setCopyOrView(Teuchos::View) to change the input MultiVector to "
-    "view semantics.  We don't do it ourselves, because that would be a side "
-    "effect which might surprise users.");
-  try {
-    if (! X_mv.getMap ().is_null ()) {
-      pointMap_ = * (X_mv.getMap ());
+  using Teuchos::RCP;
+
+  if (X_mv.getCopyOrView () == Teuchos::View) {
+    // The input MultiVector has view semantics, so assignment just
+    // does a shallow copy.
+    mv_ = X_mv;
+  }
+  else if (X_mv.getCopyOrView () == Teuchos::Copy) {
+    // The input MultiVector has copy semantics.  We can't change
+    // that, but we can make a view of the input MultiVector and
+    // change the view to have view semantics.  (That sounds silly;
+    // shouldn't views always have view semantics? but remember that
+    // "view semantics" just governs the default behavior of the copy
+    // constructor and assignment operator.)
+    RCP<const mv_type> X_view_const;
+    const size_t numCols = X_mv.getNumVectors ();
+    if (numCols == 0) {
+      Teuchos::Array<size_t> cols (0); // view will have zero columns
+      X_view_const = X_mv.subView (cols ());
+    } else { // Range1D is an inclusive range
+      X_view_const = X_mv.subView (Teuchos::Range1D (0, numCols-1));
     }
-  } catch (std::exception& e) {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error,
-      "Tpetra::Experimental::BlockMultiVector constructor: "
-      "operator* on X_mv.getMap() threw an exception: " << e.what ());
-  }
-  try {
-    mv_ = X_mv; // shallow copy, since X_mv has view semantics.
-  } catch (std::exception& e) {
+      X_view_const.is_null (), std::logic_error, "Tpetra::Experimental::"
+      "BlockMultiVector constructor: X_mv.subView(...) returned null.  This "
+      "should never happen.  Please report this bug to the Tpetra developers.");
+
+    // It's perfectly OK to cast away const here.  Those view methods
+    // should be marked const anyway, because views can't change the
+    // allocation (just the entries themselves).
+    RCP<mv_type> X_view = Teuchos::rcp_const_cast<mv_type> (X_view_const);
+    X_view->setCopyOrView (Teuchos::View);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error,
-      "Tpetra::Experimental::BlockMultiVector constructor: "
-      "Multivector::operator= threw an exception: " << e.what ());
+      X_view->getCopyOrView () != Teuchos::View, std::logic_error, "Tpetra::"
+      "Experimental::BlockMultiVector constructor: We just set a MultiVector "
+      "to have view semantics, but it claims that it doesn't have view "
+      "semantics.  This should never happen.  "
+      "Please report this bug to the Tpetra developers.");
+    mv_ = *X_view; // MultiVector::operator= does a shallow copy here
   }
-  try {
-    mvData_ = mv_.get1dViewNonConst ().getRawPtr ();
-  } catch (std::exception& e) {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error,
-      "Tpetra::Experimental::BlockMultiVector constructor: "
-      "Multivector::get1dViewNonConst() threw an exception: " << e.what ());
+
+  // At this point, mv_ has been assigned, so we can ignore X_mv.
+  Teuchos::RCP<const map_type> pointMap = mv_.getMap ();
+  if (! pointMap.is_null ()) {
+    pointMap_ = *pointMap; // Map::operator= also does a shallow copy
   }
+  mvData_ = mv_.get1dViewNonConst ().getRawPtr ();
 }
 
 template<class Scalar, class LO, class GO, class Node>
@@ -195,7 +207,7 @@ makePointMap (const map_type& meshMap, const LO blockSize)
     Teuchos::Array<GO> lclPointGblInds (lclNumPointMapInds);
     for (size_type g = 0; g < lclNumMeshGblInds; ++g) {
       const GO meshGid = lclMeshGblInds[g];
-      const GO pointGidStart = meshGid * static_cast<GO> (blockSize);
+      const GO pointGidStart = indexBase + (meshGid - indexBase) * static_cast<GO> (blockSize);
       const size_type offset = g * static_cast<size_type> (blockSize);
       for (LO k = 0; k < blockSize; ++k) {
         const GO pointGid = pointGidStart + static_cast<GO> (k);
@@ -550,9 +562,9 @@ scale (const Scalar& val)
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra::Experimental namespace!
+// Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_INSTANT(S,LO,GO,NODE) \
-  template class BlockMultiVector< S, LO, GO, NODE >;
+  template class Experimental::BlockMultiVector< S, LO, GO, NODE >;
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP

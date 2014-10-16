@@ -193,6 +193,44 @@ buildAndRegisterEvaluators(const std::string & responseName,
         fm.template requireField<EvalT>(*evaluator->evaluatedFields()[0]); // require the dummy evaluator
       }
     }
+    else if(basis->getElementSpace()==panzer::PureBasis::HDIV) {
+      TEUCHOS_ASSERT(centroidRule!=Teuchos::null);
+
+      // register basis values evaluator
+      {
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+           = Teuchos::rcp(new panzer::BasisValues_Evaluator<EvalT,panzer::Traits>(centroidRule,basis));
+        fm.template registerEvaluator<EvalT>(evaluator);
+      }
+
+      // add a DOF_PointValues for each field
+      std::string fields_concat = "";
+      std::vector<std::string> pointFields;
+      for(std::size_t f=0;f<fields.size();f++) {
+        Teuchos::ParameterList p;
+        p.set("Name",fields[f]);
+        p.set("Basis",basis);
+        p.set("Point Rule",centroidRule.getConst());
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+           = Teuchos::rcp(new panzer::DOF_PointValues<EvalT,panzer::Traits>(p));
+
+        fm.template registerEvaluator<EvalT>(evaluator);
+
+        pointFields.push_back(fields[f]+"_"+centroidRule->getName());
+
+        fields_concat += fields[f];
+      }
+
+      // add the scatter field evaluator for this basis
+      {
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+           = Teuchos::rcp(new panzer_stk_classic::ScatterVectorFields<EvalT,panzer::Traits>("STK HDIV Scatter Basis " +basis->name()+": "+fields_concat,
+                                                                              mesh_,centroidRule,fields));
+
+        fm.template registerEvaluator<EvalT>(evaluator);
+        fm.template requireField<EvalT>(*evaluator->evaluatedFields()[0]); // require the dummy evaluator
+      }
+    }
   }
 
   // print warning message for any unused scaled fields

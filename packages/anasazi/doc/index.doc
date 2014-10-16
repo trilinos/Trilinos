@@ -45,6 +45,10 @@ Unlike <a href="http://www.caam.rice.edu/software/ARPACK/">ARPACK</a>, which pro
    <li>IRTR, an implicit version of the Riemannian Trust-Region Eigensolver, orginally described in 
    <em>A truncated-CG style method for symmetric generalized eigenvalue problems</em>, P.-A. Absil, C. G. Baker, and K. A. Gallivan, J. Computational and Applied Mathematics, 189, pp. 274-285 (2006).
    <li>Generalized Davidson method, a non-symmetric variant of the block Davidson solver described above. This solver is <em>experimental</em>, but is currently in active use. It currently only support real-valued scalar types.
+   <li>TraceMin method described in <em>A trace minimization algorithm for the generalized eigenvalue problem</em>, A. Sameh and J. Wisniewski, SIAM J. Numer. Anal., 19, pp. 1243-1259 (1982).
+   This solver is <em>experimental</em>.
+   <li>TraceMin-Davidson method described in <em>The trace minimization method for the symmetric generalized eigenvalue problem</em>, A. Sameh and Z. Tong, J. Computational and Applied Mathematics, 123, pp. 155-175 (2000).
+   This solver is <em>experimental</em>.
    </ul>
 
    \section contributors Anasazi Contributors
@@ -57,6 +61,7 @@ Unlike <a href="http://www.caam.rice.edu/software/ARPACK/">ARPACK</a>, which pro
      <li> Steve Hamilton, Oak Ridge National Lab
      <li> <a href="http://www.sandia.gov/~rblehou">Rich Lehoucq</a>, Sandia National Labs
      <li> <a href="http://www.cs.sandia.gov/~hkthorn/">Heidi Thornquist</a>, Sandia National Labs
+     <li> Alicia Klinvex, Purdue University
    </ul>
 
 */

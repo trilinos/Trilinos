@@ -265,115 +265,115 @@ compare_services(nssi_service &service1, nssi_service &service2)
             break;
     }
 
-    if (service1.req_addr.buffer_addr.transport_id != service2.req_addr.buffer_addr.transport_id) {
+    if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].transport_id != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].transport_id) {
         log_error(getservice_debug_level, "service compare FAILED");
         rc=NSSI_EINVAL;
         goto out;
     }
-    switch (service1.req_addr.buffer_addr.transport_id) {
+    switch (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].transport_id) {
         case NNTI_TRANSPORT_PORTALS:
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.portals.buffer_id  != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.portals.buffer_id) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.buffer_id  != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.buffer_id) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.portals.match_bits != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.portals.match_bits) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.match_bits != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.match_bits) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.portals.size       != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.portals.size) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.size       != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.size) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
             break;
         case NNTI_TRANSPORT_IB:
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.buf      != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.buf) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.buf      != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.buf) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.key      != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.key) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.key      != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.key) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.size     != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.size) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.size     != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.size) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.ack_buf  != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.ack_buf) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.ack_buf  != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.ack_buf) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.ack_size != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.ib.ack_size) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.ack_size != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.ack_size) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
             break;
         case NNTI_TRANSPORT_GEMINI:
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.type              != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.type) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.type              != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.type) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.buf               != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.buf) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.buf               != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.buf) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1    != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.mem_hdl.qword1    != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.mem_hdl.qword1) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword2    != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword2) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.mem_hdl.qword2    != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.mem_hdl.qword2) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.size              != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.size) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.size              != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.size) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.wc_addr           != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.wc_addr) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.wc_addr           != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.wc_addr) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword1 != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword1) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword1 != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword1) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword2 != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword2) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword2 != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword2) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
             break;
         case NNTI_TRANSPORT_MPI:
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.mpi.rtr_tag  != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.mpi.rtr_tag) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rtr_tag  != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rtr_tag) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.mpi.rts_tag  != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.mpi.rts_tag) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rts_tag  != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rts_tag) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_addr.NNTI_remote_addr_t_u.mpi.size     != service2.req_addr.buffer_addr.NNTI_remote_addr_t_u.mpi.size) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.size     != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.size) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;

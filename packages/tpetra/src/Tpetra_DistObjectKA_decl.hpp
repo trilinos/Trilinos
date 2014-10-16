@@ -51,7 +51,7 @@
 #if TPETRA_USE_KOKKOS_DISTOBJECT
 
 #include "KokkosCompat_View.hpp"
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 
 // #ifndef HAVE_TPETRA_TRANSFER_TIMERS
 // #  define HAVE_TPETRA_TRANSFER_TIMERS 1
@@ -72,9 +72,9 @@ namespace Tpetra {
   /// architectures.  TPETRA_USE_KOKKOS_DISTOBJECT must be defined in
   /// order to use this class.
   template <class Packet,
-            class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class LocalOrdinal = Map<>::local_ordinal_type,
+            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
+            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
   class DistObjectKA :
     virtual public SrcDistObject,
     virtual public Teuchos::Describable {

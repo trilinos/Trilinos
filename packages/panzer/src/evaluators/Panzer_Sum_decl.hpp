@@ -54,6 +54,7 @@ namespace panzer {
     <ParameterList>
       <ParameterList name="Sum Name" type="string" value="<destination field name>"/>
       <ParameterList name="Values Names" type="Teuchos::RCP<std::vector<std::string> >" value="<Source field names>"/>
+      <ParameterList name="Scalars" type="Teuchos::RCP<const std::vector<double> >" value="<scalar values>"/>
       <ParameterList name="Data Layout" type="Teuchos::RCP<PHX::DataLayout>" value="<data layout of all associated fields>"/>
     </ParameterList>
     \endverbatim
@@ -62,6 +63,7 @@ PHX_EVALUATOR_CLASS(Sum)
   
   PHX::MDField<ScalarT> sum;
   std::vector< PHX::MDField<ScalarT> > values;
+  std::vector<double> scalars;
 
   std::size_t cell_data_size;
 

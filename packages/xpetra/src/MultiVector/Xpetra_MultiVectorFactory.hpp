@@ -62,9 +62,14 @@
 
 namespace Xpetra {
 
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = MultiVector<>::scalar_type,
+            class LocalOrdinal =
+              typename MultiVector<Scalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class MultiVectorFactory {
-
   private:
     //! Private constructor. This is a static class.
     MultiVectorFactory() {}
@@ -72,7 +77,11 @@ namespace Xpetra {
   public:
 
     //! Constructor specifying the number of non-zeros for all rows.
-    static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, bool zeroOut=true) {
+    static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+    Build (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map,
+           size_t NumVectors,
+           bool zeroOut=true)
+    {
       XPETRA_MONITOR("MultiVectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -105,7 +114,7 @@ namespace Xpetra {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef MultiVector<double, int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -122,8 +131,10 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVector(map, NumVectors, zeroOut) );
+        return rcp( new EpetraMultiVectorT<int>(map, NumVectors, zeroOut) );
+#endif
 #endif
 
       XPETRA_FACTORY_END;
@@ -139,14 +150,71 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVector(map, ArrayOfPtrs, NumVectors) );
+        return rcp( new EpetraMultiVectorT<int>(map, ArrayOfPtrs, NumVectors) );
+#endif
 #endif
 
       XPETRA_FACTORY_END;
     }
 
   };
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template <>
+  class MultiVectorFactory<double, int, long long> {
+
+    typedef double Scalar;
+    typedef int LocalOrdinal;
+    typedef long long GlobalOrdinal;
+    typedef MultiVector<double, int, GlobalOrdinal>::node_type Node;
+
+  private:
+    //! Private constructor. This is a static class.
+    MultiVectorFactory() {}
+
+  public:
+
+    static RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, bool zeroOut=true) {
+      XPETRA_MONITOR("MultiVectorFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra)
+        return rcp( new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, NumVectors, zeroOut) );
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+      if (map->lib() == UseEpetra)
+        return rcp( new EpetraMultiVectorT<long long>(map, NumVectors, zeroOut) );
+#endif
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+    //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
+    static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
+      XPETRA_MONITOR("MultiVectorFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra)
+        return rcp( new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, ArrayOfPtrs, NumVectors) );
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+      if (map->lib() == UseEpetra)
+        return rcp( new EpetraMultiVectorT<long long>(map, ArrayOfPtrs, NumVectors) );
+#endif
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+  };
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 }
 

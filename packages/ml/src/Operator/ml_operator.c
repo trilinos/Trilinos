@@ -1316,6 +1316,8 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
 
      if (block_size > 1) {
         Nneigh    = ML_CommInfoOP_Get_Nneighbors(Amat->getrow->pre_comm);
+        if (neighbors != NULL)
+          ML_free(neighbors);
         neighbors = ML_CommInfoOP_Get_neighbors(Amat->getrow->pre_comm);
 
 
@@ -1376,8 +1378,9 @@ ML_Operator *ML_Operator_ImplicitlyScale(ML_Operator *Amat, double scalar,
   new_data = (struct ml_matscale *) ML_allocate( sizeof(struct ml_matscale));
   if (new_data == NULL) {
     printf("ML_Operator_ImplicitlyScale: out of space\n");
+    if (matrix != NULL)
+      ML_free(matrix);
     return NULL;
-    exit(1);
   }
   new_data->Amat          = Amat;
   new_data->scalar        = scalar;
@@ -1430,8 +1433,8 @@ ML_Operator *ML_Operator_ImplicitlyVScale(ML_Operator *Amat, double* scale,
   new_data = (struct ml_matvscale *) ML_allocate( sizeof(struct ml_matscale));
   if (new_data == NULL) {
     printf("ML_Operator_ImplicitlyVScale: out of space\n");
+    if(matrix !=NULL) ML_free(matrix);
     return NULL;
-    exit(1);
   }
   new_data->Amat          = Amat;
   new_data->scale         = scale;
@@ -1687,8 +1690,8 @@ ML_Operator *ML_Operator_ImplicitlyVCScale(ML_Operator *Amat, double* scale,
   new_data = (struct ml_matvscale *) ML_allocate( sizeof(struct ml_matscale));
   if (new_data == NULL) {
     printf("ML_Operator_ImplicitlyVCScale: out of space\n");
+    if(matrix != NULL) ML_free(matrix);
     return NULL;
-    exit(1);
   }
   new_data->Amat          = Amat;
   new_data->scale         = scale;

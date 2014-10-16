@@ -38,7 +38,6 @@
 # @HEADER
 
 
-INCLUDE(TribitsAddAdvancedTest)
 
 INCLUDE(ParseVariableArguments)
 
@@ -401,6 +400,20 @@ CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of non-enabled SE packages:  Triutils EpetraExt ThyraGoodStuff ThyraCrazyStuff ThyraEpetraExt 5"
   )
 
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableAllPackages_VerboseConfigure
+  ARGS
+    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+    -DTrilinos_VERBOSE_CONFIGURE:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Teuchos_FULL_ENABLED_DEP_PACKAGES=''"
+    "RTOp_FULL_ENABLED_DEP_PACKAGES='Teuchos'"
+    "Epetra_FULL_ENABLED_DEP_PACKAGES=''"
+    "ThyraCoreLibs_FULL_ENABLED_DEP_PACKAGES='RTOp.Teuchos'"
+    "ThyraEpetra_FULL_ENABLED_DEP_PACKAGES='ThyraCoreLibs.Epetra.RTOp.Teuchos'"
+    "Thyra_FULL_ENABLED_DEP_PACKAGES='ThyraEpetra.ThyraCoreLibs.Epetra.RTOp.Teuchos'"
+  )
+
 
 #
 # EnableAllPackages_RequiredOnly
@@ -487,6 +500,26 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Zoltan Shards Tpetra Thyra Intrepid ML RBGen 10"
   )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  TestTrueFalse
+  ARGS -DTrilinos_ENABLE_ALL_PACKAGES=TRUE -DTrilinos_ENABLE_Zoltan=TRUE
+    -DTrilinos_ENABLE_TEST=TRUE -DTPL_ENABLE_BLAS=FALSE
+#    -DTrilinos_VERBOSE_CONFIGURE=TRUE
+  PASS_REGULAR_EXPRESSION_ALL
+    "Explicitly enabled packages on input .by user.:  Zoltan 1"
+    "Explicitly disabled packages on input .by user or by default.:  Stokhos 1"
+    "Explicitly disabled TPLs on input .by user or by default.:  MPI BLAS 2"
+    "Setting Trilinos_ENABLE_Teuchos=OFF because Teuchos has a required library dependence on disabled TPL BLAS"
+    "Setting Trilinos_ENABLE_TrilinosFramework=ON"
+    "Final set of enabled packages:  TrilinosFramework Zoltan Shards 3"
+    "Final set of enabled SE packages:  TrilinosFramework Zoltan Shards 3"
+    "Final set of non-enabled packages:  Teuchos RTOp Epetra Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 21"
+    "Final set of non-enabled SE packages:  Teuchos RTOp Epetra Triutils Tpetra EpetraExt Stokhos Sacado ThyraCoreLibs ThyraGoodStuff ThyraCrazyStuff ThyraEpetra ThyraEpetraExt ThyraTpetra Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 27"
+  )
+# Above test makes sure that TRUE/FALSE also processed correctly for enable
+# vars.
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
@@ -1005,8 +1038,23 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=
     -DTRIBITS_PROCESS_EXTRAREPOS_LISTS_DEBUG=TRUE
   PASS_REGULAR_EXPRESSION_ALL
-    "WARNING!  Ignoring missing extra repo 'MissingExtraRepo' packages list file ..+/tribits/package_arch/UnitTests/MockTrilinos/MissingExtraRepo/PackagesList.cmake. on request!"
-    "WARNING!  Ignoring missing extra repo 'MissingExtraRepo' TPLs list file ..+/tribits/package_arch/UnitTests/MockTrilinos/MissingExtraRepo/TPLsList.cmake. on request!"
+    "WARNING!  Ignoring missing extra repo 'MissingExtraRepo' packages list file ..+/package_arch/UnitTests/MockTrilinos/MissingExtraRepo/PackagesList.cmake. on request!"
+    "WARNING!  Ignoring missing extra repo 'MissingExtraRepo' TPLs list file ..+/package_arch/UnitTests/MockTrilinos/MissingExtraRepo/TPLsList.cmake. on request!"
+    "Configuring done"
+    "Generating done"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  NativeRepositoriesList1_EnableAllPackages_ST
+  ARGS -DTrilinos_NATIVE_REPO_FILE_OVERRRIDE=cmake/NativeRepositoriesList1.cmake
+    -DTrilinos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON
+    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Reading the list of packages from .*/MockTrilinos/PackagesList.cmake"
+    "Reading the list of packages from .*/MockTrilinos/preCopyrightTrilinos/PackagesList.cmake"
+    "Reading the list of packages from .*/MockTrilinos/extraTrilinosRepo/PackagesList.cmake"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko ExtraPack 24"
     "Configuring done"
     "Generating done"
   )

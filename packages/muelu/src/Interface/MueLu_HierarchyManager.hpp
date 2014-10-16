@@ -69,8 +69,8 @@ namespace MueLu {
   //
   // See also: FactoryManager
   //
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
-  class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_HIERARCHYMANAGER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -79,11 +79,11 @@ namespace MueLu {
     //!
     // TODO: default values should be query from Hierarchy class to avoid duplication
     HierarchyManager() :
-        numDesiredLevel_(MasterList::getDefault<int>("max levels")),
-        maxCoarseSize_(MasterList::getDefault<int>("coarse: max size")),
-        verbosity_(Medium),
-        doPRrebalance_(MasterList::getDefault<bool>("repartition: rebalance P and R")),
-        implicitTranspose_(MasterList::getDefault<bool>("transpose: use implicit")),
+        numDesiredLevel_        (MasterList::getDefault<int>("max levels")),
+        maxCoarseSize_          (MasterList::getDefault<int>("coarse: max size")),
+        verbosity_              (Medium),
+        doPRrebalance_          (MasterList::getDefault<bool>("repartition: rebalance P and R")),
+        implicitTranspose_      (MasterList::getDefault<bool>("transpose: use implicit")),
         graphOutputLevel_(-1) { }
 
     //!
@@ -170,9 +170,10 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
-      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
+      RCP<Teuchos::FancyOStream> fos = this->getOStream();
       fos->setOutputToRootOnly(0);
-      H.print(*fos,verbosity_);
+      H.describe(*fos, verbosity_);
 
       // When we reuse hierarchy, it is necessary that we don't
       // change the number of levels. We also cannot make requests

@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF(Kokkos_ENABLE_Cuda)
   #
@@ -59,6 +58,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 IF (${PROJECT_NAME}_ENABLE_Epetra)
+  IF(NOT Trilinos_NO_32BIT_GLOBAL_INDICES)
   # Tpetra bug 5430:
   # https://software.sandia.gov/bugzilla/show_bug.cgi?id=5430
   #
@@ -73,6 +73,7 @@ IF (${PROJECT_NAME}_ENABLE_Epetra)
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 4
     )
+  ENDIF ()
 ENDIF ()
 
 # Test whether Export to a CrsMatrix with a static graph works.

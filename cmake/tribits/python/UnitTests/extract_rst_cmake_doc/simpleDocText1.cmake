@@ -9,5 +9,5 @@ something
 # Good documenation
 #
 MACRO(SOME_MACRO_NAME1 ...)
-some other stuff 
+some other stuff
 ...

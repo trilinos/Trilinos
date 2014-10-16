@@ -49,7 +49,6 @@
 #include "Tpetra_ETIHelperMacros.h"
 
 namespace Tpetra {
-namespace Experimental {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
@@ -66,7 +65,6 @@ namespace Experimental {
   // types.  I have also put a note there that points here.
   TPETRA_INSTANTIATE_TESTMV(TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_INSTANT)
 
-} // namespace Experimental
 } // namespace Tpetra
 
 #endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

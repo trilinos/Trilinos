@@ -46,57 +46,20 @@
 #ifndef KOKKOS_CUDA_HPP
 #define KOKKOS_CUDA_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
-//----------------------------------------------------------------------------
 // If CUDA execution space is enabled then use this header file.
 
 #if defined( KOKKOS_HAVE_CUDA )
 
-#if defined( __CUDACC__ )
-
-#include <cuda.h>
-
-/*  Compiling with a CUDA compiler.
- *
- *  Include <cuda.h> to pick up the CUDA_VERSION macro defined as:
- *    CUDA_VERSION = ( MAJOR_VERSION * 1000 ) + ( MINOR_VERSION * 10 )
- *
- *  When generating device code the __CUDA_ARCH__ macro is defined as:
- *    __CUDA_ARCH__ = ( MAJOR_CAPABILITY * 100 ) + ( MINOR_CAPABILITY * 10 )
- */
-#if ! defined( CUDA_VERSION )
-#error "#include <cuda.h> did not define CUDA_VERSION"
-#endif
-
-#if ( CUDA_VERSION < 4010 )
-#error "Cuda version 4.1 or greater required"
-#endif
-
-#if defined( __CUDA_ARCH__ ) && ( __CUDA_ARCH__ < 200 )
-/*  Compiling with CUDA compiler for device code. */
-#error "Cuda device capability >= 2.0 is required"
-#endif
-
-#endif /* #if defined( __CUDACC__ ) */
-
-//----------------------------------------------------------------------------
-
 #include <iosfwd>
 #include <vector>
 
-#ifdef KOKKOS_HAVE_OPENMP
-#include <Kokkos_OpenMP.hpp>
-#else
-#ifdef KOKKOS_HAVE_PTHREAD
-#include <Kokkos_Threads.hpp>
-#else
-#include <Kokkos_Serial.hpp>
-#endif
-#endif
+#include <Kokkos_CudaSpace.hpp>
+
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
-#include <Kokkos_CudaSpace.hpp>
+#include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
@@ -113,43 +76,46 @@ class CudaExec ;
 namespace Kokkos {
 
 /// \class Cuda
-/// \brief Kokkos device that uses CUDA to run on GPUs.
+/// \brief Kokkos Execution Space that uses CUDA to run on GPUs.
 ///
-/// A "device" represents a parallel execution model.  It tells Kokkos
+/// An "execution space" represents a parallel execution model.  It tells Kokkos
 /// how to parallelize the execution of kernels in a parallel_for or
-/// parallel_reduce.  For example, the Threads device uses Pthreads or
-/// C++11 threads on a CPU, the OpenMP device uses the OpenMP language
-/// extensions, and the Serial device executes "parallel" kernels
-/// sequentially.  The Cuda device uses NVIDIA's CUDA programming
+/// parallel_reduce.  For example, the Threads execution space uses Pthreads or
+/// C++11 threads on a CPU, the OpenMP execution space uses the OpenMP language
+/// extensions, and the Serial execution space executes "parallel" kernels
+/// sequentially.  The Cuda execution space uses NVIDIA's CUDA programming
 /// model to execute kernels in parallel on GPUs.
 class Cuda {
 public:
-  //! \name Type declarations that all Kokkos devices must provide.
+  //! \name Type declarations that all Kokkos execution spaces must provide.
   //@{
 
   //! The tag (what type of kokkos_object is this).
   typedef Impl::ExecutionSpaceTag  kokkos_tag ;
   //! The device type (same as this class).
   typedef Cuda                  device_type ;
-  //! This device's execution space.
+
+
+  //! This is an execution space
   typedef Cuda                  execution_space ;
-  //! This device's preferred memory space.
+
+#if defined( KOKKOS_USE_CUDA_UVM )
+  //! This execution space's preferred memory space.
+  typedef CudaUVMSpace          memory_space ;
+#else
+  //! This execution space's preferred memory space.
   typedef CudaSpace             memory_space ;
-  typedef Cuda                  scratch_memory_space ;
-  //! The size_type typedef best suited for this device.
-  typedef CudaSpace::size_type  size_type ;
-  //! This device's preferred array layout.
+#endif
+
+  //! The size_type best suited for this execution space.
+  typedef memory_space::size_type  size_type ;
+
+  //! This execution space's preferred array layout.
   typedef LayoutLeft            array_layout ;
-  //! This device's host mirror type.
-#ifdef KOKKOS_HAVE_OPENMP
-  typedef Kokkos::OpenMP       host_mirror_device_type ;
-#else
-#ifdef KOKKOS_HAVE_PTHREAD
-  typedef Kokkos::Threads       host_mirror_device_type ;
-#else
-  typedef Kokkos::Serial       host_mirror_device_type ;
-#endif
-#endif
+
+  //! 
+  typedef ScratchMemorySpace< Cuda >  scratch_memory_space ;
+
   //@}
   //! \name Functions that all Kokkos devices must implement.
   //@{
@@ -234,36 +200,42 @@ public:
 
   //@}
   //--------------------------------------------------------------------------
-#if defined( __CUDA_ARCH__ )
-  //! \name Functions for the functor device interface
-  //@{
-
-  //! Get a pointer to shared memory for this team.
-  __device__ inline void * get_shmem( const int size ) const ;
-
-  __device__ inline Cuda( Impl::CudaExec & exec ) : m_exec(exec) {}
-  __device__ inline Cuda( const Cuda & rhs ) : m_exec(rhs.m_exec) {}
-
-  //@}
-  //--------------------------------------------------------------------------
-
-private:
-
-  Impl::CudaExec & m_exec ;
-
-  //--------------------------------------------------------------------------
-#else
-
-  void * get_shmem( const int size ) const ;
-
-  Cuda( Impl::CudaExec & );
-
-#endif
-
 };
 
 } // namespace Kokkos
 
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::Cuda::memory_space
+  , Kokkos::Cuda::scratch_memory_space
+  >
+{
+  enum { value = true };
+  KOKKOS_INLINE_FUNCTION static void verify( void ) { }
+  KOKKOS_INLINE_FUNCTION static void verify( const void * ) { }
+};
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::HostSpace
+  , Kokkos::Cuda::scratch_memory_space
+  >
+{
+  enum { value = false };
+  inline static void verify( void ) { CudaSpace::access_error(); }
+  inline static void verify( const void * p ) { CudaSpace::access_error(p); }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
 #include <Cuda/Kokkos_CudaExec.hpp>

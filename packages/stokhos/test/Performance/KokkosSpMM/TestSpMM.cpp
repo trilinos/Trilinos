@@ -42,10 +42,7 @@
 #include <iostream>
 
 // Devices
-#include "KokkosCore_config.h"
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Utilities
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -129,7 +126,7 @@ int main(int argc, char *argv[])
     if (cuda) {
       typedef Kokkos::Cuda Device;
 
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+      Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
 
       cudaDeviceProp deviceProp;
@@ -142,7 +139,7 @@ int main(int argc, char *argv[])
       performance_test_driver<Scalar,Ordinal,Device>(
         nGrid, nIter, ensemble_min, ensemble_max, ensemble_step);
 
-      Kokkos::Cuda::host_mirror_device_type::finalize();
+      Kokkos::HostSpace::execution_space::finalize();
       Kokkos::Cuda::finalize();
     }
 #endif

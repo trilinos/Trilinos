@@ -52,6 +52,7 @@
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_HostSpace.hpp>
+#include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Tags.hpp>
 
@@ -86,14 +87,11 @@ public:
   typedef HostSpace::size_type  size_type ;
   //! This device's preferred memory space.
   typedef HostSpace             memory_space ;
-  typedef Serial                scratch_memory_space ;
   //! This device's preferred array layout.
   typedef LayoutRight           array_layout ;
-  /// \brief This device's host mirror type.
-  ///
-  /// Serial is a host device, so the host mirror type is the same as
-  /// the device type itself.
-  typedef Serial                host_mirror_device_type ;
+
+  /// \brief  Scratch memory space
+  typedef ScratchMemorySpace< Kokkos::Serial >  scratch_memory_space ;
 
   //@}
 
@@ -136,7 +134,12 @@ public:
   static void initialize( unsigned threads_count = 1 ,
                           unsigned use_numa_count = 0 ,
                           unsigned use_cores_per_numa = 0 ,
-                          bool allow_asynchronous_threadpool = false) {}
+                          bool allow_asynchronous_threadpool = false) {
+    (void) threads_count;
+    (void) use_numa_count;
+    (void) use_cores_per_numa;
+    (void) allow_asynchronous_threadpool;
+  }
 
   static int is_initialized() { return 1 ; }
 
@@ -148,22 +151,22 @@ public:
 
   //--------------------------------------------------------------------------
 
-  static inline int team_max() { return 1 ; }
-  static inline int team_recommended() { return 1 ; }
-  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return 0 ; }
-  KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads() { return 1 ; }
+  inline static int thread_pool_size( int = 0 ) { return 1 ; }
+  KOKKOS_INLINE_FUNCTION static int thread_pool_rank() { return 0 ; }
 
   //--------------------------------------------------------------------------
 
-  void * get_shmem( const int size ) const ;
+  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return thread_pool_rank(); }
+  inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
 
-  static void * resize_reduce_scratch( const unsigned );
-  static void * resize_shared_scratch( const unsigned );
+  static inline int team_max()         { return thread_pool_size(1) ; }
+  static inline int team_recommended() { return thread_pool_size(2); }
 
-  Serial() : m_shmem_iter(0) {}
+  //--------------------------------------------------------------------------
 
-private:
-  mutable int m_shmem_iter ;
+  static void * scratch_memory_resize( unsigned reduce_size , unsigned shared_size );
+
+  //--------------------------------------------------------------------------
 };
 
 } // namespace Kokkos
@@ -172,17 +175,318 @@ private:
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+namespace Impl {
 
-template < class WorkArgTag >
-class TeamPolicy< Kokkos::Serial , WorkArgTag > {
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::Serial::memory_space
+  , Kokkos::Serial::scratch_memory_space
+  >
+{
+  enum { value = true };
+  inline static void verify( void ) { }
+  inline static void verify( const void * ) { }
+};
+
+namespace SerialImpl {
+
+struct Sentinel {
+
+  void *   m_scratch ;
+  unsigned m_reduce_end ;
+  unsigned m_shared_end ;
+
+  Sentinel();
+  ~Sentinel();
+  static Sentinel & singleton();
+};
+
+inline
+unsigned align( unsigned n );
+}
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+class SerialTeamMember {
+private:
+  typedef Kokkos::ScratchMemorySpace< Kokkos::Serial > scratch_memory_space ;
+  const scratch_memory_space  m_space ;
+  const int                   m_league_rank ;
+  const int                   m_league_size ;
+
+  SerialTeamMember & operator = ( const SerialTeamMember & );
+
+public:
+
+  KOKKOS_INLINE_FUNCTION
+  const scratch_memory_space & team_shmem() const { return m_space ; }
+
+  KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
+  KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
+  KOKKOS_INLINE_FUNCTION int team_rank() const { return 0 ; }
+  KOKKOS_INLINE_FUNCTION int team_size() const { return 1 ; }
+
+  KOKKOS_INLINE_FUNCTION void team_barrier() const {}
+
+  template< class JoinOp >
+  typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
+                                         , const JoinOp & ) const
+    { return value ; }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
+    {
+      const Type tmp = global_accum ? *global_accum : Type(0) ;
+      if ( global_accum ) { *global_accum += value ; }
+      return tmp ;
+    }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & ) const
+    { return Type(0); }
+
+#ifdef KOKKOS_HAVE_CXX11
+
+  /** \brief  Executes op(iType i) for each i=0..N-1.
+   *
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation>
+  KOKKOS_INLINE_FUNCTION void team_par_for(const iType n, const Operation & op) const {
+    for(int i=0; i<n ; i++) {
+      op(i);
+    }
+  }
+
+#endif
+
+  //----------------------------------------
+  // Execution space specific:
+
+  SerialTeamMember( int arg_league_rank
+                  , int arg_league_size 
+                  , int arg_shared_size
+                  );
+};
+
+template<unsigned int VectorLength>
+class SerialTeamVectorMember {
+private:
+  typedef Kokkos::ScratchMemorySpace< Kokkos::Serial > scratch_memory_space ;
+  const scratch_memory_space  m_space ;
+  const int                   m_league_rank ;
+  const int                   m_league_size ;
+
+  SerialTeamVectorMember & operator = ( const SerialTeamVectorMember & );
+
+public:
+
+  KOKKOS_INLINE_FUNCTION
+  const scratch_memory_space & team_shmem() const { return m_space ; }
+
+  KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
+  KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
+  KOKKOS_INLINE_FUNCTION int team_rank() const { return 0 ; }
+  KOKKOS_INLINE_FUNCTION int team_size() const { return 1 ; }
+
+  KOKKOS_INLINE_FUNCTION void team_barrier() const {}
+
+  template< class JoinOp >
+  typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
+                                         , const JoinOp & ) const
+    { return value ; }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
+    {
+      const Type tmp = global_accum ? *global_accum : Type(0) ;
+      if ( global_accum ) { *global_accum += value ; }
+      return tmp ;
+    }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & ) const
+    { return Type(0); }
+
+#ifdef KOKKOS_HAVE_CXX11
+
+  /** \brief  Executes op(iType i) for each i=0..N-1.
+   *
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation>
+  KOKKOS_INLINE_FUNCTION void team_par_for(const iType n, const Operation & op) const {
+    for(int i=0; i<n ; i++) {
+      op(i);
+    }
+  }
+
+  /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
+  template< class Operation >
+  KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op) const {
+    op();
+  }
+
+  /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
+  template< class Operation , typename ValueType>
+  KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op, ValueType& bcast) const {
+    op();
+  }
+
+  /** \brief  Intra-thread vector parallel for. Executes op(iType i) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation >
+  KOKKOS_INLINE_FUNCTION void vector_par_for(const iType n, const Operation & op) const {
+    #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+    #pragma ivdep
+    #endif
+    for(int i=0; i<n ; i++) {
+      op(i);
+    }
+  }
+
+  /** \brief  Intra-thread vector parallel reduce. Executes op(iType i, ValueType & val) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a summation of
+   * val is performed and put into result. This functionality requires C++11 support.*/
+  template< typename iType, class Operation, typename ValueType >
+  KOKKOS_INLINE_FUNCTION void vector_par_reduce(const iType n, const Operation & op, ValueType& result) const {
+
+    result = ValueType();
+
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+    for(int i=0; i<n ; i++) {
+      ValueType tmp = ValueType();
+      op(i,tmp);
+      result+=tmp;
+    }
+  }
+
+  /** \brief  Intra-thread vector parallel reduce. Executes op(iType i, ValueType & val) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a reduction of
+   * val is performed using JoinType(ValueType& val, const ValueType& update) and put into init_result.
+   * The input value of init_result is used as initializer for temporary variables of ValueType. Therefore
+   * the input value should be the neutral element with respect to the join operation (e.g. '0 for +-' or
+   * '1 for *'). This functionality requires C++11 support.*/
+  template< typename iType, class Operation, typename ValueType, class JoinType >
+  KOKKOS_INLINE_FUNCTION void vector_par_reduce(const iType n, const Operation & op, ValueType& init_result, const JoinType & join) const {
+
+    ValueType result = init_result;
+
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+    for(int i=0; i<n ; i++) {
+      ValueType tmp = init_result;
+      op(i,tmp);
+      join(result,tmp);
+    }
+    init_result = result;
+  }
+
+
+  /** \brief  Intra-thread vector parallel exclusive prefix sum. Executes op(iType i, ValueType & val, bool final)
+   *          for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all vector lanes in the thread and a scan operation is performed.
+   * Depending on the target execution space the operator might be called twice: once with final=false
+   * and once with final=true. When final==true val contains the prefix sum value. The contribution of this
+   * "i" needs to be added to val no matter whether final==true or not. In a serial execution
+   * (i.e. team_size==1) the operator is only called once with final==true. Scan_val will be set
+   * to the final sum value over all vector lanes.
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation, typename ValueType >
+  KOKKOS_INLINE_FUNCTION  void vector_par_scan(const iType n, const Operation & op, ValueType& scan_val) const {
+
+    scan_val = ValueType();
+
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+    for(int i=0; i<n ; i++) {
+      op(i,scan_val,true);
+    }
+  }
+#endif
+  //----------------------------------------
+  // Execution space specific:
+
+  SerialTeamVectorMember( int arg_league_rank
+                  , int arg_league_size
+                  , int arg_shared_size
+                  )
+  : m_space( ((char *) SerialImpl::Sentinel::singleton().m_scratch) + SerialImpl::Sentinel::singleton().m_reduce_end
+           , arg_shared_size )
+  , m_league_rank( arg_league_rank )
+  , m_league_size( arg_league_size )
+  {}
+};
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+
+/* 
+ * < Kokkos::Serial , WorkArgTag >
+ * < WorkArgTag , Impl::enable_if< Impl::is_same< Kokkos::Serial , Kokkos::DefaultExecutionSpace >::value >::type >
+ *
+ */
+template< class Arg0 , class Arg1 >
+class TeamPolicy< Arg0 , Arg1 , Kokkos::Serial >
+{
 private:
 
   const int m_league_size ;
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::Serial             execution_space ; ///< Execution space
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef TeamPolicy                 execution_policy ; ///< Execution policy
+  typedef Kokkos::Serial             execution_space ;  ///< Execution space
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Serial , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 
   inline int team_size() const { return 1 ; }
   inline int league_size() const { return m_league_size ; }
@@ -196,172 +500,339 @@ public:
     : m_league_size( league_size_request )
     { }
 
-  class member_type {
-  private:
-    const int m_league_rank ;
-    const int m_league_size ;
-  public:
+  template< class FunctorType >
+  static
+  int team_size_max( const FunctorType & ) { return 1 ; }
 
-    KOKKOS_INLINE_FUNCTION
-    execution_space::scratch_memory_space  team_shmem() const
-      { return execution_space::scratch_memory_space(); }
-
-    KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
-    KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
-    KOKKOS_INLINE_FUNCTION int team_rank() const { return 0 ; }
-    KOKKOS_INLINE_FUNCTION int team_size() const { return 1 ; }
-
-    KOKKOS_INLINE_FUNCTION void team_barrier() const {}
-
-    /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
-     *          with intra-team non-deterministic ordering accumulation.
-     *
-     *  The global inter-team accumulation value will, at the end of the
-     *  league's parallel execution, be the scan's total.
-     *  Parallel execution ordering of the league's teams is non-deterministic.
-     *  As such the base value for each team's scan operation is similarly
-     *  non-deterministic.
-     */
-    template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
-      {
-        const Type tmp = global_accum ? *global_accum : Type(0) ;
-        if ( global_accum ) { *global_accum += value ; }
-        return tmp ;
-      }
-
-    /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
-     *
-     *  The highest rank thread can compute the reduction total as
-     *    reduction_total = dev.team_scan( value ) + value ;
-     */
-    template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & ) const
-      { return Type(0); }
-
-    //----------------------------------------
-
-    member_type( int rank , int size ) : m_league_rank(rank), m_league_size(size) {}
-  };
+  typedef Impl::SerialTeamMember  member_type ;
 };
 
-}
+} /* namespace Kokkos */
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+
+template< unsigned int VectorLength , class Arg0 , class Arg1 >
+class TeamVectorPolicy< VectorLength , Arg0 , Arg1 , Kokkos::Serial >
+{
+private:
+
+  const int m_league_size ;
+
+public:
+
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef TeamVectorPolicy           execution_policy ; ///< Execution policy
+  typedef Kokkos::Serial             execution_space ;  ///< Execution space
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Serial , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
+
+  inline int team_size() const { return 1 ; }
+  inline int league_size() const { return m_league_size ; }
+
+  /** \brief  Specify league size, request team size */
+  TeamVectorPolicy( execution_space & , int league_size_request , int /* team_size_request */ )
+    : m_league_size( league_size_request )
+    { }
+
+  TeamVectorPolicy( int league_size_request , int /* team_size_request */ )
+    : m_league_size( league_size_request )
+    { }
+
+  template< class FunctorType >
+  static
+  int team_size_max( const FunctorType & ) { return 1 ; }
+
+  typedef Impl::SerialTeamVectorMember<VectorLength>  member_type ;
+};
+
+} /* namespace Kokkos */
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , typename IntType , unsigned P >
-class ParallelFor< FunctorType
-                 , Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P >
-                 , Kokkos::Serial
-                 >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
+class ParallelFor< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > >
 {
-public:
-  typedef Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P > Policy ;
+private:
 
-  ParallelFor( const FunctorType & functor
-             , const Policy      & policy )
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > Policy ;
+
+public:
+  // work tag is void
+  template< class PType >
+  inline
+  ParallelFor( typename Impl::enable_if<
+                 ( Impl::is_same< PType , Policy >::value &&
+                   Impl::is_same< typename PType::work_tag , void >::value
+                 ), const FunctorType & >::type functor
+             , const PType & policy )
     {
-      const typename Policy::member_type e = policy.end();
-      for ( typename Policy::member_type i = policy.begin() ; i < e ; ++i ) {
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i );
+      }
+    }
+
+  // work tag is non-void
+  template< class PType >
+  inline
+  ParallelFor( typename Impl::enable_if<
+                 ( Impl::is_same< PType , Policy >::value &&
+                   ! Impl::is_same< typename PType::work_tag , void >::value
+                 ), const FunctorType & >::type functor
+             , const PType & policy )
+    {
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
+        functor( typename PType::work_tag() , i );
       }
     }
 };
 
-template< class FunctorType , typename IntType , unsigned P >
-class ParallelReduce< FunctorType
-                    , Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P >
-                    , Kokkos::Serial
-                    >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
+class ParallelReduce< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > >
 {
 public:
-  typedef Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P > Policy ;
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > Policy ;
 
   typedef ReduceAdapter< FunctorType >  Reduce ;
   typedef typename Reduce::pointer_type pointer_type ;
 
-  template< class ViewType >
-  ParallelReduce( const FunctorType  & functor
-                , const Policy       & policy
-                , const ViewType     & result
-                , const typename enable_if<
-                   ( is_view< ViewType >::value &&
-                     is_same< typename ViewType::memory_space , HostSpace >::value
-                   )>::type * = 0
+  // Work tag is void
+  template< class ViewType , class PType >
+  ParallelReduce( typename Impl::enable_if<
+                    ( Impl::is_view< ViewType >::value &&
+                      Impl::is_same< typename ViewType::memory_space , HostSpace >::value &&
+                      Impl::is_same< PType , Policy >::value &&
+                      Impl::is_same< typename PType::work_tag , void >::value
+                    ), const FunctorType & >::type functor
+                , const PType     & policy
+                , const ViewType  & result
                 )
     {
       pointer_type result_ptr = result.ptr_on_device();
 
       if ( ! result_ptr ) {
-        result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+        result_ptr = (pointer_type)
+          Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
       }
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
-      const typename Policy::member_type e = policy.end();
-      for ( typename Policy::member_type i = policy.begin() ; i < e ; ++i ) {
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
         functor( i , update );
       }
 
       Reduce::final( functor , result_ptr );
     }
-};
 
-template< class FunctorType , typename IntType , unsigned P >
-class ParallelScan< FunctorType
-                  , Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P >
-                  , Kokkos::Serial
-                  >
-{
-public:
-  typedef Kokkos::RangePolicy< Kokkos::Serial , void , IntType , P > Policy ;
-
-  typedef ReduceAdapter< FunctorType >  Reduce ;
-  typedef typename Reduce::pointer_type pointer_type ;
-
-  ParallelScan( const FunctorType  & functor
-               , const Policy      & policy
-               )
+  // Work tag is non-void
+  template< class ViewType , class PType >
+  ParallelReduce( typename Impl::enable_if<
+                    ( Impl::is_view< ViewType >::value &&
+                      Impl::is_same< typename ViewType::memory_space , HostSpace >::value &&
+                      Impl::is_same< PType , Policy >::value &&
+                      ! Impl::is_same< typename PType::work_tag , void >::value
+                    ), const FunctorType & >::type functor
+                , const PType     & policy
+                , const ViewType  & result
+                )
     {
-      pointer_type result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+      pointer_type result_ptr = result.ptr_on_device();
+
+      if ( ! result_ptr ) {
+        result_ptr = (pointer_type)
+          Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
+      }
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
-      const typename Policy::member_type e = policy.end();
-      for ( typename Policy::member_type i = policy.begin() ; i < e ; ++i ) {
-        functor( i , update , true );
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
+        functor( typename PType::work_tag() , i , update );
       }
 
       Reduce::final( functor , result_ptr );
     }
 };
 
-//----------------------------------------------------------------------------
-
-template< class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamPolicy< Kokkos::Serial , void > , Kokkos::Serial >
+template< class FunctorType , class Arg0 , class Arg1 , class Arg2 >
+class ParallelScan< FunctorType , Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > >
 {
+private:
+
+  typedef Kokkos::RangePolicy< Arg0 , Arg1 , Arg2 , Kokkos::Serial > Policy ;
+  typedef ReduceAdapter< FunctorType >  Reduce ;
+
 public:
-  typedef Kokkos::TeamPolicy< Kokkos::Serial , void > Policy ;
+
+  typedef typename Reduce::pointer_type pointer_type ;
+
+  // work tag is void
+  template< class PType >
+  inline
+  ParallelScan( typename Impl::enable_if<
+                 ( Impl::is_same< PType , Policy >::value &&
+                   Impl::is_same< typename PType::work_tag , void >::value
+                 ), const FunctorType & >::type functor
+             , const PType & policy )
+    {
+      pointer_type result_ptr = (pointer_type)
+        Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
+
+      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
+        functor( i , update , true );
+      }
+
+      Reduce::final( functor , result_ptr );
+    }
+
+  // work tag is non-void
+  template< class PType >
+  inline
+  ParallelScan( typename Impl::enable_if<
+                 ( Impl::is_same< PType , Policy >::value &&
+                   ! Impl::is_same< typename PType::work_tag , void >::value
+                 ), const FunctorType & >::type functor
+             , const PType & policy )
+    {
+      pointer_type result_ptr = (pointer_type)
+        Kokkos::Serial::scratch_memory_resize( Reduce::value_size( functor ) , 0 );
+
+      typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
+      
+      const typename PType::member_type e = policy.end();
+      for ( typename PType::member_type i = policy.begin() ; i < e ; ++i ) {
+        functor( typename PType::work_tag() , i , update , true );
+      }
+
+      Reduce::final( functor , result_ptr );
+    }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > >
+{
+private:
+
+  typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > Policy ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( TagType() , member ); }
+
+public:
 
   ParallelFor( const FunctorType & functor
              , const Policy      & policy )
     {
-      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
+      const int shared_size = FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() );
+
+      Kokkos::Serial::scratch_memory_resize( 0 , shared_size );
 
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
-        functor( typename Policy::member_type(ileague,policy.league_size()) );
+        ParallelFor::template driver< typename Policy::work_tag >
+          ( functor , typename Policy::member_type(ileague,policy.league_size(),shared_size) );
+        // functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) );
       }
     }
 };
 
-template< class FunctorType >
-class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Kokkos::Serial , void > , Kokkos::Serial > {
+template< unsigned int VectorLength , class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength , Arg0 , Arg1 , Kokkos::Serial > >
+{
+private:
+
+  typedef Kokkos::TeamVectorPolicy< VectorLength , Arg0 , Arg1 , Kokkos::Serial > Policy ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( TagType() , member ); }
+
 public:
 
-  typedef Kokkos::TeamPolicy< Kokkos::Serial , void > Policy ;
+  ParallelFor( const FunctorType & functor
+             , const Policy      & policy )
+    {
+      const int shared_size = FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() );
+
+      Kokkos::Serial::scratch_memory_resize( 0 , shared_size );
+
+      for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
+        ParallelFor::template driver< typename Policy::work_tag >
+          ( functor , typename Policy::member_type(ileague,policy.league_size(),shared_size) );
+        // functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) );
+      }
+    }
+};
+
+template< class FunctorType , class Arg0 , class Arg1 >
+class ParallelReduce< FunctorType , Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > > 
+{
+private:
+
+  typedef Kokkos::TeamPolicy< Arg0 , Arg1 , Kokkos::Serial > Policy ;
   typedef ReduceAdapter< FunctorType >  Reduce ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member
+             ,       typename Reduce::reference_type update )
+    { functor( member , update ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type  & member 
+             ,       typename Reduce::reference_type update )
+    { functor( TagType() , member , update ); }
+
+public:
+
   typedef typename Reduce::pointer_type pointer_type ;
 
   template< class ViewType >
@@ -370,18 +841,19 @@ public:
                 , const ViewType     & result
                 )
     {
-      Serial::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
+      const int reduce_size = Reduce::value_size( functor );
+      const int shared_size = FunctorTeamShmemSize< FunctorType >::value( functor , policy.team_size() );
+      void * const scratch_reduce = Kokkos::Serial::scratch_memory_resize( reduce_size , shared_size );
 
-      pointer_type result_ptr = result.ptr_on_device();
-
-      if ( ! result_ptr ) {
-        result_ptr = (pointer_type) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
-      }
+      const pointer_type result_ptr =
+        result.ptr_on_device() ? result.ptr_on_device() 
+                               : (pointer_type) scratch_reduce ;
 
       typename Reduce::reference_type update = Reduce::init( functor , result_ptr );
       
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
-        functor( typename Policy::member_type(ileague,policy.league_size()) , update );
+        ParallelReduce::template driver< typename Policy::work_tag >
+          ( functor , typename Policy::member_type(ileague,policy.league_size(),shared_size) , update );
       }
 
       Reduce::final( functor , result_ptr );

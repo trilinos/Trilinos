@@ -55,21 +55,21 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DemoFactory()
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DemoFactory()
   { }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~DemoFactory() {}
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~DemoFactory() {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     // TODO: declare input for factory
     //Input(currentLevel, varName_);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & currentLevel) const {
     // TODO: implement factory
   }
 

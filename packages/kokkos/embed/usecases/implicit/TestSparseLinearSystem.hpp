@@ -47,7 +47,7 @@
 #include <cmath>
 #include <impl/Kokkos_Timer.hpp>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_CrsArray.hpp>
 
 #include <TestBlas1.hpp>

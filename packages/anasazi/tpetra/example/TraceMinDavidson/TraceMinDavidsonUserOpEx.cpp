@@ -52,7 +52,7 @@
   typedef Teuchos::ScalarTraits<Scalar>                                SCT;
   typedef SCT::magnitudeType                                           Magnitude;
   typedef int                                                          LocalOrdinal;  
-  typedef int                                                          GlobalOrdinal;  
+  typedef long                                                         GlobalOrdinal;  
   typedef Tpetra::DefaultPlatform::DefaultPlatformType                 Platform; 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType       Node;     
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>               Map;
@@ -88,7 +88,7 @@ public:
   //
   // Constructor
   //
-  MyOp(const int n, const RCP< const Teuchos::Comm<int> > comm) 
+  MyOp(const GlobalOrdinal n, const RCP< const Teuchos::Comm<int> > comm) 
   { 
     //
     // Construct a map for our block row distribution
@@ -120,11 +120,11 @@ public:
     if(myRank_ < numProcs_-1) nlocal++;
     // Construct a list of columns where this process has nonzero elements
     // For our tridiagonal matrix, this is firstRowItOwns-1:lastRowItOwns+1
-    std::vector<int> indices;
+    std::vector<GlobalOrdinal> indices;
     indices.reserve(nlocal);
     // The first process is a special case...
     if(myRank_ > 0) indices.push_back(opMap_->getMinGlobalIndex()-1);
-    for(int i=opMap_->getMinGlobalIndex(); i<=opMap_->getMaxGlobalIndex(); i++)
+    for(GlobalOrdinal i=opMap_->getMinGlobalIndex(); i<=opMap_->getMaxGlobalIndex(); i++)
       indices.push_back(i);
     // So is the last process...
     if(myRank_ < numProcs_-1) indices.push_back(opMap_->getMaxGlobalIndex()+1);
@@ -138,7 +138,7 @@ public:
     // Make a map for handling the redistribution
     // There will be some redundancies (i.e. some of the elements will be owned by multiple processes)
     //
-    int numGlobalElements = n + 2*(numProcs_-1);
+    GlobalOrdinal numGlobalElements = n + 2*(numProcs_-1);
     redistMap_ = rcp(new Map(numGlobalElements, elementList, 0, comm));
 
     //
@@ -179,7 +179,7 @@ public:
     //
     // Get the number of local rows
     //
-    int nlocRows = X.getLocalLength();
+    LocalOrdinal nlocRows = X.getLocalLength();
 
     //
     // Get the number of vectors
@@ -222,7 +222,7 @@ public:
       }
       
       // Y[r,c] = -colView[r-offset] + 2*colView[r+1-offset] - colView[r+2-offset]
-      for(int r=1; r<nlocRows-1; r++)
+      for(LocalOrdinal r=1; r<nlocRows-1; r++)
       {
         Y.replaceLocalValue(r, c, -colView[r-offset] + 2*colView[r+1-offset] - colView[r+2-offset]);
       }
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
   // Get parameters from command-line processor
   // 
   Scalar tol = 1e-5;
-  int n = 100;
+  GlobalOrdinal n = 100;
   int nev = 1;
   int blockSize = 1;
   bool verbose = true;
@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) {
       cout<<"------------------------------------------------------"<<endl;
       for (int i=0; i<numev; i++) {
         cout<<std::setw(16)<<T(i,i)
-          <<std::setw(16)<<normR[i]
+          <<std::setw(16)<<normR[i]/T(i,i)
           <<endl;
       }
       cout<<"------------------------------------------------------"<<endl;

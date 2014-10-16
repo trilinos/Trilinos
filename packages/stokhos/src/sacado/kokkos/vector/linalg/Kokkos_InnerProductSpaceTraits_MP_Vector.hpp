@@ -69,7 +69,14 @@ public:
 
   static KOKKOS_FORCEINLINE_FUNCTION
   mag_type norm (const val_type& x) {
-    return ArithTraits<val_type>::abs (x);
+    //return ArithTraits<val_type>::abs (x);
+    const ordinal_type sz = x.size();
+    mag_type nrm = mag_type(0);
+    for (ordinal_type i=0; i<sz; ++i) {
+      const mag_type n = BIT::norm( x.fastAccessCoeff(i) );
+      nrm += n*n;
+    }
+    return std::sqrt(nrm);
   }
 
   static KOKKOS_FORCEINLINE_FUNCTION
@@ -106,7 +113,14 @@ public:
 
   static KOKKOS_FORCEINLINE_FUNCTION
   mag_type norm (const val_type& x) {
-    return ArithTraits<val_type>::abs (x);
+    //return ArithTraits<val_type>::abs (x);
+    const ordinal_type sz = x.size();
+    mag_type nrm = mag_type(0);
+    for (ordinal_type i=0; i<sz; ++i) {
+      const mag_type n = BIT::norm( x.fastAccessCoeff(i) );
+      nrm += n*n;
+    }
+    return std::sqrt(nrm);
   }
 
   static KOKKOS_FORCEINLINE_FUNCTION

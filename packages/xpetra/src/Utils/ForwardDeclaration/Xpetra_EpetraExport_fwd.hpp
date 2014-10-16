@@ -47,7 +47,8 @@
 #define XPETRA_EPETRAEXPORT_FWD_HPP
 
 namespace Xpetra {
-  class EpetraExport;
+  template<class GO> class EpetraExportT;
+  typedef EpetraExportT<int> EpetraExport;
 }
 
 #ifndef XPETRA_EPETRAEXPORT_SHORT

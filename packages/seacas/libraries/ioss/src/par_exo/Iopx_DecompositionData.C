@@ -1,3 +1,36 @@
+// Copyright (c) 2014, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 
 #include <par_exo/Iopx_DecompositionData.h>
 #include <Ioss_ElementTopology.h>       // for ElementTopology
@@ -5,10 +38,11 @@
 #include <Ioss_Map.h>                   // for Map, MapContainer
 #include <Ioss_ParallelUtils.h>         // for ParallelUtils, etc
 #include <Ioss_Utils.h>                 // for TOPTR, Utils, ct_assert
+#include <Ioss_PropertyManager.h>       // for PropertyManager
+
 #include <assert.h>                     // for assert
 #include <limits.h>                     // for INT_MAX
 #include <mpi.h>                        // for MPI_Alltoall, MPI_Bcast, etc
-#include <parmetis.h>                   // for ParMETIS_V3_Mesh2Dual, etc
 #include <stdlib.h>                     // for exit, EXIT_FAILURE
 #include <algorithm>                    // for sort, lower_bound, copy, etc
 #include <iostream>                     // for operator<<, ostringstream, etc
@@ -16,10 +50,15 @@
 #include <map>                          // for map
 #include <numeric>                      // for accumulate
 #include <utility>                      // for pair, make_pair
-#include "Ioss_PropertyManager.h"       // for PropertyManager
-#include "zoltan.h"                     // for Zoltan_Initialize
-#include "zoltan_cpp.h"                 // for Zoltan
 
+#if !defined(NO_PARMETIS_SUPPORT)
+#include <parmetis.h>                   // for ParMETIS_V3_Mesh2Dual, etc
+#endif
+
+#if !defined(NO_ZOLTAN_SUPPORT)
+#include <zoltan.h>                     // for Zoltan_Initialize
+#include <zoltan_cpp.h>                 // for Zoltan
+#endif
 
 namespace {
   MPI_Datatype mpi_type(double /*dummy*/)  {return MPI_DOUBLE;}
@@ -236,6 +275,7 @@ namespace {
 
   // ZOLTAN Callback functions...
 
+#if !defined(NO_ZOLTAN_SUPPORT)
   int zoltan_num_dim(void *data, int *ierr)
   {
     // Return dimensionality of coordinate data.
@@ -308,6 +348,7 @@ namespace {
     *ierr = ZOLTAN_OK;
     return;
   }
+#endif
 
   template <typename INT>
   void get_entity_dist(size_t proc_count, size_t my_proc, size_t entity_count,
@@ -463,26 +504,38 @@ namespace Iopx {
       method = Ioss::Utils::uppercase(method);
     }
 
-    if (method != "LINEAR" &&
-        method != "RCB" &&
-        method != "RIB" &&
-        method != "HSFC" &&
-        method != "BLOCK" &&
-        method != "CYCLIC" &&
-        method != "RANDOM" &&
-        method != "KWAY" &&
-        method != "GEOM_KWAY" &&
-        method != "KWAY_GEOM" &&
-        method != "METIS_SFC") {
+    if (method != "LINEAR"
+        && method != "BLOCK"
+        && method != "CYCLIC"
+        && method != "RANDOM"
+#if !defined(NO_ZOLTAN_SUPPORT)
+        && method != "RCB"
+        && method != "RIB"
+        && method != "HSFC"
+#endif
+#if !defined(NO_PARMETIS_SUPPORT)
+        && method != "KWAY"
+        && method != "GEOM_KWAY"
+        && method != "KWAY_GEOM"
+        && method != "METIS_SFC"
+#endif
+      ) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Invalid decomposition method specified: '" << method << "\n"
-          << "       Valid methods: LINEAR, RCB, RIB, HSFC, KWAY, GEOM_KWAY, METIS_SFC\n";
+      errmsg << "ERROR: Invalid decomposition method specified: '" << method << "'\n"
+	     << "       Valid methods: LINEAR"
+#if !defined(NO_ZOLTAN_SUPPORT)
+	     << ", BLOCK, CYCLIC, RANDOM, RCB, RIB, HSFC"
+#endif
+#if !defined(NO_PARMETIS_SUPPORT)
+	     << ", KWAY, GEOM_KWAY, METIS_SFC"
+#endif
+	     << "\n";
       std::cerr << errmsg.str();
       exit(EXIT_FAILURE);
     }
 
     if (myProcessor == 0)
-      std::cout << "\nUsing decomposition method " << method << " on " << processorCount << " processors.\n\n";
+      std::cout << "\nUsing decomposition method '" << method << "' on " << processorCount << " processors.\n\n";
 
     if (method == "RCB" ||
         method == "RIB" ||
@@ -493,21 +546,25 @@ namespace Iopx {
       calculate_element_centroids(exodusId, pointer, adjacency, node_dist);
     }
 
+#if !defined(NO_PARMETIS_SUPPORT)
     if (method == "KWAY" ||
         method == "GEOM_KWAY" ||
         method == "KWAY_GEOM" ||
         method == "METIS_SFC") {
       metis_decompose(method, element_dist, pointer, adjacency);
-
-    } else if (method == "RCB" ||
+    }
+#endif
+#if !defined(NO_ZOLTAN_SUPPORT)
+    if (method == "RCB" ||
         method == "RIB" ||
         method == "HSFC" ||
         method == "BLOCK" ||
         method == "CYCLIC" ||
         method == "RANDOM") {
       zoltan_decompose(method);
-
-    } else if (method == "LINEAR") {
+    }
+#endif
+    if (method == "LINEAR") {
       simple_decompose(method, element_dist);
     }
 
@@ -570,6 +627,7 @@ namespace Iopx {
     }
       }
 
+#if !defined(NO_PARMETIS_SUPPORT)
   template <typename INT>
   void DecompositionData<INT>::metis_decompose(const std::string &method,
       const std::vector<INT> &element_dist,
@@ -760,7 +818,9 @@ namespace Iopx {
       }
     }
       }
+#endif
 
+#if !defined(NO_ZOLTAN_SUPPORT)
   template <typename INT>
   void DecompositionData<INT>::zoltan_decompose(const std::string &method)
   {
@@ -874,6 +934,7 @@ namespace Iopx {
     zz.LB_Free_Part(&import_global_ids, &import_local_ids, &import_procs, &import_to_part);
     zz.LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);
   }
+#endif
 
   template <typename INT>
   void DecompositionData<INT>::build_global_to_local_elem_map()
@@ -1167,6 +1228,7 @@ namespace Iopx {
     }
   }
 
+#if !defined(NO_ZOLTAN_SUPPORT)
   template <typename INT>
   void DecompositionData<INT>::get_local_element_list(const ZOLTAN_ID_PTR &export_global_ids, size_t export_count)
   {
@@ -1198,6 +1260,7 @@ namespace Iopx {
       }
     }
   }
+#endif
 
   template <typename INT>
   void DecompositionData<INT>::generate_adjacency_list(int exodusId,

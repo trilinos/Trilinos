@@ -63,7 +63,7 @@ class ExoII_Read {
 public:
   
   ExoII_Read();
-  explicit ExoII_Read(const char* file_name);
+  explicit ExoII_Read(const char* file_name_x);
   virtual ~ExoII_Read();
   const ExoII_Read& operator=(const ExoII_Read&);  // Not written.
   

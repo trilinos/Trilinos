@@ -41,10 +41,10 @@
 //@HEADER
 */
 
-#include <KokkosCore_config.h>
+#include <Kokkos_Core.hpp>
 
 #ifdef KOKKOS_HAVE_OPENMP
-#include <Kokkos_OpenMP.hpp>
+
 #include <feint.hpp>
 
 namespace Kokkos {
@@ -62,4 +62,6 @@ template void feint<Kokkos::OpenMP,true>(
 
 } /* namespace Example */
 } /* namespace Kokkos */
+
 #endif
+

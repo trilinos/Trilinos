@@ -48,9 +48,7 @@
 #include <utility>
 #include <vector>
 #include <stdexcept>
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_BlockCrsMatrix.hpp>
 #include <Kokkos_ProductTensorLegendre.hpp>
 

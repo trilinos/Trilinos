@@ -63,7 +63,7 @@ template<class T> class ArrayRCP;
  * manage the array's memory.  This means two things.  First,
  * ArrayView's destructor does not deallocate the array.  Second, if
  * the array's memory is deallocated while the ArrayView is in scope,
- * any further use of the ArrayView or its iterators will result in 
+ * any further use of the ArrayView or its iterators will result in
  * undefined behavior.
  *
  * The <tt>ArrayView</tt> class has the same shallow copy semantics of
@@ -103,7 +103,7 @@ template<class T> class ArrayRCP;
  * <tt>const T'</tt> for some type <tt>T'</tt>, and the assign()
  * method does not make sense if the right-hand side of the assignment
  * is const.
- * 
+ *
  * Partial specialization results in duplicated code, so Teuchos
  * developers should be careful to make modifications in both the
  * fully generic implementation and in the partial specialization.
@@ -187,7 +187,7 @@ public:
    * <li>[<tt>p==0</tt>] <tt>size == 0</tt>
    * </ul>
    */
-  ArrayView (T* p, size_type size, 
+  ArrayView (T* p, size_type size,
 	     const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP);
 
   /** \brief Initialize from another <tt>ArrayView<T></tt> object.

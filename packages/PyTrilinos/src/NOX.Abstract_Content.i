@@ -32,11 +32,11 @@
 // the NOX.Abstract module.  However, it intentionally lacks a %module
 // directive because it is supposed to be %include-d from a SWIG
 // interface file that does.  There are two such interface files:
-// NOX.Abstarct.i and NOX.Abstract_RelPath.i.  The first is the actual
+// NOX.Abstract.i and NOX.Abstract_RelPath.i.  The first is the actual
 // interface file that generates a wrapper file that gets compiled.
 // Its %module directive includes the full package name.  The second
 // is a special interface file that gets %import-ed from the
-// NOX.NestedEpetra.__init__.i file.  It does not include any package
+// NOX.Epetra.__init__.i file.  It does not include any package
 // information.
 
 %{
@@ -46,7 +46,7 @@
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // NOX includes
 #include "NOX_Abstract_Group.H"
@@ -57,7 +57,7 @@
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Configuration and optional includes
@@ -66,7 +66,7 @@
 %{
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
-#include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyVector.hpp"
 %}
 #endif
 

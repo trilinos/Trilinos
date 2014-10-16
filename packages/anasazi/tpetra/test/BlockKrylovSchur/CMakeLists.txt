@@ -1,12 +1,10 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_BlockKrylovSchur_ComplexLap_test
   SOURCES cxx_main_complex_lap.cpp 
   ARGS 
   COMM serial mpi
-  DEPLIBS tpetra anasazitpetra
   )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)

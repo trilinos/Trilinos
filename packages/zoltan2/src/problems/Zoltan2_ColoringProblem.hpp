@@ -92,7 +92,7 @@ class ColoringProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
@@ -192,7 +192,7 @@ void ColoringProblem<Adapter>::solve(bool newData)
   if (method.compare("SerialGreedy") == 0)
   {
       AlgSerialGreedy<Adapter> alg(this->graphModel_, this->params_,
-                                   problemComm_);
+                                   this->env_, problemComm_);
       alg.color(this->solution_);
   }
 #if 0 // TODO later
@@ -237,7 +237,7 @@ void ColoringProblem<Adapter>::createColoringProblem()
   HELLO;
   using Teuchos::ParameterList;
 
-//  cout << __func__ << " input adapter type " 
+//  cout << __func__zoltan2__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 
 //       << this->inputAdapter_->inputAdapterName() << endl;
 
@@ -290,12 +290,12 @@ void ColoringProblem<Adapter>::createColoringProblem()
   case IdentifierModelType:
   case HypergraphModelType:
   case CoordinateModelType:
-    cout << __func__ << " Model type " << modelType << " not yet supported." 
+    cout << __func__zoltan2__ << " Model type " << modelType << " not yet supported." 
          << endl;
     break;
 
   default:
-    cout << __func__ << " Invalid model" << modelType << endl;
+    cout << __func__zoltan2__ << " Invalid model" << modelType << endl;
     break;
   }
 }

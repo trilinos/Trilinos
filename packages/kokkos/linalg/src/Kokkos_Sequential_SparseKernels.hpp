@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#ifdef KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
+#ifndef KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
 #define KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
 
 /// \file Kokkos_Sequential_SparseKernels.hpp
@@ -115,20 +115,24 @@ gaussSeidel (const LocalOrdinal numRows,
 {
   using Kokkos::Details::ArithTraits;
   typedef LocalOrdinal LO;
+  const OffsetType theNumRows = static_cast<OffsetType> (numRows);
+  const OffsetType theNumCols = static_cast<OffsetType> (numCols);
 
   if (numRows == 0 || numCols == 0) {
     return; // Nothing to do.
   }
   else if (numRows > 0 && ptr[numRows] == 0) {
     // All the off-diagonal entries of A are zero, and all the
-    // diagonal entries are (implicitly) 1.  Therefore compute:
-    // X := (1 - omega) X + omega B.
+    // diagonal entries are (implicitly) 1.  Therefore compute: X :=
+    // (1 - omega) X + omega B.  There's no need to care about the
+    // direction, since there are no cross-row data dependencies in
+    // this case.
     const MatrixScalar oneMinusOmega =
       ArithTraits<MatrixScalar>::one () - omega;
-    for (OffsetType j = 0; j < numCols; ++j) {
+    for (OffsetType j = 0; j < theNumCols; ++j) {
       RangeScalar* const x_j = X + j*x_stride;
-      DomainScalar* const b_j = B + j*b_stride;
-      for (OffsetType i = 0; i < numRows; ++i) {
+      const DomainScalar* const b_j = B + j*b_stride;
+      for (OffsetType i = 0; i < theNumRows; ++i) {
         x_j[i] = oneMinusOmega * x_j[i] + omega * b_j[i];
       }
     }
@@ -183,17 +187,17 @@ gaussSeidel (const LocalOrdinal numRows,
 
     if (direction == Kokkos::Forward) {
       for (LO i = 0; i < numRows; ++i) {
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
@@ -202,33 +206,33 @@ gaussSeidel (const LocalOrdinal numRows,
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
       for (LO i = numRows - 1; i != 0; --i) {
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
       { // last loop iteration
         const LO i = 0;
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
@@ -285,7 +289,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
                       const OffsetType b_stride,
                       RangeScalar* const X,
                       const OffsetType x_stride,
-                      const MatrixScalar* const d,
+                      const MatrixScalar* const D,
                       const LocalOrdinal* const rowInd,
                       const LocalOrdinal numRowInds, // length of rowInd
                       const MatrixScalar omega,
@@ -293,14 +297,31 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
 {
   using Kokkos::Details::ArithTraits;
   typedef LocalOrdinal LO;
+  const OffsetType theNumRows = static_cast<OffsetType> (numRows);
+  const OffsetType theNumCols = static_cast<OffsetType> (numCols);
 
   if (numRows == 0 || numCols == 0) {
     return; // Nothing to do.
   }
+  else if (numRows > 0 && ptr[numRows] == 0) {
+    // All the off-diagonal entries of A are zero, and all the
+    // diagonal entries are (implicitly) 1.  Therefore compute: X :=
+    // (1 - omega) X + omega B.  There's no need to care about the
+    // direction or row ordering, since there are no cross-row data
+    // dependencies in this case.
+    const MatrixScalar oneMinusOmega =
+      ArithTraits<MatrixScalar>::one () - omega;
+    for (OffsetType j = 0; j < theNumCols; ++j) {
+      RangeScalar* const x_j = X + j*x_stride;
+      const DomainScalar* const b_j = B + j*b_stride;
+      for (OffsetType i = 0; i < theNumRows; ++i) {
+        x_j[i] = oneMinusOmega * x_j[i] + omega * b_j[i];
+      }
+    }
+    return;
+  }
 
   if (numCols == 1) {
-    RangeScalar x_temp;
-
     if (direction == Kokkos::Forward) {
       for (LO ii = 0; ii < numRowInds; ++ii) {
         LO i = rowInd[ii];
@@ -352,17 +373,17 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
     if (direction == Kokkos::Forward) {
       for (LO ii = 0; ii < numRowInds; ++ii) {
         LO i = rowInd[ii];
-        for (size_t c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
@@ -372,34 +393,34 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
       // work nevertheless.
       for (LO ii = numRowInds - 1; ii != 0; --ii) {
         LO i = rowInd[ii];
-        for (size_t c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
       { // last loop iteration
         const LO ii = 0;
         LO i = rowInd[ii];
-        for (size_t c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
         }
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
           const LO j = ind[k];
           const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < numCols; ++c) {
+          for (OffsetType c = 0; c < theNumCols; ++c) {
             x_temp[c] += A_ij * X[j + x_stride*c];
           }
         }
-        for (OffsetType c = 0; c < numCols; ++c) {
+        for (OffsetType c = 0; c < theNumCols; ++c) {
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
@@ -408,637 +429,825 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
 }
 
 
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
 void
-lowerTriSolveCsrColMajorUnitDiag (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
+lowerTriSolveCsrUnitDiag (RangeMultiVectorType X,
+                          const CrsMatrixType& A,
+                          DomainMultiVectorType Y)
 {
-  for (LocalOrdinal r = 0; r < numRows; ++r) {
-    for (LocalOrdinal j = 0; j < numVecs; ++j) {
-      X[r + j*colStrideX] = Y[r + j*colStrideY];
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+
+  const local_ordinal_type numRows = A.numRows ();
+  //const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  for (local_ordinal_type r = 0; r < numRows; ++r) {
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
     }
-    for (OffsetType k = ptr[r]; k < ptr[r+1]; ++k) {
-      const MatrixScalar A_rc = val[k];
-      const LocalOrdinal c = ind[k];
-      for (LocalOrdinal j = 0; j < numVecs; ++j) {
-        X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
+    const offset_type beg = ptr(r);
+    const offset_type end = ptr(r+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
       }
     } // for each entry A_rc in the current row r
   } // for each row r
 }
 
 
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
 void
-lowerTriSolveCsrColMajor (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
+lowerTriSolveCsr (RangeMultiVectorType X,
+                  const CrsMatrixType& A,
+                  DomainMultiVectorType Y)
 {
-  for (LocalOrdinal r = 0; r < numRows; ++r) {
-    for (LocalOrdinal j = 0; j < numVecs; ++j) {
-      X[r + j*colStrideX] = Y[r + j*colStrideY];
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+
+  const local_ordinal_type numRows = A.numRows ();
+  //const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  for (local_ordinal_type r = 0; r < numRows; ++r) {
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
     }
-    // This assumes that the diagonal entry is last in the row.
-    // This will break if the row is empty, but that's bad for
-    // non-unit-diagonal triangular solve anyway.
-    const MatrixScalar A_rr = val[ptr[r+1]-1];
-    for (OffsetType k = ptr[r]; k < ptr[r+1] - 1; ++k) {
-      const MatrixScalar A_rc = val[k];
-      const LocalOrdinal c = ind[k];
-      for (LocalOrdinal j = 0; j < numVecs; ++j) {
-        X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
+
+    matrix_scalar_type A_rr = STS::zero ();
+    const offset_type beg = ptr(r);
+    const offset_type end = ptr(r+1);
+
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c = ind(k);
+      // FIXME (mfh 28 Aug 2014) This assumes that the diagonal entry
+      // has equal local row and column indices.  That may not
+      // necessarily hold, depending on the row and column Maps.  The
+      // way to fix this would be for Tpetra::CrsMatrix to remember
+      // the local column index of the diagonal entry (if there is
+      // one) in each row, and pass that along to this function.
+      if (r == c) {
+        A_rr += A_rc;
+      } else {
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
+        }
       }
     } // for each entry A_rc in the current row r
-    for (LocalOrdinal j = 0; j < numVecs; ++j) {
-      X[r + j*colStrideX] /= A_rr;
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) /= A_rr;
     }
   } // for each row r
 }
 
 
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
 void
-upperTriSolveCsrColMajorUnitDiag (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
+upperTriSolveCsrUnitDiag (RangeMultiVectorType X,
+                          const CrsMatrixType& A,
+                          DomainMultiVectorType Y)
 {
-  for (LocalOrdinal r = numRows-1; r >= 0; --r) {
-    for (LocalOrdinal j = 0; j < numVecs; ++j) {
-      X[r + j*colStrideX] = Y[r + j*colStrideY];
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+
+  const local_ordinal_type numRows = A.numRows ();
+  //const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  // If local_ordinal_type is unsigned and numRows is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numRows == 0) {
+    return;
+  }
+
+  // Don't use r >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do r == 0 (last
+  // iteration) below.
+  for (local_ordinal_type r = numRows - 1; r != 0; --r) {
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
     }
-    for (OffsetType k = ptr[r]; k < ptr[r+1]; ++k) {
-      const MatrixScalar A_rc = val[k];
-      const LocalOrdinal c = ind[k];
-      for (LocalOrdinal j = 0; j < numVecs; ++j) {
-        X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
+    const offset_type beg = ptr(r);
+    const offset_type end = ptr(r+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
       }
     } // for each entry A_rc in the current row r
   } // for each row r
+
+  // Last iteration: r = 0.
+  {
+    const local_ordinal_type r = 0;
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
+    }
+    const offset_type beg = ptr(r);
+    const offset_type end = ptr(r+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    } // for each entry A_rc in the current row r
+  } // last iteration: r = 0
 }
 
 
-template<class LocalLocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
 void
-upperTriSolveCsrColMajor (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
+upperTriSolveCsr (RangeMultiVectorType X,
+                  const CrsMatrixType& A,
+                  DomainMultiVectorType Y)
 {
-  for (LocalOrdinal r = numRows-1; r >= 0; --r) {
-    for (LocalOrdinal j = 0; j < numVecs; ++j) {
-      X[r + j*colStrideX] = Y[r + j*colStrideY];
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+
+  const local_ordinal_type numRows = A.numRows ();
+  //const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  // If local_ordinal_type is unsigned and numRows is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numRows == 0) {
+    return;
+  }
+
+  // Don't use r >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do r == 0 (last
+  // iteration) below.
+  for (local_ordinal_type r = numRows - 1; r != 0; --r) {
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
     }
+    const offset_type beg = ptr(r);
+    const offset_type end = ptr(r+1);
     // We assume the diagonal entry is first in the row.
-    const MatrixScalar A_rr = val[ptr[r]];
-    for (OffsetType k = ptr[r]+1; k < ptr[r+1]; ++k) {
-      const MatrixScalar A_rc = val[k];
-      const LocalOrdinal c = ind[k];
-      for (LocalOrdinal j = 0; j < numVecs; ++j) {
-        X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
+    const matrix_scalar_type A_rr = val(beg);
+    for (offset_type k = beg + static_cast<offset_type> (1); k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
       }
     } // for each entry A_rc in the current row r
-    for (LocalOrdinal j = 0; j < numVecs; ++j) {
-      X[r + j*colStrideX] /= A_rr;
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) /= A_rr;
     }
   } // for each row r
+
+  // Last iteration: r = 0.
+  {
+    const local_ordinal_type r = 0;
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) = Y(r, j);
+    }
+    const offset_type beg = ptr(r);
+    const offset_type end = ptr(r+1);
+    // We assume the diagonal entry is first in the row.
+    const matrix_scalar_type A_rr = val(beg);
+    for (size_t k = beg + 1; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type c = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    } // for each entry A_rc in the current row r
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(r, j) /= A_rr;
+    }
+  } // last iteration: r = 0
 }
 
 
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
 void
-upperTriSolveCscColMajorUnitDiag (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
+upperTriSolveCscUnitDiag (RangeMultiVectorType X,
+                          const CrsMatrixType& A,
+                          DomainMultiVectorType Y)
 {
-  for (LocalOrdinal j = 0; j < numVecs; ++j) {
-    for (LocalOrdinal i = 0; i < numRows; ++i) {
-      X[i + j*colStrideX] = Y[i + j*colStrideY];
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+
+  const local_ordinal_type numRows = A.numRows ();
+  const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
     }
   }
 
-  for (LocalOrdinal c = numCols-1; c >= 0; --c) {
-    for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
-      const LocalOrdinal r = ind[k];
-      const MatrixScalar A_rc = val[k];
-      for (LocalOrdinal j = 0; j < numVecs; ++j) {
-        X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
+  // If local_ordinal_type is unsigned and numCols is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numCols == 0) {
+    return;
+  }
+
+  // Don't use c >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do c == 0 (last
+  // iteration) below.
+  for (local_ordinal_type c = numCols - 1; c != 0; --c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type r = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
       }
     } // for each entry A_rc in the current column c
   } // for each column c
+
+  // Last iteration: c = 0.
+  {
+    const local_ordinal_type c = 0;
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const matrix_scalar_type A_rc = val(k);
+      const local_ordinal_type r = ind(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    } // for each entry A_rc in the current column c
+  }
 }
 
 
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
 void
-upperTriSolveCscColMajor (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
+upperTriSolveCsc (RangeMultiVectorType X,
+                  const CrsMatrixType& A,
+                  DomainMultiVectorType Y)
 {
-  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
 
-  for (LocalOrdinal j = 0; j < numVecs; ++j) {
-    for (LocalOrdinal i = 0; i < numRows; ++i) {
-      X[i + j*colStrideX] = Y[i + j*colStrideY];
+  const local_ordinal_type numRows = A.numRows ();
+  const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
     }
   }
 
-  for (LocalOrdinal c = numCols-1; c >= 0; --c) {
-    MatrixScalar A_cc = STS::zero ();
-    for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
-      const LocalOrdinal r = ind[k];
-      const MatrixScalar A_rc = val[k];
+  // If local_ordinal_type is unsigned and numCols is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numCols == 0) {
+    return;
+  }
+
+  // Don't use c >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do c == 0 (last
+  // iteration) below.
+  for (local_ordinal_type c = numCols - 1; c != 0; --c) {
+    matrix_scalar_type A_cc = STS::zero ();
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r = ind(k);
+      const matrix_scalar_type A_rc = val(k);
+      // FIXME (mfh 28 Aug 2014) This assumes that the diagonal entry
+      // has equal local row and column indices.  That may not
+      // necessarily hold, depending on the row and column Maps.  See
+      // note above.
       if (r == c) {
         A_cc += A_rc;
       } else {
-        for (LocalOrdinal j = 0; j < numVecs; ++j) {
-          X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
         }
       }
     } // for each entry A_rc in the current column c
-    for (LocalOrdinal j = 0; j < numVecs; ++j) {
-      X[c + j*colStrideX] /= A_cc;
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(c, j) /= A_cc;
     }
   } // for each column c
-}
 
-
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
-void
-lowerTriSolveCscColMajorUnitDiag (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
-{
-  for (LocalOrdinal j = 0; j < numVecs; ++j) {
-    for (LocalOrdinal i = 0; i < numRows; ++i) {
-      X[i + j*colStrideX] = Y[i + j*colStrideY];
-    }
-  }
-
-  for (LocalOrdinal c = 0; c < numCols; ++c) {
-    for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
-      const LocalOrdinal r = ind[k];
-      MatrixScalar A_rc = val[k];
-      for (LocalOrdinal j = 0; j < numVecs; ++j) {
-        X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
-      }
-    } // for each entry A_rc in the current column c
-  } // for each column c
-}
-
-
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
-void
-upperTriSolveCscColMajorUnitDiagConj (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
-{
-  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
-
-  for (LocalOrdinal j = 0; j < numVecs; ++j) {
-    for (LocalOrdinal i = 0; i < numRows; ++i) {
-      X[i + j*colStrideX] = Y[i + j*colStrideY];
-    }
-  }
-
-  for (LocalOrdinal c = numCols-1; c >= 0; --c) {
-    for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
-      const LocalOrdinal r = ind[k];
-      const MatrixScalar A_rc = STS::conj (val[k]);
-      for (LocalOrdinal j = 0; j < numVecs; ++j) {
-        X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
-      }
-    } // for each entry A_rc in the current column c
-  } // for each column c
-}
-
-
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
-void
-upperTriSolveCscColMajorConj (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
-{
-  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
-
-  for (LocalOrdinal j = 0; j < numVecs; ++j) {
-    for (LocalOrdinal i = 0; i < numRows; ++i) {
-      X[i + j*colStrideX] = Y[i + j*colStrideY];
-    }
-  }
-
-  for (LocalOrdinal c = numCols-1; c >= 0; --c) {
-    MatrixScalar A_cc = STS::zero ();
-    for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
-      const LocalOrdinal r = ind[k];
-      const MatrixScalar A_rc = STS::conj (val[k]);
+  // Last iteration: c = 0.
+  {
+    const local_ordinal_type c = 0;
+    matrix_scalar_type A_cc = STS::zero ();
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r = ind(k);
+      const matrix_scalar_type A_rc = val(k);
+      // FIXME (mfh 28 Aug 2014) This assumes that the diagonal entry
+      // has equal local row and column indices.  That may not
+      // necessarily hold, depending on the row and column Maps.  See
+      // note above.
       if (r == c) {
         A_cc += A_rc;
       } else {
-        for (LocalOrdinal j = 0; j < numVecs; ++j) {
-          X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
         }
       }
     } // for each entry A_rc in the current column c
-    for (LocalOrdinal j = 0; j < numVecs; ++j) {
-      X[c + j*colStrideX] /= A_cc;
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(c, j) /= A_cc;
     }
+  }
+}
+
+
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
+void
+lowerTriSolveCscUnitDiag (RangeMultiVectorType X,
+                          const CrsMatrixType& A,
+                          DomainMultiVectorType Y)
+{
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+
+  const local_ordinal_type numRows = A.numRows ();
+  const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  for (local_ordinal_type c = 0; c < numCols; ++c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r = ind(k);
+      const matrix_scalar_type A_rc = val(k);
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    } // for each entry A_rc in the current column c
   } // for each column c
 }
 
 
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
 void
-lowerTriSolveCscColMajor (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
+upperTriSolveCscUnitDiagConj (RangeMultiVectorType X,
+                              const CrsMatrixType& A,
+                              DomainMultiVectorType Y)
 {
-  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
 
-  for (LocalOrdinal j = 0; j < numVecs; ++j) {
-    for (LocalOrdinal i = 0; i < numRows; ++i) {
-      X[i + j*colStrideX] = Y[i + j*colStrideY];
+  const local_ordinal_type numRows = A.numRows ();
+  const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
     }
   }
 
-  for (LocalOrdinal c = 0; c < numCols; ++c) {
-    MatrixScalar A_cc = STS::zero ();
-    for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
-      const LocalOrdinal r = ind[k];
-      const MatrixScalar A_rc = val[k];
+  // If local_ordinal_type is unsigned and numCols is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numCols == 0) {
+    return;
+  }
+
+  // Don't use c >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do c == 0 (last
+  // iteration) below.
+  for (local_ordinal_type c = numCols - 1; c != 0; --c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r = ind(k);
+      const matrix_scalar_type A_rc = STS::conj (val(k));
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    } // for each entry A_rc in the current column c
+  } // for each column c
+
+  // Last iteration: c = 0.
+  {
+    const local_ordinal_type c = 0;
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r = ind(k);
+      const matrix_scalar_type A_rc = STS::conj (val(k));
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    } // for each entry A_rc in the current column c
+  }
+}
+
+
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
+void
+upperTriSolveCscConj (RangeMultiVectorType X,
+                      const CrsMatrixType& A,
+                      DomainMultiVectorType Y)
+{
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+
+  const local_ordinal_type numRows = A.numRows ();
+  const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  // If local_ordinal_type is unsigned and numCols is 0, the loop
+  // below will have entirely the wrong number of iterations.
+  if (numCols == 0) {
+    return;
+  }
+
+  // Don't use c >= 0 as the test, because that fails if
+  // local_ordinal_type is unsigned.  We do c == 0 (last
+  // iteration) below.
+  for (local_ordinal_type c = numCols - 1; c != 0; --c) {
+    matrix_scalar_type A_cc = STS::zero ();
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r = ind(k);
+      const matrix_scalar_type A_rc = STS::conj (val(k));
+      // FIXME (mfh 28 Aug 2014) This assumes that the diagonal entry
+      // has equal local row and column indices.  That may not
+      // necessarily hold, depending on the row and column Maps.  See
+      // note above.
       if (r == c) {
         A_cc += A_rc;
       } else {
-        for (LocalOrdinal j = 0; j < numVecs; ++j) {
-          X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
         }
       }
     } // for each entry A_rc in the current column c
-    for (LocalOrdinal j = 0; j < numVecs; ++j) {
-      X[c + j*colStrideX] /= A_cc;
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(c, j) /= A_cc;
     }
   } // for each column c
-}
 
-
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
-void
-lowerTriSolveCscColMajorUnitDiagConj (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
-{
-  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
-
-  for (LocalOrdinal j = 0; j < numVecs; ++j) {
-    for (LocalOrdinal i = 0; i < numRows; ++i) {
-      X[i + j*colStrideX] = Y[i + j*colStrideY];
-    }
-  }
-
-  for (LocalOrdinal c = 0; c < numCols; ++c) {
-    for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
-      const LocalOrdinal r = ind[k];
-      MatrixScalar A_rc = STS::conj (val[k]);
-      for (LocalOrdinal j = 0; j < numVecs; ++j) {
-        X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
-      }
-    } // for each entry A_rc in the current column c
-  } // for each column c
-}
-
-
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
-void
-lowerTriSolveCscColMajorConj (
-  const LocalOrdinal numRows,
-  const LocalOrdinal numCols,
-  const LocalOrdinal numVecs,
-  RangeScalar* const X,
-  const OffsetType colStrideX,
-  const OffsetType* const ptr,
-  const LocalOrdinal* const ind,
-  const MatrixScalar* const val,
-  const DomainScalar* const Y,
-  const OffsetType colStrideY)
-{
-  typedef Kokkos::Details::ArithTraits<MatrixScalar> STS;
-
-  for (LocalOrdinal j = 0; j < numVecs; ++j) {
-    for (LocalOrdinal i = 0; i < numRows; ++i) {
-      X[i + j*colStrideX] = Y[i + j*colStrideY];
-    }
-  }
-
-  for (LocalOrdinal c = 0; c < numCols; ++c) {
-    MatrixScalar A_cc = STS::zero ();
-    for (OffsetType k = ptr[c]; k < ptr[c+1]; ++k) {
-      const LocalOrdinal r = ind[k];
-      const MatrixScalar A_rc = STS::conj (val[k]);
+  // Last iteration: c = 0.
+  {
+    const local_ordinal_type c = 0;
+    matrix_scalar_type A_cc = STS::zero ();
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r = ind(k);
+      const matrix_scalar_type A_rc = STS::conj (val(k));
+      // FIXME (mfh 28 Aug 2014) This assumes that the diagonal entry
+      // has equal local row and column indices.  That may not
+      // necessarily hold, depending on the row and column Maps.  See
+      // note above.
       if (r == c) {
         A_cc += A_rc;
       } else {
-        for (LocalOrdinal j = 0; j < numVecs; ++j) {
-          X[r + j*colStrideX] -= A_rc * X[c + j*colStrideX];
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
         }
       }
     } // for each entry A_rc in the current column c
-    for (LocalOrdinal j = 0; j < numVecs; ++j) {
-      X[c + j*colStrideX] /= A_cc;
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(c, j) /= A_cc;
+    }
+  }
+}
+
+
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
+void
+lowerTriSolveCsc (RangeMultiVectorType X,
+                  const CrsMatrixType& A,
+                  DomainMultiVectorType Y)
+{
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+
+  const local_ordinal_type numRows = A.numRows ();
+  const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  for (local_ordinal_type c = 0; c < numCols; ++c) {
+    matrix_scalar_type A_cc = STS::zero ();
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r = ind(k);
+      const matrix_scalar_type A_rc = val(k);
+      // FIXME (mfh 28 Aug 2014) This assumes that the diagonal entry
+      // has equal local row and column indices.  That may not
+      // necessarily hold, depending on the row and column Maps.  See
+      // note above.
+      if (r == c) {
+        A_cc += A_rc;
+      } else {
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
+        }
+      }
+    } // for each entry A_rc in the current column c
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(c, j) /= A_cc;
     }
   } // for each column c
 }
 
 
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
 void
-triSolve (const LocalOrdinal numRows,
-          const LocalOrdinal numCols,
-          const LocalOrdinal numVecs,
-          const OffsetType* const ptr,
-          const LocalOrdinal* const ind,
-          const MatrixScalar* const val,
-          const Teuchos::EUplo triUplo,
-          const Teuchos::EDiag unitDiag,
-          const Teuchos::ETransp trans,
-          const DomainScalar* const Y,
-          const OffsetType Y_stride,
-          RangeScalar* const X,
-          const OffsetType X_stride)
+lowerTriSolveCscUnitDiagConj (RangeMultiVectorType X,
+                              const CrsMatrixType& A,
+                              DomainMultiVectorType Y)
 {
-  typedef LocalOrdinal LO;
-  typedef OffsetType OT;
-  typedef MatrixScalar MST; // matrix scalar type
-  typedef DomainScalar DST;
-  typedef RangeScalar RST;
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
 
-  if (numRows == 0 || numVecs == 0) {
-    return; // Nothing to do
-  }
-  else if (numRows > 0 && ptr[numRows] == 0) {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      unitDiag != Teuchos::UNIT_DIAG, std::runtime_error,
-      "Triangular solve with an empty matrix is only valid if the matrix has "
-      "an implicit unit diagonal  This matrix does not.");
-    // solve I * X = Y for X = Y
-    for (LO j = 0; j < numCols; ++j) {
-      RST* const X_j = X + j*X_stride;
-      const DST* const Y_j = Y + j*Y_stride;
-      for (LO i = 0; i < numRows; ++i) {
-        X_j[i] = Y_j[i];
-      }
+  const local_ordinal_type numRows = A.numRows ();
+  const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
     }
   }
-  else {
-    if (trans == Teuchos::NO_TRANS) {
-      if (triUplo == Teuchos::LOWER_TRI) {
-        if (unitDiag == Teuchos::UNIT_DIAG) {
-          lowerTriSolveCsrColMajorUnitDiag<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                                   numVecs,
-                                                                   X, X_stride,
-                                                                   ptr, ind, val,
-                                                                   Y, Y_stride);
-        }
-        else { // non unit diagonal
-          lowerTriSolveCsrColMajor<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                           numVecs,
-                                                           X, X_stride,
-                                                           ptr, ind, val,
-                                                           Y, Y_stride);
+
+  for (local_ordinal_type c = 0; c < numCols; ++c) {
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r = ind(k);
+      const matrix_scalar_type A_rc = STS::conj (val(k));
+      for (local_ordinal_type j = 0; j < numVecs; ++j) {
+        X(r, j) -= A_rc * X(c, j);
+      }
+    } // for each entry A_rc in the current column c
+  } // for each column c
+}
+
+
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
+void
+lowerTriSolveCscConj (RangeMultiVectorType X,
+                      const CrsMatrixType& A,
+                      DomainMultiVectorType Y)
+{
+  typedef typename CrsMatrixType::row_map_type::non_const_value_type offset_type;
+  typedef typename CrsMatrixType::index_type::non_const_value_type local_ordinal_type;
+  typedef typename CrsMatrixType::values_type::non_const_value_type matrix_scalar_type;
+  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+
+  const local_ordinal_type numRows = A.numRows ();
+  const local_ordinal_type numCols = A.numCols ();
+  const local_ordinal_type numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+  typename CrsMatrixType::index_type ind = A.graph.entries;
+  typename CrsMatrixType::values_type val = A.values;
+
+  for (local_ordinal_type j = 0; j < numVecs; ++j) {
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      X(i, j) = Y(i, j);
+    }
+  }
+
+  for (local_ordinal_type c = 0; c < numCols; ++c) {
+    matrix_scalar_type A_cc = STS::zero ();
+    const offset_type beg = ptr(c);
+    const offset_type end = ptr(c+1);
+    for (offset_type k = beg; k < end; ++k) {
+      const local_ordinal_type r = ind(k);
+      const matrix_scalar_type A_rc = STS::conj (val(k));
+      // FIXME (mfh 28 Aug 2014) This assumes that the diagonal entry
+      // has equal local row and column indices.  That may not
+      // necessarily hold, depending on the row and column Maps.  See
+      // note above.
+      if (r == c) {
+        A_cc += A_rc;
+      } else {
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+          X(r, j) -= A_rc * X(c, j);
         }
       }
-      else { // upper triangular
-        if (unitDiag == Teuchos::UNIT_DIAG) {
-          upperTriSolveCsrColMajorUnitDiag<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                                   numVecs,
-                                                                   X, X_stride,
-                                                                   ptr, ind, val,
-                                                                   Y, Y_stride);
-        }
-        else { // non unit diagonal
-          upperTriSolveCsrColMajor<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                           numVecs,
-                                                           X, X_stride,
-                                                           ptr, ind, val,
-                                                           Y, Y_stride);
-        }
+    } // for each entry A_rc in the current column c
+    for (local_ordinal_type j = 0; j < numVecs; ++j) {
+      X(c, j) /= A_cc;
+    }
+  } // for each column c
+}
+
+
+template<class CrsMatrixType,
+         class DomainMultiVectorType,
+         class RangeMultiVectorType>
+void
+triSolveKokkos (RangeMultiVectorType X,
+                const CrsMatrixType& A,
+                DomainMultiVectorType Y,
+                const Teuchos::EUplo triUplo,
+                const Teuchos::EDiag unitDiag,
+                const Teuchos::ETransp trans)
+{
+  typedef typename CrsMatrixType::index_type::non_const_value_type LO;
+  const char prefix[] = "Kokkos::Sequential::triSolveKokkos: ";
+  const LO numRows = A.numRows ();
+  const LO numCols = A.numCols ();
+  const LO numVecs = X.dimension_1 ();
+  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    triUplo != Teuchos::LOWER_TRI && triUplo != Teuchos::UPPER_TRI &&
+    triUplo != Teuchos::UNDEF_TRI,
+    std::invalid_argument, prefix << "triUplo has an invalid value " << triUplo
+    << ".  Valid values are Teuchos::LOWER_TRI=" << Teuchos::LOWER_TRI <<
+    ", Teuchos::UPPER_TRI=" << Teuchos::UPPER_TRI << ", and Teuchos::UNDEF_TRI="
+    << Teuchos::UNDEF_TRI << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    triUplo == Teuchos::UNDEF_TRI, std::invalid_argument, prefix <<
+    "The matrix is neither lower nor upper triangular (triUplo="
+    "Teuchos::UNDEF_TRI), so you may not call this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    unitDiag != Teuchos::UNIT_DIAG && unitDiag != Teuchos::NON_UNIT_DIAG,
+    std::invalid_argument, prefix << "unitDiag has an invalid value "
+    << unitDiag << ".  Valid values are Teuchos::UNIT_DIAG="
+    << Teuchos::UNIT_DIAG << " and Teuchos::NON_UNIT_DIAG="
+    << Teuchos::NON_UNIT_DIAG << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    unitDiag != Teuchos::UNIT_DIAG && numRows > 0 && ptr(numRows) == 0,
+    std::invalid_argument, prefix << "Triangular solve with an empty matrix "
+    "is only valid if the matrix has an implicit unit diagonal.  This matrix "
+    "does not.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    trans != Teuchos::NO_TRANS && trans != Teuchos::TRANS &&
+    trans != Teuchos::CONJ_TRANS,
+    std::invalid_argument, prefix << "trans has an invalid value " << trans
+    << ".  Valid values are Teuchos::NO_TRANS=" << Teuchos::NO_TRANS << ", "
+    << "Teuchos::TRANS=" << Teuchos::TRANS << ", and Teuchos::CONJ_TRANS="
+    << Teuchos::CONJ_TRANS << ".");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numRows != static_cast<LO> (X.dimension_0 ()), std::invalid_argument,
+    prefix << "numRows = " << numRows << " != X.dimension_0() = " <<
+    X.dimension_0 () << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numCols != static_cast<LO> (Y.dimension_0 ()), std::invalid_argument,
+    prefix << "numCols = " << numCols << " != Y.dimension_0() = " <<
+    Y.dimension_0 () << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numVecs != static_cast<LO> (Y.dimension_1 ()), std::invalid_argument,
+    prefix << "X.dimension_1 () = " << numVecs << " != Y.dimension_1 () = "
+    << Y.dimension_1 () << ".");
+
+  if (trans == Teuchos::NO_TRANS) {          // no transpose
+    if (triUplo == Teuchos::LOWER_TRI) { // lower triangular
+      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
+        lowerTriSolveCsrUnitDiag (X, A, Y);
+      } else {                          // non unit diagonal
+        lowerTriSolveCsr (X, A, Y);
+      }
+    } else {                             // upper triangular
+      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
+        upperTriSolveCsrUnitDiag (X, A, Y);
+      } else {                          // non unit diagonal
+        upperTriSolveCsr (X, A, Y);
       }
     }
-    else if (trans == Teuchos::TRANS) {
-      if (triUplo == Teuchos::LOWER_TRI) {
-        // Transposed lower triangular solves are upper triangular solves.
-        if (unitDiag == Teuchos::UNIT_DIAG) {
-          // numRows resp. numCols come from the number of rows in Y
-          // resp. X, so they still appear in the same order as
-          // in the not transposed cases above.
-          upperTriSolveCscColMajorUnitDiag<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                                   numVecs,
-                                                                   X, X_stride,
-                                                                   ptr, ind, val,
-                                                                   Y, Y_stride);
-        }
-        else {
-          upperTriSolveCscColMajor<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                           numVecs,
-                                                           X, X_stride,
-                                                           ptr, ind, val,
-                                                           Y, Y_stride);
-        }
-      }
-      else { // upper triangular
-        // Transposed upper triangular solves are lower triangular solves.
-        if (unitDiag == Teuchos::UNIT_DIAG) {
-          lowerTriSolveCscColMajorUnitDiag<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                                   numVecs,
-                                                                   X, X_stride,
-                                                                   ptr, ind, val,
-                                                                   Y, Y_stride);
-        }
-        else {
-          lowerTriSolveCscColMajor<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                           numVecs,
-                                                           X, X_stride,
-                                                           ptr, ind, val,
-                                                           Y, Y_stride);
-        }
+  }
+  else if (trans == Teuchos::TRANS) {           // transpose
+    if (triUplo == Teuchos::LOWER_TRI) { // lower triangular
+      // Transposed lower tri CSR => upper tri CSC.
+      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
+        upperTriSolveCscUnitDiag (X, A, Y);
+      } else {                          // non unit diagonal
+        upperTriSolveCsc (X, A, Y);
       }
     }
-    else if (trans == Teuchos::CONJ_TRANS) {
-      if (triUplo == Teuchos::LOWER_TRI) {
-        // Transposed lower triangular solves are upper triangular solves.
-        if (unitDiag == Teuchos::UNIT_DIAG) {
-          upperTriSolveCscColMajorUnitDiagConj<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                                       numVecs,
-                                                                       X, X_stride,
-                                                                       ptr, ind, val,
-                                                                       Y, Y_stride);
-        }
-        else {
-          upperTriSolveCscColMajorConj<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                               numVecs,
-                                                               X, X_stride,
-                                                               ptr, ind, val,
-                                                               Y, Y_stride);
-        }
+    else {                               // upper triangular
+      // Transposed upper tri CSR => lower tri CSC.
+      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
+        lowerTriSolveCscUnitDiag (X, A, Y);
+      } else {                          // non unit diagonal
+        lowerTriSolveCsc (X, A, Y);
       }
-      else { // upper triangular
-        // Transposed upper triangular solves are lower triangular solves.
-        if (unitDiag == Teuchos::UNIT_DIAG) {
-          lowerTriSolveCscColMajorUnitDiagConj<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                                       numVecs,
-                                                                       X, X_stride,
-                                                                       ptr, ind, val,
-                                                                       Y, Y_stride);
-        }
-        else {
-          lowerTriSolveCscColMajorConj<LO, OT, MST, DST, RST> (numRows, numCols,
-                                                               numVecs,
-                                                               X, X_stride,
-                                                               ptr, ind, val,
-                                                               Y, Y_stride);
-        }
+    }
+  }
+  else if (trans == Teuchos::CONJ_TRANS) { // conj transpose
+    if (triUplo == Teuchos::LOWER_TRI) { // lower triangular
+      // Transposed lower tri CSR => upper tri CSC.
+      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
+        upperTriSolveCscUnitDiagConj (X, A, Y);
+      } else {                          // non unit diagonal
+        upperTriSolveCscConj (X, A, Y);
+      }
+    }
+    else {                               // upper triangular
+      // Transposed upper tri CSR => lower tri CSC.
+      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
+        lowerTriSolveCscUnitDiagConj (X, A, Y);
+      } else {                          // non unit diagonal
+        lowerTriSolveCscConj (X, A, Y);
       }
     }
   }
 }
+
 
 } // namespace Sequential
 } // namespace Kokkos

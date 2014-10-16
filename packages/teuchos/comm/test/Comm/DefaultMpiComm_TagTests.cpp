@@ -48,7 +48,7 @@
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_as.hpp"
 
-namespace std { 
+namespace std {
 
 template <typename Packet>
 ostream & operator<< (ostream& os, const pair<Packet, Packet>& arg)
@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST( MpiCommTag, IrecvSend )
   ArrayRCP<int> recvBuf (2);
   ArrayRCP<int> leftRecvBuf = recvBuf.persistingView (0, 1);
   ArrayRCP<int> rightRecvBuf = recvBuf.persistingView (1, 1);
-  
+
   // Send buffer, with subbuffers for each neighbor.
   Array<int> sendBuf (2);
   ArrayView<int> leftSendBuf = sendBuf.view (0, 1);
@@ -140,19 +140,19 @@ TEUCHOS_UNIT_TEST( MpiCommTag, IrecvSend )
   for (size_type k = 0; k < recvBuf.size (); ++k) {
     recvBuf[k] = -1;
   }
-  
+
   // Send my process rank plus the current tag to all neighbors.
   for (size_type k = 0; k < sendBuf.size (); ++k) {
     sendBuf[k] = myRank + tag1;
   }
-  
+
   // Post receives from left and right neighbors.
   Array<RCP<CommRequest<int> > > requests (2);
   requests[0] = ireceive<int, int> (leftRecvBuf, leftNeighbor, tag1, *comm);
   requests[1] = ireceive<int, int> (rightRecvBuf, rightNeighbor, tag1, *comm);
 
   // Post sends to left and right neighbors.
-  send<int, int> (leftSendBuf.getRawPtr (), as<int> (leftSendBuf.size ()), 
+  send<int, int> (leftSendBuf.getRawPtr (), as<int> (leftSendBuf.size ()),
 		  leftNeighbor, tag1, *comm);
   send<int, int> (rightSendBuf.getRawPtr (), as<int> (rightSendBuf.size ()),
 		  rightNeighbor, tag1, *comm);
@@ -193,18 +193,18 @@ TEUCHOS_UNIT_TEST( MpiCommTag, IrecvSend )
   for (size_type k = 0; k < recvBuf.size (); ++k) {
     recvBuf[k] = -1;
   }
-  
+
   // Send my process rank plus the current tag to all neighbors.
   for (size_type k = 0; k < sendBuf.size (); ++k) {
     sendBuf[k] = myRank + tag2;
   }
-  
+
   // Post receives from left and right neighbors.
   requests[0] = ireceive<int, int> (leftRecvBuf, leftNeighbor, tag2, *comm);
   requests[1] = ireceive<int, int> (rightRecvBuf, rightNeighbor, tag2, *comm);
 
   // Post sends to left and right neighbors.
-  send<int, int> (leftSendBuf.getRawPtr (), as<int> (leftSendBuf.size ()), 
+  send<int, int> (leftSendBuf.getRawPtr (), as<int> (leftSendBuf.size ()),
 		  leftNeighbor, tag2, *comm);
   send<int, int> (rightSendBuf.getRawPtr (), as<int> (rightSendBuf.size ()),
 		  rightNeighbor, tag2, *comm);
@@ -245,18 +245,18 @@ TEUCHOS_UNIT_TEST( MpiCommTag, IrecvSend )
   for (size_type k = 0; k < recvBuf.size (); ++k) {
     recvBuf[k] = -1;
   }
-  
+
   // Send my process rank plus the current tag to all neighbors.
   for (size_type k = 0; k < sendBuf.size (); ++k) {
     sendBuf[k] = myRank + tag3;
   }
-  
+
   // Post receives from left and right neighbors.
   requests[0] = ireceive<int, int> (leftRecvBuf, leftNeighbor, tag3, *comm);
   requests[1] = ireceive<int, int> (rightRecvBuf, rightNeighbor, tag3, *comm);
 
   // Post sends to left and right neighbors.
-  send<int, int> (leftSendBuf.getRawPtr (), as<int> (leftSendBuf.size ()), 
+  send<int, int> (leftSendBuf.getRawPtr (), as<int> (leftSendBuf.size ()),
 		  leftNeighbor, tag3, *comm);
   send<int, int> (rightSendBuf.getRawPtr (), as<int> (rightSendBuf.size ()),
 		  rightNeighbor, tag3, *comm);
@@ -335,7 +335,7 @@ TEUCHOS_UNIT_TEST( MpiCommTag, IrecvIsend )
   ArrayRCP<int> recvBuf (2);
   ArrayRCP<int> leftRecvBuf = recvBuf.persistingView (0, 1);
   ArrayRCP<int> rightRecvBuf = recvBuf.persistingView (1, 1);
-  
+
   // Send buffer, with subbuffers for each neighbor.
   ArrayRCP<int> sendBuf (2);
   ArrayRCP<int> leftSendBuf = sendBuf.persistingView (0, 1);
@@ -360,12 +360,12 @@ TEUCHOS_UNIT_TEST( MpiCommTag, IrecvIsend )
   for (size_type k = 0; k < recvBuf.size (); ++k) {
     recvBuf[k] = -1;
   }
-  
+
   // Send my process rank plus the current tag to all neighbors.
   for (size_type k = 0; k < sendBuf.size (); ++k) {
     sendBuf[k] = myRank + tag1;
   }
-  
+
   // Post receives from left and right neighbors.
   requests[0] = ireceive<int, int> (leftRecvBuf, leftNeighbor, tag1, *comm);
   requests[1] = ireceive<int, int> (rightRecvBuf, rightNeighbor, tag1, *comm);
@@ -398,12 +398,12 @@ TEUCHOS_UNIT_TEST( MpiCommTag, IrecvIsend )
   for (size_type k = 0; k < recvBuf.size (); ++k) {
     recvBuf[k] = -1;
   }
-  
+
   // Send my process rank plus the current tag to all neighbors.
   for (size_type k = 0; k < sendBuf.size (); ++k) {
     sendBuf[k] = myRank + tag2;
   }
-  
+
   // Post receives from left and right neighbors.
   requests[0] = ireceive<int, int> (leftRecvBuf, leftNeighbor, tag2, *comm);
   requests[1] = ireceive<int, int> (rightRecvBuf, rightNeighbor, tag2, *comm);
@@ -438,12 +438,12 @@ TEUCHOS_UNIT_TEST( MpiCommTag, IrecvIsend )
   for (size_type k = 0; k < recvBuf.size (); ++k) {
     recvBuf[k] = -1;
   }
-  
+
   // Send my process rank plus the current tag to all neighbors.
   for (size_type k = 0; k < sendBuf.size (); ++k) {
     sendBuf[k] = myRank + tag3;
   }
-  
+
   // Post receives from left and right neighbors.
   requests[0] = ireceive<int, int> (leftRecvBuf, leftNeighbor, tag3, *comm);
   requests[1] = ireceive<int, int> (rightRecvBuf, rightNeighbor, tag3, *comm);

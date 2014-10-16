@@ -55,7 +55,7 @@ typedef Kokkos::DualView<int**> idx_type;
 
 template<class Device>
 struct localsum {
-  // Define the execution space for the functor (overrides the DefaultDeviceType)
+  // Define the execution space for the functor (overrides the DefaultExecutionSpace)
   typedef Device device_type;
 
   // Get the view types on the particular device the functor is instantiated for
@@ -104,7 +104,7 @@ int main(int narg, char* arg[]) {
   srand(134231);
 
   // Get a reference to the host view of idx directly (equivalent to
-  // idx.view<idx_type::host_mirror_device_type>() )
+  // idx.view<idx_type::host_mirror_space>() )
   idx_type::t_host h_idx = idx.h_view;
   for (int i = 0; i < size; ++i) {
     for (view_type::size_type j=0; j < h_idx.dimension_1 (); ++j) {
@@ -112,10 +112,10 @@ int main(int narg, char* arg[]) {
     }
   }
 
-  // Mark idx as modified on the host_mirror_device_type so that a
+  // Mark idx as modified on the host_mirror_space so that a
   // sync to the device will actually move data.  The sync happens in
   // the functor's constructor.
-  idx.modify<idx_type::host_mirror_device_type>();
+  idx.modify<idx_type::host_mirror_space>();
 
   // Run on the device.  This will cause a sync of idx to the device,
   // since it was marked as modified on the host.
@@ -129,17 +129,17 @@ int main(int narg, char* arg[]) {
   Kokkos::fence();
   double sec2_dev = timer.seconds();
 
-  // Run on the host (could be the same as device).  This will cause a
-  // sync back to the host of dest.  Note that if the Device is CUDA,
+  // Run on the host's default execution space (could be the same as device).
+  // This will cause a sync back to the host of dest.  Note that if the Device is CUDA,
   // the data layout will not be optimal on host, so performance is
   // lower than what it would be for a pure host compilation.
   timer.reset();
-  Kokkos::parallel_for(size,localsum<view_type::host_mirror_device_type>(idx,dest,src));
+  Kokkos::parallel_for(size,localsum<Kokkos::HostSpace::execution_space>(idx,dest,src));
   Kokkos::fence();
   double sec1_host = timer.seconds();
 
   timer.reset();
-  Kokkos::parallel_for(size,localsum<view_type::host_mirror_device_type>(idx,dest,src));
+  Kokkos::parallel_for(size,localsum<Kokkos::HostSpace::execution_space>(idx,dest,src));
   Kokkos::fence();
   double sec2_host = timer.seconds();
 

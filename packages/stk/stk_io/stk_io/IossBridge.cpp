@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_io/IossBridge.hpp>
 #include <Ioss_NullEntity.h>            // for NullEntity
@@ -20,6 +45,7 @@
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities, etc
+#include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank, etc
 #include <stk_util/util/tokenize.hpp>   // for tokenize
@@ -50,6 +76,14 @@
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 
+
+namespace stk {
+  namespace io {
+    bool is_field_on_part(const stk::mesh::FieldBase *field,
+			  const stk::mesh::EntityRank part_type,
+			  const stk::mesh::Part &part);
+      }
+}
 
 void STKIORequire(bool cond)
 {
@@ -126,9 +160,14 @@ const stk::mesh::FieldBase *declare_ioss_field_internal(stk::mesh::MetaData &met
                                                         const Ioss::Field &io_field,
                                                         bool use_cartesian_for_scalar, T /*dummy*/)
 {
-  stk::mesh::FieldBase *field_ptr = NULL;
-  std::string field_type = io_field.transformed_storage()->name();
   std::string name = io_field.get_name();
+  stk::mesh::FieldBase *field_ptr = meta.get_field(type, name);
+  // If the field has already been declared, don't redeclare it.
+  if (field_ptr != NULL && stk::io::is_field_on_part(field_ptr, type, part)) {
+    return field_ptr;
+  }
+  
+  std::string field_type = io_field.transformed_storage()->name();
   size_t num_components = io_field.transformed_storage()->component_count();
   stk::topology::rank_t entity_rank = static_cast<stk::topology::rank_t>(type);
 
@@ -208,6 +247,9 @@ const stk::mesh::FieldBase *declare_ioss_field(stk::mesh::MetaData &meta,
   const stk::mesh::FieldBase *field_ptr = NULL;
   if (io_field.get_type() == Ioss::Field::INTEGER) {
     int dummy = 1;
+    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, dummy);
+  } else if (io_field.get_type() == Ioss::Field::INT64) {
+    int64_t dummy = 1;
     field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, dummy);
   } else if (io_field.get_type() == Ioss::Field::REAL) {
     double dummy = 1.0;
@@ -1293,6 +1335,13 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
 
     mesh::Selector *select = new mesh::Selector(selector);
     io_cs->property_add(Ioss::Property(internal_selector_name, select, false));
+
+    // Update global node and element count...
+    std::vector<size_t> entityCounts;
+    stk::mesh::comm_mesh_counts(bulk, entityCounts);
+    
+    io_region.property_add(Ioss::Property("global_node_count",    (int64_t)entityCounts[stk::topology::NODE_RANK]));
+    io_region.property_add(Ioss::Property("global_element_count", (int64_t)entityCounts[stk::topology::ELEMENT_RANK]));
   }
 }
 

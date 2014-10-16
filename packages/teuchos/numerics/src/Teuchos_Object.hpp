@@ -70,7 +70,7 @@ class TEUCHOSNUMERICS_LIB_DLL_EXPORT Object
 {
   public:
   //! @name Constructors/Destructor.
-  //@{ 
+  //@{
   //! Default Constructor.
   /*! Object is the primary base class in Teuchos.  All Teuchos class
       are derived from it, directly or indirectly.  This class is seldom
@@ -89,14 +89,14 @@ class TEUCHOSNUMERICS_LIB_DLL_EXPORT Object
   Object(const Object& obj);
 
   //! Destructor.
-  /*! Completely deletes an Object object.  
+  /*! Completely deletes an Object object.
   */
   virtual ~Object();
 
   //@}
-  
+
   //! @name Set methods.
-  //@{ 
+  //@{
 
   //! Define object label using a character std::string.
   /*! Defines the label used to describe \c this object.
@@ -121,12 +121,12 @@ class TEUCHOSNUMERICS_LIB_DLL_EXPORT Object
   //@}
 
   //! @name Accessor methods.
-  //@{ 
+  //@{
 
   //! Access the object label.
   /*! Returns the std::string used to define \e this object.
   */
-  virtual char* label() const;  
+  virtual char* label() const;
 
   //! Get the value of the Object error traceback report mode.
   static int getTracebackMode();
@@ -134,30 +134,30 @@ class TEUCHOSNUMERICS_LIB_DLL_EXPORT Object
   //@}
 
   //! @name I/O method.
-  //@{ 
+  //@{
 
   //! Print method for placing the object in an output stream
   virtual void print(std::ostream& os) const;
   //@}
 
   //! @name Error reporting method.
-  //@{ 
+  //@{
 
   //!  Method for reporting errors with Teuchos objects.
-  virtual int reportError(const std::string message, int errorCode) const 
+  virtual int reportError(const std::string message, int errorCode) const
   {
-  // NOTE:  We are extracting a C-style std::string from Message because 
-  //        the SGI compiler does not have a real std::string class with 
+  // NOTE:  We are extracting a C-style std::string from Message because
+  //        the SGI compiler does not have a real std::string class with
   //        the << operator.  Some day we should get rid of ".c_str()"
 	if ( (tracebackMode==1) && (errorCode < 0) )
 	{  // Report fatal error
-	   std::cerr << std::endl << "Error in Teuchos Object with label: " << label_ << std::endl 
+	   std::cerr << std::endl << "Error in Teuchos Object with label: " << label_ << std::endl
 		 << "Teuchos Error:  " << message.c_str() << "  Error Code:  " << errorCode << std::endl;
 	   return(errorCode);
         }
-	if ( (tracebackMode==2) && (errorCode != 0 ) ) 
+	if ( (tracebackMode==2) && (errorCode != 0 ) )
 	{
-	   std::cerr << std::endl << "Error in Teuchos Object with label: " << label_ << std::endl 
+	   std::cerr << std::endl << "Error in Teuchos Object with label: " << label_ << std::endl
 		 << "Teuchos Error:  " << message.c_str() << "  Error Code:  " << errorCode << std::endl;
 	   return(errorCode);
 	}
@@ -166,7 +166,7 @@ class TEUCHOSNUMERICS_LIB_DLL_EXPORT Object
 
   //@}
 
-  static int tracebackMode;  
+  static int tracebackMode;
 
  protected:
 
@@ -183,7 +183,7 @@ inline std::ostream& operator<<(std::ostream& os, const Teuchos::Object& Obj)
 {
   os << Obj.label() << std::endl;
   Obj.print(os);
- 
+
   return os;
 }
 

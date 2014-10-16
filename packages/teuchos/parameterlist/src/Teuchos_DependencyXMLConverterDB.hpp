@@ -66,7 +66,7 @@ public:
 
   /** \name Modifier Functions */
   //@{
-  
+
   /** \brief Add a converter to the database.
    *
    * \param A dummy dependency representing the type of dependency the converter
@@ -75,16 +75,16 @@ public:
    */
   static void addConverter(RCP<const Dependency> dependency,
     RCP<DependencyXMLConverter> converterToAdd);
-  
+
   //@}
 
   /** \name Converter Functions */
   //@{
-  
-  /** \brief Get an appropriate DependencyXMLConverter given a 
+
+  /** \brief Get an appropriate DependencyXMLConverter given a
    *  ParameterEntry.
    *
-   * \param dependency The ParameterEntryDependency for which a 
+   * \param dependency The ParameterEntryDependency for which a
    * converter is desired.
    */
   static RCP<const DependencyXMLConverter> getConverter(
@@ -94,7 +94,7 @@ public:
    *
    * @param xmlObject The XMLObject for which a converter is desired.
    */
-  static RCP<const DependencyXMLConverter> 
+  static RCP<const DependencyXMLConverter>
     getConverter(const XMLObject& xmlObject);
 
   /**
@@ -112,10 +112,10 @@ public:
   static XMLObject convertDependency(
     RCP<const Dependency> dependency,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-    ValidatortoIDMap& validatorIDsMap); 
+    ValidatortoIDMap& validatorIDsMap);
 
   /**
-   * \brief Given an XMLObject converts the XMLObject 
+   * \brief Given an XMLObject converts the XMLObject
    * to a Dependency.
    *
    * \param xmlObject The XMLObject to convert into a depdendency.
@@ -127,10 +127,10 @@ public:
    * \return A Dependency that was represented by the XML.
    */
   static RCP<Dependency> convertXML(
-    const XMLObject& xmlObject, 
+    const XMLObject& xmlObject,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-    const IDtoValidatorMap& validatorIDsMap); 
-  
+    const IDtoValidatorMap& validatorIDsMap);
+
   //@}
 
   /** \name I/O Functions */
@@ -151,26 +151,26 @@ public:
       out << "\t" << it->first <<std::endl;
     }
   }
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief convience class. */
   typedef std::map<std::string, RCP<DependencyXMLConverter> > ConverterMap;
 
   /** \brief convience typedef. */
-  typedef std::pair<std::string, RCP<DependencyXMLConverter> > 
+  typedef std::pair<std::string, RCP<DependencyXMLConverter> >
     ConverterPair;
 
   /** \brief Gets the default converter to be used to convert
    * Dependencies.
    */
   static ConverterMap& getConverterMap();
-  
+
   //@}
 
 };
@@ -190,12 +190,12 @@ private:
    Teuchos::DependencyXMLConverterDB::addConverter( \
         Teuchos::DummyObjectGetter< DEP_TYPE >:: \
           getDummyObject(), \
-        Teuchos::rcp(new CONVERTER)); 
+        Teuchos::rcp(new CONVERTER));
 
 /**
  * \brief Adds converters for NumberVisualDepednency,
- * RangeValidatorDepencny, and NumberArrayLengthDependency 
- * which are templated on type T to the list of available 
+ * RangeValidatorDepencny, and NumberArrayLengthDependency
+ * which are templated on type T to the list of available
  * converters.
  */
 #define TEUCHOS_ADD_TEMPLATED_NUMBER_DEPS(T) \
@@ -274,7 +274,7 @@ private:
   TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , int) \
   TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , long long int) \
   TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , double) \
-  TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , float) 
+  TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , float)
 #else
 /**
  * \brief Adds several ArrayModifierDependencies templated on
@@ -292,7 +292,7 @@ private:
   TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , std::string) \
   TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , int) \
   TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , double) \
-  TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , float) 
+  TEUCHOS_ADD_TWODCOL_DEP( DEPENDEE_TYPE , float)
 #endif
 
 

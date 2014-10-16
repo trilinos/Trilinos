@@ -31,6 +31,7 @@ SET(LIB_OPTIONAL_DEP_PACKAGES
   Teuchos
   Epetra
   Triutils
+  Tpetra
   EpetraExt
   Isorropia
   AztecOO

@@ -166,10 +166,10 @@ namespace Tpetra {
   /// an object can be the target of an Import or Export, it can also
   /// be the source of an Import or Export.
   template <class Packet,
-            class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class DistObject : 
+            class LocalOrdinal = Map<>::local_ordinal_type,
+            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
+            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  class DistObject :
     virtual public SrcDistObject,
     virtual public Teuchos::Describable {
   public:

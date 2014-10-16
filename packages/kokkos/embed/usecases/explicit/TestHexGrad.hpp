@@ -42,7 +42,7 @@
 */
 
 #include <stdio.h>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Explicit {
 

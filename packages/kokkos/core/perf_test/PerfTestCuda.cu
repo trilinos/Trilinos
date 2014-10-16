@@ -44,11 +44,9 @@
 #include <iostream>
 #include <iomanip>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <impl/Kokkos_Timer.hpp>
-
-#include <Kokkos_Cuda.hpp>
 
 #include <PerfTestHexGrad.hpp>
 #include <PerfTestBlasKernels.hpp>

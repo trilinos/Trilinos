@@ -359,15 +359,15 @@ const T& ArrayView<const T>::back() const
 template<class T> inline
 ArrayView<T> ArrayView<T>::view(size_type offset, size_type size_in) const
 {
-  if (size_in == 0) {
-    return null;
-  }
+  if (size_in == 0) { return null; }
   debug_assert_valid_ptr();
   debug_assert_in_range(offset, size_in);
+  return ArrayView<T>(
+    ptr_+offset, size_in
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  return arcp_(offset, size_in);
+    ,arcp_.persistingView(offset, size_in)
 #endif
-  return ArrayView<T>(ptr_+offset, size_in);
+    );
   // WARNING: The above code had better be correct since we are using raw
   // pointer arithmetic!
 }
@@ -375,15 +375,15 @@ ArrayView<T> ArrayView<T>::view(size_type offset, size_type size_in) const
 template<class T> inline
 ArrayView<const T> ArrayView<const T>::view(size_type offset, size_type size_in) const
 {
-  if (size_in == 0) {
-    return null;
-  }
+  if (size_in == 0) { return null; }
   debug_assert_valid_ptr();
   debug_assert_in_range(offset, size_in);
+  return ArrayView<const T>(
+    ptr_+offset, size_in
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  return arcp_(offset, size_in);
+    ,arcp_.persistingView(offset, size_in)
 #endif
-  return ArrayView<const T> (ptr_+offset, size_in);
+    );
   // WARNING: The above code had better be correct since we are using raw
   // pointer arithmetic!
 }

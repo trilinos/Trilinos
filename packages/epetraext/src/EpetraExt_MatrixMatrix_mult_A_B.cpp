@@ -170,7 +170,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   // **********************
   if(!B.Importer() || (B.Importer()->NumSameIDs() == DomainMap.NumMyElements())) {
     // B's colmap has all of the domain elements.  We can just copy those into the start of the array.
-    DomainMap.MyGlobalElements(&Cgids[0]);
+    DomainMap.MyGlobalElements(Cgids.size() ? &Cgids[0] : 0);
     Cstart=DomainMap.NumMyElements();
     Bstart=DomainMap.NumMyElements();
 
@@ -256,7 +256,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
       }
 
       // Sort & record reindexing
-      int *Bptr2 = &Btemp2[0]; 
+      int *Bptr2 = Btemp2.size() ? &Btemp2[0] : 0; 
       util.Sort(true, tCsize, &Cgids[Cstart], 0, 0, 1, &Bptr2, 0, 0);
 
       for(i=0, j=Cstart; i<tCsize; i++){
@@ -284,7 +284,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
       }
 
       // Sort & record reindexing
-      int *Iptr2 = &Itemp2[0]; 
+      int *Iptr2 = Itemp2.size() ? &Itemp2[0] : 0; 
       util.Sort(true, tCsize, &Cgids[Cstart], 0, 0, 1, &Iptr2, 0, 0);
 
       for(i=0, j=Cstart; i<tCsize; i++){
@@ -317,9 +317,9 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
       for(i=Istart; i<Inext; i++) {Itemp[i-Istart]=Igids[i]; Itemp2[i-Istart]=i;}
 
       // Sort & set_union
-      int *Bptr2 = &Btemp2[0]; int *Iptr2 = &Itemp2[0];
-      util.Sort(true, tBsize, &Btemp[0], 0, 0, 1, &Bptr2, 0, 0);
-      util.Sort(true, tIsize, &Itemp[0], 0, 0, 1, &Iptr2, 0, 0);
+      int *Bptr2 = Btemp2.size() ? &Btemp2[0] : 0; int *Iptr2 = Itemp2.size() ? &Itemp2[0] : 0;
+      util.Sort(true, tBsize, Btemp.size() ? &Btemp[0] : 0, 0, 0, 1, &Bptr2, 0, 0);
+      util.Sort(true, tIsize, Itemp.size() ? &Itemp[0] : 0, 0, 0, 1, &Iptr2, 0, 0);
       typename std::vector<int_type>::iterator mycstart = Cgids.begin()+Cstart;
       typename std::vector<int_type>::iterator last_el=std::set_union(Btemp.begin(),Btemp.begin()+tBsize,Itemp.begin(),Itemp.begin()+tIsize,mycstart);
 
@@ -352,7 +352,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   // Stage 5: Call constructor
   // **********************
   // Make the map
-  unionmap=new Epetra_Map((int_type) -1,Cstart,&Cgids[0], (int_type) B.ColMap().IndexBase64(),
+  unionmap=new Epetra_Map((int_type) -1,Cstart,Cgids.size() ? &Cgids[0] : 0, (int_type) B.ColMap().IndexBase64(),
 	  B.Comm(),B.ColMap().DistributedGlobal(),(int_type) B.ColMap().MinAllGID64(),(int_type) B.ColMap().MaxAllGID64());
   return 0;
 #else

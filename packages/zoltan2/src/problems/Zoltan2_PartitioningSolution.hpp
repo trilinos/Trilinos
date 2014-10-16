@@ -59,6 +59,11 @@
 #include <vector>
 #include <limits>
 
+#ifdef _MSC_VER
+#define NOMINMAX
+#include <windows.h>
+#endif
+
 namespace Teuchos{
 
 /*! \brief Zoltan2_BoxBoundaries is a reduction operation
@@ -128,7 +133,7 @@ public:
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
 #endif
@@ -403,7 +408,7 @@ public:
 
   /*! \brief Returns the user's global ID list.
    */
-  const gid_t *getIdList() const {
+  const zgid_t *getIdList() const {
     if (gids_.size() > 0) return gids_.getRawPtr();
     else                  return NULL;
   }
@@ -570,7 +575,7 @@ public:
     size_t convertSolutionToImportList(
       int numExtra,
       ArrayRCP<Extra> &xtraInfo,
-      ArrayRCP<typename Adapter::gid_t> &imports,
+      ArrayRCP<typename Adapter::zgid_t> &imports,
       ArrayRCP<Extra> &newXtraInfo) const;
 
   /*! \brief Get the parts belonging to a process.
@@ -728,7 +733,7 @@ private:
   ////////////////////////////////////////////////////////////////
   // The algorithm sets these values upon completion.
 
-  ArrayRCP<const gid_t>  gids_;   // User's global IDs
+  ArrayRCP<const zgid_t>  gids_;   // User's global IDs
   ArrayRCP<part_t> parts_;      // part number assigned to gids_[i]
 
   bool haveSolution_;
@@ -1373,12 +1378,12 @@ template <typename Adapter>
     // that it received the gnos.
 
     if (idMap_->gnosAreGids()){
-      gids_ = Teuchos::arcp_reinterpret_cast<const gid_t>(gnoList);
+      gids_ = Teuchos::arcp_reinterpret_cast<const zgid_t>(gnoList);
     }
     else{
-      gid_t *gidList = new gid_t [len];
+      zgid_t *gidList = new zgid_t [len];
       env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
-      ArrayView<gid_t> gidView(gidList, len);
+      ArrayView<zgid_t> gidView(gidList, len);
 
       const gno_t *gnos = gnoList.getRawPtr();
       ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
@@ -1388,7 +1393,7 @@ template <typename Adapter>
       }
       Z2_FORWARD_EXCEPTIONS
 
-      gids_ = arcp<const gid_t>(gidList, 0, len);
+      gids_ = arcp<const zgid_t>(gidList, 0, len);
     }
     parts_ = partList;
   }
@@ -1399,7 +1404,7 @@ template <typename Adapter>
 
     // We send part information to the process that "owns" the global number.
 
-    ArrayView<gid_t> emptyView;
+    ArrayView<zgid_t> emptyView;
     ArrayView<int> procList;
 
     if (len){
@@ -1487,7 +1492,7 @@ template <typename Adapter>
         env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpPart);
 
         size_t next = 0;
-        for (lno_t i=0; i < newLen; i++){
+        for (gno_t i=0; i < newLen; i++){
           tmpGno[i] = inBuf[next++];
           tmpPart[i] = inBuf[next++];
         }
@@ -1504,12 +1509,12 @@ template <typename Adapter>
     delete [] procList.getRawPtr();
 
     if (idMap_->gnosAreGids()){
-      gids_ = Teuchos::arcp_reinterpret_cast<const gid_t>(gnoList);
+      gids_ = Teuchos::arcp_reinterpret_cast<const zgid_t>(gnoList);
     }
     else{
-      gid_t *gidList = new gid_t [len];
+      zgid_t *gidList = new zgid_t [len];
       env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
-      ArrayView<gid_t> gidView(gidList, len);
+      ArrayView<zgid_t> gidView(gidList, len);
 
       const gno_t *gnos = gnoList.getRawPtr();
       ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
@@ -1519,7 +1524,7 @@ template <typename Adapter>
       }
       Z2_FORWARD_EXCEPTIONS
 
-      gids_ = arcp<const gid_t>(gidList, 0, len);
+      gids_ = arcp<const zgid_t>(gidList, 0, len);
     }
 
     parts_ = partList;
@@ -1633,7 +1638,7 @@ template <typename Adapter>
   template <typename Extra>
     size_t PartitioningSolution<Adapter>::convertSolutionToImportList(
       int numExtra, ArrayRCP<Extra> &xtraInfo,
-      ArrayRCP<typename Adapter::gid_t> &imports,       // output
+      ArrayRCP<typename Adapter::zgid_t> &imports,       // output
       ArrayRCP<Extra> &newXtraInfo) const               // output
 {
   env_->localInputAssertion(__FILE__, __LINE__, "no solution yet",
@@ -1657,7 +1662,7 @@ template <typename Adapter>
     offsets[i] = offsets[i-1] + counts[i-1];
   }
 
-  Array<gid_t> gidList(localNumIds);
+  Array<zgid_t> gidList(localNumIds);
   Array<Extra> numericInfo;
 
   if (numExtra > 0)
@@ -1685,7 +1690,7 @@ template <typename Adapter>
   Array<int> recvCounts(numProcs, 0);
 
   try{
-    AlltoAllv<gid_t>(*comm_, *env_, gidList(),
+    AlltoAllv<zgid_t>(*comm_, *env_, gidList(),
       counts(), imports, recvCounts());
   }
   catch (std::exception &e){
@@ -1827,6 +1832,9 @@ template <typename Adapter>
     bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
     int numLocalParts, int numGlobalParts)
 {
+#ifdef _MSC_VER
+	typedef SSIZE_T ssize_t;
+#endif
   int nprocs = comm_->getSize();
   ssize_t reducevals[4];
   ssize_t sumHaveGlobal=0, sumHaveLocal=0;

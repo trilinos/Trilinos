@@ -46,7 +46,94 @@
 #include <sstream>
 #include <iostream>
 
-#include <Kokkos_Parallel.hpp>
+#include <Kokkos_Core.hpp>
+
+/*--------------------------------------------------------------------------*/
+
+namespace Test {
+namespace {
+
+template< class ExecSpace >
+struct TestTeamPolicy {
+
+  typedef typename Kokkos::TeamPolicy< ExecSpace >::member_type team_member ;
+  typedef Kokkos::View<int**,ExecSpace> view_type ;
+
+  view_type m_flags ;
+
+  TestTeamPolicy( const size_t league_size )
+    : m_flags( Kokkos::allocate_without_initializing , "flags"
+             , Kokkos::TeamPolicy< ExecSpace >::team_size_max( *this )
+             , league_size )
+    {}
+
+  struct VerifyInitTag {};
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const team_member & member ) const
+    {
+      const int tid = member.team_rank() + member.team_size() * member.league_rank();
+
+      m_flags( member.team_rank() , member.league_rank() ) = tid ;
+    }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const VerifyInitTag & , const team_member & member ) const
+    {
+      const int tid = member.team_rank() + member.team_size() * member.league_rank();
+
+      if ( tid != m_flags( member.team_rank() , member.league_rank() ) ) {
+        printf("TestTeamPolicy member(%d,%d) error %d != %d\n"
+              , member.league_rank() , member.team_rank()
+              , tid , m_flags( member.team_rank() , member.league_rank() ) );
+      }
+    }
+
+  static void test_for( const size_t league_size )
+    {
+      TestTeamPolicy functor( league_size );
+
+      const int team_size = Kokkos::TeamPolicy< ExecSpace >::team_size_max( functor );
+
+      Kokkos::parallel_for( Kokkos::TeamPolicy< ExecSpace >( league_size , team_size ) , functor );
+      Kokkos::parallel_for( Kokkos::TeamPolicy< ExecSpace , VerifyInitTag >( league_size , team_size ) , functor );
+    }
+
+  struct ReduceTag {};
+
+  typedef int value_type ;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const team_member & member , value_type & update ) const
+    {
+      update += member.team_rank() + member.team_size() * member.league_rank();
+    }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const ReduceTag & , const team_member & member , value_type & update ) const
+    {
+      update += 1 + member.team_rank() + member.team_size() * member.league_rank();
+    }
+
+  static void test_reduce( const size_t league_size )
+    {
+      TestTeamPolicy functor( league_size );
+
+      const int team_size = Kokkos::TeamPolicy< ExecSpace >::team_size_max( functor );
+      const int N = team_size * league_size ;
+
+      Kokkos::View<int,ExecSpace> total("total");
+
+      Kokkos::parallel_reduce( Kokkos::TeamPolicy< ExecSpace >( league_size , team_size ) , functor , total );
+      ASSERT_EQ( size_t((N-1)*(N))/2 , size_t(*total) );
+
+      Kokkos::parallel_reduce( Kokkos::TeamPolicy< ExecSpace , ReduceTag >( league_size , team_size ) , functor , total );
+      ASSERT_EQ( (size_t(N)*size_t(N+1))/2 , size_t(*total) );
+    }
+};
+
+}
+}
 
 /*--------------------------------------------------------------------------*/
 
@@ -188,6 +275,14 @@ public:
              value_type volatile const & input ) const
     { if ( input ) error = 1 ; }
 
+  struct JoinMax {
+    typedef long int value_type ;
+    KOKKOS_INLINE_FUNCTION
+    void join( value_type volatile & dst
+             , value_type volatile const & input ) const
+      { if ( dst < input ) dst = input ; }
+  };
+
   KOKKOS_INLINE_FUNCTION
   void operator()( const typename policy_type::member_type ind , value_type & error ) const
   {
@@ -196,6 +291,17 @@ public:
       *total = ( thread_count * ( thread_count + 1 ) ) / 2 ;
     }
 
+    // Team max:
+    const int long m = ind.team_reduce( (long int) ( ind.league_rank() + ind.team_rank() ) , JoinMax() );
+
+    if ( m != ind.league_rank() + ( ind.team_size() - 1 ) ) {
+      printf("ScanTeamFunctor[%d.%d of %d.%d] reduce_max_answer(%ld) != reduce_max(%ld)\n"
+            , ind.league_rank(), ind.team_rank()
+            , ind.league_size(), ind.team_size()
+            , (long int)(ind.league_rank() + ( ind.team_size() - 1 )) , m );
+    }
+
+    // Scan:
     const long int answer =
       ( ind.league_rank() + 1 ) * ind.team_rank() +
       ( ind.team_rank() * ( ind.team_rank() + 1 ) ) / 2 ;
@@ -207,7 +313,7 @@ public:
       ind.team_scan( ind.league_rank() + 1 + ind.team_rank() + 1 );
 
     if ( answer != result || answer != result2 ) {
-      printf("ScanTeamFunctor[%d.%d of %d.%d] %ld != %ld or %ld\n",
+      printf("ScanTeamFunctor[%d.%d of %d.%d] answer(%ld) != scan_first(%ld) or scan_second(%ld)\n",
              ind.league_rank(), ind.team_rank(),
              ind.league_size(), ind.team_size(),
              answer,result,result2);
@@ -288,25 +394,31 @@ struct SharedTeamFunctor {
 
   // Tell how much shared memory will be required by this functor:
   inline
-  unsigned shmem_size() const
+  unsigned team_shmem_size( int /* team_size */ ) const
   {
-    return shared_int_array_type::shmem_size( SHARED_COUNT );
+    return shared_int_array_type::shmem_size( SHARED_COUNT ) +
+           shared_int_array_type::shmem_size( SHARED_COUNT );
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const typename policy_type::member_type & ind , value_type & update ) const
   {
-    const shared_int_array_type shared( ind.team_shmem() , SHARED_COUNT );
+    const shared_int_array_type shared_A( ind.team_shmem() , SHARED_COUNT );
+    const shared_int_array_type shared_B( ind.team_shmem() , SHARED_COUNT );
 
     for ( int i = ind.team_rank() ; i < SHARED_COUNT ; i += ind.team_size() ) {
-      shared[i] = i + ind.league_rank();
+      shared_A[i] = i + ind.league_rank();
+      shared_B[i] = 2 * i + ind.league_rank();
     }
 
     ind.team_barrier();
 
     if ( ind.team_rank() + 1 == ind.team_size() ) {
       for ( int i = 0 ; i < SHARED_COUNT ; ++i ) {
-        if ( shared[i] != i + ind.league_rank() ) {
+        if ( shared_A[i] != i + ind.league_rank() ) {
+          ++update ;
+        }
+        if ( shared_B[i] != 2 * i + ind.league_rank() ) {
           ++update ;
         }
       }

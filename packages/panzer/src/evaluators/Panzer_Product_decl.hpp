@@ -48,7 +48,17 @@
 
 namespace panzer {
     
-//! Products entries on a single data layout
+/** Product of entries on a single data layout
+ 
+    \verbatim
+    <ParameterList>
+      <ParameterList name="Product Name" type="string" value="<destination field name>"/>
+      <ParameterList name="Values Names" type="Teuchos::RCP<std::vector<std::string> >" value="<Source field names>"/>
+      <ParameterList name="Data Layout" type="Teuchos::RCP<PHX::DataLayout>" value="<data layout of all associated fields>"/>
+      <ParameterList name="Scaling" type="double" value="<data of the scaling>/> <!-- Optional -->
+    </ParameterList>
+    \endverbatim
+  */
 PHX_EVALUATOR_CLASS(Product)
   
   double scaling;

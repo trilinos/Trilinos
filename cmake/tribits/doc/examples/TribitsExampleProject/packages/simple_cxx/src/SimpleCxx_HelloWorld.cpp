@@ -2,6 +2,12 @@
 #include "SimpleCxx_HelloWorld.hpp"
 
 
+std::string SimpleCxx::deps()
+{
+  return "no_deps";
+}
+
+
 namespace SimpleCxx {
 
 

@@ -47,7 +47,7 @@
 #include <cmath>
 #include <impl/Kokkos_Timer.hpp>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_CrsArray.hpp>
 
 #include <LinAlgBLAS.hpp>
@@ -110,7 +110,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];

@@ -52,7 +52,7 @@
 #
 #   SET(<varName> [other arguments])
 #   MARK_AS_ADVANCED(<varName>)
-# 
+#
 MACRO(ADVANCED_SET VARNAME)
   SET(${VARNAME} ${ARGN})
   MARK_AS_ADVANCED(${VARNAME})

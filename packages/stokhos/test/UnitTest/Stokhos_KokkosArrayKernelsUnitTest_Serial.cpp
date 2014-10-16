@@ -45,7 +45,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 // Device
-#include "Kokkos_Serial.hpp"
+#include "Kokkos_Core.hpp"
 
 // Tests
 #include "Stokhos_KokkosArrayKernelsUnitTest.hpp"

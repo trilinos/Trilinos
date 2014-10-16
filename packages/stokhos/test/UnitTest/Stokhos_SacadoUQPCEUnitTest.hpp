@@ -189,9 +189,9 @@ namespace SacadoPCEUnitTest {
   };
 
   typedef UnitTestSetup<pce_type> UTS;
-  UTS setup;
 
   TEUCHOS_UNIT_TEST( Stokhos_PCE, UMinus) {
+    UTS setup;
     UTS::pce_type u = -setup.sin_x;
     UTS::opa_type u_opa(setup.basis);
     setup.exp->unaryMinus(u_opa, setup.sin_x_opa);
@@ -202,6 +202,7 @@ namespace SacadoPCEUnitTest {
 
 #define UNARY_UNIT_TEST(OP)                                             \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, OP##_const) {                         \
+    UTS setup;                                                          \
     UTS::pce_type u = OP(setup.cx);                                     \
     UTS::opa_type u_opa(setup.basis);                                   \
     setup.exp->OP(u_opa, setup.cx_opa);                                 \
@@ -209,6 +210,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, OP##_resize) {                        \
+    UTS setup;                                                          \
     UTS::pce_type u;                                                    \
     u = OP(setup.cx);                                                   \
     UTS::opa_type u_opa(setup.basis);                                   \
@@ -236,7 +238,8 @@ namespace SacadoPCEUnitTest {
 
 #define BINARY_UNIT_TEST(OP, EXPOP)                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP) {                              \
-    UTS::pce_type v = setup.sin_x;                                     \
+    UTS setup;                                                          \
+    UTS::pce_type v = setup.sin_x;                                      \
     UTS::pce_type w = setup.cos_y;                                      \
     UTS::pce_type u = OP(v,w);                                          \
     UTS::opa_type u_opa(setup.basis);                                   \
@@ -245,6 +248,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP##_left_const) {                 \
+    UTS setup;                                                          \
     UTS::pce_type w = setup.sin_x;                                      \
     UTS::pce_type u = OP(setup.a, w);                                   \
     UTS::opa_type u_opa(setup.basis);                                   \
@@ -253,6 +257,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP##_right_const) {                \
+    UTS setup;                                                          \
     UTS::pce_type v = setup.sin_x;                                      \
     UTS::pce_type u = OP(v, setup.a);                                   \
     UTS::opa_type u_opa(setup.basis);                                   \
@@ -261,6 +266,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP##_both_const) {                 \
+    UTS setup;                                                          \
     UTS::pce_type u = OP(setup.cx, setup.cx);                           \
     UTS::opa_type u_opa(setup.basis);                                   \
     setup.exp->EXPOP(u_opa, setup.cx_opa, setup.cx_opa);                \
@@ -268,6 +274,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP##_left_const2) {                \
+    UTS setup;                                                          \
     UTS::pce_type w = setup.sin_x;                                      \
     UTS::pce_type u = OP(setup.cx, w);                                  \
     UTS::opa_type u_opa(setup.basis);                                   \
@@ -276,6 +283,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP##_right_const2) {               \
+    UTS setup;                                                          \
     UTS::pce_type v = setup.sin_x;                                      \
     UTS::pce_type u = OP(v, setup.cx);                                  \
     UTS::opa_type u_opa(setup.basis);                                   \
@@ -284,6 +292,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP##_resize) {                     \
+    UTS setup;                                                          \
     UTS::pce_type v = setup.sin_x;                                      \
     UTS::pce_type w = setup.cos_y;                                      \
     UTS::pce_type u;                                                    \
@@ -294,6 +303,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP##_left_const_resize) {          \
+    UTS setup;                                                          \
     UTS::pce_type w = setup.sin_x;                                      \
     UTS::pce_type u;                                                    \
     u = OP(setup.a, w);                                                 \
@@ -303,6 +313,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP##_right_const_resize) {         \
+    UTS setup;                                                          \
     UTS::pce_type v = setup.sin_x;                                      \
     UTS::pce_type u;                                                    \
     u = OP(v, setup.a);                                                 \
@@ -319,6 +330,7 @@ namespace SacadoPCEUnitTest {
 
 #define OPASSIGN_UNIT_TEST(OP, EXPOP)                                   \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP) {                              \
+    UTS setup;                                                          \
     UTS::pce_type v = setup.sin_x;                                      \
     UTS::pce_type u = setup.cos_y;                                      \
     u OP v;                                                             \
@@ -328,6 +340,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP##_const) {                      \
+    UTS setup;                                                          \
     UTS::pce_type u = setup.sin_x;                                      \
     u OP setup.a;                                                       \
     UTS::opa_type u_opa = setup.sin_x_opa;                              \
@@ -336,6 +349,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP##_const2) {                     \
+    UTS setup;                                                          \
     UTS::pce_type u = setup.sin_x;                                      \
     u OP setup.cx;                                                      \
     UTS::opa_type u_opa = setup.sin_x_opa;                              \
@@ -344,6 +358,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);        \
   }                                                                     \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP##_resize) {                     \
+    UTS setup;                                                          \
     UTS::pce_type v = setup.sin_x;                                      \
     UTS::pce_type u = setup.a;                                          \
     u OP v;                                                             \

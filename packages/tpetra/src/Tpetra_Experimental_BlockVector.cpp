@@ -49,13 +49,11 @@
 #include "Tpetra_ETIHelperMacros.h"
 
 namespace Tpetra {
-namespace Experimental {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_SLGN(TPETRA_EXPERIMENTAL_BLOCKVECTOR_INSTANT)
 
-} // namespace Experimental
 } // namespace Tpetra
 
 #endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

@@ -62,7 +62,7 @@ namespace MueLu {
     This is to be used in conjunction with Muelu::RAPFactory::AddTransferFactory().
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class MultiVectorTransferFactory : public TwoLevelFactoryBase {
 #undef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

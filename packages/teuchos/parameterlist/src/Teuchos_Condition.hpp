@@ -55,7 +55,7 @@
 namespace Teuchos {
 
 /**
- * \brief A Condition determines whether or not 
+ * \brief A Condition determines whether or not
  * a particular set of conditions are currently
  * occuring.
  */
@@ -64,7 +64,7 @@ public:
 
   /** \name Public types */
   //@{
-  
+
   /**
    * \brief Convenience typedef for defining a list of conditions.
    */
@@ -76,7 +76,7 @@ public:
 
   /** \name Constructors/Destructor */
   //@{
-  
+
   /**
    * \brief Constructs a Condition
    */
@@ -92,7 +92,7 @@ public:
 
   /** Attribute/Query Functions */
   //@{
-  
+
   /** \brief Determins whether or not a condition is true. */
   virtual bool isConditionTrue() const = 0;
 
@@ -123,7 +123,7 @@ public:
   }
 
   //@}
-  
+
 };
 
 }

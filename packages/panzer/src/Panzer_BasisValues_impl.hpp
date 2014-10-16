@@ -202,7 +202,38 @@ namespace panzer {
                                        curl_basis);
           }
        }
-   }
+    }
+    else if(elmtspace==PureBasis::HDIV) {
+       Intrepid::FunctionSpaceTools::
+         HDIVtransformVALUE<Scalar>(basis,
+                                    jac,
+                                    jac_det,
+                                    basis_ref);
+
+       if(compute_derivatives) {
+          intrepid_basis->getValues(div_basis_ref, cub_points, 
+                                       Intrepid::OPERATOR_DIV);
+   
+          Intrepid::FunctionSpaceTools::
+             HDIVtransformDIV<Scalar>(div_basis,
+                                      jac_det,   
+                                      div_basis_ref);
+       }
+
+       if(buildWeighted) {
+          Intrepid::FunctionSpaceTools::
+            multiplyMeasure<Scalar>(weighted_basis, 
+                                    weighted_measure, 
+                                    basis);
+   
+          if(compute_derivatives) {
+             Intrepid::FunctionSpaceTools::
+               multiplyMeasure<Scalar>(weighted_div_basis, 
+                                       weighted_measure, 
+                                       div_basis);
+          }
+       }
+    }
     
 
     // If basis supports coordinate values at basis points, then
@@ -250,6 +281,23 @@ namespace panzer {
 
          if(compute_derivatives)
             Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(weighted_curl_basis,orientations);
+       }
+    }
+    else if(elmtspace==PureBasis::HDIV) {
+       bool buildWeighted = (weighted_basis.size()!=0);
+
+       // setup the orientations for the trial space
+       Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(basis,orientations);
+
+       if(compute_derivatives)
+          Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(div_basis,orientations);
+
+       // setup the orientations for the test space
+       if(buildWeighted) {
+         Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(weighted_basis,orientations);
+
+         if(compute_derivatives)
+            Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(weighted_div_basis,orientations);
        }
     }
   }

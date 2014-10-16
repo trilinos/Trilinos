@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 
 #
@@ -53,6 +52,7 @@ APPEND_SET(HEADERS
   shylu_probing_operator.h
   shylu_local_schur_operator.h
   shylu_internal.h
+  shylu_config.h
   )
 
 # Set sources

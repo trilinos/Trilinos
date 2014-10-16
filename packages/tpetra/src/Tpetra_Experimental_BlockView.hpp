@@ -46,6 +46,11 @@
 /// \brief Declaration and definition of LittleBlock and LittleVector
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_LAPACK.hpp>
+
+
+//#include "Teuchos_LAPACK_wrappers.hpp"
+//extern "C" {int DGETRF_F77(const int *, const int *, double *, const int*, int *, int*);}
 
 namespace Tpetra {
 
@@ -65,7 +70,8 @@ namespace Experimental {
 /// \class LittleBlock
 /// \brief Nonowning view of a square dense block in a block matrix.
 /// \tparam Scalar The type of entries in the block.
-/// \tparam LO The local ordinal type: a signed integer type.
+/// \tparam LO The type of local indices.  See the documentation of
+///   the first template parameter of Map for requirements.
 ///
 /// "Little" means local (not distributed over multiple MPI processes;
 /// stored to maximize locality) and small (think 3x3, not 1000x1000).
@@ -91,7 +97,8 @@ public:
                const LO strideX,
                const LO strideY) :
     A_ (A), blockSize_ (blockSize), strideX_ (strideX), strideY_ (strideY)
-  {}
+  {
+  }
 
   //! The block size (number of rows, and number of columns).
   LO getBlockSize () const {
@@ -161,11 +168,29 @@ public:
     }
   }
 
+
+
+  void factorize (int* ipiv, int & info)
+  {
+    Teuchos::LAPACK<int, Scalar> lapack;
+    lapack.GETRF(blockSize_, blockSize_, A_, blockSize_, ipiv, &info);
+  }
+
+  template<class LittleVectorType>
+  void solve (LittleVectorType & X, const int* ipiv) const
+  {
+    int info;
+    Teuchos::LAPACK<int, Scalar> lapack;
+    char trans = 'T';
+    lapack.GETRS(trans, blockSize_, 1, A_, blockSize_, ipiv, X.getRawPtr(), blockSize_, &info);
+  }
+
 private:
   Scalar* const A_;
   const LO blockSize_;
   const LO strideX_;
   const LO strideY_;
+  std::vector<int> ipiv_;
 };
 
 
@@ -173,7 +198,8 @@ private:
 /// \brief Nonowning view of a set of degrees of freedom corresponding
 ///   to a mesh point in a block vector or multivector.
 /// \tparam Scalar The type of entries.
-/// \tparam LO The local ordinal type: a signed integer type.
+/// \tparam LO The type of local indices.  See the documentation of
+///   the first template parameter of Map for requirements.
 ///
 /// "Little" means local (not distributed over multiple MPI processes;
 /// stored to maximize locality) and small (think length 3, not length

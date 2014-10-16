@@ -719,10 +719,8 @@ NOX::Thyra::Group::applyRightPreconditioning(bool useTranspose,
     out_args_.set_W_prec(Teuchos::null);
   }
 
-  const NOX::Thyra::Vector* inputThyraVectorPtr = dynamic_cast<const NOX::Thyra::Vector*>(&input);
-  NOX_ASSERT(inputThyraVectorPtr != NULL);
-  NOX::Thyra::Vector* resultThyraVectorPtr = dynamic_cast<NOX::Thyra::Vector*>(&result);
-  NOX_ASSERT(resultThyraVectorPtr != NULL);
+  const NOX::Thyra::Vector & inputThyraVector = dynamic_cast<const NOX::Thyra::Vector&>(input);
+  NOX::Thyra::Vector & resultThyraVector = dynamic_cast<NOX::Thyra::Vector&>(result);
 
   // Could be left, right or unspecified
   Teuchos::RCP<const ::Thyra::LinearOpBase<double> > tmp_prec_ = prec_->getRightPrecOp();
@@ -732,8 +730,8 @@ NOX::Thyra::Group::applyRightPreconditioning(bool useTranspose,
 
   ::Thyra::apply(*tmp_prec_,
          ::Thyra::NOTRANS,
-         *inputThyraVectorPtr->getThyraRCPVector(),
-         outArg(*resultThyraVectorPtr->getThyraRCPVector().ptr()));
+         *inputThyraVector.getThyraRCPVector(),
+         outArg(*resultThyraVector.getThyraRCPVector().ptr()));
 
   if (nonnull(prec_factory_))
     this->unscaleResidualAndJacobian();

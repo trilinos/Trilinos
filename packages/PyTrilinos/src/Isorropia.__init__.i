@@ -67,8 +67,8 @@ The purpose of Isorropia is to ....
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
-#include "PyTrilinos_Teuchos_Util.h"
+#include "numpy_include.hpp"
+#include "PyTrilinos_Teuchos_Util.hpp"
 %}
 
 // General ignore directives
@@ -136,7 +136,7 @@ __version__ = Isorropia_Version().split()[3]
 //////////////////////////////////////
 // Isorropia::Redistributor support //
 //////////////////////////////////////
-//%teuchos_rcp(Isorropia::Redistributor)
+%teuchos_rcp(Isorropia::Redistributor)
 %include "Isorropia_Redistributor.hpp"
 
 //////////////////////////////////////
@@ -162,5 +162,5 @@ __version__ = Isorropia_Version().split()[3]
 %{
 # Epetra namespace
 __all__ = ['Epetra']
-import NestedEpetra as Epetra
+import IsorropiaEpetra as Epetra
 %}

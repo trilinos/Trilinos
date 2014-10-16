@@ -106,7 +106,10 @@ template<typename T>
 typename Sacado::ScalarType<T>::type
 tau()
 {
-  return 6.283185307179586476925286766559005768394338798750211641949889185;
+  typedef typename Sacado::ScalarType<T>::type S;
+  return static_cast<S>(
+      6.283185307179586476925286766559005768394338798750211641949889185
+  );
 }
 
 //
@@ -117,7 +120,8 @@ inline
 typename Sacado::ScalarType<T>::type
 random()
 {
-  return Teuchos::ScalarTraits<typename Sacado::ScalarType<T>::type>().random();
+  typedef typename Sacado::ScalarType<T>::type S;
+  return Teuchos::ScalarTraits<S>().random();
 }
 
 //
@@ -129,7 +133,7 @@ typename Sacado::ScalarType<T>::type
 random_uniform()
 {
   typedef typename Sacado::ScalarType<T>::type S;
-  return 0.5 * random<S>() + 0.5;
+  return static_cast<S>(0.5 * random<S>() + 0.5);
 }
 
 //
@@ -148,7 +152,7 @@ random_normal()
   S const
   Theta = tau<S>() * random_uniform<S>();
 
-  return std::sqrt(-2.0 * std::log(R)) * cos(Theta);
+  return static_cast<S>(std::sqrt(-2.0 * std::log(R)) * cos(Theta));
 }
 
 //

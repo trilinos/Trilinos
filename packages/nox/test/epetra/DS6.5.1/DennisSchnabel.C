@@ -58,7 +58,10 @@
 // Constructor - creates the Epetra objects (maps and vectors)
 DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
   Comm(&comm),
-  NumGlobalElements(numGlobalElements)
+  NumGlobalElements(numGlobalElements),
+  flag(F_ONLY),
+  soln(NULL),
+  rhs(NULL)
 {
 
   // Commonly used variables

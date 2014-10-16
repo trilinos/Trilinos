@@ -69,13 +69,6 @@
 
 
 
-/* if undefined, the ACK message is NOT sent to the RDMA target when
- * the RDMA op is complete.  this creates one-sided semantics for RDMA
- * ops.  in this mode, the target has no idea when the RDMA op is
- * complete and what data was addressed.  NNTI_wait() returns NNTI_EINVAL
- * if passed a target buffer.
- */
-#undef USE_RDMA_TARGET_ACK
 /* if defined, the RDMA initiator will send an ACK message to the RDMA
  * target when the RDMA op is complete.  the target process must wait
  * on the target buffer in order to get the ACK.  this creates two-sided
@@ -83,6 +76,13 @@
  * the RDMA op is complete and status indicates what data was addressed.
  */
 #define USE_RDMA_TARGET_ACK
+/* if undefined, the ACK message is NOT sent to the RDMA target when
+ * the RDMA op is complete.  this creates one-sided semantics for RDMA
+ * ops.  in this mode, the target has no idea when the RDMA op is
+ * complete and what data was addressed.  NNTI_wait() returns NNTI_EINVAL
+ * if passed a target buffer.
+ */
+#undef USE_RDMA_TARGET_ACK
 
 
 
@@ -101,6 +101,7 @@ typedef struct {
     int send_start;
     int send_end;
     int ack;
+    int unlink;
 } ptl_put_initiator_state_t;
 /**
  * @brief Track the state of a PtlGet (i'm the initiator).
@@ -110,6 +111,7 @@ typedef struct {
     int send_end;
     int reply_start;
     int reply_end;
+    int unlink;
 } ptl_get_initiator_state_t;
 /**
  * @brief Track the state of a PtlPut (i'm the target).
@@ -157,10 +159,14 @@ typedef struct portals_work_request {
     uint8_t          last_op;
     ptl_op_state_t   op_state;
     uint8_t          is_last_op_complete;
+
+    ptl_handle_me_t  me_h;
+    ptl_md_t         md;
+    ptl_handle_md_t  md_h;
 } portals_work_request;
 
-typedef std::deque<portals_work_request *>           wr_queue_t;
-typedef std::deque<portals_work_request *>::iterator wr_queue_iter_t;
+typedef std::deque<NNTI_work_request_t *>           wr_queue_t;
+typedef std::deque<NNTI_work_request_t *>::iterator wr_queue_iter_t;
 
 typedef struct portals_memory_handle {
     ptl_buffer_type  type;
@@ -222,44 +228,60 @@ static nthread_lock_t nnti_ptl_lock;
 
 
 static void set_req_pid(NNTI_pid *pid);
-static const NNTI_buffer_t *decode_event_buffer(
-        const NNTI_buffer_t  *wait_buf,
-        const ptl_event_t    *event);
+static const NNTI_work_request_t *decode_event_wr(
+        const NNTI_work_request_t *wait_wr,
+        const ptl_event_t         *event);
 static int process_event(
-        const NNTI_buffer_t  *reg_buf,
-        const ptl_event_t    *event);
-static NNTI_result_t post_recv_work_request(
-        NNTI_buffer_t *reg_buf);
-static NNTI_result_t repost_recv_work_request(
-        NNTI_buffer_t        *reg_buf,
+        const NNTI_work_request_t *reg_buf,
+        const ptl_event_t         *event);
+//static NNTI_result_t post_recv_work_request(
+//        NNTI_buffer_t *reg_buf);
+//static NNTI_result_t repost_recv_work_request(
+//        NNTI_work_request_t *wr);
+static int8_t is_wr_complete(
         portals_work_request *wr);
-static int is_wr_complete(
-        portals_work_request *wr);
-static portals_work_request *first_incomplete_wr(
-        portals_memory_handle *ptls_mem_hdl);
-static int8_t is_wr_queue_empty(
-        const NNTI_buffer_t *reg_buf);
-static int is_buf_op_complete(
-        const NNTI_buffer_t *reg_buf);
-static int8_t is_any_buf_op_complete(
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
+static int8_t is_any_wr_complete(
+        portals_work_request **wr_list,
+        const uint32_t         wr_count,
+        uint32_t              *which);
+static int8_t is_all_wr_complete(
+        portals_work_request **wr_list,
+        const uint32_t         wr_count);
+static int8_t is_wr_complete(
+        NNTI_work_request_t *wr);
+static int8_t is_any_wr_complete(
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
         uint32_t             *which);
-static int8_t is_all_buf_ops_complete(
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count);
+static int8_t is_all_wr_complete(
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count);
+//static portals_work_request *first_incomplete_wr(
+//        portals_memory_handle *ptl_mem_hdl);
+//static int8_t is_wr_queue_empty(
+//        const NNTI_buffer_t *reg_buf);
+//static int8_t is_buf_op_complete(
+//        const NNTI_buffer_t *reg_buf);
+//static int8_t is_any_buf_op_complete(
+//        const NNTI_buffer_t **buf_list,
+//        const uint32_t        buf_count,
+//        uint32_t             *which);
+//static int8_t is_all_buf_ops_complete(
+//        const NNTI_buffer_t **buf_list,
+//        const uint32_t        buf_count);
 
 static void create_status(
-        const NNTI_buffer_t  *reg_buf,
-        const NNTI_buf_ops_t  remote_op,
-        int                   nnti_rc,
-        NNTI_status_t        *status);
+        const NNTI_work_request_t *reg_buf,
+        int                        nnti_rc,
+        NNTI_status_t             *status);
 static void create_peer(
         NNTI_peer_t *peer,
         ptl_nid_t nid,
         ptl_pid_t pid);
 
 
+#define PTL_MEM_HDL(b) ((portals_memory_handle *)((b)->transport_private))
+#define PTL_WORK_REQUEST(wr) ((portals_work_request *)((wr)->transport_private))
 
 static bool ptl_initialized=false;
 
@@ -324,7 +346,7 @@ NNTI_result_t NNTI_ptl_init (
             pid=strtol(sep+1, NULL, 0);
         }
         if (pid == -1) {
-        	set_req_pid(&pid);
+            set_req_pid(&pid);
         }
 
 
@@ -532,20 +554,94 @@ NNTI_result_t NNTI_ptl_disconnect (
  * If the memory block doesn't meet the transport's requirements for memory
  * regions, then errors or poor performance may result.
  */
+NNTI_result_t NNTI_ptl_alloc (
+        const NNTI_transport_t *trans_hdl,
+        const uint64_t          element_size,
+        const uint64_t          num_elements,
+        const NNTI_buf_ops_t    ops,
+        NNTI_buffer_t          *reg_buf)
+{
+    NNTI_result_t nnti_rc=NNTI_OK;
+
+    log_debug(nnti_debug_level, "enter");
+
+    assert(trans_hdl);
+    assert(element_size>0);
+    assert(num_elements>0);
+    assert(ops>0);
+    assert(reg_buf);
+
+    char *buf=(char *)malloc(element_size*num_elements);
+    assert(buf);
+
+    nnti_rc=NNTI_ptl_register_memory(
+            trans_hdl,
+            buf,
+            element_size,
+            num_elements,
+            ops,
+            reg_buf);
+
+    if (logging_debug(nnti_debug_level)) {
+        fprint_NNTI_buffer(logger_get_file(), "reg_buf",
+                "end of NNTI_ptl_alloc", reg_buf);
+    }
+
+    log_debug(nnti_debug_level, "exit");
+
+    return(nnti_rc);
+}
+
+
+/**
+ * @brief Cleanup after network operations are complete.
+ *
+ * Destroy an NNTI_buffer_t that was previously created by NNTI_regsiter_buffer().
+ * It is the user's responsibility to release the the memory region.
+ */
+NNTI_result_t NNTI_ptl_free (
+        NNTI_buffer_t    *reg_buf)
+{
+    NNTI_result_t nnti_rc=NNTI_OK;
+
+    log_debug(nnti_debug_level, "enter");
+
+    assert(reg_buf);
+
+    char *buf=NNTI_BUFFER_C_POINTER(reg_buf);
+    assert(buf);
+
+    nnti_rc=NNTI_ptl_unregister_memory(reg_buf);
+
+    free(buf);
+
+    log_debug(nnti_debug_level, "exit");
+
+    return(nnti_rc);
+}
+
+
+/**
+ * @brief Prepare a block of memory for network operations.
+ *
+ * Wrap a user allocated block of memory in an NNTI_buffer_t.  The transport
+ * may take additional actions to prepare the memory for network send/receive.
+ * If the memory block doesn't meet the transport's requirements for memory
+ * regions, then errors or poor performance may result.
+ */
 NNTI_result_t NNTI_ptl_register_memory (
         const NNTI_transport_t *trans_hdl,
         char                   *buffer,
         const uint64_t          element_size,
         const uint64_t          num_elements,
         const NNTI_buf_ops_t    ops,
-        const NNTI_peer_t      *peer,
         NNTI_buffer_t          *reg_buf)
 {
     int rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
     static uint64_t mbits=1;
 
-    portals_memory_handle *ptls_mem_hdl=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
 
     log_debug(nnti_debug_level, "enter");
 
@@ -556,71 +652,57 @@ NNTI_result_t NNTI_ptl_register_memory (
     assert(ops>0);
     assert(reg_buf);
 
-    ptls_mem_hdl=new portals_memory_handle();
-    assert(ptls_mem_hdl);
+    ptl_mem_hdl=new portals_memory_handle();
+    assert(ptl_mem_hdl);
 
     reg_buf->transport_id      = trans_hdl->id;
     reg_buf->buffer_owner      = trans_hdl->me;
     reg_buf->ops               = ops;
     reg_buf->payload_size      = element_size;
     reg_buf->payload           = (uint64_t)buffer;
-    reg_buf->transport_private = (uint64_t)ptls_mem_hdl;
+    reg_buf->transport_private = (uint64_t)ptl_mem_hdl;
 
     log_debug(nnti_debug_level, "rpc_buffer->payload_size=%ld",
             reg_buf->payload_size);
 
+    ptl_mem_hdl->eq_h=PTL_EQ_NONE;
+    ptl_mem_hdl->me_h=0;
+    ptl_mem_hdl->md_h=0;
+
+    ptl_mem_hdl->match_id.nid = PTL_NID_ANY;
+    ptl_mem_hdl->match_id.pid = PTL_PID_ANY;
+
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val=(NNTI_remote_addr_t *)calloc(1, sizeof(NNTI_remote_addr_t));
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_len=1;
+
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].transport_id                      = reg_buf->transport_id;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.size = element_size;
+
+    /*
+     * Buffer types are divided into four groups here.
+     *   Request Buffer - This buffer type requires immediate registration.
+     *                    Events are generated, so an EQ is assigned.
+     *   Receive Buffer - This buffer type requires immediate registration.
+     *                    Events are generated, so an EQ is assigned.
+     *   Send/RDMA Initiators - This buffer type allows for lazy registration.
+     *                          The buffer will be register when the operation
+     *                          is initiated.  Events are generated, so an EQ
+     *                          is assigned.
+     *   RDMA Targets - This buffer type requires immediate registration.
+     *                  Events are NOT generated, so an EQ is NOT assigned.
+     */
+
     if (ops == NNTI_RECV_QUEUE) {
-        ptls_mem_hdl->type=REQUEST_BUFFER;
-
-        ptls_mem_hdl->buffer_id   = NNTI_REQ_PT_INDEX;
-        ptls_mem_hdl->match_bits  = 0;
-        ptls_mem_hdl->ignore_bits = 0;
-    } else if (ops == NNTI_RECV_DST) {
-        ptls_mem_hdl->type=RECEIVE_BUFFER;
-
-        ptls_mem_hdl->buffer_id   = NNTI_RECV_PT_INDEX;
-        ptls_mem_hdl->match_bits  = mbits++;
-        ptls_mem_hdl->ignore_bits = 0;
-    } else {
-        if (ops == NNTI_SEND_SRC) {
-            ptls_mem_hdl->type=SEND_BUFFER;
-        } else if (ops == NNTI_GET_DST) {
-            ptls_mem_hdl->type=GET_DST_BUFFER;
-        } else if (ops == NNTI_GET_SRC) {
-            ptls_mem_hdl->type=GET_SRC_BUFFER;
-        } else if (ops == NNTI_PUT_SRC) {
-            ptls_mem_hdl->type=PUT_SRC_BUFFER;
-        } else if (ops == NNTI_PUT_DST) {
-            ptls_mem_hdl->type=PUT_DST_BUFFER;
-        } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
-            ptls_mem_hdl->type=RDMA_TARGET_BUFFER;
-        } else {
-            ptls_mem_hdl->type=UNKNOWN_BUFFER;
-        }
-
-        ptls_mem_hdl->buffer_id   = NNTI_DATA_PT_INDEX;
-        ptls_mem_hdl->match_bits  = mbits++;
-        ptls_mem_hdl->ignore_bits = 0;
-    }
-
-    ptls_mem_hdl->eq_h=PTL_EQ_NONE;
-    ptls_mem_hdl->me_h=0;
-    ptls_mem_hdl->md_h=0;
-
-    reg_buf->buffer_addr.transport_id                            = NNTI_TRANSPORT_PORTALS;
-    reg_buf->buffer_addr.NNTI_remote_addr_t_u.portals.size       = element_size;
-    reg_buf->buffer_addr.NNTI_remote_addr_t_u.portals.buffer_id  = (NNTI_portals_indices)ptls_mem_hdl->buffer_id;
-    reg_buf->buffer_addr.NNTI_remote_addr_t_u.portals.match_bits = ptls_mem_hdl->match_bits;
-
-
-    ptls_mem_hdl->match_id.nid = PTL_NID_ANY;
-    ptls_mem_hdl->match_id.pid = PTL_PID_ANY;
-
-    if (ptls_mem_hdl->buffer_id == NNTI_REQ_PT_INDEX) {
         uint32_t index=0;
         portals_request_queue_handle *q_hdl=&transport_global_data.req_queue;
 
-        ptls_mem_hdl->type=REQUEST_BUFFER;
+        ptl_mem_hdl->type=REQUEST_BUFFER;
+
+        ptl_mem_hdl->buffer_id   = NNTI_REQ_PT_INDEX;
+        ptl_mem_hdl->match_bits  = 0;
+        ptl_mem_hdl->ignore_bits = 0;
+        reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.buffer_id  = (NNTI_portals_indices)ptl_mem_hdl->buffer_id;
+        reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.match_bits = ptl_mem_hdl->match_bits;
 
         q_hdl->reg_buf=reg_buf;
 
@@ -640,8 +722,8 @@ NNTI_result_t NNTI_ptl_register_memory (
             nnti_rc=NNTI_ENOMEM;
             goto cleanup;
         }
-        ptls_mem_hdl->eq_h=transport_global_data.req_eq_h;
-        log_debug(nnti_debug_level, "allocated eq=%d", ptls_mem_hdl->eq_h);
+        ptl_mem_hdl->eq_h=transport_global_data.req_eq_h;
+        log_debug(nnti_debug_level, "allocated eq=%d", ptl_mem_hdl->eq_h);
 
         for (index=0; index<NUM_REQ_QUEUES; index++) {
             /* initialize the indices stored in the MD user pointer */
@@ -662,19 +744,19 @@ NNTI_result_t NNTI_ptl_register_memory (
             q_hdl->md[index].max_size = q_hdl->req_size;
             q_hdl->md[index].options = PTL_MD_OP_PUT | PTL_MD_MAX_SIZE;
             q_hdl->md[index].user_ptr = &q_hdl->indices[index];  /* used to store the index */
-            q_hdl->md[index].eq_handle = ptls_mem_hdl->eq_h;
+            q_hdl->md[index].eq_handle = ptl_mem_hdl->eq_h;
 
             log_debug(nnti_debug_level, "attaching match entry to index=%d",
-                    ptls_mem_hdl->buffer_id);
+                    ptl_mem_hdl->buffer_id);
 
             /* Attach the match entry to the portal index */
             nthread_lock(&nnti_ptl_lock);
             rc = PtlMEAttach(
                     transport_global_data.ni_h,
-                    ptls_mem_hdl->buffer_id,
-                    ptls_mem_hdl->match_id,
-                    ptls_mem_hdl->match_bits,
-                    ptls_mem_hdl->ignore_bits,
+                    ptl_mem_hdl->buffer_id,
+                    ptl_mem_hdl->match_id,
+                    ptl_mem_hdl->match_bits,
+                    ptl_mem_hdl->ignore_bits,
                     PTL_RETAIN,
                     PTL_INS_AFTER,
                     &q_hdl->me_h[index]);
@@ -703,32 +785,32 @@ NNTI_result_t NNTI_ptl_register_memory (
 
             reg_buf->payload_size=q_hdl->req_size;
         }
-    } else {
 
-#if defined(USE_RDMA_TARGET_ACK)
-        ptls_mem_hdl->eq_h = transport_global_data.data_eq_h;
-#else
-        if ((ptls_mem_hdl->type == RDMA_TARGET_BUFFER) ||
-            (ptls_mem_hdl->type == GET_SRC_BUFFER) ||
-            (ptls_mem_hdl->type == PUT_DST_BUFFER)) {
+//        post_recv_work_request(reg_buf);
 
-            // do nothing
-        } else {
-            ptls_mem_hdl->eq_h = transport_global_data.data_eq_h;
-        }
-#endif
+    } else if (ops == NNTI_RECV_DST) {
+
+        ptl_mem_hdl->type=RECEIVE_BUFFER;
+
+        ptl_mem_hdl->buffer_id   = NNTI_RECV_PT_INDEX;
+        ptl_mem_hdl->match_bits  = mbits++;
+        ptl_mem_hdl->ignore_bits = 0;
+        reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.buffer_id  = (NNTI_portals_indices)ptl_mem_hdl->buffer_id;
+        reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.match_bits = ptl_mem_hdl->match_bits;
+
+        ptl_mem_hdl->eq_h=transport_global_data.data_eq_h;
 
         /* create a match entry (unlink with MD) */
         nthread_lock(&nnti_ptl_lock);
         rc = PtlMEAttach(
                 transport_global_data.ni_h,
-                ptls_mem_hdl->buffer_id,
-                ptls_mem_hdl->match_id,
-                ptls_mem_hdl->match_bits,
-                ptls_mem_hdl->ignore_bits,
+                ptl_mem_hdl->buffer_id,
+                ptl_mem_hdl->match_id,
+                ptl_mem_hdl->match_bits,
+                ptl_mem_hdl->ignore_bits,
                 PTL_UNLINK,
                 PTL_INS_AFTER,
-                &ptls_mem_hdl->me_h);
+                &ptl_mem_hdl->me_h);
         nthread_unlock(&nnti_ptl_lock);
         if (rc != PTL_OK) {
             log_error(nnti_debug_level, "failed to attach me");
@@ -736,44 +818,133 @@ NNTI_result_t NNTI_ptl_register_memory (
             goto cleanup;
         }
         log_debug(nnti_debug_level, "allocated me=%d with bufid=%d, match_id(%d,%d), mbits=%d",
-                ptls_mem_hdl->me_h, ptls_mem_hdl->buffer_id, ptls_mem_hdl->match_id.nid, ptls_mem_hdl->match_id.pid, ptls_mem_hdl->match_bits);
+                ptl_mem_hdl->me_h, ptl_mem_hdl->buffer_id, ptl_mem_hdl->match_id.nid, ptl_mem_hdl->match_id.pid, ptl_mem_hdl->match_bits);
 
         /* initialize the md */
-        memset(&ptls_mem_hdl->md, 0, sizeof(ptl_md_t));
-        ptls_mem_hdl->md.start     = buffer;
-        ptls_mem_hdl->md.length    = element_size;
-        ptls_mem_hdl->md.threshold = PTL_MD_THRESH_INF;
-        ptls_mem_hdl->md.options   = PTL_MD_OP_PUT|PTL_MD_OP_GET|PTL_MD_MANAGE_REMOTE|PTL_MD_TRUNCATE;
-        ptls_mem_hdl->md.user_ptr  = reg_buf;
-        ptls_mem_hdl->md.eq_handle = ptls_mem_hdl->eq_h;
+        memset(&ptl_mem_hdl->md, 0, sizeof(ptl_md_t));
+        ptl_mem_hdl->md.start     = buffer;
+        ptl_mem_hdl->md.length    = element_size;
+        ptl_mem_hdl->md.threshold = PTL_MD_THRESH_INF;
+        ptl_mem_hdl->md.options   = PTL_MD_OP_PUT|PTL_MD_OP_GET|PTL_MD_MANAGE_REMOTE|PTL_MD_TRUNCATE;
+        ptl_mem_hdl->md.user_ptr  = reg_buf;
+        ptl_mem_hdl->md.eq_handle = ptl_mem_hdl->eq_h;
 
         /* attach the memory descriptor (manually unlink) */
         nthread_lock(&nnti_ptl_lock);
         rc = PtlMDAttach(
-                ptls_mem_hdl->me_h,
-                ptls_mem_hdl->md,
+                ptl_mem_hdl->me_h,
+                ptl_mem_hdl->md,
                 PTL_RETAIN,
-                &ptls_mem_hdl->md_h);
+                &ptl_mem_hdl->md_h);
         nthread_unlock(&nnti_ptl_lock);
         if (rc != PTL_OK) {
             log_error(nnti_debug_level, "failed to attach md");
             nnti_rc=NNTI_ENOMEM;
             goto cleanup;
         }
-        log_debug(nnti_debug_level, "attached ptls_mem_hdl->md_h: %d", ptls_mem_hdl->md_h);
-    }
+        log_debug(nnti_debug_level, "attached ptl_mem_hdl->md_h: %d", ptl_mem_hdl->md_h);
 
-    if ((ops == NNTI_RECV_QUEUE) || (ops == NNTI_RECV_DST)) {
-        post_recv_work_request(reg_buf);
-    }
+//        post_recv_work_request(reg_buf);
+
+    } else if ((ops == NNTI_SEND_SRC) ||
+               (ops == NNTI_GET_DST) ||
+               (ops == NNTI_PUT_SRC)) {
+
+        /*
+         * These are initiator buffers.
+         */
+
+        if (ops == NNTI_SEND_SRC) {
+            ptl_mem_hdl->type=SEND_BUFFER;
+        } else if (ops == NNTI_GET_DST) {
+            ptl_mem_hdl->type=GET_DST_BUFFER;
+        } else if (ops == NNTI_PUT_SRC) {
+            ptl_mem_hdl->type=PUT_SRC_BUFFER;
+        }
+
+        ptl_mem_hdl->buffer_id   = NNTI_DATA_PT_INDEX;
+        ptl_mem_hdl->match_bits  = mbits++;
+        ptl_mem_hdl->ignore_bits = 0;
+        reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.buffer_id  = (NNTI_portals_indices)ptl_mem_hdl->buffer_id;
+        reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.match_bits = ptl_mem_hdl->match_bits;
+
+        ptl_mem_hdl->eq_h=transport_global_data.data_eq_h;
+
+    } else if ((ops == NNTI_GET_SRC) ||
+               (ops == NNTI_PUT_DST)    ||
+               (ops == (NNTI_GET_SRC|NNTI_PUT_DST))) {
+
+        /*
+         * These are eventless target buffers.
+         */
+
+        if (ops == NNTI_GET_SRC) {
+            ptl_mem_hdl->type=GET_SRC_BUFFER;
+        } else if (ops == NNTI_PUT_DST) {
+            ptl_mem_hdl->type=PUT_DST_BUFFER;
+        } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
+            ptl_mem_hdl->type=RDMA_TARGET_BUFFER;
+        }
+
+        ptl_mem_hdl->buffer_id   = NNTI_DATA_PT_INDEX;
+        ptl_mem_hdl->match_bits  = mbits++;
+        ptl_mem_hdl->ignore_bits = 0;
+        reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.buffer_id  = (NNTI_portals_indices)ptl_mem_hdl->buffer_id;
+        reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.match_bits = ptl_mem_hdl->match_bits;
 
 #if defined(USE_RDMA_TARGET_ACK)
-    if ((ptls_mem_hdl->type == RDMA_TARGET_BUFFER) ||
-        (ptls_mem_hdl->type == GET_SRC_BUFFER) ||
-        (ptls_mem_hdl->type == PUT_DST_BUFFER)) {
+        ptl_mem_hdl->eq_h = transport_global_data.data_eq_h;
         post_recv_work_request(reg_buf);
-    }
+#else
+        ptl_mem_hdl->eq_h = PTL_EQ_NONE;
 #endif
+
+        /* create a match entry (unlink with MD) */
+        nthread_lock(&nnti_ptl_lock);
+        rc = PtlMEAttach(
+                transport_global_data.ni_h,
+                ptl_mem_hdl->buffer_id,
+                ptl_mem_hdl->match_id,
+                ptl_mem_hdl->match_bits,
+                ptl_mem_hdl->ignore_bits,
+                PTL_UNLINK,
+                PTL_INS_AFTER,
+                &ptl_mem_hdl->me_h);
+        nthread_unlock(&nnti_ptl_lock);
+        if (rc != PTL_OK) {
+            log_error(nnti_debug_level, "failed to attach me");
+            nnti_rc=NNTI_ENOMEM;
+            goto cleanup;
+        }
+        log_debug(nnti_debug_level, "allocated me=%d with bufid=%d, match_id(%d,%d), mbits=%d",
+                ptl_mem_hdl->me_h, ptl_mem_hdl->buffer_id, ptl_mem_hdl->match_id.nid, ptl_mem_hdl->match_id.pid, ptl_mem_hdl->match_bits);
+
+        /* initialize the md */
+        memset(&ptl_mem_hdl->md, 0, sizeof(ptl_md_t));
+        ptl_mem_hdl->md.start     = buffer;
+        ptl_mem_hdl->md.length    = element_size;
+        ptl_mem_hdl->md.threshold = PTL_MD_THRESH_INF;
+        ptl_mem_hdl->md.options   = PTL_MD_OP_PUT|PTL_MD_OP_GET|PTL_MD_MANAGE_REMOTE|PTL_MD_TRUNCATE;
+        ptl_mem_hdl->md.user_ptr  = reg_buf;
+        ptl_mem_hdl->md.eq_handle = ptl_mem_hdl->eq_h;
+
+        /* attach the memory descriptor (manually unlink) */
+        nthread_lock(&nnti_ptl_lock);
+        rc = PtlMDAttach(
+                ptl_mem_hdl->me_h,
+                ptl_mem_hdl->md,
+                PTL_RETAIN,
+                &ptl_mem_hdl->md_h);
+        nthread_unlock(&nnti_ptl_lock);
+        if (rc != PTL_OK) {
+            log_error(nnti_debug_level, "failed to attach md");
+            nnti_rc=NNTI_ENOMEM;
+            goto cleanup;
+        }
+        log_debug(nnti_debug_level, "attached ptl_mem_hdl->md_h: %d", ptl_mem_hdl->md_h);
+    }
+
+
 
 cleanup:
     if (logging_debug(nnti_debug_level)) {
@@ -788,6 +959,28 @@ cleanup:
 
 
 /**
+ * @brief Prepare a list of memory segments for network operations.
+ *
+ * Wrap a list of user allocated memory segments in an NNTI_buffer_t.  The
+ * transport may take additional actions to prepare the memory segments for
+ * network send/receive.  If the memory segments don't meet the transport's
+ * requirements for memory regions, then errors or poor performance may
+ * result.
+ *
+ */
+NNTI_result_t NNTI_ptl_register_segments (
+        const NNTI_transport_t *trans_hdl,
+        char                  **segments,
+        const uint64_t         *segment_lengths,
+        const uint64_t          num_segments,
+        const NNTI_buf_ops_t    ops,
+        NNTI_buffer_t          *reg_buf)
+{
+    return NNTI_OK;
+}
+
+
+/**
  * @brief Cleanup after network operations are complete.
  *
  * Destroy an NNTI_buffer_t that was previously created by NNTI_regsiter_buffer().
@@ -798,21 +991,21 @@ NNTI_result_t NNTI_ptl_unregister_memory (
 {
     int rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
-    portals_memory_handle *ptls_mem_hdl=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
     log_level debug_level = nnti_debug_level;
 
     log_debug(nnti_debug_level, "enter");
 
     assert(reg_buf);
 
-    ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
+    ptl_mem_hdl=PTL_MEM_HDL(reg_buf);
 
-    assert(ptls_mem_hdl);
+    assert(ptl_mem_hdl);
 
     log_debug(nnti_debug_level, "unregistering reg_buf(%p) buf(%p) md_h(%d) eq_h(%d)",
-        reg_buf, reg_buf->payload, ptls_mem_hdl->md_h, ptls_mem_hdl->eq_h);
+        reg_buf, reg_buf->payload, ptl_mem_hdl->md_h, ptl_mem_hdl->eq_h);
 
-    if (ptls_mem_hdl->buffer_id == NNTI_REQ_PT_INDEX) {
+    if (reg_buf->ops == NNTI_RECV_QUEUE) {
         uint32_t index=0;
         portals_request_queue_handle *q_hdl=&transport_global_data.req_queue;
 
@@ -831,7 +1024,7 @@ NNTI_result_t NNTI_ptl_unregister_memory (
         }
 
         /* free the event queue */
-        log_debug(debug_level, "freeing ptls_mem_hdl->eq_h: %d", ptls_mem_hdl->eq_h);
+        log_debug(debug_level, "freeing ptl_mem_hdl->eq_h: %d", ptl_mem_hdl->eq_h);
         nthread_lock(&nnti_ptl_lock);
         rc = PtlEQFree(transport_global_data.req_eq_h);
         nthread_unlock(&nnti_ptl_lock);
@@ -841,10 +1034,14 @@ NNTI_result_t NNTI_ptl_unregister_memory (
             nnti_rc = NNTI_ENOMEM;
             goto cleanup;
         }
-    } else {
-        log_debug(debug_level, "unlinking ptls_mem_hdl->md_h: %d", ptls_mem_hdl->md_h);
+    } else if ((reg_buf->ops == NNTI_RECV_DST) ||
+               (reg_buf->ops == NNTI_GET_SRC)  ||
+               (reg_buf->ops == NNTI_PUT_DST)  ||
+               (reg_buf->ops == (NNTI_GET_SRC|NNTI_PUT_DST))) {
+
+        log_debug(debug_level, "unlinking ptl_mem_hdl->md_h: %d", ptl_mem_hdl->md_h);
         nthread_lock(&nnti_ptl_lock);
-        rc = PtlMDUnlink(ptls_mem_hdl->md_h);
+        rc = PtlMDUnlink(ptl_mem_hdl->md_h);
         nthread_unlock(&nnti_ptl_lock);
         if (rc != PTL_OK) {
             log_error(debug_level, "failed to unlink MD: %s", ptl_err_str[rc]);
@@ -852,13 +1049,16 @@ NNTI_result_t NNTI_ptl_unregister_memory (
             goto cleanup;
         }
 
-        ptls_mem_hdl->eq_h=PTL_EQ_NONE;
+        ptl_mem_hdl->eq_h=PTL_EQ_NONE;
     }
 
 
 cleanup:
 
-    if (ptls_mem_hdl) delete ptls_mem_hdl;
+    if (ptl_mem_hdl)
+        delete ptl_mem_hdl;
+    if (reg_buf->buffer_segments.NNTI_remote_addr_array_t_val)
+        free(reg_buf->buffer_segments.NNTI_remote_addr_array_t_val);
 
     reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
     PORTALS_SET_MATCH_ANY(&reg_buf->buffer_owner);
@@ -884,13 +1084,14 @@ cleanup:
 NNTI_result_t NNTI_ptl_send (
         const NNTI_peer_t   *peer_hdl,
         const NNTI_buffer_t *msg_hdl,
-        const NNTI_buffer_t *dest_hdl)
+        const NNTI_buffer_t *dest_hdl,
+        NNTI_work_request_t *wr)
 {
     int rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
 
-    portals_memory_handle *ptls_mem_hdl=NULL;
-    portals_work_request  *wr=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
+    portals_work_request  *ptl_wr=NULL;
     ptl_process_id_t dest_id;
     ptl_pt_index_t   buffer_id;
     ptl_match_bits_t match_bits;
@@ -909,37 +1110,80 @@ NNTI_result_t NNTI_ptl_send (
                 "NNTI_ptl_send", dest_hdl);
     }
 
-    ptls_mem_hdl=(portals_memory_handle *)msg_hdl->transport_private;
-    assert(ptls_mem_hdl);
-    wr=(portals_work_request *)calloc(1, sizeof(portals_work_request));
-    assert(wr);
+    ptl_mem_hdl=PTL_MEM_HDL(msg_hdl);
+    assert(ptl_mem_hdl);
+    ptl_wr=(portals_work_request *)calloc(1, sizeof(portals_work_request));
+    assert(ptl_wr);
 
-    wr->reg_buf=(NNTI_buffer_t *)msg_hdl;
+    /* create a match entry (unlink with MD) */
+    nthread_lock(&nnti_ptl_lock);
+    rc = PtlMEAttach(
+            transport_global_data.ni_h,
+            ptl_mem_hdl->buffer_id,
+            ptl_mem_hdl->match_id,
+            ptl_mem_hdl->match_bits,
+            ptl_mem_hdl->ignore_bits,
+            PTL_UNLINK,
+            PTL_INS_AFTER,
+            &ptl_mem_hdl->me_h);
+    nthread_unlock(&nnti_ptl_lock);
+    if (rc != PTL_OK) {
+        log_error(nnti_debug_level, "failed to attach me");
+        nnti_rc=NNTI_ENOMEM;
+        goto cleanup;
+    }
+    log_debug(nnti_debug_level, "allocated me=%d with bufid=%d, match_id(%d,%d), mbits=%d",
+            ptl_mem_hdl->me_h, ptl_mem_hdl->buffer_id, ptl_mem_hdl->match_id.nid, ptl_mem_hdl->match_id.pid, ptl_mem_hdl->match_bits);
 
-    memset(&wr->op_state, 0, sizeof(ptl_op_state_t));
+    /* initialize the md */
+    memset(&ptl_mem_hdl->md, 0, sizeof(ptl_md_t));
+    ptl_mem_hdl->md.start    =(void*)msg_hdl->payload;
+    ptl_mem_hdl->md.length   =msg_hdl->payload_size;
+    ptl_mem_hdl->md.threshold=2;
+    ptl_mem_hdl->md.options  =PTL_MD_OP_PUT|PTL_MD_OP_GET|PTL_MD_MANAGE_REMOTE|PTL_MD_TRUNCATE;
+    ptl_mem_hdl->md.user_ptr =wr;
+    ptl_mem_hdl->md.eq_handle=ptl_mem_hdl->eq_h;
 
-    if (dest_hdl == NULL) {
-        wr->peer    =*peer_hdl;
-        dest_id.nid = peer_hdl->peer.NNTI_remote_process_t_u.portals.nid;
-        dest_id.pid = peer_hdl->peer.NNTI_remote_process_t_u.portals.pid;
-        buffer_id   = NNTI_REQ_PT_INDEX;
-        match_bits  = 0;
-    } else {
-        wr->peer    = dest_hdl->buffer_owner;
-        dest_id.nid = dest_hdl->buffer_owner.peer.NNTI_remote_process_t_u.portals.nid;
-        dest_id.pid = dest_hdl->buffer_owner.peer.NNTI_remote_process_t_u.portals.pid;
-        buffer_id   = dest_hdl->buffer_addr.NNTI_remote_addr_t_u.portals.buffer_id;
-        match_bits  = dest_hdl->buffer_addr.NNTI_remote_addr_t_u.portals.match_bits;
+    /* attach the memory descriptor (manually unlink) */
+    nthread_lock(&nnti_ptl_lock);
+    rc = PtlMDAttach(
+            ptl_mem_hdl->me_h,
+            ptl_mem_hdl->md,
+            PTL_UNLINK,
+            &ptl_mem_hdl->md_h);
+    nthread_unlock(&nnti_ptl_lock);
+    if (rc != PTL_OK) {
+        log_error(nnti_debug_level, "failed to attach md");
+        nnti_rc=NNTI_ENOMEM;
+        goto cleanup;
     }
 
-    wr->src_offset=0;
-    wr->dst_offset=0;
-    wr->length    =msg_hdl->payload_size;
+
+    memset(&ptl_wr->op_state, 0, sizeof(ptl_op_state_t));
+
+    if (dest_hdl == NULL) {
+        ptl_wr->peer=*peer_hdl;
+        dest_id.nid =peer_hdl->peer.NNTI_remote_process_t_u.portals.nid;
+        dest_id.pid =peer_hdl->peer.NNTI_remote_process_t_u.portals.pid;
+        buffer_id   =NNTI_REQ_PT_INDEX;
+        match_bits  =0;
+    } else {
+        ptl_wr->peer=dest_hdl->buffer_owner;
+        dest_id.nid =dest_hdl->buffer_owner.peer.NNTI_remote_process_t_u.portals.nid;
+        dest_id.pid =dest_hdl->buffer_owner.peer.NNTI_remote_process_t_u.portals.pid;
+        buffer_id   =dest_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.buffer_id;
+        match_bits  =dest_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.match_bits;
+    }
+
+    ptl_wr->reg_buf   =(NNTI_buffer_t *)msg_hdl;
+    ptl_wr->src_offset=0;
+    ptl_wr->dst_offset=0;
+    ptl_wr->length    =msg_hdl->payload_size;
 
     log_debug(nnti_debug_level, "sending to (nid=%d, pid=%d, buffer_id=%d, mbits=%d)", dest_id.nid, dest_id.pid, buffer_id, match_bits);
 
     rc=PtlPut(
-            ptls_mem_hdl->md_h,
+            ptl_mem_hdl->md_h,
             PTL_ACK_REQ,
             dest_id,
             buffer_id,
@@ -953,9 +1197,13 @@ NNTI_result_t NNTI_ptl_send (
         goto cleanup;
     }
 
-    wr->last_op=PTL_OP_SEND;
+    ptl_wr->last_op=PTL_OP_SEND;
 
-    ptls_mem_hdl->wr_queue.push_back(wr);
+    wr->transport_id     =msg_hdl->transport_id;
+    wr->ops              =NNTI_SEND_SRC;
+    wr->transport_private=(uint64_t)ptl_wr;
+
+    ptl_mem_hdl->wr_queue.push_back(wr);
 
 cleanup:
     log_debug(nnti_debug_level, "exit");
@@ -976,13 +1224,14 @@ NNTI_result_t NNTI_ptl_put (
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
-        const uint64_t       dest_offset)
+        const uint64_t       dest_offset,
+        NNTI_work_request_t *wr)
 {
     int rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
 
-    portals_memory_handle *ptls_mem_hdl=NULL;
-    portals_work_request  *wr=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
+    portals_work_request  *ptl_wr=NULL;
     ptl_process_id_t dest_id;
 
     log_debug(nnti_debug_level, "enter");
@@ -999,31 +1248,76 @@ NNTI_result_t NNTI_ptl_put (
                 "NNTI_ptl_put", dest_buffer_hdl);
     }
 
-    ptls_mem_hdl=(portals_memory_handle *)src_buffer_hdl->transport_private;
-    assert(ptls_mem_hdl);
-    wr=(portals_work_request *)calloc(1, sizeof(portals_work_request));
-    assert(wr);
+    ptl_mem_hdl=PTL_MEM_HDL(src_buffer_hdl);
+    assert(ptl_mem_hdl);
+    ptl_wr=(portals_work_request *)calloc(1, sizeof(portals_work_request));
+    assert(ptl_wr);
 
-    wr->reg_buf   =(NNTI_buffer_t *)src_buffer_hdl;
-    wr->peer      =dest_buffer_hdl->buffer_owner;
-    wr->src_offset=src_offset;
-    wr->dst_offset=dest_offset;
-    wr->length    =src_length;
+    /* create a match entry (unlink with MD) */
+    nthread_lock(&nnti_ptl_lock);
+    rc = PtlMEAttach(
+            transport_global_data.ni_h,
+            ptl_mem_hdl->buffer_id,
+            ptl_mem_hdl->match_id,
+            ptl_mem_hdl->match_bits,
+            ptl_mem_hdl->ignore_bits,
+            PTL_UNLINK,
+            PTL_INS_AFTER,
+            &ptl_mem_hdl->me_h);
+    nthread_unlock(&nnti_ptl_lock);
+    if (rc != PTL_OK) {
+        log_error(nnti_debug_level, "failed to attach me");
+        nnti_rc=NNTI_ENOMEM;
+        goto cleanup;
+    }
+    log_debug(nnti_debug_level, "allocated me=%d with bufid=%d, match_id(%d,%d), mbits=%d",
+            ptl_mem_hdl->me_h, ptl_mem_hdl->buffer_id, ptl_mem_hdl->match_id.nid, ptl_mem_hdl->match_id.pid, ptl_mem_hdl->match_bits);
 
-    memset(&wr->op_state, 0, sizeof(ptl_op_state_t));
+    /* initialize the md */
+    memset(&ptl_mem_hdl->md, 0, sizeof(ptl_md_t));
+    ptl_mem_hdl->md.start     = (void*)src_buffer_hdl->payload;
+    ptl_mem_hdl->md.length    = src_buffer_hdl->payload_size;
+    ptl_mem_hdl->md.threshold = 2;
+    ptl_mem_hdl->md.options   = PTL_MD_OP_PUT|PTL_MD_OP_GET|PTL_MD_MANAGE_REMOTE|PTL_MD_TRUNCATE;
+    ptl_mem_hdl->md.user_ptr  = wr;
+    ptl_mem_hdl->md.eq_handle = ptl_mem_hdl->eq_h;
+
+    /* attach the memory descriptor (manually unlink) */
+    nthread_lock(&nnti_ptl_lock);
+    rc = PtlMDAttach(
+            ptl_mem_hdl->me_h,
+            ptl_mem_hdl->md,
+            PTL_UNLINK,
+            &ptl_mem_hdl->md_h);
+    nthread_unlock(&nnti_ptl_lock);
+    if (rc != PTL_OK) {
+        log_error(nnti_debug_level, "failed to attach md");
+        nnti_rc=NNTI_ENOMEM;
+        goto cleanup;
+    }
+
+
+    ptl_wr->reg_buf   =(NNTI_buffer_t *)src_buffer_hdl;
+    ptl_wr->peer      =dest_buffer_hdl->buffer_owner;
+    ptl_wr->src_offset=src_offset;
+    ptl_wr->dst_offset=dest_offset;
+    ptl_wr->length    =src_length;
+    ptl_wr->last_op   =PTL_OP_PUT_INITIATOR;
+
+    memset(&ptl_wr->op_state, 0, sizeof(ptl_op_state_t));
 
     dest_id.nid=dest_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.portals.nid;
     dest_id.pid=dest_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.portals.pid;
 
     rc=PtlPutRegion(
-            ptls_mem_hdl->md_h,
+            ptl_mem_hdl->md_h,
             src_offset,
             src_length,
             PTL_ACK_REQ,
             dest_id,
-            dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.portals.buffer_id,
+            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.buffer_id,
             0,
-            dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.portals.match_bits,
+            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.match_bits,
             dest_offset,
             0);
     if (rc != PTL_OK) {
@@ -1032,11 +1326,13 @@ NNTI_result_t NNTI_ptl_put (
         goto cleanup;
     }
 
-    log_debug(nnti_debug_level, "putting to (%s, eq=%d)", dest_buffer_hdl->buffer_owner.url, ptls_mem_hdl->eq_h);
+    log_debug(nnti_debug_level, "putting to (%s, eq=%d)", dest_buffer_hdl->buffer_owner.url, ptl_mem_hdl->eq_h);
 
-    wr->last_op=PTL_OP_PUT_INITIATOR;
+    wr->transport_id     =src_buffer_hdl->transport_id;
+    wr->ops              =NNTI_PUT_SRC;
+    wr->transport_private=(uint64_t)ptl_wr;
 
-    ptls_mem_hdl->wr_queue.push_back(wr);
+    ptl_mem_hdl->wr_queue.push_back(wr);
 
 cleanup:
     log_debug(nnti_debug_level, "exit");
@@ -1057,13 +1353,14 @@ NNTI_result_t NNTI_ptl_get (
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
-        const uint64_t       dest_offset)
+        const uint64_t       dest_offset,
+        NNTI_work_request_t *wr)
 {
     int rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
 
-    portals_memory_handle *ptls_mem_hdl=NULL;
-    portals_work_request  *wr=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
+    portals_work_request  *ptl_wr=NULL;
     ptl_process_id_t src_id;
 
     log_debug(nnti_debug_level, "enter");
@@ -1090,30 +1387,76 @@ NNTI_result_t NNTI_ptl_get (
                 "NNTI_ptl_get", dest_buffer_hdl);
     }
 
-    ptls_mem_hdl=(portals_memory_handle *)dest_buffer_hdl->transport_private;
-    assert(ptls_mem_hdl);
-    wr=(portals_work_request *)calloc(1, sizeof(portals_work_request));
-    assert(wr);
+    ptl_mem_hdl=PTL_MEM_HDL(dest_buffer_hdl);
+    assert(ptl_mem_hdl);
+    ptl_wr=(portals_work_request *)calloc(1, sizeof(portals_work_request));
+    assert(ptl_wr);
 
-    wr->reg_buf   =(NNTI_buffer_t *)dest_buffer_hdl;
-    wr->peer      =src_buffer_hdl->buffer_owner;
-    wr->src_offset=src_offset;
-    wr->dst_offset=dest_offset;
-    wr->length    =src_length;
+    /* create a match entry (unlink with MD) */
+    nthread_lock(&nnti_ptl_lock);
+    rc = PtlMEAttach(
+            transport_global_data.ni_h,
+            ptl_mem_hdl->buffer_id,
+            ptl_mem_hdl->match_id,
+            ptl_mem_hdl->match_bits,
+            ptl_mem_hdl->ignore_bits,
+            PTL_UNLINK,
+            PTL_INS_AFTER,
+            &ptl_mem_hdl->me_h);
+    nthread_unlock(&nnti_ptl_lock);
+    if (rc != PTL_OK) {
+        log_error(nnti_debug_level, "failed to attach me");
+        nnti_rc=NNTI_ENOMEM;
+        goto cleanup;
+    }
+    log_debug(nnti_debug_level, "allocated me=%d with bufid=%d, match_id(%d,%d), mbits=%d",
+            ptl_mem_hdl->me_h, ptl_mem_hdl->buffer_id, ptl_mem_hdl->match_id.nid, ptl_mem_hdl->match_id.pid, ptl_mem_hdl->match_bits);
 
-    memset(&wr->op_state, 0, sizeof(ptl_op_state_t));
+    /* initialize the md */
+    memset(&ptl_mem_hdl->md, 0, sizeof(ptl_md_t));
+    ptl_mem_hdl->md.start     = (void*)dest_buffer_hdl->payload;
+    ptl_mem_hdl->md.length    = dest_buffer_hdl->payload_size;
+    ptl_mem_hdl->md.threshold = 1;
+    ptl_mem_hdl->md.options   = PTL_MD_OP_PUT|PTL_MD_OP_GET|PTL_MD_MANAGE_REMOTE|PTL_MD_TRUNCATE;
+    ptl_mem_hdl->md.user_ptr  = wr;
+    ptl_mem_hdl->md.eq_handle = ptl_mem_hdl->eq_h;
+
+    /* attach the memory descriptor (manually unlink) */
+    nthread_lock(&nnti_ptl_lock);
+    rc = PtlMDAttach(
+            ptl_mem_hdl->me_h,
+            ptl_mem_hdl->md,
+            PTL_UNLINK,
+            &ptl_mem_hdl->md_h);
+    nthread_unlock(&nnti_ptl_lock);
+    if (rc != PTL_OK) {
+        log_error(nnti_debug_level, "failed to attach md");
+        nnti_rc=NNTI_ENOMEM;
+        goto cleanup;
+    }
+
+
+    ptl_wr->reg_buf   =(NNTI_buffer_t *)dest_buffer_hdl;
+    ptl_wr->peer      =src_buffer_hdl->buffer_owner;
+    ptl_wr->src_offset=src_offset;
+    ptl_wr->dst_offset=dest_offset;
+    ptl_wr->length    =src_length;
+    ptl_wr->last_op   =PTL_OP_GET_INITIATOR;
+
+
+    memset(&ptl_wr->op_state, 0, sizeof(ptl_op_state_t));
 
     src_id.nid=src_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.portals.nid;
     src_id.pid=src_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.portals.pid;
 
     rc=PtlGetRegion(
-            ptls_mem_hdl->md_h,
+            ptl_mem_hdl->md_h,
             dest_offset,
             src_length,
             src_id,
-            src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.portals.buffer_id,
+            src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.buffer_id,
             0,
-            src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.portals.match_bits,
+            src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.portals.match_bits,
             src_offset);
     if (rc != PTL_OK) {
         log_error(nnti_debug_level, "failed to GET region: %s", ptl_err_str[rc]);
@@ -1121,16 +1464,232 @@ NNTI_result_t NNTI_ptl_get (
         goto cleanup;
     }
 
-    log_debug(nnti_debug_level, "getting from (%s, eq=%d)", src_buffer_hdl->buffer_owner.url, ptls_mem_hdl->eq_h);
+    log_debug(nnti_debug_level, "getting from (%s, eq=%d)", src_buffer_hdl->buffer_owner.url, ptl_mem_hdl->eq_h);
 
-    wr->last_op=PTL_OP_GET_INITIATOR;
+    wr->transport_id     =dest_buffer_hdl->transport_id;
+    wr->ops              =NNTI_GET_DST;
+    wr->transport_private=(uint64_t)ptl_wr;
 
-    ptls_mem_hdl->wr_queue.push_back(wr);
+    ptl_mem_hdl->wr_queue.push_back(wr);
 
 cleanup:
     log_debug(nnti_debug_level, "exit");
 
     return(nnti_rc);
+}
+
+
+/**
+ * @brief Transfer data to a peer.
+ *
+ * \param[in] src_buffer_hdl    A buffer containing the data to put.
+ * \param[in] src_length        The number of bytes to put.
+ * \param[in] dest_buffer_list  A list of buffers to put the data into.
+ * \param[in] dest_count        The number of destination buffers.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_ptl_scatter (
+        const NNTI_buffer_t  *src_buffer_hdl,
+        const uint64_t        src_length,
+        const NNTI_buffer_t **dest_buffer_list,
+        const uint64_t        dest_count,
+        NNTI_work_request_t  *wr)
+{
+    return NNTI_OK;
+}
+
+
+/**
+ * @brief Transfer data from a peer.
+ *
+ * \param[in] src_buffer_list  A list of buffers containing the data to get.
+ * \param[in] src_length       The number of bytes to get.
+ * \param[in] src_count        The number of source buffers.
+ * \param[in] dest_buffer_hdl  A buffer to get the data into.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_ptl_gather (
+        const NNTI_buffer_t **src_buffer_list,
+        const uint64_t        src_length,
+        const uint64_t        src_count,
+        const NNTI_buffer_t  *dest_buffer_hdl,
+        NNTI_work_request_t  *wr)
+{
+    return NNTI_OK;
+}
+
+
+NNTI_result_t NNTI_ptl_atomic_set_callback (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		NNTI_callback_fn_t      cbfunc,
+		void                   *context)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_ptl_atomic_read (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		int64_t                *value)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_ptl_atomic_fop (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           operand,
+		const NNTI_atomic_op_t  op,
+		NNTI_work_request_t    *wr)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_ptl_atomic_cswap (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           compare_operand,
+		const int64_t           swap_operand,
+		NNTI_work_request_t    *wr)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+/**
+ * @brief Create a receive work request that can be used to wait for buffer
+ * operations to complete.
+ *
+ */
+NNTI_result_t NNTI_ptl_create_work_request (
+        NNTI_buffer_t        *reg_buf,
+        NNTI_work_request_t  *wr)
+{
+    portals_work_request *ptl_wr=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
+
+    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
+
+    ptl_mem_hdl=PTL_MEM_HDL(reg_buf);
+    assert(ptl_mem_hdl);
+
+    ptl_wr=(portals_work_request *)calloc(1, sizeof(portals_work_request));
+    assert(ptl_wr);
+    ptl_wr->reg_buf = reg_buf;
+
+    memset(&ptl_wr->op_state, 0, sizeof(ptl_op_state_t));
+
+    wr->transport_id     =reg_buf->transport_id;
+    wr->reg_buf          =reg_buf;
+    wr->ops              =reg_buf->ops;
+    wr->transport_private=(uint64_t)ptl_wr;
+
+    ptl_mem_hdl->wr_queue.push_back(wr);
+
+    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
+
+    return(NNTI_OK);
+}
+
+
+/**
+ * @brief Disassociates a receive work request from a previous receive
+ * and prepares it for reuse.
+ *
+ */
+NNTI_result_t NNTI_ptl_clear_work_request (
+        NNTI_work_request_t  *wr)
+{
+    portals_work_request  *ptl_wr=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
+
+    log_debug(nnti_debug_level, "enter (wr=%p)", wr);
+
+    ptl_wr=PTL_WORK_REQUEST(wr);
+    assert(ptl_wr);
+    ptl_mem_hdl=PTL_MEM_HDL(ptl_wr->reg_buf);
+    assert(ptl_mem_hdl);
+
+    memset(&ptl_wr->op_state, 0, sizeof(ptl_op_state_t));
+
+    ptl_mem_hdl->wr_queue.push_back(wr);
+
+    log_debug(nnti_debug_level, "exit (wr=%p)", wr);
+
+    return(NNTI_OK);
+}
+
+
+/**
+ * @brief Disassociates a receive work request from reg_buf.
+ *
+ */
+NNTI_result_t NNTI_ptl_destroy_work_request (
+        NNTI_work_request_t  *wr)
+{
+    portals_work_request  *ptl_wr=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
+
+    log_debug(nnti_debug_level, "enter (wr=%p)", wr);
+
+    ptl_wr=PTL_WORK_REQUEST(wr);
+    assert(ptl_wr);
+    ptl_mem_hdl=PTL_MEM_HDL(ptl_wr->reg_buf);
+    assert(ptl_mem_hdl);
+
+    free(ptl_wr);
+
+    log_debug(nnti_debug_level, "exit (wr=%p)", wr);
+
+    return(NNTI_OK);
+}
+
+
+/**
+ * @brief Attempts to cancel an NNTI opertion.
+ *
+ */
+NNTI_result_t NNTI_ptl_cancel (
+        NNTI_work_request_t *wr)
+{
+    return NNTI_OK;
+}
+
+
+/**
+ * @brief Attempts to cancel a list of NNTI opertions.
+ *
+ */
+NNTI_result_t NNTI_ptl_cancelall (
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count)
+{
+    return NNTI_OK;
+}
+
+
+/**
+ * @brief Interrupts NNTI_wait*()
+ *
+ */
+NNTI_result_t NNTI_ptl_interrupt (
+        const NNTI_transport_t *trans_hdl)
+{
+    char dummy=0xAA;
+
+    log_debug(nnti_debug_level, "enter");
+
+    log_debug(nnti_debug_level, "exit");
+
+    return NNTI_OK;
 }
 
 
@@ -1144,17 +1703,18 @@ cleanup:
  *
  */
 NNTI_result_t NNTI_ptl_wait (
-        const NNTI_buffer_t  *reg_buf,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t  *wr,
         const int             timeout,
         NNTI_status_t        *status)
 {
     int rc=PTL_OK;
     NNTI_result_t nnti_rc=NNTI_OK;
-    portals_memory_handle *ptls_mem_hdl=NULL;
-    portals_work_request  *wr=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
+    portals_work_request  *ptl_wr=NULL;
 
-    const NNTI_buffer_t  *wait_buf=NULL;
+//    const NNTI_buffer_t  *reg_buf=NULL;
+
+    const NNTI_work_request_t *wait_wr=NULL;
 
     int elapsed_time=0;
     int timeout_per_call;
@@ -1170,23 +1730,25 @@ NNTI_result_t NNTI_ptl_wait (
 
     log_debug(debug_level, "enter");
 
-    assert(reg_buf);
+    assert(wr);
     assert(status);
 
-    ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
-    assert(ptls_mem_hdl);
-    wr=first_incomplete_wr(ptls_mem_hdl);
-    assert(wr);
+    ptl_wr=PTL_WORK_REQUEST(wr);
+    assert(ptl_wr);
+    ptl_mem_hdl=PTL_MEM_HDL(ptl_wr->reg_buf);
+    assert(ptl_mem_hdl);
+//    ptl_wr=first_incomplete_wr(ptl_mem_hdl);
+//    assert(ptl_wr);
 
-    if (ptls_mem_hdl->type == REQUEST_BUFFER) {
-        memset(&wr->op_state, 0, sizeof(ptl_op_state_t));
+    if (ptl_mem_hdl->type == REQUEST_BUFFER) {
+        memset(&ptl_wr->op_state, 0, sizeof(ptl_op_state_t));
     }
 
-    if (is_buf_op_complete(reg_buf) == TRUE) {
-        log_debug(debug_level, "buffer op already complete");
+    if (is_wr_complete(ptl_wr) == TRUE) {
+        log_debug(debug_level, "work request already complete");
         nnti_rc = NNTI_OK;
     } else {
-        log_debug(debug_level, "buffer op NOT complete");
+        log_debug(debug_level, "work request NOT complete");
 
         timeout_per_call = MIN_TIMEOUT;
 
@@ -1196,13 +1758,13 @@ NNTI_result_t NNTI_ptl_wait (
                 return NNTI_ECANCELED;
             }
 
-            log_debug(debug_level, "waiting on reg_buf(%p) eq_h(%d)", reg_buf , ptls_mem_hdl->eq_h);
+            log_debug(debug_level, "waiting on wr(%p) eq_h(%d)", wr, ptl_mem_hdl->eq_h);
 
             memset(&event, 0, sizeof(ptl_event_t));
             log_debug(debug_level, "lock before poll");
             trios_start_timer(call_time);
             //            nthread_lock(&nnti_ptl_lock);
-            rc = PtlEQPoll(&ptls_mem_hdl->eq_h, 1, timeout_per_call, &event, &which_eq);
+            rc = PtlEQPoll(&ptl_mem_hdl->eq_h, 1, timeout_per_call, &event, &which_eq);
             //            nthread_unlock(&nnti_ptl_lock);
             trios_stop_timer("NNTI_ptl_wait - PtlEQPoll", call_time);
             log_debug(debug_level, "polling status is %s", ptl_err_str[rc]);
@@ -1257,31 +1819,31 @@ NNTI_result_t NNTI_ptl_wait (
             /* case 4: failure */
             else {
                 log_error(debug_level, "PtlEQPoll failed (eq_handle[%d]==%d): %s",
-                        which_eq, ptls_mem_hdl->eq_h, ptl_err_str[rc]);
+                        which_eq, ptl_mem_hdl->eq_h, ptl_err_str[rc]);
                 nnti_rc = NNTI_EIO;
                 break;
             }
 
-            wait_buf=decode_event_buffer(reg_buf, &event);
-            process_event(wait_buf, &event);
+            wait_wr=decode_event_wr(wr, &event);
+            process_event(wait_wr, &event);
 
-            if (is_buf_op_complete(reg_buf) == TRUE) {
+            if (is_wr_complete(ptl_wr) == TRUE) {
                 break;
             }
         }
     }
 
-    create_status(reg_buf, remote_op, nnti_rc, status);
+    create_status(wr, nnti_rc, status);
 
     if (logging_debug(debug_level)) {
         fprint_NNTI_status(logger_get_file(), "status",
                 "end of NNTI_ptl_wait", status);
     }
 
-    if ((nnti_rc==NNTI_OK) && (ptls_mem_hdl->buffer_id == NNTI_REQ_PT_INDEX)) {
+    if ((nnti_rc==NNTI_OK) && (ptl_mem_hdl->buffer_id == NNTI_REQ_PT_INDEX)) {
         portals_request_queue_handle *q_hdl=&transport_global_data.req_queue;
 
-        int index = *(int *)wr->last_event.md.user_ptr;
+        int index = *(int *)ptl_wr->last_event.md.user_ptr;
         /* get the index of the queue */
         q_hdl->queue_count[index]++;
 
@@ -1305,10 +1867,10 @@ NNTI_result_t NNTI_ptl_wait (
             nthread_lock(&nnti_ptl_lock);
             rc = PtlMEAttach(
                     transport_global_data.ni_h,
-                    ptls_mem_hdl->buffer_id,
-                    ptls_mem_hdl->match_id,
-                    ptls_mem_hdl->match_bits,
-                    ptls_mem_hdl->ignore_bits,
+                    ptl_mem_hdl->buffer_id,
+                    ptl_mem_hdl->match_id,
+                    ptl_mem_hdl->match_bits,
+                    ptl_mem_hdl->ignore_bits,
                     PTL_RETAIN,
                     PTL_INS_AFTER,
                     &q_hdl->me_h[index]);
@@ -1336,13 +1898,13 @@ NNTI_result_t NNTI_ptl_wait (
     }
 
     if (nnti_rc==NNTI_OK) {
-        ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
-        assert(ptls_mem_hdl);
-        wr=ptls_mem_hdl->wr_queue.front();
-        assert(wr);
-        ptls_mem_hdl->wr_queue.pop_front();
+        ptl_mem_hdl=PTL_MEM_HDL(ptl_wr->reg_buf);
+        assert(ptl_mem_hdl);
+//        ptl_wr=ptl_mem_hdl->wr_queue.front();
+//        assert(ptl_wr);
+//        ptl_mem_hdl->wr_queue.pop_front();
 
-        switch (ptls_mem_hdl->type) {
+        switch (ptl_mem_hdl->type) {
             case REQUEST_BUFFER:
             case RECEIVE_BUFFER:
 #if defined(USE_RDMA_TARGET_ACK)
@@ -1350,16 +1912,16 @@ NNTI_result_t NNTI_ptl_wait (
             case PUT_DST_BUFFER:
             case RDMA_TARGET_BUFFER:
 #endif
-                repost_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
+//                repost_recv_work_request(wr);
                 break;
             case SEND_BUFFER:
             case GET_DST_BUFFER:
             case PUT_SRC_BUFFER:
-                free(wr);
+                free(ptl_wr);
                 break;
             case UNKNOWN_BUFFER:
             default:
-                log_error(nnti_debug_level, "unknown buffer type(%llu).", ptls_mem_hdl->type);
+                log_error(nnti_debug_level, "unknown buffer type(%llu).", ptl_mem_hdl->type);
                 break;
         }
     }
@@ -1383,19 +1945,19 @@ cleanup:
  *   2) You can't wait on the request queue and RDMA buffers in the same call.  Will probably be fixed in the future.
  */
 NNTI_result_t NNTI_ptl_waitany (
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
         const int             timeout,
         uint32_t             *which,
         NNTI_status_t        *status)
 {
     int rc=PTL_OK;
     NNTI_result_t nnti_rc=NNTI_OK;
-    portals_memory_handle *ptls_mem_hdl=NULL;
-    portals_work_request  *wr=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
+    portals_work_request  *ptl_wr=NULL;
 
-    const NNTI_buffer_t  *wait_buf=NULL;
+//    const NNTI_buffer_t  *reg_buf=NULL;
+    const NNTI_work_request_t *wait_wr=NULL;
 
     int elapsed_time=0;
     int timeout_per_call;
@@ -1406,29 +1968,29 @@ NNTI_result_t NNTI_ptl_waitany (
 
     log_debug(debug_level, "enter");
 
-    assert(buf_list);
-    assert(buf_count > 0);
-    if (buf_count > 1) {
-        /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
-        for (uint32_t i=0;i<buf_count;i++) {
-            if (buf_list[i] != NULL) {
-                assert(((portals_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
-            }
-        }
-    }
+    assert(wr_list);
+    assert(wr_count > 0);
+//    if (buf_count > 1) {
+//        /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
+//        for (uint32_t i=0;i<buf_count;i++) {
+//            if (buf_list[i] != NULL) {
+//                assert(((portals_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
+//            }
+//        }
+//    }
     assert(status);
 
-    if (buf_count == 1) {
-        nnti_rc=NNTI_ptl_wait(buf_list[0], remote_op, timeout, status);
+    if (wr_count == 1) {
+        nnti_rc=NNTI_ptl_wait(wr_list[0], timeout, status);
         *which=0;
         goto cleanup;
     }
 
-    if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
-        log_debug(debug_level, "buffer op already complete (which=%u, buf_list[%d]=%p)", *which, *which, buf_list[*which]);
+    if (is_any_wr_complete(wr_list, wr_count, which) == TRUE) {
+        log_debug(debug_level, "work request already complete (which=%u, wr_list[%d]=%p)", *which, *which, wr_list[*which]);
         nnti_rc = NNTI_OK;
     } else {
-        log_debug(debug_level, "buffer op NOT complete (buf_list=%p)", buf_list);
+        log_debug(debug_level, "work request NOT complete (buf_list=%p)", wr_list);
 
         timeout_per_call = MIN_TIMEOUT;
 
@@ -1501,17 +2063,17 @@ NNTI_result_t NNTI_ptl_waitany (
                 break;
             }
 
-            wait_buf=decode_event_buffer(buf_list[0], &event);
-            process_event(wait_buf, &event);
+            wait_wr=decode_event_wr(wr_list[0], &event);
+            process_event(wait_wr, &event);
 
-            if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
+            if (is_any_wr_complete(wr_list, wr_count, which) == TRUE) {
                 break;
             }
         }
     }
 
 
-    create_status(buf_list[*which], remote_op, nnti_rc, status);
+    create_status(wr_list[*which], nnti_rc, status);
 
     if (logging_debug(debug_level)) {
         fprint_NNTI_status(logger_get_file(), "status",
@@ -1519,13 +2081,15 @@ NNTI_result_t NNTI_ptl_waitany (
     }
 
     if (nnti_rc==NNTI_OK) {
-        ptls_mem_hdl=(portals_memory_handle *)buf_list[*which]->transport_private;
-        assert(ptls_mem_hdl);
-        wr=ptls_mem_hdl->wr_queue.front();
-        assert(wr);
-        ptls_mem_hdl->wr_queue.pop_front();
+        ptl_wr=PTL_WORK_REQUEST(wr_list[*which]);
+        assert(ptl_wr);
+        ptl_mem_hdl=PTL_MEM_HDL(ptl_wr->reg_buf);
+        assert(ptl_mem_hdl);
+//        ptl_wr=ptl_mem_hdl->wr_queue.front();
+//        assert(ptl_wr);
+//        ptl_mem_hdl->wr_queue.pop_front();
 
-        switch (ptls_mem_hdl->type) {
+        switch (ptl_mem_hdl->type) {
             case REQUEST_BUFFER:
             case RECEIVE_BUFFER:
 #if defined(USE_RDMA_TARGET_ACK)
@@ -1533,16 +2097,16 @@ NNTI_result_t NNTI_ptl_waitany (
             case PUT_DST_BUFFER:
             case RDMA_TARGET_BUFFER:
 #endif
-                repost_recv_work_request((NNTI_buffer_t *)buf_list[*which], wr);
+//                repost_recv_work_request(wr_list[*which]);
                 break;
             case SEND_BUFFER:
             case GET_DST_BUFFER:
             case PUT_SRC_BUFFER:
-                free(wr);
+                free(ptl_wr);
                 break;
             case UNKNOWN_BUFFER:
             default:
-                log_error(nnti_debug_level, "unknown buffer type(%llu).", ptls_mem_hdl->type);
+                log_error(nnti_debug_level, "unknown buffer type(%llu).", ptl_mem_hdl->type);
                 break;
         }
     }
@@ -1565,18 +2129,17 @@ cleanup:
  *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
  */
 NNTI_result_t NNTI_ptl_waitall (
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
         const int             timeout,
         NNTI_status_t       **status)
 {
     int rc=PTL_OK;
     NNTI_result_t nnti_rc=NNTI_OK;
-    portals_memory_handle *ptls_mem_hdl=NULL;
-    portals_work_request  *wr=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
+    portals_work_request  *ptl_wr=NULL;
 
-    const NNTI_buffer_t  *wait_buf=NULL;
+    const NNTI_work_request_t  *wait_wr=NULL;
 
     int elapsed_time=0;
     int timeout_per_call;
@@ -1587,28 +2150,28 @@ NNTI_result_t NNTI_ptl_waitall (
 
     log_debug(debug_level, "enter");
 
-    assert(buf_list);
-    assert(buf_count > 0);
-    if (buf_count > 1) {
-        /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
-        for (uint32_t i=0;i<buf_count;i++) {
-            if (buf_list[i] != NULL) {
-                assert(((portals_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
-            }
-        }
-    }
+    assert(wr_list);
+    assert(wr_count > 0);
+//    if (buf_count > 1) {
+//        /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
+//        for (uint32_t i=0;i<buf_count;i++) {
+//            if (buf_list[i] != NULL) {
+//                assert(((portals_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
+//            }
+//        }
+//    }
     assert(status);
 
-    if (buf_count == 1) {
-        nnti_rc=NNTI_ptl_wait(buf_list[0], remote_op, timeout, status[0]);
+    if (wr_count == 1) {
+        nnti_rc=NNTI_ptl_wait(wr_list[0], timeout, status[0]);
         goto cleanup;
     }
 
-    if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
-        log_debug(debug_level, "all buffer ops already complete (buf_list=%p)", buf_list);
+    if (is_all_wr_complete(wr_list, wr_count) == TRUE) {
+        log_debug(debug_level, "all buffer ops already complete (buf_list=%p)", wr_list);
         nnti_rc = NNTI_OK;
     } else {
-        log_debug(debug_level, "all buffer ops NOT complete (buf_list=%p)", buf_list);
+        log_debug(debug_level, "all buffer ops NOT complete (buf_list=%p)", wr_list);
 
         timeout_per_call = MIN_TIMEOUT;
 
@@ -1681,32 +2244,34 @@ NNTI_result_t NNTI_ptl_waitall (
                 break;
             }
 
-            wait_buf=decode_event_buffer(buf_list[0], &event);
-            process_event(wait_buf, &event);
+            wait_wr=decode_event_wr(wr_list[0], &event);
+            process_event(wait_wr, &event);
 
-            if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
+            if (is_all_wr_complete(wr_list, wr_count) == TRUE) {
                 break;
             }
         }
     }
 
 
-    for (uint32_t i=0;i<buf_count;i++) {
-        create_status(buf_list[i], remote_op, nnti_rc, status[i]);
+    for (uint32_t i=0;i<wr_count;i++) {
+        create_status(wr_list[i], nnti_rc, status[i]);
 
         if (logging_debug(debug_level)) {
             fprint_NNTI_status(logger_get_file(), "status[i]",
                     "end of NNTI_ptl_wait", status[i]);
         }
 
-        ptls_mem_hdl=(portals_memory_handle *)buf_list[i]->transport_private;
-        assert(ptls_mem_hdl);
-        wr=ptls_mem_hdl->wr_queue.front();
-        assert(wr);
-        ptls_mem_hdl->wr_queue.pop_front();
+        ptl_wr=PTL_WORK_REQUEST(wr_list[i]);
+        assert(ptl_wr);
+        ptl_mem_hdl=PTL_MEM_HDL(ptl_wr->reg_buf);
+        assert(ptl_mem_hdl);
+//        ptl_wr=ptl_mem_hdl->wr_queue.front();
+//        assert(ptl_wr);
+//        ptl_mem_hdl->wr_queue.pop_front();
 
         if (nnti_rc==NNTI_OK) {
-            switch (ptls_mem_hdl->type) {
+            switch (ptl_mem_hdl->type) {
                 case REQUEST_BUFFER:
                 case RECEIVE_BUFFER:
 #if defined(USE_RDMA_TARGET_ACK)
@@ -1714,16 +2279,16 @@ NNTI_result_t NNTI_ptl_waitall (
                 case PUT_DST_BUFFER:
                 case RDMA_TARGET_BUFFER:
 #endif
-                    repost_recv_work_request((NNTI_buffer_t *)buf_list[i], wr);
+//                    repost_recv_work_request(wr_list[i]);
                     break;
                 case SEND_BUFFER:
                 case GET_DST_BUFFER:
                 case PUT_SRC_BUFFER:
-                    free(wr);
+                    free(ptl_wr);
                     break;
                 case UNKNOWN_BUFFER:
                 default:
-                    log_error(nnti_debug_level, "unknown buffer type(%llu).", ptls_mem_hdl->type);
+                    log_error(nnti_debug_level, "unknown buffer type(%llu).", ptl_mem_hdl->type);
                     break;
             }
         }
@@ -1789,170 +2354,283 @@ static void set_req_pid(NNTI_pid *pid)
 }
 
 
-static portals_work_request *decode_work_request(
-        const ptl_event_t   *event)
+//static portals_work_request *decode_work_request(
+//        const ptl_event_t   *event)
+//{
+//    log_level debug_level = nnti_debug_level;
+//
+//    const NNTI_buffer_t *event_buf=NULL;
+//    portals_memory_handle *ptl_mem_hdl=NULL;
+//    NNTI_work_request_t   *wr=NULL;
+//    portals_work_request  *ptl_wr=NULL;
+//    portals_work_request  *debug_wr=NULL;
+//
+//    log_debug(debug_level, "enter");
+//
+//    event_buf=(NNTI_buffer_t *)event->md.user_ptr;
+//    assert(event_buf);
+//    ptl_mem_hdl=PTL_MEM_HDL(event_buf);
+//    assert(ptl_mem_hdl);
+//
+//    wr_queue_iter_t i;
+//    for (i=ptl_mem_hdl->wr_queue.begin(); i != ptl_mem_hdl->wr_queue.end(); i++) {
+//        assert(*i);
+//        ptl_wr=PTL_WORK_REQUEST(*i);
+//        if (is_wr_complete(ptl_wr) == FALSE) {
+//            // work request is incomplete, check if it matches this event
+//            switch(ptl_mem_hdl->type) {
+//                case REQUEST_BUFFER:
+//                    if (((ptl_wr)->src_offset == event->offset) &&
+//                        ((ptl_wr)->length == event->mlength)) {
+//
+//                        wr=*i;
+//                    } else {
+//                        log_debug(debug_level, "work request doesn't match (wr=%p)", ptl_wr);
+//                    }
+//                    break;
+//                case SEND_BUFFER:
+//                case PUT_SRC_BUFFER:
+//                    if (((ptl_wr)->src_offset == event->offset) &&
+//                        ((ptl_wr)->length == event->mlength)) {
+//
+//                        wr=*i;
+//                    } else {
+//                        log_debug(debug_level, "work request doesn't match (wr=%p)", ptl_wr);
+//                    }
+//                    break;
+//                case GET_DST_BUFFER:
+//                    if (((ptl_wr)->dst_offset == event->offset) &&
+//                        ((ptl_wr)->length == event->mlength)) {
+//
+//                        wr=*i;
+//                    } else {
+//                        log_debug(debug_level, "work request doesn't match (wr=%p)", ptl_wr);
+//                    }
+//                    break;
+//                case RECEIVE_BUFFER:
+//                case GET_SRC_BUFFER:
+//                case PUT_DST_BUFFER:
+//                case RDMA_TARGET_BUFFER:
+//                    wr=*i;
+//                    break;
+//                default:
+//                    log_debug(debug_level, "unknown event type %d (event_buf==%p)", ptl_mem_hdl->type, event_buf);
+//                    break;
+//            }
+//            if (wr) {
+//                break;
+//            }
+//        } else {
+//            log_debug(debug_level, "work request is already complete (wr=%p)", ptl_wr);
+//        }
+//    }
+//
+//    if (!wr) {
+//        for (i=ptl_mem_hdl->wr_queue.begin(); i != ptl_mem_hdl->wr_queue.end(); i++) {
+//            debug_wr=PTL_WORK_REQUEST(*i);
+//            log_debug(LOG_ALL, "e.offset=%llu, e.rlength=%llu, e.mlength=%llu, wr=%p, wr.length=%llu, wr.src_offset=%llu, wr.dst_offset=%llu, wr.is_complete=%d",
+//                    (uint64_t)event->offset, (uint64_t)event->rlength, (uint64_t)event->mlength,
+//                    debug_wr,
+//                    (uint64_t)debug_wr->length, (uint64_t)debug_wr->src_offset, (uint64_t)debug_wr->dst_offset,
+//                    (is_wr_complete(debug_wr)==TRUE));
+//        }
+//    }
+//    assert(wr);
+//
+//    log_debug(debug_level, "exit (wr==%p)", wr);
+//
+//    return(PTL_WORK_REQUEST(wr));
+//}
+
+static const NNTI_work_request_t *decode_event_wr(
+        const NNTI_work_request_t *wait_wr,
+        const ptl_event_t         *event)
 {
-    log_level debug_level = nnti_debug_level;
+    const NNTI_buffer_t       *event_buf=NULL;
+    const NNTI_work_request_t *event_wr=NULL;
 
-    const NNTI_buffer_t *event_buf=NULL;
-    portals_memory_handle *ptls_mem_hdl=NULL;
-    portals_work_request  *wr=NULL;
-    portals_work_request  *debug_wr=NULL;
+    const NNTI_buffer_t       *wait_buf=NULL;
+    portals_work_request      *ptl_wr=NULL;
 
-    log_debug(debug_level, "enter");
-
-    event_buf=(NNTI_buffer_t *)event->md.user_ptr;
-    assert(event_buf);
-    ptls_mem_hdl=(portals_memory_handle *)event_buf->transport_private;
-    assert(ptls_mem_hdl);
-
-    wr_queue_iter_t i;
-    for (i=ptls_mem_hdl->wr_queue.begin(); i != ptls_mem_hdl->wr_queue.end(); i++) {
-        assert(*i);
-        if (is_wr_complete(*i) == FALSE) {
-            // work request is incomplete, check if it matches this event
-            switch(ptls_mem_hdl->type) {
-                case REQUEST_BUFFER:
-                    if (((*i)->src_offset == event->offset) &&
-                        ((*i)->length == event->mlength)) {
-
-                        wr=*i;
-                    } else {
-                        log_debug(debug_level, "work request doesn't match (wr=%p)", *i);
-                    }
-                    break;
-                case SEND_BUFFER:
-                case PUT_SRC_BUFFER:
-                    if (((*i)->src_offset == event->offset) &&
-                        ((*i)->length == event->mlength)) {
-
-                        wr=*i;
-                    } else {
-                        log_debug(debug_level, "work request doesn't match (wr=%p)", *i);
-                    }
-                    break;
-                case GET_DST_BUFFER:
-                    if (((*i)->dst_offset == event->offset) &&
-                        ((*i)->length == event->mlength)) {
-
-                        wr=*i;
-                    } else {
-                        log_debug(debug_level, "work request doesn't match (wr=%p)", *i);
-                    }
-                    break;
-                case RECEIVE_BUFFER:
-                case GET_SRC_BUFFER:
-                case PUT_DST_BUFFER:
-                case RDMA_TARGET_BUFFER:
-                    wr=*i;
-                    break;
-                default:
-                    log_debug(debug_level, "unknown event type %d (event_buf==%p)", ptls_mem_hdl->type, event_buf);
-                    break;
-            }
-            if (wr) {
-                break;
-            }
-        } else {
-            log_debug(debug_level, "work request is already complete (wr=%p)", *i);
-        }
-    }
-
-    if (!wr) {
-        for (i=ptls_mem_hdl->wr_queue.begin(); i != ptls_mem_hdl->wr_queue.end(); i++) {
-            debug_wr=*i;
-            log_debug(LOG_ALL, "e.offset=%llu, e.rlength=%llu, e.mlength=%llu, wr=%p, wr.length=%llu, wr.src_offset=%llu, wr.dst_offset=%llu, wr.is_complete=%d",
-                    (uint64_t)event->offset, (uint64_t)event->rlength, (uint64_t)event->mlength,
-                    debug_wr,
-                    (uint64_t)debug_wr->length, (uint64_t)debug_wr->src_offset, (uint64_t)debug_wr->dst_offset,
-                    (is_wr_complete(debug_wr)==TRUE));
-        }
-    }
-    assert(wr);
-
-    log_debug(debug_level, "exit (wr==%p)", wr);
-
-    return(wr);
-}
-
-static const NNTI_buffer_t *decode_event_buffer(
-        const NNTI_buffer_t *wait_buf,
-        const ptl_event_t   *event)
-{
-    const NNTI_buffer_t *event_buf=NULL;
-    portals_memory_handle *ptls_mem_hdl=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
 
     log_debug(nnti_debug_level, "enter");
 
-    if ((wait_buf != NULL)                                               &&
-        (((portals_memory_handle *)wait_buf->transport_private) != NULL) &&
-        (((portals_memory_handle *)wait_buf->transport_private)->type == REQUEST_BUFFER)) {
+    assert(wait_wr);
 
-        event_buf=wait_buf;
-        ptls_mem_hdl=(portals_memory_handle *)event_buf->transport_private;
-        assert(ptls_mem_hdl);
+    ptl_wr=PTL_WORK_REQUEST(wait_wr);
+    wait_buf=ptl_wr->reg_buf;
 
-        log_debug(nnti_debug_level, "the wait buffer is a REQUEST BUFFER, so event.md.user_ptr is the index of the request buffer.");
-    } else {
-        event_buf=(NNTI_buffer_t *)event->md.user_ptr;
-        ptls_mem_hdl=(portals_memory_handle *)event_buf->transport_private;
-        assert(ptls_mem_hdl);
+    switch (event->type) {
+        /* these are the events for a PUT initiator */
+        case PTL_EVENT_SEND_START:
+            log_debug(nnti_debug_level, "got PTL_EVENT_SEND_START - event->user_ptr is a work request");
+            event_wr=(NNTI_work_request_t *)event->md.user_ptr;
+            break;
+        case PTL_EVENT_SEND_END:
+            log_debug(nnti_debug_level, "got PTL_EVENT_SEND_END   - event->user_ptr is a work request");
+            event_wr=(NNTI_work_request_t *)event->md.user_ptr;
+            break;
+        case PTL_EVENT_ACK:
+            log_debug(nnti_debug_level, "got PTL_EVENT_ACK        - event->user_ptr is a work request");
+            event_wr=(NNTI_work_request_t *)event->md.user_ptr;
+            break;
+        case PTL_EVENT_UNLINK:
+            log_debug(nnti_debug_level, "got PTL_EVENT_UNLINK     - event->user_ptr is a work request");
+            event_wr=(NNTI_work_request_t *)event->md.user_ptr;
+            break;
 
-        if (event_buf == wait_buf) {
-            log_debug(nnti_debug_level, "the wc matches the wait buffer (eq=%d, user_ptr=%p, wait_buf=%p)",
-                    ptls_mem_hdl->eq_h, (void *)event->md.user_ptr, wait_buf);
-        } else {
-            log_debug(nnti_debug_level, "the wc does NOT match the wait buffer (eq=%d, user_ptr=%p, wait_buf=%p)",
-                    ptls_mem_hdl->eq_h, (void *)event->md.user_ptr, wait_buf);
-        }
+
+        /* these are the events for a GET initiator */
+        case PTL_EVENT_REPLY_START:
+            log_debug(nnti_debug_level,"got PTL_EVENT_REPLY_START - event->user_ptr is a work request");
+            event_wr=(NNTI_work_request_t *)event->md.user_ptr;
+            break;
+        case PTL_EVENT_REPLY_END:
+            log_debug(nnti_debug_level,"got PTL_EVENT_REPLY_END   - event->user_ptr is a work request");
+            event_wr=(NNTI_work_request_t *)event->md.user_ptr;
+            break;
+
+
+        /* these are the events for a PUT target */
+        case PTL_EVENT_PUT_START:
+            log_debug(nnti_debug_level, "got PTL_EVENT_PUT_START  - ");
+            if (event->pt_index == NNTI_REQ_PT_INDEX) {
+                event_wr=wait_wr;
+                log_debug(nnti_debug_level, "the wait work request is a REQUEST BUFFER wr, so event.md.user_ptr is the index of the request buffer.");
+            } else {
+                event_buf=(NNTI_buffer_t *)event->md.user_ptr;
+                ptl_mem_hdl=PTL_MEM_HDL(event_buf);
+                assert(ptl_mem_hdl);
+                event_wr=ptl_mem_hdl->wr_queue.front();
+            }
+            break;
+        case PTL_EVENT_PUT_END:
+            log_debug(nnti_debug_level, "got PTL_EVENT_PUT_END    - ");
+            if (event->pt_index == NNTI_REQ_PT_INDEX) {
+                event_wr=wait_wr;
+                log_debug(nnti_debug_level, "the wait work request is a REQUEST BUFFER wr, so event.md.user_ptr is the index of the request buffer.");
+            } else {
+                event_buf=(NNTI_buffer_t *)event->md.user_ptr;
+                ptl_mem_hdl=PTL_MEM_HDL(event_buf);
+                assert(ptl_mem_hdl);
+                event_wr=ptl_mem_hdl->wr_queue.front();
+            }
+            break;
+
+
+        case PTL_EVENT_GET_START:
+            log_debug(nnti_debug_level, "got PTL_EVENT_GET_START  - GET targets should NOT generate events");
+            break;
+        case PTL_EVENT_GET_END:
+            log_debug(nnti_debug_level, "got PTL_EVENT_GET_END    - GET targets should NOT generate events");
+            break;
+
+
+        default:
+            log_error(nnti_debug_level, "unrecognized event type: %d - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                    event->type, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+//            rc = NNTI_EINVAL;
+
     }
 
-    log_debug(nnti_debug_level, "exit (event_buf==%p)", event_buf);
+//    if ((ptl_wr != NULL) &&
+//        (PTL_MEM_HDL(ptl_wr->reg_buf)->type == REQUEST_BUFFER)) {
+//        /* if the buffer is a request queue, then the wait_wr is the event_wr */
+//        event_wr=wait_wr;
+//        log_debug(nnti_debug_level, "the wait work request is a REQUEST BUFFER wr, so event.md.user_ptr is the index of the request buffer.");
+//    } else if ((event->initiator.nid==transport_global_data.me.nid) && (event->initiator.pid==transport_global_data.me.pid)) {
+//        /* if I am the initiator, then the event user_ptr is a work request pointer */
+//
+//        log_debug(nnti_debug_level, "I am the initiator, so the event user_ptr is a work request pointer");
+//
+//        event_wr=(NNTI_work_request_t *)event->md.user_ptr;
+//        ptl_mem_hdl=PTL_MEM_HDL(PTL_WORK_REQUEST(event_wr)->reg_buf);
+//        assert(ptl_mem_hdl);
+//
+//        if (event_wr == wait_wr) {
+//            log_debug(nnti_debug_level, "the wc matches the wait work request (eq=%d, user_ptr=%p, wait_wr=%p)",
+//                    ptl_mem_hdl->eq_h, (void *)event->md.user_ptr, wait_wr);
+//        } else {
+//            log_debug(nnti_debug_level, "the wc does NOT match the wait buffer (eq=%d, user_ptr=%p, wait_wr=%p)",
+//                    ptl_mem_hdl->eq_h, (void *)event->md.user_ptr, wait_wr);
+//        }
+//    } else {
+//        /* if I am NOT the initiator, then the event user_ptr is a pointer to the target buffer */
+//        event_buf=(NNTI_buffer_t *)event->md.user_ptr;
+//        ptl_mem_hdl=PTL_MEM_HDL(event_buf);
+//        assert(ptl_mem_hdl);
+//
+//        if (event_buf == PTL_WORK_REQUEST(wait_wr)->reg_buf) {
+//            log_debug(nnti_debug_level, "the wc matches the wait buffer (eq=%d, user_ptr=%p, wait_buf=%p)",
+//                    ptl_mem_hdl->eq_h, (void *)event->md.user_ptr, wait_buf);
+//        } else {
+//            log_debug(nnti_debug_level, "the wc does NOT match the wait buffer (eq=%d, user_ptr=%p, wait_buf=%p)",
+//                    ptl_mem_hdl->eq_h, (void *)event->md.user_ptr, wait_buf);
+//        }
+//    }
 
-    return(event_buf);
+    log_debug(nnti_debug_level, "exit (event_wr==%p)", event_wr);
+
+    return(event_wr);
 }
 
 
 static int process_event(
-        const NNTI_buffer_t  *reg_buf,
-        const ptl_event_t    *event)
+        const NNTI_work_request_t *wr,
+        const ptl_event_t         *event)
 {
     int rc=NNTI_OK;
-    portals_memory_handle *ptls_mem_hdl=NULL;
-    portals_work_request  *wr=NULL;
+
+    portals_memory_handle *ptl_mem_hdl=NULL;
+    portals_work_request  *ptl_wr      =NULL;
+
     log_level debug_level = nnti_debug_level;
 
-    ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
-    assert(ptls_mem_hdl);
+    ptl_wr=PTL_WORK_REQUEST(wr);
+    assert(ptl_wr);
+    ptl_mem_hdl=PTL_MEM_HDL(ptl_wr->reg_buf);
+    assert(ptl_mem_hdl);
 
-    if (ptls_mem_hdl->type != REQUEST_BUFFER) {
-        wr = decode_work_request(event);
-    } else {
-        wr=ptls_mem_hdl->wr_queue.front();
+//    if (ptl_mem_hdl->type != REQUEST_BUFFER) {
+//        ptl_wr=decode_work_request(event);
+//    } else {
+//        ptl_wr=ptl_mem_hdl->wr_queue.front();
+//    }
+    if (ptl_mem_hdl->type == REQUEST_BUFFER) {
+        NNTI_work_request_t *tmp_wr=NULL;
+        tmp_wr=ptl_mem_hdl->wr_queue.front();
+        assert(tmp_wr);
+        ptl_wr=PTL_WORK_REQUEST(tmp_wr);
     }
-    assert(wr);
+    assert(ptl_wr);
 
-    wr->last_event=*event;
+    ptl_wr->last_event=*event;
 
-    log_debug(debug_level, "reg_buf=%p; wr->last_op=%d", reg_buf, wr->last_op);
-    switch (ptls_mem_hdl->type) {
+    log_debug(debug_level, "wr=%p; ptl_wr=%p; ptl_wr->last_op=%d", wr, ptl_wr, ptl_wr->last_op);
+    switch (ptl_mem_hdl->type) {
         case SEND_BUFFER:
         case PUT_SRC_BUFFER:
             switch (event->type) {
                 case PTL_EVENT_SEND_START:
                     log_debug(debug_level, "got PTL_EVENT_SEND_START - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.put_initiator.send_start = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.put_initiator.send_start = TRUE;
                     break;
                 case PTL_EVENT_SEND_END:
                     log_debug(debug_level, "got PTL_EVENT_SEND_END   - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.put_initiator.send_end = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.put_initiator.send_end = TRUE;
                     break;
                 case PTL_EVENT_ACK:
                     log_debug(debug_level, "got PTL_EVENT_ACK        - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.put_initiator.ack = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.put_initiator.ack = TRUE;
+                    break;
+                case PTL_EVENT_UNLINK:
+                    log_debug(debug_level, "got PTL_EVENT_UNLINK     - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.put_initiator.unlink = TRUE;
                     break;
                 default:
                     log_error(debug_level, "unrecognized event type: %d - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
@@ -1965,23 +2643,28 @@ static int process_event(
             switch (event->type) {
                 case PTL_EVENT_SEND_START:
                     log_debug(debug_level, "got PTL_EVENT_SEND_START - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.get_initiator.send_start = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.get_initiator.send_start = TRUE;
                     break;
                 case PTL_EVENT_SEND_END:
                     log_debug(debug_level, "got PTL_EVENT_SEND_END   - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.get_initiator.send_end = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.get_initiator.send_end = TRUE;
                     break;
                 case PTL_EVENT_REPLY_START:
                     log_debug(debug_level,"got PTL_EVENT_REPLY_START - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.get_initiator.reply_start = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.get_initiator.reply_start = TRUE;
                     break;
                 case PTL_EVENT_REPLY_END:
                     log_debug(debug_level,"got PTL_EVENT_REPLY_END   - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.get_initiator.reply_end = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.get_initiator.reply_end = TRUE;
+                    break;
+                case PTL_EVENT_UNLINK:
+                    log_debug(debug_level, "got PTL_EVENT_UNLINK     - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.get_initiator.unlink = TRUE;
                     break;
                 default:
                     log_error(debug_level, "unrecognized event type: %d - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
@@ -1995,14 +2678,14 @@ static int process_event(
             switch (event->type) {
                 case PTL_EVENT_PUT_START:
                     log_debug(debug_level, "got PTL_EVENT_PUT_START  - new request - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
 
                     break;
                 case PTL_EVENT_PUT_END:
                     log_debug(debug_level, "got PTL_EVENT_PUT_END    - new request - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.put_target.put_start = TRUE;
-                    wr->op_state.put_target.put_end = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.put_target.put_start = TRUE;
+                    ptl_wr->op_state.put_target.put_end = TRUE;
                     break;
                 default:
                     log_error(debug_level, "unrecognized event type: %d - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
@@ -2015,13 +2698,13 @@ static int process_event(
             switch (event->type) {
                 case PTL_EVENT_PUT_START:
                     log_debug(debug_level, "got PTL_EVENT_PUT_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.put_target.put_start = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.put_target.put_start = TRUE;
                     break;
                 case PTL_EVENT_PUT_END:
                     log_debug(debug_level, "got PTL_EVENT_PUT_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.put_target.put_end = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.put_target.put_end = TRUE;
                     break;
                 default:
                     log_error(debug_level, "unrecognized event type: %d - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
@@ -2034,13 +2717,13 @@ static int process_event(
             switch (event->type) {
                 case PTL_EVENT_GET_START:
                     log_debug(debug_level, "got PTL_EVENT_GET_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.get_target.get_start = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.get_target.get_start = TRUE;
                     break;
                 case PTL_EVENT_GET_END:
                     log_debug(debug_level, "got PTL_EVENT_GET_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.get_target.get_end = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.get_target.get_end = TRUE;
                     break;
                 default:
                     log_error(debug_level, "unrecognized event type: %d - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
@@ -2053,23 +2736,23 @@ static int process_event(
             switch (event->type) {
                 case PTL_EVENT_PUT_START:
                     log_debug(debug_level, "got PTL_EVENT_PUT_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.put_target.put_start = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.put_target.put_start = TRUE;
                     break;
                 case PTL_EVENT_PUT_END:
                     log_debug(debug_level, "got PTL_EVENT_PUT_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.put_target.put_end = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.put_target.put_end = TRUE;
                     break;
                 case PTL_EVENT_GET_START:
                     log_debug(debug_level, "got PTL_EVENT_GET_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.get_target.get_start = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.get_target.get_start = TRUE;
                     break;
                 case PTL_EVENT_GET_END:
                     log_debug(debug_level, "got PTL_EVENT_GET_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                    wr->op_state.get_target.get_end = TRUE;
+                            ptl_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    ptl_wr->op_state.get_target.get_end = TRUE;
                     break;
                 default:
                     log_error(debug_level, "unrecognized event type: %d - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
@@ -2093,85 +2776,89 @@ cleanup:
     return (rc);
 }
 
-static NNTI_result_t post_recv_work_request(
-        NNTI_buffer_t *reg_buf)
-{
-    portals_work_request *wr=NULL;
-    portals_memory_handle *ptls_mem_hdl=NULL;
+//static NNTI_result_t post_recv_work_request(
+//        NNTI_buffer_t *reg_buf)
+//{
+//    portals_work_request *ptl_wr=NULL;
+//    portals_memory_handle *ptl_mem_hdl=NULL;
+//
+//    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
+//
+//    ptl_mem_hdl=PTL_MEM_HDL(reg_buf);
+//    assert(ptl_mem_hdl);
+//
+//    ptl_wr=(portals_work_request *)calloc(1, sizeof(portals_work_request));
+//    assert(ptl_wr);
+//    ptl_wr->reg_buf = reg_buf;
+//
+//    memset(&ptl_wr->op_state, 0, sizeof(ptl_op_state_t));
+//
+//    ptl_mem_hdl->wr_queue.push_back(ptl_wr);
+//
+//    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
+//
+//    return(NNTI_OK);
+//}
 
-    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
+//static NNTI_result_t repost_recv_work_request(
+//        NNTI_work_request_t *wr)
+//{
+//    portals_work_request  *ptl_wr=NULL;
+//    portals_memory_handle *ptl_mem_hdl=NULL;
+//
+//    log_debug(nnti_debug_level, "enter (wr=%p)", wr);
+//
+//    ptl_wr=PTL_WORK_REQUEST(wr);
+//    assert(ptl_wr);
+//    ptl_mem_hdl=PTL_MEM_HDL(ptl_wr->reg_buf);
+//    assert(ptl_mem_hdl);
+//
+//    memset(&ptl_wr->op_state, 0, sizeof(ptl_op_state_t));
+//
+//    ptl_mem_hdl->wr_queue.push_back(ptl_wr);
+//
+//    log_debug(nnti_debug_level, "exit (wr=%p)", wr);
+//
+//    return(NNTI_OK);
+//}
 
-    ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
-    assert(ptls_mem_hdl);
-
-    wr=(portals_work_request *)calloc(1, sizeof(portals_work_request));
-    assert(wr);
-    wr->reg_buf = reg_buf;
-
-    memset(&wr->op_state, 0, sizeof(ptl_op_state_t));
-
-    ptls_mem_hdl->wr_queue.push_back(wr);
-
-    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
-
-    return(NNTI_OK);
-}
-
-static NNTI_result_t repost_recv_work_request(
-        NNTI_buffer_t        *reg_buf,
-        portals_work_request *wr)
-{
-    portals_memory_handle *ptls_mem_hdl=NULL;
-
-    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
-
-    ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
-    assert(ptls_mem_hdl);
-
-    memset(&wr->op_state, 0, sizeof(ptl_op_state_t));
-
-    ptls_mem_hdl->wr_queue.push_back(wr);
-
-    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
-
-    return(NNTI_OK);
-}
-
-static int is_wr_complete(
+static int8_t is_wr_complete(
         portals_work_request *wr)
 {
     int rc=FALSE;
-    portals_memory_handle *ptls_mem_hdl=NULL;
+    portals_memory_handle *ptl_mem_hdl=NULL;
 //    log_level debug_level = nnti_debug_level;
 
     log_debug(nnti_debug_level, "enter (wr=%p)", wr);
 
-    ptls_mem_hdl=(portals_memory_handle *)wr->reg_buf->transport_private;
-    assert(ptls_mem_hdl);
+    ptl_mem_hdl=PTL_MEM_HDL(wr->reg_buf);
+    assert(ptl_mem_hdl);
 
-    switch (ptls_mem_hdl->type) {
+    switch (ptl_mem_hdl->type) {
         case SEND_BUFFER:
         case PUT_SRC_BUFFER:
             if ((wr->op_state.put_initiator.send_start==TRUE) &&
                 (wr->op_state.put_initiator.send_end==TRUE)   &&
-                (wr->op_state.put_initiator.ack==TRUE))       {
+                (wr->op_state.put_initiator.ack==TRUE)        &&
+                (wr->op_state.put_initiator.unlink==TRUE))    {
                 wr->last_op=PTL_OP_PUT_INITIATOR;
                 rc = TRUE;
             }
-            break;
         case GET_DST_BUFFER:
             /* cray portals */
             if ((wr->op_state.get_initiator.send_start==TRUE)  &&
                 (wr->op_state.get_initiator.send_end==TRUE)    &&
                 (wr->op_state.get_initiator.reply_start==TRUE) &&
-                (wr->op_state.get_initiator.reply_end==TRUE))  {
+                (wr->op_state.get_initiator.reply_end==TRUE)   &&
+                (wr->op_state.get_initiator.unlink==TRUE))  {
                 wr->last_op=PTL_OP_GET_INITIATOR;
                 rc = TRUE;
                 break;
             }
             /* schutt portals */
             if ((wr->op_state.get_initiator.reply_start==TRUE) &&
-                (wr->op_state.get_initiator.reply_end==TRUE))  {
+                (wr->op_state.get_initiator.reply_end==TRUE)   &&
+                (wr->op_state.get_initiator.unlink==TRUE))  {
                 wr->last_op=PTL_OP_GET_INITIATOR;
                 rc = TRUE;
                 break;
@@ -2227,96 +2914,18 @@ static int is_wr_complete(
     return(rc);
 }
 
-static portals_work_request *first_incomplete_wr(
-        portals_memory_handle *ptls_mem_hdl)
-{
-    portals_work_request  *wr=NULL;
-
-    log_debug(nnti_debug_level, "enter");
-
-    assert(ptls_mem_hdl);
-
-    if (ptls_mem_hdl->wr_queue.empty()) {
-        log_debug(nnti_debug_level, "work request queue is empty");
-    } else {
-        wr_queue_iter_t i;
-        for (i=ptls_mem_hdl->wr_queue.begin(); i != ptls_mem_hdl->wr_queue.end(); i++) {
-            wr=*i;
-            assert(wr);
-            if (is_wr_complete(wr) == FALSE) {
-                break;
-            }
-        }
-    }
-
-    log_debug(nnti_debug_level, "exit (wr=%p)", wr);
-    return(wr);
-}
-
-static int8_t is_wr_queue_empty(
-        const NNTI_buffer_t *reg_buf)
-{
-    int8_t rc=FALSE;
-    portals_memory_handle *ptls_mem_hdl=NULL;
-
-    log_debug(nnti_debug_level, "enter");
-
-    ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
-    assert(ptls_mem_hdl);
-
-    if (ptls_mem_hdl->wr_queue.empty()) {
-        rc=TRUE;
-    }
-
-    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
-    return(rc);
-}
-
-
-static int is_buf_op_complete(
-        const NNTI_buffer_t *reg_buf)
-{
-    int8_t rc=FALSE;
-    portals_memory_handle *ptls_mem_hdl=NULL;
-    portals_work_request  *wr=NULL;
-//    log_level debug_level = nnti_debug_level;
-
-    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
-
-    ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
-    assert(ptls_mem_hdl);
-
-    if (is_wr_queue_empty(reg_buf) == TRUE) {
-        log_debug(nnti_debug_level, "work request queue is empty - return FALSE");
-        rc=FALSE;
-    } else {
-        wr=ptls_mem_hdl->wr_queue.front();
-        assert(wr);
-
-        rc = is_wr_complete(wr);
-    }
-
-    if (rc==TRUE) {
-        log_debug(nnti_debug_level, "op is complete");
-    }
-    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
-
-    return(rc);
-}
-
-static int8_t is_any_buf_op_complete(
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
-        uint32_t             *which)
+static int8_t is_any_wr_complete(
+        portals_work_request **wr_list,
+        const uint32_t         wr_count,
+        uint32_t              *which)
 {
     int8_t rc=FALSE;
 
     log_debug(nnti_debug_level, "enter");
 
-    for (uint32_t i=0;i<buf_count;i++) {
-        if ((buf_list[i] != NULL) &&
-            (is_wr_queue_empty(buf_list[i]) == FALSE) &&
-            (is_buf_op_complete(buf_list[i]) == TRUE)) {
+    for (uint32_t i=0;i<wr_count;i++) {
+        if ((wr_list[i] != NULL) &&
+            (is_wr_complete(wr_list[i]) == TRUE)) {
 
             *which=i;
             rc = TRUE;
@@ -2329,18 +2938,17 @@ static int8_t is_any_buf_op_complete(
     return(rc);
 }
 
-static int8_t is_all_buf_ops_complete(
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count)
+static int8_t is_all_wr_complete(
+        portals_work_request **wr_list,
+        const uint32_t         wr_count)
 {
     int8_t rc=TRUE;
 
     log_debug(nnti_debug_level, "enter");
 
-    for (uint32_t i=0;i<buf_count;i++) {
-        if ((buf_list[i] != NULL) &&
-            (is_wr_queue_empty(buf_list[i]) == FALSE) &&
-            (is_buf_op_complete(buf_list[i]) == FALSE)) {
+    for (uint32_t i=0;i<wr_count;i++) {
+        if ((wr_list[i] != NULL) &&
+            (is_wr_complete(wr_list[i]) == FALSE)) {
 
             rc = FALSE;
             break;
@@ -2352,40 +2960,225 @@ static int8_t is_all_buf_ops_complete(
     return(rc);
 }
 
-static void create_status(
-        const NNTI_buffer_t  *reg_buf,
-        const NNTI_buf_ops_t  remote_op,
-        int                   nnti_rc,
-        NNTI_status_t        *status)
+static int8_t is_wr_complete(
+        NNTI_work_request_t *wr)
 {
-    portals_memory_handle *ptls_mem_hdl=NULL;
-    portals_work_request  *wr        =NULL;
+    portals_work_request *ptl_wr=NULL;
+
+    log_debug(nnti_debug_level, "enter (wr=%p)", wr);
+
+    ptl_wr=PTL_WORK_REQUEST(wr);
+    assert(ptl_wr);
+
+    return(is_wr_complete(ptl_wr));
+}
+
+static int8_t is_any_wr_complete(
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
+        uint32_t             *which)
+{
+    int8_t rc=FALSE;
+
+    log_debug(nnti_debug_level, "enter");
+
+    for (uint32_t i=0;i<wr_count;i++) {
+        if ((wr_list[i] != NULL) &&
+            (is_wr_complete(wr_list[i]) == TRUE)) {
+
+            *which=i;
+            rc = TRUE;
+            break;
+        }
+    }
+
+    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
+
+    return(rc);
+}
+
+static int8_t is_all_wr_complete(
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count)
+{
+    int8_t rc=TRUE;
+
+    log_debug(nnti_debug_level, "enter");
+
+    for (uint32_t i=0;i<wr_count;i++) {
+        if ((wr_list[i] != NULL) &&
+            (is_wr_complete(wr_list[i]) == FALSE)) {
+
+            rc = FALSE;
+            break;
+        }
+    }
+
+    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
+
+    return(rc);
+}
+
+//static portals_work_request *first_incomplete_wr(
+//        portals_memory_handle *ptl_mem_hdl)
+//{
+//    NNTI_work_request_t   *wr    =NULL;
+//    portals_work_request  *ptl_wr=NULL;
+//
+//    log_debug(nnti_debug_level, "enter");
+//
+//    assert(ptl_mem_hdl);
+//
+//    if (ptl_mem_hdl->wr_queue.empty()) {
+//        log_debug(nnti_debug_level, "work request queue is empty");
+//    } else {
+//        wr_queue_iter_t i;
+//        for (i=ptl_mem_hdl->wr_queue.begin(); i != ptl_mem_hdl->wr_queue.end(); i++) {
+//            wr=*i;
+//            assert(wr);
+//            if (is_wr_complete(wr) == FALSE) {
+//                break;
+//            }
+//        }
+//    }
+//
+//    log_debug(nnti_debug_level, "exit (wr=%p)", wr);
+//    return(PTL_WORK_REQUEST(wr));
+//}
+
+//static int8_t is_wr_queue_empty(
+//        const NNTI_buffer_t *reg_buf)
+//{
+//    int8_t rc=FALSE;
+//    portals_memory_handle *ptl_mem_hdl=NULL;
+//
+//    log_debug(nnti_debug_level, "enter");
+//
+//    ptl_mem_hdl=PTL_MEM_HDL(reg_buf);
+//    assert(ptl_mem_hdl);
+//
+//    if (ptl_mem_hdl->wr_queue.empty()) {
+//        rc=TRUE;
+//    }
+//
+//    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
+//    return(rc);
+//}
+//
+//
+//static int8_t is_buf_op_complete(
+//        const NNTI_buffer_t *reg_buf)
+//{
+//    int8_t rc=FALSE;
+//    portals_memory_handle *ptl_mem_hdl=NULL;
+//    NNTI_work_request_t   *wr    =NULL;
+//    portals_work_request  *ptl_wr=NULL;
+////    log_level debug_level = nnti_debug_level;
+//
+//    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
+//
+//    ptl_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
+//    assert(ptl_mem_hdl);
+//
+//    if (is_wr_queue_empty(reg_buf) == TRUE) {
+//        log_debug(nnti_debug_level, "work request queue is empty - return FALSE");
+//        rc=FALSE;
+//    } else {
+//        wr=ptl_mem_hdl->wr_queue.front();
+//        assert(wr);
+//
+//        rc = is_wr_complete(wr);
+//    }
+//
+//    if (rc==TRUE) {
+//        log_debug(nnti_debug_level, "op is complete");
+//    }
+//    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
+//
+//    return(rc);
+//}
+//
+//static int8_t is_any_buf_op_complete(
+//        const NNTI_buffer_t **buf_list,
+//        const uint32_t        buf_count,
+//        uint32_t             *which)
+//{
+//    int8_t rc=FALSE;
+//
+//    log_debug(nnti_debug_level, "enter");
+//
+//    for (uint32_t i=0;i<buf_count;i++) {
+//        if ((buf_list[i] != NULL) &&
+//            (is_wr_queue_empty(buf_list[i]) == FALSE) &&
+//            (is_buf_op_complete(buf_list[i]) == TRUE)) {
+//
+//            *which=i;
+//            rc = TRUE;
+//            break;
+//        }
+//    }
+//
+//    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
+//
+//    return(rc);
+//}
+//
+//static int8_t is_all_buf_ops_complete(
+//        const NNTI_buffer_t **buf_list,
+//        const uint32_t        buf_count)
+//{
+//    int8_t rc=TRUE;
+//
+//    log_debug(nnti_debug_level, "enter");
+//
+//    for (uint32_t i=0;i<buf_count;i++) {
+//        if ((buf_list[i] != NULL) &&
+//            (is_wr_queue_empty(buf_list[i]) == FALSE) &&
+//            (is_buf_op_complete(buf_list[i]) == FALSE)) {
+//
+//            rc = FALSE;
+//            break;
+//        }
+//    }
+//
+//    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
+//
+//    return(rc);
+//}
+
+static void create_status(
+        const NNTI_work_request_t  *wr,
+        int                         nnti_rc,
+        NNTI_status_t              *status)
+{
+    portals_memory_handle *ptl_mem_hdl=NULL;
+    portals_work_request  *ptl_wr      =NULL;
 
     memset(status, 0, sizeof(NNTI_status_t));
-    status->op     = remote_op;
+    status->op     = wr->ops;
     status->result = (NNTI_result_t)nnti_rc;
     if (nnti_rc==NNTI_OK) {
-        ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
-        assert(ptls_mem_hdl);
-        wr=ptls_mem_hdl->wr_queue.front();
-        assert(wr);
+        ptl_wr=(portals_work_request *)wr->transport_private;
+        assert(ptl_wr);
+        ptl_mem_hdl=(portals_memory_handle *)ptl_wr->reg_buf->transport_private;
+        assert(ptl_mem_hdl);
 
-        status->start  = (uint64_t)wr->last_event.md.start;
-        status->offset = wr->last_event.offset;
-        status->length = wr->last_event.mlength;
+        status->start  = (uint64_t)ptl_wr->last_event.md.start;
+        status->offset = ptl_wr->last_event.offset;
+        status->length = ptl_wr->last_event.mlength;
         status->result = (NNTI_result_t)nnti_rc;
-        switch (wr->last_op) {
+        switch (ptl_wr->last_op) {
             case PTL_OP_PUT_INITIATOR:
             case PTL_OP_GET_TARGET:
             case PTL_OP_SEND:
                 create_peer(&status->src, transport_global_data.me.nid, transport_global_data.me.pid); // allocates url
-                create_peer(&status->dest, wr->last_event.initiator.nid, wr->last_event.initiator.pid); // allocates url
+                create_peer(&status->dest, ptl_wr->last_event.initiator.nid, ptl_wr->last_event.initiator.pid); // allocates url
                 break;
             case PTL_OP_GET_INITIATOR:
             case PTL_OP_PUT_TARGET:
             case PTL_OP_NEW_REQUEST:
             case PTL_OP_RECEIVE:
-                create_peer(&status->src, wr->last_event.initiator.nid, wr->last_event.initiator.pid); // allocates url
+                create_peer(&status->src, ptl_wr->last_event.initiator.nid, ptl_wr->last_event.initiator.pid); // allocates url
                 create_peer(&status->dest, transport_global_data.me.nid, transport_global_data.me.pid); // allocates url
                 break;
         }

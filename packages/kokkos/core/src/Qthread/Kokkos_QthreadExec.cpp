@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
 #if defined( KOKKOS_HAVE_QTHREAD )
 
@@ -324,10 +324,17 @@ void QthreadExec::resize_worker_scratch( const int reduce_size , const int share
     s_worker_shared_begin = exec_all_reduce_alloc + shepherd_scan_alloc ;
     s_worker_shared_end   = shepherd_shared_end ;
 
+    // Need to query which shepherd this main 'process' is running...
+
     // Have each worker resize its memory for proper first-touch
     for ( int jshep = 0 ; jshep < s_number_shepherds ; ++jshep ) {
     for ( int i = jshep ? 0 : 1 ; i < s_number_workers_per_shepherd ; ++i ) {
+
+      // Unit tests hang with this call:
+      //
       // qthread_fork_to_local_priority( driver_resize_workers , NULL , NULL , jshep );
+      //
+
       qthread_fork_to( driver_resize_worker_scratch , NULL , NULL , jshep );
     }}
 
@@ -357,9 +364,16 @@ void QthreadExec::exec_all( Qthread & , QthreadExecFunctionPointer func , const 
   s_active_function     = func ;
   s_active_function_arg = arg ;
 
+  // Need to query which shepherd this main 'process' is running...
+
   for ( int jshep = 0 , iwork = 0 ; jshep < s_number_shepherds ; ++jshep ) {
   for ( int i = jshep ? 0 : 1 ; i < s_number_workers_per_shepherd ; ++i , ++iwork ) {
+
+    // Unit tests hang with this call:
+    //
     // qthread_fork_to_local_priority( driver_exec_all , NULL , NULL , jshep );
+    //
+
     qthread_fork_to( driver_exec_all , NULL , NULL , jshep );
   }}
 

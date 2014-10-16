@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -53,22 +53,28 @@
 
 
 namespace Tpetra {
-  
-  //! \brief A pure virtual interface for row-partitioned graphs.
-  /*!
-     This class is templated on \c LocalOrdinal, \c GlobalOrdinal and \c Node.
-     The \c LocalOrdinal type, if omitted, defaults to \c int. 
-     The \c GlobalOrdinal type defaults to the \c LocalOrdinal type.
-     The \c Node type defaults to the default node in Kokkos.
-   */
-  template <class LocalOrdinal = int, 
-	    class GlobalOrdinal = LocalOrdinal, 
-	    class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class RowGraph : virtual public Teuchos::Describable, 
-		   public Packable<GlobalOrdinal, LocalOrdinal> {
-  public: 
+
+  /// \class RowGraph
+  /// \brief An abstract interface for graphs accessed by rows.
+  ///
+  /// This class is to CrsGraph, what RowMatrix is to CrsMatrix.
+  /// CrsGraph is an implementation of RowGraph.
+  ///
+  /// \tparam LocalOrdinal The type of local indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam GlobalOrdinal The type of global indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam Node The Kokkos Node type.  See the documentation of Map
+  ///   for requirements.
+  template <class LocalOrdinal = Map<>::local_ordinal_type,
+            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
+            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  class RowGraph :
+    virtual public Teuchos::Describable,
+    public Packable<GlobalOrdinal, LocalOrdinal> {
+  public:
     //! \name Typedefs
-    //@{ 
+    //@{
     //! The type of local indices in the graph.
     typedef LocalOrdinal  local_ordinal_type;
     //! The type of global indices in the graph.
@@ -81,7 +87,7 @@ namespace Tpetra {
     virtual ~RowGraph() {};
 
     //! @name Graph query methods
-    //@{ 
+    //@{
 
     //! The communicator over which this graph is distributed.
     virtual Teuchos::RCP<const Teuchos::Comm<int> >
@@ -107,11 +113,11 @@ namespace Tpetra {
     getRangeMap () const = 0;
 
     //! This graph's Import object.
-    virtual Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > 
+    virtual Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >
     getImporter () const = 0;
 
     //! This graph's Export object.
-    virtual Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > 
+    virtual Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> >
     getExporter () const = 0;
 
     //! Returns the number of global rows in the graph.
@@ -126,7 +132,7 @@ namespace Tpetra {
     //! Returns the number of columns connected to the locally owned rows of this graph.
     virtual size_t getNodeNumCols() const = 0;
 
-    //! Returns the index base for global indices for this graph. 
+    //! Returns the index base for global indices for this graph.
     virtual GlobalOrdinal getIndexBase() const = 0;
 
     //! Returns the global number of entries in the graph.
@@ -143,10 +149,10 @@ namespace Tpetra {
     /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
+    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
     virtual global_size_t getGlobalNumDiags() const = 0;
 
-    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
+    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
     virtual size_t getNodeNumDiags() const = 0;
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
@@ -155,7 +161,7 @@ namespace Tpetra {
     //! \brief Returns the maximum number of entries across all rows/columns on this node.
     virtual size_t getNodeMaxNumRowEntries() const = 0;
 
-    //! \brief Indicates whether the graph has a well-defined column map. 
+    //! \brief Indicates whether the graph has a well-defined column map.
     virtual bool hasColMap() const = 0;
 
     //! \brief Indicates whether the graph is lower triangular.
@@ -175,8 +181,8 @@ namespace Tpetra {
 
     //@}
     //! @name Extraction Methods
-    //@{ 
-          
+    //@{
+
     //! Extract a list of entries in a specified global row of the graph. Put into pre-allocated storage.
     /*!
       \param LocalRow - (In) Global row number for which indices are desired.
@@ -184,13 +190,13 @@ namespace Tpetra {
       \param NumIndices - (Out) Number of indices.
 
       Note: A std::runtime_error exception is thrown if \c Indices is not large enough to hold the column indices associated
-      with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices is unchanged and \c NumIndices is 
+      with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices is unchanged and \c NumIndices is
       returned as Teuchos::OrdinalTraits<size_t>::invalid().
     */
     virtual void
     getGlobalRowCopy (GlobalOrdinal GlobalRow,
-		      const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-		      size_t &NumIndices) const = 0;
+                      const Teuchos::ArrayView<GlobalOrdinal> &Indices,
+                      size_t &NumIndices) const = 0;
 
     //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
     /*!
@@ -199,25 +205,25 @@ namespace Tpetra {
       \param NumIndices - (Out) Number of indices.
 
       Note: A std::runtime_error exception is thrown if \c Indices is not large enough to hold the column indices associated
-      with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices is unchanged and \c NumIndices is 
+      with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices is unchanged and \c NumIndices is
       returned as Teuchos::OrdinalTraits<size_t>::invalid().
     */
     virtual void
-    getLocalRowCopy (LocalOrdinal LocalRow, 
-		     const Teuchos::ArrayView<LocalOrdinal> &Indices,
-		     size_t &NumIndices) const = 0;
+    getLocalRowCopy (LocalOrdinal LocalRow,
+                     const Teuchos::ArrayView<LocalOrdinal> &Indices,
+                     size_t &NumIndices) const = 0;
 
     //@}
     //! \name Implementation of Packable interface
-    //@{ 
+    //@{
 
     //! Pack this object's data for Import or Export.
     virtual void
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-	  Teuchos::Array<GlobalOrdinal>& exports,
-	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-	  size_t& constantNumPackets,
-	  Distributor& distor) const;
+          Teuchos::Array<GlobalOrdinal>& exports,
+          const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+          size_t& constantNumPackets,
+          Distributor& distor) const;
     //@}
   }; // class RowGraph
 } // namespace Tpetra

@@ -29,7 +29,6 @@
 # @HEADER
 
 # Include the package macros
-INCLUDE(TribitsPackageMacros)
 
 # Set the package name
 TRIBITS_PACKAGE(PyTrilinos DISABLE_STRONG_WARNINGS)
@@ -45,7 +44,7 @@ SET(PyTrilinos_VERSION 4.10d)
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
 # of modules is similar to the packages, except it contains the names
 # of python modules that correspond to nested namespaces, such as
-# NOX.__init__ or NOX.NestedEpetra.Interface.
+# NOX.__init__ or NOX.Epetra.Interface.
 SET(PyTrilinos_PACKAGES "")
 SET(PyTrilinos_MODULES  "")
 
@@ -64,6 +63,11 @@ IF(PyTrilinos_ENABLE_Triutils)
   APPEND_SET(PyTrilinos_MODULES  TriUtils)
 ENDIF(PyTrilinos_ENABLE_Triutils)
 
+IF(PyTrilinos_ENABLE_Tpetra)
+  APPEND_SET(PyTrilinos_PACKAGES Tpetra)
+  APPEND_SET(PyTrilinos_MODULES  Tpetra)
+ENDIF(PyTrilinos_ENABLE_Tpetra)
+
 IF(PyTrilinos_ENABLE_EpetraExt)
   APPEND_SET(PyTrilinos_PACKAGES EpetraExt)
   APPEND_SET(PyTrilinos_MODULES  EpetraExt)
@@ -72,7 +76,7 @@ ENDIF(PyTrilinos_ENABLE_EpetraExt)
 IF(PyTrilinos_ENABLE_Isorropia)
   APPEND_SET(PyTrilinos_PACKAGES Isorropia)
   APPEND_SET(PyTrilinos_MODULES  Isorropia.__init__    )
-  Append_SET(PyTrilinos_MODULES  Isorropia.NestedEpetra)
+  Append_SET(PyTrilinos_MODULES  Isorropia.Epetra)
 ENDIF(PyTrilinos_ENABLE_Isorropia)
 
 IF(PyTrilinos_ENABLE_Pliris)
@@ -122,8 +126,8 @@ IF(PyTrilinos_ENABLE_NOX)
   APPEND_SET(PyTrilinos_MODULES  NOX.StatusTest)
   APPEND_SET(PyTrilinos_MODULES  NOX.Solver    )
   IF(NOX_ENABLE_Epetra)
-    APPEND_SET(PyTrilinos_MODULES NOX.NestedEpetra.__init__ )
-    APPEND_SET(PyTrilinos_MODULES NOX.NestedEpetra.Interface)
+    APPEND_SET(PyTrilinos_MODULES NOX.Epetra.__init__ )
+    APPEND_SET(PyTrilinos_MODULES NOX.Epetra.Interface)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_NOX)
 
@@ -157,8 +161,8 @@ IF(NOX_ENABLE_LOCA)
   APPEND_SET(PyTrilinos_MODULES  LOCA.TurningPoint.MinimallyAugmented)
   APPEND_SET(PyTrilinos_MODULES  LOCA.TurningPoint.MooreSpence       )
   IF(NOX_ENABLE_Epetra)
-    APPEND_SET(PyTrilinos_MODULES  LOCA.NestedEpetra.__init__ )
-    APPEND_SET(PyTrilinos_MODULES  LOCA.NestedEpetra.Interface)
+    APPEND_SET(PyTrilinos_MODULES  LOCA.Epetra.__init__ )
+    APPEND_SET(PyTrilinos_MODULES  LOCA.Epetra.Interface)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(NOX_ENABLE_LOCA)
 
@@ -185,15 +189,21 @@ IF(${SWIG_VERSION} VERSION_LESS ${SWIG_VERSION_FLOOR})
     " is less than minimum version " ${SWIG_VERSION_FLOOR}
     )
 ENDIF()
-IF(${SWIG_VERSION} VERSION_GREATER ${SWIG_VERSION_CEILING})
-  MESSAGE(FATAL_ERROR
-    "SWIG version " ${SWIG_VERSION}
-    " is greater than maximum version " ${SWIG_VERSION_CEILING}
-    )
-ENDIF()
+# IF(${SWIG_VERSION} VERSION_GREATER ${SWIG_VERSION_CEILING})
+#   MESSAGE(FATAL_ERROR
+#     "SWIG version " ${SWIG_VERSION}
+#     " is greater than maximum version " ${SWIG_VERSION_CEILING}
+#     )
+# ENDIF()
 # ${SWIG_USE_FILE} is hard-coded to be the installed UseSWIG.cmake
 # file.  We want to include the local, modified version.
 INCLUDE(UseSWIG)
+
+# Python module mpi4py is optional, and only of interest if MPI is
+# enabled
+IF(TPL_ENABLE_MPI)
+  FIND_PACKAGE(Mpi4Py)
+ENDIF(TPL_ENABLE_MPI)
 
 # Print the enabled PyTrilinos packages
 MESSAGE(STATUS "Enabled PyTrilinos modules:")
@@ -218,6 +228,9 @@ SET(PyTrilinos_INSTALL_PREFIX ${PyTrilinos_DEFAULT_INSTALL_PREFIX}
 
 # Add the util directory
 ADD_SUBDIRECTORY(util)
+
+# Add the doc directory, which builds the python documentation strings
+ADD_SUBDIRECTORY(doc)
 
 # Add the src directory, which builds the pytrilinos library,
 # generates the wrapper code, builds the PyTrilinos python package and

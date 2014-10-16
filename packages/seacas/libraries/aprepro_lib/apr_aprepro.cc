@@ -1,9 +1,43 @@
+// Copyright (c) 2014, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <fstream>
 #include <cstring>
 #include <vector>
 #include <sstream>
 #include <climits>
 #include <iostream>
+#include <iomanip>
 #include <ctime>
 
 #include "aprepro.h"
@@ -15,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.12 (2014/07/08)";
+  const char* version_string = "4.20 (2014/09/24)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -33,8 +67,9 @@ namespace SEAMS {
   Aprepro::Aprepro()
     : lexer(NULL), sym_table(HASHSIZE),
       stringInteractive(false), stringScanner(NULL),
-      errorStream(&std::cerr), warningStream(&std::cerr), infoStream(&std::cerr),
-      stateImmutable(false), doLoopSubstitution(true)
+      errorStream(&std::cerr), warningStream(&std::cerr), infoStream(&std::cout),
+      stateImmutable(false), doLoopSubstitution(true), doIncludeSubstitution(true),
+      isCollectingLoop(false)
   {
     ap_file_list.push(file_rec());
     init_table("#");
@@ -75,13 +110,17 @@ namespace SEAMS {
   {
     ap_file_list.top().name = in_name;
 
-    lexer = new Scanner(*this, &in, &parsingResults);
-
     if (!ap_options.include_file.empty()) {
-      lexer->add_input_file(ap_options.include_file);
+      file_rec include_file(ap_options.include_file.c_str(), 0, false, 0);
+      ap_file_list.push(include_file);
+      // File included on command line will be processed as immutable and no-echo
+      // Will revert to global settings at end of file.
       stateImmutable = true;
       echo = false;
     }
+
+    Scanner *scanner = new Scanner(*this, &in, &parsingResults);
+    this->lexer = scanner;
 
     Parser parser(*this);
     parser.set_debug_level(ap_options.trace_parsing);
@@ -101,24 +140,35 @@ namespace SEAMS {
     return parse_stream(iss, sname);
   }
 
+  bool Aprepro::parse_strings(const std::vector<std::string> &input, const std::string& sname)
+  {
+    std::stringstream iss;
+    for (size_t i=0; i < input.size(); i++) {
+      iss << input[i] << '\n';
+    }
+    return parse_stream(iss, sname);
+  }
+
   bool Aprepro::parse_string_interactive(const std::string &input)
   {
     stringInteractive = true;
 
-    if(!stringScanner)
-      stringScanner = new Scanner(*this, &stringInput, &parsingResults);
-
-    if (lexer) {
-      delete lexer;
-    }
-    
-    lexer = stringScanner;
+    if(ap_file_list.size() == 1)
+      ap_file_list.top().name == "interactive_input";
 
     if (!ap_options.include_file.empty()) {
-      lexer->add_input_file(ap_options.include_file);
+      file_rec include_file(ap_options.include_file.c_str(), 0, false, 0);
+      ap_file_list.push(include_file);
+      // File included on command line will be processed as immutable and no-echo
+      // Will revert to global settings at end of file.
       stateImmutable = true;
       echo = false;
     }
+
+    if(!stringScanner)
+      stringScanner = new Scanner(*this, &stringInput, &parsingResults);
+
+    this->lexer = stringScanner;
 
     stringInput.str(input);
     stringInput.clear();
@@ -223,9 +273,7 @@ namespace SEAMS {
 
     /* If pointer still null, print error message */
     if (pointer == NULL || pointer->bad() || !pointer->good()) {
-      char tmpstr[128];
-      sprintf(tmpstr, "Aprepro: ERROR:  Can't open '%s'",file.c_str()); 
-      perror(tmpstr);
+      error("Can't open " + file, false);
       exit(EXIT_FAILURE);
     }
 
@@ -298,11 +346,7 @@ namespace SEAMS {
       symrec *ptr = getsym(sym_name.c_str());
       if (ptr != NULL) {
 	if (ptr->type != parser_type) {
-	  char tmpstr[128];
-	  sprintf(tmpstr,
-		  "Aprepro: ERROR:  Overloaded function '%s' does not return same type.",
-		  sym_name.c_str()); 
-	  perror(tmpstr);
+    error("Overloaded function " + sym_name + "does not return same type", false);
 	  exit(EXIT_FAILURE);
 	}
 	// Function with this name already exists; return that
@@ -372,6 +416,9 @@ namespace SEAMS {
 	ap_options.include_file = file_or_path;
       }
     }
+    else if (option == "--keep_history" || option == "-k") {
+      ap_options.keep_history = true;
+    }
     else if (option == "--help" || option == "-h") {
       std::cerr << "\nAPREPRO PREPROCESSOR OPTIONS:\n"
 		<< "          --debug or -d: Dump all variables, debug loops/if/endif\n"
@@ -386,7 +433,8 @@ namespace SEAMS {
 		<< "           --help or -h: Print this list                         \n"
 		<< "        --message or -M: Print INFO messages                     \n"
 		<< "      --nowarning or -W: Do not print WARN messages              \n"
-		<< "      --copyright or -C: Print copyright message                 \n\n"
+    << "      --copyright or -C: Print copyright message                 \n"
+    << "   --keep_history or -k: Keep a history of aprepro substitutions.\n\n"
 	        << "\tUnits Systems: si, cgs, cgs-ev, shock, swap, ft-lbf-s, ft-lbm-s, in-lbf-s\n"
 		<< "\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n"
 		<< "\tEnter {DUMP_PREVAR()} for list of predefined variables in aprepro\n\n"
@@ -494,52 +542,63 @@ namespace SEAMS {
   void Aprepro::dumpsym (int type, bool doInternal) const
   {
     const char *comment = getsym("_C_")->value.svar;
+    int width = 10; // controls spacing/padding for the variable names
   
     if (type == Parser::token::VAR || type == Parser::token::SVAR || type == Parser::token::AVAR) {
-      printf ("\n%s   Variable    = Value\n", comment);
+      (*infoStream) << "\n" << comment << "   Variable    = Value" << std::endl;
+
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
 	  if ((doInternal && ptr->isInternal) || (!doInternal && !ptr->isInternal)) {
 	    if (ptr->type == Parser::token::VAR)
-	      printf ("%s  {%-10s\t= %.10g}\n", comment, ptr->name.c_str(), ptr->value.var);
+        (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name <<
+                         "\t= " << std::setprecision(10) <<  ptr->value.var << "}" << std::endl;
 	    else if (ptr->type == Parser::token::IMMVAR)
-	      printf ("%s  {%-10s\t= %.10g}\t(immutable)\n", comment, ptr->name.c_str(), ptr->value.var);
-	    else if (ptr->type == Parser::token::SVAR)
-	      printf ("%s  {%-10s\t= \"%s\"}\n", comment, ptr->name.c_str(), ptr->value.svar);
+        (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name <<
+                         "\t= " << std::setprecision(10) << ptr->value.var << "}\t(immutable)" << std::endl;
+      else if (ptr->type == Parser::token::SVAR)
+        (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name <<
+                         "\t= \"" << ptr->value.svar << "\"}" << std::endl;
 	    else if (ptr->type == Parser::token::IMMSVAR)
-	      printf ("%s  {%-10s\t= \"%s\"}\t(immutable)\n", comment, ptr->name.c_str(), ptr->value.svar);
+        (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name <<
+                         "\t= \"" << ptr->value.svar << "\"}\t(immutable)" << std::endl;
 	    else if (ptr->type == Parser::token::AVAR) {
 	      array *arr = ptr->value.avar;
-	      printf ("%s  {%-10s\t (array) rows = %d, cols = %d} \n",
-		      comment, ptr->name.c_str(), arr->rows, arr->cols);
+        (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name <<
+                         "\t (array) rows = " << arr->rows << ", cols = " << arr->cols <<
+                         "} " << std::endl;
 	    }
 	  }
 	}
       }
     }
     else if (type == Parser::token::FNCT || type == Parser::token::SFNCT || type == Parser::token::AFNCT) {
-      printf ("\nFunctions returning double:\n");
+      (*infoStream) << "\nFunctions returning double:" << std::endl;
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
 	  if (ptr->type == Parser::token::FNCT) {
-	    printf ("%-20s:  %s\n", ptr->syntax.c_str(), ptr->info.c_str());
+      (*infoStream) << std::left << std::setw(2*width) << ptr->syntax <<
+                       ":  " << ptr->info << std::endl;
 	  }
 	}
       }
-      printf ("\nFunctions returning string:\n");
+
+      (*infoStream) << "\nFunctions returning string:" << std::endl;
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
 	  if (ptr->type == Parser::token::SFNCT) {
-	    printf ("%-20s:  %s\n", ptr->syntax.c_str(), ptr->info.c_str());
+      (*infoStream) << std::left << std::setw(2*width) << ptr->syntax <<
+                       ":  " << ptr->info << std::endl;
 	  }
 	}
       }
       
-      printf ("\nFunctions returning array:\n");
+      (*infoStream) << "\nFunctions returning array:" << std::endl;
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != NULL; ptr = ptr->next) {
 	  if (ptr->type == Parser::token::AFNCT) {
-	    printf ("%-20s:  %s\n", ptr->syntax.c_str(), ptr->info.c_str());
+      (*infoStream) << std::left << std::setw(2*width) << ptr->syntax <<
+                       ":  " << ptr->info << std::endl;
 	  }
 	}
       }
@@ -612,5 +671,32 @@ namespace SEAMS {
       output = &std::cout;
     
     (*output) << "COPYRIGHT NOTICE\n";
+  }
+
+  void Aprepro::add_history(const std::string& original, const std::string& substitution)
+  {
+    if(!ap_options.keep_history)
+      return;
+
+    if(!original.empty())
+    {
+      history_data hist;
+      hist.original = original;
+      hist.substitution = substitution;
+      hist.index = outputStream.top()->tellp();
+
+      history.push_back(hist);
+    }
+  }
+
+  const std::vector<history_data>& Aprepro::get_history()
+  {
+    return history;
+  }
+
+  void Aprepro::clear_history()
+  {
+    if(ap_options.keep_history)
+      history.clear();
   }
 }

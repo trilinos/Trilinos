@@ -340,7 +340,6 @@ namespace MueLu {
 
     //! Printing method
     // TODO: print only shows requested variables. check if we also list kept factories with ref counter=0?
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
     void print(std::ostream& out, const VerbLevel verbLevel = Default) const;
 
 #if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
@@ -358,10 +357,8 @@ namespace MueLu {
     void                            setlib(Xpetra::UnderlyingLib lib2)                  { lib_ = lib2; }
     Xpetra::UnderlyingLib           lib()                                               { return lib_; }
 
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
     void                            SetComm(RCP<const Teuchos::Comm<int> > const &comm) { comm_ = comm; }
     RCP<const Teuchos::Comm<int> >  GetComm() const                                     { return comm_; }
-#endif
 
   private:
 
@@ -392,9 +389,7 @@ namespace MueLu {
 
     static RequestMode                  requestMode_;
     Xpetra::UnderlyingLib               lib_;
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
     RCP<const Teuchos::Comm<int> >      comm_;
-#endif
 
     typedef const FactoryBase*          Key1;
     typedef const std::string           Key2;

@@ -50,16 +50,7 @@
 #include "Kokkos_DefaultKernels.hpp"
 #include "Kokkos_Version.hpp"
 
-#include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include "Kokkos_OpenMPNode.hpp"
-#endif
+#include "Kokkos_DefaultNode.hpp"
 
 #if (defined(HAVE_KOKKOSCLASSIC_CUSPARSE) || defined(HAVE_KOKKOSCLASSIC_CUSP)) && defined(HAVE_KOKKOSCLASSIC_THRUST)
   #include "Kokkos_ThrustGPUNode.hpp"
@@ -98,25 +89,6 @@ namespace {
   using Teuchos::tuple;
   using std::endl;
 
-  using KokkosClassic::SerialNode;
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using KokkosClassic::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using KokkosClassic::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using KokkosClassic::OpenMPNode;
-  RCP<OpenMPNode> ompnode;
-#endif
-#ifdef TEST_CUDA
-  using KokkosClassic::ThrustGPUNode;
-  RCP<ThrustGPUNode> gpunode;
-#endif
-
   int N = 1000;
 
   TEUCHOS_STATIC_SETUP()
@@ -128,67 +100,9 @@ namespace {
 
   template <class Node>
   RCP<Node> getNode() {
-    using Teuchos::TypeNameTraits;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "getNode() has not been "
-      "specialized for the Kokkos Node type \"" << TypeNameTraits<Node>::name ()
-      << "\".  Please report this bug to the Kokkos developers.");
+    Teuchos::ParameterList pl;
+    return rcp (new Node (pl));
   }
-
-  template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
-    }
-    return snode;
-  }
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    if (tbbnode == null) {
-      Teuchos::ParameterList pl;
-      tbbnode = rcp (new TBBNode (pl));
-    }
-    return tbbnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  template <>
-  RCP<OpenMPNode> getNode<OpenMPNode>() {
-    if (ompnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      ompnode = rcp (new OpenMPNode (pl));
-    }
-    return ompnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  template <>
-  RCP<TPINode> getNode<TPINode>() {
-    if (tpinode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tpinode = rcp(new TPINode(pl));
-    }
-    return tpinode;
-  }
-#endif
-
-#ifdef TEST_CUDA
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (gpunode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      gpunode = rcp(new ThrustGPUNode(pl));
-    }
-    return gpunode;
-  }
-#endif
 
   //
   // UNIT TESTS
@@ -471,26 +385,34 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DefaultSparseOps, NodeTest,       ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DefaultSparseOps, ResubmitMatrix, ORDINAL, SCALAR, NODE )
 
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+  typedef KokkosClassic::SerialNode KokkosClassic_SerialNode;
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
-      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )
+  ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_SerialNode )
+#else
+#define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR)
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
+  typedef KokkosClassic::TBBNode KokkosClassic_TBBNode;
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
-      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, TBBNode )
+  ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_TBBNode )
 #else
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR)
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
+  typedef KokkosClassic::TBBNode KokkosClassic_OpenMPNode;
 #define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR) \
-      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, OpenMPNode )
+  ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_OpenMPNode )
 #else
 #define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR)
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  typedef KokkosClassic::TPINode KokkosClassic_TPINode;
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
-      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, TPINode )
+  ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_TPINode )
 #else
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR)
 #endif
@@ -520,7 +442,7 @@ ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexFloat, ThrustGPUNode )
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexDouble, ThrustGPUNode )
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_CUSP 
+#ifdef HAVE_KOKKOSCLASSIC_CUSP
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( short, float, ThrustGPUNode )
 #endif
 

@@ -50,7 +50,7 @@
 #ifdef HAVE_MPI
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class RepartitionFactory;
 }
 

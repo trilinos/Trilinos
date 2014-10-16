@@ -288,8 +288,10 @@ int Zoltan_Preprocess_Graph(
 
 
       j = (int)gr->xadj[gr->num_obj];
-      gr->adjncy = (indextype *)ZOLTAN_MALLOC(sizeof(indextype) * j);
-      if (j && !gr->adjncy)
+      gr->adjncy = (indextype *)ZOLTAN_MALLOC(sizeof(indextype) * (j+1)); 
+                   /* KDD 10/7/14  ParMETIS 4 doesn't like NULL adjncy array
+                      when j (number of adjacencies) is 0; force non-NULL */
+      if ((j+1) && !gr->adjncy)
         ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
 
       for (i=0; i < j; i++)
@@ -900,8 +902,8 @@ static int scale_round_weights(float *fwgts, weighttype *iwgts, int n, int dim,
       for (i=0; i<n; i++){
         for (j=0; j<dim; j++){
           if (!nonint_local[j]){
-            /* tmp = (int) roundf(fwgts[i]);  EB: Valid C99, but not C89 */
-            tmp = (int) floor((double) fwgts[i] + .5); /* Nearest int */
+            /* tmp = (int) roundf(fwgts[i*dim+j]);  EB: Valid C99, but not C89 */
+            tmp = (int) floor((double) fwgts[i*dim+j] + .5); /* Nearest int */
             if (fabs((double)tmp-fwgts[i*dim+j]) > INT_EPSILON){
               nonint_local[j] = 1;
             }

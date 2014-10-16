@@ -37,7 +37,7 @@
 #include "Teuchos_FILEstream.hpp"
 
 // Teuchos python interface includes
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 %}
 
 // The python implementation of Teuchos::ParameterList is augmented to
@@ -51,6 +51,9 @@
 // ParameterList does not support deletion, these methods are not
 // implemented.
 
+#if SWIG_VERSION >= 0x030000
+%feature ("flatnested");
+#else
 // Handle the Teuchos::ParameterList:PrintOptions nested class by
 // defining it exclusively for SWIG as though it were not nested.
 namespace Teuchos
@@ -72,6 +75,7 @@ public:
 };
 %nestedworkaround ParameterList::PrintOptions;
 }  // Namespace Teuchos
+#endif
 
 //Teuchos imports
 namespace Teuchos
@@ -79,7 +83,7 @@ namespace Teuchos
 class any;
 }
 %import "Teuchos_ParameterEntry.hpp"
-%import "PyTrilinos_Teuchos_Util.h"
+%import "PyTrilinos_Teuchos_Util.hpp"
 
 /////////////////////////////////////////////////////////////////////
 // Override typemaps for ParameterLists to allow PyDicts as input //

@@ -48,4 +48,43 @@ LOCA.TimeDependent supports the following classes:
         directors = "1",
         docstring = %loca_timedependent_docstring) TimeDependent
 
-%include "LOCA.TimeDependent_Content.i"
+%{
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+#include "PyTrilinos_Teuchos_Util.hpp"
+
+// LOCA includes
+#include "LOCA.H"
+
+// Local includes
+#define NO_IMPORT_ARRAY
+#include "numpy_include.hpp"
+%}
+
+// Ignore/renames
+%ignore *::operator=;
+
+// Standard exception handling
+%include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
+// Teuchos support
+%import "Teuchos.i"
+
+// Teuchos::RCP support
+%teuchos_rcp(LOCA::TimeDependent::AbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+
+// Import base class declarations
+%import "NOX.Abstract.i"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
+
+// LOCA::TimeDependent AbstractGroup class
+%include "LOCA_TimeDependent_AbstractGroup.H"

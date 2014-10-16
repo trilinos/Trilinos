@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -665,12 +664,18 @@ IF (NOT TPL_ENABLE_MPI)
   SET(DEPLIBS simpi)
 ENDIF()
 
+IF(NOT MSVC)
+  # Add libm linking for ceil, floor and such.
+  LIST(APPEND IMPORTEDLIBS m)
+ENDIF()
+
 TRIBITS_ADD_LIBRARY(
   zoltan
   HEADERS ${HEADERS}
   NOINSTALLHEADERS ${NOINSTALLHEADERS}
   SOURCES ${SOURCES}
   DEPLIBS ${DEPLIBS}
+  IMPORTEDLIBS ${IMPORTEDLIBS}
   )
 
 INSTALL(FILES ${MODULES} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)

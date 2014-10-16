@@ -26,12 +26,12 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PYTRILINOS_DAP_H
-#define PYTRILINOS_DAP_H
+#ifndef PYTRILINOS_DAP_HPP
+#define PYTRILINOS_DAP_HPP
 
 // Include the NumPy and Python headers
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
 // Teuchos includes
 #include "Teuchos_Array.hpp"

@@ -87,17 +87,18 @@ def runSnapshotDirTestCase(testObject, cmndLineArgsList, cmndInterceptList,
 
   # Run the command, intercept the output, and test it
   sout = WriteToString()
-  try:
-    rtn = snapshotDirMainDriver(cmndLineArgsList, defaultOptions, sout)
-    ostr = sout.getStr()
-    #print ostr
-    for passRegexExpr in passRegexExpressionsList:
-      testObject.assert_(re.search(passRegexExpr, ostr))
-  except Exception, e:
-    print "\n\nGenerated output:\n\n" + sout.getStr() + "\n\n"
-    printStackTrace()
-    raise e
 
+  rtn = snapshotDirMainDriver(cmndLineArgsList, defaultOptions, sout)
+  ostr = sout.getStr()
+  #print ostr
+  for passRegexExpr in passRegexExpressionsList:
+    try:
+      testObject.assert_(re.search(passRegexExpr, ostr))
+    except Exception, e:
+      print "\n\nCould not find regex='"+passRegexExpr+"' in generated output:\n"
+      print sout.getStr() + "\n\n"
+      printStackTrace()
+      raise e
 
 
 #
@@ -106,11 +107,15 @@ def runSnapshotDirTestCase(testObject, cmndLineArgsList, cmndInterceptList,
 
 g_gitDiffHead = "IT: git diff --name-status HEAD -- \.; 0;''\n"
 
-g_gitRemote = "IT: git remote -v; 0; 'origin\tsome-url-location (fetch)'\n"
+g_gitRevParse = "IT: git rev-parse --abbrev-ref --symbolic-full-name ..u.; 0; 'remotename/remotebranch'\n"
+
+g_gitRemote = "IT: git remote -v; 0; 'remotename\tsome-url-location (fetch)'\n"
 
 g_gitLog = "IT: git log  --pretty=.*; 0; 'one commit msg'\n"
 
-g_rsync = "IT: rsync -av --delete --exclude=.* dummy/orig/dir/ dummy/dest/dir/; 0; 'sync passed'\n"
+g_rsync = "IT: rsync -av --delete --exclude=.* dummy/orig-dir/ dummy/dest-dir/; 0; 'sync passed'\n"
+
+g_gitLogSha1 = "IT: git log -1 --pretty=format:'.h'; 0; 'abc123'\n"
 
 g_gitAdd = "IT: git add \.; 0; 'added some files'\n"
 
@@ -140,12 +145,12 @@ class test_snapshot_dir(unittest.TestCase):
   def test_override_orig_dest_dirs(self):
     runSnapshotDirTestCase(
       self,
-      ["--show-defaults", "--orig-dir=new/orig/dir", "--dest-dir=new/dest/dir"],
+      ["--show-defaults", "--orig-dir=new/orig-dir/", "--dest-dir=new/dest-dir/"],
       [],
       [
         "Script: snapshot-dir\.py",
-        "--orig-dir='new/orig/dir'",
-        "--dest-dir='new/dest/dir'"
+        "--orig-dir='new/orig-dir/'",
+        "--dest-dir='new/dest-dir/'"
         ]
      )
 
@@ -153,20 +158,29 @@ class test_snapshot_dir(unittest.TestCase):
   def test_full_snapshot(self):
     runSnapshotDirTestCase(
       self,
-      [""],
+      ["--orig-dir=dummy/orig-dir/", "--dest-dir=dummy/dest-dir/"],
       [
         g_gitDiffHead,
         g_gitDiffHead,
+        g_gitRevParse,
         g_gitRemote,
         g_gitLog,
         g_rsync,
+        g_gitLogSha1,
         g_gitAdd,
         g_gitCommit,
         ],
       [
         "Script: snapshot-dir\.py",
-        "--orig-dir='dummy/orig/dir/'",
-        "--dest-dir='dummy/dest/dir/'"
+        "--orig-dir='dummy/orig-dir/'",
+        "--dest-dir='dummy/dest-dir/'",
+        "origin remote name = 'remotename'",
+        "origin remote branch = 'remotebranch'",
+        "origin remote URL = 'some-url-location'",
+        "Automatic snapshot commit from orig-dir at abc123",
+        "Origin repo remote tracking branch: 'remotename/remotebranch'",
+        "Origin repo remote repo URL: 'remotename = some-url-location'",
+        "one commit msg"
         ]
      )
 

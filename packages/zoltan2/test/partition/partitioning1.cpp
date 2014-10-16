@@ -75,9 +75,9 @@ using namespace std;
 // GO.  For now, we set them at compile time based on whether Tpetra
 // is built with explicit instantiation on.  (in Zoltan2_TestHelpers.hpp)
 
-typedef lno_t z2TestLO;
-typedef gno_t z2TestGO;
-typedef scalar_t Scalar;
+typedef zlno_t z2TestLO;
+typedef zgno_t z2TestGO;
+typedef zscalar_t Scalar;
 
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
@@ -102,6 +102,7 @@ int main(int narg, char** arg)
   std::string inputFile = "";        // Matrix Market or Zoltan file to read
   std::string outputFile = "";       // Matrix Market or Zoltan file to write
   std::string inputPath = testDataFilePath;  // Directory with input file
+  std::string method = "scotch";
   bool verbose = false;              // Verbosity of output
   bool distributeInput = true;
   bool haveFailure = false;
@@ -126,6 +127,8 @@ int main(int narg, char** arg)
   cmdp.setOption("outputFile", &outputFile,
                  "Name of the Matrix Market sparse matrix file to write, "
                  "echoing the input/generated matrix.");
+  cmdp.setOption("method", &method,
+                 "Partitioning method to use:  scotch or parmetis.");
   cmdp.setOption("vertexWeights", &nVwgts,
                  "Number of weights to generate for each vertex");
   cmdp.setOption("edgeWeights", &nEwgts,
@@ -203,7 +206,7 @@ int main(int narg, char** arg)
   Teuchos::ParameterList params;
   
   params.set("partitioning_approach", "partition");
-  params.set("algorithm", "scotch");
+  params.set("algorithm", method);
 
   ////// Create an input adapter for the graph of the Tpetra matrix.
   SparseGraphAdapter adapter(origMatrix->getCrsGraph(), nVwgts, nEwgts);
@@ -212,16 +215,16 @@ int main(int narg, char** arg)
   ////// Generate some artificial weights.  
   ////// Maybe this code should go into UserInputForTests.
 
-  scalar_t *vwgts = NULL, *ewgts = NULL;
+  zscalar_t *vwgts = NULL, *ewgts = NULL;
   if (nVwgts) {
     // Test vertex weights with stride nVwgts.
     size_t nrows = origMatrix->getNodeNumRows();
     if (nrows) {
-      vwgts = new scalar_t[nVwgts * nrows];
+      vwgts = new zscalar_t[nVwgts * nrows];
       for (size_t i = 0; i < nrows; i++) {
         size_t idx = i * nVwgts;
-        vwgts[idx] = scalar_t(origMatrix->getRowMap()->getGlobalElement(i))
-  ;//                 + scalar_t(0.5);
+        vwgts[idx] = zscalar_t(origMatrix->getRowMap()->getGlobalElement(i))
+  ;//                 + zscalar_t(0.5);
         for (int j = 1; j < nVwgts; j++) vwgts[idx+j] = 1.;
       }
       for (int j = 0; j < nVwgts; j++) {
@@ -237,10 +240,10 @@ int main(int narg, char** arg)
     if (nnz) {
       size_t nrows = origMatrix->getNodeNumRows();
       size_t maxnzrow = origMatrix->getNodeMaxNumRowEntries();
-      ewgts = new scalar_t[nEwgts * nnz];
+      ewgts = new zscalar_t[nEwgts * nnz];
       size_t cnt = 0;
       Array<z2TestGO> egids(maxnzrow);
-      Array<scalar_t> evals(maxnzrow);
+      Array<zscalar_t> evals(maxnzrow);
       for (size_t i = 0; i < nrows; i++) {
         size_t nnzinrow;
         z2TestGO gid = origMatrix->getRowMap()->getGlobalElement(i);
@@ -249,6 +252,7 @@ int main(int narg, char** arg)
           ewgts[cnt] = (gid < egids[k] ? gid : egids[k]);
           if (nEwgts > 1) ewgts[cnt+nnz] = (gid < egids[k] ? egids[k] : gid);
           for (int j = 2; j < nEwgts; j++) ewgts[cnt+nnz*j] = 1.;
+          cnt++;
         }
       }
       for (int j = 0; j < nEwgts; j++) {
@@ -315,14 +319,14 @@ int main(int narg, char** arg)
   // Check for load balance
   size_t *countPerPart = new size_t[checkNparts];
   size_t *globalCountPerPart = new size_t[checkNparts];
-  scalar_t *wtPerPart = (nVwgts ? new scalar_t[checkNparts*nVwgts] : NULL);
-  scalar_t *globalWtPerPart = (nVwgts ? new scalar_t[checkNparts*nVwgts] : NULL);
+  zscalar_t *wtPerPart = (nVwgts ? new zscalar_t[checkNparts*nVwgts] : NULL);
+  zscalar_t *globalWtPerPart = (nVwgts ? new zscalar_t[checkNparts*nVwgts] : NULL);
   for (size_t i = 0; i < checkNparts; i++) countPerPart[i] = 0;
   for (size_t i = 0; i < checkNparts * nVwgts; i++) wtPerPart[i] = 0.;
 
   for (size_t i = 0; i < checkLength; i++) {
     if (size_t(checkParts[i]) >= checkNparts) 
-      cout << "Invalid Part:  FAIL" << endl;
+      cout << "Invalid Part " << checkParts[i] << ": FAIL" << endl;
     countPerPart[checkParts[i]]++;
     for (int j = 0; j < nVwgts; j++) {
       if (j != NNZ_IDX)
@@ -333,7 +337,7 @@ int main(int narg, char** arg)
   }
   Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, checkNparts,
                                   countPerPart, globalCountPerPart);
-  Teuchos::reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM,
+  Teuchos::reduceAll<int, zscalar_t>(*comm, Teuchos::REDUCE_SUM,
                                     checkNparts*nVwgts,
                                     wtPerPart, globalWtPerPart);
 
@@ -359,9 +363,9 @@ int main(int narg, char** arg)
          << endl;
     cout << "Imbalance:     " << max / avg << endl;
     if (nVwgts) {
-      std::vector<scalar_t> minwt(nVwgts, std::numeric_limits<scalar_t>::max());
-      std::vector<scalar_t> maxwt(nVwgts, 0.);
-      std::vector<scalar_t> sumwt(nVwgts, 0.);
+      std::vector<zscalar_t> minwt(nVwgts, std::numeric_limits<zscalar_t>::max());
+      std::vector<zscalar_t> maxwt(nVwgts, 0.);
+      std::vector<zscalar_t> sumwt(nVwgts, 0.);
       for (size_t i = 0; i < checkNparts; i++) {
         for (int j = 0; j < nVwgts; j++) {
           size_t idx = i*nVwgts+j;
@@ -402,7 +406,7 @@ int main(int narg, char** arg)
 
   if (me == 0) cout << "Redistributing vectors..." << endl;
   Vector *redistribVector;
-//  std::vector<const scalar_t *> weights;
+//  std::vector<const zscalar_t *> weights;
 //  std::vector<int> weightStrides;
   MultiVectorAdapter adapterVector(origVector); //, weights, weightStrides);
   adapterVector.applyPartitioningSolution(*origVector, redistribVector,

@@ -489,7 +489,7 @@ median(Iterator begin, Iterator end)
   }
 
   Index const
-  size = std::distance(begin, end);
+  size = static_cast<Index>(std::distance(begin, end));
 
   T
   median;

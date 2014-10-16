@@ -75,7 +75,7 @@
 // Macro that marks a function as "possibly unused," in order to
 // suppress build warnings.
 #if ! defined(TRILINOS_UNUSED_FUNCTION)
-#  if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#  if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_MSC_VER))
 #    define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
 #  elif defined(__clang__)
 #    if __has_attribute(unused)
@@ -207,15 +207,7 @@ namespace Tpetra {
     /// We do this because the typical use case of Matrix Market files
     /// in Trilinos is to test sparse matrix methods, which usually
     /// involves reading a sparse matrix A and perhaps also a dense
-    /// right-hand side b.  Also, this lets you use CrsMatrix objects
-    /// with non-default LocalMatOps template parameters.  (If we
-    /// templated on Scalar, LocalOrdinal, GlobalOrdinal, and Node, we
-    /// would also have to template on LocalMatOps in order to deal
-    /// with CrsMatrix types with nondefault LocalMatOps.  That would
-    /// tie Reader to CrsMatrix anyway, since MultiVector is not
-    /// templated on LocalMatOps.  As a result, we might as well just
-    /// template on the CrsMatrix type, in order to use arbitrary
-    /// LocalMatOps types without additional code.)
+    /// right-hand side b.
     ///
     /// \tparam SparseMatrixType A specialization of CrsMatrix.
     ///
@@ -396,14 +388,14 @@ namespace Tpetra {
         // Abbreviations so that the map creation call isn't too long.
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
-        typedef node_type Node;
+        typedef node_type NT;
 
         if (numRows == numCols) {
           return pRangeMap;
         } else {
-          return createUniformContigMapWithNode<LO,GO,Node> (numCols,
-                                                             pRangeMap->getComm (),
-                                                             pRangeMap->getNode ());
+          return createUniformContigMapWithNode<LO,GO,NT> (numCols,
+                                                           pRangeMap->getComm (),
+                                                           pRangeMap->getNode ());
         }
       }
 
@@ -3054,28 +3046,36 @@ namespace Tpetra {
         // Create a row Map which is entirely owned on Proc 0.
         RCP<Teuchos::FancyOStream> err = debug ?
           Teuchos::getFancyOStream (Teuchos::rcpFromRef (cerr)) : null;
+
         RCP<const map_type> gatherRowMap = Details::computeGatherMap (rowMap, err, debug);
+        ArrayView<const global_ordinal_type> myRows =
+            gatherRowMap->getNodeElementList ();
+        const size_type myNumRows = myRows.size ();
+        const global_ordinal_type indexBase = gatherRowMap->getIndexBase ();
+
+        ArrayRCP<size_t> gatherNumEntriesPerRow = arcp<size_t>(myNumRows);
+        for (size_type i_ = 0; i_ < myNumRows; i_++) {
+          gatherNumEntriesPerRow[i_] = numEntriesPerRow[myRows[i_]-indexBase];
+        }
 
         // Create a matrix using this Map, and fill in on Proc 0.  We
         // know how many entries there are in each row, so we can use
         // static profile.
         RCP<sparse_matrix_type> A_proc0 =
-          rcp (new sparse_matrix_type (gatherRowMap, numEntriesPerRow,
+          rcp (new sparse_matrix_type (gatherRowMap, gatherNumEntriesPerRow,
                                        Tpetra::StaticProfile));
         if (myRank == rootRank) {
           if (debug) {
             cerr << "-- Proc 0: Filling gather matrix" << endl;
           }
-          ArrayView<const global_ordinal_type> myRows =
-            gatherRowMap->getNodeElementList ();
           if (debug) {
             cerr << "---- Rows: " << Teuchos::toString (myRows) << endl;
           }
-          const size_type myNumRows = myRows.size ();
 
           // Add Proc 0's matrix entries to the CrsMatrix.
-          const global_ordinal_type indexBase = gatherRowMap->getIndexBase ();
-          for (size_type i = 0; i < myNumRows; ++i) {
+          for (size_type i_ = 0; i_ < myNumRows; ++i_) {
+            size_type i = myRows[i_] - indexBase;
+
             const size_type curPos = as<size_type> (rowPtr[i]);
             const local_ordinal_type curNumEntries = numEntriesPerRow[i];
             ArrayView<global_ordinal_type> curColInd =
@@ -3093,7 +3093,7 @@ namespace Tpetra {
             }
             // Avoid constructing empty views of ArrayRCP objects.
             if (curNumEntries > 0) {
-              A_proc0->insertGlobalValues (myRows[i], curColInd, curValues);
+              A_proc0->insertGlobalValues (myRows[i_], curColInd, curValues);
             }
           }
           // Now we can save space by deallocating numEntriesPerRow,
@@ -4830,6 +4830,7 @@ namespace Tpetra {
 
     /// \class Writer
     /// \brief Matrix Market file writer for CrsMatrix and MultiVector.
+    /// \tparam SparseMatrixType A specialization of Tpetra::CrsMatrix.
     /// \author Mark Hoemmen
     ///
     /// The Matrix Market (see their <a
@@ -4840,67 +4841,50 @@ namespace Tpetra {
     /// Market file or input stream.
     ///
     /// All methods of this class assume that the file is only
-    /// openable resp. the input stream is only writeable, on the MPI
-    /// process with Rank 0 (with respect to the MPI communicator over
-    /// which the given CrsMatrix or MultiVector is to be
-    /// distributed).
+    /// openable resp. the input stream is only writeable, on MPI
+    /// Process 0 (with respect to the MPI communicator over which the
+    /// given CrsMatrix or MultiVector is to be distributed).
     ///
-    /// We define the MultiVector type accepted by \c writeDense() and
-    /// \c writeDenseFile() using the scalar_type, local_ordinal_type,
+    /// We define the MultiVector type accepted by writeDense() and
+    /// writeDenseFile() using the scalar_type, local_ordinal_type,
     /// global_ordinal_type, and node_type typedefs in
-    /// SparseMatrixType.  This ensures that the multivectors returned
-    /// by those methods have a type compatible with the CrsMatrix
-    /// sparse matrices accepted by \c writeSparse() and \c
-    /// writeSparseFile().  We do this because the typical use case of
-    /// Matrix Market files in Trilinos is to test sparse matrix
-    /// methods, which usually involves reading a sparse matrix A and
-    /// perhaps also a dense right-hand side b.  Also, this lets you
-    /// use CrsMatrix objects with non-default LocalMatOps template
-    /// parameters.  (If we templated on Scalar, LocalOrdinal,
-    /// GlobalOrdinal, and Node, we would also have to template on
-    /// LocalMatOps in order to deal with CrsMatrix types with
-    /// nondefault LocalMatOps.  That would tie Writer to CrsMatrix
-    /// anyway, since MultiVector is not templated on LocalMatOps.  As
-    /// a result, we might as well just template on the CrsMatrix
-    /// type, in order to use arbitrary LocalMatOps types without
-    /// additional code.)
-    ///
-    /// \tparam SparseMatrixType A specialization of \c Tpetra::CrsMatrix.
-    ///
+    /// <tt>SparseMatrixType</tt>.  This ensures that the
+    /// Tpetra::MultiVector objects returned by those methods have a
+    /// type compatible with the Tpetra::CrsMatrix sparse matrices
+    /// accepted by writeSparse() and writeSparseFile().  We do this
+    /// because the typical use case of Matrix Market files in
+    /// Trilinos is to test sparse matrix methods, which usually
+    /// involves reading a sparse matrix A and perhaps also a dense
+    /// right-hand side b.
     template<class SparseMatrixType>
     class Writer {
     public:
       typedef SparseMatrixType sparse_matrix_type;
       typedef RCP<sparse_matrix_type> sparse_matrix_ptr;
 
-      /// \typedef scalar_type
-      /// \brief Type of the entries of the sparse matrix.
+      //! Type of the entries of the sparse matrix.
       typedef typename SparseMatrixType::scalar_type scalar_type;
-      /// \typedef local_ordinal_type
-      /// \brief Only used to define map_type.
+      //! Type of the local indices of the sparse matrix.
       typedef typename SparseMatrixType::local_ordinal_type local_ordinal_type;
-      /// \typedef global_ordinal_type
       /// \brief Type of indices as read from the Matrix Market file.
       ///
       /// Indices of the sparse matrix are stored as global ordinals,
       /// since Matrix Market files represent the whole matrix and
       /// don't have a notion of distribution.
       typedef typename SparseMatrixType::global_ordinal_type global_ordinal_type;
-      /// \typedef node_type
-      /// \brief The Kokkos Node type.
+      //! The Kokkos Node type; fourth template parameter of Tpetra::CrsMatrix.
       typedef typename SparseMatrixType::node_type node_type;
 
-      /// \typedef multivector_type
-      /// \brief The MultiVector type associated with SparseMatrixType.
+      //! Specialization of Tpetra::MultiVector that matches SparseMatrixType.
       typedef MultiVector<scalar_type,
                           local_ordinal_type,
                           global_ordinal_type,
                           node_type> multivector_type;
-      /// \typedef map_type
-      /// \brief Tpetra::Map specialization associated with SparseMatrixType.
+      //! Specialization of Tpetra::Map that matches SparseMatrixType.
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
-      /// \brief Print the sparse matrix in Matrix Market format, with comments.
+      /// \brief Print the sparse matrix in Matrix Market format, with
+      ///   comments.
       ///
       /// Write the given Tpetra::CrsMatrix sparse matrix to the given
       /// file, using the Matrix Market "coordinate" format.  MPI Proc
@@ -4930,19 +4914,27 @@ namespace Tpetra {
       ///   onto MPI Proc 0.  This will cause out-of-memory errors if
       ///   the matrix is too big to fit on one process.  This will be
       ///   fixed in the future.
-      ///
       static void
       writeSparseFile (const std::string& filename,
-                       const RCP<const sparse_matrix_type>& pMatrix,
+                       const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
                        const std::string& matrixName,
                        const std::string& matrixDescription,
                        const bool debug=false)
       {
-        const int myRank = Teuchos::rank (*(pMatrix->getComm()));
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          pMatrix.is_null (), std::invalid_argument,
+          "The input matrix is null.");
+        Teuchos::RCP<const Teuchos::Comm<int> > comm = pMatrix->getComm ();
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          comm.is_null (), std::invalid_argument,
+          "The input matrix's communicator (Teuchos::Comm object) is null.");
+        const int myRank = comm->getRank ();
         std::ofstream out;
 
         // Only open the file on Rank 0.
-        if (myRank == 0) out.open (filename.c_str());
+        if (myRank == 0) {
+          out.open (filename.c_str ());
+        }
         writeSparse (out, pMatrix, matrixName, matrixDescription, debug);
         // We can rely on the destructor of the output stream to close
         // the file on scope exit, even if writeSparse() throws an
@@ -4971,15 +4963,14 @@ namespace Tpetra {
       ///
       static void
       writeSparseFile (const std::string& filename,
-                       const RCP<const sparse_matrix_type>& pMatrix,
+                       const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
                        const bool debug=false)
       {
         writeSparseFile (filename, pMatrix, "", "", debug);
       }
 
-    public:
-
-      /// \brief Print the sparse matrix in Matrix Market format, with comments.
+      /// \brief Print the sparse matrix in Matrix Market format, with
+      ///   comments.
       ///
       /// Write the given Tpetra::CrsMatrix sparse matrix to an output
       /// stream, using the Matrix Market "coordinate" format.  MPI
@@ -5005,13 +4996,12 @@ namespace Tpetra {
       ///   debugging output to stderr on Proc 0.
       ///
       /// \warning The current implementation gathers the whole matrix
-      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
-      ///   the matrix is too big to fit on one process.  This will be
-      ///   fixed in the future.
-      ///
+      ///   onto MPI Process 0.  This will cause out-of-memory errors
+      ///   if the matrix is too big to fit on one process.  This will
+      ///   be fixed in the future.
       static void
       writeSparse (std::ostream& out,
-                   const RCP<const sparse_matrix_type>& pMatrix,
+                   const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
                    const std::string& matrixName,
                    const std::string& matrixDescription,
                    const bool debug=false)
@@ -5032,15 +5022,24 @@ namespace Tpetra {
         typedef typename ArrayView<const GO>::const_iterator go_iter;
         typedef typename ArrayView<const ST>::const_iterator st_iter;
 
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          pMatrix.is_null (), std::invalid_argument,
+          "The input matrix is null.");
+
         // Make the output stream write floating-point numbers in
         // scientific notation.  It will politely put the output
         // stream back to its state on input, when this scope
         // terminates.
         Teuchos::MatrixMarket::details::SetScientific<ST> sci (out);
 
-        RCP<const Comm<int> > comm = pMatrix->getComm();
+        // Get the matrix's communicator.
+        RCP<const Comm<int> > comm = pMatrix->getComm ();
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          comm.is_null (), std::invalid_argument,
+          "The input matrix's communicator (Teuchos::Comm object) is null.");
         const int myRank = comm->getRank ();
 
+        // Optionally, make a stream for debugging output.
         RCP<FancyOStream> err =
           debug ? getFancyOStream (rcpFromRef (std::cerr)) : null;
         if (debug) {
@@ -5699,11 +5698,16 @@ namespace Tpetra {
             }
           }
           else {
-            for (size_t row = 0; row < printNumRows; ++row) {
-              for (size_t col = 0; col < numCols; ++col) {
-                out << printData[row + col * printStride];
-                if (col + 1 < numCols) {
-                  out << " ";
+            // Matrix Market dense format wants one number per line.
+            // It wants each complex number as two real numbers (real
+            // resp. imaginary parts) with a space between.
+            for (size_t col = 0; col < numCols; ++col) {
+              for (size_t row = 0; row < printNumRows; ++row) {
+                if (STS::isComplex) {
+                  out << STS::real (printData[row + col * printStride]) << " "
+                      << STS::imag (printData[row + col * printStride]) << endl;
+                } else {
+                  out << printData[row + col * printStride] << endl;
                 }
               }
               out << endl;
@@ -5937,11 +5941,16 @@ namespace Tpetra {
             // Matrix Market prints dense matrices in column-major order.
             ArrayView<const scalar_type> printData = (recvDataBufs[circBufInd]) ();
             const size_t printStride = printNumRows;
-            for (size_t row = 0; row < printNumRows; ++row) {
-              for (size_t col = 0; col < numCols; ++col) {
-                out << printData[row + col * printStride];
-                if (col + 1 < numCols) {
-                  out << " ";
+            // Matrix Market dense format wants one number per line.
+            // It wants each complex number as two real numbers (real
+            // resp. imaginary parts) with a space between.
+            for (size_t col = 0; col < numCols; ++col) {
+              for (size_t row = 0; row < printNumRows; ++row) {
+                if (STS::isComplex) {
+                  out << STS::real (printData[row + col * printStride]) << " "
+                      << STS::imag (printData[row + col * printStride]) << endl;
+                } else {
+                  out << printData[row + col * printStride] << endl;
                 }
               }
               out << endl;

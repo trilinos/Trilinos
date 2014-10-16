@@ -192,7 +192,11 @@ class MyTest : public NOX::StatusTest::Generic {
 
 public:
 
-  MyTest(double tol) : status(NOX::StatusTest::Unconverged), tolerance(tol) {}
+  MyTest(double tol):
+    status(NOX::StatusTest::Unconverged),
+    tolerance(tol),
+    norm_f(0.0)
+ {}
 
   ~MyTest() {}
 

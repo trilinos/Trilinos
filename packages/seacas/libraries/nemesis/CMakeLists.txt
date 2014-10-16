@@ -21,31 +21,30 @@ CONFIGURE_FILE(
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
   "${CMAKE_CURRENT_BINARY_DIR}"
-)
+  )
 
 SET(SOURCES
-nemesis_wrapper.c
-)
+  nemesis_wrapper.c
+  )
 
 TRIBITS_ADD_LIBRARY(
-	nemesis
-	HEADERS	${HEADERS}
-	SOURCES ${SOURCES}
-	DEPLIBS exodus
-)
+  nemesis
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  )
 
 IF (${PACKAGE_NAME}_ENABLE_TESTS)
   TRIBITS_ADD_TEST(
-	ne_ctest_wrap
-	NAME ne_ctest_wrap
-	NUM_MPI_PROCS 1
-  )
+    ne_ctest_wrap
+    NAME ne_ctest_wrap
+    NUM_MPI_PROCS 1
+    )
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE(
- ne_ctest_wrap
- SOURCES ne_ctest_wrap.c
-)
+  ne_ctest_wrap
+  SOURCES ne_ctest_wrap.c
+  )
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
 

@@ -110,8 +110,8 @@ class OpRegRequestProcessor : public NssiRpc {
                 const NNTI_buffer_t *data_addr,
                 const NNTI_buffer_t *res_addr)
         {
-            int rc=NNTI_OK;
-            log_level debug_level           = opreg_debug_level;
+            int rc = NNTI_OK;
+            log_level debug_level = opreg_debug_level;
             const opreg_args *args = static_cast<const opreg_args*>(void_args);
 
             /* process array (nothing to do) */

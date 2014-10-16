@@ -55,12 +55,11 @@
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
-
 #define Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM \
   { \
     std::ostringstream emsg; \
     emsg << __FILE__ << "," << __LINE__ \
-         << " error:  " <<  __func__ \
+         << " error:  " <<  __func__zoltan2__ \
          << " is not implement in selected algorithm " \
          << std::endl; \
     throw std::runtime_error(emsg.str()); \
@@ -84,7 +83,7 @@ public:
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
 
@@ -92,7 +91,7 @@ public:
   virtual ~Algorithm() {}
 
   //! \brief Ordering method
-  virtual int order(const RCP<OrderingSolution<gid_t, lno_t> > &solution) 
+  virtual int order(const RCP<OrderingSolution<zgid_t, lno_t> > &solution) 
   {
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM 
   }

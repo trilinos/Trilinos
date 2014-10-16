@@ -67,4 +67,79 @@ LOCA.MultiContinuation supports the following classes:
         directors = "1",
         docstring = %loca_multicontinuation_docstring) MultiContinuation
 
-%include "LOCA.MultiContinuation_Content.i"
+%{
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+#include "PyTrilinos_Teuchos_Util.hpp"
+
+// LOCA includes
+#include "LOCA.H"
+
+// Local includes
+#define NO_IMPORT_ARRAY
+#include "numpy_include.hpp"
+%}
+
+// Configuration and optional includes
+%include "PyTrilinos_config.h"
+#ifdef HAVE_NOX_EPETRA
+%{
+#include "NOX_Epetra_Group.H"
+#include "NOX_Epetra_Vector.H"
+#include "Epetra_NumPyVector.hpp"
+%}
+#endif
+
+// Standard exception handling
+%include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
+// Ignore/renames
+%ignore *::operator=;
+
+%import "Teuchos.i"
+
+// Teucho::RCP support
+%teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::MultiContinuation::ConstraintInterface)
+%teuchos_rcp(LOCA::MultiContinuation::ConstraintInterfaceMVDX)
+%teuchos_rcp(LOCA::MultiContinuation::Factory)
+
+// Import base class declarations
+%import "NOX.Abstract.i"
+%import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"
+%import(module="Extended") "LOCA_Extended_MultiVector.H"
+%import(module="Extended") "LOCA_Extended_Vector.H"
+
+// LOCA::MultiContinuation AbstractGroup class
+%include "LOCA_MultiContinuation_AbstractGroup.H"
+
+// LOCA::MultiContinuation FiniteDifferenceGroup class
+%include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+
+// LOCA::MultiContinuation ConstraintInterface class
+%feature("director") LOCA::MultiContinuation::ConstraintInterface;
+%include "LOCA_MultiContinuation_ConstraintInterface.H"
+
+// LOCA::MultiContinuation ConstraintInterfaceMVDX class
+%warnfilter(473) LOCA::MultiContinuation::ConstraintInterfaceMVDX;
+%feature("director") LOCA::MultiContinuation::ConstraintInterfaceMVDX;
+%include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
+
+// LOCA::MultiContinuation ExtendedMultiVector class
+%include "LOCA_MultiContinuation_ExtendedMultiVector.H"
+
+// LOCA::MultiContinuation ExtendedVector class
+%include "LOCA_MultiContinuation_ExtendedVector.H"
+
+// LOCA::MultiContinuation Factory class
+%include "LOCA_MultiContinuation_Factory.H"

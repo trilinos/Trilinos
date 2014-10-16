@@ -46,6 +46,8 @@
 #ifndef MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_DECL_HPP_
 #define MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_DECL_HPP_
 
+#ifdef HAVE_MUELU_EXPERIMENTAL
+
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MapExtractor_fwd.hpp>
@@ -70,7 +72,7 @@ namespace MueLu {
     @ingroup MueLuTransferClasses
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class RebalanceBlockInterpolationFactory : public TwoLevelFactoryBase {
 #undef MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -121,4 +123,5 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_SHORT
+#endif /* HAVE_MUELU_EXPERIMENTAL*/
 #endif /* MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_DECL_HPP_ */

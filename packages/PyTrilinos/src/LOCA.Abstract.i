@@ -56,8 +56,8 @@ the following classes:
 
 %{
 // PyTrilinos includes
-#include "PyTrilinos_PythonException.h"
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_PythonException.hpp"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
@@ -77,7 +77,7 @@ the following classes:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Exception handling
@@ -121,12 +121,28 @@ the following classes:
 
 // General ignore directives
 %ignore *::operator=;
+%ignore operator=;
 %ignore *::operator[];
 
 // Trilinos module imports
 %import "Teuchos.i"
 
 // Teuchos::RCP handling
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::Homotopy::AbstractGroup)
+%teuchos_rcp(LOCA::TimeDependent::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::Pitchfork::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::Pitchfork::MinimallyAugmented::AbstractGroup)
+%teuchos_rcp(LOCA::Hopf::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::Hopf::MooreSpence::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::Hopf::MinimallyAugmented::AbstractGroup)
+%teuchos_rcp(LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::PhaseTransition::AbstractGroup)
 %teuchos_rcp(LOCA::Abstract::Group)
 %teuchos_rcp(LOCA::Abstract::TransposeSolveGroup)
 %teuchos_rcp(LOCA::Abstract::Iterator)
@@ -134,29 +150,36 @@ the following classes:
 
 // Import SWIG interface files to provide information about base
 // classes
-%import "LOCA.Homotopy.i"
-%import "LOCA.PhaseTransition.i"
-%import "LOCA.TurningPoint.MinimallyAugmented.i"
-%import "LOCA.Hopf.MinimallyAugmented.i"
-%import "LOCA.Pitchfork.MinimallyAugmented.i"
+%import "NOX.Abstract.i"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+%import(module="Homotopy") "LOCA_Homotopy_AbstractGroup.H"
+%import(module="TimeDependent") "LOCA_TimeDependent_AbstractGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+%import(module="TurningPoint.MinimallyAugmented") "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+%import(module="TurningPoint.MinimallyAugmented") "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+%import(module="Pitchfork.MooreSpence") "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+%import(module="Pitchfork.MinimallyAugmented") "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
+%import(module="Hopf.MooreSpence") "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+%import(module="Hopf.MooreSpence") "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+%import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+%import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+%import(module="PhaseTransition") "LOCA_PhaseTransition_AbstractGroup.H"
 
 // LOCA::Abstract Group class
-//%feature("director") LOCA::Abstract::Group;
 // The following #define is to change the name of LOCA method
 // arguments that conflict with a SWIG director method argument
 #define result loca_result
 %include "LOCA_Abstract_Group.H"
 
 // LOCA::Abstract TransposeSolveGroup class
-//%feature("director") LOCA::Abstract::TransposeSolveGroup;
 %include "LOCA_Abstract_TransposeSolveGroup.H"
 
 // LOCA::Abstract Iterator class
-//%feature("director") LOCA::Abstract::Iterator;
 %include "LOCA_Abstract_Iterator.H"
 
 // LOCA::Abstract Factory class
-//%feature("director") LOCA::Abstract::Factory;
 %include "LOCA_Abstract_Factory.H"
 
 // We need to undefine the result macro

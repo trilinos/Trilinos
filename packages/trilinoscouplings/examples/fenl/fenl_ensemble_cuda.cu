@@ -40,7 +40,7 @@
 */
 
 #include <fenl_ensemble_macros.hpp>
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Kokkos {
 namespace Example {

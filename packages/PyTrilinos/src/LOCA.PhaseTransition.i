@@ -54,7 +54,7 @@ LOCA.PhaseTransition supports the following classes:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // LOCA includes
 #include "LOCA.H"
@@ -62,7 +62,7 @@ LOCA.PhaseTransition supports the following classes:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Ignore/renames
@@ -79,11 +79,12 @@ LOCA.PhaseTransition supports the following classes:
 %import "Teuchos.i"
 
 // Teuchos::RCP handling
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
 %teuchos_rcp(LOCA::PhaseTransition::AbstractGroup)
 
 // Import base class declarations
-%import "LOCA.MultiContinuation.i"
+%import "NOX.Abstract.i"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
 
 // LOCA::PhasTransition AbstractGroup class
-//%feature("director") LOCA::PhaseTransition::AbstractGroup;
 %include "LOCA_PhaseTransition_AbstractGroup.H"

@@ -52,6 +52,7 @@ typedef view_type::HostMirror host_view_type;
 struct squaresum {
   view_type a;
   squaresum(view_type a_):a(a_) {}
+  typedef int value_type; //Specify type for reduction value, lsum
 
   KOKKOS_INLINE_FUNCTION
   void operator() (int i, int &lsum) const {

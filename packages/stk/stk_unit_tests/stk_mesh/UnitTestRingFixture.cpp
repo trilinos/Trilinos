@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
@@ -113,10 +138,7 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
   // Test no-op first:
 
   std::vector<EntityProc> change ;
-
-  ASSERT_TRUE( bulk.modification_begin() );
   bulk.change_entity_owner( change );
-  ASSERT_TRUE( bulk.modification_end());
 
   stk::mesh::count_entities( select_used , bulk , local_count );
   ASSERT_EQ( local_count[stk::topology::NODE_RANK] , nLocalNode );
@@ -126,9 +148,7 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
   ASSERT_EQ( local_count[stk::topology::NODE_RANK] , nLocalNode + n_extra );
   ASSERT_EQ( local_count[stk::topology::ELEMENT_RANK] , nLocalElement + n_extra );
 
-  bulk.modification_begin();
   fixture.fixup_node_ownership();
-  ASSERT_TRUE(bulk.modification_end());
 
   // Make sure that element->owner_rank() == element->node[1]->owner_rank()
   if ( 1 < p_size ) {
@@ -213,9 +233,7 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   recv_element_1 = Entity();
   recv_element_2 = Entity();
 
-  ASSERT_TRUE( bulk.modification_begin() );
-  bulk.change_entity_owner( change );
-  ASSERT_TRUE( stk::unit_test::modification_end_wrapper( bulk , generate_aura ) );
+  bulk.change_entity_owner( change, generate_aura, BulkData::MOD_END_COMPRESS_AND_SORT );
 
   send_element_1 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send ] );
   send_element_2 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send + 1 ] );

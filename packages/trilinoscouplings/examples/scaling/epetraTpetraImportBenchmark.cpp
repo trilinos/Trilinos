@@ -57,10 +57,10 @@ using Teuchos::rcp;
 using Teuchos::Time;
 using Teuchos::TimeMonitor;
 
-typedef double ST;
-typedef int LO;
+typedef Tpetra::Vector<>::scalar_type ST;
+typedef Tpetra::Vector<>::local_ordinal_type LO;
 typedef int GO; // So that Epetra and Tpetra can use the same GID lists
-typedef KokkosClassic::SerialNode NT;
+typedef Tpetra::Vector<>::node_type NT;
 
 // Create a new timer with the given name if it hasn't already been
 // created, else get the previously created timer with that name.

@@ -95,22 +95,48 @@ namespace Tpetra {
     };
   } // namespace Details
 
+    template<class Node>
+    Teuchos::RCP<Node> defaultArgNode() {
+        // Workaround function for a deferred visual studio bug
+        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
+        // Use this function for default arguments rather than calling
+        // what is the return value below.  Also helps in reducing
+        // duplication in various constructors.
+        return KokkosClassic::Details::getNode<Node>();
+    }
+
   /// \class Map
   /// \brief Describes a parallel distribution of objects over processes.
   ///
-  /// \tparam LocalOrdinal The type of local indices.  Should be an
-  ///   integer, and generally should be signed.  A good model of
-  ///   <tt>LocalOrdinal</tt> is \c int, which is also the default.
-  ///   (In Epetra, this is always just \c int.)
+  /// \tparam LocalOrdinal The type of local indices.  This
+  ///   <i>must</i> be a built-in integer type, and <i>must</i> be
+  ///   signed.  A good model of <tt>LocalOrdinal</tt> is
+  ///   <tt>int</tt>, which is also the default.  (In Epetra, this is
+  ///   always just <tt>int</tt>.)
   ///
-  /// \tparam GlobalOrdinal The type of global indices.  Should be an
-  ///   integer, and generally should be signed.  Also, we require
-  ///   <tt>sizeof(GlobalOrdinal) >= sizeof(LocalOrdinal)</tt>.  If
-  ///   <tt>LocalOrdinal</tt> is \c int, good models of
-  ///   <tt>GlobalOrdinal</tt> are \c int, \c long, <tt>long long</tt>
-  ///   (if the configure-time option
-  ///   <tt>Teuchos_ENABLE_LONG_LONG_INT</tt> was set), or
-  ///   <tt>ptrdiff_t</tt>.
+  /// \tparam GlobalOrdinal The type of global indices.  This
+  ///   <i>must</i> be a built-in integer type.  We allow either
+  ///   signed or unsigned types here, but prefer signed types.  Also,
+  ///   we require that <tt>GlobalOrdinal</tt> be no smaller than
+  ///   <tt>LocalOrdinal</tt>, that is:
+  ///   \code
+  ///   sizeof(GlobalOrdinal) >= sizeof(LocalOrdinal);
+  ///   \endcode
+  ///   If <tt>LocalOrdinal</tt> is <tt>int</tt>, good models of
+  ///   <tt>GlobalOrdinal</tt> are
+  ///   <ul>
+  ///   <li> \c int </li>
+  ///   <li> \c long </li>
+  ///   <li> <tt>long long</tt> (if the configure-time option
+  ///        <tt>Teuchos_ENABLE_LONG_LONG_INT</tt> was set) </li>
+  ///   <li> \c ptrdiff_t </li>
+  ///   </ul>
+  ///   If you use the default <tt>GlobalOrdinal</tt> type, which
+  ///   is <tt>int</tt>, then the <i>global</i> number of rows or
+  ///   columns in the matrix may be no more than \c INT_MAX, which
+  ///   for typical 32-bit \c int is \f$2^{31} - 1\f$ (about two
+  ///   billion).  If you want to solve larger problems, you must use
+  ///   a 64-bit integer type here.
   ///
   /// \tparam Node A class implementing on-node shared-memory parallel
   ///   operations.  It must implement the
@@ -292,7 +318,7 @@ namespace Tpetra {
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          LocalGlobal lg=GloballyDistributed,
-         const Teuchos::RCP<Node> &node = defaultArgNode());
+         const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
 
     /** \brief Constructor with a user-defined contiguous distribution.
      *
@@ -337,7 +363,7 @@ namespace Tpetra {
          size_t numLocalElements,
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = defaultArgNode());
+         const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
 
     /** \brief Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
      *
@@ -377,7 +403,7 @@ namespace Tpetra {
          const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = defaultArgNode());
+         const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
 
 
     /// \brief Default constructor (that does nothing).
@@ -668,15 +694,6 @@ namespace Tpetra {
     //! Advanced methods
     //@{
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
-
     //! Create a shallow copy of this Map, with a different Node type.
     template <class NodeOut>
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
@@ -945,8 +962,7 @@ namespace Tpetra {
   ///   the default Kokkos Node.
   ///
   /// This method returns a Map instantiated on the default Kokkos
-  /// Node type, KokkosClassic::DefaultNode::DefaultNodeType.  The Map is
-  /// configured to use zero-based indexing.
+  /// Node type.  The Map is configured to use zero-based indexing.
   ///
   /// \param numElements [in] Number of elements on each process.
   ///   Each process gets the same set of elements, namely <tt>0, 1,
@@ -979,14 +995,13 @@ namespace Tpetra {
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createLocalMapWithNode (size_t numElements,
                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                          const Teuchos::RCP<Node>& node = KokkosClassic::Details::getNode<Node> ());
+                          const Teuchos::RCP<Node>& node = defaultArgNode<Node> ());
 
   /// \brief Non-member constructor for a uniformly distributed,
   ///   contiguous Map with the default Kokkos Node.
   ///
   /// This method returns a Map instantiated on the Kokkos default
-  /// Node type, KokkosClassic::DefaultNode::DefaultNodeType.  The
-  /// resulting Map uses zero-based indexing.
+  /// Node type.  The resulting Map uses zero-based indexing.
   ///
   /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal>
@@ -1005,18 +1020,18 @@ namespace Tpetra {
   createUniformContigMapWithNode (global_size_t numElements,
                                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                   const Teuchos::RCP<Node>& node =
-                                  KokkosClassic::Details::getNode<Node> ());
+                                  defaultArgNode<Node> ());
 
   /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with the default Kokkos Node.
 
-      This method returns a Map instantiated on the Kokkos default node type, KokkosClassic::DefaultNode::DefaultNodeType.
+      This method returns a Map instantiated on the Kokkos default node type.
 
       The Map is configured to use zero-based indexing.
 
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> >
   createContigMap (global_size_t numElements,
                    size_t localNumElements,
                    const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
@@ -1036,14 +1051,14 @@ namespace Tpetra {
 
   /** \brief Non-member constructor for a non-contiguous Map with the default Kokkos Node.
 
-      This method returns a Map instantiated on the Kokkos default node type, KokkosClassic::DefaultNode::DefaultNodeType.
+      This method returns a Map instantiated on the Kokkos default node type.
 
       The Map is configured to use zero-based indexing.
 
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> >
   createNonContigMap (const ArrayView<const GlobalOrdinal> &elementList,
                       const RCP<const Teuchos::Comm<int> > &comm);
 

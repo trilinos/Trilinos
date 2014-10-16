@@ -1,10 +1,18 @@
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-SET(HAVE_ZOLTAN2_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
+IF(NOT ${PROJECT_NAME}_ENABLE_OpenMP)
+  SET(${PROJECT_NAME}_ENABLE_OpenMP OFF)
+ENDIF()
+
+TRIBITS_ADD_OPTION_AND_DEFINE( Zoltan2_ENABLE_OpenMP
+  HAVE_ZOLTAN2_OMP
+  "Enable OpenMP support in Zoltan2."
+  ${${PROJECT_NAME}_ENABLE_OpenMP}
+)
+
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 

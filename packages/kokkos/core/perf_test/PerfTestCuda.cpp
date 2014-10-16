@@ -42,7 +42,7 @@
 */
 
 #include <gtest/gtest.h>
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Test {
 
@@ -51,12 +51,12 @@ extern void test_device_cuda_init();
 class cuda : public ::testing::Test {
   protected:
     static void SetUpTestCase() {
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+      Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
     }
     static void TearDownTestCase() {
       Kokkos::Cuda::finalize();
-      Kokkos::Cuda::host_mirror_device_type::finalize();
+      Kokkos::HostSpace::execution_space::finalize();
     }
 };
 

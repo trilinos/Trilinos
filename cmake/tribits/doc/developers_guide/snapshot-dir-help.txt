@@ -112,3 +112,7 @@ Options:
                         Check that dest-dir is committed and clean. [default]
   --allow-dirty-dest-dir
                         Skip clean check of dest-dir.
+  --do-rsync            Actually do the rsync. [default]
+  --skip-rsync          Skip the rsync (testing only?).
+  --do-commit           Actually do the commit. [default]
+  --skip-commit         Skip the commit.

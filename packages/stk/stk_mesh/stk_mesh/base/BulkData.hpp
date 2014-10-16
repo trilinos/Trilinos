@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_mesh_BulkData_hpp
 #define stk_mesh_BulkData_hpp
@@ -33,13 +58,11 @@
 #include <string>                       // for char_traits, string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
-#include "Shards_CellTopologyData.h"    // for CellTopologyData, etc
 #include "boost/functional/hash/extensions.hpp"  // for hash
 #include "boost/tuple/detail/tuple_basic.hpp"  // for get
 #include "boost/unordered/unordered_map.hpp"  // for unordered_map
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type, etc
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
-#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
@@ -213,6 +236,7 @@ public:
 #endif
             , ConnectivityMap const* arg_connectivity_map = NULL
             , FieldDataManager *field_dataManager = NULL
+            , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
             );
 
   //------------------------------------
@@ -289,8 +313,7 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
   bool modification_end( modification_optimization opt = MOD_END_SORT );
-  bool modification_end_for_edge_creation( modification_optimization opt = MOD_END_SORT);
-  bool modification_end_for_edge_creation_exp( modification_optimization opt = MOD_END_SORT);
+  bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT);
 
 
   /** If field-data was set to not stay in sync with buckets as the mesh was populated,
@@ -317,8 +340,7 @@ public:
 
   /** \brief  Give away ownership of entities to other parallel processes.
    *
-   *  A parallel-synchronous operation while the mesh is in the
-   *  ok-to-modify state.
+   *  A parallel-synchronous operation while the mesh is not being modified
    *
    *  Each owning process inputs a list of entities and the
    *  new owning process.  Upon completion of the call the owning
@@ -327,10 +349,15 @@ public:
    *  entities).  If a previous owner no longer needs a
    *  changed-owner entity to support the closure of a still-owned
    *  entity then the changed-owner entity is deleted from that process.
-   *  All ghosts of all entities effected by the changed ownerships
-   *  deleted.
+   *  All ghosts of all entities affected by the changed ownerships
+   *  are deleted.  This must be called outside a mesh modification cycle
+   *  as it is a self-contained atomic modification operation.  This uses
+   *  enough communication that it will be most efficient to batch up all
+   *  desired changes so that it can be called only once.
    */
-  void change_entity_owner( const EntityProcVec & arg_change);
+  void change_entity_owner( const EntityProcVec & arg_change,
+                            bool regenerate_aura = true,
+                            modification_optimization mod_optimization = MOD_END_SORT );
 
   /** \brief  Rotate the field data of multistate fields.
    *
@@ -577,13 +604,13 @@ public:
   {
     // 09/14/10:  TODO:  tscoffe:  Will this work in 1D??
     const bool is_side = entity_rank(side) != stk::topology::EDGE_RANK;
-    const CellTopologyData * const elem_top = get_cell_topology( bucket(elem) ).getCellTopologyData();
+    stk::topology elem_top = bucket(elem).topology();
 
-    const unsigned side_count = ! elem_top ? 0 : (
-        is_side ? elem_top->side_count
-            : elem_top->edge_count );
+    const unsigned side_count = ! (elem_top != stk::topology::INVALID_TOPOLOGY) ? 0 : (
+        is_side ? elem_top.num_sides()
+            : elem_top.num_edges() );
 
-    ThrowErrorMsgIf( elem_top == NULL,
+    ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
         "For Element[" << identifier(elem) << "], element has no defined topology");
 
     ThrowErrorMsgIf( static_cast<unsigned>(side_count) <= local_side_id,
@@ -592,17 +619,16 @@ public:
         "local_side_id = " << local_side_id <<
         " ; unsupported local_side_id");
 
-    const CellTopologyData * const side_top =
-        is_side ? elem_top->side[ local_side_id ].topology
-            : elem_top->edge[ local_side_id ].topology ;
+    stk::topology side_top =
+        is_side ? elem_top.side_topology( local_side_id )
+            : elem_top.sub_topology( stk::topology::EDGE_RANK, local_side_id );
 
-    const unsigned * const side_map =
-        is_side ? elem_top->side[ local_side_id ].node
-            : elem_top->edge[ local_side_id ].node ;
+    std::vector<unsigned> side_map(side_top.num_nodes());
+    elem_top.side_node_ordinals( local_side_id, side_map.begin());
 
     Entity const *elem_nodes = begin_nodes(elem);
     Entity const *side_nodes = begin_nodes(side);
-    const unsigned n = side_top->node_count;
+    const unsigned n = side_top.num_nodes();
     bool good = false ;
     for ( unsigned i = 0 ; !good && i < n ; ++i ) {
         good = true;
@@ -814,6 +840,11 @@ public:
   entitySharing isEntityMarked(Entity entity) const
   {
       return static_cast<entitySharing>(m_mark_entity[entity.local_offset()]);
+  }
+
+  bool addNodeSharingCalled() const
+  {
+    return m_add_node_sharing_called;
   }
 
   Bucket & bucket(Entity entity) const
@@ -1252,6 +1283,7 @@ private:
   std::vector<EntityKey>   m_entity_keys;
   std::vector<uint16_t>    m_entity_states;
   std::vector<int>         m_mark_entity;
+  bool                     m_add_node_sharing_called;
 protected:
   std::vector<uint16_t>    m_closure_count;
 private:
@@ -1375,7 +1407,9 @@ private:
                                    const PartVector & parts );
   bool internal_destroy_entity( Entity entity, bool was_ghost = false );
 
-  void internal_change_entity_owner( const std::vector<EntityProc> & arg_change );
+  void internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
+                                     bool regenerate_aura = true,
+                                     modification_optimization mod_optimization = MOD_END_SORT );
 
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
@@ -1401,8 +1435,7 @@ private:
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
-  bool internal_modification_end_for_edge_creation( bool regenerate_aura, modification_optimization opt );
-  bool internal_modification_end_for_edge_creation_exp( bool regenerate_aura, modification_optimization opt );
+  bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
 
 protected:
   void internal_resolve_shared_modify_delete();

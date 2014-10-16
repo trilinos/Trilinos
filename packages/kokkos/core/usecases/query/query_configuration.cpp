@@ -46,11 +46,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <Kokkos_Threads.hpp>
-
-#if defined( KOKKOS_HAVE_CUDA )
-#include <Kokkos_Cuda.hpp>
-#endif
+#include <Kokkos_Core.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

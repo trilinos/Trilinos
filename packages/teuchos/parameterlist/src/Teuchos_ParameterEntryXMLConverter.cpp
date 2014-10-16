@@ -59,19 +59,19 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(
       "Error: this Parameter Entry XML tag has a type different than "
       "the XMLConverter being used to convert it." <<std::endl <<
       "Parameter name: " << xmlObj.getRequired(
-      XMLParameterListWriter::getNameAttributeName()) << std::endl << 
-      "XML Parameter Entry type: " << 
-      xmlObj.getRequired(getTypeAttributeName()) << std::endl << 
-      "XMLConverter type: " << getTypeAttributeValue() << 
+      XMLParameterListWriter::getNameAttributeName()) << std::endl <<
+      "XML Parameter Entry type: " <<
+      xmlObj.getRequired(getTypeAttributeName()) << std::endl <<
+      "XMLConverter type: " << getTypeAttributeValue() <<
       std::endl <<std::endl);
   #endif
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    !xmlObj.hasAttribute(getValueAttributeName()), 
+    !xmlObj.hasAttribute(getValueAttributeName()),
     NoValueAttributeExecption,
     ParameterEntry::getTagName() <<" tags must "
     "have a " << getValueAttributeName() << " attribute" << std::endl <<
-    "Bad Parameter: " << 
+    "Bad Parameter: " <<
     xmlObj.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
     std::endl << std::endl);
 
@@ -95,28 +95,28 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(
 
   toReturn.setAnyValue(getAny(xmlObj), isDefault);
   toReturn.setDocString(docString);
-  
+
   if(isUsed){
     toReturn.getAny();
   }
-  
+
   return toReturn;
 }
 
 
 XMLObject
 ParameterEntryXMLConverter::fromParameterEntrytoXML(
-  RCP<const ParameterEntry> entry, 
+  RCP<const ParameterEntry> entry,
   const std::string &name,
   const ParameterEntry::ParameterEntryID& id,
   const ValidatortoIDMap& validatorIDsMap) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (entry->getAny().typeName() != getTypeAttributeValue()) 
+    (entry->getAny().typeName() != getTypeAttributeValue())
     &&
     (
-      getTypeAttributeValue() != 
+      getTypeAttributeValue() !=
       ParameterEntryXMLConverterDB::getDefaultConverter()->getTypeAttributeValue()
     ),
     BadParameterEntryXMLConverterTypeException,
@@ -141,10 +141,10 @@ ParameterEntryXMLConverter::fromParameterEntrytoXML(
     TEUCHOS_TEST_FOR_EXCEPTION(
       validatorIDsMap.find(entry->validator()) == validatorIDsMap.end(),
       MissingValidatorDefinitionException,
-      "Could not find validator in given ValidatorIDsMap! " << 
+      "Could not find validator in given ValidatorIDsMap! " <<
       std::endl << std::endl);
     toReturn.addAttribute(
-      ValidatorXMLConverter::getIdAttributeName(), 
+      ValidatorXMLConverter::getIdAttributeName(),
       validatorIDsMap.find(entry->validator())->second);
   }
   return toReturn;

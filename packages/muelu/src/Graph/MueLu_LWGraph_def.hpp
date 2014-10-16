@@ -53,15 +53,9 @@ namespace MueLu {
   //! Print the object with some verbosity level to an FancyOStream object.
   //using MueLu::Describable::describe; // overloading, not hiding
   //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LWGraph<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
-    // mfh 15 Mar 2013: Apparently, the above macro creates a magic
-    // variable out0, which the code below doesn't use.  For now, I'm
-    // silencing the resulting compiler warning using the standard
-    // idiom.  A MueLu developer might later want to move this idiom
-    // inside the above macro.
-    (void) out0;
 
     if (verbLevel & Parameters0) {
       //out0 << "Prec. type: " << type_ << std::endl;
@@ -75,7 +69,12 @@ namespace MueLu {
     }
 
     if (verbLevel & Debug) {
-      // graph_->describe(out0, Teuchos::VERB_EXTREME);
+      for (LO i = 0; i < rows_.size()-1; i++) {
+        out0 << i << ":";
+        for (LO j = rows_[i]; j < rows_[i+1]; j++)
+          out0 << " " << columns_[j];
+        out0 << std::endl;
+      }
     }
   }
 

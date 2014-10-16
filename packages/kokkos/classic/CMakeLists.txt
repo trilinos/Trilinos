@@ -1,4 +1,3 @@
-INCLUDE(TribitsSubPackageMacros)
 
 #
 # A) Define the package
@@ -116,58 +115,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 #   MESSAGE(WARNING "Disabling Intel Math Kernel Library (MKL) support in Kokkos because ${PROJECT_NAME}_ENABLE_MKL is ${${PROJECT_NAME}_ENABLE_MKL}")
 # ENDIF()
 
-######################################################################
-## BEGIN TSQR options
-######################################################################
-
-# Whether to enable TSQR (Tall Skinny QR factorization).
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  KokkosClassic_ENABLE_TSQR
-  HAVE_KOKKOSCLASSIC_TSQR
-  "Enable TSQR (Tall Skinny QR factorization) in Kokkos"
-  ON
-  )
-
-# Whether to enable TSQR's complex arithmetic (std::complex<T>)
-# support.
-#
-# Enabled by default (unless disabled explicitly at the command line)
-# if Teuchos is built with complex arithmetic support.
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  KokkosClassic_ENABLE_TSQR_Complex
-  HAVE_KOKKOSCLASSIC_TSQR_COMPLEX
-  "Enable complex arithmetic (std::complex<T>) support for TSQR"
-  "${Teuchos_ENABLE_COMPLEX}" 
-  )
-
-# Whether to enable TSQR's Fortran backend (TSQR::CombineFortran).
-#
-# Defaults to off, even if Trilinos is built with Fortran support.
-# This is because TSQR's Fortran backend must support the Fortran 2003
-# language standard.
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  KokkosClassic_ENABLE_TSQR_Fortran
-  HAVE_KOKKOSCLASSIC_TSQR_FORTRAN
-  "For TSQR: Enable the Fortran back end option for local kernels.  This requires Fortran 90 support, so it is disabled by default, even if you have enabled Fortran in your build.  TSQR will work fine without the Fortran back end, though it may perform better on some platforms.  This option is mainly only of interest to performance tuners."
-  OFF
-  )
-
-# Whether to build TbbTsqr and related classes.
-#
-# Enabled by default (unless disabled explicitly at the command line)
-# if Trilinos is built with the TBB (Intel's Threading Building
-# Blocks) TPL (third-party library) enabled.
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  KokkosClassic_ENABLE_TSQR_Intel_TBB
-  HAVE_KOKKOSCLASSIC_TSQR_INTEL_TBB
-  "For TSQR: enable Intel Threading Building Blocks (TBB) intranode parallelization.  This option is enabled by default if you are building Trilinos with TBB enabled as a 'third-party library' (TPL), so you should not have to enable this option manually.  TSQR will work without this, but enabling it will make TSQR go faster on multicore CPU nodes."
-  "${TPL_ENABLE_TBB}" 
-  )
-
-######################################################################
-## END TSQR options
-######################################################################
-
 #
 # C) Add the libraries, tests, and examples
 #
@@ -181,25 +128,6 @@ ENDIF()
 if (KokkosClassic_ENABLE_LinAlg AND KokkosClassic_ENABLE_NodeAPI)
   ADD_SUBDIRECTORY(LinAlg)
 ENDIF()
-
-######################################################################
-## BEGIN TSQR setup
-######################################################################
-
-if (KokkosClassic_ENABLE_TSQR)
-  # Intranode (shared-memory only) part of TSQR.
-  ADD_SUBDIRECTORY(NodeTSQR)
-  # Internode (distributed-memory) part of TSQR.  Depends only on
-  # Teuchos for distributed-memory communication.  We put this in
-  # Kokkos for lack of a better place: it's independent of Tpetra /
-  # Epetra and can work for both, so it shouldn't go in either
-  # package.
-  ADD_SUBDIRECTORY(DistTSQR)  
-ENDIF()
-
-######################################################################
-## END TSQR setup
-######################################################################
 
 #
 # D) Do standard postprocessing

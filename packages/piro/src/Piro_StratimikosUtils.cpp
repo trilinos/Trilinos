@@ -61,3 +61,32 @@ Piro::extractStratimikosParams(const Teuchos::RCP<Teuchos::ParameterList> &piroP
 
   return result;
 }
+
+void
+Piro::renamePreconditionerParamList(const Teuchos::RCP<Teuchos::ParameterList> &stratParams, 
+      const std::string &oldname, const std::string &newname){
+
+
+  if(stratParams->getPtr<std::string>("Preconditioner Type")){
+
+     const std::string currentval = stratParams->get<std::string>("Preconditioner Type");
+
+     if(currentval == oldname)
+
+       stratParams->set<std::string>("Preconditioner Type", newname);
+
+     else
+
+       return; // do nothing if the names do not match
+
+  }
+  else 
+     return; // return if Preconditioner Type isn't specified
+
+  // Does the old sublist exist?
+  if (stratParams->isSublist("Preconditioner Types") && stratParams->sublist("Preconditioner Types").isSublist(oldname)) {
+      Teuchos::ParameterList &result = stratParams->sublist("Preconditioner Types").sublist(oldname, true);
+      result.setName(newname);
+  }
+
+}

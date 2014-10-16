@@ -43,10 +43,11 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Qthread.hpp>
-#include <Kokkos_View.hpp>
 #include <Kokkos_CrsArray.hpp>
+
+#include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -58,10 +59,12 @@
 
 #include <TestCrsArray.hpp>
 #include <TestTeam.hpp>
+#include <TestRange.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestTaskPolicy.hpp>
 
 namespace Test {
 
@@ -93,6 +96,18 @@ TEST_F( qthread, view_api) {
   TestViewAPI< double , Kokkos::Qthread >();
 }
 
+TEST_F( qthread , range_tag )
+{
+  TestRange< Kokkos::Qthread >::test_for(1000);
+  TestRange< Kokkos::Qthread >::test_reduce(1000);
+  TestRange< Kokkos::Qthread >::test_scan(1000);
+}
+
+TEST_F( qthread , team_tag )
+{
+  TestTeamPolicy< Kokkos::Qthread >::test_for( 1000 );
+  TestTeamPolicy< Kokkos::Qthread >::test_reduce( 1000 );
+}
 
 TEST_F( qthread, crsarray) {
   TestCrsArray< Kokkos::Qthread >();
@@ -203,7 +218,6 @@ TEST_F( qthread , view_remap )
 
 //----------------------------------------------------------------------------
 
-
 TEST_F( qthread , view_aggregate )
 {
   TestViewAggregate< Kokkos::Qthread >();
@@ -213,10 +227,7 @@ TEST_F( qthread , view_aggregate )
 
 TEST_F( qthread , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::Qthread >( 10 );
-    TestScan< Kokkos::Qthread >( 10000 );
-  }
+  TestScan< Kokkos::Qthread >::test_range( 1 , 1000 );
   TestScan< Kokkos::Qthread >( 1000000 );
   TestScan< Kokkos::Qthread >( 10000000 );
   Kokkos::Qthread::fence();
@@ -229,7 +240,27 @@ TEST_F( qthread, team_shared ) {
 TEST_F( qthread , team_scan )
 {
   TestScanTeam< Kokkos::Qthread >( 10 );
-//  TestScanTeam< Kokkos::Qthread >( 10000 );
+  TestScanTeam< Kokkos::Qthread >( 10000 );
+}
+
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( qthread , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(0) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(4) ) );
+}
+#endif
+
+//----------------------------------------------------------------------------
+
+TEST_F( qthread , task_policy )
+{
+  // TestTaskPolicy::test_norm2< Kokkos::Qthread >( 1000 );
+  for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Qthread >(i);
+  for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Qthread >(i);
 }
 
 //----------------------------------------------------------------------------

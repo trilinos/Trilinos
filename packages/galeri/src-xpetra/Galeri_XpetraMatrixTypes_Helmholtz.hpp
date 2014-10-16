@@ -107,7 +107,7 @@ namespace Galeri {
       Scalar one = (Scalar) 1.0;
       Scalar two = (Scalar) 2.0;
       comm->barrier();
-      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
+      Teuchos::RCP<Teuchos::Time> timer = Teuchos::rcp(new Teuchos::Time("TriDiag global insert"));
       timer->start(true);
       for (LocalOrdinal i = 0; i < NumMyElements; ++i) {
         if (MyGlobalElements[i] == 0) {
@@ -141,7 +141,7 @@ namespace Galeri {
                                 Teuchos::tuple<Scalar>(two-shift*omega*omega*h*h) );
       }
       timer->stop();
-      timer = rcp(new Teuchos::Time("TriDiag fillComplete"));
+      timer = Teuchos::rcp(new Teuchos::Time("TriDiag fillComplete"));
       timer->start(true);
       mtx->fillComplete();
       timer->stop();
@@ -169,7 +169,7 @@ namespace Galeri {
       if (comm->getRank() == 0) {
         std::cout << "starting global insert" << std::endl;
       }
-      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
+      Teuchos::RCP<Teuchos::Time> timer = Teuchos::rcp(new Teuchos::Time("TriDiag global insert"));
       timer->start(true);
       for (LocalOrdinal i = 0; i < NumMyElements; ++i) {
         if (MyGlobalElements[i] == 0) {
@@ -203,7 +203,7 @@ namespace Galeri {
                                 Teuchos::tuple<Scalar>(h*h) );
       }
       timer->stop();
-      timer = rcp(new Teuchos::Time("TriDiag fillComplete"));
+      timer = Teuchos::rcp(new Teuchos::Time("TriDiag fillComplete"));
       timer->start(true);
       ktx->fillComplete();
       mtx->fillComplete();

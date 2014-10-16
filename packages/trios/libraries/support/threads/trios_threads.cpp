@@ -62,6 +62,10 @@
 #include <errno.h>
 #include <string.h>
 
+#if defined(HAVE_TRIOS_PTHREAD_H)
+#include <pthread.h>
+#endif
+
 #if defined(HAVE_TRIOS_SEMAPHORE_H)
 #include <semaphore.h>
 #endif
@@ -82,11 +86,13 @@ int nthread_lock_init(
     int  rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_lock_init: initializing lock(%p), lock->lock(%p)\n", (void*)lock, (void*)lock->lock_ptr);
+    fprintf(logger_get_file(), "nthread_lock_init: initializing lock(%p)\n", (void*)lock);
     fflush(logger_get_file());
 #endif
 
-#if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES)
+#if defined(HAVE_TRIOS_PTHREAD_MUTEX_INIT)
+    pthread_mutex_init(&lock->lock, NULL);
+#elif defined(HAVE_TRIOS_UNNAMED_SEMAPHORES)
     rc=sem_init(&lock->lock, 0, 1);
     if (rc == -1) {
         fprintf(logger_get_file(), "nthread_lock_init: sem_init failed: %s\n", strerror(errno));
@@ -114,11 +120,11 @@ int nthread_lock_init(
         return(-1);
     }
 #else
-#warning Semaphores are unavailable on this system.
+#warning No locking mechanism available on this system.
 #endif
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_lock_init: initialized lock(%p), lock->lock(%p), lock->name(%s)\n", (void*)lock, (void*)lock->lock_ptr, lock->name);
+    fprintf(logger_get_file(), "nthread_lock_init: initialized lock(%p), lock->name(%s)\n", (void*)lock, lock->name);
     fflush(logger_get_file());
 #endif
 
@@ -131,12 +137,13 @@ int nthread_lock(
     int rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_lock: locking lock(%p), lock->lock(%p)\n", (void*)lock, (void*)lock->lock_ptr);
+    fprintf(logger_get_file(), "nthread_lock: locking lock(%p)\n", (void*)lock);
     fflush(logger_get_file());
 #endif
 
-#if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
-
+#if defined(HAVE_TRIOS_PTHREAD_MUTEX_LOCK)
+    pthread_mutex_lock(&lock->lock);
+#elif defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
     if (lock->lock_ptr == NULL) {
         fprintf(logger_get_file(), "nthread_lock: lock not initialized\n");
         fflush(logger_get_file());
@@ -149,11 +156,12 @@ int nthread_lock(
         fflush(logger_get_file());
         return(-1);
     }
-
+#else
+#warning No locking mechanism available on this system.
 #endif
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_lock: locked lock(%p), lock->lock(%p)\n", (void*)lock, (void*)lock->lock_ptr);
+    fprintf(logger_get_file(), "nthread_lock: locked lock(%p)\n", (void*)lock);
     fflush(logger_get_file());
 #endif
 
@@ -166,12 +174,13 @@ int nthread_unlock(
     int rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_unlock: unlocking lock(%p), lock->lock(%p)\n", (void*)lock, (void*)lock->lock_ptr);
+    fprintf(logger_get_file(), "nthread_unlock: unlocking lock(%p)\n", (void*)lock);
     fflush(logger_get_file());
 #endif
 
-#if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
-
+#if defined(HAVE_TRIOS_PTHREAD_MUTEX_UNLOCK)
+    pthread_mutex_unlock(&lock->lock);
+#elif defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
     if (lock->lock_ptr == NULL) {
         fprintf(logger_get_file(), "nthread_unlock: lock not initialized\n");
         fflush(logger_get_file());
@@ -184,11 +193,12 @@ int nthread_unlock(
         fflush(logger_get_file());
         return(-1);
     }
-
+#else
+#warning No locking mechanism available on this system.
 #endif
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_unlock: unlocked lock(%p), lock->lock(%p)\n", (void*)lock, (void*)lock->lock_ptr);
+    fprintf(logger_get_file(), "nthread_unlock: unlocked lock(%p)\n", (void*)lock);
     fflush(logger_get_file());
 #endif
 
@@ -202,12 +212,13 @@ int nthread_lock_fini(
     int rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_lock_fini: finalizing lock(%p), lock->lock(%p), lock->name(%s)", (void*)lock, (void*)lock->lock_ptr, lock->name);
+    fprintf(logger_get_file(), "nthread_lock_fini: finalizing lock(%p), lock->name(%s)", (void*)lock, lock->name);
     fflush(logger_get_file());
 #endif
 
-#if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
-
+#if defined(HAVE_TRIOS_PTHREAD_MUTEX_DESTROY)
+    // do nothing
+#elif defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
     if (lock->lock_ptr == NULL) {
         fprintf(logger_get_file(), "nthread_lock_fini: lock not initialized\n");
         fflush(logger_get_file());
@@ -215,7 +226,9 @@ int nthread_lock_fini(
     }
 #endif
 
-#if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES)
+#if defined(HAVE_TRIOS_PTHREAD_MUTEX_DESTROY)
+    pthread_mutex_destroy(&lock->lock);
+#elif defined(HAVE_TRIOS_UNNAMED_SEMAPHORES)
     rc=sem_destroy(lock->lock_ptr);
     if (rc == -1) {
         fprintf(logger_get_file(), "nthread_lock_fini: sem_destroy failed: %s\n", strerror(errno));
@@ -239,16 +252,118 @@ int nthread_lock_fini(
     free(lock->name);
     lock->name=NULL;
 #else
-
+#warning No locking mechanism available on this system.
 #endif
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_lock_fini: finalized lock(%p), lock->lock(%p), lock->name(%s)", (void*)lock, (void*)lock->lock_ptr, lock->name);
+    fprintf(logger_get_file(), "nthread_lock_fini: finalized lock(%p), lock->name(%s)", (void*)lock, lock->name);
     fflush(logger_get_file());
 #endif
 
     return(rc);
 }
+
+
+int nthread_cond_init(
+        nthread_cond_t *condvar)
+{
+    int rc=0;
+
+#if defined(HAVE_TRIOS_PTHREAD_COND_INIT)
+    pthread_cond_init(&condvar->condvar, NULL);
+#elif defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
+//#warning The semaphores implementation of NSSI threads does not have conditional variables.  Sorry.
+#endif
+
+    return(rc);
+}
+
+int nthread_wait(
+        nthread_cond_t *condvar,
+        nthread_lock_t *lock)
+{
+    int rc=0;
+
+#if defined(HAVE_TRIOS_PTHREAD_COND_WAIT)
+    pthread_cond_wait(&condvar->condvar, &lock->lock);
+#elif defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
+//#warning The semaphores implementation of NSSI threads does not have conditional variables.  Sorry.
+#endif
+
+    return(rc);
+}
+
+int nthread_timedwait(
+        nthread_cond_t *condvar,
+        nthread_lock_t *lock,
+        uint64_t        timeout)
+{
+    int rc=0;
+
+#if defined(HAVE_TRIOS_PTHREAD_COND_TIMEDWAIT)
+    struct timespec abstime;
+
+    int  sec=timeout/1000;
+    long ms =timeout-sec*1000;
+
+    clock_gettime(CLOCK_REALTIME, &abstime);
+
+    // perform the addition
+    abstime.tv_nsec+=ms*1000000;
+    // adjust the time
+    abstime.tv_sec+=abstime.tv_nsec/1000000000 + sec;
+    abstime.tv_nsec=abstime.tv_nsec%1000000000;
+
+    rc=pthread_cond_timedwait(&condvar->condvar, &lock->lock, &abstime);
+#elif defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
+//#warning The semaphores implementation of NSSI threads does not have conditional variables.  Sorry.
+#endif
+
+    return(rc);
+}
+
+int nthread_signal(
+        nthread_cond_t *condvar)
+{
+    int rc=0;
+
+#if defined(HAVE_TRIOS_PTHREAD_COND_SIGNAL)
+    pthread_cond_signal(&condvar->condvar);
+#elif defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
+//#warning The semaphores implementation of NSSI threads does not have conditional variables.  Sorry.
+#endif
+
+    return(rc);
+}
+
+int nthread_broadcast(
+        nthread_cond_t *condvar)
+{
+    int rc=0;
+
+#if defined(HAVE_TRIOS_PTHREAD_COND_BROADCAST)
+    pthread_cond_broadcast(&condvar->condvar);
+#elif defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
+//#warning The semaphores implementation of NSSI threads does not have conditional variables.  Sorry.
+#endif
+
+    return(rc);
+}
+
+int nthread_cond_fini(
+        nthread_cond_t *condvar)
+{
+    int rc=0;
+
+#if defined(HAVE_TRIOS_PTHREAD_COND_DESTROY)
+    pthread_cond_destroy(&condvar->condvar);
+#elif defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
+//#warning The semaphores implementation of NSSI threads does not have conditional variables.  Sorry.
+#endif
+
+    return(rc);
+}
+
 
 int nthread_counter_init(
         nthread_counter_t *c)
@@ -262,8 +377,21 @@ int nthread_counter_init(
         fflush(logger_get_file());
         return(-1);
     }
+
+    if (nthread_lock(&c->lock) != 0) {
+        fprintf(logger_get_file(), "nthread_counter_increment: failed to lock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
+        goto cleanup;
+    }
+
     c->value = 0;
 
+    if (nthread_unlock(&c->lock) != 0) {
+        fprintf(logger_get_file(), "nthread_counter_increment: failed to unlock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
+    }
+
+cleanup:
     return rc;
 }
 
@@ -303,6 +431,7 @@ int64_t nthread_counter_decrement(
     if (nthread_lock(&c->lock) != 0) {
         fprintf(logger_get_file(), "nthread_counter_decrement: failed to lock the counter lock: %s\n", strerror(errno));
         fflush(logger_get_file());
+        t = -1;
         goto cleanup;
     }
 
@@ -324,13 +453,26 @@ int nthread_counter_fini(
     int rc=0;
 
 //    log_debug(thread_debug_level, "nthread_counter_fini(STUB)");
+    if (nthread_lock(&c->lock) != 0) {
+        fprintf(logger_get_file(), "nthread_counter_decrement: failed to lock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
+        goto cleanup;
+    }
+
+    c->value = 0;
+
+    if (nthread_unlock(&c->lock) != 0) {
+        fprintf(logger_get_file(), "nthread_counter_decrement: failed to unlock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
+    }
+
     rc=nthread_lock_fini(&c->lock);
     if (rc == -1) {
         fprintf(logger_get_file(), "nthread_counter_fini: nthread_lock_fini failed: %s\n", strerror(errno));
         fflush(logger_get_file());
         return(-1);
     }
-    c->value = 0;
 
+cleanup:
     return rc;
 }

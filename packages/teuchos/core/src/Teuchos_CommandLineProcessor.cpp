@@ -139,7 +139,7 @@ void CommandLineProcessor::setOption(
     = opt_val_val_t(OPT_BOOL_FALSE,any(option_val),false);
   options_documentation_list_.push_back(
     opt_doc_t(OPT_BOOL_TRUE, option_true, option_false,
-      std::string(documentation?documentation:""), any(option_val)) 
+      std::string(documentation?documentation:""), any(option_val))
     );
 }
 
@@ -179,6 +179,23 @@ void CommandLineProcessor::setOption(
     );
 }
 
+
+void CommandLineProcessor::setOption(
+  const char     option_name[]
+  ,size_t        *option_val
+  ,const char    documentation[]
+  ,const bool    required
+  )
+{
+  add_extra_output_setup_options();
+  TEUCHOS_TEST_FOR_EXCEPT(!(option_val!=NULL));
+  options_list_[std::string(option_name)]
+    = opt_val_val_t(OPT_SIZE_T,any(option_val),required);
+  options_documentation_list_.push_back(
+    opt_doc_t(OPT_SIZE_T, option_name, "", std::string(documentation?documentation:""),
+      any(option_val))
+    );
+}
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 void CommandLineProcessor::setOption(
@@ -256,9 +273,9 @@ CommandLineProcessor::parse(
   for( int i = 1; i < argc; ++i ) {
     bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
     if( !gov_return ) {
-      if(procRank == 0) 
+      if(procRank == 0)
         print_bad_opt(i,argv,errout);
-      if( recogniseAllOptions() ) 
+      if( recogniseAllOptions() )
         return PARSE_UNRECOGNIZED_OPTION;
       else {
         continue;
@@ -291,13 +308,13 @@ CommandLineProcessor::parse(
     if( itr == options_list_.end() ) {
       if(procRank == 0)
         print_bad_opt(i,argv,errout);
-      if( recogniseAllOptions() ) 
+      if( recogniseAllOptions() )
         return PARSE_UNRECOGNIZED_OPTION;
       else
         continue;
     }
-    // Changed access to second value of std::map to not use overloaded arrow operator, 
-    // otherwise this code will not compile on Janus (HKT, 12/01/2003) 
+    // Changed access to second value of std::map to not use overloaded arrow operator,
+    // otherwise this code will not compile on Janus (HKT, 12/01/2003)
     opt_val_val_t &opt_val_val = (*itr).second;
     opt_val_val.was_read = true;
     switch( opt_val_val.opt_type ) {
@@ -312,6 +329,9 @@ CommandLineProcessor::parse(
         break;
       case OPT_LONG_INT:
         *(any_cast<long int*>(opt_val_val.opt_val)) = asSafe<long int> (opt_val_str);
+        break;
+      case OPT_SIZE_T:
+        *(any_cast<size_t *>(opt_val_val.opt_val)) = asSafe<size_t> (opt_val_str);
         break;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
       case OPT_LONG_LONG_INT:
@@ -384,10 +404,10 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
   if (procRank == 0) {
     using std::setw;
     using std::endl;
-    
+
     const int opt_type_w = 14;
     const char spc_chars[] = "  ";
-    
+
     // Get the maximum length of an option name
     int opt_name_w = 19; // For the 'pause-for-debugging' option
     options_documentation_list_t::const_iterator itr;
@@ -402,7 +422,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
         opt_name_w = my_max(opt_name_w,itr->opt_name_false.length());
     }
     opt_name_w += 2;
-    
+
     // Some built-in options
     out
       << "Usage: " << program_name << " [options]\n"
@@ -492,6 +512,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
           break;
         case OPT_INT:
         case OPT_LONG_INT:
+        case OPT_SIZE_T:
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
         case OPT_LONG_LONG_INT:
 #endif
@@ -511,6 +532,9 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
           break;
         case OPT_LONG_INT:
           out << "=" << (*(any_cast<long int*>(itr->default_val)));
+          break;
+        case OPT_SIZE_T:
+          out << "=" << (*(any_cast<size_t*>(itr->default_val)));
           break;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
         case OPT_LONG_LONG_INT:
@@ -819,7 +843,7 @@ CommandLineProcessor::getRawTimeMonitorSurrogate()
 {
   static RCP<TimeMonitorSurrogate> timeMonitorSurrogate;
   return timeMonitorSurrogate;
-} 
+}
 
 
 } // end namespace Teuchos

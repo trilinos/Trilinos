@@ -55,215 +55,38 @@
 
 namespace Xpetra {
 
-  EpetraMultiVector::EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
-    //TODO: input argument 'NumVectors' is not necessary in both Xpetra and Tpetra interface. Should it be removed?
-
-    const std::string tfecfFuncName("MultiVector(ArrayOfPtrs)");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1 || NumVectors != Teuchos::as<size_t>(ArrayOfPtrs.size()), std::runtime_error,
-                                          ": ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
-
-#ifdef HAVE_XPETRA_DEBUG
-    // This cannot be tested by Epetra itself
-    {
-      size_t localLength = map->getNodeNumElements();
-      for(int j=0; j<ArrayOfPtrs.size(); j++) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != localLength, std::runtime_error,
-                                              ": ArrayOfPtrs[" << j << "].size() (== " << ArrayOfPtrs[j].size() <<
-                                              ") is not equal to getLocalLength() (== " << localLength);
-
-      }
-    }
-#endif
-
-    // Convert Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > to double**
-    Array<const double*> arrayOfRawPtrs(ArrayOfPtrs.size());
-    for(int i=0; i<ArrayOfPtrs.size(); i++) {
-      arrayOfRawPtrs[i] = ArrayOfPtrs[i].getRawPtr();
-    }
-    double** rawArrayOfRawPtrs = const_cast<double**>(arrayOfRawPtrs.getRawPtr()); // This const_cast should be fine, because Epetra_DataAccess=Copy.
-
-    vec_ = Teuchos::rcp(new Epetra_MultiVector(Copy, toEpetra(map), rawArrayOfRawPtrs, NumVectors));
-  }
-
-
-  Teuchos::RCP< const Vector< double, int, int > > EpetraMultiVector::getVector(size_t j) const {
-    XPETRA_MONITOR("EpetraMultiVector::getVector");
-    return rcp(new EpetraVector(vec_, j)); // See constructor EpetraVector(const RCP<EpetraMultiVector> &mv, size_t j) for more info
-  }
-
-  Teuchos::RCP< Vector< double, int, int > > EpetraMultiVector::getVectorNonConst(size_t j) {
-    XPETRA_MONITOR("EpetraMultiVector::getVector");
-    return rcp(new EpetraVector(vec_, j)); // See constructor EpetraVector(const RCP<EpetraMultiVector> &mv, size_t j) for more info
-  }
-
-  Teuchos::ArrayRCP<const double> EpetraMultiVector::getData(size_t j) const {
-    XPETRA_MONITOR("EpetraMultiVector::getData");
-
-    double ** arrayOfPointers;
-
-    vec_->ExtractView(&arrayOfPointers);
-
-    double * data = arrayOfPointers[j];
-    int localLength = vec_->MyLength();
-
-    return ArrayRCP<double>(data, 0, localLength, false); // no ownership
-  }
-
-  Teuchos::ArrayRCP<double> EpetraMultiVector::getDataNonConst(size_t j) {
-    XPETRA_MONITOR("EpetraMultiVector::getDataNonConst");
-
-    double ** arrayOfPointers;
-
-    vec_->ExtractView(&arrayOfPointers);
-
-    double * data = arrayOfPointers[j];
-    int localLength = vec_->MyLength();
-
-    return ArrayRCP<double>(data, 0, localLength, false); // no ownership
-  }
-
-  void EpetraMultiVector::dot(const MultiVector<double,int,int> &A, const Teuchos::ArrayView<double> &dots) const {
-    XPETRA_MONITOR("EpetraMultiVector::dot");
-
-    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
-    vec_->Dot(*eA.getEpetra_MultiVector(), dots.getRawPtr());
-  }
-
-  void EpetraMultiVector::norm1(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("EpetraMultiVector::norm1"); vec_->Norm1(norms.getRawPtr()); }
-
-  void EpetraMultiVector::norm2(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("EpetraMultiVector::norm2"); vec_->Norm2(norms.getRawPtr()); }
-
-  void EpetraMultiVector::normInf(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("EpetraMultiVector::normInf"); vec_->NormInf(norms.getRawPtr()); }
-
-  void EpetraMultiVector::normWeighted(const MultiVector<double,int,int> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const {
-    XPETRA_MONITOR("EpetraMultiVector::normWeighted");
-
-    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, weights, eWeights, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
-    vec_->NormWeighted(*eWeights.getEpetra_MultiVector(), norms.getRawPtr());
-  }
-
-  void EpetraMultiVector::meanValue(const Teuchos::ArrayView<double> &means) const { XPETRA_MONITOR("EpetraMultiVector::meanValue"); vec_->MeanValue(means.getRawPtr()); } //TODO: modify ArrayView size ??
-
-  std::string EpetraMultiVector::description() const {
-    XPETRA_MONITOR("EpetraMultiVector::description");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
-    return "TODO";
-  }
-
-  void EpetraMultiVector::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
-    XPETRA_MONITOR("EpetraMultiVector::describe");
-    vec_->Print(out);
-  }
-
-  void EpetraMultiVector::doImport(const DistObject<double, int, int> &source, const Import<int, int> &importer, CombineMode CM) {
-    XPETRA_MONITOR("EpetraMultiVector::doImport");
-
-    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, source, tSource, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraMultiVector as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraImport as input arguments.");
-
-    RCP<Epetra_MultiVector> v = tSource.getEpetra_MultiVector();
-    int err = this->getEpetra_MultiVector()->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
-    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
-  }
-
-  void EpetraMultiVector::doExport(const DistObject<double, int, int> &dest, const Import<int, int>& importer, CombineMode CM) {
-    XPETRA_MONITOR("EpetraMultiVector::doExport");
-
-    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, dest, tDest, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraMultiVector as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraImport as input arguments.");
-
-    RCP<Epetra_MultiVector> v = tDest.getEpetra_MultiVector();
-    int err = this->getEpetra_MultiVector()->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
-    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
-  }
-
-  void EpetraMultiVector::doImport(const DistObject<double,int,int> &source, const Export<int, int>& exporter, CombineMode CM) {
-    XPETRA_MONITOR("EpetraMultiVector::doImport");
-
-    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, source, tSource, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraMultiVector as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraImport as input arguments.");
-
-    RCP<Epetra_MultiVector> v = tSource.getEpetra_MultiVector();
-    int err = this->getEpetra_MultiVector()->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
-    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
-  }
-
-  void EpetraMultiVector::doExport(const DistObject<double, int, int> &dest, const Export<int, int>& exporter, CombineMode CM) {
-    XPETRA_MONITOR("EpetraMultiVector::doExport");
-
-    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, dest, tDest, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraMultiVector as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraImport as input arguments.");
-
-    RCP<Epetra_MultiVector> v = tDest.getEpetra_MultiVector();
-    int err = this->getEpetra_MultiVector()->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
-    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
-  }
-
-  void EpetraMultiVector::replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
-    int err = 0;
-    if (!map.is_null()) {
-      err = this->getEpetra_MultiVector()->ReplaceMap(toEpetra(map));
-
-    } else {
-      // Replace map with a dummy map to avoid potential hangs later
-      Epetra_SerialComm SComm;
-      Epetra_Map NewMap(vec_->MyLength(), vec_->Map().IndexBase(), SComm);
-      err = this->getEpetra_MultiVector()->ReplaceMap(NewMap);
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
-  }
-
-  void EpetraMultiVector::
-  assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
-  {
-    typedef EpetraMultiVector this_type;
-    const this_type* rhsPtr = dynamic_cast<const this_type*> (&rhs);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      rhsPtr == NULL, std::invalid_argument, "Xpetra::MultiVector::operator=: "
-      "The left-hand side (LHS) of the assignment has a different type than "
-      "the right-hand side (RHS).  The LHS has type Xpetra::EpetraMultiVector "
-      "(which means it wraps an Epetra_MultiVector), but the RHS has some "
-      "other type.  This probably means that the RHS wraps a Tpetra::Multi"
-      "Vector.  Xpetra::MultiVector does not currently implement assignment "
-      "from a Tpetra object to an Epetra object, though this could be added "
-      "with sufficient interest.");
-
-    RCP<const Epetra_MultiVector> rhsImpl = rhsPtr->getEpetra_MultiVector ();
-    RCP<Epetra_MultiVector> lhsImpl = this->getEpetra_MultiVector ();
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      rhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
-      "(in Xpetra::EpetraMultiVector::assign): *this (the right-hand side of "
-      "the assignment) has a null RCP<Epetra_MultiVector> inside.  Please "
-      "report this bug to the Xpetra developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
-      "(in Xpetra::EpetraMultiVector::assign): The left-hand side of the "
-      "assignment has a null RCP<Epetra_MultiVector> inside.  Please report "
-      "this bug to the Xpetra developers.");
-
-    // Epetra_MultiVector's assignment operator does a deep copy.
-    *lhsImpl = *rhsImpl;
-  }
-
-  // TODO: move that elsewhere
-  const Epetra_MultiVector & toEpetra(const MultiVector<double, int, int> & x) {
-    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, x, tX, "toEpetra");
+// TODO: move that elsewhere
+  template<class GlobalOrdinal>
+  const Epetra_MultiVector & toEpetra(const MultiVector<double, int, GlobalOrdinal> & x) {
+    XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT<GlobalOrdinal>, x, tX, "toEpetra");
     return *tX.getEpetra_MultiVector();
   }
 
-  Epetra_MultiVector & toEpetra(MultiVector<double, int, int> & x) {
-    XPETRA_DYNAMIC_CAST(      EpetraMultiVector, x, tX, "toEpetra");
+  template<class GlobalOrdinal>
+  Epetra_MultiVector & toEpetra(MultiVector<double, int, GlobalOrdinal> & x) {
+    XPETRA_DYNAMIC_CAST(      EpetraMultiVectorT<GlobalOrdinal>, x, tX, "toEpetra");
     return *tX.getEpetra_MultiVector();
   }
   //
 
-  RCP<MultiVector<double, int, int> > toXpetra(RCP<Epetra_MultiVector> vec) {
+  template<class GlobalOrdinal>
+  RCP<MultiVector<double, int, GlobalOrdinal> > toXpetra(RCP<Epetra_MultiVector> vec) {
     if (!vec.is_null())
-      return rcp(new EpetraMultiVector(vec));
+      return rcp(new EpetraMultiVectorT<GlobalOrdinal>(vec));
 
     return Teuchos::null;
   }
 
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+template RCP<MultiVector<double, int, int> > toXpetra<int>(RCP<Epetra_MultiVector>);
+template const Epetra_MultiVector & toEpetra(const MultiVector<double, int, int> &);
+template Epetra_MultiVector & toEpetra(MultiVector<double, int, int> &);
+#endif
+
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+template RCP<MultiVector<double, int, long long> > toXpetra<long long>(RCP<Epetra_MultiVector>);
+template const Epetra_MultiVector & toEpetra(const MultiVector<double, int, long long> &);
+template Epetra_MultiVector & toEpetra(MultiVector<double, int, long long> &);
+#endif
 
 } // namespace Xpetra

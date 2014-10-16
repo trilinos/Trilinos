@@ -73,14 +73,14 @@ script in the example subdirectory of the PyTrilinos package:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // NOX includes
 #include "NOX_Version.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // General ignore directives
@@ -142,6 +142,6 @@ import StatusTest
 
 # Epetra namespace
 __all__.append('Epetra')
-import NestedEpetra as Epetra
+from . import Epetra
 %}
 #endif

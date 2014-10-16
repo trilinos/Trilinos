@@ -43,7 +43,7 @@
 #define TEUCHOS_COMMAND_LINE_PROCESSOR_HPP
 
 /*! \file Teuchos_CommandLineProcessor.hpp
-  \brief Basic command line parser for input from <tt>(argc,argv[])</tt> 
+  \brief Basic command line parser for input from <tt>(argc,argv[])</tt>
 */
 
 /** \example CommandLineProcessor/cxx_main.cpp
@@ -75,7 +75,7 @@ namespace Teuchos {
 class TEUCHOSCORE_LIB_DLL_EXPORT CommandLineProcessor {
 public:
 
-  //! @name Public types 
+  //! @name Public types
   //@{
 
   /// Thrown if a parse std::exception occurs and  throwExceptions==true
@@ -100,10 +100,10 @@ public:
     ,PARSE_UNRECOGNIZED_OPTION     =  2 /*!< The command line parser encountered an unrecognized option. */
     ,PARSE_ERROR                   =  3 /*!< The command line parser encountered an error. */
   };
-  
+
   //@}
 
-  //! @name Constructors 
+  //! @name Constructors
   //@{
 
   /** \brief Default Constructor
@@ -133,12 +133,12 @@ public:
 
   //@}
 
-  //! @name Behavior modes 
+  //! @name Behavior modes
   //@{
 
   /// Set if an std::exception is thrown, there is a parse error, or help is printed.
   void throwExceptions( const bool & throwExceptions );
-  
+
   /// Returns true if an std::exception is thrown, there is a parse error, or help is printed.
   bool throwExceptions() const;
 
@@ -156,9 +156,9 @@ public:
 
   //@}
 
-  //! @name Set up options 
+  //! @name Set up options
   //@{
-  
+
   /** \brief Set a documentation sting for the entire program printed when
    * --help is specified. */
   void setDocString( const char doc_string[] );
@@ -216,6 +216,22 @@ public:
     ,const bool    required        = false
     );
 
+  /** \brief Set a size_t option.
+   *
+   * \param  option_name    [in] (null terminated std::string) The name of the option
+   *                        (without the leading '--' or trailing '=').
+   * \param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
+   *                        of the option (used for printing in --help).  On output,
+   *                        will be set according to <tt>(argc,argv[])</tt>.
+   * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated std::string
+   *                        gives the documentation for the option.
+   */
+  void setOption(
+    const char     option_name[]
+    ,size_t        *option_val
+    ,const char    documentation[] = NULL
+    ,const bool    required        = false
+    );
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
   /** \brief Set a long long integer option.
    *
@@ -268,7 +284,7 @@ public:
     ,const char    documentation[] = NULL
     ,const bool    required        = false
     );
-  
+
   /** \brief Set an enumeration option (templated by enumeration type).
    *
    * \param  enum_option_name
@@ -277,7 +293,7 @@ public:
    * \param  enum_option_val
    *              [in/out] On input, <tt>*enum_option_val</tt> give the default
    *              value of the enumeration (used for printing in --help).
-   *              After <tt>parse()</tt> finished executing successfully, 
+   *              After <tt>parse()</tt> finished executing successfully,
    *              <tt>*enum_option_val</tt> will contain the user-selected
    *              value of the enumeration.
    * \param  num_enum_opt_values
@@ -307,10 +323,10 @@ public:
     ,const char   documentation[] = NULL
     ,const bool   required        = false
     );
-  
+
   //@}
 
-  //! @name Parse 
+  //! @name Parse
   //@{
 
   /** \brief Parse a command line.
@@ -380,7 +396,7 @@ public:
 
   //@}
 
-  //! @name Miscellaneous 
+  //! @name Miscellaneous
   //@{
 
   /** \brief Print the help message.
@@ -404,7 +420,7 @@ public:
 
 public:
   //
-  enum EOptType { OPT_NONE, OPT_BOOL_TRUE, OPT_BOOL_FALSE, OPT_INT, OPT_LONG_INT, 
+  enum EOptType { OPT_NONE, OPT_BOOL_TRUE, OPT_BOOL_FALSE, OPT_INT, OPT_LONG_INT, OPT_SIZE_T,
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
   OPT_LONG_LONG_INT,
 #endif
@@ -426,8 +442,10 @@ private:
 
   //
   struct opt_val_val_t {
-    opt_val_val_t()
-      :opt_type(OPT_NONE)
+    opt_val_val_t():
+      opt_type(OPT_NONE),
+      required(false),
+      was_read(false)
       {}
     opt_val_val_t( EOptType opt_type_in, const any& opt_val_in, bool required_in )
       :opt_type(opt_type_in),opt_val(opt_val_in),required(required_in),was_read(false)
@@ -457,7 +475,7 @@ private:
     std::string  documentation;
     any          default_val;
   };
-  
+
   //
   typedef std::vector<opt_doc_t>   options_documentation_list_t;
 
@@ -568,14 +586,14 @@ private:
     ,const int           enum_id
     ,std::ostream        *errout
     ) const;
-  
+
   // Return the index given and option value
   int find_enum_opt_index(
     const std::string           &enum_opt_name
     ,const int                  opt_value
     ,const enum_opt_data_t      &enum_data
     ,std::ostream               *errout
-    ) const; 
+    ) const;
 
   // Get the option and the value from an entry in argv[].
   // Will return false if entry is not formated properly.
@@ -599,7 +617,7 @@ public: // Hidden implementation stuff that clients should never see
 
   /// \class TimeMonitorSurrogate
   /// \brief Interface by which CommandLineProcessor may use TimeMonitor.
-  /// \warning Users should not use this class or rely on it in any way.  
+  /// \warning Users should not use this class or rely on it in any way.
   ///   It is an implementation detail.
   ///
   /// \section Teuchos_TimeMonitorSurrogate_Summary Summary
@@ -734,6 +752,9 @@ std::string CommandLineProcessor::opt_type_str( EOptType opt_type ) const
     case OPT_LONG_INT:
       str = "long int";
       break;
+    case OPT_SIZE_T:
+      str = "size_t";
+      break;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
     case OPT_LONG_LONG_INT:
       str = "long long int";
@@ -750,7 +771,7 @@ std::string CommandLineProcessor::opt_type_str( EOptType opt_type ) const
       break;
     default:
       assert(0); // Local programming error only
-  } 
+  }
   return str;
 }
 

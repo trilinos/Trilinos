@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "PyTrilinos_NumPyImporter.h"
+#include "PyTrilinos_NumPyImporter.hpp"
 
 namespace PyTrilinos
 {

@@ -47,7 +47,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -261,7 +261,7 @@ void test_view_impl()
     for ( int i = 0 ; i < rank ; ++i ) {
       ASSERT_EQ( size_t(dim[i]) , size_t( stride_6.dimension[i] ) );
       ASSERT_EQ( size_t(n) , size_t( stride_6.stride[ order[i] ] ) );
-      n *= dim[i] ;
+      n *= dim[order[i]] ;
     }
   }
 

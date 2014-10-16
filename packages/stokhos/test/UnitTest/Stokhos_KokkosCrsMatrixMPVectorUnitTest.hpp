@@ -47,8 +47,7 @@
 #include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
 
 // For computing DeviceConfig
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Helper functions
 template< typename IntType >

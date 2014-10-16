@@ -81,6 +81,7 @@
 
 /* Define if user requested explicit instantiation over ordinal pair <int,long> into libtpetra */
 #define HAVE_TPETRA_INST_INT_LONG
+/* #undef HAVE_TPETRA_INST_INT_LONG_LONG */
 
 /* #undef HAVE_TPETRA_INST_FLOAT */
 #define HAVE_TPETRA_INST_DOUBLE

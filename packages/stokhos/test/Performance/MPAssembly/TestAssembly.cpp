@@ -45,11 +45,7 @@
 #include "TestAssembly.hpp"
 
 // Devices
-#include "KokkosCore_config.h"
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_OpenMP.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Utilities
 #include "Teuchos_DefaultComm.hpp"
@@ -222,7 +218,7 @@ int main(int argc, char *argv[])
           " to run with too many GPUs per node");
       }
 
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+      Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
 
       cudaDeviceProp deviceProp;
@@ -242,7 +238,7 @@ int main(int argc, char *argv[])
       mainCuda<Storage>(comm, print, nIter, atomic, use_nodes, check,
                         dev_config);
 
-      Kokkos::Cuda::host_mirror_device_type::finalize();
+      Kokkos::HostSpace::execution_space::finalize();
       Kokkos::Cuda::finalize();
     }
 #endif

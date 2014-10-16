@@ -51,60 +51,6 @@
 #include <impl/Kokkos_Error.hpp>
 #include <Cuda/Kokkos_Cuda_abort.hpp>
 
-/*--------------------------------------------------------------------------*/
-
-#if defined( __CUDACC__ )
-
-namespace Kokkos {
-namespace Impl {
-
-class CudaExec {
-public:
-
-  __device__ inline
-  CudaExec( const int shmem_begin , const int shmem_end )
-    : m_shmem_end(   shmem_end )
-    , m_shmem_iter(  shmem_begin )
-    {}
-
-  __device__ inline
-  void * get_shmem( const int size )
-  {
-    extern __shared__ int sh[];
-
-    // m_shmem_iter is in bytes, convert to integer offsets
-    const int offset = m_shmem_iter >> power_of_two<sizeof(int)>::value ;
-
-    m_shmem_iter += size ;
-
-    if ( m_shmem_end < m_shmem_iter ) {
-      cuda_abort("Cuda::get_shmem out of memory");
-    }
-
-    return sh + offset ;
-  }
-
-private:
-
-  const int m_shmem_end ;
-        int m_shmem_iter ;
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-#if defined( __CUDA_ARCH__ )
-
-namespace Kokkos {
-
-inline __device__ 
-void * Cuda::get_shmem( const int size ) const { return m_exec.get_shmem( size ); }
-
-} // namespace Kokkos
-
-#endif /* defined( __CUDA_ARCH__ ) */
-#endif /* defined( __CUDACC__ ) */
-
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -218,7 +164,7 @@ struct CudaParallelLaunch< DriverType , true > {
                       const dim3       & block ,
                       const int          shmem )
   {
-    if ( grid.x && block.x ) {
+    if ( grid.x && ( block.x * block.y * block.z ) ) {
 
       if ( sizeof( Kokkos::Impl::CudaTraits::ConstantGlobalBufferType ) <
            sizeof( DriverType ) ) {
@@ -256,7 +202,7 @@ struct CudaParallelLaunch< DriverType , false > {
                       const dim3       & block ,
                       const int          shmem )
   {
-    if ( grid.x && block.x ) {
+    if ( grid.x && ( block.x * block.y * block.z ) ) {
 
       if ( CudaTraits::SharedMemoryCapacity < shmem ) {
         Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );

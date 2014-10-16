@@ -45,8 +45,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 // Device
-#include "Kokkos_OpenMP.hpp"
-#include "Kokkos_hwloc.hpp"
+#include "Kokkos_Core.hpp"
 
 // Kernels
 #include "Stokhos_ConfigDefs.h"

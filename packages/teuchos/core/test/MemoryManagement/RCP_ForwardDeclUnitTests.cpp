@@ -83,7 +83,7 @@ TEUCHOS_UNIT_TEST( RCP, ForwardDeclaredUndefined_rcp )
   // be issues with the destructor call.
   UndefinedType *ut_ptr = 0;
   RCP<UndefinedType> ut_rcp =
-#if defined(HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR) 
+#if defined(HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR)
     rcpFromUndefRef(*ut_ptr)
   // In this case, you have to use rcpFromUndefRef(...) in this case instead
   // of rcpFromRef() because the latter requires the object to be defined in

@@ -60,11 +60,11 @@ namespace Teuchos {
 /** \brief Turn on or off a floating point trap.
  *
  * To use this from gdb, set:
- 
+
  \verbatim
    handle SIGFPE stop nopass
  \endverbatim
- 
+
  * before running the code in gdb.
  */
 void doFloatingPointTrap(bool enableTrap);

@@ -61,5 +61,6 @@
 ../pamgen_test_driver -f report16.txt -r 0 -n 8 -d 3
 ../pamgen_test_driver -f report17.txt -r 0 -n 8 -d 3
 ../pamgen_test_driver -f double_ss_ns.txt -r 0 -n 1 -d 3 
+../pamgen_test_driver -f 360tri.txt -d 3 -r 0 -n 1
 
 

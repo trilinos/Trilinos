@@ -73,7 +73,11 @@ extern "C" {
 #define PMV3_OPTION_IPART       3
 #define PMV3_OPTION_PSR         3
 #define PMV3_OPT_USE_OBJ_SIZE   9  /* Added by EB, not in ParMetis */
-#define MAX_OPTIONS             10 /* Max number of options +1 */
+#if (PARMETIS_MAJOR_VERSION < 4)
+#define MAX_PARMETIS_OPTIONS   40 /* Max number of options +1 */
+#else
+#define MAX_PARMETIS_OPTIONS METIS_NOPTIONS
+#endif
 /* Other ParMetis constants we may need */
 #define GLOBAL_DBGLVL		0  /* Default debug level */
 #define GLOBAL_SEED		15 /* Default random seed */

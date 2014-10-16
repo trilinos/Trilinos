@@ -62,7 +62,9 @@
 
 namespace Xpetra {
 
-template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+template<class LocalOrdinal = BlockMap<>::local_ordinal_type,
+         class GlobalOrdinal = typename BlockMap<LocalOrdinal>::global_ordinal_type,
+         class Node = typename BlockMap<LocalOrdinal, GlobalOrdinal>::node_type>
 class TpetraBlockMap
   : public BlockMap<LocalOrdinal,GlobalOrdinal,Node>
 {
@@ -80,7 +82,10 @@ class TpetraBlockMap
                  LocalOrdinal blockSize,
                  GlobalOrdinal indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                 const Teuchos::RCP<Node> &node = KokkosClassic::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, blockSize, indexBase, comm, node))) {  }
+                 const Teuchos::RCP<Node>& node = KokkosClassic::Details::getNode<Node> ()) :
+    map_ (rcp (new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> (numGlobalBlocks, blockSize,
+                                                                        indexBase, comm, node)))
+  {}
 
   /*! \brief TpetraBlockMap constructor specifying num global and local blocks, and constant blockSize.
    */
@@ -89,7 +94,12 @@ class TpetraBlockMap
                  LocalOrdinal blockSize,
                  GlobalOrdinal indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                 const Teuchos::RCP<Node> &node = KokkosClassic::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, numLocalBlocks, blockSize, indexBase, comm, node))) {  }
+                 const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node> ())
+  : map_ (rcp (new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> (numGlobalBlocks,
+                                                                        numLocalBlocks,
+                                                                        blockSize, indexBase,
+                                                                        comm, node)))
+  {}
 
   /*! \brief TpetraBlockMap constructor specifying numGlobalBlocks and lists of local blocks first-global-point-in-blocks, and blockSizes.
    */
@@ -99,7 +109,13 @@ class TpetraBlockMap
                  const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
                  GlobalOrdinal indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                 const Teuchos::RCP<Node> &node = KokkosClassic::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, myGlobalBlockIDs, myFirstGlobalPointInBlocks, myBlockSizes, indexBase, comm, node))) {  }
+                 const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node> ())
+  : map_ (rcp (new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> (numGlobalBlocks,
+                                                                        myGlobalBlockIDs,
+                                                                        myFirstGlobalPointInBlocks,
+                                                                        myBlockSizes,
+                                                                        indexBase, comm, node)))
+  {}
 
   /*! \brief TpetraBlockMap constructor which takes a "regular" Map.
    * The arrays myGlobalBlockIDs and myBlockSizes must be the same length, and
@@ -110,16 +126,21 @@ class TpetraBlockMap
   TpetraBlockMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointMap,
                  const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
                  const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
-                 const Teuchos::RCP<Node> &node = KokkosClassic::DefaultNode::getDefaultNode()) {
-
+                 const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node> ())
+  {
     XPETRA_RCP_DYNAMIC_CAST(const TpetraMapClass, pointMap, tPointMap, "Xpetra::TpetraBlockMap constructors only accept Xpetra::TpetraMap as input arguments.");
-    map_ = rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(tPointMap->getTpetra_Map(), myGlobalBlockIDs, myBlockSizes, node));
+    map_ = rcp (new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> (tPointMap->getTpetra_Map (),
+                                                                         myGlobalBlockIDs, myBlockSizes,
+                                                                         node));
   }
 
-  TpetraBlockMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > &map) : map_(map) {  }
+  TpetraBlockMap (const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > &map) :
+    map_ (map)
+  {}
 
   //! TpetraBlockMap destructor.
-  virtual ~TpetraBlockMap(){  }
+  virtual ~TpetraBlockMap ()
+  {}
 
   //@}
 

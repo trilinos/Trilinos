@@ -53,7 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 IF (TPL_ENABLE_MPI)
    TRIBITS_TPL_DECLARE_LIBRARIES( Scotch

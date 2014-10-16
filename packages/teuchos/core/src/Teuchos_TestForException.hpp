@@ -53,7 +53,7 @@
 namespace Teuchos {
 
 
-/*! \defgroup TestForException_grp Utility code for throwing exceptions and setting breakpoints. 
+/*! \defgroup TestForException_grp Utility code for throwing exceptions and setting breakpoints.
 \ingroup teuchos_language_support_grp
 */
 
@@ -106,7 +106,7 @@ TEUCHOSCORE_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
  * <tt>throw_exception_test</tt> evaluates to <tt>true</tt> when an exception
  * is throw.
  *
- * The way that this macro is intended to be used is to 
+ * The way that this macro is intended to be used is to
  * call it in the source code like a function.  For example,
  * suppose that in a piece of code in the file <tt>my_source_file.cpp</tt>
  * that the exception <tt>std::out_of_range</tt> is thrown if <tt>n > 100</tt>.
@@ -203,9 +203,9 @@ TEUCHOSCORE_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
  * <tt>throw_exception_test</tt> evaluates to <tt>true</tt> when an exception
  * is throw.
  *
- * \param tfecfFuncName [implicit] This is a variable in the current scope that is 
- * required to exist and assumed to contain the name of the current class method. 
- * 
+ * \param tfecfFuncName [implicit] This is a variable in the current scope that is
+ * required to exist and assumed to contain the name of the current class method.
+ *
  * \param this [implicit] This is the variable (*this), used for printing the
  * typename of the enclosing class.
  *
@@ -213,7 +213,7 @@ TEUCHOSCORE_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
  * of of a class. It is used similarly to TEUCHOS_TEST_FOR_EXCEPTION, except that it
  * assumes that the (above) variables <tt>this</tt> and <tt>fecfFuncName</tt>
  * exist and are properly defined. Example usage is:
- 
+
  \code
 
    std::string tfecfFuncName("someMethod");

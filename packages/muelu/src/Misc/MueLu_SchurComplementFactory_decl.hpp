@@ -53,6 +53,8 @@
 #ifndef MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_
 #define MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_
 
+#ifdef HAVE_MUELU_EXPERIMENTAL
+
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Teuchos_ParameterList.hpp>
@@ -88,7 +90,7 @@ namespace MueLu {
     where omega is some scaling factor and \hat{F} an approximation of F (just the diagonal of F)
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class SchurComplementFactory : public SingleLevelFactoryBase {
 #undef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
     #include "MueLu_UseShortNames.hpp"
@@ -131,4 +133,5 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_SCHURCOMPLEMENTFACTORY_SHORT
+#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif /* MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_ */

@@ -264,8 +264,8 @@ namespace {
     using ::Tpetra::Details::makeOptimizedColMap;
     using ::Tpetra::Details::makeOptimizedColMapAndImport;
     typedef MapType map_type;
-    typedef typename MapType::local_ordinal_type LO;
-    typedef typename MapType::global_ordinal_type GO;
+    // typedef typename MapType::local_ordinal_type LO;
+    // typedef typename MapType::global_ordinal_type GO;
     typedef typename GetImportType<MapType>::import_type import_type;
 
     const Comm<int>& comm = * (domMap.getComm ());
@@ -436,8 +436,8 @@ namespace {
       // makeOptimizedColMapAndImport.
       out << "Compare the returned Import against an Import created in the "
         "conventional way." << endl;
-      import_type newImport (rcp (new map_type (domMap)),
-                             rcp (new map_type (result3.first)));
+      import_type newImport (Teuchos::rcp (new map_type (domMap)),
+                             Teuchos::rcp (new map_type (result3.first)));
       // It should always be the case that an Import's source and target
       // Maps are nonnull, especially if the Import was created in the
       // usual way.  It's worth checking, though.

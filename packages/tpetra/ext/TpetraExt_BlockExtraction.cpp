@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,16 +35,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
-#include "TpetraExt_BlockExtraction.hpp"
+#include <Tpetra_ConfigDefs.hpp>
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_CLASSIC_VBR)
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+// It's only legal to include TpetraExt_BlockExtraction*.hpp if
+// HAVE_TPETRA_CLASSIC_VBR is defined.  That's this ETI .cpp file
+// looks a bit different than the other ones.
 
+#include "TpetraExt_BlockExtraction_decl.hpp"
 #include "Tpetra_ETIHelperMacros.h"
 #include "TpetraExt_BlockExtraction_def.hpp"
 
@@ -55,7 +59,7 @@ namespace Tpetra {
 
     TPETRA_INSTANTIATE_SLGN_NOGPU(TPETRAEXT_BLOCKEXTRACTION_INSTANT)
 
-  } // end Tpetra::Ext::
-} // end Tpetra::
+  } // namespace Ext
+} // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_CLASSIC_VBR)

@@ -164,10 +164,20 @@ namespace KokkosClassic {
     bool alreadyInit_;
   };
 
+#ifdef _MSC_VER
+#pragma warning(push)
+// destructor could not be generated because a base class destructor is inaccessible
+#pragma warning(disable : 4624)
+#endif
+
   template <>
   class ArrayOfViewsHelper<TBBNode> :
     public ArrayOfViewsHelperTrivialImpl<TBBNode>
   {};
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 } // namespace KokkosClassic
 

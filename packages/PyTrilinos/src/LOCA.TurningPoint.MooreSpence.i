@@ -57,4 +57,62 @@ LOCA.TurningPoint.MooreSpence supports the following classes:
         directors = "1",
         docstring = %loca_turningpoint_moorespence_docstring) MooreSpence
 
-%include "LOCA.TurningPoint.MooreSpence_Content.i"
+%{
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+#include "PyTrilinos_Teuchos_Util.hpp"
+
+// LOCA includes
+#include "LOCA.H"
+
+// Local includes
+#define NO_IMPORT_ARRAY
+#include "numpy_include.hpp"
+%}
+
+// Standard exception handling
+%include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
+// Ignore/renames
+%ignore *::operator=;
+%ignore operator=;
+
+// Trilinos module imports
+%import "Teuchos.i"
+
+// Teuchos::RCP handling
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::SolverFactory)
+
+// Base class support
+%pythoncode
+%{
+import sys, os.path as op
+parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+if not parentDir in sys.path: sys.path.append(parentDir)
+del sys, op
+%}
+%import "NOX.Abstract.i"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+%import "LOCA.Parameter.i"
+
+// LOCA::TurningPoint::MooreSpence AbstractGroup class
+%include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+
+// LOCA::TurningPoint::MooreSpence FiniteDifferenceGroup class
+%include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+
+// LOCA::TurningPoint::MooreSpence SolverFactory class
+%include "LOCA_TurningPoint_MooreSpence_SolverFactory.H"

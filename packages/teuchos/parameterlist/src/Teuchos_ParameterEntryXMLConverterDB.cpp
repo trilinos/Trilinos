@@ -48,10 +48,10 @@
 namespace Teuchos{
 
 
-RCP<const ParameterEntryXMLConverter> 
-ParameterEntryXMLConverterDB::getConverter(RCP<const ParameterEntry> entry) 
+RCP<const ParameterEntryXMLConverter>
+ParameterEntryXMLConverterDB::getConverter(RCP<const ParameterEntry> entry)
 {
-  ConverterMap::const_iterator it = 
+  ConverterMap::const_iterator it =
   getConverterMap().find(entry->getAny().typeName());
   if(it == getConverterMap().end()){
     return getDefaultConverter();
@@ -59,21 +59,21 @@ ParameterEntryXMLConverterDB::getConverter(RCP<const ParameterEntry> entry)
   else{
     return it->second;
   }
-} 
+}
 
-RCP<const ParameterEntryXMLConverter> 
+RCP<const ParameterEntryXMLConverter>
 ParameterEntryXMLConverterDB::getConverter(const XMLObject& xmlObject)
-{ 
+{
   TEUCHOS_TEST_FOR_EXCEPTION(
-    !xmlObject.hasAttribute(ParameterEntryXMLConverter::getTypeAttributeName()), 
+    !xmlObject.hasAttribute(ParameterEntryXMLConverter::getTypeAttributeName()),
     NoTypeAttributeExecption,
     ParameterEntry::getTagName() <<" tags must "
-    "have a " << ParameterEntryXMLConverter::getTypeAttributeName() << 
+    "have a " << ParameterEntryXMLConverter::getTypeAttributeName() <<
     " attribute." << std::endl <<
-    "Bad Parameter: " << 
+    "Bad Parameter: " <<
     xmlObject.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
     std::endl << std::endl);
- 
+
   std::string parameterType = xmlObject.getRequired(
     ParameterEntryXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(parameterType);
@@ -97,25 +97,25 @@ void ParameterEntryXMLConverterDB::printKnownConverters(std::ostream& out){
     out << "\t" << it->first <<std::endl;
   }
 }
-  
-RCP<const ParameterEntryXMLConverter> 
+
+RCP<const ParameterEntryXMLConverter>
   ParameterEntryXMLConverterDB::getDefaultConverter()
 {
   static RCP<const AnyParameterEntryConverter> defaultConverter;
-  if(defaultConverter.is_null()){ 
+  if(defaultConverter.is_null()){
       defaultConverter = rcp(new AnyParameterEntryConverter);
   }
   return defaultConverter;
 }
 
-ParameterEntryXMLConverterDB::ConverterMap& 
+ParameterEntryXMLConverterDB::ConverterMap&
 ParameterEntryXMLConverterDB::getConverterMap()
 {
   static ConverterMap masterMap;
   return masterMap;
 
 }
-  
+
 
 } //namespace Teuchos
 

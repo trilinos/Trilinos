@@ -43,8 +43,7 @@
 #include "TestMeanMultiply.hpp"
 
 // Devices
-#include "KokkosCore_config.h"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 #ifdef KOKKOS_HAVE_CUDA
 using Kokkos::Cuda;

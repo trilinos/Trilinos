@@ -39,7 +39,6 @@
 
 
 
-INCLUDE(TribitsAddAdvancedTest)
 
 # The mock test project 
 SET(MOCK_PROJECT_NAME Trilinos)

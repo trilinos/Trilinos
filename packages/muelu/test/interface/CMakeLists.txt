@@ -11,7 +11,6 @@ ASSERT_DEFINED(
 # Executable
 #
 
-INCLUDE(TribitsAddExecutable)
 
 #TODO: how to remove that?
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -27,7 +26,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     ParameterListInterpreter
     SOURCES ParameterListInterpreter.cpp ../unit_tests/MueLu_TestHelpers.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra
     )
 
 ENDIF()
@@ -93,3 +91,4 @@ ENDIF()
 
 ADD_SUBDIRECTORY(EasyParameterListInterpreter)
 ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
+ADD_SUBDIRECTORY(Output)

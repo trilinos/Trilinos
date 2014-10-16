@@ -40,9 +40,6 @@
 #  *************************************************************************
 # @HEADER
 
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TribitsAddOptionAndDefine)
 
 ###########################################################
 # A) Define the package
@@ -61,10 +58,35 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
+IF (NOT CMAKE_HAVE_PTHREAD_H)
+  IF (TPL_ENABLE_InfiniBand)
+    SET (Trios_ENABLE_InfiniBand OFF)
+    SET (Triosnnti_ENABLE_InfiniBand OFF)
+    UNSET (HAVE_TRIOS_INFINIBAND)
+    UNSET (HAVE_TRIOSNNTI_INFINIBAND)
+
+    MESSAGE(WARNING "The Infiniband transport requires Pthreads, but it was disabled or not found.")
+  ENDIF ()
+ENDIF ()
+
+#    MESSAGE(STATUS "TPL_ENABLE_Pthread==${TPL_ENABLE_Pthread}")
+#    MESSAGE(STATUS "TPL_ENABLE_InfiniBand==${TPL_ENABLE_InfiniBand}")
+#
+#    MESSAGE(STATUS "Trios_ENABLE_InfiniBand==${Trios_ENABLE_InfiniBand}")
+#    MESSAGE(STATUS "Triosnnti_ENABLE_InfiniBand==${Triosnnti_ENABLE_InfiniBand}")
+#
+#    MESSAGE(STATUS "CMAKE_HAVE_PTHREAD_H==${CMAKE_HAVE_PTHREAD_H}")
+#    MESSAGE(STATUS "${PACKAGE_NAME}_HAVE_PTHREAD==${${PACKAGE_NAME}_HAVE_PTHREAD}")
+#
+#    MESSAGE(STATUS "HAVE_TRIOS_INFINIBAND==${HAVE_TRIOS_INFINIBAND}")
+#    MESSAGE(STATUS "HAVE_TRIOSNNTI_INFINIBAND==${HAVE_TRIOSNNTI_INFINIBAND}")
+
 # Various Trios checks
 INCLUDE(TriosProbeTimers)
 # Checks for a supported interconnect
 INCLUDE(TriosProbeNetwork)
+# Checks for a POSIX threads implementation
+INCLUDE(TriosProbeThreads)
 # Checks for a POSIX semaphore implementation
 INCLUDE(TriosProbeSemaphores)
 # Checks for the gettid() system call

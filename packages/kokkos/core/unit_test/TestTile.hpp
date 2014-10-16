@@ -1,8 +1,7 @@
 #ifndef TEST_TILE_HPP
 #define TEST_TILE_HPP
 
-#include <Kokkos_Parallel.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 template < typename Device , typename TileLayout>
 struct ReduceTileErrors

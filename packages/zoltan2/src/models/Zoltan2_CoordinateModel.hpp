@@ -80,7 +80,7 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename Adapter::scalar_t    scalar_t;
   typedef typename Adapter::gno_t       gno_t;
-  typedef typename Adapter::gid_t       gid_t;
+  typedef typename Adapter::zgid_t       zgid_t;
   typedef typename Adapter::lno_t       lno_t;
   typedef typename Adapter::user_t      user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
@@ -251,7 +251,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   int coordinateDim_;
-  ArrayRCP<const gid_t> gids_;
+  ArrayRCP<const zgid_t> gids_;
   ArrayRCP<input_t> xyz_;
   int userNumWeights_;
   ArrayRCP<input_t> weights_;
@@ -304,7 +304,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
 
 
   if (nLocalIds){
-    const gid_t *gids=NULL;
+    const zgid_t *gids=NULL;
     ia->getIDsView(gids);
     gids_ = arcp(gids, 0, nLocalIds, false);
 
@@ -359,7 +359,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
     gnos_ = arcp(tmpGno, 0, nLocalIds);
 
     try{
-      ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
+      ArrayRCP<zgid_t> gidsNonConst = arcp_const_cast<zgid_t>(gids_);
       idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds),
         TRANSLATE_APP_TO_LIB);
     }
@@ -406,7 +406,7 @@ void CoordinateModel<Adapter>::meshConstructor(
 
 
   if (nLocalIds){
-    const gid_t *gids=NULL;
+    const zgid_t *gids=NULL;
     ia->getIDsView(gids);
     gids_ = arcp(gids, 0, nLocalIds, false);
 
@@ -461,7 +461,7 @@ void CoordinateModel<Adapter>::meshConstructor(
     gnos_ = arcp(tmpGno, 0, nLocalIds);
 
     try{
-      ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
+      ArrayRCP<zgid_t> gidsNonConst = arcp_const_cast<zgid_t>(gids_);
       idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds),
         TRANSLATE_APP_TO_LIB);
     }

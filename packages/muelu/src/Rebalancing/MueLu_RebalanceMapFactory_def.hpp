@@ -58,8 +58,8 @@
 
 namespace MueLu {
 
- template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+ template <class LocalOrdinal, class GlobalOrdinal, class Node>
+ RCP<const ParameterList> RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     // Information about map that is to be rebalanced
@@ -75,8 +75,8 @@ namespace MueLu {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & currentLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level & currentLevel) const {
     const Teuchos::ParameterList & pL = GetParameterList();
     std::string mapName                        = pL.get<std::string> ("Map name");
     Teuchos::RCP<const FactoryBase> mapFactory = GetFactory          ("Map factory");
@@ -85,8 +85,8 @@ namespace MueLu {
     Input(currentLevel, "Importer");
   } //DeclareInput()
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level &level) const {
     FactoryMonitor m(*this, "Build", level);
 
     //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));

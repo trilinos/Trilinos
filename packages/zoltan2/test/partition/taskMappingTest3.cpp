@@ -11,7 +11,7 @@
 #define nProcs 200;
 #define nParts 200;
 
-typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
+typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
 typedef inputAdapter_t::part_t part_t;
 
@@ -185,11 +185,11 @@ int main(int argc, char *argv[]){
     //    exit(1);
     //}
     part_t numParts = 0;
-    scalar_t **partCenters = NULL;
+    zscalar_t **partCenters = NULL;
     int coordDim = 0;
 
     part_t numProcs = 0;
-    scalar_t **procCoordinates = NULL;
+    zscalar_t **procCoordinates = NULL;
     int procDim = 0;
 
 
@@ -217,9 +217,9 @@ int main(int argc, char *argv[]){
         numProcs = numParts;
         //cout << "part:" << numParts << " proc:" << procfile << endl;
         {
-            partCenters = new scalar_t * [coordDim];
+            partCenters = new zscalar_t * [coordDim];
             for(int i = 0; i < coordDim; ++i){
-                partCenters[i] = new scalar_t[numParts];
+                partCenters[i] = new zscalar_t[numParts];
             }
 
 
@@ -261,9 +261,9 @@ int main(int argc, char *argv[]){
 
         {
             std::fstream m(procfile.c_str());
-            procCoordinates = new scalar_t * [procDim];
+            procCoordinates = new zscalar_t * [procDim];
             for(int i = 0; i < procDim; ++i){
-                procCoordinates[i] = new scalar_t[numParts];
+                procCoordinates[i] = new zscalar_t[numParts];
             }
             part_t i = 0;
             while(i < numProcs){
@@ -277,8 +277,8 @@ int main(int argc, char *argv[]){
 
 
         /*
-        Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,int> *cm =
-                new Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,int>(
+        Zoltan2::CoordinateCommunicationModel<zscalar_t,zscalar_t,int> *cm =
+                new Zoltan2::CoordinateCommunicationModel<zscalar_t,zscalar_t,int>(
                         procDim, procCoordinates,
                         coordDim, partCenters,
                         numProcs, numParts);
@@ -319,7 +319,7 @@ int main(int argc, char *argv[]){
         hopper[2] = 24;
         part_t *machineDimensions = NULL;
         //machineDimensions = hopper;
-        Zoltan2::coordinateTaskMapperInterface<part_t, scalar_t, scalar_t>(
+        Zoltan2::coordinateTaskMapperInterface<part_t, zscalar_t, zscalar_t>(
                 tcomm,
                 procDim,
                 numProcs,

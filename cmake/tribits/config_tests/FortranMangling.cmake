@@ -45,7 +45,7 @@ INCLUDE(GlobalSet)
 # Sets the following outputs on success:
 #
 #  FC_FN_CASE
-#    "UPPER" if names are translated to upper-case, 
+#    "UPPER" if names are translated to upper-case,
 #    "LOWER" otherwise.
 #
 #  FC_FN_UNDERSCORE
@@ -98,9 +98,13 @@ FUNCTION(FORTRAN_MANGLING)
         SET(C_FLAGS "${CMAKE_C_FLAGS} ${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
         SET(F_FLAGS "${CMAKE_Fortran_FLAGS} ${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
         TRY_COMPILE(_fcmngl ${_fcmangledir_case} ${_fcmakelists} fmangle
-          CMAKE_FLAGS "-DCMAKE_C_FLAGS:STRING=${C_FLAGS}"
-          "-DCMAKE_Fortran_FLAGS:STRING=${F_FLAGS}"
-          "-DCOMMON_DEFS=${COMMON_DEFS}"
+          CMAKE_FLAGS
+            "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
+            "-DCMAKE_C_FLAGS:STRING=${C_FLAGS}"
+            "-DCMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}:STRING=${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}"
+            "-DCMAKE_Fortran_FLAGS:STRING=${F_FLAGS}"
+            "-DCMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}:STRING=${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}"
+            "-DCOMMON_DEFS=${COMMON_DEFS}"
           OUTPUT_VARIABLE _fcmngl_output
           )
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -205,7 +209,7 @@ ENDFUNCTION()
 ## FC_FN_STRINGARG is set to PAIRED.  If the lengths are appended
 ## to the call, e.g. foo({'b','a','r'}, 1.0, 3), FC_FN_STRINGARG
 ## is set to TRAILING.
-## 
+##
 ## This macro does not currently check for older Cray and VMS
 ## conventions that require conversion functions.  It also assumes
 ## that the length is passed as the "natural" size type, C's size_t.

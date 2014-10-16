@@ -1,9 +1,9 @@
-#include "WhileBlockRTC.hh"
-#include "ForBlockRTC.hh"
-#include "LineRTC.hh"
-#include "BlockRTC.hh"
-#include "IfElseifElseBlockRTC.hh"
-#include "commonRTC.hh"
+#include "RTC_WhileBlockRTC.hh"
+#include "RTC_ForBlockRTC.hh"
+#include "RTC_LineRTC.hh"
+#include "RTC_BlockRTC.hh"
+#include "RTC_IfElseifElseBlockRTC.hh"
+#include "RTC_commonRTC.hh"
 
 #include <string>
 #include <map>
@@ -12,13 +12,15 @@ using namespace std;
 using namespace PG_RuntimeCompiler;
 
 /*****************************************************************************/
-WhileBlock::WhileBlock(map<string, Variable*> vars, Tokenizer& lines, 
-                       string& errs) : Block(vars) 
-/*****************************************************************************/
+WhileBlock::WhileBlock(
+    map<string, Variable*> vars,
+    Tokenizer& lines,
+    string& errs
+    ):
+  Block(vars),
+  _condition(NULL)
 {
   if (errs != "") return;
-
-  _condition = NULL;
 
   lines.nextToken(); //move past "while"
 
@@ -30,20 +32,18 @@ WhileBlock::WhileBlock(map<string, Variable*> vars, Tokenizer& lines,
 }
 
 /*****************************************************************************/
-WhileBlock::~WhileBlock() 
-/*****************************************************************************/
+WhileBlock::~WhileBlock()
 {
   if (_condition != NULL)
     delete _condition;
 }
 
 /*****************************************************************************/
-Value* WhileBlock::execute() 
-/*****************************************************************************/
+Value* WhileBlock::execute()
 {
   while (_condition->execute()->getValue()) {
     list<Executable*>::iterator itr = _statements.begin();
-    
+
     while(itr != _statements.end()) {
       (*itr)->execute();
       ++itr;

@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -48,12 +48,15 @@
 #include "Tpetra_MatrixIO.hpp"
 #include <iostream>
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+namespace Tpetra {
+namespace Utils {
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-Tpetra::Utils::generateMatrix(const Teuchos::RCP<Teuchos::ParameterList> &plist,
-                              const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-                              const Teuchos::RCP<Node> &node,
-                              Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A) 
+generateMatrix (const Teuchos::RCP<Teuchos::ParameterList> &plist,
+                const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+                const Teuchos::RCP<Node> &node,
+                Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &A)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::as;
@@ -94,20 +97,20 @@ Tpetra::Utils::generateMatrix(const Teuchos::RCP<Teuchos::ParameterList> &plist,
     A->fillComplete();
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error,
         "Tpetra::Utils::generateMatrix(): ParameterList specified unsupported ""mat_type"".");
   }
 }
 
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-Tpetra::Utils::readHBMatrix(const std::string &filename, 
-                             const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-                             const Teuchos::RCP<Node> &node,
-                             Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
-                             Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap, 
-                             const Teuchos::RCP<ParameterList> &params)
+readHBMatrix (const std::string &filename,
+              const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+              const Teuchos::RCP<Node> &node,
+              Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
+              Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap,
+              const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
   const int myRank = comm->getRank();
   int numRows,numCols,numNZ;
@@ -192,7 +195,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
         typename Teuchos::ArrayRCP<size_t>::const_iterator it1, it2;
         for (it1 = nnzPerRow.begin(), it2 = nnzPerRow_debug.begin(); it1 != nnzPerRow.end(); ++it1, ++it2) {
           if (*it1 != *it2) {
-            isequal = false; 
+            isequal = false;
             break;
           }
         }
@@ -270,8 +273,8 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   rowptrs = Teuchos::null;
   A->fillComplete(domMap,rowMap,params);
 }
-
-
+} // namespace Utils
+} // namespace Tpetra
 
 //
 // Explicit instantiation macro
@@ -279,19 +282,20 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
 // Must be expanded from within the Tpetra::Utils namespace!
 //
 
-#define TPETRA_MATRIXIO_INSTANT(SCALAR,LO,GO,NODE)                                                                                                      \
-  template                                                                                                                                              \
-  void                                                                                                                                                  \
-  readHBMatrix<SCALAR,LO,GO,NODE,KokkosClassic::DefaultKernels<SCALAR,LO,NODE>::SparseOps>(                                                                    \
-          const std::string &, const Teuchos::RCP<const Teuchos::Comm<int> > &, const Teuchos::RCP<NODE > &,                                            \
-          Teuchos::RCP< CrsMatrix<SCALAR,LO,GO,NODE,KokkosClassic::DefaultKernels<SCALAR,LO,NODE>::SparseOps > > &,                                            \
-          Teuchos::RCP< const Tpetra::Map<LO,GO,NODE> >,                                                                                                \
-          const Teuchos::RCP< Teuchos::ParameterList > & );                                                                                             \
-                                                                                                                                                        \
-  template                                                                                                                                              \
-  void                                                                                                                                                  \
-  generateMatrix<SCALAR,LO,GO,NODE,KokkosClassic::DefaultKernels<SCALAR,LO,NODE>::SparseOps>(                                                                  \
-          const Teuchos::RCP<Teuchos::ParameterList> &plist, const Teuchos::RCP<const Teuchos::Comm<int> > &, const Teuchos::RCP<NODE > &,              \
-          Teuchos::RCP< CrsMatrix<SCALAR,LO,GO,NODE,KokkosClassic::DefaultKernels<SCALAR,LO,NODE>::SparseOps > > &);
+#define TPETRA_MATRIXIO_INSTANT(SCALAR,LO,GO,NODE) \
+  template void \
+  readHBMatrix< SCALAR, LO, GO, NODE > (const std::string&, \
+                                        const Teuchos::RCP<const Teuchos::Comm<int> > &, \
+                                        const Teuchos::RCP< NODE > &, \
+                                        Teuchos::RCP<CrsMatrix< SCALAR, LO, GO, NODE > >&, \
+                                        Teuchos::RCP<const Tpetra::Map< LO, GO, NODE> >, \
+                                        const Teuchos::RCP<Teuchos::ParameterList>& ); \
+  \
+  template void \
+  generateMatrix< SCALAR, LO, GO, NODE> (const Teuchos::RCP<Teuchos::ParameterList>&, \
+                                         const Teuchos::RCP<const Teuchos::Comm<int> > &, \
+                                         const Teuchos::RCP< NODE > &,\
+                                         Teuchos::RCP<CrsMatrix< SCALAR, LO, GO, NODE > >& );
+
 
 #endif

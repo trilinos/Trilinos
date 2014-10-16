@@ -44,6 +44,7 @@
 #include "AnasaziStatusTestCombo.hpp"
 #include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
+#include "AnasaziStatusTestSpecTrans.hpp"
 #include "AnasaziStatusTestWithOrdering.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziTraceMinBase.hpp"
@@ -57,6 +58,9 @@
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
+
+using Teuchos::RCP;
+using Teuchos::rcp;
 
 namespace Anasazi {
 namespace Experimental {
@@ -151,7 +155,7 @@ class TraceMinBaseSolMgr : public SolverManager<ScalarType,MV,OP> {
    *
    * Anasazi's trace minimization solvers are still in development, and we plan to add additional features in the future, including the ability to perform spectral transformations.
    */
-  TraceMinBaseSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
+  TraceMinBaseSolMgr( const RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
 
   //! Destructor.
@@ -178,7 +182,7 @@ class TraceMinBaseSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - time spent restarting
    *   - time spent locking converged eigenvectors
    */
-   Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
+   Teuchos::Array<RCP<Teuchos::Time> > getTimers() const {
      return Teuchos::tuple(_timerSolve, _timerRestarting, _timerLocking);
    }
 
@@ -213,84 +217,85 @@ class TraceMinBaseSolMgr : public SolverManager<ScalarType,MV,OP> {
   ReturnType solve();
 
   //! Set the status test defining global convergence.
-  void setGlobalStatusTest(const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &global);
+  void setGlobalStatusTest(const RCP< StatusTest<ScalarType,MV,OP> > &global);
 
   //! Get the status test defining global convergence.
-  const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & getGlobalStatusTest() const;
+  const RCP< StatusTest<ScalarType,MV,OP> > & getGlobalStatusTest() const;
 
   //! Set the status test defining locking.
-  void setLockingStatusTest(const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &locking);
+  void setLockingStatusTest(const RCP< StatusTest<ScalarType,MV,OP> > &locking);
 
   //! Get the status test defining locking.
-  const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & getLockingStatusTest() const;
+  const RCP< StatusTest<ScalarType,MV,OP> > & getLockingStatusTest() const;
 
   //! Set the status test for debugging.
-  void setDebugStatusTest(const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &debug);
+  void setDebugStatusTest(const RCP< StatusTest<ScalarType,MV,OP> > &debug);
 
   //! Get the status test for debugging.
-  const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & getDebugStatusTest() const;
+  const RCP< StatusTest<ScalarType,MV,OP> > & getDebugStatusTest() const;
 
   //@}
 
   protected:
-  Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
+  RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
 
-	int numIters_;
+  int numIters_;
 
-	// Block variables
-	int blockSize_, numBlocks_, numRestartBlocks_;
+  // Block variables
+  int blockSize_, numBlocks_, numRestartBlocks_;
 
-	// Output variables
-  Teuchos::RCP<BasicOutputManager<ScalarType> > printer_;
+  // Output variables
+  RCP<BasicOutputManager<ScalarType> > printer_;
 
-	// Convergence variables
-	MagnitudeType convTol_;
-	bool relConvTol_;
-	enum StatusTestResNorm<ScalarType,MV,OP>::ResType convNorm_;
+  // Convergence variables
+  MagnitudeType convTol_;
+  bool relConvTol_;
+  enum ResType convNorm_;
 
-	// Locking variables
-	MagnitudeType lockTol_;
-	int maxLocked_, lockQuorum_;
-	bool useLocking_, relLockTol_;
-	enum StatusTestResNorm<ScalarType,MV,OP>::ResType lockNorm_;
+  // Locking variables
+  MagnitudeType lockTol_;
+  int maxLocked_, lockQuorum_;
+  bool useLocking_, relLockTol_;
+  enum ResType lockNorm_;
 
-	// Shifting variables
-	enum WhenToShiftType whenToShift_;
-	MagnitudeType traceThresh_, shiftTol_;
-	enum HowToShiftType howToShift_;
-	bool useMultipleShifts_, relShiftTol_, considerClusters_;
-	std::string shiftNorm_;
-	
-	// Other variables
+  // Shifting variables
+  enum WhenToShiftType whenToShift_;
+  MagnitudeType traceThresh_, shiftTol_;
+  enum HowToShiftType howToShift_;
+  bool useMultipleShifts_, relShiftTol_, considerClusters_;
+  std::string shiftNorm_;
+  
+  // Other variables
+  int maxKrylovIter_;
   std::string ortho_, which_;
-	enum SaddleSolType saddleSolType_;
-	bool projectAllVecs_, projectLockedVecs_, computeAllRes_, useRHSR_;
+  enum SaddleSolType saddleSolType_;
+  bool projectAllVecs_, projectLockedVecs_, computeAllRes_, useRHSR_;
 
-	// Timers
-  Teuchos::RCP<Teuchos::Time> _timerSolve, _timerRestarting, _timerLocking;
+  // Timers
+  RCP<Teuchos::Time> _timerSolve, _timerRestarting, _timerLocking;
 
-	// Status tests
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > lockingTest_; 
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugTest_;
+  // Status tests
+  RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
+  RCP<StatusTest<ScalarType,MV,OP> > lockingTest_; 
+  RCP<StatusTest<ScalarType,MV,OP> > debugTest_;
 
-	// TraceMin specific functions
-	void copyPartOfState(const TraceMinBaseState<ScalarType,MV>& oldState, TraceMinBaseState<ScalarType,MV>& newState, const std::vector<int> indToCopy) const;
+  // TraceMin specific functions
+  void copyPartOfState(const TraceMinBaseState<ScalarType,MV>& oldState, TraceMinBaseState<ScalarType,MV>& newState, const std::vector<int> indToCopy) const;
 
-	void setParameters(Teuchos::ParameterList &pl) const;
+  void setParameters(Teuchos::ParameterList &pl) const;
 
-	void printParameters(std::ostream &os) const;
+  void printParameters(std::ostream &os) const;
 
-	virtual Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > createSolver( 
-            const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
-            const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &outputtest,
-            const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+  virtual RCP< TraceMinBase<ScalarType,MV,OP> > createSolver( 
+            const RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
+            const RCP<StatusTest<ScalarType,MV,OP> >      &outputtest,
+            const RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
             Teuchos::ParameterList &plist
           ) =0;
 
-	virtual bool needToRestart(const Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > solver) =0;
+  virtual bool needToRestart(const RCP< TraceMinBase<ScalarType,MV,OP> > solver) =0;
 
-	virtual bool performRestart(int &numRestarts, Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > solver) =0;
+  virtual bool performRestart(int &numRestarts, RCP< TraceMinBase<ScalarType,MV,OP> > solver) =0;
 };
 
 
@@ -299,7 +304,7 @@ class TraceMinBaseSolMgr : public SolverManager<ScalarType,MV,OP> {
 // Constructor
 template<class ScalarType, class MV, class OP>
 TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr( 
-        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
+        const RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
         Teuchos::ParameterList &pl ) : 
   problem_(problem)
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
@@ -315,22 +320,22 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
 
   std::string strtmp;
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	// Block parameters
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Block parameters
 
-	// TODO: the default is different for TraceMin and TraceMin-Davidson
+  // TODO: the default is different for TraceMin and TraceMin-Davidson
   // block size: default is nev()
 //  blockSize_ = pl.get("Block Size",problem_->getNEV());
 //  TEUCHOS_TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
 //                     "Anasazi::TraceMinBaseSolMgr: \"Block Size\" must be strictly positive.");
 
-	// TODO: add Num Blocks as a parameter to both child classes, since they have different default values
+  // TODO: add Num Blocks as a parameter to both child classes, since they have different default values
 //  numBlocks_ = pl.get("Num Blocks",5);
 //  TEUCHOS_TEST_FOR_EXCEPTION(numBlocks_ < 2, std::invalid_argument,
 //                     "Anasazi::TraceMinBaseSolMgr: \"Num Blocks\" must be >= 2.");
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	// Output parameters
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Output parameters
 
   // output stream
   std::string fntemplate = "";
@@ -363,9 +368,9 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
       start = pos+2;
     }
   }
-  Teuchos::RCP<ostream> osp;
+  RCP<ostream> osp;
   if (fntemplate != "") {
-    osp = Teuchos::rcp( new std::ofstream(fntemplate.c_str(),std::ios::out | std::ios::app) );
+    osp = rcp( new std::ofstream(fntemplate.c_str(),std::ios::out | std::ios::app) );
     if (!*osp) {
       osp = Teuchos::rcpFromRef(std::cout);
       std::cout << "Anasazi::TraceMinBaseSolMgr::constructor(): Could not open file for write: " << fntemplate << std::endl;
@@ -385,17 +390,17 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
   }
   if (allProcs) {
     // print on all procs
-    printer_ = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity,osp,MyPID) );
+    printer_ = rcp( new BasicOutputManager<ScalarType>(verbosity,osp,MyPID) );
   }
   else {
     // print only on proc 0
-    printer_ = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity,osp,0) );
+    printer_ = rcp( new BasicOutputManager<ScalarType>(verbosity,osp,0) );
   }
 
-	// TODO: Add restart parameters to TraceMin-Davidson
+  // TODO: Add restart parameters to TraceMin-Davidson
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	// Convergence parameters
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Convergence parameters
   convTol_ = pl.get("Convergence Tolerance",MT::prec());
   TEUCHOS_TEST_FOR_EXCEPTION(convTol_ < 0, std::invalid_argument,
                      "Anasazi::TraceMinBaseSolMgr: \"Convergence Tolerance\" must be nonnegative.");
@@ -403,18 +408,18 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
   relConvTol_ = pl.get("Relative Convergence Tolerance",true);
   strtmp = pl.get("Convergence Norm",std::string("2"));
   if (strtmp == "2") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+    convNorm_ = RES_2NORM;
   }
   else if (strtmp == "M") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+    convNorm_ = RES_ORTH;
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
         "Anasazi::TraceMinBaseSolMgr: Invalid Convergence Norm.");
   }
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	// Locking parameters
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Locking parameters
   useLocking_ = pl.get("Use Locking",true);
   relLockTol_ = pl.get("Relative Locking Tolerance",true);
   lockTol_ = pl.get("Locking Tolerance",convTol_/10);
@@ -427,17 +432,17 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
 
   strtmp = pl.get("Locking Norm",std::string("2"));
   if (strtmp == "2") {
-    lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+    lockNorm_ = RES_2NORM;
   }
   else if (strtmp == "M") {
-    lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+    lockNorm_ = RES_ORTH;
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
         "Anasazi::TraceMinBaseSolMgr: Invalid Locking Norm.");
   }
 
-	// max locked: default is nev(), must satisfy maxLocked_ + blockSize_ >= nev
+  // max locked: default is nev(), must satisfy maxLocked_ + blockSize_ >= nev
   if (useLocking_) {
     maxLocked_ = pl.get("Max Locked",problem_->getNEV());
     TEUCHOS_TEST_FOR_EXCEPTION(maxLocked_ <= 0, std::invalid_argument,
@@ -453,27 +458,27 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
                        "Anasazi::TraceMinBaseSolMgr: \"Locking Quorum\" must be strictly positive.");
   }
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	// Ritz shift parameters
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Ritz shift parameters
 
   // When to shift - what triggers a shift?
   strtmp = pl.get("When To Shift", "Always");
 
-	if(strtmp == "Never")
-		whenToShift_ = NEVER_SHIFT;
-	else if(strtmp == "After Trace Levels")
-		whenToShift_ = SHIFT_WHEN_TRACE_LEVELS;
-	else if(strtmp == "Residual Becomes Small")
-		whenToShift_ = SHIFT_WHEN_RESID_SMALL;
-	else if(strtmp == "Always")
-		whenToShift_ = ALWAYS_SHIFT;
-	else
-		TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-           "Anasazi::TraceMinBaseSolMgr: Invalid value for \"When To Shift\"; valid options are \"Never\", \"After Trace Levels\", \"Residual Becomes Small\", \"Always\".");	
+  if(strtmp == "Never")
+    whenToShift_ = NEVER_SHIFT;
+  else if(strtmp == "After Trace Levels")
+    whenToShift_ = SHIFT_WHEN_TRACE_LEVELS;
+  else if(strtmp == "Residual Becomes Small")
+    whenToShift_ = SHIFT_WHEN_RESID_SMALL;
+  else if(strtmp == "Always")
+    whenToShift_ = ALWAYS_SHIFT;
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+           "Anasazi::TraceMinBaseSolMgr: Invalid value for \"When To Shift\"; valid options are \"Never\", \"After Trace Levels\", \"Residual Becomes Small\", \"Always\".");  
 
 
-	// How small does the % change in trace have to get before shifting?
-	traceThresh_ = pl.get("Trace Threshold", 0.02);
+  // How small does the % change in trace have to get before shifting?
+  traceThresh_ = pl.get("Trace Threshold", 0.02);
 
   TEUCHOS_TEST_FOR_EXCEPTION(traceThresh_ < 0, std::invalid_argument,
                        "Anasazi::TraceMinBaseSolMgr: \"Trace Threshold\" must be nonnegative.");
@@ -491,19 +496,19 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
   shiftNorm_ = pl.get("Shift Norm", "2");
 
   TEUCHOS_TEST_FOR_EXCEPTION(shiftNorm_ != "2" && shiftNorm_ != "M", std::invalid_argument,
-         "Anasazi::TraceMinBaseSolMgr: Invalid value for \"Shift Norm\"; valid options are \"2\" and \"M\".");	
+         "Anasazi::TraceMinBaseSolMgr: Invalid value for \"Shift Norm\"; valid options are \"2\" and \"M\".");  
 
   // How to choose shift
   strtmp = pl.get("How To Choose Shift", "Adjusted Ritz Values");
-	
-	if(strtmp == "Largest Converged")
-		howToShift_ = LARGEST_CONVERGED_SHIFT;
-	else if(strtmp == "Adjusted Ritz Values")
-		howToShift_ = ADJUSTED_RITZ_SHIFT;
-	else if(strtmp == "Ritz Values")
-		howToShift_ = RITZ_VALUES_SHIFT;
-	else
-		TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+  
+  if(strtmp == "Largest Converged")
+    howToShift_ = LARGEST_CONVERGED_SHIFT;
+  else if(strtmp == "Adjusted Ritz Values")
+    howToShift_ = ADJUSTED_RITZ_SHIFT;
+  else if(strtmp == "Ritz Values")
+    howToShift_ = RITZ_VALUES_SHIFT;
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
            "Anasazi::TraceMinBaseSolMgr: Invalid value for \"How To Choose Shift\"; valid options are \"Largest Converged\", \"Adjusted Ritz Values\", \"Ritz Values\".");
 
   // Consider clusters - if all eigenvalues are in one cluster, it's not expecially safe to shift
@@ -512,50 +517,43 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
   // Use multiple shifts
   useMultipleShifts_ = pl.get("Use Multiple Shifts", true);
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	// Other parameters
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Other parameters
 
   // which orthogonalization to use
   ortho_ = pl.get("Orthogonalization", "SVQB");
-	TEUCHOS_TEST_FOR_EXCEPTION(ortho_ != "DGKS" && ortho_ != "SVQB" && ortho_ != "ICGS", std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(ortho_ != "DGKS" && ortho_ != "SVQB" && ortho_ != "ICGS", std::invalid_argument,
          "Anasazi::TraceMinBaseSolMgr: Invalid value for \"Orthogonalization\"; valid options are \"DGKS\", \"SVQB\", \"ICGS\".");  
 
-	strtmp = pl.get("Saddle Solver Type", "Projected Krylov");
-	
-	if(strtmp == "Projected Krylov")
-		saddleSolType_ = PROJECTED_KRYLOV_SOLVER;
-	else if(strtmp == "Schur Complement")
-		saddleSolType_ = SCHUR_COMPLEMENT_SOLVER;
+  strtmp = pl.get("Saddle Solver Type", "Projected Krylov");
+  
+  if(strtmp == "Projected Krylov")
+    saddleSolType_ = PROJECTED_KRYLOV_SOLVER;
+  else if(strtmp == "Schur Complement")
+    saddleSolType_ = SCHUR_COMPLEMENT_SOLVER;
   else if(strtmp == "Block Diagonal Preconditioned Minres")
     saddleSolType_ = BD_PREC_MINRES;
-	else
-		TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
            "Anasazi::TraceMinBaseSolMgr: Invalid value for \"Saddle Solver Type\"; valid options are \"Projected Krylov\", \"Schur Complement\", and \"Block Diagonal Preconditioned Minres\".");
 
-	projectAllVecs_ = pl.get("Project All Vectors", true);
-	projectLockedVecs_ = pl.get("Project Locked Vectors", true);
-	computeAllRes_ = pl.get("Compute All Residuals", true);
-	useRHSR_ = pl.get("Use Residual as RHS", true);
+  projectAllVecs_ = pl.get("Project All Vectors", true);
+  projectLockedVecs_ = pl.get("Project Locked Vectors", true);
+  computeAllRes_ = pl.get("Compute All Residuals", true);
+  useRHSR_ = pl.get("Use Residual as RHS", true);
 
   TEUCHOS_TEST_FOR_EXCEPTION(projectLockedVecs_ && ! projectAllVecs_, std::invalid_argument,
          "Anasazi::TraceMinBaseSolMgr: If you want to project out the locked vectors, you should really project out ALL the vectors of X.");
 
+  // Maximum number of inner iterations
+  maxKrylovIter_ = pl.get("Maximum Krylov Iterations", 1000);
+  TEUCHOS_TEST_FOR_EXCEPTION(maxKrylovIter_ < 1, std::invalid_argument,
+         "Anasazi::TraceMinBaseSolMgr: \"Maximum Krylov Iterations\" must be greater than 0.");
+		 
   // Which eigenvalues we want to get
   which_ = pl.get("Which", "SM");
   TEUCHOS_TEST_FOR_EXCEPTION(which_ != "SM" && which_ != "LM", std::invalid_argument,
          "Anasazi::TraceMinBaseSolMgr: Invalid value for \"Which\"; valid options are \"SM\" and \"LM\".");
-
-  // Handle the spectral transformation if necessary
-  if(which_ == "LM")
-  {
-    std::cout << "SWAPPING STIFFNESS AND MASS MATRICES\n";
-    Teuchos::RCP<const OP> swapHelper = problem_->getOperator();
-    problem_->setOperator(problem_->getM());
-    problem_->setM(swapHelper);
-    problem_->setProblem();
-
-    std::cout << "problem_->isProblemSet(): " << problem_->isProblemSet() << std::endl;
-  } 
 
   // Test whether we are shifting without an operator K
   // This is a really bad idea
@@ -590,16 +588,13 @@ template<class ScalarType, class MV, class OP>
 ReturnType 
 TraceMinBaseSolMgr<ScalarType,MV,OP>::solve() 
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcpFromRef;
   typedef SolverUtils<ScalarType,MV,OP> msutils;
 
   const int nev = problem_->getNEV();
 
 #ifdef TEUCHOS_DEBUG
     RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(rcpFromRef(printer_->stream(Debug)));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(printer_->stream(Debug)));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::TraceMinBaseSolMgr::solve()\n";
 #endif
@@ -609,12 +604,26 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
   RCP<BasicSort<MagnitudeType> > sorter = rcp( new BasicSort<MagnitudeType>("SM") );
 
   //////////////////////////////////////////////////////////////////////////////////////
+  // Handle the spectral transformation if necessary
+  // TODO: Make sure we undo this before returning...
+  if(which_ == "LM")
+  {
+    RCP<const OP> swapHelper = problem_->getOperator();
+    problem_->setOperator(problem_->getM());
+    problem_->setM(swapHelper);
+    problem_->setProblem();
+  } 
+
+  //////////////////////////////////////////////////////////////////////////////////////
   // Status tests
   //
   // convergence
   RCP<StatusTest<ScalarType,MV,OP> > convtest;
   if (globalTest_ == Teuchos::null) {
-    convtest = rcp( new StatusTestResNorm<ScalarType,MV,OP>(convTol_,nev,convNorm_,relConvTol_) );
+    if(which_ == "SM")
+      convtest = rcp( new StatusTestResNorm<ScalarType,MV,OP>(convTol_,nev,convNorm_,relConvTol_) );
+    else
+      convtest = rcp( new StatusTestSpecTrans<ScalarType,MV,OP>(convTol_,nev,convNorm_,relConvTol_,true,problem_->getOperator()) );
   }
   else {
     convtest = globalTest_;
@@ -625,7 +634,10 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
   RCP<StatusTest<ScalarType,MV,OP> > locktest;
   if (useLocking_) {
     if (lockingTest_ == Teuchos::null) {
-      locktest = rcp( new StatusTestResNorm<ScalarType,MV,OP>(lockTol_,lockQuorum_,lockNorm_,relLockTol_) );
+      if(which_ == "SM")
+        locktest = rcp( new StatusTestResNorm<ScalarType,MV,OP>(lockTol_,lockQuorum_,lockNorm_,relLockTol_) );
+      else
+        locktest = rcp( new StatusTestSpecTrans<ScalarType,MV,OP>(lockTol_,lockQuorum_,lockNorm_,relLockTol_,true,problem_->getOperator()) );
     }
     else {
       locktest = lockingTest_;
@@ -754,7 +766,6 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
     // tell tm_solver to iterate
     while (1) {
       try {
-        std::cout << "Calling iterate\n";
         tm_solver->iterate();
 
         ////////////////////////////////////////////////////////////////////////////////////
@@ -857,7 +868,7 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
           // Remember to include any aux vecs provided by the user
           curNumLocked += numNewLocked;
 
-          if(ordertest->getStatus() == Passed)	break;
+          if(ordertest->getStatus() == Passed)  break;
 
           std::vector<int> curlockind(curNumLocked);
           for (int i=0; i<curNumLocked; i++) curlockind[i] = i;
@@ -878,70 +889,70 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
             printer_->stream(Debug) << "Removed locking test\n";
           }
 
-					int newdim = numRestartBlocks_*blockSize_;
-					TraceMinBaseState<ScalarType,MV> newstate;
-					if(newdim <= numUnlocked)
-					{
-						std::vector<int> desiredSubscripts(newdim);
-						for(int i=0; i<newdim; i++)
+          int newdim = numRestartBlocks_*blockSize_;
+          TraceMinBaseState<ScalarType,MV> newstate;
+          if(newdim <= numUnlocked)
+          {
+            std::vector<int> desiredSubscripts(newdim);
+            for(int i=0; i<newdim; i++)
             {
-							desiredSubscripts[i] = unlockind[i];
+              desiredSubscripts[i] = unlockind[i];
               printer_->stream(Debug) << "desiredSubscripts[" << i << "] = " << desiredSubscripts[i] << std::endl;
             }
 
-						copyPartOfState(state, newstate, desiredSubscripts);
-					}
-					else
-					{
-						// TODO: Come back to this and make it more efficient
+            copyPartOfState(state, newstate, desiredSubscripts);
+          }
+          else
+          {
+            // TODO: Come back to this and make it more efficient
 
-						// Replace the converged eigenvectors with random ones
-						int nrandom = newdim-numUnlocked;
-	
-						RCP<const MV> helperMV;
-						RCP<MV> totalV = MVT::Clone(*tm_solver->getRitzVectors(),newdim);
+            // Replace the converged eigenvectors with random ones
+            int nrandom = newdim-numUnlocked;
+  
+            RCP<const MV> helperMV;
+            RCP<MV> totalV = MVT::Clone(*tm_solver->getRitzVectors(),newdim);
 
-						// Holds old things that we're keeping
-						tmp_vector_int.resize(numUnlocked);
-						for(int i=0; i<numUnlocked; i++) tmp_vector_int[i] = i;
-						RCP<MV> oldV = MVT::CloneViewNonConst(*totalV,tmp_vector_int);
+            // Holds old things that we're keeping
+            tmp_vector_int.resize(numUnlocked);
+            for(int i=0; i<numUnlocked; i++) tmp_vector_int[i] = i;
+            RCP<MV> oldV = MVT::CloneViewNonConst(*totalV,tmp_vector_int);
 
-						// Copy over the old things
-						helperMV = MVT::CloneView(*state.V,unlockind);
-						MVT::Assign(*helperMV,*oldV);
+            // Copy over the old things
+            helperMV = MVT::CloneView(*state.V,unlockind);
+            MVT::Assign(*helperMV,*oldV);
 
-						// Holds random vectors we're generating
-						tmp_vector_int.resize(nrandom);
-						for(int i=0; i<nrandom; i++) tmp_vector_int[i] = i+numUnlocked;
-						RCP<MV> newV = MVT::CloneViewNonConst(*totalV,tmp_vector_int);
+            // Holds random vectors we're generating
+            tmp_vector_int.resize(nrandom);
+            for(int i=0; i<nrandom; i++) tmp_vector_int[i] = i+numUnlocked;
+            RCP<MV> newV = MVT::CloneViewNonConst(*totalV,tmp_vector_int);
 
-						// Create random things
-						MVT::MvRandom(*newV);
+            // Create random things
+            MVT::MvRandom(*newV);
 
-						newstate.V = totalV;
-						newstate.curDim = newdim;
+            newstate.V = totalV;
+            newstate.curDim = newdim;
 
-						// Copy Ritz shifts
-						RCP< std::vector<ScalarType> > helperRS = rcp( new std::vector<ScalarType>(blockSize_) );
-						for(unsigned int i=0; i<(unsigned int)blockSize_; i++) 
-						{
-							if(i < unlockind.size() && unlockind[i] < blockSize_)
-								(*helperRS)[i] = (*state.ritzShifts)[unlockind[i]];
-							else
-								(*helperRS)[i] = ZERO;
-						}
-						newstate.ritzShifts  = helperRS;
-					}
+            // Copy Ritz shifts
+            RCP< std::vector<ScalarType> > helperRS = rcp( new std::vector<ScalarType>(blockSize_) );
+            for(unsigned int i=0; i<(unsigned int)blockSize_; i++) 
+            {
+              if(i < unlockind.size() && unlockind[i] < blockSize_)
+                (*helperRS)[i] = (*state.ritzShifts)[unlockind[i]];
+              else
+                (*helperRS)[i] = ZERO;
+            }
+            newstate.ritzShifts  = helperRS;
+          }
 
-					// Determine the largest safe shift
-					newstate.largestSafeShift = std::abs(lockvals[0]);
-					for(size_t i=0; i<lockvals.size(); i++)
-						newstate.largestSafeShift = std::max(std::abs(lockvals[i]), newstate.largestSafeShift);
+          // Determine the largest safe shift
+          newstate.largestSafeShift = std::abs(lockvals[0]);
+          for(size_t i=0; i<lockvals.size(); i++)
+            newstate.largestSafeShift = std::max(std::abs(lockvals[i]), newstate.largestSafeShift);
 
-					// Prepare new state, removing converged vectors
+          // Prepare new state, removing converged vectors
           // TODO: Init will perform some unnecessary calculations; look into it
           // TODO: The residual norms should be part of the state
-					newstate.NEV = state.NEV - numNewLocked;
+          newstate.NEV = state.NEV - numNewLocked;
           tm_solver->initialize(newstate);
         } // end of locking
         ////////////////////////////////////////////////////////////////////////////////////
@@ -950,9 +961,9 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
         //
         ////////////////////////////////////////////////////////////////////////////////////
         else if ( needToRestart(tm_solver) ) {
-					// if performRestart returns false, we exceeded the maximum number of restarts
-					if(performRestart(numRestarts, tm_solver) == false)
-						break;
+          // if performRestart returns false, we exceeded the maximum number of restarts
+          if(performRestart(numRestarts, tm_solver) == false)
+            break;
         } // end of restarting
         ////////////////////////////////////////////////////////////////////////////////////
         //
@@ -1041,7 +1052,7 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
       // sort the eigenvalues and permute the eigenvectors appropriately
       {
         std::vector<int> order(sol.numVecs);
-        sorter->sort(vals,rcpFromRef(order),sol.numVecs);
+        sorter->sort(vals,Teuchos::rcpFromRef(order),sol.numVecs);
         // store the values in the Eigensolution
         for (int i=0; i<sol.numVecs; i++) {
           sol.Evals[i].realpart = vals[i];
@@ -1059,7 +1070,7 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
   // print final summary
   tm_solver->currentStatus(printer_->stream(FinalSummary));
 
-	printParameters(printer_->stream(FinalSummary));
+  printParameters(printer_->stream(FinalSummary));
 
   // print timing information
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
@@ -1084,13 +1095,13 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
 template <class ScalarType, class MV, class OP>
 void 
 TraceMinBaseSolMgr<ScalarType,MV,OP>::setGlobalStatusTest(
-    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &global) 
+    const RCP< StatusTest<ScalarType,MV,OP> > &global) 
 {
   globalTest_ = global;
 }
 
 template <class ScalarType, class MV, class OP>
-const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & 
+const RCP< StatusTest<ScalarType,MV,OP> > & 
 TraceMinBaseSolMgr<ScalarType,MV,OP>::getGlobalStatusTest() const 
 {
   return globalTest_;
@@ -1099,13 +1110,13 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::getGlobalStatusTest() const
 template <class ScalarType, class MV, class OP>
 void 
 TraceMinBaseSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
-    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &debug)
+    const RCP< StatusTest<ScalarType,MV,OP> > &debug)
 {
   debugTest_ = debug;
 }
 
 template <class ScalarType, class MV, class OP>
-const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & 
+const RCP< StatusTest<ScalarType,MV,OP> > & 
 TraceMinBaseSolMgr<ScalarType,MV,OP>::getDebugStatusTest() const
 {
   return debugTest_;
@@ -1114,13 +1125,13 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::getDebugStatusTest() const
 template <class ScalarType, class MV, class OP>
 void 
 TraceMinBaseSolMgr<ScalarType,MV,OP>::setLockingStatusTest(
-    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &locking) 
+    const RCP< StatusTest<ScalarType,MV,OP> > &locking) 
 {
   lockingTest_ = locking;
 }
 
 template <class ScalarType, class MV, class OP>
-const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & 
+const RCP< StatusTest<ScalarType,MV,OP> > & 
 TraceMinBaseSolMgr<ScalarType,MV,OP>::getLockingStatusTest() const 
 {
   return lockingTest_;
@@ -1129,38 +1140,38 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::getLockingStatusTest() const
 template <class ScalarType, class MV, class OP>
 void TraceMinBaseSolMgr<ScalarType,MV,OP>::copyPartOfState(const TraceMinBaseState<ScalarType,MV>& oldState, TraceMinBaseState<ScalarType,MV>& newState, const std::vector<int> indToCopy) const
 {
-	const ScalarType ONE = Teuchos::ScalarTraits<MagnitudeType>::one();
-	const ScalarType ZERO = Teuchos::ScalarTraits<MagnitudeType>::zero();
+  const ScalarType ONE = Teuchos::ScalarTraits<MagnitudeType>::one();
+  const ScalarType ZERO = Teuchos::ScalarTraits<MagnitudeType>::zero();
 
-	newState.curDim = indToCopy.size();
-	std::vector<int> fullIndices(oldState.curDim);
-	for(int i=0; i<oldState.curDim; i++) fullIndices[i] = i;
+  newState.curDim = indToCopy.size();
+  std::vector<int> fullIndices(oldState.curDim);
+  for(int i=0; i<oldState.curDim; i++) fullIndices[i] = i;
 
-	// Initialize with X.  
-	// Note that we didn't compute enough vectors of X, but we can very easily using the Ritz vectors.
-	// That's why they're part of the state.
-	// Note that there will ALWAYS be enough vectors
+  // Initialize with X.  
+  // Note that we didn't compute enough vectors of X, but we can very easily using the Ritz vectors.
+  // That's why they're part of the state.
+  // Note that there will ALWAYS be enough vectors
 
-	// Helpful vectors for computing views and whatnot
-	std::vector<int> oldIndices;
-	std::vector<int> newIndices;
-	for(int i=0; i<newState.curDim; i++)
-	{
-		if(indToCopy[i] < blockSize_)
-			oldIndices.push_back(indToCopy[i]);
-		else
-			newIndices.push_back(indToCopy[i]);
-	}
+  // Helpful vectors for computing views and whatnot
+  std::vector<int> oldIndices;
+  std::vector<int> newIndices;
+  for(int i=0; i<newState.curDim; i++)
+  {
+    if(indToCopy[i] < blockSize_)
+      oldIndices.push_back(indToCopy[i]);
+    else
+      newIndices.push_back(indToCopy[i]);
+  }
 
-	int olddim = oldIndices.size();
-	int newdim = newIndices.size();
+  int olddim = oldIndices.size();
+  int newdim = newIndices.size();
 
-	// If there are no new vectors being copied
-	if(computeAllRes_)
-	{
-		newState.V  = MVT::CloneView(*oldState.X, indToCopy);
-		newState.R  = MVT::CloneView(*oldState.R, indToCopy);
-		newState.X = newState.V;
+  // If there are no new vectors being copied
+  if(computeAllRes_)
+  {
+    newState.V  = MVT::CloneView(*oldState.X, indToCopy);
+    newState.R  = MVT::CloneView(*oldState.R, indToCopy);
+    newState.X = newState.V;
 
     if(problem_->getOperator() != Teuchos::null)
     {
@@ -1173,222 +1184,223 @@ void TraceMinBaseSolMgr<ScalarType,MV,OP>::copyPartOfState(const TraceMinBaseSta
       newState.KX = Teuchos::null;
     }
 
-		if(problem_->getM() != Teuchos::null)
-		{
-			newState.MopV = MVT::CloneView(*oldState.MX, indToCopy);
-			newState.MX = newState.MopV;
-		}
-		else
-		{
-			newState.MopV = Teuchos::null;
-			newState.MX = Teuchos::null;
-		}
-	}
-	else if(newdim == 0)
-	{
-		std::vector<int> blockind(blockSize_);
-		for(int i=0; i<blockSize_; i++)
-			blockind[i] = i;
+    if(problem_->getM() != Teuchos::null)
+    {
+      newState.MopV = MVT::CloneView(*oldState.MX, indToCopy);
+      newState.MX = newState.MopV;
+    }
+    else
+    {
+      newState.MopV = Teuchos::null;
+      newState.MX = Teuchos::null;
+    }
+  }
+  else if(newdim == 0)
+  {
+    std::vector<int> blockind(blockSize_);
+    for(int i=0; i<blockSize_; i++)
+      blockind[i] = i;
 
-		// Initialize with X
-		newState.V  = MVT::CloneView(*oldState.X, blockind);
-		newState.KV = MVT::CloneView(*oldState.KX, blockind);
-		newState.R  = MVT::CloneView(*oldState.R, blockind);
-		newState.X = MVT::CloneView(*newState.V, blockind);
-		newState.KX = MVT::CloneView(*newState.KV, blockind);
+    // Initialize with X
+    newState.V  = MVT::CloneView(*oldState.X, blockind);
+    newState.KV = MVT::CloneView(*oldState.KX, blockind);
+    newState.R  = MVT::CloneView(*oldState.R, blockind);
+    newState.X = MVT::CloneView(*newState.V, blockind);
+    newState.KX = MVT::CloneView(*newState.KV, blockind);
 
-		if(problem_->getM() != Teuchos::null)
-		{
-			newState.MopV = MVT::CloneView(*oldState.MX, blockind);
-			newState.MX = MVT::CloneView(*newState.MopV, blockind);
-		}
-		else
-		{
-			newState.MopV = Teuchos::null;
-			newState.MX = Teuchos::null;
-		}
-	}
-	else
-	{
-		// More helpful vectors
-		std::vector<int> oldPart(olddim);
-		for(int i=0; i<olddim; i++) oldPart[i] = i;
-		std::vector<int> newPart(newdim);
-		for(int i=0; i<newdim; i++) newPart[i] = olddim+i;
+    if(problem_->getM() != Teuchos::null)
+    {
+      newState.MopV = MVT::CloneView(*oldState.MX, blockind);
+      newState.MX = MVT::CloneView(*newState.MopV, blockind);
+    }
+    else
+    {
+      newState.MopV = Teuchos::null;
+      newState.MX = Teuchos::null;
+    }
+  }
+  else
+  {
+    // More helpful vectors
+    std::vector<int> oldPart(olddim);
+    for(int i=0; i<olddim; i++) oldPart[i] = i;
+    std::vector<int> newPart(newdim);
+    for(int i=0; i<newdim; i++) newPart[i] = olddim+i;
 
-		// Helpful multivectors for views and whatnot
-		Teuchos::RCP<MV> helper = MVT::Clone(*oldState.V,newState.curDim);
-		Teuchos::RCP<MV> oldHelper = MVT::CloneViewNonConst(*helper,oldPart);
-		Teuchos::RCP<MV> newHelper = MVT::CloneViewNonConst(*helper,newPart);
-		Teuchos::RCP<const MV> viewHelper;
+    // Helpful multivectors for views and whatnot
+    RCP<MV> helper = MVT::Clone(*oldState.V,newState.curDim);
+    RCP<MV> oldHelper = MVT::CloneViewNonConst(*helper,oldPart);
+    RCP<MV> newHelper = MVT::CloneViewNonConst(*helper,newPart);
+    RCP<const MV> viewHelper;
 
-		// Get the parts of the Ritz vectors we are interested in.
-		Teuchos::SerialDenseMatrix<int,ScalarType> newRV(oldState.curDim,newdim);
-		for(int r=0; r<oldState.curDim; r++)
-		{
-			for(int c=0; c<newdim; c++)
-				newRV(r,c) = (*oldState.RV)(r,newIndices[c]);
-		}
+    // Get the parts of the Ritz vectors we are interested in.
+    Teuchos::SerialDenseMatrix<int,ScalarType> newRV(oldState.curDim,newdim);
+    for(int r=0; r<oldState.curDim; r++)
+    {
+      for(int c=0; c<newdim; c++)
+        newRV(r,c) = (*oldState.RV)(r,newIndices[c]);
+    }
 
-		// We're going to compute X as V*RitzVecs
-		viewHelper = MVT::CloneView(*oldState.V,fullIndices);
-		MVT::MvTimesMatAddMv(ONE,*viewHelper,newRV,ZERO,*newHelper);
-		viewHelper = MVT::CloneView(*oldState.X,oldIndices);
-		MVT::Assign(*viewHelper,*oldHelper);
-		newState.V = MVT::CloneCopy(*helper);
+    // We're going to compute X as V*RitzVecs
+    viewHelper = MVT::CloneView(*oldState.V,fullIndices);
+    MVT::MvTimesMatAddMv(ONE,*viewHelper,newRV,ZERO,*newHelper);
+    viewHelper = MVT::CloneView(*oldState.X,oldIndices);
+    MVT::Assign(*viewHelper,*oldHelper);
+    newState.V = MVT::CloneCopy(*helper);
 
-		// Also compute KX as KV*RitzVecs
-		viewHelper = MVT::CloneView(*oldState.KV,fullIndices);
-		MVT::MvTimesMatAddMv(ONE,*viewHelper,newRV,ZERO,*newHelper);
-		viewHelper = MVT::CloneView(*oldState.KX,oldIndices);
-		MVT::Assign(*viewHelper,*oldHelper);
-		newState.KV = MVT::CloneCopy(*helper);
+    // Also compute KX as KV*RitzVecs
+    viewHelper = MVT::CloneView(*oldState.KV,fullIndices);
+    MVT::MvTimesMatAddMv(ONE,*viewHelper,newRV,ZERO,*newHelper);
+    viewHelper = MVT::CloneView(*oldState.KX,oldIndices);
+    MVT::Assign(*viewHelper,*oldHelper);
+    newState.KV = MVT::CloneCopy(*helper);
 
-		// Do the same with MX if necessary
-		if(problem_->getM() != Teuchos::null)
-		{
-			viewHelper = MVT::CloneView(*oldState.MopV,fullIndices);
-			MVT::MvTimesMatAddMv(ONE,*viewHelper,newRV,ZERO,*newHelper);
-			viewHelper = MVT::CloneView(*oldState.MX,oldIndices);
-			MVT::Assign(*viewHelper,*oldHelper);
-			newState.MopV = MVT::CloneCopy(*helper);
-		}
-		else
-			newState.MopV = newState.V;
+    // Do the same with MX if necessary
+    if(problem_->getM() != Teuchos::null)
+    {
+      viewHelper = MVT::CloneView(*oldState.MopV,fullIndices);
+      MVT::MvTimesMatAddMv(ONE,*viewHelper,newRV,ZERO,*newHelper);
+      viewHelper = MVT::CloneView(*oldState.MX,oldIndices);
+      MVT::Assign(*viewHelper,*oldHelper);
+      newState.MopV = MVT::CloneCopy(*helper);
+    }
+    else
+      newState.MopV = newState.V;
 
-		// Get X, MX, KX
-		std::vector<int> blockVec(blockSize_);
-		for(int i=0; i<blockSize_; i++) blockVec[i] = i;
-		newState.X = MVT::CloneView(*newState.V,blockVec);
-		newState.KX = MVT::CloneView(*newState.KV,blockVec);
-		newState.MX = MVT::CloneView(*newState.MopV,blockVec);
+    // Get X, MX, KX
+    std::vector<int> blockVec(blockSize_);
+    for(int i=0; i<blockSize_; i++) blockVec[i] = i;
+    newState.X = MVT::CloneView(*newState.V,blockVec);
+    newState.KX = MVT::CloneView(*newState.KV,blockVec);
+    newState.MX = MVT::CloneView(*newState.MopV,blockVec);
 
-		// Update the residuals
-		if(blockSize_-oldIndices.size() > 0)
-		{
-			// There are vectors we have not computed the residual for yet
-			newPart.resize(blockSize_-oldIndices.size());
-			helper = MVT::Clone(*oldState.V,blockSize_);
-			oldHelper = MVT::CloneViewNonConst(*helper,oldPart);
-			newHelper = MVT::CloneViewNonConst(*helper,newPart);
+    // Update the residuals
+    if(blockSize_-oldIndices.size() > 0)
+    {
+      // There are vectors we have not computed the residual for yet
+      newPart.resize(blockSize_-oldIndices.size());
+      helper = MVT::Clone(*oldState.V,blockSize_);
+      oldHelper = MVT::CloneViewNonConst(*helper,oldPart);
+      newHelper = MVT::CloneViewNonConst(*helper,newPart);
 
-			Teuchos::RCP<MV> scaledMV = MVT::CloneCopy(*newState.MX,newPart);
-			Teuchos::RCP<const MV> localKV = MVT::CloneView(*newState.KX,newPart);
-			std::vector<ScalarType> scalarVec(blockSize_-oldIndices.size());
-			for(unsigned int i=0; i<(unsigned int)blockSize_-oldIndices.size(); i++) scalarVec[i] = (*oldState.T)[newPart[i]];
-			MVT::MvScale(*scaledMV,scalarVec);
-						
-			helper = MVT::Clone(*oldState.V,blockSize_);
-			oldHelper = MVT::CloneViewNonConst(*helper,oldPart);
-			newHelper = MVT::CloneViewNonConst(*helper,newPart);
-			MVT::MvAddMv(ONE,*localKV,-ONE,*scaledMV,*newHelper);
-			viewHelper = MVT::CloneView(*oldState.R,oldIndices);
-			MVT::Assign(*viewHelper,*oldHelper);
-			newState.R = MVT::CloneCopy(*helper);
-		}
-		else
-			newState.R = oldState.R;
-	}
+      RCP<MV> scaledMV = MVT::CloneCopy(*newState.MX,newPart);
+      RCP<const MV> localKV = MVT::CloneView(*newState.KX,newPart);
+      std::vector<ScalarType> scalarVec(blockSize_-oldIndices.size());
+      for(unsigned int i=0; i<(unsigned int)blockSize_-oldIndices.size(); i++) scalarVec[i] = (*oldState.T)[newPart[i]];
+      MVT::MvScale(*scaledMV,scalarVec);
+            
+      helper = MVT::Clone(*oldState.V,blockSize_);
+      oldHelper = MVT::CloneViewNonConst(*helper,oldPart);
+      newHelper = MVT::CloneViewNonConst(*helper,newPart);
+      MVT::MvAddMv(ONE,*localKV,-ONE,*scaledMV,*newHelper);
+      viewHelper = MVT::CloneView(*oldState.R,oldIndices);
+      MVT::Assign(*viewHelper,*oldHelper);
+      newState.R = MVT::CloneCopy(*helper);
+    }
+    else
+      newState.R = oldState.R;
+  }
 
-	// Since we are setting V:=X, V is orthonormal
-	newState.isOrtho = true;
+  // Since we are setting V:=X, V is orthonormal
+  newState.isOrtho = true;
 
-	// Get the first eigenvalues
-	Teuchos::RCP< std::vector<ScalarType> > helperT = Teuchos::rcp( new std::vector<ScalarType>(newState.curDim) );
-	for(int i=0; i<newState.curDim; i++) (*helperT)[i] = (*oldState.T)[indToCopy[i]];
-	newState.T  = helperT;
+  // Get the first eigenvalues
+  RCP< std::vector<ScalarType> > helperT = rcp( new std::vector<ScalarType>(newState.curDim) );
+  for(int i=0; i<newState.curDim; i++) (*helperT)[i] = (*oldState.T)[indToCopy[i]];
+  newState.T  = helperT;
 
-	// X'KX is diag(T)
-	Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > newKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newState.curDim,newState.curDim) );
-	for(int i=0; i<newState.curDim; i++)
-		(*newKK)(i,i) = (*newState.T)[i];
-	newState.KK = newKK;
+  // X'KX is diag(T)
+  RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > newKK = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newState.curDim,newState.curDim) );
+  for(int i=0; i<newState.curDim; i++)
+    (*newKK)(i,i) = (*newState.T)[i];
+  newState.KK = newKK;
 
-	// The associated Ritz vectors are I
-	Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > newRV = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newState.curDim,newState.curDim) );
-	for(int i=0; i<newState.curDim; i++)
-		(*newRV)(i,i) = ONE;
-	newState.RV = newRV;
+  // The associated Ritz vectors are I
+  RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > newRV = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newState.curDim,newState.curDim) );
+  for(int i=0; i<newState.curDim; i++)
+    (*newRV)(i,i) = ONE;
+  newState.RV = newRV;
 
-	// Get the Ritz shifts
-	Teuchos::RCP< std::vector<ScalarType> > helperRS = Teuchos::rcp( new std::vector<ScalarType>(blockSize_) );
-	for(int i=0; i<blockSize_; i++) 
-	{
-		if(indToCopy[i] < blockSize_)
-			(*helperRS)[i] = (*oldState.ritzShifts)[indToCopy[i]];
-		else
-			(*helperRS)[i] = ZERO;
-	}
-	newState.ritzShifts  = helperRS;
+  // Get the Ritz shifts
+  RCP< std::vector<ScalarType> > helperRS = rcp( new std::vector<ScalarType>(blockSize_) );
+  for(int i=0; i<blockSize_; i++) 
+  {
+    if(indToCopy[i] < blockSize_)
+      (*helperRS)[i] = (*oldState.ritzShifts)[indToCopy[i]];
+    else
+      (*helperRS)[i] = ZERO;
+  }
+  newState.ritzShifts  = helperRS;
 }
 
 
 template <class ScalarType, class MV, class OP>
 void TraceMinBaseSolMgr<ScalarType,MV,OP>::setParameters(Teuchos::ParameterList &pl) const
 {
-	pl.set("Block Size", blockSize_);
-	pl.set("Num Blocks", numBlocks_);
-	pl.set("Num Restart Blocks", numRestartBlocks_);
-	pl.set("When To Shift", whenToShift_);
-	pl.set("Trace Threshold", traceThresh_);
-	pl.set("Shift Tolerance", shiftTol_);
-	pl.set("Relative Shift Tolerance", relShiftTol_);
-	pl.set("Shift Norm", shiftNorm_);
-	pl.set("How To Choose Shift", howToShift_);
-	pl.set("Consider Clusters", considerClusters_);
-	pl.set("Use Multiple Shifts", useMultipleShifts_);
-	pl.set("Saddle Solver Type", saddleSolType_);
-	pl.set("Project All Vectors", projectAllVecs_);
-	pl.set("Project Locked Vectors", projectLockedVecs_);
-	pl.set("Compute All Residuals", computeAllRes_);
-	pl.set("Use Residual as RHS", useRHSR_);
+  pl.set("Block Size", blockSize_);
+  pl.set("Num Blocks", numBlocks_);
+  pl.set("Num Restart Blocks", numRestartBlocks_);
+  pl.set("When To Shift", whenToShift_);
+  pl.set("Trace Threshold", traceThresh_);
+  pl.set("Shift Tolerance", shiftTol_);
+  pl.set("Relative Shift Tolerance", relShiftTol_);
+  pl.set("Shift Norm", shiftNorm_);
+  pl.set("How To Choose Shift", howToShift_);
+  pl.set("Consider Clusters", considerClusters_);
+  pl.set("Use Multiple Shifts", useMultipleShifts_);
+  pl.set("Saddle Solver Type", saddleSolType_);
+  pl.set("Project All Vectors", projectAllVecs_);
+  pl.set("Project Locked Vectors", projectLockedVecs_);
+  pl.set("Compute All Residuals", computeAllRes_);
+  pl.set("Use Residual as RHS", useRHSR_);
+  pl.set("Maximum Krylov Iterations", maxKrylovIter_);
 }
 
 
 template <class ScalarType, class MV, class OP>
 void TraceMinBaseSolMgr<ScalarType,MV,OP>::printParameters(std::ostream &os) const
 {
-	os << "\n\n\n";
-	os << "========================================\n";
-	os << "========= TraceMin parameters ==========\n";
-	os << "========================================\n";
-	os << "=========== Block parameters ===========\n";
-	os << "Block Size: " << blockSize_ << std::endl;
-	os << "Num Blocks: " << numBlocks_ << std::endl;
-	os << "Num Restart Blocks: " << numRestartBlocks_ << std::endl;
-	os << "======== Convergence parameters ========\n";
-	os << "Convergence Tolerance: " << convTol_ << std::endl;
-	os << "Relative Convergence Tolerance: " << relConvTol_ << std::endl;
-	os << "========== Locking parameters ==========\n";
-	os << "Use Locking: " << useLocking_ << std::endl;
-	os << "Locking Tolerance: " << lockTol_ << std::endl;
-	os << "Relative Locking Tolerance: " << relLockTol_ << std::endl;
-	os << "Max Locked: " << maxLocked_ << std::endl;
-	os << "Locking Quorum: " << lockQuorum_ << std::endl;
-	os << "========== Shifting parameters =========\n";
-	os << "When To Shift: ";
-	if(whenToShift_ == NEVER_SHIFT) os << "Never\n";
-	else if(whenToShift_ == SHIFT_WHEN_TRACE_LEVELS) os << "After Trace Levels\n";
-	else if(whenToShift_ == SHIFT_WHEN_RESID_SMALL) os << "Residual Becomes Small\n";
-	else if(whenToShift_ == ALWAYS_SHIFT) os << "Always\n";
-	os << "Consider Clusters: " << considerClusters_ << std::endl;
-	os << "Trace Threshohld: " << traceThresh_ << std::endl;
-	os << "Shift Tolerance: " << shiftTol_ << std::endl;
-	os << "Relative Shift Tolerance: " << relShiftTol_ << std::endl;
-	os << "How To Choose Shift: ";
-	if(howToShift_ == LARGEST_CONVERGED_SHIFT) os << "Largest Converged\n";
-	else if(howToShift_ == ADJUSTED_RITZ_SHIFT) os << "Adjusted Ritz Values\n";
-	else if(howToShift_ == RITZ_VALUES_SHIFT) os << "Ritz Values\n";
-	os << "Use Multiple Shifts: " << useMultipleShifts_ << std::endl;
-	os << "=========== Other parameters ===========\n";
-	os << "Orthogonalization: " << ortho_ << std::endl;
-	os << "Saddle Solver Type: ";
-	if(saddleSolType_ == PROJECTED_KRYLOV_SOLVER) os << "Projected Krylov\n";
-	else if(saddleSolType_ == SCHUR_COMPLEMENT_SOLVER) os << "Schur Complement\n";
-	os << "Project All Vectors: " << projectAllVecs_ << std::endl;
-	os << "Project Locked Vectors: " << projectLockedVecs_ << std::endl;
-	os << "Compute All Residuals: " << computeAllRes_ << std::endl;
-	os << "========================================\n\n\n";
+  os << "\n\n\n";
+  os << "========================================\n";
+  os << "========= TraceMin parameters ==========\n";
+  os << "========================================\n";
+  os << "=========== Block parameters ===========\n";
+  os << "Block Size: " << blockSize_ << std::endl;
+  os << "Num Blocks: " << numBlocks_ << std::endl;
+  os << "Num Restart Blocks: " << numRestartBlocks_ << std::endl;
+  os << "======== Convergence parameters ========\n";
+  os << "Convergence Tolerance: " << convTol_ << std::endl;
+  os << "Relative Convergence Tolerance: " << relConvTol_ << std::endl;
+  os << "========== Locking parameters ==========\n";
+  os << "Use Locking: " << useLocking_ << std::endl;
+  os << "Locking Tolerance: " << lockTol_ << std::endl;
+  os << "Relative Locking Tolerance: " << relLockTol_ << std::endl;
+  os << "Max Locked: " << maxLocked_ << std::endl;
+  os << "Locking Quorum: " << lockQuorum_ << std::endl;
+  os << "========== Shifting parameters =========\n";
+  os << "When To Shift: ";
+  if(whenToShift_ == NEVER_SHIFT) os << "Never\n";
+  else if(whenToShift_ == SHIFT_WHEN_TRACE_LEVELS) os << "After Trace Levels\n";
+  else if(whenToShift_ == SHIFT_WHEN_RESID_SMALL) os << "Residual Becomes Small\n";
+  else if(whenToShift_ == ALWAYS_SHIFT) os << "Always\n";
+  os << "Consider Clusters: " << considerClusters_ << std::endl;
+  os << "Trace Threshohld: " << traceThresh_ << std::endl;
+  os << "Shift Tolerance: " << shiftTol_ << std::endl;
+  os << "Relative Shift Tolerance: " << relShiftTol_ << std::endl;
+  os << "How To Choose Shift: ";
+  if(howToShift_ == LARGEST_CONVERGED_SHIFT) os << "Largest Converged\n";
+  else if(howToShift_ == ADJUSTED_RITZ_SHIFT) os << "Adjusted Ritz Values\n";
+  else if(howToShift_ == RITZ_VALUES_SHIFT) os << "Ritz Values\n";
+  os << "Use Multiple Shifts: " << useMultipleShifts_ << std::endl;
+  os << "=========== Other parameters ===========\n";
+  os << "Orthogonalization: " << ortho_ << std::endl;
+  os << "Saddle Solver Type: ";
+  if(saddleSolType_ == PROJECTED_KRYLOV_SOLVER) os << "Projected Krylov\n";
+  else if(saddleSolType_ == SCHUR_COMPLEMENT_SOLVER) os << "Schur Complement\n";
+  os << "Project All Vectors: " << projectAllVecs_ << std::endl;
+  os << "Project Locked Vectors: " << projectLockedVecs_ << std::endl;
+  os << "Compute All Residuals: " << computeAllRes_ << std::endl;
+  os << "========================================\n\n\n";
 }
 
 

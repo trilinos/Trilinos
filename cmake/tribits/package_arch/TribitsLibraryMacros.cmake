@@ -86,7 +86,7 @@ ENDFUNCTION()
 #    ${PACKAGE_SOURCE_DIR}/cmake/<packageConfigFile>.in
 #
 # exists and it creates the file::
-# 
+#
 #   ${CMAKE_CURRENT_BINARY_DIR}/<packageConfigFile>
 #
 # by calling the built-in ``CONFIGURE_FILE()`` command::
@@ -97,8 +97,9 @@ ENDFUNCTION()
 #     )
 #
 # which does basic substitution of CMake variables (see documentation for
-# built-in CMake ``CONFIGURE_FILE()`` command for rules on how it performs
-# substitutions).
+# built-in CMake `CONFIGURE_FILE()`_ command for rules on how it performs
+# substitutions).  This command is typically used to configure the package's
+# main `<packageDir>/cmake/<packageName>_config.h.in`_ file.
 #
 # In addition to just calling ``CONFIGURE_FILE()``, this function also aids in
 # creating configured header files adding macros for deprecating code as
@@ -187,13 +188,13 @@ ENDFUNCTION()
 
 #
 # @FUNCTION: TRIBITS_ADD_LIBRARY()
-# 
+#
 # Function used to add a CMake library and target using ``ADD_LIBRARY()``.
 #
 # Usage::
 #
 #   TRIBITS_ADD_LIBRARY(
-#     <libName>
+#     <libBaseName>
 #     [HEADERS <h0> <h1> ...]
 #     [NOINSTALLHEADERS <nih0> <hih1> ...]
 #     [SOURCES <src0> <src1> ...]
@@ -202,6 +203,7 @@ ENDFUNCTION()
 #     [TESTONLY]
 #     [NO_INSTALL_LIB_OR_HEADERS]
 #     [CUDALIBRARY]
+#     [ADDED_LIB_TARGET_NAME_OUT <libTargetName>]
 #     )
 #
 # *Sections:*
@@ -216,14 +218,21 @@ ENDFUNCTION()
 #
 # **Formal Arguments (TRIBITS_ADD_LIBRARY())**
 #
-#   ``<libName>``
+#   ``<libBaseName>``
 #
-#     Required name of the library.  This is the name passed to
-#     ``ADD_LIBRARY(<libName> ...)``.  The name is *not* prefixed by the
-#     package name.  CMake will of course add any standard prefix or post-fix
-#     to the library file name appropriate for the platform and if this is a
-#     static or shared library build (see documentation for the built-in CMake
-#     command ``ADD_LIBRARY()``.
+#     Required base name of the library.  The name of the actual libray name
+#     will be prefixed by ``${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}`` to
+#     produce::
+#     
+#       <libTargetName> = ${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}<libBaseName>
+#
+#     This is the name passed to ``ADD_LIBRARY(<libTargetName> ...)``.  The
+#     name is *not* prefixed by the package name.  CMake will of course add
+#     any standard prefix or post-fix to the library file name appropriate for
+#     the platform and if this is a static or shared library build (e.g. on
+#     Linux prefix = ``'lib'``, postfix = ``'.so'`` for shared lib and postfix
+#     = ``'.a'`` static lib) (see documentation for the built-in CMake command
+#     ``ADD_LIBRARY()``.
 #
 #   ``HEADERS <h0> <h1> ...``
 #
@@ -254,41 +263,40 @@ ENDFUNCTION()
 #
 #     List of dependent libraries that are built in the current SE package
 #     that this library is dependent on.  These libraries are passed into
-#     ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-#     dependency structure of the libraries within the package.  **NOTE:** One
-#     must **not** list libraries in other upstream SE packages or libraries
-#     built externally from this TriBITS CMake project.  The TriBITS system
-#     automatically handles linking to libraries in upstream TriBITS SE
-#     packages.  External libraries need to be listed in the ``IMPORTEDLIBS``
-#     argument instead.
+#     ``TARGET_LINK_LIBRARIES(<libTargetName> ...)`` so that CMake knows about
+#     the dependency structure of the libraries within this SE package.
+#     **NOTE:** One must **not** list libraries in other upstream `TriBITS SE
+#     Packages`_ or libraries built externally from this TriBITS CMake project
+#     in ``DEPLIBS``.  The TriBITS system automatically handles linking to
+#     libraries in upstream TriBITS SE packages.  External libraries need to
+#     be listed in the ``IMPORTEDLIBS`` argument instead if they are not
+#     already specified automatically using a `TriBITS TPL`_.
 #
 #   ``IMPORTEDLIBS <ideplib0> <ideplib1> ...``
 #
 #     List of dependent libraries built externally from this TriBITS CMake
 #     project.  These libraries are passed into
-#     ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-#     dependency.  These libraries are added to the
-#     ``${PACKAGE_NAME}_LIBRARIES`` variable so that downstream SE packages
-#     will also pick up these libraries and these libraries will show up in
-#     the generated ``Makefile.export.${PACKAGE_NAME}`` and
-#     ``${PACKAGE_NAME}Config.cmake`` files (if they are generated).  However,
-#     not that external libraries are often better handled as `TriBITS TPLs`_.
-#     A well constructed TriBITS package and library should never have to use
-#     this option.
+#     ``TARGET_LINK_LIBRARIES(<libTargetName> ...)`` so that CMake knows about
+#     the dependency.  However, note that external libraries are often better
+#     handled as `TriBITS TPLs`_.  A well constructed TriBITS package and
+#     library should never have to use this option!  So far, the only case
+#     where ``IMPORTEDLIBS`` has been shown to be necessary is to pass in the
+#     standard C math library ``m``.  In every other case, a TriBITS TPL
+#     should be used instead.
 #
 #   ``TESTONLY``
 #
-#     If passed in, then ``<libName>`` will **not** be added to
+#     If passed in, then ``<libTargetName>`` will **not** be added to
 #     ``${PACKAGE_NAME}_LIBRARIES`` and an install target for the library will
 #     not be added.  In this case, the current include directories will be set
-#     in the global variable ``<libName>_INCLUDE_DIR`` which will be used in
-#     `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked in
-#     through its ``DEPLIBS`` argument.
+#     in the global variable ``<libTargetName>_INCLUDE_DIR`` which will be
+#     used in `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked
+#     in through its ``DEPLIBS`` argument.
 #
 #   ``NO_INSTALL_LIB_OR_HEADERS``
 #
 #     If specified, then no install targets will be added for the library
-#     ``<libName>`` or the header files listed in ``HEADERS``.
+#     ``<libTargetName>`` or the header files listed in ``HEADERS``.
 #
 #   ``CUDALIBRARY``
 #
@@ -300,6 +308,14 @@ ENDFUNCTION()
 #     direct or indirect dependency on the TriBITS CUDA TPL or a
 #     configure-time error may occur about not knowing about
 #     ``CUDA_ALL_LIBRARY()``.
+#
+#   ``ADDED_LIB_TARGET_NAME_OUT <libTargetName>``
+#
+#     If specified, then on output the variable ``<libTargetName>`` will be
+#     set with the name of the library passed to ``ADD_LIBRARY()``.  Having
+#     this name allows the calling ``CMakeLists.txt`` file access and set
+#     additional target propeties (see `Additional Library and Source File
+#     Properties (TRIBITS_ADD_LIBRARY())`_).
 #
 # .. _Include Directories (TRIBITS_ADD_LIBRARY()):
 #
@@ -317,7 +333,7 @@ ENDFUNCTION()
 # **Install Targets (TRIBITS_ADD_LIBRARY())**
 #
 # By default, an install target for the library is created using
-# ``INSTALL(TARGETS <libName> ...)`` to install into the directory
+# ``INSTALL(TARGETS <libTargetName> ...)`` to install into the directory
 # ``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
 # ``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix at configure
 # time`_).  However, this install target will not get created if
@@ -339,12 +355,18 @@ ENDFUNCTION()
 #
 # **Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())**
 #
-# Once ``ADD_LIBRARY(<libName> ... <src0> <src1> ...)`` is called, one can set
-# and change properties on the ``<libName>`` library target using the built-in
-# CMake command ``SET_TARGET_PROPERTIES()`` as well as set and change
-# properties on any of the source files listed in ``SOURCES`` using the
-# built-in CMake command ``SET_SOURCE_FILE_PROPERTIES()`` just like in any
-# CMake project.
+# Once ``ADD_LIBRARY(<libTargetName> ... <src0> <src1> ...)`` is called, one
+# can set and change properties on the ``<libTargetName>`` library target
+# using the built-in CMake command ``SET_TARGET_PROPERTIES()`` as well as set
+# and change properties on any of the source files listed in ``SOURCES`` using
+# the built-in CMake command ``SET_SOURCE_FILE_PROPERTIES()`` just like in any
+# CMake project.  For example::
+#
+#   TRIBITS_ADD_LIBRARY( somelib ...
+#     ADDED_LIB_TARGET_NAME_OUT  somelib_TARGET_NAME )
+#
+#   SET_TARGET_PROPERTIES( ${somelib_TARGET_NAME}
+#     PROPERTIES  LINKER_LANGUAGE  CXX )
 #
 # .. _Miscellaneous Notes (TRIBITS_ADD_LIBRARY()):
 #
@@ -359,7 +381,11 @@ ENDFUNCTION()
 # affect header files, please use a configured header file (see
 # `TRIBITS_CONFIGURE_FILE()`_).
 #
-FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
+FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
+
+  SET(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
+
+  SET(LIBRARY_NAME ${LIBRARY_NAME_PREFIX}${LIBRARY_NAME_IN})
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nTRIBITS_ADD_LIBRARY: ${LIBRARY_NAME}")
@@ -377,7 +403,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
 
   PARSE_ARGUMENTS(
     PARSE #prefix
-    "HEADERS;NOINSTALLHEADERS;SOURCES;DEPLIBS;IMPORTEDLIBS;DEFINES" # Lists
+    "HEADERS;NOINSTALLHEADERS;SOURCES;DEPLIBS;IMPORTEDLIBS;DEFINES;ADDED_LIB_TARGET_NAME_OUT" # Lists
     "TESTONLY;NO_INSTALL_LIB_OR_HEADERS;CUDALIBRARY" #Options
     ${ARGN} # Remaining arguments passed in
     )
@@ -387,6 +413,10 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
   ENDIF()
   IF(PARSE_SOURCES)
     LIST(REMOVE_DUPLICATES PARSE_SOURCES)
+  ENDIF()
+
+  IF(PARSE_ADDED_LIB_TARGET_NAME_OUT)
+    SET(${PARSE_ADDED_LIB_TARGET_NAME_OUT} PARENT_SCOPE)
   ENDIF()
 
   # ToDo: Deprecate and remove the usage of DEFINES!  People should be putting
@@ -414,7 +444,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
     SET_PROPERTY(DIRECTORY  APPEND  PROPERTY  PACKAGE_LIBRARY_DIRS
       ${${PACKAGE_NAME}_LIBRARY_DIRS})
 
-    # Local varaible to hold all of the libraries that will be directly linked
+    # Local variable to hold all of the libraries that will be directly linked
     # to this library.
     SET(LINK_LIBS)
 
@@ -427,47 +457,156 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
       MESSAGE("-- " "IMPORTEDLIBS = ${PARSE_IMPORTEDLIBS}")
     ENDIF()
 
-    IF (PARSE_DEPLIBS)
-      APPEND_SET(LINK_LIBS ${PARSE_DEPLIBS})
-    ENDIF()
-    IF (PARSE_IMPORTEDLIBS)
-      APPEND_SET(LINK_LIBS ${PARSE_IMPORTEDLIBS})
-    ENDIF()
-
     #
-    # We only want to link to the dependent package and TPL libraries when we need
-    # to.  We only need to link to these dependent libraries when this is the first
-    # library being created for this package or if this library does not depend
-    # on other libraries created for this package.  Otherwise, we don't need to
-    # add the include directories or link libraries because a dependent lib
-    # specified in PARSE_DEPLIBS already has everything that we need.
+    # Add the DEPLIBS to the LINK_LIBS, assert correct usage of DEPLIBS, and
+    # see if we need to link in the upstream SE package and TPL libs.
+    #
+    # We only want to link to the upstream dependent SE package and TPL
+    # libraries if needed.  We only need to link to these upstream dependent
+    # libraries when this is the first library being created for this SE
+    # package or if this library does not depend on other libraries created
+    # for this package.  Otherwise, we don't need to add the include
+    # directories or link libraries because a dependent lib specified in
+    # PARSE_DEPLIBS already has everything that we need.
     #
     # We also need to make special considerations for test libraries since
     # things need to be handled a little bit differently (but not much).  In the
-    # case of test libaries, we need to also pull the test-only dependencies.
+    # case of test libraries, we need to also pull the test-only dependencies.
     # In this case, we will always assume that we will add in the test
     # libraries.
+    #
+    # ToDo: Turn the below deprecated WARNING messages to FATAL_ERROR once we
+    # give enough time for people to clean up their codes.
     #
 
     SET(ADD_DEP_PACKAGE_AND_TPL_LIBS TRUE)
 
-    IF (PARSE_DEPLIBS AND NOT PARSE_TESTONLY)
-      FOREACH(DEPLIB ${PARSE_DEPLIBS})
-        LIST(FIND ${PACKAGE_NAME}_LIBRARIES ${DEPLIB} DEPLIB_IDX)
-        IF (NOT DEPLIB_IDX EQUAL -1)
-          # The library being created here is dependent on another of this
-          # package's libraries so there is no need to add in this package's
-          # dependent package and TPL libraries.
-          SET(ADD_DEP_PACKAGE_AND_TPL_LIBS FALSE)
+    SET(PREFIXED_DEPLIBS)
+
+    FOREACH(LIB ${PARSE_DEPLIBS})
+
+      SET(PREFIXED_LIB "${LIBRARY_NAME_PREFIX}${LIB}")
+
+      # LIB_IN_SE_PKG?
+      LIST(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
+      IF (FOUND_IDX GREATER -1)
+        SET(LIB_IN_SE_PKG TRUE)
+      ELSE()
+        SET(LIB_IN_SE_PKG FALSE)
+      ENDIF()
+
+      # PREFIXED_LIB_IS_TESTONLY?
+      IF (${PREFIXED_LIB}_INCLUDE_DIRS)
+        SET(LIB_TESTONLY TRUE)
+      ELSE()
+        SET(LIB_TESTONLY FALSE)
+      ENDIF()
+
+      # Check for valid usage (sorted by most common to least common)
+      IF (NOT PARSE_TESTONLY AND LIB_IN_SE_PKG AND NOT LIB_TESTONLY)
+        # The library being created here is a regular library and is
+        # dependent on a regular (non-TESTONLY) lib.  This is valid usage of
+        # DEPLIBS.  Also, there is no need to link this new lib the SE
+        # package's upstream dependent SE package and TPL libraries.
+        SET(ADD_DEP_PACKAGE_AND_TPL_LIBS FALSE)
+      ELSEIF (PARSE_TESTONLY AND LIB_IN_SE_PKG AND NOT LIB_TESTONLY)
+        # The library being created here is TESTONLY library and is
+        # dependent on a regular (non-TESTONLY) lib.  This is valid usage of
+        # DEPLIBS.  In the case of test-only libraries, we always link in
+        # the upstream libs.
+      ELSEIF (PARSE_TESTONLY AND LIB_TESTONLY) # LIB_IN_SE_PKG=TRUE/FASLE The
+        # library being created here is TESTONLY library and is dependent on
+        # another TESTONLY library.  This is valid usage of DEPLIBS.  In this
+        # case we just hope that this SE package correctly specified a TEST
+        # dependency on the upstream SE package that owns this upstream
+        # TESTONLY library.
+        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+          MESSAGE("-- "
+            "Adding include directories for TESTONLY ${PREFIXED_LIB}_INCLUDE_DIRS ...")
         ENDIF()
-      ENDFOREACH()
-    ELSE()
-      # If there are no dependent libs passed in, then this library can not
-      # possiblly depend on the package's other libraries so we must link to
-      # the dependent libraries in dependent libraries and TPLs.
-    ENDIF()
+        INCLUDE_DIRECTORIES(${${PREFIXED_LIB}_INCLUDE_DIRS})
+      ELSEIF (NOT PARSE_TESTONLY AND LIB_TESTONLY) # LIB_IN_SE_PKG=TRUE/FASLE
+        MESSAGE(WARNING "WARNING: '${LIB}' in DEPLIBS is a TESTONLY lib"
+          " and it is illegal to link to this non-TESTONLY library '${LIBRARY_NAME}'."
+          "  Such usage is deprecated (and this warning will soon become an error)!"
+          "  If this is a regular library in this SE package or in an dependent upstream SE"
+          " package then TriBITS will link automatically to it.  If you remove this and it"
+          " does not link, then you need to add a new SE package dependency to"
+          " this SE package's dependencies file"
+          " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
+        # ToDo: Turn the above to FATAL_ERROR after dropping deprecated code
+      ELSEIF (NOT LIB_IN_SE_PKG AND TARGET ${PREFIXED_LIB} ) # PARSE_TESTONLY=TRUE/FALSE
+        MESSAGE(WARNING "WARNING: '${LIB}' in DEPSLIBS is not"
+          " a lib in this SE package but is a library defined in the current"
+          " cmake project!  Such usage is  deprecated (and"
+          " will result in a configure error soon).  If this is a library in"
+          " a dependent upstream SE package, then simply remove it from this list."
+          "  TriBITS automatically links in libraries in upstream SE packages."
+          "  If you remove '${LIB}' from DEPLIBS and your code does"
+          " not link, then you need to add a new SE package dependency to"
+          " this SE package's dependencies file"
+          " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
+      ELSEIF (NOT LIB_IN_SE_PKG AND NOT TARGET ${PREFIXED_LIB} )
+        MESSAGE(WARNING "WARNING: '${LIB}' in DEPSLIBS is not"
+          " a lib defined in the current cmake project!  Such usage is deprecated (and"
+          " will result in a configure error soon).  If this is an external"
+          " lib you are trying to link in, it should likely be handled as a TriBITS"
+          " TPL.  Otherwise, it should be passed in through IMPORTEDLIBS.  However,"
+          " the only case we have found where IMPORTEDLIBS had to be used instead of"
+          " through a proper TriBITS TPL is the C math library 'm'.")
+      ELSE()
+        MESSAGE(WARNING "WARNING: The case PARSE_TESTONLY=${PARSE_TESTONLY},"
+          " LIB_IN_SE_PKG=${LIB_IN_SE_PKG}, LIB_TESTONLY=${LIB_TESTONLY}, has"
+          " not yet been handled!")
+      ENDIF()
+
+      LIST(APPEND PREFIXED_DEPLIBS "${LIBRARY_NAME_PREFIX}${LIB}")
+
+    ENDFOREACH()
+
+    APPEND_SET(LINK_LIBS ${PREFIXED_DEPLIBS})
+
+    #
+    # Check IMPORTEDLIBS
+    #
+
+    FOREACH(IMPORTEDLIB ${PARSE_IMPORTEDLIBS})
+      SET(PREFIXED_LIB "${LIBRARY_NAME_PREFIX}${IMPORTEDLIB}")
+      LIST(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
+      IF (${PREFIXED_LIB}_INCLUDE_DIRS)
+        MESSAGE(WARNING "WARNING: '${IMPORTEDLIB}' in IMPORTEDLIBS is a TESTONLY lib"
+          " and it is illegal to pass in through IMPORTEDLIBS!"
+          "  Such usage is deprecated (and this warning will soon become an error)!"
+          "  Should '${IMPORTEDLIB}' instead be passed through DEPLIBS?")
+        # ToDo: Turn the above to FATAL_ERROR after dropping deprecated code
+      ELSEIF (FOUND_IDX GREATER -1)
+        MESSAGE(WARNING "WARNING: Lib '${IMPORTEDLIB}' in IMPORTEDLIBS is in"
+        " this SE package and is *not* an external lib!"
+        "  TriBITS takes care of linking against libs the current"
+        " SE package automatically.  Please remove it from IMPORTEDLIBS!")
+      ELSEIF (TARGET ${PREFIXED_LIB})
+        MESSAGE(WARNING "WARNING: Lib '${IMPORTEDLIB}' being passed through"
+        " IMPORTEDLIBS is *not* an external library but instead is a library"
+        " defined in this CMake project!"
+        "  TriBITS takes care of linking against libraries in dependent upstream"
+        " SE packages.  If you want to link to a library in an upstream SE"
+        " package then add the SE package name to the appropriate category"
+        " in this SE package's depencencies file: "
+        " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
+      ENDIF()
+      # ToDo: Assert that this is not a test-only lib
+      LIST(APPEND LINK_LIBS ${IMPORTEDLIB})
+    ENDFOREACH()
+
+    #
+    # Add the dependent SE package and TPL libs
+    #
 
     IF (ADD_DEP_PACKAGE_AND_TPL_LIBS)
+
+      # If there are no dependent libs passed in, then this library can not
+      # possibly depend on the package's other libraries so we must link to
+      # the dependent libraries in dependent libraries and TPLs.
 
       IF (NOT PARSE_TESTONLY)
         SET(LIB_OR_TEST_ARG LIB)
@@ -509,22 +648,44 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
     ENDIF()
 
     IF (NOT PARSE_CUDALIBRARY)
-      ADD_LIBRARY(${LIBRARY_NAME} ${PARSE_HEADERS} ${PARSE_NOINSTALLHEADERS}
-        ${PARSE_SOURCES})
+      ADD_LIBRARY(
+        ${LIBRARY_NAME}
+        ${PARSE_HEADERS}
+        ${PARSE_NOINSTALLHEADERS}
+        ${PARSE_SOURCES}
+        )
     ELSE()
-      CUDA_ADD_LIBRARY(${LIBRARY_NAME} ${PARSE_HEADERS} ${PARSE_NOINSTALLHEADERS}
-        ${PARSE_SOURCES})
+      CUDA_ADD_LIBRARY(
+        ${LIBRARY_NAME}
+        ${PARSE_HEADERS}
+        ${PARSE_NOINSTALLHEADERS}
+        ${PARSE_SOURCES}
+        )
     ENDIF()
 
-    SET_PROPERTY(TARGET ${LIBRARY_NAME} APPEND PROPERTY
-      LABELS ${PACKAGE_NAME}Libs ${PARENT_PACKAGE_NAME}Libs)
+    IF(PARSE_ADDED_LIB_TARGET_NAME_OUT)
+      SET(${PARSE_ADDED_LIB_TARGET_NAME_OUT} ${LIBRARY_NAME} PARENT_SCOPE)
+    ENDIF()
 
-    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES
+    SET_PROPERTY(
+      TARGET ${LIBRARY_NAME}
+      APPEND PROPERTY
+      LABELS ${PACKAGE_NAME}Libs ${PARENT_PACKAGE_NAME}Libs
+      )
+
+    SET_TARGET_PROPERTIES(
+      ${LIBRARY_NAME}
+      PROPERTIES
       VERSION ${${PROJECT_NAME}_VERSION}
-      SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION})
+      SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}
+      )
 
     PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_LIB_TARGETS ${LIBRARY_NAME})
     PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_ALL_TARGETS ${LIBRARY_NAME})
+
+    IF (${PROJECT_NAME}_DUMP_LINK_LIBS)
+      MESSAGE("-- ${LIBRARY_NAME_IN}:LINK_LIBS='${LINK_LIBS}'")
+    ENDIF()
 
     TARGET_LINK_LIBRARIES(${LIBRARY_NAME}  ${LINK_LIBS})
 
@@ -574,11 +735,11 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
         "${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR}")
       INSTALL(
         TARGETS ${LIBRARY_NAME}
-        EXPORT ${PROJECT_NAME}
-          RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}"
-          LIBRARY DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}"
-          ARCHIVE DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}"
-          COMPONENT ${PACKAGE_NAME}
+        EXPORT ${PACKAGE_NAME}
+        RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}"
+        LIBRARY DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}"
+        ARCHIVE DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}"
+        COMPONENT ${PACKAGE_NAME}
         )
     ENDIF()
 
@@ -599,9 +760,6 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
 
       PREPEND_GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS  ${INCLUDE_DIRS_CURRENT})
       PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS  ${LIBRARY_DIRS_CURRENT})
-      IF (PARSE_IMPORTEDLIBS)
-        PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES  ${PARSE_IMPORTEDLIBS})
-      ENDIF()
       PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES  ${LIBRARY_NAME})
 
       REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_INCLUDE_DIRS)
@@ -617,6 +775,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
           " directories and libraries! ...")
       ENDIF()
 
+      LIST(REMOVE_DUPLICATES INCLUDE_DIRS_CURRENT)
       GLOBAL_SET(${LIBRARY_NAME}_INCLUDE_DIRS ${INCLUDE_DIRS_CURRENT})
 
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -625,6 +784,10 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
 
     ENDIF()
   ENDIF() #if not in installation testing mode
+
+  #
+  # Adjust for installation testing
+  #
 
   IF (${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
 
@@ -649,7 +812,11 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
     GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS ${LIBRARY_DIRS_CURRENT})
     GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES    ${${PACKAGE_NAME}_INSTALLATION_LIBRARIES})
 
-  ENDIF() #instalation testing mode
+  ENDIF() #installation testing mode
+
+  #
+  # Print the updates to the linkage variables
+  #
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     PRINT_VAR(${PACKAGE_NAME}_INCLUDE_DIRS)

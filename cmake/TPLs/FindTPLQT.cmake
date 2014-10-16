@@ -53,7 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 SET(TPL_QT_QMAKE_EXECUTABLE "" CACHE STRING "A Trilinos specific variable that defines where the Qt Qmake Execuatable is")
 
@@ -96,19 +95,7 @@ ENDIF()
 
 FIND_PACKAGE(Qt4 ${QT_REQUIRED_VERSION} COMPONENTS ${QT_REQUIRED_COMPONENTS} REQUIRED)
 if(NOT QT4_FOUND)
-	message("                             ____")
-	message("                     __,-~~/~    `---.")
-	message("                   _/_,---(      ,    )")
-	message("               __ /        <    /   )  \\___")
-	message("- ------===;;;'====------------------===;;;===----- -  -")
-	message("                 \\/  ~\"~\"~\"~\"~\"~\\~\"~)~\"/")
-	message("                 (_ (   \\  (     >    \\)")
-	message("                  \\_( _ <         >_>'")
-	message("                      ~ `-i' ::>|--\"")
-	message("                          I;|.|.|")
-	message("                         <|i::|i|`.")
-	message("                         (` ^'"`-' ")")
-	MESSAGE(FATAL_ERROR "Couldn't find Qt ${QT_REQUIRED_VERSION} or Greater. This causes explosions.")
+  MESSAGE(FATAL_ERROR "Couldn't find Qt ${QT_REQUIRED_VERSION} or greater. Abort..")
 endif()
 
 IF(NOT(QT_INCLUDE_DIRS))

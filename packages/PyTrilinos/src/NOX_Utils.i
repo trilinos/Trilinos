@@ -32,6 +32,9 @@
 // and it also has a nested class issue to work around.  So I
 // concentrate all of the NOX::Utils wrapper logic here.
 
+#if SWIG_VERSION >= 0x030000
+%feature("flatnested");
+#else
 // Handle the NOX::Utils:Fill and Sci nested classes by defining them
 // exclusively for SWIG as though they were not nested.
 namespace NOX
@@ -54,6 +57,7 @@ public:
 };
 %nestedworkaround Utils::Sci;
 }
+#endif
 
 %{
 #include "NOX_Utils.H"

@@ -421,7 +421,7 @@ struct EvaluatePCE< pce_view_type,
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig( row_count,
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<device_type>( row_count,
                                                       EnsembleSize ),
                           *this );
   }
@@ -447,7 +447,7 @@ struct EvaluatePCE< pce_view_type,
 
     Kokkos::Impl::cuda_parallel_launch_local_memory<<< grid, block, shared >>>
         ( *this );
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig( row_count,
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<device_type>( row_count,
                                                       EnsembleSize ),
                           *this );
   }
@@ -512,7 +512,7 @@ struct AssemblePCE< pce_view_type,
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig( pce_view.dimension_1(),
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<device_type>( pce_view.dimension_1(),
                                                       EnsembleSize ),
                           *this );
   }
@@ -575,7 +575,7 @@ struct AssembleRightPCE< pce_view_type,
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig( row_count,
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<device_type>( row_count,
                                                       EnsembleSize ),
                           *this );
   }
@@ -786,7 +786,7 @@ public:
 
       // Set quadrature point in diffusion coefficient
       for (unsigned i=0; i<dim; ++i)
-        for (unsigned j=0; j<EnsembleSize; ++j)
+        for (unsigned j=0; j< unsigned(EnsembleSize); ++j)
           hrv(i).fastAccessCoeff(j) = quad_points(qp+j,i);
       Kokkos::deep_copy( rv, hrv );
 

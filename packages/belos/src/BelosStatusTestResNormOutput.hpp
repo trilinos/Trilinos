@@ -293,6 +293,8 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
     std::string starLine(55,'*');
     std::string starFront(5,'*');
 
+    std::ios_base::fmtflags osFlags(os.flags());
+
     os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
     
@@ -337,6 +339,8 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
       }
       os << std::endl;
     }
+    // reset os format
+    os.flags(osFlags);
   }
  
   //@}

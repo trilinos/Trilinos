@@ -42,7 +42,7 @@
 */
 
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core.hpp>
 #include <Serial/Kokkos_Serial_Task.hpp>
 
 #if 0 && defined( KOKKOS_HAVE_OPENMP )

@@ -66,8 +66,8 @@
 
 namespace MueLu {
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SchwarzSmoother(const std::string& type, const Teuchos::ParameterList& paramList, const LocalOrdinal& overlapLevel)
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SchwarzSmoother(const std::string& type, const Teuchos::ParameterList& paramList, const LocalOrdinal& overlapLevel)
     : type_(type), paramList_(paramList), overlapLevel_(overlapLevel) {
 
     this->SetParameterList(paramList);
@@ -108,16 +108,16 @@ namespace MueLu {
 
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~SchwarzSmoother() { }
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~SchwarzSmoother() { }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     this->Input(currentLevel, "A");
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
@@ -210,10 +210,10 @@ namespace MueLu {
     Teuchos::ArrayView<const GO> globalRowList = OverlapMap_->getNodeElementList();
     localRowMap_ = Teuchos::rcp(new Tpetra::Map<LO,GO,NO>(numOverlapRows, 0, localComm,
                                                           Tpetra::LocallyReplicated, tA->getNode()));
-    Teuchos::RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > OverlapA
-      = Teuchos::rcp(new Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>(OverlapMap_,OverlapMap_,100));
-    Teuchos::RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > LocalA
-      = Teuchos::rcp(new Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>(localRowMap_,localRowMap_,100));
+    Teuchos::RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> > OverlapA
+      = Teuchos::rcp(new Tpetra::CrsMatrix<SC,LO,GO,NO>(OverlapMap_,OverlapMap_,100));
+    Teuchos::RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> > LocalA
+      = Teuchos::rcp(new Tpetra::CrsMatrix<SC,LO,GO,NO>(localRowMap_,localRowMap_,100));
     // Import/Export objects
     TpetraExporter_ = Teuchos::rcp (new Tpetra::Export<LO,GO,NO> (OverlapMap_, UniqueMap_));
     TpetraImporter_ = Teuchos::rcp (new Tpetra::Import<LO,GO,NO> (UniqueMap_, OverlapMap_));
@@ -250,8 +250,8 @@ namespace MueLu {
     SmootherPrototype::IsSetup (true);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::SchwarzSmoother::Apply(): Setup() has not been called");
 
     // Apply
@@ -311,13 +311,14 @@ namespace MueLu {
 
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Copy() const {
     return rcp(new SchwarzSmoother(*this));
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
     std::ostringstream out;
     if(type_ == "RELAXATION" || type_ == "ILUT"  || type_ == "SCHWARZ" ||
        type_ == "CHEBYSHEV"  || type_ == "RILUK" || type_ == "KRYLOV"  ) {
@@ -340,8 +341,8 @@ namespace MueLu {
     return out.str();
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0)

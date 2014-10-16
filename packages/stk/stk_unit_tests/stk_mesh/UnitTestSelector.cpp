@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <iostream>                     // for ostringstream, ostream, etc
 #include <stk_mesh/base/Part.hpp>       // for Part
@@ -100,6 +125,11 @@ TEST(Verify, partASelector)
 
   stk::mesh::Selector partASelector(fix.m_partA);
 
+  const size_t numExpectedBuckets = 2;
+  EXPECT_EQ(numExpectedBuckets, partASelector.get_buckets(stk::topology::NODE_RANK).size());
+
+  EXPECT_FALSE(partASelector.is_empty(stk::topology::NODE_RANK));
+
   const int numEntities = 5;
   bool gold_shouldEntityBeInSelector[numEntities] = {true, true, false, false, false};
 
@@ -126,10 +156,58 @@ TEST(Verify, emptyPartSelector)
 
   stk::mesh::Selector selector( fix.m_partD );
 
+  EXPECT_TRUE(selector.is_empty(stk::topology::NODE_RANK));
+
   const int numEntities = 5;
   bool gold_shouldEntityBeInSelector[numEntities] = {false, false, false, false, false};
 
   testSelectorWithBuckets(fix, selector, gold_shouldEntityBeInSelector);
+}
+
+TEST(Verify, selectorEmptyDuringMeshMod)
+{
+    const unsigned spatialDim=3;
+    stk::mesh::MetaData meta(spatialDim, stk::mesh::entity_rank_names());
+    stk::mesh::Part& block1 = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
+    meta.commit();
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+
+    stk::mesh::Selector block1Selector = block1;
+    EXPECT_TRUE(block1Selector.is_empty(stk::topology::NODE_RANK));
+    EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+
+    bulk.modification_begin();
+
+    if (bulk.parallel_rank()==0) {
+
+        stk::mesh::EntityId elem1Id = 1;
+        stk::mesh::Entity elem1 = bulk.declare_entity(stk::topology::ELEM_RANK, elem1Id, block1);
+
+        EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+
+        stk::mesh::PartVector addParts;
+        stk::mesh::PartVector removeParts(1, &block1);
+        bulk.change_entity_parts(elem1, addParts, removeParts);
+
+        EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+
+        addParts.push_back(&block1);
+        removeParts.clear();
+
+        bulk.change_entity_parts(elem1, addParts, removeParts);
+
+        EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+    }
+
+    //cannot call modification_end which requires all elements, faces, edges to have connected nodes - which we have not defined
+    //bulk.modification_end();
+
+    if (bulk.parallel_rank()==0) {
+        EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+    }
+    else {
+        EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+    }
 }
 
 TEST(Verify, complementOfPartASelector)
@@ -138,9 +216,17 @@ TEST(Verify, complementOfPartASelector)
   initialize(fix);
 
   stk::mesh::Part & partA = fix.m_partA;
-
   stk::mesh::Selector partASelector(partA);
+
+  size_t expected_num_buckets = 2;
+  EXPECT_EQ(expected_num_buckets, partASelector.get_buckets(stk::topology::NODE_RANK).size());
+  EXPECT_FALSE(partASelector.is_empty(stk::topology::NODE_RANK));
+  EXPECT_TRUE(partASelector.is_empty(stk::topology::FACE_RANK));
+
   stk::mesh::Selector partAComplementSelector = partASelector.complement();
+
+  expected_num_buckets = 3;
+  EXPECT_EQ(expected_num_buckets, partAComplementSelector.get_buckets(stk::topology::NODE_RANK).size());
 
   const int numEntities = 5;
   bool gold_shouldEntityBeInSelector[numEntities] = {false, false, true, true, true};
@@ -529,6 +615,9 @@ TEST(Verify, printingOfNothingForComplementOfDefaultSelector)
         std::ostringstream description;
         description << selectAllANDAll;
         EXPECT_EQ( "(!(NOTHING) & !(NOTHING))", description.str());
+
+        //will throw because the selector doesn't have access to a mesh
+        EXPECT_THROW(selectAllANDAll.get_buckets(stk::topology::NODE_RANK), std::logic_error);
     }
     {
         stk::mesh::Selector selectAllORAll = selectAll | anotherSelectAll;

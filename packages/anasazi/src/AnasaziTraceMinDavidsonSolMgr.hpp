@@ -39,6 +39,22 @@
 #include "AnasaziTraceMinBaseSolMgr.hpp"
 #include "AnasaziTraceMinDavidson.hpp"
 
+/** \example TraceMinDavidson/TraceMinDavidsonGeneralizedEx.cpp
+    This is an example of how to use the TraceMinDavidsonSolMgr solver manager to solve a generalized eigenvalue problem, using Tpetra data stuctures.
+*/
+
+/** \example TraceMinDavidson/TraceMinDavidsonLaplacianEx.cpp
+    This is an example of how to use the TraceMinDavidsonSolMgr solver manager to compute the Fiedler vector, using Tpetra data stuctures and an Ifpack2 preconditioner.
+*/
+
+/** \example TraceMinDavidson/TraceMinDavidsonSpecTransEx.cpp
+    This is an example of how to use the TraceMinDavidsonSolMgr solver manager to compute the largest eigenpairs of a matrix via an invisible spectral transformation, using Tpetra data stuctures.
+*/
+
+/** \example TraceMinDavidson/TraceMinDavidsonUserOpEx.cpp
+    This is an example of how to use the TraceMinDavidsonSolMgr solver manager to solve a standard eigenvalue problem where the matrix is not explicitly available, using Tpetra data stuctures.
+*/
+
 
 
 namespace Anasazi {
@@ -160,7 +176,7 @@ TraceMinDavidsonSolMgr<ScalarType,MV,OP>::TraceMinDavidsonSolMgr( const Teuchos:
   TEUCHOS_TEST_FOR_EXCEPTION(this->blockSize_ <= 0, std::invalid_argument,
          "Anasazi::TraceMinDavidsonSolMgr::constructor(): \"Block Size\" must be strictly positive.");
 
-  this->numRestartBlocks_ = std::ceil(this->problem_->getNEV() / this->blockSize_);
+  this->numRestartBlocks_ = (int)std::ceil(this->problem_->getNEV() / this->blockSize_);
   this->numRestartBlocks_ = pl.get("Num Restart Blocks", this->numRestartBlocks_);
   TEUCHOS_TEST_FOR_EXCEPTION(this->numRestartBlocks_ <= 0, std::invalid_argument,
          "Anasazi::TraceMinDavidsonSolMgr::constructor(): \"Num Restart Blocks\" must be strictly positive.");
@@ -172,9 +188,10 @@ TraceMinDavidsonSolMgr<ScalarType,MV,OP>::TraceMinDavidsonSolMgr( const Teuchos:
   TEUCHOS_TEST_FOR_EXCEPTION(this->numRestartBlocks_ >= this->numBlocks_, std::invalid_argument,
          "Anasazi::TraceMinDavidsonSolMgr::constructor(): \"Num Blocks\" must be strictly greater than \"Num Restart Blocks\".");
 
+  std::stringstream ss;
+  ss << "Anasazi::TraceMinDavidsonSolMgr::constructor(): Potentially impossible orthogonality requests. Reduce basis size (" << static_cast<ptrdiff_t>(this->numBlocks_)*this->blockSize_ << ") or locking size (" << this->maxLocked_ << ") because " << static_cast<ptrdiff_t>(this->numBlocks_) << "*" << this->blockSize_ << " + " << this->maxLocked_ << " > " << MVText::GetGlobalLength(*this->problem_->getInitVec()) << ".";
   TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(this->numBlocks_)*this->blockSize_ + this->maxLocked_ > MVText::GetGlobalLength(*this->problem_->getInitVec()),
-         std::invalid_argument,
-         "Anasazi::TraceMinDavidsonSolMgr::constructor(): Potentially impossible orthogonality requests. Reduce basis size or locking size.");
+         std::invalid_argument, ss.str());
 
   TEUCHOS_TEST_FOR_EXCEPTION(this->maxLocked_ + this->blockSize_ < this->problem_->getNEV(), std::invalid_argument,
          "Anasazi::TraceMinDavidsonSolMgr: Not enough storage space for requested number of eigenpairs.");
@@ -205,7 +222,7 @@ bool TraceMinDavidsonSolMgr<ScalarType,MV,OP>::performRestart(int &numRestarts, 
 
   // Copy the relevant parts of the old state to the new one
   // This may involve computing parts of X
-  copyPartOfState(oldstate, newstate, indToCopy);
+  this->copyPartOfState (oldstate, newstate, indToCopy);
 
   // send the new state to the solver
   newstate.NEV = oldstate.NEV;

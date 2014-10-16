@@ -309,7 +309,7 @@ Join a set of strings into a single string using a join string.
 
 Usage::
 
-  JOIN(<outputStrVar> "<sepStr>" <quoteElements> 
+  JOIN(<outputStrVar> "<sepStr>" <quoteElements>
     "<string0>" "<string1>" ...)
 
 Arguments:
@@ -586,11 +586,15 @@ instead of ``';'`` but only if it is not empty.
 
 Usage::
 
-   PRINT_NONEMPTY_VAR_WITH_SPACES(<varName>)
+   PRINT_NONEMPTY_VAR_WITH_SPACES(<varName>  <printedVarInOut>)
 
 Prints the variable as::
 
    <varName>: <ele0> <ele1> ...
+
+If ``$<printedVarInOut>`` is ``TRUE`` on input, then the varible is not
+touched. If however, the varible ``$<printedVarInOut>`` is not ``TRUE`` on
+input, then it is set to ``TRUE`` on output.
 
 PRINT_VAR()
 +++++++++++
@@ -703,8 +707,8 @@ etc!
 TIMER_GET_RAW_SECONDS()
 +++++++++++++++++++++++
 
-Return the raw time in seconds since epoch, i.e., since 1970-01-01 00:00:00
-UTC.
+Return the raw time in seconds (nano-second accuracy) since epoch, i.e.,
+since 1970-01-01 00:00:00 UTC.
 
 Usage::
 
@@ -715,11 +719,11 @@ This function is used along with `TIMER_GET_REL_SECONDS()`_, and
 profiling purposes.  See `TIMER_PRINT_REL_TIME()`_ for more details and an
 example.
 
-NOTE: This function runs an external process to run the ``date`` command.
-Therefore, it only works on Unix/Linux and other systems that have a
-standard ``date`` command.  Since this runs an external process, this
-function should only be used to time very course-grained operations
-(i.e. that take longer than a second).
+NOTE: This function runs an external process with ``EXECUTE_PROCESS()`` to
+run the ``date`` command.  Therefore, it only works on Unix/Linux and other
+systems that have a standard ``date`` command.  Since this uses
+``EXECUTE_PROCESS()``, this function should only be used to time very
+course-grained operations (i.e. that take longer than a second).
 
 TIMER_GET_REL_SECONDS()
 +++++++++++++++++++++++
@@ -747,9 +751,7 @@ Usage::
 
 Differences the raw times ``<startSeconds>`` and ``<endSeconds>``
 (i.e. gotten from `TIMER_GET_RAW_SECONDS()`_) and prints the time in
-``<min>m<sec>s`` format.  This can only resolve times a second or greater
-apart.  If the start and end times are less than a second then ``0m0s`` will
-be printed.
+``<min>m<sec>s`` format.
 
 This is meant to be used with `TIMER_GET_RAW_SECONDS()`_ to time expensive
 blocks of CMake code like::
@@ -765,11 +767,8 @@ blocks of CMake code like::
 
 This will print something like::
 
-  REAL_EXPENSIVE() time: 0m5s
+  REAL_EXPENSIVE() time: 0m5.235s
 
-Again, don't try to time something that takes less than 1 second as it will
-be recorded as ``0m0s``.
-  
 UNITTEST_COMPARE_CONST()
 ++++++++++++++++++++++++
 
@@ -781,6 +780,24 @@ Usage::
 
 If ``${<varName>} == <expectedValue>``, then the check passes, otherwise it
 fails.  This prints the variable name and values and shows the test result.
+
+This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
+``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used
+by the unit test harness system to assess overall pass/fail.
+
+UNITTEST_HAS_SUBSTR_CONST()
++++++++++++++++++++++++++++
+
+Check that a given string var contains the given substring and update
+overall test statistics
+
+Usage::
+
+  UNITTEST_HAS_SUBSTR_CONST(<varName> <substr>)
+
+If ``${<varName>}`` contains the substring ``<substr>``, then the check
+passes, otherwise it fails.  This prints the variable name and values and
+shows the test result.
 
 This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
 ``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used

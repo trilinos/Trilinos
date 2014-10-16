@@ -50,11 +50,8 @@
 #ifndef KOKKOS_UNORDERED_MAP_HPP
 #define KOKKOS_UNORDERED_MAP_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Functional.hpp>
-#include <Kokkos_View.hpp>
-#include <Kokkos_Atomic.hpp>
-#include <Kokkos_HostSpace.hpp>
 
 #include <Kokkos_Bitset.hpp>
 
@@ -211,12 +208,14 @@ private:
 ///
 template <   typename Key
            , typename Value
-           , typename Device = Impl::DefaultDeviceType
+           , typename Device = Kokkos::DefaultExecutionSpace
            , typename Hasher = pod_hash<typename Impl::remove_const<Key>::type>
            , typename EqualTo = pod_equal_to<typename Impl::remove_const<Key>::type>
         >
 class UnorderedMap
 {
+private:
+  typedef typename ViewTraits<Key,Device,void,void>::host_mirror_space host_mirror_space ;
 public:
   //! \name Public types and constants
   //@{
@@ -253,9 +252,7 @@ public:
 
   typedef UnorderedMapInsertResult insert_result;
 
-  typedef typename Device::host_mirror_device_type host_mirror_device_type;
-
-  typedef UnorderedMap<Key,Value,host_mirror_device_type,Hasher,EqualTo> HostMirror;
+  typedef UnorderedMap<Key,Value,host_mirror_space,Hasher,EqualTo> HostMirror;
 
   typedef Impl::UnorderedMapHistogram<const_map_type> histogram_type;
 

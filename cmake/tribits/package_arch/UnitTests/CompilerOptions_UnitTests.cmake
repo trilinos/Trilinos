@@ -111,6 +111,115 @@ FUNCTION(UNITEST_GCC_BASE_OPTIONS)
 ENDFUNCTION()
 
 
+FUNCTION(UNITEST_GCC_PROJECT_DEFINED_STRONG_C_OPTIONS)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing package defined strong C compiler options")
+  MESSAGE("***\n")
+
+  MULTILINE_SET(DummyProject_C_STRONG_COMPILE_WARNING_FLAGS
+    "-std=c99" # Check for C99
+    " -std=c++98" # C++98 standard code
+    " -pedantic" # Adds more static checking to remove non-ANSI GNU extensions
+    " -Wall" # Enable a bunch of default warnings
+    " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG, etc.
+  )
+
+
+  TRIBITS_SET_ALL_COMPILER_ID(GNU)
+
+  TRIBITS_COMPILE_OPTIONS_COMMON_ACTIONS()
+
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS
+    "-std=c99 -std=c++98 -pedantic -Wall -Wno-long-long" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS
+    "-std=c99 -std=c++98 -pedantic -Wall -Wno-long-long -Wwrite-strings" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS "" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_DEBUG "" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_RELEASE "" )
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITEST_GCC_PROJECT_DEFINED_STRONG_CXX_OPTIONS)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing package defined strong CXX compiler options")
+  MESSAGE("***\n")
+
+  MULTILINE_SET(DummyProject_CXX_STRONG_COMPILE_WARNING_FLAGS
+    "-std=c99" # Check for C99
+    " -std=c++98" # C++98 standard code
+    " -pedantic" # Adds more static checking to remove non-ANSI GNU extensions
+    " -Wall" # Enable a bunch of default warnings
+    " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG, etc.
+  )
+
+
+  TRIBITS_SET_ALL_COMPILER_ID(GNU)
+
+  TRIBITS_COMPILE_OPTIONS_COMMON_ACTIONS()
+
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS
+    "-ansi -pedantic -Wall -Wno-long-long" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS
+    "-std=c99 -std=c++98 -pedantic -Wall -Wno-long-long" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS "" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_DEBUG "" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_RELEASE "" )
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITEST_GCC_PROJECT_DEFINED_STRONG_C_CXX_OPTIONS)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing package defined strong C and CXX compiler options")
+  MESSAGE("***\n")
+
+  MULTILINE_SET(DummyProject_C_STRONG_COMPILE_WARNING_FLAGS
+    "-std=c99" # Check for C99
+    " -pedantic" # Adds more static checking to remove non-ANSI GNU extensions
+    " -Wall" # Enable a bunch of default warnings
+    " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG, etc.
+  )
+
+  MULTILINE_SET(DummyProject_CXX_STRONG_COMPILE_WARNING_FLAGS
+    "-std=c++98" # C++98 standard code
+    " -pedantic" # Adds more static checking to remove non-ANSI GNU extensions
+    " -Wall" # Enable a bunch of default warnings
+    " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG, etc.
+    " -Wwrite-strings"
+  )
+
+
+  TRIBITS_SET_ALL_COMPILER_ID(GNU)
+
+  TRIBITS_COMPILE_OPTIONS_COMMON_ACTIONS()
+
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS
+    "-std=c99 -pedantic -Wall -Wno-long-long" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS
+    "-std=c++98 -pedantic -Wall -Wno-long-long -Wwrite-strings" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS "" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_DEBUG "" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_RELEASE "" )
+
+ENDFUNCTION()
+
+
 FUNCTION(UNITEST_GCC_WITH_SHADOW_OPTIONS)
 
   MESSAGE("\n***")
@@ -644,7 +753,7 @@ ENDFUNCTION()
 
 # OTHER with shadow, warnings as errors, checked STL, and coverage
 
-# 
+#
 
 # ???
 
@@ -683,6 +792,9 @@ SET(PARSE_CLEANED FALSE)
 SET(CMAKE_BUILD_TYPE DEBUG)
 
 UNITEST_GCC_BASE_OPTIONS()
+UNITEST_GCC_PROJECT_DEFINED_STRONG_C_OPTIONS()
+UNITEST_GCC_PROJECT_DEFINED_STRONG_CXX_OPTIONS()
+UNITEST_GCC_PROJECT_DEFINED_STRONG_C_CXX_OPTIONS()
 UNITEST_GCC_WITH_SHADOW_OPTIONS()
 UNITEST_GCC_GLOBAL_ENABLE_SHADOW_OPTIONS()
 UNITEST_GCC_GLOBAL_DISABLE_SHADOW_OPTIONS()
@@ -703,4 +815,4 @@ UNITEST_OTHER_BASE_OPTIONS()
 UNITEST_OTHER_WITH_SHADOW_CLEANED_CHECKED_STL_COVERAGE_OPTIONS()
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(162)
+UNITTEST_FINAL_RESULT(189)

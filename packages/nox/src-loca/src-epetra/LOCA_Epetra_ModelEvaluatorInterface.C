@@ -329,7 +329,9 @@ ModelEvaluatorInterface(const LOCA::Epetra::ModelEvaluatorInterface& m) :
   LOCA::DerivUtils(m),
   param_vec(m.param_vec),
   loca_param_vec(m.loca_param_vec),
-  x_dot(NULL)
+  x_dot(NULL),
+  alpha_prev(0.0),
+  beta_prev(0.0)
 {
   if (m.x_dot != NULL) {
     x_dot = new Epetra_Vector(*m.x_dot);

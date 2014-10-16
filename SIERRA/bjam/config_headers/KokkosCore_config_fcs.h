@@ -6,11 +6,13 @@
  */
 #define KOKKOS_FOR_SIERRA
 
-#if !defined( KOKKOS_FOR_SERRIA )
+#if !defined( KOKKOS_FOR_SIERRA )
 
 #define KOKKOS_HAVE_MPI
 /* #undef KOKKOS_HAVE_CUDA */
+/* #undef KOKKOS_USE_CUDA_UVM */
 #define KOKKOS_HAVE_PTHREAD
+/* #undef KOKKOS_HAVE_QTHREAD */
 /* #undef KOKKOS_HAVE_Winthread */
 #define KOKKOS_HAVE_OPENMP
 /* #undef KOKKOS_HAVE_HWLOC */

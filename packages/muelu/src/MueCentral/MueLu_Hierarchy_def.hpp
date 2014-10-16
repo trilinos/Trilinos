@@ -46,6 +46,7 @@
 #ifndef MUELU_HIERARCHY_DEF_HPP
 #define MUELU_HIERARCHY_DEF_HPP
 
+#include <algorithm>
 #include <sstream>
 
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -66,16 +67,16 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy()
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy()
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()), doPRrebalance_(GetDefaultPRrebalance()),
       isPreconditioner_(true), Cycle_(GetDefaultCycle()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     AddLevel(rcp(new Level));
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Matrix> & A)
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix> & A)
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()), doPRrebalance_(GetDefaultPRrebalance()),
       isPreconditioner_(true), Cycle_(GetDefaultCycle()), isDumpingEnabled_(false), dumpLevel_(-1)
   {
@@ -87,8 +88,8 @@ namespace MueLu {
     Finest->Set("A", A);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddLevel(const RCP<Level> & level) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddLevel(const RCP<Level> & level) {
     int levelID = LastLevelID() + 1; // ID of the inserted level
 
     if (level->GetLevelID() != -1 && (level->GetLevelID() != levelID))
@@ -105,26 +106,38 @@ namespace MueLu {
       level->SetPreviousLevel(Levels_[LastLevelID() - 1]);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddNewLevel() {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNewLevel() {
     RCP<Level> newLevel = Levels_[LastLevelID()]->Build(); // new coarse level, using copy constructor
     newLevel->setlib(lib_);
     this->AddLevel(newLevel);                              // add to hierarchy
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Level> & Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetLevel(const int levelID) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Level> & Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLevel(const int levelID) {
     TEUCHOS_TEST_FOR_EXCEPTION(levelID < 0 || levelID > LastLevelID(), Exceptions::RuntimeError, "MueLu::Hierarchy::GetLevel(): invalid input parameter value: LevelID = " << levelID);
     return Levels_[levelID];
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  LocalOrdinal Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetNumLevels() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  int Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetNumLevels() const {
     return Levels_.size();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  double Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetOperatorComplexity() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  int Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetGlobalNumLevels() const {
+    RCP<Matrix> A = Levels_[0]->template Get<RCP<Matrix> >("A");
+    RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+
+    int numLevels = GetNumLevels();
+    int numGlobalLevels;
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numLevels, Teuchos::ptr(&numGlobalLevels));
+
+    return numGlobalLevels;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetOperatorComplexity() const {
     Xpetra::global_size_t totalNnz = 0;
 
     for (int i = 0; i < GetNumLevels(); ++i) {
@@ -138,15 +151,15 @@ namespace MueLu {
     return Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetImplicitTranspose(const bool &implicit) { implicitTranspose_ = implicit; }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetImplicitTranspose(const bool &implicit) { implicitTranspose_ = implicit; }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetImplicitTranspose() const { return implicitTranspose_; }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetImplicitTranspose() const { return implicitTranspose_; }
 
   // Coherence checks todo in Setup() (using an helper function):
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheckLevel(Level& level, int levelID) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckLevel(Level& level, int levelID) {
     TEUCHOS_TEST_FOR_EXCEPTION(level.lib() != lib_, Exceptions::RuntimeError, "MueLu::Hierarchy::CheckLevel(): wrong underlying linear algebra library.");
     TEUCHOS_TEST_FOR_EXCEPTION(level.GetLevelID() != levelID, Exceptions::RuntimeError, "MueLu::Hierarchy::CheckLevel(): wrong level ID");
     TEUCHOS_TEST_FOR_EXCEPTION(levelID != 0 && level.GetPreviousLevel() != Levels_[levelID-1], Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): wrong level parent");
@@ -154,8 +167,8 @@ namespace MueLu {
 
   // The function uses three managers: fine, coarse and next coarse
   // We construct the data for the coarse level, and do requests for the next coarse
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(int coarseLevelID,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(int coarseLevelID,
                                                                                 const Teuchos::Ptr<const FactoryManagerBase> fineLevelManager,
                                                                                 const Teuchos::Ptr<const FactoryManagerBase> coarseLevelManager,
                                                                                 const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager) {
@@ -167,8 +180,8 @@ namespace MueLu {
     // TODO: pass coarseLevelManager by reference
     TEUCHOS_TEST_FOR_EXCEPTION(coarseLevelManager == Teuchos::null, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): argument coarseLevelManager cannot be null");
 
-    typedef MueLu::TopRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>      TopRAPFactory;
-    typedef MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TopSmootherFactory;
+    typedef MueLu::TopRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TopRAPFactory;
+    typedef MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TopSmootherFactory;
 
     RCP<const FactoryManagerBase> rcpfineLevelManager   = rcpFromPtr(fineLevelManager);
     RCP<const FactoryManagerBase> rcpcoarseLevelManager = rcpFromPtr(coarseLevelManager);
@@ -177,27 +190,39 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError, "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) must be built before calling this function.");
 
     Level& level = *Levels_[coarseLevelID];
-    level.setlib(lib_);
-
-    CheckLevel(level, coarseLevelID);
 
     bool isFinestLevel = false;
     bool isLastLevel   = false;
     if (fineLevelManager == Teuchos::null) isFinestLevel = true;
     if (nextLevelManager == Teuchos::null) isLastLevel   = true;
 
+    int oldRank = -1;
     if (isFinestLevel) {
-      RCP<Matrix>                    A    = level.Get< RCP<Matrix> >("A");
-      RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+      RCP<Matrix>                    A      = level.Get< RCP<Matrix> >("A");
+      RCP<const Map>                 rowMap = A->getRowMap();
+      RCP<const Teuchos::Comm<int> > comm   = rowMap->getComm();
 
       // Initialize random seed for reproducibility
       Utils::SetRandomSeed(*comm);
 
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
       // Record the communicator on the level (used for timers sync)
       level.SetComm(comm);
-#endif
+      oldRank = SetProcRankVerbose(comm->getRank());
+
+      // Set the Hierarchy library to match that of the finest level matrix,
+      // even if it was already set
+      lib_ = rowMap->lib();
+      level.setlib(lib_);
+
+    } else {
+      // Permeate library to a coarser level
+      level.setlib(lib_);
+
+      Level& prevLevel = *Levels_[coarseLevelID-1];
+      oldRank = SetProcRankVerbose(prevLevel.GetComm()->getRank());
     }
+
+    CheckLevel(level, coarseLevelID);
 
     // Attach FactoryManager to the fine level
     RCP<SetFactoryManager> SFMFine;
@@ -272,34 +297,33 @@ namespace MueLu {
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Matrix> >("A");
 
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-    // Record the communicator on the level (used for timers sync)
+    // Record the communicator on the level
     if (!Ac.is_null())
       level.SetComm(Ac->getRowMap()->getComm());
-#endif
 
     // Test if we reach the end of the hierarchy
     bool isOrigLastLevel = isLastLevel;
-    if (isLastLevel || Ac.is_null() || (Ac->getGlobalNumRows() <= maxCoarseSize_)) {
-      // This is definitely the last level, but reasons for it may be different:
-      //   - we have achieved numDesiredLevels
-      //   - we do not belong to the next subcommunicator
-      //   - the size of the coarse matrix is too small
+    if (isLastLevel) {
+      // Last level as we have achieved the max limit
+      isLastLevel = true;
+
+    } else if (Ac.is_null()) {
+      // Last level for this processor, as it does not belong to the next
+      // subcommunicator. Other processors may continue working on the
+      // hierarchy
+      isLastLevel = true;
+
+    } else if (Ac->getGlobalNumRows() <= maxCoarseSize_) {
+      // Last level as the size of the coarse matrix became too small
+      GetOStream(Runtime0) << "Max coarse size (<= " << maxCoarseSize_ << ") achieved" << std::endl;
       isLastLevel = true;
     }
 
-    if (!isFinestLevel) {
+    if (!Ac.is_null() && !isFinestLevel) {
       RCP<Matrix> A = Levels_[coarseLevelID-1]->template Get< RCP<Matrix> >("A");
 
       const double maxCoarse2FineRatio = 0.8;
-      if (Ac.is_null() || Ac->getGlobalNumRows() > maxCoarse2FineRatio*A->getGlobalNumRows()) {
-        // Aggregation stagnated, aborting
-        GetOStream(Warnings0) << "Aggregation stagnated, aborting hierarchy construction.\n"
-            << "Please check your matrix and/or adjust your configuration file. Possible fixes:\n"
-            << "  - reduce the maximum number of levels\n"
-            << "  - enable repartitioning\n"
-            << "  - increase the minimum coarse size." << std::endl;
-
+      if (Ac->getGlobalNumRows() > maxCoarse2FineRatio*A->getGlobalNumRows()) {
         // We could abort here, but for now we simply notify user.
         // Couple of additional points:
         //   - if repartitioning is delayed until level K, but the aggregation
@@ -307,8 +331,12 @@ namespace MueLu {
         //     repartitioning could enable faster coarsening once again, but the
         //     hierarchy construction will abort due to the stagnation check.
         //   - if the matrix is small enough, we could move it to one processor.
+        GetOStream(Warnings0) << "Aggregation stagnated. Please check your matrix and/or adjust your configuration file."
+            << "Possible fixes:\n"
+            << "  - reduce the maximum number of levels\n"
+            << "  - enable repartitioning\n"
+            << "  - increase the minimum coarse size." << std::endl;
 
-        // isLastLevel = true;
       }
     }
 
@@ -343,7 +371,7 @@ namespace MueLu {
       // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
       // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to release those.
       Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
-      Levels_.pop_back(); // remove next level
+      Levels_.resize(nextLevelID);
     }
 
     // I think this is the proper place for graph so that it shows every dependence
@@ -357,11 +385,14 @@ namespace MueLu {
       level.Release(coarseRAPFactory);
     }
 
+    if (oldRank != -1)
+      SetProcRankVerbose(oldRank);
+
     return isLastLevel;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const FactoryManagerBase& manager, int startLevel, int numDesiredLevels) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const FactoryManagerBase& manager, int startLevel, int numDesiredLevels) {
     // Use MueLu::BaseClass::description() to avoid printing "{numLevels = 1}" (numLevels is increasing...)
     PrintMonitor m0(*this, "Setup (" + this->MueLu::BaseClass::description() + ")");
 
@@ -386,7 +417,7 @@ namespace MueLu {
     GetOStream(Runtime0) << "Setup loop: startLevel = " << startLevel << ", lastLevel = " << lastLevel
         << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() < " << maxCoarseSize_ << ")" << std::endl;
 
-    Clear();
+    Clear(startLevel);
 
     // Setup multigrid levels
     int iLevel = 0;
@@ -415,31 +446,29 @@ namespace MueLu {
     // factories if you exit this function with an exception
     manager.Clean();
 
-    std::ostringstream ss;
-    print(ss, GetVerbLevel());
-    GetOStream(Statistics0) << ss.str();
+    describe(GetOStream(Statistics0), GetVerbLevel());
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Clear() {
-    if (GetNumberOfLevels())
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Clear(int startLevel) {
+    if (startLevel < GetNumLevels())
       GetOStream(Runtime0) << "Clearing old data (if any)" << std::endl;
 
-    for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
+    for (int iLevel = startLevel; iLevel < GetNumLevels(); iLevel++)
       Levels_[iLevel]->Clear();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ExpertClear() {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ExpertClear() {
     GetOStream(Runtime0) << "Clearing old data (expert)" << std::endl;
-    for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
+    for (int iLevel = 0; iLevel < GetNumLevels(); iLevel++)
       Levels_[iLevel]->ExpertClear();
   }
 
   // ---------------------------------------- Iterate -------------------------------------------------------
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const MultiVector& B, MultiVector& X, LO nIts,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const MultiVector& B, MultiVector& X, LO nIts,
                                                                                   bool InitialGuessIsZero, LO startLevel) {
     // These timers work as follows. "iterateTime" records total time spent in
     // iterate. "levelTime" records time on a per level basis. The label is
@@ -661,8 +690,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(const LO &start, const LO &end) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const LO &start, const LO &end) {
     LO startLevel = start;
     LO   endLevel = end;
 
@@ -685,144 +714,164 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Keep(const std::string & ename, const FactoryBase* factory) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Keep(const std::string & ename, const FactoryBase* factory) {
     for (Array<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
       (*it)->Keep(ename, factory);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Delete(const std::string& ename, const FactoryBase* factory) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Delete(const std::string& ename, const FactoryBase* factory) {
     for (Array<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
       (*it)->Delete(ename, factory);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
     for (Array<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
       (*it)->AddKeepFlag(ename, factory, keep);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RemoveKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RemoveKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
     for (Array<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
       (*it)->RemoveKeepFlag(ename, factory, keep);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
     std::ostringstream out;
     out << BaseClass::description();
-    out << "{numLevels = " << GetNumLevels() << "}";
+    out << "{#levels = " << GetGlobalNumLevels() << ", complexity = " << GetOperatorComplexity() << "}";
     return out.str();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
-    MUELU_DESCRIBE; //macro that defines out0
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel tVerbLevel) const {
+    describe(out, toMueLuVerbLevel(tVerbLevel));
+  }
 
-    std::ostringstream ss;
-    print(ss, verbLevel);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
+    RCP<Matrix> A0 = Levels_[0]->template Get<RCP<Matrix> >("A");
+    RCP<const Teuchos::Comm<int> > comm = A0->getRowMap()->getComm();
 
-    out0 << ss.str();
+    int numLevels = GetNumLevels();
+    RCP<Matrix> cA = Levels_[numLevels-1]->template Get<RCP<Matrix> >("A");
+    if (cA.is_null()) {
+      // It may happen that we do repartition on the last level, but the matrix
+      // is small enough to satisfy "max coarse size" requirement. Then, even
+      // though we have the level, the matrix would be null on all but one processors
+      numLevels--;
+    }
+    int root = comm->getRank();
 
-    Teuchos::ParameterList status;
-    status.set("number of levels", GetNumLevels());
-    status.set("complexity",       GetOperatorComplexity());
+#ifdef HAVE_MPI
+    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
 
-    return status;
+    std::vector<int> numGlobalLevels(comm->getSize());
+    MPI_Allgather(&numLevels, 1, MPI_INT, &numGlobalLevels[0], 1, MPI_INT, rawComm);
+    root = std::max_element(numGlobalLevels.begin(), numGlobalLevels.end()) - numGlobalLevels.begin();
+#endif
+
+    std::string outstr;
+    if (comm->getRank() == root) {
+      std::vector<Xpetra::global_size_t> nnzPerLevel;
+      std::vector<Xpetra::global_size_t> rowsPerLevel;
+      std::vector<int> numProcsPerLevel;
+      for (int i = 0; i < numLevels; ++i) {
+        TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError,
+                                   "Matrix A is unavailable on level " << i);
+
+        RCP<Matrix> A = Levels_[i]->template Get<RCP<Matrix> >("A");
+        TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), Exceptions::RuntimeError,
+                                   "Matrix A on level " << i << " is null.");
+
+        Xpetra::global_size_t nnz = A->getGlobalNumEntries();
+        nnzPerLevel     .push_back(nnz);
+        rowsPerLevel    .push_back(A->getGlobalNumRows());
+        numProcsPerLevel.push_back(A->getRowMap()->getComm()->getSize());
+      }
+      double operatorComplexity = as<double>(std::accumulate(nnzPerLevel.begin(), nnzPerLevel.end(), 0)) / A0->getGlobalNumEntries();
+
+      std::ostringstream oss;
+      if (verbLevel & (Statistics0 | Test)) {
+        oss << "\n--------------------------------------------------------------------------------\n" <<
+                "---                            Multigrid Summary                             ---\n"
+                "--------------------------------------------------------------------------------" << std::endl;
+        oss << "Number of levels    = " << numLevels << std::endl;
+        oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
+            << operatorComplexity << std::endl;
+        oss << std::endl;
+
+        Xpetra::global_size_t tt = rowsPerLevel[0];
+        int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
+        tt = nnzPerLevel[0];
+        int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
+        tt = numProcsPerLevel[0];
+        int npspacer = 2;  while (tt != 0) { tt /= 10; npspacer++; }
+        oss  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::setw(npspacer)  << " procs" << std::endl;
+        for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
+          oss << "A " << i << "  "
+              << std::setw(rowspacer) << rowsPerLevel[i]
+              << std::setw(nnzspacer) << nnzPerLevel[i]
+              << std::setw(9) << std::setprecision(2) << std::setiosflags(std::ios::fixed)
+              << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i]
+              << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
+        }
+        oss << std::endl;
+        for (int i = 0; i < GetNumLevels(); ++i) {
+          RCP<SmootherBase> preSmoo, postSmoo;
+          if (Levels_[i]->IsAvailable("PreSmoother"))
+            preSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PreSmoother");
+          if (Levels_[i]->IsAvailable("PostSmoother"))
+            postSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PostSmoother");
+
+          if (preSmoo != null && preSmoo == postSmoo)
+            oss << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
+          else {
+            oss << "Smoother (level " << i << ") pre  : "
+                << (preSmoo != null ?  preSmoo->description() : "no smoother") << std::endl;
+            oss << "Smoother (level " << i << ") post : "
+                << (postSmoo != null ?  postSmoo->description() : "no smoother") << std::endl;
+          }
+
+          oss << std::endl;
+        }
+      }
+      outstr = oss.str();
+    }
+
+#ifdef HAVE_MPI
+    int strLength = outstr.size();
+    MPI_Bcast(&strLength, 1, MPI_INT, root, rawComm);
+    if (comm->getRank() != root)
+      outstr.resize(strLength);
+    MPI_Bcast(&outstr[0], strLength, MPI_CHAR, root, rawComm);
+#endif
+
+    out << outstr;
   }
 
   // NOTE: at some point this should be replaced by a friend operator <<
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(std::ostream& out, const VerbLevel verbLevel) const {
-    Xpetra::global_size_t totalNnz = 0;
-    std::vector<Xpetra::global_size_t> nnzPerLevel;
-    std::vector<Xpetra::global_size_t> rowsPerLevel;
-    std::vector<int> numProcsPerLevel;
-    for (int i = 0; i < GetNumLevels(); ++i) {
-      TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError, "Operator complexity cannot be calculated because A is unavailable on level " << i);
-
-      RCP<Matrix> A = Levels_[i]->template Get<RCP<Matrix> >("A");
-      if (A.is_null())
-        break;
-
-      Xpetra::global_size_t nnz = A->getGlobalNumEntries();
-      totalNnz += nnz;
-      nnzPerLevel.push_back(nnz);
-      rowsPerLevel.push_back(A->getGlobalNumRows());
-      numProcsPerLevel.push_back(A->getRowMap()->getComm()->getSize());
-    }
-    double operatorComplexity = Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
-
-    if (verbLevel & (Statistics0 | Test)) {
-      // save ostream flags
-      std::ios::fmtflags flags(out.flags());
-
-      out << "\n--------------------------------------------------------------------------------\n" <<
-               "---                            Multigrid Summary                             ---\n"
-               "--------------------------------------------------------------------------------" << std::endl;
-      out << "Number of levels    = " << GetNumLevels() << std::endl;
-      out << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-                                      << operatorComplexity << std::endl;
-      out << "Max Coarse Size     = " << maxCoarseSize_ << std::endl;
-      out << "Implicit Transpose  = " << (implicitTranspose_ ? "true" : "false") << std::endl;
-      out << std::endl;
-
-      Xpetra::global_size_t tt = rowsPerLevel[0];
-      int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
-      tt = nnzPerLevel[0];
-      int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
-      tt = numProcsPerLevel[0];
-      int npspacer = 2; while (tt != 0) { tt /= 10; npspacer++; }
-      out  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::setw(npspacer)  << " procs" << std::endl;
-      for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
-        out << "A " << i << "  "
-             << std::setw(rowspacer) << rowsPerLevel[i]
-             << std::setw(nnzspacer) << nnzPerLevel[i]
-             << std::setw(9) << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-             << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i]
-             << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
-      }
-      out << std::endl;
-      for (int i = 0; i < GetNumLevels(); ++i) {
-        RCP<SmootherBase> preSmoo, postSmoo;
-        if (Levels_[i]->IsAvailable("PreSmoother"))
-          preSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PreSmoother");
-        if (Levels_[i]->IsAvailable("PostSmoother"))
-          postSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PostSmoother");
-
-        if (preSmoo != null && preSmoo == postSmoo)
-          out << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
-        else {
-          out << "Smoother (level " << i << ") pre  : "
-              << (preSmoo != null ?  preSmoo->description() : "no smoother") << std::endl;
-          out << "Smoother (level " << i << ") post : "
-              << (postSmoo != null ?  postSmoo->description() : "no smoother") << std::endl;
-        }
-
-        out << std::endl;
-
-        // restore ostream flags
-        out.flags(flags);
-      }
-    }
-
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(std::ostream& out, const VerbLevel verbLevel) const {
     Teuchos::OSTab tab2(out);
     for (int i = 0; i < GetNumLevels(); ++i)
       Levels_[i]->print(out, verbLevel);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const Hierarchy &h) { }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const Hierarchy &h) { }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::IsPreconditioner(const bool flag) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsPreconditioner(const bool flag) {
     isPreconditioner_ = flag;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DumpCurrentGraph() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DumpCurrentGraph() const {
     if (GetProcRankVerbose() != 0)
       return;
 #if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
@@ -869,8 +918,8 @@ namespace MueLu {
   }
 
   // Enforce that coordinate vector's map is consistent with that of A
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReplaceCoordinateMap(Level& level) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReplaceCoordinateMap(Level& level) {
     RCP<Matrix>      A       = level.Get<RCP<Matrix> >     ("A");
     RCP<MultiVector> coords  = level.Get<RCP<MultiVector> >("Coordinates");
 

@@ -87,8 +87,8 @@ and classes:
 #include <sstream>
 
 // PyTrilinos includes
-#include "PyTrilinos_PythonException.h"
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_PythonException.hpp"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
@@ -106,7 +106,7 @@ and classes:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Ignore/renames
@@ -226,12 +226,25 @@ import MultiPredictor
 %include "LOCA_DerivUtils.H"
 
 // The LOCA::Stepper class derives from LOCA::Abstract::Iterator, so
-// import the LOCA.Abstract module
-%import "LOCA.Abstract.i"
+// import it here
+%teuchos_rcp(LOCA::Abstract::Iterator)
+%import(module="Abstract") "LOCA_Abstract_Iterator.H"
 
 // LOCA Stepper class
+%teuchos_rcp(LOCA::Stepper)
 %feature("director") LOCA::Stepper;
 %include "LOCA_Stepper.H"
 
 // LOCA ParameterVector class
 %include "LOCA_Parameter_Vector.H"
+
+// LOCA.Epetra
+#ifdef HAVE_NOX_EPETRA
+%pythoncode
+%{
+
+# Epetra namespace
+__all__.append("Epetra")
+from . import Epetra
+%}
+#endif

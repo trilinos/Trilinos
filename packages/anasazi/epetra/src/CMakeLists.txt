@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -50,6 +49,5 @@ TRIBITS_ADD_LIBRARY(
   anasaziepetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS anasazi
   DEFINES -DANASAZIEPETRA_LIB_EXPORTS_MODE
   )

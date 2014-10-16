@@ -28,8 +28,8 @@
 
 // Do the local includes first to make sure that Python.h is included before
 // any other standard headers, cf. <http://docs.python.org/2/c-api/intro.html#includes>.
-#include "PyTrilinos_Util.h"
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_Util.hpp"
+#include "PyTrilinos_PythonException.hpp"
 #include "swigpyrun.h"
 
 // System includes

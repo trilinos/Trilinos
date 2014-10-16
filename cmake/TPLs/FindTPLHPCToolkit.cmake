@@ -1,4 +1,3 @@
-INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( HPCToolkit
   REQUIRED_HEADERS hpctoolkit.h

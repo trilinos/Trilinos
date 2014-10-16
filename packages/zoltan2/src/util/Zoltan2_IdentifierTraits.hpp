@@ -228,8 +228,8 @@ static inline T invalid() {
   \todo write an example where user's global ID is a C-struct containing
         \c i and \c j indices.
 
-  \todo fix this note regarding gid_t
-  Developer note: By convention we use \c gid_t as the users global ID
+  \todo fix this note regarding zgid_t
+  Developer note: By convention we use \c zgid_t as the users global ID
   data type and \c gno_t as the data type used internally by Zoltan2.
 
   Each data type which is not defined in Teuchos::DirectSerializationTraits
@@ -360,6 +360,14 @@ struct IdentifierTraits {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
+/* The specializations of the hashCode is not a true hash.
+ * For types that can fit in an int it is just a typecast to int. 
+ * This can be used with a modulo capacity of table/array to find the basic
+ * hash. For types larger than that can fit in an int, it tries to be a
+ * little smarter by adding all the bytes into an int. It also ensures it is
+ * positive so you can use it as an index.
+ * */
+
 template<>
 struct IdentifierTraits<char> {
   typedef char T;
@@ -483,7 +491,9 @@ struct IdentifierTraits<int> {
 template<>
 struct IdentifierTraits<unsigned int> {
   typedef unsigned int T;
-  static inline int hashCode(const T  a) {return static_cast<int>(a);}
+  static inline int hashCode(const T  a) {
+    return getHashCode(
+      reinterpret_cast<const unsigned char *>(&a), sizeof(T));}
   static inline bool hasUniqueKey() { return true;}
   static inline double key(const T a){return static_cast<double>(a); }
   static inline std::string name()   {return("unsigned int");}
@@ -638,8 +648,18 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   typedef typename std::pair<pair_t, pair_t> pairPair_t;
 
   static inline int hashCode(const pair_t p)  {
-    return IdentifierTraits<T1>::hashCode(p.first) +
-      IdentifierTraits<T2>::hashCode(p.second);
+    int total = IdentifierTraits<T1>::hashCode(p.first) +
+                IdentifierTraits<T2>::hashCode(p.second);
+    if (total < 0)
+    {
+        /* Convert the largest -ve int to zero and -1 to
+         * std::numeric_limits<int>::max()
+         * */
+        size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+        maxIntBeforeWrap ++;
+        total += maxIntBeforeWrap;
+    }
+    return total;
   }
 
   static inline bool hasUniqueKey() {

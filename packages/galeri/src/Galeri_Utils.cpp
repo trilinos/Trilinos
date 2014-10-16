@@ -265,7 +265,7 @@ string toString(const int& x)
 string toString(const unsigned int& x)
 {
   char s[100];
-  sprintf(s, "%d", x);
+  sprintf(s, "%u", x);
   return string(s);
 }
 
@@ -274,6 +274,14 @@ string toString(const long int& x)
 {
   char s[100];
   sprintf(s, "%ld", x);
+  return string(s);
+}
+
+// ============================================================================
+string toString(const unsigned long int& x)
+{
+  char s[100];
+  sprintf(s, "%lu", x);
   return string(s);
 }
 
@@ -292,6 +300,26 @@ string toString(const long long& x)
   sprintf(s, "%lld", x);
   return string(s);
 }
+
+// ============================================================================
+string toString(const unsigned long long& x)
+{
+  char s[100];
+  sprintf(s, "%llu", x);
+  return string(s);
+}
+
+// ============================================================================
+// printf for size_t is not cleanly possible on all platforms and
+// different size_t sizes.  It is also not required since we
+// already have overloads for unsigned {int,long,long long}.
+// Hence commenting it out.
+//string toString(const size_t& x)
+//{
+//  char s[100];
+//  sprintf(s, "%lu", x);
+//  return string(s);
+//}
 
 // ============================================================================
 void GetNeighboursCartesian2d(const int i, const int nx, const int ny,
@@ -367,7 +395,7 @@ void GetNeighboursCartesian3d(const int i,
 // ============================================================================
 void
 PrintStencil2D(const Epetra_CrsMatrix* Matrix,
-               const int nx, const int ny, int GID)
+               const int nx, const int ny, long long GID)
 {
   if (nx <= 0 || ny <= 0)
       throw(Exception(__FILE__, __LINE__, "Input parameter not valid"));

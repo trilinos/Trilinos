@@ -45,8 +45,7 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Cuda.hpp>
-#include <Kokkos_OpenMP.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Test {
 
@@ -55,19 +54,21 @@ protected:
   static void SetUpTestCase()
   {
     Kokkos::Cuda::print_configuration( std::cout );
-    Kokkos::Cuda::host_mirror_device_type::initialize();
+    Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
   }
   static void TearDownTestCase()
   {
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
   }
 };
 
 extern void test_device_cuda_tile();
 extern void test_device_cuda_view_impl();
 extern void test_device_cuda_view_api();
+extern void test_device_cuda_range_tag();
+extern void test_device_cuda_team_tag();
 extern void test_device_cuda_crsarray();
 extern void test_device_cuda_reduce();
 extern void test_device_cuda_reduce_team();
@@ -79,6 +80,8 @@ extern void test_device_cuda_atomic();
 extern void test_device_cuda_scan();
 extern void test_device_cuda_team_scan();
 extern void test_device_cuda_compiler_macros();
+extern void test_device_cuda_memory_space();
+extern void test_device_cuda_team_vector();
 
 TEST_F( cuda, view_impl )
 {
@@ -88,6 +91,16 @@ TEST_F( cuda, view_impl )
 TEST_F( cuda, view_api )
 {
   test_device_cuda_view_api();
+}
+
+TEST_F( cuda, range_tag )
+{
+  test_device_cuda_range_tag();
+}
+
+TEST_F( cuda, team_tag )
+{
+  test_device_cuda_team_tag();
 }
 
 TEST_F( cuda, crsarray )
@@ -150,5 +163,16 @@ TEST_F( cuda , compiler_macros )
   test_device_cuda_compiler_macros();
 }
 
+TEST_F( cuda , memory_space )
+{
+  test_device_cuda_memory_space();
+}
+
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( cuda , team_vector )
+{
+  test_device_cuda_team_vector();
+}
+#endif
 }
 

@@ -52,7 +52,7 @@
 
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "KokkosCompat_View.hpp"
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 
 /* These are provided in base DistObject template
 // #ifndef HAVE_TPETRA_TRANSFER_TIMERS

@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)   
 TRIBITS_ADD_EXECUTABLE_AND_TEST(  MultiVector_ComputeTests  
   SOURCES 
     MultiVector_ComputeTests.cpp  
@@ -6,7 +5,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(  MultiVector_ComputeTests
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 TRIBITS_ADD_EXECUTABLE_AND_TEST( MultiVector_UnitTests 
   SOURCES   
@@ -15,5 +13,4 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST( MultiVector_UnitTests
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 

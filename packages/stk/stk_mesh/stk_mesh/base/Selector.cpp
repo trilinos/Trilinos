@@ -1,11 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_mesh/base/Selector.hpp>
 #include <iostream>                     // for operator<<
@@ -237,12 +261,60 @@ void Selector::get_parts(PartVector& parts) const
   gather_parts_impl(parts, &m_expr[0]);
 }
 
+BulkData* Selector::find_mesh() const
+{
+    BulkData* mesh = NULL;
+    for(size_t i=0; i<m_expr.size(); ++i) {
+        if (m_expr[i].node_type() == SelectorNodeType::PART && m_expr[i].part() != NULL) {
+            mesh = &m_expr[i].part()->mesh_bulk_data();
+        }
+    }
+    return mesh;
+}
+
+BucketVector const& Selector::get_buckets(EntityRank entity_rank) const
+{
+    static BucketVector emptyBucketVector;
+    if (m_expr.empty()) {
+        return emptyBucketVector;
+    }
+
+    BulkData* mesh = find_mesh();
+    ThrowRequireMsg(mesh != NULL,
+        "ERROR, Selector::get_buckets not available if selector expression does not involve any mesh Parts.");
+
+    return mesh->get_buckets(entity_rank, *this);
+}
+
+bool Selector::is_empty(EntityRank entity_rank) const
+{
+    if (m_expr.empty()) {
+        return true;
+    }
+
+    BulkData * mesh = this->find_mesh();
+    ThrowRequireMsg(mesh != NULL,
+                    "ERROR, Selector::empty not available if selector expression does not involve any mesh Parts.");
+    if (mesh->synchronized_state() == BulkData::MODIFIABLE) {
+      BucketVector const& buckets = this->get_buckets(entity_rank);
+      for(size_t i=0; i<buckets.size(); ++i) {
+          if (buckets[i]->size() >0) {
+              return false;
+          }
+      }
+      return true;
+    }
+    return get_buckets(entity_rank).empty();
+}
+
+
 bool Selector::is_all_unions() const
 {
   return is_all_union_impl(&m_expr[0]);
 }
 
-Selector selectUnion( const PartVector& union_part_vector )
+template <typename PartVectorType>
+Selector selectUnion( const PartVectorType & union_part_vector )
 {
   Selector selector;
   if (union_part_vector.size() > 0) {
@@ -253,6 +325,8 @@ Selector selectUnion( const PartVector& union_part_vector )
   }
   return selector;
 }
+template Selector selectUnion( const PartVector& union_part_vector);
+template Selector selectUnion( const ConstPartVector& union_part_vector);
 
 Selector selectIntersection( const PartVector& intersection_part_vector )
 {

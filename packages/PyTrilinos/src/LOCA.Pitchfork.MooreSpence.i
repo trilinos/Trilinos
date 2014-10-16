@@ -59,14 +59,14 @@ supports the following classes:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // LOCA includes
 #include "LOCA.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Standard exception handling
@@ -83,11 +83,13 @@ supports the following classes:
 %import "Teuchos.i"
 
 // Teuchos::RCP handling
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::SolverFactory)
 %teuchos_rcp(LOCA::Pitchfork::MooreSpence::AbstractGroup)
 %teuchos_rcp(LOCA::Pitchfork::MooreSpence::SolverFactory)
 
 // Base class support
-%import "NOX.Abstract.i"
 %pythoncode
 %{
 import sys, os.path as op
@@ -95,10 +97,12 @@ parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
-%import "LOCA.TurningPoint.MooreSpence_RelPath.i"
+%import "NOX.Abstract.i"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_SolverFactory.H"
 
 // LOCA::Pitchfork::MooreSpence AbstractGroup class
-//%feature("director") LOCA::Pitchfork::MooreSpence::AbstractGroup;
 %include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
 
 // LOCA::Pitchfork::MooreSpence SolverFactory class

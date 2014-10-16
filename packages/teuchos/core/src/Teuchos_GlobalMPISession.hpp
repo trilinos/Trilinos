@@ -54,12 +54,13 @@ namespace Teuchos {
 /// \class GlobalMPISession
 /// \brief Initialize, finalize, and query the global MPI session.
 ///
-/// This class insulates basic <tt>main()</tt> program type of code
-/// from having to know if MPI is enabled or not.  The typical use
-/// case is to replace an explicit call to MPI_Init() in your main()
-/// routine with creation of a GlobalMPISession instance.  The
-/// instance's destructor (which in this case will be called at the
-/// end of main()) then calls MPI_Finalize().  So, instead of writing:
+/// This class insulates basic <tt>main()</tt> program type of code from
+/// having to know if MPI is enabled or not.  The typical use case is to
+/// replace an explicit call to MPI_Init() in your main() routine with
+/// creation of a GlobalMPISession instance.  The instance's destructor (which
+/// in this case will be called at the end of main()) then calls
+/// MPI_Finalize().  So, instead of writing:
+//
 /// \code
 /// int main () {
 ///   (void) MPI_Init (&argc, &argv);
@@ -77,28 +78,35 @@ namespace Teuchos {
 ///   // Your code goes here ...
 ///   return 0;
 /// }
-/// \endcode
-/// This saves you from needing to remember to call MPI_Init() or
-/// MPI_Finalize().  GlobalMPISession cleverly checks whether MPI has
-/// been initialized already before calling MPI_Init(), so you can use
-/// it in your libraries without needing to know whether users have
-/// called MPI_Init() yet.
 ///
-/// This class even works if you have not built Trilinos with MPI support.  In
+/// \endcode
+///
+/// This saves you from needing to remember to call MPI_Init() or
+/// MPI_Finalize().  Also, having the GlobalMPISession object's constructor
+/// call MPI_Finalize() allows destructors from other objects to call MPI
+/// functions.  That wold never be possible if you were to directly call
+/// MPI_Finalize() at the end of main().
+///
+/// This class even works if you have not built Teuchos with MPI support.  In
 /// that case, it behaves as if MPI_COMM_WORLD had one process, which is
 /// always the calling process.  Thus, you can use this class to insulate your
 /// code from needing to know about MPI.  You don't even have to include
 /// mpi.h, as long as your code doesn't directly use MPI routines or types.
-/// Teuchos implements wrappers for MPI communicators (see the Comm class and
-/// its subclasses in the TeuchosComm subpackage) which allow you to use a
-/// very very small subset of MPI functionality without needing to include
-/// mpi.h or depend on MPI in any way.
+/// Teuchos implements wrappers for MPI communicators (see the Teuchos::Comm
+/// class and its subclasses in the TeuchosComm subpackage) which allow you to
+/// use a very very small subset of MPI functionality without needing to
+/// include mpi.h or depend on MPI in any way.
 ///
-/// This class also contains the most minimal of other members that are needed
-/// for only the most simplistic of tasks needed by other TeuchosCore
-/// software.  For example, you can do a barrier or sum an int across
-/// processes.  These are needed by the most basic operations involving output
-/// or determining success or failure across processes for unit tests.
+/// This class also contains the most minimal of other static member functions
+/// that are needed for only the most simplistic of tasks needed by other
+/// TeuchosCore software.  For example, you can do a barrier or sum an int
+/// across processes.  These are needed by the most basic operations involving
+/// output or determining success or failure across processes for unit tests.
+///
+/// GlobalMPISession's static functions cleverly checks whether MPI has been
+/// initialized already before calling any MPI functions.  Therefore, you can
+/// use it in your libraries without requiring that a GlobalMPISession object
+/// was created in main().
 class TEUCHOSCORE_LIB_DLL_EXPORT GlobalMPISession
 {
 public:
@@ -109,36 +117,44 @@ public:
   /** \brief Calls <tt>MPI_Init()</tt> if MPI is enabled.
    *
    * \param argc [in] Address of the argument passed into
-   *   <tt>main(argc,argv)</tt>.  Same as the first argument of
-   *   MPI_Init().
+   * <tt>main(argc,argv)</tt>.  Same as the first argument of MPI_Init().
    *
    * \param argv [in] Address of the argument passed into
-   *   <tt>main(argc,argv)</tt>.  Same as the second argument of
-   *   MPI_Init().
+   * <tt>main(argc,argv)</tt>.  Same as the second argument of MPI_Init().
    *
-   * \param out [in] If <tt> out != NULL</tt>, then a small message on
-   *   will be printed to this stream on <i>each</i> process in
-   *   <tt>MPI_COMM_WORLD</tt>.  The default is <tt>&std::cout</tt>.
+   * \param out [in] If <tt> out != NULL</tt>, then a small message on will be
+   * printed to this stream on <i>each</i> process in <tt>MPI_COMM_WORLD</tt>.
+   * The default is <tt>&std::cout</tt>.
    *
    * If the command-line arguments include the option
-   * <tt>--teuchos-suppress-startup-banner</tt>, the this option will
-   * be removed from <tt>argv[]</tt> before being passed to
-   * <tt>MPI_Init(...)</tt>, and the startup output message to
-   * <tt>*out</tt> will be suppressed.
+   * <tt>--teuchos-suppress-startup-banner</tt>, the this option will be
+   * removed from <tt>argv[]</tt> before being passed to
+   * <tt>MPI_Init(...)</tt>, and the startup output message to <tt>*out</tt>
+   * will be suppressed.
    *
    * If Teuchos was <i>not</i> built with MPI support, the constructor
    * just prints a startup banner (unless the banner was suppressed --
    * see previous paragraph).
    *
-   * \warning The default third parameter may result in a lot of lines
-   *   printed to std::cout, if <tt>MPI_COMM_WORLD</tt> is large!
-   *   Users should generally pass in <tt>NULL</tt> for the third
-   *   argument.  On the other hand, it can be useful to see that
-   *   startup banner, just to know that MPI is working.
+   * \warning The default third parameter may result in a lot of lines printed
+   * to std::cout, if <tt>MPI_COMM_WORLD</tt> is large!  Users should
+   * generally pass in <tt>NULL</tt> for the third argument.  On the other
+   * hand, it can be useful to see that startup banner, just to know that MPI
+   * is working.
    *
-   * \warning This constructor may only be called once per executable.
-   *   Otherwise, it prints an error message to <tt>*out</tt> and
-   *   throws an std::runtime_error exception.
+   * \warning If MPI_Initialized() returns true before calling this
+   * constructor, then a error message is printed to <tt>*out</tt>
+   * std::terminate() is called.  This is the only sane behavior for this
+   * constuctor.  The very nature of the GlboalMPISession object is to be
+   * constructed at the tope of main() outside of a try {} block.  If MPI
+   * can't be initialized, then the only thing to do is to abort the program.
+   * It would not be reasonble to simply not not call MPI_Initialize() becuase
+   * this would ignore the input arguments that the user (you) should be
+   * expecting to be read.
+   *
+   * \warning Any other MPI functions called direclty from within this
+   * constructor will result in an error message to be printed and for abort
+   * to be called.
    */
   GlobalMPISession( int* argc, char*** argv, std::ostream *out = &std::cout );
 

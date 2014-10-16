@@ -49,7 +49,7 @@
 namespace Anasazi {
 namespace Experimental {
 
-  /*! \class Anasazi::TraceMinDavidson
+  /*! \class TraceMinDavidson
   
       \brief This class implements a TraceMin-Davidson iteration for solving
       symmetric generalized eigenvalue problems

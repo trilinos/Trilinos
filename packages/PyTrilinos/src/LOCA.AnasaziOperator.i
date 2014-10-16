@@ -56,7 +56,7 @@ version of LOCA.AnasaziOperator supports the following classes:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // LOCA includes
 #include "LOCA.H"
@@ -64,7 +64,7 @@ version of LOCA.AnasaziOperator supports the following classes:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
 // Namespace flattening
 using Teuchos::RCP;
@@ -89,6 +89,17 @@ using Teuchos::RCP;
 
 // LOCA::AnasaziOperator AbstractStrategy class
 %feature("director") LOCA::AnasaziOperator::AbstractStrategy;
+%extend LOCA::AnasaziOperator::AbstractStrategy
+{
+  // The C++ version of this method returns a reference to a
+  // std::string.  This is not recommended for director methods, so I
+  // re-implement it here to return a copy of the label.
+  const std::string label() const
+  {
+    return self->label();
+  }
+}
+%ignore LOCA::AnasaziOperator::AbstractStrategy::label;
 %include "LOCA_AnasaziOperator_AbstractStrategy.H"
 
 // LOCA::AnasaziOperator Factory class

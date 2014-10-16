@@ -49,13 +49,13 @@
 #include <cstdio>
 #include <cstdlib>
 
-typedef Kokkos::DefaultExecutionSpace   Device ;
-typedef Device::host_mirror_device_type Host ;
+typedef Kokkos::DefaultExecutionSpace       Device ;
+typedef Kokkos::HostSpace::execution_space  Host ;
 
-typedef  Kokkos::TeamPolicy< Device >      team_policy ;
-typedef typename team_policy::member_type  team_member ;
+typedef Kokkos::TeamPolicy< Device >      team_policy ;
+typedef team_policy::member_type team_member ;
 
-#define TS 16
+static const int TEAM_SIZE = 16 ;
 
 struct find_2_tuples {
   int chunk_size;
@@ -72,33 +72,33 @@ struct find_2_tuples {
 
   KOKKOS_INLINE_FUNCTION
   void operator() ( const team_member & dev) const {
-    Kokkos::View<int**,Kokkos::MemoryUnmanaged> l_histogram(dev,TS,TS);
-    Kokkos::View<int*,Kokkos::MemoryUnmanaged> l_data(dev,chunk_size+1);
+    Kokkos::View<int**,Kokkos::MemoryUnmanaged> l_histogram(dev.team_shmem(),TEAM_SIZE,TEAM_SIZE);
+    Kokkos::View<int*,Kokkos::MemoryUnmanaged> l_data(dev.team_shmem(),chunk_size+1);
 
     const int i = dev.league_rank() * chunk_size;
     for(int j = dev.team_rank(); j<chunk_size+1; j+=dev.team_size())
       l_data(j) = data(i+j);
 
-    for(int k = dev.team_rank(); k < TS; k+=dev.team_size())
-      for(int l = 0; l < TS; l++)
+    for(int k = dev.team_rank(); k < TEAM_SIZE; k+=dev.team_size())
+      for(int l = 0; l < TEAM_SIZE; l++)
         l_histogram(k,l) = 0;
     dev.team_barrier();
 
     for(int j = 0; j<chunk_size; j++) {
-      for(int k = dev.team_rank(); k < TS; k+=dev.team_size())
-        for(int l = 0; l < TS; l++) {
+      for(int k = dev.team_rank(); k < TEAM_SIZE; k+=dev.team_size())
+        for(int l = 0; l < TEAM_SIZE; l++) {
           if((l_data(j) == k) && (l_data(j+1)==l))
             l_histogram(k,l)++;
         }
     }
 
-    for(int k = dev.team_rank(); k < TS; k+=dev.team_size())
-      for(int l = 0; l < TS; l++) {
+    for(int k = dev.team_rank(); k < TEAM_SIZE; k+=dev.team_size())
+      for(int l = 0; l < TEAM_SIZE; l++) {
         Kokkos::atomic_fetch_add(&histogram(k,l),l_histogram(k,l));
       }
     dev.team_barrier();
   }
-  size_t shmem_size() const { return sizeof(int)*(chunk_size+2 + TS*TS); }
+  size_t team_shmem_size( int team_size ) const { return sizeof(int)*(chunk_size+2 + team_size * team_size ); }
 };
 
 int main(int narg, char* args[]) {
@@ -111,17 +111,17 @@ int main(int narg, char* args[]) {
   srand(1231093);
 
   for(int i = 0; i < data.dimension_0(); i++) {
-    data.h_view(i) = rand()%TS;
+    data.h_view(i) = rand()%TEAM_SIZE;
   }
   data.modify<Host>();
   data.sync<Device>();
 
-  Kokkos::DualView<int**> histogram("histogram",TS,TS);
+  Kokkos::DualView<int**> histogram("histogram",TEAM_SIZE,TEAM_SIZE);
 
 
   Kokkos::Impl::Timer timer;
   // threads/team is automatically limited to maximum supported by the device.
-  Kokkos::parallel_for( team_policy( nchunks , TS )
+  Kokkos::parallel_for( team_policy( nchunks , TEAM_SIZE )
                       , find_2_tuples(chunk_size,data,histogram) );
   Kokkos::fence();
   double time = timer.seconds();
@@ -130,8 +130,8 @@ int main(int narg, char* args[]) {
 
   printf("Time: %lf \n\n",time);
   int sum = 0;
-  for(int k=0; k<TS; k++) {
-    for(int l=0; l<TS; l++) {
+  for(int k=0; k<TEAM_SIZE; k++) {
+    for(int l=0; l<TEAM_SIZE; l++) {
       printf("%i ",histogram.h_view(k,l));
       sum += histogram.h_view(k,l);
     }

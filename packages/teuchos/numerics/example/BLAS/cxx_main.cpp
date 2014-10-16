@@ -59,8 +59,8 @@ int main(int argc, char* argv[])
   blas.SCAL( n, alpha, x, 1 );
   int max_idx = blas.IAMAX( n, x, 1 );
   std::cout<< "The index of the maximum magnitude entry of x[] is the "
-      <<  max_idx <<"-th and x[ " << max_idx-1 << " ] = "<< x[max_idx-1] 
+      <<  max_idx <<"-th and x[ " << max_idx-1 << " ] = "<< x[max_idx-1]
       << std::endl;
-  
+
   return 0;
 }

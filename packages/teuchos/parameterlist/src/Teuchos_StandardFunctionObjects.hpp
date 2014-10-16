@@ -69,11 +69,11 @@ public:
    */
   SimpleFunctionObject():
     FunctionObject(){}
-  
+
   /**
    * \brief Constructs a SimpleFunctionObject.
    *
-   * @param modifyingOperand The operand that will be 
+   * @param modifyingOperand The operand that will be
    * modifying the arguement given in the runFuction function.
    */
   SimpleFunctionObject(OperandType modifyingOperand):
@@ -121,7 +121,7 @@ private:
    * \brief The modifying operand.
    */
   OperandType _modifyingOperand;
-  
+
   //@}
 };
 
@@ -140,7 +140,7 @@ class SubtractionFunction :
 public:
   //! @name Constructors/Destructors
   //@{
-  
+
   /**
    * \brief Constructs a SubtractionFunction.
    */
@@ -154,7 +154,7 @@ public:
    */
   SubtractionFunction(OperandType amountToSubtract):
     SimpleFunctionObject<OperandType>(amountToSubtract){}
-  
+
   //@}
 
   //! @name Overridden from SimpleFunctionObject
@@ -162,21 +162,21 @@ public:
 
   /** \brief. */
   OperandType runFunction(OperandType arguement) const{
-    return 
+    return
       arguement
       -
       SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
 
   //@}
-  
+
   //! @name Overridden from FunctionObject
   //@{
 
   /** \brief. */
   std::string getTypeAttributeValue() const{
-    return 
-      "SubtractionFunction(" 
+    return
+      "SubtractionFunction("
       + TypeNameTraits<OperandType>::name()
       +")";
   }
@@ -221,25 +221,25 @@ public:
 
   /** \brief. */
   OperandType runFunction(OperandType arguement) const{
-    return 
+    return
       arguement
       +
       SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
 
   //@}
-  
+
   //! @name Overridden from FunctionObject
   //@{
 
   /** \brief. */
   std::string getTypeAttributeValue() const{
-    return 
+    return
       "AdditionFunction("
       + TypeNameTraits<OperandType>::name()
       +")";
   }
-  
+
   //@}
 };
 
@@ -276,26 +276,26 @@ public:
     SimpleFunctionObject<OperandType>(amountToMultiplyBy){}
 
   //@}
-  
+
   //! @name Overridden from SimpleFunctionObject
   //@{
 
   /** \brief. */
   OperandType runFunction(OperandType arguement) const{
-    return 
+    return
       arguement
       *
       SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
 
   //@}
-  
+
   //! @name Overridden from FunctionObject
   //@{
 
   /** \brief. */
   std::string getTypeAttributeValue() const{
-    return "MultiplicationFunction(" + 
+    return "MultiplicationFunction(" +
       TypeNameTraits<OperandType>::name()
       +")";
   }
@@ -319,7 +319,7 @@ public:
 
   //! @name Constructors/Destructors
   //@{
- 
+
   /**
    * \brief Constructs a DivisionFunction.
    *
@@ -337,33 +337,33 @@ public:
     SimpleFunctionObject<OperandType>(amountToDivideBy){}
 
   //@}
-  
+
   //! @name Overridden from SimpleFunctionObject
   //@{
 
   /** \brief. */
   OperandType runFunction(OperandType arguement) const{
-    return 
+    return
       arguement
       /
       SimpleFunctionObject<OperandType>::getModifiyingOperand();
   }
 
   //@}
-  
+
   //! @name Overridden from FunctionObject
   //@{
 
   /** \brief. */
   std::string getTypeAttributeValue() const{
-    return 
-      "DivisionFunction(" 
+    return
+      "DivisionFunction("
       + TypeNameTraits<OperandType>::name()
       +")";
   }
 
   //@}
-  
+
 };
 
 } // namespace Teuchos

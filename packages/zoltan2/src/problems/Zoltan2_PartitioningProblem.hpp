@@ -60,7 +60,13 @@
 #include <Zoltan2_MachineRepresentation.hpp>
 #include <Zoltan2_TaskMapping.hpp>
 
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include <process.h>
+#define NOMINMAX
+#include <windows.h>
+#endif
 
 #ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
@@ -97,7 +103,7 @@ class PartitioningProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
@@ -391,10 +397,6 @@ private:
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
 
-#ifdef HAVE_ZOLTAN2_MPI
-  MPI_Comm mpiComm_;
-#endif
-
   BaseAdapterType inputType_;
 
   //ModelType modelType_;
@@ -452,8 +454,13 @@ template <typename Adapter>
   this->env_->debug(DETAILED_STATUS, "PartitioningProblem::initializeProblem");
 
   if (getenv("DEBUGME")){
+#ifndef _WIN32
     std::cout << getpid() << std::endl;
     sleep(15);
+#else
+    std::cout << _getpid() << std::endl;
+    Sleep(15000);
+#endif
   }
 
 #ifdef HAVE_ZOLTAN2_OVIS
@@ -466,13 +473,6 @@ template <typename Adapter>
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
   machine_ = RCP <Zoltan2::MachineRepresentation<typename Adapter::scalar_t> >(new Zoltan2::MachineRepresentation<typename Adapter::scalar_t>(problemComm_));
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // TPLs may want an MPI communicator
-
-  mpiComm_ = Teuchos2MPI(problemComm_);
-
-#endif
 
   // Number of criteria is number of user supplied weights if non-zero.
   // Otherwise it is 1 and uniform weight is implied.
@@ -596,9 +596,14 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
       this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
                                             problemComm_,
-#ifdef HAVE_ZOLTAN2_MPI
-                                            mpiComm_,
-#endif
+                                            this->graphModel_));
+      this->algorithm_->partition(solution_);
+    }
+
+    else if (algName_ == std::string("parmetis")) {
+
+      this->algorithm_ = rcp(new AlgParMETIS<Adapter>(this->envConst_,
+                                            problemComm_,
                                             this->graphModel_));
       this->algorithm_->partition(solution_);
     }
@@ -668,20 +673,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   else if (mapping_type == 1){
     //if mapping is 1 -- graph mapping
   }
-
-#ifdef KDDKDD_SHOULD_NEVER_CHANGE_PROBLEMCOMM
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // The algorithm may have changed the communicator.  Change it back.
-  // KDD:  Why would the algorithm change the communicator? TODO
-  // KDD:  Should we allow such a side effect? TODO
-
-  RCP<const mpiWrapper_t > wrappedComm = rcp(new mpiWrapper_t(mpiComm_));
-  problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
-  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
-
-#endif
-#endif
 
   if (metricsRequested_){
     typedef PartitioningSolution<Adapter> ps_t;
@@ -1112,7 +1103,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     if(modelAvail_[GraphModelType]==false && modelAvail_[HypergraphModelType]==false &&
        modelAvail_[CoordinateModelType]==false && modelAvail_[IdentifierModelType]==false)
     {
-      cout << __func__ << " Invalid model"  << endl;
+      cout << __func__zoltan2__ << " Invalid model"  << endl;
     }
     else
     {

@@ -272,6 +272,10 @@ public:
     , response()
     , perf()
     {
+      if ( maximum(comm, ( fixture.ok() ? 0 : 1 ) ) ) {
+        throw std::runtime_error(std::string("Problem fixture setup failed"));
+      }
+
       perf.global_elem_count  = fixture.elem_count_global();
       perf.global_node_count  = fixture.node_count_global();
 
@@ -465,6 +469,7 @@ public:
           cgsolve = belos_solve(rcpFromRef(g_jacobian),
                                 rcpFromRef(g_nodal_residual),
                                 rcpFromRef(g_nodal_delta),
+                                fixture,
                                 use_muelu,
                                 use_mean_based,
                                 cg_iteration_limit ,

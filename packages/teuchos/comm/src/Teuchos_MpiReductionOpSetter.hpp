@@ -106,7 +106,7 @@ mpiReductionOp( const RCP<const ValueTypeReductionOp<Ordinal,char> > &reductOp )
  * Note, this object can only be allocated on the stack and should be used
  * directly before a call to any MPI function that takes an <tt>MPI_Op</tt>
  * object.  For example:
- 
+
  \code
 
   ???
@@ -147,7 +147,7 @@ public:
    * function to pass in the returned <tt>MPI_Op</tt> object.
    */
   MPI_Op mpi_op() const;
-  
+
 private:
   // Not defined and not to be called!
   MpiReductionOpSetter();

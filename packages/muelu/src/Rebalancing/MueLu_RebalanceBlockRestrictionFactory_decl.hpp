@@ -46,6 +46,8 @@
 #ifndef MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DECL_HPP_
 #define MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DECL_HPP_
 
+#ifdef HAVE_MUELU_EXPERIMENTAL
+
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MapExtractor_fwd.hpp>
@@ -70,8 +72,10 @@ namespace MueLu {
     @brief Applies permutation to restriction operators.
     @ingroup MueLuTransferClasses
   */
-
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = Xpetra::Matrix<>::scalar_type,
+            class LocalOrdinal = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class RebalanceBlockRestrictionFactory : public TwoLevelFactoryBase {
 #undef MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -122,4 +126,5 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_SHORT
+#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif /* MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DECL_HPP_ */

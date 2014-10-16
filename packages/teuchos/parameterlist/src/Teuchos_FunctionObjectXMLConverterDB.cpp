@@ -58,7 +58,7 @@ void FunctionObjectXMLConverterDB::addConverter(
 
 RCP<const FunctionObjectXMLConverter>
 FunctionObjectXMLConverterDB::getConverter(const FunctionObject& function){
-  ConverterMap::const_iterator it = 
+  ConverterMap::const_iterator it =
     getConverterMap().find(function.getTypeAttributeValue());
   TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindFunctionObjectConverterException,
@@ -72,7 +72,7 @@ FunctionObjectXMLConverterDB::getConverter(const FunctionObject& function){
 
 RCP<const FunctionObjectXMLConverter>
 FunctionObjectXMLConverterDB::getConverter(const XMLObject& xmlObject)
-{ 
+{
   std::string functionType = xmlObject.getRequired(
     FunctionObjectXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(functionType);
@@ -90,7 +90,7 @@ XMLObject FunctionObjectXMLConverterDB::convertFunctionObject(
 {
   return getConverter(*function)->fromFunctionObjecttoXML(function);
 }
- 
+
 RCP<FunctionObject> FunctionObjectXMLConverterDB::convertXML(
   const XMLObject& xmlObject)
 {
@@ -114,7 +114,7 @@ namespace {
 
 TEUCHOS_STATIC_SETUP()
 {
-    
+
     TEUCHOS_ADD_SIMPLEFUNCTIONCONVERTERS(int);
     TEUCHOS_ADD_SIMPLEFUNCTIONCONVERTERS(unsigned int);
     TEUCHOS_ADD_SIMPLEFUNCTIONCONVERTERS(short int);

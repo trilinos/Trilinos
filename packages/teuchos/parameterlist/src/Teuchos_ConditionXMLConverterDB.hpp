@@ -47,7 +47,7 @@
  * \brief A database for ConditionXMLConverters.
 */
 
-// Both includes needed for convience macros below 
+// Both includes needed for convience macros below
 #include "Teuchos_StandardConditionXMLConverters.hpp"
 #include "Teuchos_StandardConditions.hpp"
 
@@ -64,7 +64,7 @@ public:
 
   /** \name Modifier Functions */
   //@{
-  
+
   /** \brief Add a converter to the database.
    *
    * \param condition A dummy condition representing the type of contidion
@@ -73,13 +73,13 @@ public:
    */
   static void addConverter(RCP<const Condition> condition,
     RCP<ConditionXMLConverter> converterToAdd);
-  
+
   //@}
 
   /** \name Converter Functions */
   //@{
-  
-  /** \brief Get an appropriate ConditionXMLConverter given a 
+
+  /** \brief Get an appropriate ConditionXMLConverter given a
    *  Condition.
    *
    * \param condition The Condition for which a converter is
@@ -87,7 +87,7 @@ public:
    *
    * \return A converter for the condition.
    */
-  static RCP<const ConditionXMLConverter> 
+  static RCP<const ConditionXMLConverter>
     getConverter(const Condition& condition);
 
   /** \brief Get an appropriate ConditionXMLConverter given a XMLObject.
@@ -96,7 +96,7 @@ public:
    *
    * @return A converter for the XMLObject.
    */
-  static RCP<const ConditionXMLConverter> 
+  static RCP<const ConditionXMLConverter>
     getConverter(const XMLObject& xmlObject);
 
   /**
@@ -114,7 +114,7 @@ public:
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap);
 
   /**
-   * \brief Given an XMLObject and IDtoConditionMap, converts the XMLObject 
+   * \brief Given an XMLObject and IDtoConditionMap, converts the XMLObject
    * to a Condition.
    *
    * \param xmlObject The XMLObject to be converted.
@@ -126,7 +126,7 @@ public:
   static RCP<Condition> convertXML(
     const XMLObject& xmlObject,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap);
-  
+
   //@}
 
   /** \name I/O Functions */
@@ -147,14 +147,14 @@ public:
       out << "\t" << it->first <<std::endl;
     }
   }
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief convience class. */
   typedef std::map<std::string, RCP<ConditionXMLConverter> > ConverterMap;
 
@@ -165,7 +165,7 @@ private:
    * Conditions.
    */
   static ConverterMap& getConverterMap();
-  
+
   //@}
 
 };

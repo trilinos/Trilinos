@@ -438,6 +438,10 @@ void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::buildUnknownsOrientation()
       std::vector<std::pair<int,int> > topEdgeIndices;
       orientation_helpers::computePatternEdgeIndices(*geomPattern_,topEdgeIndices);
 
+      std::vector<std::vector<int> > topFaceIndices;
+      if(geomPattern_->getDimension()==3)
+        orientation_helpers::computePatternFaceIndices(*geomPattern_,topFaceIndices);
+
       std::size_t numGIDs = getElementBlockGIDCount(blockName);
       const std::vector<LocalOrdinal> & elmts = getElementBlock(blockName);
       for(std::size_t e=0;e<elmts.size();e++) {
@@ -453,6 +457,10 @@ void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::buildUnknownsOrientation()
          const std::vector<GlobalOrdinalT> connectivity(connPtr,connPtr+connSz);
 
          orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
+
+         // compute face orientations in 3D
+         if(geomPattern_->getDimension()==3)
+           orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity, fieldPattern, eOrientation);
       }
    }
 }

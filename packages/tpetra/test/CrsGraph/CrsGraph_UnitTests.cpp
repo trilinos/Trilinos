@@ -152,32 +152,73 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, BadConst, LO, GO , Node )
   {
-    typedef CrsGraph<LO,GO,Node> GRAPH;
+    using Teuchos::outArg;
+    using Teuchos::reduceAll;
+    using Teuchos::REDUCE_MIN;
+    typedef Tpetra::global_size_t GST;
+    typedef Tpetra::Map<LO,GO,Node> map_type;
+    typedef Tpetra::CrsGraph<LO,GO,Node> graph_type;
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<Node> node = getNode<Node> ();
+
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
-    RCP<Node> node = getNode<Node>();
-    RCP<const Comm<int> > comm = getDefaultComm();
-    // create a Map
+
+    // Create a contiguous Map to use as the graph's row Map.
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const size_t numLocal = 10;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-    {
-      // bad constructor
-      TEST_THROW( GRAPH badgraph(map,INVALID), std::invalid_argument ); // allocation hint must be >= 0
-    }
-    {
-      // bad constructor
-      ArrayRCP<size_t> hints = arcp<size_t>(numLocal+1);
-      std::fill(hints.begin(),hints.end(),1);
-      hints[0] = INVALID;
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal+1)), std::invalid_argument ); // too many entries
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal-1)), std::invalid_argument ); // too few entries
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal)),   std::invalid_argument ); // invalid value
-    }
-    // All procs fail if any node fails
-    int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLocal, indexBase, comm, node));
+
+    RCP<graph_type> badgraph;
+
+    // CrsGraph's constructor should throw on invalid allocation hint.
+    const size_t allocHint = Teuchos::OrdinalTraits<size_t>::invalid ();
+    TEST_THROW( badgraph = rcp (new graph_type (map, allocHint)), std::invalid_argument );
+
+    // Make sure that the test passed on all processes.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+
+    // CrsGraph's constructor should throw if input allocation hint
+    // has the wrong length, as it does in this case.
+    ArrayRCP<size_t> hints = arcp<size_t> (numLocal + 1);
+    std::fill (hints.begin (), hints.end (), static_cast<size_t> (1));
+    TEST_THROW( badgraph = rcp (new graph_type (map, hints.persistingView (0, numLocal+1))),
+                std::invalid_argument ); // too many entries
+
+    // Make sure that the test passed on all processes.
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+
+    // CrsGraph's constructor should throw if input allocation hint
+    // has the wrong length, as it does in this case.
+    TEST_THROW( badgraph = rcp (new graph_type (map, hints.persistingView (0, numLocal-1))),
+                std::invalid_argument ); // too few entries
+
+    // Make sure that the test passed on all processes.
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+
+    // mfh 13 Aug 2014: It's not reasonable to ask the constructor to
+    // check all the values.  That might be reasonable for a debug
+    // build, but not for a release build.
+
+    // hints[0] = Teuchos::OrdinalTraits<size_t>::invalid ();
+    // TEST_THROW( badgraph = rcp (new graph_type (map, hints.persistingView (0, numLocal))),
+    //             std::invalid_argument ); // invalid value
+
+    // // Make sure that the test passed on all processes.
+    // lclSuccess = success ? 1 : 0;
+    // gblSuccess = 0;
+    // reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    // TEST_EQUALITY_CONST( gblSuccess, 1 );
   }
 
 
@@ -1328,24 +1369,24 @@ namespace {
 // instantiate them over all enabled local ordinal (LO), global
 // ordinal (GO), and Kokkos Node (NODE) types.
 #define UNIT_TEST_GROUP_DEBUG_AND_RELEASE( LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs   , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithColMap,     LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Describable   , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0,  LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1,  LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation,  LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst,          LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals,         LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag,        LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews,    LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithColMap,        LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Describable,       LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyFillComplete, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs      , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices , LO, GO, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs,          LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K,      LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill,        LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests,      LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC,     LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices,     LO, GO, NODE )
 
 // Test(s) for "Node conversion" (i.e., the clone() template method of
 // CrsGraph).  We will instantiate them over all enabled Kokkos Node

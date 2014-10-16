@@ -42,7 +42,7 @@
 #ifndef STOKHOS_CRSPRODUCTTENSOR_HPP
 #define STOKHOS_CRSPRODUCTTENSOR_HPP
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
@@ -51,8 +51,6 @@
 #include "Stokhos_BlockCrsMatrix.hpp"
 #include "Stokhos_StochasticProductTensor.hpp"
 #include "Stokhos_TinyVec.hpp"
-
-#include "Kokkos_Cuda.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -85,19 +83,22 @@ public:
   typedef ValueType   value_type;
   typedef Memory      memory_type;
 
-  typedef typename device_type::host_mirror_device_type host_mirror_device_type;
-  typedef CrsProductTensor<value_type, host_mirror_device_type> HostMirror;
+  typedef typename Kokkos::ViewTraits< size_type*, device_type,void,void >::host_mirror_space host_mirror_space ;
+  typedef CrsProductTensor<value_type, host_mirror_space> HostMirror;
 
 // Vectorsize used in multiply algorithm
 #if defined(__AVX__)
   static const size_type host_vectorsize = 32/sizeof(value_type);
   static const bool use_intrinsics = true;
+  static const size_type num_entry_align = 1;
 #elif defined(__MIC__)
   static const size_type host_vectorsize = 16;
   static const bool use_intrinsics = true;
+  static const size_type num_entry_align = 8; // avoid use of mask instructions
 #else
   static const size_type host_vectorsize = 2;
   static const bool use_intrinsics = false;
+  static const size_type num_entry_align = 1;
 #endif
   static const size_type cuda_vectorsize = 32;
   static const bool is_cuda =
@@ -115,13 +116,12 @@ private:
 
   template <class, class, class> friend class CrsProductTensor;
 
-  typedef Kokkos::View< value_type[], device_type, memory_type >  vec_type;
-  typedef Kokkos::View< size_type[], device_type, memory_type > coord_array_type;
-  typedef Kokkos::View< size_type[][2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
-  //typedef Kokkos::View< size_type[][2], device_type, memory_type > coord2_array_type;
-  typedef Kokkos::View< value_type[], device_type, memory_type > value_array_type;
-  typedef Kokkos::View< size_type[], device_type, memory_type > entry_array_type;
-  typedef Kokkos::View< size_type[], device_type, memory_type > row_map_array_type;
+  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type >  vec_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > coord_array_type;
+  typedef Kokkos::View< size_type*[2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
+  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type > value_array_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > entry_array_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > row_map_array_type;
 
   coord_array_type   m_coord;
   coord2_array_type  m_coord2;
@@ -363,6 +363,12 @@ public:
       coord_work[iCoord] = host_row_map[iCoord];
     }
 
+    // Initialize values and coordinates to zero since we will have extra
+    // ones for alignment
+    Kokkos::deep_copy( host_value, 0.0 );
+    Kokkos::deep_copy( host_coord, 0 );
+    Kokkos::deep_copy( host_coord2, 0 );
+
     for (typename Cijk_type::i_iterator i_it=Cijk.i_begin();
          i_it!=Cijk.i_end(); ++i_it) {
       OrdinalType i = index(i_it);
@@ -385,6 +391,9 @@ public:
           }
         }
       }
+      // Align num_entry
+      host_num_entry(row) =
+        (host_num_entry(row) + num_entry_align-1) & ~(num_entry_align-1);
     }
 
     // Copy data to device if necessary
@@ -640,35 +649,21 @@ public:
       }
       ytmp += vy.sum();
 
+      // The number of nonzeros is always constrained to be a multiple of 8
+
       const size_type rem = iEntryEnd-iEntry;
-      if (rem > 8) {
-        typedef TinyVec<ValueType,tensor_type::vectorsize,true,true> TV2;
+      if (rem >= 8) {
+        typedef TinyVec<ValueType,8,tensor_type::use_intrinsics> TV2;
         const size_type *j = &tensor.coord(iEntry,0);
         const size_type *k = &tensor.coord(iEntry,1);
-        TV2 aj(a, j, rem), ak(a, k, rem), xj(x, j, rem), xk(x, k, rem),
-          c(&(tensor.value(iEntry)), rem);
+        TV2 aj(a, j), ak(a, k), xj(x, j), xk(x, k),
+          c(&(tensor.value(iEntry)));
 
         // vy += c * ( aj * xk + ak * xj)
         aj.times_equal(xk);
         aj.multiply_add(ak, xj);
         aj.times_equal(c);
         ytmp += aj.sum();
-        iEntry += rem;
-      }
-
-      else if (rem > 0) {
-        typedef TinyVec<ValueType,8,true,true> TV2;
-        const size_type *j = &tensor.coord(iEntry,0);
-        const size_type *k = &tensor.coord(iEntry,1);
-        TV2 aj(a, j, rem), ak(a, k, rem), xj(x, j, rem), xk(x, k, rem),
-          c(&(tensor.value(iEntry)), rem);
-
-        // vy += c * ( aj * xk + ak * xj)
-        aj.times_equal(xk);
-        aj.multiply_add(ak, xj);
-        aj.times_equal(c);
-        ytmp += aj.sum();
-        iEntry += rem;
       }
 
       y[iy] += alpha * ytmp ;
@@ -911,46 +906,26 @@ public:
         }
         ytmp += vy.sum();
 
+        // The number of nonzeros is always constrained to be a multiple of 8
+
         const size_type rem = iEntryEnd-iEntry;
-        if (rem > 8) {
-          typedef TinyVec<ValueType,tensor_type::vectorsize,true,true> ValTV2;
-          typedef TinyVec<MatrixValue,tensor_type::vectorsize,true,true> MatTV2;
-          typedef TinyVec<VectorValue,tensor_type::vectorsize,true,true> VecTV2;
+        if (rem >= 8) {
+          typedef TinyVec<ValueType,8,tensor_type::use_intrinsics> ValTV2;
+          typedef TinyVec<MatrixValue,8,tensor_type::use_intrinsics> MatTV2;
+          typedef TinyVec<VectorValue,8,tensor_type::use_intrinsics> VecTV2;
           const size_type *j = &tensor.coord(iEntry,0);
           const size_type *k = &tensor.coord(iEntry,1);
-          ValTV2 c(&(tensor.value(iEntry)), rem);
+          ValTV2 c(&(tensor.value(iEntry)));
 
           for ( size_type col = 0; col < block_size; ++col ) {
-            MatTV2 aj(sh_A[col], j, rem), ak(sh_A[col], k, rem);
-            VecTV2 xj(sh_x[col], j, rem), xk(sh_x[col], k, rem);
+            MatTV2 aj(sh_A[col], j), ak(sh_A[col], k);
+            VecTV2 xj(sh_x[col], j), xk(sh_x[col], k);
 
             // vy += c * ( aj * xk + ak * xj)
             aj.times_equal(xk);
             aj.multiply_add(ak, xj);
             aj.times_equal(c);
             ytmp += aj.sum();
-            iEntry += rem;
-          }
-        }
-
-        else if (rem > 0) {
-          typedef TinyVec<ValueType,8,true,true> ValTV2;
-          typedef TinyVec<MatrixValue,8,true,true> MatTV2;
-          typedef TinyVec<VectorValue,8,true,true> VecTV2;
-          const size_type *j = &tensor.coord(iEntry,0);
-          const size_type *k = &tensor.coord(iEntry,1);
-          ValTV2 c(&(tensor.value(iEntry)), rem);
-
-          for ( size_type col = 0; col < block_size; ++col ) {
-            MatTV2 aj(sh_A[col], j, rem), ak(sh_A[col], k, rem);
-            VecTV2 xj(sh_x[col], j, rem), xk(sh_x[col], k, rem);
-
-            // vy += c * ( aj * xk + ak * xj)
-            aj.times_equal(xk);
-            aj.multiply_add(ak, xj);
-            aj.times_equal(c);
-            ytmp += aj.sum();
-            iEntry += rem;
           }
         }
 

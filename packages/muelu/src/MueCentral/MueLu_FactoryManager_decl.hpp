@@ -54,7 +54,6 @@
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_ConstraintFactory_fwd.hpp"
-#include "MueLu_CoupledAggregationFactory_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_PatternFactory_fwd.hpp"
@@ -65,6 +64,7 @@
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_TransPFactory_fwd.hpp"
 #include "MueLu_TrilinosSmoother_fwd.hpp"
+#include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_ZoltanInterface_fwd.hpp"
 
 namespace MueLu {
@@ -88,7 +88,7 @@ namespace MueLu {
     the Get call. If "no", then the FactoryManager will <b>throw an exception indicating that it does not know how to generate A</b>.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class FactoryManager : public FactoryManagerBase {
 #undef MUELU_FACTORYMANAGER_SHORT
 #include "MueLu_UseShortNames.hpp"

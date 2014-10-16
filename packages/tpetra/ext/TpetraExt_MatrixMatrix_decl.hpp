@@ -61,12 +61,12 @@ namespace MatrixMatrix {
 /// \brief Sparse matrix-matrix multiply
 ///
 /// Given CrsMatrix instances A and B, compute the product C = A*B,
-/// overwriting an existing CrsMatrix instance C with the result.  
+/// overwriting an existing CrsMatrix instance C with the result.
 ///
 /// \pre All three matrices A, B, and C must have uniquely owned row
 ///   Maps.
 /// \pre On input, C must have the same row Map as A.
-/// \pre A and B must be fill complete.  
+/// \pre A and B must be fill complete.
 /// \pre If C has a range Map on input, then A and C must have the
 ///   same range Maps.
 /// \pre If C has a domain Map on input, then B and C must have the
@@ -89,16 +89,15 @@ namespace MatrixMatrix {
 ///   defaults to true.  If false, C will <i>not</i> be fill complete
 ///   on output.
 template <class Scalar,
-	  class LocalOrdinal,
-	  class GlobalOrdinal,
-	  class Node,
-	  class SpMatOps >
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 void Multiply(
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   bool transposeA,
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   bool transposeB,
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool call_FillComplete_on_result=true);
 
     /** Given CrsMatrix objects A and B, form the sum B = a*A + b*B
@@ -117,13 +116,12 @@ void Multiply(
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
-          class Node,
-          class SpMatOps >
+          class Node>
 void Add(
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   bool transposeA,
   Scalar scalarA,
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   Scalar scalarB );
 
 
@@ -159,15 +157,14 @@ void Add(
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
-          class Node,
-          class SpMatOps >
-Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
+          class Node>
+Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 add (const Scalar& alpha,
      const bool transposeA,
-     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
      const Scalar& beta,
      const bool transposeB,
-     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
      const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap=Teuchos::null,
      const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap=Teuchos::null,
      const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null);
@@ -204,31 +201,30 @@ add (const Scalar& alpha,
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
-          class Node,
-          class SpMatOps>
+          class Node>
 void Add(
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   bool transposeA,
   Scalar scalarA,
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   bool transposeB,
   Scalar scalarB,
-  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > C);
+  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C);
 
 
   /** Given CrsMatrix objects A, B and C, and Vector Dinv, form the product C = (I-omega * Dinv A)*B
       In a parallel setting, A and B need not have matching distributions,
       but C needs to have the same row-map as A.
-      
+
     @param omega Input, scalar multiplier for Dinverse A
     @param Dinv Input, Vector representing a diagonal matrix, must match A->getRowMap()
     @param A Input, must already have had 'fillComplete()' called.
     @param B Input, must already have had 'fillComplete()' called.
     @param C Result. On entry to this method, it doesn't matter whether
              fillComplete() has already been called on C or not. If it has,
-	     then C's graph must already contain all nonzero locations that
-	     will be produced when forming the product A*B. On exit,
-	     C.FillComplete() will have been called, unless the last argument
+             then C's graph must already contain all nonzero locations that
+             will be produced when forming the product A*B. On exit,
+             C.FillComplete() will have been called, unless the last argument
              to this function is specified to be false.
     @param call_fillComplete_on_result Optional argument, defaults to true.
            Power users may specify this argument to be false if they *DON'T*
@@ -238,16 +234,15 @@ void Add(
            trivial to know which maps to use for the domain- and range-maps.)
   */
   template <class Scalar,
-	    class LocalOrdinal,
-	    class GlobalOrdinal,
-	    class Node,
-	    class SpMatOps >
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   void Jacobi(Scalar omega,
-	      const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Dinv,
-	      const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
-	      const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
-	      CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C,
-	      bool call_FillComplete_on_result=true);
+              const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Dinv,
+              const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+              const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+              CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+              bool call_FillComplete_on_result=true);
 
 } // namespace MatrixMatrix
 
@@ -256,67 +251,61 @@ namespace MMdetails{
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
-         class Node,
-         class SpMatOps>
+         class Node>
 void mult_AT_B_newmatrix(
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C);
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
 
 
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
-         class Node,
-         class SpMatOps>
+         class Node>
 void mult_A_B(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
 
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
-         class Node,
-         class SpMatOps>
+         class Node>
 void mult_A_B_newmatrix(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
 
 
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
-         class Node,
-         class SpMatOps>
+         class Node>
 void jacobi_A_B_newmatrix(
   Scalar omega,
   const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Dinv,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
 
 
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
-         class Node,
-         class SpMatOps>
+         class Node>
 void import_and_extract_views(
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& M,
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
   RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
   bool userAssertsThereAreNoRemotes=false);
 
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
-         class Node,
-         class SpMatOps>
+         class Node>
 void setMaxNumEntriesPerRow(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview);
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview);
 
 }//end namespace MMdetails
 

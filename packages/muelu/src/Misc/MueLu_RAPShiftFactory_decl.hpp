@@ -71,7 +71,7 @@ namespace MueLu {
            variable ("a") at every level. Each level must store the stiffness
            matrix K and mass matrix M separately.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class RAPShiftFactory : public TwoLevelFactoryBase {
 #undef MUELU_RAPSHIFTFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

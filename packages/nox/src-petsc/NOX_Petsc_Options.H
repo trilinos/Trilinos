@@ -51,6 +51,7 @@
 #ifndef NOX_PETSC_OPTIONS_H
 #define NOX_PETSC_OPTIONS_H
 
+#include "petscversion.h"
 #include "petscsys.h"
 #include "NOX.H" // Needed for NOX::StatusTest classes
 
@@ -84,7 +85,11 @@ private:
 
   enum {maxStringLength = 256};
   char optionString[maxStringLength];
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+  PetscBool flg;
+#else
   PetscTruth flg;  // Boolean flag
+#endif
   int ierr;   // Used in Petsc CHKERRQ macro
   int rank;   // proc ID used with output utils
 

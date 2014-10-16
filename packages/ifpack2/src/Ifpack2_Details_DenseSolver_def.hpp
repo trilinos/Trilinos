@@ -46,6 +46,7 @@
 #include "Ifpack2_Condest.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Ifpack2_Details_DenseSolver.hpp"
 
 #ifdef HAVE_MPI
 #  include <mpi.h>
@@ -401,11 +402,11 @@ applyImpl (const MV& X,
     // with its output.
     RCP<MV> Y_tmp;
     if (beta == STS::zero () && Y.isConstantStride () && alpha == STS::one ()) {
-      deep_copy(Y, X);
+      deep_copy (Y, X);
       Y_tmp = rcpFromRef (Y);
     }
     else {
-      Y_tmp = rcp (new MV (createCopy(X))); // constructor copies X
+      Y_tmp = rcp (new MV (X, Teuchos::Copy)); // constructor copies X
       if (alpha != STS::one ()) {
         Y_tmp->scale (alpha);
       }
@@ -428,7 +429,7 @@ applyImpl (const MV& X,
       Y.update (alpha, *Y_tmp, beta);
     }
     else if (! Y.isConstantStride ()) {
-      deep_copy(Y, *Y_tmp);
+      deep_copy (Y, *Y_tmp);
     }
   }
 }

@@ -355,7 +355,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 		       << "\" is not a valid DOF for the boundary condition:\n"
 		       << this->m_bc << "\n");
     
-    if(basis->isScalarBasis()) {
+    if(basis->isScalarBasis() || desc.coefficientResidual) {
       ParameterList p("Dirichlet Residual: "+residualName + " to " + dofName);
       p.set("Residual Name", residualName);
       p.set("DOF Name", dofName);
@@ -451,6 +451,24 @@ addTarget(const std::string & targetName,
 
   DOFDescriptor & desc = itr->second;
   desc.dofName = dofName;
+  desc.coefficientResidual = false;
+  desc.targetName = std::make_pair(true,targetName);
+  desc.residualName = (residualName=="") ? std::make_pair(true,"RESIDUAL_"+dofName) 
+                                         : std::make_pair(true,residualName);
+}
+
+template <typename EvalT>
+void panzer::BCStrategy_Dirichlet_DefaultImpl<EvalT>::
+addCoefficientTarget(const std::string & targetName,
+                     const std::string & dofName,
+                     const std::string & residualName)
+{
+  typename std::map<std::string,DOFDescriptor>::iterator itr = m_provided_dofs_desc.find(dofName);
+  TEUCHOS_ASSERT(itr!=m_provided_dofs_desc.end());
+
+  DOFDescriptor & desc = itr->second;
+  desc.dofName = dofName;
+  desc.coefficientResidual = true;
   desc.targetName = std::make_pair(true,targetName);
   desc.residualName = (residualName=="") ? std::make_pair(true,"RESIDUAL_"+dofName) 
                                          : std::make_pair(true,residualName);

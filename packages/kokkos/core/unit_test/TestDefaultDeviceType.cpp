@@ -60,6 +60,7 @@
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
+#include <TestTeamVector.hpp>
 
 namespace Test {
 
@@ -192,10 +193,7 @@ TEST_F( defaultdevicetype , view_aggregate )
 
 TEST_F( defaultdevicetype , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::DefaultExecutionSpace >( 10 );
-    TestScan< Kokkos::DefaultExecutionSpace >( 10000 );
-  }
+  TestScan< Kokkos::DefaultExecutionSpace >::test_range( 1 , 1000 );
   TestScan< Kokkos::DefaultExecutionSpace >( 1000000 );
   TestScan< Kokkos::DefaultExecutionSpace >( 10000000 );
   Kokkos::DefaultExecutionSpace::fence();
@@ -224,6 +222,18 @@ TEST_F( defaultdevicetype , cxx11 )
   ASSERT_TRUE( ( TestCXX11::Test< Kokkos::DefaultExecutionSpace >(2) ) );
   ASSERT_TRUE( ( TestCXX11::Test< Kokkos::DefaultExecutionSpace >(3) ) );
   ASSERT_TRUE( ( TestCXX11::Test< Kokkos::DefaultExecutionSpace >(4) ) );
+}
+#endif
+
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( defaultdevicetype , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(0) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(5) ) );
 }
 #endif
 } // namespace test

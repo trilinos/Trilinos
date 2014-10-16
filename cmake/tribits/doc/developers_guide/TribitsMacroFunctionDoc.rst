@@ -13,13 +13,14 @@ very flexible pass/fail criteria.
 Usage::
 
   TRIBITS_ADD_ADVANCED_TEST(
-    <testName>
+    <testNameBase>
     TEST_0 (EXEC <execTarget0> | CMND <cmndExec0>) ...
     [TEST_1 (EXEC <execTarget1> | CMND <cmndExec1>) ...]
     ...
     [TEST_N (EXEC <execTargetN> | CMND <cmndExecN>) ...]
     [OVERALL_WORKING_DIRECTORY (<overallWorkingDir> | TEST_NAME)]
     [FAIL_FAST]
+    [RUN_SERIAL]
     [KEYWORDS <keyword1> <keyword2> ...]
     [COMM [serial] [mpi]]
     [OVERALL_NUM_MPI_PROCS <overallNumProcs>]
@@ -32,6 +33,7 @@ Usage::
       FINAL_FAIL_REGULAR_EXPRESSION <regex>]
     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
     [TIMEOUT <maxSeconds>]
+    [ADDED_TEST_NAME_OUT <testName>]
     )
 
 This function allows one to add a single CTest test that is actually a
@@ -88,28 +90,27 @@ arguments that control overall pass/fail are described in `Overall Pass/Fail
 listed outside of the ``TEST_<idx>`` blocks, see `Argument Parsing and
 Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 
-  ``<testName>``
+  ``<testNameBase>``
 
-    The name of the test (which will have ``${PACKAGE_NAME}_`` prepended to
-    the name) that will be used to name the output CMake script file as well
-    as the CTest test name passed into ``ADD_TEST()``.  This must be the
-    first argument to this function.
+    The base name of the test (which will have ``${PACKAGE_NAME}_``
+    prepended to the name, see <testName> below) that will be used to name
+    the output CMake script file as well as the CTest test name passed into
+    ``ADD_TEST()``.  This must be the first argument to this function.
 
   ``OVERALL_WORKING_DIRECTORY <overallWorkingDir>``
 
     If specified, then the working directory ``<overallWorkingDir>`` will be
     created and all of the test commands by default will be run from within
     this directory.  If the value ``<overallWorkingDir>=TEST_NAME`` is
-    given, then the working directory will be given the name
-    ``${PACKAGE_NAME}_<testName>``.  If the directory
-    ``<overallWorkingDir>`` exists before the test runs, it will be deleted
-    and created again.  Therefore, if one wants to preserve the contents of
-    this directory between test runs then one needs to copy the files it
-    contains somewhere else.  This is a good option to use if the commands
-    create intermediate files and one wants to make sure they get deleted
-    before the test cases are run again.  This is also a very useful option
-    to use if multiple tests are defined in the same ``CMakeLists.txt`` file
-    that read/write files with the same name.
+    given, then the working directory will be given the name ``<testName>``.
+    If the directory ``<overallWorkingDir>`` exists before the test runs, it
+    will be deleted and created again.  Therefore, if one wants to preserve
+    the contents of this directory between test runs then one needs to copy
+    the files it contains somewhere else.  This is a good option to use if
+    the commands create intermediate files and one wants to make sure they
+    get deleted before the test cases are run again.  This is also a very
+    useful option to use if multiple tests are defined in the same
+    ``CMakeLists.txt`` file that read/write files with the same name.
 
   ``FAIL_FAST``
 
@@ -183,6 +184,14 @@ Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
     to run before being timed-out (see `TRIBITS_ADD_TEST()`_).  This is for
     the full CTest test, not individual ``TEST_<idx>`` commands!
 
+  ``ADDED_TEST_NAME_OUT <testName>``
+
+    If specified, then on output the variable ``<testName>`` will be set
+    with the name of the test passed to ``ADD_TEST()``.  Having this name
+    allows the calling ``CMakeLists.txt`` file access and set additional
+    test propeties (see `Setting additional test properties
+    (TRIBITS_ADD_ADVANCED_TEST())`_).
+
 .. _TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 
 **TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
@@ -217,7 +226,19 @@ executable or some general command executable and is defined as either
     executable even when configured in MPI mode
     (i.e. ``TPL_ENABLE_MPI=ON``).  If one wants to run an arbitrary command
     using MPI, use ``EXEC <fullPathToCmndExec> NOEXEPREFIX NOEXESUFFIX``
-    instead.
+    instead.  **WARNING:** If you want to run such tests using valgrind, you
+    have to use the raw executable as the ``<cmndExec>`` argument and *not*
+    the script.  For example, if you have a python script
+    ``my_python_test.py`` with ``/usr/bin/env pyhton`` at the top, you can't
+    just use::
+
+      CMND <path>/my_python_test.py ARGS <arg0> <arg1> ...
+
+    The same goes for Perl or any other scripting language.
+
+    Instead, you have to use::
+
+      CMND ${PYTHON_EXECUTABLE} ARGS <path>/my_python_test.py <arg0> <arg1> ...
 
 By default, the output (stdout/stderr) for each test command is captured and
 is then echoed to stdout for the overall test.  This is done in order to be
@@ -242,7 +263,7 @@ Other miscellaneous arguments for each ``TEST_<idx>`` block include:
     If specified, then the working directory ``<workingDir>`` will be
     created and the test will be run from within this directory.  If the
     value ``<workingDir> = TEST_NAME`` is given, then the working directory
-    will be given the name ``${PACKAGE_NAME}_<testName>``.  If the directory
+    will be given the name ``<testName>``.  If the directory
     ``<workingDir>`` exists before the test runs, it will be deleted and
     created again.  Therefore, if one wants to preserve the contents of this
     directory between test runs then one needs to copy the given file
@@ -263,6 +284,17 @@ Other miscellaneous arguments for each ``TEST_<idx>`` block include:
     ``<outputFile>``.  By default, the contents of this file will **also**
     be printed to STDOUT unless ``NO_ECHO_OUT`` is passed as well.
 
+    NOTE: Contrary to CMake documentation for EXECUTE_PROCESS(), STDOUT and
+    STDERR may not get output in the correct order interleaved correctly,
+    even in serial without MPI.  Therefore, you can't write any tests that
+    depend on the order of STDOUT and STDERR output in relation to each
+    other.  Also note that all of STDOUT and STDERR will be first read into
+    the CTest executable process main memory before the file
+    ``<outputFile>`` is written.  Therefore, don't run executables or
+    commands that generate massive amounts of console output or it may
+    exhaust main memory.  Instead, have the command or executable write
+    directly to a file instead of going through STDOUT.
+
   ``NO_ECHO_OUTPUT``
 
     If specified, then the output for the test command will not be echoed to
@@ -282,14 +314,17 @@ also be defined to pass based on:
   ``PASS_REGULAR_EXPRESSION "<regex>"``
 
     If specified, the test command will be assumed to pass if it matches the
-    given regular expression.  Otherwise, it is assumed to fail.
+    given regular expression.  Otherwise, it is assumed to fail.  TIPS:
+    Replace ';' with '[;]' or CMake will interpretet this as a array eleemnt
+    boundary.  To match '.', use '[.]'.
 
   ``PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"``
 
     If specified, the test command will be assumed to pass if the output
     matches all of the provided regular expressions.  Note that this is not
     a capability of raw ctest and represents an extension provided by
-    TriBITS.
+    TriBITS.  NOTE: It is critical that you replace ';' with '[;]' or CMake
+    will interpretet this as a array eleemnt boundary.
 
   ``FAIL_REGULAR_EXPRESSION "<regex>"``
 
@@ -311,7 +346,7 @@ below their ``TEST_<idx>`` argument and before the next test block (see
 
 By default, the overall test will be assumed to pass if it prints::
 
-  "OVERALL FINAL RESULT: TEST PASSED"
+  "OVERALL FINAL RESULT: TEST PASSED (<testName>)"
 
 However, this can be changed by setting one of the following optional arguments:
 
@@ -345,7 +380,7 @@ individual ``TEST_<idx>`` blocks can be listed can appear in any order but
 there are restrictions related to the grouping of overall arguments and
 ``TEST_<idx>`` blocks which are as follows:
 
-* The ``<testName>`` argument must be the first listed (it is the only
+* The ``<testNameBase>`` argument must be the first listed (it is the only
   positional argument).
 
 * The test cases ``TEST_<idx>`` must be listed in order (i.e. ``TEST_0
@@ -373,11 +408,10 @@ Other than that, the keyword arguments and options can appear in any order.
 
 Since raw CTest does not support the features provided by this function, the
 way an advanced test is implemented is that a ``cmake -P`` script with the
-name ``${PACKAGE_NAME}_<testName>.cmake`` gets created in the current binary
-directory that then gets added to CTest using::
+name ``<testName>.cmake`` gets created in the current binary directory that
+then gets added to CTest using::
 
-  ADD_TEST(${PACKAGE_NAME}_<testName>
-    cmake [other options] -P ${PACKAGE_NAME}_<testName>.cmake)
+  ADD_TEST(<testName> cmake [other options] -P <testName>.cmake)
 
 This ``cmake -P`` script then runs the various test cases and checks the
 pass/fail for each case to determine overall pass/fail and implement other
@@ -389,10 +423,23 @@ functionality described above.
 
 After this function returns, if the test gets added using ``ADD_TEST()``,
 then additional properties can be set and changed using
-``SET_TEST_PROPERTIES(${PACKAGE_NAME}_<testName> ...)``.  Therefore, any
-tests properties that are not directly supported by this function and passed
+``SET_TESTS_PROPERTIES(<testName> ...)``, where ``<testName>`` is returned
+using the ``ADDED_TEST_NAME_OUT <testName>`` argument.  Therefore, any tests
+properties that are not directly supported by this function and passed
 through the argument list to this wrapper function can be set in the outer
 ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_ADVANCED_TEST()``.
+For example::
+
+  TRIBITS_ADD_ADVANCED_TEST_TEST( someTest ...
+    ADDED_TEST_NAME_OUT  someTest_TEST_NAME )
+
+  IF (someTest_TEST_NAME)
+    SET_TESTS_PROPERTIES( ${someTest_TEST_NAME}
+      PROPERTIES ATTACHED_FILES someTest.log )
+  ENDIF()
+
+where the test writes a log file ``someTest.log`` that we want to submit to
+CDash also.
 
 .. _Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST()):
 
@@ -409,8 +456,8 @@ time (TRIBITS_ADD_TEST())`_).
 **Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())**
 
 The test can be disabled externally by setting the CMake cache variable
-``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disabled on a
-case-by-case basis.  The name ``${FULL_TEST_NAME}`` must be the *exact* name
+``<testName>_DISABLE=TRUE``.  This allows tests to be disabled on a
+case-by-case basis.  The name ``<testName>`` must be the *exact* name
 that shows up in ``ctest -N`` when running the test.
 
 .. _Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST()):
@@ -423,10 +470,9 @@ creation, one can set the cache variable
 of some information about the test getting added or not.
 
 Likely the best way to debugging test generation using this function is to
-examine the generated file ``${PACKAGE_NAME}_<testName>.cmake`` in the
-current binary directory (see `Implementation Details
-(TRIBITS_ADD_ADVANCED_TEST())`_) and the generated ``CTestTestfile.cmake``
-file that should list this test case.
+examine the generated file ``<testName>.cmake`` in the current binary
+directory (see `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_) and
+the generated ``CTestTestfile.cmake`` file that should list this test case.
 
 TRIBITS_ADD_DEBUG_OPTION()
 ++++++++++++++++++++++++++
@@ -445,7 +491,7 @@ the package's `<packageDir>/CMakeLists.txt`_ file.
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES()
 +++++++++++++++++++++++++++++++++
- 
+
 Macro called to conditionally add a set of example directories for an SE
 package.
 
@@ -483,11 +529,13 @@ Usage::
     [HOSTTYPE <hosttype0> <hosttype1> ...]
     [XHOSTTYPE <hosttype0> <hosttype1> ...]
     [DIRECTORY <dir>]
-    [DEPLIBS <lib0> <lib1> ...]
+    [TESTONLYLIBS <lib0> <lib1> ...]
+    [IMPORTEDLIBS <lib0> <lib1> ...]
     [COMM [serial] [mpi]]
     [LINKER_LANGUAGE (C|CXX|Fortran)]
     [DEFINES -D<define0> -D<define1> ...]
     [INSTALLABLE]
+    [ADDED_EXE_TARGET_NAME_OUT <exeTargetName>]
     )
 
 *Sections:*
@@ -535,7 +583,7 @@ Usage::
     directory (or can contain the relative path or absolute path).  If
     ``<srci>`` is an absolute path, then that full file path is used.  This
     list of sources (with adjusted directory path) are passed into
-    ``ADD_EXECUTABLE(<fullExeName> ... )``.  After calling this function,
+    ``ADD_EXECUTABLE(<exeTargetName> ... )``.  After calling this function,
     the properties of the source files can be altered using the built-in
     CMake command ``SET_SOURCE_FILE_PROPERTIES()``.
 
@@ -571,20 +619,17 @@ Usage::
     The list of host types for which **not** to enable the test (see
     `TRIBITS_ADD_TEST()`_).
 
-  ``DEPLIBS <lib0> <lib1> ...``
+  ``TESTONLYLIBS <lib0> <lib1> ...``
 
-    Specifies extra libraries that will be linked to the executable using
-    ``TARGET_LINK_LIBRARY()``.  Note that regular libraries (i.e. not
-    ``TESTONLY``) defined in the current SE package or any upstream SE
-    packages do **NOT** need to be listed!  TriBITS automatically links non
-    ``TESTONLY`` libraries in this package and upstream packages to the
-    executable.  The only libraries that should be listed in this argument
-    are either ``TESTONLY`` libraries, or other libraries that are built
-    external from this CMake project and are not provided through a proper
-    `TriBITS TPL`_.  The latter usage of passing in external libraries is
-    not recommended.  External libraries should be handled as declared
-    `TriBITS TPLs`_.  For a ``TESTONLY`` library, the include directories
-    will automatically be added using::
+    Specifies extra test-only libraries defined in this CMake project that
+    will be linked to the executable using ``TARGET_LINK_LIBRARY()``.  Note
+    that regular libraries (i.e. not ``TESTONLY``) defined in the current SE
+    package or any upstream SE packages can *NOT* be listed!  TriBITS
+    automatically links non ``TESTONLY`` libraries in this package and
+    upstream packages to the executable.  The only libraries that should be
+    listed in this argument are either ``TESTONLY`` libraries.  The include
+    directories for each test-only library will automatically be added
+    using::
 
       INCLUDE_DIRECTORIES(${<libi>_INCLUDE_DIRS})
 
@@ -594,7 +639,19 @@ Usage::
 
     Therefore, to link to a defined ``TESTONLY`` library in any upstream
     enabled package, one just needs to pass in the library name through
-    ``DEPLIBS ... <libi> ...`` and that is it!
+    ``TESTONLYLIBS ... <libi> ...`` and that is it!
+
+  ``IMPORTEDLIBS <lib0> <lib1> ...``
+
+    Specifies extra external libraries that will be linked to the executable
+    using ``TARGET_LINK_LIBRARY()``.  This can only be used for libraries
+    that are built external from this CMake project and are not provided
+    through a proper `TriBITS TPL`_.  The latter usage of passing in
+    external libraries is not recommended.  External libraries should be
+    handled as declared `TriBITS TPLs`_.  So far, the only case where
+    ``IMPORTEDLIBS`` has been shown to be necessary is to pass in the
+    standard C math library ``m``.  In every other case, a TriBITS TPL
+    should be used instead.
 
   ``COMM [serial] [mpi]``
 
@@ -623,6 +680,15 @@ Usage::
     executable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory (see
     `Install Target (TRIBITS_ADD_EXECUTABLE())`_).
 
+  ``ADDED_EXE_TARGET_NAME_OUT <exeTargetName>``
+
+    If specified, then on output the variable ``<exeTargetName>`` will be
+    set with the name of the executable target passed to
+    ``ADD_EXECUTABLE(<exeTargetName> ... )``.  Having this name allows the
+    calling ``CMakeLists.txt`` file access and set additional target
+    propeties (see `Additional Executable and Source File Properties
+    (TRIBITS_ADD_EXECUTABLE())`_).
+
 .. _Executable and Target Name (TRIBITS_ADD_EXECUTABLE()):
 
 **Executable and Target Name (TRIBITS_ADD_EXECUTABLE())**
@@ -630,13 +696,13 @@ Usage::
 By default, the full name of the executable and target name
 is::
 
-  <fullExecName> = ${PACKAGE_NAME}_<exeRootName>
+  <exeTargetName> = ${PACKAGE_NAME}_<exeRootName>
 
 If ``ADD_DIR_TO_NAME`` is set, then the directory path relative to the
 package base directory (with "/" replaced with "_"), or ``<relDirName>``, is
 added to the executable name to form::
 
-  <fullExecName> = ${PACKAGE_NAME}_<relDirName>_<exeRootName>
+  <exeTargetName> = ${PACKAGE_NAME}_<relDirName>_<exeRootName>
 
 If the option ``NOEXEPREFIX`` is passed in, then the prefix
 ``${PACKAGE_NAME}_`` is removed.
@@ -660,21 +726,28 @@ unique.  Please use common sense when picking non-namespaced names.
 
 **Additional Executable and Source File Properties (TRIBITS_ADD_EXECUTABLE())**
 
-Once ``ADD_EXECUTABLE(<fullExeName> ... )`` is called and this function
-exists, one can set and change properties on the ``<fullExeName>``
+Once ``ADD_EXECUTABLE(<exeTargetName> ... )`` is called and this function
+exists, one can set and change properties on the ``<exeTargetName>``
 executable target using the built-in ``SET_TARGET_PROPERTIES()`` command as
 well as properties on any of the source files listed in ``SOURCES`` using
 the built-in ``SET_SOURCE_FILE_PROPERTIES()`` command just like in any CMake
-project.
+project.  IF the executable is added, its name will be returned by the
+argument ``ADDED_EXE_TARGET_NAME_OUT <exeTargetName>``.  For example::
+
+  TRIBITS_ADD_EXECUTABLE( someExe ...
+    ADDED_EXE_TARGET_NAME_OUT  someExe_TARGET_NAME )
+
+  SET_TARGET_PROPERTIES( ${someExe_TARGET_NAME}
+    PROPERTIES  LINKER_LANGUAGE  CXX )
 
 .. _Install Target (TRIBITS_ADD_EXECUTABLE()):
 
 **Install Target (TRIBITS_ADD_EXECUTABLE())**
 
 If ``INSTALLABLE`` is passed in, then an install target using the built-in
-CMake command ``INSTALL(TARGETS <fullExeName> ...)`` is added to install the
-built executable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory (actual
-install directory path is determined by
+CMake command ``INSTALL(TARGETS <exeTargetName> ...)`` is added to install
+the built executable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory
+(actual install directory path is determined by
 ``${PROJECT_NAME}_INSTALL_RUNTIME_DIR``, see `Setting the install prefix at
 configure time`_) .
 
@@ -698,8 +771,8 @@ Usage::
     [XHOSTTYPE <xhosttype0> <xhosttype1> ...]
     [XHOSTTYPE_TEST <xhosttype0> <xhosttype1> ...]
     [DIRECTORY <dir>]
-    [DEFINES -DS<someDefine>]
-    [DEPLIBS <lib0> <lib1> ... ]
+    [TESTONLYLIBS <lib0> <lib1> ...]
+    [IMPORTEDLIBS <lib0> <lib1> ...]
     [COMM [serial] [mpi]]
     [ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...]
     [NUM_MPI_PROCS <numProcs>]
@@ -711,6 +784,8 @@ Usage::
     [ENVIRONMENT <var0>=<value0> <var1>=<value1> ...]
     [INSTALLABLE]
     [TIMEOUT <maxSeconds>]
+    [ADDED_EXE_TARGET_NAME_OUT <exeTargetName>]
+    [ADDED_TESTS_NAMES_OUT <testsNames>]
     )
 
 This function takes a fairly common set of arguments to
@@ -749,7 +824,7 @@ Function used to add a CMake library and target using ``ADD_LIBRARY()``.
 Usage::
 
   TRIBITS_ADD_LIBRARY(
-    <libName>
+    <libBaseName>
     [HEADERS <h0> <h1> ...]
     [NOINSTALLHEADERS <nih0> <hih1> ...]
     [SOURCES <src0> <src1> ...]
@@ -758,6 +833,7 @@ Usage::
     [TESTONLY]
     [NO_INSTALL_LIB_OR_HEADERS]
     [CUDALIBRARY]
+    [ADDED_LIB_TARGET_NAME_OUT <libTargetName>]
     )
 
 *Sections:*
@@ -772,14 +848,21 @@ Usage::
 
 **Formal Arguments (TRIBITS_ADD_LIBRARY())**
 
-  ``<libName>``
+  ``<libBaseName>``
 
-    Required name of the library.  This is the name passed to
-    ``ADD_LIBRARY(<libName> ...)``.  The name is *not* prefixed by the
-    package name.  CMake will of course add any standard prefix or post-fix
-    to the library file name appropriate for the platform and if this is a
-    static or shared library build (see documentation for the built-in CMake
-    command ``ADD_LIBRARY()``.
+    Required base name of the library.  The name of the actual libray name
+    will be prefixed by ``${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}`` to
+    produce::
+    
+      <libTargetName> = ${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}<libBaseName>
+
+    This is the name passed to ``ADD_LIBRARY(<libTargetName> ...)``.  The
+    name is *not* prefixed by the package name.  CMake will of course add
+    any standard prefix or post-fix to the library file name appropriate for
+    the platform and if this is a static or shared library build (e.g. on
+    Linux prefix = ``'lib'``, postfix = ``'.so'`` for shared lib and postfix
+    = ``'.a'`` static lib) (see documentation for the built-in CMake command
+    ``ADD_LIBRARY()``.
 
   ``HEADERS <h0> <h1> ...``
 
@@ -810,41 +893,40 @@ Usage::
 
     List of dependent libraries that are built in the current SE package
     that this library is dependent on.  These libraries are passed into
-    ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-    dependency structure of the libraries within the package.  **NOTE:** One
-    must **not** list libraries in other upstream SE packages or libraries
-    built externally from this TriBITS CMake project.  The TriBITS system
-    automatically handles linking to libraries in upstream TriBITS SE
-    packages.  External libraries need to be listed in the ``IMPORTEDLIBS``
-    argument instead.
+    ``TARGET_LINK_LIBRARIES(<libTargetName> ...)`` so that CMake knows about
+    the dependency structure of the libraries within this SE package.
+    **NOTE:** One must **not** list libraries in other upstream `TriBITS SE
+    Packages`_ or libraries built externally from this TriBITS CMake project
+    in ``DEPLIBS``.  The TriBITS system automatically handles linking to
+    libraries in upstream TriBITS SE packages.  External libraries need to
+    be listed in the ``IMPORTEDLIBS`` argument instead if they are not
+    already specified automatically using a `TriBITS TPL`_.
 
   ``IMPORTEDLIBS <ideplib0> <ideplib1> ...``
 
     List of dependent libraries built externally from this TriBITS CMake
     project.  These libraries are passed into
-    ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-    dependency.  These libraries are added to the
-    ``${PACKAGE_NAME}_LIBRARIES`` variable so that downstream SE packages
-    will also pick up these libraries and these libraries will show up in
-    the generated ``Makefile.export.${PACKAGE_NAME}`` and
-    ``${PACKAGE_NAME}Config.cmake`` files (if they are generated).  However,
-    not that external libraries are often better handled as `TriBITS TPLs`_.
-    A well constructed TriBITS package and library should never have to use
-    this option.
+    ``TARGET_LINK_LIBRARIES(<libTargetName> ...)`` so that CMake knows about
+    the dependency.  However, note that external libraries are often better
+    handled as `TriBITS TPLs`_.  A well constructed TriBITS package and
+    library should never have to use this option!  So far, the only case
+    where ``IMPORTEDLIBS`` has been shown to be necessary is to pass in the
+    standard C math library ``m``.  In every other case, a TriBITS TPL
+    should be used instead.
 
   ``TESTONLY``
 
-    If passed in, then ``<libName>`` will **not** be added to
+    If passed in, then ``<libTargetName>`` will **not** be added to
     ``${PACKAGE_NAME}_LIBRARIES`` and an install target for the library will
     not be added.  In this case, the current include directories will be set
-    in the global variable ``<libName>_INCLUDE_DIR`` which will be used in
-    `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked in
-    through its ``DEPLIBS`` argument.
+    in the global variable ``<libTargetName>_INCLUDE_DIR`` which will be
+    used in `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked
+    in through its ``DEPLIBS`` argument.
 
   ``NO_INSTALL_LIB_OR_HEADERS``
 
     If specified, then no install targets will be added for the library
-    ``<libName>`` or the header files listed in ``HEADERS``.
+    ``<libTargetName>`` or the header files listed in ``HEADERS``.
 
   ``CUDALIBRARY``
 
@@ -856,6 +938,14 @@ Usage::
     direct or indirect dependency on the TriBITS CUDA TPL or a
     configure-time error may occur about not knowing about
     ``CUDA_ALL_LIBRARY()``.
+
+  ``ADDED_LIB_TARGET_NAME_OUT <libTargetName>``
+
+    If specified, then on output the variable ``<libTargetName>`` will be
+    set with the name of the library passed to ``ADD_LIBRARY()``.  Having
+    this name allows the calling ``CMakeLists.txt`` file access and set
+    additional target propeties (see `Additional Library and Source File
+    Properties (TRIBITS_ADD_LIBRARY())`_).
 
 .. _Include Directories (TRIBITS_ADD_LIBRARY()):
 
@@ -873,7 +963,7 @@ downstream SE packages..
 **Install Targets (TRIBITS_ADD_LIBRARY())**
 
 By default, an install target for the library is created using
-``INSTALL(TARGETS <libName> ...)`` to install into the directory
+``INSTALL(TARGETS <libTargetName> ...)`` to install into the directory
 ``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
 ``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix at configure
 time`_).  However, this install target will not get created if
@@ -895,12 +985,18 @@ the headers listed in ``NOINSTALLHEADERS``.
 
 **Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())**
 
-Once ``ADD_LIBRARY(<libName> ... <src0> <src1> ...)`` is called, one can set
-and change properties on the ``<libName>`` library target using the built-in
-CMake command ``SET_TARGET_PROPERTIES()`` as well as set and change
-properties on any of the source files listed in ``SOURCES`` using the
-built-in CMake command ``SET_SOURCE_FILE_PROPERTIES()`` just like in any
-CMake project.
+Once ``ADD_LIBRARY(<libTargetName> ... <src0> <src1> ...)`` is called, one
+can set and change properties on the ``<libTargetName>`` library target
+using the built-in CMake command ``SET_TARGET_PROPERTIES()`` as well as set
+and change properties on any of the source files listed in ``SOURCES`` using
+the built-in CMake command ``SET_SOURCE_FILE_PROPERTIES()`` just like in any
+CMake project.  For example::
+
+  TRIBITS_ADD_LIBRARY( somelib ...
+    ADDED_LIB_TARGET_NAME_OUT  somelib_TARGET_NAME )
+
+  SET_TARGET_PROPERTIES( ${somelib_TARGET_NAME}
+    PROPERTIES  LINKER_LANGUAGE  CXX )
 
 .. _Miscellaneous Notes (TRIBITS_ADD_LIBRARY()):
 
@@ -979,6 +1075,7 @@ Usage::
     [WILL_FAIL]
     [ENVIRONMENT <var0>=<value0> <var1>=<value1> ...]
     [TIMEOUT <maxSeconds>]
+    [ADDED_TESTS_NAMES_OUT <testsNames>]
     )
 
 *Sections:*
@@ -1026,14 +1123,14 @@ Usage::
     is to allow multiple tests to be defined for the same executable.  CTest
     requires all test names to be globally unique in a single project.  See
     `Determining the Full Test Name (TRIBITS_ADD_TEST())`_.
- 
+
   ``NAME_POSTFIX <testNamePostfix>``
 
     If specified, gives a postfix that will be added to the standard test
     name based on ``<exeRootName>`` (appended as ``_<NAME_POSTFIX>``).  If
     the ``NAME <testRootName>`` argument is given, this argument is ignored.
     See `Determining the Full Test Name (TRIBITS_ADD_TEST())`_.
- 
+
   ``DIRECTORY <dir>``
 
     If specified, then the executable is assumed to be in the directory
@@ -1041,7 +1138,7 @@ Usage::
     absolute path.  If not specified, the executable is assumed to be in the
     current binary directory ``${CMAKE_CURRENT_BINARY_DIR}``.  See
     `Determining the Executable or Command to Run (TRIBITS_ADD_TEST())`_.
-  
+
   ``ADD_DIR_TO_NAME``
 
     If specified, then the directory name that this test resides in will be
@@ -1051,7 +1148,7 @@ Usage::
     base directory stripped off so only the unique part of the test
     directory will be used.  All directory separators ``"/"`` will be
     changed into underscores ``"_"``.
- 
+
   ``RUN_SERIAL``
 
     If specified then no other tests will be allowed to run while this test
@@ -1059,7 +1156,7 @@ Usage::
     exclusive access for processes/threads.  This just sets the CTest test
     property ``RUN_SERIAL`` using the built-in CMake function
     ``SET_TESTS_PROPERTIES()``.
- 
+
   ``ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...``
 
     If specified, then a set of arguments can be passed in quotes.  If
@@ -1073,18 +1170,18 @@ Usage::
     arguments passed to a single test invocation must be quoted or multiple
     tests taking single arguments will be created instead!  See `Adding
     Multiple Tests (TRIBITS_ADD_TEST())`_ for more details and exmaples.
- 
+
   ``POSTFIX_AND_ARGS_<IDX> <postfix> <arg0> <arg1> ...``
 
     If specified, gives a sequence of sets of test postfix names and
     arguments lists for different tests (up to ``POSTFIX_AND_ARGS_19``).
     For example, a set of three different tests with argument lists can be
     specified as::
-      
+
       POSTIFX_AND_ARGS_0 postfix0 --arg1 --arg2="dummy"
       POSTIFX_AND_ARGS_1 postfix1  --arg2="fly"
       POSTIFX_AND_ARGS_2 postfix2  --arg2="bags"
- 
+
     This will create three different test cases with the postfix names
     ``postfix0``, ``postfix1``, and ``postfix2``.  The indexes must be
     consecutive starting a ``0`` and going up to (currently) ``19``.  The
@@ -1093,7 +1190,7 @@ Usage::
     specify multiple arguments without having to quote them and one can
     allow long argument lists to span multiple lines.  See `Adding Multiple
     Tests (TRIBITS_ADD_TEST())`_ for more details and exmaples.
- 
+
   ``COMM [serial] [mpi]``
 
     If specified, determines if the test will be added in serial and/or MPI
@@ -1104,7 +1201,7 @@ Usage::
     the test will **not** be added if ``TPL_ENABLE_MPI=ON``.  If ``COMM
     serial mpi`` or ``COMM mpi serial`` is passed in, then the value of
     ``TPL_ENABLE_MPI`` does not determine if the test is added or not.
- 
+
   ``NUM_MPI_PROCS <numProcs>``
 
     If specified, gives the number of MPI processes used to run the test
@@ -1145,7 +1242,7 @@ Usage::
     of ``${PROJECT_NAME}_HOSTNAME`` gets printed out in the TriBITS cmake
     output under the section ``Probing the environment`` (see `Full
     Processing of TriBITS Project Files`_).
- 
+
   ``XHOST <host0> <host1> ...``
 
     If specified, gives a list of hostnames (see ``HOST`` argument) on which
@@ -1186,7 +1283,9 @@ Usage::
     regular expressions ``<regex0>``, ``<regex1>`` etc. match the output
     send to stdout.  Otherwise, the test will fail.  This is set using the
     built-in CTest property ``PASS_REGULAR_EXPRESSION``.  Consult standard
-    CMake documentation for full behavior.
+    CMake documentation for full behavior.  TIPS: Replace ';' with '[;]' or
+    CMake will interpretet this as a array eleemnt boundary.  To match '.',
+    use '[.]'.
 
   ``FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
 
@@ -1194,7 +1293,8 @@ Usage::
     expressions ``<regex0>``, ``<regex1>`` etc. match the output send to
     stdout.  Otherwise, the test will pass.  This is set using the built-in
     CTest property ``FAIL_REGULAR_EXPRESSION``.  Consult standard CMake
-    documentation for full behavior.
+    documentation for full behavior (and see above tips for
+    ``PASS_REGULAR_EXPRESSION``).
 
   ``WILL_FAIL``
 
@@ -1212,12 +1312,23 @@ Usage::
 
     If passed in, gives maximum number of seconds the test will be allowed
     to run before being timed-out.  This sets the CTest property
-    ``TIMEOUT``.  **WARNING:** Rather than just increasing the timeout for
-    an expensive test, please try to either make the test run faster or
-    relegate the test to being run less often (i.e. set ``CATEGORIES
-    NIGHTLY`` or even ``WEEKLY`` for extremely expensive tests).  Expensive
-    tests are one of the worse forms of technical debt that a project can
-    have!
+    ``TIMEOUT``.  The value ``<maxSeconds>`` will be scaled by the value of
+    `${PROJECT_NAME}_SCALE_TEST_TIMEOUT`_.
+
+    **WARNING:** Rather than just increasing the timeout for an expensive
+    test, please try to either make the test run faster or relegate the test
+    to being run less often (i.e. set ``CATEGORIES NIGHTLY`` or even
+    ``WEEKLY`` for extremely expensive tests).  Expensive tests are one of
+    the worse forms of technical debt that a project can have!
+
+  ``ADDED_TESTS_NAMES_OUT <testsNames>``
+
+    If specified, then on output the variable ``<testsNames>`` will be set
+    with the name(S) of the tests passed to ``ADD_TEST()``.  If more than
+    one test is added, then this will be a list of test names.  Having this
+    name allows the calling ``CMakeLists.txt`` file access and set
+    additional test propeties (see `Setting additional test properties
+    (TRIBITS_ADD_TEST())`_).
 
 In the end, this function just calls the built-in CMake commands
 ``ADD_TEST(${TEST_NAME} ...)`` and ``SET_TESTS_PROPERTIES(${TEST_NAME}
@@ -1257,7 +1368,7 @@ which is (by no coincidence) identical to how it is selected in
 
 By default, this executable is assumed to be in the current CMake binary
 directory ``${CMAKE_CURRENT_BINARY_DIR}`` but the directory location can be
-changed using the ``DIRECTORY <dir>`` argument.  
+changed using the ``DIRECTORY <dir>`` argument.
 
 If an arbitrary executable is to be run (i.e. not build inside of the
 project), then pass in ``NOEXEPREFIX`` and ``NOEXESUFFIX`` and set
@@ -1379,13 +1490,31 @@ test.
 
 After this function returns, any tests that get added using ``ADD_TEST()``
 can have additional properties set and changed using
-``SET_TEST_PROPERTIES()``.  Therefore, any tests properties that are not
+``SET_TESTS_PROPERTIES()``.  Therefore, any tests properties that are not
 directly supported and passed through this wrapper function can be set in
 the outer ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_TEST()``.
 
-ToDo: Describe how to use new variable ``ADDED_TESTS_OUT`` to get the list
-of tests actually added (if they are added) in order to make it easy to set
-additional test properties.
+If tests are added, then the names of those tests will be returned in the
+varible ``ADDED_TESTS_NAMES_OUT <testsNames>``.  This can be used, for
+example, to override the ``PROCESSORS`` property for the tests with::
+
+  TRIBITS_ADD_TEST( someTest ...
+    ADDED_TESTS_NAMES_OUT  someTest_TEST_NAME )
+
+  IF (someTest_TEST_NAME)
+    SET_TESTS_PROPERTIES( ${someTest_TEST_NAME}
+      PROPERTIES ATTACHED_FILES someTest.log )
+  ENDIF()
+
+where the test writes a log file ``someTest.log`` that we want to submit to
+CDash also.
+
+This appraoch will work no matter what TriBITS names the individual test(s)
+or whether the test(s) are added or not (depending on other arguments like
+``COMM``, ``XHOST``, etc.).
+
+There are many other test properties that one may want to set also and this
+is the way it needs to be done.
 
 .. _Running multiple tests at the same time (TRIBITS_ADD_TEST()):
 
@@ -1447,10 +1576,12 @@ function returns, one can reset the ``PROCESSORS`` property` with::
 For example, if one runs an MPI program that uses 4 processes and 6 threads
 per process, one would call::
 
-  TRIBITS_ADD_TEST(myProg ... NUM_MPI_PROCS 4 ...)
-  SET_TESTS_PROPERTIES(${PACKAGE_NAME}_myProg PROPERTIES PROCESSORS 12)
+  TRIBITS_ADD_TEST(myProg ... NUM_MPI_PROCS 4 ...
+    ADDED_TESTS_NAMES_OUT  myProg_TEST_NAME)
 
-ToDo: Update above example to use loop over ``ADDED_TESTS_OUT``.
+  IF (myProg_TEST_NAME)
+    SET_TESTS_PROPERTIES(${myProg_TEST_NAME} PROPERTIES PROCESSORS 12)
+  ENDIF()
 
 .. _Debugging and Examining Test Generation (TRIBITS_ADD_TEST()):
 
@@ -1466,7 +1597,7 @@ directory which contains all of the added tests and test properties that are
 set.  This is the file that is read by ``ctest`` when it runs to determine
 what tests to run, determine pass/fail and adjust other behavior using test
 properties.  In this file, one can see the exact ``ADD_TEST()`` and
-``SET_TEST_PROPERTIES()`` commands.  The is the ultimate way to debug
+``SET_TESTS_PROPERTIES()`` commands.  The is the ultimate way to debug
 exactly what tests are getting added by this function (or if the test is
 even being added at all).
 
@@ -1577,8 +1708,9 @@ by calling the built-in ``CONFIGURE_FILE()`` command::
     )
 
 which does basic substitution of CMake variables (see documentation for
-built-in CMake ``CONFIGURE_FILE()`` command for rules on how it performs
-substitutions).
+built-in CMake `CONFIGURE_FILE()`_ command for rules on how it performs
+substitutions).  This command is typically used to configure the package's
+main `<packageDir>/cmake/<packageName>_config.h.in`_ file.
 
 In addition to just calling ``CONFIGURE_FILE()``, this function also aids in
 creating configured header files adding macros for deprecating code as
@@ -1805,6 +1937,68 @@ be overridden from the env.
 
 ToDo: Finish Documentation!
 
+TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT()
+++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Determine at configure time if any of the upstream dependencies for a
+package require the current package to be rebuilt.
+
+Usage::
+
+  TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT(
+    [SHOW_MOST_RECENT_FILES]
+    [SHOW_OVERALL_MOST_RECENT_FILES]
+    CURRENT_PACKAGE_OUT_OF_DATE_OUT <currentPackageOutOfDate>
+    )
+
+**Arguments:**
+
+  ``SHOW_MOST_RECENT_FILES``
+
+    If specified, then the most recently modified file for each individual
+    base source and binary directory searched will be will be printed the
+    STDOUT.  Setting this implies ``SHOW_OVERALL_MOST_RECENT_FILE``.
+
+  ``SHOW_OVERALL_MOST_RECENT_FILE``
+
+    If specified, then only the most recent modified file over all of the
+    individual directories for each category (i.e. one for upstream SE
+    package source dirs, one for upstream SE package binary dirs, one for
+    the package's source dir, and one for the package's own binary dir) is
+    printed to STDOUT.
+
+  ``CURRENT_PACKAGE_OUT_OF_DATE_OUT <currentPackageOutOfDate>``
+
+    On output, the local variable ``<currentPackageOutOfDate>`` will be set
+    to ``TRUE`` if any of the upstream most modified files are more recent
+    than the most modified file in the package's binary directory.
+    Otherwise, this variable is set to ``FALSE``.
+
+**Description:**
+
+This function is designed to help take an externally configured and built
+piece of software (that generates libraries) and wrap it as a TriBITS
+package or subpackage.  This function uses the lower-level functions:
+
+* `TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()`_
+* `TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()`_
+
+to determine the most recent modified files in the upstream TriBITS SE
+packages' source and binary directories as well as the most recent source
+file for the current package.  It then compares these timestamps to the most
+recent binary file timestamp in this package's binary directory.  If any of
+these three files are more recent than this package's most recent binary
+file, then the output variable ``<currentPackageOutOfDate>`` is set to
+``TRUE``.  Otherwise, it is set to ``FALSE``.
+
+NOTE: The source and binary directories for full packages are searched, not
+individual subpackage dirs.  This is to reduce the number of dirs searched.
+This will, however, result in changes in non-dependent subpackages being
+considered as well.
+
+See the demonstration of the usage of this function in the ``WrapExternal``
+package in `TribitsExampleProject`_.
+
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()
 ++++++++++++++++++++++++++++++++++++++
 
@@ -1851,7 +2045,133 @@ Also, be careful to note that the ``<filei>`` arguments are actually regexes
 and one must be very careful not understand how CPack will use these regexes
 to match files that get excluded from the tarball.  For more details, see
 `Creating Source Distributions`_.
-   
+
+TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP()
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+Find the most modified binary file in a set of base directories and return
+its timestamp.
+
+Usage::
+
+  TRIBITS_FIND_MOST_RECENT_BINARY_FILE_TIMESTAMP(
+    BINARY_BASE_DIRS <dir0> <dir1> ...
+    [BINARY_BASE_BASE_DIR <dir>]
+    [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]
+    [MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>]
+    [MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>]
+    [SHOW_MOST_RECENT_FILES]
+    [SHOW_OVERALL_MOST_RECENT_FILE]
+    )
+
+This function just calls `TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()`_
+passing in a set of basic exclude regexes like ``CMakeFiles/``,
+``[.]cmake$``, and ``/Makefile$``, etc.  These types of files usually don't
+impact the build of downstream software in CMake projects.
+
+TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()
++++++++++++++++++++++++++++++++++++++++++
+
+Find the most modified file in a set of base directories and return its
+timestamp.
+
+Usage::
+
+  TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP(
+    BASE_DIRS <dir0> <dir1> ...
+    [BASE_BASE_DIR <dir>]
+    [EXCLUDE_REGEXES "<re0>" "<re1>" ...
+    [SHOW_MOST_RECENT_FILES]
+    [SHOW_OVERALL_MOST_RECENT_FILE]
+    [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]
+    [MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>]
+    [MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>]
+    )
+
+**Arguments:**
+
+  ``BASE_DIRS <dir0> <dir1> ...``
+
+    Gives the absolute base directory paths that will be searched for the
+    most recently modified files, as described above.
+
+  ``BASE_BASE_DIR <dir>```
+
+    Absolute path for which to print file paths relative to.  This makes
+    outputting less verbose and easier to read (optional).
+
+  ``EXCLUDE_REGEXES "<re0>" "<re1>" ...``
+
+    Gives the regular expressions that are used to exclude files from
+    consideration.  Each "<rei>" regex is used with a `grep -v "<rei>"`
+    filter to exclude files before sorting by time stamp.
+
+  ``SHOW_MOST_RECENT_FILES``
+
+    If specified, then the most recently modified file for each individual
+    directory ``<dir0>``, ``<dir1``, ... will be printed the STDOUT.
+    Setting this implies ``SHOW_OVERALL_MOST_RECENT_FILE``.
+
+  ``SHOW_OVERALL_MOST_RECENT_FILE``
+
+    If specified, then only the most recent modified file over all of the
+    individual directories is printed to STDOUT.
+
+  ``MOST_RECENT_TIMESTAMP_OUT <mostRecentTimestamp>``
+
+     On output, the variable `<mostRecentTimestamp>` is set that gives the
+     timestamp of the most recently modified file over all the directories.
+     This number is given as the number of seconds since Jan. 1, 1970, 00:00
+     GMT.
+
+  ``MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>``
+
+    On output, the variable `<mostRecentFilepathBaseDir>` gives absolute base
+    directory of the file with the most recent timestamp over all
+    directories.
+
+  ``MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>``
+
+    On output, the variable `<mostRecentFilepathBaseDir>` gives the file
+    name with relative path to the file with the most recent timestamp over
+    all directories.
+
+**Description:**
+
+This function uses the Linux/Unix command::
+
+    $ find . -type f -printf '%T@ %p\n'
+        | grep -v "<re0>" | grep -v "<re1>" | ... \
+        | sort -n | tail -1
+
+to return the most recent file in each listed directory <dir0>, <dir1>, etc.
+It then determines the most recently modified file over all of the
+directories and prints and returns in the variables `<mostRecentTimestamp>`,
+`<mostRecentFilepathBaseDir>`, and `<mostRecentRelativeFilePath>`.
+
+TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP()
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+Find the most modified source file in a set of base directories and return
+its timestamp.
+
+Usage::
+
+  TRIBITS_FIND_MOST_RECENT_SOURCE_FILE_TIMESTAMP(
+    SOURCE_BASE_DIRS <dir0> <dir1> ...
+    [SOURCE_BASE_BASE_DIR <dir>]
+    [SHOW_MOST_RECENT_FILES]
+    [SHOW_OVERALL_MOST_RECENT_FILE]
+    [MOST_RECENT_TIMESTAMP_OUT  <mostRecentTimestamp>]
+    [MOST_RECENT_FILEPATH_BASE_DIR_OUT <mostRecentFilepathBaseDir>]
+    [MOST_RECENT_RELATIVE_FILEPATH_OUT <mostRecentRelativeFilePath>]
+    )
+
+This function just calls `TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP()`_
+passing in a set of basic exclude regexes like ``[.]git/``, ``[.]svn/``,
+etc.  These types of version control files can not possibly directly impact
+the source code.
+
 TRIBITS_INCLUDE_DIRECTORIES()
 +++++++++++++++++++++++++++++
 
@@ -1937,12 +2257,12 @@ The arguments are:
     turned off, if they are not already turned off by global cache
     variables.  Strong warnings are turned on by default in development
     mode.
- 
+
   ``CLEANED``
 
     If specified, then warnings will be promoted to errors for compiling the
     package's sources for all defined warnings.
- 
+
   ``DISABLE_CIRCULAR_REF_DETECTION_FAILURE``
 
     If specified, then the standard grep looking for RCPNode circular
@@ -2026,7 +2346,7 @@ upstream dependencies).  The arguments that apply to all SE packages are:
 
     List of required upstream SE packages that must be enabled in order to
     build and use the libraries (or capabilities) in this SE package.
- 
+
   ``LIB_OPTIONAL_PACKAGES``
 
     List of additional optional upstream SE packages that can be used in
@@ -2034,14 +2354,14 @@ upstream dependencies).  The arguments that apply to all SE packages are:
     enabled in order to enable this SE package but not enabling one or more
     of these optional upstream SE packages will result in diminished
     capabilities of this SE package.
- 
+
   ``TEST_REQUIRED_PACKAGES``
 
     List of additional upstream SE packages that must be enabled in order to
     build and/or run the tests and/or examples in this SE package.  If any
     of these upstream SE packages are not enabled, then there will be no
     tests or examples defined or run for this SE package.
- 
+
   ``TEST_OPTIONAL_PACKAGES``
 
     List of additional optional upstream SE packages that can be used by the
@@ -2049,26 +2369,26 @@ upstream dependencies).  The arguments that apply to all SE packages are:
     enabled in order to run some basic tests or examples for this SE
     package.  Typically, extra tests that depend on optional test SE
     packages involve integration testing of some type.
- 
+
   ``LIB_REQUIRED_TPLS``
 
     List of required upstream TPLs that must be enabled in order to build
     and use the libraries (or capabilities) in this SE package.
- 
+
   ``LIB_OPTIONAL_TPLS``
 
     List of additional optional upstream TPLs that can be used in this SE
     package if enabled.  These upstream TPLs need not be enabled in order to
     use this SE package but not enabling one or more of these optional
     upstream TPLs will result in diminished capabilities of this SE package.
- 
+
   ``TEST_REQUIRED_TPLS``
 
     List of additional upstream TPLs that must be enabled in order to build
     and/or run the tests and/or examples in this SE package.  If any of
     these upstream TPLs are not enabled, then there will be no tests or
     examples defined or run for this SE package.
- 
+
   ``TEST_OPTIONAL_TPLS``
 
     List of additional optional upstream TPLs that can be used by the tests
@@ -2128,20 +2448,20 @@ Subpackages`_.  In this case, the following argument must be passed in:
       The full SE package name is ``${PARENT_PACKAGE_NAME}<spkg_name>``.
       The full SE package name is what is used in listing dependencies in
       other SE packages.
-   
+
     * **DIRS** (Column 1): The subdirectory ``<spkg_dir>`` relative to the
       parent package's base directory.  All of the contents of the
       subpackage should be under this subdirectory.  This is assumed by the
       TriBITS testing support software when mapping modified files to SE
       packages that need to be tested (see `checkin-test.py`_).
-   
+
     * **CLASSIFICATIONS** (Column 2): The `Test Test Category`_ `PT`_,
       `ST`_, `EX`_ and the maturity level ``EP``, ``RS``, ``PG``, ``PM``,
       ``GRS``, ``GPG``, ``GPM``, and ``UM``, separated by a coma ',' with no
       spaces in between (e.g. ``"PT,GPM"``).  These have exactly the same
       meaning as for full packages (see
       `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_).
-   
+
     * **OPTREQ** (Column 3): Determines if the outer parent package has an
       ``OPTIONAL`` or ``REQUIRED`` dependence on this subpackage.
 
@@ -2176,7 +2496,7 @@ the names of these variables.
 
 TRIBITS_PACKAGE_POSTPROCESS()
 +++++++++++++++++++++++++++++
- 
+
 Macro called at the very end of a package's top-level
 `<packageDir>/CMakeLists.txt`_ file that performs some critical
 post-processing activities.
@@ -2369,6 +2689,12 @@ Packaging Principles`_).  Package ``i`` can only list dependencies (in
 package in this list (or in upstream TriBITS repositories).  This avoids an
 expensive package sorting algorithm and makes it easy to flag packages with
 circular dependencies or misspelling of package names.
+
+NOTE: For some rare use cases, the package directory ``<pkgi_dir>`` is
+allowed to be specified as an absolute directory but this absolute directory
+must be a subdirectory of the project source base directory given by
+`PROJECT_SOURCE_DIR`_.  If not, ``MESSAGE(FATAL_ERROR ...)`` is called and
+processing stops immediately.
 
 NOTE: This macro just sets the variable::
 
@@ -2624,6 +2950,23 @@ are intended for the user to set and/or use:
     searched for and this variable will be assumed to have the correct list
     of libraries to link to.
 
+TRIBITS_VERBOSE_PRINT_VAR()
++++++++++++++++++++++++++++
+
+print a variable giving its name then value if
+``${PROJECT_NAME}_VERBOSE_CONFIGURE=TRUE``.
+
+Usage::
+
+  TRIBITS_VERBOSE_PRINT_VAR(<varName>)
+
+This prints::
+
+  MESSAGE("-- " "${VARIBLE_NAME}='${${VARIBLE_NAME}}'")
+
+The variable ``<varName>`` can be defined or undefined or empty.  This uses
+an explicit "-- " line prefix so that it prints nice even on Windows CMake.
+
 TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()
 ++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -2638,46 +2981,46 @@ Usage::
     PACKAGE_NAME <pakageName>
     [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
     [WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>]
-    [WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>]
+    [WRITE_EXPORT_MAKEFILE <exportMakefileFileFullPath>]
     [WRITE_INSTALL_CMAKE_CONFIG_FILE]
-    [WRITE_INSTALL_EXPORT_MAKLEFILE]
+    [WRITE_INSTALL_EXPORT_MAKEFILE]
     )
 
 The arguments are:
 
   ``PACKAGE_NAME <pakageName>``
- 
+
     Gives the name of the TriBITS package for which the export files should
     be created.
- 
+
   ``EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>``
- 
+
     If specified, then all of the variables in the generated export files
     will be prefixed with ``<exportFileVarPrefix>_`` instead of
     ``<pakageName>_``.
- 
+
   ``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
- 
+
     If specified, then the package's (``<packageName>``) cmake configure
     export file for use by external CMake client projects will be created as
     the file ``<cmakeConfigFileFullPath>``.  NOTE: the argument should be
     the full path!
- 
-  ``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
- 
+
+  ``WRITE_EXPORT_MAKEFILE <exportMakefileFileFullPath>``
+
     If specified, then the package's (``<packageName>``) export makefile for
     use by external Makefile client projects will be created in the file
     <exportMakefileFileFullPath>.  NOTE: the argument should be the full
     path!
- 
+
   ``WRITE_INSTALL_CMAKE_CONFIG_FILE``
- 
+
     If specified, then the package's (``<packageName>``) install cmake
     configured export file will be installed in to the install tree as well.
     The name and location of this file is hard-coded.
- 
-  ``WRITE_INSTALL_EXPORT_MAKLEFILE``
- 
+
+  ``WRITE_INSTALL_EXPORT_MAKEFILE``
+
     If specified, then the package's (``<packageName>``) install export
     makefile to be installed into the install tree as well.  The name and
     location of this file is hard-coded.

@@ -48,6 +48,7 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Experimental_BlockCrsMatrix.hpp>
 
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
 // statistics on diagonal entries in compute().
@@ -152,6 +153,7 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     IsComputed_ = false;
     diagOffsets_ = Teuchos::null;
     savedDiagOffsets_ = false;
+    hasBlockCrsMatrix_ = false;
     if (! A.is_null ()) {
       IsParallel_ = (A->getRowMap ()->getComm ()->getSize () > 1);
     }
@@ -168,7 +170,9 @@ Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
   NumSweeps_ (1),
   PrecType_ (Ifpack2::Details::JACOBI),
   DampingFactor_ (STS::one ()),
-  IsParallel_ (A.is_null () ? false : A->getRowMap ()->getComm ()->getSize () > 1), // pick a reasonable default if the matrix is null.  It doesn't really matter, because the methods that care can't use a null matrix anyway.
+  IsParallel_ ((A.is_null () || A->getRowMap ().is_null () || A->getRowMap ()->getComm ().is_null ()) ?
+               false : // a reasonable default if there's no communicator
+               A->getRowMap ()->getComm ()->getSize () > 1),
   ZeroStartingSolution_ (true),
   DoBackwardGS_ (false),
   DoL1Method_ (false),
@@ -193,7 +197,8 @@ Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
   globalNumZeroDiagEntries_ (0),
   globalNumNegDiagEntries_ (0),
   globalDiagNormDiff_(Teuchos::ScalarTraits<magnitude_type>::zero()),
-  savedDiagOffsets_ (false)
+  savedDiagOffsets_ (false),
+  hasBlockCrsMatrix_ (false)
 {
   this->setObjectLabel ("Ifpack2::Relaxation");
 }
@@ -336,7 +341,7 @@ Relaxation<MatrixType>::getComm() const {
 
 template<class MatrixType>
 Teuchos::RCP<const typename Relaxation<MatrixType>::row_matrix_type>
-Relaxation<MatrixType>::getMatrix() const {
+Relaxation<MatrixType>::getMatrix () const {
   return A_;
 }
 
@@ -366,61 +371,61 @@ Relaxation<MatrixType>::getRangeMap () const {
   return A_->getRangeMap ();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 bool Relaxation<MatrixType>::hasTransposeApply () const {
   return true;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 int Relaxation<MatrixType>::getNumInitialize() const {
   return(NumInitialize_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 int Relaxation<MatrixType>::getNumCompute() const {
   return(NumCompute_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 int Relaxation<MatrixType>::getNumApply() const {
   return(NumApply_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double Relaxation<MatrixType>::getInitializeTime() const {
   return(InitializeTime_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double Relaxation<MatrixType>::getComputeTime() const {
   return(ComputeTime_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double Relaxation<MatrixType>::getApplyTime() const {
   return(ApplyTime_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double Relaxation<MatrixType>::getComputeFlops() const {
   return(ComputeFlops_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double Relaxation<MatrixType>::getApplyFlops() const {
   return(ApplyFlops_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
 Relaxation<MatrixType>::getCondEst () const
@@ -493,11 +498,13 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       Y.putScalar (STS::zero ());
     }
     else {
-      // If X and Y are pointing to the same memory location,
-      // we need to create an auxiliary vector, Xcopy
+      // If X and Y alias one another, then we need to create an
+      // auxiliary vector, Xcopy (a deep copy of X).
       RCP<const MV> Xcopy;
-      if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-        Xcopy = rcp (new MV(Tpetra::createCopy(X)));
+      // FIXME (mfh 12 Sep 2014) This test for aliasing is both
+      // incomplete, and a dependence on KokkosClassic.
+      if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
+        Xcopy = rcp (new MV (X, Teuchos::Copy));
       }
       else {
         Xcopy = rcpFromRef (X);
@@ -558,11 +565,26 @@ applyMat (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordi
 
 
 template<class MatrixType>
-void Relaxation<MatrixType>::initialize () {
+void Relaxation<MatrixType>::initialize ()
+{
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::initialize: "
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
     "input matrix before calling this method.");
+
+  if (A_.is_null ()) {
+    hasBlockCrsMatrix_ = false;
+  }
+  else { // A_ is not null
+    Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+      Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+    if (A_bcrs.is_null ()) {
+      hasBlockCrsMatrix_ = false;
+    }
+    else { // A_ is a block_crs_matrix_type
+      hasBlockCrsMatrix_ = true;
+    }
+  }
 
   // Initialization for Relaxation is trivial, so we say it takes zero time.
   //InitializeTime_ += Time_->totalElapsedTime ();
@@ -570,6 +592,101 @@ void Relaxation<MatrixType>::initialize () {
   isInitialized_ = true;
 }
 
+template<class MatrixType>
+void Relaxation<MatrixType>::computeBlockCrs ()
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::as;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_MAX;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::reduceAll;
+
+  {
+    // Reset the timer each time, since Relaxation uses the same Time
+    // object to track times for different methods.
+    Teuchos::TimeMonitor timeMon (*Time_, true);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::"
+      "computeBlockCrs: The input matrix A is null.  Please call setMatrix() "
+      "with a nonnull input matrix, then call initialize(), before calling "
+      "this method.");
+    const block_crs_matrix_type* blockCrsA =
+      dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      blockCrsA == NULL, std::logic_error, "Ifpack2::Relaxation::"
+      "computeBlockCrs: A_ is not a BlockCrsMatrix, but it should be if we "
+      "got this far.  Please report this bug to the Ifpack2 developers.");
+
+    const scalar_type one = STS::one ();
+
+    // Reset state.
+    IsComputed_ = false;
+    Condest_ = -STM::one ();
+
+    const local_ordinal_type blockSize = blockCrsA->getBlockSize ();
+
+    if (! savedDiagOffsets_) {
+      BlockDiagonal_ = Teuchos::null;
+      BlockDiagonal_ =
+        rcp (new block_crs_matrix_type (* (blockCrsA->getDiagonalGraph ()),
+                                        blockSize));
+      blockCrsA->getLocalDiagOffsets (diagOffsets_);
+      savedDiagOffsets_ = true;
+    }
+    blockCrsA->getLocalDiagCopy (*BlockDiagonal_, diagOffsets_ ());
+
+    const size_t numMyRows = A_->getNodeNumRows ();
+
+    if (DoL1Method_ && IsParallel_) {
+      const scalar_type two = one + one;
+      const size_t maxLength = A_->getNodeMaxNumRowEntries ();
+      Array<local_ordinal_type> indices (maxLength);
+      Array<scalar_type> values (maxLength * blockSize * blockSize);
+      size_t numEntries = 0;
+
+      for (size_t i = 0; i < numMyRows; ++i) {
+        blockCrsA->getLocalRowCopy (i, indices (), values (), numEntries);
+        scalar_type* diagBlock = BlockDiagonal_->getLocalBlock (i,i).getRawPtr ();
+        for (local_ordinal_type subRow = 0; subRow < blockSize; ++subRow) {
+          magnitude_type diagonal_boost = STM::zero ();
+          for (size_t k = 0 ; k < numEntries ; ++k) {
+            if (static_cast<size_t> (indices[k]) > numMyRows) {
+              const size_t offset = blockSize*blockSize*k + subRow*blockSize;
+              for (local_ordinal_type subCol = 0; subCol < blockSize; ++subCol) {
+                diagonal_boost += STS::magnitude (values[offset+subCol] / two);
+              }
+            }
+          }
+          if (STS::magnitude (diagBlock[subRow*(blockSize+1)]) < L1Eta_ * diagonal_boost) {
+            diagBlock[subRow*(blockSize+1)] += diagonal_boost;
+          }
+        }
+      }
+    }
+
+    blockDiagonalFactorizationPivots.resize (numMyRows * blockSize);
+    int info;
+    for (size_t i = 0 ; i < numMyRows; ++i) {
+      typename block_crs_matrix_type::little_block_type diagBlock =
+        BlockDiagonal_->getLocalBlock (i, i);
+      diagBlock.factorize (&blockDiagonalFactorizationPivots[i*blockSize], info);
+    }
+
+    Importer_ = A_->getGraph ()->getImporter ();
+  } // end TimeMonitor scope
+
+  ComputeTime_ += Time_->totalElapsedTime ();
+  ++NumCompute_;
+  IsComputed_ = true;
+}
 
 template<class MatrixType>
 void Relaxation<MatrixType>::compute ()
@@ -593,6 +710,11 @@ void Relaxation<MatrixType>::compute ()
   // We don't count initialization in compute() time.
   if (! isInitialized ()) {
     initialize ();
+  }
+
+  if (hasBlockCrsMatrix_) {
+    computeBlockCrs ();
+    return;
   }
 
   {
@@ -637,11 +759,6 @@ void Relaxation<MatrixType>::compute ()
       // method (not inherited from RowMatrix's interface).  It's
       // perfectly valid to do relaxation on a RowMatrix which is not
       // a CrsMatrix.
-      //
-      // This cast isn't ideal because it won't catch CrsMatrix
-      // specializations with nondefault LocalMatOps (fifth) template
-      // parameter.  The code will still be correct if the cast fails,
-      // but it won't pick up the "cached offsets" optimization.
       const crs_matrix_type* crsMat =
         dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
       if (crsMat == NULL || ! crsMat->isStaticGraph ()) {
@@ -711,7 +828,7 @@ void Relaxation<MatrixType>::compute ()
         A_->getLocalRowCopy (i, indices (), values (), numEntries);
         magnitude_type diagonal_boost = STM::zero ();
         for (size_t k = 0 ; k < numEntries ; ++k) {
-          if (as<size_t> (indices[k]) > numMyRows) {
+          if (static_cast<size_t> (indices[k]) > numMyRows) {
             diagonal_boost += STS::magnitude (values[k] / two);
           }
         }
@@ -719,6 +836,7 @@ void Relaxation<MatrixType>::compute ()
           diag[i] += diagonal_boost;
         }
       }
+
     }
 
     //
@@ -930,7 +1048,13 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
                     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::as;
-  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+    global_ordinal_type, node_type> MV;
+
+  if (hasBlockCrsMatrix_) {
+    ApplyInverseJacobi_BlockCrsMatrix (X, Y);
+    return;
+  }
 
   const double numGlobalRows = as<double> (A_->getGlobalNumRows ());
   const double numVectors = as<double> (X.getNumVectors ());
@@ -989,6 +1113,51 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
+template<class MatrixType>
+void
+Relaxation<MatrixType>::
+ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                                                             global_ordinal_type, node_type>& X,
+                                   Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                                                       global_ordinal_type,node_type>& Y) const
+{
+  typedef Tpetra::Experimental::BlockMultiVector<scalar_type,
+    local_ordinal_type, global_ordinal_type,node_type> BMV;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+    global_ordinal_type, node_type> MV;
+  typedef typename block_crs_matrix_type::little_block_type little_block_type;
+  typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
+
+  if (ZeroStartingSolution_) {
+    Y.putScalar (STS::zero ());
+  }
+
+  const size_t numVectors = X.getNumVectors ();
+
+  const block_crs_matrix_type* blockMat =
+    dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
+
+  const local_ordinal_type blockSize = blockMat->getBlockSize ();
+  BMV A_times_Y_Block (* (blockMat->getRowMap ()), * (Y.getMap ()),
+                       blockSize, numVectors);
+  MV A_times_Y = A_times_Y_Block.getMultiVectorView();
+  BMV yBlock (Y, * (blockMat->getRowMap ()), blockSize);
+  for (int j = 0; j < NumSweeps_; ++j) {
+    blockMat->apply (Y, A_times_Y);
+    A_times_Y.update (STS::one (), X, -STS::one ());
+    const size_t numRows = blockMat->getNodeNumRows ();
+    for (size_t i = 0; i < numVectors; ++i) {
+      for (size_t k = 0; k < numRows; ++k) {
+        // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
+        little_block_type factorizedBlockDiag = BlockDiagonal_->getLocalBlock (k, k);
+        little_vec_type xloc = A_times_Y_Block.getLocalBlock (k, i);
+        little_vec_type yloc = yBlock.getLocalBlock (k, i);
+        factorizedBlockDiag.solve (xloc, &blockDiagonalFactorizationPivots[i*blockSize]);
+        yloc.update (DampingFactor_, xloc);
+      }
+    }
+  }
+}
 
 template<class MatrixType>
 void
@@ -996,6 +1165,7 @@ Relaxation<MatrixType>::
 ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
+  typedef Relaxation<MatrixType> this_type;
   // The CrsMatrix version is faster, because it can access the sparse
   // matrix data directly, rather than by copying out each row's data
   // in turn.  Thus, we check whether the RowMatrix is really a
@@ -1005,8 +1175,13 @@ ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_
   // declaration in Ifpack2_Relaxation_decl.hpp header file.  The code
   // will still be correct if the cast fails, but it will use an
   // unoptimized kernel.
-  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
-  if (crsMat != NULL) {
+  const block_crs_matrix_type* blockCrsMat =
+    dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
+  const crs_matrix_type* crsMat =
+    dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
+  if (blockCrsMat != NULL)  {
+    const_cast<this_type*> (this)->ApplyInverseGS_BlockCrsMatrix (*blockCrsMat, X, Y);
+  } else if (crsMat != NULL) {
     ApplyInverseGS_CrsMatrix (*crsMat, X, Y);
   } else {
     ApplyInverseGS_RowMatrix (X, Y);
@@ -1015,9 +1190,10 @@ ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_
 
 
 template<class MatrixType>
-void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+void
+Relaxation<MatrixType>::
+ApplyInverseGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -1027,8 +1203,6 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
-
-
 
   // Tpetra's GS implementation for CrsMatrix handles zeroing out the
   // starting multivector itself.  The generic RowMatrix version here
@@ -1043,13 +1217,13 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
   Array<scalar_type> Values (maxLength);
 
   // Local smoothing stuff
-  const size_t numMyRows             = A_->getNodeNumRows();
-  const local_ordinal_type * rowInd  = 0;
-  size_t numActive                   = numMyRows;
-  bool do_local = !localSmoothingIndices_.is_null();
-  if(do_local) {
-    rowInd    = localSmoothingIndices_.getRawPtr();
-    numActive = localSmoothingIndices_.size();
+  const size_t numMyRows = A_->getNodeNumRows();
+  const local_ordinal_type* rowInd  = 0;
+  size_t numActive = numMyRows;
+  bool do_local = ! localSmoothingIndices_.is_null ();
+  if (do_local) {
+    rowInd = localSmoothingIndices_.getRawPtr ();
+    numActive = localSmoothingIndices_.size ();
   }
 
   RCP<MV> Y2;
@@ -1069,13 +1243,13 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
   }
 
   // Diagonal
-  ArrayRCP<const scalar_type>  d_rcp = Diagonal_->get1dView();
+  ArrayRCP<const scalar_type> d_rcp = Diagonal_->get1dView ();
   ArrayView<const scalar_type> d_ptr = d_rcp();
 
   // Constant stride check
   bool constant_stride = X.isConstantStride() && Y2->isConstantStride();
 
-  if(constant_stride) {
+  if (constant_stride) {
     // extract 1D RCPs
     size_t                    x_stride = X.getStride();
     size_t                   y2_stride = Y2->getStride();
@@ -1085,122 +1259,126 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
     ArrayView<const scalar_type> x_ptr = x_rcp();
     Array<scalar_type> dtemp(NumVectors,STS::zero());
 
-    for (int j = 0; j < NumSweeps_; j++) {
+    for (int j = 0; j < NumSweeps_; ++j) {
       // data exchange is here, once per sweep
       if (IsParallel_) {
-	if (Importer_.is_null ()) {
-	  *Y2 = Y; // just copy, since domain and column Maps are the same
-	} else {
-	  Y2->doImport (Y, *Importer_, Tpetra::INSERT);
-	}
+        if (Importer_.is_null ()) {
+          *Y2 = Y; // just copy, since domain and column Maps are the same
+        } else {
+          Y2->doImport (Y, *Importer_, Tpetra::INSERT);
+        }
       }
-      
+
       if (! DoBackwardGS_) { // Forward sweep
-	for (size_t ii = 0; ii < numActive; ++ii) {
-	  local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
-	  size_t NumEntries;
-	  A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);	  
-	  dtemp.assign(NumVectors,STS::zero());
+        for (size_t ii = 0; ii < numActive; ++ii) {
+          local_ordinal_type i = as<local_ordinal_type> (do_local ? rowInd[ii] : ii);
+          size_t NumEntries;
+          A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
+          dtemp.assign(NumVectors,STS::zero());
 
-	  for (size_t k = 0; k < NumEntries; ++k) {
-	    const local_ordinal_type col = Indices[k];
-	    for (size_t m = 0; m < NumVectors; ++m) 
-	      dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
-	  }
+          for (size_t k = 0; k < NumEntries; ++k) {
+            const local_ordinal_type col = Indices[k];
+            for (size_t m = 0; m < NumVectors; ++m) {
+              dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
+            }
+          }
 
-	  for (size_t m = 0; m < NumVectors; ++m) 
-	    y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
-	}
+          for (size_t m = 0; m < NumVectors; ++m) {
+            y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
+          }
+        }
       }
       else { // Backward sweep
-	// ptrdiff_t is the same size as size_t, but is signed.  Being
-	// signed is important so that i >= 0 is not trivially true.
-	for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
-	  local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
-	  size_t NumEntries;
-	  A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);	  
-	  dtemp.assign(NumVectors,STS::zero());
+        // ptrdiff_t is the same size as size_t, but is signed.  Being
+        // signed is important so that i >= 0 is not trivially true.
+        for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
+          local_ordinal_type i = as<local_ordinal_type> (do_local ? rowInd[ii] : ii);
+          size_t NumEntries;
+          A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
+          dtemp.assign (NumVectors, STS::zero ());
 
-	  for (size_t k = 0; k < NumEntries; ++k) {
-	    const local_ordinal_type col = Indices[k];
-	    for (size_t m = 0; m < NumVectors; ++m) 
-	      dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
-	  }
+          for (size_t k = 0; k < NumEntries; ++k) {
+            const local_ordinal_type col = Indices[k];
+            for (size_t m = 0; m < NumVectors; ++m) {
+              dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
+            }
+          }
 
-	  for (size_t m = 0; m < NumVectors; ++m) 
-	    y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
-	}
-      }      
+          for (size_t m = 0; m < NumVectors; ++m) {
+            y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
+          }
+        }
+      }
       // FIXME (mfh 02 Jan 2013) This is only correct if row Map == range Map.
       if (IsParallel_) {
-	Y = *Y2;
+        Tpetra::deep_copy (Y, *Y2);
       }
     }
   }
   else {
-    // extract 2D RCPS 
-    ArrayRCP<ArrayRCP<scalar_type> > y2_ptr      = Y2->get2dViewNonConst();
-    ArrayRCP<ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
-    
-    for (int j = 0; j < NumSweeps_; j++) {
+    // extract 2D RCPS
+    ArrayRCP<ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst ();
+    ArrayRCP<ArrayRCP<const scalar_type> > x_ptr = X.get2dView ();
+
+    for (int j = 0; j < NumSweeps_; ++j) {
       // data exchange is here, once per sweep
       if (IsParallel_) {
-	if (Importer_.is_null ()) {
-	  *Y2 = Y; // just copy, since domain and column Maps are the same
-	} else {
-	  Y2->doImport (Y, *Importer_, Tpetra::INSERT);
-	}
+        if (Importer_.is_null ()) {
+          *Y2 = Y; // just copy, since domain and column Maps are the same
+        } else {
+          Y2->doImport (Y, *Importer_, Tpetra::INSERT);
+        }
       }
-      
+
       if (! DoBackwardGS_) { // Forward sweep
-	for (size_t ii = 0; ii < numActive; ++ii) {
-	  local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
-	  size_t NumEntries;
-	  A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
-	  
-	  for (size_t m = 0; m < NumVectors; ++m) {
-	    scalar_type dtemp = STS::zero ();
-	    ArrayView<const scalar_type> x_local = (x_ptr())[m]();
-	    ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-	    
-	    for (size_t k = 0; k < NumEntries; ++k) {
-	      const local_ordinal_type col = Indices[k];
-	      dtemp += Values[k] * y2_local[col];
-	    }
-	    y2_local[i] += DampingFactor_ * d_ptr[i] * (x_local[i] - dtemp);
-	  }
-	}
+        for (size_t ii = 0; ii < numActive; ++ii) {
+          local_ordinal_type i = as<local_ordinal_type> (do_local ? rowInd[ii] : ii);
+          size_t NumEntries;
+          A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
+
+          for (size_t m = 0; m < NumVectors; ++m) {
+            scalar_type dtemp = STS::zero ();
+            ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+            ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+
+            for (size_t k = 0; k < NumEntries; ++k) {
+              const local_ordinal_type col = Indices[k];
+              dtemp += Values[k] * y2_local[col];
+            }
+            y2_local[i] += DampingFactor_ * d_ptr[i] * (x_local[i] - dtemp);
+          }
+        }
       }
       else { // Backward sweep
-	// ptrdiff_t is the same size as size_t, but is signed.  Being
-	// signed is important so that i >= 0 is not trivially true.
-	for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
-	  local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
-	  
-	  size_t NumEntries;
-	  A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
-	  
-	  for (size_t m = 0; m < NumVectors; ++m) {
-	    scalar_type dtemp = STS::zero ();
-	    ArrayView<const scalar_type> x_local = (x_ptr())[m]();
-	    ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-	    
-	    for (size_t k = 0; k < NumEntries; ++k) {
-	      const local_ordinal_type col = Indices[k];
-	      dtemp += Values[k] * y2_local[col];
-	    }
-	    y2_local[i] += DampingFactor_ * d_ptr[i] * (x_local[i] - dtemp);
-	  }
-	}
+        // ptrdiff_t is the same size as size_t, but is signed.  Being
+        // signed is important so that i >= 0 is not trivially true.
+        for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
+          local_ordinal_type i = as<local_ordinal_type> (do_local ? rowInd[ii] : ii);
+
+          size_t NumEntries;
+          A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
+
+          for (size_t m = 0; m < NumVectors; ++m) {
+            scalar_type dtemp = STS::zero ();
+            ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+            ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+
+            for (size_t k = 0; k < NumEntries; ++k) {
+              const local_ordinal_type col = Indices[k];
+              dtemp += Values[k] * y2_local[col];
+            }
+            y2_local[i] += DampingFactor_ * d_ptr[i] * (x_local[i] - dtemp);
+          }
+        }
       }
-      
+
       // FIXME (mfh 02 Jan 2013) This is only correct if row Map == range Map.
       if (IsParallel_) {
-	Y = *Y2;
+        Tpetra::deep_copy (Y, *Y2);
       }
     }
   }
- 
+
 
   // See flop count discussion in implementation of ApplyInverseGS_CrsMatrix().
   const double dampingFlops = (DampingFactor_ == STS::one()) ? 0.0 : 1.0;
@@ -1248,6 +1426,73 @@ ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
+template<class MatrixType>
+void
+Relaxation<MatrixType>::
+ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
+                               const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  typedef Tpetra::Experimental::BlockMultiVector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type> BMV;
+  typedef Tpetra::MultiVector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type> MV;
+
+  //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
+  //
+  // NOTE (mfh 12 Sep 2014) I don't think it should be a problem for
+  // multiple right-hand sides, unless the input or output MultiVector
+  // does not have constant stride.  We should check for that case
+  // here, in case it doesn't work in localGaussSeidel (which is
+  // entirely possible).
+  BMV yBlock (Y, * (A.getGraph ()->getDomainMap ()), A.getBlockSize ());
+  const BMV xBlock (X, * (A.getColMap ()), A.getBlockSize ());
+
+  bool performImport = false;
+  RCP<BMV> yBlockCol;
+  if (Importer_.is_null ()) {
+    yBlockCol = rcpFromRef (yBlock);
+  }
+  else {
+    if (yBlockColumnPointMap_.is_null () ||
+        yBlockColumnPointMap_->getNumVectors () != yBlock.getNumVectors () ||
+        yBlockColumnPointMap_->getBlockSize () != yBlock.getBlockSize ()) {
+      yBlockColumnPointMap_ =
+        rcp (new BMV (* (A.getColMap ()), A.getBlockSize (),
+                      static_cast<local_ordinal_type> (yBlock.getNumVectors ())));
+    }
+    yBlockCol = yBlockColumnPointMap_;
+    performImport = true;
+  }
+
+  if (ZeroStartingSolution_) {
+    yBlockCol->putScalar (STS::zero ());
+  }
+  else if (performImport) {
+    yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
+  }
+
+  const Tpetra::ESweepDirection direction =
+    DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
+
+  for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
+    if (performImport && sweep > 0) {
+      yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
+    }
+    A.localGaussSeidel (xBlock, *yBlockCol, *BlockDiagonal_,
+                        &blockDiagonalFactorizationPivots[0],
+                        DampingFactor_, direction);
+    if (performImport) {
+      RCP<const MV> yBlockColPointDomain =
+        yBlockCol->getMultiVectorView ().offsetView (A.getDomainMap (), 0);
+      Tpetra::deep_copy (Y, *yBlockColPointDomain);
+    }
+  }
+}
+
 
 template<class MatrixType>
 void
@@ -1255,6 +1500,7 @@ Relaxation<MatrixType>::
 ApplyInverseSGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
+  typedef Relaxation<MatrixType> this_type;
   // The CrsMatrix version is faster, because it can access the sparse
   // matrix data directly, rather than by copying out each row's data
   // in turn.  Thus, we check whether the RowMatrix is really a
@@ -1264,8 +1510,12 @@ ApplyInverseSGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
   // declaration in Ifpack2_Relaxation_decl.hpp header file.  The code
   // will still be correct if the cast fails, but it will use an
   // unoptimized kernel.
+  const block_crs_matrix_type* blockCrsMat = dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr());
   const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
-  if (crsMat != NULL) {
+  if (blockCrsMat != NULL)  {
+    const_cast<this_type*> (this)->ApplyInverseSGS_BlockCrsMatrix(*blockCrsMat, X, Y);
+  }
+  else if (crsMat != NULL) {
     ApplyInverseSGS_CrsMatrix (*crsMat, X, Y);
   } else {
     ApplyInverseSGS_RowMatrix (X, Y);
@@ -1346,65 +1596,71 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
     for (int iter = 0; iter < NumSweeps_; ++iter) {
       // only one data exchange per sweep
       if (IsParallel_) {
-	if (Importer_.is_null ()) {
-	  *Y2 = Y; // just copy, since domain and column Maps are the same
-	} else {
-	  Y2->doImport (Y, *Importer_, Tpetra::INSERT);
-	}
+        if (Importer_.is_null ()) {
+          // just copy, since domain and column Maps are the same
+          Tpetra::deep_copy (*Y2, Y);
+        } else {
+          Y2->doImport (Y, *Importer_, Tpetra::INSERT);
+        }
       }
 
       for (int j = 0; j < NumSweeps_; j++) {
-	// data exchange is here, once per sweep
-	if (IsParallel_) {
-	  if (Importer_.is_null ()) {
-	    *Y2 = Y; // just copy, since domain and column Maps are the same
-	  } else {
-	    Y2->doImport (Y, *Importer_, Tpetra::INSERT);
-	  }
-	}
-	
-	for (size_t ii = 0; ii < numActive; ++ii) {
-	  local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
-	  size_t NumEntries;
-	  A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);	  
-	  dtemp.assign(NumVectors,STS::zero());
-	  
-	  for (size_t k = 0; k < NumEntries; ++k) {
-	    const local_ordinal_type col = Indices[k];
-	    for (size_t m = 0; m < NumVectors; ++m) 
-	      dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
-	  }
-	  
-	  for (size_t m = 0; m < NumVectors; ++m) 
-	    y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
-	}
+        // data exchange is here, once per sweep
+        if (IsParallel_) {
+          if (Importer_.is_null ()) {
+            // just copy, since domain and column Maps are the same
+            Tpetra::deep_copy (*Y2, Y);
+          } else {
+            Y2->doImport (Y, *Importer_, Tpetra::INSERT);
+          }
+        }
 
-	// ptrdiff_t is the same size as size_t, but is signed.  Being
-	// signed is important so that i >= 0 is not trivially true.
-	for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
-	  local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
-	  size_t NumEntries;
-	  A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);	  
-	  dtemp.assign(NumVectors,STS::zero());
-	  
-	  for (size_t k = 0; k < NumEntries; ++k) {
-	    const local_ordinal_type col = Indices[k];
-	    for (size_t m = 0; m < NumVectors; ++m) 
-	      dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
-	  }
-	  
-	  for (size_t m = 0; m < NumVectors; ++m) 
-	    y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
-	}
-      }      
+        for (size_t ii = 0; ii < numActive; ++ii) {
+          local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
+          size_t NumEntries;
+          A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
+          dtemp.assign(NumVectors,STS::zero());
+
+          for (size_t k = 0; k < NumEntries; ++k) {
+            const local_ordinal_type col = Indices[k];
+            for (size_t m = 0; m < NumVectors; ++m) {
+              dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
+            }
+          }
+
+          for (size_t m = 0; m < NumVectors; ++m) {
+            y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
+          }
+        }
+
+        // ptrdiff_t is the same size as size_t, but is signed.  Being
+        // signed is important so that i >= 0 is not trivially true.
+        for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
+          local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
+          size_t NumEntries;
+          A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
+          dtemp.assign(NumVectors,STS::zero());
+
+          for (size_t k = 0; k < NumEntries; ++k) {
+            const local_ordinal_type col = Indices[k];
+            for (size_t m = 0; m < NumVectors; ++m) {
+              dtemp[m] += Values[k] * y2_ptr[col + y2_stride*m];
+            }
+          }
+
+          for (size_t m = 0; m < NumVectors; ++m) {
+            y2_ptr[i + y2_stride*m] += DampingFactor_ * d_ptr[i] * (x_ptr[i + x_stride*m] - dtemp[m]);
+          }
+        }
+      }
 
       // FIXME (mfh 02 Jan 2013) This is only correct if row Map == range Map.
       if (IsParallel_) {
-	Y = *Y2;
+        Tpetra::deep_copy (Y, *Y2);
       }
     }
   }
-  else { 
+  else {
     // extract 2D RCPs
     ArrayRCP<ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst ();
     ArrayRCP<ArrayRCP<const scalar_type> > x_ptr =  X.get2dView ();
@@ -1412,56 +1668,57 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
     for (int iter = 0; iter < NumSweeps_; ++iter) {
       // only one data exchange per sweep
       if (IsParallel_) {
-	if (Importer_.is_null ()) {
-	  *Y2 = Y; // just copy, since domain and column Maps are the same
-	} else {
-	  Y2->doImport (Y, *Importer_, Tpetra::INSERT);
-	}
+        if (Importer_.is_null ()) {
+          // just copy, since domain and column Maps are the same
+          Tpetra::deep_copy (*Y2, Y);
+        } else {
+          Y2->doImport (Y, *Importer_, Tpetra::INSERT);
+        }
       }
 
       for (size_t ii = 0; ii < numActive; ++ii) {
-	local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
-	const scalar_type diag = d_ptr[i];
-	size_t NumEntries;
-	A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
-	
-	for (size_t m = 0; m < NumVectors; ++m) {
-	  scalar_type dtemp = STS::zero ();
-	  ArrayView<const scalar_type> x_local = (x_ptr())[m]();
-	  ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-	  
-	  for (size_t k = 0; k < NumEntries; ++k) {
-	    const local_ordinal_type col = Indices[k];
-	    dtemp += Values[k] * y2_local[col];
-	  }
-	  y2_local[i] += DampingFactor_ * (x_local[i] - dtemp) * diag;
-	}
+        local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
+        const scalar_type diag = d_ptr[i];
+        size_t NumEntries;
+        A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
+
+        for (size_t m = 0; m < NumVectors; ++m) {
+          scalar_type dtemp = STS::zero ();
+          ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+          ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+
+          for (size_t k = 0; k < NumEntries; ++k) {
+            const local_ordinal_type col = Indices[k];
+            dtemp += Values[k] * y2_local[col];
+          }
+          y2_local[i] += DampingFactor_ * (x_local[i] - dtemp) * diag;
+        }
       }
-      
+
       // ptrdiff_t is the same size as size_t, but is signed.  Being
       // signed is important so that i >= 0 is not trivially true.
       for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
-	local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
-	const scalar_type diag = d_ptr[i];
-	size_t NumEntries;
-	A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
-	
-	for (size_t m = 0; m < NumVectors; ++m) {
-	  scalar_type dtemp = STS::zero ();
-	  ArrayView<const scalar_type> x_local = (x_ptr())[m]();
-	  ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-	  
-	  for (size_t k = 0; k < NumEntries; ++k) {
-	    const local_ordinal_type col = Indices[k];
-	    dtemp += Values[k] * y2_local[col];
-	  }
-	  y2_local[i] += DampingFactor_ * (x_local[i] - dtemp) * diag;
-	}
+        local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
+        const scalar_type diag = d_ptr[i];
+        size_t NumEntries;
+        A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
+
+        for (size_t m = 0; m < NumVectors; ++m) {
+          scalar_type dtemp = STS::zero ();
+          ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+          ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+
+          for (size_t k = 0; k < NumEntries; ++k) {
+            const local_ordinal_type col = Indices[k];
+            dtemp += Values[k] * y2_local[col];
+          }
+          y2_local[i] += DampingFactor_ * (x_local[i] - dtemp) * diag;
+        }
       }
-      
+
       // FIXME (mfh 02 Jan 2013) This is only correct if row Map == range Map.
       if (IsParallel_) {
-	Y = *Y2;
+        Tpetra::deep_copy (Y, *Y2);
       }
     }
   }
@@ -1485,12 +1742,15 @@ ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
 {
   using Teuchos::as;
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
-  if(localSmoothingIndices_.is_null())
+  if (localSmoothingIndices_.is_null ()) {
     A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
                        NumSweeps_, ZeroStartingSolution_);
-  else
-    A.reorderedGaussSeidelCopy (Y, X, *Diagonal_, localSmoothingIndices_(), DampingFactor_, direction,
+  }
+  else {
+    A.reorderedGaussSeidelCopy (Y, X, *Diagonal_, localSmoothingIndices_ (),
+                                DampingFactor_, direction,
                                 NumSweeps_, ZeroStartingSolution_);
+  }
 
   // For each column of output, for each sweep over the matrix:
   //
@@ -1514,9 +1774,78 @@ ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
+template<class MatrixType>
+void
+Relaxation<MatrixType>::
+ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
+                                const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  typedef Tpetra::Experimental::BlockMultiVector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type> BMV;
+  typedef Tpetra::MultiVector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type> MV;
+
+  //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
+  //
+  // NOTE (mfh 12 Sep 2014) I don't think it should be a problem for
+  // multiple right-hand sides, unless the input or output MultiVector
+  // does not have constant stride.  We should check for that case
+  // here, in case it doesn't work in localGaussSeidel (which is
+  // entirely possible).
+  BMV yBlock (Y, * (A.getGraph ()->getDomainMap ()), A.getBlockSize ());
+  const BMV xBlock (X, * (A.getColMap ()), A.getBlockSize ());
+
+  bool performImport = false;
+  RCP<BMV> yBlockCol;
+  if (Importer_.is_null ()) {
+    yBlockCol = Teuchos::rcpFromRef (yBlock);
+  }
+  else {
+    if (yBlockColumnPointMap_.is_null () ||
+        yBlockColumnPointMap_->getNumVectors () != yBlock.getNumVectors () ||
+        yBlockColumnPointMap_->getBlockSize () != yBlock.getBlockSize ()) {
+      yBlockColumnPointMap_ =
+        rcp (new BMV (* (A.getColMap ()), A.getBlockSize (),
+                      static_cast<local_ordinal_type> (yBlock.getNumVectors ())));
+    }
+    yBlockCol = yBlockColumnPointMap_;
+    performImport = true;
+  }
+
+  if (ZeroStartingSolution_) {
+    yBlockCol->putScalar (STS::zero ());
+  }
+  else if (performImport) {
+    yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
+  }
+
+  // FIXME (mfh 12 Sep 2014) Shouldn't this come from the user's parameter?
+  const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
+
+  for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
+    if (performImport && sweep > 0) {
+      yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
+    }
+    A.localGaussSeidel (xBlock, *yBlockCol, *BlockDiagonal_,
+                        &blockDiagonalFactorizationPivots[0],
+                        DampingFactor_, direction);
+    if (performImport) {
+      RCP<const MV> yBlockColPointDomain =
+        yBlockCol->getMultiVectorView ().offsetView (A.getDomainMap (), 0);
+      MV yBlockView = yBlock.getMultiVectorView ();
+      Tpetra::deep_copy (yBlockView, *yBlockColPointDomain);
+    }
+  }
+}
+
 
 template<class MatrixType>
-std::string Relaxation<MatrixType>::description () const {
+std::string Relaxation<MatrixType>::description () const
+{
   std::ostringstream os;
 
   // Output is a valid YAML dictionary in flow style.  If you don't

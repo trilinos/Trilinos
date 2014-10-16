@@ -40,8 +40,7 @@
 */
 
 #include <fenl_ensemble_macros.hpp>
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_OpenMP.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Kokkos {
 namespace Example {

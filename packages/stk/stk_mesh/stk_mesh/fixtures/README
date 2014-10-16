@@ -4,7 +4,7 @@ in parallel.
 
 GridFixture
   Two dimensional
-  4x4 faces (shards Quadrilaterals)
+  4x4 faces (Quadrilaterals)
   25 nodes
   Two parts:  quad_part and dead_part
   No fields are defined 
@@ -16,7 +16,7 @@ GridFixture
 
 QuadFixture
   Two dimensional
-  NX by NY elements (shards Quadrilaterals)
+  NX by NY elements (Quadrilaterals)
   One part:  quad_part
   Two fields:  Coordinates and GatherCoordinates
   Default parallel distrubtion:
@@ -29,7 +29,7 @@ QuadFixture
 
 HexFixture
   Three dimensional
-  NX by NY by NZ elements (shards Hexahedrons)
+  NX by NY by NZ elements (Hexahedrons)
   One part:  hex_part
   Two fields:  Coordinates and GatherCoordinates
   Default parallel distrubtion:

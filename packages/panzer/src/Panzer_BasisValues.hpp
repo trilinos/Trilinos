@@ -90,22 +90,25 @@ namespace panzer {
 
     PureBasis::EElementSpace getElementSpace() const; 
 
-    Array basis_ref;           // <BASIS,IP>
-    Array basis;               // <Cell,BASIS,IP>
+    Array basis_ref;           // <BASIS,IP> (basis dependent)
+    Array basis;               // <Cell,BASIS,IP> (basis dependent)
     Array grad_basis_ref;      // <BASIS,IP,Dim>
     Array grad_basis;          // <Cell,BASIS,IP,Dim>
     Array curl_basis_ref;      // <BASIS,IP,Dim> (dimension dependent)
     Array curl_basis;          // <Cell,BASIS,IP,Dim> (dimension dependent)
+    Array div_basis_ref;       // <BASIS,IP>
+    Array div_basis;           // <Cell,BASIS,IP>
     Array weighted_basis;      // <Cell,BASIS,IP>
     Array weighted_grad_basis; // <Cell,BASIS,IP,Dim>
     Array weighted_curl_basis; // <Cell,BASIS,IP,Dim> (dimension dependent)
+    Array weighted_div_basis;  // <Cell,BASIS,IP> 
 
     /** Carterisan coordinates for basis coefficients
 
         NOTE: This quantity is not always available.  Certain bases
         may not have a corresponding coordiante value
     */
-    Array basis_coordinates_ref;     // <Cell,BASIS>
+    Array basis_coordinates_ref;     // <Cell,BASIS,Dim>
 
     /** Carterisan coordinates for basis coefficients
 

@@ -51,6 +51,7 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
@@ -77,7 +78,6 @@ typedef double Scalar;
 typedef int    LocalOrdinal;
 typedef int    GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 #include <unistd.h>
 /**********************************************************************************/
@@ -98,89 +98,95 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  out->setOutputToRootOnly(0);
+  bool success = false;
+  try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setOutputToRootOnly(0);
 
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
-  *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
+    *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 
-  /**********************************************************************************/
-  /* SET TEST PARAMETERS                                                            */
-  /**********************************************************************************/
-  // Note: use --help to list available options.
-  Teuchos::CommandLineProcessor clp(false);
+    /**********************************************************************************/
+    /* SET TEST PARAMETERS                                                            */
+    /**********************************************************************************/
+    // Note: use --help to list available options.
+    Teuchos::CommandLineProcessor clp(false);
 
-  // Default is Laplace1D with nx = 8748.
-  // It's a nice size for 1D and perfect aggregation. (6561=3^8)
-  //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-  Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
+    // Default is Laplace1D with nx = 8748.
+    // It's a nice size for 1D and perfect aggregation. (6561=3^8)
+    //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
+    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
+    Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
-  // custom parameters
-  std::string aggOrdering = "natural";
-  int minPerAgg=2;
-  int maxNbrAlreadySelected=0;
+    // custom parameters
+    std::string aggOrdering = "natural";
+    int minPerAgg=2;
+    int maxNbrAlreadySelected=0;
 
-  clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,random,graph)");
-  clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
-  clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
+    clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,random,graph)");
+    clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
+    clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
 
-  switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
-  }
+    switch (clp.parse(argc,argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    }
 
-  matrixParameters.check();
-  xpetraParameters.check();
-  // TODO: check custom parameters
+    matrixParameters.check();
+    xpetraParameters.check();
+    // TODO: check custom parameters
 
-  if (comm->getRank() == 0) {
-    std::cout << matrixParameters << xpetraParameters << std::endl;
-    // TODO: print custom parameters
-  }
+    if (comm->getRank() == 0) {
+      std::cout << matrixParameters << xpetraParameters << std::endl;
+      // TODO: print custom parameters
+    }
 
-  /**********************************************************************************/
-  /* CREATE INITIAL MATRIX                                                          */
-  /**********************************************************************************/
-  const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+    /**********************************************************************************/
+    /* CREATE INITIAL MATRIX                                                          */
+    /**********************************************************************************/
+    const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+    Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
       Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
-  RCP<Matrix> A = Pr->BuildMatrix();
+    RCP<Matrix> A = Pr->BuildMatrix();
 
-  //  return EXIT_SUCCESS;
-  /**********************************************************************************/
-  /*                                                                                */
-  /**********************************************************************************/
+    //  return EXIT_SUCCESS;
+    /**********************************************************************************/
+    /*                                                                                */
+    /**********************************************************************************/
 
-  Level Finest;
-  Finest.SetLevelID(0);  // must be level 0 for NullspaceFactory
-  Finest.Set("A", A);
+    Level Finest;
+    Finest.SetLevelID(0);  // must be level 0 for NullspaceFactory
+    Finest.Set("A", A);
 
-  Finest.SetFactoryManager( rcp( new FactoryManager() ));
+    Finest.SetFactoryManager( rcp( new FactoryManager() ));
 
-  CoupledAggregationFactory CoupledAggFact;
-  Finest.Request(CoupledAggFact);
-  *out << "========================= Aggregate option summary  =========================" << std::endl;
-  *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
-  *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-  CoupledAggFact.SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
-  CoupledAggFact.SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-  std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
-  if (aggOrdering == "natural" || aggOrdering == "graph" || aggOrdering == "random") {
-    *out << "aggregate ordering :                    " << aggOrdering<< std::endl;
-    CoupledAggFact.SetOrdering(aggOrdering);
-  } else {
-    std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
-    throw(MueLu::Exceptions::RuntimeError(msg));
+    CoupledAggregationFactory CoupledAggFact;
+    Finest.Request(CoupledAggFact);
+    *out << "========================= Aggregate option summary  =========================" << std::endl;
+    *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
+    *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
+    CoupledAggFact.SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
+    CoupledAggFact.SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+    std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
+    if (aggOrdering == "natural" || aggOrdering == "graph" || aggOrdering == "random") {
+      *out << "aggregate ordering :                    " << aggOrdering<< std::endl;
+      CoupledAggFact.SetOrdering(aggOrdering);
+    } else {
+      std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
+      throw(MueLu::Exceptions::RuntimeError(msg));
+    }
+    CoupledAggFact.SetPhase3AggCreation(0.5);
+    *out << "=============================================================================" << std::endl;
+
+    CoupledAggFact.Build(Finest);
+
+    success = true;
   }
-  CoupledAggFact.SetPhase3AggCreation(0.5);
-  *out << "=============================================================================" << std::endl;
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
-  CoupledAggFact.Build(Finest);
-
-  return EXIT_SUCCESS;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

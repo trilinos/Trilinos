@@ -68,11 +68,29 @@
 
 
 /* ************************************************
- * Semaphore configuration
+ * Linux thread ID configuration
  * ************************************************ */
 #cmakedefine HAVE_TRIOS_UNISTD_H 1
 #cmakedefine HAVE_TRIOS_SYSCALL_H 1
 #cmakedefine HAVE_TRIOS_GETTID 1
+
+
+/* ************************************************
+ * Pthread configuration
+ * ************************************************ */
+#cmakedefine HAVE_TRIOS_PTHREAD_H 1
+#cmakedefine HAVE_TRIOS_PTHREAD_MUTEX_T 1
+#cmakedefine HAVE_TRIOS_PTHREAD_MUTEX_INIT 1
+#cmakedefine HAVE_TRIOS_PTHREAD_MUTEX_LOCK 1
+#cmakedefine HAVE_TRIOS_PTHREAD_MUTEX_UNLOCK 1
+#cmakedefine HAVE_TRIOS_PTHREAD_MUTEX_DESTROY 1
+#cmakedefine HAVE_TRIOS_PTHREAD_COND_T 1
+#cmakedefine HAVE_TRIOS_PTHREAD_COND_INIT 1
+#cmakedefine HAVE_TRIOS_PTHREAD_COND_WAIT 1
+#cmakedefine HAVE_TRIOS_PTHREAD_COND_TIMEDWAIT 1
+#cmakedefine HAVE_TRIOS_PTHREAD_COND_SIGNAL 1
+#cmakedefine HAVE_TRIOS_PTHREAD_COND_BROADCAST 1
+#cmakedefine HAVE_TRIOS_PTHREAD_COND_DESTROY 1
 
 
 /* ************************************************

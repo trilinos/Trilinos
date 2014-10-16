@@ -45,8 +45,8 @@
 #define KOKKOSTRAITS_HPP
 
 #include <stddef.h>
-#include <Kokkos_Macros.hpp>
 #include <stdint.h>
+#include <Kokkos_Macros.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -310,7 +310,7 @@ struct integral_nonzero_constant<T,zero,false>
 
 //----------------------------------------------------------------------------
 
-template <typename T> struct is_integral : public false_ {};
+template < typename T > struct is_integral : public false_ {};
 
 template <> struct is_integral<int8_t>  : public true_ {};
 template <> struct is_integral<int16_t> : public true_ {};
@@ -321,6 +321,21 @@ template <> struct is_integral<uint8_t>  : public true_ {};
 template <> struct is_integral<uint16_t> : public true_ {};
 template <> struct is_integral<uint32_t> : public true_ {};
 template <> struct is_integral<uint64_t> : public true_ {};
+
+//----------------------------------------------------------------------------
+
+template < class C > struct is_integral_constant : public false_
+{
+  typedef void integral_type ;
+  enum { integral_value = 0 };
+};
+
+template < typename T , T v >
+struct is_integral_constant< integral_constant<T,v> > : public true_
+{
+  typedef T integral_type ;
+  enum { integral_value = v };
+};
 
 } // namespace Impl
 } // namespace Kokkos

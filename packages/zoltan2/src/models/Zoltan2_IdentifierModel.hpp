@@ -75,7 +75,7 @@ public:
   typedef typename Adapter::scalar_t  scalar_t;
   typedef typename Adapter::gno_t     gno_t;
   typedef typename Adapter::lno_t     lno_t;
-  typedef typename Adapter::gid_t     gid_t;
+  typedef typename Adapter::zgid_t     zgid_t;
   typedef IdentifierMap<typename Adapter::user_t> idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 #endif
@@ -115,8 +115,11 @@ public:
     wgts = weights_.view(0, nUserWeights_);
     size_t n = getLocalNumIdentifiers();
     if (n){
-      if (gnosAreGids_) Ids = gids_(0, n);
-      else              Ids = gnosConst_(0, n);
+      if (gnosAreGids_) 
+        Ids = ArrayView<const gno_t>(
+                        reinterpret_cast<const gno_t*>(gids_.getRawPtr()), n);
+      else              
+        Ids = gnosConst_(0, n);
     }
     return n;
   }
@@ -135,7 +138,7 @@ private:
   gno_t numGlobalIdentifiers_;
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
-  ArrayRCP<const gid_t> gids_;
+  ArrayRCP<const zgid_t> gids_;
   int nUserWeights_;
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
@@ -175,7 +178,7 @@ template <typename Adapter>
     weights_ = arcp<input_t>(w, 0, nUserWeights_);
   }
 
-  const gid_t *gids=NULL;
+  const zgid_t *gids=NULL;
   
   // Get the input adapter's views
   try{
@@ -199,7 +202,7 @@ template <typename Adapter>
 
 
   // TODO:  Why does an IdentifierModel need an IdentifierMap?
-  // TODO:  Currently is useful only if gid_t is not Teuchos::Ordinal
+  // TODO:  Currently is useful only if zgid_t is not Teuchos::Ordinal
   RCP<const idmap_t> idMap;
   try{
     if (modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE))
@@ -219,7 +222,7 @@ template <typename Adapter>
     gnos_ = arcp(tmpGno, 0, nLocalIds);
 
     try{
-      ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
+      ArrayRCP<zgid_t> gidsNonConst = arcp_const_cast<zgid_t>(gids_);
       idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds),
         TRANSLATE_APP_TO_LIB);
     }

@@ -89,7 +89,7 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
@@ -203,7 +203,7 @@ public:
   // TODO:  Need to add option for columns or nonzeros?
   size_t getLocalNumVertices() const { return graph_->getNodeNumRows(); }
 
-  void getVertexIDsView(const gid_t *&ids) const 
+  void getVertexIDsView(const zgid_t *&ids) const 
   {
     ids = NULL;
     if (getLocalNumVertices())
@@ -212,7 +212,7 @@ public:
 
   size_t getLocalNumEdges() const { return graph_->getNodeNumEntries(); }
 
-  void getEdgesView(const lno_t *&offsets, const gid_t *&adjIds) const
+  void getEdgesView(const lno_t *&offsets, const zgid_t *&adjIds) const
   {
     offsets = offs_.getRawPtr();
     adjIds = (getLocalNumEdges() ? adjids_.getRawPtr() : NULL);
@@ -253,7 +253,7 @@ private:
   RCP<const Comm<int> > comm_;
 
   ArrayRCP<const lno_t> offs_;
-  ArrayRCP<const gid_t> adjids_;
+  ArrayRCP<const zgid_t> adjids_;
 
   int nWeightsPerVertex_;
   ArrayRCP<StridedData<lno_t, scalar_t> > vertexWeights_;
@@ -298,9 +298,9 @@ template <typename User, typename UserCoord>
   lno_t *offs = new lno_t [n];
   env_->localMemoryAssertion(__FILE__, __LINE__, n, offs);
 
-  gid_t *adjids = NULL;
+  zgid_t *adjids = NULL;
   if (nedges){
-    adjids = new gid_t [nedges];
+    adjids = new zgid_t [nedges];
     env_->localMemoryAssertion(__FILE__, __LINE__, nedges, adjids);
   }
 
@@ -403,14 +403,14 @@ template <typename User, typename UserCoord>
   // Get an import list
 
   size_t len = solution.getLocalNumberOfIds();
-  const gid_t *gids = solution.getIdList();
+  const zgid_t *gids = solution.getIdList();
   const part_t *parts = solution.getPartList();
-  ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false);
+  ArrayRCP<zgid_t> gidList = arcp(const_cast<zgid_t *>(gids), 0, len, false);
   ArrayRCP<part_t> partList = arcp(const_cast<part_t *>(parts), 0, len, 
     false);
 
   ArrayRCP<lno_t> dummyIn;
-  ArrayRCP<gid_t> importList;
+  ArrayRCP<zgid_t> importList;
   ArrayRCP<lno_t> dummyOut;
   size_t numNewVtx;
   const RCP<const Comm<int> > comm = graph_->getComm();

@@ -26,6 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
+// TODO: Modify code so R is not computed unless needed
+
 /*! \file AnasaziTraceMinBase.hpp
   \brief Abstract base class for trace minimization eigensolvers
 */
@@ -51,8 +53,20 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+using Teuchos::RCP;
+using Teuchos::rcp;
 
 namespace Anasazi {
+/**
+ * @namespace Experimental
+ * Namespace for new Anasazi features that are not ready for public release,
+ * but are ready for evaluation by friendly expert users.
+ *
+ * \warning Expect header files, classes, functions, and other interfaces to change or disappear. 
+ * Anything in this namespace is under active development and evaluation. Documentation may be 
+ * sparse or not exist yet. If you understand these caveats and accept them, please feel free to 
+ * take a look inside and try things out. 
+ */
 namespace Experimental {
 
   //! @name TraceMinBase Structures 
@@ -70,29 +84,29 @@ namespace Experimental {
      *
      * V has TraceMinBase::getMaxSubspaceDim() vectors, but only the first \c curDim are valid.
      */
-    Teuchos::RCP<const MV> V;
+    RCP<const MV> V;
     //! The image of V under K
-    Teuchos::RCP<const MV> KV;
+    RCP<const MV> KV;
     //! The image of V under M, or Teuchos::null if M was not specified
-    Teuchos::RCP<const MV> MopV;
+    RCP<const MV> MopV;
     //! The current eigenvectors.
-    Teuchos::RCP<const MV> X; 
+    RCP<const MV> X; 
     //! The image of the current eigenvectors under K.
-    Teuchos::RCP<const MV> KX; 
+    RCP<const MV> KX; 
     //! The image of the current eigenvectors under M, or Teuchos::null if M was not specified.
-    Teuchos::RCP<const MV> MX;
+    RCP<const MV> MX;
     //! The current residual vectors
-    Teuchos::RCP<const MV> R;
+    RCP<const MV> R;
     //! The current Ritz values. This vector is a copy of the internal data.
-    Teuchos::RCP<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
+    RCP<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
     /*! \brief The current projected K matrix.
      *
      * KK is of order TraceMinBase::getMaxSubspaceDim(), but only the principal submatrix of order \c curDim is meaningful. It is Hermitian in memory.
      *
      */
-    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > KK;
+    RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > KK;
     //! The current Ritz vectors.
-    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > RV;
+    RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > RV;
     //! Whether V has been projected and orthonormalized already
     bool isOrtho;
     //! Number of unconverged eigenvalues
@@ -100,7 +114,7 @@ namespace Experimental {
     //! Largest safe shift
     ScalarType largestSafeShift;
     //! Current Ritz shifts
-    Teuchos::RCP< const std::vector<ScalarType> > ritzShifts;
+    RCP< const std::vector<ScalarType> > ritzShifts;
     TraceMinBaseState() : curDim(0), V(Teuchos::null), KV(Teuchos::null), MopV(Teuchos::null),
                           X(Teuchos::null), KX(Teuchos::null), MX(Teuchos::null), R(Teuchos::null), 
                           T(Teuchos::null), KK(Teuchos::null), RV(Teuchos::null), isOrtho(false), 
@@ -138,7 +152,7 @@ namespace Experimental {
   
   //@}
 
-  /*! \class Anasazi::TraceMinBase
+  /*! \class TraceMinBase
   
       \brief This is an abstract base class for the trace minimization eigensolvers.
 
@@ -182,11 +196,11 @@ namespace Experimental {
      *
      * Anasazi's trace minimization solvers are still in development, and we plan to add additional features in the future including additional saddle point solvers.
      */
-    TraceMinBase( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
-                   const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
-                   const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
-                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
-                   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+    TraceMinBase( const RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
+                   const RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
+                   const RCP<OutputManager<ScalarType> >         &printer,
+                   const RCP<StatusTest<ScalarType,MV,OP> >      &tester,
+                   const RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
                    Teuchos::ParameterList &params 
                  );
     
@@ -298,7 +312,7 @@ namespace Experimental {
         The i-th vector of the return corresponds to the i-th Ritz vector; there is no need to use
         getRitzIndex().
      */
-    Teuchos::RCP<const MV> getRitzVectors();
+    RCP<const MV> getRitzVectors();
 
     /*! \brief Get the Ritz values for the previous iteration.
      *
@@ -361,10 +375,10 @@ namespace Experimental {
     //@{ 
 
     //! Set a new StatusTest for the solver.
-    void setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test);
+    void setStatusTest(RCP<StatusTest<ScalarType,MV,OP> > test);
 
     //! Get the current StatusTest used by the solver.
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getStatusTest() const;
+    RCP<StatusTest<ScalarType,MV,OP> > getStatusTest() const;
 
     //! Get a constant reference to the eigenvalue problem.
     const Eigenproblem<ScalarType,MV,OP>& getProblem() const;
@@ -400,10 +414,10 @@ namespace Experimental {
      *  it from the solver using getState(), orthogonalize it against the
      *  new auxiliary vectors, and reinitialize using initialize().
      */
-    void setAuxVecs(const Teuchos::Array<Teuchos::RCP<const MV> > &auxvecs);
+    void setAuxVecs(const Teuchos::Array<RCP<const MV> > &auxvecs);
 
     //! Get the auxiliary vectors for the solver.
-    Teuchos::Array<Teuchos::RCP<const MV> > getAuxVecs() const;
+    Teuchos::Array<RCP<const MV> > getAuxVecs() const;
 
     //@}
 
@@ -442,23 +456,23 @@ namespace Experimental {
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
-    const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
-    const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > sm_;
-    const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> >             tester_;
-    const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> >  orthman_;
+    const RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
+    const RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > sm_;
+    const RCP<OutputManager<ScalarType> >          om_;
+    RCP<StatusTest<ScalarType,MV,OP> >             tester_;
+    const RCP<MatOrthoManager<ScalarType,MV,OP> >  orthman_;
     //
     // Information obtained from the eigenproblem
     //
-    Teuchos::RCP<const OP> Op_;
-    Teuchos::RCP<const OP> MOp_;
-    Teuchos::RCP<const OP> Prec_;
+    RCP<const OP> Op_;
+    RCP<const OP> MOp_;
+    RCP<const OP> Prec_;
     bool hasM_;
     //
     // Internal timers
     // TODO: Fix the timers
     //
-    Teuchos::RCP<Teuchos::Time> timerOp_, timerMOp_, timerSaddle_, timerSortEval_, timerDS_,
+    RCP<Teuchos::Time> timerOp_, timerMOp_, timerSaddle_, timerSortEval_, timerDS_,
                                 timerLocal_, timerCompRes_, timerOrtho_, timerInit_;
     //
     // Internal structs
@@ -506,14 +520,14 @@ namespace Experimental {
     // V is the current basis
     // X is the current set of eigenvectors
     // R is the residual
-    Teuchos::RCP<MV> X_, KX_, MX_, KV_, MV_, R_, V_;
+    RCP<MV> X_, KX_, MX_, KV_, MV_, R_, V_;
     //
     // Projected matrices
     //
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > KK_, ritzVecs_;
+    RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > KK_, ritzVecs_;
     // 
     // auxiliary vectors
-    Teuchos::Array<Teuchos::RCP<const MV> > auxVecs_, MauxVecs_;
+    Teuchos::Array<RCP<const MV> > auxVecs_, MauxVecs_;
     int numAuxVecs_;
     //
     // Number of iterations that have been performed.
@@ -526,7 +540,7 @@ namespace Experimental {
     bool Rnorms_current_, R2norms_current_;
 
     // TraceMin specific variables
-    Teuchos::RCP<TraceMinRitzOp<ScalarType,MV,OP> > ritzOp_;	  // Operator which incorporates Ritz shifts
+    RCP<TraceMinRitzOp<ScalarType,MV,OP> > ritzOp_;    // Operator which incorporates Ritz shifts
     enum SaddleSolType saddleSolType_;                          // Type of saddle point solver being used
     bool previouslyLeveled_;                                    // True if the trace already leveled off
     MagnitudeType previousTrace_;                               // Trace of X'KX at the previous iteration
@@ -536,7 +550,7 @@ namespace Experimental {
     std::vector<ScalarType> ritzShifts_;                        // Current Ritz shifts
 
     // This is only used if we're using the Schur complement solver
-    Teuchos::RCP<MV> Z_;
+    RCP<MV> Z_;
 
     // User provided TraceMin parameters
     enum WhenToShiftType whenToShift_;                          // What triggers a Ritz shift
@@ -571,16 +585,16 @@ namespace Experimental {
     // TODO: Come back to this and make sure it does what I want it to
     std::vector<ScalarType> computeTol();
     // Solves a saddle point problem
-    void solveSaddlePointProblem(Teuchos::RCP<MV> Delta);
+    void solveSaddlePointProblem(RCP<MV> Delta);
     // Solves a saddle point problem by using unpreconditioned projected minres
-    void solveSaddleProj(Teuchos::RCP<MV> Delta) const;
+    void solveSaddleProj(RCP<MV> Delta) const;
     // Solves a saddle point problem by using preconditioned projected...Krylov...something
     // TODO: Fix this.  Replace minres with gmres or something.
-    void solveSaddleProjPrec(Teuchos::RCP<MV> Delta) const;
+    void solveSaddleProjPrec(RCP<MV> Delta) const;
     // Solves a saddle point problem by explicitly forming the inexact Schur complement
-    void solveSaddleSchur (Teuchos::RCP<MV> Delta) const;
+    void solveSaddleSchur (RCP<MV> Delta) const;
     // Solves a saddle point problem with a block diagonal preconditioner
-    void solveSaddleBDPrec (Teuchos::RCP<MV> Delta) const; 
+    void solveSaddleBDPrec (RCP<MV> Delta) const; 
     // Computes KK = X'KX
     void computeKK();
     // Computes the eigenpairs of KK
@@ -593,7 +607,7 @@ namespace Experimental {
     void updateResidual();
     // Adds Delta to the basis
     // TraceMin and TraceMinDavidson each do this differently, which is why this is pure virtual
-    virtual void addToBasis(const Teuchos::RCP<const MV> Delta) =0;
+    virtual void addToBasis(const RCP<const MV> Delta) =0;
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -611,11 +625,11 @@ namespace Experimental {
   // TODO: Add additional checking for logic errors (like trying to use gmres with multiple shifts)
   template <class ScalarType, class MV, class OP>
   TraceMinBase<ScalarType,MV,OP>::TraceMinBase(
-        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
-        const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
-        const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
-        const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
-        const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+        const RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
+        const RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
+        const RCP<OutputManager<ScalarType> >         &printer,
+        const RCP<StatusTest<ScalarType,MV,OP> >      &tester,
+        const RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
         Teuchos::ParameterList &params
         ) :
     ONE(Teuchos::ScalarTraits<MagnitudeType>::one()),
@@ -646,8 +660,8 @@ namespace Experimental {
     numBlocks_(0),
     initialized_(false),
     curDim_(0),
-    auxVecs_( Teuchos::Array<Teuchos::RCP<const MV> >(0) ), 
-    MauxVecs_( Teuchos::Array<Teuchos::RCP<const MV> >(0) ),
+    auxVecs_( Teuchos::Array<RCP<const MV> >(0) ), 
+    MauxVecs_( Teuchos::Array<RCP<const MV> >(0) ),
     numAuxVecs_(0),
     iter_(0),
     Rnorms_current_(false),
@@ -682,16 +696,16 @@ namespace Experimental {
     // Set the saddle point solver parameters
     saddleSolType_ = params.get("Saddle Solver Type", PROJECTED_KRYLOV_SOLVER);
     TEUCHOS_TEST_FOR_EXCEPTION(saddleSolType_ != PROJECTED_KRYLOV_SOLVER && saddleSolType_ != SCHUR_COMPLEMENT_SOLVER && saddleSolType_ != BD_PREC_MINRES, std::invalid_argument,
-           "Anasazi::TraceMin::constructor: Invalid value for \"Saddle Solver Type\"; valid options are PROJECTED_KRYLOV_SOLVER, SCHUR_COMPLEMENT_SOLVER, and BD_PREC_MINRES.");		
+           "Anasazi::TraceMin::constructor: Invalid value for \"Saddle Solver Type\"; valid options are PROJECTED_KRYLOV_SOLVER, SCHUR_COMPLEMENT_SOLVER, and BD_PREC_MINRES.");    
 
     // Set the Ritz shift parameters
     whenToShift_ = params.get("When To Shift", ALWAYS_SHIFT);
     TEUCHOS_TEST_FOR_EXCEPTION(whenToShift_ != NEVER_SHIFT && whenToShift_ != SHIFT_WHEN_TRACE_LEVELS && whenToShift_ != SHIFT_WHEN_RESID_SMALL && whenToShift_ != ALWAYS_SHIFT, std::invalid_argument,
-           "Anasazi::TraceMin::constructor: Invalid value for \"When To Shift\"; valid options are \"NEVER_SHIFT\", \"SHIFT_WHEN_TRACE_LEVELS\", \"SHIFT_WHEN_RESID_SMALL\", and \"ALWAYS_SHIFT\".");	
+           "Anasazi::TraceMin::constructor: Invalid value for \"When To Shift\"; valid options are \"NEVER_SHIFT\", \"SHIFT_WHEN_TRACE_LEVELS\", \"SHIFT_WHEN_RESID_SMALL\", and \"ALWAYS_SHIFT\".");  
 
     traceThresh_ = params.get("Trace Threshold", 2e-2);
     TEUCHOS_TEST_FOR_EXCEPTION(traceThresh_ < 0, std::invalid_argument,
-           "Anasazi::TraceMin::constructor: Invalid value for \"Trace Threshold\"; Must be positive.");	
+           "Anasazi::TraceMin::constructor: Invalid value for \"Trace Threshold\"; Must be positive.");  
 
     howToShift_ = params.get("How To Choose Shift", ADJUSTED_RITZ_SHIFT);
     TEUCHOS_TEST_FOR_EXCEPTION(howToShift_ != LARGEST_CONVERGED_SHIFT && howToShift_ != ADJUSTED_RITZ_SHIFT && howToShift_ != RITZ_VALUES_SHIFT, std::invalid_argument,
@@ -709,8 +723,8 @@ namespace Experimental {
 
     projectAllVecs_ = params.get("Project All Vectors", true);
     projectLockedVecs_ = params.get("Project Locked Vectors", true);
-    computeAllRes_ = params.get("Compute All Residuals", true);
     useRHSR_ = params.get("Use Residual as RHS", true);
+    computeAllRes_ = params.get("Compute All Residuals", true);
 
     // set the block size and allocate data
     int bs = params.get("Block Size", problem_->getNEV());
@@ -720,7 +734,11 @@ namespace Experimental {
     NEV_ = problem_->getNEV();
 
     // Create the Ritz shift operator
-    ritzOp_ = Teuchos::rcp( new TraceMinRitzOp<ScalarType,MV,OP>(Op_,MOp_,Prec_) );
+    ritzOp_ = rcp( new TraceMinRitzOp<ScalarType,MV,OP>(Op_,MOp_,Prec_) );
+	
+	// Set the maximum number of inner iterations
+	int innerMaxIts = params.get("Maximum Krylov Iterations", 1000);
+	ritzOp_->setMaxIts(innerMaxIts);
   }
 
 
@@ -744,7 +762,7 @@ namespace Experimental {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Return the current auxiliary vectors
   template <class ScalarType, class MV, class OP>
-  Teuchos::Array<Teuchos::RCP<const MV> > TraceMinBase<ScalarType,MV,OP>::getAuxVecs() const {
+  Teuchos::Array<RCP<const MV> > TraceMinBase<ScalarType,MV,OP>::getAuxVecs() const {
     return auxVecs_;
   }
 
@@ -815,7 +833,7 @@ namespace Experimental {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // return pointer to ritz vectors
   template <class ScalarType, class MV, class OP>
-  Teuchos::RCP<const MV> TraceMinBase<ScalarType,MV,OP>::getRitzVectors() {
+  RCP<const MV> TraceMinBase<ScalarType,MV,OP>::getRitzVectors() {
     return X_;
   }
 
@@ -864,11 +882,11 @@ namespace Experimental {
     state.KK = KK_;
     state.RV = ritzVecs_;
     if (curDim_ > 0) {
-      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(theta_.begin(),theta_.begin()+curDim_) );
+      state.T = rcp(new std::vector<MagnitudeType>(theta_.begin(),theta_.begin()+curDim_) );
     } else {
-      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(0));
+      state.T = rcp(new std::vector<MagnitudeType>(0));
     }
-    state.ritzShifts = Teuchos::rcp(new std::vector<MagnitudeType>(ritzShifts_.begin(),ritzShifts_.begin()+blockSize_) );
+    state.ritzShifts = rcp(new std::vector<MagnitudeType>(ritzShifts_.begin(),ritzShifts_.begin()+blockSize_) );
     state.isOrtho = true;
     state.largestSafeShift = largestSafeShift_;
 
@@ -892,7 +910,7 @@ namespace Experimental {
     const int searchDim = blockSize_*numBlocks_;
 
     // Update obtained from solving saddle point problem
-    Teuchos::RCP<MV> Delta = MVT::Clone(*X_,blockSize_);
+    RCP<MV> Delta = MVT::Clone(*X_,blockSize_);
 
     ////////////////////////////////////////////////////////////////
     // iterate until the status test tells us to stop.
@@ -1022,8 +1040,8 @@ namespace Experimental {
 
     // set up V and KK: get them from newstate if user specified them
     // otherwise, set them manually
-    Teuchos::RCP<MV> lclV, lclKV, lclMV;
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK, lclRV;
+    RCP<MV> lclV, lclKV, lclMV;
+    RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK, lclRV;
 
     // If V was supplied by the user...
     if (newstate.V != Teuchos::null) {
@@ -1060,7 +1078,7 @@ namespace Experimental {
     else 
     {
       // get vectors from problem or generate something, projectAndNormalize
-      Teuchos::RCP<const MV> ivec = problem_->getInitVec();
+      RCP<const MV> ivec = problem_->getInitVec();
       TEUCHOS_TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::invalid_argument,
              "Anasazi::TraceMinBase::initialize(newstate): Eigenproblem did not specify initial vectors to clone from.");
       // clear newstate so we won't use any data from it below
@@ -1097,7 +1115,7 @@ namespace Experimental {
       }
 
       std::vector<int> nevind(curDim_);
-      for (int i=0; i<curDim_; ++i) nevind[i] = i;	
+      for (int i=0; i<curDim_; ++i) nevind[i] = i;  
 
       // get a pointer into V
       // lclV has curDim vectors
@@ -1114,7 +1132,7 @@ namespace Experimental {
         if(newstate.curDim > 0)
         {
           if(MVT::GetNumberVecs(*newstate.V) > curDim_) {
-            Teuchos::RCP<const MV> helperMV = MVT::CloneView(*newstate.V,nevind);
+            RCP<const MV> helperMV = MVT::CloneView(*newstate.V,nevind);
             MVT::SetBlock(*helperMV,nevind,*lclV);
           }
           // assign ivec to first part of lclV
@@ -1184,7 +1202,7 @@ namespace Experimental {
       om_->stream(Debug) << "Project and normalize\n";
 
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-			Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
+      Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 #endif
 
       // These things are now invalid
@@ -1201,7 +1219,7 @@ namespace Experimental {
       if(auxVecs_.size() > 0)
       {
         rank = orthman_->projectAndNormalizeMat(*lclV, auxVecs_, 
-               Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)), 
+               Teuchos::tuple(RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)), 
                Teuchos::null, lclMV, MauxVecs_);
       }
       else
@@ -1280,7 +1298,7 @@ namespace Experimental {
       // We can't just call computeKK because it only computes the new parts of KK
 
       // Get a pointer to the part of KK we're interested in
-      lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
+      lclKK = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
 
       // KK := V'KV
       MVT::MvTransMv(ONE,*lclV,*lclKV,*lclKK);
@@ -1295,10 +1313,10 @@ namespace Experimental {
              "Anasazi::TraceMinBase::initialize(newstate): Projected matrix in new state must be as large as specified state rank.");
 
       // put data into KK_
-      lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
+      lclKK = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
       if (newstate.KK != KK_) {
         if (newstate.KK->numRows() > curDim_ || newstate.KK->numCols() > curDim_) {
-          newstate.KK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*newstate.KK,curDim_,curDim_) );
+          newstate.KK = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*newstate.KK,curDim_,curDim_) );
         }
         lclKK->assign(*newstate.KK);
       }
@@ -1332,10 +1350,10 @@ namespace Experimental {
 
       std::copy(newstate.T->begin(),newstate.T->end(),theta_.begin());
 
-      lclRV = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,curDim_) );
+      lclRV = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,curDim_) );
       if (newstate.RV != ritzVecs_) {
         if (newstate.RV->numRows() > curDim_ || newstate.RV->numCols() > curDim_) {
-          newstate.RV = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*newstate.RV,curDim_,curDim_) );
+          newstate.RV = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*newstate.RV,curDim_,curDim_) );
         }
         lclRV->assign(*newstate.RV);
       }
@@ -1395,24 +1413,24 @@ namespace Experimental {
       om_->stream(Debug) << "Copying KX and MX\n";
       if(Op_ != Teuchos::null)
       {
-		    if(computeAllRes_ == false)
-		    {
-		    	TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != blockSize_ || MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*KX_),
-		             std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of KX must be consistent with block size and length of V.");
+        if(computeAllRes_ == false)
+        {
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != blockSize_ || MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*KX_),
+                 std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of KX must be consistent with block size and length of V.");
 
-		      if(newstate.KX != KX_) {
-		        MVT::SetBlock(*newstate.KX,bsind,*KX_);
-		      }
-		    }
-		    else
-		    {
-		    	TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != curDim_ || MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*KX_),
-		             std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of KX must be consistent with current dimension and length of V.");
+          if(newstate.KX != KX_) {
+            MVT::SetBlock(*newstate.KX,bsind,*KX_);
+          }
+        }
+        else
+        {
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != curDim_ || MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*KX_),
+                 std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of KX must be consistent with current dimension and length of V.");
 
-		      if (newstate.KX != KX_) {
-		        MVT::SetBlock(*newstate.KX,dimind,*KX_);
-		      }
-		    }
+          if (newstate.KX != KX_) {
+            MVT::SetBlock(*newstate.KX,dimind,*KX_);
+          }
+        }
       }
 
       if(hasM_)
@@ -1544,7 +1562,7 @@ namespace Experimental {
     blockSize_ = blockSize;
     numBlocks_ = numBlocks;
 
-    Teuchos::RCP<const MV> tmp;
+    RCP<const MV> tmp;
     // grab some Multivector to Clone
     // in practice, getInitVec() should always provide this, but it is possible to use a 
     // Eigenproblem with nothing in getInitVec() by manually initializing with initialize(); 
@@ -1561,85 +1579,85 @@ namespace Experimental {
     TEUCHOS_TEST_FOR_EXCEPTION(numAuxVecs_+blockSize*static_cast<ptrdiff_t>(numBlocks) > MVText::GetGlobalLength(*tmp),std::invalid_argument,
            "Anasazi::TraceMinBase::setSize(): max subspace dimension and auxilliary subspace too large.  Potentially impossible orthogonality constraints.");
 
-		// New subspace dimension
-		int newsd = blockSize_*numBlocks_;
+    // New subspace dimension
+    int newsd = blockSize_*numBlocks_;
 
     //////////////////////////////////
     // blockSize dependent
     //
-		ritzShifts_.resize(blockSize_,ZERO);
-		if(computeAllRes_ == false)
-		{
-		  // grow/allocate vectors
-		  Rnorms_.resize(blockSize_,NANVAL);
-		  R2norms_.resize(blockSize_,NANVAL);
-		  //
-		  // clone multivectors off of tmp
-		  //
-		  // free current allocation first, to make room for new allocation
-		  X_ = Teuchos::null;
-		  KX_ = Teuchos::null;
-		  MX_ = Teuchos::null;
-		  R_ = Teuchos::null;
-		  V_ = Teuchos::null;
-		  KV_ = Teuchos::null;
-		  MV_ = Teuchos::null;
+    ritzShifts_.resize(blockSize_,ZERO);
+    if(computeAllRes_ == false)
+    {
+      // grow/allocate vectors
+      Rnorms_.resize(blockSize_,NANVAL);
+      R2norms_.resize(blockSize_,NANVAL);
+      //
+      // clone multivectors off of tmp
+      //
+      // free current allocation first, to make room for new allocation
+      X_ = Teuchos::null;
+      KX_ = Teuchos::null;
+      MX_ = Teuchos::null;
+      R_ = Teuchos::null;
+      V_ = Teuchos::null;
+      KV_ = Teuchos::null;
+      MV_ = Teuchos::null;
 
-		  om_->print(Debug," >> Allocating X_\n");
-		  X_ = MVT::Clone(*tmp,blockSize_);
+      om_->print(Debug," >> Allocating X_\n");
+      X_ = MVT::Clone(*tmp,blockSize_);
       if(Op_ != Teuchos::null) {
-		    om_->print(Debug," >> Allocating KX_\n");
-		    KX_ = MVT::Clone(*tmp,blockSize_);
+        om_->print(Debug," >> Allocating KX_\n");
+        KX_ = MVT::Clone(*tmp,blockSize_);
       }
       else {
         KX_ = X_;
       }
-		  if (hasM_) {
-		    om_->print(Debug," >> Allocating MX_\n");
-		    MX_ = MVT::Clone(*tmp,blockSize_);
-		  }
-		  else {
-		    MX_ = X_;
-		  }
-		  om_->print(Debug," >> Allocating R_\n");
-		  R_ = MVT::Clone(*tmp,blockSize_);
-		}
-		else
-		{
-		  // grow/allocate vectors
-		  Rnorms_.resize(newsd,NANVAL);
-		  R2norms_.resize(newsd,NANVAL);
-		  //
-		  // clone multivectors off of tmp
-		  //
-		  // free current allocation first, to make room for new allocation
-		  X_ = Teuchos::null;
-		  KX_ = Teuchos::null;
-		  MX_ = Teuchos::null;
-		  R_ = Teuchos::null;
-		  V_ = Teuchos::null;
-		  KV_ = Teuchos::null;
-		  MV_ = Teuchos::null;
+      if (hasM_) {
+        om_->print(Debug," >> Allocating MX_\n");
+        MX_ = MVT::Clone(*tmp,blockSize_);
+      }
+      else {
+        MX_ = X_;
+      }
+      om_->print(Debug," >> Allocating R_\n");
+      R_ = MVT::Clone(*tmp,blockSize_);
+    }
+    else
+    {
+      // grow/allocate vectors
+      Rnorms_.resize(newsd,NANVAL);
+      R2norms_.resize(newsd,NANVAL);
+      //
+      // clone multivectors off of tmp
+      //
+      // free current allocation first, to make room for new allocation
+      X_ = Teuchos::null;
+      KX_ = Teuchos::null;
+      MX_ = Teuchos::null;
+      R_ = Teuchos::null;
+      V_ = Teuchos::null;
+      KV_ = Teuchos::null;
+      MV_ = Teuchos::null;
 
-		  om_->print(Debug," >> Allocating X_\n");
-		  X_ = MVT::Clone(*tmp,newsd);
+      om_->print(Debug," >> Allocating X_\n");
+      X_ = MVT::Clone(*tmp,newsd);
       if(Op_ != Teuchos::null) {
-		    om_->print(Debug," >> Allocating KX_\n");
-		    KX_ = MVT::Clone(*tmp,newsd);
+        om_->print(Debug," >> Allocating KX_\n");
+        KX_ = MVT::Clone(*tmp,newsd);
       }
       else {
         KX_ = X_;
       }
-		  if (hasM_) {
-		    om_->print(Debug," >> Allocating MX_\n");
-		    MX_ = MVT::Clone(*tmp,newsd);
-		  }
-		  else {
-		    MX_ = X_;
-		  }
-		  om_->print(Debug," >> Allocating R_\n");
-		  R_ = MVT::Clone(*tmp,newsd);
-		}
+      if (hasM_) {
+        om_->print(Debug," >> Allocating MX_\n");
+        MX_ = MVT::Clone(*tmp,newsd);
+      }
+      else {
+        MX_ = X_;
+      }
+      om_->print(Debug," >> Allocating R_\n");
+      R_ = MVT::Clone(*tmp,newsd);
+    }
 
     //////////////////////////////////
     // blockSize*numBlocks dependent
@@ -1647,8 +1665,8 @@ namespace Experimental {
     theta_.resize(newsd,NANVAL);
     om_->print(Debug," >> Allocating V_\n");
     V_ = MVT::Clone(*tmp,newsd);
-    KK_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
-		ritzVecs_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
+    KK_ = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
+    ritzVecs_ = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
 
     if(Op_ != Teuchos::null) {
       om_->print(Debug," >> Allocating KV_\n");
@@ -1675,30 +1693,30 @@ namespace Experimental {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the auxiliary vectors
   template <class ScalarType, class MV, class OP>
-  void TraceMinBase<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RCP<const MV> > &auxvecs) {
-    typedef typename Teuchos::Array<Teuchos::RCP<const MV> >::iterator tarcpmv;
+  void TraceMinBase<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<RCP<const MV> > &auxvecs) {
+    typedef typename Teuchos::Array<RCP<const MV> >::iterator tarcpmv;
 
     // set new auxiliary vectors
     auxVecs_ = auxvecs;
 
-		if(hasM_)
-			MauxVecs_.resize(0);
+    if(hasM_)
+      MauxVecs_.resize(0);
     numAuxVecs_ = 0;
 
     for (tarcpmv i=auxVecs_.begin(); i != auxVecs_.end(); ++i) {
       numAuxVecs_ += MVT::GetNumberVecs(**i);
 
-			if(hasM_)
-			{
+      if(hasM_)
+      {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-			Teuchos::TimeMonitor lcltimer( *timerMOp_ );
+      Teuchos::TimeMonitor lcltimer( *timerMOp_ );
 #endif
         count_ApplyM_+= MVT::GetNumberVecs(**i);
 
-				Teuchos::RCP<MV> helperMV = MVT::Clone(**i,MVT::GetNumberVecs(**i));
-				OPT::Apply(*MOp_,**i,*helperMV);
-				MauxVecs_.push_back(helperMV);
-			}
+        RCP<MV> helperMV = MVT::Clone(**i,MVT::GetNumberVecs(**i));
+        OPT::Apply(*MOp_,**i,*helperMV);
+        MauxVecs_.push_back(helperMV);
+      }
     }
 
     // If the solver has been initialized, V is not necessarily orthogonal to new auxiliary vectors
@@ -1728,7 +1746,7 @@ namespace Experimental {
         for(int i=0; i<curDim_; i++)
           curind[i] = i;
 
-        Teuchos::RCP<const MV> locR = MVT::CloneView(*R_,curind);
+        RCP<const MV> locR = MVT::CloneView(*R_,curind);
         std::vector<ScalarType> locNorms(curDim_);
         orthman_->norm(*locR,locNorms);
 
@@ -1742,7 +1760,7 @@ namespace Experimental {
         return locNorms;
       }
       else
-      	orthman_->norm(*R_,Rnorms_);
+        orthman_->norm(*R_,Rnorms_);
       Rnorms_current_ = true;
     }
     else if(computeAllRes_)
@@ -1770,7 +1788,7 @@ namespace Experimental {
         for(int i=0; i<curDim_; i++)
           curind[i] = i;
 
-        Teuchos::RCP<const MV> locR = MVT::CloneView(*R_,curind);
+        RCP<const MV> locR = MVT::CloneView(*R_,curind);
         std::vector<ScalarType> locNorms(curDim_);
         MVT::MvNorm(*locR,locNorms);
 
@@ -1786,7 +1804,7 @@ namespace Experimental {
         return locNorms;
       }
       else
-      	MVT::MvNorm(*R_,R2norms_);
+        MVT::MvNorm(*R_,R2norms_);
       R2norms_current_ = true;
     }
     else if(computeAllRes_)
@@ -1803,7 +1821,7 @@ namespace Experimental {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set a new StatusTest for the solver.
   template <class ScalarType, class MV, class OP>
-  void TraceMinBase<ScalarType,MV,OP>::setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
+  void TraceMinBase<ScalarType,MV,OP>::setStatusTest(RCP<StatusTest<ScalarType,MV,OP> > test) {
     TEUCHOS_TEST_FOR_EXCEPTION(test == Teuchos::null,std::invalid_argument,
         "Anasazi::TraceMinBase::setStatusTest() was passed a null StatusTest.");
     tester_ = test;
@@ -1812,7 +1830,7 @@ namespace Experimental {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the current StatusTest used by the solver.
   template <class ScalarType, class MV, class OP>
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > TraceMinBase<ScalarType,MV,OP>::getStatusTest() const {
+  RCP<StatusTest<ScalarType,MV,OP> > TraceMinBase<ScalarType,MV,OP>::getStatusTest() const {
     return tester_;
   }
 
@@ -1863,666 +1881,666 @@ namespace Experimental {
     os << endl;
   }
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	template <class ScalarType, class MV, class OP>
-	ScalarType TraceMinBase<ScalarType,MV,OP>::getTrace() const
-	{
-		ScalarType currentTrace = ZERO;
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  template <class ScalarType, class MV, class OP>
+  ScalarType TraceMinBase<ScalarType,MV,OP>::getTrace() const
+  {
+    ScalarType currentTrace = ZERO;
 
-		int neigs = std::min(NEV_,curDim_);
-		for(int i=0; i < neigs; i++)
-			currentTrace += theta_[i];
+    int neigs = std::min(NEV_,curDim_);
+    for(int i=0; i < neigs; i++)
+      currentTrace += theta_[i];
 
-		return currentTrace;
-	}
+    return currentTrace;
+  }
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	template <class ScalarType, class MV, class OP>
-	bool TraceMinBase<ScalarType,MV,OP>::traceLeveled()
-	{
-		ScalarType ratioOfChange = traceThresh_;
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  template <class ScalarType, class MV, class OP>
+  bool TraceMinBase<ScalarType,MV,OP>::traceLeveled()
+  {
+    ScalarType ratioOfChange = traceThresh_;
 
-		if(previouslyLeveled_)
-		{
-			om_->stream(Debug) << "The trace already leveled, so we're not going to check it again\n";
-			return true;
-		}
+    if(previouslyLeveled_)
+    {
+      om_->stream(Debug) << "The trace already leveled, so we're not going to check it again\n";
+      return true;
+    }
 
-		ScalarType currentTrace = getTrace();
+    ScalarType currentTrace = getTrace();
 
-		om_->stream(Debug) << "The current trace is " << currentTrace << std::endl;
+    om_->stream(Debug) << "The current trace is " << currentTrace << std::endl;
 
-		// Compute the ratio of the change
-		// We seek the point where the trace has leveled off
-		// It should be reasonably safe to shift at this point
-		if(previousTrace_ != ZERO)
-		{
-			om_->stream(Debug) << "The previous trace was " << previousTrace_ << std::endl;
+    // Compute the ratio of the change
+    // We seek the point where the trace has leveled off
+    // It should be reasonably safe to shift at this point
+    if(previousTrace_ != ZERO)
+    {
+      om_->stream(Debug) << "The previous trace was " << previousTrace_ << std::endl;
 
-			ratioOfChange = std::abs(previousTrace_-currentTrace)/std::abs(previousTrace_);
-			om_->stream(Debug) << "The ratio of change is " << ratioOfChange << std::endl;
-		}
+      ratioOfChange = std::abs(previousTrace_-currentTrace)/std::abs(previousTrace_);
+      om_->stream(Debug) << "The ratio of change is " << ratioOfChange << std::endl;
+    }
 
-		previousTrace_ = currentTrace;
+    previousTrace_ = currentTrace;
 
-		if(ratioOfChange < traceThresh_)
-		{
-			previouslyLeveled_ = true;
-			return true;
-		}
-		return false;
-	}
+    if(ratioOfChange < traceThresh_)
+    {
+      previouslyLeveled_ = true;
+      return true;
+    }
+    return false;
+  }
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	// Compute the residual of each CLUSTER of eigenvalues
-	// This is important for selecting the Ritz shifts
-	template <class ScalarType, class MV, class OP>
-	std::vector<ScalarType> TraceMinBase<ScalarType,MV,OP>::getClusterResids()
-	{
-		int nvecs;
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Compute the residual of each CLUSTER of eigenvalues
+  // This is important for selecting the Ritz shifts
+  template <class ScalarType, class MV, class OP>
+  std::vector<ScalarType> TraceMinBase<ScalarType,MV,OP>::getClusterResids()
+  {
+    int nvecs;
 
-		if(computeAllRes_)
-			nvecs = curDim_;
-		else
-			nvecs = blockSize_;
+    if(computeAllRes_)
+      nvecs = curDim_;
+    else
+      nvecs = blockSize_;
 
     std::vector<ScalarType> clusterResids(nvecs);
-		std::vector<int> clusterIndices;
-		for(int i=0; i < nvecs; i++)
-		{
-			// test for cluster
-			if(clusterIndices.empty() || (theta_[i-1] + R2norms_[i-1] >= theta_[i] - R2norms_[i]))
-			{
-				// Add to cluster
-				if(!clusterIndices.empty())	om_->stream(Debug) << theta_[i-1] << " is in a cluster with " << theta_[i] << " because " << theta_[i-1] + R2norms_[i-1] << " >= " << theta_[i] - R2norms_[i] << std::endl;
-				clusterIndices.push_back(i);
-			}
-			// Cluster completed
-			else
-			{
-				om_->stream(Debug) << theta_[i-1] << " is NOT in a cluster with " << theta_[i] << " because " << theta_[i-1] + R2norms_[i-1] << " < " << theta_[i] - R2norms_[i] << std::endl;
-				ScalarType totalRes = ZERO;
-				for(size_t j=0; j < clusterIndices.size(); j++)
-					totalRes += (R2norms_[clusterIndices[j]]*R2norms_[clusterIndices[j]]);
+    std::vector<int> clusterIndices;
+    for(int i=0; i < nvecs; i++)
+    {
+      // test for cluster
+      if(clusterIndices.empty() || (theta_[i-1] + R2norms_[i-1] >= theta_[i] - R2norms_[i]))
+      {
+        // Add to cluster
+        if(!clusterIndices.empty())  om_->stream(Debug) << theta_[i-1] << " is in a cluster with " << theta_[i] << " because " << theta_[i-1] + R2norms_[i-1] << " >= " << theta_[i] - R2norms_[i] << std::endl;
+        clusterIndices.push_back(i);
+      }
+      // Cluster completed
+      else
+      {
+        om_->stream(Debug) << theta_[i-1] << " is NOT in a cluster with " << theta_[i] << " because " << theta_[i-1] + R2norms_[i-1] << " < " << theta_[i] - R2norms_[i] << std::endl;
+        ScalarType totalRes = ZERO;
+        for(size_t j=0; j < clusterIndices.size(); j++)
+          totalRes += (R2norms_[clusterIndices[j]]*R2norms_[clusterIndices[j]]);
 
-				// If the smallest magnitude value of this sign is in a cluster with the 
-				// largest magnitude cluster of this sign, it is not safe for the smallest
+        // If the smallest magnitude value of this sign is in a cluster with the 
+        // largest magnitude cluster of this sign, it is not safe for the smallest
         // eigenvalue to use a shift
-				if(theta_[clusterIndices[0]] < 0 && theta_[i] < 0)
-					negSafeToShift_ = true;
+        if(theta_[clusterIndices[0]] < 0 && theta_[i] < 0)
+          negSafeToShift_ = true;
         else if(theta_[clusterIndices[0]] > 0 && theta_[i] > 0)
-					posSafeToShift_ = true;
+          posSafeToShift_ = true;
 
-				for(size_t j=0; j < clusterIndices.size(); j++)
-					clusterResids[clusterIndices[j]] = sqrt(totalRes);
+        for(size_t j=0; j < clusterIndices.size(); j++)
+          clusterResids[clusterIndices[j]] = sqrt(totalRes);
 
-				clusterIndices.clear();
-				clusterIndices.push_back(i);
-			}
-		}
+        clusterIndices.clear();
+        clusterIndices.push_back(i);
+      }
+    }
 
-		// Handle last cluster
-		ScalarType totalRes = ZERO;
-		for(size_t j=0; j < clusterIndices.size(); j++)
-			totalRes += R2norms_[clusterIndices[j]];
-		for(size_t j=0; j < clusterIndices.size(); j++)
-			clusterResids[clusterIndices[j]] = totalRes;
+    // Handle last cluster
+    ScalarType totalRes = ZERO;
+    for(size_t j=0; j < clusterIndices.size(); j++)
+      totalRes += R2norms_[clusterIndices[j]];
+    for(size_t j=0; j < clusterIndices.size(); j++)
+      clusterResids[clusterIndices[j]] = totalRes;
 
-		return clusterResids;
-	}
+    return clusterResids;
+  }
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	// Compute the Ritz shifts based on the Ritz values and residuals
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Compute the Ritz shifts based on the Ritz values and residuals
   // A note on shifting: if the matrix is indefinite, you NEED to use a large block size
-	// TODO: resids[i] on its own is unsafe for the generalized EVP
-	//       See "A Parallel Implementation of the Trace Minimization Eigensolver"
-	//       by Eloy Romero and Jose E. Roman
-	template <class ScalarType, class MV, class OP>
-	void TraceMinBase<ScalarType,MV,OP>::computeRitzShifts(const std::vector<ScalarType>& clusterResids)
-	{
+  // TODO: resids[i] on its own is unsafe for the generalized EVP
+  //       See "A Parallel Implementation of the Trace Minimization Eigensolver"
+  //       by Eloy Romero and Jose E. Roman
+  template <class ScalarType, class MV, class OP>
+  void TraceMinBase<ScalarType,MV,OP>::computeRitzShifts(const std::vector<ScalarType>& clusterResids)
+  {
     std::vector<ScalarType> thetaMag(theta_);
-		bool traceHasLeveled = traceLeveled();
+    bool traceHasLeveled = traceLeveled();
 
     // Compute the magnitude of the eigenvalues
     for(int i=0; i<blockSize_; i++)
       thetaMag[i] = std::abs(thetaMag[i]);
 
-		// Test whether it is safe to shift
-		// TODO: Add residual shift option
-		// Note: If you choose single shift with an indefinite matrix, you're gonna have a bad time...
-		// Note: This is not safe for indefinite matrices, and I don't even know that it CAN be made safe.
+    // Test whether it is safe to shift
+    // TODO: Add residual shift option
+    // Note: If you choose single shift with an indefinite matrix, you're gonna have a bad time...
+    // Note: This is not safe for indefinite matrices, and I don't even know that it CAN be made safe.
     //       There just isn't any theoretical reason it should work.
-		// TODO: It feels like this should be different for TraceMin-Base; we should be able to use all eigenvalues in the current subspace to determine whether we have a cluster
-		if(whenToShift_ == ALWAYS_SHIFT || (whenToShift_ == SHIFT_WHEN_TRACE_LEVELS && traceHasLeveled))
-		{
-			// Set the shift to the largest safe shift
-			if(howToShift_ == LARGEST_CONVERGED_SHIFT)
-			{
-				for(int i=0; i<blockSize_; i++)
-					ritzShifts_[i] = largestSafeShift_;
-			}
-			// Set the shifts to the Ritz values
-			else if(howToShift_ == RITZ_VALUES_SHIFT)
-			{
-				ritzShifts_[0] = theta_[0];
+    // TODO: It feels like this should be different for TraceMin-Base; we should be able to use all eigenvalues in the current subspace to determine whether we have a cluster
+    if(whenToShift_ == ALWAYS_SHIFT || (whenToShift_ == SHIFT_WHEN_TRACE_LEVELS && traceHasLeveled))
+    {
+      // Set the shift to the largest safe shift
+      if(howToShift_ == LARGEST_CONVERGED_SHIFT)
+      {
+        for(int i=0; i<blockSize_; i++)
+          ritzShifts_[i] = largestSafeShift_;
+      }
+      // Set the shifts to the Ritz values
+      else if(howToShift_ == RITZ_VALUES_SHIFT)
+      {
+        ritzShifts_[0] = theta_[0];
 
-				// If we're using mulitple shifts, set them to EACH Ritz value.
-				// Otherwise, only use the smallest
-				if(useMultipleShifts_)
-				{
-					for(int i=1; i<blockSize_; i++)
-						ritzShifts_[i] = theta_[i];
-				}
-				else
-				{
-					for(int i=1; i<blockSize_; i++)
-						ritzShifts_[i] = ritzShifts_[0];
-				}
-			}
-			// Use Dr. Sameh's original shifting strategy
-			else if(howToShift_ == ADJUSTED_RITZ_SHIFT)
-			{
-				om_->stream(Debug) << "\nSeeking a shift for theta[0]=" << thetaMag[0] << std::endl;
+        // If we're using mulitple shifts, set them to EACH Ritz value.
+        // Otherwise, only use the smallest
+        if(useMultipleShifts_)
+        {
+          for(int i=1; i<blockSize_; i++)
+            ritzShifts_[i] = theta_[i];
+        }
+        else
+        {
+          for(int i=1; i<blockSize_; i++)
+            ritzShifts_[i] = ritzShifts_[0];
+        }
+      }
+      // Use Dr. Sameh's original shifting strategy
+      else if(howToShift_ == ADJUSTED_RITZ_SHIFT)
+      {
+        om_->stream(Debug) << "\nSeeking a shift for theta[0]=" << thetaMag[0] << std::endl;
 
-				// This is my adjustment.  If all eigenvalues are in a single cluster, it's probably a bad idea to shift the smallest one.
-				// If all of your eigenvalues are in one cluster, it's either way to early to shift or your subspace is too small
-				if((theta_[0] > 0 && posSafeToShift_) || (theta_[0] < 0 && negSafeToShift_) || considerClusters_ == false)
-				{
-					// Initialize with a conservative shift, either the biggest safe shift or the eigenvalue adjusted by its cluster's residual
-					ritzShifts_[0] = std::max(largestSafeShift_,thetaMag[0]-clusterResids[0]);
+        // This is my adjustment.  If all eigenvalues are in a single cluster, it's probably a bad idea to shift the smallest one.
+        // If all of your eigenvalues are in one cluster, it's either way to early to shift or your subspace is too small
+        if((theta_[0] > 0 && posSafeToShift_) || (theta_[0] < 0 && negSafeToShift_) || considerClusters_ == false)
+        {
+          // Initialize with a conservative shift, either the biggest safe shift or the eigenvalue adjusted by its cluster's residual
+          ritzShifts_[0] = std::max(largestSafeShift_,thetaMag[0]-clusterResids[0]);
 
-					om_->stream(Debug) << "Initializing with a conservative shift, either the most positive converged eigenvalue (" 
+          om_->stream(Debug) << "Initializing with a conservative shift, either the most positive converged eigenvalue (" 
                              << largestSafeShift_ << ") or the eigenvalue adjusted by the residual (" << thetaMag[0] << "-" 
                              << clusterResids[0] << ").\n";
 
-					// If this eigenvalue is NOT in a cluster, do an aggressive shift
-					if(R2norms_[0] == clusterResids[0])
-					{
-						ritzShifts_[0] = thetaMag[0];
-						om_->stream(Debug) << "Since this eigenvalue is NOT in a cluster, we can use the eigenvalue itself as a shift: ritzShifts[0]=" << ritzShifts_[0] << std::endl;
-					}
-					else
-						om_->stream(Debug) << "This eigenvalue is in a cluster, so it would not be safe to use the eigenvalue itself as a shift\n";
-				}
-				else
-				{
-					if(largestSafeShift_ > std::abs(ritzShifts_[0]))
-					{
-						om_->stream(Debug) << "Initializing with a conservative shift...the most positive converged eigenvalue: " << largestSafeShift_ << std::endl;
-						ritzShifts_[0] = largestSafeShift_;
-					}
-					else
-						om_->stream(Debug) << "Using the previous value of ritzShifts[0]=" << ritzShifts_[0];
-						
-				}
+          // If this eigenvalue is NOT in a cluster, do an aggressive shift
+          if(R2norms_[0] == clusterResids[0])
+          {
+            ritzShifts_[0] = thetaMag[0];
+            om_->stream(Debug) << "Since this eigenvalue is NOT in a cluster, we can use the eigenvalue itself as a shift: ritzShifts[0]=" << ritzShifts_[0] << std::endl;
+          }
+          else
+            om_->stream(Debug) << "This eigenvalue is in a cluster, so it would not be safe to use the eigenvalue itself as a shift\n";
+        }
+        else
+        {
+          if(largestSafeShift_ > std::abs(ritzShifts_[0]))
+          {
+            om_->stream(Debug) << "Initializing with a conservative shift...the most positive converged eigenvalue: " << largestSafeShift_ << std::endl;
+            ritzShifts_[0] = largestSafeShift_;
+          }
+          else
+            om_->stream(Debug) << "Using the previous value of ritzShifts[0]=" << ritzShifts_[0];
+            
+        }
 
-				om_->stream(Debug) << "ritzShifts[0]=" << ritzShifts_[0] << std::endl;
+        om_->stream(Debug) << "ritzShifts[0]=" << ritzShifts_[0] << std::endl;
 
-				if(useMultipleShifts_)
-				{
-					/////////////////////////////////////////////////////////////////////////////////////////
-					// Compute shifts for other eigenvalues
-					for(int i=1; i < blockSize_; i++)
-					{
-						om_->stream(Debug) << "\nSeeking a shift for theta[" << i << "]=" << thetaMag[i] << std::endl;
+        if(useMultipleShifts_)
+        {
+          /////////////////////////////////////////////////////////////////////////////////////////
+          // Compute shifts for other eigenvalues
+          for(int i=1; i < blockSize_; i++)
+          {
+            om_->stream(Debug) << "\nSeeking a shift for theta[" << i << "]=" << thetaMag[i] << std::endl;
 
-						// If the previous shift was aggressive and we are not in a cluster, do an aggressive shift
-						if(ritzShifts_[i-1] == thetaMag[i-1] && i < blockSize_-1 && thetaMag[i] < thetaMag[i+1] - R2norms_[i+1])
-						{
-							ritzShifts_[i] = thetaMag[i];
-							om_->stream(Debug) << "Using an aggressive shift: ritzShifts_[" << i << "]=" << ritzShifts_[i] << std::endl;
-						}
-						else
-						{
-							if(ritzShifts_[0] > std::abs(ritzShifts_[i]))
-							{
-								om_->stream(Debug) << "It was unsafe to use the aggressive shift.  Choose the shift used by theta[0]=" 
-		                               << thetaMag[0] << ": ritzShifts[0]=" << ritzShifts_[0] << std::endl;
+            // If the previous shift was aggressive and we are not in a cluster, do an aggressive shift
+            if(ritzShifts_[i-1] == thetaMag[i-1] && i < blockSize_-1 && thetaMag[i] < thetaMag[i+1] - clusterResids[i+1])
+            {
+              ritzShifts_[i] = thetaMag[i];
+              om_->stream(Debug) << "Using an aggressive shift: ritzShifts_[" << i << "]=" << ritzShifts_[i] << std::endl;
+            }
+            else
+            {
+              if(ritzShifts_[0] > std::abs(ritzShifts_[i]))
+              {
+                om_->stream(Debug) << "It was unsafe to use the aggressive shift.  Choose the shift used by theta[0]=" 
+                                   << thetaMag[0] << ": ritzShifts[0]=" << ritzShifts_[0] << std::endl;
 
-								// Choose a conservative shift, that of the smallest positive eigenvalue
-								ritzShifts_[i] = ritzShifts_[0];
-							}
-							else
-								om_->stream(Debug) << "It was unsafe to use the aggressive shift.  We will use the shift from the previous iteration: " << ritzShifts_[i] << std::endl;								
+                // Choose a conservative shift, that of the smallest positive eigenvalue
+                ritzShifts_[i] = ritzShifts_[0];
+              }
+              else
+                om_->stream(Debug) << "It was unsafe to use the aggressive shift.  We will use the shift from the previous iteration: " << ritzShifts_[i] << std::endl;                
 
-							om_->stream(Debug) << "Check whether any less conservative shifts would work (such as the biggest eigenvalue outside of the cluster, namely theta[ell] < " 
-                                 << thetaMag[i] << "-" << R2norms_[i] << " (" << thetaMag[i] - R2norms_[i] << ")\n";
+              om_->stream(Debug) << "Check whether any less conservative shifts would work (such as the biggest eigenvalue outside of the cluster, namely theta[ell] < " 
+                                 << thetaMag[i] << "-" << clusterResids[i] << " (" << thetaMag[i] - clusterResids[i] << ")\n";
 
-							// If possible, choose a less conservative shift, that of the biggest eigenvalue outside of the cluster
-							for(int ell=0; ell < i; ell++)
-							{
-								if(thetaMag[ell] < thetaMag[i] - R2norms_[i])
-								{
-									ritzShifts_[i] = thetaMag[ell];
-									om_->stream(Debug) << "ritzShifts_[" << i << "]=" << ritzShifts_[i] << " is valid\n";
-								}
-								else
-									break;
-							}
-						} // end else
+              // If possible, choose a less conservative shift, that of the biggest eigenvalue outside of the cluster
+              for(int ell=0; ell < i; ell++)
+              {
+                if(thetaMag[ell] < thetaMag[i] - clusterResids[i])
+                {
+                  ritzShifts_[i] = thetaMag[ell];
+                  om_->stream(Debug) << "ritzShifts_[" << i << "]=" << ritzShifts_[i] << " is valid\n";
+                }
+                else
+                  break;
+              }
+            } // end else
 
-						om_->stream(Debug) << "ritzShifts[" << i << "]=" << ritzShifts_[i] << std::endl;
-					} // end for
-				} // end if(useMultipleShifts_)
-				else
-				{
-					for(int i=1; i<blockSize_; i++)
-						ritzShifts_[i] = ritzShifts_[0];					
-				}
-			} // end if(howToShift_ == "Adjusted Ritz Values")
-		} // end if(whenToShift_ == "Always" || (whenToShift_ == "After Trace Levels" && traceHasLeveled))
+            om_->stream(Debug) << "ritzShifts[" << i << "]=" << ritzShifts_[i] << std::endl;
+          } // end for
+        } // end if(useMultipleShifts_)
+        else
+        {
+          for(int i=1; i<blockSize_; i++)
+            ritzShifts_[i] = ritzShifts_[0];          
+        }
+      } // end if(howToShift_ == "Adjusted Ritz Values")
+    } // end if(whenToShift_ == "Always" || (whenToShift_ == "After Trace Levels" && traceHasLeveled))
 
     // Set the correct sign
-		for(int i=0; i<blockSize_; i++)
-		{
-			if(theta_[i] < 0)
-				ritzShifts_[i] = -ritzShifts_[i];
-		}
-	}
+    for(int i=0; i<blockSize_; i++)
+    {
+      if(theta_[i] < 0)
+        ritzShifts_[i] = -ritzShifts_[i];
+    }
+  }
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	template <class ScalarType, class MV, class OP>
-	std::vector<ScalarType> TraceMinBase<ScalarType,MV,OP>::computeTol()
-	{
-		ScalarType temp1, temp2;
-		int nvecs = ritzShifts_.size();
-		std::vector<ScalarType> tolerances;
-	
-		for(int i=0; i < nvecs; i++)
-		{
-			if(std::abs(theta_[0]) != std::abs(ritzShifts_[i]))
-				temp1 = std::abs(theta_[i]-ritzShifts_[i])/std::abs(std::abs(theta_[0])-std::abs(ritzShifts_[i]));
-			else
-				temp1 = ONE;
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  template <class ScalarType, class MV, class OP>
+  std::vector<ScalarType> TraceMinBase<ScalarType,MV,OP>::computeTol()
+  {
+    ScalarType temp1, temp2;
+    int nvecs = ritzShifts_.size();
+    std::vector<ScalarType> tolerances;
+  
+    for(int i=0; i < nvecs; i++)
+    {
+      if(std::abs(theta_[0]) != std::abs(ritzShifts_[i]))
+        temp1 = std::abs(theta_[i]-ritzShifts_[i])/std::abs(std::abs(theta_[0])-std::abs(ritzShifts_[i]));
+      else
+        temp1 = ONE;
 
-			temp2 = pow(2.0,-iter_);
+      temp2 = pow(2.0,-iter_);
 
-			// TODO: The min and max tolerances should not be hard coded
-			//       Neither should the maximum number of iterations
-			tolerances.push_back(std::max(std::min(temp1,temp2),1e-8));
-		}
-	
-		if(nvecs > 1)
-			tolerances[nvecs-1] = tolerances[nvecs-2];
+      // TODO: The min and max tolerances should not be hard coded
+      //       Neither should the maximum number of iterations
+      tolerances.push_back(std::max(std::min(temp1,temp2),1e-8));
+    }
+  
+    if(nvecs > 1)
+      tolerances[nvecs-1] = tolerances[nvecs-2];
 
-		return tolerances;
-	}
+    return tolerances;
+  }
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	template <class ScalarType, class MV, class OP>
-	void TraceMinBase<ScalarType,MV,OP>::solveSaddlePointProblem(Teuchos::RCP<MV> Delta)
-	{
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  template <class ScalarType, class MV, class OP>
+  void TraceMinBase<ScalarType,MV,OP>::solveSaddlePointProblem(RCP<MV> Delta)
+  {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-	Teuchos::TimeMonitor lcltimer( *timerSaddle_ );
+  Teuchos::TimeMonitor lcltimer( *timerSaddle_ );
 #endif
 
     // This case can arise when looking for the largest eigenpairs
     if(Op_ == Teuchos::null)
     {
-			// dense solver
-			Teuchos::SerialDenseSolver<int,ScalarType> My_Solver;	
+      // dense solver
+      Teuchos::SerialDenseSolver<int,ScalarType> My_Solver;  
 
       // Schur complement
-			Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclS = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_,blockSize_) );
+      RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclS = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_,blockSize_) );
 
-			if(computeAllRes_)
-			{
-				// Get the valid indices of X
-				std::vector<int> curind(blockSize_);
-				for(int i=0; i<blockSize_; i++)
-					curind[i] = i;
+      if(computeAllRes_)
+      {
+        // Get the valid indices of X
+        std::vector<int> curind(blockSize_);
+        for(int i=0; i<blockSize_; i++)
+          curind[i] = i;
 
-				// Get a view of MX
-				Teuchos::RCP<const MV> lclMX = MVT::CloneView(*MX_, curind);
+        // Get a view of MX
+        RCP<const MV> lclMX = MVT::CloneView(*MX_, curind);
 
-				// form S = X' M^2 X
-				MVT::MvTransMv(ONE,*lclMX,*lclMX,*lclS);
+        // form S = X' M^2 X
+        MVT::MvTransMv(ONE,*lclMX,*lclMX,*lclS);
 
-				// compute the inverse of S
-				My_Solver.setMatrix(lclS);
-				My_Solver.invert();
+        // compute the inverse of S
+        My_Solver.setMatrix(lclS);
+        My_Solver.invert();
 
-				// Delta = X - MX/S
-				Teuchos::RCP<const MV> lclX = MVT::CloneView(*X_, curind);
-				MVT::Assign(*lclX,*Delta);
-				MVT::MvTimesMatAddMv( -ONE, *lclMX, *lclS, ONE, *Delta);
-			}
-			else
-			{
-				// form S = X' M^2 X
-				MVT::MvTransMv(ONE,*MX_,*MX_,*lclS);
+        // Delta = X - MX/S
+        RCP<const MV> lclX = MVT::CloneView(*X_, curind);
+        MVT::Assign(*lclX,*Delta);
+        MVT::MvTimesMatAddMv( -ONE, *lclMX, *lclS, ONE, *Delta);
+      }
+      else
+      {
+        // form S = X' M^2 X
+        MVT::MvTransMv(ONE,*MX_,*MX_,*lclS);
 
-				// compute the inverse of S
-				My_Solver.setMatrix(lclS);
-				My_Solver.invert();
+        // compute the inverse of S
+        My_Solver.setMatrix(lclS);
+        My_Solver.invert();
 
-				// Delta = X - MX/S
-				MVT::Assign(*X_,*Delta);
-				MVT::MvTimesMatAddMv( -ONE, *MX_, *lclS, ONE, *Delta);
-			}
+        // Delta = X - MX/S
+        MVT::Assign(*X_,*Delta);
+        MVT::MvTimesMatAddMv( -ONE, *MX_, *lclS, ONE, *Delta);
+      }
     }
     else
     {
-			std::vector<int> order(curDim_);
-			std::vector<ScalarType> tempvec(blockSize_);
-			Teuchos::RCP<BasicSort<MagnitudeType> > sorter = Teuchos::rcp( new BasicSort<MagnitudeType>("SR") );
+      std::vector<int> order(curDim_);
+      std::vector<ScalarType> tempvec(blockSize_);
+      RCP<BasicSort<MagnitudeType> > sorter = rcp( new BasicSort<MagnitudeType>("SR") );
 
-			// Stores the residual of each CLUSTER of eigenvalues
-			std::vector<ScalarType> clusterResids;
+      // Stores the residual of each CLUSTER of eigenvalues
+      std::vector<ScalarType> clusterResids;
 
-			// Sort the eigenvalues in ascending order for the Ritz shift selection
-			sorter->sort(theta_, Teuchos::rcpFromRef(order), curDim_);   // don't catch exception
+      // Sort the eigenvalues in ascending order for the Ritz shift selection
+      sorter->sort(theta_, Teuchos::rcpFromRef(order), curDim_);   // don't catch exception
 
-			// Apply the same ordering to the residual norms
-			getRes2Norms();
-			for (int i=0; i<blockSize_; i++)
-				tempvec[i] = R2norms_[order[i]];
-			R2norms_ = tempvec;
+      // Apply the same ordering to the residual norms
+      getRes2Norms();
+      for (int i=0; i<blockSize_; i++)
+        tempvec[i] = R2norms_[order[i]];
+      R2norms_ = tempvec;
 
-			// Compute the residual of each CLUSTER of eigenvalues
-			// This is important for selecting the Ritz shifts
-			clusterResids = getClusterResids();
+      // Compute the residual of each CLUSTER of eigenvalues
+      // This is important for selecting the Ritz shifts
+      clusterResids = getClusterResids();
 
-			// Sort the eigenvalues based on what the user wanted
-			sm_->sort(theta_, Teuchos::rcpFromRef(order), blockSize_);
+      // Sort the eigenvalues based on what the user wanted
+      sm_->sort(theta_, Teuchos::rcpFromRef(order), blockSize_);
 
-			// Apply the same ordering to the residual norms and cluster residuals
-			for (int i=0; i<blockSize_; i++)
-				tempvec[i] = R2norms_[order[i]];
-			R2norms_ = tempvec;
+      // Apply the same ordering to the residual norms and cluster residuals
+      for (int i=0; i<blockSize_; i++)
+        tempvec[i] = R2norms_[order[i]];
+      R2norms_ = tempvec;
 
-			for (int i=0; i<blockSize_; i++)
-				tempvec[i] = clusterResids[order[i]];
-			clusterResids = tempvec;			
+      for (int i=0; i<blockSize_; i++)
+        tempvec[i] = clusterResids[order[i]];
+      clusterResids = tempvec;      
 
-			// Compute the Ritz shifts
-			computeRitzShifts(clusterResids);
+      // Compute the Ritz shifts
+      computeRitzShifts(clusterResids);
 
-			// Compute the tolerances for the inner solves
-			std::vector<ScalarType> tolerances = computeTol();
+      // Compute the tolerances for the inner solves
+      std::vector<ScalarType> tolerances = computeTol();
 
-			for(int i=0; i<blockSize_; i++)
-			{
-				om_->stream(IterationDetails) << "Choosing Ritz shifts...theta[" << i << "]=" 
-						<< theta_[i] << ", resids[" << i << "]=" << R2norms_[i] << ", clusterResids[" << i << "]=" << clusterResids[i]
-						<< ", ritzShifts[" << i << "]=" << ritzShifts_[i] << ", and tol[" << i << "]=" << tolerances[i] << std::endl;
-			}
+      for(int i=0; i<blockSize_; i++)
+      {
+        om_->stream(IterationDetails) << "Choosing Ritz shifts...theta[" << i << "]=" 
+            << theta_[i] << ", resids[" << i << "]=" << R2norms_[i] << ", clusterResids[" << i << "]=" << clusterResids[i]
+            << ", ritzShifts[" << i << "]=" << ritzShifts_[i] << ", and tol[" << i << "]=" << tolerances[i] << std::endl;
+      }
 
-			// Set the Ritz shifts for the solver
-			ritzOp_->setRitzShifts(ritzShifts_);
+      // Set the Ritz shifts for the solver
+      ritzOp_->setRitzShifts(ritzShifts_);
 
-			// Set the inner stopping tolerance
-			// This uses the Ritz values to determine when to stop
-			ritzOp_->setInnerTol(tolerances);
+      // Set the inner stopping tolerance
+      // This uses the Ritz values to determine when to stop
+      ritzOp_->setInnerTol(tolerances);
 
-			// Solve the saddle point problem
-			if(saddleSolType_ == PROJECTED_KRYLOV_SOLVER)
-			{
-				if(Prec_ != Teuchos::null)
-					solveSaddleProjPrec(Delta);
-				else
-					solveSaddleProj(Delta);
-			}
-			else if(saddleSolType_ == SCHUR_COMPLEMENT_SOLVER)
-			{
-				if(Z_ == Teuchos::null || MVT::GetNumberVecs(*Z_) != blockSize_)
-				{
-					// We do NOT want Z to be 0, because that could result in stagnation
-					Z_ = MVT::Clone(*X_,blockSize_);
-					MVT::MvRandom(*Z_);
-				}
-				solveSaddleSchur(Delta);
-			}
+      // Solve the saddle point problem
+      if(saddleSolType_ == PROJECTED_KRYLOV_SOLVER)
+      {
+        if(Prec_ != Teuchos::null)
+          solveSaddleProjPrec(Delta);
+        else
+          solveSaddleProj(Delta);
+      }
+      else if(saddleSolType_ == SCHUR_COMPLEMENT_SOLVER)
+      {
+        if(Z_ == Teuchos::null || MVT::GetNumberVecs(*Z_) != blockSize_)
+        {
+          // We do NOT want Z to be 0, because that could result in stagnation
+          Z_ = MVT::Clone(*X_,blockSize_);
+          MVT::MvRandom(*Z_);
+        }
+        solveSaddleSchur(Delta);
+      }
       else if(saddleSolType_ == BD_PREC_MINRES)
       {
         solveSaddleBDPrec(Delta);
 //        Delta->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
       }
-			else
-				std::cout << "Invalid saddle solver type\n";
+      else
+        std::cout << "Invalid saddle solver type\n";
     }
-	}
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Solve the saddle point problem using projected minres
-	// TODO: We should be able to choose KX or -R as RHS.
-  template <class ScalarType, class MV, class OP>
-  void TraceMinBase<ScalarType,MV,OP>::solveSaddleProj (Teuchos::RCP<MV> Delta) const
-	{
-		Teuchos::RCP<TraceMinProjRitzOp<ScalarType,MV,OP> > projOp;
-
-		if(computeAllRes_)
-		{
-			// Get the valid indices of X
-			std::vector<int> curind(blockSize_);
-			for(int i=0; i<blockSize_; i++)
-				curind[i] = i;
-
-			Teuchos::RCP<const MV> locMX = MVT::CloneView(*MX_, curind);
-
-			// We should really project out the converged eigenvectors too
-			if(projectAllVecs_)
-			{
-				if(projectLockedVecs_ && numAuxVecs_ > 0)
-					projOp = Teuchos::rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,locMX,orthman_,auxVecs_) );
-				else
-					projOp = Teuchos::rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,locMX,orthman_) );
-			}
-			else
-				projOp = Teuchos::rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,locMX) );
-
-			// Remember, Delta0 must equal 0
-			// This ensures B-orthogonality between Delta and X
-			MVT::MvInit(*Delta);
-
-			if(useRHSR_)
-			{
-				Teuchos::RCP<const MV> locR = MVT::CloneView(*R_, curind);
-				projOp->ApplyInverse(*locR, *Delta);
-				MVT::MvScale(*Delta,-ONE);
-			}
-			else
-			{
-				Teuchos::RCP<const MV> locKX = MVT::CloneView(*KX_, curind);
-				projOp->ApplyInverse(*locKX, *Delta);
-			}
-		}
-		else
-		{
-			// We should really project out the converged eigenvectors too
-			if(projectAllVecs_)
-			{
-				if(projectLockedVecs_ && numAuxVecs_ > 0)
-					projOp = Teuchos::rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,MX_,orthman_,auxVecs_) );
-				else
-					projOp = Teuchos::rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,MX_,orthman_) );
-			}
-			else
-				projOp = Teuchos::rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,MX_) );
-
-			// Remember, Delta0 must equal 0
-			// This ensures B-orthogonality between Delta and X
-			MVT::MvInit(*Delta);
-
-			if(useRHSR_)
-			{
-				projOp->ApplyInverse(*R_, *Delta);
-				MVT::MvScale(*Delta,-ONE);
-			}
-			else
-				projOp->ApplyInverse(*KX_, *Delta);
-		}
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-	// TODO: Fix preconditioning
+  // Solve the saddle point problem using projected minres
+  // TODO: We should be able to choose KX or -R as RHS.
   template <class ScalarType, class MV, class OP>
-  void TraceMinBase<ScalarType,MV,OP>::solveSaddleProjPrec (Teuchos::RCP<MV> Delta) const
-	{
+  void TraceMinBase<ScalarType,MV,OP>::solveSaddleProj (RCP<MV> Delta) const
+  {
+    RCP<TraceMinProjRitzOp<ScalarType,MV,OP> > projOp;
+
+    if(computeAllRes_)
+    {
+      // Get the valid indices of X
+      std::vector<int> curind(blockSize_);
+      for(int i=0; i<blockSize_; i++)
+        curind[i] = i;
+
+      RCP<const MV> locMX = MVT::CloneView(*MX_, curind);
+
+      // We should really project out the converged eigenvectors too
+      if(projectAllVecs_)
+      {
+        if(projectLockedVecs_ && numAuxVecs_ > 0)
+          projOp = rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,locMX,orthman_,auxVecs_) );
+        else
+          projOp = rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,locMX,orthman_) );
+      }
+      else
+        projOp = rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,locMX) );
+
+      // Remember, Delta0 must equal 0
+      // This ensures B-orthogonality between Delta and X
+      MVT::MvInit(*Delta);
+
+      if(useRHSR_)
+      {
+        RCP<const MV> locR = MVT::CloneView(*R_, curind);
+        projOp->ApplyInverse(*locR, *Delta);
+      }
+      else
+      {
+        RCP<const MV> locKX = MVT::CloneView(*KX_, curind);
+        projOp->ApplyInverse(*locKX, *Delta);
+      }
+    }
+    else
+    {
+      // We should really project out the converged eigenvectors too
+      if(projectAllVecs_)
+      {
+        if(projectLockedVecs_ && numAuxVecs_ > 0)
+          projOp = rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,MX_,orthman_,auxVecs_) );
+        else
+          projOp = rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,MX_,orthman_) );
+      }
+      else
+        projOp = rcp( new TraceMinProjRitzOp<ScalarType,MV,OP>(ritzOp_,MX_) );
+
+      // Remember, Delta0 must equal 0
+      // This ensures B-orthogonality between Delta and X
+      MVT::MvInit(*Delta);
+
+      if(useRHSR_) {
+        projOp->ApplyInverse(*R_, *Delta);
+      }
+      else {
+        projOp->ApplyInverse(*KX_, *Delta);
+      }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // TODO: Fix preconditioning
+  template <class ScalarType, class MV, class OP>
+  void TraceMinBase<ScalarType,MV,OP>::solveSaddleProjPrec (RCP<MV> Delta) const
+  {
     // If we don't have Belos installed, we can't use TraceMinProjRitzOpWithPrec
     // Of course, this problem will be detected in the constructor and an exception will be thrown
     // This is only here to make sure the code compiles properly
 #ifdef HAVE_ANASAZI_BELOS
-		Teuchos::RCP<TraceMinProjRitzOpWithPrec<ScalarType,MV,OP> > projOp;
+    RCP<TraceMinProjRitzOpWithPrec<ScalarType,MV,OP> > projOp;
 
-		if(computeAllRes_)
-		{
-			// Get the valid indices of X
-			std::vector<int> curind(blockSize_);
-			for(int i=0; i<blockSize_; i++)
-				curind[i] = i;
+    if(computeAllRes_)
+    {
+      // Get the valid indices of X
+      std::vector<int> curind(blockSize_);
+      for(int i=0; i<blockSize_; i++)
+        curind[i] = i;
 
-			Teuchos::RCP<const MV> locMX = MVT::CloneView(*MX_, curind);
+      RCP<const MV> locMX = MVT::CloneView(*MX_, curind);
 
-			// We should really project out the converged eigenvectors too
-			if(projectAllVecs_)
-			{
-				if(projectLockedVecs_ && numAuxVecs_ > 0)
-					projOp = Teuchos::rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,locMX,orthman_,auxVecs_) );
-				else
-					projOp = Teuchos::rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,locMX,orthman_) );
-			}
-			else
-				projOp = Teuchos::rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,locMX) );
+      // We should really project out the converged eigenvectors too
+      if(projectAllVecs_)
+      {
+        if(projectLockedVecs_ && numAuxVecs_ > 0)
+          projOp = rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,locMX,orthman_,auxVecs_) );
+        else
+          projOp = rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,locMX,orthman_) );
+      }
+      else
+        projOp = rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,locMX) );
 
-			// Remember, Delta0 must equal 0
-			// This ensures B-orthogonality between Delta and X
-			MVT::MvInit(*Delta);
+      // Remember, Delta0 must equal 0
+      // This ensures B-orthogonality between Delta and X
+      MVT::MvInit(*Delta);
 
-			if(useRHSR_)
-			{
-				Teuchos::RCP<const MV> locR = MVT::CloneView(*R_, curind);
-				projOp->ApplyInverse(*locR, *Delta);
-				MVT::MvScale(*Delta, -ONE);
-			}
-			else
-			{
-				Teuchos::RCP<const MV> locKX = MVT::CloneView(*KX_, curind);
-				projOp->ApplyInverse(*locKX, *Delta);
-			}
-		}
-		else
-		{
-			// We should really project out the converged eigenvectors too
-			if(projectAllVecs_)
-			{
-				if(projectLockedVecs_ && numAuxVecs_ > 0)
-					projOp = Teuchos::rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,MX_,orthman_,auxVecs_) );
-				else
-					projOp = Teuchos::rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,MX_,orthman_) );
-			}
-			else
-				projOp = Teuchos::rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,MX_) );
+      if(useRHSR_)
+      {
+        RCP<const MV> locR = MVT::CloneView(*R_, curind);
+        projOp->ApplyInverse(*locR, *Delta);
+        MVT::MvScale(*Delta, -ONE);
+      }
+      else
+      {
+        RCP<const MV> locKX = MVT::CloneView(*KX_, curind);
+        projOp->ApplyInverse(*locKX, *Delta);
+      }
+    }
+    else
+    {
+      // We should really project out the converged eigenvectors too
+      if(projectAllVecs_)
+      {
+        if(projectLockedVecs_ && numAuxVecs_ > 0)
+          projOp = rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,MX_,orthman_,auxVecs_) );
+        else
+          projOp = rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,MX_,orthman_) );
+      }
+      else
+        projOp = rcp( new TraceMinProjRitzOpWithPrec<ScalarType,MV,OP>(ritzOp_,MX_) );
 
-			// Remember, Delta0 must equal 0
-			// This ensures B-orthogonality between Delta and X
-			MVT::MvInit(*Delta);
+      // Remember, Delta0 must equal 0
+      // This ensures B-orthogonality between Delta and X
+      MVT::MvInit(*Delta);
 
-			if(useRHSR_)
-			{
-				projOp->ApplyInverse(*R_, *Delta);
-				MVT::MvScale(*Delta,-ONE);
-			}
-			else
-				projOp->ApplyInverse(*KX_, *Delta);
-		}
+      if(useRHSR_)
+      {
+        projOp->ApplyInverse(*R_, *Delta);
+        MVT::MvScale(*Delta,-ONE);
+      }
+      else
+        projOp->ApplyInverse(*KX_, *Delta);
+    }
 #endif
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-	// TODO: We can hold the Schur complement constant in later iterations
+  // TODO: We can hold the Schur complement constant in later iterations
   // TODO: Make sure we're using the preconditioner correctly
   template <class ScalarType, class MV, class OP>
-  void TraceMinBase<ScalarType,MV,OP>::solveSaddleSchur (Teuchos::RCP<MV> Delta) const 
-	{
-		// dense solver
-		Teuchos::SerialDenseSolver<int,ScalarType> My_Solver;	
+  void TraceMinBase<ScalarType,MV,OP>::solveSaddleSchur (RCP<MV> Delta) const 
+  {
+    // dense solver
+    Teuchos::SerialDenseSolver<int,ScalarType> My_Solver;  
 
-		Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclL;
-		Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclS = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_,blockSize_) );
+    RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclL;
+    RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclS = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_,blockSize_) );
 
-		if(computeAllRes_)
-		{
-			// Get the valid indices of X
-			std::vector<int> curind(blockSize_);
-			for(int i=0; i<blockSize_; i++)
-				curind[i] = i;
+    if(computeAllRes_)
+    {
+      // Get the valid indices of X
+      std::vector<int> curind(blockSize_);
+      for(int i=0; i<blockSize_; i++)
+        curind[i] = i;
 
-			// Z = K \ MX
-			Teuchos::RCP<const MV> lclMX = MVT::CloneView(*MX_, curind);
-			ritzOp_->ApplyInverse(*lclMX,*Z_);
+      // Z = K \ MX
+      MVT::SetBlock(*X_,curind,*Z_);
+      RCP<const MV> lclMX = MVT::CloneView(*MX_, curind);
+      ritzOp_->ApplyInverse(*lclMX,*Z_);
 
-			// form S = X' M Z
-			MVT::MvTransMv(ONE,*Z_,*lclMX,*lclS);
+      // form S = X' M Z
+      MVT::MvTransMv(ONE,*Z_,*lclMX,*lclS);
 
-			// solve S L = I
-			My_Solver.setMatrix(lclS);
-			My_Solver.invert();
-			lclL = lclS;
+      // solve S L = I
+      My_Solver.setMatrix(lclS);
+      My_Solver.invert();
+      lclL = lclS;
 
-			// Delta = X - Z L
-			Teuchos::RCP<const MV> lclX = MVT::CloneView(*X_, curind);
-			MVT::Assign(*lclX,*Delta);
-			MVT::MvTimesMatAddMv( -ONE, *Z_, *lclL, ONE, *Delta);
-		}
-		else
-		{
-			// Z = K \ MX
-			ritzOp_->ApplyInverse(*MX_,*Z_);
+      // Delta = X - Z L
+      RCP<const MV> lclX = MVT::CloneView(*X_, curind);
+      MVT::Assign(*lclX,*Delta);
+      MVT::MvTimesMatAddMv( -ONE, *Z_, *lclL, ONE, *Delta);
+    }
+    else
+    {
+      // Z = K \ MX
+      ritzOp_->ApplyInverse(*MX_,*Z_);
 
-			// form S = X' M Z
-			MVT::MvTransMv(ONE,*Z_,*MX_,*lclS);
+      // form S = X' M Z
+      MVT::MvTransMv(ONE,*Z_,*MX_,*lclS);
 
-			// solve S L = I
-			My_Solver.setMatrix(lclS);
-			My_Solver.invert();
-			lclL = lclS;
+      // solve S L = I
+      My_Solver.setMatrix(lclS);
+      My_Solver.invert();
+      lclL = lclS;
 
-			// Delta = X - Z L
-			MVT::Assign(*X_,*Delta);
-			MVT::MvTimesMatAddMv( -ONE, *Z_, *lclL, ONE, *Delta);
-		}
+      // Delta = X - Z L
+      MVT::Assign(*X_,*Delta);
+      MVT::MvTimesMatAddMv( -ONE, *Z_, *lclL, ONE, *Delta);
+    }
   }
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-	// TODO: We can hold the Schur complement constant in later iterations
+  // TODO: We can hold the Schur complement constant in later iterations
   template <class ScalarType, class MV, class OP>
-  void TraceMinBase<ScalarType,MV,OP>::solveSaddleBDPrec (Teuchos::RCP<MV> Delta) const 
-	{
-    Teuchos::RCP<MV> locKX, locMX;
-		if(computeAllRes_)
-		{
-			std::vector<int> curind(blockSize_);
-			for(int i=0; i<blockSize_; i++)
-				curind[i] = i;
+  void TraceMinBase<ScalarType,MV,OP>::solveSaddleBDPrec (RCP<MV> Delta) const 
+  {
+    RCP<MV> locKX, locMX;
+    if(computeAllRes_)
+    {
+      std::vector<int> curind(blockSize_);
+      for(int i=0; i<blockSize_; i++)
+        curind[i] = i;
       locKX = MVT::CloneViewNonConst(*KX_, curind);
       locMX = MVT::CloneViewNonConst(*MX_, curind);
-		}
-		else
-		{
+    }
+    else
+    {
       locKX = KX_;
       locMX = MX_;
-		}
+    }
 
     // Create the operator [A BX; X'B 0]
-    Teuchos::RCP< SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > sadOp = Teuchos::rcp(new SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> >(ritzOp_,locMX));
+    RCP< SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > sadOp = rcp(new SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> >(ritzOp_,locMX));
 
     // Create the RHS [AX; 0]
-    Teuchos::RCP< SaddleContainer<ScalarType, MV> > sadRHS = Teuchos::rcp(new SaddleContainer<ScalarType,MV>(locKX));
+    RCP< SaddleContainer<ScalarType, MV> > sadRHS = rcp(new SaddleContainer<ScalarType,MV>(locKX));
 
     // Create the solution vector [Delta; L]
-    Teuchos::RCP< SaddleContainer<ScalarType, MV> > sadSol = Teuchos::rcp(new SaddleContainer<ScalarType,MV>(Delta));
+    MVT::MvInit(*Delta);
+    RCP< SaddleContainer<ScalarType, MV> > sadSol = rcp(new SaddleContainer<ScalarType,MV>(Delta));
 
     // Create a minres solver
-    Teuchos::RCP<MyMinresSolver<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > > sadSolver;
+    RCP<PseudoBlockMinres<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > > sadSolver;
     if(Prec_ != Teuchos::null)
     {
-      Teuchos::RCP< SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > sadPrec = Teuchos::rcp(new SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> >(ritzOp_,locMX,BD_PREC));
-      sadSolver = Teuchos::rcp(new MyMinresSolver<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > >(sadOp, sadPrec));
+      RCP< SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > sadPrec = rcp(new SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> >(ritzOp_,locMX,BD_PREC));
+      sadSolver = rcp(new PseudoBlockMinres<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > >(sadOp, sadPrec));
     }
     else {
-      sadSolver = Teuchos::rcp(new MyMinresSolver<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > >(sadOp));
+      sadSolver = rcp(new PseudoBlockMinres<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > >(sadOp));
     }
 
     // Set the tolerance for the minres solver
@@ -2544,224 +2562,224 @@ namespace Experimental {
   }
 
 
-	//////////////////////////////////////////////////////////////////////////////////////////////////
-	// Compute KK := V'KV
-	// We only compute the NEW elements
-	template <class ScalarType, class MV, class OP>
-	void TraceMinBase<ScalarType,MV,OP>::computeKK()
-	{
-		// Get the valid indices of V
-		std::vector<int> curind(curDim_);
-		for(int i=0; i<curDim_; i++)
-			curind[i] = i;
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Compute KK := V'KV
+  // We only compute the NEW elements
+  template <class ScalarType, class MV, class OP>
+  void TraceMinBase<ScalarType,MV,OP>::computeKK()
+  {
+    // Get the valid indices of V
+    std::vector<int> curind(curDim_);
+    for(int i=0; i<curDim_; i++)
+      curind[i] = i;
 
-		// Get a pointer to the valid parts of V
-		Teuchos::RCP<const MV> lclV = MVT::CloneView(*V_,curind);
+    // Get a pointer to the valid parts of V
+    RCP<const MV> lclV = MVT::CloneView(*V_,curind);
 
-		// Get the valid indices of KV
-		curind.resize(blockSize_);
-		for(int i=0; i<blockSize_; i++)
-			curind[i] = curDim_-blockSize_+i;
-		Teuchos::RCP<const MV> lclKV = MVT::CloneView(*KV_,curind);
+    // Get the valid indices of KV
+    curind.resize(blockSize_);
+    for(int i=0; i<blockSize_; i++)
+      curind[i] = curDim_-blockSize_+i;
+    RCP<const MV> lclKV = MVT::CloneView(*KV_,curind);
 
-		// Get a pointer to the valid part of KK
-		Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK = 
-				Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,blockSize_,0,curDim_-blockSize_) );
+    // Get a pointer to the valid part of KK
+    RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK = 
+        rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,blockSize_,0,curDim_-blockSize_) );
 
-		// KK := V'KV
-		MVT::MvTransMv(ONE,*lclV,*lclKV,*lclKK);
+    // KK := V'KV
+    MVT::MvTransMv(ONE,*lclV,*lclKV,*lclKK);
 
-		// We only constructed the upper triangular part of the matrix, but that's okay because KK is symmetric!
-		for(int r=0; r<curDim_; r++)
-		{
-			for(int c=0; c<r; c++)
-			{
-				(*KK_)(r,c) = (*KK_)(c,r);
-			}
-		}
-	}
+    // We only constructed the upper triangular part of the matrix, but that's okay because KK is symmetric!
+    for(int r=0; r<curDim_; r++)
+    {
+      for(int c=0; c<r; c++)
+      {
+        (*KK_)(r,c) = (*KK_)(c,r);
+      }
+    }
+  }
 
-	//////////////////////////////////////////////////////////////////////////////////////////////////
-	// Compute the eigenpairs of KK, i.e. the Ritz pairs
-	template <class ScalarType, class MV, class OP>
-	void TraceMinBase<ScalarType,MV,OP>::computeRitzPairs()
-	{
-		// Get a pointer to the valid part of KK
-		Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK = 
-				Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Compute the eigenpairs of KK, i.e. the Ritz pairs
+  template <class ScalarType, class MV, class OP>
+  void TraceMinBase<ScalarType,MV,OP>::computeRitzPairs()
+  {
+    // Get a pointer to the valid part of KK
+    RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK = 
+        rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
 
-		// Get a pointer to the valid part of ritzVecs
-		Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > lclRV = 
-				Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,curDim_) );
+    // Get a pointer to the valid part of ritzVecs
+    RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > lclRV = 
+        rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,curDim_) );
 
-		// Compute Ritz pairs from KK
-		{
+    // Compute Ritz pairs from KK
+    {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-			Teuchos::TimeMonitor lcltimer( *timerDS_ );
+      Teuchos::TimeMonitor lcltimer( *timerDS_ );
 #endif
-			int rank = curDim_;
-			Utils::directSolver(curDim_, *lclKK, Teuchos::null, *lclRV, theta_, rank, 10);
-			// we want all ritz values back
-			// TODO: This probably should not be an ortho failure
-			TEUCHOS_TEST_FOR_EXCEPTION(rank != curDim_,TraceMinBaseOrthoFailure,
-			       "Anasazi::TraceMinBase::computeRitzPairs(): Failed to compute all eigenpairs of KK.");
-		}
+      int rank = curDim_;
+      Utils::directSolver(curDim_, *lclKK, Teuchos::null, *lclRV, theta_, rank, 10);
+      // we want all ritz values back
+      // TODO: This probably should not be an ortho failure
+      TEUCHOS_TEST_FOR_EXCEPTION(rank != curDim_,TraceMinBaseOrthoFailure,
+             "Anasazi::TraceMinBase::computeRitzPairs(): Failed to compute all eigenpairs of KK.");
+    }
 
-		// Sort ritz pairs
-		{
+    // Sort ritz pairs
+    {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-			Teuchos::TimeMonitor lcltimer( *timerSortEval_ );
-#endif
-
-			std::vector<int> order(curDim_);
-			//
-			// sort the first curDim_ values in theta_
-			sm_->sort(theta_, Teuchos::rcpFromRef(order), curDim_);   // don't catch exception
-			//
-			// apply the same ordering to the primitive ritz vectors
-			Utils::permuteVectors(order,*lclRV);
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////
-	// Compute X := V evecs
-	template <class ScalarType, class MV, class OP>
-	void TraceMinBase<ScalarType,MV,OP>::computeX()
-	{
-#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor lcltimer( *timerLocal_ );
+      Teuchos::TimeMonitor lcltimer( *timerSortEval_ );
 #endif
 
-		// Get the valid indices of V
-		std::vector<int> curind(curDim_);
-		for(int i=0; i<curDim_; i++)
-			curind[i] = i;
+      std::vector<int> order(curDim_);
+      //
+      // sort the first curDim_ values in theta_
+      sm_->sort(theta_, Teuchos::rcpFromRef(order), curDim_);   // don't catch exception
+      //
+      // apply the same ordering to the primitive ritz vectors
+      Utils::permuteVectors(order,*lclRV);
+    }
+  }
 
-		// Get a pointer to the valid parts of V
-		Teuchos::RCP<const MV> lclV = MVT::CloneView(*V_,curind);
-
-		if(computeAllRes_)
-		{
-			// Capture the relevant eigenvectors
-			Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > relevantEvecs = 
-					Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,curDim_) ); 
-
-			// X <- lclV*S
-			Teuchos::RCP<MV> lclX = MVT::CloneViewNonConst(*X_,curind);
-			MVT::MvTimesMatAddMv( ONE, *lclV, *relevantEvecs, ZERO, *lclX );
-		}
-		else
-		{
-			// Capture the relevant eigenvectors
-			Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > relevantEvecs = 
-					Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,blockSize_) ); 
-
-			// X <- lclV*S
-			MVT::MvTimesMatAddMv( ONE, *lclV, *relevantEvecs, ZERO, *X_ );
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////
-	// Compute KX := KV evecs and (if necessary) MX := MV evecs
-	template <class ScalarType, class MV, class OP>
-	void TraceMinBase<ScalarType,MV,OP>::updateKXMX()
-	{
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Compute X := V evecs
+  template <class ScalarType, class MV, class OP>
+  void TraceMinBase<ScalarType,MV,OP>::computeX()
+  {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor lcltimer( *timerLocal_ );
 #endif
 
-		// Get the valid indices of V
-		std::vector<int> curind(curDim_);
-		for(int i=0; i<curDim_; i++)
-			curind[i] = i;
+    // Get the valid indices of V
+    std::vector<int> curind(curDim_);
+    for(int i=0; i<curDim_; i++)
+      curind[i] = i;
 
-		// Get pointers to the valid parts of V, KV, and MV (if necessary)
-		Teuchos::RCP<const MV> lclV = MVT::CloneView(*V_,curind);
-		Teuchos::RCP<const MV> lclKV = MVT::CloneView(*KV_,curind);
+    // Get a pointer to the valid parts of V
+    RCP<const MV> lclV = MVT::CloneView(*V_,curind);
 
-		if(computeAllRes_)
-		{
-			// Capture the relevant eigenvectors
-			Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > relevantEvecs = 
-					Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,curDim_) ); 
+    if(computeAllRes_)
+    {
+      // Capture the relevant eigenvectors
+      RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > relevantEvecs = 
+          rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,curDim_) ); 
 
-			// Update KX and MX
-			Teuchos::RCP<MV> lclKX = MVT::CloneViewNonConst(*KX_,curind);
-			MVT::MvTimesMatAddMv( ONE, *lclKV, *relevantEvecs, ZERO, *lclKX );
-			if(hasM_)
-			{
-				Teuchos::RCP<const MV> lclMV = MVT::CloneView(*MV_,curind);
-				Teuchos::RCP<MV> lclMX = MVT::CloneViewNonConst(*MX_,curind);
-				MVT::MvTimesMatAddMv( ONE, *lclMV, *relevantEvecs, ZERO, *lclMX );
-			}
-		}
-		else
-		{
-			// Capture the relevant eigenvectors
-			Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > relevantEvecs = 
-					Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,blockSize_) ); 
+      // X <- lclV*S
+      RCP<MV> lclX = MVT::CloneViewNonConst(*X_,curind);
+      MVT::MvTimesMatAddMv( ONE, *lclV, *relevantEvecs, ZERO, *lclX );
+    }
+    else
+    {
+      // Capture the relevant eigenvectors
+      RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > relevantEvecs = 
+          rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,blockSize_) ); 
 
-			// Update KX and MX
-			MVT::MvTimesMatAddMv( ONE, *lclKV, *relevantEvecs, ZERO, *KX_ );
-			if(hasM_)
-			{
-				Teuchos::RCP<const MV> lclMV = MVT::CloneView(*MV_,curind);
-				MVT::MvTimesMatAddMv( ONE, *lclMV, *relevantEvecs, ZERO, *MX_ );
-			}
-		}
-	}
+      // X <- lclV*S
+      MVT::MvTimesMatAddMv( ONE, *lclV, *relevantEvecs, ZERO, *X_ );
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Compute KX := KV evecs and (if necessary) MX := MV evecs
+  template <class ScalarType, class MV, class OP>
+  void TraceMinBase<ScalarType,MV,OP>::updateKXMX()
+  {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor lcltimer( *timerLocal_ );
+#endif
+
+    // Get the valid indices of V
+    std::vector<int> curind(curDim_);
+    for(int i=0; i<curDim_; i++)
+      curind[i] = i;
+
+    // Get pointers to the valid parts of V, KV, and MV (if necessary)
+    RCP<const MV> lclV = MVT::CloneView(*V_,curind);
+    RCP<const MV> lclKV = MVT::CloneView(*KV_,curind);
+
+    if(computeAllRes_)
+    {
+      // Capture the relevant eigenvectors
+      RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > relevantEvecs = 
+          rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,curDim_) ); 
+
+      // Update KX and MX
+      RCP<MV> lclKX = MVT::CloneViewNonConst(*KX_,curind);
+      MVT::MvTimesMatAddMv( ONE, *lclKV, *relevantEvecs, ZERO, *lclKX );
+      if(hasM_)
+      {
+        RCP<const MV> lclMV = MVT::CloneView(*MV_,curind);
+        RCP<MV> lclMX = MVT::CloneViewNonConst(*MX_,curind);
+        MVT::MvTimesMatAddMv( ONE, *lclMV, *relevantEvecs, ZERO, *lclMX );
+      }
+    }
+    else
+    {
+      // Capture the relevant eigenvectors
+      RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > relevantEvecs = 
+          rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,blockSize_) ); 
+
+      // Update KX and MX
+      MVT::MvTimesMatAddMv( ONE, *lclKV, *relevantEvecs, ZERO, *KX_ );
+      if(hasM_)
+      {
+        RCP<const MV> lclMV = MVT::CloneView(*MV_,curind);
+        MVT::MvTimesMatAddMv( ONE, *lclMV, *relevantEvecs, ZERO, *MX_ );
+      }
+    }
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Update the residual R := KX - MX*T
   template <class ScalarType, class MV, class OP>
   void TraceMinBase<ScalarType,MV,OP>::updateResidual () {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-		Teuchos::TimeMonitor lcltimer( *timerCompRes_ );
+    Teuchos::TimeMonitor lcltimer( *timerCompRes_ );
 #endif
 
-		if(computeAllRes_)
-		{
-			// Get the valid indices of X
-			std::vector<int> curind(curDim_);
-			for(int i=0; i<curDim_; i++)
-				curind[i] = i;
+    if(computeAllRes_)
+    {
+      // Get the valid indices of X
+      std::vector<int> curind(curDim_);
+      for(int i=0; i<curDim_; i++)
+        curind[i] = i;
 
-			// Holds MX*T
-			Teuchos::RCP<MV> MXT = MVT::CloneCopy(*MX_,curind);
+      // Holds MX*T
+      RCP<MV> MXT = MVT::CloneCopy(*MX_,curind);
 
-			// Holds the relevant part of theta
-			std::vector<ScalarType> locTheta(curDim_);
-			for(int i=0; i<curDim_; i++)
-				locTheta[i] = theta_[i];
+      // Holds the relevant part of theta
+      std::vector<ScalarType> locTheta(curDim_);
+      for(int i=0; i<curDim_; i++)
+        locTheta[i] = theta_[i];
 
-			// Compute MX*T
-			MVT::MvScale(*MXT,locTheta);
+      // Compute MX*T
+      MVT::MvScale(*MXT,locTheta);
 
-			// form R <- KX - MX*T
-			Teuchos::RCP<const MV> locKX = MVT::CloneView(*KX_,curind);
-			Teuchos::RCP<MV> locR = MVT::CloneViewNonConst(*R_,curind);
-			MVT::MvAddMv(ONE,*locKX,-ONE,*MXT,*locR);
-		}
-		else
-		{
-			// Holds MX*T
-			Teuchos::RCP<MV> MXT = MVT::CloneCopy(*MX_);
+      // form R <- KX - MX*T
+      RCP<const MV> locKX = MVT::CloneView(*KX_,curind);
+      RCP<MV> locR = MVT::CloneViewNonConst(*R_,curind);
+      MVT::MvAddMv(ONE,*locKX,-ONE,*MXT,*locR);
+    }
+    else
+    {
+      // Holds MX*T
+      RCP<MV> MXT = MVT::CloneCopy(*MX_);
 
-			// Holds the relevant part of theta
-			std::vector<ScalarType> locTheta(blockSize_);
-			for(int i=0; i<blockSize_; i++)
-				locTheta[i] = theta_[i];
+      // Holds the relevant part of theta
+      std::vector<ScalarType> locTheta(blockSize_);
+      for(int i=0; i<blockSize_; i++)
+        locTheta[i] = theta_[i];
 
-			// Compute MX*T
-			MVT::MvScale(*MXT,locTheta);
+      // Compute MX*T
+      MVT::MvScale(*MXT,locTheta);
 
-			// form R <- KX - MX*T
-			MVT::MvAddMv(ONE,*KX_,-ONE,*MXT,*R_);
-		}
+      // form R <- KX - MX*T
+      MVT::MvAddMv(ONE,*KX_,-ONE,*MXT,*R_);
+    }
 
-		// R has been updated; mark the norms as out-of-date
-		Rnorms_current_ = false;
-		R2norms_current_ = false;
+    // R has been updated; mark the norms as out-of-date
+    Rnorms_current_ = false;
+    R2norms_current_ = false;
   }
 
 
@@ -2805,7 +2823,7 @@ namespace Experimental {
     // V and friends
     std::vector<int> lclind(curDim_);
     for (int i=0; i<curDim_; ++i) lclind[i] = i;
-    Teuchos::RCP<const MV> lclV;
+    RCP<const MV> lclV;
     if (initialized_) {
       lclV = MVT::CloneView(*V_,lclind);
     }
@@ -2819,7 +2837,7 @@ namespace Experimental {
     }
 
     // X and friends
-    Teuchos::RCP<const MV> lclX;
+    RCP<const MV> lclX;
     if(initialized_)
     {
       if(computeAllRes_)
@@ -2837,9 +2855,9 @@ namespace Experimental {
       }
     }
     if (chk.checkMX && hasM_ && initialized_) {
-      Teuchos::RCP<const MV> lclMX;
+      RCP<const MV> lclMX;
       if(computeAllRes_)
-      	lclMX = MVT::CloneView(*MX_,lclind);
+        lclMX = MVT::CloneView(*MX_,lclind);
       else
         lclMX = MX_;
 
@@ -2847,9 +2865,9 @@ namespace Experimental {
       os << " >> Error in MX == M*X     : " << err << endl;
     }
     if (Op_ != Teuchos::null && chk.checkKX && initialized_) {
-      Teuchos::RCP<const MV> lclKX;
+      RCP<const MV> lclKX;
       if(computeAllRes_)
-      	lclKX = MVT::CloneView(*KX_,lclind);
+        lclKX = MVT::CloneView(*KX_,lclind);
       else
         lclKX = KX_;
 
@@ -2861,7 +2879,7 @@ namespace Experimental {
     if (chk.checkKK && initialized_) {
       Teuchos::SerialDenseMatrix<int,ScalarType> curKK(curDim_,curDim_);
       if(Op_ != Teuchos::null) {
-        Teuchos::RCP<MV> lclKV = MVT::Clone(*V_,curDim_);
+        RCP<MV> lclKV = MVT::Clone(*V_,curDim_);
         OPT::Apply(*Op_,*lclV,*lclKV);
         MVT::MvTransMv(ONE,*lclV,*lclKV,curKK);
       }

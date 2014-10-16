@@ -70,14 +70,12 @@ namespace Tpetra {
   ///
   /// \tparam Scalar The type of the entries in the sparse matrix.
   ///   Same as the \c Scalar typedef of Operator.
-  /// \tparam LocalOrdinal The type of local indices; defaults to
-  ///   <tt>int</tt>.  Same as the \c LocalOrdinal typedef of
-  ///   Operator.
-  /// \tparam GlobalOrdinal The type of global indices; defaults to
-  ///   <tt>LocalOrdinal</tt>.  Same as the \c GlobalOrdinal typedef
-  ///   of Operator.
-  /// \tparam Node Kokkos Node type; defaults to Kokkos' default Node
-  ///   type.  Same as the \c Node typedef of Operator.
+  /// \tparam LocalOrdinal The type of local indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam GlobalOrdinal The type of global indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam Node The Kokkos Node type.  See the documentation of Map
+  ///   for requirements.
   ///
   /// RowMatrix provides a read-only, row-oriented interface to view
   /// the entries of a sparse matrix, which is distributed over one or
@@ -92,12 +90,16 @@ namespace Tpetra {
   /// implementations of RowMatrix, which do useful things like
   /// wrapping an existing matrix to view only certain desired
   /// entries.
-  template <class Scalar,
-            class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template<class Scalar =
+             Operator<>::scalar_type,
+           class LocalOrdinal =
+             typename Operator<Scalar>::local_ordinal_type,
+           class GlobalOrdinal =
+             typename Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+           class Node =
+             typename Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class RowMatrix :
-    virtual public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
+    virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     virtual public SrcDistObject,
     public Packable<char, LocalOrdinal> {
   public:

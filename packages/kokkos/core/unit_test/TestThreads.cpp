@@ -47,10 +47,7 @@
 
 #if defined( KOKKOS_HAVE_PTHREAD )
 
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
-
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <Kokkos_CrsArray.hpp>
 
@@ -66,10 +63,13 @@
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
+#include <TestRange.hpp>
 #include <TestTeam.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
+#include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
 
 namespace Test {
 
@@ -136,6 +136,19 @@ TEST_F( threads, view_api) {
 
 TEST_F( threads, view_aggregate ) {
   TestViewAggregate< Kokkos::Threads >();
+}
+
+TEST_F( threads , range_tag )
+{
+  TestRange< Kokkos::Threads >::test_for(1000);
+  TestRange< Kokkos::Threads >::test_reduce(1000);
+  TestRange< Kokkos::Threads >::test_scan(1000);
+}
+
+TEST_F( threads , team_tag )
+{
+  TestTeamPolicy< Kokkos::Threads >::test_for(1000);
+  TestTeamPolicy< Kokkos::Threads >::test_reduce(1000);
 }
 
 TEST_F( threads, long_reduce) {
@@ -265,10 +278,7 @@ TEST_F( threads , scan_small )
 
 TEST_F( threads , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::Threads >( 10 );
-    TestScan< Kokkos::Threads >( 10000 );
-  }
+  TestScan< Kokkos::Threads >::test_range( 1 , 1000 );
   TestScan< Kokkos::Threads >( 1000000 );
   TestScan< Kokkos::Threads >( 10000000 );
   Kokkos::Threads::fence();
@@ -289,6 +299,11 @@ TEST_F( threads , compiler_macros )
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Threads >() ) );
 }
 
+TEST_F( threads , memory_space )
+{
+  TestMemorySpace< Kokkos::Threads >();
+}
+
 
 //----------------------------------------------------------------------------
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
@@ -303,6 +318,17 @@ TEST_F( threads , cxx11 )
 }
 #endif
 
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( threads , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(0) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(5) ) );
+}
+#endif
 } // namespace Test
 
 #endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */

@@ -92,10 +92,11 @@ ParameterList will accept a python dictionary.
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_DataAccess.hpp"
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
 // Namespace flattening
 using std::string;
@@ -207,6 +208,11 @@ __version__ = Teuchos_Version().split()[2]
 ///////////////////////////
 %teuchos_rcp(Teuchos::Time)
 %include "Teuchos_Time.hpp"
+
+/////////////////////////////////
+// Teuchos::DataAccess support //
+/////////////////////////////////
+%include "Teuchos_DataAccess.hpp"
 
 // Turn off the exception handling
 %exception;

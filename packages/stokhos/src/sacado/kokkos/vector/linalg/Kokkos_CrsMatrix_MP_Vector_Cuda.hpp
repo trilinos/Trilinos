@@ -45,8 +45,7 @@
 #if defined( __CUDACC__)
 
 #include "Kokkos_CrsMatrix_MP_Vector.hpp"
-#include "Kokkos_Cuda.hpp"
-#include "Cuda/Kokkos_Cuda_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 #include "Stokhos_Cuda_DeviceProp.hpp"
 
 //----------------------------------------------------------------------------

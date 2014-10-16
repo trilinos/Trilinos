@@ -57,18 +57,18 @@ DependencyXMLConverter::fromXMLtoDependency(
 
   TEUCHOS_TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependeeTagName()) == -1,
     MissingDependeesException,
-    "Could not find any dependees for a dependency!" 
+    "Could not find any dependees for a dependency!"
     <<std::endl <<std::endl);
 
   TEUCHOS_TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependentTagName()) == -1,
     MissingDependentsException,
-    "Could not find any dependents for a dependency!" 
+    "Could not find any dependents for a dependency!"
     <<std::endl <<std::endl);
 
   for(int i=0; i<xmlObj.numChildren(); ++i){
     XMLObject child = xmlObj.getChild(i);
     if(child.getTag() == getDependeeTagName()){
-      ParameterEntry::ParameterEntryID dependeeID = 
+      ParameterEntry::ParameterEntryID dependeeID =
         child.getRequired<ParameterEntry::ParameterEntryID>(
           getParameterIdAttributeName());
 
@@ -79,7 +79,7 @@ DependencyXMLConverter::fromXMLtoDependency(
       dependees.insert(entryIDsMap.find(dependeeID)->second);
     }
     else if(child.getTag() == getDependentTagName()){
-      ParameterEntry::ParameterEntryID dependentID = 
+      ParameterEntry::ParameterEntryID dependentID =
         child.getRequired<ParameterEntry::ParameterEntryID>(
           getParameterIdAttributeName());
 
@@ -103,7 +103,7 @@ DependencyXMLConverter::fromDependencytoXML(
 {
   XMLObject toReturn(Dependency::getXMLTagName());
 
-  toReturn.addAttribute(getTypeAttributeName(), 
+  toReturn.addAttribute(getTypeAttributeName(),
     dependency->getTypeAttributeValue());
 
   Dependency::ConstParameterEntryList::const_iterator it =

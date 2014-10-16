@@ -92,11 +92,10 @@ namespace Stokhos {
   // MP::Vector scalar type (each block is an identity matrix)
   // If flat_domain_map and/or flat_range_map are null, they will be computed,
   // otherwise they will be used as-is.
-  template <typename LocalOrdinal, typename GlobalOrdinal, typename Node,
-            typename LMO>
+  template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
   Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   create_flat_mp_graph(
-    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LMO>& graph,
+    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& graph,
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& flat_domain_map,
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& flat_range_map,
     const LocalOrdinal block_size) {
@@ -167,12 +166,11 @@ namespace Stokhos {
   // MP::Vector scalar type (each block is an identity matrix)
   // If flat_domain_map and/or flat_range_map are null, they will be computed,
   // otherwise they will be used as-is.
-  template <typename LocalOrdinal, typename GlobalOrdinal, typename Device,
-            typename LMO>
+  template <typename LocalOrdinal, typename GlobalOrdinal, typename Device>
   Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,
                                  Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
   create_flat_mp_graph(
-    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device>,LMO>& graph,
+    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& graph,
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_domain_map,
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_range_map,
     const LocalOrdinal block_size) {
@@ -183,7 +181,7 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
-    typedef typename Graph::t_RowPtrs RowPtrs;
+    typedef typename Graph::t_RowPtrsNC RowPtrs;
     typedef typename Graph::t_LocalOrdinal_1D LocalIndices;
 
     // Build domain map if necessary
@@ -502,12 +500,12 @@ namespace Stokhos {
   // Create a flattened matrix by unrolling the MP::Vector scalar type.  The
   // returned matrix is NOT a view of the original (and can't be)
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Node, typename LMO>
+            typename Node>
   Teuchos::RCP< Tpetra::CrsMatrix<typename Storage::value_type,
                                   LocalOrdinal,GlobalOrdinal,Node> >
   create_flat_matrix(
     const Tpetra::CrsMatrix<Sacado::MP::Vector<Storage>,
-                            LocalOrdinal,GlobalOrdinal,Node,LMO>& mat,
+                            LocalOrdinal,GlobalOrdinal,Node>& mat,
     const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& flat_graph,
     const LocalOrdinal block_size) {
     using Teuchos::ArrayView;

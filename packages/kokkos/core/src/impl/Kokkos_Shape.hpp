@@ -46,8 +46,7 @@
 
 #include <typeinfo>
 #include <utility>
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_Layout.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 
@@ -75,9 +74,6 @@ template< unsigned ScalarSize ,
           unsigned s6  = 1 ,
           unsigned s7  = 1 >
 struct Shape ;
-
-template< class ShapeType , class Layout >
-struct ShapeMap ;
 
 //----------------------------------------------------------------------------
 /** \brief  Shape equality if the value type, layout, and dimensions
@@ -221,7 +217,7 @@ struct assert_shape_is_rank_one< Shape<Size,1,s0> >
 /** \brief  Array bounds assertion templated on the execution space
  *          to allow device-specific abort code.
  */
-template< class ExecutionSpace >
+template< class Space >
 struct AssertShapeBoundsAbort ;
 
 template<>
@@ -239,7 +235,7 @@ struct AssertShapeBoundsAbort< Kokkos::HostSpace >
                      const size_t i6 , const size_t i7 );
 };
 
-template< class ExecutionDevice >
+template< class ExecutionSpace >
 struct AssertShapeBoundsAbort
 {
   KOKKOS_INLINE_FUNCTION
@@ -286,7 +282,7 @@ void assert_shape_bounds( const ShapeType & shape ,
                   i7 < shape.N7 ;
 
   if ( ! ok ) {
-    AssertShapeBoundsAbort< ExecutionSpace >
+    AssertShapeBoundsAbort< Kokkos::Impl::ActiveExecutionMemorySpace >
       ::apply( ShapeType::rank ,
                shape.N0 , shape.N1 , shape.N2 , shape.N3 ,
                shape.N4 , shape.N5 , shape.N6 , shape.N7 ,

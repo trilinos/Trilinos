@@ -1703,7 +1703,7 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "Warning, the eg command is not in your path! .*no eg in .path1:path2:path3.*\n" \
-      "Setting to default eg in source tree '.*/tribits/common_tools/git/eg'\n" \
+      "Setting to default eg in source tree '.*/common_tools/git/eg'\n" \
       ,
       inPathEg=False, egVersion=False
       )
@@ -2905,7 +2905,7 @@ class test_checkin_test(unittest.TestCase):
       ("MPI_DEBUG/do-configure.base",
        "\-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
        +"\-DBUILD_SHARED:BOOL=ON\n" \
-       +"\-DTrilinos_TRIBITS_DIR:PATH=.*/tribits\n" \
+       +"\-DTrilinos_TRIBITS_DIR:PATH=.*\n" \
        +"\-DTrilinos_TEST_CATEGORIES:STRING=BASIC\n" \
        +"\-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
        +"\-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n"
@@ -3051,7 +3051,11 @@ class test_checkin_test(unittest.TestCase):
       "--enable-all-packages=on",
       "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n",
       modifiedFilesStr = "M\tdummy.txt", # Will not trigger any enables!
-      extraPassRegexStr="Enabling all packages on request\n",
+      extraPassRegexStr=\
+        "Enabling all packages on request since --enable-all-packages=on\n"\
+        +"Skipping detection of changed packages since --enable-all-packages=on\n"\
+        +"cmakePkgOptions: ..-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON., .-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON., .-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON..\n"\
+        ,
       )
 
 

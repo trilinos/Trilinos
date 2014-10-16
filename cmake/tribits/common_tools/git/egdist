@@ -2,6 +2,8 @@
 
 usageHelp = r"""egdist [egdist options] [OPTIONS]
 
+WARNING: egdist is deprecated.  Use gitdist instead!
+
 Run eg/git recursively over extra repos
 
 Instead of typing
@@ -82,12 +84,12 @@ Each repository entry can have a summary message or not (i.e. use two or three
 lines per repo in the file).  A compatible repo version file can be generated
 with this script using, for example, using:
 
-   $ egdist log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
+   $ egdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
     | grep -v "^$" &> RepoVersion.txt
 
 using three lines per repo, or just:
 
-   $ egdist log -1 --pretty=format:"%h [%ad] <%ae>" \
+   $ egdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
     | grep -v "^$" &> RepoVersion.txt
 
 using two lines per repo in the output file.
@@ -502,6 +504,8 @@ if __name__ == '__main__':
         print "*** Changing to directory "+baseDir
       os.chdir(baseDir)
   
+  print ""
+  print "WARNING: egdist is deprecated.  Use gitdist instead!"
   print ""
   sys.stdout.flush()
   

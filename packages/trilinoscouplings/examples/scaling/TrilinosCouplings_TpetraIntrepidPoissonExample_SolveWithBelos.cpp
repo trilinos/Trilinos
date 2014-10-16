@@ -93,9 +93,6 @@ cloneAndSolveWithBelos (
   typedef Tpetra::CrsMatrix<ST, LO, GO, CloneNode>    clone_sparse_matrix_type;
   typedef Tpetra::Operator<ST, LO, GO, CloneNode>     clone_operator_type;
   typedef Tpetra::MultiVector<ST, LO, GO, CloneNode>  clone_multi_vector_type;
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
-  typedef typename KokkosClassic::DefaultKernels<ST,LO,CloneNode>::SparseOps clone_sparse_ops;
-#endif // HAVE_TRILINOSCOUPLINGS_MUELU
   typedef clone_multi_vector_type MV;
   typedef clone_operator_type OP;
 
@@ -119,12 +116,12 @@ cloneAndSolveWithBelos (
     if (M_left != Teuchos::null && prec_type == "MueLu") {
       RCP< const MueLu::TpetraOperator<ST,LO,GO,Node> > M_muelu =
         rcp_dynamic_cast<const MueLu::TpetraOperator<ST,LO,GO,Node> >(M_left);
-      M_left_clone = M_muelu->clone<CloneNode, clone_sparse_ops>(clone_node);
+      M_left_clone = M_muelu->clone<CloneNode> (clone_node);
     }
     if (M_right != Teuchos::null && prec_type == "MueLu") {
       RCP< const MueLu::TpetraOperator<ST,LO,GO,Node> > M_muelu =
         rcp_dynamic_cast<const MueLu::TpetraOperator<ST,LO,GO,Node> >(M_right);
-      M_right_clone = M_muelu->clone<CloneNode, clone_sparse_ops>(clone_node);
+      M_right_clone = M_muelu->clone<CloneNode> (clone_node);
     }
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -218,8 +215,8 @@ solveWithBelosGPU (
               << std::endl;
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
-    if (!Kokkos::Cuda::host_mirror_device_type::is_initialized())
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+    if (!Kokkos::HostSpace::execution_space::is_initialized())
+      Kokkos::HostSpace::execution_space::initialize();
     if (!Kokkos::Cuda::is_initialized())
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
 #endif
@@ -232,7 +229,7 @@ solveWithBelosGPU (
       gpu_node, X, A, B, prec_type, M_left, M_right);
 #if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
 #endif
   }
   else {

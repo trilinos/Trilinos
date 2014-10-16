@@ -55,20 +55,20 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoupledAggregationFactory()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::CoupledAggregationFactory()
   {
     TEUCHOS_TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, "");
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "Graph");
     //Input(currentLevel, "UnAmalgamationInfo"); // TODO, only provided by CoalesceDropFactory2
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const
   {
     FactoryMonitor m(*this, "Build", currentLevel);
 

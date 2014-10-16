@@ -51,7 +51,7 @@ namespace Teuchos {
 /** \brief A class for instantiating a default serialization object.
  *
  * The serialization buffer classes below are generalized beyond using the
- * SerializationTraits to use a general serialization object.  This is to 
+ * SerializationTraits to use a general serialization object.  This is to
  * allow for more general types of serialization, e.g., when other data needs
  * to be used.
  */
@@ -142,7 +142,7 @@ class ValueTypeSerializationBufferImp<Ordinal,T,Serializer,true> {
 public:
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ValueTypeSerializationBufferImp(
-    const Ordinal count, T buffer[], 
+    const Ordinal count, T buffer[],
     const RCP<const Serializer>& serializer
     );
   /** \brief Deserialize from the interal <tt>char[]</tt> buffer back to the
@@ -177,7 +177,7 @@ class ConstValueTypeSerializationBufferImp<Ordinal,T,Serializer,true> {
 public:
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ConstValueTypeSerializationBufferImp(
-    const Ordinal count, const T buffer[], 
+    const Ordinal count, const T buffer[],
     const RCP<const Serializer>& serializer
     );
   /** \brief Deserialize from the interal <tt>char[]</tt> buffer back to the
@@ -213,7 +213,7 @@ class ValueTypeDeserializationBufferImp<Ordinal,T,Serializer,true> {
 public:
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ValueTypeDeserializationBufferImp(
-    const Ordinal bytes, char charBuffer[], 
+    const Ordinal bytes, char charBuffer[],
     const RCP<const Serializer>& serializer
     );
   /** \brief Deserialize from the interal <tt>char[]</tt> buffer back to the
@@ -247,7 +247,7 @@ class ConstValueTypeDeserializationBufferImp<Ordinal,T,Serializer,true> {
 public:
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ConstValueTypeDeserializationBufferImp(
-    const Ordinal bytes, const char charBuffer[], 
+    const Ordinal bytes, const char charBuffer[],
     const RCP<const Serializer>& serializer
     );
   /** \brief Deserialize from the interal <tt>char[]</tt> buffer back to the
@@ -280,7 +280,7 @@ class ValueTypeSerializationBufferImp<Ordinal,T,Serializer,false> {
 public:
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ValueTypeSerializationBufferImp(
-    const Ordinal count, T buffer[], 
+    const Ordinal count, T buffer[],
     const RCP<const Serializer>& serializer
     );
   /** \brief Deserialize from the interal <tt>char[]</tt> buffer back to the
@@ -315,7 +315,7 @@ class ConstValueTypeSerializationBufferImp<Ordinal,T,Serializer,false> {
 public:
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ConstValueTypeSerializationBufferImp(
-    const Ordinal count, const T buffer[], 
+    const Ordinal count, const T buffer[],
     const RCP<const Serializer>& serializer
     );
   /** \brief Deserialize from the interal <tt>char[]</tt> buffer back to the
@@ -351,7 +351,7 @@ class ValueTypeDeserializationBufferImp<Ordinal,T,Serializer,false> {
 public:
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ValueTypeDeserializationBufferImp(
-    const Ordinal bytes, char charBuffer[], 
+    const Ordinal bytes, char charBuffer[],
     const RCP<const Serializer>& serializer
     );
   /** \brief Deserialize from the interal <tt>char[]</tt> buffer back to the
@@ -385,7 +385,7 @@ class ConstValueTypeDeserializationBufferImp<Ordinal,T,Serializer,false> {
 public:
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ConstValueTypeDeserializationBufferImp(
-    const Ordinal bytes, const char charBuffer[], 
+    const Ordinal bytes, const char charBuffer[],
     const RCP<const Serializer>& serializer
     );
   /** \brief Deserialize from the interal <tt>char[]</tt> buffer back to the
@@ -414,13 +414,13 @@ private:
  */
 template <typename Ordinal, typename T,
 	  typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
-class ValueTypeSerializationBuffer : 
+class ValueTypeSerializationBuffer :
     public ValueTypeSerializationBufferImp<Ordinal,T,Serializer> {
 public:
   typedef ValueTypeSerializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ValueTypeSerializationBuffer(
-    const Ordinal count, T buffer[], 
+    const Ordinal count, T buffer[],
     const RCP<const Serializer>& serializer
     ) : Base(count,buffer,serializer) {}
 };
@@ -430,13 +430,13 @@ public:
  */
 template <typename Ordinal, typename T,
 	  typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
-class ConstValueTypeSerializationBuffer : 
+class ConstValueTypeSerializationBuffer :
     public ConstValueTypeSerializationBufferImp<Ordinal,T,Serializer> {
 public:
   typedef ConstValueTypeSerializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ConstValueTypeSerializationBuffer(
-    const Ordinal count, const T buffer[], 
+    const Ordinal count, const T buffer[],
     const RCP<const Serializer>& serializer
     ) : Base(count,buffer,serializer) {}
 };
@@ -447,13 +447,13 @@ public:
  */
 template <typename Ordinal, typename T,
 	  typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
-class ValueTypeDeserializationBuffer : 
+class ValueTypeDeserializationBuffer :
     public ValueTypeDeserializationBufferImp<Ordinal,T,Serializer> {
 public:
   typedef ValueTypeDeserializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ValueTypeDeserializationBuffer(
-    const Ordinal bytes, char charBuffer[], 
+    const Ordinal bytes, char charBuffer[],
     const RCP<const Serializer>& serializer
     ) : Base(bytes,charBuffer,serializer) {}
 };
@@ -464,13 +464,13 @@ public:
  */
 template <typename Ordinal, typename T,
 	  typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
-class ConstValueTypeDeserializationBuffer : 
+class ConstValueTypeDeserializationBuffer :
     public ConstValueTypeDeserializationBufferImp<Ordinal,T,Serializer> {
 public:
   typedef ConstValueTypeDeserializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ConstValueTypeDeserializationBuffer(
-    const Ordinal bytes, const char charBuffer[], 
+    const Ordinal bytes, const char charBuffer[],
     const RCP<const Serializer>& serializer
     ) : Base(bytes,charBuffer,serializer) {}
 };
@@ -478,11 +478,11 @@ public:
 /** \brief Encapsulate how an array of non-const objects with value sematics
  * is serialized into a <tt>char[]</tt> array.
  *
- * Specialization for the default serializer object type with a default 
+ * Specialization for the default serializer object type with a default
  * argument for the serializer object parameter.
  */
 template <typename Ordinal, typename T>
-class ValueTypeSerializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> : 
+class ValueTypeSerializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> :
     public ValueTypeSerializationBufferImp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> {
 public:
   typedef DefaultSerializer<Ordinal,T> DS;  // work around for parsing bug in gcc 4.1-4.2
@@ -490,7 +490,7 @@ public:
   typedef ValueTypeSerializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ValueTypeSerializationBuffer(
-    const Ordinal count, T buffer[], 
+    const Ordinal count, T buffer[],
     const RCP<const Serializer>& serializer = DS::getDefaultSerializerRCP()
     ) : Base(count,buffer,serializer) {}
 };
@@ -498,11 +498,11 @@ public:
 /** \brief Encapsulate how an array of const objects with value sematics is
  * serialized into a <tt>const char[]</tt> array.
  *
- * Specialization for the default serializer object type with a default 
+ * Specialization for the default serializer object type with a default
  * argument for the serializer object parameter.
  */
 template <typename Ordinal, typename T>
-class ConstValueTypeSerializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> : 
+class ConstValueTypeSerializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> :
     public ConstValueTypeSerializationBufferImp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> {
 public:
   typedef DefaultSerializer<Ordinal,T> DS;  // work around for parsing bug in gcc 4.1-4.2
@@ -510,7 +510,7 @@ public:
   typedef ConstValueTypeSerializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ConstValueTypeSerializationBuffer(
-    const Ordinal count, const T buffer[], 
+    const Ordinal count, const T buffer[],
     const RCP<const Serializer>& serializer = DS::getDefaultSerializerRCP()
     ) : Base(count,buffer,serializer) {}
 };
@@ -519,11 +519,11 @@ public:
  * sematics stored in a <tt>char[]</tt> array is deserialized to a
  * <tt>T[]</tt> array and then serialized back again.
  *
- * Specialization for the default serializer object type with a default 
+ * Specialization for the default serializer object type with a default
  * argument for the serializer object parameter.
  */
 template <typename Ordinal, typename T>
-class ValueTypeDeserializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> : 
+class ValueTypeDeserializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> :
     public ValueTypeDeserializationBufferImp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> {
 public:
   typedef DefaultSerializer<Ordinal,T> DS;  // work around for parsing bug in gcc 4.1-4.2
@@ -531,7 +531,7 @@ public:
   typedef ValueTypeDeserializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ValueTypeDeserializationBuffer(
-    const Ordinal bytes, char charBuffer[], 
+    const Ordinal bytes, char charBuffer[],
     const RCP<const Serializer>& serializer = DS::getDefaultSerializerRCP()
     ) : Base(bytes,charBuffer,serializer) {}
 };
@@ -540,11 +540,11 @@ public:
  * sematics stored in a <tt>char[]</tt> array is deserialized to a
  * <tt>T[]</tt> array and then serialized back again.
  *
- * Specialization for the default serializer object type with a default 
+ * Specialization for the default serializer object type with a default
  * argument for the serializer object parameter.
  */
 template <typename Ordinal, typename T>
-class ConstValueTypeDeserializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> : 
+class ConstValueTypeDeserializationBuffer<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> :
     public ConstValueTypeDeserializationBufferImp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> {
 public:
   typedef DefaultSerializer<Ordinal,T> DS;  // work around for parsing bug in gcc 4.1-4.2
@@ -552,7 +552,7 @@ public:
   typedef ConstValueTypeDeserializationBufferImp<Ordinal,T,Serializer> Base;
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ConstValueTypeDeserializationBuffer(
-    const Ordinal bytes, const char charBuffer[], 
+    const Ordinal bytes, const char charBuffer[],
     const RCP<const Serializer>& serializer = DS::getDefaultSerializerRCP()
     ) : Base(bytes,charBuffer,serializer) {}
 };

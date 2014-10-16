@@ -115,20 +115,20 @@ class UserInputForTests
 {
 public:
 
-  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
-  typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> tcrsGraph_t;
-  typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> tVector_t;
-  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
+  typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tcrsMatrix_t;
+  typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tcrsGraph_t;
+  typedef Tpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> tVector_t;
+  typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 
-  typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xcrsMatrix_t;
-  typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xcrsGraph_t;
-  typedef Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> xVector_t;
-  typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> xMVector_t;
+  typedef Xpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> xcrsMatrix_t;
+  typedef Xpetra::CrsGraph<zlno_t, zgno_t, znode_t> xcrsGraph_t;
+  typedef Xpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> xVector_t;
+  typedef Xpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> xMVector_t;
 
-  typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-  typedef Tpetra::Export<lno_t, gno_t, node_t> export_t;
-  typedef Tpetra::Import<lno_t, gno_t, node_t> import_t;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType default_node_t;
+  typedef Tpetra::Map<zlno_t, zgno_t, znode_t> map_t;
+  typedef Tpetra::Export<zlno_t, zgno_t, znode_t> export_t;
+  typedef Tpetra::Import<zlno_t, zgno_t, znode_t> import_t;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType default_znode_t;
 
   /*! \brief Constructor that reads in a matrix/graph from disk.
    *   \param path is the path to the test data.  In the case of
@@ -175,8 +175,8 @@ public:
 
   /*! \brief Generate lists of random scalars.
    */
-  static void getUIRandomData(unsigned int seed, lno_t length,
-    scalar_t min, scalar_t max, ArrayView<ArrayRCP<scalar_t > > data);
+  static void getUIRandomData(unsigned int seed, zlno_t length,
+    zscalar_t min, zscalar_t max, ArrayView<ArrayRCP<zscalar_t > > data);
 
   RCP<tMVector_t> getUICoordinates();
 
@@ -397,8 +397,8 @@ RCP<Epetra_CrsGraph> UserInputForTests::getUIEpetraCrsGraph()
   if (M_.is_null())
     throw std::runtime_error("could not read mtx file");
   RCP<const tcrsGraph_t> tgraph = M_->getCrsGraph();
-  RCP<const Tpetra::Map<lno_t, gno_t> > trowMap = tgraph->getRowMap();
-  RCP<const Tpetra::Map<lno_t, gno_t> > tcolMap = tgraph->getColMap();
+  RCP<const Tpetra::Map<zlno_t, zgno_t> > trowMap = tgraph->getRowMap();
+  RCP<const Tpetra::Map<zlno_t, zgno_t> > tcolMap = tgraph->getColMap();
 
   int nElts = static_cast<int>(trowMap->getGlobalNumElements());
   int nMyElts = static_cast<int>(trowMap->getNodeNumElements());
@@ -446,7 +446,7 @@ RCP<Epetra_CrsMatrix> UserInputForTests::getUIEpetraCrsMatrix()
 
   for (int i=0; i < nrows; i++){
     ArrayView<const int> colLid;
-    ArrayView<const scalar_t> nz;
+    ArrayView<const zscalar_t> nz;
     M_->getLocalRowView(i+base, colLid, nz);
     size_t rowSize = colLid.size();
     int rowGid = rowMap.GID(i+base);
@@ -478,27 +478,27 @@ RCP<Epetra_MultiVector> UserInputForTests::getUIEpetraMultiVector(int nvec)
 }
 #endif
 
-void UserInputForTests::getUIRandomData(unsigned int seed, lno_t length, 
-    scalar_t min, scalar_t max,
-    ArrayView<ArrayRCP<scalar_t > > data)
+void UserInputForTests::getUIRandomData(unsigned int seed, zlno_t length, 
+    zscalar_t min, zscalar_t max,
+    ArrayView<ArrayRCP<zscalar_t > > data)
 {
   if (length < 1)
     return;
 
   size_t dim = data.size();
   for (size_t i=0; i < dim; i++){
-    scalar_t *tmp = new scalar_t [length];
+    zscalar_t *tmp = new zscalar_t [length];
     if (!tmp)
        throw (std::bad_alloc());
     data[i] = Teuchos::arcp(tmp, 0, length, true);
   }
 
-  scalar_t scalingFactor = (max-min) / RAND_MAX;
+  zscalar_t scalingFactor = (max-min) / RAND_MAX;
   srand(seed);
   for (size_t i=0; i < dim; i++){
-    scalar_t *x = data[i].getRawPtr();
-    for (lno_t j=0; j < length; j++)
-      *x++ = min + (scalar_t(rand()) * scalingFactor);
+    zscalar_t *x = data[i].getRawPtr();
+    for (zlno_t j=0; j < length; j++)
+      *x++ = min + (zscalar_t(rand()) * scalingFactor);
   }
 }
 
@@ -544,7 +544,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 
   size_t coordDim = 0, numGlobalCoords = 0;
   size_t msg[2]={0,0};
-  ArrayRCP<ArrayRCP<scalar_t> > xyz;
+  ArrayRCP<ArrayRCP<zscalar_t> > xyz;
   std::ifstream coordFile;
 
   if (tcomm_->getRank() == 0){
@@ -587,11 +587,11 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
     
         // Read in the coordinates.
       
-        xyz = Teuchos::arcp(new ArrayRCP<scalar_t> [coordDim], 0, coordDim);
+        xyz = Teuchos::arcp(new ArrayRCP<zscalar_t> [coordDim], 0, coordDim);
       
         for (size_t dim=0; !fail && dim < coordDim; dim++){
           size_t idx;
-          scalar_t *tmp = new scalar_t [numGlobalCoords];
+          zscalar_t *tmp = new zscalar_t [numGlobalCoords];
           if (!tmp)
             fail = 1;
           else{
@@ -609,7 +609,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
         }
 
         if (fail){
-          ArrayRCP<scalar_t> emptyArray;
+          ArrayRCP<zscalar_t> emptyArray;
           for (size_t dim=0; dim < coordDim; dim++)
             xyz[dim] = emptyArray;   // free the memory
 
@@ -636,7 +636,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   if (coordDim == 0)
     return;
 
-  gno_t base;
+  zgno_t base;
   RCP<const map_t> toMap;
 
   if (!M_.is_null()){
@@ -653,21 +653,21 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 
   xyz_ = rcp(new tMVector_t(toMap, coordDim));
 
-  ArrayRCP<ArrayView<const scalar_t> > coordLists(coordDim);
+  ArrayRCP<ArrayView<const zscalar_t> > coordLists(coordDim);
 
   if (tcomm_->getRank() == 0){
 
     for (size_t dim=0; dim < coordDim; dim++)
       coordLists[dim] = xyz[dim].view(0, numGlobalCoords);
 
-    gno_t *tmp = new gno_t [numGlobalCoords];
+    zgno_t *tmp = new zgno_t [numGlobalCoords];
     if (!tmp)
       throw std::bad_alloc();
 
-    ArrayRCP<const gno_t> rowIds = Teuchos::arcp(tmp, 0, numGlobalCoords);
+    ArrayRCP<const zgno_t> rowIds = Teuchos::arcp(tmp, 0, numGlobalCoords);
 
-    gno_t basePlusNumGlobalCoords = base+numGlobalCoords;
-    for (gno_t id=base; id < basePlusNumGlobalCoords; id++)
+    zgno_t basePlusNumGlobalCoords = base+numGlobalCoords;
+    for (zgno_t id=base; id < basePlusNumGlobalCoords; id++)
       *tmp++ = id;
 
     RCP<const map_t> fromMap = rcp(new map_t(numGlobalCoords, 
@@ -682,7 +682,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   else{
 
     RCP<const map_t> fromMap = rcp(new map_t(numGlobalCoords, 
-      ArrayView<gno_t>(), base, tcomm_));
+      ArrayView<zgno_t>(), base, tcomm_));
 
     tMVector_t allCoords(fromMap, coordLists.view(0, coordDim), coordDim);
 
@@ -696,18 +696,18 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   string problemType, bool distributeInput)
 {
   Teuchos::CommandLineProcessor tclp;
-  Galeri::Xpetra::Parameters<gno_t> params(tclp,
+  Galeri::Xpetra::Parameters<zgno_t> params(tclp,
      xdim, ydim, zdim, problemType);
 
-  RCP<const Tpetra::Map<lno_t, gno_t> > map;
+  RCP<const Tpetra::Map<zlno_t, zgno_t> > map;
   if (distributeInput)
-    map = rcp(new Tpetra::Map<lno_t, gno_t>(params.GetNumGlobalElements(),
+    map = rcp(new Tpetra::Map<zlno_t, zgno_t>(params.GetNumGlobalElements(),
                                             0, tcomm_));
   else {
     // All data initially on rank 0
     size_t nGlobalElements = params.GetNumGlobalElements();
     size_t nLocalElements = ((tcomm_->getRank() == 0) ? nGlobalElements : 0);
-    map = rcp(new Tpetra::Map<lno_t, gno_t>(nGlobalElements, nLocalElements, 0,
+    map = rcp(new Tpetra::Map<zlno_t, zgno_t>(nGlobalElements, nLocalElements, 0,
                                             tcomm_));
   }
 
@@ -725,8 +725,8 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   }
 
   try{
-    RCP<Galeri::Xpetra::Problem<Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t>, Tpetra::MultiVector<scalar_t, lno_t, gno_t> > > Pr =
-        Galeri::Xpetra::BuildProblem<scalar_t, lno_t, gno_t, Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t>, Tpetra::MultiVector<scalar_t, lno_t, gno_t> >
+    RCP<Galeri::Xpetra::Problem<Tpetra::Map<zlno_t, zgno_t>, Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t>, Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t> > > Pr =
+        Galeri::Xpetra::BuildProblem<zscalar_t, zlno_t, zgno_t, Tpetra::Map<zlno_t, zgno_t>, Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t>, Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t> >
         (params.GetMatrixType(), map, params.GetParameterList());
     M_ = Pr->BuildMatrix();
   }
@@ -745,8 +745,8 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
      "UserInputForTests, Implied matrix row coordinates computed" << 
        std::endl;
   
-  ArrayView<const gno_t> gids = map->getNodeElementList();
-  lno_t count = gids.size();
+  ArrayView<const zgno_t> gids = map->getNodeElementList();
+  zlno_t count = gids.size();
   int dim = 3;
   size_t pos = problemType.find("2D");
   if (pos != string::npos)
@@ -755,45 +755,45 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
            problemType == string("Identity"))
     dim = 1;
 
-  Array<ArrayRCP<scalar_t> > coordinates(dim);
+  Array<ArrayRCP<zscalar_t> > coordinates(dim);
 
   if (count > 0){
     for (int i=0; i < dim; i++){
-      scalar_t *c = new scalar_t [count];
+      zscalar_t *c = new zscalar_t [count];
       if (!c)
         throw(std::bad_alloc());
       coordinates[i] = Teuchos::arcp(c, 0, count, true);
     }
   
     if (dim==3){
-      scalar_t *x = coordinates[0].getRawPtr();
-      scalar_t *y = coordinates[1].getRawPtr();
-      scalar_t *z = coordinates[2].getRawPtr();
-      gno_t xySize = xdim * ydim;
-      for (lno_t i=0; i < count; i++){
-        gno_t iz = gids[i] / xySize;
-        gno_t xy = gids[i] - iz*xySize;
-        z[i] = scalar_t(iz);
-        y[i] = scalar_t(xy / xdim);
-        x[i] = scalar_t(xy % xdim);
+      zscalar_t *x = coordinates[0].getRawPtr();
+      zscalar_t *y = coordinates[1].getRawPtr();
+      zscalar_t *z = coordinates[2].getRawPtr();
+      zgno_t xySize = xdim * ydim;
+      for (zlno_t i=0; i < count; i++){
+        zgno_t iz = gids[i] / xySize;
+        zgno_t xy = gids[i] - iz*xySize;
+        z[i] = zscalar_t(iz);
+        y[i] = zscalar_t(xy / xdim);
+        x[i] = zscalar_t(xy % xdim);
       }
     }
     else if (dim==2){
-      scalar_t *x = coordinates[0].getRawPtr();
-      scalar_t *y = coordinates[1].getRawPtr();
-      for (lno_t i=0; i < count; i++){
-        y[i] = scalar_t(gids[i] / xdim);
-        x[i] = scalar_t(gids[i] % xdim);
+      zscalar_t *x = coordinates[0].getRawPtr();
+      zscalar_t *y = coordinates[1].getRawPtr();
+      for (zlno_t i=0; i < count; i++){
+        y[i] = zscalar_t(gids[i] / xdim);
+        x[i] = zscalar_t(gids[i] % xdim);
       }
     }
     else{
-      scalar_t *x = coordinates[0].getRawPtr();
-      for (lno_t i=0; i < count; i++)
-        x[i] = scalar_t(gids[i]);
+      zscalar_t *x = coordinates[0].getRawPtr();
+      for (zlno_t i=0; i < count; i++)
+        x[i] = zscalar_t(gids[i]);
     }
   }
 
-  Array<ArrayView<const scalar_t> > coordView(dim);
+  Array<ArrayView<const zscalar_t> > coordView(dim);
   if (count > 0)
     for (int i=0; i < dim; i++)
       coordView[i] = coordinates[i].view(0,count);
@@ -870,7 +870,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
   float *ewgts = NULL, *vwgts = NULL;
   size_t *nzPerRow = NULL;
   size_t maxRowLen = 0;
-  gno_t base = 0;
+  zgno_t base = 0;
   ArrayRCP<const size_t> rowSizes;
   int fail = 0;
   bool haveEdges = true;
@@ -954,7 +954,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
     graphCounts[1] = nedges;
     graphCounts[2] = nVwgts;
     graphCounts[3] = nEwgts;
-    graphCounts[4] = maxRowLen;  // size_t maxRowLen will fit; it is <= (int-int)
+    graphCounts[4] = maxRowLen; // size_t maxRowLen will fit; it is <= (int-int)
   }
   
   Teuchos::broadcast<int, int>(*tcomm_, 0, 5, graphCounts);
@@ -977,7 +977,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
 
     if (haveEdges){
 
-      gno_t *edgeIds = new gno_t [nedges];
+      zgno_t *edgeIds = new zgno_t [nedges];
       if (nedges && !edgeIds)
         throw std::bad_alloc();
       for (int i=0; i < nedges; i++)
@@ -986,12 +986,12 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
       free(adj);
       adj = NULL; 
 
-      gno_t *nextId = edgeIds;
-      Array<scalar_t> values(maxRowLen, 1.0);
+      zgno_t *nextId = edgeIds;
+      Array<zscalar_t> values(maxRowLen, 1.0);
   
-      for (gno_t i=0; i < nvtxs; i++){
+      for (int i=0; i < nvtxs; i++){
         if (nzPerRow[i] > 0){
-          ArrayView<const gno_t> rowNz(nextId, nzPerRow[i]);
+          ArrayView<const zgno_t> rowNz(nextId, nzPerRow[i]);
           fromMatrix->insertGlobalValues(i, rowNz, values.view(0,nzPerRow[i]));
           nextId += nzPerRow[i];
         }
@@ -1044,21 +1044,21 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
 
   // Vertex weights, if any
 
-  typedef ArrayRCP<const ArrayView<const scalar_t> > arrayArray_t;
+  typedef ArrayRCP<const ArrayView<const zscalar_t> > arrayArray_t;
 
   if (nVwgts > 0){
 
-    ArrayRCP<scalar_t> weightBuf;
-    ArrayView<const scalar_t> *wgts = new ArrayView<const scalar_t> [nVwgts];
+    ArrayRCP<zscalar_t> weightBuf;
+    ArrayView<const zscalar_t> *wgts = new ArrayView<const zscalar_t> [nVwgts];
 
     if (rank == 0){
       size_t len = nVwgts * nvtxs;
-      scalar_t *buf = new scalar_t [len];
+      zscalar_t *buf = new zscalar_t [len];
       if (!buf) throw std::bad_alloc();
       weightBuf = arcp(buf, 0, len, true);
 
       for (int widx=0; widx < nVwgts; widx++){
-        wgts[widx] = ArrayView<const scalar_t>(buf, nvtxs);
+        wgts[widx] = ArrayView<const zscalar_t>(buf, nvtxs);
         float *vw = vwgts + widx;
         for (int i=0; i < nvtxs; i++, vw += nVwgts)
           buf[i] = *vw;
@@ -1089,19 +1089,19 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
 
   if (haveEdges && nEwgts > 0){
 
-    ArrayRCP<scalar_t> weightBuf;
-    ArrayView<const scalar_t> *wgts = new ArrayView<const scalar_t> [nEwgts];
+    ArrayRCP<zscalar_t> weightBuf;
+    ArrayView<const zscalar_t> *wgts = new ArrayView<const zscalar_t> [nEwgts];
 
     toMap = rcp(new map_t(nedges, M_->getNodeNumEntries(), base, tcomm_));
 
     if (rank == 0){
       size_t len = nEwgts * nedges;
-      scalar_t *buf = new scalar_t [len];
+      zscalar_t *buf = new zscalar_t [len];
       if (!buf) throw std::bad_alloc();
       weightBuf = arcp(buf, 0, len, true);
 
       for (int widx=0; widx < nEwgts; widx++){
-        wgts[widx] = ArrayView<const scalar_t>(buf, nedges);
+        wgts[widx] = ArrayView<const zscalar_t>(buf, nedges);
         float *ew = ewgts + widx;
         for (int i=0; i < nedges; i++, ew += nEwgts)
           buf[i] = *ew;
@@ -1170,19 +1170,19 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
   if (ndim == 0)
     throw std::runtime_error("Can't read coordinate file");
 
-  ArrayRCP<ArrayRCP<const scalar_t> > coords(ndim);
-  lno_t len = 0;
+  ArrayRCP<ArrayRCP<const zscalar_t> > coords(ndim);
+  zlno_t len = 0;
 
   if (rank == 0){
 
     for (int dim=0; dim < ndim; dim++){
-      scalar_t *v = new scalar_t [globalNumVtx];
+      zscalar_t *v = new zscalar_t [globalNumVtx];
       if (!v)
         throw std::bad_alloc();
-      coords[dim] = arcp<const scalar_t>(v, 0, globalNumVtx, true);
+      coords[dim] = arcp<const zscalar_t>(v, 0, globalNumVtx, true);
       float *val = (dim==0 ? x : (dim==1 ? y : z));
       for (size_t i=0; i < globalNumVtx; i++)
-        v[i] = scalar_t(val[i]);
+        v[i] = zscalar_t(val[i]);
 
       free(val);
     }
@@ -1194,7 +1194,7 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
   RCP<const map_t> toMap = rcp(new map_t(globalNumVtx, localNumVtx, 0, tcomm_));
   RCP<import_t> importer = rcp(new import_t(fromMap, toMap));
 
-  Array<ArrayView<const scalar_t> > coordData;
+  Array<ArrayView<const zscalar_t> > coordData;
   for (int dim=0; dim < ndim; dim++)
     coordData.push_back(coords[dim].view(0, len));
 

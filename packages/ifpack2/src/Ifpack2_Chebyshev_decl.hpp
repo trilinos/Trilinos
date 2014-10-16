@@ -710,8 +710,7 @@ public:
   ///   preconditioner to return; a specialization of
   ///   Tpetra::RowMatrix or Tpetra::CrsMatrix.  The intent is that
   ///   this type differ from \c MatrixType only in its fourth Node
-  ///   template parameter, and/or its fifth \c LocalMatOps template
-  ///   parameter.  However, this is not strictly required.
+  ///   template parameter.  However, this is not strictly required.
   ///
   /// \param[in] A_newnode  The matrix, with the new Kokkos Node type.
   ///   This would generally be the result of cloning (calling

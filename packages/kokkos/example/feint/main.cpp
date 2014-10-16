@@ -2,15 +2,7 @@
 #include <utility>
 #include <iostream>
 
-#include <KokkosCore_config.h>
-#include <Kokkos_hwloc.hpp>
-#include <Kokkos_Threads.hpp>
-#if defined( KOKKOS_HAVE_OPENMP)
-#include <Kokkos_OpenMP.hpp>
-#endif
-#if defined( KOKKOS_HAVE_CUDA )
-#include <Kokkos_Cuda.hpp>
-#endif
+#include <Kokkos_Core.hpp>
 
 #include <feint_fwd.hpp>
 
@@ -57,7 +49,7 @@ int main()
 #if defined( KOKKOS_HAVE_CUDA )
   {
     // Initialize Host mirror device
-    Kokkos::Cuda::host_mirror_device_type::initialize(1);
+    Kokkos::HostSpace::execution_space::initialize(1);
     const unsigned device_count = Kokkos::Cuda::detect_device_count();
 
     // Use the last device:
@@ -70,7 +62,7 @@ int main()
     Kokkos::Example::feint< Kokkos::Cuda , true  >();
 
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
 
   }
 #endif

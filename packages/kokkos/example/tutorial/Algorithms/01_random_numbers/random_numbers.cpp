@@ -49,7 +49,7 @@
 #include <impl/Kokkos_Timer.hpp>
 #include <cstdlib>
 
-typedef Kokkos::Impl::DefaultDeviceType::host_mirror_device_type DefaultHostType;
+typedef Kokkos::HostSpace::execution_space DefaultHostType;
 
 template<class GeneratorPool>
 struct generate_random {
@@ -80,6 +80,10 @@ struct generate_random {
 
 
 int main(int argc, char* args[]) {
+  if (argc != 3){
+	printf("Please pass two integers on the command line\n");
+  }
+  else {
   srand(5374857);
   Kokkos::initialize(argc,args);
   int size = atoi(args[1]);
@@ -113,6 +117,7 @@ int main(int argc, char* args[]) {
   Kokkos::deep_copy(vals.h_view,vals.d_view);
 
   Kokkos::finalize();
+  }
   return 0;
 }
 

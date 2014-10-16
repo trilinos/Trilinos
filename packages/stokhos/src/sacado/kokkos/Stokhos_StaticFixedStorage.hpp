@@ -45,8 +45,7 @@
 #include "Stokhos_StaticArrayTraits.hpp"
 #include "Stokhos_MemoryTraits.hpp"
 
-#include "Kokkos_Macros.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core_fwd.hpp"
 
 #include "Sacado_Traits.hpp"
 #include "Stokhos_KokkosTraits.hpp"

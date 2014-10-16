@@ -38,7 +38,6 @@
 # @HEADER
 
 
-INCLUDE(TribitsAddAdvancedTest)
 
 INCLUDE(ParseVariableArguments)
 INCLUDE(AdvancedSet)
@@ -115,6 +114,7 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
         ${MOCK_PROJECT_NAME}_PACKAGES=  # Set back to default
         CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES= # Set back to default
         CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=OFF # Set back to default
+        ${MOCK_PROJECT_NAME}_EXTRA_REPOSITORIES= # Set back to default
         CTEST_DO_UPDATES=ON # Set back to default
         CTEST_DASHBOARD_ROOT=  # Must be empty
         CTEST_DO_SUBMIT=OFF # Must be off
@@ -209,6 +209,21 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableTeuchosRTOp_DisableRTOp
+  ARGS Trilinos_PACKAGES="Teuchos,RTOp" Trilinos_EXCLUDE_PACKAGES=RTOp
+  PASS_REGULAR_EXPRESSION_ALL
+    "Disabling excluded package RTOp ..."
+    "Enabling explicitly set package Teuchos ..."
+    "NOT enabling explicitly set package RTOp since it was explicitly excluded"
+    "Explicitly enabled packages on input .by user.:  Teuchos 1"
+    "Final set of enabled packages:  Teuchos 1"
+    "Trilinos_NUM_ENABLED_PACKAGES=1:  Configuring packages!"
+  )
+# NOTE: The above test ensures that disabled packages turn off explicitly
+#  enabled downstream packages.
+
+
+CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableTeuchos_DisableTPLBLAS
   ARGS Trilinos_PACKAGES=Teuchos Trilinos_EXCLUDE_TPLS=BLAS
   PASS_REGULAR_EXPRESSION_ALL
@@ -229,15 +244,26 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra 8"
     "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 16"
     "Processing current package Teuchos: libs='ON', tests=''"
-    "CONFIGURE_OPTIONS = '-DTrilinos_TRIBITS_DIR=.+-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-DummyErrFlags.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON.-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON.-DTrilinos_EXTRAREPOS_FILE:STRING=.+/tribits/package_arch/UnitTests/MockTrilinos/cmake/ExtraRepositoriesList.cmake.-DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
+    "CONFIGURE_OPTIONS = '-DTrilinos_TRIBITS_DIR=.+-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-DummyErrFlags.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON.-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON.-DTrilinos_EXTRAREPOS_FILE:STRING=.+/package_arch/UnitTests/MockTrilinos/cmake/ExtraRepositoriesList.cmake.-DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
     "Processing current package Epetra: libs='ON', tests=''"
     "Processing current package Thyra: libs='ON', tests='ON'"
-    "CONFIGURE_OPTIONS = '-DTrilinos_TRIBITS_DIR=.+-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-DummyErrFlags.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON.-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON.-DTrilinos_EXTRAREPOS_FILE:STRING=.+/tribits/package_arch/UnitTests/MockTrilinos/cmake/ExtraRepositoriesList.cmake.-DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_EpetraExt:BOOL=.-DTrilinos_ENABLE_Thyra:BOOL=ON'"
-    "Processing current package Stokhos: libs='OFF', tests=''"
-    "Processing current package Isorropia: libs='', tests=''"
+    "CONFIGURE_OPTIONS = '-DTrilinos_TRIBITS_DIR=.+-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-DummyErrFlags.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON.-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON.-DTrilinos_EXTRAREPOS_FILE:STRING=.+/package_arch/UnitTests/MockTrilinos/cmake/ExtraRepositoriesList.cmake.-DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_EpetraExt:BOOL=.-DTrilinos_ENABLE_Thyra:BOOL=ON'"
   )
 # NOTE: The above test pins down the form of the configure options passed to
 # different package configures to make sure everything in there.
+
+
+CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableEpetraThyra_NoProcessImplicitlyEnabled
+  ARGS Trilinos_PACKAGES=Epetra,Thyra
+    CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=OFF
+  PASS_REGULAR_EXPRESSION_ALL
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra 8"
+    "Final set of packages to be explicitly processed by CTest/CDash:  Epetra Thyra 2"
+    "0. Processing current package Epetra: libs=.ON., tests=.ON."
+    "1. Processing current package Thyra: libs=.ON., tests=.ON."
+  )
+# NOTE: The above test shows that ony 
 
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
@@ -249,9 +275,6 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of enabled packages:  Teuchos RTOp Tpetra Thyra 4"
     "Final set of non-enabled packages:  TrilinosFramework Epetra Zoltan Shards Triutils EpetraExt Stokhos Sacado Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 20"
     "Processing current package Teuchos: libs='ON', tests=''"
-    "Processing current package Epetra: libs='OFF', tests=''"
-    "Processing current package Zoltan: libs='', tests=''"
-    "Processing current package EpetraExt: libs='OFF', tests=''"
     "Processing current package Thyra: libs='ON', tests='ON'"
   )
 
@@ -266,7 +289,6 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen Phalanx 21"
     "Final set of non-enabled packages:  Stokhos Belos Panzer 3"
-    "Processing current package Stokhos: libs='OFF', tests=''"
     "Processing current package RBGen: libs='ON', tests='ON'"
     "Processing current package Phalanx: libs='ON', tests='ON'"
   )
@@ -276,7 +298,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAll_EnableStokhos
   ARGS Trilinos_ADDITIONAL_PACKAGES=Stokhos
   PASS_REGULAR_EXPRESSION_ALL
-    "Enabling explicitly set package Stokhos"
+    "Enabling explicitly set package Stokhos which was default or otherwise disabed!"
     "Explicitly enabled packages on input .*  Stokhos 1"
     "Explicitly disabled packages on input .*  0"
     "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
@@ -284,7 +306,6 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of non-enabled packages:  Sacado Belos Phalanx Panzer 4"
     "Processing current package Stokhos: libs='ON', tests='ON'"
     "Processing current package RBGen: libs='ON', tests='ON'"
-    "Processing current package Phalanx: libs='', tests=''"
   )
 
 
@@ -313,13 +334,12 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Explicitly disabled packages on input .*  Stokhos Stalix 2"
     "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko 24"
+    "Final set of packages to be explicitly processed by CTest/CDash:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko 24"
     "Final set of non-enabled packages:  Stokhos Stalix 2"
     "CONFIGURE_OPTIONS.+-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Continuous.+"
     "Processing current package Teuchos: libs='ON', tests='ON'"
     "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
     "Processing current package Phalanx: libs='ON', tests='ON'"
-    "Processing current package Stalix: libs='OFF', tests=''"
-    "Package Stalix is disabled, skipping configure, build, test"
   COMPARE_DEPS_FILE
      "${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependencies.Continuos.xml"
   )
@@ -332,13 +352,13 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     Trilinos_ADDITIONAL_PACKAGES=Stalix
   PASS_REGULAR_EXPRESSION_ALL
     "preCopyrightTrilinos: Doing GIT update from URL 'url1:/git/preCopyrightTrilinos' to dir '.*/MockTrilinos/preCopyrightTrilinos'"
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.reset.--hard.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.reset.out."
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.clean.-df.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.clean.out."
-    "EXECUTE_PROCESS.COMMAND./somebasedir/git.pull.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.update.out."
-    "EXECUTE_PROCESS.COMMAND;/somebasedir/git.log.--pretty=format:.*.-C.HEAD..ORIG_HEAD.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY;.*/tribits/package_arch/UnitTests/MockTrilinos/preCopyrightTrilinos."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.reset.--hard.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.reset.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.clean.-df.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.clean.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.pull.WORKING_DIRECTORY..*/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/preCopyrightTrilinos.update.out."
+    "EXECUTE_PROCESS.COMMAND;/somebasedir/git.log.--pretty=format:.*.-C.HEAD..ORIG_HEAD.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY;.*/package_arch/UnitTests/MockTrilinos/preCopyrightTrilinos."
     "Dakota: Doing initial SVN clone/checkout from URL 'url3/somedirpath/trunk' to dir 'packages/TriKota/Dakota'"
-    "EXECUTE_PROCESS.COMMAND./someotherbasedir/svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/MockTrilinos.OUTPUT_FILE..*/tribits/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/Dakota.update.out."
-    "EXECUTE_PROCESS.echo.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY.*/tribits/package_arch/UnitTests/MockTrilinos/packages/TriKota/Dakota."
+    "EXECUTE_PROCESS.COMMAND./someotherbasedir/svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/MockTrilinos.OUTPUT_FILE..*/ctest/UnitTests/TriBITS_CTestDriver_CI_EnableAllSecondaryTested_EnableStalix/Dakota.update.out."
+    "EXECUTE_PROCESS.echo.OUTPUT_VARIABLE.CLONE_OR_PULL_OUTPUT.WORKING_DIRECTORY.*/package_arch/UnitTests/MockTrilinos/packages/TriKota/Dakota."
     ".... preCopyrightTrilinos updates."
     "... Dakota cloned version."
     "Adding extra Continuous repository preCopyrightTrilinos"
@@ -414,7 +434,6 @@ IF (PYTHON_EXECUTABLE)
       "CTEST_UPDATE.+ returned '1'"
       "Processing current package Teuchos: libs='ON', tests='ON'"
       "Processing current package Teko: libs='ON', tests='ON'"
-      "Processing current package Stalix: libs='OFF', tests=''"
     )
 
 
@@ -439,7 +458,6 @@ IF (PYTHON_EXECUTABLE)
       "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
       "Processing current package Zoltan: libs='ON', tests=''"
       "Processing current package Teko: libs='ON', tests='ON'"
-      "Processing current package Stalix: libs='OFF', tests=''"
       "Processing current package ExtraPack: libs='ON', tests='ON'"
     )
 
@@ -459,11 +477,8 @@ IF (PYTHON_EXECUTABLE)
       "Explicitly enabled packages on input .*  Thyra 1"
       "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos Phalanx Panzer Teko 22"
       "Final set of non-enabled packages:  TrilinosFramework Stokhos RBGen Stalix 4"
+      "Final set of packages to be explicitly processed by CTest/CDash:  Thyra Stratimikos Panzer Teko 4"
       "CTEST_UPDATE.+ returned '1'"
-      "Processing current package Teuchos: libs='ON', tests=''"
-      "Not enabling implicitly enabled package Teuchos on request"
-      "Processing current package Zoltan: libs='ON', tests=''"
-      "Not enabling implicitly enabled package Zoltan on request"
       "Processing current package Thyra: libs='ON', tests='ON'"
       "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Thyra:BOOL=ON"
       "Processing current package Teko: libs='ON', tests='ON'"
@@ -486,11 +501,8 @@ IF (PYTHON_EXECUTABLE)
       "Explicitly enabled SE packages on input .*  ThyraCoreLibs 1"
       "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos Phalanx Panzer Teko 22"
       "Final set of non-enabled packages:  TrilinosFramework Stokhos RBGen Stalix 4"
+      "Final set of packages to be explicitly processed by CTest/CDash:  Thyra Stratimikos Panzer Teko 4"
       "CTEST_UPDATE.+ returned '1'"
-      "Processing current package Teuchos: libs='ON', tests=''"
-      "Not enabling implicitly enabled package Teuchos on request"
-      "Processing current package Zoltan: libs='ON', tests=''"
-      "Not enabling implicitly enabled package Zoltan on request"
       "Processing current package Thyra: libs='ON', tests='ON'"
       "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Thyra:BOOL=ON"
       "Processing current package Teko: libs='ON', tests='ON'"
@@ -515,7 +527,6 @@ IF (PYTHON_EXECUTABLE)
       "Processing current package Teuchos: libs='ON', tests=''"
       "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
       "Processing current package Teko: libs='ON', tests='ON'"
-      "Processing current package Stalix: libs='OFF', tests=''"
     )
   # NOTE: The above unit test is critical because it shows that Teko will get
   # enabled and processed even though the main git update of the main Trilinos
@@ -545,7 +556,6 @@ IF (PYTHON_EXECUTABLE)
       "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
       "Processing current package Teko: libs='ON', tests='ON'"
       "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teko:BOOL=ON"
-      "Processing current package Stalix: libs='OFF', tests=''"
     )
 
 
@@ -592,14 +602,11 @@ IF (PYTHON_EXECUTABLE)
       "Explicitly disabled packages on input .*  Stokhos Stalix 2"
       "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko 23"
       "Final set of non-enabled packages:  TrilinosFramework Stokhos Stalix 3"
+      "Final set of packages to be explicitly processed by CTest/CDash:  Thyra Stratimikos RBGen Panzer Teko 5"
       "CTEST_UPDATE.+ returned '0'"
-      "Processing current package Teuchos: libs='ON', tests=''"
-      "Processing current package Epetra: libs='ON', tests=''"
       "Processing current package Thyra: libs='ON', tests='ON'"
       "Processing current package RBGen: libs='ON', tests='ON'"
-      "Processing current package Stokhos: libs='OFF', tests=''"
       "Processing current package Teko: libs='ON', tests='ON'"
-      "Processing current package Stalix: libs='OFF', tests=''"
     )
 
 

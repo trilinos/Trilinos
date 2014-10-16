@@ -332,7 +332,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      Xcopy = rcp (new MV (createCopy(X)));
+      Xcopy = rcp (new MV (X, Teuchos::Copy));
     } else {
       Xcopy = rcpFromRef (X);
     }
@@ -343,7 +343,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     }
 
     // apply Hiptmair Smoothing
-    applyHiptmairSmoother(*Xcopy,*Ycopy);
+    applyHiptmairSmoother (*Xcopy, *Ycopy);
 
   }
   ++NumApply_;
@@ -359,46 +359,48 @@ applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type
                       Tpetra::MultiVector<typename MatrixType::scalar_type,
                       typename MatrixType::local_ordinal_type,
                       typename MatrixType::global_ordinal_type,
-                      typename MatrixType::node_type>& Y) const {
-
+                      typename MatrixType::node_type>& Y) const
+{
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type> MV;
+  const scalar_type ZERO = STS::zero ();
+  const scalar_type ONE = STS::one ();
 
-  RCP<MV> res1 = rcp( new MV(A_->getRowMap(),X.getNumVectors()) );
-  RCP<MV> vec1 = rcp( new MV(A_->getRowMap(),X.getNumVectors()) );
-  RCP<MV> res2 = rcp( new MV(PtAP_->getRowMap(),X.getNumVectors()) );
-  RCP<MV> vec2 = rcp( new MV(PtAP_->getRowMap(),X.getNumVectors()) );
+  RCP<MV> res1 = rcp (new MV (A_->getRowMap (), X.getNumVectors ()));
+  RCP<MV> vec1 = rcp (new MV (A_->getRowMap (), X.getNumVectors ()));
+  RCP<MV> res2 = rcp (new MV (PtAP_->getRowMap (), X.getNumVectors ()));
+  RCP<MV> vec2 = rcp (new MV (PtAP_->getRowMap (), X.getNumVectors ()));
 
-  if(preOrPost_=="pre" || preOrPost_=="both") {
+  if (preOrPost_ == "pre" || preOrPost_ == "both") {
     // apply initial relaxation to primary space
-    A_ -> apply(Y,*res1);
-    res1 -> update((scalar_type)1.0,X,(scalar_type)-1.0);
-    vec1 -> putScalar((scalar_type)0.0);
-    ifpack2_prec1_ -> apply(*res1,*vec1);
-    Y.update((scalar_type)1.0,*vec1,(scalar_type)1.0);
+    A_->apply (Y, *res1);
+    res1->update (ONE, X, -ONE);
+    vec1->putScalar (ZERO);
+    ifpack2_prec1_->apply (*res1, *vec1);
+    Y.update (ONE, *vec1, ONE);
   }
 
   // project to auxiliary space and smooth
-  A_ -> apply(Y,*res1);
-  res1 -> update((scalar_type)1.0,X,(scalar_type)-1.0);
-  P_ -> apply(*res1,*res2,Teuchos::TRANS);
-  vec2 -> putScalar((scalar_type)0.0);
-  ifpack2_prec2_ -> apply(*res2,*vec2);
-  P_ -> apply(*vec2,*vec1,Teuchos::NO_TRANS);
-  Y.update((scalar_type)1.0,*vec1,(scalar_type)1.0);
+  A_->apply (Y, *res1);
+  res1->update (ONE, X, -ONE);
+  P_->apply (*res1, *res2, Teuchos::TRANS);
+  vec2->putScalar (ZERO);
+  ifpack2_prec2_->apply (*res2, *vec2);
+  P_->apply (*vec2, *vec1, Teuchos::NO_TRANS);
+  Y.update (ONE,*vec1,ONE);
 
-  if(preOrPost_=="post" || preOrPost_=="both") {
+  if (preOrPost_ == "post" || preOrPost_ == "both") {
     // smooth again on primary space
-    A_ -> apply(Y,*res1);
-    res1 -> update((scalar_type)1.0,X,(scalar_type)-1.0);
-    vec1 -> putScalar((scalar_type)0.0);
-    ifpack2_prec1_ -> apply(*res1,*vec1);
-    Y.update((scalar_type)1.0,*vec1,(scalar_type)1.0);
+    A_->apply (Y, *res1);
+    res1->update (ONE, X, -ONE);
+    vec1->putScalar (ZERO);
+    ifpack2_prec1_->apply (*res1, *vec1);
+    Y.update (ONE, *vec1, ONE);
   }
-
 }
 
 template <class MatrixType>

@@ -53,14 +53,13 @@
 // Explicit instantiation macro for OneLevelFactory.
 // Only invoke this macro in the Ifpack2::Details namespace.
 #  define LCLINST(S, LO, GO) \
-  template<> \
-  class OneLevelFactory< \
+  template class OneLevelFactory< \
   Tpetra::CrsMatrix< \
-    S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >; \
-  template<> \
-  class OneLevelFactory< \
+    S, LO, GO> >; \
+  template class OneLevelFactory< \
   Tpetra::RowMatrix< \
-    S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
+    S, LO, GO> >;
+
 
 namespace Ifpack2 {
 namespace Details {
@@ -69,17 +68,18 @@ namespace Details {
 
   IFPACK2_INSTANTIATE_SLG( LCLINST )
 
-  // template<>
-  // class OneLevelFactory<Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode> >;
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
 
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template<>
-  class OneLevelFactory<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+  template class OneLevelFactory<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+  template class OneLevelFactory<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template<>
-  class OneLevelFactory<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
+
+  template class OneLevelFactory<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
+  template class OneLevelFactory<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
+
 #endif
 
 } // namespace Details

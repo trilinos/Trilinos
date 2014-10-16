@@ -74,7 +74,7 @@
 // Macro that marks a function as "possibly unused," in order to
 // suppress build warnings.
 #if ! defined(TRILINOS_UNUSED_FUNCTION)
-#  if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#  if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_MSC_VER))
 #    define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
 #  elif defined(__clang__)
 #    if __has_attribute(unused)
@@ -209,18 +209,20 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector, ViewModeConstructorTests, Node )
   {
-    #ifdef HAVE_TPETRA_KOKKOSCOMPAT
-      #ifdef KOKKOS_HAVE_CUDA
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
-      #endif
-      #ifdef KOKKOS_HAVE_OPENMP
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
-      #endif
-      #ifdef KOKKOS_HAVE_PTHREAD
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
-      #endif
-    #endif
-
+    // The old "view mode constructors" don't work for the Kokkos
+    // refactor version of Tpetra.  We skip the test in that case.
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(HAVE_TPETRA_KOKKOSCOMPAT)
+#  ifdef KOKKOS_HAVE_CUDA
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
+#  endif
+#  ifdef KOKKOS_HAVE_OPENMP
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
+#  endif
+#  ifdef KOKKOS_HAVE_PTHREAD
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
+#  endif
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosSerialWrapperNode)) return;
+#endif
 
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<double,int,int,Node> MV;
@@ -262,18 +264,20 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Vector, ViewModeConstructorTests, Node )
   {
-    #ifdef HAVE_TPETRA_KOKKOSCOMPAT
-      #ifdef KOKKOS_HAVE_CUDA
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
-      #endif
-      #ifdef KOKKOS_HAVE_OPENMP
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
-      #endif
-      #ifdef KOKKOS_HAVE_PTHREAD
-        if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
-      #endif
-    #endif
-
+    // The old "view mode constructors" don't work for the Kokkos
+    // refactor version of Tpetra.  We skip the test in that case.
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(HAVE_TPETRA_KOKKOSCOMPAT)
+#  ifdef KOKKOS_HAVE_CUDA
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
+#  endif
+#  ifdef KOKKOS_HAVE_OPENMP
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
+#  endif
+#  ifdef KOKKOS_HAVE_PTHREAD
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
+#  endif
+    if(typeid(Node)==typeid(Kokkos::Compat::KokkosSerialWrapperNode)) return;
+#endif
 
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::Vector<double,int,int,Node> Vec;
@@ -2908,12 +2912,32 @@ namespace {
 #endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
 
 #define VIEWMODETEST(NODE) \
-        TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, NODE ) \
-        TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_N_NOGPU(VIEWMODETEST)
+  // mfh 06 Oct 2014: These tests only work for the non-GPU (not
+  // KokkosClassic::ThrustGPUNode) KokkosClassic Node types.  They
+  // don't work for the Kokkos refactor Node types in Kokkos::Compat.
+
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, KokkosClassic_SerialNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, KokkosClassic_SerialNode )
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
+
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, KokkosClassic_TPINode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, KokkosClassic_TPINode )
+#endif // HAVE_KOKKOSCLASSIC_THREADPOOL
+
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, KokkosClassic_TBBNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, KokkosClassic_TBBNode )
+#endif // HAVE_KOKKOSCLASSIC_TBB
+
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, KokkosClassic_OpenMPNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, KokkosClassic_OpenMPNode )
+#endif // HAVE_KOKKOSCLASSIC_OPENMP
 
   // mfh 04 June 2013: To avoid explicit instantiation - related link
   // errors for LO = int and GO = unsigned (long) int, I've forced

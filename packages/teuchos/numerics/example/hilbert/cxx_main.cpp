@@ -40,21 +40,21 @@
 // @HEADER
 
 // Teuchos Example: Hilbert
-  
+
 // This example showcases the usage of BLAS generics with an arbitrary precision
 // library -- ARPREC.
-  
+
 // Hilbert matrices are classical examples of ill-conditioned matrices. Cholesky
 // factorization fails on higher-order Hilbert matrices because they lose their
 // positive definiteness when represented with floating-point numbers. We have
 // attempted to alleviate this problem with arbitrary precision.
-  
+
 // The example program compares two datatypes, scalar type 1 and scalar type 2,
 // which can be customized below using #defines. Default types are mp_real (from
-// ARPREC) and double. The mp_real datatype must be initialized with a maximum 
+// ARPREC) and double. The mp_real datatype must be initialized with a maximum
 // precision value, also customizable below. (Default is 32.)
-  
-// For a given size n, an n-by-n Hilbert matrix H and a n-by-1 std::vector b are 
+
+// For a given size n, an n-by-n Hilbert matrix H and a n-by-1 std::vector b are
 // constructed such that, if Hx* = b, the true solution x* is a one-std::vector.
 // Cholesky factorization is attempted on H; if it fails, no further tests are
 // attempted for that datatype. If it is successful, the approximate solution x~
@@ -63,11 +63,11 @@
 // NRM2. The program output is of the form:
 
 //     [size of Hilbert matrix]: [two-norm of (x* - x~)]
-  
+
 // Tests for scalar type 2 are performed before scalar type 1 because scalar
 // type 2 fails at Cholesky factorization for much lower values of n if the
 // mp_real precision is sufficiently large.
-  
+
 // Timing analysis still remains to be done for this example, which should be
 // easily accomplished with the timing mechanisms native to Teuchos.
 
@@ -151,11 +151,11 @@ int main(int argc, char *argv[]) {
 
   std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
   //
-  // Create command line processor. 
+  // Create command line processor.
   //
   Teuchos::CommandLineProcessor hilbertCLP(true, false);
   //
-  // Set option for precision and verbosity  
+  // Set option for precision and verbosity
   int precision = 32;
   hilbertCLP.setOption("precision", &precision, "Arbitrary precision");
   bool verbose = false;
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
   SType2 *H2=0, *b2=0;
   //
   while ( compSType1>0 || compSType2>0 || convSType1>0 || convSType2>0 ) {
-    
+
     if (compSType1 > 0) {
       H1 = new SType1[ n*n ];
       b1 = new SType1[ n ];
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
       // Try to solve it.
       //
       compSType1 = Solve(n, H1, b1, &result1);
-      if (compSType1 < 0 && verbose) 
+      if (compSType1 < 0 && verbose)
 	std::cout << typeid( result1 ).name() << " -- Cholesky factorization failed (negative diagonal) at row "<<-compSType1<< std::endl;
       //
       // Clean up always;
@@ -225,12 +225,12 @@ int main(int argc, char *argv[]) {
       // Try to solve it.
       //
       compSType2 = Solve(n, H2, b2, &result2);
-      if (compSType2 < 0 && verbose) 
+      if (compSType2 < 0 && verbose)
 	std::cout << typeid( result2 ).name() << " -- Cholesky factorization failed (negative diagonal) at row "<<-compSType2<< std::endl;
       //
       // Clean up always.
       delete [] H2; H2 = 0;
-      delete [] b2; b2 = 0;      
+      delete [] b2; b2 = 0;
     }
     if (convSType2 > 0) {
       //
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
       // Try to solve it.
       //
       convSType2 = Solve(n, H2, b2, &result1_2);
-      if (convSType2 < 0 && verbose) 
+      if (convSType2 < 0 && verbose)
 	std::cout << typeid( result1_2 ).name() << " (converted) -- Cholesky factorization failed (negative diagonal) at row "<<-convSType2<< std::endl;
       //
       // Clean up
@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
       // Try to solve it.
       //
       convSType1 = Solve(n, H1, b1, &result2_1);
-      if (convSType1 < 0 && verbose) 
+      if (convSType1 < 0 && verbose)
 	std::cout << typeid( result2_1 ).name() << " (converted) -- Cholesky factorization failed (negative diagonal) at row "<<-convSType1<< std::endl;
       //
       // Clean up
@@ -298,17 +298,17 @@ int main(int argc, char *argv[]) {
       std::cout << "***************************************************" << std::endl;
       std::cout << "Datatype : Absolute error || x_hat - x ||"<< std::endl;
       std::cout << "---------------------------------------------------" << std::endl;
-    }    
+    }
     if (compSType1>0 && verbose)
       std::cout << typeid( result1 ).name() << "\t : "<< result1 << std::endl;
-    
+
     if (convSType1>0 && verbose)
       std::cout << typeid( result2_1 ).name() <<"(converted) : "<< result2_1 << std::endl;
 
     if (convSType2>0 && verbose)
       std::cout << typeid( result1_2 ).name() <<"(converted) : "<< result2_1 << std::endl;
 
-    if (compSType2>0 && verbose) 
+    if (compSType2>0 && verbose)
       std::cout << typeid( result2 ).name() << "\t : "<< result2 << std::endl;
     //
     // Increment counter.
@@ -342,7 +342,7 @@ void ConstructHilbertSumVector(TYPE* x, int n) {
     for(int j = 0; j < n; j++) {
       x[i] += (scal1 / (i + j + scal1));
     }
-  }  
+  }
 }
 
 template<typename TYPE1, typename TYPE2>
@@ -358,7 +358,7 @@ template<typename TYPE1, typename TYPE2>
 void ConvertHilbertSumVector(TYPE1* x, TYPE2* y, int n) {
   for(int i = 0; i < n; i++) {
     y[i] = x[i];
-  }  
+  }
 }
 
 #ifdef HAVE_TEUCHOS_ARPREC
@@ -375,7 +375,7 @@ template<>
 void ConvertHilbertSumVector(mp_real* x, double* y, int n) {
   for(int i = 0; i < n; i++) {
     y[i] = dble( x[i] );
-  }  
+  }
 }
 #endif
 
@@ -393,7 +393,7 @@ template<>
 void ConvertHilbertSumVector(mpf_class* x, double* y, int n) {
   for(int i = 0; i < n; i++) {
     y[i] = x[i].get_d();
-  }  
+  }
 }
 #endif
 
@@ -434,7 +434,7 @@ int Solve(int n, TYPE* H, TYPE* b, TYPE* err) {
     blasObj.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, n, 1, scal1, H, n, b, n);
     blasObj.AXPY(n, scalNeg1, x, 1, b, 1);
     *err = blasObj.NRM2(n, b, 1);
-  }  
+  }
   delete[] x;
   return choleskySuccessful;
 }
@@ -499,6 +499,6 @@ void PrintArrayAsMatrix(mp_real* a, int m, int n) {
       std::cout << std::endl;
     }
   }
-  std::cout << "]" << std::endl; 
+  std::cout << "]" << std::endl;
 }
 #endif

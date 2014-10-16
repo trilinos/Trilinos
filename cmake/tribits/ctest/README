@@ -90,10 +90,20 @@ You can set the environment variable TDD_PARALLEL_LEVEL to control how
 many dashboards are run in parallel (as tests) by the <Project>Driver
 dashboard.
 
-You may also need to set the environment variable TDD_HTTP_PROXY for
-your http proxy which is needed if the script download-cmake.py can't
-figure it out the proxy automatically.  For Sandia machines, this is
-http://wwwproxy.sandia.gov:80/.
+By default, the TDD system will download the version of CMake/CTest using the
+download-cmake.py script.  This allows one to use specific versions of
+CMake/CTest for the build and also to have the versions upgraded automatically
+according to how download-cmake.py is set up (see download-cmake.py --help for
+details).  However, if TRIBITS_TDD_USE_SYSTEM_CTEST=1 is set in the env, then
+CTest/CMake as found in the default env at the time the TDD driver
+tdd_driver.py is run will be used instead of downloading and installing
+CMake/CTest.
+
+If TRIBITS_TDD_USE_SYSTEM_CTEST != 1, then the download of CMake/CTest will
+occur.  In this case, you may also need to set the environment variable
+TDD_HTTP_PROXY for your http proxy which is needed if the script
+download-cmake.py can't figure it out the proxy automatically.  For Sandia
+machines, this is http://wwwproxy.sandia.gov:80/.
 
 Typical cron_driver.sh contents:
 
@@ -131,6 +141,8 @@ overridding CTEST_DASHBOARD_ROOT for example as:
      <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
      CTEST_DO_UPDATES=TRUE  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
+     CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE=FALSE \
+     CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE=FALSE \
      ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 Running the above will clone <Project> into MOCK_MPI_OPT/<Project> and will
@@ -140,7 +152,14 @@ CTEST_DO_UPDATES=FALSE and CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE on
 the environment.  You can keep running this 'env ... ctest -S ...' command
 until you get everything working.  All of the info needed to debug problems
 should be present in the output from 'ctest -VV -S' (which you should pipe to
-a file and then examine).
+a file and then examine).  The option
+CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE=FALSE speeds up the run by skipping
+the generation of the <Proejct>PackageDependencies.xml file.  That file is
+only needed in CI iterations to detect changed files.  If you want to detect
+changed files, set it to TRUE.  The option
+CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE=FALSE is set to avoid the generation
+of the file CDashSubprojectDependencies.xml.  There is no reason to generate
+or submit that file when you are just doing local testing.
 
 If you want to test the exact state of the local changes in <somedir>,
 you can avoid pulling commits by creating a symbolic link and running as:
@@ -154,6 +173,8 @@ you can avoid pulling commits by creating a symbolic link and running as:
      <Project>_IGNORE_MISSING_EXTRA_REPOSITORIES=ON CTEST_DO_UPDATES=OFF \
      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
+     CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE=FALSE \
+     CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE=FALSE \
      ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 Note that above it is critical that you set CTEST_DO_UPDATES=OFF so that it

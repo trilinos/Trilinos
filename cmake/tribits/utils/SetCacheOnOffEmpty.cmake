@@ -48,7 +48,7 @@
 # Sets a special string cache variable with possible values "", "ON", or
 # "OFF".  This results in a nice drop-down box in the CMake cache manipulation
 # GUIs.
-# 
+#
 FUNCTION(SET_CACHE_ON_OFF_EMPTY VAR INITIAL_VALUE DOCSTR)
   SET(FORCE_ARG)
   FOREACH(ARG ${ARGN})
@@ -60,7 +60,5 @@ FUNCTION(SET_CACHE_ON_OFF_EMPTY VAR INITIAL_VALUE DOCSTR)
     ENDIF()
   ENDFOREACH()
   SET( ${VAR} "${INITIAL_VALUE}" CACHE STRING "${DOCSTR}" ${FORCE_ARG})
-  IF("${CMAKE_VERSION}" VERSION_GREATER 2.7.20090312)
-    SET_PROPERTY(CACHE ${VAR} PROPERTY STRINGS "" "ON" "OFF")
-  ENDIF()
+  SET_PROPERTY(CACHE ${VAR} PROPERTY STRINGS "" "ON" "OFF")
 ENDFUNCTION()

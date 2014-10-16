@@ -62,7 +62,7 @@ following classes:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Standard exception handling
@@ -79,6 +79,10 @@ following classes:
 %import "Teuchos.i"
 
 // Teuchos::RCP handling
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::AbstractGroup)
+%teuchos_rcp(LOCA::Pitchfork::MooreSpence::AbstractGroup)
 %teuchos_rcp(LOCA::Pitchfork::MinimallyAugmented::AbstractGroup)
 
 // Base class support
@@ -89,9 +93,11 @@ parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
-%import "LOCA.TurningPoint.MinimallyAugmented_RelPath.i"
-%import "LOCA.Pitchfork.MooreSpence.i"
+%import "NOX.Abstract.i"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+%import(module="TurningPoint.MinimallyAugmented") "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+%import(module="MooreSpence") "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
 
 // LOCA::Pitchfork::MinimallyAugmented AbstractGroup class
-//%feature("director") LOCA::Pitchfork::MinimallyAugmented::AbstractGroup;
 %include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"

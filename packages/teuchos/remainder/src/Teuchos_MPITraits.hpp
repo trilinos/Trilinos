@@ -43,11 +43,11 @@
 #define TEUCHOS_MPITRAITS_H
 
 /*! \file Teuchos_MPITraits.hpp
- * \brief A templated traits class for binding MPI types to C++ types. 
+ * \brief A templated traits class for binding MPI types to C++ types.
  *
  * \warning The class implemented in this file is DEPRECATED, since
  *   \c Teuchos::MPIComm is deprecated.
- * 
+ *
  * The \c Teuchos::MPITraits class is for use with the \c
  * Teuchos::MPIComm class and is supposed to compile whether or not
  * Trilinos was built with MPI. If you need to convert directly to MPI
@@ -59,14 +59,14 @@ namespace Teuchos
 {
   using std::string;
 
-  /** 
+  /**
    * \class MPITraits
-   * \ingroup MPI 
+   * \ingroup MPI
    * \brief Templated traits class that binds MPI types to C++ types
    *
    * \warning This class is DEPRECATED, since it depends on the
    *   deprecated class \c MPIComm.
-   * 
+   *
    * \note Template specializations exist for datatypes:
    *   <tt>char</tt>, <tt>int</tt>, <tt>float</tt>, and
    *   <tt>double</tt>.
@@ -79,7 +79,7 @@ namespace Teuchos
   };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS	
-  /** \ingroup MPI 
+  /** \ingroup MPI
    * Binds MPI_INT to int
    */
   template <> class MPITraits<int>
@@ -89,7 +89,7 @@ namespace Teuchos
     static int type() {return MPIComm::INT;}
   };
 	
-  /** \ingroup MPI 
+  /** \ingroup MPI
    * Binds MPI_FLOAT to float
    */
   template <> class MPITraits<float>
@@ -99,7 +99,7 @@ namespace Teuchos
     static int type() {return MPIComm::FLOAT;}
   };
 	
-  /** \ingroup MPI 
+  /** \ingroup MPI
    * Binds MPI_DOUBLE to double
    */
   template <> class MPITraits<double>
@@ -109,7 +109,7 @@ namespace Teuchos
     static int type() {return MPIComm::DOUBLE;}
   };
 	
-  /** \ingroup MPI 
+  /** \ingroup MPI
    * Binds MPI_CHAR to char
    */
   template <> class MPITraits<char>

@@ -69,7 +69,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     Level myLevel;
     myLevel.SetLevelID(0);
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(15);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
     myLevel.Set("A", A);
 
     // build dummy aggregate structure
@@ -95,14 +95,14 @@ namespace MueLuTests {
 
 
 
-///////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////
 
   TEUCHOS_UNIT_TEST(CoarseMap, NonStandardCaseA )
   {
     out << "version: " << MueLu::Version() << std::endl;
     Level myLevel;
     myLevel.SetLevelID(0);
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(15);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
     myLevel.Set("A", A);
 
     // build dummy aggregate structure

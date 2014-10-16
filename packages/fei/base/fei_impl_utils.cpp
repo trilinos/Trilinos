@@ -360,7 +360,9 @@ int remove_couplings(fei::FillableMat& mat)
           coefs[ii] *= coef;
         }
 
-        add_entries(*frow, rowlen, &indices[0], &coefs[0]);
+        int* indPtr = indices.empty() ? NULL : &indices[0];
+        double* coefPtr = coefs.empty() ? NULL : &coefs[0];
+        add_entries(*frow, rowlen, indPtr, coefPtr);
         foundCoupling = true;
       }
     }
@@ -518,7 +520,7 @@ void add_to_graph(const fei::CSRMat& inmat, fei::Graph& graph)
     int row = rowNumbers[i];
     int offset = rowOffsets[i];
     int rowlen = rowOffsets[i+1]-offset;
-    const int* indices = &pckColInds[offset];
+    const int* indices = pckColInds.empty() ? NULL : &pckColInds[offset];
 
     if (graph.addIndices(row, rowlen, indices) != 0) {
       throw std::runtime_error("fei::impl_utils::add_to_graph ERROR in graph.addIndices.");

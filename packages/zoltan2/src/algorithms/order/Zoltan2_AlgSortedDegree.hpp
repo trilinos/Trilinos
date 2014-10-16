@@ -71,7 +71,7 @@ class AlgSortedDegree : public Algorithm<Adapter>
   public:
 
   typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   AlgSortedDegree(
@@ -82,7 +82,7 @@ class AlgSortedDegree : public Algorithm<Adapter>
   {
   }
 
-  int order(const RCP<OrderingSolution<gid_t, lno_t> > &solution)
+  int order(const RCP<OrderingSolution<zgid_t, lno_t> > &solution)
   {
     int ierr= 0;
   

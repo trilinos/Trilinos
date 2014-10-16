@@ -58,7 +58,7 @@ INCLUDE(PrintVar)
 #
 #  BASE_DIR
 #
-#    The base directory where files with the extension 
+#    The base directory where files with the extension
 #    ${${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT} will be
 #    globed for.
 #
@@ -76,7 +76,7 @@ INCLUDE(PrintVar)
 FUNCTION(TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS BASE_DIR)
 
   #PRINT_VAR(BASE_DIR)
-   
+
   #
   # A) Parse the input arguments
   #
@@ -117,7 +117,7 @@ FUNCTION(TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS BASE_DIR)
   ASSERT_DEFINED(HAVE_${PARENT_PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION)
 
   FOREACH(DECL_HEADER ${DECL_HEADERS_LIST})
- 
+
     # Get the base file names (without _decl.hpp)
     STRING(REGEX REPLACE ".*/(.+)${${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT}" "\\1"  DECL_HEADER_BASE ${DECL_HEADER})
     #PRINT_VAR(DECL_HEADER_BASE)

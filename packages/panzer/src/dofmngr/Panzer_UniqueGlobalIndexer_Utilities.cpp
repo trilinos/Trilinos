@@ -72,8 +72,11 @@ void computePatternEdgeIndices(const FieldPattern & pattern,std::vector<std::pai
 
 void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vector<int> > & faceIndices)
 {
+   // this only works for 3D field patterns
+   TEUCHOS_ASSERT(pattern.getDimension()==3);
+
    unsigned node_dim = 0; // by assumption
-   unsigned subcell_dim = pattern.getDimension()<=2 ? 1 : 2;
+   unsigned subcell_dim = 2;
    shards::CellTopology cellTopo = pattern.getCellTopology();
 
    faceIndices.resize(cellTopo.getSubcellCount(subcell_dim));

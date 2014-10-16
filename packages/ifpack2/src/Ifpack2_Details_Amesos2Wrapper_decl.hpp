@@ -358,7 +358,7 @@ private:
   Amesos2Wrapper<MatrixType>& operator= (const Amesos2Wrapper<MatrixType>& RHS);
 
   //! Amesos2 solver; it contains the factorization of the matrix A_.
-  Teuchos::RCP<Amesos2::Solver<MatrixType, MV> > amesos2solver_;
+  Teuchos::RCP<Amesos2::Solver<crs_matrix_type, MV> > amesos2solver_;
 
   /// \brief Return A, wrapped in a LocalFilter, if necessary.
   ///

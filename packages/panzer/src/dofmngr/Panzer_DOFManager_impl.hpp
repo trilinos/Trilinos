@@ -841,9 +841,14 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
      // grab field patterns, will be necessary to compute orientations
     const FieldPattern & fieldPattern = *fa_fps_[bid];
 
+    //Should be ga_fp_ (geometric aggregate field pattern)
     std::vector<std::pair<int,int> > topEdgeIndices;
-    //Should be ga_fp_
     orientation_helpers::computePatternEdgeIndices(*ga_fp_,topEdgeIndices);
+
+    // grab face orientations if 3D
+    std::vector<std::vector<int> > topFaceIndices;
+    if(ga_fp_->getDimension()==3)
+      orientation_helpers::computePatternFaceIndices(*ga_fp_,topFaceIndices);
 
     //How many GIDs are associated with a particular element bloc
     const std::vector<LO> & elmts = connMngr_->getElementBlock(blockName);
@@ -851,11 +856,10 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
        // this is the vector of orientations to fill: initialize it correctly
       std::vector<char> & eOrientation = orientation_[elmts[e]];
 
-      //This resize seems to be the same as fieldPattern.numberIDs(). 
-      //When computer ede orientations is called, that is the assert.
-      //There should be no reason to make it anymore complicated.
+      // This resize seems to be the same as fieldPattern.numberIDs(). 
+      // When computer edge orientations is called, that is the assert.
+      // There should be no reason to make it anymore complicated.
       eOrientation.resize(fieldPattern.numberIds());
-      //eOrientation.resize(8);
       for(std::size_t s=0;s<eOrientation.size();s++)
         eOrientation[s] = 1; // put in 1 by default 
 
@@ -865,6 +869,10 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
       const std::vector<GO> connectivity(connPtr,connPtr+connSz);
 
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
+
+      // compute face orientations in 3D
+      if(ga_fp_->getDimension()==3)
+        orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity, fieldPattern, eOrientation);
     }
   }
 }

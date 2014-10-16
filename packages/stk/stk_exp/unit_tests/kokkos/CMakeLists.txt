@@ -1,0 +1,17 @@
+
+INCLUDE(TribitsAddExecutableAndTest)
+
+ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
+
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR}/unit_tests/kokkos)
+
+FILE(GLOB SOURCES *.cpp)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  exp_unit_kokkos
+  SOURCES ${SOURCES}
+  DEPLIBS stk_mesh_base stk_topology
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+

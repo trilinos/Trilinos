@@ -54,16 +54,19 @@ namespace Amesos2 {
 #endif
 
 #ifdef HAVE_TPETRA_INST_FLOAT
-  AMESOS2_SOLVER_TPETRA_INST(Superlu,float,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,float,int,int)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,int)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<float>,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<float>,int,int)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,int)
+#endif
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,long long)
 #endif
 }
 
@@ -86,6 +89,10 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
   AMESOS2_SUPERLU_LOCAL_INSTANT(double, int, int, KokkosClassic_ThrustGPUNode)
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  AMESOS2_SUPERLU_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosSerialWrapperNode)
 #endif
 
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)

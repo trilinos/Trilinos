@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
@@ -23,7 +22,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
   #     SOURCES amesos2.cpp
   #     ARGS ""
   #     COMM serial mpi
-  #     DEPLIBS muelu xpetra
   #   )
 
 
@@ -32,7 +30,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
   #     SOURCES mainMergedSmoo.cpp
   #     ARGS ""
   #     COMM serial mpi
-  #     DEPLIBS muelu xpetra
   #   )
 
   # JJH: 9/3/2013 This test is failing.  Until Andrey fixes it, I'm allowing
@@ -41,14 +38,12 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     simple1D-Emin
     SOURCES Emin.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra
     )
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #   simple1D-Emin
   #   SOURCES Emin.cpp
   #   ARGS ""
   #   COMM serial mpi
-  #   DEPLIBS muelu xpetra
   #   )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -56,6 +51,5 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     SOURCES simple1D-UncoupledAggregation.cpp
     ARGS ""
     COMM serial mpi
-    DEPLIBS muelu xpetra
     )
 ENDIF()

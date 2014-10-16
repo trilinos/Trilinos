@@ -32,7 +32,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 // Device
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Kernels
 #include "Stokhos_Cuda_CrsMatrix.hpp"
@@ -92,7 +92,7 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize Cuda
-  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::HostSpace::execution_space::initialize();
   Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
   Kokkos::Cuda::print_configuration( std::cout );
 
@@ -103,7 +103,7 @@ int main( int argc, char* argv[] ) {
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
   Kokkos::Cuda::finalize();
 
   return ret;

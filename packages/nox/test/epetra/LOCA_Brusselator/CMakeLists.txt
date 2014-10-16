@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -18,7 +17,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     Problem_Interface.C
     brussCont.C
     COMM serial mpi
-    DEPLIBS noxtestutils
+    TESTONLYLIBS noxtestutils
     NUM_MPI_PROCS 2
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
@@ -35,7 +34,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     Problem_Interface.C
     brussCont_ShiftInvert2Matrix.C
     COMM serial mpi
-    DEPLIBS noxtestutils
+    TESTONLYLIBS noxtestutils
     NUM_MPI_PROCS 2
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
@@ -52,7 +51,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     Problem_Interface.C
     brussCont_Cayley2Matrix.C
     COMM serial mpi
-    DEPLIBS noxtestutils
+    TESTONLYLIBS noxtestutils
     NUM_MPI_PROCS 2
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
@@ -72,7 +71,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
       brussHopfCont.C
       COMM serial mpi
       NUM_MPI_PROCS 2
-      DEPLIBS noxtestutils
+      TESTONLYLIBS noxtestutils
       ARGS -v
       PASS_REGULAR_EXPRESSION "All tests passed"
       )

@@ -151,12 +151,6 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  int MyPID;
-#ifdef HAVE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
-#else 
-  MyPID = 0;
-#endif
   bool debug = false;
   bool verbose = false;
   bool testFailed = false;

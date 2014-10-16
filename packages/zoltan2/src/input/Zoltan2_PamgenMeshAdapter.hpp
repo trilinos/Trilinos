@@ -54,7 +54,8 @@
 #include <Zoltan2_StridedData.hpp>
 #include <vector>
 
-#include <im_exodusII.h>
+#include <pamgen_im_exodusII.h>
+#include "pamgen_im_ne_nemesisI.h"
 
 namespace Zoltan2 {
 
@@ -92,7 +93,7 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef MeshAdapter<User>       base_adapter_t;
@@ -105,7 +106,7 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  PamgenMeshAdapter(std::string typestr="region");
+  PamgenMeshAdapter(const Comm<int> &comm, std::string typestr="region");
 
   void print(int);
 
@@ -128,7 +129,7 @@ public:
     return 0;
   }
    
-  void getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
+  void getIDsViewOf(MeshEntityType etype, const zgid_t *&Ids) const
   {
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_)) {
@@ -201,7 +202,7 @@ public:
   }
 
   void getAdjsView(MeshEntityType source, MeshEntityType target,
-		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
+		   const lno_t *&offsets, const zgid_t *& adjacencyIds) const
   {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
@@ -237,7 +238,7 @@ public:
   }
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
-		      const lno_t *&offsets, const gid_t *& adjacencyIds) const
+		      const lno_t *&offsets, const zgid_t *& adjacencyIds) const
   {
     if (avail2ndAdjs(sourcetarget, through)) {
       offsets = start_;
@@ -251,11 +252,11 @@ public:
 
 private:
   int dimension_, num_nodes_, num_elem_;
-  gid_t *element_num_map_, *node_num_map_;
+  zgid_t *element_num_map_, *node_num_map_;
   int *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
   lno_t *start_;
-  gid_t *adj_;
+  zgid_t *adj_;
   size_t nadj_;
 };
 
@@ -263,17 +264,19 @@ private:
 // Definitions
 ////////////////////////////////////////////////////////////////
 
-  ssize_t in_list(const int value, size_t count, int *vector)
-  {
-    for(size_t i=0; i < count; i++) {
-      if(vector[i] == value)
-	return i;
-    }
-    return -1;
+static
+ssize_t in_list(const int value, size_t count, int *vector)
+{
+  for(size_t i=0; i < count; i++) {
+    if(vector[i] == value)
+      return i;
   }
+  return -1;
+}
 
 template <typename User>
-PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
+PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
+					   std::string typestr):
   dimension_(0)
 {
   this->setEntityTypes(typestr, "vertex", "vertex");
@@ -386,7 +389,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
       reconnect[telct] = new int [num_nodes_per_elem[b]];
 
       for (int j = 0; j < num_nodes_per_elem[b]; j++) {
-	elemToNode_[tnoct_] = connect[b][i*num_nodes_per_elem[b] + j];
+	elemToNode_[tnoct_]=
+	  node_num_map_[connect[b][i*num_nodes_per_elem[b] + j]-1];
 	reconnect[telct][j] = connect[b][i*num_nodes_per_elem[b] + j];
 	++tnoct_;
       }
@@ -394,6 +398,18 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
       ++telct;
     }
   }
+
+  delete[] num_nodes_per_elem;
+  num_nodes_per_elem = NULL;
+  delete[] num_elem_this_blk;
+  num_elem_this_blk = NULL;
+
+  for(int b = 0; b < num_elem_blk; b++) {
+    delete[] connect[b];
+  }
+
+  delete[] connect;
+  connect = NULL;
 
   int max_side_nodes = nnodes_per_elem;
   int *side_nodes = new int [max_side_nodes];
@@ -420,6 +436,231 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
     }
   }
 
+  int nprocs = comm.getSize();
+
+  if (nprocs > 1) {
+    int neid = 0, num_internal_nodes, num_border_nodes, num_external_nodes;
+    int num_internal_elems, num_border_elems, num_node_cmaps, num_elem_cmaps;
+    int proc = 0;
+    error += im_ne_get_loadbal_param(neid, &num_internal_nodes,
+				     &num_border_nodes, &num_external_nodes,
+				     &num_internal_elems, &num_border_elems,
+				     &num_node_cmaps, &num_elem_cmaps, proc);
+
+    int *node_cmap_ids = new int [num_node_cmaps];
+    int *node_cmap_node_cnts = new int [num_node_cmaps];
+    int *elem_cmap_ids = new int [num_elem_cmaps];
+    int *elem_cmap_elem_cnts = new int [num_elem_cmaps];
+    error += im_ne_get_cmap_params(neid, node_cmap_ids, node_cmap_node_cnts,
+				   elem_cmap_ids, elem_cmap_elem_cnts, proc);
+    delete[] elem_cmap_ids;
+    elem_cmap_ids = NULL;
+    delete[] elem_cmap_elem_cnts;
+    elem_cmap_elem_cnts = NULL;
+
+    int **node_ids = new int * [num_node_cmaps];
+    int **node_proc_ids = new int * [num_node_cmaps];
+    for(int j = 0; j < num_node_cmaps; j++) {
+      node_ids[j] = new int [node_cmap_node_cnts[j]];
+      node_proc_ids[j] = new int [node_cmap_node_cnts[j]];
+      error += im_ne_get_node_cmap(neid, node_cmap_ids[j], node_ids[j],
+				   node_proc_ids[j], proc);
+    }
+    delete[] node_cmap_ids;
+    node_cmap_ids = NULL;
+    int *sendCount = new int [nprocs];
+    int *recvCount = new int [nprocs];
+
+    // Post receives
+    RCP<CommRequest<int> >*requests=new RCP<CommRequest<int> >[num_node_cmaps];
+    for (int cnt = 0, i = 0; i < num_node_cmaps; i++) {
+      try {
+	requests[cnt++] =
+	  Teuchos::ireceive<int,int>(comm,
+				     rcp(&(recvCount[node_proc_ids[i][0]]),
+					 false),
+				     node_proc_ids[i][0]);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+    }
+
+    Teuchos::barrier<int>(comm);
+    size_t totalsend = 0;
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      sendCount[node_proc_ids[j][0]] = 1;
+      for(int i = 0; i < node_cmap_node_cnts[j]; i++) {
+	sendCount[node_proc_ids[j][i]] += sur_elem[node_ids[j][i]-1].size()+2;
+      }
+      totalsend += sendCount[node_proc_ids[j][0]];
+    }
+
+    // Send data; can use readySend since receives are posted.
+    for (int i = 0; i < num_node_cmaps; i++) {
+      try {
+	Teuchos::readySend<int,int>(comm, sendCount[node_proc_ids[i][0]],
+				    node_proc_ids[i][0]);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+    }
+
+    // Wait for messages to return.
+    try {
+      Teuchos::waitAll<int>(comm, arrayView(requests, num_node_cmaps));
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    delete [] requests;
+
+    // Allocate the receive buffer.
+    size_t totalrecv = 0;
+    int maxMsg = 0;
+    int nrecvranks = 0;
+    for(int i = 0; i < num_node_cmaps; i++) {
+      if (recvCount[node_proc_ids[i][0]] > 0) {
+	totalrecv += recvCount[node_proc_ids[i][0]];
+	nrecvranks++;
+	if (recvCount[node_proc_ids[i][0]] > maxMsg)
+	  maxMsg = recvCount[node_proc_ids[i][0]];
+      }
+    }
+
+    int *rbuf = NULL;
+    if (totalrecv) rbuf = new int[totalrecv];
+
+    requests = new RCP<CommRequest<int> > [nrecvranks];
+
+    // Error checking for memory and message size.
+    int OK[2] = {1,1};
+    // OK[0] -- true/false indicating whether each message size fits in an int
+    //          (for MPI).
+    // OK[1] -- true/false indicating whether memory allocs are OK
+    int gOK[2]; // For global reduce of OK.
+
+    if (size_t(maxMsg) * sizeof(int) > INT_MAX) OK[0] = false;
+    if (totalrecv && !rbuf) OK[1] = 0;
+    if (!requests) OK[1] = 0;
+
+    // Post receives
+
+    size_t offset = 0;
+
+    if (OK[0] && OK[1]) {
+      int rcnt = 0;
+      for (int i = 0; i < num_node_cmaps; i++) {
+	if (recvCount[node_proc_ids[i][0]]) {
+	  try {
+	    requests[rcnt++] =
+	      Teuchos::
+	      ireceive<int,int>(comm,
+				Teuchos::arcp(&rbuf[offset], 0,
+					      recvCount[node_proc_ids[i][0]],
+					      false),
+				node_proc_ids[i][0]);
+	  }
+	  Z2_FORWARD_EXCEPTIONS;
+	}
+	offset += recvCount[node_proc_ids[i][0]];
+      }
+    }
+
+    delete[] recvCount;
+
+    // Use barrier for error checking
+    Teuchos::reduceAll<int>(comm, Teuchos::REDUCE_MIN, 2, OK, gOK);
+    if (!gOK[0] || !gOK[1]) {
+      delete [] rbuf;
+      delete [] requests;
+      if (!gOK[0])
+	throw std::runtime_error("Max single message length exceeded");
+      else
+	throw std::bad_alloc();
+    }
+
+    int *sbuf = NULL;
+    if (totalsend) sbuf = new int[totalsend];
+    a = 0;
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      sbuf[a++] = node_cmap_node_cnts[j];
+      for(int i = 0; i < node_cmap_node_cnts[j]; i++) {
+	sbuf[a++] = node_num_map_[node_ids[j][i]-1];
+	sbuf[a++] = sur_elem[node_ids[j][i]-1].size();
+	for(size_t ecnt=0; ecnt < sur_elem[node_ids[j][i]-1].size(); ecnt++) {
+	  sbuf[a++] = sur_elem[node_ids[j][i]-1][ecnt];
+	}
+      }
+    }
+
+    delete[] node_cmap_node_cnts;
+    node_cmap_node_cnts = NULL;
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      delete[] node_ids[j];
+    }
+
+    delete[] node_ids;
+    node_ids = NULL;
+    ArrayRCP<int> sendBuf;
+
+    if (totalsend)
+      sendBuf = ArrayRCP<int>(sbuf, 0, totalsend, true);
+    else
+      sendBuf = Teuchos::null;
+
+    // Send data; can use readySend since receives are posted.
+    offset = 0;
+    for (int i = 0; i < num_node_cmaps; i++) {
+      if (sendCount[node_proc_ids[i][0]]) {
+	try{
+	  Teuchos::readySend<int,
+	    int>(comm,
+		 Teuchos::arrayView(&sendBuf[offset],
+				    sendCount[node_proc_ids[i][0]]),
+		 node_proc_ids[i][0]);
+	}
+	Z2_FORWARD_EXCEPTIONS;
+      }
+      offset += sendCount[node_proc_ids[i][0]];
+    }
+
+    for(int j = 0; j < num_node_cmaps; j++) {
+      delete[] node_proc_ids[j];
+    }
+
+    delete[] node_proc_ids;
+    node_proc_ids = NULL;
+    delete[] sendCount;
+
+    // Wait for messages to return.
+    try{
+      Teuchos::waitAll<int>(comm, Teuchos::arrayView(requests, nrecvranks));
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    delete[] requests;
+    a = 0;
+
+    for (int i = 0; i < num_node_cmaps; i++) {
+      int num_nodes_this_processor = rbuf[a++];
+
+      for (int j = 0; j < num_nodes_this_processor; j++) {
+	int this_node = rbuf[a++];
+	int num_elem_this_node = rbuf[a++];
+
+	for (int ncnt = 0; ncnt < num_nodes_; ncnt++) {
+	  if (node_num_map_[ncnt] == this_node) {
+	    for (int ecnt = 0; ecnt < num_elem_this_node; ecnt++) {
+	      sur_elem[ncnt].push_back(rbuf[a++]);
+	    }
+	  }
+	}
+      }
+    }
+
+    delete[] rbuf;
+  }
+
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
     start_[ecnt] = nadj_;
     int nnodes = nnodes_per_elem;
@@ -428,7 +669,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
       for(size_t i=0; i < sur_elem[node].size(); i++) {
 	int entry = sur_elem[node][i];
 
-	if(ecnt != entry-1 &&
+	if(element_num_map_[ecnt] != entry &&
 	   in_list(entry,
 		   adj.size()-start_[ecnt],
 		   &adj[start_[ecnt]]) < 0) {
@@ -438,25 +679,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
       }
     }
   }
-  start_[num_elem_] = nadj_;
-
-  adj_ = new gid_t [nadj_];
-
-  for (size_t i=0; i < nadj_; i++) {
-    adj_[i] = adj[i];
-  }
-
-  delete[] num_nodes_per_elem;
-  num_nodes_per_elem = NULL;
-  delete[] num_elem_this_blk;
-  num_elem_this_blk = NULL;
-
-  for(int b = 0; b < num_elem_blk; b++) {
-    delete[] connect[b];
-  }
-
-  delete[] connect;
-  connect = NULL;
 
   for(int b = 0; b < num_elem_; b++) {
     delete[] reconnect[b];
@@ -464,8 +686,18 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(std::string typestr):
 
   delete[] reconnect;
   reconnect = NULL;
+  start_[num_elem_] = nadj_;
+
+  adj_ = new zgid_t [nadj_];
+
+  for (size_t i=0; i < nadj_; i++) {
+    adj_[i] = adj[i];
+  }
+
   delete[] side_nodes;
+  side_nodes = NULL;
   delete[] mirror_nodes;
+  mirror_nodes = NULL;
 }
 
 template <typename User>
@@ -479,14 +711,18 @@ void PamgenMeshAdapter<User>::print(int me)
             << std::endl;
 
   for (int i = 0; i < num_elem_; i++) {
-    std::cout << me << fn << i << " Coords: ";
+    std::cout << me << fn << i 
+              << " Elem " << element_num_map_[i]
+              << " Coords: ";
     for (int j = 0; j < dimension_; j++)
       std::cout << Acoords_[i + j * num_elem_] << " ";
     std::cout << std::endl;
   }
 
   for (int i = 0; i < num_elem_; i++) {
-    std::cout << me << fn << i+1 << " Graph: ";
+    std::cout << me << fn << i 
+              << " Elem " << element_num_map_[i]
+              << " Graph: ";
     for (int j = start_[i]; j < start_[i+1]; j++)
       std::cout << adj_[j] << " ";
     std::cout << std::endl;

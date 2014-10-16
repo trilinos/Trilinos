@@ -1,0 +1,34 @@
+#!/bin/bash
+
+EXTRA_ARGS=$@
+
+#
+# By default, this script assumes the directory structure
+#
+# Trilinos.base/
+#     Trilinos/
+#         TriBITS/
+#     BUILDS/
+#         GCC-4.8.3   # or whatever compiler name
+#             MPI_DEBUG
+#
+# To change this structure, just run with:
+#
+#   env TRIBITS_SRC_DIR=<some-dir> ./do-configure [other args]
+#
+if [ "$TRIBITS_DIR" == "" ] ; then
+  TRIBITS_DIR=../../../Trilinos/TriBITS
+fi
+
+TRIBITS_DIR_ABS=$(readlink -f $TRIBITS_DIR)
+echo "TRIBITS_DIR_ABS = $TRIBITS_DIR_ABS"
+
+cmake \
+-D CMAKE_BUILD_TYPE:STRING="DEBUG" \
+-D CTEST_BUILD_FLAGS:STRING="-j8" \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D TriBITSProj_ENABLE_Fortran:BOOL=ON \
+-D TriBITSProj_ENABLE_TESTS:BOOL=ON \
+-D TriBITSProj_ENABLE_CONFIGURE_TIMING:BOOL=ON \
+$EXTRA_ARGS \
+${TRIBITS_DIR_ABS}

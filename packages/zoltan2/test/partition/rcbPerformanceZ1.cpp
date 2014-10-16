@@ -81,10 +81,10 @@ using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
 using Teuchos::CommandLineProcessor;
 
-typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-typedef Tpetra::Map<lno_t, gno_t, node_t> tMap_t;
+typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
+typedef Tpetra::Map<zlno_t, zgno_t, znode_t> tMap_t;
 
-static ArrayRCP<ArrayRCP<scalar_t> > weights;
+static ArrayRCP<ArrayRCP<zscalar_t> > weights;
 static RCP<tMVector_t> coordinates;
 
 
@@ -143,20 +143,20 @@ int getDim(void *data, int *ierr)
 }
 
 void getObjList(void *data, int numGid, int numLid,
-  gid_t * gids, gid_t * lids, 
+  zzgid_t * gids, zzgid_t * lids, 
   int num_wgts, float *obj_wgts, int *ierr)
 {
   *ierr = 0;
   size_t localLen = coordinates->getLocalLength();
-  const gno_t *ids = coordinates->getMap()->getNodeElementList().getRawPtr();
-  gno_t *idsNonConst = const_cast<gno_t *>(ids);
+  const zgno_t *ids = coordinates->getMap()->getNodeElementList().getRawPtr();
+  zgno_t *idsNonConst = const_cast<zgno_t *>(ids);
 
-  if (sizeof(gid_t) == sizeof(gno_t)){
-    memcpy(gids, idsNonConst, sizeof(gid_t) * localLen);
+  if (sizeof(zzgid_t) == sizeof(zgno_t)){
+    memcpy(gids, idsNonConst, sizeof(zzgid_t) * localLen);
   }
   else{
     for (size_t i=0; i < localLen; i++)
-      gids[i] = static_cast<gid_t>(idsNonConst[i]);
+      gids[i] = static_cast<zzgid_t>(idsNonConst[i]);
   }
 
   if (num_wgts > 0){
@@ -168,16 +168,16 @@ void getObjList(void *data, int numGid, int numLid,
 }
 
 void getCoords(void *data, int numGid, int numLid,
-  int numObj, gid_t * gids, gid_t * lids,
+  int numObj, zzgid_t * gids, zzgid_t * lids,
   int dim, double *coords, int *ierr)
 {
   // I know that Zoltan asks for coordinates in gid order.
   *ierr = 0;
   double *val = coords;
-  const scalar_t *x = coordinates->getData(0).getRawPtr();
-  const scalar_t *y = coordinates->getData(1).getRawPtr();
-  const scalar_t *z = coordinates->getData(2).getRawPtr();
-  for (lno_t i=0; i < numObj; i++){
+  const zscalar_t *x = coordinates->getData(0).getRawPtr();
+  const zscalar_t *y = coordinates->getData(1).getRawPtr();
+  const zscalar_t *z = coordinates->getData(2).getRawPtr();
+  for (zlno_t i=0; i < numObj; i++){
     *val++ = static_cast<double>(x[i]);
     *val++ = static_cast<double>(y[i]);
     *val++ = static_cast<double>(z[i]);
@@ -193,31 +193,31 @@ enum weightTypes{
   numWeightTypes
 };
 
-ArrayRCP<scalar_t> makeWeights(
+ArrayRCP<zscalar_t> makeWeights(
   const RCP<const Teuchos::Comm<int> > & comm,
-  lno_t len, weightTypes how, scalar_t scale, int rank)
+  zlno_t len, weightTypes how, zscalar_t scale, int rank)
 {
-  scalar_t *wgts = new scalar_t [len];
+  zscalar_t *wgts = new zscalar_t [len];
   if (!wgts)
     throw bad_alloc();
 
-  ArrayRCP<scalar_t> wgtArray(wgts, 0, len, true);
+  ArrayRCP<zscalar_t> wgtArray(wgts, 0, len, true);
 
   if (how == upDown){
-    scalar_t val = scale + rank%2;
-    for (lno_t i=0; i < len; i++)
+    zscalar_t val = scale + rank%2;
+    for (zlno_t i=0; i < len; i++)
       wgts[i] = val;
   }
   else if (how == roundRobin){
     for (int i=0; i < 10; i++){
-      scalar_t val = (i + 10)*scale;
+      zscalar_t val = (i + 10)*scale;
       for (int j=i; j < len; j += 10)
          wgts[j] = val;
     }
   }
   else if (how == increasing){
-    scalar_t val = scale + rank;
-    for (lno_t i=0; i < len; i++)
+    zscalar_t val = scale + rank;
+    for (zlno_t i=0; i < len; i++)
       wgts[i] = val;
   }
 
@@ -230,19 +230,19 @@ ArrayRCP<scalar_t> makeWeights(
  */
 const RCP<tMVector_t> getMeshCoordinates(
     const RCP<const Teuchos::Comm<int> > & comm,
-    gno_t numGlobalCoords)
+    zgno_t numGlobalCoords)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
   double k = log(numGlobalCoords) / 3;
   double xdimf = exp(k) + 0.5;
-  gno_t xdim = static_cast<int>(floor(xdimf));
-  gno_t ydim = xdim;
-  gno_t zdim = numGlobalCoords / (xdim*ydim);
-  gno_t num=xdim*ydim*zdim;
-  gno_t diff = numGlobalCoords - num;
-  gno_t newdiff = 0;
+  zgno_t xdim = static_cast<int>(floor(xdimf));
+  zgno_t ydim = xdim;
+  zgno_t zdim = numGlobalCoords / (xdim*ydim);
+  zgno_t num=xdim*ydim*zdim;
+  zgno_t diff = numGlobalCoords - num;
+  zgno_t newdiff = 0;
 
   while (diff > 0){
     if (zdim > xdim && zdim > ydim){
@@ -286,27 +286,27 @@ const RCP<tMVector_t> getMeshCoordinates(
 
   // Divide coordinates.
 
-  gno_t numLocalCoords = num / nprocs;
-  gno_t leftOver = num % nprocs;
-  gno_t gid0 = 0;
+  zgno_t numLocalCoords = num / nprocs;
+  zgno_t leftOver = num % nprocs;
+  zgno_t gid0 = 0;
 
   if (rank <= leftOver)
-    gid0 = gno_t(rank) * (numLocalCoords+1);
+    gid0 = zgno_t(rank) * (numLocalCoords+1);
   else
     gid0 = (leftOver * (numLocalCoords+1)) + 
-           ((gno_t(rank) - leftOver) * numLocalCoords);
+           ((zgno_t(rank) - leftOver) * numLocalCoords);
 
   if (rank < leftOver)
     numLocalCoords++;
 
-  gno_t gid1 = gid0 + numLocalCoords;
+  zgno_t gid1 = gid0 + numLocalCoords;
 
-  gno_t *ids = new gno_t [numLocalCoords];
+  zgno_t *ids = new zgno_t [numLocalCoords];
   if (!ids)
     throw bad_alloc();
-  ArrayRCP<gno_t> idArray(ids, 0, numLocalCoords, true);
+  ArrayRCP<zgno_t> idArray(ids, 0, numLocalCoords, true);
 
-  for (gno_t i=gid0; i < gid1; i++)
+  for (zgno_t i=gid0; i < gid1; i++)
     *ids++ = i;   
 
   RCP<const tMap_t> idMap = rcp(
@@ -314,28 +314,28 @@ const RCP<tMVector_t> getMeshCoordinates(
 
   // Create a Tpetra::MultiVector of coordinates.
 
-  scalar_t *x = new scalar_t [numLocalCoords*3]; 
+  zscalar_t *x = new zscalar_t [numLocalCoords*3]; 
   if (!x)
     throw bad_alloc();
-  ArrayRCP<scalar_t> coordArray(x, 0, numLocalCoords*3, true);
+  ArrayRCP<zscalar_t> coordArray(x, 0, numLocalCoords*3, true);
 
-  scalar_t *y = x + numLocalCoords;
-  scalar_t *z = y + numLocalCoords;
+  zscalar_t *y = x + numLocalCoords;
+  zscalar_t *z = y + numLocalCoords;
 
-  gno_t xStart = 0;
-  gno_t yStart = 0;
-  gno_t xyPlane = xdim*ydim;
-  gno_t zStart = gid0 / xyPlane;
-  gno_t rem = gid0 % xyPlane;
+  zgno_t xStart = 0;
+  zgno_t yStart = 0;
+  zgno_t xyPlane = xdim*ydim;
+  zgno_t zStart = gid0 / xyPlane;
+  zgno_t rem = gid0 % xyPlane;
   if (rem > 0){
     yStart = rem / xdim;
     xStart = rem % xdim;
   }
 
-  lno_t next = 0;
-  for (scalar_t zval=zStart; next < numLocalCoords && zval < zdim; zval++){
-    for (scalar_t yval=yStart; next < numLocalCoords && yval < ydim; yval++){
-      for (scalar_t xval=xStart; next < numLocalCoords && xval < xdim; xval++){
+  zlno_t next = 0;
+  for (zscalar_t zval=zStart; next < numLocalCoords && zval < zdim; zval++){
+    for (zscalar_t yval=yStart; next < numLocalCoords && yval < ydim; yval++){
+      for (zscalar_t xval=xStart; next < numLocalCoords && xval < xdim; xval++){
         x[next] = xval;
         y[next] = yval;
         z[next] = zval;
@@ -346,16 +346,16 @@ const RCP<tMVector_t> getMeshCoordinates(
     yStart = 0;
   }
 
-  ArrayView<const scalar_t> xArray(x, numLocalCoords);
-  ArrayView<const scalar_t> yArray(y, numLocalCoords);
-  ArrayView<const scalar_t> zArray(z, numLocalCoords);
-  ArrayRCP<ArrayView<const scalar_t> > coordinates =
-    arcp(new ArrayView<const scalar_t> [3], 0, 3);
+  ArrayView<const zscalar_t> xArray(x, numLocalCoords);
+  ArrayView<const zscalar_t> yArray(y, numLocalCoords);
+  ArrayView<const zscalar_t> zArray(z, numLocalCoords);
+  ArrayRCP<ArrayView<const zscalar_t> > coordinates =
+    arcp(new ArrayView<const zscalar_t> [3], 0, 3);
   coordinates[0] = xArray;
   coordinates[1] = yArray;
   coordinates[2] = zArray;
 
-  ArrayRCP<const ArrayView<const scalar_t> > constCoords =
+  ArrayRCP<const ArrayView<const zscalar_t> > constCoords =
    coordinates.getConst();
 
   RCP<tMVector_t> meshCoords = rcp(new tMVector_t(
@@ -484,30 +484,30 @@ int main(int argc, char *argv[])
 #ifdef HAVE_ZOLTAN2_OMP
   double begin = omp_get_wtime();
 #endif
-  GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+  GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t> *gg = new GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t>(geoparams,comm);
 #ifdef HAVE_ZOLTAN2_OMP
   double end = omp_get_wtime();
   cout << "GeometricGen Time:" << end - begin << endl;
 #endif
   int coord_dim = gg->getCoordinateDimension();
   int nWeights = gg->getNumWeights();
-  lno_t numLocalPoints = gg->getNumLocalCoords();
-  gno_t numGlobalPoints = gg->getNumGlobalCoords();
-  scalar_t **coords = new scalar_t * [coord_dim];
+  zlno_t numLocalPoints = gg->getNumLocalCoords();
+  zgno_t numGlobalPoints = gg->getNumGlobalCoords();
+  zscalar_t **coords = new zscalar_t * [coord_dim];
   for(int i = 0; i < coord_dim; ++i){
-    coords[i] = new scalar_t[numLocalPoints];
+    coords[i] = new zscalar_t[numLocalPoints];
   }
   gg->getLocalCoordinatesCopy(coords);
-  scalar_t **weight = NULL;
+  zscalar_t **weight = NULL;
   if(nWeights){
-    weight= new scalar_t * [nWeights];
+    weight= new zscalar_t * [nWeights];
     for(int i = 0; i < nWeights; ++i){
-      weight[i] = new scalar_t[numLocalPoints];
+      weight[i] = new zscalar_t[numLocalPoints];
     }
     gg->getLocalWeightsCopy(weight);
   }
 
-  gno_t globalSize = static_cast<gno_t>(numGlobalPoints);
+  zgno_t globalSize = static_cast<zgno_t>(numGlobalPoints);
   delete gg;
 
   cout << "coord_dim:" << coord_dim << " nWeights:" << nWeights << " numLocalPoints:" << numLocalPoints << " numGlobalPoints:" << numGlobalPoints << endl;
@@ -570,24 +570,24 @@ int main(int argc, char *argv[])
 
 
 
-  RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
-      new Tpetra::Map<lno_t, gno_t, node_t> (numGlobalPoints, numLocalPoints, 0, comm));
+  RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp = rcp(
+      new Tpetra::Map<zlno_t, zgno_t, znode_t> (numGlobalPoints, numLocalPoints, 0, comm));
 
-  Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(coord_dim);
+  Teuchos::Array<Teuchos::ArrayView<const zscalar_t> > coordView(coord_dim);
   for (int i=0; i < coord_dim; i++){
     if(numLocalPoints > 0){
-      Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalPoints);
+      Teuchos::ArrayView<const zscalar_t> a(coords[i], numLocalPoints);
       coordView[i] = a;
     } else{
-      Teuchos::ArrayView<const scalar_t> a;
+      Teuchos::ArrayView<const zscalar_t> a;
       coordView[i] = a;
     }
   }
 
-  coordinates = RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >(
-      new Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>( mp, coordView.view(0, coord_dim), coord_dim));
+  coordinates = RCP< Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> >(
+      new Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t>( mp, coordView.view(0, coord_dim), coord_dim));
 
-  //typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
+  //typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 
   RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(coordinates);
 
@@ -601,10 +601,10 @@ int main(int argc, char *argv[])
   for (int p=0; p < nprocs; p++){
     if (p==rank){
       cout << "Rank " << rank << ", " << numLocalCoords << "coords" << endl;
-      const scalar_t *x = coordinates->getData(0).getRawPtr();
-      const scalar_t *y = coordinates->getData(1).getRawPtr();
-      const scalar_t *z = coordinates->getData(2).getRawPtr();
-      for (lno_t i=0; i < numLocalCoords; i++)
+      const zscalar_t *x = coordinates->getData(0).getRawPtr();
+      const zscalar_t *y = coordinates->getData(1).getRawPtr();
+      const zscalar_t *z = coordinates->getData(2).getRawPtr();
+      for (zlno_t i=0; i < numLocalCoords; i++)
         cout << " " << x[i] << " " << y[i] << " " << z[i] << endl;
     }
     cout.flush();
@@ -614,10 +614,10 @@ int main(int argc, char *argv[])
 
   if (nWeights > 0){
 
-    weights = arcp(new ArrayRCP<scalar_t> [nWeights],
+    weights = arcp(new ArrayRCP<zscalar_t> [nWeights],
       0, nWeights, true);
     for(int i = 0; i < nWeights; ++i){
-      //weights[i] = ArrayRCP<scalar_t>(weight[i]);
+      //weights[i] = ArrayRCP<zscalar_t>(weight[i]);
     }
   }
 
@@ -674,8 +674,8 @@ int main(int argc, char *argv[])
   Zoltan_Set_Geom_Multi_Fn(zz, getCoords, NULL);
 
   int changes, numGidEntries, numLidEntries, numImport, numExport;
-  gid_t * importGlobalGids, * importLocalGids;
-  gid_t * exportGlobalGids, * exportLocalGids;
+  zzgid_t * importGlobalGids, * importLocalGids;
+  zzgid_t * exportGlobalGids, * exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
 
   MEMORY_CHECK(doMemory && rank==0, "Before Zoltan_LB_Partition");

@@ -35,7 +35,7 @@
   </parameter>
 
   <parameter>
-    <name>Export data</name>
+    <name>export data</name>
     <type>\parameterlist</type>
     <description>Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", "P", "R") of type "string" and value "\{levels separated by commas\}". A matrix is saved in two files: a) data is saved in the MatrixMarket format in a file called "A\_level.mm", or similar; b) row map is saved in the MatrixMarket format in a file called "rowmap\_A\_level.mm", or similar.</description>
   </parameter>
@@ -338,14 +338,6 @@
     <type>int</type>
     <default>4</default>
     <description>Number of maximum components from each processor used to construct partial bipartite graph.</description>
-    <visible>false</visible>
-  </parameter>
-
-  <parameter>
-    <name>repartition: keep proc 0</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Postprocessing for partitioning to keep processor 0 from dropping out. The goal is to keep processor 0 of the original fine level communication even when we use level subcommunicators.</description>
     <visible>false</visible>
   </parameter>
 

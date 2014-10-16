@@ -71,7 +71,7 @@ SET(Trilinos_PACKAGES Tpetra KokokosCore KokkosCompat KokkosContainers KokkosLin
 
 SET(CUDA_NVCC_FLAGS "-O3")
 SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode arch=compute_35,code=sm_35 -I/home/crtrott/lib/mpi/include")
-SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -Wall,-ansi,-fopenmp")
+SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -DKOKKOS_USE_CUDA_UVM -Xcompiler -Wall,-ansi,-fopenmp")
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_Tpetra=ON"

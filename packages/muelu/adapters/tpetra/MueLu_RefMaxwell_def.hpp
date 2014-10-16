@@ -56,22 +56,22 @@
 
 namespace MueLu {
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
 
   return Xpetra::toTpetraNonZero(SM_Matrix_->getDomainMap());
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const {
 
   return Xpetra::toTpetraNonZero(SM_Matrix_->getRangeMap());
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParameters(Teuchos::ParameterList& list) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::ParameterList& list) {
 
   disable_addon_  =  list.get("refmaxwell: disable add-on",true);
   MaxCoarseSize_  =  list.get("refmaxwell: max coarse size",1000);
@@ -102,8 +102,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParamete
   hiptmairPostList_.set("hiptmair: zero starting solution",false);
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
 
   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
   out.setOutputToRootOnly(0);
@@ -211,8 +211,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlongator() {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
 
   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
   out.setOutputToRootOnly(0);
@@ -261,7 +261,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
   size_t numLocalRows = SM_Matrix_->getNodeNumRows();
   Teuchos::RCP<XMap> BlockColMap
     = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getColMap(),dim);
-  P11_ = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Build(Ptent->getRowMap(),BlockColMap,0);
+  P11_ = Teuchos::rcp(new XCrsWrap(Ptent->getRowMap(),BlockColMap,0,Xpetra::StaticProfile));
 
   std::vector< Teuchos::ArrayRCP<const Scalar> > nullspace(dim);
   for(size_t i=0; i<dim; i++) {
@@ -269,33 +269,49 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
     nullspace[i]=datavec;
   }
 
+  size_t nnz=0;
+  std::vector<size_t>       rowPtrs;
+  std::vector<LocalOrdinal> blockCols;
+  std::vector<Scalar>       blockVals;
   for(size_t i=0; i<numLocalRows; i++) {
+    rowPtrs.push_back(nnz);
     Teuchos::ArrayView<const LocalOrdinal> localCols;
     Teuchos::ArrayView<const Scalar>       localVals;
     Ptent->getLocalRowView(i,localCols,localVals);
     size_t numCols = localCols.size();
-    std::vector<LocalOrdinal> blockLocalCols(dim*numCols);
-    std::vector<Scalar>       blockLocalVals(dim*numCols);
     for(size_t j=0; j<numCols; j++) {
       for(size_t k=0; k<dim; k++) {
-	blockLocalCols[j*dim+k] = localCols[j]*dim+k;
-	blockLocalVals[j*dim+k] = localVals[j]*nullspace[k][i];
+        blockCols.push_back(localCols[j]*dim+k);
+        blockVals.push_back(localVals[j]*nullspace[k][i]);
+        nnz++;
       }
     }
-    P11_ -> insertLocalValues(i,
-			      Teuchos::ArrayView<LocalOrdinal>(blockLocalCols),
-			      Teuchos::ArrayView<Scalar>(blockLocalVals));
   }
+  rowPtrs.push_back(nnz);
+
+  ArrayRCP<size_t>       rcpRowPtr;
+  ArrayRCP<LocalOrdinal> rcpColumns;
+  ArrayRCP<Scalar>       rcpValues;
+
+  RCP<XCRS> TP11 = rcp_dynamic_cast<XCrsWrap>(P11_)->getCrsMatrix();
+  TP11->allocateAllValues(nnz, rcpRowPtr, rcpColumns, rcpValues);
+
+  ArrayView<size_t>       rows    = rcpRowPtr();
+  ArrayView<LocalOrdinal> columns = rcpColumns();
+  ArrayView<Scalar>       values  = rcpValues();
+
+  for (size_t ii = 0; ii < rowPtrs.size();   ii++) rows[ii]    = rowPtrs[ii];
+  for (size_t ii = 0; ii < blockCols.size(); ii++) columns[ii] = blockCols[ii];
+  for (size_t ii = 0; ii < blockVals.size(); ii++) values[ii]  = blockVals[ii];
+  TP11->setAllValues(rcpRowPtr, rcpColumns, rcpValues);
   Teuchos::RCP<XMap> blockCoarseMap
     = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getDomainMap(),dim);
-  Utils::Apply_BCsToMatrixRows(P11_,BCrows_);
-  P11_->fillComplete(blockCoarseMap,SM_Matrix_->getDomainMap());
-  //P11_->describe(out,Teuchos::VERB_EXTREME);
+  TP11->expertStaticFillComplete(blockCoarseMap,SM_Matrix_->getDomainMap());
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::formCoarseMatrix() {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
 
   // coarse matrix for P11* (M1 + D1* M2 D1) P11
   Teuchos::RCP<XMat> C = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
@@ -312,6 +328,11 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::formCoarseM
     A11_=Matrix1;
   }
   else {
+    // catch a failure
+    TEUCHOS_TEST_FOR_EXCEPTION(M0inv_Matrix_==Teuchos::null,std::invalid_argument,
+                               "MueLu::RefMaxwell::formCoarseMatrix(): Inverse of "
+                               "lumped mass matrix required for add-on (i.e. M0inv_Matrix is null)");
+
     // coarse matrix for add-on, i.e P11* (M1 D0 M0inv D0* M1) P11
     Teuchos::RCP<XMat> Zaux = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
     Teuchos::RCP<XMat> Z = MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
@@ -337,8 +358,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::formCoarseM
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resetMatrix(Teuchos::RCP<TCRS> SM_Matrix_new) {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::resetMatrix(Teuchos::RCP<TCRS> SM_Matrix_new) {
 
   // convert Tpetra matrices to Xpetra
   Teuchos::RCP<XCRS> SM_tmp = Teuchos::rcp( new XTCRS(SM_Matrix_new) );
@@ -346,8 +367,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resetMatrix
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverseAdditive(const XTMV& RHS, XTMV& X) const {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(const XTMV& RHS, XTMV& X) const {
 
   // compute residuals
   RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
@@ -369,8 +390,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInvers
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverse121(const XTMV& RHS, XTMV& X) const {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse121(const XTMV& RHS, XTMV& X) const {
 
   RCP<XMV> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
   RCP<XMV> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
@@ -400,8 +421,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInvers
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverse212(const XTMV& RHS, XTMV& X) const {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse212(const XTMV& RHS, XTMV& X) const {
 
   RCP<XMV> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
   RCP<XMV> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
@@ -431,10 +452,10 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInvers
 
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-									   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-									   Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                                                                           Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                                                                           Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
   try {
 
     TMV& temp_x = const_cast<TMV &>(X);
@@ -462,14 +483,60 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const
 
     //FIXME add message and rethrow
     std::cerr << "Caught an exception in MueLu::RefMaxwell::ApplyInverse():" << std::endl
-	      << e.what() << std::endl;
+              << e.what() << std::endl;
 
   }
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-bool RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::hasTransposeApply() const {
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
   return false;
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+initialize(const Teuchos::RCP<TCRS> & D0_Matrix,
+           const Teuchos::RCP<TCRS> & M0inv_Matrix,
+           const Teuchos::RCP<TCRS> & M1_Matrix,
+           const Teuchos::RCP<TMV>  & Nullspace,
+           const Teuchos::RCP<TMV>  & Coords,
+           Teuchos::ParameterList& List)
+{
+  // some pre-conditions
+  TEUCHOS_ASSERT(D0_Matrix!=Teuchos::null);
+  TEUCHOS_ASSERT(M1_Matrix!=Teuchos::null);
+
+  Hierarchy11_ = Teuchos::null;
+  Hierarchy22_ = Teuchos::null;
+  parameterList_ = List;
+  disable_addon_ = false;
+  MaxCoarseSize_ = 1000;
+  MaxLevels_ = 5;
+  Cycles_ = 1;
+  precType11_ = "CHEBYSHEV";
+  precType22_ = "CHEBYSHEV";
+  mode_ = "additive";
+
+  // set parameters
+  setParameters(List);
+
+  // convert Tpetra matrices to Xpetra
+  Teuchos::RCP<XCRS> D0_tmp = Teuchos::rcp( new XTCRS(D0_Matrix) );
+  D0_Matrix_ = Teuchos::rcp( new XCrsWrap(D0_tmp) );
+
+  if(M0inv_Matrix != Teuchos::null) {
+    Teuchos::RCP<XCRS> M0inv_tmp = Teuchos::rcp( new XTCRS(M0inv_Matrix) );
+    M0inv_Matrix_ = Teuchos::rcp( new XCrsWrap(M0inv_tmp) );
+  }
+
+  Teuchos::RCP<XCRS> M1_tmp = Teuchos::rcp( new XTCRS(M1_Matrix) );
+  M1_Matrix_ = Teuchos::rcp( new XCrsWrap(M1_tmp) );
+
+  // convert Tpetra MultiVector to Xpetra
+  if(Coords != Teuchos::null)
+    Coords_ = Xpetra::toXpetra(Coords);
+  if(Nullspace != Teuchos::null)
+    Nullspace_ = Xpetra::toXpetra(Nullspace);
 }
 
 } // namespace

@@ -29,6 +29,7 @@
 // @HEADER
 
 %{
+// Teuchos includes
 #include "Teuchos_VerbosityLevel.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_LabeledObject.hpp"
@@ -39,7 +40,23 @@
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 using Teuchos::OpaqueWrapper;
+
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_PythonException.hpp"
 %}
+
+// Convey the PyTrilinos configuration to SWIG
+%include "PyTrilinos_config.h"
+
+// Handle Mpi4Py, if we have it
+#ifdef HAVE_MPI4PY
+%{
+#include "mpi4py/mpi4py.h"
+%}
+%include "mpi4py/mpi4py.i"
+%mpi4py_typemap(Comm, MPI_Comm);
+#endif
 
 // Teuchos Array support
 %include "Teuchos_Array.i"
@@ -350,6 +367,7 @@ SerialComm = SerialComm_int
 %template(barrier_int) Teuchos::barrier<int>;
 %pythoncode
 %{
+
 rank    = rank_int
 size    = size_int
 barrier = barrier_int
@@ -479,19 +497,33 @@ def scan(comm, reductOp, buffer):
   }
 }
 
-// Add python code to call MPI_Init() if appropriate.  If Init_Argv()
-// returns True, then MPI_Init() was not called before and Epetra is
-// responsible for calling MPI_Finalize(), via the atexit module.
+// Add python code to call MPI_Init() if appropriate.  If
+// Teuchos_MPI_Init_Argv() returns True, then MPI_Init() was not
+// called before and Epetra is responsible for calling MPI_Finalize(),
+// via the atexit module.
 %pythoncode
 %{
+
 # Call MPI_Init if appropriate
 import sys
 calledMpiInit = Teuchos_MPI_Init_Argv(sys.argv)
 
-# Arrange for MPI_Finalize to be called at exit, if appropriate
+# Proceed according to calledMpiInit.  If calledMpiInit is true, then register a
+# call to MPI_Finalize() with the atexit module and use the default value for
+# mpiCommunicator, equivalent to MPI_COMM_WORLD.  If calledMpiInit is false, try
+# to assess what package is responsible for calling MPI_Init(), currently either
+# distarray or mpi4py, and extract the appropriate value for mpiCommunicator.
+mpiCommunicator = None
 if calledMpiInit:
     import atexit
     atexit.register(Teuchos_MPI_Finalize)
+else:
+    if sys.modules.get("distarray.localapi.mpiutils"):
+        dlm = sys.modules["distarray.localapi.mpiutils"]
+        mpiCommunicator = dlm.get_base_comm()
+    elif sys.modules.get("mpi4py.MPI"):
+        MPI = sys.modules["mpi4py.MPI"]
+        mpiCommunicator = MPI.COMM_WORLD
 %}
 
 //////////////////////////////
@@ -499,19 +531,27 @@ if calledMpiInit:
 //////////////////////////////
 %extend Teuchos::MpiComm
 {
-  MpiComm()
+#ifdef HAVE_MPI4PY
+  MpiComm(MPI_Comm mpiComm = MPI_COMM_WORLD)
   {
-    return new Teuchos::MpiComm<Ordinal>
-      (Teuchos::opaqueWrapper((MPI_Comm)MPI_COMM_WORLD));
+    return new Teuchos::MpiComm< Ordinal >
+      (Teuchos::opaqueWrapper(mpiComm));
   }
+#else
+  MpiComm(PyObject * dummy = NULL)
+  {
+    return new Teuchos::MpiComm< Ordinal >
+      (Teuchos::opaqueWrapper(MPI_COMM_WORLD));
+  }
+#endif
 }
-%teuchos_rcp(Teuchos::MpiComm< int >)
 %ignore Teuchos::MpiComm::MpiComm;
 %ignore Teuchos::MpiComm::getRawMpiComm;
 %ignore Teuchos::MpiComm::broadcast;
 %ignore Teuchos::MpiComm::gatherAll;
 %ignore Teuchos::MpiComm::reduceAll;
 %ignore Teuchos::MpiComm::scan;
+%teuchos_rcp(Teuchos::MpiComm< int >)
 %include "Teuchos_DefaultMpiComm.hpp"
 %template(MpiComm_int) Teuchos::MpiComm<int>;
 %pythoncode
@@ -524,26 +564,28 @@ MpiComm = MpiComm_int
 ///////////////////////////////////////////
 %pythoncode
 %{
+
 class DefaultComm:
     "Encapsulate the default global communicator"
-    __defaultComm = MpiComm()
+    __defaultComm = MpiComm(mpiCommunicator)
     @classmethod
     def getComm(cls):
         "Return the default global communicator"
         return cls.__defaultComm
 %}
 
+#else
+
 ////////////////////////////////////////////////////////////////////////////////
 // The following code is implemented if HAVE_MPI is not defined
 ////////////////////////////////////////////////////////////////////////////////
-
-#else
 
 /////////////////////////////////////////////
 // Teuchos.DefaultComm support without MPI //
 /////////////////////////////////////////////
 %pythoncode
 %{
+
 class DefaultComm:
     "Encapsulate the default global communicator"
     __defaultComm = SerialComm()

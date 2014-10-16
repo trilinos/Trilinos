@@ -57,9 +57,13 @@ namespace Tpetra {
 
   /// \class ImportExportData
   /// \brief Implementation detail of Import and Export.
-  /// \tparam LocalOrdinal Same as the first template parameter of Map.
-  /// \tparam GlobalOrdinal Same as the second template parameter of Map.
-  /// \tparam Node Same as the third template parameter of Map.
+  ///
+  /// \tparam LocalOrdinal The type of local indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam GlobalOrdinal The type of global indices.  See the
+  ///   documentation of Map for requirements.
+  /// \tparam Node The Kokkos Node type.  See the documentation of Map
+  ///   for requirements.
   ///
   /// \warning This class is an implementation detail of Import and
   ///   Export.  It may change or disappear at any time.  Tpetra users
@@ -70,7 +74,9 @@ namespace Tpetra {
   /// and outgoing ("export") local indices (LIDs), LIDs to permute on
   /// the source and target of the Import or Export, and process ranks
   /// ("image IDs") to which to send.
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  template<class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node>
   class ImportExportData {
   public:
     typedef LocalOrdinal local_ordinal_type;

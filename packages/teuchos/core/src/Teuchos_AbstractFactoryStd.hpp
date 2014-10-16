@@ -80,7 +80,7 @@ public:
  * subclass is to use a concrete, default-constructable subclass for
  * <tt>T_impl</tt> and then to simply instantiate a concrete abstract
  * factory for that class using:
- 
+
  \verbatim
 
  Teuchos::AbstractFactoryStd<T_itfc,T_impl>  abstractFactory;
@@ -92,7 +92,7 @@ public:
  * private) and that it allow <tt>T_impl::new()</tt> and
  * <tt>T_impl::delete</tt> (i.e.  don't make them private functions, see
  * Meyers, More Effective C++, Item 27).
- 
+
  * However, this subclass is also templated on two other policy types that
  * allow a modification on how objects are created and destroyed.  The first
  * templated policy type, <tt>T_PostMod</tt>, defines how an object is
@@ -125,7 +125,7 @@ public:
  * allow <tt>new</tt> or <tt>delete</tt>).  The default class for
  * <tt>T_Allocator</tt> is <tt>AllocatorNew</tt><tt><T_impl></tt> who's
  * <tt>allocate()</tt> function just returns <tt>rcp(new T_impl())</tt>.
- * 
+ *
  * Since the <tt>T_Allocator</tt> class can specialize both the memory
  * management and can initialize the object using more that the default
  * constructor, the class <tt>T_PostMod</tt> may seem unecessary.  However, it

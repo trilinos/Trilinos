@@ -59,8 +59,9 @@ using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
+typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zgno_t, zlno_t, zgno_t> myTypes_t;
+// Need to use zgno_t as zzgid_t in basic types, since zzgid_t=zgno_t in MultiVector
 
 
 /*! \test rcbTest.cpp
@@ -122,7 +123,7 @@ void testFromDataFile(
   if (coordsConst->getGlobalLength() < 40) {
     int len = coordsConst->getLocalLength();
     const inputAdapter_t::part_t *zparts = problem.getSolution().getPartList();
-    const gno_t *zgids = problem.getSolution().getIdList(); 
+    const zgno_t *zgids = problem.getSolution().getIdList(); 
     for (int i = 0; i < len; i++)
       cout << me << " gid " << zgids[i] << " part " << zparts[i] << endl;
   }
@@ -138,14 +139,14 @@ void serialTest(int numParts, bool doRemap)
 
   cout << "Serial partitioning: " << numParts << " parts." << endl;
 
-  gno_t *ids = new gno_t [numCoords];
+  zgno_t *ids = new zgno_t [numCoords];
   if (!ids)
     throw std::bad_alloc();
-  for (lno_t i=0; i < numCoords; i++)
+  for (int i=0; i < numCoords; i++)
     ids[i] = i;
-  ArrayRCP<gno_t> globalIds(ids, 0, numCoords, true);
+  ArrayRCP<zgno_t> globalIds(ids, 0, numCoords, true);
 
-  Array<ArrayRCP<scalar_t> > randomCoords(3);
+  Array<ArrayRCP<zscalar_t> > randomCoords(3);
   UserInputForTests::getUIRandomData(555, numCoords, 0, 10,
     randomCoords.view(0,3));
 
@@ -186,12 +187,12 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
 
   size_t localCount = coords->getLocalLength();
 
-  scalar_t *x=NULL, *y=NULL, *z=NULL;
+  zscalar_t *x=NULL, *y=NULL, *z=NULL;
   x = coords->getDataNonConst(0).getRawPtr();
   y = coords->getDataNonConst(1).getRawPtr();
   z = coords->getDataNonConst(2).getRawPtr();
 
-  const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
+  const zgno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
   typedef Zoltan2::BasicVectorAdapter<tMVector_t> inputAdapter_t;
 
   inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);

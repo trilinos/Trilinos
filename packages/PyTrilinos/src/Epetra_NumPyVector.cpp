@@ -28,7 +28,7 @@
 
 #include "float.h"
 
-#include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyVector.hpp"
 
 #if NDARRAY_VERSION == 0x00090504
 #define NPY_ANYORDER -1

@@ -60,12 +60,7 @@ using std::endl;
 typedef double scalar_type;
 typedef int local_ordinal_type;
 typedef int global_ordinal_type;
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-typedef KokkosClassic::TBBNode node_type;
-#else
-typedef KokkosClassic::SerialNode node_type;
-#endif // HAVE_KOKKOSCLASSIC_TBB
+typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
 typedef Teuchos::ScalarTraits<scalar_type> SCT;
 typedef SCT::magnitudeType magnitude_type;
@@ -94,12 +89,12 @@ main (int argc, char *argv[])
   using Teuchos::rcp;
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
-  RCP<const Teuchos::Comm<int> > pComm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   bool success = false;
   bool verbose = false; // Verbosity of output
   try {
+    RCP<const Teuchos::Comm<int> > pComm =
+      Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
     // This factory object knows how to make a (Mat)OrthoManager
     // subclass, given a name for the subclass.  The name is not the
     // same as the class' syntactic name: e.g., "TSQR" is the name of

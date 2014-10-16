@@ -1,16 +1,49 @@
 /*! \page blockPage Block partitioning
 
-\section block_algorithm The algorithm
+\section block_algorithm Algorithm Overview
 
-\subsection block_input Input
+The block partitioning method is a simple partitioning method that partitions
+objects into groups of objects with consecutive IDs, where each group is assigned to the same
+part.  This partitioning is computed so that the sum of the weights of the objects
+on each part is balanced (for unweighted objects, the number of objects is balanced).
 
-\subsection block_solution Solution
 
-\subsection block_quality_measures Quality measures
 
-\subsection block_examples Examples
+\section block_input Input
 
-\subsection block_source Source
+The BlockPartitioning method expects a Zoltan2::IdentifierInput object that will contain the 
+IDs of the objects and optionally object weights.
+
+\section block_parameters Parameters
+
+In order to anable MJ:
+- \e algorithm should be set to \e block
+
+
+The following parameters are used by the MJ algorithm:
+
+- \e imbalance_tolerance (default is \e 1.1 )
+- \e partitioning_objective (default: if weights specified, <em>balance_object_weights</em>; otherwise <em>balance_object_count</em>) 
+
+
+
+\section block_solution Solution
+
+The solution is a list of part assignments for each object and the load imbalance for
+each weight.  
+
+
+\section block_quality_measures Quality measures
+
+Partitioning quality is measured with an imbalance measure.  Use the parameter
+\ref compute_metrics if you want the Zoltan2::PartitioningProblem to
+compute imbalance metrics for the solution.
+
+
+\section block_examples Examples
+block.cpp
+
+\section block_source Source
 Zoltan2_AlgBlock.hpp is the source file for block partitioning.
 
 */

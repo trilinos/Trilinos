@@ -42,19 +42,20 @@
 #ifndef TPETRA_VBRMATRIX_DEF_HPP
 #define TPETRA_VBRMATRIX_DEF_HPP
 
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
+#else
+
 #include <Tpetra_BlockMap.hpp>
 #include <Tpetra_BlockCrsGraph.hpp>
 #include <Tpetra_DistObject.hpp>
 #include <Tpetra_Vector.hpp>
+#include <Tpetra_VbrMatrix_decl.hpp>
 #include <Kokkos_NodeHelpers.hpp>
 #include <Kokkos_VbrMatrix.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <algorithm>
 #include <sstream>
-
-#ifdef DOXYGEN_USE_ONLY
-#include "Tpetra_VbrMatrix_decl.hpp"
-#endif
 
 namespace Tpetra {
 
@@ -71,8 +72,8 @@ void fill_device_ArrayRCP(Teuchos::RCP<Node>& node, Teuchos::ArrayRCP<Scalar>& p
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype)
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype)
  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node>(convertBlockMapToPointMap(*blkRowMap)),
    blkGraph_(Teuchos::rcp(new BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(blkRowMap, maxNumEntriesPerRow, pftype))),
    constBlkGraph_(blkGraph_),
@@ -97,8 +98,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const T
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > &blkGraph)
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > &blkGraph)
  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node>(convertBlockMapToPointMap(*blkGraph->getBlockRowMap())),
    blkGraph_(),
    constBlkGraph_(blkGraph),
@@ -135,40 +136,40 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const T
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::~VbrMatrix()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~VbrMatrix()
 {
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const
 {
   return getBlockDomainMap()->getPointMap();
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const
 {
   return getBlockRangeMap()->getPointMap();
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isFillComplete() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isFillComplete() const
 {
   return is_fill_completed_;
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template <class DomainScalar, class RangeScalar>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 multiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
           MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
           Teuchos::ETransp trans,
@@ -187,10 +188,10 @@ multiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template<class DomainScalar, class RangeScalar>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 solve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
        MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
        Teuchos::ETransp trans) const
@@ -220,9 +221,9 @@ solve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const
 {
   if (importer_ != Teuchos::null) {
     if (importedVec_ == Teuchos::null || importedVec_->getNumVectors() != X.getNumVectors()) {
@@ -234,9 +235,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::updateImport(cons
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::updateExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   if (exporter_ != Teuchos::null) {
     if (exportedVec_ == Teuchos::null || exportedVec_->getNumVectors() != Y.getNumVectors()) {
@@ -248,9 +249,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::updateExport(cons
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(
          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
                Teuchos::ETransp trans,
@@ -273,9 +274,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverse(
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse(
          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
                MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                Teuchos::ETransp trans) const
@@ -296,65 +297,65 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverse(
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::hasTransposeApply() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const
 {
   return true;
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getBlockRowMap() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getBlockRowMap() const
 {
   return constBlkGraph_->getBlockRowMap();
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getPointRowMap() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getPointRowMap() const
 {
   return constBlkGraph_->getBlockRowMap()->getPointMap();
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getBlockColMap() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getBlockColMap() const
 {
   return constBlkGraph_->getBlockColMap();
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getBlockDomainMap() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getBlockDomainMap() const
 {
   return constBlkGraph_->getBlockDomainMap();
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getBlockRangeMap() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getBlockRangeMap() const
 {
   return constBlkGraph_->getBlockRangeMap();
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getPointColMap() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getPointColMap() const
 {
   return constBlkGraph_->getBlockColMap()->getPointMap();
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 getGlobalBlockRowView (GlobalOrdinal globalBlockRow,
                        LocalOrdinal& numPtRows,
                        Teuchos::ArrayView<const GlobalOrdinal>& blockCols,
@@ -380,9 +381,9 @@ getGlobalBlockRowView (GlobalOrdinal globalBlockRow,
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockRowView(
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalBlockRowView(
          LocalOrdinal localBlockRow,
          LocalOrdinal& numPtRows,
          Teuchos::ArrayView<const LocalOrdinal>& blockCols,
@@ -414,9 +415,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockRowV
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalBlockEntryViewNonConst(
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalBlockEntryViewNonConst(
     GlobalOrdinal globalBlockRow,
     GlobalOrdinal globalBlockCol,
     LocalOrdinal& numPtRows,
@@ -473,16 +474,16 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalBlockEnt
     Teuchos::RCP<Node> node = getNode();
     size_t blockSize = numPtRows*numPtCols;
     blockEntry = Teuchos::arcp(new Scalar[blockSize], 0, blockSize);
-    std::fill(blockEntry.begin(), blockEntry.end(), 0);
+    std::fill(blockEntry.begin(), blockEntry.end(), (Scalar) 0);
     blkrow.insert(std::make_pair(globalBlockCol, blockEntry));
     blkGraph_->insertGlobalIndices(globalBlockRow, Teuchos::ArrayView<GlobalOrdinal>(&globalBlockCol, 1));
   }
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalBlockEntryView(
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalBlockEntryView(
       GlobalOrdinal globalBlockRow,
       GlobalOrdinal globalBlockCol,
       LocalOrdinal& numPtRows,
@@ -528,9 +529,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalBlockEnt
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntryViewNonConst(
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalBlockEntryViewNonConst(
     LocalOrdinal localBlockRow,
     LocalOrdinal localBlockCol,
     LocalOrdinal& numPtRows,
@@ -575,9 +576,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalDiagCopy(
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalDiagCopy(
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const
 {
   const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& rowmap = getBlockRowMap();
@@ -601,12 +602,12 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalDiagCopy(
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 checkSizes (const SrcDistObject& source)
 {
-  typedef VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> this_type;
+  typedef VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> this_type;
   const this_type* srcVbrMat = dynamic_cast<const this_type*> (&source);
 
   if (srcVbrMat == NULL) {
@@ -632,17 +633,16 @@ checkSizes (const SrcDistObject& source)
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
-         class Node,
-         class LocalMatOps>
+         class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 copyAndPermute (const SrcDistObject& source,
                 size_t numSameIDs,
                 const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
                 const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
 {
   typedef typename Teuchos::ArrayView<const LocalOrdinal>::size_type Tsize_t;
-  typedef VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> this_type;
+  typedef VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> this_type;
   const this_type* src_mat_ptr = dynamic_cast<const this_type*> (&source);
 
   if (src_mat_ptr == NULL) {
@@ -719,9 +719,9 @@ copyAndPermute (const SrcDistObject& source,
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 packAndPrepare (const SrcDistObject& source,
                 const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
                 Teuchos::Array<char>& exports,
@@ -730,7 +730,7 @@ packAndPrepare (const SrcDistObject& source,
                 Distributor& distor)
 {
   typedef typename Teuchos::ArrayView<const LocalOrdinal>::size_type Tsize_t;
-  typedef VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> this_type;
+  typedef VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> this_type;
   const this_type* src_mat_ptr = dynamic_cast<const this_type*> (&source);
 
   if (src_mat_ptr == NULL) {
@@ -873,9 +873,9 @@ packAndPrepare (const SrcDistObject& source,
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
                   const Teuchos::ArrayView<const char>& imports,
                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
@@ -925,9 +925,9 @@ unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntryView(
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalBlockEntryView(
       LocalOrdinal localBlockRow,
       LocalOrdinal localBlockCol,
       LocalOrdinal& numPtRows,
@@ -969,17 +969,17 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Node>
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNode() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNode() const
 {
   return getBlockRowMap()->getPointMap()->getNode();
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::putScalar(Scalar s)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::putScalar(Scalar s)
 {
   Teuchos::RCP<Node> node = getNode();
 
@@ -1028,9 +1028,9 @@ void set_array_values(ArrayType1& dest, ArrayType2& src, Ordinal rows, Ordinal c
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
@@ -1045,9 +1045,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEnt
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
@@ -1062,9 +1062,9 @@ internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), RE
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
@@ -1079,9 +1079,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBloc
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<int,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
@@ -1096,9 +1096,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalBlock
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
@@ -1113,9 +1113,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEnt
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
@@ -1130,9 +1130,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocalBlockEntr
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
@@ -1147,9 +1147,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBloc
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
   Teuchos::ArrayRCP<Scalar> internalBlockEntry;
@@ -1164,9 +1164,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalBlock
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::optimizeStorage()
 {
   typedef Teuchos::ArrayRCP<const size_t> Host_View;
   typedef Teuchos::ArrayRCP<const LocalOrdinal> Host_View_LO;
@@ -1255,8 +1255,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMatrix()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::fillLocalMatrix()
 {
   //We insist that optimzeStorage has already been called.
   //We don't care whether this function (fillLocalMatrix()) is being
@@ -1286,8 +1286,8 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMat
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMatVec()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::fillLocalMatVec()
 {
   //We insist that optimzeStorage has already been called.
   //We don't care whether this function (fillLocalMatVec()) is being
@@ -1299,9 +1299,9 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMat
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::createImporterExporter()
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createImporterExporter()
 {
   typedef typename Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > PtMap;
 
@@ -1319,9 +1319,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::createImporterExp
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockRangeMap)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockRangeMap)
 {
   if (isFillComplete()) return;
 
@@ -1340,8 +1340,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(cons
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::fillComplete()
 {
   //In this case, our block-row-map will also be our domain-map and
   //range-map.
@@ -1350,8 +1350,8 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::globalAssemble()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::globalAssemble()
 {
   if (getPointRowMap()->getComm()->getSize() == 1) {
     return;
@@ -1388,9 +1388,9 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::globalAssemb
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 std::string
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::description() const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const
 {
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
@@ -1406,9 +1406,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::description() con
 }
 
 //-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
 {
   Teuchos::EVerbosityLevel vl = verbLevel;
   if (vl == Teuchos::VERB_DEFAULT) vl = Teuchos::VERB_LOW;
@@ -1433,5 +1433,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::describe(Teuchos:
   \
   template class VbrMatrix< SCALAR , LO , GO , NODE >;
 
-#endif //TPETRA_VBRMATRIX_DEF_HPP
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRA_VBRMATRIX_DEF_HPP
 

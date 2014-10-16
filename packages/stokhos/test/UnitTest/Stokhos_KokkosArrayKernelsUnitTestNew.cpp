@@ -44,15 +44,9 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "KokkosCore_config.h"
 #include "Stokhos_ConfigDefs.h"
 
-// Devices
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_OpenMP.hpp"
-#include "Kokkos_Cuda.hpp"
-#include "Kokkos_Serial.hpp"
-#include "Kokkos_hwloc.hpp"
+#include "Kokkos_Core.hpp"
 
 // Threads kernels
 #ifdef KOKKOS_HAVE_PTHREAD

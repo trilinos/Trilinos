@@ -58,7 +58,6 @@
 // #  include "Ifpack2_SupportGraph_def.hpp"
 // #endif
 #include "Ifpack2_ETIHelperMacros.h"
-#include "KokkosClassic_config.h"
 
 // mfh 06 Jan 2014: AdditiveSchwarz's second template parameter, the
 // type of the subdomain solver, is being deprecated.  It's possible
@@ -72,12 +71,21 @@
 // parameters, only for the commonly used case of ILUT as the
 // subdomain solver's type.
 
+// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
+// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// preconditioners can and should do dynamic casts if they need a type
+// more specific than RowMatrix.
+
 #define IFPACK2_INST_ADDITIVE_SCHWARZ(S,LO,GO) \
+  template class AdditiveSchwarz<Tpetra::RowMatrix< S, LO, GO > >; \
   template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO > >;
 
 #define IFPACK2_INST_ADDITIVE_SCHWARZ_ILUT(S,LO,GO) \
+  template class AdditiveSchwarz<Tpetra::RowMatrix< S, LO, GO >, \
+                                 Ifpack2::ILUT<Tpetra::RowMatrix< S, LO, GO > > >; \
   template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO >, \
                                  Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO > > >;
+
 
 namespace Ifpack2 {
 
@@ -87,17 +95,25 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_ADDITIVE_SCHWARZ_ILUT )
 
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode>,
                                  Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > >;
+  template class AdditiveSchwarz<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+  template class AdditiveSchwarz<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode>,
+                                 Ifpack2::ILUT<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > >;
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>,
                                  Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > >;
+  template class AdditiveSchwarz<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
+  template class AdditiveSchwarz<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>,
+                                 Ifpack2::ILUT<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> > >;
 #endif
+#endif // HAVE_TPETRA_INST_DOUBLE
 
 }
 

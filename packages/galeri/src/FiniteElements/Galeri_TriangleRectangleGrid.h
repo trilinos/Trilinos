@@ -53,6 +53,7 @@
 #include "Galeri_AbstractGrid.h"
 #include <vector>
 #include <algorithm>
+#include <limits>
 
 using namespace Teuchos;
 
@@ -214,7 +215,16 @@ public:
 
   virtual void VertexCoord(const int LocalID, double* coord) const
   {
-    int GlobalID = VertexMap_->GID(LocalID);
+    long long LLGlobalID = VertexMap_->GID64(LocalID);
+
+    if(LLGlobalID > std::numeric_limits<int>::max())
+    {
+      cerr << "Vertex ID out of int bound" << endl;
+      cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+      throw(-1);
+    }
+
+    int GlobalID = (int) LLGlobalID;
 
     int ix, iy;
     GetVertexXY(GlobalID, ix, iy);
@@ -229,7 +239,17 @@ public:
   {
     for (int i = 0 ; i < Length ; ++i)
     {
-      int ID = VertexMap_->GID(IDs[i]);
+      int ID;
+      long long LLID = VertexMap_->GID64(IDs[i]);
+
+      if(LLID > std::numeric_limits<int>::max())
+      {
+        cerr << "LLID ID out of int bound" << endl;
+        cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+        throw(-1);
+      }
+
+      ID = (int) LLID;
 
       int ix, iy;
       GetVertexXY(ID, ix, iy);
@@ -577,7 +597,11 @@ private:
 
   void CreateVertexMap()
   {
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+    std::vector<long long> itmp(NumMyVertices());
+#else
     std::vector<int> itmp(NumMyVertices());
+#endif
 
     int count = 0;
     int px, py;
@@ -623,7 +647,11 @@ private:
     int size = (endx - startx) * (endy - starty);
 
     int count = 0;
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+    std::vector<long long> itmp(size);
+#else
     std::vector<int> itmp(size);
+#endif
     for (int j = starty ; j < endy ; ++j) 
     {
       for (int i = startx ; i < endx ; ++i) 

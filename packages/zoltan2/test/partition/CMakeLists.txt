@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -13,8 +11,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
 ENDIF()
   
 # MultiJagged Tests
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
     mjTest
     SOURCES MultiJaggedTest.cpp
     NUM_MPI_PROCS 4
@@ -23,7 +20,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     "I=1.03 P=2,2 O=0 C=4 F=simple"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
-  )
+)
 
 #  TRIBITS_ADD_TEST(
 #    mjTest
@@ -47,7 +44,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
 #    FAIL_REGULAR_EXPRESSION "FAIL"
 #  )
 
-  TRIBITS_ADD_TEST(
+TRIBITS_ADD_TEST(
     mjTest
     NAME mjTest_geomgen
     NUM_MPI_PROCS 3
@@ -56,7 +53,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     "P=2,2,2,2 C=16 O=1 F=GeomGenParam.txt"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
-  )
+)
 
 #  TRIBITS_ADD_TEST(
 #    mjTest
@@ -69,7 +66,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
 #    FAIL_REGULAR_EXPRESSION "FAIL"
 #  )
 
-  TRIBITS_ADD_TEST(
+TRIBITS_ADD_TEST(
     mjTest
     NAME mjTest_geomgen_noholes
     NUM_MPI_PROCS 3
@@ -78,10 +75,10 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     "P=2,2,2,2 C=16 O=1 F=GeomGenParam_noholes.txt"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
-  )
+)
 
 #muelu like usecase, don't specify mjparts
-  TRIBITS_ADD_TEST(
+TRIBITS_ADD_TEST(
     mjTest
     NAME mjTest_geomgen_nomjparts
     NUM_MPI_PROCS 3
@@ -90,7 +87,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     "C=16 O=1 F=GeomGenParam_noholes.txt"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
-  )
+)
 
 #  TRIBITS_ADD_TEST(
 #    mjTest
@@ -104,7 +101,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
 #  )
 
 #muelu like usecase, don't specify mjparts, odd parts
-  TRIBITS_ADD_TEST(
+TRIBITS_ADD_TEST(
     mjTest
     NAME mjTest_geomgen_nomjparts_odd
     NUM_MPI_PROCS 3
@@ -113,7 +110,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     "C=9 O=1 F=GeomGenParam_noholes.txt"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
-  )
+)
 
 #  TRIBITS_ADD_TEST(
 #    mjTest
@@ -125,8 +122,6 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
 #    PASS_REGULAR_EXPRESSION "PASS"
 #    FAIL_REGULAR_EXPRESSION "FAIL"
 #  )
-
-ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -154,37 +149,41 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   pamgenMeshAdapterTest
-  NAME pamgenMeshAdapterTest_rcb
+  NAME pamgenMeshAdapterTest_color
   SOURCES pamgenMeshAdapterTest.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-    "--action=rcb --nparts=6"
+    "--action=color"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
-TRIBITS_ADD_TEST(
-  pamgenMeshAdapterTest
-  NAME pamgenMeshAdapterTest_scotch
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  ARGS
-    "--action=scotch --nparts=6"
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  TRIBITS_ADD_TEST(
+    pamgenMeshAdapterTest
+    NAME pamgenMeshAdapterTest_mj
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+      "--action=mj --nparts=6"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
 
-#TRIBITS_ADD_TEST(
-#  pamgenMeshAdapterTest_color
-#  NAME pamgenMeshAdapterTest_color
-#  NUM_MPI_PROCS 4
-#  COMM serial mpi
-#  ARGS
-#    "--action=color"
-#  PASS_REGULAR_EXPRESSION "PASS"
-#  FAIL_REGULAR_EXPRESSION "FAIL"
-#)
+IF (${PACKAGE_NAME}_ENABLE_Scotch)
+  TRIBITS_ADD_TEST(
+    pamgenMeshAdapterTest
+    NAME pamgenMeshAdapterTest_scotch
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+      "--action=scotch --nparts=6"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Partitioning1
@@ -248,6 +247,72 @@ TRIBITS_ADD_TEST(
   COMM serial mpi
   ARGS
    "--inputFile=simple --no-distribute --edgeWeights=2"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_ParMETIS
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --method=parmetis"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_ParMETIS_OneProc
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --no-distribute --method=parmetis"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_ParMETIS_VWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --vertexWeights=3 --method=parmetis"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_ParMETIS_OneProc_VWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --no-distribute --vertexWeights=1 --method=parmetis"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_ParMETIS_EWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --edgeWeights=1 --method=parmetis"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_ParMETIS_OneProc_EWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --no-distribute --edgeWeights=2 --method=parmetis"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )

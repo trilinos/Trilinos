@@ -70,18 +70,18 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GeoInterpFactory(){
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GeoInterpFactory(){
     std::cout << "I constructed a GeoInterpFactory object... Nothing else to do here." << std::endl;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~GeoInterpFactory(){
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~GeoInterpFactory(){
     // Should be empty. All destruction should be handled by Level-based get stuff and RCP
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
 
     Input(fineLevel, "A");
     Input(fineLevel, "A00");
@@ -110,8 +110,8 @@ namespace MueLu {
     //currentLevel.DeclareInput(varName_,factory_,this);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
 
     std::cout << "Starting 'build' routine...\n";
 
@@ -125,8 +125,8 @@ namespace MueLu {
 
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
 
     typedef Teuchos::SerialDenseMatrix<GO,GO> SerialDenseMatrixType;
 

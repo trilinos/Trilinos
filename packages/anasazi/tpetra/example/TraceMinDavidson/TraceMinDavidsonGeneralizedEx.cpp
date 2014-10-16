@@ -38,7 +38,6 @@
 
   using Teuchos::RCP;
   using std::cout;
-  using std::cin;
 
   //
   // Specify types used in this example

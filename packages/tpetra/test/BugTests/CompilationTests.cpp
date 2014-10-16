@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -45,16 +45,16 @@
 // only the .cu version of this file is actually compiled
 #include <Tpetra_config.h>
 #ifdef HAVE_TPETRA_KOKKOSCOMPAT
-#include <KokkosCore_config.h>
-#ifdef KOKKOS_USE_CUDA_BUILD
-  #define DO_COMPILATION
+#  include <KokkosCore_config.h>
+#  ifdef KOKKOS_USE_CUDA_BUILD
+#    define DO_COMPILATION
+#  else
+#    ifndef KOKKOS_HAVE_CUDA
+#      define DO_COMPILATION
+#    endif
+#  endif
 #else
-  #ifndef KOKKOS_HAVE_CUDA
-    #define DO_COMPILATION
-  #endif
-#endif
-#else
-  #define DO_COMPILATION
+#  define DO_COMPILATION
 #endif
 
 #ifdef DO_COMPILATION
@@ -62,50 +62,51 @@
 #include <Teuchos_UnitTestHarness.hpp>
 
 // include all the Tpetra headers twice to check if headers are protected by #ifndef FILE_HPP #define ... #endif
-#include <Tpetra_BlockMap.hpp>
+#ifdef HAVE_TPETRA_CLASSIC_VBR
+#  include <Tpetra_BlockMap.hpp>
+#  include <Tpetra_BlockCrsGraph.hpp>
+#  include <Tpetra_BlockMultiVector.hpp>
+#  include <Tpetra_VbrMatrix.hpp>
+#  include <TpetraExt_BlockExtraction.hpp>
+#endif // HAVE_TPETRA_CLASSIC_VBR
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrixSolveOp.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
-#include <Tpetra_BlockCrsGraph.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Directory.hpp>
 #include <Tpetra_CrsMatrixMultiplyOp.hpp>
-#include <Tpetra_BlockMultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_VbrMatrix.hpp>
 #include <Tpetra_MultiVector.hpp>
-#include <TpetraExt_BlockExtraction.hpp>
 #include <TpetraExt_MMHelpers.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Tpetra_MatrixIO.hpp>
 
-#include <Tpetra_BlockMap.hpp>
+#ifdef HAVE_TPETRA_CLASSIC_VBR
+#  include <Tpetra_BlockMap.hpp>
+#  include <Tpetra_BlockCrsGraph.hpp>
+#  include <Tpetra_BlockMultiVector.hpp>
+#  include <Tpetra_VbrMatrix.hpp>
+#  include <TpetraExt_BlockExtraction.hpp>
+#endif // HAVE_TPETRA_CLASSIC_VBR
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrixSolveOp.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
-#include <Tpetra_BlockCrsGraph.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Directory.hpp>
 #include <Tpetra_CrsMatrixMultiplyOp.hpp>
-#include <Tpetra_BlockMultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_VbrMatrix.hpp>
 #include <Tpetra_MultiVector.hpp>
-#include <TpetraExt_BlockExtraction.hpp>
 #include <TpetraExt_MMHelpers.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Tpetra_MatrixIO.hpp>
 
-
-// this test do not compile if Tpetra objects are declared outside of the namespace Tpetra.
+// This test does not compile if Tpetra objects are declared outside
+// of the Tpetra namespace.
 typedef int BinaryFunctorAdapter;
 typedef int BinaryFunctorAdapterWithAlphaBeta;
 typedef int BinaryOp;
-typedef int BlockCrsGraph;
-typedef int BlockMap;
-typedef int BlockMultiVector;
 typedef int CrsGraph;
 typedef int CrsMatrix;
 typedef int CrsMatrixMultiplyOp;
@@ -137,13 +138,19 @@ typedef int StdOpKernel;
 typedef int TeuchosValueTypeReductionOpAdapter;
 typedef int TransformReductionGlob;
 typedef int UnaryFunctorAdapter;
-typedef int VbrMatrix;
 typedef int Vector;
 typedef int ZeroOp;
 
+#ifdef HAVE_TPETRA_CLASSIC_VBR
+typedef int BlockCrsGraph;
+typedef int BlockMap;
+typedef int BlockMultiVector;
+typedef int VbrMatrix;
+#endif // HAVE_TPETRA_CLASSIC_VBR
+
 TEUCHOS_UNIT_TEST( Compilation, Bug_ClassDeclarationOutsideOfNamespace )
 {
-   
+
 }
 
 

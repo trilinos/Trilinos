@@ -57,4 +57,65 @@ following classes:
         directors = "1",
         docstring = %loca_extended_docstring) Extended
 
-%include "LOCA.Extended_Content.i"
+%{
+// Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+#include "PyTrilinos_Teuchos_Util.hpp"
+
+// LOCA includes
+#include "LOCA.H"
+
+// Local includes
+#define NO_IMPORT_ARRAY
+#include "numpy_include.hpp"
+%}
+
+// Configuration and optional includes
+%include "PyTrilinos_config.h"
+#ifdef HAVE_NOX_EPETRA
+%{
+#include "NOX_Epetra_Group.H"
+#include "NOX_Epetra_Vector.H"
+#include "Epetra_NumPyVector.hpp"
+%}
+#endif
+
+// Standard exception handling
+%include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
+// Ignore/renames
+%ignore *::operator=;
+
+// Trilinos module imports
+%import "Teuchos.i"
+%import "NOX.Abstract.i"
+
+// Teuchos::RCP support
+%teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
+
+//////////////////////////////////////
+// LOCA::Extended MultiVector class //
+//////////////////////////////////////
+//%feature("director") LOCA::Extended::MultiVector;
+%include "LOCA_Extended_MultiVector.H"
+
+/////////////////////////////////
+// LOCA::Extended Vector class //
+/////////////////////////////////
+//%feature("director") LOCA::Extended::Vector;
+%ignore LOCA::Extended::Vector::getScalar(int);
+%include "LOCA_Extended_Vector.H"
+
+/////////////////////////////////////////////
+// LOCA::Extended MultiAbstractGroup class //
+/////////////////////////////////////////////
+//%feature("director") LOCA::Extended::MultiAbstractGroup;
+%include "LOCA_Extended_MultiAbstractGroup.H"

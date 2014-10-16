@@ -57,12 +57,12 @@ using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> userTypes_t;
 
 int checkBasicVector(
   Zoltan2::BasicVectorAdapter<userTypes_t> *ia, int len, int glen,
-  gno_t *ids, int mvdim, const scalar_t **values, int *valueStrides,
-  int wdim, const scalar_t **weights, int *weightStrides)
+  zzgid_t *ids, int mvdim, const zscalar_t **values, int *valueStrides,
+  int wdim, const zscalar_t **weights, int *weightStrides)
 {
   int fail = 0;
   bool strideOne = false;
@@ -78,14 +78,14 @@ int checkBasicVector(
   if (!fail && ia->getLocalNumIDs() != size_t(len))
     fail = 102;
 
-  const gno_t *idList;
+  const zzgid_t *idList;
   ia->getIDsView(idList);
   for (int i=0; !fail && i < len; i++)
     if (!fail && idList[i] != ids[i])
       fail = 107;
 
   for (int v=0; !fail && v < mvdim; v++){
-    const scalar_t *vals;
+    const zscalar_t *vals;
     int correctStride = (strideOne ? 1 : valueStrides[v]);
     int stride;
 
@@ -102,7 +102,7 @@ int checkBasicVector(
   }
 
   for (int w=0; !fail && w < wdim; w++){
-    const scalar_t *wgts;
+    const zscalar_t *wgts;
     int stride;
 
     ia->getWeightsView(wgts, stride, w);
@@ -131,22 +131,22 @@ int main(int argc, char *argv[])
   // Create a single vector and a strided multi-vector with 
   // strided multi-weights.
 
-  lno_t numLocalIds = 10;
-  gno_t *myIds = new gno_t [numLocalIds];
-  gno_t base = rank * numLocalIds;
+  zlno_t numLocalIds = 10;
+  zzgid_t *myIds = new zzgid_t [numLocalIds];
+  zgno_t base = rank * numLocalIds;
   
   int wdim = 2;
-  scalar_t *weights = new scalar_t [numLocalIds*wdim];
+  zscalar_t *weights = new zscalar_t [numLocalIds*wdim];
   int *weightStrides = new int [wdim];
-  const scalar_t **weightPtrs = new const scalar_t * [wdim];
+  const zscalar_t **weightPtrs = new const zscalar_t * [wdim];
 
   int mvdim = 3;
-  scalar_t *v_values= new scalar_t [numLocalIds];
-  scalar_t *mv_values= new scalar_t [mvdim * numLocalIds];
+  zscalar_t *v_values= new zscalar_t [numLocalIds];
+  zscalar_t *mv_values= new zscalar_t [mvdim * numLocalIds];
   int *valueStrides = new int [mvdim];
-  const scalar_t **valuePtrs = new const scalar_t * [mvdim];
+  const zscalar_t **valuePtrs = new const zscalar_t * [mvdim];
 
-  for (lno_t i=0; i < numLocalIds; i++){
+  for (zlno_t i=0; i < numLocalIds; i++){
     myIds[i] = base+i;
 
     for (int w=0; w < wdim; w++)
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
   {
     // A Zoltan2::BasicVectorAdapter object with one vector and no weights
 
-    std::vector<const scalar_t *> weightValues;
+    std::vector<const zscalar_t *> weightValues;
     std::vector<int> strides;
   
     try{
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
   {
     // A Zoltan2::BasicVectorAdapter object with one vector and weights
 
-    std::vector<const scalar_t *> weightValues;
+    std::vector<const zscalar_t *> weightValues;
     std::vector<int> strides;
 
     weightValues.push_back(weightPtrs[0]);
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
   {
     // A Zoltan2::BasicVectorAdapter object with a multivector and no weights
 
-    std::vector<const scalar_t *> weightValues, values;
+    std::vector<const zscalar_t *> weightValues, values;
     std::vector<int> wstrides, vstrides;
 
     for (int dim=0; dim < mvdim; dim++){
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
   {
     // A Zoltan2::BasicVectorAdapter object with a multivector with weights
 
-    std::vector<const scalar_t *> weightValues, values;
+    std::vector<const zscalar_t *> weightValues, values;
     std::vector<int> wstrides, vstrides;
 
     for (int dim=0; dim < wdim; dim++){

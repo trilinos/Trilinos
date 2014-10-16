@@ -58,6 +58,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "Teuchos_Assert.hpp"
 #include "EpetraExt_mmio.h"
 
 using namespace EpetraExt;
@@ -127,7 +128,7 @@ int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
 
     for (i=0; i<nz; i++)
     {
-        fscanf(f, "%d %d %lg\n", &I[i], &J[i], &val[i]);
+        TEUCHOS_ASSERT(fscanf(f, "%d %d %lg\n", &I[i], &J[i], &val[i]) != EOF);
         I[i]--;  /* adjust from 1-based to 0-based */
         J[i]--;
     }
