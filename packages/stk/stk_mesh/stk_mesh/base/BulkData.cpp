@@ -5164,7 +5164,7 @@ bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerat
 #ifndef NDEBUG
     std::ostringstream msg ;
     bool is_consistent = true;
-    is_consistent = comm_mesh_verify_parallel_consistency( *this , msg );
+    is_consistent = impl::comm_mesh_verify_parallel_consistency( *this , msg );
     ThrowErrorMsgIf( !is_consistent, msg.str() );
 #endif
   }
@@ -5251,7 +5251,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
 #ifndef NDEBUG
     std::ostringstream msg ;
     bool is_consistent = true;
-    is_consistent = comm_mesh_verify_parallel_consistency( *this , msg );
+    is_consistent = impl::comm_mesh_verify_parallel_consistency( *this , msg );
     ThrowErrorMsgIf( !is_consistent, msg.str() );
 #endif
   }
@@ -5739,7 +5739,7 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
 #ifndef NDEBUG
     std::ostringstream msg ;
     bool is_consistent = true;
-    is_consistent = comm_mesh_verify_parallel_consistency( *this , msg );
+    is_consistent = impl::comm_mesh_verify_parallel_consistency( *this , msg );
     ThrowErrorMsgIf( !is_consistent, msg.str() );
 #endif
   }
