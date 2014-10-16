@@ -167,32 +167,22 @@ test_mean_multiply(const OrdinalType order,
   // Generate input vectors:
 
   ordinal_type pce_size = basis->size();
-  scalar_left_multi_vector_type xl(Kokkos::allocate_without_initializing,
-                                  "scalar left x", fem_length, pce_size);
-  scalar_left_multi_vector_type yl(Kokkos::allocate_without_initializing,
-                                  "scalar right y", fem_length, pce_size);
-  scalar_right_multi_vector_type xr(Kokkos::allocate_without_initializing,
-                                    "scalar right x", fem_length, pce_size);
-  scalar_right_multi_vector_type yr(Kokkos::allocate_without_initializing,
-                                    "scalar right y", fem_length, pce_size);
+  scalar_left_multi_vector_type xl(Kokkos::ViewAllocateWithoutInitializing("scalar left x"), fem_length, pce_size);
+  scalar_left_multi_vector_type yl(Kokkos::ViewAllocateWithoutInitializing("scalar right y"), fem_length, pce_size);
+  scalar_right_multi_vector_type xr(Kokkos::ViewAllocateWithoutInitializing("scalar right x"), fem_length, pce_size);
+  scalar_right_multi_vector_type yr(Kokkos::ViewAllocateWithoutInitializing("scalar right y"), fem_length, pce_size);
   std::vector<scalar_vector_type> x_col(pce_size), y_col(pce_size);
   for (ordinal_type i=0; i<pce_size; ++i) {
-    x_col[i] = scalar_vector_type (Kokkos::allocate_without_initializing,
-                                   "scalar x col", fem_length);
-    y_col[i] = scalar_vector_type(Kokkos::allocate_without_initializing,
-                                  "scalar y col", fem_length);
+    x_col[i] = scalar_vector_type (Kokkos::ViewAllocateWithoutInitializing("scalar x col"), fem_length);
+    y_col[i] = scalar_vector_type(Kokkos::ViewAllocateWithoutInitializing("scalar y col"), fem_length);
     Kokkos::deep_copy( x_col[i] , value_type(1.0) );
     Kokkos::deep_copy( y_col[i] , value_type(0.0) );
   }
-  pce_vector_type x_pce(Kokkos::allocate_without_initializing,
-                        "pce x", kokkos_cijk, fem_length, pce_size);
-  pce_vector_type y_pce(Kokkos::allocate_without_initializing,
-                        "pce y", kokkos_cijk, fem_length, pce_size);
-  pce_multi_vector_type x_multi_pce(Kokkos::allocate_without_initializing,
-                                    "pce multi x", kokkos_cijk, fem_length,
+  pce_vector_type x_pce(Kokkos::ViewAllocateWithoutInitializing("pce x"), kokkos_cijk, fem_length, pce_size);
+  pce_vector_type y_pce(Kokkos::ViewAllocateWithoutInitializing("pce y"), kokkos_cijk, fem_length, pce_size);
+  pce_multi_vector_type x_multi_pce(Kokkos::ViewAllocateWithoutInitializing("pce multi x"), kokkos_cijk, fem_length,
                                     num_pce_col, pce_size);
-  pce_multi_vector_type y_multi_pce(Kokkos::allocate_without_initializing,
-                                    "pce multi y", kokkos_cijk, fem_length,
+  pce_multi_vector_type y_multi_pce(Kokkos::ViewAllocateWithoutInitializing("pce multi y"), kokkos_cijk, fem_length,
                                     num_pce_col, pce_size);
 
   Kokkos::deep_copy( xl , value_type(1.0) );
@@ -211,11 +201,9 @@ test_mean_multiply(const OrdinalType order,
     Kokkos::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   scalar_matrix_values_type scalar_matrix_values =
-    scalar_matrix_values_type(Kokkos::allocate_without_initializing,
-                              "scalar matrix", graph_length);
+    scalar_matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("scalar matrix"), graph_length);
   pce_matrix_values_type pce_matrix_values =
-    pce_matrix_values_type(Kokkos::allocate_without_initializing,
-                           "pce matrix", kokkos_cijk, graph_length, 1);
+    pce_matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("pce matrix"), kokkos_cijk, graph_length, 1);
   scalar_matrix_type scalar_matrix("scalar matrix", fem_length,
                                    scalar_matrix_values, matrix_graph);
   pce_matrix_type pce_matrix("pce matrix", fem_length,

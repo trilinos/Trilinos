@@ -64,6 +64,7 @@ protected:
   }
 };
 
+extern void test_cuda_spaces();
 extern void test_device_cuda_tile();
 extern void test_device_cuda_view_impl();
 extern void test_device_cuda_view_api();
@@ -82,6 +83,11 @@ extern void test_device_cuda_team_scan();
 extern void test_device_cuda_compiler_macros();
 extern void test_device_cuda_memory_space();
 extern void test_device_cuda_team_vector();
+
+TEST_F( cuda, spaces )
+{
+  test_cuda_spaces();
+}
 
 TEST_F( cuda, view_impl )
 {

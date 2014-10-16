@@ -314,6 +314,106 @@ struct ViewFill< OutputView , 0 >
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+namespace Kokkos {
+
+struct ViewAllocateWithoutInitializing {
+
+  const std::string label ;
+
+  ViewAllocateWithoutInitializing() : label() {}
+  ViewAllocateWithoutInitializing( const std::string & arg_label ) : label( arg_label ) {}
+  ViewAllocateWithoutInitializing( const char * const  arg_label ) : label( arg_label ) {}
+};
+
+}
+
+namespace Kokkos {
+namespace Impl {
+
+template< class Traits , class AllocationProperties , class Enable = void >
+struct ViewAllocProp : public Kokkos::Impl::false_type {};
+
+template< class Traits >
+struct ViewAllocProp< Traits , std::string
+  , typename Kokkos::Impl::enable_if<(
+      Traits::is_managed && ! Kokkos::Impl::is_const< typename Traits::value_type >::value
+    )>::type >
+  : public Kokkos::Impl::true_type
+{
+  typedef size_t              size_type ;
+  typedef const std::string & property_type ;
+
+  inline
+  static const std::string & label( property_type s ) { return s ; }
+
+  inline
+  static bool managed( property_type ) { return true ; }
+
+  static bool initialize() { return true ; }
+
+  template< class ViewType >
+  inline
+  static void initialize( const ViewType & view )
+    { (void) ViewFill< ViewType >( view , typename ViewType::value_type() ); }
+};
+
+template< class Traits , unsigned N >
+struct ViewAllocProp< Traits , char[N]
+  , typename Kokkos::Impl::enable_if<(
+      Traits::is_managed && ! Kokkos::Impl::is_const< typename Traits::value_type >::value
+    )>::type >
+  : public Kokkos::Impl::true_type
+{
+private:
+  typedef char label_type[N] ;
+public:
+
+  typedef size_t             size_type ;
+  typedef const label_type & property_type ;
+
+  inline
+  static std::string label( property_type s ) { return std::string(s) ; }
+
+  inline
+  static bool managed( property_type ) { return true ; }
+
+  static bool initialize() { return true ; }
+
+  template< class ViewType >
+  inline
+  static void initialize( const ViewType & view )
+    { (void) ViewFill< ViewType >( view , typename ViewType::value_type() ); }
+};
+
+template< class Traits >
+struct ViewAllocProp< Traits , Kokkos::ViewAllocateWithoutInitializing
+  , typename Kokkos::Impl::enable_if<(
+      Traits::is_managed && ! Kokkos::Impl::is_const< typename Traits::value_type >::value
+    )>::type >
+  : public Kokkos::Impl::true_type
+{
+  typedef size_t size_type ;
+  typedef const Kokkos::ViewAllocateWithoutInitializing & property_type ;
+
+  inline
+  static std::string label( property_type s ) { return s.label ; }
+
+  inline
+  static bool managed( property_type ) { return true ; }
+
+  static bool initialize() { return false ; }
+
+  template< class ViewType >
+  inline
+  static void initialize( const ViewType & ) {}
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 #endif /* #ifndef KOKKOS_VIEWSUPPORT_HPP */
 
 

@@ -325,12 +325,6 @@ void parallel_reduce( const ExecPolicy  & policy
                       , typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type
                       >::type result_ref )
 {
-  // mfh 16 Oct 2014: Commenting this out to avoid "unused typedef" warnings.
-  //
-  // typedef typename
-  //   Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
-  //     execution_space ;
-
   typedef Kokkos::Impl::ReduceAdapter< FunctorType >  Reduce ;
 
   // Wrap the result output request in a view to inform the implementation

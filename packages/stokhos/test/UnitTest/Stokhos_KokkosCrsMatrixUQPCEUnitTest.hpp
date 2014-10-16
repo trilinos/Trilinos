@@ -613,8 +613,7 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     matrix_values_type(
-      Kokkos::allocate_without_initializing,
-      "matrix", cijk, fem_graph_length, stoch_length_aligned);
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, stoch_length_aligned);
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
@@ -807,8 +806,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     matrix_values_type(
-      Kokkos::allocate_without_initializing,
-      "matrix", cijk, fem_graph_length, ordinal_type(1)); //instead of stoch_length
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, ordinal_type(1)); //instead of stoch_length
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
@@ -839,8 +837,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   //Generate same matrix with stochastic dim = x.sacado_size() (i.e. not = 1)
   matrix_values_type full_matrix_values =
     matrix_values_type(
-      Kokkos::allocate_without_initializing,
-      "matrix", cijk, fem_graph_length, stoch_length_aligned);
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, stoch_length_aligned);
   block_matrix_type full_matrix(
     "block_matrix", fem_length, full_matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
@@ -953,8 +950,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     matrix_values_type(
-      Kokkos::allocate_without_initializing,
-      "matrix", cijk, fem_graph_length, ordinal_type(1));
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, ordinal_type(1));
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
@@ -989,8 +985,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   //Generate same matrix with stochastic dim = x.sacado_size() (i.e. not = 1)
   matrix_values_type full_matrix_values =
     matrix_values_type(
-      Kokkos::allocate_without_initializing,
-      "matrix", cijk, fem_graph_length, stoch_length_aligned);
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, stoch_length_aligned);
   block_matrix_type full_matrix(
     "block_matrix", fem_length, full_matrix_values, matrix_graph);
   matrix.dev_config = dev_config;

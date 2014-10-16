@@ -331,9 +331,9 @@ public:
     CrsProductTensor tensor;
     tensor.m_coord = coord_array_type("tensor_coord", entry_count );
     tensor.m_coord2 = coord2_array_type( "tensor_coord2", entry_count );
-    tensor.m_value = value_array_type( Kokkos::allocate_without_initializing, "tensor_value", entry_count );
-    tensor.m_num_entry = entry_array_type( Kokkos::allocate_without_initializing, "tensor_num_entry", dimension );
-    tensor.m_row_map = row_map_array_type( Kokkos::allocate_without_initializing, "tensor_row_map", dimension+1 );
+    tensor.m_value = value_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_value"), entry_count );
+    tensor.m_num_entry = entry_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_num_entry"), dimension );
+    tensor.m_row_map = row_map_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_row_map"), dimension+1 );
     tensor.m_dim = dimension;
     tensor.m_entry_max = 0;
     tensor.m_avg_entries_per_row = avg_entries_per_row;
@@ -426,9 +426,9 @@ public:
     CrsProductTensor tensor;
     tensor.m_coord = coord_array_type("tensor_coord", entry_count );
     tensor.m_coord2 = coord2_array_type( "tensor_coord2", entry_count );
-    tensor.m_value = value_array_type( Kokkos::allocate_without_initializing, "tensor_value", entry_count );
-    tensor.m_num_entry = entry_array_type( Kokkos::allocate_without_initializing, "tensor_num_entry", dimension );
-    tensor.m_row_map = row_map_array_type( Kokkos::allocate_without_initializing, "tensor_row_map", dimension+1 );
+    tensor.m_value = value_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_value"), entry_count );
+    tensor.m_num_entry = entry_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_num_entry"), dimension );
+    tensor.m_row_map = row_map_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_row_map"), dimension+1 );
     tensor.m_dim = dimension;
     tensor.m_entry_max = 1;
     tensor.m_avg_entries_per_row = 1;

@@ -106,9 +106,9 @@ namespace Kokkos {
  */
 
 template< class DataType ,
-          class Arg1 ,
-          class Arg2 ,
-          class Arg3 >
+          class Arg1 = void ,
+          class Arg2 = void ,
+          class Arg3 = void >
 class ViewTraits {
 private:
 
@@ -356,11 +356,18 @@ struct ViewEnableArrayOper<
 
 namespace Kokkos {
 
-struct AllocateWithoutInitializing {};
+struct ViewRawMemory {
+
+  void * const pointer ;
+
+  ViewRawMemory( void * const arg_pointer ) : pointer( arg_pointer ) {}
+};
+
+
+
 struct ViewWithoutManaging {};
 
 namespace {
-const AllocateWithoutInitializing allocate_without_initializing = AllocateWithoutInitializing();
 const ViewWithoutManaging view_without_managing = ViewWithoutManaging();
 }
 
@@ -595,10 +602,12 @@ public:
   // Allocation of a managed view with possible alignment padding.
   // Allocation constructor enabled for managed and non-const values
 
-  template< class LabelType >
+  template< class AllocationProperties >
   explicit inline
-  View( const LabelType & label ,
-        const size_t n0 = 0 ,
+  View( const AllocationProperties & prop ,
+        // Impl::ViewAllocProp::size_type exists when the traits and allocation properties
+        // are valid for allocating viewed memory.
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -606,91 +615,36 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         const size_t n7 = 0 ,
-        typename Impl::enable_if<(
-          Impl::IsViewLabel< LabelType >::value &&
-          ( ! Impl::is_const< typename traits::value_type >::value ) &&
-          traits::is_managed ),
-        const size_t >::type n8 = 0 )
+        const size_t n8 = 0 )
     : m_ptr_on_device(0)
     {
-      // typedef typename traits::memory_space  memory_space_ ; // unused
-      // typedef typename traits::value_type    value_type_ ; // unused
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
       m_offset_map.set_padding();
 
-      m_ptr_on_device = data_handle_type::allocate( label , m_offset_map.capacity() );
+      m_ptr_on_device = data_handle_type::allocate( Alloc::label(prop) , m_offset_map.capacity() );
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      Alloc::initialize( *this );
     }
 
-  template< class LabelType >
+  template< class AllocationProperties >
   explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const LabelType & label ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        const size_t n7 = 0 ,
-        typename Impl::enable_if<(
-          Impl::IsViewLabel< LabelType >::value &&
-          ( ! Impl::is_const< typename traits::value_type >::value ) &&
-          traits::is_managed ),
-        const size_t >::type n8 = 0 )
+  View( const AllocationProperties & prop ,
+        const typename traits::array_layout & layout ,
+        // Impl::ViewAllocProp::size_type exists when the traits and allocation properties
+        // are valid for allocating viewed memory.
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type = 0 )
     : m_ptr_on_device(0)
     {
-      // typedef typename traits::memory_space  memory_space_ ; // unused
-      // typedef typename traits::value_type    value_type_ ; // unused
-
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
-      m_offset_map.set_padding();
-
-      m_ptr_on_device = data_handle_type::allocate( label , m_offset_map.capacity() );
-    }
-
-  template< class LabelType >
-  explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const LabelType & label ,
-        typename Impl::enable_if<(
-          Impl::IsViewLabel< LabelType >::value &&
-          ( ! Impl::is_const< typename traits::value_type >::value ) &&
-          traits::is_managed ),
-        const typename traits::array_layout >::type layout )
-    : m_ptr_on_device(0)
-    {
-      // typedef typename traits::memory_space  memory_space_ ; // unused
-      // typedef typename traits::value_type    value_type_ ; // unused
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
       m_offset_map.assign( layout );
       m_offset_map.set_padding();
 
-      m_ptr_on_device = data_handle_type::allocate( label , m_offset_map.capacity() );
-    }
+      m_ptr_on_device = data_handle_type::allocate( Alloc::label(prop) , m_offset_map.capacity() );
 
-  template< class LabelType >
-  explicit inline
-  View( const LabelType & label ,
-        typename Impl::enable_if<(
-          Impl::IsViewLabel< LabelType >::value &&
-          ( ! Impl::is_const< typename traits::value_type >::value ) &&
-          traits::is_managed
-        ), typename traits::array_layout const & >::type layout )
-    : m_ptr_on_device(0)
-    {
-      // typedef typename traits::memory_space  memory_space_ ; // unused
-      // typedef typename traits::value_type    value_type_ ; // unused
-
-      m_offset_map.assign( layout );
-      m_offset_map.set_padding();
-
-      m_ptr_on_device = data_handle_type::allocate( label , m_offset_map.capacity() );
-
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      Alloc::initialize( *this );
     }
 
   //------------------------------------

@@ -62,7 +62,7 @@ struct TestTeamPolicy {
   view_type m_flags ;
 
   TestTeamPolicy( const size_t league_size )
-    : m_flags( Kokkos::allocate_without_initializing , "flags"
+    : m_flags( Kokkos::ViewAllocateWithoutInitializing("flags")
              , Kokkos::TeamPolicy< ExecSpace >::team_size_max( *this )
              , league_size )
     {}

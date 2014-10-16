@@ -435,14 +435,10 @@ public:
   //------------------------------------
   // Allocation of a managed view with possible alignment padding.
 
-  typedef Impl::if_c< traits::is_managed ,
-                      std::string ,
-                      Impl::ViewError::allocation_constructor_requires_managed >
-   if_allocation_constructor ;
-
+  template< class AllocationProperties >
   explicit inline
-  View( const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
+  View( const AllocationProperties & prop ,
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -452,47 +448,21 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+
       typedef typename traits::memory_space  memory_space ;
-      //typedef typename traits::shape_type    shape_type ; // unused
       typedef typename traits::value_type::value_type   scalar_type ;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_offset_map.set_padding();
 
       m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( if_allocation_constructor::select( label ) ,
+        memory_space::allocate( Alloc::label( prop ) ,
                                 typeid(scalar_type) ,
                                 sizeof(scalar_type) ,
                                 m_offset_map.capacity() );
 
-      Impl::ViewFill< View > init( *this , typename traits::value_type() );
-    }
-
-  explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        const size_t n7 = 0 )
-    : m_ptr_on_device(0)
-    {
-      typedef typename traits::memory_space  memory_space ;
-      //typedef typename traits::shape_type    shape_type ; // unused
-      typedef typename traits::value_type::value_type   scalar_type ;
-
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_offset_map.set_padding();
-
-      m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( if_allocation_constructor::select( label ) ,
-                                typeid(scalar_type) ,
-                                sizeof(scalar_type) ,
-                                m_offset_map.capacity() );
+      Alloc::initialize( *this );
     }
 
   //------------------------------------

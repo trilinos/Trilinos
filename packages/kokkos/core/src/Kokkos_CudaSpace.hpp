@@ -148,6 +148,9 @@ public:
   typedef unsigned int          size_type ;
   typedef Cuda                  execution_space ;
 
+  /** \brief  If UVM capability is available */
+  static bool available();
+
   /** \brief  Allocate a contiguous block of memory on the Cuda device
    *          with size = scalar_size * scalar_count.
    *
