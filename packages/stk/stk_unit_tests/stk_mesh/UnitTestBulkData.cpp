@@ -72,6 +72,7 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>
+#include <unit_tests/BulkDataTester.hpp>
 
 namespace stk
 {
@@ -104,33 +105,6 @@ extern char** gl_argv;
 
 namespace
 {
-
-class BulkDataTester : public stk::mesh::BulkData
-{
-public:
-    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-            stk::mesh::BulkData(mesh_meta_data, comm)
-    {
-    }
-    virtual ~BulkDataTester()
-    {
-    }
-
-    void my_internal_resolve_shared_modify_delete()
-    {
-        this->internal_resolve_shared_modify_delete();
-    }
-
-    void reset_closure_count(Entity entity)
-    {
-        m_closure_count[entity.local_offset()] = 0;
-    }
-
-    uint16_t closure_count(Entity entity)
-    {
-        return m_closure_count[entity.local_offset()];
-    }
-};
 
 void donate_one_element(BulkData & mesh, bool aura)
 {

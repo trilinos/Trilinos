@@ -123,6 +123,29 @@ struct EntityLess {
   const BulkData* m_mesh;
 }; //struct EntityLess
 
+struct shared_entity_type
+{
+  stk::topology::topology_t topology;
+  std::vector<EntityKey>    nodes;
+  EntityKey                 local_key;
+  EntityKey                 global_key;
+  std::vector<int>          sharing_procs;
+
+  friend inline bool operator < (shared_entity_type const& l, shared_entity_type const& r)
+  {
+    if (l.topology < r.topology)   return true;
+    if (l.topology > r.topology)   return false;
+    return l.nodes < r.nodes;
+  }
+
+  friend inline bool operator == (shared_entity_type const& l, shared_entity_type const& r)
+  {
+
+    bool sameTopologyAndNodes =  (l.topology == r.topology) && (l.nodes==r.nodes);
+    return sameTopologyAndNodes;
+  }
+};
+
 parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
 
 struct EntityCommListInfo
@@ -712,12 +735,6 @@ public:
   { return m_entity_comm_map.shared_comm_info(key); }
   PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const
   { return m_entity_comm_map.comm(key,sub); }
-
-  bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity)); }
-  bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
-  bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
-  void entity_comm_map_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
-  void entity_comm_map_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
 
   int entity_comm_map_owner(const EntityKey & key) const;
 
@@ -1452,6 +1469,7 @@ private:
   void internal_resolve_parallel_create();
 
 protected:
+
   /**
    * Mark this entity as modified (only changes from Unchanged
    * to Modified). Propagates the modification to higher-ranking
@@ -1460,6 +1478,10 @@ protected:
    * closure must also be marked as modified.
    */
   void mark_entity_and_upward_related_entities_as_modified(Entity entity);
+
+  void resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(std::vector<shared_entity_type> & shared_entity_map);
+  void update_shared_entities_global_ids(std::vector<shared_entity_type> & shared_entity_map);
+  void resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<EntityKey> &entity_keys);
 
   void internal_resolve_shared_modify_delete();
   void update_comm_list_based_on_changes_in_comm_map();
@@ -1471,6 +1493,11 @@ protected:
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
   void update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified);
+  bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity)); }
+  bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
+  bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
+  void entity_comm_map_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
+  void entity_comm_map_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
 
 public:
   typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;

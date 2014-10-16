@@ -49,6 +49,8 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/NamedPair.hpp"
+#include "unit_tests/BulkDataTester.hpp"
+
 namespace stk { namespace mesh { class Part; } }
 
 
@@ -134,7 +136,7 @@ TEST( UnitTestMetaData, testEntityRepository )
 
   meta.commit();
 
-  stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD );
+  BulkDataTester bulk ( meta , MPI_COMM_WORLD );
   std::vector<stk::mesh::Part *>  add_part;
   add_part.push_back ( &part );
   std::vector<stk::mesh::Part *> elem_parts;
