@@ -1199,15 +1199,6 @@ public:
 
 private:
 
-  /**
-   * Mark this entity as modified (only changes from Unchanged
-   * to Modified). Propagates the modification to higher-ranking
-   * entities related to this entity. In other words, based on our
-   * modification model, all entities that have modified_entity in their
-   * closure must also be marked as modified.
-   */
-  void mark_entity_and_upward_related_entities_as_modified(Entity entity);
-
   void entity_setter_debug_check(Entity entity) const
   {
     // The 0-th local_offset is special, it represents the invalid, 0-initialized entity.
@@ -1444,9 +1435,6 @@ private:
   bool internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt );
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
 
-protected:
-  void internal_resolve_shared_modify_delete();
-  void update_comm_list_based_on_changes_in_comm_map();
 private:
   //Optional parameter 'always_propagate_internal_changes' is always true except when this function
   //is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
@@ -1460,13 +1448,23 @@ private:
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
   void internal_resolve_shared_modify_delete_second_pass();
-protected:
-  void internal_resolve_ghosted_modify_delete();
-  void internal_resolve_shared_membership();
-private:
+
   void internal_resolve_parallel_create();
 
 protected:
+  /**
+   * Mark this entity as modified (only changes from Unchanged
+   * to Modified). Propagates the modification to higher-ranking
+   * entities related to this entity. In other words, based on our
+   * modification model, all entities that have modified_entity in their
+   * closure must also be marked as modified.
+   */
+  void mark_entity_and_upward_related_entities_as_modified(Entity entity);
+
+  void internal_resolve_shared_modify_delete();
+  void update_comm_list_based_on_changes_in_comm_map();
+  void internal_resolve_ghosted_modify_delete();
+  void internal_resolve_shared_membership();
   void internal_update_distributed_index(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
   void internal_update_distributed_index(std::vector<stk::mesh::Entity> & shared_new );
   void fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::KeyTypeVector &local_created_or_modified);
@@ -1607,7 +1605,7 @@ private:
   void write_entity_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
   std::string convert_label_for_method_type(const std::string &label, enum PublicOrInternalMethod methodType);
 
-public:
+protected:
   void internal_apply_node_sharing(const NodeToDependentProcessorsMap & owned_node_sharing_map);
   void internal_add_node_sharing( Entity node, int sharing_proc );
   void internal_remove_node_sharing( EntityKey node, int sharing_proc );
@@ -2206,27 +2204,6 @@ struct EntityGhostData
         return s;
     }
 };
-
-void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
-void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mesh );
-bool comm_mesh_verify_parallel_consistency(BulkData & M , std::ostream & error_log );
-void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
-        stk::mesh::Entity edge, std::vector<stk::mesh::Entity> &nodes);
-
-void internal_generate_parallel_change_lists( const BulkData & mesh ,
-                                              const std::vector<EntityProc> & local_change ,
-                                              std::vector<EntityProc> & shared_change ,
-                                              std::vector<EntityProc> & ghosted_change );
-
-void internal_get_processor_dependencies_shared_or_ghosted(
-          const BulkData &mesh,
-          const EntityProc                  shared_or_ghosted_entry ,
-          BulkData::NodeToDependentProcessorsMap & owned_node_sharing_map);
-
-void internal_clean_and_verify_parallel_change(
-  const BulkData & mesh ,
-  std::vector<EntityProc> & local_change );
-
 
 } // namespace mesh
 } // namespace stk

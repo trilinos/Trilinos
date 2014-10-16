@@ -65,6 +65,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Relation.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -1253,7 +1254,7 @@ TEST(BulkData, test_internal_clean_and_verify_parallel_change_trivial)
     stk::mesh::MetaData meta(spatialDim);
     stk::mesh::BulkData mesh(meta, pm);
     std::vector<EntityProc> local_change;
-    stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change);
+    stk::mesh::impl::internal_clean_and_verify_parallel_change(mesh,local_change);
     EXPECT_TRUE(local_change.size() == 0);
 }
 TEST(BulkData, test_internal_clean_and_verify_parallel_change_sort_unique)
@@ -1284,7 +1285,7 @@ TEST(BulkData, test_internal_clean_and_verify_parallel_change_sort_unique)
         local_change.push_back(EntityProc(node2,1));
         local_change.push_back(EntityProc(node1,1));
     }
-    stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change);
+    stk::mesh::impl::internal_clean_and_verify_parallel_change(mesh,local_change);
     if (myRank == 0)
     {
         EXPECT_EQ(3u,local_change.size());
@@ -1302,7 +1303,7 @@ TEST(BulkData, test_internal_clean_and_verify_parallel_change_bad_null)
     stk::mesh::BulkData mesh(meta, pm);
     std::vector<EntityProc> local_change;
     local_change.push_back(EntityProc(Entity(),1));
-    EXPECT_THROW( stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change),
+    EXPECT_THROW( stk::mesh::impl::internal_clean_and_verify_parallel_change(mesh,local_change),
                   std::runtime_error );
 }
 TEST(BulkData, test_internal_clean_and_verify_parallel_change_not_owner)
@@ -1354,7 +1355,7 @@ TEST(BulkData, test_internal_clean_and_verify_parallel_change_not_owner)
         EXPECT_FALSE( mesh.bucket(node2).owned() );
         local_change.push_back(EntityProc(node2,1));
     }
-    EXPECT_THROW( stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change),
+    EXPECT_THROW( stk::mesh::impl::internal_clean_and_verify_parallel_change(mesh,local_change),
                   std::runtime_error );
 }
 TEST(BulkData, test_internal_clean_and_verify_parallel_change_invalid_owner)
@@ -1379,7 +1380,7 @@ TEST(BulkData, test_internal_clean_and_verify_parallel_change_invalid_owner)
     {
         local_change.push_back(EntityProc(node1,numProcs));
     }
-    EXPECT_THROW( stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change),
+    EXPECT_THROW( stk::mesh::impl::internal_clean_and_verify_parallel_change(mesh,local_change),
                   std::runtime_error );
 }
 TEST(BulkData, test_internal_clean_and_verify_parallel_change_send_to_2_owners)
@@ -1404,7 +1405,7 @@ TEST(BulkData, test_internal_clean_and_verify_parallel_change_send_to_2_owners)
         local_change.push_back(EntityProc(node1,1));
         local_change.push_back(EntityProc(node1,2));
     }
-    EXPECT_THROW( stk::mesh::internal_clean_and_verify_parallel_change(mesh,local_change),
+    EXPECT_THROW( stk::mesh::impl::internal_clean_and_verify_parallel_change(mesh,local_change),
                   std::runtime_error );
 }
 
@@ -1419,7 +1420,7 @@ TEST(BulkData, test_internal_generate_parallel_change_lists_trivial)
     std::vector<EntityProc> local_change;
     std::vector<EntityProc> ghosted_change;
     std::vector<EntityProc> shared_change;
-    stk::mesh::internal_generate_parallel_change_lists(mesh, local_change,
+    stk::mesh::impl::internal_generate_parallel_change_lists(mesh, local_change,
                                                        shared_change, ghosted_change);
     EXPECT_TRUE(shared_change.empty());
     EXPECT_TRUE(ghosted_change.empty());
@@ -1473,7 +1474,7 @@ TEST(BulkData, test_internal_generate_parallel_change_lists_2EltsChown1ChownItsN
 
   std::vector<EntityProc> shared_change;
   std::vector<EntityProc> ghosted_change;
-  stk::mesh::internal_generate_parallel_change_lists(bulk, local_change, shared_change, ghosted_change);
+  stk::mesh::impl::internal_generate_parallel_change_lists(bulk, local_change, shared_change, ghosted_change);
 
   EXPECT_TRUE(shared_change.empty());
   EXPECT_TRUE(ghosted_change.empty());
@@ -1537,7 +1538,7 @@ TEST(BulkData, test_internal_generate_parallel_change_lists_2EltsFlip)
 
   std::vector<EntityProc> shared_change;
   std::vector<EntityProc> ghosted_change;
-  stk::mesh::internal_generate_parallel_change_lists(bulk, local_change, shared_change, ghosted_change);
+  stk::mesh::impl::internal_generate_parallel_change_lists(bulk, local_change, shared_change, ghosted_change);
 
 
   if (p_rank == 0) {
@@ -1629,7 +1630,7 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
 
   std::vector<EntityProc> shared_change;
   std::vector<EntityProc> ghosted_change;
-  stk::mesh::internal_generate_parallel_change_lists(bulk, local_change, shared_change, ghosted_change);
+  stk::mesh::impl::internal_generate_parallel_change_lists(bulk, local_change, shared_change, ghosted_change);
 
   // Contents on p0:
   //    shared_change: (empty)
@@ -1647,7 +1648,7 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
     for (std::vector<EntityProc>::const_iterator shared_giving_away_eproc = shared_change.begin();
          shared_giving_away_eproc != shared_change.end(); ++shared_giving_away_eproc)
     {
-      stk::mesh::internal_get_processor_dependencies_shared_or_ghosted(bulk, *shared_giving_away_eproc,
+      stk::mesh::impl::internal_get_processor_dependencies_shared_or_ghosted(bulk, *shared_giving_away_eproc,
                                                                        entity_to_dependent_processors_map);
     }
 
@@ -1670,7 +1671,7 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
     for (std::vector<EntityProc>::const_iterator ghosted_giving_away_eproc = ghosted_change.begin();
          ghosted_giving_away_eproc != ghosted_change.end(); ++ghosted_giving_away_eproc)
     {
-      stk::mesh::internal_get_processor_dependencies_shared_or_ghosted(bulk, *ghosted_giving_away_eproc,
+      stk::mesh::impl::internal_get_processor_dependencies_shared_or_ghosted(bulk, *ghosted_giving_away_eproc,
                                                                        entity_to_dependent_processors_map);
     }
 
@@ -1755,7 +1756,7 @@ TEST(BulkData, test_nominal_internal_get_processor_dependencies_shared_or_ghoste
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 6);
         int dest_proc = 3;
         BulkData::NodeToDependentProcessorsMap owned_node_sharing_map;
-        stk::mesh::internal_get_processor_dependencies_shared_or_ghosted(bulk, stk::mesh::EntityProc(elem, dest_proc), owned_node_sharing_map);
+        stk::mesh::impl::internal_get_processor_dependencies_shared_or_ghosted(bulk, stk::mesh::EntityProc(elem, dest_proc), owned_node_sharing_map);
 
         EntityKey node7_key(stk::topology::NODE_RANK,7);
         EntityKey node8_key(stk::topology::NODE_RANK,8);
@@ -1782,7 +1783,7 @@ TEST(BulkData, test_nominal_internal_get_processor_dependencies_shared_or_ghoste
 
         stk::mesh::Entity node8 = bulk.get_entity(stk::topology::NODE_RANK, 8);
         owned_node_sharing_map.clear();
-        stk::mesh::internal_get_processor_dependencies_shared_or_ghosted(bulk, stk::mesh::EntityProc(node8, dest_proc), owned_node_sharing_map);
+        stk::mesh::impl::internal_get_processor_dependencies_shared_or_ghosted(bulk, stk::mesh::EntityProc(node8, dest_proc), owned_node_sharing_map);
 
         EXPECT_EQ( 1u, owned_node_sharing_map.size() );
         const std::set<int> & node_set = owned_node_sharing_map[node8_key];
@@ -2580,7 +2581,7 @@ std::string printGhostData(stk::mesh::BulkData & bulkData, stk::mesh::Entity ent
 {
     std::ostringstream oss;
     std::vector<stk::mesh::EntityGhostData> egd;
-    stk::mesh::get_ghost_data(bulkData, entity, egd);
+    stk::mesh::impl::get_ghost_data(bulkData, entity, egd);
     for(size_t z = 0; z < egd.size(); ++z)
     {
         oss << "P" << bulkData.parallel_rank() << ":  " << egd[z] << std::endl;
@@ -3311,7 +3312,7 @@ TEST(BulkData, ModificationEnd)
         }
 
         // Really testing destroy_entity
-        stk::mesh::delete_shared_entities_which_are_no_longer_in_owned_closure(*stkMeshBulkData);
+        stk::mesh::impl::delete_shared_entities_which_are_no_longer_in_owned_closure(*stkMeshBulkData);
 
         iter = std::lower_bound(stkMeshBulkData->comm_list().begin(), stkMeshBulkData->comm_list().end(), nodeEntityKey);
 
@@ -5770,7 +5771,7 @@ TEST(BulkData, change_entity_owner_3Elem4Proc1Edge3D)
     std::vector<Entity> nodes;
     nodes.push_back(mesh.get_entity(stk::topology::NODE_RANK, 5));
     nodes.push_back(mesh.get_entity(stk::topology::NODE_RANK, 13));
-    stk::mesh::connectEntityToEdge(mesh, elem, edge, nodes);
+    stk::mesh::impl::connectEntityToEdge(mesh, elem, edge, nodes);
     mesh.declare_relation(edge, nodes[0], 0);
     mesh.declare_relation(edge, nodes[1], 1);
   }

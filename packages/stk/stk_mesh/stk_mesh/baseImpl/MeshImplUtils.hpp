@@ -59,6 +59,37 @@ void find_locally_owned_elements_these_nodes_have_in_common(BulkData& mesh, unsi
 bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity element, unsigned numEdgeNodes, const Entity* edgeNodes, unsigned& elemEdgeOrdinal, Entity* elemEdgeNodes);
 
 
+void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
+void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mesh );
+bool comm_mesh_verify_parallel_consistency(BulkData & M , std::ostream & error_log );
+void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
+        stk::mesh::Entity edge, std::vector<stk::mesh::Entity> &nodes);
+
+void internal_generate_parallel_change_lists( const BulkData & mesh ,
+                                              const std::vector<EntityProc> & local_change ,
+                                              std::vector<EntityProc> & shared_change ,
+                                              std::vector<EntityProc> & ghosted_change );
+
+void internal_get_processor_dependencies_shared_or_ghosted(
+          const BulkData &mesh,
+          const EntityProc                  shared_or_ghosted_entry ,
+          BulkData::NodeToDependentProcessorsMap & owned_node_sharing_map);
+
+void internal_clean_and_verify_parallel_change(
+  const BulkData & mesh ,
+  std::vector<EntityProc> & local_change );
+
+void unpack_not_owned_verify_compare_comm_info( CommBuffer&            buf,
+                                                const BulkData &       mesh,
+                                                Entity                 entity,
+                                                EntityKey &            recv_entity_key,
+                                                int       &            recv_owner_rank,
+                                                unsigned  &            recv_comm_count,
+                                                std::vector<Part*>&    recv_parts,
+                                                std::vector<Relation>& recv_relations,
+                                                std::vector<int>    &  recv_comm,
+                                                bool&                  bad_comm);
+
 template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
 void VisitClosureGeneral(
         const BulkData & mesh,
