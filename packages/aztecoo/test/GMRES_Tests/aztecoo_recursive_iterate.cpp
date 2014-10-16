@@ -16,6 +16,8 @@
 
 // Trilinos Includes
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
 #ifdef HAVE_MPI
@@ -28,10 +30,9 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 
-#include "mpi.h"
-
 using Teuchos::RCP;
 using Teuchos::rcp;
+
 
 // Build 3D Laplacian on Nx x Ny x Nz grid
 RCP<Epetra_CrsMatrix> build_matrix(int Nx, int Ny, int Nz)
@@ -138,71 +139,97 @@ int main( int argc, char *argv[] )
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   using std::cout;
 
-  int num_trials = 5;
+  using Teuchos::CommandLineProcessor;
 
   bool all_passed = true;
 
-  for( int itrial=0; itrial<num_trials; ++itrial )
-  {
-    int Nx = 100;
-    int Ny = 100;
-    int Nz = 100;
-    int err;
+	try {
+
+    CommandLineProcessor clp(false); // Don't throw exceptions
+
+    int num_trials = 5;
+    clp.setOption( "num-trials", &num_trials,
+      "Number of times to set up and solve linear system" );
+
+    int Ni= 5;
+    clp.setOption( "Ni", &Ni, "Discretization size used for Nx, Ny, and Nz" );
 
     double tol = 1e-6;
+    clp.setOption( "tol", &tol, "Tolerance for the linear solves" );
+
     int max_iters = 100;
+    clp.setOption( "max-iters", &max_iters, "Maximum number of iterations" );
 
-    // Build matrix and vectors for this level
-    RCP<Epetra_CrsMatrix> A = build_matrix(Nx,Ny,Nz);
+		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
+			cout << "\nEnd Result: TEST FAILED" << std::endl;
+			return parse_return;
+		}
 
-    RCP<Epetra_MultiVector> x = rcp( new Epetra_MultiVector(A->OperatorDomainMap(),1) );
-    RCP<Epetra_MultiVector> b = rcp( new Epetra_MultiVector(A->OperatorDomainMap(),1) );
-    x->PutScalar(0.0);
-    b->PutScalar(1.0);
+    for( int itrial=0; itrial<num_trials; ++itrial )
+    {
+      int Nx = Ni;
+      int Ny = Ni;
+      int Nz = Ni;
+      int err;
 
-    RCP<AztecOO> solver = rcp( new AztecOO() );
-    solver->SetAztecOption(AZ_solver,AZ_bicgstab);
-    solver->SetAztecOption(AZ_precond,AZ_dom_decomp);
-    solver->SetAztecOption(AZ_subdomain_solve,AZ_ilu);
+      // Build matrix and vectors for this level
+      RCP<Epetra_CrsMatrix> A = build_matrix(Nx,Ny,Nz);
 
-    // Prepare for solve
-    solver->SetLHS( x.get() );
-    solver->SetRHS( b.get() );
-    err = solver->SetUserMatrix( A.get() );
-    if( err != 0 ) {
-      cout << "SetUserMatrix returned error code " << err << std::endl;
-      all_passed = false;
+      RCP<Epetra_MultiVector> x = rcp( new Epetra_MultiVector(A->OperatorDomainMap(),1) );
+      RCP<Epetra_MultiVector> b = rcp( new Epetra_MultiVector(A->OperatorDomainMap(),1) );
+      x->PutScalar(0.0);
+      b->PutScalar(1.0);
+
+      RCP<AztecOO> solver = rcp( new AztecOO() );
+      solver->SetAztecOption(AZ_solver,AZ_bicgstab);
+      solver->SetAztecOption(AZ_precond,AZ_dom_decomp);
+      solver->SetAztecOption(AZ_subdomain_solve,AZ_ilu);
+
+      // Prepare for solve
+      solver->SetLHS( x.get() );
+      solver->SetRHS( b.get() );
+      err = solver->SetUserMatrix( A.get() );
+      if( err != 0 ) {
+        cout << "SetUserMatrix returned error code " << err << std::endl;
+        all_passed = false;
+      }
+
+      // Explicitly build preconditioner
+      double condest;
+      cout << "\nConstructing a new preconditioner ...\n";
+      err = solver->ConstructPreconditioner(condest);
+      if( err != 0 ) {
+        cout << "ConstructPreconditioner returned error code "
+             << err << std::endl;
+        all_passed = false;
+      }
+
+      solver->SetAztecOption(AZ_keep_info, 1);
+
+      // Solve problem
+      err = solver->recursiveIterate(max_iters,tol);
+      if( err != 0 ) {
+        cout << "recursiveIterate returned error code " << err << std::endl;
+        all_passed = false;
+      }
+
+      // Destroy preconditioner
+      err = solver->DestroyPreconditioner();
+      if( err != 0 ) {
+        cout << "DestroyPreconditioner returned error code "
+             << err << std::endl;
+        all_passed = false;
+      }
+
+      //cout << "End of solve, press Enter to continue..." << std::endl;
+      //std::cin.ignore(100,'\n');
+
     }
 
-    // Explicitly build preconditioner
-    double condest;
-    err = solver->ConstructPreconditioner(condest);
-    if( err != 0 ) {
-      cout << "ConstructPreconditioner returned error code "
-           << err << std::endl;
-      all_passed = false;
-    }
+	}
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, all_passed);
 
-    solver->SetAztecOption(AZ_keep_info, 1);
-
-    // Solve problem
-    err = solver->recursiveIterate(max_iters,tol);
-    if( err != 0 ) {
-      cout << "recursiveIterate returned error code " << err << std::endl;
-      all_passed = false;
-    }
-
-    // Destroy preconditioner
-    err = solver->DestroyPreconditioner();
-    if( err != 0 ) {
-      cout << "DestroyPreconditioner returned error code "
-                << err << std::endl;
-      all_passed = false;
-    }
-
-    //cout << "End of solve, press Enter to continue..." << std::endl;
-    //std::cin.ignore(100,'\n');
-  }
 
   if (all_passed) {
     cout << "ALL TESTS PASSED\n";
