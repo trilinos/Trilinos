@@ -1,0 +1,25 @@
+-----------------------------------------
+Release Notes for Trilinos Package MueLu
+-----------------------------------------
+
+Trilinos 11.12
+--------------
+
+Trilinos 11.12 is the initial release of MueLu.
+
+MueLu is an extensible multigrid library that is part of the Trilinos project.
+MueLu works with Epetra (32- and 64-bit versions) and Tpetra matrix types. The
+library is written in C++ and allows for different ordinal (index) and scalar
+types. MueLu is designed to be efficient on many different computer
+architectures, from workstations to supercomputers. While it is MPI based,
+MueLu is relies on the "MPI+X" principle, where "X" can be threading or CUDA.
+
+MueLu's software design allows for the rapid introduction of new multigrid
+algorithms.
+
+MueLu provides a number of different multigrid algorithms:
+ - smoothed aggregation algebraic multigrid (AMG), appropriate for Poisson-like
+   and elasticity problems
+ - Petrov-Galerkin aggregation AMG for convection-diffusion problems
+ - aggregation-based AMG for problems arising from the eddy current formulation
+   of Maxwell’s equations
