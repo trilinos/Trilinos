@@ -402,7 +402,7 @@ namespace {
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  typedef KokkosClassic::TBBNode KokkosClassic_OpenMPNode;
+  typedef KokkosClassic::OpenMPNode KokkosClassic_OpenMPNode;
 #define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_OpenMPNode )
 #else
