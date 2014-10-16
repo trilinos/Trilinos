@@ -101,8 +101,8 @@ enum MeshEntityType {
 
 */
 
-  template <typename User>
-  class MeshAdapter : public BaseAdapter<User> {
+template <typename User>
+class MeshAdapter : public BaseAdapter<User> {
 private:
   enum MeshEntityType primaryEntityType; // Entity type
                                          // to be partitioned, ordered,
