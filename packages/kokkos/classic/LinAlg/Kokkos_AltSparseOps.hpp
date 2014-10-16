@@ -2667,6 +2667,11 @@ namespace KokkosClassic {
                     const RST&, const size_t[], const OT[], const MST[],
                     const DST[], const OT) = NULL;
 
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      matVecVariant_ != FOR_FOR, std::logic_error, "Kokkos::AltSparseOps::"
+      "multiply: The \"for-while\" and \"for-if\" variants of sparse matrix-"
+      "vector multiply have been removed and are no longer supported.");
+
     // The following very long switch statement selects one of the
     // hard-coded-numVecs routines for certain values of numVecs.
     // (Hard-coding the number of columns in the multivectors avoids
@@ -2683,250 +2688,46 @@ namespace KokkosClassic {
     switch (numVecs) {
     case 1:
       if (trans == Teuchos::NO_TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor1Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForif1Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForwhile1Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor1Vec<OT, MST, DST, RST>;
       }
       else if (trans == Teuchos::TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForfor1Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForif1Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhile1Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCscColMajorForfor1Vec<OT, MST, DST, RST>;
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj1Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForifConj1Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhileConj1Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj1Vec<OT, MST, DST, RST>;
       }
       break;
     case 2:
       if (trans == Teuchos::NO_TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor2Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForif2Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForwhile2Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor2Vec<OT, MST, DST, RST>;
       }
       else if (trans == Teuchos::TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForfor2Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForif2Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhile2Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCscColMajorForfor2Vec<OT, MST, DST, RST>;
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj2Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForifConj2Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhileConj2Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj2Vec<OT, MST, DST, RST>;
       }
       break;
     case 3:
       if (trans == Teuchos::NO_TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor3Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForif3Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForwhile3Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor3Vec<OT, MST, DST, RST>;
       }
       else if (trans == Teuchos::TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForfor3Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForif3Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhile3Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCscColMajorForfor3Vec<OT, MST, DST, RST>;
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj3Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForifConj3Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhileConj3Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj3Vec<OT, MST, DST, RST>;
       }
       break;
     case 4:
       if (trans == Teuchos::NO_TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor4Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForif4Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCsrColMajorForwhile4Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor4Vec<OT, MST, DST, RST>;
       }
       else if (trans == Teuchos::TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForfor4Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForif4Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhile4Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCscColMajorForfor4Vec<OT, MST, DST, RST>;
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
-        if (matVecVariant_ == FOR_FOR) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj4Vec<OT, MST, DST, RST>;
-        }
-#ifndef KOKKOSCLASSIC_HAVE_FAST_COMPILE
-        else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForifConj4Vec<OT, MST, DST, RST>;
-        }
-        else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhileConj4Vec<OT, MST, DST, RST>;
-        }
-#else
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error, "Kokkos::AltSparseOps::multiply: Since the "
-            "KOKKOS_HAVE_FAST_COMPILE macro is defined, the \"for-while\" and "
-            "\"for-if\" variants of sparse matrix-vector multiply are disabled.");
-        }
-#endif // ! KOKKOSCLASSIC_HAVE_FAST_COMPILE
+        matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj4Vec<OT, MST, DST, RST>;
       }
       break;
     default: // The "general case"
