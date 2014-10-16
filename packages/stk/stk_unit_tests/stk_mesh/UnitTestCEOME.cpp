@@ -71,6 +71,7 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>
+#include <unit_tests/BulkDataTester.hpp>
 
 namespace stk
 {
@@ -99,23 +100,6 @@ using stk::mesh::fixtures::BoxFixture;
 namespace
 {
 
-class BulkDataTester : public stk::mesh::BulkData
-{
-public:
-    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-            stk::mesh::BulkData(mesh_meta_data, comm)
-    {
-    }
-    virtual ~BulkDataTester()
-    {
-    }
-
-    void my_update_comm_list_based_on_changes_in_comm_map()
-    {
-        this->update_comm_list_based_on_changes_in_comm_map();
-    }
-};
-
 const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 const EntityRank EDGE_RANK = stk::topology::EDGE_RANK;
 const EntityRank FACE_RANK = stk::topology::FACE_RANK;
@@ -140,20 +124,20 @@ void add_nodes_to_move(stk::mesh::BulkData& bulk,
                        std::vector<stk::mesh::EntityProc>& entities_to_move);
 //==============================================================================
 
-void addSharingInfo(stk::mesh::BulkData& bulkData, stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId, int sharingProc )
+void addSharingInfo(BulkDataTester& bulkData, stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId, int sharingProc )
 {
-    EXPECT_TRUE(bulkData.entity_comm_map_insert(entity, stk::mesh::EntityCommInfo(ghostingId, sharingProc)));
+    EXPECT_TRUE(bulkData.my_entity_comm_map_insert(entity, stk::mesh::EntityCommInfo(ghostingId, sharingProc)));
 }
 
-void eraseSharingInfo(stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId )
+void eraseSharingInfo(BulkDataTester &bulkData, stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId )
 {
     stk::mesh::EntityKey key = bulkData.entity_key(entity);
-    bulkData.entity_comm_map_erase(key, *bulkData.ghostings()[ghostingId]);
+    bulkData.my_entity_comm_map_erase(key, *bulkData.ghostings()[ghostingId]);
 }
 
-void eraseSharingInfoUsingKey(stk::mesh::BulkData &bulkData, stk::mesh::EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId )
+void eraseSharingInfoUsingKey(BulkDataTester &bulkData, stk::mesh::EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId )
 {
-    bulkData.entity_comm_map_erase(key, *bulkData.ghostings()[ghostingId]);
+    bulkData.my_entity_comm_map_erase(key, *bulkData.ghostings()[ghostingId]);
 }
 
 TEST(CEOME, change_entity_owner_2Elem2ProcMove)
@@ -168,7 +152,7 @@ TEST(CEOME, change_entity_owner_2Elem2ProcMove)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  stk::mesh::BulkData bulk( meta, pm);
+  BulkDataTester bulk( meta, pm);
 
   //   id/owner_proc
   //
@@ -361,7 +345,7 @@ TEST(CEOME, change_entity_owner_2Elem2ProcFlip)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  stk::mesh::BulkData mesh( meta, pm);
+  BulkDataTester mesh( meta, pm);
 
   //   id/owner_proc
   //
@@ -585,7 +569,7 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveRight)
   Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
   meta_data.commit();
 
-  BulkData mesh(meta_data, pm);
+  BulkDataTester mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
 
@@ -862,7 +846,7 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveLeft)
   Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
   meta_data.commit();
 
-  BulkData mesh(meta_data, pm);
+  BulkDataTester mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
 
@@ -1548,7 +1532,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
        }
 
        mesh.my_update_comm_list_based_on_changes_in_comm_map();
-       mesh.update_comm_list(modifiedEntities);
+       mesh.my_update_comm_list(modifiedEntities);
 
        mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
 
@@ -2172,7 +2156,7 @@ TEST(CEOME, change_entity_owner_8Elem4ProcMoveTop)
     }
 
     mesh.my_update_comm_list_based_on_changes_in_comm_map();
-    mesh.update_comm_list(modifiedEntities);
+    mesh.my_update_comm_list(modifiedEntities);
 
     mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
 
@@ -2764,7 +2748,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcRotate)
     }
 
     mesh.my_update_comm_list_based_on_changes_in_comm_map();
-    mesh.update_comm_list(modifiedEntities);
+    mesh.my_update_comm_list(modifiedEntities);
 
     mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
 
@@ -3347,7 +3331,7 @@ TEST(CEOME, change_entity_owner_3Elem4Proc1Edge3D)
   }
 
   mesh.my_update_comm_list_based_on_changes_in_comm_map();
-  mesh.update_comm_list(modifiedEntities);
+  mesh.my_update_comm_list(modifiedEntities);
 
   mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
 

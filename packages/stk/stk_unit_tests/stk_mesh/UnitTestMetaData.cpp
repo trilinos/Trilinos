@@ -167,20 +167,20 @@ TEST( UnitTestMetaData, testEntityRepository )
     bulk.declare_relation(elem, nodes[ord], ord);
   }
 
-  bulk.entity_comm_map_clear(bulk.entity_key(elem));
+  bulk.my_entity_comm_map_clear(bulk.entity_key(elem));
 
-  bulk.entity_comm_map_clear_ghosting(bulk.entity_key(elem));
+  bulk.my_entity_comm_map_clear_ghosting(bulk.entity_key(elem));
 
   const stk::mesh::Ghosting & ghost = bulk.aura_ghosting();
 
   bulk.modification_end();
 
-  ASSERT_FALSE(bulk.entity_comm_map_erase(bulk.entity_key(elem), ghost));
+  ASSERT_FALSE(bulk.my_entity_comm_map_erase(bulk.entity_key(elem), ghost));
 
   const stk::mesh::EntityCommInfo comm_info( ghost.ordinal() , 0 );
 
-  ASSERT_FALSE(bulk.entity_comm_map_erase(bulk.entity_key(elem), comm_info));
-  ASSERT_TRUE(bulk.entity_comm_map_insert(elem, comm_info));
+  ASSERT_FALSE(bulk.my_entity_comm_map_erase(bulk.entity_key(elem), comm_info));
+  ASSERT_TRUE(bulk.my_entity_comm_map_insert(elem, comm_info));
 }
 
 TEST( UnitTestMetaData, noEntityTypes )

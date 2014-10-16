@@ -1515,7 +1515,6 @@ protected:
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
 
-public:
   void update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified);
   bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity)); }
   bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
@@ -1523,6 +1522,7 @@ public:
   void entity_comm_map_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
   void entity_comm_map_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
 
+public:
   typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;
   typedef std::map<EntityKey,int> NewOwnerMap;
 

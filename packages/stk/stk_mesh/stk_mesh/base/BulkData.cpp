@@ -4544,8 +4544,8 @@ void BulkData::internal_update_distributed_index_exp(
     }
 #endif
 
-    update_shared_entities_global_ids( *this, shared_edges );
-    update_shared_entities_global_ids( *this, shared_faces );
+    update_shared_entities_global_ids( shared_edges );
+    update_shared_entities_global_ids( shared_faces );
 
     // Add the explicitly-shared nodes to our list of shared and modified entities.
     //

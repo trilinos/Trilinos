@@ -63,30 +63,40 @@ public:
         return m_closure_count[entity.local_offset()];
     }
 
-    bool entity_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
+    bool my_entity_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
     {
         return BulkData::entity_comm_map_insert(entity, val);
     }
 
-    bool entity_comm_map_erase(const stk::mesh::EntityKey& key, const stk::mesh::EntityCommInfo& commInfo)
+    bool my_entity_comm_map_erase(const stk::mesh::EntityKey& key, const stk::mesh::EntityCommInfo& commInfo)
     {
         return BulkData::entity_comm_map_erase(key, commInfo);
     }
 
 
-    bool entity_comm_map_erase(const stk::mesh::EntityKey& key, const stk::mesh::Ghosting& ghost)
+    bool my_entity_comm_map_erase(const stk::mesh::EntityKey& key, const stk::mesh::Ghosting& ghost)
     {
         return BulkData::entity_comm_map_erase(key, ghost);
     }
 
-    void entity_comm_map_clear(const stk::mesh::EntityKey& key)
+    void my_entity_comm_map_clear(const stk::mesh::EntityKey& key)
     {
         BulkData::entity_comm_map_clear(key);
     }
 
-    void entity_comm_map_clear_ghosting(const stk::mesh::EntityKey& key)
+    void my_entity_comm_map_clear_ghosting(const stk::mesh::EntityKey& key)
     {
         BulkData::entity_comm_map_clear_ghosting(key);
+    }
+
+    void my_update_comm_list_based_on_changes_in_comm_map()
+    {
+        this->update_comm_list_based_on_changes_in_comm_map();
+    }
+
+    void my_update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified)
+    {
+        this->update_comm_list(shared_modified);
     }
 };
 
