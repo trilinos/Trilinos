@@ -480,16 +480,7 @@ main (int argc, char *argv[])
   try {
     if (performingTests) {
       using std::endl;
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-      typedef KokkosClassic::TBBNode node_type;
-#else
-#  ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-      typedef KokkosClassic::TPINode node_type;
-#  else
-      typedef KokkosClassic::SerialNode node_type;
-#  endif // HAVE_KOKKOSCLASSIC_THREADPOOL
-#endif // HAVE_KOKKOSCLASSIC_TBB
+      typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
       RCP<ParameterList> nodeParams =
         rcp (new ParameterList (node_type::getDefaultParameters ()));
