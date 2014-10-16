@@ -53,7 +53,25 @@ namespace KokkosClassic {
   {
     Teuchos::ParameterList params = getDefaultParameters ();
     const int numThreads = params.get<int> ("Num Threads");
-    const int verbose = params.get<int> ("Verbose");
+    //
+    // Allow either int or bool value of "Verbose" parameter.
+    //
+    int verbose = 0; // default value
+    bool gotVerbose = false;
+    try {
+      verbose = params.get<int> ("Verbose");
+      gotVerbose = true;
+    }
+    catch (...) {}
+    if (! gotVerbose) {
+      try {
+        const bool boolVerbose = params.get<bool> ("Verbose");
+        verbose = boolVerbose ? 1 : 0;
+        // gotVerbose = true; // no longer needed
+      }
+      catch (...) {}
+    }
+
     if (numThreads >= 0) {
       if (verbose) {
         std::cout << "TBBNode initializing with numThreads == " << numThreads
@@ -71,7 +89,25 @@ namespace KokkosClassic {
     Teuchos::ParameterList params = getDefaultParameters ();
     params.setParameters (pl);
     const int numThreads = params.get<int> ("Num Threads");
-    const int verbose = params.get<int> ("Verbose");
+    //
+    // Allow either int or bool value of "Verbose" parameter.
+    //
+    int verbose = 0; // default value
+    bool gotVerbose = false;
+    try {
+      verbose = params.get<int> ("Verbose");
+      gotVerbose = true;
+    }
+    catch (...) {}
+    if (! gotVerbose) {
+      try {
+        const bool boolVerbose = params.get<bool> ("Verbose");
+        verbose = boolVerbose ? 1 : 0;
+        // gotVerbose = true; // no longer needed
+      }
+      catch (...) {}
+    }
+
     if (numThreads >= 0) {
       if (verbose) {
         std::cout << "TBBNode initializing with numThreads == " << numThreads
