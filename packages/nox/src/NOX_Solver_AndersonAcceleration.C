@@ -238,6 +238,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
       else if (utilsPtr->isPrintType(NOX::Utils::Warning))
         utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - using recovery step for line search" << std::endl;
     }
+    // Old code before before block above added for line search
     //solnPtr->computeX(*solnPtr, *oldPrecF, mixParam);
 
     // Compute F for the first iterate in case it isn't in the line search
@@ -377,11 +378,14 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     else if (utilsPtr->isPrintType(NOX::Utils::Warning))
       utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - using recovery step for line search" << std::endl;
   }
-  /*solnPtr->computeX(*solnPtr, *precF, mixParam);
+  // Old code before before block above added for line search
+  /*
+  solnPtr->computeX(*solnPtr, *precF, mixParam);
   for (int ii=0; ii<nStore; ii++){
     solnPtr->computeX(*solnPtr, *(xMat[ii]), -gamma(ii,0));
     solnPtr->computeX(*solnPtr, *(qMat[ii]), -Rgamma(ii,0));
-  }*/
+  }
+  */
 
   // Compute F for new current solution in case the line search didn't .
   NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
