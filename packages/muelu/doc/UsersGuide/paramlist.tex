@@ -1,101 +1,100 @@
 
 \cbb{verbosity}{string}{"high"}{Control of the amount of printed information. Possible values: "none", "low", "medium", "high", "extreme".}
-          
+
 \cbb{number of equations}{int}{1}{Number of PDE equations at each gride node. Only constant block size is considered.}
-          
+
 \cbb{max levels}{int}{10}{Maximum number of levels.}
-          
+
 \cbb{cycle type}{string}{"V"}{Multigrid cycle type. Possible values: "V", "W".}
-          
+
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem.}
-          
-\cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", "P", "R") of type "string" and value "\{levels separated by commas\}". A matrix is saved in two files: a) data is saved in the MatrixMarket format in a file called "A\_level.mm", or similar; b) row map is saved in the MatrixMarket format in a file called "rowmap\_A\_level.mm", or similar.}
-          
-\cbb{print initial parameters}{bool}{true}{Print parameters provided for a hierarchy construction.}
-          
-\cbb{print unused parameters}{bool}{true}{Print parameters unused during a hierarchy construction.}
-          
-\cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: "unsmoothed", "sa", "emin", "pg".}
-          
-\cbb{transpose: use implicit}{bool}{false}{Use implicit transpose for the restriction operator.}
-          
-\cbb{aggregation: type}{string}{"uncoupled"}{Aggregation scheme. Possible values: "uncoupled", "coupled".}
-          
-\cbb{aggregation: ordering}{string}{"natural"}{Ordering strategy. Possible values: "natrual", "graph", "random".}
-          
-\cbb{aggregation: drop scheme}{string}{"classical"}{Aggregation connectivity dropping scheme. Possible values: "classical", "distance laplacian".}
-          
-\cbb{aggregation: drop tol}{double}{0.0}{Aggregation dropping threshold.}
-          
-\cbb{aggregation: min agg size}{int}{2}{Minimum size of an aggregate.}
-          
-\cbb{aggregation: max agg size}{int}{2147483647}{Maximum size of an aggregate.}
-          
-\cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
-          
-\cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
-          
+
 \cbb{smoother: pre or post}{string}{"both"}{Smoother combination. Possible values: "pre", "post", "both", "none".}
-          
+
 \cbb{smoother: type}{string}{"gs"}{Smoother type. Possible values: see Table~\ref{t:smoothers}.}
-          
+
 \cbb{smoother: pre type}{string}{"gs"}{Pre-smoother type. Possible values: see Table~\ref{t:smoothers}.}
-          
+
 \cbb{smoother: post type}{string}{"gs"}{Post-smoother type. Possible values: see Table~\ref{t:smoothers}.}
-          
+
 \cba{smoother: params}{\parameterlist}{Smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.}
-          
+
 \cba{smoother: pre params}{\parameterlist}{Pre-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.}
-          
+
 \cba{smoother: post params}{\parameterlist}{Post-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.}
-          
+
 \cbb{smoother: overlap}{int}{0}{Smoother subdomain overlap.}
-          
+
 \cbb{smoother: pre overlap}{int}{0}{Pre-smoother subdomain overlap.}
-          
+
 \cbb{smoother: post overlap}{int}{0}{Post-smoother subdomain overlap.}
-          
+
 \cbb{coarse: max size}{int}{2000}{Maximum dimension of the coarse grid. \muelu will stop coarsening once it is achieved.}
-          
+
 \cbb{coarse: type}{string}{"SuperLU"}{Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.}
-          
+
 \cba{coarse: params}{\parameterlist}{Coarse solver parameters. \muelu passes them directly to coarse solver.}
-          
+
 \cbb{coarse: overlap}{int}{0}{Coarse solver subdomain overlap.}
-          
-\cbb{repartition: enable}{bool}{false}{Repartitioning on/off switch.}
-          
-\cbb{repartition: partitioner}{string}{"zoltan2"}{Partitioning package to use. Possible values: "zoltan", "zoltan2".}
-          
-\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to partitioner.}
-          
-\cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not repartition for finer levels.}
-          
-\cbb{repartition: min rows per proc}{int}{800}{Desired minimum number of rows per processor. If actual number if smaller, then repartitioning occurs.}
-          
-\cbb{repartition: max imbalance}{double}{1.2}{Desired maximum nonzero imbalance ratio.}
-          
-\cbb{repartition: remap parts}{bool}{true}{Postprocessing for partitioning to reduce data migration.}
-          
-\cbb{repartition: rebalance P and R}{bool}{true}{Do rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
-          
+
+\cbb{aggregation: type}{string}{"uncoupled"}{Aggregation scheme. Possible values: "uncoupled", "coupled".}
+
+\cbb{aggregation: ordering}{string}{"natural"}{Ordering strategy. Possible values: "natrual", "graph", "random".}
+
+\cbb{aggregation: drop scheme}{string}{"classical"}{Aggregation connectivity dropping scheme. Possible values: "classical", "distance laplacian".}
+
+\cbb{aggregation: drop tol}{double}{0.0}{Aggregation dropping threshold.}
+
+\cbb{aggregation: min agg size}{int}{2}{Minimum size of an aggregate.}
+
+\cbb{aggregation: max agg size}{int}{2147483647}{Maximum size of an aggregate.}
+
+\cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
+
+\cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
+
+\cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", "P", "R") of type "string" and value "\{levels separated by commas\}". A matrix is saved in two files: a) data is saved in the MatrixMarket format in a file called "A\_level.mm", or similar; b) row map is saved in the MatrixMarket format in a file called "rowmap\_A\_level.mm", or similar.}
+
+\cbb{print initial parameters}{bool}{true}{Print parameters provided for a hierarchy construction.}
+
+\cbb{print unused parameters}{bool}{true}{Print parameters unused during a hierarchy construction.}
+
+\cbb{transpose: use implicit}{bool}{false}{Use implicit transpose for the restriction operator.}
+
+\cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: "unsmoothed", "sa", "emin", "pg".}
+
 \cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
-          
+
 \cbb{sa: damping factor}{double}{1.33333333}{Damping factor for smoothed aggregation.}
-          
+
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
-          
+
 \cbb{filtered matrix: use lumping}{bool}{true}{During construction of a filtered matrix, we have an option to add dropped entries to the diagonal. This is useful for preserving constant nullspace for the Laplacian type matrix.}
-          
+
 \cbb{filtered matrix: reuse eigenvalue}{bool}{true}{During construction of a filtered matrix, we have an option to get the eigenvalue estimate from the original matrix. This allows us to skip heavy computation.}
-          
+
 \cbb{emin: iterative method}{string}{"cg"}{Iterative method to use for energy minimization of intial prolongator in energy-minimization. Possible values: "cg", "sd".}
-          
+
 \cbb{emin: num iterations}{int}{2}{Number of iterations to minimize initial prolongator energy in energy-minimization.}
-          
+
 \cbb{emin: num reuse iterations}{int}{1}{Number of iterations to minimize the reused prolongator energy in energy-minimization.}
-          
+
 \cbb{emin: pattern}{string}{"AkPtent"}{Sparsity pattern to use for energy minization. Possible values: "AkPtent".}
-          
+
 \cbb{emin: pattern order}{int}{1}{Matrix order for the "AkPtent" pattern.}
-          
+
+\cbb{repartition: enable}{bool}{false}{Repartitioning on/off switch.}
+
+\cbb{repartition: partitioner}{string}{"zoltan2"}{Partitioning package to use. Possible values: "zoltan", "zoltan2".}
+
+\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to partitioner.}
+
+\cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not repartition for finer levels.}
+
+\cbb{repartition: min rows per proc}{int}{800}{Desired minimum number of rows per processor. If actual number if smaller, then repartitioning occurs.}
+
+\cbb{repartition: max imbalance}{double}{1.2}{Desired maximum nonzero imbalance ratio.}
+
+\cbb{repartition: remap parts}{bool}{true}{Postprocessing for partitioning to reduce data migration.}
+
+\cbb{repartition: rebalance P and R}{bool}{true}{Do rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
