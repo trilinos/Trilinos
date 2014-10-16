@@ -1763,19 +1763,51 @@ ignore the argument!
 Running memory checking
 -----------------------
 
-To run the memory tests for just a single package, from the *base* build
-directory, run::
+To configure for running memory testing with ``valgrind``, use::
 
-  $ ctest -L <TRIBITS_PACKAGE> -T memcheck
+ -D MEMORYCHECK_COMMAND=<abs-path-to-valgrind>/valgrind \
+ -D MEMORYCHECK_SUPPRESSIONS_FILE=<abs-path-to-supp-file0> \
+ -D MEMORYCHECK_COMMAND_OPTIONS="-q --trace-children=yes --tool=memcheck \
+   --leak-check=yes --workaround-gcc296-bugs=yes \
+   --num-callers=50 --suppressions=<abs-path-to-supp-file1> \
+   ... --suppressions=<abs-path-to-supp-fileN>"
 
-Detailed output form the memory checker (i.e. valgrind) is printed in the
-file::
+Above, you have to set the absolute path to the valgrind executable to run
+using ``MEMORYCHECK_COMMAND`` as CMake will not find this for you by default.
+To use a single valgrind suppression file, just set
+``MEMORYCHECK_SUPPRESSIONS_FILE`` to the path of that suppression file as
+shown above.  To add other suppression files, they have to be added as other
+general valgrind arguments in ``MEMORYCHECK_COMMAND_OPTIONS`` as shown.
+
+After configuring with the above options, to run the memory tests for all
+enabled tests, from the **base** project build directory, do::
+
+  $ ctest -T memcheck
+
+This will run valgrind on **every** test command that is run by ctest.
+
+To run valgrind on the tests for a single package, from the **base** project
+directory, do::
+
+  $ ctest -T memcheck -L <TRIBITS_PACKAGE>
+
+To run valgrind on a specific test, from the **base** project directory, do:
+
+  $ ctest -T memcheck -R ^<FULL_TEST_NAME>$
+
+Detailed output from valgrind is printed in the file::
 
   Testing/Temporary/LastDynamicAnalysis_<DATE_TIME>.log
 
 NOTE: If you try to run memory tests from any subdirectories, it will not
-work.  You have to run them from the base build directory and then use ``-L
-<TRIBITS_PACKAGE>`` or any CTest test filtering command you would like.
+work.  You have to run them from the ***base** project build directory as
+shown above.  A nice way to view valgrind results is to submit to CDash using
+the ``dashboard`` target (see `Dashboard submissions`_).
+
+NOTE: You have to use the valgrind option ``--trace-children=yes`` to trace
+through child processes.  This is needed if you have tests that are given as
+CMake -P scripts (such as advanced tests) or tests driven in bash, Perl,
+Python, or other languages.
 
 
 Installing
@@ -1977,7 +2009,8 @@ Currently, this options includes::
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
   SET_DEFAULT_AND_FROM_ENV( CTEST_COVERAGE_COMMAND gcov )
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND valgrind )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND /usr/local/valgrind )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND_OPTIONS "" )
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
   SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF )
   SET_DEFAULT_AND_FROM_ENV( Trilinos_ADDITIONAL_PACKAGES "" )
@@ -1995,33 +2028,42 @@ name and the options to pass to 'make', use::
 After this finishes running, look for the build 'MyBuild' (or whatever build
 name you used above) in the Trilinos CDash dashboard.
 
-NOTE: It is useful to set CTEST_BUILD_NAME to some unique name to make it
-easier to find your results in the CDash dashboard.
+It is useful to set CTEST_BUILD_NAME to some unique name to make it easier to
+find your results in the CDash dashboard.
 
-NOTE: A number of the defaults set in TribitsCTestDriverCore.cmake
-are overridden from experimental_build_test.cmake (such as
-CTEST_TEST_TYPE=Experimental) so you will want to look at
-experimental_build_test.cmake to see how these are changed.  The
-script experimental_build_test.cmake sets reasonable values for these
-options in order to use the 'make dashboard' target in iterative
+A number of the defaults set in TribitsCTestDriverCore.cmake are overridden
+from experimental_build_test.cmake (such as CTEST_TEST_TYPE=Experimental) so
+you will want to look at experimental_build_test.cmake to see how these are
+changed.  The script experimental_build_test.cmake sets reasonable values for
+these options in order to use the 'make dashboard' target in iterative
 development for experimental builds.
 
-NOTE: The target 'dashboard' is not directly related to the built-in
-CMake targets 'Experimental*' that run standard dashboards with CTest
-without the custom package-by-package driver in
-TribitsCTestDriverCore.cmake.  The package-by-package extended CTest
-driver is more appropriate for Trilinos.
+The target 'dashboard' is not directly related to the built-in CMake targets
+'Experimental*' that run standard dashboards with CTest without the custom
+package-by-package driver in TribitsCTestDriverCore.cmake.  The
+package-by-package extended CTest driver is more appropriate for Trilinos.
 
-NOTE: Once you configure with -DTrilinos_ENABLE_COVERAGE_TESTING=ON, the
-environment variable CTEST_DO_COVERAGE_TESTING=TRUE is automatically set by the
-target 'dashboard' so you don't have to set this yourself.
+Once you configure with -DTrilinos_ENABLE_COVERAGE_TESTING=ON, the
+environment variable CTEST_DO_COVERAGE_TESTING=TRUE is automatically set by
+the target 'dashboard' so you don't have to set this yourself.
 
-NOTE: Doing a memory check with Valgrind requires that you set
+Doing a memory check with Valgrind requires that you set
 CTEST_DO_MEMORY_TESTING=TRUE with the 'env' command as::
 
   $ env CTEST_DO_MEMORY_TESTING=TRUE make dashboard
 
-NOTE: The CMake cache variable Trilinos_DASHBOARD_CTEST_ARGS can be set on the
+but also note that you may also need to set the valgrind command and options
+with::
+
+  $ env CTEST_DO_MEMORY_TESTING=TRUE \
+    CTEST_MEMORYCHECK_COMMAND=<abs-path-to-valgrind> \
+    CTEST_MEMORYCHECK_COMMAND_OPTIONS="-q --trace-children=yes --tool=memcheck \
+     --leak-check=yes --workaround-gcc296-bugs=yes \
+     --num-callers=50 --suppressions=<abs-path-to-supp-file1> \
+     ... --suppressions=<abs-path-to-supp-fileN>" \
+    make dashboard
+
+The CMake cache variable Trilinos_DASHBOARD_CTEST_ARGS can be set on the
 cmake configure line in order to pass additional arguments to 'ctest -S' when
 invoking the package-by-package CTest driver.  For example::
 
