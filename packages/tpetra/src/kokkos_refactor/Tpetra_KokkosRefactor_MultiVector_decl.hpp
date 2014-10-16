@@ -1840,8 +1840,10 @@ namespace Tpetra {
              const MultiVector<SS, SL, SG, Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src)
   {
     using Kokkos::parallel_for;
-    typedef MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> > MVD;
-    typedef const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> > MVS;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<SD> src_node_type;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DD> dst_node_type;
+    typedef MultiVector<DS, DL, DG, dst_node_type> MVD;
+    typedef const MultiVector<SS, SL, SG, src_node_type> MVS;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       dst.getGlobalLength () != src.getGlobalLength () ||
@@ -1871,7 +1873,7 @@ namespace Tpetra {
 
         // We can't sync src, since it is only an input argument.
         // Thus, we have to use the most recently modified version of
-        // src, device or host.
+        // src, which coudl be either the device or host version.
         if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
           // Copy from the device version of src.
           //
@@ -1904,8 +1906,8 @@ namespace Tpetra {
           //
           // whichVecs tells the kernel which vectors (columns) of src
           // to copy.  Fill whichVecs on the host, and use it there.
-          typedef Kokkos::View<SL*, host_mirror_space> whichvecs_type;
-          whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
+          typedef Kokkos::View<SL*, host_mirror_space> the_whichvecs_type;
+          the_whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
           for (SL i = 0; i < numWhichVecs; ++i) {
             whichVecs(i) = static_cast<SL> (src.whichVectors_[i]);
           }
@@ -1923,7 +1925,8 @@ namespace Tpetra {
         }
       }
       else { // dst is NOT constant stride
-        typedef typename Kokkos::ViewTraits<DL*,DD,void,void>::host_mirror_space host_mirror_space ;
+        typedef typename Kokkos::ViewTraits<DL*,DD,void,void>::host_mirror_space
+          host_mirror_space_type;
 
         if (src.isConstantStride ()) {
           if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
@@ -1931,11 +1934,11 @@ namespace Tpetra {
             //
             // whichVecs tells the kernel which vectors (columns) of dst
             // to copy.  Fill whichVecs on the host, and sync to device.
-            typedef Kokkos::DualView<DL*, DD> whichvecs_type;
+            typedef Kokkos::DualView<DL*, DD> the_whichvecs_type;
             const std::string whichVecsLabel ("MV::deep_copy::whichVecs");
             const DL numWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
-            whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
-            whichVecs.template modify<host_mirror_space> ();
+            the_whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
+            whichVecs.template modify<host_mirror_space_type> ();
             for (DL i = 0; i < numWhichVecs; ++i) {
               whichVecs.h_view(i) = dst.whichVectors_[i];
             }
@@ -1955,26 +1958,26 @@ namespace Tpetra {
             //
             // FIXME (mfh 29 Jul 2014) This may overwrite columns that
             // don't actually belong to dst's view.
-            dst.template sync<host_mirror_space> ();
+            dst.template sync<host_mirror_space_type> ();
           }
           else { // host version of src was the most recently modified
             // Copy from the host version of src.
             //
             // whichVecs tells the kernel which vectors (columns) of src
             // to copy.  Fill whichVecs on the host, and use it there.
-            typedef Kokkos::View<DL*, host_mirror_space> whichvecs_type;
+            typedef Kokkos::View<DL*, host_mirror_space_type> the_whichvecs_type;
             const DL numWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
-            whichvecs_type whichVecs ("MV::deep_copy::whichVecs", numWhichVecs);
+            the_whichvecs_type whichVecs ("MV::deep_copy::whichVecs", numWhichVecs);
             for (DL i = 0; i < numWhichVecs; ++i) {
               whichVecs(i) = static_cast<DL> (dst.whichVectors_[i]);
             }
             // Copy from src to the selected vectors of dst, on the
             // host.  The functor ignores its 4th arg in this case.
             typedef DeepCopySelectedVectors<typename MVD::dual_view_type::t_host,
-              typename MVS::dual_view_type::t_host, DL, host_mirror_space,
+              typename MVS::dual_view_type::t_host, DL, host_mirror_space_type,
               false, true> functor_type;
-            functor_type f (dst.getDualView ().template view<host_mirror_space> (),
-                            src.getDualView ().template view<host_mirror_space> (),
+            functor_type f (dst.getDualView ().template view<host_mirror_space_type> (),
+                            src.getDualView ().template view<host_mirror_space_type> (),
                             whichVecs, whichVecs);
             Kokkos::parallel_for (src.getLocalLength (), f);
             // Sync dst back to the device, since we only copied on the host.
