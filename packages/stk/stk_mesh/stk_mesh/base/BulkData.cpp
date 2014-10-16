@@ -4558,7 +4558,7 @@ void BulkData::internal_update_distributed_index_exp(
     for (size_t i=0; i<shared_edges.size(); ++i)
     {
         Entity entity = get_entity(shared_edges[i].global_key);
-        if ( isEntityMarked(entity) == BulkData::IS_SHARED )
+        if ( is_entity_marked(entity) == BulkData::IS_SHARED )
         {
             entity_keys.push_back(shared_edges[i].global_key);
         }
@@ -4567,7 +4567,7 @@ void BulkData::internal_update_distributed_index_exp(
     for (size_t i=0; i<shared_faces.size(); ++i)
     {
         Entity entity = get_entity(shared_faces[i].global_key);
-        if ( isEntityMarked(entity) == BulkData::IS_SHARED )
+        if ( is_entity_marked(entity) == BulkData::IS_SHARED )
         {
             entity_keys.push_back(shared_faces[i].global_key);
         }
@@ -4957,19 +4957,21 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
 }
 
 
-void BulkData::update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified)
+void BulkData::update_comm_list(const std::vector<stk::mesh::Entity>& sharedModifiedEntities)
 {
     // ------------------------------------------------------------
     // Update m_entity_comm based on shared_modified
 
     const size_t n_old = m_entity_comm_list.size();
 
-    m_entity_comm_list.reserve(m_entity_comm_list.size() + shared_modified.size());
-    for (size_t i = 0, e = shared_modified.size(); i < e; ++i) {
-      Entity entity = shared_modified[i];
+    m_entity_comm_list.reserve(m_entity_comm_list.size() + sharedModifiedEntities.size());
+    for (size_t i = 0, e = sharedModifiedEntities.size(); i < e; ++i) {
+      Entity entity = sharedModifiedEntities[i];
       EntityCommListInfo new_comm = {entity_key(entity), entity, parallel_owner_rank(entity), NULL};
       m_entity_comm_list.push_back(new_comm);
     }
+
+    std::sort( m_entity_comm_list.begin() + n_old , m_entity_comm_list.end() );
 
     std::inplace_merge( m_entity_comm_list.begin() ,
                         m_entity_comm_list.begin() + n_old ,

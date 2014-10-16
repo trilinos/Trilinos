@@ -1505,6 +1505,7 @@ protected:
 
   void internal_resolve_shared_modify_delete();
   void update_comm_list_based_on_changes_in_comm_map();
+
   void internal_resolve_ghosted_modify_delete();
   void internal_resolve_shared_membership();
   void internal_update_distributed_index(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
@@ -1522,7 +1523,6 @@ public:
   void entity_comm_map_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
   void entity_comm_map_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
 
-public:
   typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;
   typedef std::map<EntityKey,int> NewOwnerMap;
 
