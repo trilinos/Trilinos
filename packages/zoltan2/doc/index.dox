@@ -171,8 +171,6 @@ linked by the applications.
 
 \section z2_main_overview Overview of the library usage
 
-\subsection z2_main_overview_partitioning Basic partitioning
-
 Here we describe the typical user interaction with Zoltan2.  We use partitioning as an example.
 
 -# Create a Zoltan2::InputAdapter object for your data.  This adapter provides a uniform interface to user data for the Zoltan2 library.  Adapter interfaces exist for the following classes of data:
