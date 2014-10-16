@@ -298,7 +298,7 @@ struct UnitTestSetup {
         (*sg_y_commuted)[i][block] = (*sg_y)[block][i];
     }
 
-    typedef typename Kokkos::ViewTraits<value_type,Device>::host_mirror_space host_device;
+    typedef typename Kokkos::ViewTraits<value_type,Device,void,void>::host_mirror_space host_device;
     typedef Stokhos::CrsProductTensor< value_type , host_device > tensor_type;
     typedef Stokhos::StochasticProductTensor< value_type , tensor_type ,
       host_device > stoch_tensor_type ;
