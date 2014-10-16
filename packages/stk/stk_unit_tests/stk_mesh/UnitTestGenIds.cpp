@@ -104,7 +104,6 @@ private:
     MPI_Comm mComm;
 };
 
-INTMPI whichProcOwnsId(const uint64_t maxId, const uint64_t id, INTMPI numProcs);
 uint64_t getNumIdsPerProc(const uint64_t maxId, const INTMPI numProcs);
 void retrieveIds(const INTMPI root, uint64_t id, MPI_Comm comm, uint64_t numIdsToGetPerProc, std::vector<int>& areIdsBeingUsed);
 bool sendIdToCheck(const INTMPI root, uint64_t id, MPI_Comm comm);
@@ -389,16 +388,6 @@ void writeIdsToFile(const std::string &filename, const INTMPI myProcId, const st
 uint64_t getNumIdsPerProc(const uint64_t maxId, const INTMPI numProcs)
 {
     return maxId/numProcs;
-}
-
-////////////////////////////////////////////////////////////////////
-
-INTMPI whichProcOwnsId(const uint64_t maxId, const uint64_t id, INTMPI numProcs)
-{
-    ThrowRequireMsg(id>0, "Invalid Id. Contact sierra-help for support.");
-    uint64_t numIdsPerProc = getNumIdsPerProc(maxId, numProcs);
-    INTMPI procOwner = (id-1)/numIdsPerProc;
-    return procOwner;
 }
 
 ////////////////////////////////////////////////////////////////////
