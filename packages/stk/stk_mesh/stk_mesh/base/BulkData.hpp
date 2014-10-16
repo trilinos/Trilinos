@@ -825,17 +825,17 @@ public:
 
   enum entitySharing { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2 };
 
-  void markEntity(Entity entity, entitySharing sharedType)
+  void mark_entity(Entity entity, entitySharing sharedType)
   {
       m_mark_entity[entity.local_offset()] = static_cast<int>(sharedType);
   }
 
-  entitySharing isEntityMarked(Entity entity) const
+  entitySharing is_entity_marked(Entity entity) const
   {
       return static_cast<entitySharing>(m_mark_entity[entity.local_offset()]);
   }
 
-  bool addNodeSharingCalled() const
+  bool add_node_sharing_called() const
   {
     return m_add_node_sharing_called;
   }
@@ -1474,7 +1474,9 @@ protected:
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
   void update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified);
 
-
+public:
+  typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;
+  typedef std::map<EntityKey,int> NewOwnerMap;
 
   /** \brief  Regenerate the shared-entity aura,
    *          adding and removing ghosted entities as necessary.
@@ -1483,7 +1485,10 @@ protected:
    */
 protected:
   void internal_regenerate_aura();
-
+  void internal_calculate_sharing(const std::vector<EntityProc> & local_change,
+                           const std::vector<EntityProc> & shared_change,
+                           const std::vector<EntityProc> & ghosted_change,
+                           NodeToDependentProcessorsMap & owned_node_sharing_map);
 private:
   void internal_basic_part_check(const Part* part,
                                  const unsigned ent_rank,
@@ -1603,12 +1608,6 @@ private:
   std::string convert_label_for_method_type(const std::string &label, enum PublicOrInternalMethod methodType);
 
 public:
-  typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;
-  typedef std::map<EntityKey,int> NewOwnerMap;
-  void internal_calculate_sharing(const std::vector<EntityProc> & local_change,
-                           const std::vector<EntityProc> & shared_change,
-                           const std::vector<EntityProc> & ghosted_change,
-                           NodeToDependentProcessorsMap & owned_node_sharing_map);
   void internal_apply_node_sharing(const NodeToDependentProcessorsMap & owned_node_sharing_map);
   void internal_add_node_sharing( Entity node, int sharing_proc );
   void internal_remove_node_sharing( EntityKey node, int sharing_proc );

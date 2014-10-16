@@ -221,7 +221,7 @@ void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsTh
                     {
                         shared_itr->global_key = sentity.global_key;
                     }
-                    mesh.markEntity(entity, BulkData::IS_SHARED);
+                    mesh.mark_entity(entity, BulkData::IS_SHARED);
                 }
             }
         }
@@ -261,7 +261,7 @@ void update_shared_entities_global_ids( BulkData & mesh, std::vector<shared_enti
 void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities)
 {
     const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entityRank);
-    const bool add_node_sharing_called = mesh.addNodeSharingCalled();
+    const bool add_node_sharing_called = mesh.add_node_sharing_called();
 
     for(size_t bucketIndex = 0; bucketIndex < entity_buckets.size(); bucketIndex++)
     {
@@ -295,7 +295,7 @@ void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, st
                     for(size_t n = 0; n < num_nodes_on_entity; ++n)
                     {
                         Entity node = entity_nodes[n];
-                        shared_entity = shared_entity && (mesh.bucket(node).shared() || (mesh.isEntityMarked(node) == BulkData::IS_SHARED));
+                        shared_entity = shared_entity && (mesh.bucket(node).shared() || (mesh.is_entity_marked(node) == BulkData::IS_SHARED));
                     }
 
                     if(shared_entity)
@@ -312,7 +312,7 @@ void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, st
                         sentity.local_key = entity_key;
                         sentity.global_key = entity_key;
                         shared_entities.push_back(sentity);
-                        mesh.markEntity(entity, BulkData::POSSIBLY_SHARED);
+                        mesh.mark_entity(entity, BulkData::POSSIBLY_SHARED);
                     }
                 }
             }
@@ -330,7 +330,7 @@ void gather_shared_nodes(stk::mesh::BulkData & mesh, std::vector<EntityKey> & sh
         for(size_t entityIndex = 0; entityIndex < bucket.size(); ++entityIndex)
         {
             Entity node = bucket[entityIndex];
-            if (mesh.isEntityMarked(node) == BulkData::IS_SHARED)
+            if (mesh.is_entity_marked(node) == BulkData::IS_SHARED)
             {
                 shared_nodes.push_back(mesh.entity_key(node));
             }
@@ -347,11 +347,11 @@ void resolve_entity_sharing(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Ent
     for (size_t i=0; i<shared_entities.size();i++)
     {
         Entity entity = stkMeshBulkData.get_entity(shared_entities[i].global_key);
-        if ( stkMeshBulkData.isEntityMarked(entity) == BulkData::IS_SHARED )
+        if ( stkMeshBulkData.is_entity_marked(entity) == BulkData::IS_SHARED )
         {
             entity_keys.push_back(shared_entities[i].global_key);
         }
-        stkMeshBulkData.markEntity(entity, BulkData::NOT_MARKED);
+        stkMeshBulkData.mark_entity(entity, BulkData::NOT_MARKED);
     }
     std::sort(entity_keys.begin(), entity_keys.end());
 }
@@ -1267,7 +1267,7 @@ void BulkData::add_node_sharing( Entity node, int sharing_proc )
 
   m_add_node_sharing_called = true;
 
-  markEntity(node, IS_SHARED);
+  mark_entity(node, IS_SHARED);
   entity_comm_map_insert(node, EntityCommInfo(stk::mesh::BulkData::SHARED, sharing_proc));
 }
 
@@ -1278,7 +1278,7 @@ void BulkData::internal_add_node_sharing( Entity node, int sharing_proc )
 
   m_add_node_sharing_called = true;
 
-  markEntity(node, IS_SHARED);
+  mark_entity(node, IS_SHARED);
   entity_comm_map_insert(node, EntityCommInfo(stk::mesh::BulkData::SHARED, sharing_proc));
 }
 
@@ -1288,7 +1288,7 @@ void BulkData::internal_remove_node_sharing( EntityKey node, int sharing_proc )
     ThrowRequireMsg(result, "ERROR, entity_comm_map_erase called for node " << node << " and proc " << sharing_proc << " and returned false" );
 //    PairIterEntityComm piec = entity_comm_map_shared(node);
 //    if (piec.begin() == piec.end()) {
-//        markEntity(get_entity(node), NOT_MARKED);
+//        mark_entity(get_entity(node), NOT_MARKED);
 //    }
 }
 
@@ -3955,7 +3955,7 @@ void BulkData::internal_apply_node_sharing(const NodeToDependentProcessorsMap & 
         std::set<int>::const_iterator set_it = sharing_procs.begin();
         for (; set_it != sharing_procs.end() ; ++set_it ) {
             if (*set_it == parallel_rank()) { continue; }
-            markEntity(entity, IS_SHARED);
+            mark_entity(entity, IS_SHARED);
             m_add_node_sharing_called = true;
             // Cannot have both sharing and ghosting of a node to same proc.
             entity_comm_map_erase(key, EntityCommInfo(stk::mesh::BulkData::AURA, *set_it));
@@ -5246,7 +5246,7 @@ void BulkData::fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::
   {
     Entity entity = i->second ;
 
-    if ( state(entity) != Unchanged &&  isEntityMarked(entity)==BulkData::NOT_MARKED &&
+    if ( state(entity) != Unchanged &&  is_entity_marked(entity)==BulkData::NOT_MARKED &&
          in_owned_closure( *this, entity , m_parallel_rank ) )
     {
       // Has been changed and is in owned closure, may be shared
@@ -5261,7 +5261,7 @@ void BulkData::fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::
   {
     Entity entity = i->second ;
 
-    if ( state(entity) != Unchanged &&  isEntityMarked(entity)==BulkData::NOT_MARKED &&
+    if ( state(entity) != Unchanged &&  is_entity_marked(entity)==BulkData::NOT_MARKED &&
          in_owned_closure(*this, entity , m_parallel_rank ) )
     {
       // Has been changed and is in owned closure, may be shared
@@ -5386,7 +5386,7 @@ void BulkData::internal_update_distributed_index(
     for (size_t i=0; i<shared_edges.size(); ++i)
     {
         Entity entity = get_entity(shared_edges[i].global_key);
-        if ( isEntityMarked(entity) == BulkData::IS_SHARED )
+        if ( is_entity_marked(entity) == BulkData::IS_SHARED )
         {
             entity_keys.push_back(shared_edges[i].global_key);
         }
@@ -5395,7 +5395,7 @@ void BulkData::internal_update_distributed_index(
     for (size_t i=0; i<shared_faces.size(); ++i)
     {
         Entity entity = get_entity(shared_faces[i].global_key);
-        if ( isEntityMarked(entity) == BulkData::IS_SHARED )
+        if ( is_entity_marked(entity) == BulkData::IS_SHARED )
         {
             entity_keys.push_back(shared_faces[i].global_key);
         }
