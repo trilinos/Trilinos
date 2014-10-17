@@ -652,8 +652,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left(  "left" )
-    , right( "right" )
+    , left(  std::string("left") )
+    , right( std::string("right") )
     , left_stride( left )
     , right_stride( right )
     , left_alloc( allocation_count( left ) )
@@ -753,8 +753,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left(  "left" )
-    , right( "right" )
+    , left(  Kokkos::ViewAllocate("left") )
+    , right( Kokkos::ViewAllocate("right") )
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
@@ -850,8 +850,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left(  "left" )
-    , right( "right" )
+    , left(  Kokkos::ViewAllocate() )
+    , right( Kokkos::ViewAllocate() )
     , left_stride( left )
     , right_stride( right )
     , left_alloc( allocation_count( left ) )
@@ -1033,8 +1033,7 @@ public:
 
     {
       // Destruction of this view should be harmless
-      const_dView4 unmanaged_from_ptr_const_dx( Kokkos::view_without_managing ,
-                                                dx.ptr_on_device() ,
+      const_dView4 unmanaged_from_ptr_const_dx( dx.ptr_on_device() ,
                                                 dx.dimension_0() ,
                                                 dx.dimension_1() ,
                                                 dx.dimension_2() ,

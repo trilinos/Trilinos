@@ -356,21 +356,6 @@ struct ViewEnableArrayOper<
 
 namespace Kokkos {
 
-struct ViewRawMemory {
-
-  void * const pointer ;
-
-  ViewRawMemory( void * const arg_pointer ) : pointer( arg_pointer ) {}
-};
-
-
-
-struct ViewWithoutManaging {};
-
-namespace {
-const ViewWithoutManaging view_without_managing = ViewWithoutManaging();
-}
-
 /** \class View
  *  \brief View to an array of data.
  *
@@ -599,8 +584,17 @@ public:
     }
 
   //------------------------------------
-  // Allocation of a managed view with possible alignment padding.
-  // Allocation constructor enabled for managed and non-const values
+  /**\brief Allocation of a managed view with possible alignment padding.
+   *
+   *  Allocation properties for allocating and initializing to the default value_type:
+   *    Kokkos::ViewAllocate()
+   *    Kokkos::ViewAllocate("label")  OR  "label"
+   *    Kokkos::ViewAllocate(std::string("label"))  OR  std::string("label")
+   *
+   *  Allocation properties for allocating and bypassing initialization:
+   *    Kokkos::ViewAllocateWithoutInitializing()
+   *    Kokkos::ViewAllocateWithoutInitializing("label")
+   */
 
   template< class AllocationProperties >
   explicit inline
@@ -651,48 +645,10 @@ public:
   // Assign an unmanaged View from pointer, can be called in functors.
   // No alignment padding is performed.
 
-  template< typename T >
+  template< class Type >
   explicit KOKKOS_INLINE_FUNCTION
-  View( T * ptr ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        const size_t n7 = 0 ,
-        typename Impl::enable_if<(
-          ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::const_value_type>::value )
-          &&
-          ( ! traits::is_managed )
-        ), const size_t >::type n8 = 0 )
-    : m_ptr_on_device(ptr)
-    {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
-      m_tracking = false ;
-    }
-
-  template< typename T >
-  explicit KOKKOS_INLINE_FUNCTION
-  View( T * ptr ,
-        typename Impl::enable_if<(
-          ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::const_value_type>::value )
-          &&
-          ( ! traits::is_managed )
-        ), typename traits::array_layout const & >::type layout )
-    : m_ptr_on_device(ptr)
-    {
-      m_offset_map.assign( layout );
-      m_tracking = false ;
-    }
-
-  explicit inline
-  View( const ViewWithoutManaging & ,
-        typename traits::value_type * ptr ,
-        const size_t n0 = 0 ,
+  View( Type * ptr ,
+        typename Impl::ViewRawPointerProp< traits , Type >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -707,10 +663,11 @@ public:
       m_tracking = false ;
     }
 
+  template< class Type >
   explicit KOKKOS_INLINE_FUNCTION
-  View( const ViewWithoutManaging &
-      , typename traits::value_type * ptr
-      , typename traits::array_layout const & layout )
+  View( Type * ptr ,
+        typename traits::array_layout const & layout ,
+        typename Impl::ViewRawPointerProp< traits , Type >::size_type = 0 )
     : m_ptr_on_device(ptr)
     {
       m_offset_map.assign( layout );

@@ -429,21 +429,25 @@ namespace {
 
 typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
+
+#if (defined(HAVE_KOKKOSCLASSIC_CUSPARSE) || defined(HAVE_KOKKOSCLASSIC_CUSP)) && defined(HAVE_KOKKOSCLASSIC_THRUST)
+  typedef KokkosClassic::ThrustGPUNode KokkosClassic_ThrustGPUNode;
 #ifdef TEST_CUDA_FLOAT
-ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, float, ThrustGPUNode )
+ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, float, KokkosClassic_ThrustGPUNode )
 #endif
 #ifdef TEST_CUDA_DOUBLE
-ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, double, ThrustGPUNode )
+ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, double, KokkosClassic_ThrustGPUNode )
 #endif
 #ifdef TEST_CUDA_COMPLEX_FLOAT
-ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexFloat, ThrustGPUNode )
+ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexFloat, KokkosClassic_ThrustGPUNode )
 #endif
 #ifdef TEST_CUDA_COMPLEX_DOUBLE
-ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexDouble, ThrustGPUNode )
+ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexDouble, KokkosClassic_ThrustGPUNode )
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_CUSP
-ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( short, float, ThrustGPUNode )
+ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( short, float, KokkosClassic_ThrustGPUNode )
+#endif
 #endif
 
 UNIT_TEST_GROUP_ORDINAL(int)

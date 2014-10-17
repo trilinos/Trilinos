@@ -325,6 +325,15 @@ struct ViewAllocateWithoutInitializing {
   ViewAllocateWithoutInitializing( const char * const  arg_label ) : label( arg_label ) {}
 };
 
+struct ViewAllocate {
+
+  const std::string  label ;
+
+  ViewAllocate() : label() {}
+  ViewAllocate( const std::string & arg_label ) : label( arg_label ) {}
+  ViewAllocate( const char * const  arg_label ) : label( arg_label ) {}
+};
+
 }
 
 namespace Kokkos {
@@ -332,6 +341,30 @@ namespace Impl {
 
 template< class Traits , class AllocationProperties , class Enable = void >
 struct ViewAllocProp : public Kokkos::Impl::false_type {};
+
+template< class Traits >
+struct ViewAllocProp< Traits , Kokkos::ViewAllocate
+  , typename Kokkos::Impl::enable_if<(
+      Traits::is_managed && ! Kokkos::Impl::is_const< typename Traits::value_type >::value
+    )>::type >
+  : public Kokkos::Impl::true_type
+{
+  typedef size_t               size_type ;
+  typedef const ViewAllocate & property_type ;
+
+  inline
+  static const std::string & label( property_type p ) { return p.label ; }
+
+  inline
+  static bool managed( property_type ) { return true ; }
+
+  static bool initialize() { return true ; }
+
+  template< class ViewType >
+  inline
+  static void initialize( const ViewType & view )
+    { (void) ViewFill< ViewType >( view , typename ViewType::value_type() ); }
+};
 
 template< class Traits >
 struct ViewAllocProp< Traits , std::string
@@ -377,6 +410,7 @@ public:
   inline
   static bool managed( property_type ) { return true ; }
 
+  inline
   static bool initialize() { return true ; }
 
   template< class ViewType >
@@ -401,11 +435,35 @@ struct ViewAllocProp< Traits , Kokkos::ViewAllocateWithoutInitializing
   inline
   static bool managed( property_type ) { return true ; }
 
+  inline
   static bool initialize() { return false ; }
 
   template< class ViewType >
   inline
   static void initialize( const ViewType & ) {}
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< class Traits , class PointerProperties , class Enable = void >
+struct ViewRawPointerProp : public Kokkos::Impl::false_type {};
+
+template< class Traits , typename T >
+struct ViewRawPointerProp< Traits , T ,
+  typename Kokkos::Impl::enable_if<(
+    Impl::is_same< T , typename Traits::value_type >::value ||
+    Impl::is_same< T , typename Traits::non_const_value_type >::value
+  )>::type >
+  : public Kokkos::Impl::true_type
+{
+  typedef size_t size_type ; 
 };
 
 } // namespace Impl

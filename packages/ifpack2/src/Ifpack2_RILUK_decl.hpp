@@ -676,7 +676,7 @@ namespace detail {
     }
   };
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
-  template<class MatrixType, class Scalar>
+  template<class MatrixType>
   struct setLocalSolveParams<MatrixType, KokkosClassic::ThrustGPUNode>
   {
     static Teuchos::RCP<Teuchos::ParameterList>

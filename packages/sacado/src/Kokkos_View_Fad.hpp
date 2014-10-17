@@ -343,34 +343,9 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
-          ( Impl::is_same<T,fad_value_type>::value ||
-            Impl::is_same<T,const_fad_value_type>::value ) &&
-          ! traits::is_managed ),
-        const size_t >::type n7 = 0 )
-    : m_ptr_on_device(ptr)
-    {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-
-      verify_dimension_storage_static_size();
-
-      m_storage_size = Impl::dimension( m_offset_map , unsigned(Rank) );
-
-      m_tracking = false;
-    }
-
-  template< typename T >
-  View( const ViewWithoutManaging & ,
-        T * ptr ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        typename Impl::enable_if<(
-          Impl::is_same<T,fad_value_type>::value ||
-          Impl::is_same<T,const_fad_value_type>::value ),
+            Impl::is_same<T,fad_value_type>::value ||
+            Impl::is_same<T,const_fad_value_type>::value 
+          ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
     {

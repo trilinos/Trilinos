@@ -2113,8 +2113,8 @@ template <class RangeVector,
       if(x.dimension_1()==1) {
         typedef View<typename DomainVectorType::const_value_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type> DomainVector1D;
         typedef View<typename RangeVectorType::value_type*,typename RangeVector::array_layout ,typename RangeVectorType::device_type,typename RangeVector::memory_traits> RangeVector1D;
-        RangeVector1D y_sub = RangeVector1D(Kokkos::ViewWithoutManaging(),y.ptr_on_device(),y.dimension_0());
-        DomainVector1D x_sub = DomainVector1D(Kokkos::ViewWithoutManaging(),x.ptr_on_device(),x.dimension_0());
+        RangeVector1D y_sub = RangeVector1D(y.ptr_on_device(),y.dimension_0());
+        DomainVector1D x_sub = DomainVector1D(x.ptr_on_device(),x.dimension_0());
 
         return MV_MultiplySingle<RangeVector1D,TCrsMatrix,DomainVector1D,CoeffVector1,CoeffVector2,doalpha,dobeta>
           (betav,y_sub,alphav,A,x_sub);

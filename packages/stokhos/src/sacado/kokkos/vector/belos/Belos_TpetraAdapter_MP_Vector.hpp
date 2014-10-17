@@ -1247,15 +1247,13 @@ namespace Belos {
       // Create a view for B
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, device_type> b_view_type;
       typedef typename b_view_type::HostMirror b_host_view_type;
-      b_host_view_type B_view(Kokkos::view_without_managing,
-                              B.values(), strideB, numColsB);
+      b_host_view_type B_view( B.values(), strideB, numColsB);
 
       // Create view for B on the device -- need to be careful to get the
       // right stride to match B
       typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, device_type> b_1d_view_type;
       b_1d_view_type B_1d_view_dev(Kokkos::ViewAllocateWithoutInitializing("B"), strideB*numColsB);
-      b_view_type B_view_dev(Kokkos::view_without_managing,
-                             B_1d_view_dev.ptr_on_device(), strideB, numColsB);
+      b_view_type B_view_dev( B_1d_view_dev.ptr_on_device(), strideB, numColsB);
       Kokkos::deep_copy(B_view_dev, B_view);
 
       // Make a Kokkos::MultiVector for B
@@ -1377,15 +1375,13 @@ namespace Belos {
       // Create a view for C
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, device_type> c_view_type;
       typedef typename c_view_type::HostMirror c_host_view_type;
-      c_host_view_type C_view(Kokkos::view_without_managing,
-                              C.values(), strideC, numColsC);
+      c_host_view_type C_view( C.values(), strideC, numColsC);
 
       // Create view for C on the device -- need to be careful to get the
       // right stride to match C (allow setting to 0 for first-touch)
       typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, device_type> c_1d_view_type;
       c_1d_view_type C_1d_view_dev("C", strideC*numColsC);
-      c_view_type C_view_dev(Kokkos::view_without_managing,
-                             C_1d_view_dev.ptr_on_device(), strideC, numColsC);
+      c_view_type C_view_dev( C_1d_view_dev.ptr_on_device(), strideC, numColsC);
 
       // Make a Kokkos::MultiVector for C
       DKMV C_mv(A.getMap()->getNode());
@@ -1408,8 +1404,7 @@ namespace Belos {
       else {
         typedef typename c_1d_view_type::HostMirror c_1d_host_view_type;
         c_1d_host_view_type C_1d_view_tmp(Kokkos::ViewAllocateWithoutInitializing("C_tmp"), strideC*numColsC);
-        c_host_view_type C_view_tmp(Kokkos::view_without_managing,
-                                    C_1d_view_tmp.ptr_on_device(),
+        c_host_view_type C_view_tmp( C_1d_view_tmp.ptr_on_device(),
                                     strideC, numColsC);
         Kokkos::deep_copy(C_view_tmp, C_view_dev);
         reduceAll<int> (*pcomm, REDUCE_SUM, strideC*numColsC,

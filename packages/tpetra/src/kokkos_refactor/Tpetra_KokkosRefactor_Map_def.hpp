@@ -169,7 +169,7 @@ namespace Tpetra {
     // is viewing host or device memory.  Regardless, we don't own the
     // data and we will need a deep copy anyway, so we might as well
     // copy it.
-    const_host_view_type gidsHost_view (Kokkos::ViewWithoutManaging(),myGlobalIndices.getRawPtr (), myGlobalIndices.size ());
+    const_host_view_type gidsHost_view (myGlobalIndices.getRawPtr (), myGlobalIndices.size ());
     host_view_type gidsHost ("GIDS_Host", myGlobalIndices.size ());
     Kokkos::deep_copy (gidsHost, gidsHost_view);
     device_view_type gidsDevice ("GIDs", myGlobalIndices.size ());
@@ -190,7 +190,7 @@ namespace Tpetra {
     mapDevice_ = device_impl_type (globalNumInds, gidsDevice , indexBase, *comm);
     #ifdef KOKKOS_USE_CUDA_UVM
       const GlobalOrdinal* ptr = gidsDevice.ptr_on_device();
-      mapHost_ = host_impl_type (globalNumInds, const_host_view_type(Kokkos::ViewWithoutManaging(),ptr,myGlobalIndices.size ()), indexBase, *comm);
+      mapHost_ = host_impl_type (globalNumInds, const_host_view_type(ptr,myGlobalIndices.size ()), indexBase, *comm);
     #else
       mapHost_ = host_impl_type (globalNumInds, gidsHost, indexBase, *comm);
     #endif

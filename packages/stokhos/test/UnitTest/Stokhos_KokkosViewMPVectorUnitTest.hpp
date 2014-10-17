@@ -404,8 +404,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Unmanaged, Storage, Layout )
   Kokkos::deep_copy(v, h_v);
 
   // Create unmanaged view
-  ViewType v2(Kokkos::view_without_managing, v.ptr_on_device(),
-              num_rows, num_cols);
+  ViewType v2(v.ptr_on_device(), num_rows, num_cols);
 
   success = checkVectorView(v2, out);
 }
