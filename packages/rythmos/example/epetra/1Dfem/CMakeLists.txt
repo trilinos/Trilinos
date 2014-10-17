@@ -8,7 +8,7 @@ FILE(GLOB SOURCES *.cpp *.C)
 TRIBITS_ADD_EXECUTABLE(
   1DfemTransient
   SOURCES ${SOURCES}
-  DEPLIBS rythmos_test_models
+  TESTONLYLIBS rythmos_test_models
   COMM serial mpi  
   )
 

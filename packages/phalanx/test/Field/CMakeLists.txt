@@ -7,7 +7,7 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   field
   SOURCES Field.cpp
-  DEPLIBS phalanx_test_utilities
+  TESTONLYLIBS phalanx_test_utilities
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "Test passed!"
@@ -16,7 +16,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   mdfield
   SOURCES MDField.cpp
-  DEPLIBS phalanx_test_utilities
+  TESTONLYLIBS phalanx_test_utilities
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "Test passed!"
@@ -25,7 +25,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   mdfield_runtime
   SOURCES MDField_Runtime.cpp
-  DEPLIBS phalanx_test_utilities
+  TESTONLYLIBS phalanx_test_utilities
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "Test passed!"
@@ -35,7 +35,7 @@ IF (NOT Phalanx_ENABLE_COMPILETIME_ARRAY_CHECK)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     mdfield_simulated_intrepid
     SOURCES MDField_SimulatedIntrepid.cpp
-    DEPLIBS phalanx_test_utilities
+    TESTONLYLIBS phalanx_test_utilities
     COMM serial mpi
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
@@ -50,7 +50,7 @@ ENDIF()
 #  TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #    mdfield_intrepid
 #    SOURCES MDField_Intrepid.cpp
-#    DEPLIBS phalanx_test_utilities
+#    TESTONLYLIBS phalanx_test_utilities
 #    COMM serial mpi
 #    NUM_MPI_PROCS 1
 #    PASS_REGULAR_EXPRESSION "Test passed!"

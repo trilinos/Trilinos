@@ -18,7 +18,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1
-    DEPLIBS fei_test_utils
+    TESTONLYLIBS fei_test_utils
    STANDARD_PASS_OUTPUT
   )
 
