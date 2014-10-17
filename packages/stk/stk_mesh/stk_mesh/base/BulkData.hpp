@@ -668,20 +668,6 @@ public:
   const EntityCommListInfoVector & comm_list() const
   { return m_entity_comm_list; }
 
-  void deleteKeyFromCommList(stk::mesh::EntityKey key)
-  {
-      stk::mesh::EntityCommListInfoVector::iterator iter = std::lower_bound(m_entity_comm_list.begin(),
-                                                                            m_entity_comm_list.end(), key);
-
-      if ( iter != m_entity_comm_list.end() && key == iter->key )
-      {
-          iter->key = EntityKey();
-          iter = std::remove_if( m_entity_comm_list.begin() ,
-                                 m_entity_comm_list.end() , IsInvalid() );
-          m_entity_comm_list.erase( iter , m_entity_comm_list.end() );
-      }
-  }
-
   VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const
   {
     ThrowAssert(synchronized_state() == SYNCHRONIZED);
@@ -1242,10 +1228,11 @@ private:
     ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_states.size() - 1);
   }
 
-  void update_deleted_entities_container();
   void addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
          const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities);
+
 protected:
+  void update_deleted_entities_container();
   std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0);
 
 private:
@@ -1361,8 +1348,10 @@ private:
   size_t m_num_modifications;
 #endif
 
+protected:
   impl::BucketRepository              m_bucket_repository; // needs to be destructed first!
 
+private:
   //
   // Internal methods
   //
@@ -1584,10 +1573,10 @@ public:
 
 protected:
   void require_ok_to_modify() const ;
+  void internal_update_fast_comm_maps();
 
 private:
 
-  void internal_update_fast_comm_maps();
 
   //------------------------------------
 

@@ -3007,9 +3007,6 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
         internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
       if ( p_rank == i->second ) { // I receive ownership
-          std::ostringstream os;
-           os << "[" << p_rank << "] Adding entity_key to my own list: " << entity_key(entity) << std::endl;
-           std::cerr << os.str();
           internal_verify_and_change_entity_parts( entity , owned , PartVector() );
       }
     }
@@ -4471,7 +4468,8 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
         // remove from ghost-send list
 
-        for ( size_t j = ghosting_count ; j-- ; ) {
+         // j=2, j=1,
+        for ( size_t j = ghosting_count ; --j ; ) {
           if ( entity_comm_map_erase( key, EntityCommInfo( j , remote_proc ) ) ) {
             ghosting_change_flags[ j ] = true ;
           }
@@ -4494,7 +4492,8 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
       // This is a receive ghost so the only communication information
       // is the ghosting information, can clear it all out.
-      entity_comm_map_clear(key);
+      //entity_comm_map_clear(key);
+      entity_comm_map_erase(key, aura_ghosting());
 
       if ( ! locally_destroyed && ! in_owned_closure(*this, entity , m_parallel_rank ) )
       {
@@ -5774,7 +5773,7 @@ void pack_part_memberships( BulkData& meshbulk, CommAll & comm ,
 //
 //  Part memberships may have been added or removed
 //  either explicitly or indirectly via entity relationships
-//  being added or removed.
+//  being added or removed.q
 
 void BulkData::internal_resolve_shared_membership()
 {
@@ -5845,7 +5844,6 @@ void BulkData::internal_resolve_shared_membership()
 
                 for(PairIterEntityComm ec = entity_comm_map_shared(i->key); !ec.empty(); ++ec)
                 {
-
                     CommBuffer & buf = comm.recv_buffer(ec->proc);
 
                     unsigned count = 0;

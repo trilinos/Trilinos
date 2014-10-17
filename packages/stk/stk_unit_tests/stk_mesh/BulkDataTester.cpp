@@ -182,9 +182,6 @@ void BulkDataTester::internal_change_entity_owner_exp( const std::vector<EntityP
         internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
       if ( p_rank == i->second ) { // I receive ownership
-          std::ostringstream os;
-          os << "[" << p_rank << "] Adding entity_key to my own list: " << entity_key(entity) << std::endl;
-          std::cerr << os.str();
           internal_verify_and_change_entity_parts( entity , owned , PartVector() );
       }
     }
@@ -454,7 +451,7 @@ bool BulkDataTester::internal_modification_end_for_change_entity_owner_exp( bool
     // by destroying ghost entities that have been touched.
 
     //doesn't fail if not called (np1-np4)
-    //internal_resolve_ghosted_modify_delete();
+    internal_resolve_ghosted_modify_delete();
 
     //passes np1 segfaults np2-np4 if not called
     update_comm_list_based_on_changes_in_comm_map();
@@ -468,7 +465,7 @@ bool BulkDataTester::internal_modification_end_for_change_entity_owner_exp( bool
     // entities are resolved along with previously existing shared entities.
 
     //doesn't fail if not called (np1-np4)
-    //internal_resolve_shared_membership();
+    internal_resolve_shared_membership();
 
     // Regenerate the ghosting aura around all shared mesh entities.
     if ( regenerate_aura )
@@ -491,7 +488,7 @@ bool BulkDataTester::internal_modification_end_for_change_entity_owner_exp( bool
   else {
       std::vector<Entity> shared_modified ;
       //doesn't fail if not called (np1-np4)
-      //internal_update_distributed_index( shared_modified );
+      internal_update_distributed_index( shared_modified );
   }
 
   // ------------------------------
@@ -507,26 +504,26 @@ bool BulkDataTester::internal_modification_end_for_change_entity_owner_exp( bool
 
   if ( opt == MOD_END_COMPRESS_AND_SORT ) {
     //doesn't fail if not called (np1-np4)
-    //m_bucket_repository.optimize_buckets();
+    m_bucket_repository.optimize_buckets();
   }
   else {
     //doesn't fail if not called (np1-np4)
-    //m_bucket_repository.internal_sort_bucket_entities();
+    m_bucket_repository.internal_sort_bucket_entities();
   }
 
   // ------------------------------
 
   //doesn't fail if not called (np1-np4)
-  //m_bucket_repository.internal_modification_end();
+  m_bucket_repository.internal_modification_end();
 
   //doesn't fail if not called (np1-np4)
-  //internal_update_fast_comm_maps();
+  internal_update_fast_comm_maps();
 
   m_sync_state = SYNCHRONIZED ;
   m_add_node_sharing_called = false;
 
   //doesn't fail if not called (np1-np4)
-  //update_deleted_entities_container();
+  update_deleted_entities_container();
 
   return true ;
 }

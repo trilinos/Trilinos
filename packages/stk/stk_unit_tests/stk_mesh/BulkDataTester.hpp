@@ -62,6 +62,16 @@ public:
         this->internal_resolve_shared_modify_delete();
     }
 
+    void my_resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new)
+    {
+        this->resolve_ownership_of_modified_entities(shared_new);
+    }
+
+    void my_move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified )
+    {
+        this->move_entities_to_proper_part_ownership(shared_modified);
+    }
+
 //    void reset_closure_count(stk::mesh::Entity entity)
 //    {
 //        m_closure_count[entity.local_offset()] = 0;
