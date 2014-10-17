@@ -93,6 +93,8 @@ namespace MueLu {
     static const std::string                     stringList_;
     //! @brief A ParameterList that holds all valid parameters and their default values for a particular problem type.
     static Teuchos::RCP<Teuchos::ParameterList>  problemSpecificList_;
+    //! @brief The problem type associated with the current problem-specific ParameterList.
+    static std::string                           problemType_;
     //! @brief Map of string equivalents of the problemSpecificList_.  The first entry is the problem type, the second is the string equivalent.
     static std::map<std::string,std::string>     DefaultProblemTypeLists_;
   };
