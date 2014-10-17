@@ -209,7 +209,7 @@ namespace Impl {
 
 template<>
 struct VerifyExecutionCanAccessMemorySpace
-  < Kokkos::Cuda::memory_space
+  < Kokkos::CudaSpace
   , Kokkos::Cuda::scratch_memory_space
   >
 {
