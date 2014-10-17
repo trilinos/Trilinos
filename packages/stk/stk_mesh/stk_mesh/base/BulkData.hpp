@@ -1245,8 +1245,10 @@ private:
   void update_deleted_entities_container();
   void addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
          const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities);
+protected:
   std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0);
 
+private:
 #ifndef DOXYGEN_COMPILE
 
   // Forbidden
@@ -1258,8 +1260,10 @@ private:
   // Members
   //
 
+protected:
   /** \brief  Parallel index for entity keys */
   parallel::DistributedIndex          m_entities_index;
+private:
   impl::EntityRepository              m_entity_repo;
 
   // Simply a list of data for entities that are being communicated
@@ -1273,7 +1277,10 @@ private:
   //   Means that the entities represented by FastMeshIndexes are shared with proc parallel_rank
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
 
+protected:
   std::vector<Ghosting*>              m_ghosting; /**< Aura is [1] */
+
+private:
   std::vector<Part*>                  m_ghost_parts;
 
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> >     m_deleted_entities;
@@ -1281,6 +1288,7 @@ private:
 
   GhostReuseMap m_ghost_reuse_map;
 
+protected:
   // Other information:
   MetaData &         m_mesh_meta_data;
   ParallelMachine    m_parallel_machine;
@@ -1288,6 +1296,8 @@ private:
   int                m_parallel_rank;
   size_t             m_sync_count;
   BulkDataSyncState  m_sync_state;
+
+private:
   bool               m_meta_data_verified;
   bool               m_mesh_finalized;
   std::string        m_modification_begin_description;
@@ -1309,9 +1319,9 @@ private:
 
   std::vector<EntityKey>   m_entity_keys;
   std::vector<uint16_t>    m_entity_states;
+protected:
   std::vector<int>         m_mark_entity;
   bool                     m_add_node_sharing_called;
-protected:
   std::vector<uint16_t>    m_closure_count;
 private:
   std::vector<size_t>      m_entity_sync_counts;
@@ -1399,6 +1409,7 @@ private:
   /** \brief  Declare a collection of relations by simply iterating
    *          the input and calling declare_relation on each entry.
    */
+protected:
   void internal_declare_relation( Entity entity, const std::vector<Relation> & rel);
 
   void internal_declare_relation( Entity entity, const std::vector<Relation> & rel,
@@ -1408,6 +1419,7 @@ private:
                                  RelationIdentifier local_id,
                                  unsigned sync_count, bool is_back_relation,
                                  Permutation permut);
+private:
   bool internal_destroy_relation(Entity e_from ,
                                  Entity e_to,
                                  const RelationIdentifier local_id );
@@ -1417,6 +1429,7 @@ private:
 
   /** methods for managing arrays of entity member-data */
 
+protected:
   void log_created_parallel_copy(Entity entity)
   {
     if (state(entity) == Created) {
@@ -1424,6 +1437,7 @@ private:
     }
   }
 
+private:
   /**
    * For all processors sharing an entity, find one to be the new
    * owner.
@@ -1432,8 +1446,10 @@ private:
 
   Entity internal_declare_entity( EntityRank ent_rank , EntityId ent_id ,
                                    const PartVector & parts );
+protected:
   bool internal_destroy_entity( Entity entity, bool was_ghost = false );
 
+private:
   void internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
                                      bool regenerate_aura = true,
                                      modification_optimization mod_optimization = MOD_END_SORT );
@@ -1444,11 +1460,13 @@ private:
    *  2) Change parts => update forward relations via part relation
    *                  => update via field relation
    */
+protected:
   void internal_change_entity_parts( Entity ,
                                      const std::vector<Part*> & add_parts ,
                                      const std::vector<Part*> & remove_parts,
                                      bool always_propagate_internal_changes=true);
 
+private:
   void internal_propagate_part_changes( Entity entity, const std::vector<Part*> & removed );
 
   Ghosting & internal_create_ghosting( const std::string & name );
@@ -1456,10 +1474,12 @@ private:
                                     Ghosting & ghosts ,
                                     const std::vector<EntityProc> & add_send ,
                                     const std::vector<EntityKey> & remove_receive );
+protected:
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<EntityKey> & remove_receive,
                                  bool is_full_regen = false);
+private:
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
@@ -1471,7 +1491,7 @@ private:
 
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
 
-private:
+protected:
   //Optional parameter 'always_propagate_internal_changes' is always true except when this function
   //is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
   //internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
@@ -1480,13 +1500,13 @@ private:
                                                 const PartVector & add_parts ,
                                                 const PartVector & remove_parts,
                                                 bool always_propagate_internal_changes=true );
+private:
 
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
   void internal_resolve_shared_modify_delete_second_pass();
 
   void internal_resolve_parallel_create();
-  void internal_resolve_parallel_create_exp();
 
 protected:
 
@@ -1510,7 +1530,6 @@ protected:
   void internal_resolve_shared_membership();
   void internal_update_distributed_index(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
   void internal_update_distributed_index(std::vector<stk::mesh::Entity> & shared_new );
-  void internal_update_distributed_index_exp(std::vector<stk::mesh::Entity> & shared_new );
   void fillLocallyCreatedOrModifiedEntities(parallel::DistributedIndex::KeyTypeVector &local_created_or_modified);
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
@@ -1563,6 +1582,9 @@ public:
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
   void internal_sync_comm_list_owners();
 
+protected:
+  void require_ok_to_modify() const ;
+
 private:
 
   void internal_update_fast_comm_maps();
@@ -1574,7 +1596,6 @@ private:
    */
 
   /** \brief  All non-const methods assert this */
-  void require_ok_to_modify() const ;
 
   void require_entity_owner( const Entity entity, int owner) const ;
 
@@ -2254,6 +2275,36 @@ struct EntityGhostData
         s << ")";
         return s;
     }
+};
+
+struct StoreEntityKeyInSet
+{
+    StoreEntityKeyInSet(const BulkData & mesh_in) : mesh(mesh_in) {}
+    void operator()(Entity entity) {
+       entity_key_set.insert(mesh.entity_key(entity));
+    }
+    std::set<EntityKey> entity_key_set;
+    const BulkData & mesh;
+};
+
+struct StoreEntityProcInSet
+{
+    StoreEntityProcInSet(const BulkData & mesh_in)
+    :mesh(mesh_in)
+    ,entity_proc_set(EntityLess(mesh_in))
+    ,target(-1) {}
+
+    bool operator()(Entity entity) {
+        EntityProc ep(entity,target);
+        if (entity_proc_set.find(ep) == entity_proc_set.end()) {
+            entity_proc_set.insert(ep);
+            return true;
+        }
+        return false;
+    }
+    const BulkData & mesh;
+    std::set<EntityProc,EntityLess> entity_proc_set;
+    int target;
 };
 
 } // namespace mesh

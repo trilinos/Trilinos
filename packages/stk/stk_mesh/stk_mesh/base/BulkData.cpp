@@ -234,91 +234,10 @@ void BulkData::update_shared_entities_global_ids(std::vector<shared_entity_type>
     unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(comm, *this, shared_entity_map);
     resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(shared_entity_map);
 }
-
-void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities)
-{
-    const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entityRank);
-    const bool add_node_sharing_called = mesh.add_node_sharing_called();
-
-    for(size_t bucketIndex = 0; bucketIndex < entity_buckets.size(); bucketIndex++)
-    {
-        const stk::mesh::Bucket& bucket = *entity_buckets[bucketIndex];
-        stk::topology topology = bucket.topology();
-        for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
-        {
-            Entity entity = bucket[entityIndex];
-            const unsigned num_nodes_on_entity = bucket.num_nodes(entityIndex);
-
-            if (!add_node_sharing_called && mesh.state(entity) == stk::mesh::Unchanged)
-            {
-              // No nodes newly shared and entity has not had nodes added, so entity cannot become shared.
-              continue;
-            }
-
-            if ( num_nodes_on_entity > 1 )
-            {
-                if(stk::mesh::in_owned_closure(mesh, entity, mesh.parallel_rank()))
-                {
-                    EntityVector entity_nodes(num_nodes_on_entity);
-
-                    Entity const * nodes = bucket.begin_nodes(entityIndex);
-                    entity_nodes.assign(nodes, nodes+num_nodes_on_entity);
-
-                    //do we need to do some sorting operation here?
-                    //sort entity nodes into lexicographical smallest permutation?
-
-
-                    bool shared_entity = true;
-                    for(size_t n = 0; n < num_nodes_on_entity; ++n)
-                    {
-                        Entity node = entity_nodes[n];
-                        shared_entity = shared_entity && (mesh.bucket(node).shared() || (mesh.is_entity_marked(node) == BulkData::IS_SHARED));
-                    }
-
-                    if(shared_entity)
-                    {
-                        std::sort(entity_nodes.begin(),entity_nodes.end(),EntityLess(mesh));
-                        shared_entity_type sentity;
-                        sentity.topology = topology;
-                        sentity.nodes.resize(num_nodes_on_entity);
-                        for(size_t n = 0; n < num_nodes_on_entity; ++n)
-                        {
-                            sentity.nodes[n]=mesh.entity_key(entity_nodes[n]);
-                        }
-                        const EntityKey &entity_key = mesh.entity_key(entity);
-                        sentity.local_key = entity_key;
-                        sentity.global_key = entity_key;
-                        shared_entities.push_back(sentity);
-                        mesh.mark_entity(entity, BulkData::POSSIBLY_SHARED);
-                    }
-                }
-            }
-        }
-    }
-}
-
-void gather_shared_nodes(stk::mesh::BulkData & mesh, std::vector<EntityKey> & shared_nodes)
-{
-    const stk::mesh::BucketVector & node_buckets = mesh.buckets(stk::topology::NODE_RANK);
-
-    for(size_t nodeIndex = 0; nodeIndex < node_buckets.size(); ++nodeIndex)
-    {
-        const stk::mesh::Bucket & bucket = *node_buckets[nodeIndex];
-        for(size_t entityIndex = 0; entityIndex < bucket.size(); ++entityIndex)
-        {
-            Entity node = bucket[entityIndex];
-            if (mesh.is_entity_marked(node) == BulkData::IS_SHARED)
-            {
-                shared_nodes.push_back(mesh.entity_key(node));
-            }
-        }
-    }
-}
-
 void BulkData::resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<EntityKey> &entity_keys)
 {
     std::vector<shared_entity_type> shared_entities;
-    markEntitiesForResolvingSharingInfoUsingNodes(*this, entityRank, shared_entities);
+    impl::markEntitiesForResolvingSharingInfoUsingNodes(*this, entityRank, shared_entities);
     update_shared_entities_global_ids( shared_entities );
 
     for (size_t i=0; i<shared_entities.size();i++)
@@ -2643,77 +2562,6 @@ void par_verify_print_comm_list( const BulkData & mesh , bool doit, const std::s
 
 }
 
-struct StoreEntityKeyInSet
-{
-    StoreEntityKeyInSet(const BulkData & mesh_in) : mesh(mesh_in) {}
-    void operator()(Entity entity) {
-       entity_key_set.insert(mesh.entity_key(entity));
-    }
-    std::set<EntityKey> entity_key_set;
-    const BulkData & mesh;
-};
-
-struct StoreEntityProcInSet
-{
-    StoreEntityProcInSet(const BulkData & mesh_in)
-    :mesh(mesh_in)
-    ,entity_proc_set(EntityLess(mesh_in))
-    ,target(-1) {}
-
-    bool operator()(Entity entity) {
-        EntityProc ep(entity,target);
-        if (entity_proc_set.find(ep) == entity_proc_set.end()) {
-            entity_proc_set.insert(ep);
-            return true;
-        }
-        return false;
-    }
-    const BulkData & mesh;
-    std::set<EntityProc,EntityLess> entity_proc_set;
-    int target;
-};
-
-namespace {
-
-//----------------------------------------------------------------------
-
-bool member_of_owned_closure(const BulkData& mesh, const Entity e , const int p_rank )
-{
-  if (p_rank == mesh.parallel_owner_rank(e)) {
-    return true;
-  }
-
-  const EntityRank erank = mesh.entity_rank(e);
-  const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
-
-  // Any higher ranking entities locally owned?
-  EntityVector temp_entities;
-  Entity const* rels = NULL;
-  int num_rels = 0;
-  for (EntityRank irank = static_cast<EntityRank>(end_rank - 1); irank > erank; --irank)
-  {
-    if (mesh.connectivity_map().valid(erank, irank)) {
-      num_rels = mesh.num_connectivity(e, irank);
-      rels     = mesh.begin(e, irank);
-    }
-    else {
-      num_rels = get_connectivity( mesh, e, irank, temp_entities);
-      rels     = &*temp_entities.begin();
-    }
-
-    for (int r = 0; r < num_rels; ++r) {
-      if (p_rank == mesh.parallel_owner_rank(rels[r]) ||  member_of_owned_closure(mesh, rels[r], p_rank) ) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-} // namespace
-
-
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
@@ -3159,6 +3007,9 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
         internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
       if ( p_rank == i->second ) { // I receive ownership
+          std::ostringstream os;
+           os << "[" << p_rank << "] Adding entity_key to my own list: " << entity_key(entity) << std::endl;
+           std::cerr << os.str();
           internal_verify_and_change_entity_parts( entity , owned , PartVector() );
       }
     }
@@ -3261,7 +3112,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
       for ( EntityVector::reverse_iterator i = unique_list_of_send_closure.rbegin() ;
             i != unique_list_of_send_closure.rend() ;
             ++i) {
-        if ( ! member_of_owned_closure(*this, *i , p_rank ) ) {
+        if ( ! stk::mesh::impl::member_of_owned_closure(*this, *i , p_rank ) ) {
           ThrowRequireMsg( internal_destroy_entity( *i ),
                            "Failed to destroy entity " << identifier(*i) );
         }
@@ -3278,7 +3129,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 #endif
 
 
-//  internal_modification_end_for_change_entity_owner(regenerate_aura, mod_optimization);
+  internal_modification_end_for_change_entity_owner(regenerate_aura, mod_optimization);
 }
 
 //----------------------------------------------------------------------
@@ -4306,13 +4157,13 @@ void BulkData::internal_update_distributed_index(
     // that DistributedIndex isn't used to query sharing information.
     //
     std::vector<EntityKey> shared_nodes;
-    gather_shared_nodes(*this, shared_nodes);
+    impl::gather_shared_nodes(*this, shared_nodes);
 
     std::vector<shared_entity_type> shared_edges;
-    markEntitiesForResolvingSharingInfoUsingNodes(*this, stk::topology::EDGE_RANK, shared_edges);
+    impl::markEntitiesForResolvingSharingInfoUsingNodes(*this, stk::topology::EDGE_RANK, shared_edges);
 
     std::vector<shared_entity_type> shared_faces;
-    markEntitiesForResolvingSharingInfoUsingNodes(*this, stk::topology::FACE_RANK, shared_faces);
+    impl::markEntitiesForResolvingSharingInfoUsingNodes(*this, stk::topology::FACE_RANK, shared_faces);
 
     // Generate a list of all entities that have been created or modified
     // locally, who must have their sharing information in the comm lists
@@ -4442,152 +4293,7 @@ void BulkData::internal_update_distributed_index(
     }
 }
 
-void BulkData::internal_update_distributed_index_exp(
-        std::vector<Entity> & shared_new )
-{
-    Trace_("stk::mesh::BulkData::internal_update_distributed_index");
-    BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      entered internal_update_distributed_index");
 
-    // Scoop up a list of all nodes that have had their sharing information
-    // provided directly by the end-user.  These need special handling so
-    // that DistributedIndex isn't used to query sharing information.
-    //
-    std::vector<EntityKey> shared_nodes;
-    gather_shared_nodes(*this, shared_nodes);
-
-    std::vector<shared_entity_type> shared_edges;
-    markEntitiesForResolvingSharingInfoUsingNodes(*this, stk::topology::EDGE_RANK, shared_edges);
-
-    std::vector<shared_entity_type> shared_faces;
-    markEntitiesForResolvingSharingInfoUsingNodes(*this, stk::topology::FACE_RANK, shared_faces);
-
-    // Generate a list of all entities that have been created or modified
-    // locally, who must have their sharing information in the comm lists
-    // updated by making queries to DistributedIndex.  This list *does not*
-    // include nodes that have had their sharing information explicitly
-    // provided or edges and faces that will have their sharing information
-    // resolved through node sharing.
-    //
-    parallel::DistributedIndex::KeyTypeVector local_created_or_modified;
-    fillLocallyCreatedOrModifiedEntities(local_created_or_modified);
-
-    // Update distributed index's ownership and sharing information with
-    // locally-owned/shared entities that have been created or modified.
-    // We need to manually insert the explicitly-shared nodes into this list
-    // so that DistributedIndex is notified about IDs that are now in use
-    // (since it manages available IDs).  These nodes will not have their
-    // sharing info updated through queries to DistributedIndex.
-    //
-    parallel::DistributedIndex::KeyTypeVector keys_requiring_update(local_created_or_modified);
-    keys_requiring_update.reserve(keys_requiring_update.size() + shared_nodes.size() + shared_edges.size() + shared_faces.size() );
-    keys_requiring_update.insert(keys_requiring_update.end(), shared_nodes.begin(), shared_nodes.end());
-    for (size_t i = 0; i < shared_edges.size(); ++i)
-    {
-      keys_requiring_update.push_back(shared_edges[i].global_key);
-    }
-    for (size_t i = 0; i < shared_faces.size(); ++i)
-    {
-      keys_requiring_update.push_back(shared_faces[i].global_key);
-    }
-
-    parallel::DistributedIndex::KeyTypeVector::const_iterator begin = keys_requiring_update.begin();
-    parallel::DistributedIndex::KeyTypeVector::const_iterator end = keys_requiring_update.end();
-    m_entities_index.update_keys( begin, end );
-
-    // Update the sharing and ownership information in the comm maps for
-    // locally-created or modified entities through queries to DistributedIndex.
-    //
-
-    std::vector<EntityKey> entity_keys;  // List of shared and modified entities
-//#define UPDATE_DIST_IDX_USE_QUERY_TO_USAGE
-#ifdef UPDATE_DIST_IDX_USE_QUERY_TO_USAGE
-    if (parallel_size() > 1)
-    {
-        // Retrieve data regarding which processes use the local_created_or_modified
-        // including this process.
-        parallel::DistributedIndex::KeyProcVector global_created_or_modified ;
-        m_entities_index.query_to_usage( local_created_or_modified ,
-                                 global_created_or_modified );
-
-        //------------------------------
-        // Take the usage data and update the sharing comm lists
-        {
-            Entity entity = Entity();
-
-            // Iterate over all global modifications to this entity, this vector is
-            // sorted, so we're guaranteed that all modifications to a particular
-            // entities will be adjacent in this vector.
-
-            for ( parallel::DistributedIndex::KeyProcVector::iterator
-                    i =  global_created_or_modified.begin() ;
-                    i != global_created_or_modified.end() ; ++i )
-            {
-                EntityKey key( static_cast<EntityKey::entity_key_t>(i->first) );
-                int modifying_proc = i->second;
-
-                if ( m_parallel_rank != modifying_proc )
-                {
-                    // Another process also created or updated this entity.
-                    // Only want to look up entities at most once
-                    if ( !is_valid(entity) || entity_key(entity) != key )
-                    {
-                        // Have not looked this entity up by key
-                        entity = get_entity( key );
-                        entity_keys.push_back(key);
-                    }
-
-                    // Add the other_process to the entity's sharing info.
-                    entity_comm_map_insert(entity, EntityCommInfo( stk::mesh::BulkData::SHARED, modifying_proc ));
-                }
-            }
-        }
-    }
-#endif
-
-    update_shared_entities_global_ids( shared_edges );
-    update_shared_entities_global_ids( shared_faces );
-
-    // Add the explicitly-shared nodes to our list of shared and modified entities.
-    //
-    entity_keys.reserve(entity_keys.size() + shared_nodes.size());
-    entity_keys.insert(entity_keys.end(), shared_nodes.begin(), shared_nodes.end());
-
-    // Add the edges that had their sharing information updated through
-    // node sharing to our list of shared and modified entities.
-    //
-    for (size_t i=0; i<shared_edges.size(); ++i)
-    {
-        Entity entity = get_entity(shared_edges[i].global_key);
-        if ( is_entity_marked(entity) == BulkData::IS_SHARED )
-        {
-            entity_keys.push_back(shared_edges[i].global_key);
-        }
-    }
-
-    for (size_t i=0; i<shared_faces.size(); ++i)
-    {
-        Entity entity = get_entity(shared_faces[i].global_key);
-        if ( is_entity_marked(entity) == BulkData::IS_SHARED )
-        {
-            entity_keys.push_back(shared_faces[i].global_key);
-        }
-    }
-
-    // Reset our marking array for all entities now that all sharing information
-    // has been properly resolved.
-    //
-    std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
-
-    // Return a list of all shared and modified entities, sorted by their entity key.
-    //
-    std::sort(entity_keys.begin(), entity_keys.end());
-    shared_new.clear();
-    shared_new.resize(entity_keys.size());
-    for (size_t i=0; i<entity_keys.size(); ++i)
-    {
-        shared_new[i] = get_entity(entity_keys[i]);
-    }
-}
 
 //----------------------------------------------------------------------
 
@@ -5027,36 +4733,7 @@ void BulkData::internal_resolve_parallel_create()
   update_comm_list( shared_modified );
 }
 
-void BulkData::internal_resolve_parallel_create_exp()
-{
-  Trace_("stk::mesh::BulkData::internal_resolve_parallel_create");
-  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  entered internal_resolve_parallel_create");
 
-  ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
-  std::vector<Entity> shared_modified ;
-
-  // Update the parallel index and
-  // output shared and modified entities.
-  internal_update_distributed_index_exp(shared_modified );
-
-  // ------------------------------------------------------------
-  // Claim ownership on all shared_modified entities that I own
-  // and which were not created in this modification cycle. All
-  // sharing procs will need to be informed of this claim.
-
-  resolve_ownership_of_modified_entities( shared_modified );
-
-  // ------------------------------------------------------------
-  // Update shared created entities.
-  // - Revise ownership to selected processor
-  // - Update sharing.
-  // - Work backward so the 'in_owned_closure' function
-  //   can evaluate related higher ranking entities.
-
-  move_entities_to_proper_part_ownership( shared_modified );
-
-  update_comm_list( shared_modified );
-}
 
 //----------------------------------------------------------------------
 
@@ -5192,61 +4869,6 @@ void print_comm_list( const BulkData & mesh , bool doit )
 
 #endif
 
-namespace {
-
-int check_for_connected_nodes(const BulkData& mesh)
-{
-  //This function returns an old-fashioned int return-code which is 0 if all is well
-  //and -1 if an error is found.
-  //
-  //All EDGE_RANK and FACE_RANK entities must have at least 1 connected node.
-  for(stk::mesh::EntityRank rank=stk::topology::EDGE_RANK; rank<=stk::topology::ELEMENT_RANK; ++rank) {
-    const stk::mesh::BucketVector& buckets = mesh.buckets(rank);
-    for(size_t i=0; i<buckets.size(); ++i) {
-      const stk::mesh::Bucket& bucket = *buckets[i];
-      if (bucket.topology() == stk::topology::INVALID_TOPOLOGY)
-      {
-        std::cerr << "Entities on rank " << rank << " bucket " << i << " have no topology defined" << std::endl;
-        return -1;
-      }
-      for(size_t j=0; j<bucket.size(); ++j) {
-        if (bucket.num_nodes(j) < 1) {
-          std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" has no connected nodes."<<std::endl;
-          return -1;
-        }
-        // NEED TO CHECK FOR EACH BUCKET INHABITANT THAT ALL ITS NODES ARE VALID.
-        unsigned num_nodes = bucket.num_nodes(j);
-        Entity const* nodes = bucket.begin_nodes(j);
-        for (unsigned k = 0; k < num_nodes; ++k) {
-          if (!mesh.is_valid(nodes[k])) {
-            std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" is connected to an invalid node."
-                      << " via node relation " << k << std::endl;
-            return -1;
-          }
-        }
-      }
-    }
-  }
-  return 0;
-}
-
-int check_no_shared_elements_or_higher(const BulkData& mesh)
-{
-  for(stk::mesh::EntityRank rank=stk::topology::ELEMENT_RANK; rank < mesh.mesh_meta_data().entity_rank_count(); ++rank) {
-    const stk::mesh::BucketVector& buckets = mesh.buckets(rank);
-    for(size_t j=0; j<buckets.size(); ++j) {
-      if (buckets[j]->size() > 0 && buckets[j]->shared()) {
-        stk::mesh::Entity entity = (*buckets[j])[0];
-        std::cerr << "Entities with rank ELEMENT_RANK or higher must not be shared. Entity with rank="<<rank<<", identifier="<<mesh.identifier(entity)<<" is shared."<<std::endl;
-        return -1;
-      }
-    }
-  } 
-  return 0;
-}
-
-}
-
 void BulkData::update_comm_list_based_on_changes_in_comm_map()
 // Resolution of shared and ghost modifications can empty
 // the communication information for entities.
@@ -5277,9 +4899,9 @@ bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerat
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
 
-  ThrowAssertMsg(check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+  ThrowAssertMsg(impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
-  ThrowAssertMsg(add_fmwk_data() || check_no_shared_elements_or_higher(*this)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+  ThrowAssertMsg(add_fmwk_data() || impl::check_no_shared_elements_or_higher(*this)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
 
   if (parallel_size() > 1) {
     // Resolve modification or deletion of shared entities
@@ -5299,7 +4921,7 @@ bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerat
 
     // Resolve creation of entities: discover sharing and set unique ownership.
     //passes np1 fails on 10 tests np2, 3 tests np3, segfaults np4
-    internal_resolve_parallel_create_exp();
+    internal_resolve_parallel_create();
 
     // Resolve part membership for shared entities.
     // This occurs after resolving creation so created and shared
@@ -5376,9 +4998,9 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
 
-  ThrowAssertMsg(check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+  ThrowAssertMsg(impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
-  ThrowAssertMsg(add_fmwk_data() || check_no_shared_elements_or_higher(*this)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+  ThrowAssertMsg(add_fmwk_data() || impl::check_no_shared_elements_or_higher(*this)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
 
   if (parallel_size() > 1) {
     // Resolve modification or deletion of shared entities
@@ -5854,7 +5476,7 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
 
-  ThrowAssertMsg(check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+  ThrowAssertMsg(impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
   if (parallel_size() > 1)
   {

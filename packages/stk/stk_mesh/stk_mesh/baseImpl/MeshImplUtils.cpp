@@ -100,6 +100,172 @@ bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity eleme
   return false;//didn't find element edge equivalent to input edgeNodes
 }
 
+void gather_shared_nodes(stk::mesh::BulkData & mesh, std::vector<EntityKey> & shared_nodes)
+{
+    const stk::mesh::BucketVector & node_buckets = mesh.buckets(stk::topology::NODE_RANK);
+
+    for(size_t nodeIndex = 0; nodeIndex < node_buckets.size(); ++nodeIndex)
+    {
+        const stk::mesh::Bucket & bucket = *node_buckets[nodeIndex];
+        for(size_t entityIndex = 0; entityIndex < bucket.size(); ++entityIndex)
+        {
+            Entity node = bucket[entityIndex];
+            if (mesh.is_entity_marked(node) == BulkData::IS_SHARED)
+            {
+                shared_nodes.push_back(mesh.entity_key(node));
+            }
+        }
+    }
+}
+
+int check_for_connected_nodes(const BulkData& mesh)
+{
+  //This function returns an old-fashioned int return-code which is 0 if all is well
+  //and -1 if an error is found.
+  //
+  //All EDGE_RANK and FACE_RANK entities must have at least 1 connected node.
+  for(stk::mesh::EntityRank rank=stk::topology::EDGE_RANK; rank<=stk::topology::ELEMENT_RANK; ++rank) {
+    const stk::mesh::BucketVector& buckets = mesh.buckets(rank);
+    for(size_t i=0; i<buckets.size(); ++i) {
+      const stk::mesh::Bucket& bucket = *buckets[i];
+      if (bucket.topology() == stk::topology::INVALID_TOPOLOGY)
+      {
+        std::cerr << "Entities on rank " << rank << " bucket " << i << " have no topology defined" << std::endl;
+        return -1;
+      }
+      for(size_t j=0; j<bucket.size(); ++j) {
+        if (bucket.num_nodes(j) < 1) {
+          std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" has no connected nodes."<<std::endl;
+          return -1;
+        }
+        // NEED TO CHECK FOR EACH BUCKET INHABITANT THAT ALL ITS NODES ARE VALID.
+        unsigned num_nodes = bucket.num_nodes(j);
+        Entity const* nodes = bucket.begin_nodes(j);
+        for (unsigned k = 0; k < num_nodes; ++k) {
+          if (!mesh.is_valid(nodes[k])) {
+            std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" is connected to an invalid node."
+                      << " via node relation " << k << std::endl;
+            return -1;
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+bool member_of_owned_closure(const BulkData& mesh, const Entity e , const int p_rank )
+{
+  if (p_rank == mesh.parallel_owner_rank(e)) {
+    return true;
+  }
+
+  const EntityRank erank = mesh.entity_rank(e);
+  const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+
+  // Any higher ranking entities locally owned?
+  EntityVector temp_entities;
+  Entity const* rels = NULL;
+  int num_rels = 0;
+  for (EntityRank irank = static_cast<EntityRank>(end_rank - 1); irank > erank; --irank)
+  {
+    if (mesh.connectivity_map().valid(erank, irank)) {
+      num_rels = mesh.num_connectivity(e, irank);
+      rels     = mesh.begin(e, irank);
+    }
+    else {
+      num_rels = get_connectivity( mesh, e, irank, temp_entities);
+      rels     = &*temp_entities.begin();
+    }
+
+    for (int r = 0; r < num_rels; ++r) {
+      if (p_rank == mesh.parallel_owner_rank(rels[r]) ||  member_of_owned_closure(mesh, rels[r], p_rank) ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+int check_no_shared_elements_or_higher(const BulkData& mesh)
+{
+  for(stk::mesh::EntityRank rank=stk::topology::ELEMENT_RANK; rank < mesh.mesh_meta_data().entity_rank_count(); ++rank) {
+    const stk::mesh::BucketVector& buckets = mesh.buckets(rank);
+    for(size_t j=0; j<buckets.size(); ++j) {
+      if (buckets[j]->size() > 0 && buckets[j]->shared()) {
+        stk::mesh::Entity entity = (*buckets[j])[0];
+        std::cerr << "Entities with rank ELEMENT_RANK or higher must not be shared. Entity with rank="<<rank<<", identifier="<<mesh.identifier(entity)<<" is shared."<<std::endl;
+        return -1;
+      }
+    }
+  }
+  return 0;
+}
+
+
+void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::BulkData &mesh, stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities)
+{
+    const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entityRank);
+    const bool add_node_sharing_called = mesh.add_node_sharing_called();
+
+    for(size_t bucketIndex = 0; bucketIndex < entity_buckets.size(); bucketIndex++)
+    {
+        const stk::mesh::Bucket& bucket = *entity_buckets[bucketIndex];
+        stk::topology topology = bucket.topology();
+        for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
+        {
+            Entity entity = bucket[entityIndex];
+            const unsigned num_nodes_on_entity = bucket.num_nodes(entityIndex);
+
+            if (!add_node_sharing_called && mesh.state(entity) == stk::mesh::Unchanged)
+            {
+              // No nodes newly shared and entity has not had nodes added, so entity cannot become shared.
+              continue;
+            }
+
+            if ( num_nodes_on_entity > 1 )
+            {
+                if(stk::mesh::in_owned_closure(mesh, entity, mesh.parallel_rank()))
+                {
+                    EntityVector entity_nodes(num_nodes_on_entity);
+
+                    Entity const * nodes = bucket.begin_nodes(entityIndex);
+                    entity_nodes.assign(nodes, nodes+num_nodes_on_entity);
+
+                    //do we need to do some sorting operation here?
+                    //sort entity nodes into lexicographical smallest permutation?
+
+
+                    bool shared_entity = true;
+                    for(size_t n = 0; n < num_nodes_on_entity; ++n)
+                    {
+                        Entity node = entity_nodes[n];
+                        shared_entity = shared_entity && (mesh.bucket(node).shared() || (mesh.is_entity_marked(node) == BulkData::IS_SHARED));
+                    }
+
+                    if(shared_entity)
+                    {
+                        std::sort(entity_nodes.begin(),entity_nodes.end(),EntityLess(mesh));
+                        shared_entity_type sentity;
+                        sentity.topology = topology;
+                        sentity.nodes.resize(num_nodes_on_entity);
+                        for(size_t n = 0; n < num_nodes_on_entity; ++n)
+                        {
+                            sentity.nodes[n]=mesh.entity_key(entity_nodes[n]);
+                        }
+                        const EntityKey &entity_key = mesh.entity_key(entity);
+                        sentity.local_key = entity_key;
+                        sentity.global_key = entity_key;
+                        shared_entities.push_back(sentity);
+                        mesh.mark_entity(entity, BulkData::POSSIBLY_SHARED);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
         stk::mesh::Entity edge, std::vector<stk::mesh::Entity> &nodes)
 {

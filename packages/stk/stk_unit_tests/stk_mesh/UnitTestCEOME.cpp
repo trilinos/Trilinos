@@ -225,7 +225,7 @@ TEST(CEOME, change_entity_owner_2Elem2ProcMove)
     entity_procs.push_back(stk::mesh::EntityProc(bulk.get_entity(NODE_RANK, 6), 1));
   }
 
-  bulk.change_entity_owner(entity_procs);
+  bulk.change_entity_owner_exp(entity_procs);
 
   ////////////////////////////////////////////////////////////////////////////
 
@@ -270,7 +270,7 @@ TEST(CEOME, change_entity_owner_2Elem2ProcMove)
   bulk.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
 
   bulk.modification_begin();
-  bulk.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+  bulk.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
   ////////////////////////////////////////////////////////////////////////////
 
@@ -451,7 +451,7 @@ TEST(CEOME, change_entity_owner_2Elem2ProcFlip)
     entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 5), 0));
     entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 6), 0));
   }
-  mesh.change_entity_owner(entity_procs_flip);
+  mesh.change_entity_owner_exp(entity_procs_flip);
 
   ////////////////////////////////////////////////////////////////////////////
 
@@ -484,10 +484,10 @@ TEST(CEOME, change_entity_owner_2Elem2ProcFlip)
       }
   }
 
-  mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+  mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
   mesh.modification_begin();
-  mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+  mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
   ////////////////////////////////////////////////////////////////////////////
 
@@ -702,7 +702,7 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveRight)
     change.push_back(EntityProc(nodes[5], 1));
   }
 
-  mesh.change_entity_owner(change);
+  mesh.change_entity_owner_exp(change);
 
   ////////////////////////////////////////////////////////////////////////////
 
@@ -751,10 +751,10 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveRight)
 
     // mesh.update_comm_list_based_on_changes_in_comm_map();
 
-    mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
     mesh.modification_begin();
-    mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -978,7 +978,7 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveLeft)
     change.push_back(EntityProc(nodes[3], 0));
   }
 
-  mesh.change_entity_owner(change);
+  mesh.change_entity_owner_exp(change);
 
   ////////////////////////////////////////////////////////////////////////////
 
@@ -1028,10 +1028,10 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveLeft)
 
      // mesh.update_comm_list_based_on_changes_in_comm_map();
 
-     mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+     mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
      mesh.modification_begin();
-     mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+     mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
      ////////////////////////////////////////////////////////////////////////////
 
@@ -1435,7 +1435,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     }
   }
 
-  mesh.change_entity_owner(change);
+  mesh.change_entity_owner_exp(change);
 
   ////////////////////////////////////////////////////////////////////////////
 
@@ -1534,10 +1534,10 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
        mesh.my_update_comm_list_based_on_changes_in_comm_map();
        mesh.my_update_comm_list(modifiedEntities);
 
-       mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+       mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
        mesh.modification_begin();
-       mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+       mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
        ////////////////////////////////////////////////////////////////////////////
 
@@ -1967,7 +1967,7 @@ TEST(CEOME, change_entity_owner_8Elem4ProcMoveTop)
         add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
     }
 
-    mesh.change_entity_owner(entities_to_move);
+    mesh.change_entity_owner_exp(entities_to_move);
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -2158,10 +2158,10 @@ TEST(CEOME, change_entity_owner_8Elem4ProcMoveTop)
     mesh.my_update_comm_list_based_on_changes_in_comm_map();
     mesh.my_update_comm_list(modifiedEntities);
 
-    mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
     mesh.modification_begin();
-    mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -2692,7 +2692,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcRotate)
         add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
     }
 
-    mesh.change_entity_owner(entities_to_move);
+    mesh.change_entity_owner_exp(entities_to_move);
 
     std::vector<std::pair<int, int> > entities;
 
@@ -2750,10 +2750,10 @@ TEST(CEOME, change_entity_owner_4Elem4ProcRotate)
     mesh.my_update_comm_list_based_on_changes_in_comm_map();
     mesh.my_update_comm_list(modifiedEntities);
 
-    mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
     mesh.modification_begin();
-    mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -3252,7 +3252,7 @@ TEST(CEOME, change_entity_owner_3Elem4Proc1Edge3D)
     add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
   }
 
-  mesh.change_entity_owner(entities_to_move);
+  mesh.change_entity_owner_exp(entities_to_move);
 
   ////////////////////////////////////////////////////////////////////////////
 
@@ -3333,10 +3333,10 @@ TEST(CEOME, change_entity_owner_3Elem4Proc1Edge3D)
   mesh.my_update_comm_list_based_on_changes_in_comm_map();
   mesh.my_update_comm_list(modifiedEntities);
 
-  mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+  mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
   mesh.modification_begin();
-  mesh.internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+  mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 
   ////////////////////////////////////////////////////////////////////////////
 

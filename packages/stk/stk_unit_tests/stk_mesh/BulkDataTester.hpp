@@ -36,6 +36,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 
 class BulkDataTester : public stk::mesh::BulkData
 {
@@ -48,15 +49,23 @@ public:
     {
     }
 
+    void internal_change_entity_owner_exp(const std::vector<stk::mesh::EntityProc> & arg_change,
+            bool regenerate_aura = true,
+            modification_optimization mod_optimization = MOD_END_SORT);
+
+    void change_entity_owner_exp( const std::vector<stk::mesh::EntityProc> & arg_change,
+                                                bool regenerate_aura = true,
+                                                modification_optimization mod_optimization = MOD_END_SORT );
+
     void my_internal_resolve_shared_modify_delete()
     {
         this->internal_resolve_shared_modify_delete();
     }
 
-    void reset_closure_count(stk::mesh::Entity entity)
-    {
-        m_closure_count[entity.local_offset()] = 0;
-    }
+//    void reset_closure_count(stk::mesh::Entity entity)
+//    {
+//        m_closure_count[entity.local_offset()] = 0;
+//    }
 
     uint16_t closure_count(stk::mesh::Entity entity)
     {
@@ -98,6 +107,11 @@ public:
     {
         this->update_comm_list(shared_modified);
     }
+
+    void internal_resolve_parallel_create_exp();
+    void internal_update_distributed_index_exp(std::vector<stk::mesh::Entity> & shared_new );
+    bool internal_modification_end_for_change_entity_owner_exp( bool regenerate_aura, modification_optimization opt );
 };
+
 
 #endif
