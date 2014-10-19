@@ -58,6 +58,9 @@ namespace Tpetra {
 /// \brief A platform class for hybrid nodes.
 /// \warning Users should consider this class DEPRECATED.
 class HybridPlatform : public Teuchos::Describable {
+private:
+  typedef KokkosClassic::DefaultNode::DefaultNodeType default_node_type;
+
 public:
   //! @name Constructor/Destructor Methods
   //@{
@@ -154,10 +157,26 @@ private:
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
     , THRUSTGPUNODE
 #endif
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+    // FIXME (mfh 02 Oct 2014) There is currently no macro
+    // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial
+    // Kokkos device is enabled.  If that changes, we'll need to
+    // protect this line accordingly.
+    , SERIAL_WRAPPER_NODE
+#ifdef KOKKOS_HAVE_OPENMP
+    , OPENMP_WRAPPER_NODE
+#endif // KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_HAVE_PTHREAD
+    , THREADS_WRAPPER_NODE
+#endif // KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_HAVE_CUDA
+    , CUDA_WRAPPER_NODE
+#endif // KOKKOS_HAVE_CUDA
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
   } nodeType_;
 
   //! Instance of the default Node type.
-  Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> defaultNode_;
+  Teuchos::RCP<default_node_type> defaultNode_;
 
 #ifdef HAVE_KOKKOSCLASSIC_SERIAL
   Teuchos::RCP<KokkosClassic::SerialNode> serialNode_;
@@ -174,6 +193,22 @@ private:
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
   Teuchos::RCP<KokkosClassic::ThrustGPUNode> thrustNode_;
 #endif
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+    // FIXME (mfh 19 Oct 2014) There is currently no macro
+    // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial
+    // Kokkos device is enabled.  If that changes, we'll need to
+    // protect this line accordingly.
+  Teuchos::RCP<Kokkos::Compat::KokkosSerialWrapperNode> serialWrapperNode_;
+#ifdef KOKKOS_HAVE_OPENMP
+  Teuchos::RCP<Kokkos::Compat::KokkosOpenMPWrapperNode> ompWrapperNode_;
+#endif // KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_HAVE_PTHREAD
+  Teuchos::RCP<Kokkos::Compat::KokkosThreadsWrapperNode> threadsWrapperNode_;
+#endif // KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_HAVE_CUDA
+  Teuchos::RCP<Kokkos::Compat::KokkosCudaWrapperNode> cudaWrapperNode_;
+#endif // KOKKOS_HAVE_CUDA
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
 };
 
 
@@ -191,7 +226,7 @@ HybridPlatform::runUserCode (UserCode& codeobj)
   createNode ();
   switch (nodeType_) {
   case DEFAULTNODE:
-    codeobj.template run<KokkosClassic::DefaultNode::DefaultNodeType> (instList_,comm_, defaultNode_);
+    codeobj.template run<default_node_type> (instList_, comm_, defaultNode_);
     break;
 #ifdef HAVE_KOKKOSCLASSIC_SERIAL
   case SERIALNODE:
@@ -218,6 +253,34 @@ HybridPlatform::runUserCode (UserCode& codeobj)
     codeobj.template run<KokkosClassic::ThrustGPUNode> (instList_, comm_, thrustNode_);
     break;
 #endif
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+  // FIXME (mfh 02 Oct 2014) There is currently no macro
+  // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos
+  // device is enabled.  If that changes, we'll need to protect these
+  // lines accordingly.
+  case SERIAL_WRAPPER_NODE:
+    codeobj.template run<Kokkos::Compat::KokkosSerialWrapperNode> (instList_, comm_,
+                                                                   serialWrapperNode_);
+    break;
+#ifdef KOKKOS_HAVE_OPENMP
+  case OPENMP_WRAPPER_NODE:
+    codeobj.template run<Kokkos::Compat::KokkosOpenMPWrapperNode> (instList_, comm_,
+                                                                   ompWrapperNode_);
+    break;
+#endif // KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_HAVE_PTHREAD
+  case THREADS_WRAPPER_NODE:
+    codeobj.template run<Kokkos::Compat::KokkosThreadsWrapperNode> (instList_, comm_,
+                                                                    threadsWrapperNode_);
+    break;
+#endif // KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_HAVE_CUDA
+  case CUDA_WRAPPER_NODE:
+    codeobj.template run<Kokkos::Compat::KokkosCudaWrapperNode> (instList_, comm_,
+                                                                 cudaWrapperNode_);
+    break;
+#endif // KOKKOS_HAVE_CUDA
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
   default:
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::runtime_error, Teuchos::typeName(*this) << "::runUserCode: "
@@ -232,7 +295,7 @@ HybridPlatform::runUserCode ()
   createNode ();
   switch (nodeType_) {
   case DEFAULTNODE:
-    UserCode<KokkosClassic::DefaultNode::DefaultNodeType>::run (instList_, comm_, defaultNode_);
+    UserCode<default_node_type>::run (instList_, comm_, defaultNode_);
     break;
 #ifdef HAVE_KOKKOSCLASSIC_SERIAL
   case SERIALNODE:
@@ -259,6 +322,34 @@ HybridPlatform::runUserCode ()
     UserCode<KokkosClassic::ThrustGPUNode>::run (instList_, comm_, thrustNode_);
     break;
 #endif
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+  // FIXME (mfh 02 Oct 2014) There is currently no macro
+  // "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos
+  // device is enabled.  If that changes, we'll need to protect these
+  // lines accordingly.
+  case SERIAL_WRAPPER_NODE:
+    UserCode<Kokkos::Compat::KokkosSerialWrapperNode>::run (instList_, comm_,
+                                                            serialWrapperNode_);
+    break;
+#ifdef KOKKOS_HAVE_OPENMP
+  case OPENMP_WRAPPER_NODE:
+    UserCode<Kokkos::Compat::KokkosOpenMPWrapperNode>::run (instList_, comm_,
+                                                            ompWrapperNode_);
+    break;
+#endif // KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_HAVE_PTHREAD
+  case THREADS_WRAPPER_NODE:
+    UserCode<Kokkos::Compat::KokkosThreadsWrapperNode>::run (instList_, comm_,
+                                                             threadsWrapperNode_);
+    break;
+#endif // KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_HAVE_CUDA
+  case CUDA_WRAPPER_NODE:
+    UserCode<Kokkos::Compat::KokkosCudaWrapperNode>::run (instList_, comm_,
+                                                          cudaWrapperNode_);
+    break;
+#endif // KOKKOS_HAVE_CUDA
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
   default:
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::runtime_error, Teuchos::typeName(*this) << "::runUserCode: "
@@ -286,10 +377,40 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::TPINode)
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::ThrustGPUNode)
 #endif
 
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+// FIXME (mfh 19 Oct 2014) There is currently no macro
+// "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos device
+// is enabled.  If that changes, we'll need to protect this line
+// accordingly.
+TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::Compat::KokkosSerialWrapperNode)
+
+#ifdef KOKKOS_HAVE_OPENMP
+TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::Compat::KokkosOpenMPWrapperNode)
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::Compat::KokkosThreadsWrapperNode)
+#endif // KOKKOS_HAVE_PTHREAD
+
+#ifdef KOKKOS_HAVE_CUDA
+TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::Compat::KokkosCudaWrapperNode)
+#endif // KOKKOS_HAVE_CUDA
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+
 // Make sure that the default Node type is always supported.  We can
 // only do this if it's not any of the Node types listed above.
 #if ! defined(HAVE_KOKKOSCLASSIC_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_TBB) && ! defined(HAVE_KOKKOSCLASSIC_OPENMP) && ! defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_THRUST)
+#  ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+// FIXME (mfh 19 Oct 2014) There is currently no macro
+// "KOKKOS_HAVE_SERIAL" that tells us whether the Serial Kokkos device
+// is enabled.  If that changes, we'll need to protect this line
+// accordingly.
+#    if ! defined(KOKKOS_HAVE_OPENMP) && ! defined(KOKKOS_HAVE_PTHREAD) && ! defined(KOKKOS_HAVE_CUDA)
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::DefaultNode::DefaultNodeType)
+#    endif
+#  else
+TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::DefaultNode::DefaultNodeType)
+#  endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
 #endif
 
 } // namespace Tpetra
