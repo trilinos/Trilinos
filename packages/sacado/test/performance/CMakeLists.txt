@@ -36,7 +36,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     HEADERS fe_jac_fill_funcs.hpp
     SOURCES fe_jac_fill_funcs.cpp
     TESTONLY
-    DEPLIBS teuchoscore
+    DEPLIBS sacado
     )
 
   TRIBITS_ADD_EXECUTABLE(
