@@ -38,6 +38,7 @@
 #include "AnasaziRTRSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_as.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -63,9 +64,9 @@ int main(int argc, char *argv[])
 #endif
 
   bool success = false;
+  bool verbose = false;
   try {
     bool boolret;
-    bool verbose = false;
     bool debug = false;
     bool skinny = true;
     bool fakeM = true;
