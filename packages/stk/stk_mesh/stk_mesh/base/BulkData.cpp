@@ -2571,6 +2571,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change,
 {
     INCREMENT_MODIFICATION_COUNTER(PUBLIC, CHANGE_ENTITY_OWNER);
     internal_change_entity_owner(arg_change, regenerate_aura, mod_optimization);
+    internal_modification_end_for_change_entity_owner(regenerate_aura, mod_optimization);
 }
 
 void BulkData::internal_compute_proposed_owned_closure_count(const std::vector<EntityProc> & local_change,
@@ -3126,7 +3127,6 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 #endif
 
 
-  internal_modification_end_for_change_entity_owner(regenerate_aura, mod_optimization);
 }
 
 //----------------------------------------------------------------------

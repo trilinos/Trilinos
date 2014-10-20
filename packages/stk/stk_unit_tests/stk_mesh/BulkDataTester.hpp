@@ -41,12 +41,19 @@
 class BulkDataTester : public stk::mesh::BulkData
 {
 public:
+
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
             stk::mesh::BulkData(mesh_meta_data, comm)
     {
     }
+
     virtual ~BulkDataTester()
     {
+    }
+
+    void legacy_internal_change_entity_owner( const std::vector<stk::mesh::EntityProc> & arg_change, bool regenerate_aura = true, modification_optimization mod_optimization = MOD_END_SORT )
+    {
+        this->internal_change_entity_owner(arg_change,regenerate_aura,mod_optimization);
     }
 
     void internal_change_entity_owner_exp(const std::vector<stk::mesh::EntityProc> & arg_change,

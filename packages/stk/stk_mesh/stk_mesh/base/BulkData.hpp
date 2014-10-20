@@ -1438,11 +1438,10 @@ private:
 protected:
   bool internal_destroy_entity( Entity entity, bool was_ghost = false );
 
-private:
+protected:
   void internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
                                      bool regenerate_aura = true,
                                      modification_optimization mod_optimization = MOD_END_SORT );
-
 
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
