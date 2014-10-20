@@ -50,6 +50,11 @@
 #ifndef _ZOLTAN2_ALGORITHM_HPP_
 #define _ZOLTAN2_ALGORITHM_HPP_
 
+namespace Zoltan2 {
+template <typename Adapter>
+class Algorithm;
+}
+
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_ColoringSolution.hpp>
 #include <Zoltan2_OrderingSolution.hpp>

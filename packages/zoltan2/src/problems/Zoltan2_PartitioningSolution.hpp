@@ -50,9 +50,15 @@
 #ifndef _ZOLTAN2_PARTITIONINGSOLUTION_HPP_
 #define _ZOLTAN2_PARTITIONINGSOLUTION_HPP_
 
+namespace Zoltan2 {
+template <typename Adapter>
+class PartitioningSolution;
+}
+
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
 #include <Zoltan2_GreedyMWM.hpp>
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
 #include <cmath>
 #include <algorithm>
@@ -149,6 +155,7 @@ public:
  *    \param idMap  the IdentifierMap corresponding to the solution
  *    \param nUserWeights  the number of weights supplied by the
  *         application for each object.
+ *    \param algorithm  Algorithm, if any, used to compute the solution.
  *
  *   It is possible that part sizes were supplied on other processes,
  *   so this constructor does do a check to see if part sizes need
@@ -158,7 +165,8 @@ public:
   PartitioningSolution( RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap,
-    int nUserWeights);
+    int nUserWeights, 
+    const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null);
 
 /*! \brief Constructor when part sizes are supplied.
  *
@@ -176,6 +184,7 @@ public:
  *    \param reqPartSizes  reqPartSizes[i] is the list
  *          of part sizes for weight i corresponding to parts in
  *          reqPartIds[i]
+ *    \param algorithm  Algorithm, if any, used to compute the solution.
  *
  *   If <tt>reqPartIds[i].size()</tt> and <tt>reqPartSizes[i].size()</tt>
  *           are zero for
@@ -193,7 +202,8 @@ public:
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap,
     int nUserWeights, ArrayView<ArrayRCP<part_t> > reqPartIds,
-    ArrayView<ArrayRCP<scalar_t> > reqPartSizes);
+    ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
+    const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null);
 
   ////////////////////////////////////////////////////////////////////
   // Information that the algorithm may wish to query.
@@ -446,6 +456,53 @@ public:
   {
     return this->partBoxes;
   }
+
+  //!  \brief Return the part overlapping a given point in space; 
+  //          when a point lies on a part boundary, the lowest part
+  //          number on that boundary is returned.
+  //          Note that not all partitioning algorithms will support
+  //          this method.
+  //
+  //   \param dim : the number of dimensions specified for the point in space
+  //   \param point : the coordinates of the point in space; array of size dim
+  //   \return the part number of a part overlapping the given point
+  part_t pointAssign(int dim, scalar_t *point) 
+  {
+    part_t p;
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+
+      p = this->algorithm_->pointAssign(dim, point); 
+    }
+    Z2_FORWARD_EXCEPTIONS
+    return p;
+  }
+
+  //!  \brief Return an array of all parts overlapping a given box in space.
+  //   This method allocates memory for the return argument, but does not
+  //   control that memory.  The user is responsible for freeing the 
+  //   memory.
+  //
+  //   \param dim : (in) the number of dimensions specified for the box
+  //   \param lower : (in) the coordinates of the lower corner of the box; 
+  //                   array of size dim
+  //   \param upper : (in) the coordinates of the upper corner of the box; 
+  //                   array of size dim
+  //   \param nPartsFound : (out) the number of parts overlapping the box
+  //   \param partsFound :  (out) array of parts overlapping the box
+  void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
+                 size_t &nPartsFound, part_t **partsFound) 
+  {
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+
+      this->algorithm_->boxAssign(dim, lower, upper, nPartsFound, partsFound); 
+    }
+    Z2_FORWARD_EXCEPTIONS
+  }
+
 
   /*! \brief returns communication graph resulting from geometric partitioning.
    */
@@ -745,6 +802,11 @@ private:
   // unless onePartPerProc_.
 
   ArrayRCP<int> procs_;       // process rank assigned to gids_[i]
+
+  ////////////////////////////////////////////////////////////////
+  // Algorithm used to compute the solution; 
+  // needed for post-processing with pointAssign or getCommunicationGraph
+  const RCP<Algorithm<Adapter> > algorithm_;  // 
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -755,7 +817,8 @@ template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
     RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights)
+    RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights,
+    const RCP<Algorithm<Adapter> > &algorithm)
     : env_(env), comm_(comm), idMap_(idMap),
       partBoxes(),comXAdj_(), comAdj_(),
       nGlobalParts_(0), nLocalParts_(0),
@@ -764,7 +827,7 @@ template <typename Adapter>
       procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
-      procs_()
+      procs_(), algorithm_(algorithm)
 {
   nWeightsPerObj_ = (nUserWeights ? nUserWeights : 1);  // TODO:  WHY??  WHY NOT ZERO?
 
@@ -789,7 +852,8 @@ template <typename Adapter>
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights,
     ArrayView<ArrayRCP<part_t> > reqPartIds,
-    ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
+    ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
+    const RCP<Algorithm<Adapter> > &algorithm)
     : env_(env), comm_(comm), idMap_(idMap),
       partBoxes(),comXAdj_(), comAdj_(),
       nGlobalParts_(0), nLocalParts_(0),
@@ -798,7 +862,7 @@ template <typename Adapter>
       procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
-      procs_()
+      procs_(), algorithm_(algorithm)
 {
   nWeightsPerObj_ = (nUserWeights ? nUserWeights : 1);  // TODO:  WHY?? WHY NOT ZERO?
 
