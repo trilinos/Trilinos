@@ -143,16 +143,12 @@ struct is_space< C
   typedef typename C::execution_space  execution_space ;
   typedef typename C::memory_space     memory_space ;
 
+  // The host_mirror_space defines a space with host-resident memory.
   // If the execution space's memory space is HostSpace then use that execution space.
-  // Else if the memory space is host accessible then use that memory space.
   // Else use the HostSpace.
-  //
-  // Keeps the execution_space when multiple host execution spaces are enabled.
-  // Keeps CudaUVMSpace.
   typedef
     typename Impl::if_c< Impl::is_same< typename execution_space::memory_space , HostSpace >::value , execution_space ,
-    typename Impl::if_c< Impl::VerifyExecutionCanAccessMemorySpace< HostSpace , memory_space >::value , memory_space ,
-    HostSpace >::type >::type
+    HostSpace >::type
       host_mirror_space ;
 };
 
