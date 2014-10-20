@@ -17,6 +17,19 @@
 
 #include <cmath>
 
+
+/// \file util.hpp
+/// \brief Utility functions and constant integer class like an enum class.
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+///
+/// This provides utility functions for implementing mini-app for incomplete
+/// sparse matrix factorization with task-data parallelism e.g., parameter
+/// classes, error handling, ostream << overloading.
+///
+/// Note: The reference of the "static const int" members in the enum-like 
+/// classes should not be used as function arguments but their values only. 
+
+
 using namespace std;
 
 namespace Example {
@@ -31,6 +44,8 @@ namespace Example {
 #define ERROR(msg)                              \
   { std::runtime_error(msg); }
 
+  /// \class Partition
+  /// \brief Matrix partition parameters.
   class Partition { 
   public:
     static const int Top         = 101;
@@ -45,30 +60,55 @@ namespace Example {
     static const int BottomRight = 404;
   };
 
+
+  /// \class Uplo
+  /// \brief Matrix upper/lower parameters.
   class Uplo {
   public:
     static const int Upper = 501;
     static const int Lower = 502;
+    
+    template<int uplo, typename OrdinalType> 
+    bool 
+    is(const OrdinalType i, const OrdinalType j) {
+      return true;
+    }
+
+    // template<typename OrdinalType> 
+    // bool 
+    // is<Uplo::Lower,OrdinalType>(const OrdinalType i, const OrdinalType j) {
+    //   return (i<=j);      
+    // }
+
   };
 
+
+
+  /// \class Side
+  /// \brief Matrix left/right parameters.
   class Side {
   public:
     static const int Left  = 601;
     static const int Right = 602;
   };
 
+  /// \class Diag
+  /// \brief Matrix unit/non-unit diag parameters.
   class Diag {
   public:
     static const int Unit    = 701;
     static const int NonUnit = 702;
   };
 
+  /// \brief Interface for overloaded stream operators.
   template<typename T> 
   inline 
   ostream& operator<<(ostream &os, const auto_ptr<T> &p) {
     return p->showMe(os);
   }
 
+  /// \class Disp
+  /// \brief Interface for the stream operator.
   class Disp {
     friend ostream& operator<<(ostream &os, const Disp &disp);
   public:
@@ -77,16 +117,12 @@ namespace Example {
       return os;
     }
   };
-  
+
+  /// \brief Implementation of the overloaded stream operator.
   inline 
   ostream& operator<<(ostream &os, const Disp &disp) {
     return disp.showMe(os);
   }  
-
-  static map<string,string> g_graphviz_color = {
-    { "ichol/scalar", "indianred2"},
-    { "ichol/trsm",   "orange2"   },
-    { "ichol/gemm",   "lightblue2"} };
 
 }
 
