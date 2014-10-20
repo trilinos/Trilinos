@@ -189,8 +189,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // create it as a "const map_type".  If you want a new data
   // distribution, create a new Map.
   RCP<const map_type> contigMap =
-    rcp (new map_type (numGlobalEntries, indexBase, comm,
-                       Tpetra::GloballyDistributed));
+    rcp (new map_type (numGlobalEntries, indexBase, comm));
 
   // contigMap is contiguous by construction.  Test this at run time.
   // Lesson 01 introduced the TEUCHOS_TEST_FOR_EXCEPTION macro, which
