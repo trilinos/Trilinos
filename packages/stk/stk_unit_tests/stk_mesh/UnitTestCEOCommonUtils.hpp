@@ -244,6 +244,89 @@ inline bool check_state(const stk::mesh::BulkData & mesh, const stk::mesh::Entit
 
 }
 
+bool check_parts(const stk::mesh::BulkData & mesh, const EntityKey & entityKey,
+                 stk::mesh::Part *p0 = NULL, stk::mesh::Part *p1 = NULL, stk::mesh::Part *p2 = NULL,
+                 stk::mesh::Part *p3 = NULL, stk::mesh::Part *p4 = NULL, stk::mesh::Part *p5 = NULL)
+{
+  // Check to see if the state is as expected for the provided EntityKey.
+  //
+  // Meaning of the optional processor arguments for various states:
+  //     STATE_OWNED: Processor that owns the Entity
+  //    STATE_SHARED: List of Processors that we share this entity with
+  //   STATE_GHOSTED: Processor that we ghost the Entity from
+  //
+  PartVector expectedParts;
+  if (p0 != NULL) {
+    expectedParts.push_back(p0);
+  }
+  if (p1 != NULL) {
+    expectedParts.push_back(p1);
+  }
+  if (p2 != NULL) {
+    expectedParts.push_back(p2);
+  }
+  if (p3 != NULL) {
+    expectedParts.push_back(p3);
+  }
+  if (p4 != NULL) {
+    expectedParts.push_back(p4);
+  }
+  if (p5 != NULL) {
+    expectedParts.push_back(p5);
+  }
+  std::sort(expectedParts.begin(), expectedParts.end());
+
+  Entity entity = mesh.get_entity(entityKey);
+  std::ostringstream oss;
+
+  if (expectedParts.empty()) {
+    oss << "check_state(): Must provide at least one Part." << std::endl;
+  }
+
+  const PartVector & meshParts = mesh.bucket(entity).supersets();
+
+  PartVector::const_iterator mesh_parts_it = meshParts.begin();
+  PartVector::const_iterator expected_parts_it = expectedParts.begin();
+  bool lists_match = true;
+
+  if (expectedParts.size() != meshParts.size()) {
+    lists_match = false;
+  }
+  else {
+    for ( ; expected_parts_it != expectedParts.end(); ++expected_parts_it, ++mesh_parts_it) {
+      if ((*expected_parts_it) != (*mesh_parts_it)) {
+        lists_match = false;
+        break;
+      }
+    }
+  }
+
+  if (!lists_match) {
+    oss << "check_state(): Entity " << entityKey << " existed on Parts (";
+    mesh_parts_it = meshParts.begin();
+    for ( ; mesh_parts_it != meshParts.end(); ++mesh_parts_it) {
+      oss << (*mesh_parts_it)->name() << " ";
+    }
+    oss << ")" << std::endl
+        << "               when it was expected to exist on Parts (";
+    expected_parts_it = expectedParts.begin();
+    for ( ; expected_parts_it != expectedParts.end(); ++expected_parts_it) {
+      oss << (*expected_parts_it)->name() << " ";
+    }
+    oss << ")" << std::endl;
+  }
+
+
+  if (oss.str().size() > 0u) {
+    std::cout << oss.str();
+    return false;
+  }
+  else {
+    return true;
+  }
+
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////  Mesh Creation Functions With Tests              /////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
