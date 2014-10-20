@@ -2603,6 +2603,7 @@ void AZ_matrix_destroy(AZ_MATRIX **Amat)
 {
   if ( (*Amat) == NULL) return;
    if ((*Amat)->must_free_data_org == 1) {
+      AZ_free_memory((*Amat)->data_org[AZ_name]);
       AZ_free((*Amat)->data_org);
       (*Amat)->data_org = NULL;
    }
