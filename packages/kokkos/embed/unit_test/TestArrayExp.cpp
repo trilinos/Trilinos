@@ -45,8 +45,7 @@
 #include <iostream>
 #include <typeinfo>
 
-#include <Kokkos_Cuda.hpp>
-#include <Kokkos_Threads.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Array.hpp>
 
 #include <impl/Kokkos_ArrayAnalyzeShape.hpp>

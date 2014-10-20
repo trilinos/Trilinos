@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsSubPackageMacros)
 
 # Subpackage name must match what appears in kokkos/cmake/Dependencies.cmake
 #

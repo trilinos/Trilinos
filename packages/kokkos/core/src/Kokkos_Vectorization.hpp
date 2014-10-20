@@ -46,7 +46,7 @@
 #ifndef KOKKOS_VECTORIZATION_HPP
 #define KOKKOS_VECTORIZATION_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_ExecPolicy.hpp>
 
 namespace Kokkos {

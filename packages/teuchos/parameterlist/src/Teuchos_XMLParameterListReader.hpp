@@ -58,12 +58,12 @@ namespace Teuchos {
 
 /** \brief Writes an XML object to a parameter list.
  *
- * \ingroup XML 
+ * \ingroup XML
  */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT XMLParameterListReader{
 
 public:
-  
+
   /** \name Public Types */
   //@{
 
@@ -73,7 +73,7 @@ public:
 
   //@}
 
-  //! @name Constructors 
+  //! @name Constructors
   //@{
   /** \brief . */
   XMLParameterListReader();
@@ -88,15 +88,15 @@ public:
 
   /** \brief Set policy regarding duplicated sublists
     *
-    * The default behavior of this class is to allow duplicated sublists, 
+    * The default behavior of this class is to allow duplicated sublists,
     * although the resulting
-    * ParameterList is undefined for the duplicated sublists (in most 
-    * cases, they will be merged in the order they are encountered in the 
+    * ParameterList is undefined for the duplicated sublists (in most
+    * cases, they will be merged in the order they are encountered in the
     * XML character stream).
-    * 
-    * If set \c false, then duplicated sublists in the XML tree 
-    * will result in the Teuchos::DuplicateParameterSublist 
-    * exception being thrown. 
+    *
+    * If set \c false, then duplicated sublists in the XML tree
+    * will result in the Teuchos::DuplicateParameterSublist
+    * exception being thrown.
     *
     * If set \c true, the default behavior is restored.
     */
@@ -124,8 +124,8 @@ private:
 
   /** \brief Write the given XML object to appropriate dependencies. */
   void convertDependencies(
-    RCP<DependencySheet> depSheet, 
-    const XMLObject& xml, 
+    RCP<DependencySheet> depSheet,
+    const XMLObject& xml,
     const EntryIDsMap& entryIDsMap,
     const IDtoValidatorMap& validatorIDsMap) const;
 

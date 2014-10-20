@@ -43,7 +43,7 @@
 #define TEUCHOS_XMLPARSER_H
 
 /*! \file Teuchos_XMLParser.hpp
-    \brief A class providing a simple XML parser. Methods can be overloaded 
+    \brief A class providing a simple XML parser. Methods can be overloaded
            to exploit external XML parsing libraries.
 */
 
@@ -53,7 +53,7 @@
 
 namespace Teuchos
 {
-  /** 
+  /**
    * \brief XMLParser consumes characters from an XMLInputStream object,
    * parsing the XML and using a TreeBuildingXMLHandler to construct an
    * XMLObject.
@@ -61,13 +61,13 @@ namespace Teuchos
   class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT XMLParser
     {
     public:
-     
+
       /** \brief Constructor */
       XMLParser(RCP<XMLInputStream> is) : _is(is), _lineNo(1) {;}
-      
+
       /** \brief Destructor */
       ~XMLParser(){;}
-      
+
       /** \brief Consume the XMLInputStream to build an XMLObject. */
       XMLObject parse();
     private:
@@ -82,7 +82,7 @@ namespace Teuchos
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-      
+
       /** \brief Determine whether \c c matches the <tt>Letter</tt> production according to the XML specification.*/
       inline static bool isLetter(unsigned char c);
       /** \brief Determine whether \c c matches the <tt>NameChar</tt> production according to the XML specification.*/
@@ -94,7 +94,7 @@ namespace Teuchos
 
       /** \brief Consume a <tt>ETag</tt> production according to the XML specification.
        *  <tt>getETag</tt> throws an std::exception if the input does not match the production rule.
-       *  
+       *
        *  @param tag
        *         [out] On output, will be set to the tag name of the closing tag.
        */
@@ -102,13 +102,13 @@ namespace Teuchos
 
       /** \brief Consume a <tt>STag</tt> production according to the XML specification.
        *  <tt>getSTag</tt> throws an std::exception if the input does not match the production rule.
-       *  
+       *
        *  @param lookahead
        *         [in] Contains the first character of the tag name.
-       * 
+       *
        *  @param tag
        *         [out] On output, will be set to the tag name of the opening tag.
-       * 
+       *
        *  @param attrs
        *         [out] On output, contains the attributes of the tag.
        *
@@ -140,17 +140,17 @@ namespace Teuchos
        */
       void getReference(std::string &refstr);
 
-      /** \brief Ignore the rest of an XML declaration tag. 
+      /** \brief Ignore the rest of an XML declaration tag.
        */
       void ignoreXMLDeclaration();
 
-      /** \brief Determines if the next character on the stream 
+      /** \brief Determines if the next character on the stream
        *
        *  @param cexp
        *         [in] The expected character.
        *
        *  @return Returns non-zero if the next character on the stream is not \c cexp.
-       * 
+       *
        */
       int assertChar(unsigned char cexp);
     };

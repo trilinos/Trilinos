@@ -27,7 +27,7 @@
 // @HEADER
 
 // Include files
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 #include "swigpyrun.h"
 
 // Backward compatibility for python < 2.5
@@ -135,25 +135,25 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
     if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_INT)
     {
       Teuchos::Array< int > tArray;
-      CopyNumPyToTeuchos(pyArray, tArray);
+      copyNumPyToTeuchosArray(pyArray, tArray);
       plist.set(name, tArray);
     }
     else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_LONG)
     {
       Teuchos::Array< long > tArray;
-      CopyNumPyToTeuchos(pyArray, tArray);
+      copyNumPyToTeuchosArray(pyArray, tArray);
       plist.set(name, tArray);
     }
     else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_FLOAT)
     {
       Teuchos::Array< float > tArray;
-      CopyNumPyToTeuchos(pyArray, tArray);
+      copyNumPyToTeuchosArray(pyArray, tArray);
       plist.set(name, tArray);
     }
     else if (PyArray_TYPE((PyArrayObject*) pyArray) == NPY_DOUBLE)
     {
       Teuchos::Array< double > tArray;
-      CopyNumPyToTeuchos(pyArray, tArray);
+      copyNumPyToTeuchosArray(pyArray, tArray);
       plist.set(name, tArray);
     }
     else
@@ -235,7 +235,7 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
     {
       Teuchos::Array< int > tArray =
         Teuchos::any_cast< Teuchos::Array< int > >(entry->getAny(false));
-      return CopyTeuchosToNumPy(tArray, NPY_INT);
+      return copyTeuchosArrayToNumPy(tArray);
     }
     catch(Teuchos::bad_any_cast &e)
     {
@@ -243,7 +243,7 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
       {
         Teuchos::Array< long > tArray =
           Teuchos::any_cast< Teuchos::Array< long > >(entry->getAny(false));
-        return CopyTeuchosToNumPy(tArray, NPY_LONG);
+        return copyTeuchosArrayToNumPy(tArray);
       }
       catch(Teuchos::bad_any_cast &e)
       {
@@ -251,7 +251,7 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
         {
           Teuchos::Array< float > tArray =
             Teuchos::any_cast< Teuchos::Array< float > >(entry->getAny(false));
-          return CopyTeuchosToNumPy(tArray, NPY_FLOAT);
+          return copyTeuchosArrayToNumPy(tArray);
         }
         catch(Teuchos::bad_any_cast &e)
         {
@@ -259,7 +259,7 @@ PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
           {
             Teuchos::Array< double > tArray =
               Teuchos::any_cast< Teuchos::Array< double > >(entry->getAny(false));
-            return CopyTeuchosToNumPy(tArray, NPY_DOUBLE);
+            return copyTeuchosArrayToNumPy(tArray);
           }
           catch(Teuchos::bad_any_cast &e)
           {

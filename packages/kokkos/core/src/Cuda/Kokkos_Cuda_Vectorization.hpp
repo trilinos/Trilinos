@@ -60,8 +60,10 @@ namespace Impl {
     shfl_union() {
       val = Scalar();
     }
+
+    enum {n = (sizeof(Scalar)+3)/4};
     Scalar val;
-    float fval[sizeof(Scalar)/4];
+    float fval[n];
   };
 }
 
@@ -132,7 +134,7 @@ Scalar shfl_up(const Scalar &val, const int& delta, const int& width, void*);
       Impl::shfl_union<Scalar> r_val;
       s_val.val = val;
 
-      for(int i = 0; i<sizeof(Scalar)/4; i++)
+      for(int i = 0; i<s_val.n; i++)
         r_val.fval[i] = __shfl(s_val.fval[i],srcLane,width);
       return r_val.val;
     }
@@ -189,7 +191,7 @@ Scalar shfl_up(const Scalar &val, const int& delta, const int& width, void*);
       Impl::shfl_union<Scalar> r_val;
       s_val.val = val;
 
-      for(int i = 0; i<sizeof(Scalar)/4; i++)
+      for(int i = 0; i<s_val.n; i++)
         r_val.fval[i] = __shfl_down(s_val.fval[i],delta,width);
       return r_val.val;
     }
@@ -246,7 +248,7 @@ Scalar shfl_up(const Scalar &val, const int& delta, const int& width, void*);
       Impl::shfl_union<Scalar> r_val;
       s_val.val = val;
 
-      for(int i = 0; i<sizeof(Scalar)/4; i++)
+      for(int i = 0; i<s_val.n; i++)
         r_val.fval[i] = __shfl_up(s_val.fval[i],delta,width);
       return r_val.val;
     }
@@ -275,112 +277,6 @@ Scalar shfl_up(const Scalar &val, const int& delta, const int& width, void*);
   #endif
 #endif
 
-/*template<typename Scalar>
-KOKKOS_INLINE_FUNCTION
-Scalar shfl_down(const Scalar &val, const int& delta, const int& width){
-  return val;
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-unsigned int shfl_down<unsigned int>(const unsigned int &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    unsigned int tmp1 = val;
-    int tmp = *reinterpret_cast<int*>(&tmp1);
-    tmp = __shfl_down(tmp,delta,width);
-    return *reinterpret_cast<unsigned int*>(&tmp);
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-int shfl_down<int>(const int &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    return __shfl_down(val,delta,width);
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-float shfl_down<float>(const float &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    return __shfl_down(val,delta,width);
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-double shfl_down<double>(const double &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    int lo = __double2loint(val);
-    int hi = __double2hiint(val);
-    lo = __shfl_down(lo,delta,width);
-    hi = __shfl_down(hi,delta,width);
-    return __hiloint2double(hi,lo);
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-long int shfl_down<long int>(const long int &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    int lo = __double2loint(*reinterpret_cast<const double*>(&val));
-    int hi = __double2hiint(*reinterpret_cast<const double*>(&val));
-    lo = __shfl_down(lo,delta,width);
-    hi = __shfl_down(hi,delta,width);
-    const double tmp = __hiloint2double(hi,lo);
-    return *(reinterpret_cast<const long int*>(&tmp));
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-unsigned long shfl_down<unsigned long>(const unsigned long &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    int lo = __double2loint(*reinterpret_cast<const double*>(&val));
-    int hi = __double2hiint(*reinterpret_cast<const double*>(&val));
-    lo = __shfl_down(lo,delta,width);
-    hi = __shfl_down(hi,delta,width);
-    const double tmp = __hiloint2double(hi,lo);
-    return *(reinterpret_cast<const unsigned long*>(&tmp));
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}*/
 
 template<int N>
 struct Vectorization<Cuda,N> {

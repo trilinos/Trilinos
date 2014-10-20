@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -13,7 +11,7 @@ IF (Phalanx_ENABLE_Intrepid)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     intrepid_interoperability
     SOURCES IntrepidInteroperability.cpp
-    DEPLIBS phalanx_test_utilities
+    TESTONLYLIBS phalanx_test_utilities
     COMM serial mpi
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"

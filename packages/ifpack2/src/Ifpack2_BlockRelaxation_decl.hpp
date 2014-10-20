@@ -239,7 +239,7 @@ public:
   /// the same communicator as the original matrix.
   virtual void
   setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
-  
+
   //@}
   //! @name Methods implementing the Tpetra::Operator interface.
   //@{
@@ -405,6 +405,14 @@ private:
   //! Contains the (block) diagonal elements of \c Matrix.
   mutable std::vector<Teuchos::RCP<ContainerType> > Containers_;
 
+  //  mutable Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Diagonal_;
+
+  // FIXME (mfh 06 Oct 2014) This doesn't comply with the naming
+  // convention for instance members of a class.  Furthermore, the
+  // class should keep the Vector, not the ArrayRCP to the data _in_
+  // the Vector.
+  Teuchos::ArrayRCP< const scalar_type > DiagRCP;
+
   //! Contains information about non-overlapping partitions.
   Teuchos::RCP<Ifpack2::Partitioner<Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > > Partitioner_;
 
@@ -421,9 +429,6 @@ private:
 
   //! Which type of point relaxation approach to use
   Details::RelaxationType PrecType_;
-
-  //! Minimum diagonal value
-  scalar_type MinDiagonalValue_;
 
   //! Damping factor.
   scalar_type DampingFactor_;

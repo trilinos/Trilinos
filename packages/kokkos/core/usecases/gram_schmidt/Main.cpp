@@ -176,7 +176,7 @@ int main( int argc , char ** argv )
 
 #if defined( KOKKOS_HAVE_CUDA )
     if ( 0 <= cuda_device ) {
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+      Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::SelectDevice select( ( cuda_device + comm_rank ) % cuda_device_count );
       Kokkos::Cuda::initialize( select );
 
@@ -193,7 +193,7 @@ int main( int argc , char ** argv )
       }
 
       Kokkos::Cuda::finalize();
-      Kokkos::Cuda::host_mirror_device_type::finalize();
+      Kokkos::HostSpace::execution_space::finalize();
     }
 #endif
 

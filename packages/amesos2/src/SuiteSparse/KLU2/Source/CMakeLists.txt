@@ -42,9 +42,6 @@
 # @HEADER
 
 
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 
 #
@@ -115,6 +112,8 @@ APPEND_SET(SOURCES
 # C) Define the targets for package's library(s)
 #
 
+# FIXME (mfh 15 Oct 2014) Is this even right?
+# Shouldn't this depend on amesos2 instead of amesos?
 TRIBITS_ADD_EXECUTABLE(
   klu2_simple
   HEADERS ${HEADERS}

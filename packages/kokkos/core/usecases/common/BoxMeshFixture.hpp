@@ -48,7 +48,7 @@
 #include <stdexcept>
 #include <sstream>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <BoxMeshPartition.hpp>
 #include <FEMesh.hpp>
 #include <HexElement.hpp>

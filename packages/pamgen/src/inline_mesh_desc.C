@@ -82,6 +82,7 @@ Inline_Mesh_Desc::~Inline_Mesh_Desc()
   if (IJKcoors[2])delete [] IJKcoors[2];
   if(element_block_lists)delete [] element_block_lists;
   if(sideset_list.size())delete [] sideset_vectors;
+  if(sideset_list.size())delete [] sideset_global_count;
   if(nodeset_list.size())delete [] nodeset_vectors;
 
   std::list < PG_BC_Specification * > :: iterator it;
@@ -172,10 +173,9 @@ long long Inline_Mesh_Desc::Element_Proc(long long global_element_id)
 {
   long long proc = 0;
   if(inline_decomposition_type == SEQUENTIAL){
-    long long total = kestride * nel_tot[2];
-    long long num_per_proc = total/num_processors;
-    proc = global_element_id/num_per_proc;
-    if(proc >= num_processors)proc = num_processors-1;
+    for(unsigned ict = 0; ict < sequential_decomp_limits.size();ict ++){
+      if(sequential_decomp_limits[ict] >= global_element_id)return ict;
+    }
   }
   else if(inline_decomposition_type == RANDOM){
     SRANDOM(global_element_id);
@@ -195,6 +195,35 @@ long long Inline_Mesh_Desc::Element_Proc(long long global_element_id)
 
   return proc;
 }
+
+/****************************************************************************/
+long long Inline_Mesh_Desc::DecomposeSequential(std::set <long long> & global_el_ids)
+/****************************************************************************/
+{
+  sequential_decomp_limits.resize(num_processors);
+  long long ltotal =  kestride * nel_tot[2];
+  long long total = total_unsupressed_elements;
+  long long num_per_proc = total/num_processors;
+  long long remainder = total - num_per_proc*num_processors;
+  long long my_start = my_rank * num_per_proc;
+  long long my_end = my_start + num_per_proc;
+  if(my_rank == num_processors-1)my_end +=remainder;
+  long long mtotal = 0;
+  for(long long acount = 0; acount < ltotal; acount ++){
+    if(!isElementSuppressed(acount)){
+      if(mtotal >= my_start && mtotal < my_end){
+	global_el_ids.insert(acount);
+      }
+      long long the_proc = mtotal/num_per_proc;
+      if(the_proc > (num_processors -1))the_proc = num_processors - 1;
+      sequential_decomp_limits[the_proc] = acount;
+      mtotal ++;
+    }
+  }
+  sequential_decomp_limits[num_processors-1] = ltotal;
+  return 0;
+}
+
 
 
 //! Partitions all elements by a recursive bisection into 
@@ -377,17 +406,7 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     return 0;
   }
   else if(inline_decomposition_type == SEQUENTIAL){
-    long long total = kestride * nel_tot[2];
-    long long num_per_proc = total/num_processors;
-    long long remainder = total - num_per_proc*num_processors;
-    long long my_start = my_rank * num_per_proc;
-    long long my_end = my_start + num_per_proc;
-    if(my_rank == num_processors-1)my_end +=remainder;
-
-    for(long long mtotal = my_start; mtotal < my_end; mtotal ++){
-      global_el_ids.insert(mtotal);
-    }
-    return 0;
+    return DecomposeSequential(global_el_ids);
   }  
 
   std::sort(sorted_partition_list.begin(),sorted_partition_list.end(),part_compare_centroid);//sorted_partition_list.sort();
@@ -419,6 +438,27 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
   return 0;
 }
 
+/****************************************************************************/
+long long Inline_Mesh_Desc::getBlockFromElementNumber(long long the_element)
+/****************************************************************************/
+{
+  long long global_k = the_element/(kestride);
+  long long global_j = (the_element - global_k*(kestride))/(jestride);
+  long long global_i = the_element - global_k*(kestride)-global_j*(jestride);
+  
+  // these are the indices of the block in which the element resides
+  //       long long block_k = global_k/(inline_nz);
+  //       long long block_j = global_j/(inline_ny);
+  //       long long block_i = global_i/(inline_nx);
+  long long block_k = get_block_index(global_k,inline_b[2],c_inline_n[2]);
+  long long block_j = get_block_index(global_j,inline_b[1],c_inline_n[1]);
+  long long block_i = get_block_index(global_i,inline_b[0],c_inline_n[0]);
+  
+  // This is the ordinal number of the block the element resides in
+  long long local_block = block_i + block_j*(inline_b[0])+ block_k*(blockKstride());
+  return local_block;
+}
+
 //! A utility function to build up required bookkeeping objects.
 /****************************************************************************/
 void Inline_Mesh_Desc::Build_Global_Lists(const std::set <long long> & global_element_ids,
@@ -440,24 +480,16 @@ void Inline_Mesh_Desc::Build_Global_Lists(const std::set <long long> & global_el
   std::set <long long> ::iterator lit;
   for(lit = global_element_ids.begin();lit != global_element_ids.end();lit ++){
     long long the_element = *lit;
-    // These are the indices of the element in the entire domain
+
     long long global_k = the_element/(kestride);
     long long global_j = (the_element - global_k*(kestride))/(jestride);
     long long global_i = the_element - global_k*(kestride)-global_j*(jestride);
-
-    // these are the indices of the block in which the element resides
-    //       long long block_k = global_k/(inline_nz);
-    //       long long block_j = global_j/(inline_ny);
-    //       long long block_i = global_i/(inline_nx);
-    long long block_k = get_block_index(global_k,inline_b[2],c_inline_n[2]);
-    long long block_j = get_block_index(global_j,inline_b[1],c_inline_n[1]);
-    long long block_i = get_block_index(global_i,inline_b[0],c_inline_n[0]);
-
+    
     // This is the ordinal number of the block the element resides in
-    long long local_block = block_i + block_j*(inline_b[0])+ block_k*(blockKstride());
+    long long local_block = getBlockFromElementNumber(the_element);
     element_block_lists[local_block].push_back(the_element);
     long long nn;
-
+    long long block_j = get_block_index(global_j,inline_b[1],c_inline_n[1]);
     if(periodic_j && (block_j == (inline_b[1]-1)) && (global_j == (nel_tot[1]-1))){
       if(dimension == 2){
       nn = (global_i+0)*instride + (global_j+0)*jnstride;                         global_node_list.push_back(nn);
@@ -793,37 +825,52 @@ long long Inline_Mesh_Desc::Check_Block_BC_Sets()
   std::list < PG_BC_Specification * > ::iterator setit;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++){
     for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
-    if((*setit)->the_locs[ict].block_boundary_set){
-      long long bid = (*setit)->the_locs[ict].block_id;
-      long long bmax = numBlocks();
-      if (bid < 1 || bid > bmax){
-        error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
-        error_stream << bid ;
-        error_stream << " is outside the range of blocks present in the mesh  1 to ";
-        error_stream << bmax;
-        error_stream << ".";
-	return 1;
+      if((*setit)->the_locs[ict].block_boundary_set){
+	long long bid = (*setit)->the_locs[ict].block_id;
+	long long bmax = numBlocks();
+	if (bid < 1 || bid > bmax){
+	  error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
+	  error_stream << bid ;
+	  error_stream << " is outside the range of blocks present in the mesh  1 to ";
+	  error_stream << bmax;
+	  error_stream << ".";
+	  return 1;
+	}
+	/*check if block suppressed*/
+	if(isBlockSuppressed(bid)){
+	  error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
+	  error_stream << bid ;
+	  error_stream << " is suppressed and may not accept nodesets.";
+	  return 1;
+	}
       }
     }
-    }
   }
+
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++){
     for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
-
-    if((*setit)->the_locs[ict].block_boundary_set){
-      long long bid = (*setit)->the_locs[ict].block_id;
-      long long bmax = numBlocks();
-      if (bid < 1 || bid > bmax){
-        error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
-        error_stream << bid ;
-        error_stream << " is outside the range of blocks present in the mesh  1 to ";
-        error_stream << bmax;
-        error_stream << ".";
-	return 1;
-       }
-    }
+      if((*setit)->the_locs[ict].block_boundary_set){
+	long long bid = (*setit)->the_locs[ict].block_id;
+	long long bmax = numBlocks();
+	if (bid < 1 || bid > bmax){
+	  error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
+	  error_stream << bid ;
+	  error_stream << " is outside the range of blocks present in the mesh  1 to ";
+	  error_stream << bmax;
+	  error_stream << ".";
+	  return 1;
+	}
+	/*check if block suppressed*/
+	if(isBlockSuppressed(bid)){
+	  error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
+	  error_stream << bid ;
+	  error_stream << " is suppressed and may not accept sidesets.";
+	  return 1;
+	}
+      }
     }
   }
+
   return Rename_Block_BC_Sets();
 }
 
@@ -838,6 +885,18 @@ long long Inline_Mesh_Desc::Check_Blocks()
     error_stream << " inline_b[2] " << inline_b[2];
     return 1;
   }
+  /*check suppressed blocks are properly clled out*/
+  long long bmax = numBlocks();
+  std::set<long long >::iterator sit;
+  for(sit = suppressed_blocks.begin();sit != suppressed_blocks.end();sit ++){
+    if(*sit < 0 || (*sit)>bmax){
+      error_stream << "Terminating from Inline_Mesh_Desc::Check_Blocks block ";
+      error_stream << *sit ;
+      error_stream << " may not be suppressed as it does not exist.";
+      return 1;
+    }
+  }
+
   return 0;
 }
 
@@ -1158,6 +1217,8 @@ void Inline_Mesh_Desc::ZeroSet()
     
     transition_radius = -1;
 
+    total_unsupressed_elements = 0;
+
   my_rank = 0;
   num_processors = 1;
 
@@ -1169,6 +1230,7 @@ void Inline_Mesh_Desc::ZeroSet()
   topo_loc_to_exo_face[PLUS_K] = 6;
 
   sideset_vectors = NULL;
+  sideset_global_count = NULL;
   nodeset_vectors = NULL;
 
   debug_mode = false;
@@ -1291,7 +1353,10 @@ void Inline_Mesh_Desc::setStrides()
   iestride = 1;
   jestride = nel_tot[0];
   kestride = (nel_tot[0])*(nel_tot[1]);
-
+  
+  for(long long i = 0; i < kestride*nel_tot[2];i++){
+    if(!isElementSuppressed(i))total_unsupressed_elements ++;
+  }
 }
 
 //! A utility function to build up required bookkeeping objects.
@@ -1384,90 +1449,123 @@ long long Inline_Mesh_Desc::get_neighbor(Topo_Loc tl,
 				   long long lk)
 /****************************************************************************/
 {
+  long long result = -1;
   switch(tl) {
   
   case MINUS_I:{
-    return get_element_number_from_l_i_j_k(ll,li-1,lj,lk);
-  }
-  case PLUS_I:{
-    return get_element_number_from_l_i_j_k(ll,li+1,lj,lk);
-  }
-  case MINUS_J:{
-    return get_element_number_from_l_i_j_k(ll,li,lj-1,lk);
-  }
-  case PLUS_J:{
-    return get_element_number_from_l_i_j_k(ll,li,lj+1,lk);
-  }
-  case MINUS_K:{
-    return get_element_number_from_l_i_j_k(ll,li,lj,lk-1);
-  }
-  case PLUS_K:{
-    return get_element_number_from_l_i_j_k(ll,li,lj,lk+1);
-  }
-  case EDGE0:{
-    return get_element_number_from_l_i_j_k(ll,li,lj-1,lk-1);
-  }
-  case EDGE1:{
-    return get_element_number_from_l_i_j_k(ll,li+1,lj,lk-1);
-  }
-  case EDGE2:{
-    return get_element_number_from_l_i_j_k(ll,li,lj+1,lk-1);
-  }
-  case EDGE3:{
-    return get_element_number_from_l_i_j_k(ll,li-1,lj,lk-1);
-  }
-  case EDGE4:{
-    return get_element_number_from_l_i_j_k(ll,li-1,lj-1,lk);
-  }
-  case EDGE5:{
-    return get_element_number_from_l_i_j_k(ll,li+1,lj-1,lk);
-  }
-  case EDGE6:{
-    return get_element_number_from_l_i_j_k(ll,li+1,lj+1,lk);
-  }
-  case EDGE7:{
-    return get_element_number_from_l_i_j_k(ll,li-1,lj+1,lk);
-  }
-  case EDGE8:{
-    return get_element_number_from_l_i_j_k(ll,li,lj-1,lk+1);
-  }
-  case EDGE9:{
-    return get_element_number_from_l_i_j_k(ll,li+1,lj,lk+1);
-  }
-  case EDGE10:{
-    return get_element_number_from_l_i_j_k(ll,li,lj+1,lk+1);
-  }
-  case EDGE11:{
-    return get_element_number_from_l_i_j_k(ll,li-1,lj,lk+1);
-  }
-  case VERTEX0:{
-    return get_element_number_from_l_i_j_k(ll,li-1,lj-1,lk-1);
-  }
-  case VERTEX1:{
-    return get_element_number_from_l_i_j_k(ll,li+1,lj-1,lk-1);
-  }
-  case VERTEX2:{
-    return get_element_number_from_l_i_j_k(ll,li+1,lj+1,lk-1);
-  }
-  case VERTEX3:{
-    return get_element_number_from_l_i_j_k(ll,li-1,lj+1,lk-1);
-  }
-  case VERTEX4:{
-    return get_element_number_from_l_i_j_k(ll,li-1,lj-1,lk+1);
-  }
-  case VERTEX5:{
-    return get_element_number_from_l_i_j_k(ll,li+1,lj-1,lk+1);
-  }
-  case VERTEX6:{
-    return get_element_number_from_l_i_j_k(ll,li+1,lj+1,lk+1);
-  }
-  case VERTEX7:{
-    return get_element_number_from_l_i_j_k(ll,li-1,lj+1,lk+1);
-  }
-  default:
+    result =  get_element_number_from_l_i_j_k(ll,li-1,lj,lk);
     break;
   }
-  return -1;
+  case PLUS_I:{
+    result =  get_element_number_from_l_i_j_k(ll,li+1,lj,lk);
+    break;
+  }
+  case MINUS_J:{
+    result =  get_element_number_from_l_i_j_k(ll,li,lj-1,lk);
+    break;
+  }
+  case PLUS_J:{
+    result =  get_element_number_from_l_i_j_k(ll,li,lj+1,lk);
+    break;
+  }
+  case MINUS_K:{
+    result =  get_element_number_from_l_i_j_k(ll,li,lj,lk-1);
+    break;
+  }
+  case PLUS_K:{
+    result =  get_element_number_from_l_i_j_k(ll,li,lj,lk+1);
+    break;
+  }
+  case EDGE0:{
+    result =  get_element_number_from_l_i_j_k(ll,li,lj-1,lk-1);
+    break;
+  }
+  case EDGE1:{
+    result =  get_element_number_from_l_i_j_k(ll,li+1,lj,lk-1);
+    break;
+  }
+  case EDGE2:{
+    result =  get_element_number_from_l_i_j_k(ll,li,lj+1,lk-1);
+    break;
+  }
+  case EDGE3:{
+    result =  get_element_number_from_l_i_j_k(ll,li-1,lj,lk-1);
+    break;
+  }
+  case EDGE4:{
+    result =  get_element_number_from_l_i_j_k(ll,li-1,lj-1,lk);
+    break;
+  }
+  case EDGE5:{
+    result =  get_element_number_from_l_i_j_k(ll,li+1,lj-1,lk);
+    break;
+  }
+  case EDGE6:{
+    result =  get_element_number_from_l_i_j_k(ll,li+1,lj+1,lk);
+    break;
+  }
+  case EDGE7:{
+    result =  get_element_number_from_l_i_j_k(ll,li-1,lj+1,lk);
+    break;
+  }
+  case EDGE8:{
+    result =  get_element_number_from_l_i_j_k(ll,li,lj-1,lk+1);
+    break;
+  }
+  case EDGE9:{
+    result =  get_element_number_from_l_i_j_k(ll,li+1,lj,lk+1);
+    break;
+  }
+  case EDGE10:{
+    result =  get_element_number_from_l_i_j_k(ll,li,lj+1,lk+1);
+    break;
+  }
+  case EDGE11:{
+    result =  get_element_number_from_l_i_j_k(ll,li-1,lj,lk+1);
+    break;
+  }
+  case VERTEX0:{
+    result =  get_element_number_from_l_i_j_k(ll,li-1,lj-1,lk-1);
+    break;
+  }
+  case VERTEX1:{
+    result =  get_element_number_from_l_i_j_k(ll,li+1,lj-1,lk-1);
+    break;
+  }
+  case VERTEX2:{
+    result =  get_element_number_from_l_i_j_k(ll,li+1,lj+1,lk-1);
+    break;
+  }
+  case VERTEX3:{
+    result =  get_element_number_from_l_i_j_k(ll,li-1,lj+1,lk-1);
+    break;
+  }
+  case VERTEX4:{
+    result =  get_element_number_from_l_i_j_k(ll,li-1,lj-1,lk+1);
+    break;
+  }
+  case VERTEX5:{
+    result =  get_element_number_from_l_i_j_k(ll,li+1,lj-1,lk+1);
+    break;
+  }
+  case VERTEX6:{
+    result =  get_element_number_from_l_i_j_k(ll,li+1,lj+1,lk+1);
+    break;
+  }
+  case VERTEX7:{
+    result =  get_element_number_from_l_i_j_k(ll,li-1,lj+1,lk+1);
+    break;
+  }
+  default:
+    return -1;
+    break;
+  }
+  if(result != -1){
+    if(isElementSuppressed(result)){
+      result = -1;
+    }
+  }
+  return result;
 }
 
 /****************************************************************************/
@@ -1992,8 +2090,11 @@ void Inline_Mesh_Desc::Calc_Serial_Component(const std::set <long long> & global
   //  These values are combined to calculate the index of the element that corresponds
   // to numbering the elements sequentially within blocks. 
   nsct = 0;
-  if(sideset_list.size() > 0)sideset_vectors = new std::vector < std::pair <long long ,Topo_Loc > > [sideset_list.size()];  
-
+  if(sideset_list.size() > 0){
+    sideset_vectors = new std::vector < std::pair <long long ,Topo_Loc > > [sideset_list.size()];  
+    sideset_global_count = new long long [sideset_list.size()];  
+    for(unsigned ict = 0; ict < sideset_list.size();ict++)sideset_global_count[ict] = 0.;
+  }
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++,nsct ++){
     for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
       
@@ -2006,6 +2107,7 @@ void Inline_Mesh_Desc::Calc_Serial_Component(const std::set <long long> & global
 	  for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
 	    for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
 	      long long elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
+	      if(!isElementSuppressed(elnumber))sideset_global_count[nsct]++;
 	      if(global_element_ids.find(elnumber)!=global_element_ids.end()){
 		std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
 		sideset_vectors[nsct].push_back(el_loc_pair);
@@ -2019,6 +2121,7 @@ void Inline_Mesh_Desc::Calc_Serial_Component(const std::set <long long> & global
 	for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
 	  for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
 	    long long elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
+	    if(!isElementSuppressed(elnumber))sideset_global_count[nsct]++;
 	    if(global_element_ids.find(elnumber)!=global_element_ids.end()){	  
 	      std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
 	      sideset_vectors[nsct].push_back(el_loc_pair);

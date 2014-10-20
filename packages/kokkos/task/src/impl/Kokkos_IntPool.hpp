@@ -48,8 +48,7 @@
 
 #include <iostream>
 
-#include <Kokkos_View.hpp>
-#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Core.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -194,7 +193,7 @@ public:
   };
 
   IntPool( int capacity )
-    : m_pool( Kokkos::allocate_without_initializing , "IntPool" , 1 + ( ( capacity + MASK ) >> SHIFT ) * STRIDE )
+    : m_pool( Kokkos::ViewAllocateWithoutInitializing("IntPool"), 1 + ( ( capacity + MASK ) >> SHIFT ) * STRIDE )
     , m_size( capacity )
     { Kokkos::parallel_for( m_pool.dimension_0() , Init(m_pool,m_size) ); }
 };

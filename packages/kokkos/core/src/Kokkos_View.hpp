@@ -45,7 +45,7 @@
 #define KOKKOS_VIEW_HPP
 
 #include <string>
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 
@@ -106,9 +106,9 @@ namespace Kokkos {
  */
 
 template< class DataType ,
-          class Arg1 ,
-          class Arg2 ,
-          class Arg3 >
+          class Arg1 = void ,
+          class Arg2 = void ,
+          class Arg3 = void >
 class ViewTraits {
 private:
 
@@ -119,27 +119,29 @@ private:
 
   enum { Arg1IsLayout = Impl::is_layout<Arg1>::value };
 
-  enum { Arg1IsExecSpace = Impl::is_execution_space<Arg1>::value };
-  enum { Arg2IsExecSpace = Impl::is_execution_space<Arg2>::value };
-
-  enum { Arg1IsMemorySpace = Impl::is_memory_space<Arg1>::value };
-  enum { Arg2IsMemorySpace = Impl::is_memory_space<Arg2>::value };
+  enum { Arg1IsSpace = Impl::is_space<Arg1>::value };
+  enum { Arg2IsSpace = Impl::is_space<Arg2>::value };
 
   enum { Arg1IsMemoryTraits = Impl::is_memorytraits<Arg1>::value };
   enum { Arg2IsMemoryTraits = Impl::is_memorytraits<Arg2>::value };
   enum { Arg3IsMemoryTraits = Impl::is_memorytraits<Arg3>::value };
 
-  // Arg1 or Arg2 may be either execution space or memory space
-
-  typedef typename Impl::if_c<( Arg1IsExecSpace || Arg1IsMemorySpace ), Arg1 ,
-          typename Impl::if_c<( Arg2IsExecSpace || Arg2IsMemorySpace ), Arg2 ,
-          Kokkos::DefaultExecutionSpace 
+  // Arg1 or Arg2 may have execution and memory spaces
+  typedef typename Impl::if_c<( Arg1IsSpace ), Arg1 ,
+          typename Impl::if_c<( Arg2IsSpace ), Arg2 ,
+          Kokkos::DefaultExecutionSpace
           >::type >::type::execution_space  ExecutionSpace ;
 
-  typedef typename Impl::if_c<( Arg1IsExecSpace || Arg1IsMemorySpace ), Arg1 ,
-          typename Impl::if_c<( Arg2IsExecSpace || Arg2IsMemorySpace ), Arg2 ,
-          Kokkos::DefaultExecutionSpace 
+  typedef typename Impl::if_c<( Arg1IsSpace ), Arg1 ,
+          typename Impl::if_c<( Arg2IsSpace ), Arg2 ,
+          Kokkos::DefaultExecutionSpace
           >::type >::type::memory_space  MemorySpace ;
+
+  typedef typename Impl::is_space<
+    typename Impl::if_c<( Arg1IsSpace ), Arg1 ,
+    typename Impl::if_c<( Arg2IsSpace ), Arg2 ,
+    Kokkos::DefaultExecutionSpace
+    >::type >::type >::host_mirror_space  HostMirrorSpace ;
 
   // Arg1 may be array layout
   typedef typename Impl::if_c< Arg1IsLayout , Arg1 ,
@@ -187,19 +189,22 @@ public:
   enum { rank_dynamic = shape_type::rank_dynamic };
 
   //------------------------------------
-  // Execution space, memory space, and memory traits:
+  // Execution space, memory space, memory access traits, and host mirror space.
 
-  typedef ExecutionSpace  device_type ; // for backward compatibility
+  typedef ExecutionSpace   execution_space ;
+  typedef MemorySpace      memory_space ;
+  typedef MemoryTraits     memory_traits ;
+  typedef HostMirrorSpace  host_mirror_space ;
 
-  typedef ExecutionSpace  execution_space ;
-  typedef MemorySpace     memory_space ;
-  typedef MemoryTraits    memory_traits ;
-
-  typedef typename device_type::size_type  size_type ;
+  typedef typename memory_space::size_type  size_type ;
 
   enum { is_hostspace      = Impl::is_same< memory_space , HostSpace >::value };
   enum { is_managed        = memory_traits::Unmanaged == 0 };
   enum { is_random_access  = memory_traits::RandomAccess == 1 };
+
+  //------------------------------------
+
+  typedef ExecutionSpace  device_type ; // for backward compatibility, to be removed
 
   //------------------------------------
   // Specialization tag:
@@ -351,14 +356,6 @@ struct ViewEnableArrayOper<
 
 namespace Kokkos {
 
-struct AllocateWithoutInitializing {};
-struct ViewWithoutManaging {};
-
-namespace {
-const AllocateWithoutInitializing allocate_without_initializing = AllocateWithoutInitializing();
-const ViewWithoutManaging view_without_managing = ViewWithoutManaging();
-}
-
 /** \class View
  *  \brief View to an array of data.
  *
@@ -499,22 +496,22 @@ public:
 
   typedef View< typename traits::array_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > array_type ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > non_const_type ;
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 void > HostMirror ;
 
   //------------------------------------
@@ -587,13 +584,24 @@ public:
     }
 
   //------------------------------------
-  // Allocation of a managed view with possible alignment padding.
-  // Allocation constructor enabled for managed and non-const values
+  /**\brief Allocation of a managed view with possible alignment padding.
+   *
+   *  Allocation properties for allocating and initializing to the default value_type:
+   *    Kokkos::ViewAllocate()
+   *    Kokkos::ViewAllocate("label")  OR  "label"
+   *    Kokkos::ViewAllocate(std::string("label"))  OR  std::string("label")
+   *
+   *  Allocation properties for allocating and bypassing initialization:
+   *    Kokkos::ViewAllocateWithoutInitializing()
+   *    Kokkos::ViewAllocateWithoutInitializing("label")
+   */
 
-  template< class LabelType >
+  template< class AllocationProperties >
   explicit inline
-  View( const LabelType & label ,
-        const size_t n0 = 0 ,
+  View( const AllocationProperties & prop ,
+        // Impl::ViewAllocProp::size_type exists when the traits and allocation properties
+        // are valid for allocating viewed memory.
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -601,139 +609,46 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         const size_t n7 = 0 ,
-        typename Impl::enable_if<(
-          Impl::IsViewLabel< LabelType >::value &&
-          ( ! Impl::is_const< typename traits::value_type >::value ) &&
-          traits::is_managed ),
-        const size_t >::type n8 = 0 )
+        const size_t n8 = 0 )
     : m_ptr_on_device(0)
     {
-      // typedef typename traits::memory_space  memory_space_ ; // unused
-      // typedef typename traits::value_type    value_type_ ; // unused
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
       m_offset_map.set_padding();
 
-      m_ptr_on_device = data_handle_type::allocate( label , m_offset_map.capacity() );
+      m_ptr_on_device = data_handle_type::allocate( Alloc::label(prop) , m_offset_map.capacity() );
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      Alloc::initialize( *this );
     }
 
-  template< class LabelType >
+  template< class AllocationProperties >
   explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const LabelType & label ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        const size_t n7 = 0 ,
-        typename Impl::enable_if<(
-          Impl::IsViewLabel< LabelType >::value &&
-          ( ! Impl::is_const< typename traits::value_type >::value ) &&
-          traits::is_managed ),
-        const size_t >::type n8 = 0 )
+  View( const AllocationProperties & prop ,
+        const typename traits::array_layout & layout ,
+        // Impl::ViewAllocProp::size_type exists when the traits and allocation properties
+        // are valid for allocating viewed memory.
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type = 0 )
     : m_ptr_on_device(0)
     {
-      // typedef typename traits::memory_space  memory_space_ ; // unused
-      // typedef typename traits::value_type    value_type_ ; // unused
-
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
-      m_offset_map.set_padding();
-
-      m_ptr_on_device = data_handle_type::allocate( label , m_offset_map.capacity() );
-    }
-
-  template< class LabelType >
-  explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const LabelType & label ,
-        typename Impl::enable_if<(
-          Impl::IsViewLabel< LabelType >::value &&
-          ( ! Impl::is_const< typename traits::value_type >::value ) &&
-          traits::is_managed ),
-        const typename traits::array_layout >::type layout )
-    : m_ptr_on_device(0)
-    {
-      // typedef typename traits::memory_space  memory_space_ ; // unused
-      // typedef typename traits::value_type    value_type_ ; // unused
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
       m_offset_map.assign( layout );
       m_offset_map.set_padding();
 
-      m_ptr_on_device = data_handle_type::allocate( label , m_offset_map.capacity() );
-    }
+      m_ptr_on_device = data_handle_type::allocate( Alloc::label(prop) , m_offset_map.capacity() );
 
-  template< class LabelType >
-  explicit inline
-  View( const LabelType & label ,
-        typename Impl::enable_if<(
-          Impl::IsViewLabel< LabelType >::value &&
-          ( ! Impl::is_const< typename traits::value_type >::value ) &&
-          traits::is_managed
-        ), typename traits::array_layout const & >::type layout )
-    : m_ptr_on_device(0)
-    {
-      // typedef typename traits::memory_space  memory_space_ ; // unused
-      // typedef typename traits::value_type    value_type_ ; // unused
-
-      m_offset_map.assign( layout );
-      m_offset_map.set_padding();
-
-      m_ptr_on_device = data_handle_type::allocate( label , m_offset_map.capacity() );
-
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      Alloc::initialize( *this );
     }
 
   //------------------------------------
   // Assign an unmanaged View from pointer, can be called in functors.
   // No alignment padding is performed.
 
-  template< typename T >
+  template< class Type >
   explicit KOKKOS_INLINE_FUNCTION
-  View( T * ptr ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        const size_t n7 = 0 ,
-        typename Impl::enable_if<(
-          ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::const_value_type>::value )
-          &&
-          ( ! traits::is_managed )
-        ), const size_t >::type n8 = 0 )
-    : m_ptr_on_device(ptr)
-    {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
-      m_tracking = false ;
-    }
-
-  template< typename T >
-  explicit KOKKOS_INLINE_FUNCTION
-  View( T * ptr ,
-        typename Impl::enable_if<(
-          ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::const_value_type>::value )
-          &&
-          ( ! traits::is_managed )
-        ), typename traits::array_layout const & >::type layout )
-    : m_ptr_on_device(ptr)
-    {
-      m_offset_map.assign( layout );
-      m_tracking = false ;
-    }
-
-  explicit inline
-  View( const ViewWithoutManaging & ,
-        typename traits::value_type * ptr ,
-        const size_t n0 = 0 ,
+  View( Type * ptr ,
+        typename Impl::ViewRawPointerProp< traits , Type >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -748,10 +663,11 @@ public:
       m_tracking = false ;
     }
 
+  template< class Type >
   explicit KOKKOS_INLINE_FUNCTION
-  View( const ViewWithoutManaging &
-      , typename traits::value_type * ptr
-      , typename traits::array_layout const & layout )
+  View( Type * ptr ,
+        typename traits::array_layout const & layout ,
+        typename Impl::ViewRawPointerProp< traits , Type >::size_type = 0 )
     : m_ptr_on_device(ptr)
     {
       m_offset_map.assign( layout );
@@ -762,7 +678,7 @@ public:
   // Assign unmanaged View to portion of execution space's shared memory
 
   typedef Impl::if_c< ! traits::is_managed ,
-                      const typename traits::device_type::scratch_memory_space & ,
+                      const typename traits::execution_space::scratch_memory_space & ,
                       Impl::ViewError::device_shmem_constructor_requires_unmanaged >
       if_scratch_memory_constructor ;
 
@@ -789,6 +705,29 @@ public:
                           value_type_ * ,
                           Impl::ViewError::device_shmem_constructor_requires_unmanaged >
         if_device_shmem_pointer ;
+
+      // Select the first argument:
+      m_ptr_on_device = if_device_shmem_pointer::select(
+       (value_type_*) space.get_shmem( unsigned( sizeof(value_type_) * m_offset_map.capacity() + unsigned(mask) ) & ~unsigned(mask) ) );
+    }
+
+  explicit KOKKOS_INLINE_FUNCTION
+  View( typename if_scratch_memory_constructor::type space ,
+        typename traits::array_layout const & layout)
+    : m_ptr_on_device(0)
+    {
+      typedef typename traits::value_type  value_type_ ;
+
+      typedef Impl::if_c< ! traits::is_managed ,
+                          value_type_ * ,
+                          Impl::ViewError::device_shmem_constructor_requires_unmanaged >
+        if_device_shmem_pointer ;
+
+      m_offset_map.assign( layout );
+      m_tracking = false ;
+
+      enum { align = 8 };
+      enum { mask  = align - 1 };
 
       // Select the first argument:
       m_ptr_on_device = if_device_shmem_pointer::select(
@@ -1205,8 +1144,38 @@ deep_copy( ST & dst , const View<ST,SL,SD,SM,SS> & src )
 }
 
 //----------------------------------------------------------------------------
-/** \brief  A deep copy between views of the same specialization, compatible type,
- *          same rank, same layout are handled by that specialization.
+/** \brief  A deep copy between views of compatible type, and rank zero.
+ */
+template< class DT , class DL , class DD , class DM , class DS ,
+          class ST , class SL , class SD , class SM , class SS >
+inline
+void deep_copy( const View<DT,DL,DD,DM,DS> & dst ,
+                const View<ST,SL,SD,SM,SS> & src ,
+                typename Impl::enable_if<(
+                  // Same type and destination is not constant:
+                  Impl::is_same< typename View<DT,DL,DD,DM,DS>::value_type ,
+                                 typename View<ST,SL,SD,SM,SS>::non_const_value_type >::value
+                  &&
+                  // Rank zero:
+                  ( unsigned(View<DT,DL,DD,DM,DS>::rank) == unsigned(0) ) &&
+                  ( unsigned(View<ST,SL,SD,SM,SS>::rank) == unsigned(0) )
+                )>::type * = 0 )
+{
+  typedef  View<DT,DL,DD,DM,DS>  dst_type ;
+  typedef  View<ST,SL,SD,SM,SS>  src_type ;
+
+  typedef typename dst_type::memory_space  dst_memory_space ;
+  typedef typename src_type::memory_space  src_memory_space ;
+  typedef typename src_type::value_type    value_type ;
+
+  if ( dst.ptr_on_device() != src.ptr_on_device() ) {
+    Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , sizeof(value_type) );
+  }
+}
+
+//----------------------------------------------------------------------------
+/** \brief  A deep copy between views of the default specialization, compatible type,
+ *          same non-zero rank, same contiguous layout.
  */
 template< class DT , class DL , class DD , class DM ,
           class ST , class SL , class SD , class SM >
@@ -1214,16 +1183,19 @@ inline
 void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
                 const View<ST,SL,SD,SM,Impl::ViewDefault> & src ,
                 typename Impl::enable_if<(
-                  // Destination is not constant:
+                  // Same type and destination is not constant:
                   Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewDefault>::value_type ,
                                  typename View<ST,SL,SD,SM,Impl::ViewDefault>::non_const_value_type >::value
+                  &&
+                  // Same non-zero rank:
+                  ( unsigned(View<DT,DL,DD,DM,Impl::ViewDefault>::rank) ==
+                    unsigned(View<ST,SL,SD,SM,Impl::ViewDefault>::rank) )
+                  &&
+                  ( 0 < unsigned(View<DT,DL,DD,DM,Impl::ViewDefault>::rank) )
                   &&
                   // Same layout:
                   Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewDefault>::array_layout ,
                                  typename View<ST,SL,SD,SM,Impl::ViewDefault>::array_layout >::value
-                  &&
-                  // Same rank:
-                  ( unsigned(View<DT,DL,DD,DM,Impl::ViewDefault>::rank) == unsigned(View<ST,SL,SD,SM,Impl::ViewDefault>::rank) )
                 )>::type * = 0 )
 {
   typedef  View<DT,DL,DD,DM,Impl::ViewDefault>  dst_type ;
@@ -1232,21 +1204,19 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
   typedef typename dst_type::memory_space  dst_memory_space ;
   typedef typename src_type::memory_space  src_memory_space ;
 
+  enum { is_contiguous = // Contiguous (e.g., non-strided, non-tiled) layout
+           Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewDefault>::array_layout , LayoutLeft >::value ||
+           Impl::is_same< typename View<DT,DL,DD,DM,Impl::ViewDefault>::array_layout , LayoutRight >::value };
+
   if ( dst.ptr_on_device() != src.ptr_on_device() ) {
 
     // Same shape (dimensions)
     Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
 
-    if ( dst.capacity() == src.capacity() ) {
+    if ( is_contiguous && dst.capacity() == src.capacity() ) {
 
       // Views span equal length contiguous range.
       // Assuming can perform a straight memory copy over this range.
-      //
-      // TODO: Problem if these are subviews spanning equal length
-      //       contiguous range have non-padding gaps then those
-      //       gaps will be erroneously copied.
-      //       Need to detect if gaps are mere padding or valid subranges.
-      //       If subranges then cannot do a straight memory copy.
 
       const size_t nbytes = sizeof(typename dst_type::value_type) * dst.capacity();
 
@@ -1255,8 +1225,6 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
     else {
       // Destination view's execution space must be able to directly access source memory space
       // in order for the ViewRemap functor run in the destination memory space's execution space.
-      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< dst_memory_space , src_memory_space >::verify();
-
       Impl::ViewRemap< dst_type , src_type >( dst , src );
     }
   }
@@ -1272,17 +1240,19 @@ inline
 void deep_copy( const View< DT, DL, DD, DM, DS > & dst ,
                 const View< ST, SL, SD, SM, SS > & src ,
                 const typename Impl::enable_if<(
-                  // Destination is not constant:
+                  // Same type and destination is not constant:
                   Impl::is_same< typename View<DT,DL,DD,DM,DS>::value_type ,
                                  typename View<DT,DL,DD,DM,DS>::non_const_value_type >::value
                   &&
-                  // Same space
-                  Impl::is_same< typename View<DT,DL,DD,DM,DS>::memory_space ,
-                                 typename View<ST,SL,SD,SM,SS>::memory_space >::value
+                  // Source memory space is accessible to destination memory space
+                  Impl::VerifyExecutionCanAccessMemorySpace< typename View<DT,DL,DD,DM,DS>::memory_space
+                                                           , typename View<ST,SL,SD,SM,SS>::memory_space >::value
                   &&
-                  // Same rank
+                  // Same non-zero rank
                   ( unsigned( View<DT,DL,DD,DM,DS>::rank ) ==
                     unsigned( View<ST,SL,SD,SM,SS>::rank ) )
+                  &&
+                  ( 0 < unsigned( View<DT,DL,DD,DM,DS>::rank ) )
                   &&
                   // Different layout or different specialization:
                   ( ( ! Impl::is_same< typename View<DT,DL,DD,DM,DS>::array_layout ,

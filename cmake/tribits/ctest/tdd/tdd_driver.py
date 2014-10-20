@@ -70,6 +70,93 @@ sys.path.insert(0, tribitsTddDriverDir+"/../../python")
 from GeneralScriptSupport import *
 
 
+def install_ctest(tddDashboardRootDir, tribitsDir):
+
+  # dashboardToolsDir is the directory to which any needed tools will be downloaded.
+  #
+  dashboardToolsDir = tddDashboardRootDir + "/tools"
+  print "dashboardToolsDir = '"+dashboardToolsDir+"'"
+
+  # Make sure tools directory exists:
+  #
+  if not os.path.exists(dashboardToolsDir):
+    os.makedirs(dashboardToolsDir)
+    if not os.path.exists(dashboardToolsDir):
+      print "error: could not create directory \"" + dashboardToolsDir + "\""
+      sys.exit(1)
+
+  # Download and install CMake/CTest to use for the outer driver
+  #
+  cmakeTddDownloadBaseDir = dashboardToolsDir + "/cmake-TDD"
+
+  TDD_CMAKE_INSTALLER_TYPE = "release"
+  if "TDD_CMAKE_INSTALLER_TYPE" in os.environ:
+    TDD_CMAKE_INSTALLER_TYPE = os.environ["TDD_CMAKE_INSTALLER_TYPE"]
+
+  TDD_FORCE_CMAKE_INSTALL = "1"
+  if "TDD_FORCE_CMAKE_INSTALL" in os.environ:
+    TDD_FORCE_CMAKE_INSTALL = os.environ["TDD_FORCE_CMAKE_INSTALL"]
+
+  TDD_HTTP_PROXY = ""
+  if "TDD_HTTP_PROXY" in os.environ:
+    TDD_HTTP_PROXY = os.environ["TDD_HTTP_PROXY"]
+
+  # Only install cmake-TDD if necessary or if requested.
+  # (Requires network connectivity; avoid when possible.)
+  #
+
+  print "\n***"
+  print "*** Downloading and installing CMake to \"" + cmakeTddDownloadBaseDir + "\"..."
+  print "***\n"
+
+  installMasterCMake = False
+  if not os.path.exists(cmakeTddDownloadBaseDir):
+    print "Forcing install of master CMake because '"+cmakeTddDownloadBaseDir+"' does not exist!"
+    installMasterCMake = True
+  elif TDD_FORCE_CMAKE_INSTALL == "1":
+    print "Forcing install of master CMake because" \
+      + " TDD_FORCE_CMAKE_INSTALL == 1!"
+    installMasterCMake = True
+  else:
+    print "Leaving current CMake in place ..." \
+
+  if installMasterCMake:
+
+    cmnd =  sys.executable + " " \
+      + tribitsDir + "/python/download-cmake.py" \
+      + " --skip-detect" \
+      + " --install-dir="+cmakeTddDownloadBaseDir \
+      + " --installer-type="+TDD_CMAKE_INSTALLER_TYPE
+
+    if TDD_HTTP_PROXY:
+      cmnd += " --http-proxy="+TDD_HTTP_PROXY
+
+    try:
+      echoRunSysCmnd( cmnd,
+        timeCmnd = True,
+        workingDir = dashboardToolsDir \
+        )
+    except Exception, e:
+      print "WARNING! The following command failed!\n"+cmnd
+      print "However, not updating CMake is not the end of the world!"
+
+
+  # Find ctest under cmakeTddDownloadBaseDir:
+  #
+  ctestGlobStr = glob.glob(cmakeTddDownloadBaseDir + "/bin/ctest*")
+  if 0 == len(ctestGlobStr):
+    ctestGlobStr = glob.glob(cmakeTddDownloadBaseDir + "/*/bin/ctest*")
+  if 0 == len(ctestGlobStr):
+    ctestGlobStr = glob.glob(cmakeTddDownloadBaseDir + "/*/*/bin/ctest*")
+  if 1 != len(ctestGlobStr):
+    print "error: could not find ctest executable after download..."
+    sys.exit(2)
+
+  ctestExe = ctestGlobStr[0]
+
+  return ctestExe
+
+
 def invoke_ctest(ctestExe, script, tddDashboardRootDir, environment = {}):
   """
   Invokes CTest using the executable given by the ctestExe argument,
@@ -140,92 +227,22 @@ def run_driver(ctestSourceDirectory, projectRepoBaseDir):
       tddDashboardRootDir = os.environ["TDD_DASHBOARD_ROOT"]
     print "tddDashboardRootDir = '"+tddDashboardRootDir+"'"
 
-    # dashboardToolsDir is the directory to which any needed tools will be downloaded.
-    #
-    dashboardToolsDir = tddDashboardRootDir + "/tools"
-    print "dashboardToolsDir = '"+dashboardToolsDir+"'"
-
-    # Make sure tools directory exists:
-    #
-    if not os.path.exists(dashboardToolsDir):
-      os.makedirs(dashboardToolsDir)
-      if not os.path.exists(dashboardToolsDir):
-        print "error: could not create directory \"" + dashboardToolsDir + "\""
-        sys.exit(1)
-
     os.chdir(tddDashboardRootDir)
     if verbose: "\nNew PWD = '"+os.getcwd()+"'"
 
-    # Download and install CMake/CTest to use for the outer driver
-    #
-    cmakeTddDownloadBaseDir = dashboardToolsDir + "/cmake-TDD"
+    tddUseSystemCTest = False
+    if "TRIBITS_TDD_USE_SYSTEM_CTEST" in os.environ \
+      and os.environ["TRIBITS_TDD_USE_SYSTEM_CTEST"] == "1" \
+      :
+      tddUseSystemCTest = True
+    print "tddUseSystemCTest =", tddUseSystemCTest
 
-    TDD_CMAKE_INSTALLER_TYPE = "release"
-    if "TDD_CMAKE_INSTALLER_TYPE" in os.environ:
-      TDD_CMAKE_INSTALLER_TYPE = os.environ["TDD_CMAKE_INSTALLER_TYPE"]
-
-    TDD_FORCE_CMAKE_INSTALL = "1"
-    if "TDD_FORCE_CMAKE_INSTALL" in os.environ:
-      TDD_FORCE_CMAKE_INSTALL = os.environ["TDD_FORCE_CMAKE_INSTALL"]
-
-    TDD_HTTP_PROXY = ""
-    if "TDD_HTTP_PROXY" in os.environ:
-      TDD_HTTP_PROXY = os.environ["TDD_HTTP_PROXY"]
-
-    # Only install cmake-TDD if necessary or if requested.
-    # (Requires network connectivity; avoid when possible.)
-    #
-
-    print "\n***"
-    print "*** Downloading and installing CMake to \"" + cmakeTddDownloadBaseDir + "\"..."
-    print "***\n"
-
-    installMasterCMake = False
-    if not os.path.exists(cmakeTddDownloadBaseDir):
-      print "Forcing install of master CMake because '"+cmakeTddDownloadBaseDir+"' does not exist!"
-      installMasterCMake = True
-    elif TDD_FORCE_CMAKE_INSTALL == "1":
-      print "Forcing install of master CMake because" \
-        + " TDD_FORCE_CMAKE_INSTALL == 1!"
-      installMasterCMake = True
+    if tddUseSystemCTest:
+      ctestExe = getCmndOutput("which ctest", True, False)
     else:
-      print "Leaving current CMake in place ..." \
+      ctestExe = install_ctest(tddDashboardRootDir, tribitsDir)
 
-    if installMasterCMake:
-
-      cmnd =  sys.executable + " " \
-        + tribitsDir + "/python/download-cmake.py" \
-        + " --skip-detect" \
-        + " --install-dir="+cmakeTddDownloadBaseDir \
-        + " --installer-type="+TDD_CMAKE_INSTALLER_TYPE
-
-      if TDD_HTTP_PROXY:
-        cmnd += " --http-proxy="+TDD_HTTP_PROXY
-
-      try:
-        echoRunSysCmnd( cmnd,
-          timeCmnd = True,
-          workingDir = dashboardToolsDir \
-          )
-      except Exception, e:
-        print "WARNING! The following command failed!\n"+cmnd
-        print "However, not updating CMake is not the end of the world!"
-
-
-    # Find ctest under cmakeTddDownloadBaseDir:
-    #
-    ctestGlobStr = glob.glob(cmakeTddDownloadBaseDir + "/bin/ctest*")
-    if 0 == len(ctestGlobStr):
-      ctestGlobStr = glob.glob(cmakeTddDownloadBaseDir + "/*/bin/ctest*")
-    if 0 == len(ctestGlobStr):
-      ctestGlobStr = glob.glob(cmakeTddDownloadBaseDir + "/*/*/bin/ctest*")
-    if 1 != len(ctestGlobStr):
-      print "error: could not find ctest executable after download..."
-      sys.exit(2)
-
-    ctestExe = ctestGlobStr[0]
     print "\nctestExe = '" + ctestExe + "'"
-
     if not os.path.exists(ctestExe):
       print "error: ctest does not exist after installation..."
       sys.exit(3)

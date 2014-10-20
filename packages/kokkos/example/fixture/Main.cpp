@@ -2,14 +2,9 @@
 #include <utility>
 #include <iostream>
 
-#include <Kokkos_Macros.hpp>
-#include <HostExecSpace.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <BoxElemPart.hpp>
-
-#if defined( KOKKOS_HAVE_CUDA )
-#include <Kokkos_Cuda.hpp>
-#endif
 
 namespace Kokkos {
 namespace Example {
@@ -249,19 +244,19 @@ int main()
 //  test_elem();
 
   {
-    std::cout << "test_fixture< HostExecSpace >" << std::endl ;
-    HostExecSpace::initialize( 1 );
-    Kokkos::Example::test_fixture< HostExecSpace >();
-    HostExecSpace::finalize();
+    std::cout << "test_fixture< Host >" << std::endl ;
+    Kokkos::HostSpace::execution_space::initialize( 1 );
+    Kokkos::Example::test_fixture< Kokkos::HostSpace::execution_space >();
+    Kokkos::HostSpace::execution_space::finalize();
   }
 #if defined( KOKKOS_HAVE_CUDA )
   {
     std::cout << "test_fixture< Cuda >" << std::endl ;
-    Kokkos::Cuda::host_mirror_device_type::initialize();
+    Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
     Kokkos::Example::test_fixture< Kokkos::Cuda >();
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
   }
 #endif
 }

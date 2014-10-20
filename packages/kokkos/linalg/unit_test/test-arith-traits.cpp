@@ -42,19 +42,7 @@
 #include <iostream>
 
 #include "Kokkos_ArithTraitsTest.hpp"
-#include "Kokkos_Serial.hpp"
-
-#ifdef KOKKOS_HAVE_OPENMP
-#  include "Kokkos_OpenMP.hpp"
-#endif // KOKKOS_HAVE_OPENMP
-
-#ifdef KOKKOS_HAVE_PTHREAD
-#  include "Kokkos_Threads.hpp"
-#endif // KOKKOS_HAVE_PTHREAD
-
-#ifdef KOKKOS_HAVE_CUDA
-#  include "Kokkos_Cuda.hpp"
-#endif // KOKKOS_HAVE_CUDA
+#include "Kokkos_Core.hpp"
 
 #ifdef KOKKOS_HAVE_CUDA
 // We annoyingly have to build the CUDA tests in a separate .cu file,
@@ -122,7 +110,7 @@ main (int argc, char* argv[])
 #ifdef KOKKOS_HAVE_CUDA
   // Start up the Cuda device's host mirror device (must be done
   // before starting up the Cuda device)
-  Kokkos::Cuda::host_mirror_device_type::initialize ();
+  Kokkos::HostSpace::execution_space::initialize ();
 
   bool cudaWorked = false;
   try {
@@ -152,7 +140,7 @@ main (int argc, char* argv[])
 
   // Close down the Cuda device's host mirror device (must be done
   // after starting up the Cuda device)
-  Kokkos::Cuda::host_mirror_device_type::finalize ();
+  Kokkos::HostSpace::execution_space::finalize ();
 #endif // KOKKOS_HAVE_CUDA
 
   if (success) {

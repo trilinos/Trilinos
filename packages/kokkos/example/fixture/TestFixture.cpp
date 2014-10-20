@@ -46,7 +46,7 @@
 namespace Kokkos {
 namespace Example {
 
-template void test_fixture<HostExecSpace>();
+template void test_fixture< Kokkos::HostSpace::execution_space >();
 
 } /* namespace Example */
 } /* namespace Kokkos */

@@ -123,11 +123,11 @@ FUNCTION(COMBINED_OPTION  COMBINED_OPTION_NAME)
         "${OPTION_NAMES_AND_VALUES}  ${DEP_OPTION_NAME}='${${DEP_OPTION_NAME}}'\n")
     ENDFOREACH()
 
-    MESSAGE(FATAL_ERROR 
+    MESSAGE(FATAL_ERROR
       "Error: you can not enable the option ${COMBINED_OPTION_NAME} unless"
       " you also enable the options ${OPTION_NAMES}.  The current option"
       "values are:\n${OPTION_NAMES_AND_VALUES}" )
 
   ENDIF()
-  
+
 ENDFUNCTION()

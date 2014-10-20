@@ -10,37 +10,41 @@ number of partitions in each level of recursion need not be the same.
 
 Coordinates can be weighted, in which case the total weight in each part is balanced, rather than the number of coordinates in each part.
 
-\subsection mj_input Input
+\section mj_input Input
 
 MJ expects a Zoltan2::CoordinateInput object.  This class supports geometric
 coordinates of arbitrary dimension, with weights of arbritrary dimension.  If
 weights are not provided, MJ assumes coordinates are equally weighted.
 
-\subsection mj_parameters Parameters
+\section mj_parameters Parameters
+
+In order to anable MJ:
+- algorithm should be set to "multijagged"
+
 
 The following parameters are used by the MJ algorithm:
 
-- \ref imbalance_tolerance (default is \e .01% )
+- \ref imbalance_tolerance (default is \e 1.0001 )
 - \ref mj_parts (default is \e none ) 
 - \ref rectilinear_blocks (default is \e yes )
 - \ref mj_recursion_depth (default is \e coordinate dimension )
 - \ref mj_enable_rcb (default is \e 0 )
 - \ref mj_concurrent_part_count (default is \e 1)
 
-\subsection mj_solution Solution
+\section mj_solution Solution
 
 An MJ solution is a list of global IDs with a corresponding list of part numbers and process ranks.  
 
-\subsection mj_quality_measures Quality measures
+\section mj_quality_measures Quality measures
 
 MJ quality is measured with an imbalance measure.  Use the parameter
 \ref compute_metrics if you want the Zoltan2::PartitioningProblem to
 compute imbalance metrics for the solution.
 
-\subsection mj_examples Examples
-See test/partition/MultiJaggedTest.cpp for an example of using the MJ algorithm.
+\section mj_examples Examples
+See MultiJaggedTest.cpp for an example of using the MJ algorithm.
 
-\subsection mj_source Source
+\section mj_source Source
 Zoltan2_AlgMultiJagged.hpp is the source file for MJ.
 
 */

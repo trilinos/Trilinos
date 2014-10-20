@@ -404,6 +404,85 @@ public:
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+namespace Impl {
+
+class QthreadTeamPolicyMember {
+private:
+        Impl::QthreadExec   & m_exec ;
+  const int                   m_team_size ;
+  const int                   m_team_rank ;
+  const int                   m_league_size ;
+  const int                   m_league_end ;
+        int                   m_league_rank ;
+
+public:
+
+  KOKKOS_INLINE_FUNCTION
+  Kokkos::Qthread::scratch_memory_space team_shmem() const
+    { return Kokkos::Qthread::scratch_memory_space( m_exec ); }
+
+  KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
+  KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
+  KOKKOS_INLINE_FUNCTION int team_rank() const { return m_team_rank ; }
+  KOKKOS_INLINE_FUNCTION int team_size() const { return m_team_size ; }
+
+  KOKKOS_INLINE_FUNCTION void team_barrier() const
+    { m_exec.shepherd_barrier( m_team_size ); }
+
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_reduce( const Type & value ) const
+    { return m_exec.template shepherd_reduce<Type>( m_team_size , value ); }
+
+  template< typename JoinOp >
+  KOKKOS_INLINE_FUNCTION typename JoinOp::value_type
+    team_reduce( const typename JoinOp::value_type & value
+               , const JoinOp & op ) const
+    { return m_exec.template shepherd_reduce<JoinOp>( m_team_size , value , op ); }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value ) const
+    { return m_exec.template shepherd_scan<Type>( m_team_size , value ); }
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename Type >
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
+    { return m_exec.template shepherd_scan<Type>( m_team_size , value , global_accum ); }
+
+  //----------------------------------------
+  // Private for the driver ( for ( member_type i(exec,team); i ; i.next_team() ) { ... }
+
+  // Initialize
+  template< class Arg0 , class Arg1 >
+  QthreadTeamPolicyMember( Impl::QthreadExec & exec , const TeamPolicy<Arg0,Arg1,Qthread> & team )
+    : m_exec( exec )
+    , m_team_size(   team.m_team_size )
+    , m_team_rank(   exec.shepherd_worker_rank() )
+    , m_league_size( team.m_league_size )
+    , m_league_end(  team.m_league_size - team.m_shepherd_iter * ( exec.shepherd_size() - ( exec.shepherd_rank() + 1 ) ) )
+    , m_league_rank( m_league_end > team.m_shepherd_iter ? m_league_end - team.m_shepherd_iter : 0 )
+  {}
+
+  // Continue
+  operator bool () const { return m_league_rank < m_league_end ; }
+
+  // iterate
+  void next_team() { ++m_league_rank ; }
+};
+
+} // namespace Impl
 
 template< class Arg0 , class Arg1 >
 class TeamPolicy< Arg0 , Arg1 , Kokkos::Qthread >
@@ -455,94 +534,30 @@ public:
   int team_size_max( const FunctorType & )
     { return Qthread::instance().shepherd_worker_size(); }
 
-  class member_type {
-  private:
-          Impl::QthreadExec   & m_exec ;
-    const int                   m_team_size ;
-    const int                   m_team_rank ;
-    const int                   m_league_size ;
-    const int                   m_league_end ;
-          int                   m_league_rank ;
+  typedef Impl::QthreadTeamPolicyMember member_type ;
 
-  public:
-
-    KOKKOS_INLINE_FUNCTION
-    Kokkos::Qthread::scratch_memory_space team_shmem() const
-      { return Kokkos::Qthread::scratch_memory_space( m_exec ); }
-
-    KOKKOS_INLINE_FUNCTION int league_rank() const { return m_league_rank ; }
-    KOKKOS_INLINE_FUNCTION int league_size() const { return m_league_size ; }
-    KOKKOS_INLINE_FUNCTION int team_rank() const { return m_team_rank ; }
-    KOKKOS_INLINE_FUNCTION int team_size() const { return m_team_size ; }
-
-    KOKKOS_INLINE_FUNCTION void team_barrier() const
-      { m_exec.shepherd_barrier( m_team_size ); }
-
-    template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type team_reduce( const Type & value ) const
-      { return m_exec.template shepherd_reduce<Type>( m_team_size , value ); }
-
-    template< typename JoinOp >
-    KOKKOS_INLINE_FUNCTION typename JoinOp::value_type
-      team_reduce( const typename JoinOp::value_type & value
-                 , const JoinOp & op ) const
-      { return m_exec.template shepherd_reduce<JoinOp>( m_team_size , value , op ); }
-
-    /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
-     *
-     *  The highest rank thread can compute the reduction total as
-     *    reduction_total = dev.team_scan( value ) + value ;
-     */
-    template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value ) const
-      { return m_exec.template shepherd_scan<Type>( m_team_size , value ); }
-
-    /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
-     *          with intra-team non-deterministic ordering accumulation.
-     *
-     *  The global inter-team accumulation value will, at the end of the
-     *  league's parallel execution, be the scan's total.
-     *  Parallel execution ordering of the league's teams is non-deterministic.
-     *  As such the base value for each team's scan operation is similarly
-     *  non-deterministic.
-     */
-    template< typename Type >
-    KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value , Type * const global_accum ) const
-      { return m_exec.template shepherd_scan<Type>( m_team_size , value , global_accum ); }
-
-    //----------------------------------------
-    // Private for the driver ( for ( member_type i(exec,team); i ; i.next_team() ) { ... }
-
-    // Initialize
-    member_type( Impl::QthreadExec & exec , const TeamPolicy & team )
-      : m_exec( exec )
-      , m_team_size(   team.m_team_size )
-      , m_team_rank(   exec.shepherd_worker_rank() )
-      , m_league_size( team.m_league_size )
-      , m_league_end(  team.m_league_size - team.m_shepherd_iter * ( exec.shepherd_size() - ( exec.shepherd_rank() + 1 ) ) )
-      , m_league_rank( m_league_end > team.m_shepherd_iter ? m_league_end - team.m_shepherd_iter : 0 )
-    {}
-
-    // Continue
-    operator bool () const { return m_league_rank < m_league_end ; }
-
-    // iterate
-    void next_team() { ++m_league_rank ; }
-  };
+  friend class Impl::QthreadTeamPolicyMember ;
 };
 
-template< unsigned int VectorLength, class WorkArgTag >
-class TeamVectorPolicy< VectorLength, Kokkos::Qthread , WorkArgTag > {
+template< unsigned VectorLength
+        , class Arg0
+        , class Arg1 >
+class TeamVectorPolicy<VectorLength, Arg0, Arg1, Kokkos::Qthread> {
+public:
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef Kokkos::Qthread            execution_space ;  ///< Execution space
+  typedef TeamVectorPolicy           execution_policy ;
+
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Qthread , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 private:
   const int m_league_size ;
   const int m_team_size ;
   const int m_shepherd_iter ;
 
 public:
-
-  typedef Impl::ExecutionPolicyTag  kokkos_tag ;
-  typedef Qthread                   execution_space ;
-
 
   // One active team per shepherd
   TeamVectorPolicy( Kokkos::Qthread & q
@@ -644,11 +659,16 @@ public:
     op();
   }
 
+  /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
+  template< class Operation , typename ValueType>
+  KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op, ValueType& bcast) const {
+    op();
+  }
   /** \brief  Intra-thread vector parallel for. Executes op(iType i) for each i=0..N-1.
    *
    * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
    * This functionality requires C++11 support.*/
-  template< typename iType, class Operation, typename ValueType >
+  template< typename iType, class Operation >
   KOKKOS_INLINE_FUNCTION void vector_par_for(const iType n, const Operation & op) const {
     #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
     #pragma ivdep

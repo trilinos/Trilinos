@@ -1,9 +1,10 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC)
+
+  # NOTE: This test only runs in serial!
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     petsc_1DFiniteDifference_example

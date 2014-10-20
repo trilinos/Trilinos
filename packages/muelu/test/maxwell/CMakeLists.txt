@@ -4,7 +4,6 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Tpetra
   )
 
-INCLUDE(TribitsAddExecutable)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
@@ -19,7 +18,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
       Maxwell3D
       SOURCES Maxwell3D.cpp
       COMM serial
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -27,7 +25,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
       SOURCES Maxwell3D.cpp
       NUM_MPI_PROCS 4
       COMM mpi
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     IF(HAVE_MUELU_COMPLEX)
@@ -36,7 +33,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
         MaxwellComplex3D
         SOURCES MaxwellComplex3D.cpp
         COMM serial
-        DEPLIBS muelu xpetra muelu-adapters
       )
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -44,7 +40,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
         SOURCES MaxwellComplex3D.cpp
         NUM_MPI_PROCS 4
         COMM mpi
-        DEPLIBS muelu xpetra muelu-adapters
       )
 
     ENDIF()

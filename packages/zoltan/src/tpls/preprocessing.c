@@ -288,8 +288,10 @@ int Zoltan_Preprocess_Graph(
 
 
       j = (int)gr->xadj[gr->num_obj];
-      gr->adjncy = (indextype *)ZOLTAN_MALLOC(sizeof(indextype) * j);
-      if (j && !gr->adjncy)
+      gr->adjncy = (indextype *)ZOLTAN_MALLOC(sizeof(indextype) * (j+1)); 
+                   /* KDD 10/7/14  ParMETIS 4 doesn't like NULL adjncy array
+                      when j (number of adjacencies) is 0; force non-NULL */
+      if ((j+1) && !gr->adjncy)
         ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
 
       for (i=0; i < j; i++)

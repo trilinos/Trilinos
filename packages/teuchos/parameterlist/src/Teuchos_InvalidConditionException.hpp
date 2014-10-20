@@ -51,7 +51,7 @@ namespace Teuchos {
  * Thrown when some aspect of a Condition has been determined to be invalid.
  */
 class InvalidConditionException : public std::logic_error{
-public: 
+public:
   /**
    * Constructs an InvalidConditionException
    *

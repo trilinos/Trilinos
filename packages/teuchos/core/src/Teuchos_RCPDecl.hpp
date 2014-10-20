@@ -79,14 +79,14 @@ enum ERCPUndefinedWithDealloc { RCP_UNDEFINED_WITH_DEALLOC };
 
 /** \brief Smart reference counting pointer class for automatic garbage
   collection.
-  
+
 For a carefully written discussion about what this class is and basic details
 on how to use it see the <A
 HREF="../../../teuchos/doc/html/RefCountPtrBeginnersGuideSAND.pdf">beginners
 guide</A>.
 
 <b>Quickstart for <tt>RCP</tt></b>
- 
+
 Here we present a short, but fairly comprehensive, quick-start for the
 use of <tt>RCP<></tt>.  The use cases described here
 should cover the overwhelming majority of the use instances of
@@ -642,9 +642,9 @@ public:
    *
    * Return values:<ul>
    * <li><tt>RCP_STRONG</tt>: Underlying reference-counted object will be deleted
-   *     when <tt>*this</tt> is destroyed if <tt>strong_count()==1</tt>. 
+   *     when <tt>*this</tt> is destroyed if <tt>strong_count()==1</tt>.
    * <li><tt>RCP_WEAK</tt>: Underlying reference-counted object will not be deleted
-   *     when <tt>*this</tt> is destroyed if <tt>strong_count() > 0</tt>. 
+   *     when <tt>*this</tt> is destroyed if <tt>strong_count() > 0</tt>.
    * <li><tt>RCP_STRENGTH_INVALID</tt>: <tt>*this</tt> is not strong or weak but
    *     is null.
    * </ul>
@@ -679,7 +679,7 @@ public:
   /** \brief Total count (strong_count() + weak_count()). */
   inline int total_count() const;
 
-  /** \brief Give <tt>this</tt> and other <tt>RCP<></tt> objects ownership 
+  /** \brief Give <tt>this</tt> and other <tt>RCP<></tt> objects ownership
    * of the referenced object <tt>this->get()</tt>.
    *
    * See ~RCP() above.  This function
@@ -840,7 +840,7 @@ public:
   /** \brief Reset the raw pointer with default ownership to delete.
    *
    * Equivalent to calling:
-   
+
    \code
 
      r_rcp = rcp(p)
@@ -964,7 +964,7 @@ public:
   /// Gives the type (required)
   typedef T ptr_t;
   /// Deallocates a pointer <tt>ptr</tt> using <tt>delete ptr</tt> (required).
-  void free( T* ptr ) { 
+  void free( T* ptr ) {
     (void) ptr; // silence "unused parameter" compiler warning
   }
 };
@@ -1158,7 +1158,7 @@ embeddedObjDeallocArrayDelete(const Embedded &embedded, EPrePostDestruction preP
  *
  * If the pointer <tt>p</tt> did not come from <tt>new</tt> then
  * either the client should use the version of <tt>rcp()</tt> that
- * that uses a deallocator policy object or should pass in 
+ * that uses a deallocator policy object or should pass in
  * <tt>owns_mem = false</tt>.
  *
  * \relates RCP

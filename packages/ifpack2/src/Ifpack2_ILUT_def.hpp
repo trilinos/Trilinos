@@ -53,6 +53,7 @@
 #include <Ifpack2_LocalFilter.hpp>
 #include <Ifpack2_Parameters.hpp>
 #include <Tpetra_CrsMatrix_def.hpp>
+#include <Ifpack2_ILUT.hpp>
 
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>

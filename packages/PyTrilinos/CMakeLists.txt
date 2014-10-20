@@ -29,7 +29,6 @@
 # @HEADER
 
 # Include the package macros
-INCLUDE(TribitsPackageMacros)
 
 # Set the package name
 TRIBITS_PACKAGE(PyTrilinos DISABLE_STRONG_WARNINGS)
@@ -63,6 +62,11 @@ IF(PyTrilinos_ENABLE_Triutils)
   APPEND_SET(PyTrilinos_PACKAGES TriUtils)
   APPEND_SET(PyTrilinos_MODULES  TriUtils)
 ENDIF(PyTrilinos_ENABLE_Triutils)
+
+IF(PyTrilinos_ENABLE_Tpetra)
+  APPEND_SET(PyTrilinos_PACKAGES Tpetra)
+  APPEND_SET(PyTrilinos_MODULES  Tpetra)
+ENDIF(PyTrilinos_ENABLE_Tpetra)
 
 IF(PyTrilinos_ENABLE_EpetraExt)
   APPEND_SET(PyTrilinos_PACKAGES EpetraExt)

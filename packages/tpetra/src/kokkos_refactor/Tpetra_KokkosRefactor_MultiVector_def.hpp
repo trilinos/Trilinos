@@ -313,7 +313,7 @@ namespace Tpetra {
         view_.h_view(i,j) = data[j*LDA+i];
       }
     }
-    view_.template modify<typename dual_view_type::host_mirror_device_type> ();
+    view_.template modify<typename dual_view_type::host_mirror_space> ();
     origView_ = view_;
   }
 
@@ -783,12 +783,12 @@ namespace Tpetra {
     // FIXME (mfh 14 Jul 2014) It would be better to get this typedef
     // from mv_view_type itself, in case the layout changes.
     typedef Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> vec_view_type;
-    typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
+    typedef typename dual_view_type::host_mirror_space host_mirror_space;
     // View of all the dot product results.
     typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft,
-      host_mirror_device_type, Kokkos::MemoryUnmanaged> host_dots_view_type;
+      host_mirror_space, Kokkos::MemoryUnmanaged> host_dots_view_type;
     typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft,
-      host_mirror_device_type> host_dots_managed_view_type;
+      host_mirror_space> host_dots_managed_view_type;
     const char tfecfFuncName[] = "Tpetra::MultiVector::dot";
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -1080,10 +1080,10 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   norm2 (const Teuchos::ArrayView<mag_type>& norms) const
   {
-    typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
+    typedef typename dual_view_type::host_mirror_space host_mirror_space;
     typedef Kokkos::View<mag_type*, device_type> dev_norms_view_type;
     typedef Kokkos::View<mag_type*, typename dev_norms_view_type::array_layout,
-      host_mirror_device_type, Kokkos::MemoryUnmanaged> host_norms_view_type;
+      host_mirror_space, Kokkos::MemoryUnmanaged> host_norms_view_type;
 
     const size_t numNorms = static_cast<size_t> (norms.size ());
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
@@ -1210,9 +1210,9 @@ namespace Tpetra {
     // host memory are the same, it probably doesn't pay to launch a
     // parallel kernel for that, since there isn't enough
     // parallelism for the typical MultiVector case.
-    typedef typename device_type::host_mirror_device_type host_mirror_device_type;
-    const bool inHostMemory = Kokkos::Impl::is_same<typename device_type::memory_space,
-      typename host_mirror_device_type::memory_space>::value;
+    const bool inHostMemory =
+      Kokkos::Impl::is_same< typename vec_view_type::memory_space,
+                             typename vec_view_type::host_mirror_space::memory_space >::value;
     if (inHostMemory) {
       for (size_t j = 0; j < numVecs; ++j) {
         theNorms(j) = Kokkos::Details::ArithTraits<mag_type>::sqrt (theNorms(j));
@@ -1320,10 +1320,10 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   norm1 (const Teuchos::ArrayView<mag_type>& norms) const
   {
-    typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
+    typedef typename dual_view_type::host_mirror_space host_mirror_space;
     typedef Kokkos::View<mag_type*, device_type> dev_norms_view_type;
     typedef Kokkos::View<mag_type*, typename dev_norms_view_type::array_layout,
-      host_mirror_device_type, Kokkos::MemoryUnmanaged> host_norms_view_type;
+      host_mirror_space, Kokkos::MemoryUnmanaged> host_norms_view_type;
 
     const size_t numNorms = static_cast<size_t> (norms.size ());
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
@@ -1451,9 +1451,9 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   normInf (const Teuchos::ArrayView<mag_type>& norms) const
   {
-    typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
+    typedef typename dual_view_type::host_mirror_space host_mirror_space;
     typedef Kokkos::View<mag_type*, device_type> dev_norms_view_type;
-    typedef Kokkos::View<mag_type*, typename dev_norms_view_type::array_layout, host_mirror_device_type, Kokkos::MemoryUnmanaged> host_norms_view_type;
+    typedef Kokkos::View<mag_type*, typename dev_norms_view_type::array_layout, host_mirror_space, Kokkos::MemoryUnmanaged> host_norms_view_type;
 
     const size_t numNorms = static_cast<size_t> (norms.size ());
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
@@ -1840,10 +1840,11 @@ namespace Tpetra {
     }
 
     if (isConstantStride ()) {
-      Kokkos::DualView<Scalar*,device_type> k_alphas("Alphas::tmp",alphas.size());
+      typedef Kokkos::DualView<Scalar*,device_type> k_alphas_type ;
+      k_alphas_type k_alphas("Alphas::tmp",alphas.size());
       for(int i=0; i<alphas.size(); i++)
          k_alphas.h_view(i) = alphas[i];
-      k_alphas.template modify<host_mirror_device_type>();
+      k_alphas.template modify<typename k_alphas_type::host_mirror_space>();
       k_alphas.template sync<device_type>();
       view_.template sync<DeviceType>();
       view_.template modify<DeviceType>();
@@ -2181,7 +2182,7 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef typename dual_view_type::host_mirror_device_type host_type;
+    typedef typename dual_view_type::host_mirror_space host_type;
     typedef typename dual_view_type::t_host host_view_type;
 
     // Any MultiVector method that called the (classic) Kokkos Node's
@@ -2229,7 +2230,7 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef typename dual_view_type::host_mirror_device_type host_type;
+    typedef typename dual_view_type::host_mirror_space host_type;
     typedef typename dual_view_type::t_host host_view_type;
 
     // Any MultiVector method that called the (classic) Kokkos Node's
@@ -2312,8 +2313,8 @@ namespace Tpetra {
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef typename dual_view_type::host_mirror_device_type
-      host_mirror_device_type;
+    typedef typename dual_view_type::host_mirror_space
+      host_mirror_space;
     typedef typename dual_view_type::t_host host_view_type;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
 
@@ -2337,7 +2338,7 @@ namespace Tpetra {
     // the output View on host, then sync the output View (only) to
     // device.  Doing copies on host saves us the trouble of copying
     // whichVecsSrc and whichVecsDst over to the device.
-    view_.template sync<host_mirror_device_type> ();
+    view_.template sync<host_mirror_space> ();
 
     const size_t numRows = this->getLocalLength ();
     const size_t numCols = this->getNumVectors ();
@@ -2347,8 +2348,8 @@ namespace Tpetra {
 
     // Create a DualView which will be a contiguously stored deep copy of this MV's view.
     dual_view_type dstView ("MV::dual_view", numRows, numColsToCopy);
-    Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numColsToCopy);
-    Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numColsToCopy);
+    Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsDst ("whichVecsDst", numColsToCopy);
+    Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsSrc ("whichVecsSrc", numColsToCopy);
 
     if (! this->isConstantStride ()) {
       for (size_t j = 0; j < numColsToCopy; ++j) {
@@ -2370,7 +2371,7 @@ namespace Tpetra {
     host_view_type srcView =
       Kokkos::subview<host_view_type> (view_.h_view, rowRange, colRange);
     DeepCopySelectedVectors<host_view_type, host_view_type, LocalOrdinal,
-      host_mirror_device_type, false, false> f (dstView.h_view, srcView,
+      host_mirror_space, false, false> f (dstView.h_view, srcView,
                                                 whichVecsDst, whichVecsSrc);
     Kokkos::parallel_for (numRows, f);
 
@@ -2389,8 +2390,8 @@ namespace Tpetra {
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef typename dual_view_type::host_mirror_device_type
-      host_mirror_device_type;
+    typedef typename dual_view_type::host_mirror_space
+      host_mirror_space;
     typedef typename dual_view_type::t_host host_view_type;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
 
@@ -2398,7 +2399,7 @@ namespace Tpetra {
     // the output View on host, then sync the output View (only) to
     // device.  Doing copies on host saves us the trouble of copying
     // whichVecsSrc and whichVecsDst over to the device.
-    view_.template sync<host_mirror_device_type> ();
+    view_.template sync<host_mirror_space> ();
 
     const size_t numRows = this->getLocalLength ();
     const size_t numCols = this->getNumVectors ();
@@ -2414,8 +2415,8 @@ namespace Tpetra {
 
     // Create a DualView which will be a contiguously stored deep copy of this MV's view.
     dual_view_type dstView ("MV::dual_view", numRows, numColsToCopy);
-    Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numColsToCopy);
-    Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numColsToCopy);
+    Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsDst ("whichVecsDst", numColsToCopy);
+    Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsSrc ("whichVecsSrc", numColsToCopy);
 
     if (! this->isConstantStride ()) {
       for (size_t j = 0; j < numColsToCopy; ++j) {
@@ -2440,7 +2441,7 @@ namespace Tpetra {
     host_view_type srcView =
       Kokkos::subview<host_view_type> (view_.h_view, rowRange, colRange);
     DeepCopySelectedVectors<host_view_type, host_view_type, LocalOrdinal,
-      host_mirror_device_type, false, false> f (dstView.h_view, srcView,
+      host_mirror_space, false, false> f (dstView.h_view, srcView,
                                                 whichVecsDst, whichVecsSrc);
     Kokkos::parallel_for (numRows, f);
 
@@ -2720,12 +2721,12 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef typename dual_view_type::host_mirror_device_type host_mirror_device_type;
+    typedef typename dual_view_type::host_mirror_space host_mirror_space;
     // The user's array is column major ("LayoutLeft").
     // typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft,
-    //   host_mirror_device_type, Kokkos::MemoryUnmanaged> input_view_type;
+    //   host_mirror_space, Kokkos::MemoryUnmanaged> input_view_type;
     typedef Kokkos::View<Scalar*, Kokkos::LayoutLeft,
-      host_mirror_device_type, Kokkos::MemoryUnmanaged> input_col_type;
+      host_mirror_space, Kokkos::MemoryUnmanaged> input_col_type;
     typedef typename dual_view_type::t_host host_view_type;
     typedef Kokkos::View< Scalar*
                         , typename host_view_type::array_layout
@@ -2755,7 +2756,7 @@ namespace Tpetra {
     // exists.
 
     // Start by sync'ing to host.
-    view_.template sync<host_mirror_device_type> ();
+    view_.template sync<host_mirror_space> ();
 
     // FIXME (mfh 22 Jul 2014) These actually should be strided views.
     // This causes a run-time error with deep copy.  The temporary fix
@@ -2771,14 +2772,14 @@ namespace Tpetra {
     //   Kokkos::deep_copy (dstView, srcView);
     // }
     // else {
-    //   Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsDst ("whichVecsDst", numCols);
-    //   Kokkos::View<LocalOrdinal*, host_mirror_device_type> whichVecsSrc ("whichVecsSrc", numCols);
+    //   Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsDst ("whichVecsDst", numCols);
+    //   Kokkos::View<LocalOrdinal*, host_mirror_space> whichVecsSrc ("whichVecsSrc", numCols);
     //   for (size_t j = 0; j < numCols; ++j) {
     //     whichVecsSrc(j) = static_cast<LocalOrdinal> (this->whichVectors_[j]);
     //     whichVecsDst(j) = static_cast<LocalOrdinal> (j);
     //   }
     //   DeepCopySelectedVectors<input_view_type, host_view_type, LocalOrdinal,
-    //     host_mirror_device_type, false, false> f (dstView, srcView, whichVecsDst, whichVecsSrc);
+    //     host_mirror_space, false, false> f (dstView, srcView, whichVecsDst, whichVecsSrc);
     //   Kokkos::parallel_for (numRows, f);
     // }
 
@@ -2810,12 +2811,12 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   get2dCopy (Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const
   {
-    typedef typename dual_view_type::host_mirror_device_type
-      host_mirror_device_type;
+    typedef typename dual_view_type::host_mirror_space
+      host_mirror_space;
     typedef typename dual_view_type::t_host host_view_type;
     typedef Kokkos::View<Scalar**,
       typename host_view_type::array_layout,
-      typename dual_view_type::host_mirror_device_type,
+      typename dual_view_type::host_mirror_space,
       Kokkos::MemoryUnmanaged> unmanaged_host_view_type;
 
     const char tfecfFuncName[] = "get2dCopy";
@@ -2830,7 +2831,7 @@ namespace Tpetra {
 
     if (numRows != 0 && numCols != 0) {
       // Start by sync'ing to host.
-      view_.template sync<host_mirror_device_type> ();
+      view_.template sync<host_mirror_space> ();
 
       // No side effects until we've validated the input.
       for (size_t j = 0; j < numCols; ++j) {
@@ -2873,7 +2874,7 @@ namespace Tpetra {
       // NOTE (mfh 09 2014) get1dView() and get1dViewNonConst() have
       // always been device->host synchronization points.  We might
       // want to change this in the future.
-      typedef typename dual_view_type::host_mirror_device_type host_type;
+      typedef typename dual_view_type::host_mirror_space host_type;
       view_.template sync<host_type> ();
       // Both get1dView() and get1dViewNonConst() return a host view
       // of the data.
@@ -2901,7 +2902,7 @@ namespace Tpetra {
       // NOTE (mfh 09 May 2014) get1dView() and get1dViewNonConst()
       // have always been device->host synchronization points.  We
       // might want to change this in the future.
-      typedef typename dual_view_type::host_mirror_device_type host_type;
+      typedef typename dual_view_type::host_mirror_space host_type;
       view_.template sync<host_type> ();
       // Both get1dView() and get1dViewNonConst() return a host view
       // of the data.
@@ -2954,27 +2955,30 @@ namespace Tpetra {
             const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& B,
             const Scalar &beta)
   {
-    using Teuchos::NO_TRANS;      // enums
-    using Teuchos::TRANS;
     using Teuchos::CONJ_TRANS;
-    using Teuchos::null;
-    using Teuchos::ScalarTraits;  // traits
+    using Teuchos::NO_TRANS;
+    using Teuchos::TRANS;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
+    using Teuchos::rcpFromRef;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
+    const char errPrefix[] = "Tpetra::MultiVector::multiply: ";
 
-    // This routine performs a variety of matrix-matrix multiply operations, interpreting
-    // the MultiVector (this-aka C , A and B) as 2D matrices.  Variations are due to
-    // the fact that A, B and C can be local replicated or global distributed
-    // MultiVectors and that we may or may not operate with the transpose of
-    // A and B.  Possible cases are:
-    //                                       Num
-    //      OPERATIONS                        cases  Notes
-    //  1) C(local) = A^X(local) * B^X(local)  4    (X=Trans or Not, No comm needed)
-    //  2) C(local) = A^T(distr) * B  (distr)  1    (2D dot product, replicate C)
-    //  3) C(distr) = A  (distr) * B^X(local)  2    (2D vector update, no comm needed)
+    // This routine performs a variety of matrix-matrix multiply
+    // operations, interpreting the MultiVector (this-aka C , A and B)
+    // as 2D matrices.  Variations are due to the fact that A, B and C
+    // can be local replicated or global distributed MultiVectors and
+    // that we may or may not operate with the transpose of A and B.
+    // Possible cases are:
     //
-    // The following operations are not meaningful for 1D distributions:
+    //     Operations                          # Cases  Notes
+    //  1) C(local) = A^X(local) * B^X(local)  4        X=Trans or Not, no comm needed
+    //  2) C(local) = A^T(distr) * B  (distr)  1        2-D dot product, replicate C
+    //  3) C(distr) = A  (distr) * B^X(local)  2        2-D vector update, no comm needed
+    //
+    // The following operations are not meaningful for 1-D
+    // distributions:
     //
     // u1) C(local) = A^T(distr) * B^T(distr)  1
     // u2) C(local) = A  (distr) * B^X(distr)  2
@@ -2985,12 +2989,14 @@ namespace Tpetra {
     // u7) C(distr) = A^X(distr) * B^X(local)  4
     // u8) C(local) = A^X(local) * B^X(distr)  4
     //
-    // Total of 32 case (2^5).
+    // Total number of cases: 32 (= 2^5).
 
-    const char errPrefix[] = "Tpetra::MultiVector::multiply(transOpA,transOpB,alpha,A,B,beta): ";
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      STS::isComplex && (transA == TRANS || transB == TRANS),
+      std::invalid_argument, errPrefix << "Transpose without conjugation "
+      "(transA == TRANS || transB == TRANS) not supported for complex Scalar "
+      "types.");
 
-    TEUCHOS_TEST_FOR_EXCEPTION( ScalarTraits<Scalar>::isComplex && (transA == TRANS || transB == TRANS), std::invalid_argument,
-        errPrefix << "non-conjugate transpose not supported for complex types.");
     transA = (transA == NO_TRANS ? NO_TRANS : CONJ_TRANS);
     transB = (transB == NO_TRANS ? NO_TRANS : CONJ_TRANS);
 
@@ -3003,72 +3009,89 @@ namespace Tpetra {
     Scalar beta_local = beta; // local copy of beta; might be reassigned below
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      getLocalLength() != A_nrows || getNumVectors() != B_ncols || A_ncols != B_nrows,
-      std::runtime_error,
-      errPrefix << "dimension of *this, op(A) and op(B) must be consistent.  "
-      << std::endl << "The local part of *this is "
+      getLocalLength () != A_nrows || getNumVectors () != B_ncols ||
+      A_ncols != B_nrows, std::runtime_error, errPrefix << "Dimensions of "
+      "*this, op(A), and op(B) must be consistent.  Local part of *this is "
       << getLocalLength() << " x " << getNumVectors()
       << ", A is " << A_nrows << " x " << A_ncols
       << ", and B is " << B_nrows << " x " << B_ncols << ".");
 
-    bool A_is_local = !A.isDistributed();
-    bool B_is_local = !B.isDistributed();
-    bool C_is_local = !this->isDistributed();
-    bool Case1 = ( C_is_local &&  A_is_local &&  B_is_local);                                           // Case 1: C(local) = A^X(local) * B^X(local)
-    bool Case2 = ( C_is_local && !A_is_local && !B_is_local && transA==CONJ_TRANS && transB==NO_TRANS); // Case 2: C(local) = A^T(distr) * B  (distr)
-    bool Case3 = (!C_is_local && !A_is_local &&  B_is_local && transA==NO_TRANS  );                     // Case 3: C(distr) = A  (distr) * B^X(local)
+    const bool A_is_local = ! A.isDistributed ();
+    const bool B_is_local = ! B.isDistributed ();
+    const bool C_is_local = ! this->isDistributed ();
+    // Case 1: C(local) = A^X(local) * B^X(local)
+    const bool Case1 = C_is_local && A_is_local && B_is_local;
+    // Case 2: C(local) = A^T(distr) * B  (distr)
+    const bool Case2 = C_is_local && ! A_is_local && ! B_is_local &&
+      transA == CONJ_TRANS && transB == NO_TRANS;
+    // Case 3: C(distr) = A  (distr) * B^X(local)
+    const bool Case3 = ! C_is_local && ! A_is_local && B_is_local &&
+      transA == NO_TRANS;
 
-    // Test that we are considering a meaningful cases
-    TEUCHOS_TEST_FOR_EXCEPTION( !Case1 && !Case2 && !Case3, std::runtime_error,
-        errPrefix << "multiplication of op(A) and op(B) into *this is not a supported use case.");
+    // Test that we are considering a meaningful case
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! Case1 && ! Case2 && ! Case3, std::runtime_error, errPrefix
+      << "Multiplication of op(A) and op(B) into *this is not a "
+      "supported use case.");
 
-    if (beta != ScalarTraits<Scalar>::zero() && Case2)
-    {
-      // if Case2, then C is local and contributions must be summed across all nodes
-      // however, if beta != 0, then accumulate beta*C into the sum
-      // when summing across all nodes, we only want to accumulate this once, so
-      // set beta == 0 on all nodes except node 0
-      int MyPID = this->getMap()->getComm()->getRank();
-      if (MyPID!=0) beta_local = ScalarTraits<Scalar>::zero();
+    if (beta != STS::zero () && Case2) {
+      // If Case2, then C is local and contributions must be summed
+      // across all processes.  However, if beta != 0, then accumulate
+      // beta*C into the sum.  When summing across all processes, we
+      // only want to accumulate this once, so set beta == 0 on all
+      // processes except Process 0.
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      if (myRank != 0) {
+        beta_local = STS::zero ();
+      }
     }
 
-    // Check if A, B, C have constant stride, if not then make temp copy (strided)
-    RCP<const MV> Atmp, Btmp;
-    RCP<MV>       Ctmp;
-    if (isConstantStride() == false) Ctmp = rcp (new MV (*this));
-    else Ctmp = rcp(this,false);
-
-    if (A.isConstantStride() == false) Atmp = rcp (new MV (A));
-    else Atmp = rcp(&A,false);
-
-    if (B.isConstantStride() == false) Btmp = rcp (new MV (B));
-    else Btmp = rcp(&B,false);
-
-#ifdef HAVE_TEUCHOS_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(!Ctmp->isConstantStride() || !Btmp->isConstantStride() || !Atmp->isConstantStride(), std::logic_error,
-        errPrefix << "failed making temporary strided copies of input multivectors.");
-#endif
-    Kokkos::DeviceGEMM<Scalar,DeviceType>::GEMM(transA,transB,alpha,
-       Atmp->getDualView().d_view,Btmp->getDualView().d_view,beta_local,Ctmp->getDualView().d_view);
-
-    // Dispose of (possibly) extra copies of A, B
-    Atmp = null;
-    Btmp = null;
-
-    /*RCP<Node> node = MVT::getNode(lclMV_);
-    // If *this was not strided, copy the data from the strided version and then delete it
+    // We only know how to do matrix-matrix multiplies if all the
+    // MultiVectors have constant stride.  If not, we have to make
+    // temporary copies of those MultiVectors (including possibly
+    // *this) that don't have constant stride.
+    RCP<MV> C_tmp;
     if (! isConstantStride ()) {
-      // *this is not strided, we must put data from Ctmp into *this
-      TEUCHOS_TEST_FOR_EXCEPT(&C_mv != &lclMV_);
-      const size_t numVecs = MVT::getNumCols(lclMV_);
-      for (size_t j=0; j < numVecs; ++j) {
-        node->template copyBuffers<Scalar>(getLocalLength(),MVT::getValues(C_mv,j),MVT::getValuesNonConst(lclMV_,whichVectors_[j]));
-      }
-    }*/
+      C_tmp = rcp (new MV (*this, Teuchos::Copy)); // deep copy
+    } else {
+      C_tmp = rcp (this, false);
+    }
 
-    // If Case 2 then sum up *this and distribute it to all processors.
+    RCP<const MV> A_tmp;
+    if (! A.isConstantStride ()) {
+      A_tmp = rcp (new MV (A, Teuchos::Copy)); // deep copy
+    } else {
+      A_tmp = rcpFromRef (A);
+    }
+
+    RCP<const MV> B_tmp;
+    if (! B.isConstantStride ()) {
+      B_tmp = rcp (new MV (B, Teuchos::Copy)); // deep copy
+    } else {
+      B_tmp = rcpFromRef (B);
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! C_tmp->isConstantStride () || ! B_tmp->isConstantStride () ||
+      ! A_tmp->isConstantStride (), std::logic_error, errPrefix
+      << "Failed to make temporary constant-stride copies of MultiVectors.");
+
+    typedef Kokkos::DeviceGEMM<Scalar,DeviceType> gemm_type;
+
+    gemm_type::GEMM (transA, transB, alpha,
+                     A_tmp->getDualView ().d_view, B_tmp->getDualView ().d_view,
+                     beta_local, C_tmp->getDualView ().d_view);
+    if (! isConstantStride ()) {
+      deep_copy (*this, *C_tmp); // Copy the result back into *this.
+    }
+
+    // Dispose of (possibly) extra copies of A and B.
+    A_tmp = Teuchos::null;
+    B_tmp = Teuchos::null;
+
+    // If Case 2 then sum up *this and distribute it to all processes.
     if (Case2) {
-      this->reduce();
+      this->reduce ();
     }
   }
 
@@ -3076,37 +3099,43 @@ namespace Tpetra {
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   elementWiseMultiply (Scalar scalarAB,
-                       const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& A,
-                       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& B,
+                       const Vector<Scalar,LocalOrdinal,GlobalOrdinal, node_type>& A,
+                       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, node_type>& B,
                        Scalar scalarThis)
   {
+    using Kokkos::ALL;
+    using Kokkos::subview;
     using Teuchos::arcp_const_cast;
-    const char tfecfFuncName[] = "elementWiseMultiply()";
+    typedef Kokkos::View<Scalar*, Kokkos::LayoutLeft, DeviceType> view_type;
+    const char tfecfFuncName[] = "elementWiseMultiply: ";
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       getLocalLength() != A.getLocalLength() ||
       getLocalLength() != B.getLocalLength(), std::runtime_error,
-      ": MultiVectors do not have the same local length.");
+      "MultiVectors do not have the same local length.");
 #endif // HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       B.getNumVectors() != this->getNumVectors(), std::runtime_error,
-      ": MultiVectors 'this' and B must have the same number of vectors.");
+      "MultiVectors 'this' and B must have the same number of vectors.");
 
-    const size_t numVecs = getNumVectors();
-
-    typedef Kokkos::View<Scalar*, Kokkos::LayoutLeft, DeviceType> view_type;
-
-    if (isConstantStride() && A.isConstantStride()) {
+    const size_t numVecs = this->getNumVectors ();
+    if (isConstantStride () && A.isConstantStride ()) {
+      // FIXME (mfh 02 Oct 2014) Shouldn't it be asking if B has
+      // constant stride?  A is just a Vector; it only has one column,
+      // so it always has constant stride.
+      //
+      // If both *this and A have constant stride, we can do an
+      // element-wise multiply on all columns at once.
       view_.template sync<DeviceType>();
       view_.template modify<DeviceType>();
       A.view_.template sync<DeviceType>();
       A.view_.template modify<DeviceType>();
       B.view_.template sync<DeviceType>();
       B.view_.template modify<DeviceType>();
-      view_type vector_A = Kokkos::subview<view_type> (A.view_.d_view, Kokkos::ALL (), 0);
-      Kokkos::MV_ElementWiseMultiply(scalarThis,view_.d_view,
-                                     scalarAB,vector_A,B.view_.d_view);
+      view_type vector_A = subview<view_type> (A.view_.d_view, ALL (), 0);
+      Kokkos::MV_ElementWiseMultiply (scalarThis, view_.d_view,
+                                      scalarAB, vector_A, B.view_.d_view);
     }
     else {
       view_.template sync<DeviceType>();
@@ -3115,13 +3144,13 @@ namespace Tpetra {
       A.view_.template modify<DeviceType>();
       B.view_.template sync<DeviceType>();
       B.view_.template modify<DeviceType>();
-      view_type vector_A = Kokkos::subview<view_type> (A.view_.d_view, Kokkos::ALL (), 0);
-      for (size_t k=0; k < numVecs; ++k) {
+      view_type vector_A = subview<view_type> (A.view_.d_view, ALL (), 0);
+      for (size_t k = 0; k < numVecs; ++k) {
         const size_t this_col = isConstantStride () ? k : whichVectors_[k];
-        view_type vector_k = Kokkos::subview<view_type> (view_.d_view, Kokkos::ALL (), this_col);
+        view_type vector_k = subview<view_type> (view_.d_view, ALL (), this_col);
         const size_t B_col = isConstantStride () ? k : B.whichVectors_[k];
-        view_type vector_Bk = Kokkos::subview<view_type> (B.view_.d_view, Kokkos::ALL (), B_col);
-        Kokkos::V_ElementWiseMultiply(scalarThis,vector_k, scalarAB,vector_A,vector_Bk);
+        view_type vector_Bk = subview<view_type> (B.view_.d_view, ALL (), B_col);
+        Kokkos::V_ElementWiseMultiply (scalarThis, vector_k, scalarAB, vector_A, vector_Bk);
       }
     }
   }
@@ -3135,7 +3164,7 @@ namespace Tpetra {
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     typedef typename dual_view_type::t_dev device_view_type;
-    typedef typename device_type::host_mirror_device_type host_mirror_device_type;
+    typedef typename dual_view_type::host_mirror_space host_mirror_space;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       this->isDistributed (), std::runtime_error,
@@ -3215,7 +3244,7 @@ namespace Tpetra {
     // MultiVector methods always leave the MultiVector in a
     // synchronized state, but it seems silly to synchronize to host
     // if they hardly ever need host data.
-    view_.template sync<host_mirror_device_type> ();
+    view_.template sync<host_mirror_space> ();
   }
 
 
@@ -3563,7 +3592,7 @@ namespace Tpetra {
     using Kokkos::parallel_for;
     typedef LocalOrdinal LO;
     typedef DeviceType DT;
-    typedef typename DT::host_mirror_device_type HMDT;
+    typedef typename dual_view_type::host_mirror_space HMDT;
     typedef typename dual_view_type::t_host host_view_type;
     typedef typename dual_view_type::t_dev dev_view_type;
 
@@ -3858,7 +3887,7 @@ namespace Tpetra {
         Kokkos::parallel_for (src.getLocalLength (), f);
       }
       else {
-        typedef typename DeviceType::host_mirror_device_type host_dev_type;
+        typedef typename MV::dual_view_type::host_mirror_space host_dev_type;
         typedef typename MV::dual_view_type::t_host host_view_type;
         typedef DeepCopySelectedVectors<host_view_type, host_view_type,
           LO, host_dev_type, true, false> functor_type;

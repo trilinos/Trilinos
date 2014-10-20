@@ -45,9 +45,8 @@
 #include "Sacado_MP_Vector.hpp"
 #include "Sacado_MP_VectorTraits.hpp"
 #include "Stokhos_ViewStorage.hpp"
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
-#include "Kokkos_View.hpp"
 #include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_MP_Vector_Utils.hpp"
 
@@ -142,9 +141,9 @@ public:
   // Host mirror
   typedef View< typename Impl::RebindStokhosStorageDevice<
                   typename traits::data_type ,
-                  typename traits::device_type::host_mirror_device_type >::type ,
+                  typename traits::host_mirror_space >::type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 void > HostMirror ;
 
   // Equivalent array type for this view.
@@ -162,13 +161,13 @@ public:
   // Equivalent host array type for this view.
   typedef View< typename traits::array_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 typename traits::memory_traits > host_array_type ;
 
   // Equivalent const host array type for this view.
   typedef View< typename traits::const_array_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 typename traits::memory_traits > host_const_array_type ;
 
   typedef typename traits::value_type                   sacado_mp_vector_type ;
@@ -360,9 +359,12 @@ public:
                       Impl::ViewError::allocation_constructor_requires_managed >
    if_allocation_constructor ;
 
+  template< class AllocationProperties >
   explicit inline
-  View( const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
+  View( const AllocationProperties & prop ,
+        // Impl::ViewAllocProp::size_type exists when the traits and allocation properties
+        // are valid for allocating viewed memory.
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -372,6 +374,8 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+
       typedef typename traits::memory_space              memory_space ;
       typedef typename traits::shape_type                shape_type ;
       typedef typename stokhos_storage_type::value_type  scalar_type ;
@@ -385,44 +389,12 @@ public:
       verify_dimension_storage_static_size();
 
       m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( if_allocation_constructor::select( label ) ,
+        memory_space::allocate( Alloc::label( prop );
                                 typeid(scalar_type) ,
                                 sizeof(scalar_type) ,
                                 Impl::capacity( m_array_shape , m_stride ) );
 
-      (void) Impl::ViewFill< array_type >( *this , typename array_type::value_type() );
-    }
-
-  explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        const size_t n7 = 0 )
-    : m_ptr_on_device(0)
-    {
-      typedef typename traits::memory_space              memory_space ;
-      typedef typename traits::shape_type                shape_type ;
-      typedef typename stokhos_storage_type::value_type  scalar_type ;
-
-      shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-      array_shape_type::assign( m_array_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-      stride_type::assign_with_padding( m_stride , m_array_shape );
-      m_storage_size  = Impl::dimension( m_array_shape , unsigned(Rank) );
-      m_sacado_size = m_storage_size;
-
-      verify_dimension_storage_static_size();
-
-      m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( if_allocation_constructor::select( label ) ,
-                                typeid(scalar_type) ,
-                                sizeof(scalar_type) ,
-                                Impl::capacity( m_array_shape , m_stride ) );
+      Alloc::initialize( array_type( *this ) );
     }
 
   //------------------------------------

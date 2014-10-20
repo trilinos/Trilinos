@@ -138,8 +138,13 @@ namespace panzer_stk_classic {
     paramList->validateParametersAndSetDefaults(*this->getValidParameters());
 
     // add in some addtional defaults that are hard to validate externally (this is because of the "disableRecursiveValidation" calls)
+
+    if(!paramList->sublist("Initial Conditions").isType<bool>("Zero Initial Conditions"))
+      paramList->sublist("Initial Conditions").set<bool>("Zero Initial Conditions",false);
+        
     paramList->sublist("Initial Conditions").sublist("Vector File").validateParametersAndSetDefaults(
       getValidParameters()->sublist("Initial Conditions").sublist("Vector File"));
+
     this->setMyParamList(paramList);
   }
 
@@ -155,13 +160,16 @@ namespace panzer_stk_classic {
       pl->sublist("Boundary Conditions").disableRecursiveValidation();
       pl->sublist("Solution Control").disableRecursiveValidation();
       pl->set<bool>("Use Discrete Adjoint",false);
+
       pl->sublist("Mesh").disableRecursiveValidation();
+
+      pl->sublist("Initial Conditions").set<bool>("Zero Initial Conditions",false);
       pl->sublist("Initial Conditions").sublist("Transient Parameters").disableRecursiveValidation();
       pl->sublist("Initial Conditions").sublist("Vector File");
       pl->sublist("Initial Conditions").sublist("Vector File").set("File Name","");
       pl->sublist("Initial Conditions").sublist("Vector File").set<bool>("Enabled",false);
       pl->sublist("Initial Conditions").disableRecursiveValidation();
-      // pl->sublist("Output").disableRecursiveValidation();
+
       pl->sublist("Output").set("File Name","panzer.exo");
       pl->sublist("Output").set("Write to Exodus",true);
       pl->sublist("Output").sublist("Cell Average Quantities").disableRecursiveValidation();
@@ -662,7 +670,13 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<panzer::LinearObjContainer> loc = linObjFactory->buildLinearObjContainer();
 
-    if(!p.sublist("Initial Conditions").sublist("Vector File").get<bool>("Enabled")) {
+    if(p.sublist("Initial Conditions").get<bool>("Zero Initial Conditions")) {
+      // zero out the x vector
+      Thyra::ModelEvaluatorBase::InArgs<double> nomValues = thyra_me->getNominalValues();
+
+      Thyra::assign(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()).ptr(),0.0); 
+    }
+    else if(!p.sublist("Initial Conditions").sublist("Vector File").get<bool>("Enabled")) {
       // read from exodus, or compute using field managers
 
       bool write_dot_files = false;
@@ -1070,9 +1084,10 @@ namespace panzer_stk_classic {
     fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,bc_cm_factory,bc_factory,closure_models,lo_factory,user_data);
 
     // Print Phalanx DAGs
-    if (writeGraph)
+    if (writeGraph){
       fmb->writeVolumeGraphvizDependencyFiles(graphPrefix, physicsBlocks);
-
+      fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
+    }
     return fmb;
   }
 
@@ -1505,7 +1520,6 @@ namespace panzer_stk_classic {
 
              typedef Tpetra::Map<int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> Map;
              typedef Tpetra::MultiVector<double,int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> MV;
-             typedef Tpetra::CrsMatrix<double,int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> CrsMatrix;
 
              // extract coordinate vectors and modify strat_params to include coordinate vectors
              unsigned dim = mesh->getDimension();

@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Epetra_NumPyMultiVector.h"
+#include "Epetra_NumPyMultiVector.hpp"
 
 #if NDARRAY_VERSION == 0x00090504
 #define PyArray_ANYORDER -1

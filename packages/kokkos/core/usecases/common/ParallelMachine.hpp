@@ -50,7 +50,7 @@
 
 #include <iosfwd>
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core.hpp>
 
 //------------------------------------------------------------------------
 
@@ -61,24 +61,6 @@
 #endif
 
 //------------------------------------------------------------------------
-
-#if defined( KOKKOS_HAVE_PTHREAD )
-
-typedef Kokkos::Threads HostExecSpace ;
-#include <Kokkos_Threads.hpp>
-
-#elif defined( KOKKOS_HAVE_OPENMP )
-
-typedef Kokkos::OpenMP HostExecSpace ;
-#include <Kokkos_OpenMP.hpp>
-
-#elif defined( KOKKOS_HAVE_OPENMP )
-
-#include <Kokkos_Serial.hpp>
-typedef Kokkos::Serial HostExecSpace ;
-
-#endif
-
 //------------------------------------------------------------------------
 
 namespace Parallel {

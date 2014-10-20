@@ -45,6 +45,7 @@
 
 #include <Ifpack2_Condest.hpp>
 #include <Ifpack2_Parameters.hpp>
+#include <Ifpack2_Chebyshev.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
 namespace Ifpack2 {

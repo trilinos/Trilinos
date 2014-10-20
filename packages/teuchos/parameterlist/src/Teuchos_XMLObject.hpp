@@ -55,14 +55,14 @@ namespace Teuchos{
 class EmptyXMLError : public std::runtime_error
 {public: EmptyXMLError(const std::string& what_arg) : std::runtime_error(what_arg) {}};
 
-/** \ingroup XML 
+/** \ingroup XML
  * \brief Representation of an XML data tree. XMLObject is a ref-counted
  * handle to a XMLObjectImplem object, allowing storage by reference.
  */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT XMLObject{
 public:
 
-  //! @name Constructors 
+  //! @name Constructors
   //@{
 
   //! Empty constructor
@@ -79,14 +79,14 @@ public:
   XMLObject(XMLObjectImplem* ptr);
   //@}	
 
-  //! @name Copy methods 
+  //! @name Copy methods
   //@{
 
   //! Make a deep copy of this object
   XMLObject deepCopy() const ;
   //@}
 
-  //! @name Data Access methods 
+  //! @name Data Access methods
   //@{
 
   //! Return the tag of the current node
@@ -102,11 +102,11 @@ public:
   const std::string& getRequired(const std::string& name) const;
 
   //! Get a required attribute, returning it as a double
-  double getRequiredDouble(const std::string& name) const 
+  double getRequiredDouble(const std::string& name) const
     {return std::atof(getRequired(name).c_str());}
-  
+
   //! Get a required attribute, returning it as an int
-  int getRequiredInt(const std::string& name) const 
+  int getRequiredInt(const std::string& name) const
     {return std::atoi(getRequired(name).c_str());}
 
   //! Get a required attribute, returning it as T
@@ -132,11 +132,11 @@ public:
       return defaultValue;
     }
   }
-  
+
   //! Return the number of child nodes owned by this node
   int numChildren() const;
 
-  //! Return the i-th child node 
+  //! Return the i-th child node
   const XMLObject& getChild(int i) const;
 
   /** \brief Returns the index of the first child found with the given tag name.
@@ -144,7 +144,7 @@ public:
    */
   int findFirstChild(std::string tagName) const;
 
-  //! Return the number of lines of character content stored in this node 
+  //! Return the number of lines of character content stored in this node
   int numContentLines() const;
 
   //! Return the i-th line of character content stored in this node
@@ -172,7 +172,7 @@ public:
   void checkTag(const std::string& expected) const ;
   //@}
 	
-  //! @name Tree-Assembly methods 
+  //! @name Tree-Assembly methods
   //@{
 
   //! Add a double as an attribute
@@ -211,7 +211,7 @@ public:
   void removeContentLine(const size_t& i) {
     ptr_->removeContentLine(i);
   }
-  
+
 protected:
 
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
@@ -256,7 +256,7 @@ inline std::ostream& operator<<(std::ostream& os, const XMLObject& xml)
 
 /** \brief Write XMLObject to std::string.
  *
- * \relates XMLObject 
+ * \relates XMLObject
  */
 inline std::string toString(const XMLObject& xml)
 {

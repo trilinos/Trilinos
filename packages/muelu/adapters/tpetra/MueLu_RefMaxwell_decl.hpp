@@ -144,44 +144,96 @@ namespace MueLu {
     {
     }
 
-    //! Constructor with matrices
-    RefMaxwell(Teuchos::RCP<TCRS> SM_Matrix,
-               Teuchos::RCP<TCRS> D0_Matrix,
-               Teuchos::RCP<TCRS> M0inv_Matrix,
-               Teuchos::RCP<TCRS> M1_Matrix,
-               Teuchos::RCP<TMV>  Nullspace,
-               Teuchos::RCP<TMV>  Coords,
+    /** Constructor with Jacobian (with add on)
+      *
+      * \param[in] SM_Matrix Jacobian
+      * \param[in] D0_Matrix Discrete Gradient
+      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
+      * \param[in] M1_Matrix Edge mass matrix for the 
+      * \param[in] Nullspace Null space (needed for periodic)
+      * \param[in] coords Nodal coordinates
+      * \param[in] precList Parameter list
+      * \param[in] ComputePrec If true, compute the preconditioner immediately
+      */
+    RefMaxwell(const Teuchos::RCP<TCRS> & SM_Matrix,
+               const Teuchos::RCP<TCRS> & D0_Matrix,
+               const Teuchos::RCP<TCRS> & M0inv_Matrix,
+               const Teuchos::RCP<TCRS> & M1_Matrix,
+               const Teuchos::RCP<TMV> & Nullspace,
+               const Teuchos::RCP<TMV> & Coords,
                Teuchos::ParameterList& List,
-               bool ComputePrec = true) :
-      Hierarchy11_(Teuchos::null),
-      Hierarchy22_(Teuchos::null),
-      parameterList_(List),
-      disable_addon_(false),
-      MaxCoarseSize_(1000),
-      MaxLevels_(5),
-      Cycles_(1),
-      precType11_("CHEBYSHEV"),
-      precType22_("CHEBYSHEV"),
-      mode_("additive")
+               bool ComputePrec = true)
     {
-      // set parameters
-      setParameters(List);
-      // convert Tpetra matrices to Xpetra
-      Teuchos::RCP<XCRS> SM_tmp = Teuchos::rcp( new XTCRS(SM_Matrix) );
-      SM_Matrix_ = Teuchos::rcp( new XCrsWrap(SM_tmp) );
-      Teuchos::RCP<XCRS> D0_tmp = Teuchos::rcp( new XTCRS(D0_Matrix) );
-      D0_Matrix_ = Teuchos::rcp( new XCrsWrap(D0_tmp) );
-      Teuchos::RCP<XCRS> M0inv_tmp = Teuchos::rcp( new XTCRS(M0inv_Matrix) );
-      M0inv_Matrix_ = Teuchos::rcp( new XCrsWrap(M0inv_tmp) );
-      Teuchos::RCP<XCRS> M1_tmp = Teuchos::rcp( new XTCRS(M1_Matrix) );
-      M1_Matrix_ = Teuchos::rcp( new XCrsWrap(M1_tmp) );
-      // convert Tpetra MultiVector to Xpetra
-      if(Coords != Teuchos::null)
-        Coords_ = Xpetra::toXpetra(Coords);
-      if(Nullspace != Teuchos::null)
-        Nullspace_ = Xpetra::toXpetra(Nullspace);
-      // compute preconditioner
-      compute();
+      initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
+
+      resetMatrix(SM_Matrix);
+
+      // compute preconditioner (optionally)
+      if(ComputePrec)
+        compute();
+    }
+
+    /** Constructor without Jacobian (with add on)
+      *
+      * \param[in] D0_Matrix Discrete Gradient
+      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
+      * \param[in] M1_Matrix Edge mass matrix for the 
+      * \param[in] Nullspace Null space (needed for periodic)
+      * \param[in] coords Nodal coordinates
+      * \param[in] precList Parameter list
+      */
+    RefMaxwell(const Teuchos::RCP<TCRS> & D0_Matrix,
+               const Teuchos::RCP<TCRS> & M0inv_Matrix,
+               const Teuchos::RCP<TCRS> & M1_Matrix,
+               const Teuchos::RCP<TMV> & Nullspace,
+               const Teuchos::RCP<TMV> & Coords,
+               Teuchos::ParameterList& List)
+    {
+      initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
+    }
+
+    /** Constructor with Jacobian (no add on)
+      *
+      * \param[in] SM_Matrix Jacobian
+      * \param[in] D0_Matrix Discrete Gradient
+      * \param[in] M1_Matrix Edge mass matrix for the 
+      * \param[in] Nullspace Null space (needed for periodic)
+      * \param[in] coords Nodal coordinates
+      * \param[in] precList Parameter list
+      * \param[in] ComputePrec If true, compute the preconditioner immediately
+      */
+    RefMaxwell(const Teuchos::RCP<TCRS> & SM_Matrix,
+               const Teuchos::RCP<TCRS> & D0_Matrix,
+               const Teuchos::RCP<TCRS> & M1_Matrix,
+               const Teuchos::RCP<TMV>  & Nullspace,
+               const Teuchos::RCP<TMV>  & Coords,
+               Teuchos::ParameterList& List,
+               bool ComputePrec = true)
+    {
+      initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
+
+      resetMatrix(SM_Matrix);
+
+      // compute preconditioner (optionally)
+      if(ComputePrec)
+        compute();
+    }
+
+    /** Constructor without Jacobian (no add on)
+      *
+      * \param[in] D0_Matrix Discrete Gradient
+      * \param[in] M1_Matrix Edge mass matrix for the 
+      * \param[in] Nullspace Null space (needed for periodic)
+      * \param[in] coords Nodal coordinates
+      * \param[in] precList Parameter list
+      */
+    RefMaxwell(const Teuchos::RCP<TCRS> & D0_Matrix,
+               const Teuchos::RCP<TCRS> & M1_Matrix,
+               const Teuchos::RCP<TMV>  & Nullspace,
+               const Teuchos::RCP<TMV>  & Coords,
+               Teuchos::ParameterList& List)
+    {
+      initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
     }
 
     //! Destructor.
@@ -251,6 +303,22 @@ namespace MueLu {
     }
 
   private:
+
+    /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
+      *
+      * \param[in] D0_Matrix Discrete Gradient
+      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
+      * \param[in] M1_Matrix Edge mass matrix
+      * \param[in] Nullspace Null space (needed for periodic)
+      * \param[in] coords Nodal coordinates
+      * \param[in] precList Parameter list
+      */
+    void initialize(const Teuchos::RCP<TCRS> & D0_Matrix,
+                    const Teuchos::RCP<TCRS> & M0inv_Matrix,
+                    const Teuchos::RCP<TCRS> & M1_Matrix,
+                    const Teuchos::RCP<TMV> & Nullspace,
+                    const Teuchos::RCP<TMV> & Coords,
+                    Teuchos::ParameterList& List);
 
     //! Two hierarchies: one for the (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> Hierarchy11_, Hierarchy22_;

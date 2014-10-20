@@ -50,8 +50,7 @@
 //#include <cusparse.h>
 #include <cusparse_v2.h>
 
-#include "Kokkos_Cuda.hpp"
-#include "Cuda/Kokkos_Cuda_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsMatrix.hpp"
@@ -213,8 +212,8 @@ public:
     const size_t ncol = col_indices.size();
 
     // Copy columns of x into a contiguous vector
-    vector_type xx( Kokkos::allocate_without_initializing, "xx" , n * ncol );
-    vector_type yy( Kokkos::allocate_without_initializing, "yy" , n * ncol );
+    vector_type xx( Kokkos::ViewAllocateWithoutInitializing("xx"), n * ncol );
+    vector_type yy( Kokkos::ViewAllocateWithoutInitializing("yy"), n * ncol );
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -323,7 +322,7 @@ public:
 
     // Copy col_indices to the device
     Kokkos::View<Ordinal*,device_type> col_indices_dev(
-      Kokkos::allocate_without_initializing, "col_indices", ncol);
+      Kokkos::ViewAllocateWithoutInitializing("col_indices"), ncol);
     typename Kokkos::View<Ordinal*,device_type>::HostMirror col_indices_host =
       Kokkos::create_mirror_view(col_indices_dev);
     for (size_t i=0; i<ncol; ++i)
@@ -332,12 +331,12 @@ public:
 
     // Copy columns of x into a contiguous multi-vector and transpose
     multi_vector_type xx(
-      Kokkos::allocate_without_initializing , "xx" , ncol , n );
+      Kokkos::ViewAllocateWithoutInitializing("xx"), ncol , n );
     GatherTranspose::apply(xx, x, col_indices_dev);
 
     // Temporary to store result (this is not transposed)
     multi_vector_type yy(
-      Kokkos::allocate_without_initializing , "yy" , n , ncol );
+      Kokkos::ViewAllocateWithoutInitializing("yy"), n , ncol );
 
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
@@ -382,8 +381,8 @@ public:
     const size_t ncol = col_indices.size();
 
     // Copy columns of x into a contiguous vector
-    vector_type xx( Kokkos::allocate_without_initializing, "xx" , n * ncol );
-    vector_type yy( Kokkos::allocate_without_initializing, "yy" , n * ncol );
+    vector_type xx( Kokkos::ViewAllocateWithoutInitializing("xx"), n * ncol );
+    vector_type yy( Kokkos::ViewAllocateWithoutInitializing("yy"), n * ncol );
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -584,7 +583,7 @@ public:
   {
     // Copy col_indices to the device
     Kokkos::View<Ordinal*,device_type> col_indices_dev(
-      Kokkos::allocate_without_initializing, "col_indices", ncol);
+      Kokkos::ViewAllocateWithoutInitializing("col_indices"), ncol);
     typename Kokkos::View<Ordinal*,device_type>::HostMirror col_indices_host =
       Kokkos::create_mirror_view(col_indices_dev);
     for (size_t i=0; i<ncol; ++i)
@@ -625,8 +624,8 @@ public:
     const size_t ncol = x.size();
 
     // Copy columns of x into a contiguous vector
-    vector_type xx( Kokkos::allocate_without_initializing, "xx" , n * ncol );
-    vector_type yy( Kokkos::allocate_without_initializing, "yy" , n * ncol );
+    vector_type xx( Kokkos::ViewAllocateWithoutInitializing("xx"), n * ncol );
+    vector_type yy( Kokkos::ViewAllocateWithoutInitializing("yy"), n * ncol );
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -690,8 +689,8 @@ public:
     const size_t ncol = x.size();
 
     // Copy columns of x into a contiguous vector
-    vector_type xx( Kokkos::allocate_without_initializing, "xx" , n * ncol );
-    vector_type yy( Kokkos::allocate_without_initializing, "yy" , n * ncol );
+    vector_type xx( Kokkos::ViewAllocateWithoutInitializing("xx"), n * ncol );
+    vector_type yy( Kokkos::ViewAllocateWithoutInitializing("yy"), n * ncol );
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );

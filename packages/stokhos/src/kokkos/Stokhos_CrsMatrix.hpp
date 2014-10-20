@@ -45,9 +45,8 @@
 #include <fstream>
 #include <iomanip>
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 #include "Kokkos_CrsArray.hpp"
-#include "Kokkos_Parallel.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_MatrixMarket.hpp"
@@ -85,7 +84,7 @@ public:
   typedef Kokkos::View< value_type[], Layout, device_type > values_type;
   typedef Kokkos::CrsArray< int , Layout, device_type , int > graph_type;
 
-  typedef CrsMatrix< ValueType, typename device_type::host_mirror_device_type, Layout> HostMirror;
+  typedef CrsMatrix< ValueType, typename values_type::host_mirror_space, Layout> HostMirror;
 
   values_type values;
   graph_type graph;

@@ -57,14 +57,14 @@ struct hello_world {
 };
 
 int main() {
-  // initialize Kokkos::DefaultExecutionSpace (and potentially its host_mirror_device_type)
+  // initialize Kokkos::DefaultExecutionSpace (and potentially its HostSpace::execution_space)
   Kokkos::initialize();
   printf("Hello World running on %s\n",typeid(Kokkos::DefaultExecutionSpace).name());
 
   // run functor with 15 iterations
   Kokkos::parallel_for(15, hello_world() );
   
-  // finalize Kokkos::DefaultExecutionSpace (and potentially its host_mirror_device_type)
+  // finalize Kokkos::DefaultExecutionSpace (and potentially its HostSpace::execution_space)
   Kokkos::finalize();
 }
 

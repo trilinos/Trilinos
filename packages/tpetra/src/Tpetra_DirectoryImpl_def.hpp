@@ -42,9 +42,7 @@
 #ifndef __Tpetra_DirectoryImpl_def_hpp
 #define __Tpetra_DirectoryImpl_def_hpp
 
-#ifdef DOXYGEN_USE_ONLY
-#  include <Tpetra_DirectoryImpl_decl.hpp>
-#endif
+#include <Tpetra_DirectoryImpl_decl.hpp>
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_TieBreak.hpp>
@@ -1182,6 +1180,5 @@ namespace Tpetra {
   template class ContiguousUniformDirectory< LO, GO, NODE >;          \
   template class DistributedContiguousDirectory< LO , GO , NODE >;    \
   template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
-
 
 #endif // __Tpetra_DirectoryImpl_def_hpp

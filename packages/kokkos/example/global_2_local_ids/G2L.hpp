@@ -1,8 +1,7 @@
 #ifndef KOKKOS_GLOBAL_TO_LOCAL_IDS_HPP
 #define KOKKOS_GLOBAL_TO_LOCAL_IDS_HPP
 
-#include <Kokkos_Parallel.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>
 

@@ -157,12 +157,12 @@ int main(int argc, char *argv[]) {
 
     GlobalOrdinal gid = map->getGlobalElement(Teuchos::as<LocalOrdinal>(i));
     if(gid % 2 == 0) {
-      data0[i] = 1.0; data1[i] = 0.0;
+    data0[i] = 1.0; data1[i] = 0.0;
     }
     else {
-      data0[i] = 0.0; data1[i] = 1.0;
+    data0[i] = 0.0; data1[i] = 1.0;
     }
-  }*/
+    }*/
 
   RCP<MueLu::Hierarchy<SC,LO,GO,NO> > H = rcp ( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
@@ -214,8 +214,8 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList ifpackList;
   ifpackList.set("relaxation: sweeps", (LO) sweeps);
   ifpackList.set("relaxation: damping factor", (SC) 0.9); // 0.7
-    ifpackType = "RELAXATION";
-    ifpackList.set("relaxation: type", "Gauss-Seidel");
+  ifpackType = "RELAXATION";
+  ifpackList.set("relaxation: type", "Gauss-Seidel");
 
 
   smooProto = Teuchos::rcp( new TrilinosSmoother(Xpetra::UseEpetra, ifpackType, ifpackList) );

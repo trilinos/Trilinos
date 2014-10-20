@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2014 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require  license from the                  */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef STK_MESH_BASE_FIELDBLAS_HPP
 #define STK_MESH_BASE_FIELDBLAS_HPP
@@ -47,7 +72,7 @@ int SIERRA_FORTRAN(idamax)(const int *n, const double *vect, const int *inc);
 //int SIERRA_FORTRAN(idamin)(const int *n, const double *vect, const int *inc);
 void SIERRA_FORTRAN(saxpy)(const int *n, const float *xscale, const float x[], const int *incx, float y[],const int *incy); // y=y+sscale*x
 void SIERRA_FORTRAN(scopy)(const int* n, const float* s, const int* inc, float* s1, const int* inc1); // s1 = s
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) || !defined(STK_BUILT_IN_SIERRA)
 float SIERRA_FORTRAN(sdot)(const int * n, const float* x, const int * incx, const float* y, const int * incy); // < x , y >
 float SIERRA_FORTRAN(snrm2)(const int * n, const float* x, const int * incx); // || x ||
 float SIERRA_FORTRAN(sasum)(const int * n,const float * x,const int * incx);
@@ -744,7 +769,15 @@ void INTERNAL_field_copy(
         Bucket & b = *buckets[i];
         const Bucket::size_type length = b.size();
         const unsigned int fieldSize = field_scalars_per_entity(xFieldBase, b);
-        ThrowAssert(fieldSize == field_scalars_per_entity(yFieldBase, b));
+
+        
+        ThrowAssertMsg(fieldSize == field_scalars_per_entity(yFieldBase, b), 
+          "In INTERNAL_field_copy: found incomptaible field sizes.  "<<std::endl
+          <<"  First field name: "<<xFieldBase.name()<<std::endl
+          <<"  First field size: "<<field_scalars_per_entity(xFieldBase, b)<<std::endl
+          <<"  Second field name: "<<yFieldBase.name()<<std::endl
+          <<"  Second field size: "<<field_scalars_per_entity(yFieldBase, b)<<std::endl);
+        
         const int kmax = length * fieldSize;
         const Scalar * x = static_cast<Scalar*>(field_data(xFieldBase, b));
         Scalar * y = static_cast<Scalar*>(field_data(yFieldBase, b));

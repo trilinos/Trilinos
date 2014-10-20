@@ -57,7 +57,6 @@
 #
 # Any questions as to how this works? Ask Chris Siefert <csiefer@sandia.gov>
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 # Check to make sure MATLAB_ARCH is set
 IF(NOT MATLAB_ARCH)

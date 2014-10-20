@@ -1694,7 +1694,11 @@ int ML_GGraph_Gen_ElementGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    ML_free( vlist );
    ML_free( vlist2 );
    for ( i = 0; i < nvertices; i++ ) ML_free( v2elem_map[i] );
+
    ML_free(v2elem_map);
+   if(egraph_ia != NULL) free(egraph_ia);
+   if(egraph_ja != NULL) free(egraph_ja);
+
    return 0;
 }
 

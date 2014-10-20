@@ -28,9 +28,11 @@
 // @HEADER
 #include "Teuchos_TestingHelpers.hpp"
 
-#include "Kokkos_View.hpp"
-#include "Kokkos_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 #include "Sacado.hpp"
+#include "Sacado_CacheFad_DFad.hpp"
+#include "Sacado_CacheFad_SFad.hpp"
+#include "Sacado_CacheFad_SLFad.hpp"
 
 #include "Kokkos_View_Fad.hpp"
 
@@ -493,8 +495,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos::deep_copy(v, h_v);
 
   // Create unmanaged view
-  FadViewType v_fad(Kokkos::view_without_managing,
-                    v.ptr_on_device(), num_rows, num_cols, fad_size+1);
+  FadViewType v_fad( v.ptr_on_device(), num_rows, num_cols, fad_size+1);
 
   // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
   fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);
@@ -589,8 +590,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ConstViewType v_const = v;
 
   // Create unmanaged view
-  ConstFadViewType v_fad(Kokkos::view_without_managing, v_const.ptr_on_device(),
-                         num_rows, num_cols, fad_size+1);
+  ConstFadViewType v_fad(v_const.ptr_on_device(), num_rows, num_cols, fad_size+1);
 
   // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
   fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);
@@ -668,14 +668,41 @@ typedef Sacado::Fad::DFad<double> DFadType;
 typedef Sacado::Fad::SLFad<double,2*global_fad_size> SLFadType;
 typedef Sacado::Fad::SFad<double,global_fad_size> SFadType;
 
+typedef Sacado::ELRFad::DFad<double> ELRDFadType;
+typedef Sacado::ELRFad::SLFad<double,2*global_fad_size> ELRSLFadType;
+typedef Sacado::ELRFad::SFad<double,global_fad_size> ELRSFadType;
+
+typedef Sacado::CacheFad::DFad<double> CacheDFadType;
+typedef Sacado::CacheFad::SLFad<double,2*global_fad_size> CacheSLFadType;
+typedef Sacado::CacheFad::SFad<double,global_fad_size> CacheSFadType;
+
+typedef Sacado::ELRCacheFad::DFad<double> ELRCacheDFadType;
+typedef Sacado::ELRCacheFad::SLFad<double,2*global_fad_size> ELRCacheSLFadType;
+typedef Sacado::ELRCacheFad::SFad<double,global_fad_size> ELRCacheSFadType;
+
 // We can't use DFad unless we use the View specialization
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-#define VIEW_FAD_TESTS_D( D )                   \
-  VIEW_FAD_TESTS_FD( SFadType, D )              \
-  VIEW_FAD_TESTS_FD( SLFadType, D )             \
-  VIEW_FAD_TESTS_FD( DFadType, D )
+#define VIEW_FAD_TESTS_D( D )                           \
+  VIEW_FAD_TESTS_FD( SFadType, D )                      \
+  VIEW_FAD_TESTS_FD( SLFadType, D )                     \
+  VIEW_FAD_TESTS_FD( DFadType, D )                      \
+  VIEW_FAD_TESTS_FD( ELRSFadType, D )                   \
+  VIEW_FAD_TESTS_FD( ELRSLFadType, D )                  \
+  VIEW_FAD_TESTS_FD( ELRDFadType, D )                   \
+  VIEW_FAD_TESTS_FD( CacheSFadType, D )                 \
+  VIEW_FAD_TESTS_FD( CacheSLFadType, D )                \
+  VIEW_FAD_TESTS_FD( CacheDFadType, D )                 \
+  VIEW_FAD_TESTS_FD( ELRCacheSFadType, D )              \
+  VIEW_FAD_TESTS_FD( ELRCacheSLFadType, D )             \
+  VIEW_FAD_TESTS_FD( ELRCacheDFadType, D )
 #else
-#define VIEW_FAD_TESTS_D( D )                   \
-  VIEW_FAD_TESTS_FD( SFadType, D )              \
-  VIEW_FAD_TESTS_FD( SLFadType, D )
+#define VIEW_FAD_TESTS_D( D )                        \
+  VIEW_FAD_TESTS_FD( SFadType, D )                   \
+  VIEW_FAD_TESTS_FD( SLFadType, D )                  \
+  VIEW_FAD_TESTS_FD( ELRSFadType, D )                \
+  VIEW_FAD_TESTS_FD( ELRSLFadType, D )               \
+  VIEW_FAD_TESTS_FD( CacheSFadType, D )              \
+  VIEW_FAD_TESTS_FD( CacheSLFadType, D )             \
+  VIEW_FAD_TESTS_FD( ELRCacheSFadType, D )           \
+  VIEW_FAD_TESTS_FD( ELRCacheSLFadType, D )
 #endif

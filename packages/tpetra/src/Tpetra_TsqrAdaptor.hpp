@@ -46,7 +46,7 @@
 /// \brief Adaptor from Tpetra::MultiVector to TSQR
 /// \author Mark Hoemmen
 
-#include <Tpetra_ConfigDefs.hpp> // HAVE_TPETRA_TSQR, etc.
+#include <Tpetra_ConfigDefs.hpp>
 
 #ifdef HAVE_TPETRA_TSQR
 #  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object

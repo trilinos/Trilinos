@@ -57,7 +57,6 @@
 #
 # Unlike the MATLAB TPL, this TPL seems to work with MPI enabled.
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( MATLABLib
   REQUIRED_HEADERS mat.h matrix.h

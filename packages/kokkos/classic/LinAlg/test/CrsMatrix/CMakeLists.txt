@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)   
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
@@ -11,7 +10,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultMultiply
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultSolve  
@@ -21,7 +19,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultSolve
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_UnitTests 
@@ -31,7 +28,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_UnitTests
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST( Raw_AddSparseMatrices
@@ -41,7 +37,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST( Raw_AddSparseMatrices
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
 
@@ -53,7 +48,6 @@ IF (KokkosClassic_ENABLE_CUSPARSE)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   ) 
 ENDIF()
 
@@ -67,23 +61,23 @@ IF(NOT __LINUX_COMPILER_PGI)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   ) 
 ENDIF()
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SerialNodeCrsTiming
-  SOURCES 
+IF (KokkosClassic_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SerialNodeCrsTiming
+    SOURCES 
     NodeTest
     ../../../NodeAPI/test/SerialNodeTest
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
-  DEPLIBS kokkosnodeapi
-  XHOSTTYPE Windows
-  )
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    XHOSTTYPE Windows
+    )
+ENDIF ()
 IF (KokkosClassic_ENABLE_TBB)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TBBNodeCrsTiming
@@ -94,7 +88,6 @@ IF (KokkosClassic_ENABLE_TBB)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    DEPLIBS kokkosnodeapi
     )
 ENDIF()
 IF (KokkosClassic_ENABLE_OpenMP)
@@ -107,7 +100,6 @@ IF (KokkosClassic_ENABLE_OpenMP)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    DEPLIBS kokkosnodeapi
     )
 ENDIF()
 IF (KokkosClassic_ENABLE_ThreadPool)
@@ -120,7 +112,6 @@ IF (KokkosClassic_ENABLE_ThreadPool)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    DEPLIBS kokkosnodeapi
     XHOSTTYPE Windows
     )
 ENDIF()

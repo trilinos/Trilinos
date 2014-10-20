@@ -44,9 +44,7 @@
 #ifndef KOKKOS_COREVIEWDEFAULT_HPP
 #define KOKKOS_COREVIEWDEFAULT_HPP
 
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_View.hpp>
-#include <impl/Kokkos_Shape.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -325,7 +323,7 @@ public:
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type
+                typename traits::host_mirror_space
               > HostMirror ;
 
   enum { Rank = traits::rank };

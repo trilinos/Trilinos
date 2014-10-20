@@ -67,7 +67,7 @@ ENDIF()
 
 # # Test that CUDA compiler works
 # IF(NOT _CUDA_FAILURE)
-#   INCLUDE(TrilinosCUDASupport) 
+#   INCLUDE(TrilinosCUDASupport)
 #   SET(SRC "
 #     #include <cuda_runtime.h>
 #     __global__ void vecAdd(const float* a, const float* b, float* c, int N)

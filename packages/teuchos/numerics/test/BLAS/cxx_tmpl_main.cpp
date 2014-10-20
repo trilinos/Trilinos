@@ -77,7 +77,7 @@ using Teuchos::ScalarTraits;
 #endif
 
 // Define the ordinal type
-#define OType	   long int 
+#define OType	   long int
 
 // MVMIN/MAX define the minimum and maximum dimensions of generated matrices and vectors, respectively.
 #define MVMIN      2
@@ -126,13 +126,13 @@ template<typename TYPE>
 void PrintMatrix(TYPE* Matrix, OType Rows, OType Columns, OType LDM, std::string Name, bool Matlab = 0);
 
 template<typename TYPE1, typename TYPE2>
-bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, typename ScalarTraits<TYPE2>::magnitudeType Tolerance ); 
+bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, typename ScalarTraits<TYPE2>::magnitudeType Tolerance );
 
 template<typename TYPE1, typename TYPE2>
-bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, OType Size, typename ScalarTraits<TYPE2>::magnitudeType Tolerance ); 
+bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, OType Size, typename ScalarTraits<TYPE2>::magnitudeType Tolerance );
 
 template<typename TYPE1, typename TYPE2>
-bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, OType Rows, OType Columns, OType LDM, typename ScalarTraits<TYPE2>::magnitudeType Tolerance ); 
+bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, OType Rows, OType Columns, OType LDM, typename ScalarTraits<TYPE2>::magnitudeType Tolerance );
 
 // For most types, this function is just a wrapper for static_cast(), but for mp_real/double, it calls mp::dble()
 // The second input parameter is not used; it is only needed to determine what type to convert *to*
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
       return 1;
     }
   typedef ScalarTraits<SType1>::magnitudeType MType1;
-  typedef ScalarTraits<SType2>::magnitudeType MType2; 
+  typedef ScalarTraits<SType2>::magnitudeType MType2;
   BLAS<OType, SType1> SType1BLAS;
   BLAS<OType, SType2> SType2BLAS;
   SType1 SType1zero = ScalarTraits<SType1>::zero();
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
   SType2* SType2B;
   SType2* SType2C;
   SType2* SType2x;
-  SType2* SType2y; 
+  SType2* SType2y;
   SType2 SType2alpha, SType2beta;
   SType1 SType1ASUMresult, SType1DOTresult, SType1NRM2result, SType1SINresult;
   SType2 SType2ASUMresult, SType2DOTresult, SType2NRM2result, SType2SINresult;
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
   SType2 convertTo = ScalarTraits<SType2>::zero();
   MType2 mConvertTo = ScalarTraits<MType2>::zero();
   MType2 TOL = 1e-5*ScalarTraits<MType2>::one();
-  
+
   std::srand(time(NULL));
 
   //--------------------------------------------------------------------------------
@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
       SType2COSresult = ConvertType(SType1COSresult, ScalarTraits<MType2>::zero());
       SType1SINresult = ScalarTraits<SType1>::zero();
       SType2SINresult = ConvertType(SType1SINresult, convertTo);
-      
+
       if(debug)
 	{
 	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 	  std::cout << "SType1 ROTG SIN result: " << SType1SINresult << std::endl;
 	  std::cout << "SType2 ROTG SIN result: " << SType2SINresult << std::endl;
 	}
-      GoodTestSubcount += ( CompareScalars(SType1COSresult, SType2COSresult, TOL) && 
+      GoodTestSubcount += ( CompareScalars(SType1COSresult, SType2COSresult, TOL) &&
 			    CompareScalars(SType1SINresult, SType2SINresult, TOL) );
     }
   GoodTestCount += GoodTestSubcount;
@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
       SType1x = new SType1[Mx];
       SType1y = new SType1[My];
       SType2x = new SType2[Mx];
-      SType2y = new SType2[My]; 
+      SType2y = new SType2[My];
       for(j = 0; j < Mx; j++)
 	{
 	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -476,7 +476,7 @@ int main(int argc, char *argv[])
       SType1x = new SType1[Mx];
       SType1y = new SType1[My];
       SType2x = new SType2[Mx];
-      SType2y = new SType2[My]; 
+      SType2y = new SType2[My];
       for(j = 0; j < Mx; j++)
 	{
 	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
       SType1x = new SType1[Mx];
       SType1y = new SType1[My];
       SType2x = new SType2[Mx];
-      SType2y = new SType2[My]; 
+      SType2y = new SType2[My];
       for(j = 0; j < Mx; j++)
 	{
 	  SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -579,7 +579,7 @@ int main(int argc, char *argv[])
     {
       incx = GetRandom(1, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
-      M2 = M*incx; 
+      M2 = M*incx;
       SType1x = new SType1[M2];
       SType2x = new SType2[M2];
       for(j = 0; j < M2; j++)
@@ -618,7 +618,7 @@ int main(int argc, char *argv[])
   for(i = 0; i < SCALTESTS; i++)
     {
       // These will only test for the case that the increment is > 0, the
-      // templated case can handle when incx < 0, but the blas library doesn't 
+      // templated case can handle when incx < 0, but the blas library doesn't
       // seem to be able to on some machines.
       incx = GetRandom(1, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
@@ -717,14 +717,14 @@ int main(int argc, char *argv[])
       incy = GetRandom(1, MVMAX);
       while (incy == 0) {
       	  incy = GetRandom(1, MVMAX);
-      }   
+      }
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);
 
       TRANS = RandomTRANS();
       if (Teuchos::ETranspChar[TRANS] == 'N') {	
       	M2 = M*std::abs(incy);
-      	N2 = N*std::abs(incx);   
+      	N2 = N*std::abs(incx);
       } else {
 	M2 = N*std::abs(incy);
 	N2 = M*std::abs(incx);
@@ -733,7 +733,7 @@ int main(int argc, char *argv[])
       LDA = GetRandom(MVMIN, MVMAX);
       while (LDA < M) {
           LDA = GetRandom(MVMIN, MVMAX);
-      }   
+      }
 
       SType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
       SType1beta = GetRandom(-SCALARMAX, SCALARMAX);
@@ -745,7 +745,7 @@ int main(int argc, char *argv[])
       SType1y = new SType1[M2];
       SType2A = new SType2[LDA * N];
       SType2x = new SType2[N2];
-      SType2y = new SType2[M2]; 
+      SType2y = new SType2[M2];
 
       for(j = 0; j < LDA * N; j++)
 	{
@@ -807,10 +807,10 @@ int main(int argc, char *argv[])
     {
       UPLO = RandomUPLO();
       TRANSA = RandomTRANS();
-      
+
       // Since the entries are integers, we don't want to use the unit diagonal feature,
       // this creates ill-conditioned, nearly-singular matrices.
-      //DIAG = RandomDIAG();  
+      //DIAG = RandomDIAG();
       DIAG = Teuchos::NON_UNIT_DIAG;
 
       N = GetRandom(MVMIN, MVMAX);
@@ -836,11 +836,11 @@ int main(int argc, char *argv[])
       SType2A = new SType2[LDA * N];
 
       for(j = 0; j < N; j++)
-	{	     
+	{	
 	  if(Teuchos::EUploChar[UPLO] == 'U') {
 	    // The operator is upper triangular, make sure that the entries are
 	    // only in the upper triangular part of A and the diagonal is non-zero.
-	    for(k = 0; k < N; k++) 
+	    for(k = 0; k < N; k++)
 	    {
 	      if(k < j) {
 		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -864,7 +864,7 @@ int main(int argc, char *argv[])
 	  } else {
 	    // The operator is lower triangular, make sure that the entries are
 	    // only in the lower triangular part of A and the diagonal is non-zero.
-	    for(k = 0; k < N; k++) 
+	    for(k = 0; k < N; k++)
 	      {
 		if(k > j) {
 		  SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -887,7 +887,7 @@ int main(int argc, char *argv[])
 	      } // end for(k=0 ...		
 	  } // end if(UPLO == 'U') ...
 	} // end for(j=0 ...      for(j = 0; j < N*N; j++)
-      
+
       if(debug)
 	{
 	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
@@ -926,21 +926,21 @@ int main(int argc, char *argv[])
       incx = GetRandom(1, MVMAX);
       while (incx == 0) {
       	  incx = GetRandom(1, MVMAX);
-      }   
+      }
       incy = GetRandom(1, MVMAX);
       while (incy == 0) {
       	  incy = GetRandom(1, MVMAX);
-      }   
+      }
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);
 
       M2 = M*std::abs(incx);
-      N2 = N*std::abs(incy);   
+      N2 = N*std::abs(incy);
 
       LDA = GetRandom(MVMIN, MVMAX);
       while (LDA < M) {
           LDA = GetRandom(MVMIN, MVMAX);
-      }   
+      }
 
       SType1A = new SType1[LDA * N];
       SType1x = new SType1[M2];
@@ -1007,8 +1007,8 @@ int main(int argc, char *argv[])
   //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < GEMMTESTS; i++)
-    { 
-      TRANSA = RandomTRANS();      
+    {
+      TRANSA = RandomTRANS();
       TRANSB = RandomTRANS();
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);
@@ -1060,7 +1060,7 @@ int main(int argc, char *argv[])
 	  PrintMatrix(SType1B, P, N, LDB,"SType1B", matlab);
 	  PrintMatrix(SType2B, P, N, LDB,"SType2B", matlab);
 	}
-      } else { 
+      } else {
 	while (LDB < N) {  LDB = GetRandom(MVMIN, MVMAX); }
 	SType1B = new SType1[LDB * P];
 	SType2B = new SType2[LDB * P];
@@ -1122,7 +1122,7 @@ int main(int argc, char *argv[])
   //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < SYMMTESTS; i++)
-    { 
+    {
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);
       SIDE = RandomSIDE();
@@ -1155,7 +1155,7 @@ int main(int argc, char *argv[])
 	  SType1B[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2B[j] = ConvertType(SType1B[j], convertTo);
       }
-    
+
       LDC = GetRandom(MVMIN, MVMAX);
       while (LDC < M) {  LDC = GetRandom(MVMIN, MVMAX); }
       SType1C = new SType1[LDC * N];
@@ -1164,7 +1164,7 @@ int main(int argc, char *argv[])
 	  SType1C[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2C[j] = ConvertType(SType1C[j], convertTo);
       }
-      
+
       SType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
       SType1beta = GetRandom(-SCALARMAX, SCALARMAX);
       SType2alpha = ConvertType(SType1alpha, convertTo);
@@ -1263,7 +1263,7 @@ int main(int argc, char *argv[])
             SType1C[j*LDC+k] = GetRandom(-SCALARMAX, SCALARMAX);
           } else {
             SType1C[j*LDC+k] = SType1zero;
-          } 
+          }
           SType2C[j*LDC+k] = ConvertType(SType1C[j*LDC+k], convertTo);
         }
       }
@@ -1277,9 +1277,9 @@ int main(int argc, char *argv[])
           }
           SType2C[j*LDC+k] = ConvertType(SType1C[j*LDC+k], convertTo);
         }
-      } 
+      }
     }
-       
+
     SType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
     SType1beta = GetRandom(-SCALARMAX, SCALARMAX);
     SType2alpha = ConvertType(SType1alpha, convertTo);
@@ -1329,7 +1329,7 @@ int main(int argc, char *argv[])
   //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < TRMMTESTS; i++)
-    { 
+    {
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);
 
@@ -1357,11 +1357,11 @@ int main(int argc, char *argv[])
 	  SType2A = new SType2[LDA * M];
 
 	  for(j = 0; j < M; j++)
-	    {	     
+	    {	
 	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
-		for(k = 0; k < M; k++) 
+		for(k = 0; k < M; k++)
 		{
 		    if(k < j) {
 	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1385,7 +1385,7 @@ int main(int argc, char *argv[])
 	      } else {
 		// The operator is lower triangular, make sure that the entries are
 		// only in the lower triangular part of A and the diagonal is non-zero.
-		for(k = 0; k < M; k++) 
+		for(k = 0; k < M; k++)
 		{
 		    if(k > j) {
 	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1420,11 +1420,11 @@ int main(int argc, char *argv[])
 	  SType2A = new SType2[LDA * N];
 
 	  for(j = 0; j < N; j++)
-	    {	     
+	    {	
 	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
-		for(k = 0; k < N; k++) 
+		for(k = 0; k < N; k++)
 		{
 		    if(k < j) {
 	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1448,7 +1448,7 @@ int main(int argc, char *argv[])
 	      } else {
 		// The operator is lower triangular, make sure that the entries are
 		// only in the lower triangular part of A and the diagonal is non-zero.
-		for(k = 0; k < N; k++) 
+		for(k = 0; k < N; k++)
 		{
 		    if(k > j) {
 	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1487,7 +1487,7 @@ int main(int argc, char *argv[])
 	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
 	  std::cout << "SType1alpha = " << SType1alpha << std::endl;
 	  std::cout << "SType2alpha = " << SType2alpha << std::endl;
-          if(Teuchos::ESideChar[SIDE] == 'L') { 
+          if(Teuchos::ESideChar[SIDE] == 'L') {
 	    PrintMatrix(SType1A, M, M, LDA, "SType1A", matlab);
 	    PrintMatrix(SType2A, M, M, LDA, "SType2A", matlab);
 	  } else {
@@ -1523,7 +1523,7 @@ int main(int argc, char *argv[])
   //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
   for(i = 0; i < TRSMTESTS; i++)
-    { 
+    {
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);
 
@@ -1540,7 +1540,7 @@ int main(int argc, char *argv[])
       TRANSA = RandomTRANS();
       // Since the entries are integers, we don't want to use the unit diagonal feature,
       // this creates ill-conditioned, nearly-singular matrices.
-      //DIAG = RandomDIAG();  
+      //DIAG = RandomDIAG();
       DIAG = Teuchos::NON_UNIT_DIAG;
 
       if(Teuchos::ESideChar[SIDE] == 'L')  // The operator is on the left side
@@ -1554,11 +1554,11 @@ int main(int argc, char *argv[])
 	  SType2A = new SType2[LDA * M];
 
 	  for(j = 0; j < M; j++)
-	    {	     
+	    {	
 	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
-		for(k = 0; k < M; k++) 
+		for(k = 0; k < M; k++)
 		{
 		    if(k < j) {
 	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1582,7 +1582,7 @@ int main(int argc, char *argv[])
 	      } else {
 		// The operator is lower triangular, make sure that the entries are
 		// only in the lower triangular part of A and the diagonal is non-zero.
-		for(k = 0; k < M; k++) 
+		for(k = 0; k < M; k++)
 		{
 		    if(k > j) {
 	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1617,11 +1617,11 @@ int main(int argc, char *argv[])
 	  SType2A = new SType2[LDA * N];
 
 	  for(j = 0; j < N; j++)
-	    {	     
+	    {	
 	      if(Teuchos::EUploChar[UPLO] == 'U') {
 		// The operator is upper triangular, make sure that the entries are
 		// only in the upper triangular part of A and the diagonal is non-zero.
-		for(k = 0; k < N; k++) 
+		for(k = 0; k < N; k++)
 		{
 		    if(k < j) {
 	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1645,7 +1645,7 @@ int main(int argc, char *argv[])
 	      } else {
 		// The operator is lower triangular, make sure that the entries are
 		// only in the lower triangular part of A and the diagonal is non-zero.
-		for(k = 0; k < N; k++) 
+		for(k = 0; k < N; k++)
 		{
 		    if(k > j) {
 	      		SType1A[j*LDA+k] = GetRandom(-SCALARMAX, SCALARMAX);
@@ -1673,22 +1673,22 @@ int main(int argc, char *argv[])
       // Fill in the right hand side block B.
       for(j = 0; j < N; j++)
 	{
-	  for(k = 0; k < M; k++) 
+	  for(k = 0; k < M; k++)
 	    {
 	  	SType1B[j*LDB+k] = GetRandom(-SCALARMAX, SCALARMAX);
 	  	SType2B[j*LDB+k] = ConvertType(SType1B[j*LDB+k], convertTo);
 	    }
 	}
-      
+
       SType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
       SType2alpha = ConvertType(SType1alpha, convertTo);
-      
+
       if(debug)
 	{
 	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
-	  std::cout << Teuchos::ESideChar[SIDE] << "\t" 
-	       << Teuchos::EUploChar[UPLO] << "\t" 
-	       << Teuchos::ETranspChar[TRANSA] << "\t" 
+	  std::cout << Teuchos::ESideChar[SIDE] << "\t"
+	       << Teuchos::EUploChar[UPLO] << "\t"
+	       << Teuchos::ETranspChar[TRANSA] << "\t"
 	       << Teuchos::EDiagChar[DIAG] << std::endl;
 	  std::cout << "M="<<M << "\t" << "N="<<N << "\t" << "LDA="<<LDA << "\t" << "LDB="<<LDB << std::endl;
 	  std::cout << "SType1alpha = " << SType1alpha << std::endl;
@@ -1707,7 +1707,7 @@ int main(int argc, char *argv[])
 
       SType1BLAS.TRSM(SIDE, UPLO, TRANSA, DIAG, M, N, SType1alpha, SType1A, LDA, SType1B, LDB);
       SType2BLAS.TRSM(SIDE, UPLO, TRANSA, DIAG, M, N, SType2alpha, SType2A, LDA, SType2B, LDB);
- 
+
       if(debug)
 	{
 	  PrintMatrix(SType1B, M, N, LDB, "SType1B_after_operation", matlab);
@@ -1723,7 +1723,7 @@ int main(int argc, char *argv[])
       delete [] SType2A;
       delete [] SType2B;
     }
-  GoodTestCount += GoodTestSubcount; 
+  GoodTestCount += GoodTestSubcount;
   if(verbose || debug) std::cout << "TRSM: " << GoodTestSubcount << " of " << TRSMTESTS << " tests were successful." << std::endl;
   if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
@@ -1879,7 +1879,7 @@ bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, OType Rows, OType Columns, 
       for(i = 0; i < Rows; i++)
 	{
 	  sum2 = ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::conjugate(Matrix2[j*LDM + i])*Matrix2[j*LDM + i]);
-	  temp = ConvertType(Matrix1[j*LDM + i],convertTo) - Matrix2[j*LDM + i]; 
+	  temp = ConvertType(Matrix1[j*LDM + i],convertTo) - Matrix2[j*LDM + i];
 	  sum = ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::conjugate(temp)*temp);
 	}
     }

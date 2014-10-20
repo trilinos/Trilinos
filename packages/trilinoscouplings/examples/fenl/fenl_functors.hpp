@@ -122,7 +122,7 @@ public:
     : node_count(arg_node_count)
     , elem_node_id( arg_elem_node_id )
     , row_total( "row_total" )
-    , row_count(AllocateWithoutInitializing(), "row_count" , node_count ) // will deep_copy to 0 inside loop
+    , row_count(Kokkos::ViewAllocateWithoutInitializing("row_count"), node_count ) // will deep_copy to 0 inside loop
     , row_map( "graph_row_map" , node_count + 1 )
     , node_node_set()
     , phase( FILL_NODE_SET )

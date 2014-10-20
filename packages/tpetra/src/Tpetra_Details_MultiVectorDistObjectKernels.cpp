@@ -52,14 +52,7 @@
 #include "Tpetra_ETIHelperMacros.h"
 #include "Tpetra_Details_MultiVectorDistObjectKernels_def.hpp"
 
-#include "KokkosCore_config.h"
-#include "Kokkos_Serial.hpp"
-#if defined(KOKKOS_HAVE_PTHREAD)
-#include "Kokkos_Threads.hpp"
-#endif
-#if defined(KOKKOS_HAVE_OPENMP)
-#include "Kokkos_OpenMP.hpp"
-#endif
+#include "Kokkos_Core.hpp"
 
 namespace Tpetra {
 namespace Details {

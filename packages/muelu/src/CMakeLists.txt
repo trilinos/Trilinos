@@ -1,4 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 # Note about the use of wildcard in CMakeLists.txt: CMake dont't know
@@ -33,8 +32,10 @@ INCLUDE_DIRECTORIES(${DIR}/MueCentral)
 INCLUDE_DIRECTORIES(${DIR}/Rebalancing)
 INCLUDE_DIRECTORIES(${DIR}/Smoothers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BaseClass)
-INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/BlockedTransfers)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
+  INCLUDE_DIRECTORIES(${DIR}/Transfers/BlockedTransfers)
+ENDIF()
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization/Solvers)
@@ -153,7 +154,6 @@ TRIBITS_ADD_LIBRARY(
   muelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS xpetra xpetra-sup xpetra-ext
   )
 
 IF(KokkosClassic_ENABLE_Thrust OR

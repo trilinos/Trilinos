@@ -1,0 +1,26 @@
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+SET(HEADERS "")
+SET(SOURCES "")
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+APPEND_SET(HEADERS
+  MixedLang.hpp
+  Ray_Tracer.hh
+  Ray.hh
+  )
+
+APPEND_SET(SOURCES
+  MixedLang.cpp
+  Ray_Tracer.cc
+  Parameters.f90
+  Ray_Tracer_Kernel.f90
+  )
+
+TRIBITS_ADD_LIBRARY(
+  mixedlang
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  )

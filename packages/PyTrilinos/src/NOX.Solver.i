@@ -66,7 +66,7 @@ in addition to the following factory function:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // NOX includes
 #include "NOX_StatusTest_Generic.H"
@@ -87,7 +87,7 @@ in addition to the following factory function:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 
 // Namespace flattening
 using Teuchos::RCP;

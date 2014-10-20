@@ -43,8 +43,7 @@
 
 #include <stdio.h>
 
-#include <Kokkos_Parallel.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -56,7 +55,7 @@ struct TestRange {
 
   typedef int value_type ; ///< typedef required for the parallel_reduce
 
-  typedef Kokkos::View<int*,typename ExecSpace::memory_space> view_type ;
+  typedef Kokkos::View<int*,ExecSpace> view_type ;
 
   view_type m_flags ;
 
@@ -65,7 +64,7 @@ struct TestRange {
   struct VerifyResetTag {};
 
   TestRange( const size_t N )
-    : m_flags( Kokkos::allocate_without_initializing , "flags" , N )
+    : m_flags( Kokkos::ViewAllocateWithoutInitializing("flags"), N )
     {}
 
   static void test_for( const size_t N )
@@ -121,6 +120,7 @@ struct TestRange {
     {
       TestRange functor(N);
       Kokkos::View<int,Kokkos::HostSpace> total("total");
+
       Kokkos::parallel_for(    Kokkos::RangePolicy<ExecSpace>(0,N) , functor );
 
       Kokkos::parallel_reduce( Kokkos::RangePolicy<ExecSpace>(0,N) , functor , total );
@@ -146,6 +146,7 @@ struct TestRange {
     {
       TestRange functor(N);
       Kokkos::View<int,Kokkos::HostSpace> total("total");
+
       Kokkos::parallel_for( Kokkos::RangePolicy<ExecSpace>(0,N) , functor );
 
       Kokkos::parallel_scan( Kokkos::RangePolicy<ExecSpace,OffsetTag>(0,N) , functor );

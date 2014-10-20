@@ -187,6 +187,8 @@ public:
     ,KRYLOV
     ,IHSS
     ,SORA
+    ,TRIDI_RELAXATION
+    ,TRIDI_RELAXATION_STAND_ALONE
   };
 
   /** \brief . */
@@ -214,7 +216,7 @@ public:
 #ifdef HAVE_IFPACK_SUPPORTGRAPH
     +1
 #endif
-    +5
+    +7
     ;
 
   /** \brief List of the preconditioner types as enum values . */

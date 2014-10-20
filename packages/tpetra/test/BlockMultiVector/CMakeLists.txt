@@ -1,27 +1,30 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF(Kokkos_ENABLE_Cuda)
   #
   # Add subpackage include path dependencies for CUDA_COMPILE().
   CUDA_INCLUDE_DIRECTORIES( "." )
   CUDA_INCLUDE_DIRECTORIES( ${Tpetra_INCLUDE_DIRS} )
-  CUDA_COMPILE(BLOCKMV_UNIT_TEST_OBJECTS_CUDA BlockMultiVector_UnitTests_CU.cu)
+
+  IF (${PACKAGE_NAME}_ENABLE_CLASSIC_VBR)
+    CUDA_COMPILE(BLOCKMV_UNIT_TEST_OBJECTS_CUDA BlockMultiVector_UnitTests_CU.cu)
+  ENDIF ()
   CUDA_COMPILE(EXPBLOCKMULTIVECTOR_OBJECTS_CUDA ExpBlockMultiVector_CU.cu)
   CUDA_COMPILE(EXPBLOCKCRSMATRIX_OBJECTS_CUDA ExpBlockCrsMatrix_CU.cu)
   CUDA_COMPILE(EXPBLOCKMAP_OBJECTS_CUDA ExpBlockMap_CU.cu)
 ENDIF()
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  BlockMultiVector_UnitTests
-  SOURCES
+IF (${PACKAGE_NAME}_ENABLE_CLASSIC_VBR)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BlockMultiVector_UnitTests
+    SOURCES
     BlockMultiVector_UnitTests
     ${BLOCKMV_UNIT_TEST_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
-  )
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ExpBlockMultiVector
@@ -31,7 +34,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -42,7 +44,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -53,5 +54,4 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )

@@ -102,14 +102,15 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements) :
   ierr = MatCreate(PETSC_COMM_SELF,A);
   ierr = MatSetSizes(*A,PETSC_DECIDE,PETSC_DECIDE,2,2);
   ierr = MatSetFromOptions(*A);
+  ierr = MatSetUp(*A);
 
   // Create Mapping for overlap solution vector using Petsc IS
   overlapSolution = new Vec;
   VecCreateSeq(PETSC_COMM_SELF,2,overlapSolution);
   int indexMap[] = {0, 1};
   IS from, to;
-  ISCreateGeneral(PETSC_COMM_WORLD,2,indexMap,&from);
-  ISCreateGeneral(PETSC_COMM_WORLD,2,indexMap,&to);
+  ISCreateGeneral(PETSC_COMM_WORLD,2,indexMap,PETSC_COPY_VALUES,&from);
+  ISCreateGeneral(PETSC_COMM_WORLD,2,indexMap,PETSC_COPY_VALUES,&to);
   petscMap = new VecScatter;
   VecScatterCreate(*initialSolution, from, *overlapSolution, to, petscMap);
 

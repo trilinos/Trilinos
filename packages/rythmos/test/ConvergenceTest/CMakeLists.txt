@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
@@ -27,7 +26,7 @@ FOREACH(TEST_NAME ${TEST_NAMES})
     SOURCES
       ${COMMON_SOURCES}
       Rythmos_${TEST_NAME}_ConvergenceTest.cpp
-    DEPLIBS rythmos_test_models
+    TESTONLYLIBS rythmos_test_models
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     )

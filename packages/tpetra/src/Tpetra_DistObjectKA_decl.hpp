@@ -51,7 +51,7 @@
 #if TPETRA_USE_KOKKOS_DISTOBJECT
 
 #include "KokkosCompat_View.hpp"
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 
 // #ifndef HAVE_TPETRA_TRANSFER_TIMERS
 // #  define HAVE_TPETRA_TRANSFER_TIMERS 1

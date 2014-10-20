@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -75,15 +75,13 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
   TEUCHOS_UNIT_TEST( NodeAPI, DefaultNodeTest )
   {
     Time tAlloc("Alloc Time"), tInit("Init Op"), tSum("Sum Op"), tFree("Free Time");
     typedef DefaultNode::DefaultNodeType NODE;
-    typedef ArrayRCP<const char>  cbuf;
-    typedef ArrayRCP<      char> ncbuf;
     Teuchos::ArrayRCP<int> x;
     RCP<NODE> node = DefaultNode::getDefaultNode();
     ReadyBufferHelper<NODE> rbh(node);

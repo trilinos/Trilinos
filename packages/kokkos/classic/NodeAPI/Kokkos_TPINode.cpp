@@ -44,10 +44,7 @@
 #include <Teuchos_Assert.hpp>
 
 #ifdef HAVE_KOKKOSCLASSIC_KOKKOSCORE
-#include "KokkosCore_config.h"
-#ifdef KOKKOS_HAVE_PTHREAD
-#include "Kokkos_Threads.hpp"
-#endif
+#include "Kokkos_Core.hpp"
 #endif
 
 namespace KokkosClassic {

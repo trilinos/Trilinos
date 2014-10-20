@@ -2553,9 +2553,8 @@ int ML_Smoother_VBlockSGS(ML_Smoother *sm, int inlen, double x[],
    }
    ML_free( vals );
    ML_free( cols );
-   if ( Nblocks > 0 ) ML_free( aggr_offset );
-   if ( Nrows > 0 ) ML_free( aggr_group );
-
+   if ( aggr_offset != NULL ) ML_free( aggr_offset );
+   if ( aggr_group != NULL ) ML_free( aggr_group );
    return 0;
 }
 
@@ -2786,8 +2785,8 @@ int ML_Smoother_VBlockSGSSequential(ML_Smoother *sm, int inlen, double x[],
    }
    ML_free( vals );
    ML_free( cols );
-   if ( Nblocks > 0 ) ML_free( aggr_offset );
-   if ( Nrows > 0 ) ML_free( aggr_group );
+   if ( aggr_offset != NULL ) ML_free( aggr_offset );
+   if ( aggr_group != NULL ) ML_free( aggr_group );
 
    return 0;
 }
@@ -8359,7 +8358,8 @@ void ML_Smoother_DestroySubdomainOverlap(void *data)
 int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
                              double rhs[])
 {
-   int            i, k, iter, one=1, *BlkPtr, *block_indices, *blkOffset;
+   int            i, k, iter, one=1;
+   int            *BlkPtr = NULL, *block_indices, *blkOffset;
    int            Nrows, NBlks;
    int            *RowsInBlk;
    double         omega;
@@ -8461,7 +8461,8 @@ int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
 int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
                           int outlen, double rhs[])
 {
-   int            i, j, k, iter, one=1, *BlkPtr, *block_indices, *blkOffset;
+   int            i, j, k, iter, one=1;
+   int            *BlkPtr = NULL, *block_indices, *blkOffset;
    int            Nrows, NBlks, row;
    int            *RowsInBlk;
    ML_CommInfoOP  *getrow_comm;
@@ -8649,7 +8650,7 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
 
 #include "ml_petsc.h"
 
-#ifdef HAVE_PETSC
+#ifdef HAVE_ML_PETSC
 int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen,
                       double rhs[])
 {

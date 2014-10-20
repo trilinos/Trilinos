@@ -3,7 +3,7 @@
 #include <typeinfo>
 #include <utility>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <Kokkos_Array.hpp>
 #include <impl/Kokkos_ArrayAnalyzeShape.hpp>

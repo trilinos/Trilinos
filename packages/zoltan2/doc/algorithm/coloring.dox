@@ -1,0 +1,17 @@
+/*! \page coloringPage Coloring
+
+
+
+\section coloring_functionality Coloring Functionality
+
+Graph coloring currently supported:
+<ul>
+<li> Distance-1 vertex coloring
+</ul>
+Currently serial; multithreaded coloring is planned for a future release.
+
+
+
+
+
+*/

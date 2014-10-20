@@ -43,10 +43,17 @@
 # Version info that will change with new versions
 #
 
-cmakeVersion = "2.8.5"
-cmakeTarball = "cmake-"+cmakeVersion+".tar.gz"
-cmakeSrcDir = "cmake-"+cmakeVersion
+cmakeVersion = "2.8.11"
+cmakeVersionFull = "2.8.11.2"
+# ToDo: Allow user to select a new version from the env
+# (e.g. TRIBITS_INSTALL_CMAKE_VERSION=2.8.12,
+# TRIBITS_INSTALL_CMAKE_VERSION_FULL=2.8.12.1).
 
+cmakeTarball = "cmake-"+cmakeVersionFull+".tar.gz"
+cmakeSrcDir = "cmake-"+cmakeVersionFull
+cmakeDefaultCheckoutCmnd = \
+  "git clone https://github.com/TriBITSPub/devtools-cmake-"+cmakeVersion+"-base" \
+  + " cmake-"+cmakeVersion+"-base" 
 
 #
 # Script code
@@ -65,16 +72,19 @@ class CMakeInstall:
   def getProductName(self):
     return "cmake-"+cmakeVersion
 
+  def getBaseDirName(self):
+    return "cmake-"+cmakeVersion+"-base"
+
   def getScriptName(self):
     return "install-cmake.py"
 
   def getExtraHelpStr(self):
     return """
-This script builds cmake-"""+cmakeVersion+""" from source compiled with
-the configured C/C++ compilers in your path.  Note that the provided
-CMake configure script actually builds a local bootstrap copy of CMake
-first, before building the final version of CMake and the rest of the
-tools that gets installed.
+This script builds CMake"""+self.getProductName()+""" from source compiled with the
+configured C/C++ compilers in your path.  Note that the provided CMake
+configure script actually builds a local bootstrap copy of CMake first, before
+building the final version of CMake and the rest of the tools that gets
+installed.
 
 WARNING: By default CMake builds an unoptimized version!  To build an optimized
 version you must set CXXFLAGS and CFLAGS with:
@@ -83,17 +93,22 @@ version you must set CXXFLAGS and CFLAGS with:
 
 There does not appear to be any other way to set compiler flags than
 on the env.
-"""
 
-  def getBaseDirName(self):
-    return "cmake.BASE"
+NOTE: The assumed directory structure of the download source provided by the
+command --checkout-cmnd=<checkout-cmnd> is:
+
+   cmake-<version>-base/
+     cmake-<version>.tar.gz
+
+ToDo: Allow user to select different cmake versions.
+"""
 
   def injectExtraCmndLineOptions(self, clp):
     clp.add_option(
       "--checkout-cmnd", dest="checkoutCmnd", type="string",
-      default="git clone software.sandia.gov:/space/git/TrilinosToolset/cmake.BASE "+\
-      self.getBaseDirName(),
-      help="Command used to check out "+self.getProductName()+" and dependent source tarball(s)." )
+      default=cmakeDefaultCheckoutCmnd,
+      help="Command used to check out CMake and dependent source tarball(s)." \
+        +"  (Default ='"+cmakeDefaultCheckoutCmnd+"')" )
     clp.add_option(
       "--extra-configure-options", dest="extraConfigureOptions", type="string", \
       default="", \

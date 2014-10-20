@@ -50,10 +50,7 @@
 #include <string>
 #include <utility>
 #include <Teuchos_SerialDenseMatrix.hpp>
-
-#ifdef DOXYGEN_USE_ONLY
-  #include "Tpetra_CrsGraph_decl.hpp"
-#endif
+#include "Tpetra_CrsGraph_decl.hpp"
 
 namespace Tpetra {
 
@@ -79,7 +76,6 @@ namespace Tpetra {
   , noRedundancies_ (true)
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
-  , haveRowInfo_(true)
   , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
@@ -116,7 +112,6 @@ namespace Tpetra {
   , noRedundancies_(true)
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
-  , haveRowInfo_(true)
   , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
@@ -152,7 +147,6 @@ namespace Tpetra {
   , noRedundancies_(true)
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
-  , haveRowInfo_(true)
   , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
@@ -197,7 +191,6 @@ namespace Tpetra {
   , noRedundancies_(true)
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
-  , haveRowInfo_(true)
   , sortGhostsAssociatedWithEachProcessor_(true)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
@@ -241,7 +234,6 @@ namespace Tpetra {
   , noRedundancies_(true)
   , haveLocalConstants_ (false)
   , haveGlobalConstants_ (false)
-  , haveRowInfo_(true)
   , sortGhostsAssociatedWithEachProcessor_(true)
   {
     staticAssertions();
@@ -2628,21 +2620,32 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
-    // FIXME (mfh 19 Aug 2014) If fillComplete has already been called
-    // with nondefault domain and range Maps, then this will clobber
-    // them.
-    fillComplete(rowMap_,rowMap_,params);
+    // If the graph already has domain and range Maps, don't clobber
+    // them.  If it doesn't, use the current row Map for both the
+    // domain and range Maps.
+    //
+    // NOTE (mfh 28 Sep 2014): If the graph was constructed without a
+    // column Map, and column indices are inserted which are not in
+    // the row Map on any process, this will cause troubles.  However,
+    // that is not a common case for most applications that we
+    // encounter, and checking for it might require more
+    // communication.
+    Teuchos::RCP<const map_type> domMap = this->getDomainMap ();
+    if (domMap.is_null ()) {
+      domMap = this->getRowMap ();
+    }
+    Teuchos::RCP<const map_type> ranMap = this->getRangeMap ();
+    if (ranMap.is_null ()) {
+      ranMap = this->getRowMap ();
+    }
+    this->fillComplete (domMap, ranMap, params);
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
@@ -4388,16 +4391,13 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
   hasRowInfo () const
   {
-#ifdef HAVE_TPETRA_DEBUG
-    bool actuallyHasRowInfo = true;
-    if (indicesAreAllocated() && getProfileType() == StaticProfile && rowPtrs_ == null) {
-      actuallyHasRowInfo = false;
+    if (indicesAreAllocated () &&
+        getProfileType () == StaticProfile &&
+        rowPtrs_.is_null ()) {
+      return false;
+    } else {
+      return true;
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      actuallyHasRowInfo != haveRowInfo_,
-      std::logic_error, "Internal logic error. Please contact Tpetra team.");
-#endif // HAVE_TPETRA_DEBUG
-    return haveRowInfo_;
   }
 
 } // namespace Tpetra

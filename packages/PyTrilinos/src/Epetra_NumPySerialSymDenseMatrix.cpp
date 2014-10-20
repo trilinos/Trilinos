@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Epetra_NumPySerialSymDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.hpp"
 
 namespace PyTrilinos
 {

@@ -585,10 +585,10 @@ int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
   if (ierr == 0)
     return(0);
 
-  if (N_requested_rows != 1) {
-    std::cerr << "Only N_requested_rows == 1 currently implemented..." << std::endl;
-    exit(EXIT_FAILURE);
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      N_requested_rows != 1,
+      "Only N_requested_rows == 1 currently implemented..."
+      );
 
   switch (Filter_.Type) {
 
@@ -661,9 +661,7 @@ int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
     break;
 
   default:
-
-    std::cerr << "Error, file " << __FILE__ << ", line " << __LINE__ << std::endl;
-    exit(EXIT_FAILURE);
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error.")
   }
 
   if (Filter_.RThresh != 1.00 && Filter_.AThresh != 0.0) {
@@ -1584,11 +1582,10 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
   int *bindx = NULL;
   double *val = NULL;
   int* global_rows = linrowmap->MyGlobalElements();
-  if (Mat1Mat2->getrow->Nrows != Mat1_epet->RowMap().NumMyElements())
-  {
-    std::cout << "Rowmap of ML_Operator and Epetra_CrsMatrix are different!\n";
-    exit(-1);
-  }
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(
+      Mat1Mat2->getrow->Nrows != Mat1_epet->RowMap().NumMyElements(),
+      "Rowmap of ML_Operator and Epetra_CrsMatrix are different!\n"
+      );
   for (int i=0; i<Mat1Mat2->getrow->Nrows; ++i)
   {
     // get the row
@@ -2794,15 +2791,20 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
   int ok = 1;
   if (proc==0)
   {
-     fgets(buffer,199,fp);
+     if (NULL == fgets(buffer,199,fp))
+        pr_error("Error: I/O error.\n");
      numeq_total = strtol(buffer,&bptr,10); // read number of global rows
      int j = strtol(bptr,&bptr,10);
      if (j != nproc) ok = 0;
      else            ok = numeq_total;
-     fgets(buffer,199,fp);
+     if (NULL == fgets(buffer,199,fp))
+        pr_error("Error: I/O error.\n");
   }
   comm.Broadcast(&ok,1,0);
-  if (!ok) return 0;
+  if (!ok) {
+    if (fp != NULL) fclose(fp);
+    return 0;
+  }
   else numeq_total = ok;
 
   int* gupdate = new int[numeq_total];
@@ -2813,7 +2815,8 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
         int row = strtol(buffer,&bptr,10);
         int thisproc = strtol(bptr,&bptr,10);
         gupdate[row] = thisproc;
-        fgets(buffer,199,fp);
+        if (NULL == fgets(buffer,199,fp))
+           pr_error("Error: I/O error.\n");
      }
      fclose(fp); fp = 0;
   }
@@ -2837,6 +2840,7 @@ Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
 
   map = new Epetra_Map(numeq_total,numeq,update,0,comm);
 
+  if(update != NULL) free(update);
   return map;
 }
 
@@ -2885,7 +2889,8 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
          if (fp)
          {
             ok=1;
-            fgets(buffer,9999,fp);
+            if (NULL == fgets(buffer,9999,fp))
+               pr_error("Error: I/O error.\n");
             int readnumeq = strtol(buffer,&bptr,10);
             if (readnumeq != numeq_total)
                ok = 0;
@@ -2896,13 +2901,15 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
       if (!ok)
       {
          delete A;
+         if(fp != NULL) fclose(fp);
          return 0;
       }
       if (activeproc==proc)
       {
          for (int i=0; i<numeq_total; i++)
          {
-            fgets(buffer,9999,fp);
+            if (NULL == fgets(buffer,9999,fp))
+               pr_error("Error: I/O error.\n");
             int row = i;
             if (!map.MyGID(row)) // it's not one of my rows
                continue;
@@ -2976,7 +2983,8 @@ bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
   int ok = 0;
   if (proc==0)
   {
-     fgets(buffer,199,fp);
+     if (NULL == fgets(buffer,199,fp))
+        pr_error("Error: I/O error.\n");
      int tmp = strtol(buffer,&bptr,10); // read number of global rows
      if (tmp != numeq_total) ok = 0;
      else                    ok = 1;
@@ -2995,18 +3003,22 @@ bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
         if (fp)
         {
            ok = 1;
-           fgets(buffer,199,fp);
+           if (NULL == fgets(buffer,199,fp))
+              pr_error("Error: I/O error.\n");
         }
         else ok = 0;
      }
      comm.Broadcast(&ok,1,activeproc);
-     if (!ok)
+     if (!ok) {
+        fclose(fp);
         return false;
+     }
      if (activeproc==proc)
      {
         for (int i=0; i<numeq_total; i++)
         {
-           fgets(buffer,199,fp);
+           if (NULL == fgets(buffer,199,fp))
+              pr_error("Error: I/O error.\n");
            int row = strtol(buffer,&bptr,10);
            if (!map.MyGID(row))
               continue;
@@ -3079,7 +3091,8 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
   int nblocks = 0;
   if (proc==0)
   {
-     fgets(buffer,199,fp);
+     if (NULL == fgets(buffer,199,fp))
+        pr_error("Error: I/O error.\n");
      nblocks = strtol(buffer,&bptr,10); // read number of global blocks
      fclose(fp); fp = 0;
   }
@@ -3101,7 +3114,8 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
         if (fp)
         {
            ok = 1;
-           fgets(buffer,999,fp);
+           if (NULL == fgets(buffer,999,fp))
+              pr_error("Error: I/O error.\n");
         }
         else ok = 0;
      }
@@ -3117,7 +3131,8 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
      {
         for (int i=0; i<nblocks; i++)
         {
-           fgets(buffer,199,fp);
+           if (NULL == fgets(buffer,199,fp))
+              pr_error("Error: I/O error.\n");
            int blocksize = strtol(buffer,&bptr,10);
            if (!blocksize)
            {
@@ -3159,6 +3174,7 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
         return false;
      }
      comm.Broadcast(&block_counter,1,activeproc);
+     fclose(fp);
   }
 
   if (nblocks != block_counter)
@@ -3203,7 +3219,10 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   }
   comm.SumAll(send,gvalues,numeq_total);
   delete [] send;
-  if (proc) delete [] gvalues;
+  if (proc) {
+    delete [] gvalues;
+    gvalues = NULL;
+  }
 
   // ---------------------------------------------------open all files
   // copy filename not to modify it
@@ -3220,7 +3239,12 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   comm.Broadcast(&ok,1,0);
   if (!ok)
   {
-     delete [] gvalues;
+     if (gvalues != NULL) {
+       delete [] gvalues;
+       gvalues = NULL;
+     }
+     if (fin != NULL)
+       fclose(fin);
      return false;
   }
   bool newresfile=true;
@@ -3259,9 +3283,11 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   if (proc==0)
   {
      // read the grid file
-     fgets(buffer,999,fin);
+     if (NULL == fgets(buffer,999,fin))
+        pr_error("Error: I/O error.\n");
      while (strpbrk(buffer,"#"))
-        fgets(buffer,999,fin);
+        if (NULL == fgets(buffer,999,fin))
+           pr_error("Error: I/O error.\n");
      nnode      = strtol(buffer,&bptr,10);
      dofpernode = strtol(bptr,&bptr,10);
      readnumeq  = strtol(bptr,&bptr,10);
@@ -3276,6 +3302,12 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   if (!ok)
   {
      delete [] gvalues;
+     if (fin != NULL)
+       fclose(fin);
+     if (foutr != NULL)
+       fclose(foutr);
+     if (foutm != NULL)
+       fclose(foutm);
      return false;
   }
 
@@ -3298,7 +3330,8 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      // read the nodes
      for (int i=0; i<nnode; i++)
      {
-        fgets(buffer,999,fin);
+        if (NULL == fgets(buffer,999,fin))
+           pr_error("Error: I/O error.\n");
         int node    = strtol(buffer,&bptr,10);
         x[node-1]   = strtod(bptr,&bptr);
         y[node-1]   = strtod(bptr,&bptr);
@@ -3307,11 +3340,17 @@ bool Epetra_ML_writegidviz(char* filename, int label,
            dof[node-1][j] = strtol(bptr,&bptr,10);
      }
      // check whether we arrived at the line, were the elements begin
-     fgets(buffer,999,fin);
+     if (NULL == fgets(buffer,999,fin))
+        pr_error("Error: I/O error.\n");
      if (!(strpbrk(buffer,"#")))
      {
         ok = 0;
-        delete [] x; delete [] y; delete [] z;
+        delete [] x;
+        x = NULL;
+        delete [] y;
+        y = NULL;
+        delete [] z;
+        z = NULL;
         delete [] dof[0]; delete [] dof;
      }
      else ok = 1;
@@ -3330,7 +3369,8 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   if (proc==0)
   {
      // read the elements
-     fgets(buffer,999,fin);
+     if (NULL == fgets(buffer,999,fin))
+        pr_error("Error: I/O error.\n");
      nelement    = strtol(buffer,&bptr,10);
      nodesperele = strtol(bptr,&bptr,10);
      // allocate array for topology
@@ -3341,17 +3381,30 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      // read the elements
      for (int i=0; i<nelement; i++)
      {
-        fgets(buffer,999,fin);
+        if (NULL == fgets(buffer,999,fin))
+           pr_error("Error: I/O error.\n");
         int element    = strtol(buffer,&bptr,10);
         for (int j=0; j<nodesperele; j++)
           top[element-1][j] = strtol(bptr,&bptr,10);
      }
      // check for end of elements marker
-     fgets(buffer,999,fin);
+     if (NULL == fgets(buffer,999,fin))
+        pr_error("Error: I/O error.\n");
      if (!(strpbrk(buffer,"#")))
      {
         ok = 0;
-        delete [] x; delete [] y; delete [] z;
+        if (x != NULL) {
+          delete [] x;
+          x = NULL;
+        }
+        if (y != NULL) {
+          delete [] y;
+          y = NULL;
+        }
+        if (z != NULL) {
+          delete [] z;
+          z = NULL;
+        }
         delete [] dof[0]; delete [] dof;
         delete [] top[0]; delete [] top;
      }
@@ -3562,7 +3615,8 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
        printf("** You may now attach debugger to the processes listed above.\n");
        printf( "**\n");
        printf( "** Enter a character to continue > "); fflush(stdout);
-       scanf("%c",&go);
+       if (EOF == scanf("%c",&go))
+         pr_error("Error: I/O error.\n");
      }
      Comm.Barrier();
    }
@@ -3654,16 +3708,11 @@ void ML_CreateSublists(const ParameterList &List, ParameterList &newList)
             int matched = sscanf(pname.c_str(),"%s %[^(](level %d)", ctype.getRawPtr(), coption.getRawPtr(), &levelID); // use [^(] instead of %s to allow for strings with white-spaces (ex: "ifpack list")
             type = std::string(ctype.getRawPtr());
             option = std::string(coption.getRawPtr()); option.resize(option.size () - 1); // remove final white-space
-
-            if (matched != 3 || (type != "smoother:" && type != "aggregation:")) {
-              std::cout << "ML_CreateSublist(), Line " << __LINE__ << ". "
-                        << "Error in creating level-specific sublists" << std::endl
-                        << "Offending parameter: " << pname << std::endl;
-#          ifdef ML_MPI
-              MPI_Finalize();
-#          endif
-              exit(EXIT_FAILURE);
-            }
+            TEUCHOS_TEST_FOR_EXCEPT_MSG(
+                matched != 3 || (type != "smoother:" && type != "aggregation:"),
+                "ML_CreateSublist(), Line " << __LINE__ << ". "                << "Error in creating level-specific sublists\n"
+                << "Offending parameter: " << pname << "\n"
+                );
           }
 
           // Create/grab the corresponding sublist of newList

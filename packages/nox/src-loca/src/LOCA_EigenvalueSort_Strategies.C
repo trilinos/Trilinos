@@ -57,7 +57,8 @@ NOX::Abstract::Group::ReturnType
 LOCA::EigenvalueSort::LargestMagnitude::sort(int n, double* evals,
                          std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double temp, temp2;
   Teuchos::LAPACK<int,double> lapack;
 
@@ -93,7 +94,8 @@ LOCA::EigenvalueSort::LargestMagnitude::sort(int n, double* r_evals,
                          double* i_evals,
                          std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double temp, tempr, tempi;
   Teuchos::LAPACK<int,double> lapack;
 
@@ -129,7 +131,8 @@ NOX::Abstract::Group::ReturnType
 LOCA::EigenvalueSort::SmallestMagnitude::sort(int n, double* evals,
                          std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double temp, temp2;
   Teuchos::LAPACK<int,double> lapack;
 
@@ -165,7 +168,8 @@ LOCA::EigenvalueSort::SmallestMagnitude::sort(int n, double* r_evals,
                          double* i_evals,
                          std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double temp, tempr, tempi;
   Teuchos::LAPACK<int,double> lapack;
 
@@ -202,7 +206,8 @@ NOX::Abstract::Group::ReturnType
 LOCA::EigenvalueSort::LargestReal::sort(int n, double* evals,
                     std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double temp;
   Teuchos::LAPACK<int,double> lapack;
 
@@ -237,7 +242,8 @@ LOCA::EigenvalueSort::LargestReal::sort(int n, double* r_evals,
                     double* i_evals,
                     std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double tempr, tempi;
   Teuchos::LAPACK<int,double> lapack;
 
@@ -271,7 +277,8 @@ NOX::Abstract::Group::ReturnType
 LOCA::EigenvalueSort::SmallestReal::sort(int n, double* evals,
                      std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double temp;
   Teuchos::LAPACK<int,double> lapack;
 
@@ -306,7 +313,8 @@ LOCA::EigenvalueSort::SmallestReal::sort(int n, double* r_evals,
                     double* i_evals,
                     std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double tempr, tempi;
   Teuchos::LAPACK<int,double> lapack;
 
@@ -348,7 +356,8 @@ LOCA::EigenvalueSort::LargestImaginary::sort(int n, double* r_evals,
                          double* i_evals,
                          std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double tempr, tempi;
   Teuchos::LAPACK<int,double> lapack;
 
@@ -390,7 +399,8 @@ LOCA::EigenvalueSort::SmallestImaginary::sort(int n, double* r_evals,
                          double* i_evals,
                          std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double tempr, tempi;
   Teuchos::LAPACK<int,double> lapack;
 
@@ -435,7 +445,8 @@ LOCA::EigenvalueSort::LargestRealInverseCayley::sort(
                         int n, double* evals,
                         std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double temp, templambda;
   Teuchos::LAPACK<int,double> lapack;
 
@@ -468,7 +479,8 @@ LOCA::EigenvalueSort::LargestRealInverseCayley::sort(
                         double* i_evals,
                         std::vector<int>* perm) const
 {
-  int i, j, tempord;
+  int i, j;
+  int tempord = 0;
   double temp, tempr, tempi;
   Teuchos::LAPACK<int,double> lapack;
 

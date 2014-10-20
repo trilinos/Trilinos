@@ -735,6 +735,10 @@ namespace Experimental {
 
     // Create the Ritz shift operator
     ritzOp_ = rcp( new TraceMinRitzOp<ScalarType,MV,OP>(Op_,MOp_,Prec_) );
+	
+	// Set the maximum number of inner iterations
+	int innerMaxIts = params.get("Maximum Krylov Iterations", 1000);
+	ritzOp_->setMaxIts(innerMaxIts);
   }
 
 
@@ -2272,7 +2276,6 @@ namespace Experimental {
       // Solve the saddle point problem
       if(saddleSolType_ == PROJECTED_KRYLOV_SOLVER)
       {
-        std::cout << "Projected Krylov solver\n";
         if(Prec_ != Teuchos::null)
           solveSaddleProjPrec(Delta);
         else
@@ -2280,7 +2283,6 @@ namespace Experimental {
       }
       else if(saddleSolType_ == SCHUR_COMPLEMENT_SOLVER)
       {
-        std::cout << "Schur complement solver\n";
         if(Z_ == Teuchos::null || MVT::GetNumberVecs(*Z_) != blockSize_)
         {
           // We do NOT want Z to be 0, because that could result in stagnation
@@ -2291,7 +2293,6 @@ namespace Experimental {
       }
       else if(saddleSolType_ == BD_PREC_MINRES)
       {
-        std::cout << "block minres solver\n";
         solveSaddleBDPrec(Delta);
 //        Delta->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
       }
@@ -2528,6 +2529,7 @@ namespace Experimental {
     RCP< SaddleContainer<ScalarType, MV> > sadRHS = rcp(new SaddleContainer<ScalarType,MV>(locKX));
 
     // Create the solution vector [Delta; L]
+    MVT::MvInit(*Delta);
     RCP< SaddleContainer<ScalarType, MV> > sadSol = rcp(new SaddleContainer<ScalarType,MV>(Delta));
 
     // Create a minres solver

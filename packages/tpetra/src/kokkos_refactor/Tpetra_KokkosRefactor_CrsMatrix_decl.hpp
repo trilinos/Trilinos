@@ -988,9 +988,13 @@ namespace Tpetra {
     /// \brief Reindex the column indices in place, and replace the
     ///   column Map.  Optionally, replace the Import object as well.
     ///
+    /// \pre The matrix is <i>not</i> fill complete:
+    ///   <tt>! this->isFillComplete() </tt>.
+    /// \pre Either the input graph is \c NULL, or it is <i>not</i>
+    ///   fill complete:
+    ///   <tt>graph == NULL || ! graph->isFillComplete()</tt>.
     /// \pre On every calling process, every index owned by the
     ///   current column Map must also be owned by the new column Map.
-    ///
     /// \pre If the new Import object is provided, the new Import
     ///   object's source Map must be the same as the current domain
     ///   Map, and the new Import's target Map must be the same as the
@@ -1003,15 +1007,65 @@ namespace Tpetra {
     ///   graph.)  If you <i>do</i> provide this, then the method will
     ///   assume that it is the same graph as the matrix's graph, and
     ///   the provided graph will be modified in place.
-    ///
     /// \param newColMap [in] New column Map.  Must be nonnull.
-    ///
     /// \param newImport [in] New Import object.  Optional; computed
     ///   if not provided or if null.  Computing an Import is
     ///   expensive, so it is worth providing this if you can.
-    ///
     /// \param sortEachRow [in] If true, sort the indices (and their
     ///   corresponding values) in each row after reindexing.
+    ///
+    /// Why would you want to use this method?  Well, for example, you
+    /// might need to use an Ifpack2 preconditioner that only accepts
+    /// a matrix with a certain kind of column Map.  Your matrix has
+    /// the wrong kind of column Map, but you know how to compute the
+    /// right kind of column Map.  You might also know an efficient
+    /// way to compute an Import object from the current domain Map to
+    /// the new column Map.  (For an instance of the latter, see the
+    /// Details::makeOptimizedColMapAndImport function in
+    /// Tpetra_Details_makeOptimizedColMap.hpp.)
+    ///
+    /// Suppose that you created this CrsMatrix with a constant graph;
+    /// that is, that you called the CrsMatrix constructor that takes
+    /// a CrsGraph as input:
+    ///
+    /// \code
+    /// RCP<CrsGraph<> > G (new CrsGraph<> (rowMap, origColMap, ...));
+    /// // ... fill G ...
+    /// G->fillComplete (domMap, ranMap);
+    /// CrsMatrix<> A (G);
+    /// // ... fill A ...
+    /// \endcode
+    ///
+    /// Now suppose that you want to give A to a preconditioner that
+    /// can't handle a matrix with an arbitrary column Map (in the
+    /// example above, <tt>origColMap</tt>).  You first must create a
+    /// new suitable column Map <tt>newColMap</tt>, and optionally a
+    /// new Import object <tt>newImport</tt> from the matrix's current
+    /// domain Map to the new column Map.  Then, call this method,
+    /// passing in G (which must <i>not</i> be fill complete) while
+    /// the matrix is <i>not</i> fill complete.  Be sure to save the
+    /// graph's <i>original</i> Import object; you'll need that later.
+    ///
+    /// \code
+    /// RCP<const CrsGraph<>::import_type> origImport = G->getImporter ();
+    /// G->resumeFill ();
+    /// A.reindexColumns (G.getRawPtr (), newColMap, newImport);
+    /// G.fillComplete (domMap, ranMap);
+    /// A.fillComplete (domMap, ranMap);
+    /// \endcode
+    ///
+    /// Now you may give the matrix A to the preconditioner in
+    /// question.  After doing so, and after you solve the linear
+    /// system using the preconditioner, you might want to put the
+    /// matrix back like it originally was.  You can do that, too!
+    ///
+    /// \code
+    /// A.resumeFill ();
+    /// G->resumeFill ();
+    /// A.reindexColumns (G.getRawPtr (), origColMap, origImport);
+    /// G->fillComplete (domMap, ranMap);
+    /// A->fillComplete (domMap, ranMap);
+    /// \endcode
     void
     reindexColumns (crs_graph_type* const graph,
                     const Teuchos::RCP<const map_type>& newColMap,

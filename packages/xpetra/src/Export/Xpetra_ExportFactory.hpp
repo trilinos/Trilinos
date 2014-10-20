@@ -87,12 +87,12 @@ namespace Xpetra {
 
   };
 
-  template <class GlobalOrdinalArg>
-  class ExportFactory<int, GlobalOrdinalArg> {
+  template <>
+  class ExportFactory<int, int> {
 
     typedef int LocalOrdinal;
-    typedef GlobalOrdinalArg GlobalOrdinal;
-    typedef typename Export<int, GlobalOrdinal>::node_type Node;
+    typedef int GlobalOrdinal;
+    typedef Export<int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -111,8 +111,10 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (source->lib() == UseEpetra)
-        return rcp( new EpetraExportT<GlobalOrdinalArg>(source, target));
+        return rcp( new EpetraExportT<int>(source, target));
+#endif
 #endif
 
       XPETRA_FACTORY_END;
@@ -120,6 +122,42 @@ namespace Xpetra {
 
   };
 
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template <>
+  class ExportFactory<int, long long> {
+
+    typedef int LocalOrdinal;
+    typedef long long GlobalOrdinal;
+    typedef Export<int, GlobalOrdinal>::node_type Node;
+
+  private:
+    //! Private constructor. This is a static class.
+    ExportFactory() {}
+
+  public:
+
+    static RCP<Export<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source, const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target) {
+      XPETRA_MONITOR("ExportFactory::Build");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (source->lib() == UseTpetra)
+        return rcp( new TpetraExport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+      if (source->lib() == UseEpetra)
+        return rcp( new EpetraExportT<long long>(source, target));
+#endif
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+  };
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 }
 
 #define XPETRA_EXPORTFACTORY_SHORT

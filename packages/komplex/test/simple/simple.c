@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
   double *x_real, *b_real;         /* initial guess/solution, RHS  */
   double *x_imag, *b_imag;
 
-  int    N_local;                  /* Number of equations on this node */
+  unsigned int  N_local;           /* Number of equations on this node */
   double residual;                 /* Used for computing residual */
 
   double *xx_real, *xx_imag, *xx; /* Known exact solution */
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
   }
   N_local = atoi(argv[1]);
 
-  const int N_local_max = 1000000;
+  const unsigned int N_local_max = 1000000;
   if (N_local > N_local_max) {
     if (myPID==0)
       printf("No more than %d local equation allowed\n", N_local_max);

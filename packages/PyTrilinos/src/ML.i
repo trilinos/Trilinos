@@ -71,8 +71,8 @@ example subdirectory of the PyTrilinos package:
 
 %{
 //  PyTrilinos includes
-#include "PyTrilinos_PythonException.h"
-#include "PyTrilinos_FILEstream.h"
+#include "PyTrilinos_PythonException.hpp"
+#include "PyTrilinos_FILEstream.hpp"
 
 // System includes
 #include <iostream>
@@ -96,7 +96,7 @@ example subdirectory of the PyTrilinos package:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 #endif
 
 // Epetra includes
@@ -123,16 +123,16 @@ example subdirectory of the PyTrilinos package:
 
 // Epetra python includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
-#include "Epetra_NumPyIntVector.h"
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPyVector.h"
-#include "Epetra_NumPyFEVector.h"
-#include "Epetra_NumPyIntSerialDenseMatrix.h"
-#include "Epetra_NumPyIntSerialDenseVector.h"
-#include "Epetra_NumPySerialDenseMatrix.h"
-#include "Epetra_NumPySerialSymDenseMatrix.h"
-#include "Epetra_NumPySerialDenseVector.h"
+#include "numpy_include.hpp"
+#include "Epetra_NumPyIntVector.hpp"
+#include "Epetra_NumPyMultiVector.hpp"
+#include "Epetra_NumPyVector.hpp"
+#include "Epetra_NumPyFEVector.hpp"
+#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
+#include "Epetra_NumPyIntSerialDenseVector.hpp"
+#include "Epetra_NumPySerialDenseMatrix.hpp"
+#include "Epetra_NumPySerialSymDenseMatrix.hpp"
+#include "Epetra_NumPySerialDenseVector.hpp"
 #endif
 
 // IFPACK includes
@@ -151,7 +151,7 @@ example subdirectory of the PyTrilinos package:
 #undef HAVE_SYS_TIME_H
 #include "ml_MultiLevelPreconditioner.h"
 #include "MLAPI.h"
-#include "PyTrilinos_ML_Util.h"
+#include "PyTrilinos_ML_Util.hpp"
 
 %}
 
@@ -727,7 +727,7 @@ namespace MLAPI
 // PyTrilinos_ML_Util support //
 ////////////////////////////////
 #ifdef HAVE_EPETRA
-%include "PyTrilinos_ML_Util.h"
+%include "PyTrilinos_ML_Util.hpp"
 %extend PyTrilinos::PyMatrix
 {
   PyObject * __setitem__(PyObject* args, double val)

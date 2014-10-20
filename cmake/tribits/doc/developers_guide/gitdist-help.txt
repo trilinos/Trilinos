@@ -1,0 +1,152 @@
+Usage: gitdist [gitdist options] [OPTIONS]
+
+Run git recursively over extra repos
+
+Instead of typing
+
+   $ git [OPTIONS]
+
+type:
+
+  $ gitdist [gitdist options] [OPTIONS]
+
+This will distribute git options across all git repos listed, including the
+base git repo.  The options in [gitdist options] are prefixed with '--dist-'
+and are are pulled out before running git on the underlying executable.  See
+--help to see the gitdist options.
+
+If --dist-extra-repos="", then the list of extra repos will be read from the
+file .gitdist.  The format of this file is to have one repo name per line as
+in:
+
+   Repo1
+   Repo2
+   Repo3
+   ...
+
+NOTE: If any extra repository does not exist, then it will be ignored and no
+output will be produced.  Therefore, be careful to manually verify that the
+script recognizes the repositories that you list.  The best way to do that is
+to type 'gitdist status'.
+
+NOTE: This script has no dependencies other than standard linux packagse so it
+can be copied and moved anywhere and used.
+
+TIPS:
+
+ - Use 'gitdist --no-pager <command> ...' to get the full output from
+   all extra repos in one contiguous stream which can then be piped
+   to 'less' or to a file to be read with emacs or vi (may also want
+   to use --dist-no-color as well).
+
+ - 'gitdist --help' will run gitdist help, not git help.  If you want git
+   help, run raw 'git --help'.
+
+ - By default, gitdist will use 'git' in the environment.  If it can't find
+   'git' in the environment, it will require that the user specify the git
+   command to run with --dist-use-git=<the command>.
+
+ - To exclude processing either the base git repo and/or other git repos
+   listed in .gitdist, pass in --dist-not-base-repo and/or
+   --dist-not-extra-repos=RepoX,RepoZ,...  The provides complete control over
+   what git repos the given command is run on.
+
+REPO VERSION FILES:
+
+This script also supports the options --dist-version-file=<versionFile> and
+--dist-version-file2=<versionFile2> which are used to provide different SHA1
+versions for each repo.  Each of these version files is expected to represent
+a compatible set of versions of the repos.
+
+The format of these repo version files is a follows:
+
+-----------------------------------------------------
+*** Base Git Repo: SomeBaseRepo
+e102e27 [Mon Sep 23 11:34:59 2013 -0400] <author1@someurl.com>
+First summary message
+*** Git Repo: ExtraRepo1
+b894b9c [Fri Aug 30 09:55:07 2013 -0400] <author2@someurl.com>
+Second summary message
+*** Git Repo: ExtraRepo2
+97cf1ac [Thu Dec 1 23:34:06 2011 -0500] <author3@someurl.com>
+Third summary message
+...
+-----------------------------------------------------
+
+Each repository entry can have a summary message or not (i.e. use two or three
+lines per repo in the file).  A compatible repo version file can be generated
+with this script using, for example, using:
+
+   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
+    | grep -v "^$" &> RepoVersion.txt
+
+using three lines per repo, or just:
+
+   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
+    | grep -v "^$" &> RepoVersion.txt
+
+using two lines per repo in the output file.
+
+This allows checking out consistent versions of the repos, diffing two
+consistent versions of the repos, etc.
+
+To checkout an older set of consistent versions of the set of repos, use:
+
+  $ gitdist fetch origin
+  $ gitdist --dist-version-file=RepoVersion.SomeDate.txt checkout _VERSION_
+
+The '_VERSION_' string will be replaced with the SHA1 for each of the repos.
+
+To tag and branch the set of repos using a consistent set of versions, use:
+
+  $ gitdist --dist-version-file=RepoVersion.SomeDate.txt \
+    tag -a some_tag _VERSION_
+
+To diff two sets of versions of the repos, for example, use:
+
+  $ gitdist --dist-version-file=RepoVersion.NewerDate.txt \
+     --dist-version-file2=RepoVersion.OlderDate.txt \
+     diff _VERSION_ ^_VERSION2_
+
+Here, _VERSION_ is replaced by the SHA1s listed in RepoVersion.NewerDate.txt
+and _VERSION2_ is replaced by the SHA1s listed in RepoVersion.OlderDate.txt.
+
+One can construct any git commit taking one or two different repo version
+arguments (SHA1s).
+
+Note that the set of repos listed in the RepoVersion.txt file must be a
+super-set of those processed by this script or an error will occur and the
+script will stop.
+
+Note that this Python script only depends on the Python 2.4+ standard modules
+'sys', 'os', 'subprocess', 'commands', and 're'. Also, it requires some
+compatible version of 'git' at the very minimum as well of course.
+
+
+Options:
+  -h, --help            show this help message and exit
+  --dist-use-git=USEGIT
+                        The (path) to the git executable to use for each git
+                        repo command (default='git')
+  --dist-extra-repos=EXTRAREPOS
+                        Comma-separated list of extra repos to forward git
+                        commands to.  If the list is empty, it will look for a
+                        file called .gitdist to get the list of extra repos
+                        separated by newlines.
+  --dist-not-extra-repos=NOTEXTRAREPOS
+                        Comma separated list of extra repos to *not* forward
+                        git commands to.  This removes any repos from being
+                        processed that would otherwise be.
+  --dist-not-base-repo  If set, don't pass the git command on to the base git
+                        repo.
+  --dist-version-file=VERSIONFILE
+                        Path to a file contains a list of extra repo
+                        directories and git versions (replaces _VERSION_).
+  --dist-version-file2=VERSIONFILE2
+                        Path to a second file contains a list of extra repo
+                        directories and git versions (replaces _VERSION2_).
+  --dist-no-color       If set, don't use color in the output for gitdist
+                        (better for output to a file).
+  --dist-debug          If set, then debugging info is printed.
+  --dist-no-opt         If set, then no git commands will be run but instead
+                        will just be printed.

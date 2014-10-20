@@ -48,7 +48,7 @@
 #include <string>
 #include <fstream>
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>
 

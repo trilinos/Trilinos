@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -6,7 +5,6 @@ IF (NOT Xpetra_Epetra_NO_32BIT_GLOBAL_INDICES)
   TRIBITS_ADD_EXECUTABLE(
     EditCrsMatrix
     SOURCES EditCrsMatrix.cpp
-    DEPLIBS xpetra
     )
 ENDIF()
 
@@ -15,7 +13,6 @@ IF (NOT Xpetra_Epetra_NO_64BIT_GLOBAL_INDICES)
   TRIBITS_ADD_EXECUTABLE(
     EditCrsMatrix_LL
     SOURCES EditCrsMatrix.cpp
-    DEPLIBS xpetra
     DEFINES -DXPETRA_TEST_USE_LONGLONG_GO
     )
 ENDIF()

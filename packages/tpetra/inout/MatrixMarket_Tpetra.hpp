@@ -75,7 +75,7 @@
 // Macro that marks a function as "possibly unused," in order to
 // suppress build warnings.
 #if ! defined(TRILINOS_UNUSED_FUNCTION)
-#  if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#  if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_MSC_VER))
 #    define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
 #  elif defined(__clang__)
 #    if __has_attribute(unused)
@@ -3046,28 +3046,36 @@ namespace Tpetra {
         // Create a row Map which is entirely owned on Proc 0.
         RCP<Teuchos::FancyOStream> err = debug ?
           Teuchos::getFancyOStream (Teuchos::rcpFromRef (cerr)) : null;
+
         RCP<const map_type> gatherRowMap = Details::computeGatherMap (rowMap, err, debug);
+        ArrayView<const global_ordinal_type> myRows =
+            gatherRowMap->getNodeElementList ();
+        const size_type myNumRows = myRows.size ();
+        const global_ordinal_type indexBase = gatherRowMap->getIndexBase ();
+
+        ArrayRCP<size_t> gatherNumEntriesPerRow = arcp<size_t>(myNumRows);
+        for (size_type i_ = 0; i_ < myNumRows; i_++) {
+          gatherNumEntriesPerRow[i_] = numEntriesPerRow[myRows[i_]-indexBase];
+        }
 
         // Create a matrix using this Map, and fill in on Proc 0.  We
         // know how many entries there are in each row, so we can use
         // static profile.
         RCP<sparse_matrix_type> A_proc0 =
-          rcp (new sparse_matrix_type (gatherRowMap, numEntriesPerRow,
+          rcp (new sparse_matrix_type (gatherRowMap, gatherNumEntriesPerRow,
                                        Tpetra::StaticProfile));
         if (myRank == rootRank) {
           if (debug) {
             cerr << "-- Proc 0: Filling gather matrix" << endl;
           }
-          ArrayView<const global_ordinal_type> myRows =
-            gatherRowMap->getNodeElementList ();
           if (debug) {
             cerr << "---- Rows: " << Teuchos::toString (myRows) << endl;
           }
-          const size_type myNumRows = myRows.size ();
 
           // Add Proc 0's matrix entries to the CrsMatrix.
-          const global_ordinal_type indexBase = gatherRowMap->getIndexBase ();
-          for (size_type i = 0; i < myNumRows; ++i) {
+          for (size_type i_ = 0; i_ < myNumRows; ++i_) {
+            size_type i = myRows[i_] - indexBase;
+
             const size_type curPos = as<size_type> (rowPtr[i]);
             const local_ordinal_type curNumEntries = numEntriesPerRow[i];
             ArrayView<global_ordinal_type> curColInd =
@@ -3085,7 +3093,7 @@ namespace Tpetra {
             }
             // Avoid constructing empty views of ArrayRCP objects.
             if (curNumEntries > 0) {
-              A_proc0->insertGlobalValues (myRows[i], curColInd, curValues);
+              A_proc0->insertGlobalValues (myRows[i_], curColInd, curValues);
             }
           }
           // Now we can save space by deallocating numEntriesPerRow,

@@ -1769,19 +1769,16 @@ namespace Tpetra {
 
     /// \brief Whether it is valid to call getRowInfo().
     ///
-    /// FIXME (mfh 21 Oct 2013) As far as I can tell, this is always
-    /// true.  Why do we need it?  Furthermore, why can't we just use
-    /// the test in hasRowInfo() (that defines \c actuallyHasRowInfo)?
-    /// It looks like, historically, the graph (by default) "deleted
-    /// row info" at fillComplete().  This is probably why many
-    /// CrsGraph methods check whether hasRowInfo() returns true
-    /// before doing anything.  However, I think that nonintuitive
-    /// behavior was fixed later, such that hasRowInfo() should
-    /// <i>always</i> return true.  If this is actually the case, then
-    /// we should dispense with both haveRowInfo_ and hasRowInfo().
-    bool haveRowInfo_;
-
-    bool hasRowInfo() const;
+    /// FIXME (mfh 21 Oct 2013, 28 Sep 2014) As far as I can tell,
+    /// this should <i>always</i> return true.  Why do we need it?  It
+    /// looks like, historically, the graph (by default) "deleted row
+    /// info" at fillComplete().  This is probably why many CrsGraph
+    /// methods check whether hasRowInfo() returns true before doing
+    /// anything.  However, I think that nonintuitive behavior was
+    /// fixed later, such that hasRowInfo() should <i>always</i>
+    /// return true.  If this is actually the case, then we should
+    /// dispense with this method.
+    bool hasRowInfo () const;
 
     /// \brief Whether to require makeColMap() (and therefore
     ///   fillComplete()) to order column Map GIDs associated with

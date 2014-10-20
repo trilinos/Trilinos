@@ -42,51 +42,64 @@
 #ifndef TPETRA_BLOCKCRSGRAPH_DECL_HPP
 #define TPETRA_BLOCKCRSGRAPH_DECL_HPP
 
-#include "Tpetra_CrsGraph.hpp"
-#include "Tpetra_BlockMap.hpp"
+/// \file Tpetra_BlockCrsGraph_decl.hpp
+/// \brief Declarations for the class Tpetra::BlockCrsGraph.
 
-/** \file Tpetra_BlockCrsGraph_decl.hpp
+#include <Tpetra_ConfigDefs.hpp>
 
-  Declarations for the class Tpetra::BlockCrsGraph.
-*/
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
+#else
+
+#include <Tpetra_CrsGraph.hpp>
+#include <Tpetra_BlockMap.hpp>
+
 namespace Tpetra {
 
-/** \brief Block-entry counterpart to Tpetra::CrsGraph.
-
-  BlockCrsGraph doesn't inherit Tpetra::CrsGraph, but always holds a
-  Tpetra::CrsGraph as a class-member attribute.
-
-  The reason BlockCrsGraph exists is to create and hold the block-versions
-  (Tpetra::BlockMap) of the Tpetra::Map objects that CrsGraph holds.
-
-  BlockCrsGraph is used by Tpetra::VbrMatrix (variable block row matrix).
-*/
+/// \class BlockCrsGraph
+/// \brief Block-entry counterpart to Tpetra::CrsGraph.
+///
+/// BlockCrsGraph doesn't inherit from Tpetra::CrsGraph, but always
+/// holds a Tpetra::CrsGraph as an instance variable.
+///
+/// The reason BlockCrsGraph exists is to create and hold the block
+/// versions (Tpetra::BlockMap) of the Tpetra::Map objects that
+/// CrsGraph holds.
+///
+/// BlockCrsGraph is used by Tpetra::VbrMatrix (variable block row matrix).
+///
+/// \warning This class is DEPRECATED.  There are known outstanding
+///   bugs with the current implementations of variable-block-size
+///   sparse matrices and related classes in Tpetra.
 template <class LocalOrdinal = CrsGraph<>::local_ordinal_type,
           class GlobalOrdinal = typename CrsGraph<LocalOrdinal>::global_ordinal_type,
           class Node = typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
-class BlockCrsGraph : public Teuchos::Describable {
- public:
+class TPETRA_DEPRECATED BlockCrsGraph : public Teuchos::Describable {
+public:
   typedef LocalOrdinal  local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node          node_type;
+  typedef BlockMap<LocalOrdinal, GlobalOrdinal, Node> block_map_type;
 
   //! @name Constructor/Destructor Methods
   //@{
 
   /*! \brief BlockCrsGraph constructor specifying a block-row-map and max-num-block-entries-per-row.
    */
-  BlockCrsGraph(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+  BlockCrsGraph (const Teuchos::RCP<const block_map_type>& blkRowMap,
+                 size_t maxNumEntriesPerRow,
+                 ProfileType pftype = DynamicProfile);
 
   //! BlockCrsGraph destructor.
-  ~BlockCrsGraph(){}
+  ~BlockCrsGraph ()
+  {}
 
   //@}
-
   //! @name Insertion/Extraction Methods
   //@{
 
   //! Submit graph indices, using global IDs.
-  void insertGlobalIndices(GlobalOrdinal row, const Teuchos::ArrayView<const GlobalOrdinal> &indices);
+  void insertGlobalIndices (GlobalOrdinal row, const Teuchos::ArrayView<const GlobalOrdinal>& indices);
 
   //! Get row-offsets. (This is the bptr array in VBR terminology.)
   /*! Returns null if optimizeStorage has not been called.
@@ -97,93 +110,105 @@ class BlockCrsGraph : public Teuchos::Describable {
   /*! Returns null if optimizeStorage has not been called.
    */
   Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
-  //@}
 
+  //@}
   //! @name Transformational Methods
   //@{
 
-  //! \brief Communicate non-local contributions to other nodes.
-  void globalAssemble();
+  //! Communicate non-local contributions to other nodes.
+  void globalAssemble ();
 
   /*! \brief Signal that data entry is complete, specifying domain and range maps.
       Off-node entries are distributed, repeated entries are summed, and global indices are transformed to local indices.
       If \c OptimizeStorage is true, then optimizeStorage() is called as well.
    */
-  void fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRangeMap, OptimizeOption os = DoOptimizeStorage);
+  void
+  fillComplete (const Teuchos::RCP<const block_map_type>& blkDomainMap,
+                const Teuchos::RCP<const block_map_type>& blkRangeMap,
+                OptimizeOption os = DoOptimizeStorage);
 
   /*! \brief Signal that data entry is complete.
       Off-node entries are distributed, repeated entries are summed, and global indices are transformed to local indices.
       If \c OptimizeStorage is true, then optimizeStorage() is called as well.
       \note This method calls fillComplete( getRowMap(), getRowMap(), OptimizeStorage ).
    */
-  void fillComplete(OptimizeOption os = DoOptimizeStorage);
+  void fillComplete (OptimizeOption os = DoOptimizeStorage);
 
   //! \brief Re-allocate the data into contiguous storage.
-  void optimizeStorage();
+  void optimizeStorage ();
 
   //@}
 
   //! @name Attribute Accessor Methods
   //@{
 
-  //! Returns \c true if fillComplete() has been called.
-  bool isFillComplete() const;
+  //! Whether fillComplete () has been called.
+  bool isFillComplete () const;
 
-  //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
+  //! Whether the column indices are stored as local indices.
   bool isLocallyIndexed() const;
 
-  //! \brief true if graph is upper-triangular.
+  /// \brief Whether the graph is upper triangular on the calling process.
+  ///
+  /// Upper or lower triangularity is a local (per-process) attribute.
   bool isUpperTriangular() const;
 
-  //! \brief true if graph is lower-triangular.
+  /// \brief Whether the graph is upper triangular on the calling process.
+  ///
+  /// Upper or lower triangularity is a local (per-process) attribute.
   bool isLowerTriangular() const;
 
-  //! Returns the number of block rows owned on the calling node.
+  //! The number of block rows owned by the calling process.
   size_t getNodeNumBlockRows() const;
 
-  //! Returns the global number of block rows.
+  //! The global number of block rows.
   size_t getGlobalNumBlockRows() const;
 
-  //! Returns the number of diagonal entries on the calling node.
+  //! The number of (block) diagonal entries owned by the calling process.
   size_t getNodeNumBlockDiags() const;
 
-  //! Returns the local number of entries in the graph.
+  //! The number of (block) entries owned by the calling process.
   size_t getNodeNumBlockEntries() const;
 
   //! Returns the number of block-columns in the specified global block row.
   size_t getGlobalBlockRowLength(GlobalOrdinal row) const;
 
   //! Returns a read-only view of the block-column-indices for the specified global block row.
-  void getGlobalBlockRowView(GlobalOrdinal row,
-                             Teuchos::ArrayView<const GlobalOrdinal>& blockCols) const;
+  void
+  getGlobalBlockRowView (GlobalOrdinal row,
+                         Teuchos::ArrayView<const GlobalOrdinal>& blockCols) const;
 
   //! Returns a read-only view of the block-column-indices for the specified local block row.
-  void getLocalBlockRowView(LocalOrdinal row,
-                             Teuchos::ArrayView<const LocalOrdinal>& blockCols) const;
+  void
+  getLocalBlockRowView (LocalOrdinal row,
+                        Teuchos::ArrayView<const LocalOrdinal>& blockCols) const;
 
   //! Returns the block-row map.
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockRowMap() const;
+  Teuchos::RCP<const block_map_type> getBlockRowMap () const;
 
   //! Returns the block-column map.
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockColMap() const;
+  Teuchos::RCP<const block_map_type> getBlockColMap () const;
 
   //! Returns the block-domain map.
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockDomainMap() const;
+  Teuchos::RCP<const block_map_type> getBlockDomainMap () const;
 
   //! Returns the block-range map.
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockRangeMap() const;
+  Teuchos::RCP<const block_map_type> getBlockRangeMap () const;
 
   //@}
 
- private:
-  Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > ptGraph_;
+private:
+  typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> crs_graph_type;
+  typedef Map<LocalOrdinal, GlobalOrdinal, Node> point_map_type;
 
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkRowMap_;
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkColMap_;
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkDomainMap_;
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkRangeMap_;
-};//class BlockCrsGraph
-}//namespace Tpetra
+  Teuchos::RCP<crs_graph_type> ptGraph_;
+  Teuchos::RCP<const block_map_type> blkRowMap_;
+  Teuchos::RCP<const block_map_type> blkColMap_;
+  Teuchos::RCP<const block_map_type> blkDomainMap_;
+  Teuchos::RCP<const block_map_type> blkRangeMap_;
+};
+} // namespace Tpetra
 
-#endif
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRA_BLOCKCRSGRAPH_DECL_HPP
 

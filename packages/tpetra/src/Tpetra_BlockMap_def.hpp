@@ -42,12 +42,13 @@
 #ifndef TPETRA_BLOCKMAP_DEF_HPP
 #define TPETRA_BLOCKMAP_DEF_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Distributor.hpp"
+#include <Tpetra_ConfigDefs.hpp>
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
+#else
 
-#ifdef DOXYGEN_USE_ONLY
+#include "Tpetra_Distributor.hpp"
 #include "Tpetra_BlockMap_decl.hpp"
-#endif
 
 namespace Tpetra {
 
@@ -122,66 +123,86 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
    blockIDsAreContiguous_(true),
    constantBlockSize_(blockSize)
 {
+  using KokkosClassic::WriteOnly;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
+  typedef LocalOrdinal LO;
+  typedef global_size_t GST;
+
   TEUCHOS_TEST_FOR_EXCEPTION( blockSize <= 0, std::runtime_error,
        "Tpetra::BlockMap::BlockMap ERROR: blockSize must be greater than 0.");
 
-  global_size_t numGlobalPoints = numGlobalBlocks*blockSize;
-  if (numGlobalBlocks == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
-    numGlobalPoints = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+  GST numGlobalPoints = numGlobalBlocks*blockSize;
+  if (numGlobalBlocks == INVALID) {
+    numGlobalPoints = INVALID;
   }
 
   size_t numLocalPoints = numLocalBlocks*blockSize;
 
   //now create the point-map specifying both numGlobalPoints and numLocalPoints:
-  pointMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalPoints, numLocalPoints, indexBase, comm, node));
+  pointMap_ = rcp (new point_map_type (numGlobalPoints, numLocalPoints,
+                                       indexBase, comm, node));
 
-  if (numGlobalBlocks == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
-    Teuchos::reduceAll<int, global_size_t>(*comm, Teuchos::REDUCE_SUM,
-             1, &numLocalBlocks, &globalNumBlocks_);
+  if (numGlobalBlocks == INVALID) {
+    reduceAll<int, GST> (*comm, REDUCE_SUM, 1, &numLocalBlocks, &globalNumBlocks_);
   }
 
   myGlobalBlockIDs_.resize(numLocalBlocks);
-  pbuf_firstPointInBlock_ = node->template allocBuffer<LocalOrdinal>(numLocalBlocks+1);
-  Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(KokkosClassic::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
+  pbuf_firstPointInBlock_ = node->template allocBuffer<LO> (numLocalBlocks + 1);
+  Teuchos::ArrayRCP<LO> v_firstPoints =
+    node->template viewBufferNonConst<LO> (WriteOnly, numLocalBlocks + 1,
+                                           pbuf_firstPointInBlock_);
 
-  LocalOrdinal firstPoint = pointMap_->getMinLocalIndex();
-  GlobalOrdinal blockID = pointMap_->getMinGlobalIndex()/blockSize;
-  for(size_t i=0; i<numLocalBlocks; ++i) {
+  LO firstPoint = pointMap_->getMinLocalIndex ();
+  GlobalOrdinal blockID = pointMap_->getMinGlobalIndex () / blockSize;
+  for (size_t i=0; i < numLocalBlocks; ++i) {
     myGlobalBlockIDs_[i] = blockID++;
     v_firstPoints[i] = firstPoint;
     firstPoint += blockSize;
   }
   v_firstPoints[numLocalBlocks] = firstPoint;
   v_firstPoints = Teuchos::null;
-  view_firstPointInBlock_ = node->template viewBuffer<LocalOrdinal>(numLocalBlocks+1, pbuf_firstPointInBlock_);
+  view_firstPointInBlock_ =
+    node->template viewBuffer<LO> (numLocalBlocks + 1, pbuf_firstPointInBlock_);
 }
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
-BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
-    global_size_t numGlobalBlocks,
-    const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
-    const Teuchos::ArrayView<const GlobalOrdinal>& myFirstGlobalPointInBlocks,
-    const Teuchos::ArrayView<const LocalOrdinal>& blockSizes,
-    GlobalOrdinal indexBase,
-    const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-    const Teuchos::RCP<Node> &node)
- : pointMap_(),
-   globalNumBlocks_(numGlobalBlocks),
-   myGlobalBlockIDs_(myGlobalBlockIDs),
-   pbuf_firstPointInBlock_(),
-   view_firstPointInBlock_(),
-   blockIDsAreContiguous_(false),
-   constantBlockSize_(0)
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::
+BlockMap (const global_size_t numGlobalBlocks,
+          const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
+          const Teuchos::ArrayView<const GlobalOrdinal>& myFirstGlobalPointInBlocks,
+          const Teuchos::ArrayView<const LocalOrdinal>& blockSizes,
+          const GlobalOrdinal indexBase,
+          const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+          const Teuchos::RCP<Node>& node)
+ : pointMap_ (),
+   globalNumBlocks_ (numGlobalBlocks),
+   myGlobalBlockIDs_ (myGlobalBlockIDs),
+   pbuf_firstPointInBlock_ (),
+   view_firstPointInBlock_ (),
+   blockIDsAreContiguous_ (false),
+   constantBlockSize_ (0)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(myGlobalBlockIDs_.size()!=blockSizes.size(), std::runtime_error,
-             "Tpetra::BlockMap::BlockMap ERROR: input myGlobalBlockIDs and blockSizes arrays must have the same length.");
+  using Teuchos::outArg;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
+  typedef LocalOrdinal LO;
+  typedef global_size_t GST;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    myGlobalBlockIDs_.size () != blockSizes.size (), std::runtime_error,
+    "Tpetra::BlockMap::BlockMap: input myGlobalBlockIDs and blockSizes arrays "
+    "must have the same length.");
 
   size_t sum_blockSizes = 0;
   Teuchos::Array<GlobalOrdinal> myGlobalPoints;
   typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator
     iter = blockSizes.begin(), iend = blockSizes.end();
   size_t i = 0;
-  for(; iter!=iend; ++iter) {
+  for (; iter!=iend; ++iter) {
     LocalOrdinal bsize = *iter;
     sum_blockSizes += bsize;
     GlobalOrdinal firstPoint = myFirstGlobalPointInBlocks[i++];
@@ -190,19 +211,23 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
     }
   }
 
-  pointMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(Teuchos::OrdinalTraits<global_size_t>::invalid(), myGlobalPoints(), indexBase, comm, node));
+  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+  pointMap_ = rcp (new point_map_type (INVALID, myGlobalPoints (),
+                                       indexBase, comm, node));
 
   global_size_t global_sum;
-  Teuchos::reduceAll<int,global_size_t>(*comm, Teuchos::REDUCE_SUM,
-                Teuchos::as<global_size_t>(myGlobalBlockIDs.size()), Teuchos::outArg(global_sum));
+  reduceAll<int, GST> (*comm, REDUCE_SUM, static_cast<GST> (myGlobalBlockIDs.size ()), outArg (global_sum));
   globalNumBlocks_ = global_sum;
 
   iter = blockSizes.begin();
-  LocalOrdinal firstBlockSize = iter==iend ? 0 : *iter;
-  LocalOrdinal firstPoint = pointMap_->getMinLocalIndex();
-  LocalOrdinal numLocalBlocks = myGlobalBlockIDs.size();
-  pbuf_firstPointInBlock_ = node->template allocBuffer<LocalOrdinal>(numLocalBlocks+1);
-  Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(KokkosClassic::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
+  LO firstBlockSize = (iter == iend) ? 0 : *iter;
+  LO firstPoint = pointMap_->getMinLocalIndex ();
+  LO numLocalBlocks = myGlobalBlockIDs.size ();
+  pbuf_firstPointInBlock_ = node->template allocBuffer<LO> (numLocalBlocks + 1);
+  Teuchos::ArrayRCP<LO> v_firstPoints =
+    node->template viewBufferNonConst<LO> (KokkosClassic::WriteOnly,
+                                           numLocalBlocks + 1,
+                                           pbuf_firstPointInBlock_);
 
   bool blockSizesAreConstant = true;
   i=0;
@@ -215,11 +240,15 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
   }
   v_firstPoints[i] = firstPoint;
   v_firstPoints = Teuchos::null;
-  if (blockSizesAreConstant) constantBlockSize_ = firstBlockSize;
+  if (blockSizesAreConstant) {
+    constantBlockSize_ = firstBlockSize;
+  }
 
-  size_t num_points = pointMap_->getNodeNumElements();
-  TEUCHOS_TEST_FOR_EXCEPTION(sum_blockSizes != num_points, std::runtime_error,
-            "Tpetra::BlockMap::BlockMap ERROR: internal failure, sum of block-sizes must equal pointMap->getNodeNumElements().");
+  size_t num_points = pointMap_->getNodeNumElements ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    sum_blockSizes != num_points, std::runtime_error,
+    "Tpetra::BlockMap::BlockMap: internal failure, sum of block sizes must "
+    "equal pointMap->getNodeNumElements().");
 
   typename Teuchos::Array<GlobalOrdinal>::const_iterator
     b_iter = myGlobalBlockIDs_.begin(), b_end = myGlobalBlockIDs_.end();
@@ -237,37 +266,85 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
     setup_noncontig_mapping();
   }
 
-  view_firstPointInBlock_ = node->template viewBuffer<LocalOrdinal>(numLocalBlocks+1, pbuf_firstPointInBlock_);
+  view_firstPointInBlock_ =
+    node->template viewBuffer<LO> (numLocalBlocks+1, pbuf_firstPointInBlock_);
 }
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
-BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointMap, const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs, const Teuchos::ArrayView<const LocalOrdinal>& blockSizes, const Teuchos::RCP<Node>& node)
- : pointMap_(pointMap),
-   globalNumBlocks_(Teuchos::OrdinalTraits<LocalOrdinal>::invalid()),
-   myGlobalBlockIDs_(myGlobalBlockIDs),
-   pbuf_firstPointInBlock_(),
-   view_firstPointInBlock_(),
-   blockIDsAreContiguous_(false),
-   constantBlockSize_(0)
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::
+BlockMap (const Teuchos::RCP<const point_map_type>& pointMap,
+          const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
+          const Teuchos::ArrayView<const LocalOrdinal>& blockSizes) :
+  pointMap_ (pointMap),
+  globalNumBlocks_ (Teuchos::OrdinalTraits<global_size_t>::invalid ()),
+  myGlobalBlockIDs_(myGlobalBlockIDs),
+  pbuf_firstPointInBlock_ (),
+  view_firstPointInBlock_ (),
+  blockIDsAreContiguous_ (false),
+  constantBlockSize_ (0)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(myGlobalBlockIDs_.size()!=blockSizes.size(), std::runtime_error,
-             "Tpetra::BlockMap::BlockMap ERROR: input myGlobalBlockIDs and blockSizes arrays must have the same length.");
+  Teuchos::RCP<Node> node =
+    pointMap.is_null () ? defaultArgNode<Node> () : pointMap->getNode ();
+  initWithPointMap (pointMap, myGlobalBlockIDs, blockSizes, node);
+}
 
-  global_size_t numLocalBlocks = myGlobalBlockIDs.size();
-  Teuchos::reduceAll<int,global_size_t>(*pointMap->getComm(), Teuchos::REDUCE_SUM, 1, &numLocalBlocks, &globalNumBlocks_);
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+TPETRA_DEPRECATED
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::
+BlockMap (const Teuchos::RCP<const point_map_type>& pointMap,
+          const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
+          const Teuchos::ArrayView<const LocalOrdinal>& blockSizes,
+          const Teuchos::RCP<Node>& node) :
+  pointMap_ (pointMap),
+  globalNumBlocks_ (Teuchos::OrdinalTraits<global_size_t>::invalid ()),
+  myGlobalBlockIDs_(myGlobalBlockIDs),
+  pbuf_firstPointInBlock_ (),
+  view_firstPointInBlock_ (),
+  blockIDsAreContiguous_ (false),
+  constantBlockSize_ (0)
+{
+  initWithPointMap (pointMap, myGlobalBlockIDs, blockSizes, node);
+}
 
-  LocalOrdinal firstPoint = pointMap->getMinLocalIndex();
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+void
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::
+initWithPointMap (const Teuchos::RCP<const point_map_type>& pointMap,
+                  const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
+                  const Teuchos::ArrayView<const LocalOrdinal>& blockSizes,
+                  const Teuchos::RCP<Node>& node)
+{
+  using KokkosClassic::WriteOnly;
+  using Teuchos::ArrayRCP;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
+  typedef GlobalOrdinal GO;
+  typedef LocalOrdinal LO;
+  typedef global_size_t GST;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    myGlobalBlockIDs_.size () != blockSizes.size (), std::runtime_error,
+    "Tpetra::BlockMap::BlockMap: input myGlobalBlockIDs and blockSizes arrays "
+    "must have the same length.");
+
+  const global_size_t numLocalBlocks = myGlobalBlockIDs.size ();
+  reduceAll<int, GST> (* (pointMap->getComm ()), REDUCE_SUM, 1,
+                       &numLocalBlocks, &globalNumBlocks_);
+
+  pbuf_firstPointInBlock_ =
+    node->template allocBuffer<LO> (myGlobalBlockIDs.size () + 1);
+  ArrayRCP<LO> v_firstPoints =
+    node->template viewBufferNonConst<LO> (WriteOnly, numLocalBlocks + 1,
+                                           pbuf_firstPointInBlock_);
+
+  LO firstPoint = pointMap->getMinLocalIndex ();
   size_t sum_blockSizes = 0;
-  typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator
+  typename Teuchos::ArrayView<const LO>::const_iterator
     iter = blockSizes.begin(), iend = blockSizes.end();
   LocalOrdinal firstBlockSize = *iter;
-
-  pbuf_firstPointInBlock_ = node->template allocBuffer<LocalOrdinal>(myGlobalBlockIDs.size()+1);
-  Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(KokkosClassic::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
-
   bool blockSizesAreConstant = true;
-  size_t i=0;
-  for(; iter!=iend; ++iter, ++i) {
+  size_t i = 0;
+  for (; iter!=iend; ++iter, ++i) {
     sum_blockSizes += *iter;
     v_firstPoints[i] = firstPoint;
     firstPoint += *iter;
@@ -277,30 +354,36 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(const Teuchos::RCP<const Map
   }
   v_firstPoints[i] = firstPoint;
   v_firstPoints = Teuchos::null;
-  if (blockSizesAreConstant) constantBlockSize_ = firstBlockSize;
+  if (blockSizesAreConstant) {
+    constantBlockSize_ = firstBlockSize;
+  }
 
-  size_t num_points = pointMap->getNodeNumElements();
-  TEUCHOS_TEST_FOR_EXCEPTION(sum_blockSizes != num_points, std::runtime_error,
-            "Tpetra::BlockMap::BlockMap ERROR: sum of block-sizes must equal pointMap->getNodeNumElements().");
+  const size_t num_points = pointMap->getNodeNumElements ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    sum_blockSizes != num_points, std::runtime_error,
+    "Tpetra::BlockMap::BlockMap: Sum of block sizes must equal "
+    "pointMap->getNodeNumElements().");
 
-  typename Teuchos::Array<GlobalOrdinal>::const_iterator
+  typename Teuchos::Array<GO>::const_iterator
     b_iter = myGlobalBlockIDs_.begin(), b_end = myGlobalBlockIDs_.end();
   GlobalOrdinal id = *b_iter;
   ++b_iter;
   blockIDsAreContiguous_ = true;
-  for(; b_iter != b_end; ++b_iter) {
+  for (; b_iter != b_end; ++b_iter) {
     if (*b_iter != id+1) {
       blockIDsAreContiguous_ = false;
       break;
     }
     ++id;
   }
-  if (blockIDsAreContiguous_ == false) {
-    setup_noncontig_mapping();
+  if (! blockIDsAreContiguous_) {
+    setup_noncontig_mapping ();
   }
 
-  view_firstPointInBlock_ = node->template viewBuffer<LocalOrdinal>(numLocalBlocks+1, pbuf_firstPointInBlock_);
+  view_firstPointInBlock_ =
+    node->template viewBuffer<LO> (numLocalBlocks+1, pbuf_firstPointInBlock_);
 }
+
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 void
@@ -473,7 +556,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getFirstGlobalPointInLocalBlock(Local
   return pointMap_->getGlobalElement(view_firstPointInBlock_[localBlockID]);
 }
 
-}//namespace Tpetra
+} // namespace Tpetra
 
 //
 // Explicit instantiation macro
@@ -485,4 +568,5 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getFirstGlobalPointInLocalBlock(Local
   \
   template class BlockMap< LO , GO , NODE >;
 
-#endif
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRA_BLOCKMAP_DEF_HPP

@@ -73,6 +73,10 @@ IF(PyTrilinos_ENABLE_Triutils)
   PyTrilinos_MAKE_TEST(testTriUtils)
 ENDIF(PyTrilinos_ENABLE_Triutils)
 
+IF(PyTrilinos_ENABLE_Tpetra)
+  PyTrilinos_MAKE_TEST(testTpetra_Map)
+ENDIF(PyTrilinos_ENABLE_Tpetra)
+
 IF(PyTrilinos_ENABLE_EpetraExt)
   PyTrilinos_MAKE_TEST(testEpetraExt_Coloring)
   PyTrilinos_MAKE_TEST(testEpetraExt_Property)

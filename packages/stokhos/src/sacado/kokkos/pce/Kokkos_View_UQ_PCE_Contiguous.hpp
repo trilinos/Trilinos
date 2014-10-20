@@ -45,7 +45,7 @@
 #include "Sacado_UQ_PCE.hpp"
 #include "Sacado_UQ_PCE_Traits.hpp"
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 #include "Kokkos_AnalyzeSacadoShape.hpp"
 #include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_UQ_PCE_Utils.hpp"
@@ -321,10 +321,10 @@ public:
 
   // Host mirror
   typedef View< typename Impl::RebindStokhosStorageDevice<
-                typename traits::non_const_data_type ,
-                typename traits::device_type::host_mirror_device_type >::type ,
+                  typename traits::non_const_data_type ,
+                  typename traits::host_mirror_space >::type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 void > HostMirror ;
 
   // Equivalent array type for this view.
@@ -342,13 +342,13 @@ public:
   // Equivalent host array type for this view.
   typedef View< typename analyze_sacado_shape::array_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 typename traits::memory_traits > host_array_type ;
 
   // Equivalent const host array type for this view.
   typedef View< typename analyze_sacado_shape::const_array_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 typename traits::memory_traits > host_const_array_type ;
 
   // Equivalent flattened array type for this view.
@@ -474,14 +474,12 @@ public:
   //------------------------------------
   // Allocation of a managed view with possible alignment padding.
 
-  typedef Impl::if_c< traits::is_managed ,
-                      std::string ,
-                      Impl::ViewError::allocation_constructor_requires_managed >
-   if_allocation_constructor ;
-
+  template< class AllocationProperties >
   explicit inline
-  View( const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
+  View( const AllocationProperties & prop ,
+        // Impl::ViewAllocProp::size_type exists when the traits and allocation properties
+        // are valid for allocating viewed memory.
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -491,6 +489,8 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_cijk = getGlobalCijkTensor<cijk_type>();
@@ -500,19 +500,22 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
+        m_allocation.allocate( Alloc::label( prop ),
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      deep_copy( *this , intrinsic_scalar_type() );
+      if ( Alloc::initialize() ) {
+        deep_copy( *this , intrinsic_scalar_type() );
+      }
     }
 
+  template< class AllocationProperties >
   explicit inline
-  View( const typename if_allocation_constructor::type & label ,
+  View( const AllocationProperties & prop ,
         const cijk_type & cijk ,
-        const size_t n0 = 0 ,
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -522,6 +525,8 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_cijk = cijk;
@@ -531,80 +536,26 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
+        m_allocation.allocate( Alloc::label( prop ),
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      deep_copy( *this , intrinsic_scalar_type() );
+      if ( Alloc::initialize() ) {
+        deep_copy( *this , intrinsic_scalar_type() );
+      }
     }
 
+  template< class AllocationProperties , typename iType >
   explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        const size_t n7 = 0 )
+  View( const AllocationProperties & prop ,
+        const iType * const n ,
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type = 0 )
     : m_ptr_on_device(0)
     {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_stride = 1 ;
-      m_cijk = getGlobalCijkTensor<cijk_type>();
-      m_storage_size =
-        Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
-      if (m_storage_size == 0)
-        m_storage_size = m_cijk.dimension();
-      m_sacado_size = m_storage_size;
-      m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
-      m_is_contiguous = true;
-    }
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
-  explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const typename if_allocation_constructor::type & label ,
-        const cijk_type & cijk ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        const size_t n7 = 0 )
-    : m_ptr_on_device(0)
-    {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_stride = 1 ;
-      m_cijk = cijk;
-      m_storage_size =
-        Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
-      if (m_storage_size == 0)
-        m_storage_size = m_cijk.dimension();
-      m_sacado_size = m_storage_size;
-      m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
-      m_is_contiguous = true;
-    }
-
-  template <typename iType>
-  explicit inline
-  View( const typename if_allocation_constructor::type & label ,
-        const iType * const n )
-    : m_ptr_on_device(0)
-    {
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
       const size_t n2 = Rank >= 2 ? n[2] : 0 ;
@@ -622,22 +573,27 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
+        m_allocation.allocate( Alloc::label( prop ),
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      deep_copy( *this , intrinsic_scalar_type() );
+      if ( Alloc::initialize() ) {
+        deep_copy( *this , intrinsic_scalar_type() );
+      }
     }
 
-  template <typename iType>
+  template< class AllocationProperties , typename iType >
   explicit inline
-  View( const typename if_allocation_constructor::type & label ,
+  View( const AllocationProperties & prop ,
         const cijk_type & cijk ,
-        const iType * const n )
+        const iType * const n ,
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type = 0 )
     : m_ptr_on_device(0)
     {
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
       const size_t n2 = Rank >= 2 ? n[2] : 0 ;
@@ -655,76 +611,15 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
+        m_allocation.allocate( Alloc::label( prop ),
                                m_offset_map,
                                m_cijk,
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      deep_copy( *this , intrinsic_scalar_type() );
-    }
-
-  template <typename iType>
-  explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const typename if_allocation_constructor::type & label ,
-        const iType * const n )
-    : m_ptr_on_device(0)
-    {
-      const size_t n0 = Rank >= 0 ? n[0] : 0 ;
-      const size_t n1 = Rank >= 1 ? n[1] : 0 ;
-      const size_t n2 = Rank >= 2 ? n[2] : 0 ;
-      const size_t n3 = Rank >= 3 ? n[3] : 0 ;
-      const size_t n4 = Rank >= 4 ? n[4] : 0 ;
-      const size_t n5 = Rank >= 5 ? n[5] : 0 ;
-      const size_t n6 = Rank >= 6 ? n[6] : 0 ;
-      const size_t n7 = Rank >= 7 ? n[7] : 0 ;
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_stride = 1 ;
-      m_cijk = getGlobalCijkTensor<cijk_type>();
-      m_storage_size =
-        Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
-      if (m_storage_size == 0)
-        m_storage_size = m_cijk.dimension();
-      m_sacado_size = m_storage_size;
-      m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
-      m_is_contiguous = true;
-    }
-
-  template <typename iType>
-  explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const typename if_allocation_constructor::type & label ,
-        const cijk_type & cijk ,
-        const iType * const n )
-    : m_ptr_on_device(0)
-    {
-      const size_t n0 = Rank >= 0 ? n[0] : 0 ;
-      const size_t n1 = Rank >= 1 ? n[1] : 0 ;
-      const size_t n2 = Rank >= 2 ? n[2] : 0 ;
-      const size_t n3 = Rank >= 3 ? n[3] : 0 ;
-      const size_t n4 = Rank >= 4 ? n[4] : 0 ;
-      const size_t n5 = Rank >= 5 ? n[5] : 0 ;
-      const size_t n6 = Rank >= 6 ? n[6] : 0 ;
-      const size_t n7 = Rank >= 7 ? n[7] : 0 ;
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_stride = 1 ;
-      m_cijk = cijk;
-      m_storage_size =
-        Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
-      if (m_storage_size == 0)
-        m_storage_size = m_cijk.dimension();
-      m_sacado_size = m_storage_size;
-      m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
-      m_is_contiguous = true;
+      if ( Alloc::initialize() ) {
+        deep_copy( *this , intrinsic_scalar_type() );
+      }
     }
 
   //------------------------------------
@@ -741,9 +636,9 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
-          ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::non_const_value_type>::value ) &&
-          ! traits::is_managed ),
+            Impl::is_same<T,typename traits::value_type>::value ||
+            Impl::is_same<T,typename traits::non_const_value_type>::value
+          ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
     {
@@ -771,68 +666,9 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
-          ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::non_const_value_type>::value ) &&
-          ! traits::is_managed ),
-        const size_t >::type n7 = 0 )
-    : m_ptr_on_device(ptr)
-    {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_stride = 1 ;
-      m_cijk = cijk;
-      m_storage_size =
-        Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
-      if (m_storage_size == 0)
-        m_storage_size = m_cijk.dimension();
-      m_sacado_size = m_storage_size;
-      m_allocation.assign(ptr);
-      m_tracking = false;
-      m_is_contiguous = this->is_data_contiguous();
-    }
-
-  template< typename T >
-  View( const ViewWithoutManaging & ,
-        T * ptr ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        typename Impl::enable_if<(
-          Impl::is_same<T,typename traits::value_type>::value ||
-          Impl::is_same<T,typename traits::non_const_value_type>::value ),
-        const size_t >::type n7 = 0 )
-    : m_ptr_on_device(ptr)
-    {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_stride = 1 ;
-      m_cijk = getGlobalCijkTensor<cijk_type>();
-      m_storage_size =
-        Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
-      if (m_storage_size == 0)
-        m_storage_size = m_cijk.dimension();
-      m_sacado_size = m_storage_size;
-      m_allocation.assign(ptr);
-      m_tracking = false;
-      m_is_contiguous = this->is_data_contiguous();
-    }
-
-  template< typename T >
-  View( const ViewWithoutManaging & ,
-        T * ptr ,
-        const cijk_type & cijk ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        typename Impl::enable_if<(
-          Impl::is_same<T,typename traits::value_type>::value ||
-          Impl::is_same<T,typename traits::non_const_value_type>::value ),
+            Impl::is_same<T,typename traits::value_type>::value ||
+            Impl::is_same<T,typename traits::non_const_value_type>::value
+          ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
     {
@@ -1366,8 +1202,7 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewPCEContiguous> & dst ,
         size_t src_dims[8];
         src.dimensions(src_dims);
         src_dims[src_type::Rank] = src.sacado_size();
-        tmp_src_type src_tmp( allocate_without_initializing ,
-                              "src_tmp" , src.cijk() , src_dims );
+        tmp_src_type src_tmp( ViewAllocateWithoutInitializing("src_tmp") , src.cijk() , src_dims );
         Impl::DeepCopyNonContiguous< tmp_src_type , src_type >( src_tmp , src );
         dst_array_type dst_array = dst ;
         tmp_src_array_type src_array = src_tmp ;
@@ -1381,8 +1216,7 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewPCEContiguous> & dst ,
         size_t dst_dims[8];
         dst.dimensions(dst_dims);
         dst_dims[dst_type::Rank] = dst.sacado_size();
-        tmp_dst_type dst_tmp( allocate_without_initializing ,
-                              "dst_tmp" , dst.cijk() , dst_dims );
+        tmp_dst_type dst_tmp( ViewAllocateWithoutInitializing("dst_tmp") , dst.cijk() , dst_dims );
         tmp_dst_array_type dst_array = dst_tmp ;
         src_array_type src_array = src ;
         deep_copy( dst_array , src_array );
@@ -1395,14 +1229,12 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewPCEContiguous> & dst ,
         size_t src_dims[8];
         src.dimensions(src_dims);
         src_dims[src_type::Rank] = src.sacado_size();
-        tmp_src_type src_tmp( allocate_without_initializing ,
-                              "src_tmp" , src.cijk() , src_dims );
+        tmp_src_type src_tmp( ViewAllocateWithoutInitializing("src_tmp"), src.cijk() , src_dims );
         Impl::DeepCopyNonContiguous< tmp_src_type , src_type >( src_tmp , src );
         size_t dst_dims[8];
         dst.dimensions(dst_dims);
         dst_dims[dst_type::Rank] = dst.sacado_size();
-        tmp_dst_type dst_tmp( allocate_without_initializing ,
-                              "dst_tmp" , dst.cijk() , dst_dims );
+        tmp_dst_type dst_tmp( ViewAllocateWithoutInitializing("dst_tmp") , dst.cijk() , dst_dims );
         tmp_dst_array_type dst_array = dst_tmp ;
         tmp_src_array_type src_array = src_tmp ;
         deep_copy( dst_array , src_array );

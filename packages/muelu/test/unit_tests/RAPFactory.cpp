@@ -136,7 +136,7 @@ namespace MueLuTests {
     Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the Galerkin triple "
-        << "matrix product by comparing (RAP)*X to R(A(P*X))." << std::endl;
+      << "matrix product by comparing (RAP)*X to R(A(P*X))." << std::endl;
     out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);
@@ -227,7 +227,7 @@ namespace MueLuTests {
     Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the Galerkin triple "
-        << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit transpose of P." << std::endl;
+      << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit transpose of P." << std::endl;
     out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);

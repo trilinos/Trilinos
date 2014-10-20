@@ -50,11 +50,11 @@
 #ifdef HAVE_STOKHOS_KOKKOSCORE
 #include "Stokhos_Sacado_Kokkos.hpp"
 
+#include <Kokkos_Core.hpp>
+
 #if defined( KOKKOS_HAVE_OPENMP )
-#include <Kokkos_OpenMP.hpp>
 typedef Kokkos::OpenMP node_type;
 #elif defined( KOKKOS_HAVE_PTHREAD )
-#include <Kokkos_Threads.hpp>
 typedef Kokkos::Threads node_type;
 #else
 typedef Kokkos::Serial node_type;

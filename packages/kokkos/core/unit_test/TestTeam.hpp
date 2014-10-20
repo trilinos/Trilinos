@@ -46,7 +46,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <Kokkos_Parallel.hpp>
+#include <Kokkos_Core.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -57,12 +57,12 @@ template< class ExecSpace >
 struct TestTeamPolicy {
 
   typedef typename Kokkos::TeamPolicy< ExecSpace >::member_type team_member ;
-  typedef Kokkos::View<int**,typename ExecSpace::memory_space> view_type ;
+  typedef Kokkos::View<int**,ExecSpace> view_type ;
 
   view_type m_flags ;
 
   TestTeamPolicy( const size_t league_size )
-    : m_flags( Kokkos::allocate_without_initializing , "flags"
+    : m_flags( Kokkos::ViewAllocateWithoutInitializing("flags")
              , Kokkos::TeamPolicy< ExecSpace >::team_size_max( *this )
              , league_size )
     {}
@@ -97,6 +97,38 @@ struct TestTeamPolicy {
 
       Kokkos::parallel_for( Kokkos::TeamPolicy< ExecSpace >( league_size , team_size ) , functor );
       Kokkos::parallel_for( Kokkos::TeamPolicy< ExecSpace , VerifyInitTag >( league_size , team_size ) , functor );
+    }
+
+  struct ReduceTag {};
+
+  typedef int value_type ;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const team_member & member , value_type & update ) const
+    {
+      update += member.team_rank() + member.team_size() * member.league_rank();
+    }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const ReduceTag & , const team_member & member , value_type & update ) const
+    {
+      update += 1 + member.team_rank() + member.team_size() * member.league_rank();
+    }
+
+  static void test_reduce( const size_t league_size )
+    {
+      TestTeamPolicy functor( league_size );
+
+      const int team_size = Kokkos::TeamPolicy< ExecSpace >::team_size_max( functor );
+      const int N = team_size * league_size ;
+
+      Kokkos::View<int,ExecSpace> total("total");
+
+      Kokkos::parallel_reduce( Kokkos::TeamPolicy< ExecSpace >( league_size , team_size ) , functor , total );
+      ASSERT_EQ( size_t((N-1)*(N))/2 , size_t(*total) );
+
+      Kokkos::parallel_reduce( Kokkos::TeamPolicy< ExecSpace , ReduceTag >( league_size , team_size ) , functor , total );
+      ASSERT_EQ( (size_t(N)*size_t(N+1))/2 , size_t(*total) );
     }
 };
 

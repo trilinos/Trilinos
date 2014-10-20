@@ -51,14 +51,10 @@
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_ArrayRCP.hpp>
-
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_CrsMatrix_decl.hpp"
-#endif
+#include "Tpetra_CrsMatrix_decl.hpp"
 
 // CrsMatrix relies on template methods implemented in Tpetra_CrsGraph_def.hpp
 #include <Tpetra_CrsGraph_def.hpp>
-
 
 namespace Tpetra {
   //

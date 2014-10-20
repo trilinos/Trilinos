@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
@@ -7,7 +6,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
 
-  SET(DEPLIBS stokhos kokkoscore)
   SET(CUDA_SOURCES "")
   IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
     GET_PROPERTY(Stokhos_CUDA_INC_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
@@ -25,7 +23,6 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
             main.cpp
             ${CUDA_SOURCES}
     COMM serial mpi
-    DEPLIBS ${DEPLIBS}
     )
 
   IF(Kokkos_ENABLE_Pthread)
@@ -34,7 +31,6 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
       SOURCES TestStochastic.hpp
               HostScaling.cpp
       COMM serial mpi
-      DEPLIBS stokhos kokkoscore
       )
   ENDIF()
 
@@ -42,7 +38,6 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
     SPMVEpetra
     SOURCES TestEpetra.cpp
     COMM serial mpi
-    DEPLIBS stokhos
     )
 
 ENDIF()

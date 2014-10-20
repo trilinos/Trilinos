@@ -248,7 +248,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_NonContiguous, Stor
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
-  typedef typename Device::host_mirror_device_type HostDevice;
+  typedef typename ViewType::host_mirror_space HostDevice;
   typedef Kokkos::View<PCE*,typename ViewType::array_layout,HostDevice,Kokkos::MemoryUnmanaged> HostViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename PCE::cijk_type Cijk;
@@ -516,8 +516,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Unmanaged, Storage, Layout )
   Kokkos::deep_copy(v, h_v);
 
   // Create unmanaged view
-  ViewType v2(Kokkos::view_without_managing, v.ptr_on_device(), cijk,
-              num_rows, num_cols);
+  ViewType v2( v.ptr_on_device(), cijk, num_rows, num_cols);
 
   success = checkPCEView(v2, out);
 }

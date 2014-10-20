@@ -49,11 +49,9 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_MDArray.hpp>
 
-#include <Kokkos_Threads.hpp>
+#include <Kokkos_Core.hpp>
 
-#include <Kokkos_Macros.hpp>
 #include <explicit_dynamics_app.hpp>
-#include <impl/Kokkos_Clear_macros.hpp>
 
 namespace Test{
 

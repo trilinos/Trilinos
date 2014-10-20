@@ -56,7 +56,7 @@ namespace Teuchos {
       ///
       /// This class is an implementation detail of SetScientific.
       /// Users should use SetScientific, not this class.
-      /// 
+      ///
       /// \tparam Scalar A type for which
       ///   Teuchos::ScalarTraits<Scalar> has a specialization.
       /// \tparam isFloatingPoint Whether Scalar is a floating-point
@@ -79,7 +79,7 @@ namespace Teuchos {
         ~SetScientificImpl ();
       };
 
-      /// Partial specialization of SetScientificImpl for floating-point types.  
+      /// Partial specialization of SetScientificImpl for floating-point types.
       ///
       /// This class currently requires that std::log10() take
       /// arguments of type Scalar.  This may be relaxed in the future
@@ -142,7 +142,7 @@ namespace Teuchos {
         std::ios_base::fmtflags originalFlags_;
       };
 
-      //! Partial specialization of SetScientificImpl for non-floating-point types. 
+      //! Partial specialization of SetScientificImpl for non-floating-point types.
       template<class Scalar>
       class SetScientificImpl<Scalar, false> {
       public:
@@ -172,7 +172,7 @@ namespace Teuchos {
       ///   complex, for which Teuchos::ScalarTraits<Scalar> has a
       ///   specialization.
       template<class Scalar>
-      class SetScientific : 
+      class SetScientific :
 	public SetScientificImpl<Scalar, ! Teuchos::ScalarTraits<Scalar>::isOrdinal> {
       private:
 	//! Parent class of this class.

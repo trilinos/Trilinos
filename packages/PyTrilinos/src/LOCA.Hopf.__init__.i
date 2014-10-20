@@ -71,7 +71,7 @@ and classes:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Configuration and optional includes
@@ -80,7 +80,7 @@ and classes:
 %{
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
-#include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyVector.hpp"
 %}
 #endif
 

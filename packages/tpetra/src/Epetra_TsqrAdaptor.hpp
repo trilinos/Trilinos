@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -82,7 +82,7 @@ namespace Epetra {
   /// TSQR (Tall Skinny QR factorization) is an orthogonalization
   /// kernel that is as accurate as Householder QR, yet requires only
   /// \f$2 \log P\f$ messages between $P$ MPI processes, independently
-  /// of the number of columns in the multivector.  
+  /// of the number of columns in the multivector.
   ///
   /// TSQR works independently of the particular multivector
   /// implementation, and interfaces to the latter via an adaptor
@@ -122,16 +122,25 @@ namespace Epetra {
     /// \typedef node_type
     ///
     /// TSQR depends on a Kokkos Node type.  We could use the
-    /// KokkosClassic::DefaultNode::DefaultNodeType typedef, but (a) we want
-    /// to ensure the expected "sequential within one MPI process"
-    /// semantics of Epetra, and (b) we don't have a good
+    /// KokkosClassic::DefaultNode::DefaultNodeType typedef, but (a)
+    /// we want to ensure the expected "sequential within one MPI
+    /// process" semantics of Epetra, and (b) we don't have a good
     /// platform-independent automatic mechanism for determining how
     /// many threads each MPI process should use, when running
     /// multiple MPI processes on a node.  Thus, we use
-    /// KokkosClassic::SerialNode.
+    /// KokkosClassic::SerialNode if it is available.  If it's not,
+    /// all we can do is use the default Node type.
+    ///
+    /// FIXME (mfh 15 Oct 2014) What if the default Node type does not
+    /// have a host memory space as its default memory space, e.g., a
+    /// CUDA Node?  That would make it incompatible with Epetra.
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
     typedef KokkosClassic::SerialNode node_type;
+#else
+    typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
-    /// \typedef dense_matrix_type 
+    /// \typedef dense_matrix_type
     ///
     /// How we pass around small dense matrices that are either local
     /// to each MPI process, or globally replicated.
@@ -174,7 +183,7 @@ namespace Epetra {
     }
 
     //! Constructor (that uses default parameters).
-    TsqrAdaptor () : 
+    TsqrAdaptor () :
       nodeTsqr_ (new node_tsqr_type),
       distTsqr_ (new dist_tsqr_type),
       tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
@@ -200,7 +209,7 @@ namespace Epetra {
       return defaultParams_;
     }
 
-    void 
+    void
     setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
       using Teuchos::ParameterList;
@@ -208,7 +217,7 @@ namespace Epetra {
       using Teuchos::RCP;
       using Teuchos::sublist;
 
-      RCP<ParameterList> params = plist.is_null() ? 
+      RCP<ParameterList> params = plist.is_null() ?
         parameterList (*getValidParameters ()) : plist;
       nodeTsqr_->setParameterList (sublist (params, "NodeTsqr"));
       distTsqr_->setParameterList (sublist (params, "DistTsqr"));
@@ -289,7 +298,7 @@ namespace Epetra {
     {
       typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
 
-      prepareTsqr (Q); // Finish initializing TSQR.      
+      prepareTsqr (Q); // Finish initializing TSQR.
 
       // FIXME (mfh 25 Oct 2010) Check Epetra_Comm object in Q to make
       // sure it is the same communicator as the one we are using in
@@ -301,7 +310,7 @@ namespace Epetra {
   private:
     //! The intranode TSQR implementation instance.
     Teuchos::RCP<node_tsqr_type> nodeTsqr_;
-    
+
     //! The internode TSQR implementation instance.
     Teuchos::RCP<dist_tsqr_type> distTsqr_;
 
@@ -332,8 +341,8 @@ namespace Epetra {
     ///   underlying communicator object (in this case, Epetra_Comm).
     ///   All multivector objects used with this Adaptor instance must
     ///   have the same map and communicator.
-    void 
-    prepareTsqr (const MV& mv) 
+    void
+    prepareTsqr (const MV& mv)
     {
       if (! ready_) {
         prepareDistTsqr (mv);
@@ -350,7 +359,7 @@ namespace Epetra {
     {
       (void) mv; // Epetra objects don't have a Kokkos Node.
 
-      // KokkosClassic::SerialNode wants an empty ParameterList.
+      // Create Node with empty ParameterList.
       Teuchos::ParameterList plist;
       Teuchos::RCP<node_type> node (new node_type (plist));
       node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, node);
@@ -414,7 +423,7 @@ namespace Epetra {
       // don't have a Kokkos Node, so we make a temporary node just
       // for the KMV.
       //
-      // KokkosClassic::SerialNode wants an empty ParameterList.
+      // Create Node with empty ParameterList.
       Teuchos::ParameterList plist;
       Teuchos::RCP<node_type> node (new node_type (plist));
       KMV A_kmv (node);

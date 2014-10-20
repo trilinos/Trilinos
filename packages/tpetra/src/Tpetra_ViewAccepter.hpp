@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -48,71 +48,77 @@
 
 
 namespace Tpetra {
+namespace details {
 
-  namespace details {
+/// \brief Support for compile-time detection based on Node type, of support for accepting user views.
+/// \warning Please consider this class DEPRECATED.
+/// \warning This class is NOT for users to use directly.
+template <class Node>
+class ViewAccepter {
+private:
+  // no support for object instantiation
+  ViewAccepter();
+public:
+  template <class T>
+  inline static ArrayRCP<T> acceptView(const ArrayRCP<T> &view) {
+    Node::this_node_type_does_not_support_object_construction_from_user_views();
+    return null;
+  }
+};
 
-  //! \brief ViewAccepter provides support for compile-time detection based on Node type, of support for accepting user views.
-  template <class Node>
-  class ViewAccepter {
-    private:
-      // no support for object instantiation
-      ViewAccepter();
-    public:
-      template <class T>
-      inline static ArrayRCP<T> acceptView(const ArrayRCP<T> &view) {
-        Node::this_node_type_does_not_support_object_construction_from_user_views();
-        return null;
-      }
-  };
+//! Implementation
+class ViewAccepterSupportedNode {
+private:
+  // no support for object instantiation
+  ViewAccepterSupportedNode();
+public:
+  template <class T>
+  inline static ArrayRCP<T> acceptView(const ArrayRCP<T> &view) {
+    return view;
+  }
+};
 
-  //! Implementation 
-  class ViewAccepterSupportedNode {
-    private:
-      // no support for object instantiation
-      ViewAccepterSupportedNode();
-    public:
-      template <class T>
-      inline static ArrayRCP<T> acceptView(const ArrayRCP<T> &view) {
-        return view;
-      }
-  };
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+template <>
+class ViewAccepter<KokkosClassic::SerialNode> : public ViewAccepterSupportedNode {};
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
-  template <>
-  class ViewAccepter<KokkosClassic::SerialNode> : public ViewAccepterSupportedNode {};
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  template <>
-  class ViewAccepter<KokkosClassic::TBBNode> : public ViewAccepterSupportedNode {};
+template <>
+class ViewAccepter<KokkosClassic::TBBNode> : public ViewAccepterSupportedNode {};
 #endif
+
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  template <>
-  class ViewAccepter<KokkosClassic::TPINode> : public ViewAccepterSupportedNode {};
+template <>
+class ViewAccepter<KokkosClassic::TPINode> : public ViewAccepterSupportedNode {};
 #endif
+
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  template <>
-  class ViewAccepter<KokkosClassic::OpenMPNode> : public ViewAccepterSupportedNode {};
+template <>
+class ViewAccepter<KokkosClassic::OpenMPNode> : public ViewAccepterSupportedNode {};
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-    // Full specializations for the new Kokkos wrapper Node types.
+// Full specializations for the new Kokkos wrapper Node types.
 
-  #ifdef KOKKOS_HAVE_CUDA
-    template<>
-    class ViewAccepter< ::Kokkos::Compat::KokkosCudaWrapperNode> : public ViewAccepterSupportedNode {};
-  #endif // KOKKOS_HAVE_CUDA
+#  ifdef KOKKOS_HAVE_CUDA
+template<>
+class ViewAccepter< ::Kokkos::Compat::KokkosCudaWrapperNode> : public ViewAccepterSupportedNode {};
+#  endif // KOKKOS_HAVE_CUDA
 
-  #ifdef KOKKOS_HAVE_OPENMP
-    template<>
-    class ViewAccepter< ::Kokkos::Compat::KokkosOpenMPWrapperNode> : public ViewAccepterSupportedNode {};
-  #endif // KOKKOS_HAVE_OPENMP
+#  ifdef KOKKOS_HAVE_OPENMP
+template<>
+class ViewAccepter< ::Kokkos::Compat::KokkosOpenMPWrapperNode> : public ViewAccepterSupportedNode {};
+#  endif // KOKKOS_HAVE_OPENMP
 
-  #ifdef KOKKOS_HAVE_PTHREAD
-    template<>
-    class ViewAccepter< ::Kokkos::Compat::KokkosThreadsWrapperNode> : public ViewAccepterSupportedNode {};
-  #endif // KOKKOS_HAVE_PTHREAD
+#  ifdef KOKKOS_HAVE_PTHREAD
+template<>
+class ViewAccepter< ::Kokkos::Compat::KokkosThreadsWrapperNode> : public ViewAccepterSupportedNode {};
+#  endif // KOKKOS_HAVE_PTHREAD
 
 #endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-  } // end of namespace Tpetra::details
 
+} // end of namespace Tpetra::details
 } // end of namespace Tpetra
 
 #endif

@@ -45,8 +45,7 @@
 #define TEST_GRAMSCHMIDT_HPP
 
 #include <ParallelComm.hpp>
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_Threads.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <iostream>
 
@@ -73,8 +72,6 @@ void driver_modified_gram_schmidt<Kokkos::Threads>(
 }
 
 #if defined( KOKKOS_HAVE_CUDA )
-
-#include <Kokkos_Cuda.hpp>
 
 namespace Test {
 

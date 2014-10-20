@@ -53,22 +53,30 @@
 # through a cmake -P script because the desired ctest executable
 # location is unknown at CMake configure time of the driver project.
 
-if(NOT CTEST_EXE)
-  if(WIN32)
-    set(ctest_filename "ctest.exe")
-  else()
-    set(ctest_filename "ctest")
-  endif()
+if(WIN32)
+  set(ctest_filename "ctest.exe")
+else()
+  set(ctest_filename "ctest")
+endif()
+
+set(TRIBITS_TDD_USE_SYSTEM_CTEST $ENV{TRIBITS_TDD_USE_SYSTEM_CTEST})
+message("TRIBITS_TDD_USE_SYSTEM_CTEST='${TRIBITS_TDD_USE_SYSTEM_CTEST}'")
+
+if (TRIBITS_TDD_USE_SYSTEM_CTEST STREQUAL "1")
+
+  find_program(CTEST_EXE ${ctest_filename})
+
+elseif(NOT CTEST_EXE)
 
   message("Selecting '${ctest_filename}' of type '${ctest_type}'...")
 
-  set(CTEST_EXE 
+  set(CTEST_EXE
     "${TD_BASE_DIR}/tools/cmake-${ctest_type}/bin/${ctest_filename}")
 
-endif()
+  if(NOT CTEST_EXE)
+    message(FATAL_ERROR "error: '${ctest_type}' ctest could not be found...")
+  endif()
 
-if(NOT CTEST_EXE)
-  message(FATAL_ERROR "error: '${ctest_type}' ctest could not be found...")
 endif()
 
 if(NOT EXISTS "${CTEST_EXE}")

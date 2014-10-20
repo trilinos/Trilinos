@@ -34,12 +34,12 @@ main (int argc, char *argv[])
 
   // Make a "serial" (non-MPI) communicator.
   // It doesn't actually "communicate," because it only has one process.
-  RCP<const Comm<int> > comm = rcp (new SerialComm<int> ());
+  RCP<const Comm<int> > comm (new SerialComm<int> ());
 
   // With a "serial" communicator, the rank is always 0,
   // and the number of processes is always 1.
-  const int myRank = comm->getRank();
-  const int numProcs = comm->getSize();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
 
   if (myRank == 0) {
     cout << "Total number of processes: " << numProcs << endl;

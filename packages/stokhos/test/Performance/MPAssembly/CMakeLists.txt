@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
@@ -29,7 +28,6 @@ IF (Stokhos_ENABLE_KokkosCore)
             TestAssembly_Host.cpp
             ${CUDA_SOURCES}
     COMM serial mpi
-    DEPLIBS stokhos kokkoscore
     )
 
 ENDIF()

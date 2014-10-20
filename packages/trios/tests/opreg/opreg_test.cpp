@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
                 "\t\t\tcpp-obj: Use C++ code for server opcode registration");
 
         // Set an enumeration command line option for the opreg_type
-        parser.setOption("transport", &args.transport, num_nssi_transports, nssi_transport_vals, nssi_transport_names,
+        parser.setOption("transport", &transport_index, num_nssi_transports, nssi_transport_vals, nssi_transport_names,
                 "NSSI transports (not all are available on every platform): \n"
                 "\t\t\tportals|ptl    : Cray or Schutt\n"
                 "\t\t\tinfiniband|ib  : libibverbs\n"
@@ -461,8 +461,6 @@ int main(int argc, char *argv[])
     opreg_debug_level = args.debug_level;
 
     // Print the arguments after they've all been set.
-    args.opreg_type_name = opreg_type_names[args.opreg_type];
-    args.transport_name = nssi_transport_names[args.transport];
     print_args(out, args, "%");
 
 

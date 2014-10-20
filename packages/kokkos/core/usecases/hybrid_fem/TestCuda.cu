@@ -1,10 +1,12 @@
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <TestBoxMeshFixture.hpp>
 #include <Implicit.hpp>
 #include <Nonlinear.hpp>
 #include <Explicit.hpp>
+
+#define BUILD_FROM_CU_FILE
 #include <SparseLinearSystem.hpp>
 
 //----------------------------------------------------------------------------
@@ -30,12 +32,12 @@ void test_cuda_fixture( comm::Machine machine ,
     dev_count && dev_count <= comm_size ? comm_rank % dev_count : 0 ;
   const size_t gang_count = 0 ;
 
-  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::HostSpace::execution_space::initialize();
   Kokkos::Cuda::SelectDevice select_device( dev_rank );
   Kokkos::Cuda::initialize( select_device );
   test_box_fixture<Kokkos::Cuda>( machine , gang_count , nx , ny , nz );
   Kokkos::Cuda::finalize();
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
 }
 
 //----------------------------------------------------------------------------
@@ -52,12 +54,12 @@ void test_cuda_implicit( comm::Machine machine ,
     dev_count && dev_count <= comm_size ? comm_rank % dev_count : 0 ;
   const size_t gang_count = 0 ;
 
-  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::HostSpace::execution_space::initialize();
   Kokkos::Cuda::SelectDevice select_device( dev_rank );
   Kokkos::Cuda::initialize( select_device );
   HybridFEM::Implicit::driver<double,Kokkos::Cuda>( "Cuda" , machine , gang_count , elem_count_begin , elem_count_end , count_run );
   Kokkos::Cuda::finalize();
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
 }
 
 //----------------------------------------------------------------------------
@@ -74,12 +76,12 @@ void test_cuda_explicit( comm::Machine machine ,
     dev_count && dev_count <= comm_size ? comm_rank % dev_count : 0 ;
   const size_t gang_count = 0 ;
 
-  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::HostSpace::execution_space::initialize();
   Kokkos::Cuda::SelectDevice select_device( dev_rank );
   Kokkos::Cuda::initialize( select_device );
   Explicit::driver<double,Kokkos::Cuda>( "Cuda" , machine , gang_count , elem_count_begin , elem_count_end , count_run );
   Kokkos::Cuda::finalize();
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
 }
 
 //----------------------------------------------------------------------------
@@ -96,7 +98,7 @@ void test_cuda_nonlinear( comm::Machine machine ,
     dev_count && dev_count <= comm_size ? comm_rank % dev_count : 0 ;
   const size_t gang_count = 0 ;
 
-  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::HostSpace::execution_space::initialize();
   Kokkos::Cuda::SelectDevice select_device( dev_rank );
   Kokkos::Cuda::initialize( select_device );
 
@@ -104,7 +106,7 @@ void test_cuda_nonlinear( comm::Machine machine ,
   typedef FixtureElementHex8 hex8 ;
   HybridFEM::Nonlinear::driver<double,device,hex8>( "Cuda" , machine , gang_count , elem_count_begin , elem_count_end , count_run );
   Kokkos::Cuda::finalize();
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
 }
 
 void test_cuda_nonlinear_quadratic( comm::Machine machine , 
@@ -119,7 +121,7 @@ void test_cuda_nonlinear_quadratic( comm::Machine machine ,
     dev_count && dev_count <= comm_size ? comm_rank % dev_count : 0 ;
   const size_t gang_count = 0 ;
 
-  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::HostSpace::execution_space::initialize();
   Kokkos::Cuda::SelectDevice select_device( dev_rank );
   Kokkos::Cuda::initialize( select_device );
 
@@ -127,7 +129,7 @@ void test_cuda_nonlinear_quadratic( comm::Machine machine ,
   typedef FixtureElementHex27 hex27 ;
   HybridFEM::Nonlinear::driver<double,device,hex27>( "Cuda" , machine , gang_count , elem_count_begin , elem_count_end , count_run );
   Kokkos::Cuda::finalize();
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
 }
 
 //----------------------------------------------------------------------------

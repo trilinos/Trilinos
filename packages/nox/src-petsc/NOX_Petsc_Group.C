@@ -58,6 +58,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 // External include files - linking to Petsc
+#include "petscversion.h"
 #include "petscksp.h"
 
 using namespace NOX;
@@ -83,8 +84,8 @@ Group::Group(const Group& source, CopyType type) :
   NewtonVector(source.NewtonVector, type),
   sharedJacobianPtr(NULL),
   sharedJacobian(source.sharedJacobian),
-  userInterface(source.userInterface),
-  jacType(source.jacType)
+  jacType(source.jacType),
+  userInterface(source.userInterface)
 {
   switch (type) {
 
@@ -289,7 +290,8 @@ Group::computeGradient()
 
   // Compute grad = Jacobian^T * RHS.
   // Need to add a check on ierr
-  int ierr = MatMultTranspose(Jacobian, RHSVector.getPetscVector(), gradVector.getPetscVector());
+  PetscErrorCode ierr = MatMultTranspose(Jacobian, RHSVector.getPetscVector(), gradVector.getPetscVector());
+  TEUCHOS_ASSERT(ierr == 0);
 
   // Update state
   isValidGrad = true;
@@ -328,7 +330,11 @@ Group::computeNewton(Teuchos::ParameterList& p)
      Set operators. Here the matrix that defines the linear system
      also serves as the preconditioning matrix.
   */
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+  ierr = KSPSetOperators(ksp,Jacobian,Jacobian);
+#else
   ierr = KSPSetOperators(ksp,Jacobian,Jacobian, DIFFERENT_NONZERO_PATTERN);
+#endif
 
   /*
      Set runtime options (e.g., -ksp_type <type> -pc_type <type>)
@@ -366,6 +372,8 @@ Group::computeNewton(Teuchos::ParameterList& p)
     ierr = KSPGetIterationNumber( ksp, &its );
     std::cout << "\nConvergence in " << its << " iterations.\n";
   }
+
+  TEUCHOS_ASSERT(ierr == 0);
 
   // Scale soln by -1
   NewtonVector.scale(-1.0);
@@ -439,14 +447,24 @@ Group::applyRightPreconditioning(const Vector& input, Vector& result) const
      Set operators and vector. Here the matrix that defines the linear system
      also serves as the preconditioning matrix.
   */
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+  ierr = PCSetOperators(pc,Jacobian,Jacobian);
+#else
   ierr = PCSetOperators(pc,Jacobian,Jacobian, DIFFERENT_NONZERO_PATTERN);
+#endif
   ierr = PCSetUp(pc);
 
   // Apply the preconditioner
   ierr = PCApply(pc,input.getPetscVector(),r);
 
   // Cleanup
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+  ierr = PCDestroy(&pc);
+#else
   ierr = PCDestroy(pc);
+#endif
+
+  TEUCHOS_ASSERT(ierr == 0);
 
   return Abstract::Group::Ok;
 }
@@ -472,6 +490,8 @@ Group::applyJacobianTranspose(const Vector& input, Vector& result) const
 
   // Apply the Jacobian
   int ierr = MatMultTranspose(Jacobian, input.getPetscVector(), result.getPetscVector());
+
+  TEUCHOS_ASSERT(ierr == 0);
 
   return Abstract::Group::Ok;
 }

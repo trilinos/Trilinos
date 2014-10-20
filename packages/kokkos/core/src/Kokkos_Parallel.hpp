@@ -48,7 +48,7 @@
 #define KOKKOS_PARALLEL_HPP
 
 #include <cstddef>
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_View.hpp>
 #include <Kokkos_ExecPolicy.hpp>
 #include <impl/Kokkos_Traits.hpp>
@@ -64,7 +64,8 @@ namespace Impl {
 /** \brief  Given a Functor and Execution Policy query an execution space.
  *
  *  if       the Policy has an execution space use that
- *  else if  the Functor has a device_type use that
+ *  else if  the Functor has an execution_space use that
+ *  else if  the Functor has a device_type use that for backward compatibility
  *  else     use the default
  */
 template< class Functor
@@ -80,6 +81,16 @@ template< class Functor , class Policy >
 struct FunctorPolicyExecutionSpace
   < Functor , Policy
   , typename enable_if_type< typename Functor::device_type     >::type
+  , typename enable_if_type< typename Policy ::execution_space >::type
+  >
+{
+  typedef typename Policy ::execution_space execution_space ;
+};
+
+template< class Functor , class Policy >
+struct FunctorPolicyExecutionSpace
+  < Functor , Policy
+  , typename enable_if_type< typename Functor::execution_space >::type
   , typename enable_if_type< typename Policy ::execution_space >::type
   >
 {
@@ -104,6 +115,16 @@ struct FunctorPolicyExecutionSpace
   >
 {
   typedef typename Functor::device_type execution_space ;
+};
+
+template< class Functor , class Policy , class EnablePolicy >
+struct FunctorPolicyExecutionSpace
+  < Functor , Policy
+  , typename enable_if_type< typename Functor::execution_space >::type
+  , EnablePolicy
+  >
+{
+  typedef typename Functor::execution_space execution_space ;
 };
 
 //----------------------------------------------------------------------------
@@ -161,13 +182,13 @@ namespace Kokkos {
 /** \brief Execute \c functor in parallel according to the execution \c policy.
  *
  * A "functor" is a class containing the function to execute in parallel,
- * data needed for that execution, and an optional \c device_type
+ * data needed for that execution, and an optional \c execution_space
  * typedef.  Here is an example functor for parallel_for:
  *
  * \code
  *  class FunctorType {
  *  public:
- *    typedef  ...  device_type ;
+ *    typedef  ...  execution_space ;
  *    void operator() ( WorkType iwork ) const ;
  *  };
  * \endcode
@@ -177,7 +198,7 @@ namespace Kokkos {
  * <tt>operator()</tt> method defines the operation to parallelize,
  * over the range of integer indices <tt>iwork=[0,work_count-1]</tt>.
  * This compares to a single iteration \c iwork of a \c for loop.
- * If \c device_type is not defined DefaultExecutionSpace will be used.
+ * If \c execution_space is not defined DefaultExecutionSpace will be used.
  */
 template< class ExecPolicy , class FunctorType >
 inline
@@ -214,7 +235,7 @@ namespace Kokkos {
  * \code
  *  class FunctorType { // For POD value type
  *  public:
- *    typedef    ...     device_type ;
+ *    typedef    ...     execution_space ;
  *    typedef <podType>  value_type ;
  *    void operator()( <intType> iwork , <podType> & update ) const ;
  *    void init( <podType> & update ) const ;
@@ -230,7 +251,7 @@ namespace Kokkos {
  * \code
  *  class FunctorType { // For array of POD value
  *  public:
- *    typedef    ...     device_type ;
+ *    typedef    ...     execution_space ;
  *    typedef <podType>  value_type[] ;
  *    void operator()( <intType> , <podType> update[] ) const ;
  *    void init( <podType> update[] ) const ;
@@ -244,7 +265,7 @@ namespace Kokkos {
  */
 template< class ExecPolicy , class FunctorType >
 inline
-void parallel_reduce( const ExecPolicy  & policy 
+void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorType & functor
                     , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0
                     )
@@ -273,7 +294,7 @@ void parallel_reduce( const size_t        work_count
                                      >::type value_type ;
 
   Kokkos::View< value_type
-              , typename execution_space::host_mirror_device_type
+              , HostSpace
               , Kokkos::MemoryUnmanaged
               >
     result_view ;
@@ -284,8 +305,8 @@ void parallel_reduce( const size_t        work_count
 // general policy and view ouput
 template< class ExecPolicy , class FunctorType , class ViewType >
 inline
-void parallel_reduce( const ExecPolicy  & policy 
-                    , const FunctorType & functor 
+void parallel_reduce( const ExecPolicy  & policy
+                    , const FunctorType & functor
                     , const ViewType    & result_view
                     , typename Impl::enable_if<
                       ( Impl::is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value
@@ -297,17 +318,13 @@ void parallel_reduce( const ExecPolicy  & policy
 // general policy and pod or array of pod output
 template< class ExecPolicy , class FunctorType >
 inline
-void parallel_reduce( const ExecPolicy  & policy 
-                    , const FunctorType & functor 
+void parallel_reduce( const ExecPolicy  & policy
+                    , const FunctorType & functor
                     , typename Impl::enable_if<
                       ( ! Impl::is_integral< ExecPolicy >::value )
                       , typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type
                       >::type result_ref )
 {
-  typedef typename
-    Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
-      execution_space ;
-
   typedef Kokkos::Impl::ReduceAdapter< FunctorType >  Reduce ;
 
   // Wrap the result output request in a view to inform the implementation
@@ -319,7 +336,7 @@ void parallel_reduce( const ExecPolicy  & policy
                                      >::type value_type ;
 
   Kokkos::View< value_type
-              , typename execution_space::host_mirror_device_type
+              , HostSpace
               , Kokkos::MemoryUnmanaged
               >
     result_view( Reduce::pointer( result_ref )
@@ -333,7 +350,7 @@ void parallel_reduce( const ExecPolicy  & policy
 template< class FunctorType , class ViewType >
 inline
 void parallel_reduce( const size_t        work_count
-                    , const FunctorType & functor 
+                    , const FunctorType & functor
                     , const ViewType    & result_view
                     , typename Impl::enable_if<( Impl::is_view<ViewType>::value )>::type * = 0 )
 {
@@ -370,13 +387,13 @@ void parallel_reduce( const size_t        work_count ,
                                      >::type value_type ;
 
   Kokkos::View< value_type
-              , typename execution_space::host_mirror_device_type
+              , HostSpace
               , Kokkos::MemoryUnmanaged
               >
     result_view( Reduce::pointer( result )
                , Reduce::value_count( functor )
                );
-  
+
   (void) Impl::ParallelReduce< FunctorType , policy >( functor , policy(0,work_count) , result_view );
 }
 
@@ -414,7 +431,7 @@ namespace Kokkos {
 /// class ScanFunctor {
 /// public:
 ///   // The Kokkos device type
-///   typedef ... device_type;
+///   typedef ... execution_space;
 ///   // Type of an entry of the array containing the result;
 ///   // also the type of each of the entries combined using
 ///   // operator() or join().
@@ -434,16 +451,17 @@ namespace Kokkos {
 /// template<class SpaceType>
 /// class InclScanFunctor {
 /// public:
-///   typedef SpaceType device_type;
+///   typedef SpaceType execution_space;
 ///   typedef int value_type;
 ///   typedef typename SpaceType::size_type size_type;
 ///
-///   InclScanFunctor (Kokkos::View<value_type*, device_type> x) : x_ (x) {}
+///   InclScanFunctor( Kokkos::View<value_type*, execution_space> x
+///                  , Kokkos::View<value_type*, execution_space> y ) : m_x(x), m_y(y) {}
 ///
 ///   void operator () (const size_type i, value_type& update, const bool final_pass) const {
-///     update += x_(i);
+///     update += m_x(i);
 ///     if (final_pass) {
-///       x_(i) = update;
+///       m_y(i) = update;
 ///     }
 ///   }
 ///   void init (value_type& update) const {
@@ -454,7 +472,8 @@ namespace Kokkos {
 ///   }
 ///
 /// private:
-///   Kokkos::View<value_type*, device_type> x_;
+///   Kokkos::View<value_type*, execution_space> m_x;
+///   Kokkos::View<value_type*, execution_space> m_y;
 /// };
 /// \endcode
 ///
@@ -468,11 +487,11 @@ namespace Kokkos {
 /// template<class SpaceType>
 /// class ExclScanFunctor {
 /// public:
-///   typedef SpaceType device_type;
+///   typedef SpaceType execution_space;
 ///   typedef int value_type;
 ///   typedef typename SpaceType::size_type size_type;
 ///
-///   ExclScanFunctor (Kokkos::View<value_type*, device_type> x) : x_ (x) {}
+///   ExclScanFunctor (Kokkos::View<value_type*, execution_space> x) : x_ (x) {}
 ///
 ///   void operator () (const size_type i, value_type& update, const bool final_pass) const {
 ///     const value_type x_i = x_(i);
@@ -489,7 +508,7 @@ namespace Kokkos {
 ///   }
 ///
 /// private:
-///   Kokkos::View<value_type*, device_type> x_;
+///   Kokkos::View<value_type*, execution_space> x_;
 /// };
 /// \endcode
 ///
@@ -504,25 +523,25 @@ namespace Kokkos {
 /// template<class SpaceType>
 /// class OffsetScanFunctor {
 /// public:
-///   typedef SpaceType device_type;
+///   typedef SpaceType execution_space;
 ///   typedef int value_type;
 ///   typedef typename SpaceType::size_type size_type;
 ///
 ///   // lastIndex_ is the last valid index (zero-based) of x.
 ///   // If x has length zero, then lastIndex_ won't be used anyway.
-///   OffsetScanFunctor (Kokkos::View<value_type*, device_type> x) :
-///     x_ (x), last_index_ (x.dimension_0 () == 0 ? 0 : x.dimension_0 () - 1)
+///   OffsetScanFunctor( Kokkos::View<value_type*, execution_space> x
+///                    , Kokkos::View<value_type*, execution_space> y )
+///      : m_x(x), m_y(y), last_index_ (x.dimension_0 () == 0 ? 0 : x.dimension_0 () - 1)
 ///   {}
 ///
 ///   void operator () (const size_type i, int& update, const bool final_pass) const {
-///     const value_type x_i = x_(i);
 ///     if (final_pass) {
-///       x_(i) = update;
+///       m_y(i) = update;
 ///     }
-///     update += x_i;
-///     // The last entry of x_ gets the final sum.
+///     update += m_x(i);
+///     // The last entry of m_y gets the final sum.
 ///     if (final_pass && i == last_index_) {
-///       x_(i) = update;
+///       m_y(i+1) = update;
 ///     }
 ///   }
 ///   void init (value_type& update) const {
@@ -533,15 +552,16 @@ namespace Kokkos {
 ///   }
 ///
 /// private:
-///   Kokkos::View<value_type*, device_type> x_;
+///   Kokkos::View<value_type*, execution_space> m_x;
+///   Kokkos::View<value_type*, execution_space> m_y;
 ///   const size_type last_index_;
 /// };
 /// \endcode
 ///
 template< class ExecutionPolicy , class FunctorType >
 inline
-void parallel_scan( const ExecutionPolicy & policy 
-                  , const FunctorType     & functor 
+void parallel_scan( const ExecutionPolicy & policy
+                  , const FunctorType     & functor
                   , typename Impl::enable_if< ! Impl::is_integral< ExecutionPolicy >::value >::type * = 0
                   )
 {
@@ -638,7 +658,7 @@ public:
   typedef typename ReduceAdapterFunctorOperatorArgType< function_pointer_type >::type type ;
 };
 
-#endif
+#endif /* #if defined( KOKKOS_HAVE_CXX11 ) */
 
 template< class FunctorType , class ScalarType >
 struct ReduceAdapter

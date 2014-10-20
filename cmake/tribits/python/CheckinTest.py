@@ -1161,7 +1161,11 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   enablePackagesList = []
   gitRepoList = tribitsGitRepos.gitRepoList()
     
-  if inOptions.enablePackages:
+  if inOptions.enableAllPackages == "on":
+    if verbose:
+      print "\nEnabling all packages on request since --enable-all-packages=on! ..."
+      print "\nSkipping detection of changed packages since --enable-all-packages=on ..."
+  elif inOptions.enablePackages:
     if verbose:
       print "\nEnabling only the explicitly specified packages '"+inOptions.enablePackages+"' ..."
     enablePackagesList = inOptions.enablePackages.split(',')
@@ -1218,8 +1222,6 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_ALL_OPTIONAL_PACKAGES:BOOL", "ON"))
 
   if inOptions.enableAllPackages == 'on':
-    if verbose:
-      print "\nEnabling all packages on request!"
     cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_ALL_PACKAGES:BOOL", "ON"))
 
   if inOptions.enableFwdPackages:

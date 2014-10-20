@@ -1261,16 +1261,16 @@ static yyconst flex_int16_t yy_chk[2519] =
 
 static yyconst flex_int16_t yy_rule_linenum[100] =
     {   0,
-       92,   93,   94,   95,   99,  100,  101,  102,  103,  105,
-      106,  108,  117,  118,  145,  180,  204,  210,  231,  238,
-      249,  254,  268,  273,  279,  303,  310,  312,  330,  336,
-      341,  346,  351,  361,  369,  377,  386,  414,  434,  435,
-      436,  437,  439,  444,  467,  469,  471,  527,  528,  531,
-      533,  541,  542,  543,  544,  545,  546,  547,  548,  549,
-      550,  551,  552,  553,  554,  555,  556,  557,  558,  559,
-      560,  561,  562,  563,  564,  565,  566,  567,  568,  569,
-      570,  571,  572,  573,  574,  575,  576,  577,  583,  589,
-      601,  603,  605,  620,  621,  631,  634,  635,  637
+      125,  126,  127,  128,  132,  133,  134,  135,  136,  138,
+      139,  141,  150,  151,  178,  213,  237,  243,  264,  271,
+      282,  287,  301,  306,  313,  337,  344,  346,  364,  370,
+      375,  380,  385,  395,  403,  411,  420,  448,  469,  470,
+      471,  472,  474,  479,  502,  504,  506,  562,  563,  566,
+      568,  576,  577,  578,  579,  580,  581,  582,  583,  584,
+      585,  586,  587,  588,  589,  590,  591,  592,  593,  594,
+      595,  596,  597,  598,  599,  600,  601,  602,  603,  604,
+      605,  606,  607,  608,  609,  610,  611,  612,  618,  624,
+      636,  638,  640,  655,  656,  666,  669,  670,  672
 
     } ;
 
@@ -1282,8 +1282,41 @@ static yyconst flex_int16_t yy_rule_linenum[100] =
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 #line 1 "aprepro.ll"
+/*
+ * Copyright (c) 2014, Sandia Corporation.
+ * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ * the U.S. Government retains certain rights in this software.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ * 
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ * 
+ *     * Neither the name of Sandia Corporation nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
 /* -*- Mode: c++ -*- */
-#line 3 "aprepro.ll"
+#line 36 "aprepro.ll"
 
 #include <fstream>
 #include <iostream>
@@ -1349,7 +1382,7 @@ size_t hist_start = 0;
  * versions. */
 /* enables the use of start condition stacks */
 
-#line 1353 "apr_scanner.cc"
+#line 1386 "apr_scanner.cc"
 
 #define INITIAL 0
 #define PARSING 1
@@ -1516,9 +1549,9 @@ YY_DECL
 	register int yy_act;
     
 /* %% [7.0] user's declarations go here */
-#line 90 "aprepro.ll"
+#line 123 "aprepro.ll"
 
-#line 1522 "apr_scanner.cc"
+#line 1555 "apr_scanner.cc"
 
 	if ( !(yy_init) )
 		{
@@ -1633,56 +1666,56 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 92 "aprepro.ll"
+#line 125 "aprepro.ll"
 { BEGIN(INITIAL);   }
 	YY_BREAK
 case 2:
-#line 94 "aprepro.ll"
+#line 127 "aprepro.ll"
 case 3:
 YY_RULE_SETUP
-#line 94 "aprepro.ll"
+#line 127 "aprepro.ll"
 { if (echo) ECHO; }
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 95 "aprepro.ll"
+#line 128 "aprepro.ll"
 { if (echo) ECHO; aprepro.ap_file_list.top().lineno++;   }
 	YY_BREAK
 
 
 case 5:
 YY_RULE_SETUP
-#line 99 "aprepro.ll"
+#line 132 "aprepro.ll"
 { BEGIN(VERBATIM);  }
 	YY_BREAK
 case 6:
-#line 101 "aprepro.ll"
+#line 134 "aprepro.ll"
 case 7:
 YY_RULE_SETUP
-#line 101 "aprepro.ll"
+#line 134 "aprepro.ll"
 { echo = true;	}
 	YY_BREAK
 case 8:
-#line 103 "aprepro.ll"
+#line 136 "aprepro.ll"
 case 9:
 YY_RULE_SETUP
-#line 103 "aprepro.ll"
+#line 136 "aprepro.ll"
 { echo = false;	}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 105 "aprepro.ll"
+#line 138 "aprepro.ll"
 { aprepro.stateImmutable = true;	}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 106 "aprepro.ll"
+#line 139 "aprepro.ll"
 { aprepro.stateImmutable = aprepro.ap_options.immutable; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 108 "aprepro.ll"
+#line 141 "aprepro.ll"
 {
     BEGIN(GET_LOOP_VAR);
     if (aprepro.ap_options.debugging) 
@@ -1694,11 +1727,11 @@ YY_RULE_SETUP
 
 case 13:
 /* rule 13 can match eol */
-#line 118 "aprepro.ll"
+#line 151 "aprepro.ll"
 case 14:
 /* rule 14 can match eol */
 YY_RULE_SETUP
-#line 118 "aprepro.ll"
+#line 151 "aprepro.ll"
 {
     /* Loop control defined by integer */
     char *pt = strchr(yytext, ')');
@@ -1729,7 +1762,7 @@ YY_RULE_SETUP
 case 15:
 /* rule 15 can match eol */
 YY_RULE_SETUP
-#line 145 "aprepro.ll"
+#line 178 "aprepro.ll"
 {
     /* Loop control defined by variable */
     symrec *s;
@@ -1768,7 +1801,7 @@ YY_RULE_SETUP
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 180 "aprepro.ll"
+#line 213 "aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;
     if(loop_lvl > 0)
@@ -1796,7 +1829,7 @@ YY_RULE_SETUP
 case 17:
 /* rule 17 can match eol */
 YY_RULE_SETUP
-#line 204 "aprepro.ll"
+#line 237 "aprepro.ll"
 {
     loop_lvl++; /* Nested Loop */
     (*tmp_file) << yytext;
@@ -1806,7 +1839,7 @@ YY_RULE_SETUP
 case 18:
 /* rule 18 can match eol */
 YY_RULE_SETUP
-#line 210 "aprepro.ll"
+#line 243 "aprepro.ll"
 {
     if(aprepro.ap_options.interactive ||
        aprepro.string_interactive())
@@ -1831,7 +1864,7 @@ YY_RULE_SETUP
 case 19:
 /* rule 19 can match eol */
 YY_RULE_SETUP
-#line 231 "aprepro.ll"
+#line 264 "aprepro.ll"
 {
     (*tmp_file) << yytext;
     aprepro.ap_file_list.top().lineno++;
@@ -1842,7 +1875,7 @@ YY_RULE_SETUP
 case 20:
 /* rule 20 can match eol */
 YY_RULE_SETUP
-#line 238 "aprepro.ll"
+#line 271 "aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;
     if(loop_lvl > 0)
@@ -1857,7 +1890,7 @@ YY_RULE_SETUP
 case 21:
 /* rule 21 can match eol */
 YY_RULE_SETUP
-#line 249 "aprepro.ll"
+#line 282 "aprepro.ll"
 {
     loop_lvl++; /* Nested Loop */
     aprepro.ap_file_list.top().lineno++;
@@ -1866,7 +1899,7 @@ YY_RULE_SETUP
 case 22:
 /* rule 22 can match eol */
 YY_RULE_SETUP
-#line 254 "aprepro.ll"
+#line 287 "aprepro.ll"
 {
     if(aprepro.ap_options.interactive ||
        aprepro.string_interactive())
@@ -1884,7 +1917,7 @@ YY_RULE_SETUP
 case 23:
 /* rule 23 can match eol */
 YY_RULE_SETUP
-#line 268 "aprepro.ll"
+#line 301 "aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;
   }
@@ -1893,9 +1926,10 @@ YY_RULE_SETUP
 case 24:
 /* rule 24 can match eol */
 YY_RULE_SETUP
-#line 273 "aprepro.ll"
+#line 306 "aprepro.ll"
 {
   yyless(0);
+  curr_index = 0;
   BEGIN(INITIAL);
   switch_skip_to_endcase = false;
 }
@@ -1903,7 +1937,7 @@ YY_RULE_SETUP
 case 25:
 /* rule 25 can match eol */
 YY_RULE_SETUP
-#line 279 "aprepro.ll"
+#line 313 "aprepro.ll"
 {
  aprepro.ap_file_list.top().lineno++;
  if (!switch_active) {
@@ -1931,7 +1965,7 @@ YY_RULE_SETUP
 case 26:
 /* rule 26 can match eol */
 YY_RULE_SETUP
-#line 303 "aprepro.ll"
+#line 337 "aprepro.ll"
 {
   aprepro.ap_file_list.top().lineno++;
   BEGIN(INITIAL);
@@ -1942,13 +1976,13 @@ YY_RULE_SETUP
 case 27:
 /* rule 27 can match eol */
 YY_RULE_SETUP
-#line 310 "aprepro.ll"
+#line 344 "aprepro.ll"
 {  aprepro.ap_file_list.top().lineno++; }
 	YY_BREAK
 case 28:
 /* rule 28 can match eol */
 YY_RULE_SETUP
-#line 312 "aprepro.ll"
+#line 346 "aprepro.ll"
 {
   aprepro.ap_file_list.top().lineno++;
   if (!switch_active) {
@@ -1970,7 +2004,7 @@ YY_RULE_SETUP
 case 29:
 /* rule 29 can match eol */
 YY_RULE_SETUP
-#line 330 "aprepro.ll"
+#line 364 "aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;  
     if (--if_skip_level == 0)
@@ -1980,7 +2014,7 @@ YY_RULE_SETUP
 case 30:
 /* rule 30 can match eol */
 YY_RULE_SETUP
-#line 336 "aprepro.ll"
+#line 370 "aprepro.ll"
 { 
     aprepro.ap_file_list.top().lineno++;  
     if_skip_level++;
@@ -1989,7 +2023,7 @@ YY_RULE_SETUP
 case 31:
 /* rule 31 can match eol */
 YY_RULE_SETUP
-#line 341 "aprepro.ll"
+#line 375 "aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;  
     if_skip_level++;
@@ -1998,7 +2032,7 @@ YY_RULE_SETUP
 case 32:
 /* rule 32 can match eol */
 YY_RULE_SETUP
-#line 346 "aprepro.ll"
+#line 380 "aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;  
     if_skip_level++;
@@ -2007,7 +2041,7 @@ YY_RULE_SETUP
 case 33:
 /* rule 33 can match eol */
 YY_RULE_SETUP
-#line 351 "aprepro.ll"
+#line 385 "aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;
   }
@@ -2020,7 +2054,7 @@ YY_RULE_SETUP
    */
 case 34:
 YY_RULE_SETUP
-#line 361 "aprepro.ll"
+#line 395 "aprepro.ll"
 { 
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
@@ -2031,7 +2065,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 369 "aprepro.ll"
+#line 403 "aprepro.ll"
 {
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
@@ -2042,7 +2076,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 377 "aprepro.ll"
+#line 411 "aprepro.ll"
 {
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'ifndef'  found while skipping at line %d\n",
@@ -2055,7 +2089,7 @@ YY_RULE_SETUP
 case 37:
 /* rule 37 can match eol */
 YY_RULE_SETUP
-#line 386 "aprepro.ll"
+#line 420 "aprepro.ll"
 { 
   aprepro.ap_file_list.top().lineno++; 
   if (aprepro.ap_options.debugging) 
@@ -2087,7 +2121,7 @@ YY_RULE_SETUP
 case 38:
 /* rule 38 can match eol */
 YY_RULE_SETUP
-#line 414 "aprepro.ll"
+#line 448 "aprepro.ll"
 {
     /* If any previous 'block' of this if has executed, then
      * just skip this block; otherwise see if condition is
@@ -2103,26 +2137,27 @@ YY_RULE_SETUP
     } else {
       /* Need to check the elseif condition; push back and parse */
       yyless(0);
+      curr_index = 0;
       BEGIN(INITIAL);
       if_state[if_lvl] = INITIAL;
     }
   }
 	YY_BREAK
 case 39:
-#line 435 "aprepro.ll"
+#line 470 "aprepro.ll"
 case 40:
-#line 436 "aprepro.ll"
+#line 471 "aprepro.ll"
 case 41:
-#line 437 "aprepro.ll"
+#line 472 "aprepro.ll"
 case 42:
 YY_RULE_SETUP
-#line 437 "aprepro.ll"
+#line 472 "aprepro.ll"
 { ; }
 	YY_BREAK
 case 43:
 /* rule 43 can match eol */
 YY_RULE_SETUP
-#line 439 "aprepro.ll"
+#line 474 "aprepro.ll"
 {
      aprepro.ap_file_list.top().lineno++;
    }
@@ -2131,7 +2166,7 @@ YY_RULE_SETUP
 case 44:
 /* rule 44 can match eol */
 YY_RULE_SETUP
-#line 444 "aprepro.ll"
+#line 479 "aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;
 
@@ -2157,20 +2192,20 @@ YY_RULE_SETUP
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 467 "aprepro.ll"
+#line 502 "aprepro.ll"
 { BEGIN(GET_FILENAME); 
                              file_must_exist = true; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 469 "aprepro.ll"
+#line 504 "aprepro.ll"
 { BEGIN(GET_FILENAME);
                              file_must_exist = !true; }
 	YY_BREAK
 case 47:
 /* rule 47 can match eol */
 YY_RULE_SETUP
-#line 471 "aprepro.ll"
+#line 506 "aprepro.ll"
 { BEGIN(INITIAL); 
 			     {
 			       symrec *s;
@@ -2228,21 +2263,21 @@ YY_RULE_SETUP
 			   }
 	YY_BREAK
 case 48:
-#line 528 "aprepro.ll"
+#line 563 "aprepro.ll"
 case 49:
 YY_RULE_SETUP
-#line 528 "aprepro.ll"
+#line 563 "aprepro.ll"
 { sscanf (yytext, "%lf", &yylval->val);
                        return(token::NUM); }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 531 "aprepro.ll"
+#line 566 "aprepro.ll"
 ; // Empty rule
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 533 "aprepro.ll"
+#line 568 "aprepro.ll"
 {
            symrec *s;
 			     s = aprepro.getsym(yytext);
@@ -2254,189 +2289,189 @@ YY_RULE_SETUP
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 541 "aprepro.ll"
+#line 576 "aprepro.ll"
 return(token::EQUAL);
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 542 "aprepro.ll"
+#line 577 "aprepro.ll"
 return(token::EQ_PLUS);
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 543 "aprepro.ll"
+#line 578 "aprepro.ll"
 return(token::EQ_MINUS);
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 544 "aprepro.ll"
+#line 579 "aprepro.ll"
 return(token::EQ_TIME);
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 545 "aprepro.ll"
+#line 580 "aprepro.ll"
 return(token::EQ_DIV);
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 546 "aprepro.ll"
+#line 581 "aprepro.ll"
 return(token::EQ_POW);
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 547 "aprepro.ll"
+#line 582 "aprepro.ll"
 return(token::EQ_POW);
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 548 "aprepro.ll"
+#line 583 "aprepro.ll"
 return(token::INC);
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 549 "aprepro.ll"
+#line 584 "aprepro.ll"
 return(token::DEC);
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 550 "aprepro.ll"
+#line 585 "aprepro.ll"
 return(token::PLU);
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 551 "aprepro.ll"
+#line 586 "aprepro.ll"
 return(token::SUB);
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 552 "aprepro.ll"
+#line 587 "aprepro.ll"
 return(token::TIM);
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 553 "aprepro.ll"
+#line 588 "aprepro.ll"
 return(token::TIM);		/* ~ is same as multiply */
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 554 "aprepro.ll"
+#line 589 "aprepro.ll"
 return(token::CONCAT);	/* String concatenation */
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 555 "aprepro.ll"
+#line 590 "aprepro.ll"
 return(token::DIV);
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 556 "aprepro.ll"
+#line 591 "aprepro.ll"
 return(token::MOD);
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 557 "aprepro.ll"
+#line 592 "aprepro.ll"
 return(token::POW);
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 558 "aprepro.ll"
+#line 593 "aprepro.ll"
 return(token::POW);
 	YY_BREAK
 case 70:
 /* rule 70 can match eol */
 YY_RULE_SETUP
-#line 559 "aprepro.ll"
+#line 594 "aprepro.ll"
 aprepro.ap_file_list.top().lineno++;
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 560 "aprepro.ll"
+#line 595 "aprepro.ll"
 return(token::LPAR);
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 561 "aprepro.ll"
+#line 596 "aprepro.ll"
 return(token::RPAR);
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 562 "aprepro.ll"
+#line 597 "aprepro.ll"
 return(token::COMMA);
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 563 "aprepro.ll"
+#line 598 "aprepro.ll"
 return(token::SEMI);
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 564 "aprepro.ll"
+#line 599 "aprepro.ll"
 return(token::COLON);
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 565 "aprepro.ll"
+#line 600 "aprepro.ll"
 return(token::QUEST);
 	YY_BREAK
 case 77:
 YY_RULE_SETUP
-#line 566 "aprepro.ll"
+#line 601 "aprepro.ll"
 return(token::LT);
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 567 "aprepro.ll"
+#line 602 "aprepro.ll"
 return(token::GT);
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 568 "aprepro.ll"
+#line 603 "aprepro.ll"
 return(token::LE);
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 569 "aprepro.ll"
+#line 604 "aprepro.ll"
 return(token::GE);
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 570 "aprepro.ll"
+#line 605 "aprepro.ll"
 return(token::EQ);
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 571 "aprepro.ll"
+#line 606 "aprepro.ll"
 return(token::NE);
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 572 "aprepro.ll"
+#line 607 "aprepro.ll"
 return(token::LAND);
 	YY_BREAK
 case 84:
 YY_RULE_SETUP
-#line 573 "aprepro.ll"
+#line 608 "aprepro.ll"
 return(token::LOR);
 	YY_BREAK
 case 85:
 YY_RULE_SETUP
-#line 574 "aprepro.ll"
+#line 609 "aprepro.ll"
 return(token::NOT);
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 575 "aprepro.ll"
+#line 610 "aprepro.ll"
 return(token::LBRACK);
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 576 "aprepro.ll"
+#line 611 "aprepro.ll"
 return(token::RBRACK);
 	YY_BREAK
 case 88:
 /* rule 88 can match eol */
 YY_RULE_SETUP
-#line 577 "aprepro.ll"
+#line 612 "aprepro.ll"
 {
            char *pt = strrchr(yytext, '"');
 			     *pt = '\0';
@@ -2446,7 +2481,7 @@ YY_RULE_SETUP
 case 89:
 /* rule 89 can match eol */
 YY_RULE_SETUP
-#line 583 "aprepro.ll"
+#line 618 "aprepro.ll"
 {
            char *pt = strrchr(yytext, '\'');
 			     *pt = '\0';
@@ -2455,7 +2490,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 589 "aprepro.ll"
+#line 624 "aprepro.ll"
 {
   // Add to the history string
   save_history_string();
@@ -2469,17 +2504,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 91:
 YY_RULE_SETUP
-#line 601 "aprepro.ll"
+#line 636 "aprepro.ll"
 { if (echo) LexerOutput("{", 1); }
 	YY_BREAK
 case 92:
 YY_RULE_SETUP
-#line 603 "aprepro.ll"
+#line 638 "aprepro.ll"
 { if (echo) LexerOutput("}", 1); }
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 605 "aprepro.ll"
+#line 640 "aprepro.ll"
 {
     // Check if we need to save the substitution history first.
     if(aprepro.ap_options.keep_history &&
@@ -2496,10 +2531,10 @@ YY_RULE_SETUP
   }
 	YY_BREAK
 case 94:
-#line 621 "aprepro.ll"
+#line 656 "aprepro.ll"
 case 95:
 YY_RULE_SETUP
-#line 621 "aprepro.ll"
+#line 656 "aprepro.ll"
 { if (aprepro.ap_options.end_on_exit)
 			       {
 				 if (echo) ECHO;
@@ -2511,29 +2546,29 @@ YY_RULE_SETUP
 	YY_BREAK
 case 96:
 YY_RULE_SETUP
-#line 631 "aprepro.ll"
+#line 666 "aprepro.ll"
 { if (echo) ECHO; }
 	YY_BREAK
 case 97:
-#line 635 "aprepro.ll"
+#line 670 "aprepro.ll"
 case 98:
 YY_RULE_SETUP
-#line 635 "aprepro.ll"
+#line 670 "aprepro.ll"
 { if (echo && if_state[if_lvl] != IF_SKIP) ECHO; }
 	YY_BREAK
 case 99:
 /* rule 99 can match eol */
 YY_RULE_SETUP
-#line 637 "aprepro.ll"
+#line 672 "aprepro.ll"
 { if (echo && !suppress_nl) ECHO; suppress_nl = false;
                              aprepro.ap_file_list.top().lineno++;}
 	YY_BREAK
 case 100:
 YY_RULE_SETUP
-#line 640 "aprepro.ll"
+#line 675 "aprepro.ll"
 ECHO;
 	YY_BREAK
-#line 2537 "apr_scanner.cc"
+#line 2572 "apr_scanner.cc"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(PARSING):
 case YY_STATE_EOF(GET_FILENAME):
@@ -3582,7 +3617,7 @@ void SEAMSfree (void * ptr )
 
 /* %ok-for-header */
 
-#line 640 "aprepro.ll"
+#line 675 "aprepro.ll"
 
 
 

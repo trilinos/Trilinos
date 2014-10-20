@@ -46,6 +46,11 @@
 /// \brief Declarations for the class Tpetra::VbrMatrix.
 
 #include <Tpetra_ConfigDefs.hpp>
+
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
+#else
+
 #include <Tpetra_DistObject_decl.hpp>
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_VbrUtils.hpp>
@@ -109,12 +114,16 @@ to the optimized-storage state by calling the method fillComplete().
 
 Once in the optimized-storage state, the VbrMatrix can not be returned to the
 non-optimized-storage state.
+
+\warning This class is DEPRECATED.  There are known outstanding
+  bugs with the current implementations of variable-block-size
+  sparse matrices and related classes in Tpetra.
 */
 template<class Scalar = Operator<>::scalar_type,
          class LocalOrdinal = typename Operator<Scalar>::local_ordinal_type,
          class GlobalOrdinal = typename Operator<Scalar, LocalOrdinal>::global_ordinal_type,
          class Node = typename Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-class VbrMatrix :
+class TPETRA_DEPRECATED VbrMatrix :
   public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
   public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 public:
@@ -672,5 +681,6 @@ public:
 //
 //----------------------------------------------------------------------------
 
-#endif //TPETRA_VBRMATRIX_DECL_HPP
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRA_VBRMATRIX_DECL_HPP
 

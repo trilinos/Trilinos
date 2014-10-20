@@ -1,29 +1,25 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
   IF (NOT Xpetra_Epetra_NO_32BIT_GLOBAL_INDICES)
-	TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	  Laplace1D-Xpetra
-	  SOURCES Laplace1D-Xpetra.cpp
-	  DEPLIBS xpetra
-	  )
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Laplace1D-Xpetra
+      SOURCES Laplace1D-Xpetra.cpp
+      )
   ENDIF()
 
   IF (NOT Xpetra_Epetra_NO_64BIT_GLOBAL_INDICES)
-	TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Laplace1D-Xpetra_LL
-	  SOURCES Laplace1D-Xpetra.cpp
-	  DEPLIBS xpetra
+      SOURCES Laplace1D-Xpetra.cpp
       DEFINES -DXPETRA_TEST_USE_LONGLONG_GO
       )
   ENDIF()
 
 
-	TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	  Laplace1D-Tpetra
-	  SOURCES Laplace1D-Tpetra.cpp
-	  DEPLIBS xpetra
-	  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Laplace1D-Tpetra
+    SOURCES Laplace1D-Tpetra.cpp
+    )
 ENDIF()

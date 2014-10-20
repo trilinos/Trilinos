@@ -48,10 +48,7 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_DirectoryImpl.hpp>
 #include <Tpetra_DirectoryImpl_def.hpp>
-
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_Directory_decl.hpp"
-#endif
+#include "Tpetra_Directory_decl.hpp"
 
 namespace Tpetra {
 

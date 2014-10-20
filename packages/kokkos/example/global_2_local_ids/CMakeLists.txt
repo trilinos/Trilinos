@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)   
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -24,7 +23,6 @@ TRIBITS_ADD_EXECUTABLE(
   global_2_local_ids
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS kokkoscore kokkoscontainers
   )
 
 

@@ -45,13 +45,17 @@
 
 #include "Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp"
 
-#include "Kokkos_SerialNode.hpp"
+#include <Kokkos_DefaultNode.hpp>
+
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
 
 // Instantiate tests for serial node
 // Only static storage as dynamic has no chance of working without
 // KokkosRefactor
 using KokkosClassic::SerialNode;
 CRSMATRIX_MP_VECTOR_TESTS_N_SFS( SerialNode )
+
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -61,3 +65,5 @@ int main( int argc, char* argv[] ) {
 
   return ret;
 }
+
+

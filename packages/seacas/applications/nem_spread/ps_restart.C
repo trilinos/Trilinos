@@ -43,7 +43,7 @@
 #include "exodusII.h"                   // for ex_close, etc
 #include "nem_spread.h"                 // for NemSpread, etc
 #include "pe_common.h"                  // for MAX_CHUNK_SIZE
-#include "ps_pario_const.h"             // for Par_Nem_File_Name, PIO_Info, etc
+#include "ps_pario_const.h"             // for PIO_Info, etc
 #include "rf_allo.h"                    // for array_alloc, safe_free
 #include "rf_io_const.h"                // for Exo_Res_File, ExoFile, etc
 #include "rf_util.h"                    // for break_message_up
@@ -399,14 +399,14 @@ void NemSpread<T,INT>::read_restart_data ()
   }
 
   /* See if any '/' in the name.  IF present, isolate the basename of the file */
-  if (strrchr(PIO_Info.Scalar_LB_File_Name, '/') != NULL) {
+  if (strrchr(Output_File_Base_Name, '/') != NULL) {
     /* There is a path separator.  Get the portion after the
      * separator
      */
-    strcpy(cTemp, strrchr(PIO_Info.Scalar_LB_File_Name, '/')+1);
+    strcpy(cTemp, strrchr(Output_File_Base_Name, '/')+1);
   } else {
     /* No separator; this is already just the basename... */
-    strcpy(cTemp, PIO_Info.Scalar_LB_File_Name);
+    strcpy(cTemp, Output_File_Base_Name);
   }    
   
   if (strlen(PIO_Info.Exo_Extension) == 0)
@@ -418,17 +418,17 @@ void NemSpread<T,INT>::read_restart_data ()
   if (open_file_count >Proc_Info[5]) {
     printf("All output files opened simultaneously.\n");
     for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
-     
-      gen_par_filename(cTemp, Par_Nem_File_Name, Proc_Ids[iproc],
+      char Parallel_File_Name[MAX_FNL];
+      gen_par_filename(cTemp, Parallel_File_Name, Proc_Ids[iproc],
 		       Proc_Info[0]);
       
       /* Open the parallel Exodus II file for writing */
       cpu_ws = io_ws;
       int mode = EX_WRITE | int64api | int64db;
-      if ((par_exoid[iproc]=ex_open(Par_Nem_File_Name, mode, &cpu_ws,
+      if ((par_exoid[iproc]=ex_open(Parallel_File_Name, mode, &cpu_ws,
 				    &io_ws, &vers)) < 0) {
 	fprintf(stderr,"[%d] %s Could not open parallel Exodus II file: %s\n",
-		iproc, yo, Par_Nem_File_Name);
+		iproc, yo, Parallel_File_Name);
 	exit(1);
       }
     }
@@ -458,16 +458,17 @@ void NemSpread<T,INT>::read_restart_data ()
     for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
 
       if (open_file_count <Proc_Info[5]) {
-	gen_par_filename(cTemp, Par_Nem_File_Name, Proc_Ids[iproc],
+	char Parallel_File_Name[MAX_FNL];
+	gen_par_filename(cTemp, Parallel_File_Name, Proc_Ids[iproc],
 			 Proc_Info[0]);
 	  
 	/* Open the parallel Exodus II file for writing */
 	cpu_ws = io_ws;
 	int mode = EX_WRITE | int64api | int64db;
-	if ((par_exoid[iproc]=ex_open(Par_Nem_File_Name, mode, &cpu_ws,
+	if ((par_exoid[iproc]=ex_open(Parallel_File_Name, mode, &cpu_ws,
 				      &io_ws, &vers)) < 0) {
 	  fprintf(stderr,"[%d] %s Could not open parallel Exodus II file: %s\n",
-		  iproc, yo, Par_Nem_File_Name);
+		  iproc, yo, Parallel_File_Name);
 	  exit(1);
 	}
       }

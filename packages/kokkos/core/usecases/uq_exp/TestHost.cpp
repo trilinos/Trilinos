@@ -4,7 +4,7 @@
 #include <limits>
 #include <utility>
 
-#include <Kokkos_Threads.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <BoxMeshFixture.hpp>
 #include <Explicit.hpp>

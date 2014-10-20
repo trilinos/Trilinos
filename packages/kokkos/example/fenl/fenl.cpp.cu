@@ -39,7 +39,7 @@
 // ************************************************************************
 */
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <HexElement.hpp>
 #include <fenl_impl.hpp>
 

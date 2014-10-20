@@ -45,9 +45,7 @@
 /// \file Tpetra_Experimental_BlockCrsMatrix_def.hpp
 /// \brief Definition of Tpetra::Experimental::BlockCrsMatrix
 
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
-#endif
+#include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 
 namespace Tpetra {
 namespace Experimental {

@@ -45,10 +45,7 @@
 #include <cuda_runtime.h>
 
 #ifdef HAVE_KOKKOSCLASSIC_KOKKOSCORE
-#include "KokkosCore_config.h"
-#ifdef KOKKOS_HAVE_CUDA
-#include "Kokkos_Cuda.hpp"
-#endif
+#include "Kokkos_Core.hpp"
 #endif
 
 namespace KokkosClassic {
@@ -99,8 +96,8 @@ namespace KokkosClassic {
     totalMem_ = deviceProp.totalGlobalMem;
 
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-    if (! Kokkos::Cuda::host_mirror_device_type::is_initialized ())
-      Kokkos::Cuda::host_mirror_device_type::initialize ();
+    if (! Kokkos::HostSpace::execution_space::is_initialized ())
+      Kokkos::HostSpace::execution_space::initialize ();
     if (! Kokkos::Cuda::is_initialized ())
       Kokkos::Cuda::initialize (Kokkos::Cuda::SelectDevice (device));
 #endif
@@ -153,8 +150,8 @@ namespace KokkosClassic {
     totalMem_ = deviceProp.totalGlobalMem;
 
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-    if (! Kokkos::Cuda::host_mirror_device_type::is_initialized ()) {
-      Kokkos::Cuda::host_mirror_device_type::initialize ();
+    if (! Kokkos::HostSpace::execution_space::is_initialized ()) {
+      Kokkos::HostSpace::execution_space::initialize ();
     }
     if (! Kokkos::Cuda::is_initialized ()) {
       Kokkos::Cuda::initialize (Kokkos::Cuda::SelectDevice (device));

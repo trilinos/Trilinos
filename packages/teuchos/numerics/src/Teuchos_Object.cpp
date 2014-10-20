@@ -86,7 +86,7 @@ void Object::print(std::ostream& os) const
   // os << label_; // No need to print label, since std::ostream does it already
 }
 //=============================================================================
-Object::~Object()  
+Object::~Object()
 {
   if (label_!=0) {
     delete [] label_;
@@ -100,7 +100,7 @@ char* Object::label() const
 }
 //=============================================================================
 void Object::setLabel(const char* label_in)
-{ 
+{
   if (label_ != 0)
     delete [] label_;
   label_ = new char[std::strlen(label_in) + 1];

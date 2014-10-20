@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsSubPackageMacros)
 
 TRIBITS_SUBPACKAGE(Core)
 

@@ -111,8 +111,8 @@ namespace Belos {
   /// Tpetra::MultiVector.  See the Tpetra::MultiVector documentation
   /// for more information.
   template<class Scalar, class LO, class GO, class Node>
-  class MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > {
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+  class MultiVecTraits<Scalar, ::Tpetra::MultiVector<Scalar,LO,GO,Node> > {
+    typedef ::Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
   public:
     /// \brief Create a new MultiVector with \c numVecs columns.
     ///
@@ -365,7 +365,7 @@ namespace Belos {
       using Teuchos::ArrayView;
       using Teuchos::Comm;
       using Teuchos::rcpFromRef;
-      typedef Tpetra::Map<LO, GO, Node> map_type;
+      typedef ::Tpetra::Map<LO, GO, Node> map_type;
 
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       const std::string timerName ("Belos::MVT::MvTimesMatAddMv");
@@ -394,7 +394,7 @@ namespace Belos {
       Teuchos::SerialComm<int> serialComm;
       map_type LocalMap (B.numRows (), A.getMap ()->getIndexBase (),
                          rcpFromRef<const Comm<int> > (serialComm),
-                         Tpetra::LocallyReplicated, A.getMap ()->getNode ());
+                         ::Tpetra::LocallyReplicated, A.getMap ()->getNode ());
       // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
       ArrayView<const Scalar> Bvalues (B.values (), B.stride () * B.numCols ());
       // create locally replicated MultiVector with a copy of this data
@@ -433,7 +433,7 @@ namespace Belos {
                const MV& B,
                Teuchos::SerialDenseMatrix<int,Scalar>& C)
     {
-      using Tpetra::LocallyReplicated;
+      using ::Tpetra::LocallyReplicated;
       using Teuchos::Comm;
       using Teuchos::RCP;
       using Teuchos::rcp;
@@ -441,7 +441,7 @@ namespace Belos {
       using Teuchos::reduceAll;
       using Teuchos::SerialComm;
       using Teuchos::TimeMonitor;
-      typedef Tpetra::Map<LO,GO,Node> map_type;
+      typedef ::Tpetra::Map<LO,GO,Node> map_type;
 
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       const std::string timerName ("Belos::MVT::MvTransMv");
@@ -603,9 +603,9 @@ namespace Belos {
       RCP<MV> mvsub = CloneViewNonConst (mv, index);
       if (inNumVecs > static_cast<size_t> (index.size ())) {
         RCP<const MV> Asub = A.subView (Range1D (0, index.size () - 1));
-        Tpetra::deep_copy (*mvsub, *Asub);
+        ::Tpetra::deep_copy (*mvsub, *Asub);
       } else {
-        Tpetra::deep_copy (*mvsub, A);
+        ::Tpetra::deep_copy (*mvsub, A);
       }
     }
 
@@ -682,7 +682,7 @@ namespace Belos {
         A_view = CloneView (A, Teuchos::Range1D (0, index.size () - 1));
       }
 
-      Tpetra::deep_copy (*mv_view, *A_view);
+      ::Tpetra::deep_copy (*mv_view, *A_view);
     }
 
     static void Assign (const MV& A, MV& mv)
@@ -723,11 +723,11 @@ namespace Belos {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
       }
       if (numColsA == numColsMv) {
-        Tpetra::deep_copy (mv, A);
+        ::Tpetra::deep_copy (mv, A);
       } else {
         Teuchos::RCP<MV> mv_view =
           CloneViewNonConst (mv, Teuchos::Range1D (0, numColsA - 1));
-        Tpetra::deep_copy (*mv_view, A);
+        ::Tpetra::deep_copy (*mv_view, A);
       }
     }
 
@@ -749,21 +749,21 @@ namespace Belos {
 #ifdef HAVE_BELOS_TSQR
     /// \typedef tsqr_adaptor_type
     /// \brief TsqrAdaptor specialization for Tpetra::MultiVector
-    typedef Tpetra::TsqrAdaptor<Tpetra::MultiVector<Scalar, LO, GO, Node> > tsqr_adaptor_type;
+    typedef ::Tpetra::TsqrAdaptor< ::Tpetra::MultiVector<Scalar, LO, GO, Node> > tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
   };
 
   //! Partial specialization of OperatorTraits for Tpetra objects.
   template <class Scalar, class LO, class GO, class Node>
   class OperatorTraits<Scalar,
-                       Tpetra::MultiVector<Scalar,LO,GO,Node>,
-                       Tpetra::Operator<Scalar,LO,GO,Node> >
+                       ::Tpetra::MultiVector<Scalar,LO,GO,Node>,
+                       ::Tpetra::Operator<Scalar,LO,GO,Node> >
   {
   public:
     static void
-    Apply (const Tpetra::Operator<Scalar,LO,GO,Node>& Op,
-           const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
-           Tpetra::MultiVector<Scalar,LO,GO,Node>& Y,
+    Apply (const ::Tpetra::Operator<Scalar,LO,GO,Node>& Op,
+           const ::Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
+           ::Tpetra::MultiVector<Scalar,LO,GO,Node>& Y,
            const ETrans trans = NOTRANS)
     {
       Teuchos::ETransp teuchosTrans = Teuchos::NO_TRANS;
@@ -783,7 +783,7 @@ namespace Belos {
     }
 
     static bool
-    HasApplyTranspose (const Tpetra::Operator<Scalar,LO,GO,Node>& Op)
+    HasApplyTranspose (const ::Tpetra::Operator<Scalar,LO,GO,Node>& Op)
     {
       return Op.hasTransposeApply ();
     }
@@ -791,9 +791,9 @@ namespace Belos {
 
   // Partial specialization for MV=Tpetra::MultiVector.
   template<class Scalar, class LO, class GO, class Node>
-  class MultiVecTraitsExt<Scalar, Tpetra::MultiVector<Scalar, LO, GO, Node> > {
+  class MultiVecTraitsExt<Scalar, ::Tpetra::MultiVector<Scalar, LO, GO, Node> > {
   public:
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    typedef ::Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
     static ptrdiff_t GetGlobalLength (const MV& mv) {
       return static_cast<ptrdiff_t> (mv.getGlobalLength ());
     }

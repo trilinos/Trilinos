@@ -46,6 +46,7 @@
 
 #include <cstddef>
 #include <iosfwd>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_HostSpace.hpp>
@@ -78,7 +79,6 @@ public:
   typedef Qthread                  scratch_memory_space ;
   typedef memory_space::size_type  size_type ;
   typedef Kokkos::LayoutRight      array_layout ;
-  typedef Kokkos::Qthread          host_mirror_device_type ;
 
   //@}
   /*------------------------------------------------------------------------*/

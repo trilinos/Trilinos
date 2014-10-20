@@ -1,4 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 #
@@ -84,7 +83,11 @@ TRIBITS_ADD_LIBRARY(
   tpetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  ADDED_LIB_TARGET_NAME_OUT TPETRA_LIBNAME
   )
 
 # We need to set the linker language explicitly here for CUDA builds.
-SET_PROPERTY(TARGET tpetra APPEND PROPERTY LINKER_LANGUAGE CXX)
+SET_PROPERTY(
+  TARGET ${TPETRA_LIBNAME}
+  APPEND PROPERTY LINKER_LANGUAGE CXX
+  )

@@ -43,9 +43,8 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Qthread.hpp>
-#include <Kokkos_View.hpp>
 #include <Kokkos_CrsArray.hpp>
 
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
@@ -60,6 +59,7 @@
 
 #include <TestCrsArray.hpp>
 #include <TestTeam.hpp>
+#include <TestRange.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
@@ -96,6 +96,18 @@ TEST_F( qthread, view_api) {
   TestViewAPI< double , Kokkos::Qthread >();
 }
 
+TEST_F( qthread , range_tag )
+{
+  TestRange< Kokkos::Qthread >::test_for(1000);
+  TestRange< Kokkos::Qthread >::test_reduce(1000);
+  TestRange< Kokkos::Qthread >::test_scan(1000);
+}
+
+TEST_F( qthread , team_tag )
+{
+  TestTeamPolicy< Kokkos::Qthread >::test_for( 1000 );
+  TestTeamPolicy< Kokkos::Qthread >::test_reduce( 1000 );
+}
 
 TEST_F( qthread, crsarray) {
   TestCrsArray< Kokkos::Qthread >();
@@ -234,9 +246,11 @@ TEST_F( qthread , team_scan )
 #if defined (KOKKOS_HAVE_CXX11)
 TEST_F( qthread , team_vector )
 {
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(0) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(1) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(4) ) );
 }
 #endif
 

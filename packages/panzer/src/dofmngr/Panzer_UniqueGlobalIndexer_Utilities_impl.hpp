@@ -239,8 +239,6 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
                                     const ArrayT & data,Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> & dataVector)
 {
    typedef Tpetra::Map<int,GlobalOrdinalT,Node> Map;
-   typedef Tpetra::Vector<int,int,GlobalOrdinalT,Node> IntVector;
-   typedef Tpetra::Import<int,GlobalOrdinalT,Node> Importer;
 
    TEUCHOS_TEST_FOR_EXCEPTION(!ugi.fieldInBlock(fieldName,blockId),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: field name = \""+fieldName+"\" is not in element block = \"" +blockId +"\"!");

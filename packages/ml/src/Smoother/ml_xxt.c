@@ -455,6 +455,8 @@ int ML_submv(ML_Operator *Amat, double p[], double ap[])
      for (i = 0; i < Nrows; i++) p[i] = p2[i];
      ML_free(p2);
   }
+  if(cols != NULL) free(cols);
+  if(vals != NULL) free(vals);
   return(1);
 }
 int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
@@ -503,6 +505,8 @@ int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
      for (i = 0; i < Nrows; i++) p[i] = p2[i];
      ML_free(p2);
   }
+  if(cols != NULL) free(cols);
+  if(vals != NULL) free(vals);
   return(1);
 }
 int CSR_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)

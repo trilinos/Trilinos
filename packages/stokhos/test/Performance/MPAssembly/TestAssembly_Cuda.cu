@@ -43,8 +43,7 @@
 #include "TestAssembly.hpp"
 
 // Devices
-#include "KokkosCore_config.h"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 template <typename Storage>
 void mainCuda(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,

@@ -111,6 +111,7 @@ namespace KokkosClassic {
     typedef DefaultRelaxation<Scalar, Ordinal, Node> Relaxations;
   };
 
+#if defined(HAVE_KOKKOSCLASSIC_SERIAL)
   /// \brief Partial specialization for Node=SerialNode.
   ///
   /// AltSparseOps doesn't use KokkosClassic's parallel programming
@@ -124,6 +125,7 @@ namespace KokkosClassic {
     typedef DefaultBlockSparseOps<Scalar, Ordinal, SerialNode> BlockSparseOps;
     typedef DefaultRelaxation<Scalar, Ordinal, SerialNode> Relaxations;
   };
+#endif // defined(HAVE_KOKKOSCLASSIC_SERIAL)
 
 #if defined(HAVE_KOKKOSCLASSIC_TBB)
   class TBBNode;

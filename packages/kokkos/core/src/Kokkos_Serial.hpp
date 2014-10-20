@@ -89,11 +89,6 @@ public:
   typedef HostSpace             memory_space ;
   //! This device's preferred array layout.
   typedef LayoutRight           array_layout ;
-  /// \brief This device's host mirror type.
-  ///
-  /// Serial is a host device, so the host mirror type is the same as
-  /// the device type itself.
-  typedef Serial                host_mirror_device_type ;
 
   /// \brief  Scratch memory space
   typedef ScratchMemorySpace< Kokkos::Serial >  scratch_memory_space ;
@@ -161,7 +156,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline static unsigned hardware_thread_id() { return thread_pool_rank(); }
+  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id() { return thread_pool_rank(); }
   inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
 
   static inline int team_max()         { return thread_pool_size(1) ; }
@@ -188,6 +183,7 @@ struct VerifyExecutionCanAccessMemorySpace
   , Kokkos::Serial::scratch_memory_space
   >
 {
+  enum { value = true };
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 };
@@ -269,6 +265,20 @@ public:
   KOKKOS_INLINE_FUNCTION Type team_scan( const Type & ) const
     { return Type(0); }
 
+#ifdef KOKKOS_HAVE_CXX11
+
+  /** \brief  Executes op(iType i) for each i=0..N-1.
+   *
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation>
+  KOKKOS_INLINE_FUNCTION void team_par_for(const iType n, const Operation & op) const {
+    for(int i=0; i<n ; i++) {
+      op(i);
+    }
+  }
+
+#endif
+
   //----------------------------------------
   // Execution space specific:
 
@@ -333,9 +343,25 @@ public:
 
 #ifdef KOKKOS_HAVE_CXX11
 
+  /** \brief  Executes op(iType i) for each i=0..N-1.
+   *
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation>
+  KOKKOS_INLINE_FUNCTION void team_par_for(const iType n, const Operation & op) const {
+    for(int i=0; i<n ; i++) {
+      op(i);
+    }
+  }
+
   /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
   template< class Operation >
   KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op) const {
+    op();
+  }
+
+  /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
+  template< class Operation , typename ValueType>
+  KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op, ValueType& bcast) const {
     op();
   }
 
@@ -343,7 +369,7 @@ public:
    *
    * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
    * This functionality requires C++11 support.*/
-  template< typename iType, class Operation, typename ValueType >
+  template< typename iType, class Operation >
   KOKKOS_INLINE_FUNCTION void vector_par_for(const iType n, const Operation & op) const {
     #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
     #pragma ivdep
@@ -488,16 +514,22 @@ public:
 
 namespace Kokkos {
 
-template < unsigned int VectorLength, class WorkArgTag >
-class TeamVectorPolicy< VectorLength, Kokkos::Serial , WorkArgTag > {
+template< unsigned int VectorLength , class Arg0 , class Arg1 >
+class TeamVectorPolicy< VectorLength , Arg0 , Arg1 , Kokkos::Serial >
+{
 private:
 
   const int m_league_size ;
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::Serial             execution_space ; ///< Execution space
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef TeamVectorPolicy           execution_policy ; ///< Execution policy
+  typedef Kokkos::Serial             execution_space ;  ///< Execution space
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Serial , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 
   inline int team_size() const { return 1 ; }
   inline int league_size() const { return m_league_size ; }
@@ -737,11 +769,27 @@ public:
     }
 };
 
-template< unsigned int VectorLength, class FunctorType >
-class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength, Kokkos::Serial , void > >
+template< unsigned int VectorLength , class FunctorType , class Arg0 , class Arg1 >
+class ParallelFor< FunctorType , Kokkos::TeamVectorPolicy< VectorLength , Arg0 , Arg1 , Kokkos::Serial > >
 {
 private:
-  typedef Kokkos::TeamVectorPolicy< VectorLength,Kokkos::Serial , void > Policy ;
+
+  typedef Kokkos::TeamVectorPolicy< VectorLength , Arg0 , Arg1 , Kokkos::Serial > Policy ;
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( member ); }
+
+  template< class TagType >
+  KOKKOS_FORCEINLINE_FUNCTION static
+  void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
+                 const FunctorType & >::type functor
+             , const typename Policy::member_type & member )
+    { functor( TagType() , member ); }
+
 public:
 
   ParallelFor( const FunctorType & functor
@@ -752,7 +800,9 @@ public:
       Kokkos::Serial::scratch_memory_resize( 0 , shared_size );
 
       for ( int ileague = 0 ; ileague < policy.league_size() ; ++ileague ) {
-        functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) );
+        ParallelFor::template driver< typename Policy::work_tag >
+          ( functor , typename Policy::member_type(ileague,policy.league_size(),shared_size) );
+        // functor( typename Policy::member_type(ileague,policy.league_size(),shared_size) );
       }
     }
 };

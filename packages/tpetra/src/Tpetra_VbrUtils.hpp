@@ -42,6 +42,15 @@
 #ifndef TPETRA_VBRUTILS_HPP
 #define TPETRA_VBRUTILS_HPP
 
+/// \file Tpetra_VbrUtils.hpp
+/// \brief Utilities for VbrMatrix INTERNAL USE ONLY.
+
+#include <Tpetra_ConfigDefs.hpp>
+
+#ifndef HAVE_TPETRA_CLASSIC_VBR
+#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
+#else
+
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Tpetra_BlockMap.hpp"
@@ -50,15 +59,11 @@
 #include <Tpetra_Distributor.hpp> // avoid error C2027: use of undefined type 'Tpetra::Distributor' at (void) distor below
 #include <map>
 
-/** \file Tpetra_VbrUtils.hpp
-
-  Utilities for VbrMatrix INTERNAL USE ONLY.
-*/
 namespace Tpetra {
 
   // Forward declaration
   class Distributor;
-  
+
 
 /**
   Utilities for VbrMatrix INTERNAL USE ONLY.
@@ -89,8 +94,8 @@ struct VbrData {
       RowGlobalCols& rgc = (this->data)[i];
       typename RowGlobalCols::iterator rgc_it = rgc.begin(), rgc_end = rgc.end();
       for ( ; rgc_it != rgc_end; ++rgc_it) {
-	BlkInfo<LocalOrdinal,Scalar>& blk = rgc_it->second;
-	std::fill (blk.blkEntry.begin (), blk.blkEntry.end (), STS::zero ());
+        BlkInfo<LocalOrdinal,Scalar>& blk = rgc_it->second;
+        std::fill (blk.blkEntry.begin (), blk.blkEntry.end (), STS::zero ());
       }
     }
   }
@@ -102,11 +107,11 @@ struct VbrData {
 template<typename LocalOrdinal, typename GlobalOrdinal, typename Scalar>
 void
 getGlobalBlockEntryViewNonConst (VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata,
-				 GlobalOrdinal globalBlockRow,
-				 GlobalOrdinal globalBlockCol,
-				 LocalOrdinal& numPtRows,
-				 LocalOrdinal& numPtCols,
-				 Teuchos::ArrayRCP<Scalar>& blockEntry)
+                                 GlobalOrdinal globalBlockRow,
+                                 GlobalOrdinal globalBlockCol,
+                                 LocalOrdinal& numPtRows,
+                                 LocalOrdinal& numPtCols,
+                                 Teuchos::ArrayRCP<Scalar>& blockEntry)
 {
   typename std::map<GlobalOrdinal,LocalOrdinal>::iterator miter =
       vbrdata.row_map.find(globalBlockRow);
@@ -131,7 +136,7 @@ getGlobalBlockEntryViewNonConst (VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbr
     blk.numPtCols = numPtCols;
     size_t blockSize = numPtRows*numPtCols;
     blk.blkEntry = Teuchos::arcp(new Scalar[blockSize], 0, blockSize);
-    std::fill(blk.blkEntry.begin(), blk.blkEntry.end(), 0);
+    std::fill(blk.blkEntry.begin(), blk.blkEntry.end(), (Scalar) 0);
     blkrow.insert(iter, std::make_pair(globalBlockCol, blk));
     blockEntry = blk.blkEntry;
   }
@@ -176,30 +181,30 @@ createOverlapMap(VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata,
 }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Scalar, class Node>
-class VbrDataDist : public Tpetra::SrcDistObject, 
-		    public Tpetra::Packable<char, LocalOrdinal> {
+class VbrDataDist : public Tpetra::SrcDistObject,
+                    public Tpetra::Packable<char, LocalOrdinal> {
 private:
   Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > pointMap_;
   VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrData_;
 
 public:
   VbrDataDist (VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrData,
-	       const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>& importMap)
+               const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>& importMap)
     : pointMap_ (convertBlockMapToPointMap (importMap)),
       vbrData_ (vbrData)
   {}
 
   ~VbrDataDist() {}
 
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > 
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
   getMap () const { return pointMap_; }
 
-  virtual void 
+  virtual void
   pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-	Teuchos::Array<char>& exports,
-	const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-	size_t& constantNumPackets,
-	Distributor& distor) const
+        Teuchos::Array<char>& exports,
+        const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+        size_t& constantNumPackets,
+        Distributor& distor) const
   {
     (void) distor; // forestall "unused argument" compiler warning
     using Teuchos::Array;
@@ -229,9 +234,9 @@ public:
         numScalars += as<size_t> (blk.numPtRows) * as<size_t> (blk.numPtCols);
       }
       const size_t numBlkCols = as<size_t> (rgc.size ());
-      const size_t size_for_this_row = 
-	sizeof (GO) * (2 + 2*numBlkCols)
-	+ sizeof (Scalar) * numScalars;
+      const size_t size_for_this_row =
+        sizeof (GO) * (2 + 2*numBlkCols)
+        + sizeof (Scalar) * numScalars;
       numPacketsPerLID[i] = size_for_this_row;
       total_exports_size += size_for_this_row;
     }
@@ -287,9 +292,9 @@ public:
       avVals = av_reinterpret_cast<Scalar> (avValsC);
       std::copy (blkEntries.begin (), blkEntries.end (), avVals.begin ());
 
-      const size_t size_for_this_row = 
-	sizeof (GO) * (2 + 2*numBlkCols) + 
-	sizeof (Scalar) * numScalars;
+      const size_t size_for_this_row =
+        sizeof (GO) * (2 + 2*numBlkCols) +
+        sizeof (Scalar) * numScalars;
       offset += size_for_this_row;
     }
     constantNumPackets = 0;
@@ -300,5 +305,7 @@ public:
 }//namespace VbrUtils
 }//namespace Tpetra
 
-#endif
+#endif // ! HAVE_TPETRA_CLASSIC_VBR
+#endif // ! TPETRA_VBRUTILS_HPP
+
 

@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORY(HybridPlatform)
 

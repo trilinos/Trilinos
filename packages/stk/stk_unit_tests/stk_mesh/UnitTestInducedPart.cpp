@@ -1,11 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
@@ -41,9 +65,12 @@ namespace {
                                                                         \
   MetaData meta_data(spatial_dim);                                      \
   Part& unranked_part = meta_data.declare_part("unranked_part");        \
-  Part& element_rank_part = meta_data.declare_part("element_rank_part", stk::topology::ELEMENT_RANK); \
-  Part& element_rank_superset_part = meta_data.declare_part("element_rank_superset_part", stk::topology::ELEMENT_RANK); \
-  Part& side_rank_part = meta_data.declare_part("side_rank_part", meta_data.side_rank()); \
+  Part& element_rank_part =                                             \
+     meta_data.declare_part_with_topology("element_rank_part", stk::topology::TRI_3);        \
+  Part& element_rank_superset_part =                                    \
+    meta_data.declare_part("element_rank_superset_part", stk::topology::ELEMENT_RANK); \
+  Part& side_rank_part =                                                \
+    meta_data.declare_part_with_topology("side_rank_part", stk::topology::LINE_2); \
   Part& unranked_superset_part = meta_data.declare_part("unranked_superset_part"); \
   meta_data.declare_part_subset(unranked_superset_part, element_rank_part); \
   meta_data.declare_part_subset(element_rank_superset_part, element_rank_part); \
@@ -64,13 +91,19 @@ namespace {
   Entity side2 = mesh.declare_entity(meta_data.side_rank(), 2 /*id*/, parts); \
                                                                         \
   parts.clear();                                                        \
-  Entity node = mesh.declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);      \
+  Entity node  = mesh.declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);      \
+  Entity node2 = mesh.declare_entity(stk::topology::NODE_RANK, 2 /*id*/, parts);      \
+  Entity node3 = mesh.declare_entity(stk::topology::NODE_RANK, 3 /*id*/, parts);      \
                                                                         \
   mesh.declare_relation(elem, side1,  0 /*rel id*/);                    \
-  mesh.declare_relation(elem, node,  0 /*rel id*/);                    \
+  mesh.declare_relation(elem, node,   0 /*rel id*/);                    \
+  mesh.declare_relation(elem, node2,  1 /*rel id*/);                    \
+  mesh.declare_relation(elem, node3,  2 /*rel id*/);                    \
   mesh.declare_relation(elem, side2,  1 /*rel id*/);                    \
   mesh.declare_relation(side1, node,  0 /*rel id*/);                    \
-  mesh.declare_relation(side2, node,  0 /*rel id*/);
+  mesh.declare_relation(side1, node2,  1 /*rel id*/);                   \
+  mesh.declare_relation(side2, node,  0 /*rel id*/);                    \
+  mesh.declare_relation(side2, node3,  1 /*rel id*/);
 
 TEST ( UnitTestInducedPart , verifyBasicInducedPart )
 {

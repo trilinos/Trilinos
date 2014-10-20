@@ -151,10 +151,10 @@ namespace Anasazi {
         std::runtime_error, fnName << ": All indices must be nonnegative.");
       TEUCHOS_TEST_FOR_EXCEPTION(
         index.size () > 0 &&
-        static_cast<size_t> (*std::max_element (index.begin (), index.end ())) >= mv.getNumVectors (),
+        static_cast<size_t> (*std::max_element (index.begin (), index.end ())) >= inNumVecs,
         std::runtime_error,
         fnName << ": All indices must be strictly less than the number of "
-        "columns " << mv.getNumVectors () << " of the input multivector mv.");
+        "columns " << inNumVecs << " of the input multivector mv.");
 #endif // HAVE_TPETRA_DEBUG
 
       // Tpetra wants an array of size_t, not of int.

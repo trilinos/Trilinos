@@ -279,7 +279,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
   Manager_   -> SetFactory("Ptent", TentPfact_);
   Teuchos::ParameterList params;
   params.set("lightweight wrap",true);
-  params.set("aggregation: drop scheme","original");
+  params.set("aggregation: drop scheme","classical");
   Dropfact_  -> SetParameterList(params);
   Manager_   -> SetFactory("Graph", Dropfact_);
   Manager_   -> SetFactory("Smoother", Teuchos::null);
@@ -510,7 +510,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupNormalRAP() 
   Manager_   -> SetFactory("Ptent", TentPfact_);
   Teuchos::ParameterList params;
   params.set("lightweight wrap",true);
-  params.set("aggregation: drop scheme","original");
+  params.set("aggregation: drop scheme","classical");
   Dropfact_  -> SetParameterList(params);
   Manager_   -> SetFactory("Graph", Dropfact_);
   if(Aggregation_=="coupled") {

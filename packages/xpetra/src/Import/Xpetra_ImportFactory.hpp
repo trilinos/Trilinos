@@ -88,12 +88,12 @@ namespace Xpetra {
 
   };
 
-  template <class GlobalOrdinalArg>
-  class ImportFactory<int, GlobalOrdinalArg> {
+  template <>
+  class ImportFactory<int, int> {
 
     typedef int LocalOrdinal;
-    typedef GlobalOrdinalArg GlobalOrdinal;
-    typedef typename Import<int, GlobalOrdinal>::node_type Node;
+    typedef int GlobalOrdinal;
+    typedef Import<int, GlobalOrdinal>::node_type Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -111,14 +111,52 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (source->lib() == UseEpetra)
-        return rcp( new EpetraImportT<GlobalOrdinal>(source, target));
+        return rcp( new EpetraImportT<int>(source, target));
+#endif
 #endif
 
       XPETRA_FACTORY_END;
     }
 
   };
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template <>
+  class ImportFactory<int, long long> {
+
+    typedef int LocalOrdinal;
+    typedef long long GlobalOrdinal;
+    typedef Import<int, GlobalOrdinal>::node_type Node;
+
+  private:
+    //! Private constructor. This is a static class.
+    ImportFactory() {}
+
+  public:
+
+    static RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source, const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target) {
+      XPETRA_MONITOR("ImportFactory::Build");
+      TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (source->lib() == UseTpetra)
+        return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+      if (source->lib() == UseEpetra)
+        return rcp( new EpetraImportT<long long>(source, target));
+#endif
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+  };
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 }
 

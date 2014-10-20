@@ -64,7 +64,8 @@ static char help[] =
      petscsles.h   - linear solvers
 */
 
-#include "petscda.h"
+#include "petscdm.h"
+#include "petscdmda.h"
 #include "petscsnes.h"
 
 // NOX Library
@@ -93,7 +94,7 @@ int FormJacobian(SNES,Vec,Mat*,Mat*,MatStructure*,void*);
 int FormFunction(SNES,Vec,Vec,void*);
 int FormInitialGuess(Vec);
 int Monitor(SNES,int,PetscReal,void *);
-int StepCheck(SNES,void *,Vec,PetscTruth *);
+int StepCheck(SNES,void *,Vec,PetscBool *);
 
 /*
    User-defined context for monitoring
@@ -143,14 +144,14 @@ int main(int argc, char *argv[])
   /*
      Create distributed array (DA) to manage parallel grid and vectors
   */
-  ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,N,1,1,PETSC_NULL,&ctx.da);CHKERRQ(ierr);
+  ierr = DMDACreate1d(PETSC_COMM_WORLD,DM_BOUNDARY_NONE,N,1,1,PETSC_NULL,&ctx.da);CHKERRQ(ierr);
 
   /*
      Extract global and local vectors from DA; then duplicate for remaining
      vectors that are the same types
   */
   Vec x, r;
-  ierr = DACreateGlobalVector(ctx.da,&x);CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(ctx.da,&x);CHKERRQ(ierr);
   ierr = VecDuplicate(x,&r);CHKERRQ(ierr);
 
   // Create the Problem class.  For now, this is simply a holder for
@@ -165,6 +166,7 @@ int main(int argc, char *argv[])
   ierr = MatCreate( PETSC_COMM_SELF, &J );
   ierr = MatSetSizes( J, PETSC_DECIDE, PETSC_DECIDE, N, N);
   ierr = MatSetFromOptions(J);CHKERRQ(ierr);
+  ierr = MatSetUp(J);
 
   // This should be replaced by NOX interface setup
   //ierr = SNESSetJacobian(snes,J,J,FormJacobian,&ctx);CHKERRQ(ierr);
@@ -179,7 +181,7 @@ int main(int argc, char *argv[])
        xs, xm - starting grid index, width of local grid (no ghost points)
   */
   int xs, xm;
-  ierr = DAGetCorners(ctx.da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+  ierr = DMDAGetCorners(ctx.da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      Evaluate initial guess; then solve nonlinear system
@@ -232,11 +234,11 @@ int main(int argc, char *argv[])
      Free work space.  All PETSc objects should be destroyed when they
      are no longer needed.
   */
-  ierr = VecDestroy(x);CHKERRQ(ierr);
-  ierr = VecDestroy(r);CHKERRQ(ierr);
-  ierr = MatDestroy(J);CHKERRQ(ierr);
-  ierr = SNESDestroy(snes);CHKERRQ(ierr);
-  ierr = DADestroy(ctx.da);CHKERRQ(ierr);
+  ierr = VecDestroy(&x);CHKERRQ(ierr);
+  ierr = VecDestroy(&r);CHKERRQ(ierr);
+  ierr = MatDestroy(&J);CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes);CHKERRQ(ierr);
+  ierr = DMDestroy(&ctx.da);CHKERRQ(ierr);
   ierr = PetscFinalize();CHKERRQ(ierr);
 
   return 0;

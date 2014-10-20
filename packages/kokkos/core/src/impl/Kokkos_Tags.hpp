@@ -126,6 +126,36 @@ struct is_memorytraits< C , typename Impl::enable_if_type< typename C::memorytra
 
 #endif
 
+//----------------------------------------------------------------------------
+
+template< class C , class Enable = void >
+struct is_space : public Impl::false_type {};
+
+template< class C >
+struct is_space< C
+                 , typename Impl::enable_if<(
+                     Impl::is_same< C , typename C::execution_space >::value ||
+                     Impl::is_same< C , typename C::memory_space    >::value
+                   )>::type
+                 >
+  : public Impl::true_type
+{
+  typedef typename C::execution_space  execution_space ;
+  typedef typename C::memory_space     memory_space ;
+
+  // If the execution space's memory space is HostSpace then use that execution space.
+  // Else if the memory space is host accessible then use that memory space.
+  // Else use the HostSpace.
+  //
+  // Keeps the execution_space when multiple host execution spaces are enabled.
+  // Keeps CudaUVMSpace.
+  typedef
+    typename Impl::if_c< Impl::is_same< typename execution_space::memory_space , HostSpace >::value , execution_space ,
+    typename Impl::if_c< Impl::VerifyExecutionCanAccessMemorySpace< HostSpace , memory_space >::value , memory_space ,
+    HostSpace >::type >::type
+      host_mirror_space ;
+};
+
 }
 }
 

@@ -103,7 +103,7 @@ struct TestInsert
   struct TestFind
   {
     typedef MapType map_type;
-    typedef typename MapType::device_type device_type;
+    typedef typename MapType::device_type::execution_space device_type;
     typedef uint32_t value_type;
 
     map_type m_map;
@@ -120,9 +120,9 @@ struct TestInsert
 
     void apply(value_type &errors)
     {
-      device_type::fence();
+      device_type::execution_space::fence();
       Kokkos::parallel_reduce(m_map.capacity(), *this, errors);
-      device_type::fence();
+      device_type::execution_space::fence();
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -206,7 +206,7 @@ void test_failed_insert( uint32_t num_nodes)
   map_type map(num_nodes);
   Impl::TestInsert<map_type> test_insert(map, 2u*num_nodes, 1u);
   test_insert.apply(false /*don't rehash on fail*/);
-  Device::fence();
+  Device::execution_space::fence();
 
   EXPECT_TRUE( map.failed_insert() );
 }
@@ -216,12 +216,11 @@ void test_failed_insert( uint32_t num_nodes)
 template <typename Device>
 void test_deep_copy( uint32_t num_nodes )
 {
-  typedef typename Device::host_mirror_device_type host_type ;
-
   typedef Kokkos::UnorderedMap<uint32_t,uint32_t, Device> map_type;
   typedef Kokkos::UnorderedMap<const uint32_t, const uint32_t, Device> const_map_type;
 
-  typedef Kokkos::UnorderedMap<uint32_t, uint32_t, host_type> host_map_type;
+  typedef typename map_type::HostMirror host_map_type ;
+  // typedef Kokkos::UnorderedMap<uint32_t, uint32_t, typename Device::host_mirror_device_type > host_map_type;
 
   map_type map;
   map.rehash(num_nodes,false);

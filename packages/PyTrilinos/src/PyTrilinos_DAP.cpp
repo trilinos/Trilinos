@@ -30,7 +30,7 @@
 #include "PyTrilinos_DAP.hpp"
 
 // Python exception handling
-#include "PyTrilinos_PythonException.h"
+#include "PyTrilinos_PythonException.hpp"
 
 // Verbosity
 // #define PYTRILINOS_DAP_VERBOSE

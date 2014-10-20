@@ -228,9 +228,12 @@ TEST_F( defaultdevicetype , cxx11 )
 #if defined (KOKKOS_HAVE_CXX11)
 TEST_F( defaultdevicetype , team_vector )
 {
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(0) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(1) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(5) ) );
 }
 #endif
 } // namespace test

@@ -54,7 +54,7 @@
 #include "Sacado_mpl_apply.hpp"
 #include "Sacado_Random.hpp"
 
-#include <Kokkos_Threads.hpp>
+#include <Kokkos_Core.hpp>
 
 //
 // Currently this doesn't test:

@@ -135,7 +135,7 @@ public:
   static ThreadsExec * get_thread( const int init_thread_rank );
 
   inline void * reduce_memory() const { return ((unsigned char *) m_scratch ); }
-  inline void * scratch_memory() const { return ((unsigned char *) m_scratch ) + m_scratch_reduce_end ; }
+  KOKKOS_INLINE_FUNCTION  void * scratch_memory() const { return ((unsigned char *) m_scratch ) + m_scratch_reduce_end ; }
 
   static void driver(void);
 
@@ -578,6 +578,22 @@ public:
   KOKKOS_INLINE_FUNCTION ArgType team_scan( const ArgType & value ) const
     { return this-> template team_scan<ArgType>( value , 0 ); }
 
+#ifdef KOKKOS_HAVE_CXX11
+
+  /** \brief  Inter-thread parallel for. Executes op(iType i) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all threads of the the calling thread team.
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation>
+  KOKKOS_INLINE_FUNCTION void team_par_for(const iType n, const Operation & op) const {
+    const int chunk = ((n+m_team_size-1)/m_team_size);
+    const int start = chunk*m_team_rank;
+    const int end = start+chunk<n?start+chunk:n;
+    for(int i=start; i<end ; i++) {
+      op(i);
+    }
+  }
+#endif
   //----------------------------------------
   // Private for the driver
 
@@ -836,6 +852,20 @@ public:
     { return this-> template team_scan<ArgType>( value , 0 ); }
 
 #ifdef KOKKOS_HAVE_CXX11
+  /** \brief  Inter-thread parallel for. Executes op(iType i) for each i=0..N-1.
+   *
+   * The range i=0..N-1 is mapped to all threads of the the calling thread team.
+   * This functionality requires C++11 support.*/
+  template< typename iType, class Operation>
+  KOKKOS_INLINE_FUNCTION void team_par_for(const iType n, const Operation & op) const {
+    const int chunk = ((n+m_team_size-1)/m_team_size);
+    const int start = chunk*m_team_rank;
+    const int end = start+chunk<n?start+chunk:n;
+    for(int i=start; i<end ; i++) {
+      op(i);
+    }
+  }
+
 
   /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
   template< class Operation >
@@ -843,11 +873,17 @@ public:
     op();
   }
 
+  /** \brief  Guarantees execution of op() with only a single vector lane of this thread. */
+  template< class Operation , typename ValueType>
+  KOKKOS_INLINE_FUNCTION void vector_single(const Operation & op, ValueType& bcast) const {
+    op();
+  }
+
   /** \brief  Intra-thread vector parallel for. Executes op(iType i) for each i=0..N-1.
    *
    * The range i=0..N-1 is mapped to all vector lanes of the the calling thread.
    * This functionality requires C++11 support.*/
-  template< typename iType, class Operation, typename ValueType >
+  template< typename iType, class Operation >
   KOKKOS_INLINE_FUNCTION void vector_par_for(const iType n, const Operation & op) const {
     #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
     #pragma ivdep
@@ -925,9 +961,9 @@ public:
   //----------------------------------------
   // Private for the driver
 
-  template< class WorkArgTag >
+  template< class Arg0 , class Arg1 >
   ThreadsExecTeamVectorMember( Impl::ThreadsExec & exec
-                       , const TeamVectorPolicy< VectorLength, execution_space , WorkArgTag > & team
+                       , const TeamVectorPolicy< VectorLength, Arg0, Arg1, Kokkos::Threads > & team
                        , const int shared_size )
     : m_exec( exec )
     , m_team_shared(0,0)
@@ -1096,8 +1132,19 @@ public:
   friend class Impl::ThreadsExecTeamMember ;
 };
 
-template < unsigned int VectorLength, class WorkArgTag >
-class TeamVectorPolicy< VectorLength, Kokkos::Threads , WorkArgTag > {
+template< unsigned VectorLength
+        , class Arg0
+        , class Arg1 >
+class TeamVectorPolicy<VectorLength, Arg0, Arg1, Kokkos::Threads> {
+public:
+  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
+  typedef Kokkos::Threads            execution_space ;  ///< Execution space
+  typedef TeamVectorPolicy           execution_policy ;
+
+
+  typedef typename
+    Impl::if_c< ! Impl::is_same< Kokkos::Threads , Arg0 >::value , Arg0 , Arg1 >::type
+      work_tag ;
 private:
 
   int m_league_size ;
@@ -1127,9 +1174,6 @@ private:
 
 
 public:
-
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::Threads            execution_space ; ///< Execution space
 
   inline int team_size() const { return m_team_size ; }
   inline int team_alloc() const { return m_team_alloc ; }

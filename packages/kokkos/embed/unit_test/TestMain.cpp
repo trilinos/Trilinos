@@ -1,7 +1,6 @@
 
 #include <iostream>
-#include <KokkosCore_config.h>
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core.h>
 
 template< class Space > int test();
 template< class Space > int testdyn();

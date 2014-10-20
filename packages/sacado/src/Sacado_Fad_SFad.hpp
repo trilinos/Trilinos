@@ -79,7 +79,7 @@ namespace Sacado {
     public:
 
       //! Typename of values
-      typedef T value_type;
+      typedef typename RemoveConst<T>::type value_type;
 
       /*!
        * @name Initialization methods

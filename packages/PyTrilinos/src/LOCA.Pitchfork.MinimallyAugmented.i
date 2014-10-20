@@ -62,7 +62,7 @@ following classes:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
 %}
 
 // Standard exception handling

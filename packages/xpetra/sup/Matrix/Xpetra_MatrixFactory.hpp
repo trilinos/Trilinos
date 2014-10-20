@@ -193,18 +193,35 @@ namespace Xpetra {
   };
 #define XPETRA_MATRIXFACTORY2_SHORT
 
-  template<class GlobalOrdinalArg>
-  class MatrixFactory2<double,int,GlobalOrdinalArg> {
+  template<>
+  class MatrixFactory2<double,int,int> {
     typedef double                                        Scalar;
     typedef int                                           LocalOrdinal;
-    typedef GlobalOrdinalArg                              GlobalOrdinal;
-    typedef typename Matrix<double, int, GlobalOrdinal>::node_type Node;
+    typedef int                                           GlobalOrdinal;
+    typedef Matrix<double, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
   public:
     static RCP<Matrix> BuildCopy(const RCP<const Matrix> A);
   };
+
+#define XPETRA_MATRIXFACTORY2_SHORT
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template<>
+  class MatrixFactory2<double,int,long long> {
+    typedef double                                        Scalar;
+    typedef int                                           LocalOrdinal;
+    typedef long long                                     GlobalOrdinal;
+    typedef Matrix<double, int, GlobalOrdinal>::node_type Node;
+#undef XPETRA_MATRIXFACTORY2_SHORT
+#include "Xpetra_UseShortNames.hpp"
+
+  public:
+    static RCP<Matrix> BuildCopy(const RCP<const Matrix> A);
+  };
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 #define XPETRA_MATRIXFACTORY2_SHORT
 

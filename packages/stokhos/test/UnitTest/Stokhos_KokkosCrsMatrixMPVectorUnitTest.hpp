@@ -47,8 +47,7 @@
 #include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
 
 // For computing DeviceConfig
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Helper functions
 template< typename IntType >
@@ -437,11 +436,9 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   // Generate input multivector:
 
   block_vector_type x =
-    block_vector_type(Kokkos::allocate_without_initializing,
-                      "x", fem_length, stoch_length);
+    block_vector_type(Kokkos::ViewAllocateWithoutInitializing("x"), fem_length, stoch_length);
   block_vector_type y =
-    block_vector_type(Kokkos::allocate_without_initializing,
-                      "y", fem_length, stoch_length);
+    block_vector_type(Kokkos::ViewAllocateWithoutInitializing("y"), fem_length, stoch_length);
 
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
   typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
@@ -470,8 +467,7 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     matrix_values_type(
-      Kokkos::allocate_without_initializing,
-      "matrix", fem_graph_length, stoch_length);
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), fem_graph_length, stoch_length);
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;

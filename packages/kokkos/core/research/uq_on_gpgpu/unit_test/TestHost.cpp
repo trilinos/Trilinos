@@ -43,8 +43,7 @@
 
 #include <iostream>
 
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <Kokkos_LegendrePolynomial.hpp>
 #include <Kokkos_SymmetricDiagonalSpec.hpp>

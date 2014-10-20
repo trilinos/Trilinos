@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
@@ -27,6 +26,7 @@ Ifpack2_UnitTestChebyshev.cpp
 Ifpack2_UnitTestContainer.cpp
 Ifpack2_UnitTestCreateOverlapGraph.cpp
 Ifpack2_UnitTestDenseSolver.cpp
+Ifpack2_UnitTestTriDiSolver.cpp
 Ifpack2_UnitTestDiagonal.cpp
 Ifpack2_UnitTestFactory.cpp
 Ifpack2_UnitTestFiltering.cpp
@@ -52,7 +52,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SOURCES ${SOURCES}
     ARGS ""
     COMM serial mpi
-    DEPLIBS ifpack2_tpetra_testinst
+    TESTONLYLIBS ifpack2_tpetra_testinst
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -62,7 +62,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
-  DEPLIBS ifpack2 tpetra ifpack2_tpetra_testinst
+  TESTONLYLIBS ifpack2_tpetra_testinst
   STANDARD_PASS_OUTPUT
   )
 
@@ -77,7 +77,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ""
   COMM mpi
   NUM_MPI_PROCS 2
-  DEPLIBS ifpack2 tpetra ifpack2_tpetra_testinst
+  TESTONLYLIBS ifpack2_tpetra_testinst
   STANDARD_PASS_OUTPUT
   )
 
@@ -89,7 +89,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ""
   COMM serial mpi
   NUM_MPI_PROCS 1
-  DEPLIBS ifpack2 tpetra ifpack2_tpetra_testinst
+  TESTONLYLIBS ifpack2_tpetra_testinst
   STANDARD_PASS_OUTPUT
   )
 

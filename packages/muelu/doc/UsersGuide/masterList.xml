@@ -1,461 +1,495 @@
 <masterlist>
-  <parameter>
-    <name>verbosity</name>
-    <type>string</type>
-    <default>"high"</default>
-    <description>Control of the amount of printed information. Possible values: "none", "low", "medium", "high", "extreme".</description>
-  </parameter>
 
-  <parameter>
-    <name>number of equations</name>
-    <type>int</type>
-    <default>1</default>
-    <description>Number of PDE equations at each gride node. Only constant block size is considered.</description>
-  </parameter>
+  <general>
 
-  <parameter>
-    <name>max levels</name>
-    <type>int</type>
-    <default>10</default>
-    <description>Maximum number of levels.</description>
-  </parameter>
+    <parameter>
+      <name>problem: type</name>
+      <type>string</type>
+      <default>"unknown"</default>
+      <description>Type of problem to be solved.  Possible values: "unknown", "Poisson-2D", "Poisson-3D", "Elasticity-2D", "Elasticity-3D", "MHD".</description>
+    </parameter>
 
-  <parameter>
-    <name>cycle type</name>
-    <type>string</type>
-    <default>"V"</default>
-    <description>Multigrid cycle type. Possible values: "V", "W".</description>
-  </parameter>
+    <parameter>
+      <name>verbosity</name>
+      <type>string</type>
+      <default>"high"</default>
+      <description>Control of the amount of printed information. Possible values: "none", "low", "medium", "high", "extreme".</description>
+    </parameter>
 
-  <parameter>
-    <name>problem: symmetric</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Symmetry of a problem.</description>
-  </parameter>
+    <parameter>
+      <name>number of equations</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
+      <Elasticity-2D>3</Elasticity-2D>
+      <Elasticity-3D>6</Elasticity-3D>
+      <MHD>8</MHD>
+    </parameter>
 
-  <parameter>
-    <name>export data</name>
-    <type>\parameterlist</type>
-    <description>Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", "P", "R") of type "string" and value "\{levels separated by commas\}". A matrix is saved in two files: a) data is saved in the MatrixMarket format in a file called "A\_level.mm", or similar; b) row map is saved in the MatrixMarket format in a file called "rowmap\_A\_level.mm", or similar.</description>
-  </parameter>
+    <parameter>
+      <name>max levels</name>
+      <type>int</type>
+      <default>10</default>
+      <description>Maximum number of levels.</description>
+    </parameter>
 
-  <parameter>
-    <name>print initial parameters</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Print parameters provided for a hierarchy construction.</description>
-  </parameter>
+    <parameter>
+      <name>cycle type</name>
+      <type>string</type>
+      <default>"V"</default>
+      <description>Multigrid cycle type. Possible values: "V", "W".</description>
+    </parameter>
 
-  <parameter>
-    <name>print unused parameters</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Print parameters unused during a hierarchy construction.</description>
-  </parameter>
+    <parameter>
+      <name>problem: symmetric</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Symmetry of a problem.</description>
+    </parameter>
 
-  <parameter>
-    <name>multigrid algorithm</name>
-    <type>string</type>
-    <default>"sa"</default>
-    <description>Multigrid method. Possible values: "unsmoothed", "sa", "emin", "pg".</description>
-  </parameter>
+  </general>
 
-  <parameter>
-    <name>transpose: use implicit</name>
-    <type>bool</type>
-    <default>false</default>
-    <description>Use implicit transpose for the restriction operator.</description>
-  </parameter>
+  <smoothing_and_coarse>
 
-  <parameter>
-    <name>aggregation: type</name>
-    <type>string</type>
-    <default>"uncoupled"</default>
-    <description>Aggregation scheme. Possible values: "uncoupled", "coupled".</description>
-  </parameter>
+    <parameter>
+      <name>smoother: pre or post</name>
+      <type>string</type>
+      <default>"both"</default>
+      <description>Smoother combination. Possible values: "pre", "post", "both", "none".</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: ordering</name>
-    <type>string</type>
-    <default>"natural"</default>
-    <description>Ordering strategy. Possible values: "natrual", "graph", "random".</description>
-  </parameter>
+    <parameter>
+      <name>smoother: type</name>
+      <type>string</type>
+      <default>"gs"</default>
+      <Poisson-2D>"CHEBYSHEV"</Poisson-2D>
+      <Poisson-3D>"CHEBYSHEV"</Poisson-3D>
+      <Elasticity-2D>"CHEBYSHEV"</Elasticity-2D>
+      <Elasticity-3D>"CHEBYSHEV"</Elasticity-3D>
+      <MHD>"SCHWARZ"</MHD>
+      <description>Smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
+    </parameter>
 
-<!--
-  <parameter>
-    <name>aggregation: symmetrize</name>
-    <type>bool</type>
-    <default>false</default>
-    <description>Symmetrize connectivity graph for nonsymmetric matrices.</description>
-  </parameter>
--->
+    <parameter>
+      <name>smoother: pre type</name>
+      <type>string</type>
+      <default>"gs"</default>
+      <description>Pre-smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: drop scheme</name>
-    <type>string</type>
-    <default>"classical"</default>
-    <description>Aggregation connectivity dropping scheme. Possible values: "classical", "distance laplacian".</description>
-  </parameter>
+    <parameter>
+      <name>smoother: post type</name>
+      <type>string</type>
+      <default>"gs"</default>
+      <description>Post-smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: drop tol</name>
-    <type>double</type>
-    <default>0.0</default>
-    <description>Aggregation dropping threshold.</description>
-  </parameter>
+    <parameter>
+      <name>smoother: params</name>
+      <type>\parameterlist</type>
+      <description>Smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: min agg size</name>
-    <type>int</type>
-    <default>2</default>
-    <description>Minimum size of an aggregate.</description>
-    <visible>true</visible>
-  </parameter>
+    <parameter>
+      <name>smoother: pre params</name>
+      <type>\parameterlist</type>
+      <description>Pre-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: max agg size</name>
-    <type>int</type>
-    <default>2147483647</default>
-    <description>Maximum size of an aggregate.</description>
-    <visible>true</visible>
-  </parameter>
+    <parameter>
+      <name>smoother: post params</name>
+      <type>\parameterlist</type>
+      <description>Post-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: max selected neighbors</name>
-    <type>int</type>
-    <default>0</default>
-    <description>Number of maximum neighbour nodes that are already aggregated already. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.</description>
-    <visible>false</visible>
-  </parameter>
+    <parameter>
+      <name>smoother: overlap</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Smoother subdomain overlap.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: Dirichlet threshold</name>
-    <type>double</type>
-    <default>0.0</default>
-    <description>Threshold for determining whether entries are zero during Dirichlet row detection.</description>
-  </parameter>
+    <parameter>
+      <name>smoother: pre overlap</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Pre-smoother subdomain overlap.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: enable phase 1</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Turn on/off phase 1 of aggregation</description>
-    <visible>false</visible>
-  </parameter>
+    <parameter>
+      <name>smoother: post overlap</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Post-smoother subdomain overlap.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: enable phase 2a</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Turn on/off phase 2a of aggregation</description>
-    <visible>false</visible>
-  </parameter>
+    <parameter>
+      <name>coarse: max size</name>
+      <type>int</type>
+      <default>2000</default>
+      <description>Maximum dimension of the coarse grid. \muelu will stop coarsening once it is achieved.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: enable phase 2b</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Turn on/off phase 2b of aggregation</description>
-    <visible>false</visible>
-  </parameter>
+    <parameter>
+      <name>coarse: type</name>
+      <type>string</type>
+      <default>"SuperLU"</default>
+      <description>Coarse solver. Possible values: see Table~\ref{tab:coarse}.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: enable phase 3</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Turn on/off phase 3 of aggregation</description>
-    <visible>false</visible>
-  </parameter>
+    <parameter>
+      <name>coarse: params</name>
+      <type>\parameterlist</type>
+      <description>Coarse solver parameters. \muelu passes them directly to coarse solver.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: preserve Dirichlet points</name>
-    <type>bool</type>
-    <default>false</default>
-    <description>Turn on/off Dirichlet points preservation</description>
-    <visible>false</visible>
-  </parameter>
+    <parameter>
+      <name>coarse: overlap</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Coarse solver subdomain overlap.</description>
+    </parameter>
 
-  <parameter>
-    <name>aggregation: export visualization data</name>
-    <type>bool</type>
-    <default>false</default>
-    <description>Export data for visualization post-processing.</description>
-  </parameter>
+  </smoothing_and_coarse>
 
-  <parameter>
-    <name>aggregation: mode</name>
-    <type>string</type>
-    <default>"old"</default>
-    <description>old = Tobias, new = ML</description>
-    <visible>false</visible>
-  </parameter>
+  <aggregation>
 
-  <parameter>
-    <name>smoother: pre or post</name>
-    <type>string</type>
-    <default>"both"</default>
-    <description>Smoother combination. Possible values: "pre", "post", "both", "none".</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: type</name>
+      <type>string</type>
+      <default>"uncoupled"</default>
+      <description>Aggregation scheme. Possible values: "uncoupled", "coupled".</description>
+    </parameter>
 
-  <parameter>
-    <name>smoother: type</name>
-    <type>string</type>
-    <default>"gs"</default>
-    <description>Smoother type. Possible values: see Table~\ref{t:smoothers}.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: ordering</name>
+      <type>string</type>
+      <default>"natural"</default>
+      <description>Ordering strategy. Possible values: "natural", "graph", "random".</description>
+    </parameter>
 
-  <parameter>
-    <name>smoother: pre type</name>
-    <type>string</type>
-    <default>"gs"</default>
-    <description>Pre-smoother type. Possible values: see Table~\ref{t:smoothers}.</description>
-  </parameter>
+    <!--
+      <parameter>
+        <name>aggregation: symmetrize</name>
+          <type>bool</type>
+            <default>false</default>
+              <description>Symmetrize connectivity graph for nonsymmetric matrices.</description>
+              </parameter>
+            -->
 
-  <parameter>
-    <name>smoother: post type</name>
-    <type>string</type>
-    <default>"gs"</default>
-    <description>Post-smoother type. Possible values: see Table~\ref{t:smoothers}.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: drop scheme</name>
+      <type>string</type>
+      <default>"classical"</default>
+      <description>Aggregation connectivity dropping scheme. Possible values: "classical", "distance laplacian".</description>
+    </parameter>
 
-  <parameter>
-    <name>smoother: params</name>
-    <type>\parameterlist</type>
-    <description>Smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: drop tol</name>
+      <type>double</type>
+      <default>0.0</default>
+      <description>Aggregation dropping threshold.</description>
+    </parameter>
 
-  <parameter>
-    <name>smoother: pre params</name>
-    <type>\parameterlist</type>
-    <description>Pre-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: min agg size</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Minimum size of an aggregate.</description>
+      <visible>true</visible>
+    </parameter>
 
-  <parameter>
-    <name>smoother: post params</name>
-    <type>\parameterlist</type>
-    <description>Post-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: max agg size</name>
+      <type>int</type>
+      <default>2147483647</default>
+      <description>Maximum size of an aggregate.</description>
+      <visible>true</visible>
+    </parameter>
 
-  <parameter>
-    <name>smoother: overlap</name>
-    <type>int</type>
-    <default>0</default>
-    <description>Smoother subdomain overlap.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: max selected neighbors</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Number of maximum neighbor nodes that are already aggregated already. If a new aggregate has some neighbors that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.</description>
+      <visible>false</visible>
+    </parameter>
 
-  <parameter>
-    <name>smoother: pre overlap</name>
-    <type>int</type>
-    <default>0</default>
-    <description>Pre-smoother subdomain overlap.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: Dirichlet threshold</name>
+      <type>double</type>
+      <default>0.0</default>
+      <description>Threshold for determining whether entries are zero during Dirichlet row detection.</description>
+    </parameter>
 
-  <parameter>
-    <name>smoother: post overlap</name>
-    <type>int</type>
-    <default>0</default>
-    <description>Post-smoother subdomain overlap.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: enable phase 1</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Turn on/off phase 1 of aggregation</description>
+      <visible>false</visible>
+    </parameter>
 
-  <parameter>
-    <name>coarse: max size</name>
-    <type>int</type>
-    <default>2000</default>
-    <description>Maximum dimension of the coarse grid. \muelu will stop coarsening once it is achieved.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: enable phase 2a</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Turn on/off phase 2a of aggregation</description>
+      <visible>false</visible>
+    </parameter>
 
-  <parameter>
-    <name>coarse: type</name>
-    <type>string</type>
-    <default>"SuperLU"</default>
-    <description>Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: enable phase 2b</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Turn on/off phase 2b of aggregation</description>
+      <visible>false</visible>
+    </parameter>
 
-  <parameter>
-    <name>coarse: params</name>
-    <type>\parameterlist</type>
-    <description>Coarse solver parameters. \muelu passes them directly to coarse solver.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: enable phase 3</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Turn on/off phase 3 of aggregation</description>
+      <visible>false</visible>
+    </parameter>
 
-  <parameter>
-    <name>coarse: overlap</name>
-    <type>int</type>
-    <default>0</default>
-    <description>Coarse solver subdomain overlap.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: preserve Dirichlet points</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Turn on/off Dirichlet points preservation</description>
+      <visible>false</visible>
+    </parameter>
 
-  <parameter>
-    <name>repartition: enable</name>
-    <type>bool</type>
-    <default>false</default>
-    <description>Repartitioning on/off switch.</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: export visualization data</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Export data for visualization post-processing.</description>
+    </parameter>
 
-  <parameter>
-    <name>repartition: partitioner</name>
-    <type>string</type>
-    <default>"zoltan2"</default>
-    <description>Partitioning package to use. Possible values: "zoltan", "zoltan2".</description>
-  </parameter>
+    <parameter>
+      <name>aggregation: mode</name>
+      <type>string</type>
+      <default>"old"</default>
+      <MHD>"new"</MHD>
+      <description>old = Tobias, new = ML</description>
+      <visible>false</visible>
+    </parameter>
 
-  <parameter>
-    <name>repartition: params</name>
-    <type>\parameterlist</type>
-    <description>Partitioner parameters. \muelu passes them directly to partitioner.</description>
-  </parameter>
+  </aggregation>
 
-  <parameter>
-    <name>repartition: start level</name>
-    <type>int</type>
-    <default>2</default>
-    <description>Minimum level to run partitioner. \muelu does not repartition for finer levels.</description>
-  </parameter>
+  <misc>
 
-  <parameter>
-    <name>repartition: min rows per proc</name>
-    <type>int</type>
-    <default>800</default>
-    <description>Desired minimum number of rows per processor. If actual number if smaller, then repartitioning occurs.</description>
-  </parameter>
+    <parameter>
+      <name>export data</name>
+      <type>\parameterlist</type>
+      <description>Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", "P", "R") of type "string" and value "\{levels separated by commas\}". A matrix is saved in two files: a) data is saved in the MatrixMarket format in a file called "A\_level.mm", or similar; b) row map is saved in the MatrixMarket format in a file called "rowmap\_A\_level.mm", or similar.</description>
+    </parameter>
 
-  <parameter>
-    <name>repartition: max imbalance</name>
-    <type>double</type>
-    <default>1.2</default>
-    <description>Desired maximum nonzero imbalance ratio.</description>
-  </parameter>
+    <parameter>
+      <name>print initial parameters</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Print parameters provided for a hierarchy construction.</description>
+    </parameter>
 
-  <parameter>
-    <name>repartition: remap parts</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Postprocessing for partitioning to reduce data migration.</description>
-  </parameter>
+    <parameter>
+      <name>print unused parameters</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Print parameters unused during a hierarchy construction.</description>
+    </parameter>
 
-  <parameter>
-    <name>repartition: remap num values</name>
-    <type>int</type>
-    <default>4</default>
-    <description>Number of maximum components from each processor used to construct partial bipartite graph.</description>
-    <visible>false</visible>
-  </parameter>
+    <parameter>
+      <name>transpose: use implicit</name>
+      <type>bool</type>
+      <default>false</default>
+      <MHD>true</MHD>
+      <description>Use implicit transpose for the restriction operator.</description>
+    </parameter>
 
-  <parameter>
-    <name>repartition: keep proc 0</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Postprocessing for partitioning to keep processor 0 from dropping out. The goal is to keep processor 0 of the original fine level communication even when we use level subcommunicators.</description>
-    <visible>false</visible>
-  </parameter>
+  </misc>
 
-  <parameter>
-    <name>repartition: print partition distribution</name>
-    <type>bool</type>
-    <default>false</default>
-    <description>Print partition distribution with '+' and '.'</description>
-    <visible>false</visible>
-  </parameter>
+  <multigrid>
 
-  <parameter>
-    <name>repartition: rebalance P and R</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Do rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.</description>
-  </parameter>
+    <parameter>
+      <name>multigrid algorithm</name>
+      <type>string</type>
+      <default>"sa"</default>
+      <MHD>"unsmoothed"</MHD>
+      <description>Multigrid method. Possible values: "unsmoothed", "sa", "emin", "pg".</description>
+    </parameter>
 
-  <parameter>
-    <name>semicoarsen: coarsen rate</name>
-    <type>int</type>
-    <default>3</default>
-    <description>Rate at which to coarsen unknowns in the z direction.</description>
-  </parameter>
+    <parameter>
+      <name>semicoarsen: coarsen rate</name>
+      <type>int</type>
+      <default>3</default>
+      <description>Rate at which to coarsen unknowns in the z direction.</description>
+    </parameter>
 
-  <parameter>
-    <name>sa: damping factor</name>
-    <type>double</type>
-    <default>1.33333333</default>
-    <description>Damping factor for smoothed aggregation.</description>
-  </parameter>
+    <parameter>
+      <name>sa: damping factor</name>
+      <type>double</type>
+      <default>1.33333333</default>
+      <description>Damping factor for smoothed aggregation.</description>
+    </parameter>
 
-  <parameter>
-    <name>sa: use filtered matrix</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
-  </parameter>
+    <parameter>
+      <name>sa: use filtered matrix</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
+    </parameter>
 
-  <parameter>
-    <name>sa: calculate eigenvalue estimate</name>
-    <type>bool</type>
-    <default>false</default>
-    <description>Force calculation of eigenvalue estimate during prolongator smoothing.</description>
-    <visible>false</visible>
-  </parameter>
+    <parameter>
+      <name>sa: calculate eigenvalue estimate</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Force calculation of eigenvalue estimate during prolongator smoothing.</description>
+      <visible>false</visible>
+    </parameter>
 
-  <parameter>
-    <name>sa: eigenvalue estimate num iterations</name>
-    <type>int</type>
-    <default>10</default>
-    <description>Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.</description>
-    <visible>false</visible>
-  </parameter>
+    <parameter>
+      <name>sa: eigenvalue estimate num iterations</name>
+      <type>int</type>
+      <default>10</default>
+      <description>Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.</description>
+      <visible>false</visible>
+    </parameter>
 
-  <parameter>
-    <name>filtered matrix: use lumping</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>During construction of a filtered matrix, we have an option to add dropped entries to the diagonal. This is useful for preserving constant nullspace for the Laplacian type matrix.</description>
-  </parameter>
+    <parameter>
+      <name>filtered matrix: use lumping</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>During construction of a filtered matrix, we have an option to add dropped entries to the diagonal. This is useful for preserving constant nullspace for the Laplacian type matrix.</description>
+    </parameter>
 
-  <parameter>
-    <name>filtered matrix: reuse eigenvalue</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>During construction of a filtered matrix, we have an option to get the eigenvalue estimate from the original matrix. This allows us to skip heavy computation.</description>
-  </parameter>
+    <parameter>
+      <name>filtered matrix: reuse eigenvalue</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>During construction of a filtered matrix, we have an option to get the eigenvalue estimate from the original matrix. This allows us to skip heavy computation.</description>
+    </parameter>
 
-  <parameter>
-    <name>filtered matrix: reuse graph</name>
-    <type>bool</type>
-    <default>true</default>
-    <description>Set values to zero instead of constructing a new graph.</description>
-    <visible>false</visible>
-  </parameter>
+    <parameter>
+      <name>filtered matrix: reuse graph</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Set values to zero instead of constructing a new graph.</description>
+      <visible>false</visible>
+    </parameter>
 
-  <parameter>
-    <name>emin: iterative method</name>
-    <type>string</type>
-    <default>"cg"</default>
-    <description>Iterative method to use for energy minimization of intial prolongator in energy-minimization. Possible values: "cg", "sd".</description>
-  </parameter>
+    <parameter>
+      <name>emin: iterative method</name>
+      <type>string</type>
+      <default>"cg"</default>
+      <description>Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg", "sd".</description>
+    </parameter>
 
-  <parameter>
-    <name>emin: num iterations</name>
-    <type>int</type>
-    <default>2</default>
-    <description>Number of iterations to minimize initial prolongator energy in energy-minimization.</description>
-  </parameter>
+    <parameter>
+      <name>emin: num iterations</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Number of iterations to minimize initial prolongator energy in energy-minimization.</description>
+    </parameter>
 
-  <parameter>
-    <name>emin: num reuse iterations</name>
-    <type>int</type>
-    <default>1</default>
-    <description>Number of iterations to minimize the reused prolongator energy in energy-minimization.</description>
-  </parameter>
+    <parameter>
+      <name>emin: num reuse iterations</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Number of iterations to minimize the reused prolongator energy in energy-minimization.</description>
+    </parameter>
 
-  <parameter>
-    <name>emin: pattern</name>
-    <type>string</type>
-    <default>"AkPtent"</default>
-    <description>Sparsity pattern to use for energy minization. Possible values: "AkPtent".</description>
-  </parameter>
+    <parameter>
+      <name>emin: pattern</name>
+      <type>string</type>
+      <default>"AkPtent"</default>
+      <description>Sparsity pattern to use for energy minization. Possible values: "AkPtent".</description>
+    </parameter>
 
-  <parameter>
-    <name>emin: pattern order</name>
-    <type>int</type>
-    <default>1</default>
-    <description>Matrix order for the "AkPtent" pattern.</description>
-  </parameter>
+    <parameter>
+      <name>emin: pattern order</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Matrix order for the "AkPtent" pattern.</description>
+    </parameter>
+
+  </multigrid>
+
+  <rebalancing>
+    <parameter>
+      <name>repartition: enable</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Repartitioning on/off switch.</description>
+    </parameter>
+
+    <parameter>
+      <name>repartition: partitioner</name>
+      <type>string</type>
+      <default>"zoltan2"</default>
+      <description>Partitioning package to use. Possible values: "zoltan", "zoltan2".</description>
+    </parameter>
+
+    <parameter>
+      <name>repartition: params</name>
+      <type>\parameterlist</type>
+      <description>Partitioner parameters. \muelu passes them directly to partitioner.</description>
+    </parameter>
+
+    <parameter>
+      <name>repartition: start level</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Minimum level to run partitioner. \muelu does not repartition for finer levels.</description>
+    </parameter>
+
+    <parameter>
+      <name>repartition: min rows per proc</name>
+      <type>int</type>
+      <default>800</default>
+      <description>Desired minimum number of rows per processor. If actual number if smaller, then repartitioning occurs.</description>
+    </parameter>
+
+    <parameter>
+      <name>repartition: max imbalance</name>
+      <type>double</type>
+      <default>1.2</default>
+      <description>Desired maximum nonzero imbalance ratio.</description>
+    </parameter>
+
+    <parameter>
+      <name>repartition: remap parts</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Postprocessing for partitioning to reduce data migration.</description>
+    </parameter>
+
+    <parameter>
+      <name>repartition: remap num values</name>
+      <type>int</type>
+      <default>4</default>
+      <description>Number of maximum components from each processor used to construct partial bipartite graph.</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>repartition: print partition distribution</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Print partition distribution with '+' and '.'</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>repartition: rebalance P and R</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Do rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.</description>
+    </parameter>
+
+  </rebalancing>
 
 </masterlist>

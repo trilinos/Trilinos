@@ -88,12 +88,12 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(Teuchos::ParameterList& paramList) {
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(Teuchos::ParameterList& paramList,Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
     SetParameterList(paramList);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm) {
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm,Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), comm);
     SetParameterList(paramList);
@@ -235,6 +235,13 @@ namespace MueLu {
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
+    std::string problemType = paramList.get<std::string>("problem: type", MasterList::getDefault<std::string>("problem: type"));
+    Teuchos::RCP<Teuchos::ParameterList> newParamList;
+    if (problemType != "unknown") {
+      newParamList = MasterList::GetProblemSpecificList(problemType);
+      newParamList->setParameters(paramList);
+      paramList = *newParamList;
+    }
     UpdateFactoryManager(paramList, ParameterList(), *defaultManager);
     defaultManager->Print();
 
@@ -447,7 +454,7 @@ namespace MueLu {
       else
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
 
-      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother, Teuchos::null)));
+      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
     }
 
     // === Aggregation ===
@@ -457,8 +464,7 @@ namespace MueLu {
     dropParams.set("lightweight wrap", true);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop scheme",         paramList, defaultList, std::string);
     // Rename classical to original
-    if (dropParams.isParameter("aggregation: drop scheme") && dropParams.get<std::string>("aggregation: drop scheme") == "classical")
-      dropParams.set("aggregation: drop scheme", "original");
+    MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop scheme",         paramList, defaultList, std::string);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: drop tol",            paramList, defaultList, double);
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation: Dirichlet threshold", paramList, defaultList, double);
 
@@ -784,6 +790,10 @@ namespace MueLu {
     if (paramList.isSublist("Matrix"))
       blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", 1);
 
+    // create new FactoryFactory object if necessary
+    if (factFact_ == Teuchos::null) 
+      factFact_ = Teuchos::rcp(new FactoryFactory());
+
     // Parameter List Parsing:
     // ---------
     //   <ParameterList name="MueLu">
@@ -825,6 +835,11 @@ namespace MueLu {
       if (hieraList.isParameter("repartition: rebalance P and R")) {
         this->doPRrebalance_ = hieraList.get<bool>("repartition: rebalance P and R");
         hieraList.remove("repartition: rebalance P and R");
+      }
+
+      if (hieraList.isParameter("transpose: use implicit")) {
+        this->implicitTranspose_ = hieraList.get<bool>("transpose: use implicit");
+        hieraList.remove("transpose: use implicit");
       }
 
       //TODO Move this its own class or MueLu::Utils?
@@ -949,7 +964,7 @@ namespace MueLu {
       if (paramValue.isList()) {
         Teuchos::ParameterList paramList1 = Teuchos::getValue<Teuchos::ParameterList>(paramValue);
         if (paramList1.isParameter("factory")) { // default: just a factory definition
-          factoryMapOut[paramName] = FactoryFactory().BuildFactory(paramValue, factoryMapIn, factoryManagers);
+          factoryMapOut[paramName] = factFact_->BuildFactory(paramValue, factoryMapIn, factoryManagers);
 
         } else if (paramList1.isParameter("group")) { // definitiion of a factory group (for a factory manager)
           std::string groupType = paramList1.get<std::string>("group");
@@ -973,7 +988,7 @@ namespace MueLu {
         }
       } else {
         // default: just a factory (no parameter list)
-        factoryMapOut[paramName] = FactoryFactory().BuildFactory(paramValue, factoryMapIn, factoryManagers);
+        factoryMapOut[paramName] = factFact_->BuildFactory(paramValue, factoryMapIn, factoryManagers);
       }
     }
   }

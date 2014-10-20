@@ -46,7 +46,7 @@
 #ifndef KOKKOS_CUDA_HPP
 #define KOKKOS_CUDA_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
 // If CUDA execution space is enabled then use this header file.
 
@@ -55,14 +55,6 @@
 #include <iosfwd>
 #include <vector>
 
-#if defined( KOKKOS_HAVE_OPENMP )
-#include <Kokkos_OpenMP.hpp>
-#elif defined( KOKKOS_HAVE_PTHREAD )
-#include <Kokkos_Threads.hpp>
-#else
-#endif
-
-#include <Kokkos_Serial.hpp>
 #include <Kokkos_CudaSpace.hpp>
 
 #include <Kokkos_Parallel.hpp>
@@ -100,27 +92,26 @@ public:
 
   //! The tag (what type of kokkos_object is this).
   typedef Impl::ExecutionSpaceTag  kokkos_tag ;
-  //! The device type (same as this class).
-  typedef Cuda                  device_type ;
-  //! This device's execution space.
+  //! This is an execution space
   typedef Cuda                  execution_space ;
-  //! This device's preferred memory space.
+  typedef Cuda                  device_type ;
+
+#if defined( KOKKOS_USE_CUDA_UVM )
+  //! This execution space's preferred memory space.
+  typedef CudaUVMSpace          memory_space ;
+#else
+  //! This execution space's preferred memory space.
   typedef CudaSpace             memory_space ;
-  //! The size_type typedef best suited for this device.
-  typedef CudaSpace::size_type  size_type ;
-  //! This device's preferred array layout.
+#endif
+
+  //! The size_type best suited for this execution space.
+  typedef memory_space::size_type  size_type ;
+
+  //! This execution space's preferred array layout.
   typedef LayoutLeft            array_layout ;
 
+  //! 
   typedef ScratchMemorySpace< Cuda >  scratch_memory_space ;
-
-  //! This device's host mirror type.
-#if defined( KOKKOS_HAVE_OPENMP )
-  typedef Kokkos::OpenMP       host_mirror_device_type ;
-#elif defined( KOKKOS_HAVE_PTHREAD )
-  typedef Kokkos::Threads      host_mirror_device_type ;
-#else
-  typedef Kokkos::Serial       host_mirror_device_type ;
-#endif
 
   //@}
   //! \name Functions that all Kokkos devices must implement.
@@ -218,10 +209,11 @@ namespace Impl {
 
 template<>
 struct VerifyExecutionCanAccessMemorySpace
-  < Kokkos::Cuda::memory_space
+  < Kokkos::CudaSpace
   , Kokkos::Cuda::scratch_memory_space
   >
 {
+  enum { value = true };
   KOKKOS_INLINE_FUNCTION static void verify( void ) { }
   KOKKOS_INLINE_FUNCTION static void verify( const void * ) { }
 };
@@ -232,6 +224,7 @@ struct VerifyExecutionCanAccessMemorySpace
   , Kokkos::Cuda::scratch_memory_space
   >
 {
+  enum { value = false };
   inline static void verify( void ) { CudaSpace::access_error(); }
   inline static void verify( const void * p ) { CudaSpace::access_error(p); }
 };

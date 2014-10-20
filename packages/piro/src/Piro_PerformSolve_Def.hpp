@@ -84,9 +84,14 @@ void PerformSolveImpl(
           for (int l = 0; l < parameterCount; ++l) {
             const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
               outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-            const Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient =
-              Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
-            if (dgdp_support.supports(dgdp_orient)) {
+            Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient;
+            if (dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM)||dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+              //Somehow, when DERIV_MV_JACOBIAN_FORM is supported, also  DERIV_MV_GRADIENT_FORM is.
+              //When p is a distributed parameter, only DERIV_MV_GRADIENT_FORM is supported.
+              dgdp_orient =  (dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) ?
+                Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM:
+                Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM;
+
               const Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar> dgdp =
                 Thyra::create_DgDp_mv(model, j, l, dgdp_orient);
               outArgs.set_DgDp(j, l, dgdp);

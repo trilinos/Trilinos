@@ -417,6 +417,7 @@ int  ML_Epetra::FaceMatrixFreePreconditioner::FormCoarseMatrix()
   }
   else{
     if(!Comm_->MyPID()) printf("ERROR: FMFP Illegal Operator\n");
+    delete R;
     ML_CHK_ERR(-1);
   }
 

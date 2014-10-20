@@ -50,7 +50,7 @@
 
 // Kokkos includes
 #include "KokkosClassic_config.h"
-#include "Kokkos_Serial.hpp"
+#include "Kokkos_Core.hpp"
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
 #include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
@@ -66,8 +66,8 @@ namespace Kokkos {
     Kokkos::View<Sacado::UQ::PCE<S>*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView< Sacado::UQ::PCE<S> >& a) {
       typedef Sacado::UQ::PCE<S> T;
-      typedef typename D::host_mirror_device_type HostDevice;
       typedef Kokkos::View<T*,D>  view_type;
+      typedef typename view_type::host_mirror_space HostDevice;
       typedef Kokkos::View<T*,typename view_type::array_layout,HostDevice,Kokkos::MemoryUnmanaged> unmanaged_host_view_type;
       if (a.size() == 0)
         return view_type();
@@ -81,8 +81,8 @@ namespace Kokkos {
     Kokkos::View<const Sacado::UQ::PCE<S>*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView<const Sacado::UQ::PCE<S> >& a) {
       typedef Sacado::UQ::PCE<S> T;
-      typedef typename D::host_mirror_device_type HostDevice;
       typedef Kokkos::View<T*,D>  view_type;
+      typedef typename view_type::host_mirror_space HostDevice;
       typedef Kokkos::View<const T*,typename view_type::array_layout,HostDevice,Kokkos::MemoryUnmanaged> unmanaged_host_view_type;
       if (a.size() == 0)
         return view_type();
@@ -128,12 +128,12 @@ struct DeviceForNode2< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
 #include "Tpetra_Import_Util2.hpp"
 namespace Tpetra {
   namespace Import_Util {
-    template <typename S, typename LO, typename GO, typename D, typename LMO>
+    template <typename S, typename LO, typename GO, typename D>
     struct MatrixSerializationTraits<
-      CrsMatrix< Sacado::UQ::PCE<S>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D>,LMO> > {
+      CrsMatrix< Sacado::UQ::PCE<S>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> > > {
       typedef Sacado::UQ::PCE<S> Scalar;
       typedef Kokkos::Compat::KokkosDeviceWrapperNode<D> Node;
-      typedef CrsMatrix<Scalar,LO,GO,Node,LMO> Matrix;
+      typedef CrsMatrix<Scalar,LO,GO,Node> Matrix;
 
       typedef typename Scalar::value_type scalar_value;
 

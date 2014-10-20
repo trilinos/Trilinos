@@ -144,9 +144,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -229,9 +228,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_Vector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -314,9 +312,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -408,9 +405,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -505,9 +501,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -611,9 +606,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -738,9 +732,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -881,9 +874,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_CrsMatrix;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1007,9 +999,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1155,9 +1146,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1316,9 +1306,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1470,9 +1459,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1633,9 +1621,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1817,9 +1804,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 

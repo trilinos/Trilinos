@@ -114,7 +114,7 @@ if("${CTEST_CMAKE_GENERATOR}" STREQUAL "")
     set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
   endif()
 endif()
-  
+
 # Extra directories to pull updates from
 SET_DEFAULT_AND_FROM_ENV( TDD_EXTRA_GIT_PULL_DIRS "" )
 
@@ -122,7 +122,7 @@ set(CTEST_TEST_TIMEOUT "$ENV{CTEST_TEST_TIMEOUT}")
 if("${CTEST_TEST_TIMEOUT}" STREQUAL "")
   set(CTEST_TEST_TIMEOUT 7200)
 endif()
-  
+
 # Submit the results to the dashboard or not
 SET_DEFAULT_AND_FROM_ENV( TDD_DO_SUBMIT TRUE )
 
@@ -192,7 +192,7 @@ if (NOT TDD_IN_TESTING_MODE)
   foreach(EXTRA_PULL_DIR ${TDD_EXTRA_GIT_PULL_DIRS})
     SET(EXTRA_PULL_DIR_ABS "${CTEST_UPDATE_DIRECTORY}/${EXTRA_PULL_DIR}")
     SET(PULL_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRA_PULL_DIR}.pull.out")
-    set(CTEST_NOTES_FILES ${CTEST_NOTES_FILES} ${PULL_OUT_FILE}) 
+    set(CTEST_NOTES_FILES ${CTEST_NOTES_FILES} ${PULL_OUT_FILE})
     MESSAGE("Pull extra updates in '${EXTRA_PULL_DIR_ABS}' ...")
     execute_process(
       COMMAND ${git_exe} pull

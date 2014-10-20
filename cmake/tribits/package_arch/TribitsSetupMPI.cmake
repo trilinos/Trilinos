@@ -82,7 +82,7 @@ FUNCTION(TRIBITS_SETUP_MPI)
   #
   # A) Get the directory paths
   #
-  
+
   MULTILINE_SET( DOC
     "Base directory for the MPI implementation under which"
     " the bin, include, and lib directories are found" )
@@ -207,5 +207,5 @@ FUNCTION(TRIBITS_SETUP_MPI)
 
 ENDFUNCTION()
 
-# 2009/01/23: rabartl: ToDo: Above: create util FIND_PROGRAM_PATH_FIRST(...) 
+# 2009/01/23: rabartl: ToDo: Above: create util FIND_PROGRAM_PATH_FIRST(...)
 # in order to implement looking in the input path first and not last

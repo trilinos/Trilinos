@@ -636,7 +636,7 @@ namespace Teuchos {
     /// processes for that timing.  (We compute it a bit differently
     /// to help prevent overflow.)  Along with the mean timing comes
     /// the same mean call count as mentioned above.
-    /// 
+    ///
     /// Statistics may optionally be calculated in a mode that ignores
     /// contributions from processes that either do not have a timer
     /// or have a hard zero for that time.  This is slightly more expensive

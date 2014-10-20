@@ -37,8 +37,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(AssertDefined)
-
 #
 # @MACRO: PREPEND_SET()
 #
@@ -52,9 +50,9 @@ INCLUDE(AssertDefined)
 #
 #   SET(<varName> <arg0> <arg1> ... ${<varName>})
 #
-# NOTE: Prepending is not as efficient as appending so prefer `APPEND_SET()`_.
+# NOTE: Prepending is not as efficient as appending so prefer `APPEND_SET()`_
+# or just ``LIST(APPEND ...)``.
 #
 MACRO(PREPEND_SET VARNAME)
-  ASSERT_DEFINED(${VARNAME})
   SET(${VARNAME} ${ARGN} ${${VARNAME}})
 ENDMACRO()

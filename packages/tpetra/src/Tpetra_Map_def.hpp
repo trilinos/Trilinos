@@ -53,9 +53,7 @@
 #include <Teuchos_as.hpp>
 #include <stdexcept>
 
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_Map_decl.hpp"
-#endif
+#include "Tpetra_Map_decl.hpp"
 
 namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

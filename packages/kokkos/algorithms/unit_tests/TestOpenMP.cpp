@@ -43,13 +43,7 @@
 
 #include <gtest/gtest.h>
 
-#include <KokkosCore_config.h>
-
-// To force use of OMP atomics instead of intrinsics
-// #define KOKKOS_ATOMICS_USE_OMP31
-
-#include <Kokkos_OpenMP.hpp>
-#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Core.hpp>
 
 //----------------------------------------------------------------------------
 #include <TestRandom.hpp>
@@ -90,8 +84,8 @@ protected:
       Impl::test_random<Kokkos::Random_XorShift1024_Pool<Kokkos::OpenMP> >(num_draws);                                   \
   }
 
-OPENMP_RANDOM_XORSHIFT64( 10000000 )
-OPENMP_RANDOM_XORSHIFT1024( 10000000 )
+OPENMP_RANDOM_XORSHIFT64( 10240000 )
+OPENMP_RANDOM_XORSHIFT1024( 10130144 )
 
 #undef OPENMP_RANDOM_XORSHIFT64
 #undef OPENMP_RANDOM_XORSHIFT1024

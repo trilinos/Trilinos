@@ -1,6 +1,6 @@
 /* 
  * Copyright 2007 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -371,7 +371,7 @@ copyright_output (void)
 {
   ECHOC("%s -------------------------------------------------------------------------\n");
   ECHOC("%s Copyright 2007 Sandia Corporation. Under the terms of Contract\n");
-  ECHOC("%s DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement\n");
+  ECHOC("%s DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government\n");
   ECHOC("%s retains certain rights in this software.\n");
   ECHOC("%s\n");
   ECHOC("%s Redistribution and use in source and binary forms, with or without\n");

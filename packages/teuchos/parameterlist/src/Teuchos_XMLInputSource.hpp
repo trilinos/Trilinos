@@ -52,11 +52,11 @@
 
 namespace Teuchos
 {
-  /** 
+  /**
    * \brief XMLInputSource represents a source of XML input that can be parsed
-   * to produce an XMLObject. 
+   * to produce an XMLObject.
    *
-   * \note 
+   * \note
    *	<ul>
    *	<li>The source might be a file, a socket, a
    * std::string. The XMLObject is created with a call to the getObject() method.

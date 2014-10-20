@@ -56,23 +56,11 @@
 #ifndef KOKKOS_ARITHTRAITSTEST_HPP
 #define KOKKOS_ARITHTRAITSTEST_HPP
 
-#include <Kokkos_Parallel.hpp>
+#include <Kokkos_Core.hpp>
 #include "Kokkos_ArithTraits.hpp"
 #include <limits> // std::numeric_limits
 #include <typeinfo> // typeid (T)
 #include <cstdio>
-
-// If KOKKOS_INLINE_FUNCTION isn't already defined from Kokkos, define
-// it here.  If compiling with CUDA, the macro includes both the
-// __host__ and __device__ attributes.  Whether or not compiling with
-// CUDA, the macro also includes the inline attribute.
-#ifndef KOKKOS_INLINE_FUNCTION
-#  ifdef __CUDA_ARCH__
-#    define KOKKOS_INLINE_FUNCTION inline __host__ __device__
-#  else
-#    define KOKKOS_INLINE_FUNCTION inline
-#  endif // __CUDA_ARCH__
-#endif // KOKKOS_INLINE_FUNCTION
 
 /// \class ArithTraitsTesterBase
 /// \brief Base class providing tests for Kokkos::Details::ArithTraits

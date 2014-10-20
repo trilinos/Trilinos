@@ -58,10 +58,10 @@ namespace Teuchos {
    * The coefficients \f$x_i\f$, \f$i=0,\dots,d\f$ can be scalars, vectors,
    * operators, etc., any type that can implement Teuchos::PolynomialTraits.
    * A template specialization of Teuchos::PolynomialTraits must be provided
-   * for the coefficient type, however Teuchos::PolynomailTraits does provide 
+   * for the coefficient type, however Teuchos::PolynomailTraits does provide
    * a default template definition for scalars.
    *
-   * This class provides methods for creating a polynomial of some degree, 
+   * This class provides methods for creating a polynomial of some degree,
    * setting and retreiving coefficients, and evaluating the polynomial and
    * its derivative at some value \f$t\f$.
    */
@@ -78,11 +78,11 @@ namespace Teuchos {
     //! Create a polynomial of degree \c deg
     /*!
      * If \c reserve > \c deg, a polynomial of degree \c deg will be created,
-     * but space for \c reserve + 1 coefficients will be created to allow 
+     * but space for \c reserve + 1 coefficients will be created to allow
      * future increases in the degree of the polynomial to be more efficient.
      * A clone of \c cloneCoeff will be placed at each coefficient.
      */
-    Polynomial(unsigned int deg, const CoeffT& cloneCoeff, 
+    Polynomial(unsigned int deg, const CoeffT& cloneCoeff,
 	       unsigned int reserve = 0);
 
     //! Create a polynomial of degree \c deg without cloning.  DANGEROUS!
@@ -122,19 +122,19 @@ namespace Teuchos {
      * also modify the coefficient pointed to \c c_ptr.  However, in certain
      * situations it is necessary to do this for efficiency.
      */
-    void setCoefficientPtr(unsigned int i, 
+    void setCoefficientPtr(unsigned int i,
 			   const Teuchos::RCP<CoeffT>& c_ptr);
 
     //! Evaluate polynomial and possibly its derivative at time \c t
     /*!
-     * The value of the polynomial at \c t is computed and stored in \c *x. 
-     * If \c xdot is not \c NULL, the derivative with respect to t is 
+     * The value of the polynomial at \c t is computed and stored in \c *x.
+     * If \c xdot is not \c NULL, the derivative with respect to t is
      * evaluated and stored in \c *xdot.
      *
      * Horner's method is used to efficiently evaluate the polynomial
      * and its derivative.
      */
-    void evaluate(typename Teuchos::Polynomial<CoeffT>::scalar_type&  t, 
+    void evaluate(typename Teuchos::Polynomial<CoeffT>::scalar_type&  t,
 		  CoeffT* x, CoeffT* xdot = NULL) const;
 
   private:
@@ -148,7 +148,7 @@ namespace Teuchos {
   protected:
 
     //! Degree of polynomial
-    unsigned int d; 
+    unsigned int d;
 
     //! Size of polynomial (may be > d)
     unsigned int sz;

@@ -81,6 +81,15 @@ namespace Xpetra {
 
   public:
 
+    static Teuchos::RCP<Node> defaultArgNode() {
+        // Workaround function for a deferred visual studio bug
+        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
+        // Use this function for default arguments rather than calling
+        // what is the return value below.  Also helps in reducing
+        // duplication in various constructors.
+        return KokkosClassic::Details::getNode<Node>();
+    }
+
     //! @name Constructors and destructor
     //@{
 
@@ -89,7 +98,7 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = KokkosClassic::Details::getNode<Node> ())
+               const Teuchos::RCP< Node > &node = defaultArgNode())
       : map_ (Teuchos::rcp (new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > (numGlobalElements,
                                                                                   indexBase, comm,
                                                                                   toTpetra(lg), node)))
@@ -100,7 +109,7 @@ namespace Xpetra {
                size_t numLocalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = KokkosClassic::Details::getNode<Node> ())
+               const Teuchos::RCP< Node > &node = defaultArgNode())
       : map_ (Teuchos::rcp (new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > (numGlobalElements,
                                                                                   numLocalElements,
                                                                                   indexBase, comm,
@@ -112,7 +121,7 @@ namespace Xpetra {
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = KokkosClassic::Details::getNode<Node>())
+               const Teuchos::RCP< Node > &node = defaultArgNode())
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements,
                                                                                elementList, indexBase,
                                                                                comm, node)))

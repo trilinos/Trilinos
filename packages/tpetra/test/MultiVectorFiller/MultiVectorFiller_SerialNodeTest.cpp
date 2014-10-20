@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -63,16 +63,17 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Tpetra_MultiVectorFiller.hpp>
-#include <Kokkos_DefaultNode.hpp>
 
-Teuchos::RCP<KokkosClassic::SerialNode>
-makeSerialNode (const Teuchos::RCP<Teuchos::ParameterList>& nodeParams)
+typedef Tpetra::MultiVector<>::node_type default_node_type;
+
+Teuchos::RCP<default_node_type>
+makeDefaultNode (const Teuchos::RCP<Teuchos::ParameterList>& nodeParams)
 {
-  return Teuchos::rcp (new KokkosClassic::SerialNode (*nodeParams));
+  return Teuchos::rcp (new default_node_type (*nodeParams));
 }
 
-int 
-main (int argc, char *argv[]) 
+int
+main (int argc, char *argv[])
 {
   using Teuchos::as;
   using Teuchos::Comm;
@@ -94,7 +95,7 @@ main (int argc, char *argv[])
 #else
   typedef int  global_ordinal_type;
 #endif
-  typedef KokkosClassic::SerialNode node_type;
+  typedef default_node_type node_type;
 
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
@@ -102,42 +103,42 @@ main (int argc, char *argv[])
 
   //
   // Read in command line arguments.
-  //  
+  //
   int unknownsPerNode = 20; // number of unknowns per process
   int unknownsPerElt = 3; // number of unknowns per (overlapping) element
   int numCols = 1;
   bool verbose = false;
 
   Teuchos::CommandLineProcessor cmdp (false, true);
-  cmdp.setOption ("unknownsPerNode", &unknownsPerNode, 
-		  "Number of unknowns per process");
-  cmdp.setOption ("unknownsPerElt", &unknownsPerElt, 
-		  "Number of unknowns per (overlapping) element.");
-  cmdp.setOption ("numCols", &numCols, 
-		  "Number of columns in the multivector.  Must be positive.");
-  cmdp.setOption ("verbose", "quiet", &verbose, 
-		  "Whether to print verbose output.");
+  cmdp.setOption ("unknownsPerNode", &unknownsPerNode,
+                  "Number of unknowns per process");
+  cmdp.setOption ("unknownsPerElt", &unknownsPerElt,
+                  "Number of unknowns per (overlapping) element.");
+  cmdp.setOption ("numCols", &numCols,
+                  "Number of columns in the multivector.  Must be positive.");
+  cmdp.setOption ("verbose", "quiet", &verbose,
+                  "Whether to print verbose output.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return EXIT_FAILURE;
   }
 
-  const Teuchos::EVerbosityLevel verbLevel = 
+  const Teuchos::EVerbosityLevel verbLevel =
     verbose ? Teuchos::VERB_EXTREME : Teuchos::VERB_DEFAULT;
   RCP<FancyOStream> out = verbose ? getFancyOStream (rcpFromRef (std::cout)) :
     getFancyOStream (rcpFromRef (blackHole));
 
   RCP<ParameterList> nodeParams = parameterList ("Kokkos Node");
-  RCP<node_type> node = makeSerialNode (nodeParams);
+  RCP<node_type> node = makeDefaultNode (nodeParams);
 
   // Run the test.
   bool succeeded = true;
   try {
-    Tpetra::Test::testMultiVectorFiller<scalar_type, 
-      local_ordinal_type, 
-      global_ordinal_type, 
+    Tpetra::Test::testMultiVectorFiller<scalar_type,
+      local_ordinal_type,
+      global_ordinal_type,
       node_type> (comm, node, as<size_t> (unknownsPerNode),
-		  as<global_ordinal_type> (unknownsPerElt), 
-		  as<size_t> (numCols), out, verbLevel);
+                  as<global_ordinal_type> (unknownsPerElt),
+                  as<size_t> (numCols), out, verbLevel);
     succeeded = true;
   } catch (std::exception& e) {
     *out << "MultiVectorFiller test threw an exception:  " << e.what() << endl;
@@ -146,9 +147,9 @@ main (int argc, char *argv[])
 
   const int localSuccess = succeeded ? 1 : 0;
   int globalSuccess = localSuccess;
-  Teuchos::reduceAll (*comm, Teuchos::REDUCE_SUM, localSuccess, 
-		      Teuchos::ptr (&globalSuccess));
-  
+  Teuchos::reduceAll (*comm, Teuchos::REDUCE_SUM, localSuccess,
+                      Teuchos::ptr (&globalSuccess));
+
   if (globalSuccess) {
     std::cout << "End Result: TEST PASSED" << endl;
     return EXIT_SUCCESS;

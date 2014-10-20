@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -74,11 +74,13 @@ bool sillyCgSolve(
   const Scalar one = ST::one(), zero = ST::zero();  using Teuchos::as;
   using Teuchos::RCP; using Thyra::VectorSpaceBase; using Thyra::VectorBase;
   using Thyra::NOTRANS; using Thyra::V_V; using Thyra::apply;
-  
+
 
   // Validate input
   THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("sillyCgSolve()", A, Thyra::NOTRANS, *x, &b);
   Teuchos::EVerbosityLevel vl = Teuchos::VERB_MEDIUM;
+
+  std::ios::fmtflags fmt(out.flags());
 
   out << "\nStarting CG solver ...\n" << std::scientific << "\ndescribe A:\n"<<describe(A, vl)
       << "\ndescribe b:\n"<<describe(b, vl)<<"\ndescribe x:\n"<<describe(*x, vl)<<"\n";
@@ -101,7 +103,10 @@ bool sillyCgSolve(
     const bool isConverged = r_nrm/r0_nrm <= tolerance;
     if( iter%(maxNumIters/10+1) == 0 || iter == maxNumIters || isConverged ) {
       out << "Iter = " << iter << ", ||b-A*x||/||b-A*x0|| = " << (r_nrm/r0_nrm) << std::endl;
-      if( r_nrm/r0_nrm < tolerance ) return true; // Success!
+      if( r_nrm/r0_nrm < tolerance ) {
+        out.flags(fmt);
+        return true; // Success!
+      }
     }
 
     // Compute iteration
@@ -116,8 +121,8 @@ bool sillyCgSolve(
 
   }
 
+  out.flags(fmt);
   return false; // Failure
-
 } // end sillyCgSolve
 
 #endif // THYRA_SILLY_CG_SOLVE_HPP

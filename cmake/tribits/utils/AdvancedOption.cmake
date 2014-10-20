@@ -51,7 +51,7 @@
 #
 #   OPTION(<varName> [other arguments])
 #   MARK_AS_ADVANCED(<varName>)
-# 
+#
 MACRO(ADVANCED_OPTION VARNAME)
   OPTION(${VARNAME} ${ARGN})
   MARK_AS_ADVANCED(${VARNAME})

@@ -62,7 +62,7 @@ public:
 
   /** \name Modifier Functions */
   //@{
-  
+
   /** \brief Add a converter to the database.
    *
    * \param convertToAdd The converter to add to the database.
@@ -71,7 +71,7 @@ public:
     getConverterMap().insert(
       ConverterPair(converterToAdd->getTypeAttributeValue(), converterToAdd));
   }
-  
+
   //@}
 
   /** \name Getter Functions */
@@ -82,14 +82,14 @@ public:
    *
    * \param entry The ParameterEntry for which a converter is desired.
    */
-  static RCP<const ParameterEntryXMLConverter> 
+  static RCP<const ParameterEntryXMLConverter>
     getConverter(RCP<const ParameterEntry> entry);
 
   /** \brief Get an appropriate ParameterEntryXMLConverter given a XMLObject.
    *
    * \param xmlObject The XMLObject for which a converter is desired.
    */
-  static RCP<const ParameterEntryXMLConverter> 
+  static RCP<const ParameterEntryXMLConverter>
     getConverter(const XMLObject& xmlObject);
 
   /** \brief Gets the default converter to be used on Parameter Entries */
@@ -104,12 +104,12 @@ public:
 
   /** \name Converter Functions */
   //@{
-  
+
   /**
    * \brief Converts the given ParameterEntry to XML.
    */
   static XMLObject convertEntry(
-    RCP<const ParameterEntry> entry, 
+    RCP<const ParameterEntry> entry,
     const std::string& name,
     const ParameterEntry::ParameterEntryID& id,
     const ValidatortoIDMap& validatorIDsMap)
@@ -125,7 +125,7 @@ public:
   {
     return getConverter(xmlObj)->fromXMLtoParameterEntry(xmlObj);
   }
-  
+
   //@}
 
   /** \name I/O Functions */
@@ -150,11 +150,11 @@ private:
   /** \brief convience typedef */
   typedef std::pair<std::string, RCP<ParameterEntryXMLConverter> > ConverterPair;
 
-  //@} 
-  
+  //@}
+
   /** \brief Gets the map containing all the ParameterEntry converters. */
   static ConverterMap& getConverterMap();
-  
+
 
 };
 

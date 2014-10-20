@@ -60,6 +60,7 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 // Epetra
 #include <EpetraExt_CrsMatrixIn.h>
@@ -97,7 +98,7 @@ namespace MueLuExamples {
 
 #include "MueLu_UseShortNames.hpp"
 
-void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase* aggFact,const Teuchos::RCP<const Teuchos::Comm<int> >& comm );
+  void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase* aggFact,const Teuchos::RCP<const Teuchos::Comm<int> >& comm );
 
 }
 
@@ -111,184 +112,191 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  out->setOutputToRootOnly(0);
-  *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
+  bool success = false;
+  bool verbose = true;
+  try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setOutputToRootOnly(0);
+    *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
-  // Timing
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor Monitor(myTime);
+    // Timing
+    Teuchos::Time myTime("global");
+    Teuchos::TimeMonitor Monitor(myTime);
 
 
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
-  *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
+    *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 
-  // custom parameters
-  LO maxLevels = 4;
+    // custom parameters
+    LO maxLevels = 4;
 
-  int maxCoarseSize=1; //FIXME clp doesn't like long long int
-  std::string aggOrdering = "natural";
-  int minPerAgg=3;
-  int maxNbrAlreadySelected=0;
+    int maxCoarseSize=1; //FIXME clp doesn't like long long int
+    std::string aggOrdering = "natural";
+    int minPerAgg=3;
+    int maxNbrAlreadySelected=0;
 
-  // read in problem
-  Epetra_Map emap(10201,0,*Xpetra::toEpetra(comm));
-  Epetra_CrsMatrix * ptrA = 0;
-  Epetra_Vector * ptrf = 0;
+    // read in problem
+    Epetra_Map emap(10201,0,*Xpetra::toEpetra(comm));
+    Epetra_CrsMatrix * ptrA = 0;
+    Epetra_Vector * ptrf = 0;
 
-  std::cout << "Reading matrix market file" << std::endl;
-  EpetraExt::MatrixMarketFileToCrsMatrix("Condif2Mat.mat",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("Condif2Rhs.mat",emap,ptrf);
-  RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
-  RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
+    std::cout << "Reading matrix market file" << std::endl;
+    EpetraExt::MatrixMarketFileToCrsMatrix("Condif2Mat.mat",emap,emap,emap,ptrA);
+    EpetraExt::MatrixMarketFileToVector("Condif2Rhs.mat",emap,ptrf);
+    RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
+    RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
 
-  // Epetra_CrsMatrix -> Xpetra::Matrix
-  RCP<Xpetra::CrsMatrix<double, int, int> > exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-  RCP<Xpetra::CrsMatrixWrap<double, int, int> > crsOp = Teuchos::rcp(new Xpetra::CrsMatrixWrap<double, int, int>(exA));
-  RCP<Xpetra::Matrix<double, int, int> > Op = Teuchos::rcp_dynamic_cast<Xpetra::Matrix<double, int, int> >(crsOp);
+    // Epetra_CrsMatrix -> Xpetra::Matrix
+    RCP<Xpetra::CrsMatrix<double, int, int> > exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+    RCP<Xpetra::CrsMatrixWrap<double, int, int> > crsOp = Teuchos::rcp(new Xpetra::CrsMatrixWrap<double, int, int>(exA));
+    RCP<Xpetra::Matrix<double, int, int> > Op = Teuchos::rcp_dynamic_cast<Xpetra::Matrix<double, int, int> >(crsOp);
 
-  // Epetra_Vector -> Xpetra::Vector
-  RCP<Xpetra::Vector<double,int,int> > xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
+    // Epetra_Vector -> Xpetra::Vector
+    RCP<Xpetra::Vector<double,int,int> > xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
 
-  // Epetra_Map -> Xpetra::Map
-  const RCP< const Xpetra::Map<int, int> > map = Xpetra::toXpetra<int>(emap);
+    // Epetra_Map -> Xpetra::Map
+    const RCP< const Xpetra::Map<int, int> > map = Xpetra::toXpetra<int>(emap);
 
-  // build nullspace
-  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
-  nullSpace->putScalar( (SC) 1.0);
+    // build nullspace
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
+    nullSpace->putScalar( (SC) 1.0);
 
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO> > H = rcp ( new Hierarchy() );
-  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  H->SetMaxCoarseSize((GO) maxCoarseSize);;
+    RCP<MueLu::Hierarchy<SC,LO,GO,NO> > H = rcp ( new Hierarchy() );
+    H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+    H->SetMaxCoarseSize((GO) maxCoarseSize);;
 
-  // build finest Level
-  RCP<MueLu::Level> Finest = H->GetLevel();
-  Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->Set("A",Op);
-  Finest->Set("Nullspace",nullSpace);
+    // build finest Level
+    RCP<MueLu::Level> Finest = H->GetLevel();
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+    Finest->Set("A",Op);
+    Finest->Set("Nullspace",nullSpace);
 
-  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-  *out << "========================= Aggregate option summary  =========================" << std::endl;
-  *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
-  *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-  CoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-  CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-  std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
-  if (aggOrdering == "natural" || aggOrdering == "graph" || aggOrdering == "random") {
-    *out << "aggregate ordering :                    " << aggOrdering << std::endl;
-    CoupledAggFact->SetOrdering(aggOrdering);
-  } else {
-    std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
-    throw(MueLu::Exceptions::RuntimeError(msg));
+    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+    *out << "========================= Aggregate option summary  =========================" << std::endl;
+    *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
+    *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
+    CoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+    CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+    std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
+    if (aggOrdering == "natural" || aggOrdering == "graph" || aggOrdering == "random") {
+      *out << "aggregate ordering :                    " << aggOrdering << std::endl;
+      CoupledAggFact->SetOrdering(aggOrdering);
+    } else {
+      std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
+      throw(MueLu::Exceptions::RuntimeError(msg));
+    }
+    CoupledAggFact->SetPhase3AggCreation(0.5);
+    Finest->Keep("Aggregates",CoupledAggFact.get());
+    *out << "=============================================================================" << std::endl;
+
+    // build transfer operators
+    //   RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
+    //   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(CoupledAggFact,nspFact));
+    //   //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
+    //   //RCP<FactoryBase2> Rfact  = rcp( new GenericRFactory(Pfact));
+    //   RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
+    //   RCP<FactoryBase2>   Rfact  = rcp( new TransPFactory(Pfact) );
+    //   RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
+    //   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+    //   Finest->Keep("Aggregates",CoupledAggFact.get());
+    //   Finest->Keep("Nullspace",nspFact.get());
+
+    // build level smoothers
+    RCP<SmootherPrototype> smooProto;
+    std::string ifpackType;
+    Teuchos::ParameterList ifpackList;
+    ifpackList.set("relaxation: sweeps", (LO) 1);
+    ifpackList.set("relaxation: damping factor", (SC) 0.9); // 0.7
+    ifpackType = "RELAXATION";
+    ifpackList.set("relaxation: type", "Gauss-Seidel");
+
+    smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
+    RCP<SmootherFactory> SmooFact;
+    if (maxLevels > 1)
+      SmooFact = rcp( new SmootherFactory(smooProto) );
+
+    RCP<FactoryManager> M = rcp(new FactoryManager());
+    M->SetFactory("Aggregates", CoupledAggFact);
+    M->SetFactory("Smoother", SmooFact);
+
+    H->Setup(*M,0,maxLevels);
+
+    // print out aggregation information
+    for(LocalOrdinal l=0; l<H->GetNumLevels()-1;l++) {
+      RCP<Level> level = H->GetLevel((int)l);
+      ExportAggregates(level, CoupledAggFact.get(),comm);
+    }
+
+    success = true;
   }
-  CoupledAggFact->SetPhase3AggCreation(0.5);
-  Finest->Keep("Aggregates",CoupledAggFact.get());
-  *out << "=============================================================================" << std::endl;
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  // build transfer operators
-//   RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
-//   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(CoupledAggFact,nspFact));
-//   //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
-//   //RCP<FactoryBase2> Rfact  = rcp( new GenericRFactory(Pfact));
-//   RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
-//   RCP<FactoryBase2>   Rfact  = rcp( new TransPFactory(Pfact) );
-//   RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
-//   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
-
-//   Finest->Keep("Aggregates",CoupledAggFact.get());
-//   Finest->Keep("Nullspace",nspFact.get());
-
-  // build level smoothers
-  RCP<SmootherPrototype> smooProto;
-  std::string ifpackType;
-  Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 0.9); // 0.7
-  ifpackType = "RELAXATION";
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
-
-  smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
-  RCP<SmootherFactory> SmooFact;
-  if (maxLevels > 1)
-    SmooFact = rcp( new SmootherFactory(smooProto) );
-
-  RCP<FactoryManager> M = rcp(new FactoryManager());
-  M->SetFactory("Aggregates", CoupledAggFact);
-  M->SetFactory("Smoother", SmooFact);
-
-  H->Setup(*M,0,maxLevels);
-
-  // print out aggregation information
-  for(LocalOrdinal l=0; l<H->GetNumLevels()-1;l++) {
-    RCP<Level> level = H->GetLevel((int)l);
-    ExportAggregates(level, CoupledAggFact.get(),comm);
-  }
-
-  return EXIT_SUCCESS;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
 namespace MueLuExamples {
 
 #include "MueLu_UseShortNames.hpp"
 
-void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase* aggFact,const Teuchos::RCP<const Teuchos::Comm<int> >& comm ) {
-  if(level->IsAvailable("Aggregates",aggFact) == false) {
-    std::cout << "no Aggregates available." << std::endl;
-    return;
+  void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase* aggFact,const Teuchos::RCP<const Teuchos::Comm<int> >& comm ) {
+    if(level->IsAvailable("Aggregates",aggFact) == false) {
+      std::cout << "no Aggregates available." << std::endl;
+      return;
+    }
+    if(level->IsAvailable("A") == false) {
+      std::cout << "no matrix A available" << std::endl;
+      return;
+    }
+    Teuchos::RCP<Aggregates> aggregates = level->Get< Teuchos::RCP<Aggregates> >("Aggregates",aggFact);
+    Teuchos::RCP<Matrix> Op = level->Get<Teuchos::RCP<Matrix> >("A");
+
+    Teuchos::RCP<LOVector>vertex2AggId_vector = aggregates->GetVertex2AggId();
+    Teuchos::RCP<LOVector>procWinner_vector = aggregates->GetProcWinner();
+    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0);
+    Teuchos::ArrayRCP<LO> procWinner = aggregates->GetProcWinner()->getDataNonConst(0);
+
+    // 1.) prepare for calculating global aggregate ids
+    std::vector<GlobalOrdinal> numAggsGlobal(comm->getSize(),0);
+    std::vector<GlobalOrdinal> numAggsLocal(comm->getSize(),0);
+    std::vector<GlobalOrdinal> minGlobalAggId(comm->getSize(),0);
+    numAggsLocal[comm->getRank()] = aggregates->GetNumAggregates();
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM, comm->getSize(),&numAggsLocal[0], &numAggsGlobal[0]);
+    for(int i=1; i<Teuchos::as<int>(numAggsGlobal.size()); ++i) {
+      numAggsGlobal[i] += numAggsGlobal[i-1];
+      minGlobalAggId[i] = numAggsGlobal[i-1];
+    }
+
+    // 2.) build overlapping vector (global row id (column map) -> global AggId)
+    Teuchos::RCP<MultiVector> OverlappingRowId2GlobalAggId = MultiVectorFactory::Build(Op->getColMap(),1);
+    Teuchos::ArrayRCP<Scalar> OverlappingRowId2GlobalAggId_data = OverlappingRowId2GlobalAggId->getDataNonConst(0);
+
+    // loop over local aggids
+    for(LocalOrdinal lrow=0; lrow<vertex2AggId.size(); ++lrow)
+    {
+      LocalOrdinal localAggId = vertex2AggId[lrow];
+      LocalOrdinal localAggIdProc = procWinner[lrow];
+      GlobalOrdinal globalAggId = minGlobalAggId[localAggIdProc] + localAggId;
+      OverlappingRowId2GlobalAggId_data[lrow] = globalAggId;
+    }
+
+    // 3.) communicate vector (global row id -> global agg id)
+    Teuchos::RCP<const Import> importer = ImportFactory::Build(Op->getColMap(), Op->getRowMap());
+
+    Teuchos::RCP<MultiVector> RowMap2GlobalAggId = MultiVectorFactory::Build(Op->getRowMap(),1);
+    RowMap2GlobalAggId->doImport(*OverlappingRowId2GlobalAggId,*importer,Xpetra::INSERT);
+    Teuchos::ArrayRCP<Scalar> RowMap2GlobalAggId_data = RowMap2GlobalAggId->getDataNonConst(0);
+
+    // 4.) write to file
+    std::stringstream filename;
+    filename << "aggs_level" << level->GetLevelID() << "_proc" << comm->getRank() << ".out";
+    std::ofstream fout(filename.str().c_str());
+    for(size_t i=0; i<RowMap2GlobalAggId->getLocalLength(); i++) {
+      fout << i << " " << Op->getRowMap()->getGlobalElement(i) << " " << RowMap2GlobalAggId_data[i] << std::endl;
+    }
+    fout.close();
   }
-  if(level->IsAvailable("A") == false) {
-    std::cout << "no matrix A available" << std::endl;
-    return;
-  }
-  Teuchos::RCP<Aggregates> aggregates = level->Get< Teuchos::RCP<Aggregates> >("Aggregates",aggFact);
-  Teuchos::RCP<Matrix> Op = level->Get<Teuchos::RCP<Matrix> >("A");
-
-  Teuchos::RCP<LOVector>vertex2AggId_vector = aggregates->GetVertex2AggId();
-  Teuchos::RCP<LOVector>procWinner_vector = aggregates->GetProcWinner();
-  Teuchos::ArrayRCP<LO> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0);
-  Teuchos::ArrayRCP<LO> procWinner = aggregates->GetProcWinner()->getDataNonConst(0);
-
-  // 1.) prepare for calculating global aggregate ids
-  std::vector<GlobalOrdinal> numAggsGlobal(comm->getSize(),0);
-  std::vector<GlobalOrdinal> numAggsLocal(comm->getSize(),0);
-  std::vector<GlobalOrdinal> minGlobalAggId(comm->getSize(),0);
-  numAggsLocal[comm->getRank()] = aggregates->GetNumAggregates();
-  Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM, comm->getSize(),&numAggsLocal[0], &numAggsGlobal[0]);
-  for(int i=1; i<Teuchos::as<int>(numAggsGlobal.size()); ++i) {
-    numAggsGlobal[i] += numAggsGlobal[i-1];
-    minGlobalAggId[i] = numAggsGlobal[i-1];
-  }
-
-  // 2.) build overlapping vector (global row id (column map) -> global AggId)
-  Teuchos::RCP<MultiVector> OverlappingRowId2GlobalAggId = MultiVectorFactory::Build(Op->getColMap(),1);
-  Teuchos::ArrayRCP<Scalar> OverlappingRowId2GlobalAggId_data = OverlappingRowId2GlobalAggId->getDataNonConst(0);
-
-  // loop over local aggids
-  for(LocalOrdinal lrow=0; lrow<vertex2AggId.size(); ++lrow)
-  {
-    LocalOrdinal localAggId = vertex2AggId[lrow];
-    LocalOrdinal localAggIdProc = procWinner[lrow];
-    GlobalOrdinal globalAggId = minGlobalAggId[localAggIdProc] + localAggId;
-    OverlappingRowId2GlobalAggId_data[lrow] = globalAggId;
-  }
-
-  // 3.) communicate vector (global row id -> global agg id)
-  Teuchos::RCP<const Import> importer = ImportFactory::Build(Op->getColMap(), Op->getRowMap());
-
-  Teuchos::RCP<MultiVector> RowMap2GlobalAggId = MultiVectorFactory::Build(Op->getRowMap(),1);
-  RowMap2GlobalAggId->doImport(*OverlappingRowId2GlobalAggId,*importer,Xpetra::INSERT);
-  Teuchos::ArrayRCP<Scalar> RowMap2GlobalAggId_data = RowMap2GlobalAggId->getDataNonConst(0);
-
-  // 4.) write to file
-  std::stringstream filename;
-  filename << "aggs_level" << level->GetLevelID() << "_proc" << comm->getRank() << ".out";
-  std::ofstream fout(filename.str().c_str());
-  for(size_t i=0; i<RowMap2GlobalAggId->getLocalLength(); i++) {
-    fout << i << " " << Op->getRowMap()->getGlobalElement(i) << " " << RowMap2GlobalAggId_data[i] << std::endl;
-  }
-  fout.close();
-}
 
 }

@@ -46,8 +46,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "Kokkos_Cuda.hpp"
-#include "Cuda/Kokkos_Cuda_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"

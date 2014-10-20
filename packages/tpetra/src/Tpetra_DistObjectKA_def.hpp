@@ -42,17 +42,14 @@
 #ifndef TPETRA_DISTOBJECT_DEF_HPP
 #define TPETRA_DISTOBJECT_DEF_HPP
 
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Distributor.hpp"
-
-#ifdef DOXYGEN_USE_ONLY
-#  include "Tpetra_DistObjectKA_decl.hpp"
-#endif // DOXYGEN_USE_ONLY
-
-#if TPETRA_USE_KOKKOS_DISTOBJECT
+#include "Tpetra_DistObjectKA_decl.hpp"
 
 namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -613,6 +610,11 @@ namespace Tpetra {
 
 
 } // namespace Tpetra
+
+#else
+
+#define TPETRA_DISTOBJECTKA_INSTANT(SCALAR, LO, GO, NODE)
+#define TPETRA_DISTOBJECTKA_INSTANT_CHAR(LO, GO, NODE)
 
 #endif /* TPETRA_ENABLE_KOKKOSARRAY_DISTOBJECT */
 

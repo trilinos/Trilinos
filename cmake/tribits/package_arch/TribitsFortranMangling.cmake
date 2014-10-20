@@ -45,7 +45,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
   FORTRAN_MANGLING()
 
   # Verify the selected combination of Fortran and C++ compilers.
-  IF("${CMAKE_VERSION}" VERSION_GREATER 2.7.20090824 AND NOT ${PROJECT_NAME}_SKIP_FORTRANCINTERFACE_VERIFY_TEST)
+  IF(NOT ${PROJECT_NAME}_SKIP_FORTRANCINTERFACE_VERIFY_TEST)
     INCLUDE(FortranCInterface)
     FortranCInterface_VERIFY(CXX)
   ENDIF()
@@ -62,7 +62,7 @@ IF (FC_FUNC_DEFAULT)
   # be too hard.
 
 ELSE()
- 
+
   IF(CYGWIN)
     SET(F77_FUNC_DEFAULT "(name,NAME) name ## _" )
     SET(F77_FUNC__DEFAULT "(name,NAME) name ## __" )

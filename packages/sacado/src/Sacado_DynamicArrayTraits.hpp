@@ -35,10 +35,7 @@
 
 #include "Sacado_Traits.hpp"
 #if defined(HAVE_SACADO_KOKKOSCORE)
-#include "KokkosCore_config.h"
-#if defined(KOKKOS_HAVE_CUDA)
-#include "Kokkos_Cuda.hpp"
-#endif
+#include "Kokkos_Core.hpp"
 #endif
 
 namespace Sacado {

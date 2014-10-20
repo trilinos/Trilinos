@@ -46,7 +46,7 @@
 #include "Teuchos_RCP.hpp"
 
 
-namespace Teuchos 
+namespace Teuchos
 {
   /** \brief Class ConstHandleable provides an abstract interface for
    * polymorphic conversion from raw pointers to const smart pointers.
@@ -62,8 +62,8 @@ namespace Teuchos
    * where ConstHandleable<Base> provides a getConstRcp() method which returns
    * the result of a call to rcp() on this.
    */
-  template <typename Base> 
-  class ConstHandleable 
+  template <typename Base>
+  class ConstHandleable
   {
   public:
     /** \brief . */
@@ -88,7 +88,7 @@ namespace Teuchos
    * Handleable<Base> provides a getRcp() method which returns the result of a
    * call to rcp() on this.
    */
-  template <typename Base> 
+  template <typename Base>
   class Handleable : public virtual ConstHandleable<Base>
   {
   public:
@@ -118,7 +118,7 @@ namespace Teuchos
  */
 #define TEUCHOS_GET_RCP(Base)                                           \
   virtual Teuchos::RCP<const Base > getConstRcp() const {return rcp(this);} \
-  virtual Teuchos::RCP<Base > getRcp() {return rcp(this);} 
+  virtual Teuchos::RCP<Base > getRcp() {return rcp(this);}
 
 /** \brief Use this macro as an easy way to implement the ConstHandleable
  * interface in a derived class. For example,

@@ -44,9 +44,7 @@
 #include <gtest/gtest.h>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_hwloc.hpp>
 
-#include <Kokkos_View.hpp>
 #include <impl/Kokkos_ViewTileLeft.hpp>
 #include <impl/Kokkos_Serial_TaskPolicy.hpp>
 
@@ -70,6 +68,7 @@
 #include <TestTaskPolicy.hpp>
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
 
 namespace Test {
 
@@ -101,6 +100,7 @@ TEST_F( serial , range_tag )
 TEST_F( serial , team_tag )
 {
   TestTeamPolicy< Kokkos::Serial >::test_for( 1000 );
+  TestTeamPolicy< Kokkos::Serial >::test_reduce( 1000 );
 }
 
 TEST_F( serial, crsarray) {
@@ -307,6 +307,13 @@ TEST_F( serial , compiler_macros )
 
 //----------------------------------------------------------------------------
 
+TEST_F( serial , memory_space )
+{
+  TestMemorySpace< Kokkos::Serial >();
+}
+
+//----------------------------------------------------------------------------
+
 TEST_F( serial , task_policy )
 {
   TestTaskPolicy::test_norm2< Kokkos::Serial >( 1000 );
@@ -330,9 +337,12 @@ TEST_F( serial , cxx11 )
 #if defined (KOKKOS_HAVE_CXX11)
 TEST_F( serial , team_vector )
 {
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(0) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(1) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(5) ) );
 }
 #endif
 } // namespace test

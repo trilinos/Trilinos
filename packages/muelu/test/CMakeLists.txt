@@ -2,7 +2,10 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Tpetra
   )
 
-TRIBITS_ADD_TEST_DIRECTORIES(blockedtransfer)
+# experimental data
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  TRIBITS_ADD_TEST_DIRECTORIES(blockedtransfer)
+ENDIF()
 
 IF(Teuchos_ENABLE_LONG_LONG_INT AND HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
   TRIBITS_ADD_TEST_DIRECTORIES(longlong)
@@ -28,12 +31,11 @@ if (NOT MUELU_VALGRIND_TESTING)
     TRIBITS_ADD_TEST_DIRECTORIES(helmholtz)
   ENDIF()
 ELSE()
-  MESSAGE("Skipping EasyParameterListInterpreter and Helmholtz due to valgrind testing.")
+  MESSAGE(STATUS "Skipping EasyParameterListInterpreter and Helmholtz due to valgrind testing.")
 ENDIF()
 
 #TRIBITS_ADD_TEST_DIRECTORIES(mhdvanka)
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 

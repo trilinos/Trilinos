@@ -214,10 +214,11 @@ namespace MueLu {
       std::string phase = algos_[a]->description();
       SubFactoryMonitor sfm(*this, "Algo \"" + phase + "\"", currentLevel);
 
+      int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
       algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
+      algos_[a]->SetProcRankVerbose(oldRank);
 
       if (IsPrint(Statistics1)) {
-
         GO numLocalAggregated = numRows - numNonAggregatedNodes, numGlobalAggregated = 0;
         GO numLocalAggs       = aggregates->GetNumAggregates(),  numGlobalAggs = 0;
         sumAll(comm, numLocalAggregated, numGlobalAggregated);

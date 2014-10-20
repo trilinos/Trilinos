@@ -47,7 +47,7 @@ using namespace Teuchos;
 
 TreeBuildingXMLHandler::TreeBuildingXMLHandler()
 	: root_(), current_(), path_()
-{ 
+{
 	current_ = root_;
 }
 
@@ -74,12 +74,12 @@ void TreeBuildingXMLHandler::characters(const std::string& chars)
   }
 }
 
-void TreeBuildingXMLHandler::startElement(const std::string& tag, 
+void TreeBuildingXMLHandler::startElement(const std::string& tag,
 																					const Map& attributes)
 {
   XMLObject parent;
-  
-  if (current_.isEmpty()) 
+
+  if (current_.isEmpty())
     {
       root_ = XMLObject("root");
       current_ = root_;
@@ -113,7 +113,7 @@ int TreeBuildingXMLHandler::endElement(const std::string& tag)
       current_ = path_.top();
       path_.pop();
     }
-  else 
+  else
     {
       error = 1; // error: cannot end element that wasn't started
     }

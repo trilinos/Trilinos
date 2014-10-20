@@ -45,7 +45,7 @@
 namespace Teuchos {
 
   std::string
-  mpiErrorCodeToString (const int err) 
+  mpiErrorCodeToString (const int err)
   {
     if (err == MPI_SUCCESS) {
       return "MPI_SUCCESS";

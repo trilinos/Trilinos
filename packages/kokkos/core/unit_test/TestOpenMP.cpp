@@ -43,15 +43,7 @@
 
 #include <gtest/gtest.h>
 
-// Force OMP atomics for testing only
-
-//#define KOKKOS_ATOMICS_USE_OMP31
-#include <Kokkos_Atomic.hpp>
-
 #include <Kokkos_Core.hpp>
-#include <Kokkos_hwloc.hpp>
-
-#include <Kokkos_View.hpp>
 
 #include <Kokkos_CrsArray.hpp>
 
@@ -72,6 +64,7 @@
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
 #include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
 
 namespace Test {
 
@@ -114,6 +107,12 @@ TEST_F( openmp , range_tag )
   TestRange< Kokkos::OpenMP >::test_for(1000);
   TestRange< Kokkos::OpenMP >::test_reduce(1000);
   TestRange< Kokkos::OpenMP >::test_scan(1000);
+}
+
+TEST_F( openmp , team_tag )
+{
+  TestTeamPolicy< Kokkos::OpenMP >::test_for(1000);
+  TestTeamPolicy< Kokkos::OpenMP >::test_reduce(1000);
 }
 
 TEST_F( openmp, crsarray) {
@@ -259,8 +258,15 @@ TEST_F( openmp , compiler_macros )
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::OpenMP >() ) );
 }
 
+//----------------------------------------------------------------------------
+
+TEST_F( openmp , memory_space )
+{
+  TestMemorySpace< Kokkos::OpenMP >();
+}
 
 //----------------------------------------------------------------------------
+
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
 TEST_F( openmp , cxx11 )
 {
@@ -276,9 +282,12 @@ TEST_F( openmp , cxx11 )
 #if defined (KOKKOS_HAVE_CXX11)
 TEST_F( openmp , team_vector )
 {
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(0) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(1) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(2) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(5) ) );
 }
 #endif
 } // namespace test

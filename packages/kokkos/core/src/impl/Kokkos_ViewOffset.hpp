@@ -45,6 +45,7 @@
 #define KOKKOS_VIEWOFFSET_HPP
 
 #include <Kokkos_Pair.hpp>
+#include <Kokkos_Layout.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Shape.hpp>
 

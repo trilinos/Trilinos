@@ -45,9 +45,8 @@
 
 #include <iostream>
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 
-#include <Kokkos_View.hpp>
 #include <impl/Kokkos_ViewTileLeft.hpp>
 
 #include <Kokkos_CrsArray.hpp>
@@ -67,6 +66,8 @@
 #include <TestTeam.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestMemorySpaceTracking.hpp>
+#include <TestTeamVector.hpp>
 
 namespace Test {
 
@@ -76,6 +77,30 @@ void test_abort()
   Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
     Kokkos::CudaSpace ,
     Kokkos::HostSpace >::verify();
+}
+
+__global__
+void test_cuda_spaces_int_value( int * ptr )
+{
+  if ( *ptr == 42 ) { *ptr = 2 * 42 ; }
+}
+
+void test_cuda_spaces()
+{
+  if ( Kokkos::CudaUVMSpace::available() ) {
+
+    int * uvm_ptr = (int*) Kokkos::CudaUVMSpace::allocate("uvm_ptr",typeid(int),sizeof(int),1);
+
+    *uvm_ptr = 42 ;
+
+    Kokkos::Cuda::fence();
+    test_cuda_spaces_int_value<<<1,1>>>(uvm_ptr);
+    Kokkos::Cuda::fence();
+
+    EXPECT_EQ( *uvm_ptr, int(2*42) );
+
+    Kokkos::CudaUVMSpace::decrement(uvm_ptr);
+  }
 }
 
 
@@ -105,9 +130,15 @@ void test_device_cuda_view_api()
 
 void test_device_cuda_range_tag()
 {
-  TestRange< Kokkos::Cuda >::test_for(1000);
-  TestRange< Kokkos::Cuda >::test_reduce(1000);
-  TestRange< Kokkos::Cuda >::test_scan(1000);
+  // TestRange< Kokkos::Cuda >::test_for(1000);
+  // TestRange< Kokkos::Cuda >::test_reduce(1000);
+  // TestRange< Kokkos::Cuda >::test_scan(1000);
+}
+
+void test_device_cuda_team_tag()
+{
+  // TestTeamPolicy< Kokkos::Cuda >::test_for(1000);
+  // TestTeamPolicy< Kokkos::Cuda >::test_reduce(1000);
 }
 
 void test_device_cuda_crsarray() {
@@ -273,5 +304,25 @@ void test_device_cuda_compiler_macros()
 {
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Cuda >() ) );
 }
+
+void test_device_cuda_memory_space()
+{
+  TestMemorySpace< Kokkos::Cuda >();
+}
+
+#ifdef KOKKOS_HAVE_CXX11
+void test_device_cuda_team_vector()
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(0) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Cuda >(5) ) );
+}
+#endif
+
+//----------------------------------------------------------------------------
+
 
 }

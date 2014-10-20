@@ -105,6 +105,8 @@ struct TPL_Traits {
       //        however, this condition is not needed for the arrays we use.
       //        For now, we'll set these arrays to NULL.  We could allocate
       //        a dummy value here if needed.  KDD 1/23/14
+      // Note:  ParMETIS would likely prefer a dummy value as well.  It does
+      //        not like NULL adjcny array.  KDD 10/7/14
     }
   }
 

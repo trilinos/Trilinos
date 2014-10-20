@@ -89,30 +89,60 @@ namespace MueLu {
     //! @name Constructors/Destructors
     //@{
 
-    //! Constructor that accepts a user-provided ParameterList.
-    ParameterListInterpreter(Teuchos::ParameterList& paramList);
+    /*! @brief Constructor that accepts a user-provided ParameterList.
+
+        Constructor for parameter list interpreter which directly interprets Teuchos::ParameterLists
+
+        @details The parameter list can be either in the easy parameter list format or in the factory driven parameter list format.
+
+        @param[in] paramList (Teuchos::ParameterList): ParameterList containing the MueLu parameters
+        @param[in] factFact  (RCP<FactoryFactory>): Optional parameter allowing to define user-specific factory interpreters for user-specific extensions of the XML interface. (default: Teuchos::null)
+
+     */
+    ParameterListInterpreter(Teuchos::ParameterList& paramList, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null);
 
     /*! @brief Constructor that reads parameters from an XML file.
 
         XML options are converted to ParameterList entries by Teuchos.
+
+        @param[in] paramList (Teuchos::ParameterList): ParameterList containing the MueLu parameters
+        @param[in] factFact  (RCP<FactoryFactory>): Optional parameter allowing to define user-specific factory interpreters for user-specific extensions of the XML interface. (default: Teuchos::null)
+
     */
-    ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm);
+    ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null);
 
     //! Destructor.
     virtual ~ParameterListInterpreter() { }
 
     //@}
 
+    /*! @brief Set parameter list for Parameter list interpreter.
+
+       The routine checks whether it is a parameter list in the easy parameter format or the more advanced factory-based parameter format and calls the corresponding interpreter routine.
+
+       When finished, the parameter list is set that will used by the hierarchy build phase.
+
+       This method includes validation and some pre-parsing of the list for:
+           - verbosity level
+           - data to export
+           - cycle type
+           - max coarse size
+           - max levels
+           - number of equations
+
+       @param[in] paramList: ParameterList containing the MueLu parameters.
+    */
     void SetParameterList(const Teuchos::ParameterList& paramList);
 
+    //! Call the SetupHierarchy routine from the HiearchyManager object.
     void SetupHierarchy(Hierarchy& H) const;
 
   private:
     //! Setup Matrix object
     virtual void SetupMatrix(Matrix& A) const;
 
-    int       blockSize_;
-    CycleType Cycle_;
+    int       blockSize_; ///< block size of matrix (fixed block size)
+    CycleType Cycle_;     ///< multigrid cycle type (V-cycle or W-cycle)
 
     //! Easy interpreter stuff
     //@{
@@ -143,6 +173,9 @@ namespace MueLu {
     typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
 
     void BuildFactoryMap(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, FactoryMap& factoryMapOut, FactoryManagerMap& factoryManagers) const;
+
+    //! Internal factory for factories
+    Teuchos::RCP<FactoryFactory> factFact_; 
     //@}
   };
 

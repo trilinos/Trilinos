@@ -43,7 +43,7 @@
 #define KOKKOS_ATOMIC_UQ_ATOMIC_HPP
 
 #include "Sacado_UQ_PCE.hpp"
-#include "Kokkos_Atomic.hpp"
+#include "Kokkos_Core.hpp"
 
 //----------------------------------------------------------------------------
 // Overloads of Kokkos atomic functions for Sacado::UQ::PCE scalar type

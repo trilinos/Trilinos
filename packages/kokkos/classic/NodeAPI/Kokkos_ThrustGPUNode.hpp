@@ -47,10 +47,7 @@
 #include "Kokkos_ThrustGPUWrappers.hpp"
 
 #ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
-#  include "KokkosCore_config.h"
-#  ifdef KOKKOS_HAVE_CUDA
-#    include "Kokkos_Cuda.hpp"
-#  endif
+#  include "Kokkos_Core.hpp"
 #endif
 
 namespace KokkosClassic {

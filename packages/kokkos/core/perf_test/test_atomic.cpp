@@ -46,21 +46,17 @@
 #include <cstdlib>
 #include <ctime>
 
+#include <Kokkos_Core.hpp>
+
 #ifndef DEVICE
 #define DEVICE 1
 #endif
 #if DEVICE==1
-#include "Kokkos_Threads.hpp"
 typedef Kokkos::Threads device_type;
 #endif
 #if DEVICE==2
-#include "Kokkos_Cuda.hpp"
 typedef Kokkos::Cuda device_type;
 #endif
-
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_Atomic.hpp>
-#include <Kokkos_Parallel.hpp>
 
 #define RESET		0
 #define BRIGHT 		1

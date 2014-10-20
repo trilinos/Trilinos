@@ -76,7 +76,7 @@ NOX.Epetra provides the following user-level classes:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
 
 // Epetra includes
 #include "Epetra_BLAS.h"
@@ -103,7 +103,7 @@ NOX.Epetra provides the following user-level classes:
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDistributor.h"
 #include "Epetra_DLLExportMacro.h"
-#include "PyTrilinos_Epetra_Util.h"
+#include "PyTrilinos_Epetra_Util.hpp"
 
 // EpetraExt includes
 #ifdef HAVE_NOX_EPETRAEXT
@@ -130,16 +130,16 @@ NOX.Epetra provides the following user-level classes:
 
 // Local includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
-#include "Epetra_NumPyFEVector.h"
-#include "Epetra_NumPyIntSerialDenseMatrix.h"
-#include "Epetra_NumPyIntSerialDenseVector.h"
-#include "Epetra_NumPyIntVector.h"
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPySerialDenseMatrix.h"
-#include "Epetra_NumPySerialDenseVector.h"
-#include "Epetra_NumPySerialSymDenseMatrix.h"
-#include "Epetra_NumPyVector.h"
+#include "numpy_include.hpp"
+#include "Epetra_NumPyFEVector.hpp"
+#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
+#include "Epetra_NumPyIntSerialDenseVector.hpp"
+#include "Epetra_NumPyIntVector.hpp"
+#include "Epetra_NumPyMultiVector.hpp"
+#include "Epetra_NumPySerialDenseMatrix.hpp"
+#include "Epetra_NumPySerialDenseVector.hpp"
+#include "Epetra_NumPySerialSymDenseMatrix.hpp"
+#include "Epetra_NumPyVector.hpp"
 
 // Namespace flattening
 using Teuchos::RCP;

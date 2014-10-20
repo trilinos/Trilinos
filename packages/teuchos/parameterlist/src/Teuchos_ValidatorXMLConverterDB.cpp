@@ -74,14 +74,14 @@ ValidatorXMLConverterDB::getConverter(const ParameterEntryValidator& validator)
 
 RCP<const ValidatorXMLConverter>
 ValidatorXMLConverterDB::getConverter(const XMLObject& xmlObject)
-{ 
+{
   std::string validatorType = xmlObject.getRequired(
     ValidatorXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(validatorType);
   TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindValidatorConverterException,
     "Could not find a ValidatorXMLConverter for type " << validatorType <<
-    std::endl << 
+    std::endl <<
     "Try adding an appropriate converter to the ValidatorXMLConverterDB " <<
     "in order solve this problem." << std::endl << std::endl
   )
@@ -98,7 +98,7 @@ XMLObject ValidatorXMLConverterDB::convertValidator(
     validator, validatorIDsMap, assignID);
 }
 
- 
+
 RCP<ParameterEntryValidator> ValidatorXMLConverterDB::convertXML(
   const XMLObject& xmlObject,
   const IDtoValidatorMap& validatorIDsMap)
@@ -127,7 +127,7 @@ void ValidatorXMLConverterDB::printKnownConverters(std::ostream& out){
     out << "\t" << it->first <<std::endl;
   }
 }
-  
+
 
 } // namespace Teuchos
 
@@ -140,23 +140,23 @@ TEUCHOS_STATIC_SETUP()
   TEUCHOS_ADD_NUMBERTYPE_VALIDATOR_CONVERTERS(int);
   TEUCHOS_ADD_ENHANCEDNUMBERVALIDATOR_CONVERTER(double);
   TEUCHOS_ADD_ENHANCEDNUMBERVALIDATOR_CONVERTER(float);
-  
+
   TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(Teuchos::EnhancedNumberValidator<double>, double);
   TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(Teuchos::EnhancedNumberValidator<float>, float);
-  
+
   TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(Teuchos::FileNameValidator, std::string);
   TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(Teuchos::StringValidator, std::string);
-  
+
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
   TEUCHOS_ADD_NUMBERTYPE_VALIDATOR_CONVERTERS(long long int);
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
-  
-  TEUCHOS_ADD_STRINGTOINTEGRALVALIDATOR_CONVERTER(Teuchos::EVerbosityLevel); 
+
+  TEUCHOS_ADD_STRINGTOINTEGRALVALIDATOR_CONVERTER(Teuchos::EVerbosityLevel);
 
   TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::FileNameValidator, Teuchos::FileNameValidatorXMLConverter);
   TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::StringValidator, Teuchos::StringValidatorXMLConverter);
   TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::AnyNumberParameterEntryValidator, Teuchos::AnyNumberValidatorXMLConverter);
-  
+
 }
 
 

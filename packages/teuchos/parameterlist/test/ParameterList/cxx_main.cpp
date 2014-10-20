@@ -86,7 +86,7 @@ int main( int argc, char *argv[] )
 
   try {
 
-  // Read options from the command line. 
+  // Read options from the command line.
   CommandLineProcessor  clp(false); // Don't throw exceptions
   clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
   CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
@@ -124,32 +124,32 @@ int main( int argc, char *argv[] )
     cout<<PL_Main<< std::endl;
   }
   if (verbose) cout << "Is 'Direction' recognized as a sublist of 'Main' ... ";
-  if ( PL_Main.isSublist( "Direction" ) ) {  
+  if ( PL_Main.isSublist( "Direction" ) ) {
     if (verbose) cout << "yes"<< std::endl;
   } else {
     if (verbose) cout << "no"<< std::endl;
-    FailedTests++;        
+    FailedTests++;
   }
   if (verbose) cout << "Is 'Newton' recognized as a sublist of 'Direction' ... ";
-  if ( PL_Direction.isSublist( "Newton" ) ) {  
+  if ( PL_Direction.isSublist( "Newton" ) ) {
     if (verbose) cout << "yes"<< std::endl;
   } else {
     if (verbose) cout << "no"<< std::endl;
-    FailedTests++;        
+    FailedTests++;
   }
   if (verbose) cout << "Is 'Linear Solver' recognized as a sublist of 'Newton' ... ";
-  if ( PL_Newton.isSublist( "Linear Solver" ) ) {  
+  if ( PL_Newton.isSublist( "Linear Solver" ) ) {
     if (verbose) cout << "yes"<< std::endl;
   } else {
     if (verbose) cout << "no"<< std::endl;
-    FailedTests++;        
+    FailedTests++;
   }
   if (verbose) cout << "Is 'Line Search' recognized as a sublist of 'Main' ... ";
-  if ( PL_Main.isSublist( "Line Search" ) ) {  
+  if ( PL_Main.isSublist( "Line Search" ) ) {
     if (verbose) cout << "yes"<< std::endl;
   } else {
     if (verbose) cout << "no"<< std::endl;
-    FailedTests++;        
+    FailedTests++;
   }
 
   if (verbose) cout << "Is subist documentation std::string maintained ...\n";
@@ -166,10 +166,10 @@ int main( int argc, char *argv[] )
     }
     else {
       if (verbose) tab.o() << "failed!  They do not match :-("<< std::endl;
-      FailedTests++;        
+      FailedTests++;
     }
   }
-  
+
 
   //-----------------------------------------------------------
   // Fill in Direction Sublist
@@ -194,28 +194,28 @@ int main( int argc, char *argv[] )
     PL_Direction.print(cout);
   }
   if (verbose) cout << "Is 'Newton' recognized as a parameter of 'Direction' ... ";
-  if ( PL_Direction.isParameter( "Newton" ) ) {  
+  if ( PL_Direction.isParameter( "Newton" ) ) {
     if (verbose) cout << "yes"<< std::endl;
   } else {
     if (verbose) cout << "no"<< std::endl;
-    FailedTests++;        
+    FailedTests++;
   }
   if (verbose) cout << "Is 'Tolerance' recognized as a parameter of 'Newton' ... ";
-  if ( PL_Newton.isParameter( "Tolerance" ) ) {  
+  if ( PL_Newton.isParameter( "Tolerance" ) ) {
     if (verbose) cout << "yes (should be no)"<< std::endl;
     FailedTests++;
   } else {
     if (verbose) cout << "no (as expected)"<< std::endl;
   }
   if (verbose) cout << "Is 'Tolerance' recognized as a parameter of 'Linear Solver' ... ";
-  if ( PL_LinSol.isParameter( "Tolerance" ) ) {  
+  if ( PL_LinSol.isParameter( "Tolerance" ) ) {
     if (verbose) cout << "yes"<< std::endl;
   } else {
     if (verbose) cout << "no"<< std::endl;
-    FailedTests++;        
+    FailedTests++;
   }
   if (verbose) cout << "Is 'Rescue Bad Newton Solve' recognized as a parameter of 'Newton' ... ";
-  if ( PL_Newton.isParameter( "Rescue Bad Newton Solve" ) ) {  
+  if ( PL_Newton.isParameter( "Rescue Bad Newton Solve" ) ) {
     if (verbose) cout << "yes"<< std::endl;
   } else {
     if (verbose) cout << "no"<< std::endl;
@@ -223,7 +223,7 @@ int main( int argc, char *argv[] )
   }
 
   //-----------------------------------------------------------
-  // Line Search Sublist 
+  // Line Search Sublist
   // (if there are no failures, this will be constructed and added)
   //-----------------------------------------------------------
   if (!FailedTests) {
@@ -326,7 +326,7 @@ int main( int argc, char *argv[] )
     } else {
       if (verbose) cout<< "no" << std::endl;
       FailedTests++;
-    }  
+    }
 
     bool tempMeth = true;
 
@@ -347,7 +347,7 @@ int main( int argc, char *argv[] )
       max_iters_again = Teuchos::getConst(PL_My_Polynomial).INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
       nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<std::string>("Nonlinear Solver");
     }
-    catch( const Teuchos::Exceptions::InvalidParameter&) { tempMeth = false; }  
+    catch( const Teuchos::Exceptions::InvalidParameter&) { tempMeth = false; }
     if (verbose) {
       cout<< "Is the templated 'get' method functional ... "<<std::endl;
       cout<< "  Can we retrieve information using the CORRECT variable type ... ";
@@ -391,7 +391,7 @@ int main( int argc, char *argv[] )
       max_iters = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
       nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<std::string>("Nonlinear Solver");
     }
-    catch( const Teuchos::Exceptions::InvalidParameter&) { tempMeth = false; }  
+    catch( const Teuchos::Exceptions::InvalidParameter&) { tempMeth = false; }
     if (verbose) {
       cout<< "Is the templated 'get' method functional ... "<<std::endl;
       cout<< "  Can we retrieve information using the CORRECT variable type ... ";
@@ -440,7 +440,7 @@ int main( int argc, char *argv[] )
     }
     if (max_iters_ptr) {
       if ((*max_iters_ptr)==3) {
-        if (verbose) cout << "yes" << std::endl; 
+        if (verbose) cout << "yes" << std::endl;
       }
       else { if (verbose) cout << "no" << std::endl; FailedTests++; }
     }
@@ -449,7 +449,7 @@ int main( int argc, char *argv[] )
     }
     if (max_iters_ptr_again) {
       if ((*max_iters_ptr_again)==3) {
-        if (verbose) cout << "yes" << std::endl; 
+        if (verbose) cout << "yes" << std::endl;
       }
       else { if (verbose) cout << "no" << std::endl; FailedTests++; }
     }
@@ -464,7 +464,7 @@ int main( int argc, char *argv[] )
     mbf_ptr = PL_LinSol.INVALID_TEMPLATE_QUALIFIER getPtr<float>( "Tol" );
 
     if (mbf_ptr)
-      ++FailedTests;        
+      ++FailedTests;
 
     if (verbose) {
       cout<< "  Can we retrieve information using the WRONG variable type ... ";
@@ -488,7 +488,7 @@ int main( int argc, char *argv[] )
     }
     if (max_iters_ptr) {
       if ((*max_iters_ptr)==3) {
-        if (verbose) cout << "yes" << std::endl; 
+        if (verbose) cout << "yes" << std::endl;
       }
       else { if (verbose) cout << "no" << std::endl; FailedTests++; }
     }
@@ -502,7 +502,7 @@ int main( int argc, char *argv[] )
     mbf_ptr = PL_LinSol.INVALID_TEMPLATE_QUALIFIER getPtr<float>( "Tol" );
 
     if (mbf_ptr)
-      ++FailedTests;        
+      ++FailedTests;
 
     if (verbose) {
       cout<< "  Can we retrieve information using the WRONG variable type ... ";
@@ -559,7 +559,7 @@ int main( int argc, char *argv[] )
     //-----------------------------------------------------------
     bool PT4, PT5;
     PT4 = Teuchos::isParameterType<double>(PL_Polynomial, "Max Bounds Factor");
-    PT5 = Teuchos::isParameterType<float>(PL_Polynomial, "Max Bounds Factor");    
+    PT5 = Teuchos::isParameterType<float>(PL_Polynomial, "Max Bounds Factor");
     if (verbose) {
       cout<< "Is the helper function 'isParameterType' functional ... "<<std::endl;
       cout<< "  Is the 'Max Bounds Factor' of type 'double' ... ";
@@ -652,7 +652,7 @@ int main( int argc, char *argv[] )
       if(verbose) {
         print_break();
       }
-      
+
     }
 
     //-----------------------------------------------------------
@@ -697,7 +697,7 @@ int main( int argc, char *argv[] )
       if(verbose) {
         print_break();
       }
-      
+
     }
 
     //-----------------------------------------------------------
@@ -705,10 +705,10 @@ int main( int argc, char *argv[] )
     // Use a simple function, pass it in and get it back out ...
     // ( HKT 03/23/2004 This test is not supported on Janus )
     //-----------------------------------------------------------
-#ifndef JANUS_STLPORT 
+#ifndef JANUS_STLPORT
     double (*pt2Function) (double, double);
     PL_Main.set( "Address to Simple Function", &Plus );
-    pt2Function = Teuchos::getParameter<double(*)(double,double)>( PL_Main, "Address to Simple Function" ); 
+    pt2Function = Teuchos::getParameter<double(*)(double,double)>( PL_Main, "Address to Simple Function" );
     if (verbose) {
       cout<< "Can we pass a pointer to a function to a parameter list ... ";
     }
@@ -717,14 +717,14 @@ int main( int argc, char *argv[] )
       FailedTests++;
     } else {
       if (verbose) cout<<"yes"<<std::endl;
-    }    
+    }
 #endif
   }
 
   //-----------------------------------------------------------
   // We can store and retrieve void* pointers!
   //-----------------------------------------------------------
-  
+
   {
     ParameterList pl;
     int someInt = 1;
@@ -748,11 +748,11 @@ int main( int argc, char *argv[] )
   // KL - 7 August 2004
   //-----------------------------------------------------------
   ParameterList::ConstIterator iter;
-  
-  if (verbose) 
+
+  if (verbose)
   {
     print_break();
-    cout << " printing using public iterators " 
+    cout << " printing using public iterators "
          << std::endl;
     print_break();
   }
@@ -767,7 +767,7 @@ int main( int argc, char *argv[] )
       ParameterList::ConstIterator i;
       for (i=sublist.begin(); i != sublist.end(); ++i)
       {
-        const std::string& nm = sublist.name(i);              
+        const std::string& nm = sublist.name(i);
         const ParameterEntry& v = sublist.entry(i);
         if (v.isList())
         {
@@ -940,7 +940,7 @@ int main( int argc, char *argv[] )
     &PL_Main
     );
 
-/*    
+/*
   Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
     nonlinearSolverValidator = rcp(
     new Teuchos::StringToIntegralParameterEntryValidator<int>(
@@ -1215,7 +1215,7 @@ int main( int argc, char *argv[] )
 
     ParameterList &Polynomial_sublist
       = PL_Main.sublist("Line Search",true).sublist("Polynomial",true);
-    
+
     std::string typeName;
 
     // Set the input type
@@ -1414,7 +1414,7 @@ int main( int argc, char *argv[] )
 
     ParameterList &Polynomial_sublist
       = PL_Main.sublist("Line Search",true).sublist("Polynomial",true);
-    
+
     std::string typeName;
 
     // Set the input type
@@ -1532,7 +1532,7 @@ int main( int argc, char *argv[] )
 
     ParameterList &Polynomial_sublist
       = PL_Main.sublist("Line Search",true).sublist("Polynomial",true);
-    
+
     std::string typeName;
 
     // Set the input type
@@ -1772,15 +1772,15 @@ int main( int argc, char *argv[] )
   }
 
   //-----------------------------------------------------------
-  // Return -1 if there are any failed tests, 
-  // else 0 will be returned indicating a clean finish!  
+  // Return -1 if there are any failed tests,
+  // else 0 will be returned indicating a clean finish!
   //-----------------------------------------------------------
 
   } // end try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
   if(!success) ++FailedTests;
 
-  if ( FailedTests > 0 ) { 
+  if ( FailedTests > 0 ) {
     cout << "End Result: TEST FAILED" << std::endl;
     return 1; // Can't return negative numbers from main()!
   }

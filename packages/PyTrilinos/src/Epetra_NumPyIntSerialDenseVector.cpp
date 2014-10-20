@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Epetra_NumPyIntSerialDenseVector.h"
+#include "Epetra_NumPyIntSerialDenseVector.hpp"
 
 namespace PyTrilinos
 {

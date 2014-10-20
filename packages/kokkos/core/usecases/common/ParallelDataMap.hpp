@@ -50,8 +50,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <Kokkos_View.hpp>
-#include <Kokkos_Serial.hpp>
+#include <Kokkos_Core.hpp>
 #include <ParallelComm.hpp>
 
 namespace Kokkos {

@@ -47,11 +47,11 @@
 
 namespace Teuchos {
 
-	std::string Teuchos_Version() { 
-		return ("Teuchos in Trilinos " TRILINOS_VERSION_STRING); 
+	std::string Teuchos_Version() {
+		return ("Teuchos in Trilinos " TRILINOS_VERSION_STRING);
 	}
 
 } // namespace Teuchos
 
 #endif // TEUCHOS_VERSION_HPP
- 
+

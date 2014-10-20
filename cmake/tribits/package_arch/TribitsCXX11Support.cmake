@@ -50,7 +50,7 @@ INCLUDE(CheckCXXSourceCompiles)
 # enables C++11, then those flags are used.  The first set of flags that
 # passes the try-compile test is set into the cache variable
 # ${PROJECT_NAME}_CXX11_FLAGS on output.
-# 
+#
 FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
 
   ##
@@ -215,7 +215,7 @@ int main() {
   std::for_each(some_list.begin(), some_list.end(), [&, value](int x) {
       total += x * value;
       });
-  // 
+  //
   return 0;
 }
   "

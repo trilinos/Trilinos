@@ -137,7 +137,8 @@ struct LayoutStride {
         size_t n = 1 ;
         for ( int r = 0 ; r < rank ; ++r ) {
           tmp.stride[ order[r] ] = n ;
-          n *= ( tmp.dimension[r] = dimen[r] );
+          n *= ( dimen[order[r]] );
+          tmp.dimension[r] = dimen[r];
         }
       }
       return tmp ;

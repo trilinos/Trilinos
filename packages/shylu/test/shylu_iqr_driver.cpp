@@ -69,6 +69,7 @@
 #endif
 #include <Epetra_CrsMatrix.h>
 
+#include <Epetra_Vector.h>
 #include <EpetraExt_CrsMatrixIn.h>
 #include "EpetraExt_MultiVectorIn.h"
 #include "EpetraExt_BlockMapIn.h"

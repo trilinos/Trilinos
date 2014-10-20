@@ -59,6 +59,9 @@ LOCA::PhaseTransition::ExtendedGroup::ExtendedGroup(
   LOCA::Extended::MultiAbstractGroup(),
   LOCA::MultiContinuation::AbstractGroup(),
   grp(grp_), // Underlying group for regular system of size n
+  isValidF(false),
+  isValidJacobian(false),
+  isValidNewton(false),
   normF(0.0),
   globalData(gD)
 {

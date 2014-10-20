@@ -46,6 +46,7 @@
 #ifndef MUELU_MERGEDBLOCKEDMATRIXFACTORY_DEF_HPP_
 #define MUELU_MERGEDBLOCKEDMATRIXFACTORY_DEF_HPP_
 
+#ifdef HAVE_MUELU_EXPERIMENTAL
 
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -105,5 +106,5 @@ void MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
 
 } // namespace MueLu
 
-
+#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif /* MUELU_MERGEDBLOCKEDMATRIXFACTORY_DEF_HPP_ */
