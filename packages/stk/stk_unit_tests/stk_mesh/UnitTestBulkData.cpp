@@ -73,6 +73,7 @@
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>
 #include <unit_tests/BulkDataTester.hpp>
+#include "UnitTestCEOCommonUtils.hpp"
 
 namespace stk
 {
@@ -101,7 +102,6 @@ using stk::mesh::fixtures::BoxFixture;
 //====================
 extern int gl_argc;
 extern char** gl_argv;
-
 
 namespace
 {
@@ -227,186 +227,6 @@ void donate_all_shared_nodes(BulkData & mesh, bool aura)
     ASSERT_EQ( before_count[1], after_count[1]);
     ASSERT_EQ( before_count[2], after_count[2]);
     ASSERT_EQ( before_count[3], after_count[3]);
-}
-
-enum EntityStates {
-  STATE_VALID,
-  STATE_NOT_VALID,
-  STATE_OWNED,
-  STATE_SHARED,
-  STATE_NOT_SHARED,
-  STATE_GHOSTED,
-  STATE_NOT_GHOSTED
-};
-
-bool check_state(const stk::mesh::BulkData & mesh, const EntityKey & entityKey, EntityStates state,
-                 int p0 = -1, int p1 = -1, int p2 = -1, int p3 = -1, int p4 = -1, int p5 = -1)
-{
-  // Check to see if the state is as expected for the provided EntityKey.
-  //
-  // Meaning of the optional processor arguments for various states:
-  //     STATE_OWNED: Processor that owns the Entity
-  //    STATE_SHARED: List of Processors that we share this entity with
-  //   STATE_GHOSTED: Processor that we ghost the Entity from
-  //
-  std::vector<int> procs;
-  if (p0 >= 0) {
-    procs.push_back(p0);
-  }
-  if (p1 >= 0) {
-    procs.push_back(p1);
-  }
-  if (p2 >= 0) {
-    procs.push_back(p2);
-  }
-  if (p3 >= 0) {
-    procs.push_back(p3);
-  }
-  if (p4 >= 0) {
-    procs.push_back(p4);
-  }
-  if (p5 >= 0) {
-    procs.push_back(p5);
-  }
-  std::sort(procs.begin(), procs.end());
-
-  Entity entity = mesh.get_entity(entityKey);
-  std::ostringstream oss;
-
-  switch (state) {
-    case STATE_VALID:
-    {
-      if (!procs.empty()) {
-        oss << "check_state(): Cannot provide processors with validity check." << std::endl;
-      }
-      if (!mesh.is_valid(entity)) {
-        oss << "check_state(): Entity " << entityKey << " is not valid when it should have been." << std::endl;
-      }
-      break;
-    }
-    case STATE_NOT_VALID:
-    {
-      if (!procs.empty()) {
-        oss << "check_state(): Cannot provide processors with STATE_NOT_VALID check." << std::endl;
-      }
-      if (mesh.is_valid(entity)) {
-        oss << "check_state(): Entity " << entityKey << " is valid when it shouldn't have been." << std::endl;
-      }
-      break;
-    }
-    case STATE_OWNED:
-    {
-      if (procs.size() != 1u) {
-        oss << "check_state(): Entities can have only one owner." << std::endl;
-      }
-      if (mesh.is_valid(entity)) {
-        if (procs[0] != mesh.parallel_owner_rank(entity) ) {
-          oss << "check_state(): Owner of entity " << entityKey << " was proc " << mesh.parallel_owner_rank(entity)
-              << " and not proc " << procs[0] << std::endl;
-        }
-      }
-      else {
-        oss << "check_state(): Can't check ownership of locally-invalid entity." << std::endl;
-      }
-      break;
-    }
-    case STATE_SHARED:
-    {
-      if (procs.empty()) {
-        oss << "check_state(): Must provide processor(s) with STATE_SHARED check." << std::endl;
-      }
-      stk::mesh::PairIterEntityComm comm_it = mesh.entity_comm_map_shared(entityKey);
-      std::vector<int>::const_iterator procs_it = procs.begin();
-      bool lists_match = true;
-
-      if (comm_it.size() != procs.size()) {
-        lists_match = false;
-      }
-      else {
-        for ( ; procs_it != procs.end(); ++comm_it, ++procs_it) {
-          int comm_proc = comm_it.first->proc;
-          int user_proc = *procs_it;
-          if (comm_proc != user_proc) {
-            lists_match = false;
-            break;
-          }
-        }
-      }
-
-      if (!lists_match) {
-        oss << "check_state(): Entity " << entityKey << " was shared with procs (";
-        comm_it = mesh.entity_comm_map_shared(entityKey);
-        for ( ; comm_it.first != comm_it.second; ++comm_it) {
-          int proc = comm_it.first->proc;
-          oss << proc << " ";
-        }
-        oss << ")" << std::endl
-            << "               when it was expected to be shared with procs (";
-        procs_it = procs.begin();
-        for ( ; procs_it != procs.end(); ++procs_it) {
-          oss << *procs_it << " ";
-        }
-        oss << ")" << std::endl;
-      }
-
-      break;
-    }
-    case STATE_NOT_SHARED:
-    {
-      if (!procs.empty()) {
-        oss << "check_state(): Cannot provide processors with STATE_NOT_SHARED check." << std::endl;
-      }
-      if (!mesh.entity_comm_map_shared(entityKey).empty()) {
-        oss << "check_state(): Entity " << entityKey << " was shared with procs (";
-        stk::mesh::PairIterEntityComm comm_pit = mesh.entity_comm_map_shared(entityKey);
-        for ( ; comm_pit.first != comm_pit.second; ++comm_pit) {
-          int proc = comm_pit.first->proc;
-          oss << proc << " ";
-        }
-        oss << ") when it shouldn't have been shared." << std::endl;
-      }
-      break;
-    }
-    case STATE_GHOSTED:
-    {
-      if (procs.size() != 1) {
-        oss << "check_state(): Must provide one processor with STATE_GHOSTED check." << std::endl;
-      }
-      if (!mesh.in_receive_ghost( mesh.aura_ghosting() , entityKey )) {
-        oss << "check_state(): Entity " << entityKey << " was not ghosted from any proc when it should have" << std::endl
-            << "               been ghosted from proc " << procs[0] << "." << std::endl;
-      }
-      else {
-        const int owner_rank = mesh.entity_comm_map_owner(entityKey);
-        if (owner_rank != procs[0]) {
-          oss << "check_state(): Entity " << entityKey << " was ghosted from proc " << owner_rank << std::endl
-              << "               when it should have been ghosted from proc " << procs[0] << "." << std::endl;
-        }
-      }
-      break;
-    }
-    case STATE_NOT_GHOSTED:
-    {
-      if (!procs.empty()) {
-        oss << "check_state(): Cannot provide processors with STATE_NOT_GHOSTED check." << std::endl;
-      }
-      if (mesh.in_receive_ghost( mesh.aura_ghosting() , entityKey )) {
-        const int owner_rank = mesh.entity_comm_map_owner(entityKey);
-        oss << "check_state(): Entity " << entityKey << " was ghosted from proc " << owner_rank << std::endl
-            << "               when it shouldn't have been ghosted." << std::endl;
-      }
-      break;
-    }
-  }
-
-  if (oss.str().size() > 0u) {
-    std::cout << oss.str();
-    return false;
-  }
-  else {
-    return true;
-  }
-
 }
 
 //----------------------------------------------------------------------
@@ -1203,21 +1023,6 @@ TEST(BulkData, testChangeEntityOwnerFromSelfToSelf)
     }
 
     mesh.change_entity_owner(change);
-}
-
-void add_nodes_to_move(stk::mesh::BulkData& bulk,
-                       stk::mesh::Entity elem,
-                       int dest_proc,
-                       std::vector<stk::mesh::EntityProc>& entities_to_move)
-{
-    const stk::mesh::Entity* nodes = bulk.begin_nodes(elem);
-    for(unsigned i = 0; i < bulk.num_nodes(elem); ++i)
-    {
-        if(bulk.parallel_owner_rank(nodes[i]) == bulk.parallel_rank())
-        {
-            entities_to_move.push_back(stk::mesh::EntityProc(nodes[i], dest_proc));
-        }
-    }
 }
 
 TEST(BulkData, test_internal_clean_and_verify_parallel_change_trivial)
@@ -3507,42 +3312,42 @@ TEST(BulkData, change_entity_owner_2Elem2ProcMove)
 
   // Check initial state
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 0) );
 
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_VALID) );
   }
 
   stk::mesh::EntityProcVec entity_procs;
@@ -3555,60 +3360,60 @@ TEST(BulkData, change_entity_owner_2Elem2ProcMove)
   bulk.change_entity_owner(entity_procs);
 
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
 
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_GHOSTED,  1) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(bulk, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
   }
 
 }
@@ -3658,60 +3463,60 @@ TEST(BulkData, change_entity_owner_2Elem2ProcFlip)
   mesh.modification_end();
 
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_GHOSTED,  1) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
   }
 
   //okay now flip
@@ -3734,60 +3539,60 @@ TEST(BulkData, change_entity_owner_2Elem2ProcFlip)
   mesh.change_entity_owner(entity_procs_flip);
 
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 0) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 0) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 0) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 0) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_GHOSTED,  0) );
   }
 
 }
@@ -3868,71 +3673,71 @@ TEST(BulkData, change_entity_owner_3Elem2ProcMoveRight)
 
 
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_GHOSTED,  1) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_GHOSTED) );
   }
 
 
@@ -3948,71 +3753,71 @@ TEST(BulkData, change_entity_owner_3Elem2ProcMoveRight)
 
 
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_GHOSTED,  1) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_GHOSTED) );
   }
 }
 
@@ -4092,71 +3897,71 @@ TEST(BulkData, change_entity_owner_3Elem2ProcMoveLeft)
 
 
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_GHOSTED,  1) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_GHOSTED) );
   }
 
   std::vector<EntityProc> change;
@@ -4171,71 +3976,71 @@ TEST(BulkData, change_entity_owner_3Elem2ProcMoveLeft)
 
 
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_GHOSTED,  1) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED, 1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_GHOSTED) );
   }
 
 }
@@ -4383,164 +4188,164 @@ TEST(BulkData, change_entity_owner_4Elem4ProcEdge)
 
   //test pre-conditions
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_GHOSTED,  1) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_GHOSTED, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_GHOSTED, 2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_SHARED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_GHOSTED,  2) );
   }
   else if (p_rank == 2) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_GHOSTED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED,    2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_SHARED,   3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED,    2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_SHARED,   3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED, 3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  STATE_SHARED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  STATE_SHARED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  CEOUtils::STATE_SHARED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  CEOUtils::STATE_SHARED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_GHOSTED,  3) );
   }
   else if (p_rank == 3) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED,    2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_SHARED,   2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED,    2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_SHARED,   2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED, 3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  CEOUtils::STATE_SHARED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  CEOUtils::STATE_SHARED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_GHOSTED) );
   }
 
   std::vector<EntityProc> change;
@@ -4574,152 +4379,152 @@ TEST(BulkData, change_entity_owner_4Elem4ProcEdge)
 
   //test post condition
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED, 3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_GHOSTED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED,    0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_SHARED,   3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED,    0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_SHARED,   3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1),  STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2),  STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  STATE_OWNED, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1),  CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2),  CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  CEOUtils::STATE_OWNED, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED, 3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  STATE_SHARED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  STATE_SHARED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  CEOUtils::STATE_SHARED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  CEOUtils::STATE_SHARED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_GHOSTED,  3) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  0) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_GHOSTED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_GHOSTED, 0) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED, 0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED, 0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_GHOSTED,  0) );
   }
   else if (p_rank == 2) { //amnesia
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1),  STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2),  STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1),  CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2),  CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3),  CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4),  CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_VALID) );
   }
   else if (p_rank == 3) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED,    0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_SHARED,   0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED,    0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_SHARED,   0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED, 3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5),  CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6),  CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9),  CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_GHOSTED) );
   }
 
 }
@@ -4758,224 +4563,224 @@ TEST(BulkData, change_entity_owner_8Elem4ProcMoveTop)
 
   // Check the initial state
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_GHOSTED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_GHOSTED,  1) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_GHOSTED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_SHARED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_SHARED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_SHARED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_SHARED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_SHARED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_GHOSTED,  2) );
   }
   else if (p_rank == 2) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_GHOSTED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_SHARED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_SHARED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_SHARED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_SHARED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_SHARED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_SHARED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_SHARED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_SHARED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_GHOSTED,  3) );
   }
   else if (p_rank == 3) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_SHARED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_SHARED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_SHARED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_SHARED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_SHARED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_SHARED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_SHARED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_GHOSTED) );
   }
 
 
@@ -4985,270 +4790,270 @@ TEST(BulkData, change_entity_owner_8Elem4ProcMoveTop)
     stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 6);
     int dest_proc = 3;
     entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
-    add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
+    CEOUtils::add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
   }
   if(mesh.parallel_rank() == 2)
   {
     stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 7);
     int dest_proc = 0;
     entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
-    add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
+    CEOUtils::add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
   }
 
   mesh.change_entity_owner(entities_to_move);
 
   // Check the final state
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_GHOSTED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_SHARED,  1, 3   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_SHARED,  1, 2, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_SHARED,  2, 3   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_SHARED,  1, 3   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_SHARED,  1, 2, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_SHARED,  2, 3   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_SHARED,  3      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_SHARED,  3      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_SHARED,  3      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_GHOSTED,  3) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_GHOSTED,  0) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_SHARED,  2      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_SHARED,  0, 3   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_SHARED,  0, 2, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_SHARED,  2      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_SHARED,  0, 3   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_SHARED,  0, 2, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_GHOSTED,  0) );
   }
   else if (p_rank == 2) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_GHOSTED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_SHARED,  0, 1, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_SHARED,  0, 3   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_SHARED,  3      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_SHARED,  0, 1, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_SHARED,  0, 3   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_GHOSTED,  3) );
   }
   else if (p_rank == 3) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 5), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 7), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 8), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_SHARED,  2      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_SHARED,  0, 1   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_SHARED,  0, 1, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_SHARED,  0, 2   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_SHARED,  2      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_SHARED,  0, 1   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_SHARED,  0, 1, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_SHARED,  0, 2   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_GHOSTED) );
   }
 }
 
@@ -5320,168 +5125,168 @@ TEST(BulkData, change_entity_owner_4Elem4ProcRotate)
 
   // Check the initial state
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_GHOSTED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  1, 2, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  3      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  1, 2, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_GHOSTED,  2) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_GHOSTED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  0, 2, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_SHARED,  2      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  0, 2, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_SHARED,  2      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_GHOSTED,  2) );
   }
   else if (p_rank == 2) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_GHOSTED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  0, 1, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  0, 1, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_SHARED,  3      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_GHOSTED) );
   }
   else if (p_rank == 3) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  3) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  0, 1, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_SHARED,  2      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  0, 1, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_SHARED,  2      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_GHOSTED,  2) );
   }
 
   std::vector<stk::mesh::EntityProc> entities_to_move;
@@ -5489,193 +5294,193 @@ TEST(BulkData, change_entity_owner_4Elem4ProcRotate)
     stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
     int dest_proc = 3;
     entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
-    add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
+    CEOUtils::add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
   }
   else if (p_rank == 1) {
     stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 2);
     int dest_proc = 0;
     entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
-    add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
+    CEOUtils::add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
   }
   else if (p_rank == 2) {
     stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 3);
     int dest_proc = 1;
     entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
-    add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
+    CEOUtils::add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
   }
   else if (p_rank == 3) {
     stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 4);
     int dest_proc = 2;
     entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
-    add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
+    CEOUtils::add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
   }
 
   mesh.change_entity_owner(entities_to_move);
 
   // Check the initial state
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_GHOSTED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  1, 2, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_SHARED,  3      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  1, 2, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_GHOSTED,  1) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_GHOSTED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  0, 2, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_SHARED,  2      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  0, 2, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_SHARED,  2      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_GHOSTED) );
   }
   else if (p_rank == 2) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  0, 1, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  3      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  0, 1, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_GHOSTED,  1) );
   }
   else if (p_rank == 3) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 4), CEOUtils::STATE_GHOSTED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_OWNED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_SHARED,  2      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_SHARED,  0, 1, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_SHARED,  2      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_SHARED,  0, 1, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 3), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 6), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 7), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 8), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 9), CEOUtils::STATE_GHOSTED,  1) );
   }
 }
 
@@ -5763,220 +5568,220 @@ TEST(BulkData, change_entity_owner_3Elem4Proc1Edge3D)
 
   // Check the initial state
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
  
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED,  0   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_SHARED, 1, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_GHOSTED ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED,  0   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_SHARED, 1, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_SHARED,  1, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_SHARED,  1, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_SHARED,  1, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_SHARED,  1, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_GHOSTED,  2) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  2) );
  
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED,  0   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_SHARED, 0, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_GHOSTED ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED,  0   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_SHARED, 0, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_SHARED,  0, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_SHARED,  2      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_SHARED,  0, 2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_SHARED,  2      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_SHARED,  0, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_SHARED,  2      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_SHARED,  0, 2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_SHARED,  2      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_GHOSTED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_GHOSTED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_GHOSTED,  2) );
   }
   else if (p_rank == 2) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
  
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED,  0   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_SHARED, 0, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_GHOSTED ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED,  0   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_SHARED, 0, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_OWNED,  2) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_OWNED,  2) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_OWNED,  2) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_SHARED,  0, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_SHARED,  0, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_SHARED,  0, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_SHARED,  0, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_NOT_GHOSTED) );
   }
   else if (p_rank == 3) {  //knows nothing
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_NOT_VALID) );
   }
 
   std::vector<stk::mesh::EntityProc> entities_to_move;
@@ -5984,7 +5789,7 @@ TEST(BulkData, change_entity_owner_3Elem4Proc1Edge3D)
     Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
     int dest_proc = 3;
     entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
-    add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
+    CEOUtils::add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
     
     elem = mesh.get_entity(stk::topology::EDGE_RANK, 1);
     dest_proc = 1;
@@ -5994,233 +5799,233 @@ TEST(BulkData, change_entity_owner_3Elem4Proc1Edge3D)
     Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 2);
     int dest_proc = 0;
     entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
-    add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
+    CEOUtils::add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
   }
   else if (p_rank == 2) {
     Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, 3);
     int dest_proc = 1;
     entities_to_move.push_back(stk::mesh::EntityProc(elem, dest_proc));
-    add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
+    CEOUtils::add_nodes_to_move(mesh, elem, dest_proc, entities_to_move);
   }
 
   mesh.change_entity_owner(entities_to_move);
 
   // Check the final state
   if (p_rank == 0) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  1) );
  
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED,  1   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_SHARED, 1, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_GHOSTED ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED,  1   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_SHARED, 1, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_OWNED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_SHARED,  1, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_SHARED,  3      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_SHARED,  1, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_SHARED,  1      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_SHARED,  3      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_SHARED,  1, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_SHARED,  3      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_SHARED,  1, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_SHARED,  1      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_GHOSTED,  1) );
   }
   else if (p_rank == 1) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_GHOSTED) );
  
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED,  1   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_SHARED, 0, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_GHOSTED ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED,  1   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_SHARED, 0, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_OWNED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_SHARED,  0, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_SHARED,  0, 3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_SHARED,  0, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_SHARED,  0, 3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_GHOSTED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_GHOSTED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_NOT_GHOSTED) );
   }
   else if (p_rank == 2) {  //knows nothing
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_VALID) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_VALID) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_VALID) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_NOT_VALID) );
   }
   else if (p_rank == 3) {
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_OWNED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::ELEMENT_RANK, 3), CEOUtils::STATE_GHOSTED,  1) );
  
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_OWNED,  1   ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_SHARED, 0, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), STATE_NOT_GHOSTED ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_OWNED,  1   ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_SHARED, 0, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::EDGE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_OWNED,  3) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_OWNED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_OWNED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_OWNED,  3) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_OWNED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_OWNED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_OWNED,  1) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_SHARED,  0, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_SHARED,  0      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_SHARED,  0, 1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_NOT_SHARED      ) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_SHARED,  0, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_SHARED,  0      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_SHARED,  0, 1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_NOT_SHARED      ) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_NOT_SHARED      ) );
 
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), STATE_NOT_GHOSTED) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), STATE_GHOSTED,  0) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), STATE_GHOSTED,  1) );
-    EXPECT_TRUE( check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  1), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  2), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  3), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  4), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  5), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  6), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  7), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  8), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK,  9), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 10), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 11), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 12), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 13), CEOUtils::STATE_NOT_GHOSTED) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 14), CEOUtils::STATE_GHOSTED,  0) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 15), CEOUtils::STATE_GHOSTED,  1) );
+    EXPECT_TRUE( CEOUtils::check_state(mesh, EntityKey(stk::topology::NODE_RANK, 16), CEOUtils::STATE_GHOSTED,  1) );
   }
 }
 

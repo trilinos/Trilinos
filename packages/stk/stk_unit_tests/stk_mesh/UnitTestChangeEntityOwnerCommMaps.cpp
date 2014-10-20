@@ -69,6 +69,7 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>
+#include "UnitTestCEOCommonUtils.hpp"
 
 namespace stk
 {
@@ -93,6 +94,7 @@ using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
 using stk::mesh::fixtures::RingFixture;
 using stk::mesh::fixtures::BoxFixture;
+
 
 namespace
 {
@@ -182,13 +184,7 @@ private:
 
 void testSubMesh(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr);
 void createSerialSubMesh(const stk::mesh::MetaData &meta, stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Selector subMeshSelector, stk::mesh::MetaData &newMeta, stk::mesh::BulkData &newBulkData);
-void add_nodes_to_move(stk::mesh::BulkData& bulk,
-                       stk::mesh::Entity elem,
-                       int dest_proc,
-                       std::vector<stk::mesh::EntityProc>& entities_to_move);
-bool isEntityValidOnCommList(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity);
-bool isEntityInGhostingCommMap(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity);
-bool isEntityInSharingCommMap(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity);
+
 void checkCommMaps(std::string message, stk::mesh::BulkData &stkMeshBulkData, int numElements, bool ownerOfElement[], bool isElementInAuraCommMap[], bool isElementValid[],
             int numNodes, bool ownerOfNode[], bool isNodeInSharedCommMap[], bool isNodeInAuraCommMap[], bool isNodeValid[]);
 void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr);
@@ -427,7 +423,7 @@ void runProc0(stk::mesh::BulkData &stkMeshBulkData)
     int proc2=2;
     entitiesToMove.push_back(std::make_pair(entity, proc2));
 
-    add_nodes_to_move(stkMeshBulkData, entity, proc2, entitiesToMove);
+    CEOUtils::add_nodes_to_move(stkMeshBulkData, entity, proc2, entitiesToMove);
 
     stkMeshBulkData.change_entity_owner(entitiesToMove);
 
@@ -543,7 +539,7 @@ void runProc1(stk::mesh::BulkData &stkMeshBulkData)
     int proc2=2;
     entitiesToMove.push_back(std::make_pair(entity, proc2));
 
-    add_nodes_to_move(stkMeshBulkData, entity, proc2, entitiesToMove);
+    CEOUtils::add_nodes_to_move(stkMeshBulkData, entity, proc2, entitiesToMove);
 
     stkMeshBulkData.change_entity_owner(entitiesToMove);
 
@@ -899,33 +895,6 @@ void testSubMesh(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Selector selec
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool isEntityValidOnCommList(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity)
-{
-    stk::mesh::EntityKey entityKey = stkMeshBulkData.entity_key(entity);
-    stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData.comm_list().begin(), stkMeshBulkData.comm_list().end(), entityKey);
-    return iter != stkMeshBulkData.comm_list().end() && entityKey == iter->key;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-bool isEntityInGhostingCommMap(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity)
-{
-    stk::mesh::EntityKey entityKey = stkMeshBulkData.entity_key(entity);
-    bool is_entity_in_aura_comm_map = !stkMeshBulkData.entity_comm_map(entityKey, stkMeshBulkData.aura_ghosting()).empty();
-    return is_entity_in_aura_comm_map;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-bool isEntityInSharingCommMap(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity)
-{
-    stk::mesh::EntityKey entityKey = stkMeshBulkData.entity_key(entity);
-    bool is_entity_in_shared_comm_map = !stkMeshBulkData.entity_comm_map(entityKey, stkMeshBulkData.shared_ghosting()).empty();
-    return is_entity_in_shared_comm_map;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 void checkCommMaps(std::string message, stk::mesh::BulkData &stkMeshBulkData, int numElements, bool ownerOfElement[], bool isElementInAuraCommMap[], bool isElementValid[],
             int numNodes, bool ownerOfNode[], bool isNodeInSharedCommMap[], bool isNodeInAuraCommMap[], bool isNodeValid[])
 {
@@ -937,7 +906,7 @@ void checkCommMaps(std::string message, stk::mesh::BulkData &stkMeshBulkData, in
         {
             bool amIOwner = ( stkMeshBulkData.parallel_owner_rank(element) == stkMeshBulkData.parallel_rank() );
             EXPECT_EQ(ownerOfElement[i], amIOwner) << message << " for element " << i+1;
-            EXPECT_EQ(isElementInAuraCommMap[i], isEntityInGhostingCommMap(stkMeshBulkData, element)) << message << " for element " << i+1;
+            EXPECT_EQ(isElementInAuraCommMap[i], CEOUtils::isEntityInGhostingCommMap(stkMeshBulkData, element)) << message << " for element " << i+1;
         }
     }
 
@@ -949,25 +918,8 @@ void checkCommMaps(std::string message, stk::mesh::BulkData &stkMeshBulkData, in
         {
             bool amIOwner = ( stkMeshBulkData.parallel_owner_rank(node) == stkMeshBulkData.parallel_rank() );
             EXPECT_EQ(ownerOfNode[i], amIOwner) << message << " for node " << i+1;
-            EXPECT_EQ(isNodeInSharedCommMap[i], isEntityInSharingCommMap(stkMeshBulkData, node)) << message << " for node " << i+1;
-            EXPECT_EQ(isNodeInAuraCommMap[i], isEntityInGhostingCommMap(stkMeshBulkData, node)) << message << " for node " << i+1;
-        }
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void add_nodes_to_move(stk::mesh::BulkData& bulk,
-                       stk::mesh::Entity elem,
-                       int dest_proc,
-                       std::vector<stk::mesh::EntityProc>& entities_to_move)
-{
-    const stk::mesh::Entity* nodes = bulk.begin_nodes(elem);
-    for(unsigned i = 0; i < bulk.num_nodes(elem); ++i)
-    {
-        if(bulk.parallel_owner_rank(nodes[i]) == bulk.parallel_rank())
-        {
-            entities_to_move.push_back(stk::mesh::EntityProc(nodes[i], dest_proc));
+            EXPECT_EQ(isNodeInSharedCommMap[i], CEOUtils::isEntityInSharingCommMap(stkMeshBulkData, node)) << message << " for node " << i+1;
+            EXPECT_EQ(isNodeInAuraCommMap[i], CEOUtils::isEntityInGhostingCommMap(stkMeshBulkData, node)) << message << " for node " << i+1;
         }
     }
 }
@@ -999,7 +951,7 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
                 // 1: ghosted else where
                 // 2: ghosted here
 
-                if(isEntityInGhostingCommMap(bulkData, bucket[j]))
+                if(CEOUtils::isEntityInGhostingCommMap(bulkData, bucket[j]))
                 {
                     if ( bucket.in_aura() )
                     {
@@ -1020,7 +972,7 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
                 // 2: shared only
                 // 3: ghosted to me
 
-                if(isEntityInSharingCommMap(bulkData, bucket[j]))
+                if(CEOUtils::isEntityInSharingCommMap(bulkData, bucket[j]))
                 {
                     if ( bucket.owned() )
                     {
@@ -1043,7 +995,7 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
                     }
                 }
 
-                if(isEntityValidOnCommList(bulkData, bucket[j]))
+                if(CEOUtils::isEntityValidOnCommList(bulkData, bucket[j]))
                 {
                     *commListNode = 1;
                 }
@@ -1070,7 +1022,7 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
                 // 1: ghosted to other proc
                 // 2: ghosted here from another proc
 
-                if(isEntityInGhostingCommMap(bulkData, bucket[j]))
+                if(CEOUtils::isEntityInGhostingCommMap(bulkData, bucket[j]))
                 {
                     if ( bucket.in_aura() )
                     {
