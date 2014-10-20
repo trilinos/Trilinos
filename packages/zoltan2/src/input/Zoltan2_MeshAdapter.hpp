@@ -241,6 +241,8 @@ public:
     if (!availAdjs(sourcetarget, through))
       return false;
     else {
+      zgid_t const *element_num_map=NULL;
+      getIDsView(element_num_map);
       
       return true;
     }
