@@ -1231,13 +1231,7 @@ private:
   void addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
          const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities);
 
-protected:
-  void update_deleted_entities_container();
-  std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0);
-
-private:
 #ifndef DOXYGEN_COMPILE
-
   // Forbidden
   BulkData();
   BulkData( const BulkData & );
@@ -1248,6 +1242,9 @@ private:
   //
 
 protected:
+  void update_deleted_entities_container();
+  std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0);
+
   /** \brief  Parallel index for entity keys */
   parallel::DistributedIndex          m_entities_index;
 private:
@@ -1395,10 +1392,17 @@ private:
                                  OrdinalVector& ordinal_scratch,
                                  PartVector& part_scratch);
 
+  bool internal_destroy_relation(Entity e_from ,
+                                 Entity e_to,
+                                 const RelationIdentifier local_id );
+
+  /** \brief  The meta data manager for this bulk data manager. */
+  MetaData & meta_data() const { return m_mesh_meta_data ; }
+
+protected:
   /** \brief  Declare a collection of relations by simply iterating
    *          the input and calling declare_relation on each entry.
    */
-protected:
   void internal_declare_relation( Entity entity, const std::vector<Relation> & rel);
 
   void internal_declare_relation( Entity entity, const std::vector<Relation> & rel,
@@ -1408,17 +1412,8 @@ protected:
                                  RelationIdentifier local_id,
                                  unsigned sync_count, bool is_back_relation,
                                  Permutation permut);
-private:
-  bool internal_destroy_relation(Entity e_from ,
-                                 Entity e_to,
-                                 const RelationIdentifier local_id );
-
-  /** \brief  The meta data manager for this bulk data manager. */
-  MetaData & meta_data() const { return m_mesh_meta_data ; }
-
   /** methods for managing arrays of entity member-data */
 
-protected:
   void log_created_parallel_copy(Entity entity)
   {
     if (state(entity) == Created) {
@@ -1435,8 +1430,6 @@ private:
 
   Entity internal_declare_entity( EntityRank ent_rank , EntityId ent_id ,
                                    const PartVector & parts );
-protected:
-  bool internal_destroy_entity( Entity entity, bool was_ghost = false );
 
 protected:
   void internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
@@ -1448,11 +1441,26 @@ protected:
    *  2) Change parts => update forward relations via part relation
    *                  => update via field relation
    */
-protected:
   void internal_change_entity_parts( Entity ,
                                      const std::vector<Part*> & add_parts ,
                                      const std::vector<Part*> & remove_parts,
                                      bool always_propagate_internal_changes=true);
+  bool internal_destroy_entity( Entity entity, bool was_ghost = false );
+
+  void internal_change_ghosting( Ghosting & ghosts,
+                                 const std::vector<EntityProc> & add_send ,
+                                 const std::vector<EntityKey> & remove_receive,
+                                 bool is_full_regen = false);
+
+  //Optional parameter 'always_propagate_internal_changes' is always true except when this function
+  //is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
+  //internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
+  //the propagation that stk-mesh does.
+  void internal_verify_and_change_entity_parts( Entity entity,
+                                                const PartVector & add_parts ,
+                                                const PartVector & remove_parts,
+                                                bool always_propagate_internal_changes=true );
+
 
 private:
   void internal_propagate_part_changes( Entity entity, const std::vector<Part*> & removed );
@@ -1462,39 +1470,21 @@ private:
                                     Ghosting & ghosts ,
                                     const std::vector<EntityProc> & add_send ,
                                     const std::vector<EntityKey> & remove_receive );
-protected:
-  void internal_change_ghosting( Ghosting & ghosts,
-                                 const std::vector<EntityProc> & add_send ,
-                                 const std::vector<EntityKey> & remove_receive,
-                                 bool is_full_regen = false);
-private:
+
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
-
-public:
-  bool internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt );
-
-private:
-
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
-
-protected:
-  //Optional parameter 'always_propagate_internal_changes' is always true except when this function
-  //is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
-  //internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
-  //the propagation that stk-mesh does.
-  void internal_verify_and_change_entity_parts( Entity entity,
-                                                const PartVector & add_parts ,
-                                                const PartVector & remove_parts,
-                                                bool always_propagate_internal_changes=true );
-private:
-
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
   void internal_resolve_shared_modify_delete_second_pass();
 
   void internal_resolve_parallel_create();
+
+public:
+  bool internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt );
+  typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;
+  typedef std::map<EntityKey,int> NewOwnerMap;
 
 protected:
 
@@ -1529,21 +1519,21 @@ protected:
   void entity_comm_map_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
   void entity_comm_map_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
 
-public:
-  typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;
-  typedef std::map<EntityKey,int> NewOwnerMap;
-
   /** \brief  Regenerate the shared-entity aura,
    *          adding and removing ghosted entities as necessary.
    *
    *  - a collective parallel operation.
    */
-protected:
   void internal_regenerate_aura();
   void internal_calculate_sharing(const std::vector<EntityProc> & local_change,
                            const std::vector<EntityProc> & shared_change,
                            const std::vector<EntityProc> & ghosted_change,
                            NodeToDependentProcessorsMap & owned_node_sharing_map);
+
+  void require_ok_to_modify() const ;
+  void internal_update_fast_comm_maps();
+
+
 private:
   void internal_basic_part_check(const Part* part,
                                  const unsigned ent_rank,
@@ -1570,9 +1560,6 @@ public:
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
   void internal_sync_comm_list_owners();
 
-protected:
-  void require_ok_to_modify() const ;
-  void internal_update_fast_comm_maps();
 
 private:
 
