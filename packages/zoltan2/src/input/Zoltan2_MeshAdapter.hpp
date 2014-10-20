@@ -248,7 +248,7 @@ public:
   /*! \brief Returns whether a second adjacency combination is available.
    */
   virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
-			    MeshEntityType through) const { return false;}
+			    MeshEntityType through) const {return availAdjs(sourcetarget, through);}
 
 
   /*! \brief Returns the number of second adjacencies on this process.
