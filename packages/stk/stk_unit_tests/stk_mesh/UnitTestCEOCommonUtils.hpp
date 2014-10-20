@@ -358,13 +358,13 @@ inline bool check_parts(const stk::mesh::BulkData & mesh, const EntityKey & enti
 //////////////////////////////////// 2Elem2ProcMove //////////////////////////////////////
 inline void fillMeshfor2Elem2ProcMoveAndTest(BulkDataTester& bulk, stk::mesh::MetaData &meta, std::vector<stk::mesh::Entity>& elems)
 {
-//   id/owner_proc
-//
-//   1/0---4/0---5/0      1/0---4/1---5/1
-//    |     |     |        |     |     |
-//    | 1/0 | 2/0 |   =>   | 1/0 | 2/1 |
-//    |     |     |        |     |     |
-//   2/0---3/0---6/0      2/0---3/0---6/1
+    //   id/owner_proc
+    //
+    //   1/0---4/0---5/0      1/0---4/1---5/1
+    //    |     |     |        |     |     |
+    //    | 1/0 | 2/0 |   =>   | 1/0 | 2/1 |
+    //    |     |     |        |     |     |
+    //   2/0---3/0---6/0      2/0---3/0---6/1
 
     stk::mesh::EntityId element_ids[2] = {1, 2};
     stk::mesh::EntityId elem_node_ids[][4] = { {1, 2, 3, 4}, {4, 3, 6, 5}};
@@ -429,6 +429,14 @@ inline void fillMeshfor2Elem2ProcMoveAndTest(BulkDataTester& bulk, stk::mesh::Me
 
 inline void checkStatesAfterCEOME_2Elem2ProcMove(BulkDataTester &bulk)
 {
+    //   id/owner_proc
+    //
+    //   1/0---4/0---5/0      1/0---4/1---5/1
+    //    |     |     |        |     |     |
+    //    | 1/0 | 2/0 |   =>   | 1/0 | 2/1 |
+    //    |     |     |        |     |     |
+    //   2/0---3/0---6/0      2/0---3/0---6/1
+
     int p_rank = bulk.parallel_rank();
     if(p_rank == 0)
     {
@@ -557,14 +565,13 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
 
 inline void fillMeshfor2Elem2ProcFlipAndTest(BulkDataTester& mesh, stk::mesh::MetaData &meta)
 {
-
-//   id/owner_proc
-//
-//   1/0---4/0---5/1        1/1---4/0---5/0
-//    |     |     |          |     |     |
-//    | 1/0 | 2/1 |     =>   | 1/1 | 2/0 |
-//    |     |     |          |     |     |
-//   2/0---3/0---6/1        2/1---3/0---6/0
+    //   id/owner_proc
+    //
+    //   1/0---4/0---5/1        1/1---4/0---5/0
+    //    |     |     |          |     |     |
+    //    | 1/0 | 2/1 |     =>   | 1/1 | 2/0 |
+    //    |     |     |          |     |     |
+    //   2/0---3/0---6/1        2/1---3/0---6/0
 
     stk::mesh::EntityId element_ids[2] = {1, 2};
     stk::mesh::EntityId elem_node_ids[][4] = { {1, 2, 3, 4}, {4, 3, 6, 5}};
@@ -654,6 +661,14 @@ inline void fillMeshfor2Elem2ProcFlipAndTest(BulkDataTester& mesh, stk::mesh::Me
 
 inline void checkStatesAfterCEOME_2Elem2ProcFlip(BulkDataTester& mesh)
 {
+    //   id/owner_proc
+    //
+    //   1/0---4/0---5/1        1/1---4/0---5/0
+    //    |     |     |          |     |     |
+    //    | 1/0 | 2/1 |     =>   | 1/1 | 2/0 |
+    //    |     |     |          |     |     |
+    //   2/0---3/0---6/1        2/1---3/0---6/0
+
     int p_rank = mesh.parallel_rank();
 
     if(p_rank == 0)
@@ -720,6 +735,14 @@ inline void checkStatesAfterCEOME_2Elem2ProcFlip(BulkDataTester& mesh)
 
 inline void fillMeshfor3Elem2ProcMoveRightAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector& elements)
 {
+    //   id/owner_proc
+    //
+    //   1/0---3/0---5/0---7/1         1/0---3/0---5/1---7/1
+    //    |     |     |     |           |     |     |     |
+    //    | 1/0 | 2/0 | 3/1 |     =>    | 1/0 | 2/1 | 3/1 |
+    //    |     |     |     |           |     |     |     |
+    //   2/0---4/0---6/0---8/1         2/0---4/0---6/1---8/1
+
     stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
     stk::mesh::Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
     meta_data.commit();
@@ -844,6 +867,14 @@ inline void fillMeshfor3Elem2ProcMoveRightAndTest(BulkDataTester &mesh, stk::mes
 
 inline void checkStatesAfterCEOME_3Elem2ProcMoveRight(BulkDataTester &mesh)
 {
+    //   id/owner_proc
+    //
+    //   1/0---3/0---5/0---7/1         1/0---3/0---5/1---7/1
+    //    |     |     |     |           |     |     |     |
+    //    | 1/0 | 2/0 | 3/1 |     =>    | 1/0 | 2/1 | 3/1 |
+    //    |     |     |     |           |     |     |     |
+    //   2/0---4/0---6/0---8/1         2/0---4/0---6/1---8/1
+
     int p_rank = mesh.parallel_rank();
     if(p_rank == 0)
     {
@@ -920,6 +951,14 @@ inline void checkStatesAfterCEOME_3Elem2ProcMoveRight(BulkDataTester &mesh)
 
 inline void fillMeshfor3Elem2ProcMoveLeftAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta_data, stk::mesh::EntityVector &nodes, stk::mesh::EntityVector &elements)
 {
+    //   id/owner_proc
+    //
+    //   1/0---3/0---5/1---7/1         1/0---3/0---5/0---7/1
+    //    |     |     |     |           |     |     |     |
+    //    | 1/0 | 2/1 | 3/1 |     =>    | 1/0 | 2/0 | 3/1 |
+    //    |     |     |     |           |     |     |     |
+    //   2/0---4/0---6/1---8/1         2/0---4/0---6/0---8/1
+
     int p_rank = mesh.parallel_rank();
 
     stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
@@ -1045,6 +1084,14 @@ inline void fillMeshfor3Elem2ProcMoveLeftAndTest(BulkDataTester &mesh, stk::mesh
 
 inline void checkStatesAfterCEOME_3Elem2ProcMoveLeft(BulkDataTester &mesh)
 {
+    //   id/owner_proc
+    //
+    //   1/0---3/0---5/1---7/1         1/0---3/0---5/0---7/1
+    //    |     |     |     |           |     |     |     |
+    //    | 1/0 | 2/1 | 3/1 |     =>    | 1/0 | 2/0 | 3/1 |
+    //    |     |     |     |           |     |     |     |
+    //   2/0---4/0---6/1---8/1         2/0---4/0---6/0---8/1
+
     int p_rank = mesh.parallel_rank();
     if(p_rank == 0)
     {
@@ -1122,6 +1169,26 @@ inline void checkStatesAfterCEOME_3Elem2ProcMoveLeft(BulkDataTester &mesh)
 inline void fillMeshfor4Elem4ProcEdgeAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta_data,
         EntityKey &elem_key_chg_own)
 {
+    // This unit-test is designed to test the conditions that results that
+    // resulted in the difficult-to-fix rebalance use-case bug. Specifically,
+    // it will test the changing-of-ownership of a shared edge to a proc that
+    // either ghosted it or did not know about it.
+    //
+    //         id/proc                             id/proc
+    //        1/0---3/0---5/1---7/2---9/3         1/0---3/0---5/1---7/0---9/3
+    //        |      |     |    ||     |          |      |     |    ||     |
+    //        | 1/0  | 2/1 | 3/2|| 4/3 |          | 1/0  | 2/1 | 3/0|| 4/3 |
+    //        |      |     |    ||     |          |      |     |    ||     |
+    //        2/0---4/0---6/1---8/2---10/3        2/0---4/0---6/1---8/0---10/3
+    //  this edge moves to p0 --^
+    //  element 3 moves to proc 0.
+    //  nodes 7&8 move to proc 0.
+    //  proc 2 forgets everything.
+    //
+    // To test this, we use the mesh above, with each elem going on a separate
+    // proc, one elem per proc. We will take the edge shared by the last
+    // two (rightmost) elements and change the ownership to proc 0.
+
     int p_rank = mesh.parallel_rank();
 
     stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
@@ -1399,6 +1466,26 @@ inline void fillMeshfor4Elem4ProcEdgeAndTest(BulkDataTester &mesh, stk::mesh::Me
 
 inline void checkStatesAfterCEOME_4Elem4ProcEdge(BulkDataTester &mesh)
 {
+    // This unit-test is designed to test the conditions that results that
+    // resulted in the difficult-to-fix rebalance use-case bug. Specifically,
+    // it will test the changing-of-ownership of a shared edge to a proc that
+    // either ghosted it or did not know about it.
+    //
+    //         id/proc                             id/proc
+    //        1/0---3/0---5/1---7/2---9/3         1/0---3/0---5/1---7/0---9/3
+    //        |      |     |    ||     |          |      |     |    ||     |
+    //        | 1/0  | 2/1 | 3/2|| 4/3 |          | 1/0  | 2/1 | 3/0|| 4/3 |
+    //        |      |     |    ||     |          |      |     |    ||     |
+    //        2/0---4/0---6/1---8/2---10/3        2/0---4/0---6/1---8/0---10/3
+    //  this edge moves to p0 --^
+    //  element 3 moves to proc 0.
+    //  nodes 7&8 move to proc 0.
+    //  proc 2 forgets everything.
+    //
+    // To test this, we use the mesh above, with each elem going on a separate
+    // proc, one elem per proc. We will take the edge shared by the last
+    // two (rightmost) elements and change the ownership to proc 0.
+
     int p_rank = mesh.parallel_rank();
 
 //test post condition
@@ -1560,6 +1647,22 @@ inline void checkStatesAfterCEOME_4Elem4ProcEdge(BulkDataTester &mesh)
 
 inline void fillMeshfor8Elem4ProcMoveTopAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta)
 {
+    //
+    //     id/proc                           id/proc
+    //     11/0--12/0--13/1--14/2--15/3      11/0--12/0--13/3--14/0--15/3
+    //       |     |     |     |     |         |     |     |     |     |
+    //       | 5/0 | 6/1 | 7/2 | 8/3 |         | 5/0 | 6/3 | 7/0 | 8/3 |
+    //       |     |     |     |     |         |     |     |     |     |
+    //      6/0---7/0---8/1---9/2--10/3  -->  6/0---7/0---8/3---9/0--10/3
+    //       |     |     |     |     |         |     |     |     |     |
+    //       | 1/0 | 2/1 | 3/2 | 4/3 |         | 1/0 | 2/1 | 3/2 | 4/3 |
+    //       |     |     |     |     |         |     |     |     |     |
+    //      1/0---2/0---3/1---4/2---5/3       1/0---2/0---3/1---4/2---5/3
+    //
+    // This test moves ownership of elements 6 and 7 (as well as their locally-owned
+    // nodes) to procs 3 and 0, respectively.
+    //
+
     const int p_rank = mesh.parallel_rank();
 
     setup8Quad4ProcMesh2D(mesh);
@@ -1793,6 +1896,22 @@ inline void fillMeshfor8Elem4ProcMoveTopAndTest(BulkDataTester &mesh, stk::mesh:
 
 inline void checkStatesAfterCEOME_8Elem4ProcMoveTop(BulkDataTester &mesh)
 {
+    //
+    //     id/proc                           id/proc
+    //     11/0--12/0--13/1--14/2--15/3      11/0--12/0--13/3--14/0--15/3
+    //       |     |     |     |     |         |     |     |     |     |
+    //       | 5/0 | 6/1 | 7/2 | 8/3 |         | 5/0 | 6/3 | 7/0 | 8/3 |
+    //       |     |     |     |     |         |     |     |     |     |
+    //      6/0---7/0---8/1---9/2--10/3  -->  6/0---7/0---8/3---9/0--10/3
+    //       |     |     |     |     |         |     |     |     |     |
+    //       | 1/0 | 2/1 | 3/2 | 4/3 |         | 1/0 | 2/1 | 3/2 | 4/3 |
+    //       |     |     |     |     |         |     |     |     |     |
+    //      1/0---2/0---3/1---4/2---5/3       1/0---2/0---3/1---4/2---5/3
+    //
+    // This test moves ownership of elements 6 and 7 (as well as their locally-owned
+    // nodes) to procs 3 and 0, respectively.
+    //
+
     int p_rank = mesh.parallel_rank();
 
 // Check the final state
@@ -2058,6 +2177,18 @@ inline void checkStatesAfterCEOME_8Elem4ProcMoveTop(BulkDataTester &mesh)
 
 inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta)
 {
+    //
+    //     id/proc                id/proc
+    //      7/3---8/2---9/2        7/2---8/1---9/1
+    //       |     |     |          |     |     |
+    //       | 4/3 | 3/2 |          | 4/2 | 3/1 |
+    //       |     |     |          |     |     |
+    //      4/0---5/0---6/1  -->   4/3---5/3---6/0
+    //       |     |     |          |     |     |
+    //       | 1/0 | 2/1 |          | 1/3 | 2/0 |
+    //       |     |     |          |     |     |
+    //      1/0---2/0---3/1        1/3---2/3---3/0
+
     const int p_rank = mesh.parallel_rank();
 
     stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
@@ -2275,6 +2406,18 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
 
 inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh)
 {
+    //
+    //     id/proc                id/proc
+    //      7/3---8/2---9/2        7/2---8/1---9/1
+    //       |     |     |          |     |     |
+    //       | 4/3 | 3/2 |          | 4/2 | 3/1 |
+    //       |     |     |          |     |     |
+    //      4/0---5/0---6/1  -->   4/3---5/3---6/0
+    //       |     |     |          |     |     |
+    //       | 1/0 | 2/1 |          | 1/3 | 2/0 |
+    //       |     |     |          |     |     |
+    //      1/0---2/0---3/1        1/3---2/3---3/0
+
     const int p_rank = mesh.parallel_rank();
 
 // Check the initial state
@@ -2452,6 +2595,26 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh)
 
 inline void fillMeshfor3Elem4Proc1Edge3DAndTest(BulkDataTester &mesh, stk::mesh::MetaData &meta)
 {
+    //  ID.proc
+    //                    15.2--------16.2                      15.1--------16.1
+    //                     /|          /|                        /|          /|
+    //                    / |         / |                       / |         / |
+    //                  7.2---------8.2 |                     7.1---------8.1 |
+    //                   |  |  3.2   |  |                      |  |  3.1   |  |
+    //                   |  |        |  |                      |  |        |  |
+    //        12.0-------|13.0-------|14.1          12.3-------|13.3-------|14.0
+    //         /|        | *|        | /|   -->      /|        | *|        | /|
+    //        / |        |* |        |/ |           / |        |* |        |/ |
+    //      4.0---------5.0---------6.1 |         4.3---------5.3---------6.0 |
+    //       |  |  1.0   |  |  2.1   |  |          |  |  1.3   |  |  2.0   |  |
+    //       |  |        |  |        |  |          |  |        |  |        |  |
+    //       | 9.0-------|10.0-------|11.1         | 9.3-------|10.3-------|11.0
+    //       | /         | /         | /           | /         | /         | /
+    //       |/          |/          |/            |/          |/          |/
+    //      1.0---------2.0---------3.1           1.3---------2.3---------3.0
+    //
+    //      (*)edge: 1.0                          (*)edge: 1.1
+
     const int p_rank = mesh.parallel_rank();
 
     stk::mesh::Part & elem_part = meta.declare_part_with_topology("elem_part", stk::topology::HEX_8);
@@ -2750,6 +2913,26 @@ inline void fillMeshfor3Elem4Proc1Edge3DAndTest(BulkDataTester &mesh, stk::mesh:
 
 inline void checkStatesAfterCEOME_3Elem4Proc1Edge3D(BulkDataTester &mesh)
 {
+    //  ID.proc
+    //                    15.2--------16.2                      15.1--------16.1
+    //                     /|          /|                        /|          /|
+    //                    / |         / |                       / |         / |
+    //                  7.2---------8.2 |                     7.1---------8.1 |
+    //                   |  |  3.2   |  |                      |  |  3.1   |  |
+    //                   |  |        |  |                      |  |        |  |
+    //        12.0-------|13.0-------|14.1          12.3-------|13.3-------|14.0
+    //         /|        | *|        | /|   -->      /|        | *|        | /|
+    //        / |        |* |        |/ |           / |        |* |        |/ |
+    //      4.0---------5.0---------6.1 |         4.3---------5.3---------6.0 |
+    //       |  |  1.0   |  |  2.1   |  |          |  |  1.3   |  |  2.0   |  |
+    //       |  |        |  |        |  |          |  |        |  |        |  |
+    //       | 9.0-------|10.0-------|11.1         | 9.3-------|10.3-------|11.0
+    //       | /         | /         | /           | /         | /         | /
+    //       |/          |/          |/            |/          |/          |/
+    //      1.0---------2.0---------3.1           1.3---------2.3---------3.0
+    //
+    //      (*)edge: 1.0                          (*)edge: 1.1
+
     const int p_rank = mesh.parallel_rank();
 
 // Check the final state

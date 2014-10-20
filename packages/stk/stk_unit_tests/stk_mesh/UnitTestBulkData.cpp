@@ -3275,6 +3275,14 @@ TEST(BulkData, verify_closure_count_is_correct)
 
 TEST(BulkData, change_entity_owner_2Elem2ProcMove)
 {
+//   id/owner_proc
+//
+//   1/0---4/0---5/0      1/0---4/1---5/1
+//    |     |     |        |     |     |
+//    | 1/0 | 2/0 |   =>   | 1/0 | 2/1 |
+//    |     |     |        |     |     |
+//   2/0---3/0---6/0      2/0---3/0---6/1
+
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   const int p_rank = stk::parallel_machine_rank( pm );
   const int p_size = stk::parallel_machine_size( pm );
@@ -3304,6 +3312,14 @@ TEST(BulkData, change_entity_owner_2Elem2ProcMove)
 
 TEST(BulkData, change_entity_owner_2Elem2ProcFlip)
 {
+  //   id/owner_proc
+  //
+  //   1/0---4/0---5/1        1/1---4/0---5/0
+  //    |     |     |          |     |     |
+  //    | 1/0 | 2/1 |     =>   | 1/1 | 2/0 |
+  //    |     |     |          |     |     |
+  //   2/0---3/0---6/1        2/1---3/0---6/0
+
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   const int p_rank = stk::parallel_machine_rank( pm );
   const int p_size = stk::parallel_machine_size( pm );
@@ -3317,13 +3333,6 @@ TEST(BulkData, change_entity_owner_2Elem2ProcFlip)
   BulkDataTester mesh( meta, pm);
 
   CEOUtils::fillMeshfor2Elem2ProcFlipAndTest(mesh, meta);
-
-  //okay now flip
-  //    1/0---4/0---5/1          1/1---4/0---5/0
-  //     |     |     |            |     |     |
-  //     | 1/0 | 2/1 |       =>   | 1/1 | 2/0 |
-  //     |     |     |            |     |     |
-  //    2/0---3/0---6/1          2/1---3/0---6/0
 
   stk::mesh::EntityProcVec entity_procs_flip;
   if (p_rank == 0) {
