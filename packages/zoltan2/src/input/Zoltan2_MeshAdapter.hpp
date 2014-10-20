@@ -274,8 +274,8 @@ public:
     //if (!avail2ndAdjs(sourcetarget, through))
       return 0;
       /*else {
-      return nadj_;
-      }*/
+	return nadj_;*/
+  }
 
   /*! \brief Sets pointers to this process' mesh second adjacencies.
       \param sourcetarget
@@ -294,14 +294,9 @@ public:
                               const lno_t *&offsets,
                               const zgid_t *&adjacencyIds) const
   {
-    //if (!avail2ndAdjs(sourcetarget, through)) {
       offsets = NULL;
       adjacencyIds = NULL;
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
-	/*} else {
-      offsets = start_;
-      adjacencyIds = adj_;
-      }*/
   }
 
 
