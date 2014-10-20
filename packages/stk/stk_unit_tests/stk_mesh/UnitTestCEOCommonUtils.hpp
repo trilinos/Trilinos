@@ -19,11 +19,11 @@ using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::PartVector;
 using stk::mesh::Entity;
-using EntityKey;
+using stk::mesh::EntityKey;
 using stk::mesh::EntityRank;
 
-const EntityRank NODE_RANK = NODE_RANK;
-const EntityRank EDGE_RANK = EDGE_RANK;
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
+const EntityRank EDGE_RANK = stk::topology::EDGE_RANK;
 const EntityRank FACE_RANK = stk::topology::FACE_RANK;
 const EntityRank ELEM_RANK = stk::topology::ELEM_RANK;
 
@@ -98,7 +98,7 @@ enum EntityStates {
   STATE_NOT_GHOSTED
 };
 
-inline boolcheck_state(const stk::mesh::BulkData & mesh, const EntityKey & entityKey, EntityStates state,
+inline bool check_state(const stk::mesh::BulkData & mesh, const EntityKey & entityKey, EntityStates state,
                  int p0 = -1, int p1 = -1, int p2 = -1, int p3 = -1, int p4 = -1, int p5 = -1)
 {
   // Check to see if the state is as expected for the provided EntityKey.
@@ -268,7 +268,7 @@ inline boolcheck_state(const stk::mesh::BulkData & mesh, const EntityKey & entit
 
 }
 
-bool check_parts(const stk::mesh::BulkData & mesh, const EntityKey & entityKey,
+inline bool check_parts(const stk::mesh::BulkData & mesh, const EntityKey & entityKey,
                  stk::mesh::Part *p0 = NULL, stk::mesh::Part *p1 = NULL, stk::mesh::Part *p2 = NULL,
                  stk::mesh::Part *p3 = NULL, stk::mesh::Part *p4 = NULL, stk::mesh::Part *p5 = NULL)
 {
