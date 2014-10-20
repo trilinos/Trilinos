@@ -1,8 +1,24 @@
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <gtest/gtest.h>
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Relation.hpp"
+#include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "BulkDataTester.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 
 namespace CEOUtils
 {
+
+using stk::mesh::Part;
+using stk::mesh::MetaData;
+using stk::mesh::BulkData;
+using stk::mesh::PartVector;
+using stk::mesh::Entity;
+using stk::mesh::EntityKey;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
