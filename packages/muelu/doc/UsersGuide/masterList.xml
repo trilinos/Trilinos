@@ -23,7 +23,6 @@
       <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
       <Elasticity-2D>3</Elasticity-2D>
       <Elasticity-3D>6</Elasticity-3D>
-      <MHD>8</MHD>
     </parameter>
 
     <parameter>
@@ -87,6 +86,57 @@
     <parameter>
       <name>smoother: params</name>
       <type>\parameterlist</type>
+      <MHD>
+        <parameter>
+          <name>schwarz: overlap level</name>
+          <type>int</type>
+          <default>1</default>
+        </parameter>
+        <parameter>
+          <name>schwarz: combine mode</name>
+          <type>string</type>
+          <default>"Zero"</default> 
+        </parameter>
+        <parameter>
+          <name>schwarz: use reordering</name>
+          <type>bool</type>
+          <default>false</default>
+        </parameter>
+
+        <parameter>
+          <name>subdomain solver name</name>
+          <type>string</type>
+          <default>RILUK</default>/>
+        </parameter>
+        <parameter>
+          <name>subdomain solver parameters</name>
+          <type>\parameterlist</type>
+
+            <parameter>
+              <name>fact: iluk level-of-fill</name>
+              <type>int</type>
+              <default>0</default>
+            </parameter>
+
+            <parameter>
+              <name>fact: absolute threshold</name>
+              <type>double</type>
+              <default>0.</default>
+            </parameter>
+
+            <parameter>
+              <name>fact: relative threshold</name>
+              <type>double</type>
+              <default>1.</default>
+            </parameter>
+
+            <parameter>
+              <name>fact: relax value</name>
+              <type>double</type>
+              <default>0.</default>
+            </parameter>
+        </parameter>
+      </MHD>
       <description>Smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
     </parameter>
 

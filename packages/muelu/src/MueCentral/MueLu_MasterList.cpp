@@ -144,52 +144,79 @@ namespace MueLu {
 ;
   std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>
 ("Poisson-2D",
-"<ParameterList name=\"MueLu\">"
+
+    "<ParameterList name=\"MueLu\">"
     
-          "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-        
-"</ParameterList>"
-)
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+          
+    "</ParameterList>"
+  )
 ("Poisson-3D",
-"<ParameterList name=\"MueLu\">"
+
+    "<ParameterList name=\"MueLu\">"
     
-          "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-        
-"</ParameterList>"
-)
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+          
+    "</ParameterList>"
+  )
 ("Elasticity-2D",
-"<ParameterList name=\"MueLu\">"
+
+    "<ParameterList name=\"MueLu\">"
     
-          "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
-        
-          "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-        
-"</ParameterList>"
-)
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
+          
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+          
+    "</ParameterList>"
+  )
 ("Elasticity-3D",
-"<ParameterList name=\"MueLu\">"
+
+    "<ParameterList name=\"MueLu\">"
     
-          "<Parameter name=\"number of equations\" type=\"int\" value=\"6\"/>"
-        
-          "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-        
-"</ParameterList>"
-)
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"6\"/>"
+          
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+          
+    "</ParameterList>"
+  )
 ("MHD",
-"<ParameterList name=\"MueLu\">"
+
+    "<ParameterList name=\"MueLu\">"
     
-          "<Parameter name=\"number of equations\" type=\"int\" value=\"8\"/>"
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"SCHWARZ\"/>"
+          
+    "<ParameterList name=\"smoother: params\">"
+    
+        "<Parameter name=\"schwarz: overlap level\" type=\"int\" value=\"1\"/>"
         
-          "<Parameter name=\"smoother: type\" type=\"string\" value=\"SCHWARZ\"/>"
+        "<Parameter name=\"schwarz: combine mode\" type=\"string\" value=\"Zero\"/>"
         
-          "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
+        "<Parameter name=\"schwarz: use reordering\" type=\"bool\" value=\"false\"/>"
         
-          "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"true\"/>"
+        "<Parameter name=\"subdomain solver name\" type=\"string\" value=\"RILUK\"/>"
         
-          "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"unsmoothed\"/>"
+    "<ParameterList name=\"subdomain solver parameters\">"
+    
+        "<Parameter name=\"fact: iluk level-of-fill\" type=\"int\" value=\"0\"/>"
         
-"</ParameterList>"
-)
+        "<Parameter name=\"fact: absolute threshold\" type=\"double\" value=\"0.\"/>"
+        
+        "<Parameter name=\"fact: relative threshold\" type=\"double\" value=\"1.\"/>"
+        
+        "<Parameter name=\"fact: relax value\" type=\"double\" value=\"0.\"/>"
+        
+    "</ParameterList>"
+  
+    "</ParameterList>"
+  
+            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
+          
+            "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"true\"/>"
+          
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"unsmoothed\"/>"
+          
+    "</ParameterList>"
+  )
 ;
 
 }
