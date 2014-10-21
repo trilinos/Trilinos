@@ -513,8 +513,6 @@ namespace TSQR {
         using std::cerr;
         using std::endl;
 #endif // KNR_DEBUG
-        typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view_type;
-        typedef MatView<LocalOrdinal, Scalar> mat_view_type;
         typedef CacheBlockRange<const_mat_view_type> const_range_type;
         typedef CacheBlockRange<mat_view_type> range_type;
 
