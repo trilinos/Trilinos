@@ -168,7 +168,7 @@ void BulkDataTester::internal_change_entity_owner_exp( const std::vector<EntityP
 
       internal_verify_and_change_entity_parts( entity , PartVector() , owned );
 
-      const bool changed = this->only_call_from_fmwk_set_parallel_owner_rank( entity, i->second );
+      const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, i->second );
       if (changed) {
         internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
@@ -177,7 +177,7 @@ void BulkDataTester::internal_change_entity_owner_exp( const std::vector<EntityP
     for ( std::vector<EntityProc>::iterator
           i = shared_change.begin() ; i != shared_change.end() ; ++i ) {
       Entity entity = i->first;
-      const bool changed = this->only_call_from_fmwk_set_parallel_owner_rank( entity, i->second );
+      const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, i->second );
       if (changed) {
         internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
@@ -259,7 +259,7 @@ void BulkDataTester::internal_change_entity_owner_exp( const std::vector<EntityP
 
         log_created_parallel_copy( entity );
 
-        const bool changed = this->only_call_from_fmwk_set_parallel_owner_rank( entity, owner );
+        const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, owner );
         if (changed) {
           internal_change_owner_in_comm_data(entity_key(entity), owner);
         }

@@ -1222,7 +1222,7 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
   internal_verify_and_change_entity_parts( declared_entity , add , rem );
 
   if ( result.second ) {
-    this->only_call_from_fmwk_set_parallel_owner_rank(declared_entity, m_parallel_rank);
+    this->set_parallel_owner_rank_but_not_comm_lists(declared_entity, m_parallel_rank);
     set_synchronized_count(declared_entity, m_sync_count);
     DiagIfWatching(LOG_ENTITY, key, "new entity: " << entity_key(declared_entity));
   }
@@ -1450,7 +1450,7 @@ void BulkData::addMeshEntities(const std::vector< stk::parallel::DistributedInde
             internal_verify_and_change_entity_parts(new_entity, add, rem);
             requested_entities.push_back(new_entity);
 
-            this->only_call_from_fmwk_set_parallel_owner_rank(new_entity, m_parallel_rank);
+            this->set_parallel_owner_rank_but_not_comm_lists(new_entity, m_parallel_rank);
             set_synchronized_count(new_entity, m_sync_count);
         }
     }
@@ -2994,7 +2994,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 
       internal_verify_and_change_entity_parts( entity , PartVector() , owned );
 
-      const bool changed = this->only_call_from_fmwk_set_parallel_owner_rank( entity, i->second );
+      const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, i->second );
       if (changed) {
         internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
@@ -3003,7 +3003,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
     for ( std::vector<EntityProc>::iterator
           i = shared_change.begin() ; i != shared_change.end() ; ++i ) {
       Entity entity = i->first;
-      const bool changed = this->only_call_from_fmwk_set_parallel_owner_rank( entity, i->second );
+      const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, i->second );
       if (changed) {
         internal_change_owner_in_comm_data(entity_key(entity), i->second);
       }
@@ -3085,7 +3085,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 
         log_created_parallel_copy( entity );
 
-        const bool changed = this->only_call_from_fmwk_set_parallel_owner_rank( entity, owner );
+        const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, owner );
         if (changed) {
           internal_change_owner_in_comm_data(entity_key(entity), owner);
         }
@@ -3465,7 +3465,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
 
           if ( created ) {
             log_created_parallel_copy( entity );
-            this->only_call_from_fmwk_set_parallel_owner_rank( entity, owner);
+            this->set_parallel_owner_rank_but_not_comm_lists( entity, owner);
           }
 
           internal_declare_relation( entity , relations, ordinal_scratch, part_scratch );
@@ -4298,7 +4298,7 @@ void BulkData::internal_establish_new_owner(stk::mesh::Entity entity)
 {
     const int new_owner = determine_new_owner(entity);
 
-    const bool changed = this->only_call_from_fmwk_set_parallel_owner_rank(entity, new_owner);
+    const bool changed = this->set_parallel_owner_rank_but_not_comm_lists(entity, new_owner);
     if(changed)
     {
         internal_change_owner_in_comm_data(entity_key(entity), new_owner);
@@ -4583,7 +4583,7 @@ void BulkData::resolve_ownership_of_modified_entities( const std::vector<Entity>
             Entity entity = get_entity( key );
 
             // Set owner, will correct part membership later
-            const bool changed = this->only_call_from_fmwk_set_parallel_owner_rank( entity, p);
+            const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, p);
             if (changed) {
                 internal_change_owner_in_comm_data(key, p);
             }
@@ -4613,7 +4613,7 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
 
         const int new_owner = determine_new_owner( entity );
 
-        const bool changed = this->only_call_from_fmwk_set_parallel_owner_rank( entity, new_owner);
+        const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, new_owner);
         if (changed) {
           internal_change_owner_in_comm_data(entity_key(entity), new_owner);
         }

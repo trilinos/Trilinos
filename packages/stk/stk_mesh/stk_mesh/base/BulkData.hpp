@@ -1130,7 +1130,7 @@ public:
   //reserves space for a new entity, or reclaims space from a previously-deleted entity
   size_t generate_next_local_offset(size_t preferred_offset = 0);
 
-  bool only_call_from_fmwk_set_parallel_owner_rank(Entity entity, int in_owner_rank)
+  bool set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank)
   {
     TraceIfWatching("stk::mesh::BulkData::set_entity_owner_rank", LOG_ENTITY, entity_key(entity));
     DiagIfWatching(LOG_ENTITY, entity_key(entity), "new owner: " << in_owner_rank);
