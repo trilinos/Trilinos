@@ -58,8 +58,8 @@ IF (${PACKAGE_NAME}_ENABLE_MixedLang)
   TRIBITS_ADD_EXECUTABLE_AND_TEST( test_of_b_mixed_lang
     SOURCES  b_mixed_lang_test.cpp
     NUM_MPI_PROCS  1
-    PASS_REGULAR_EXPRESSION  "B Mixed Language"
-    TESTONLYLIBS  b_mixed_lang
+    PASS_REGULAR_EXPRESSION  "B Mixed Language Hello World"
+    TESTONLYLIBS  b_test_utils  b_mixed_lang
     ${TAEAT_EXTRALIB_ARGS} # Used for testing and to demonstrate errors
     )
 
