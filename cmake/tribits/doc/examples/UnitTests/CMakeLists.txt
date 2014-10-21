@@ -742,7 +742,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         -DSPKB_SHOW_M_DEPLIBS_ERROR=
         .
       PASS_REGULAR_EXPRESSION_ALL
-        "ERROR: TESTONLY lib 'b_mixed_lang' not allowed with INSTALLABLE executable"
+        "ERROR: TESTONLY lib 'b_test_utils' not allowed with INSTALLABLE executable"
         "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Configuring incomplete, errors occurred!"
 
@@ -921,7 +921,7 @@ IF (${PROJECT_NAME}_ENABLE_Fortran)
         -DSPKB_SHOW_M_DEPLIBS_ERROR=
         .
       PASS_REGULAR_EXPRESSION_ALL
-        "ERROR: TESTONLY lib 'b_mixed_lang' not allowed with INSTALLABLE executable"
+        "ERROR: TESTONLY lib 'b_test_utils' not allowed with INSTALLABLE executable"
         "packages/with_subpackages/b/tests/CMakeLists.txt:.* .TRIBITS_ADD_EXECUTABLE_AND_TEST."
         "Configuring incomplete, errors occurred!"
 
@@ -1218,7 +1218,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_WrapExternal_VerboseConfigu
       "-- pws_b:LINK_LIBS='pws_a[;]simplecxx'"
       "-- b_test:LINK_LIBS='pws_b[;]mixedlang'"
       "-- b_mixed_lang:LINK_LIBS='pws_b[;]mixedlang'"
-      "-- test_of_b_mixed_lang:LINK_LIBS='b_mixed_lang[;]pws_b[;]mixedlang'"
+      "-- test_of_b_mixed_lang:LINK_LIBS='b_test_utils[;]b_mixed_lang[;]pws_b[;]mixedlang'"
       "-- c_util:LINK_LIBS='pws_b[;]pws_a'"
       "-- pws_c:LINK_LIBS='pws_b[;]pws_a'"
       "-- c_test:LINK_LIBS='pws_c'"
