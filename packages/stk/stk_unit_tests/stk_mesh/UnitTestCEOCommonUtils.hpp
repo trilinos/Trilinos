@@ -516,10 +516,11 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
         EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::ELEMENT_RANK, 1), CEOUtils::STATE_OWNED, 0));
  
         EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_VALID)); // CHANGED
+//        EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED, 1)); // CHANGED
+
         EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_GHOSTED));
         EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED));
         EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
-//        EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_GHOSTED, 1)); // CHANGED
  
         EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_GHOSTED));
         EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::NODE_RANK, 2), CEOUtils::STATE_NOT_SHARED));
@@ -549,6 +550,7 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
  
         EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_NOT_GHOSTED));
         EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::ELEMENT_RANK, 2), CEOUtils::STATE_OWNED, 1));
+
         EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_SHARED));
         EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_NOT_VALID)); // CHANGED
 //        EXPECT_TRUE(CEOUtils::check_state(bulk, stk::mesh::EntityKey(stk::topology::NODE_RANK, 1), CEOUtils::STATE_GHOSTED, 0)); // CHANGED
@@ -1131,7 +1133,6 @@ inline void checkStatesAfterCEOME_3Elem2ProcMoveLeft(BulkDataTester &mesh)
     int p_rank = mesh.parallel_rank();
     if(p_rank == 0)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0));
@@ -1175,7 +1176,6 @@ inline void checkStatesAfterCEOME_3Elem2ProcMoveLeft(BulkDataTester &mesh)
     }
     else if(p_rank == 1)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_VALID));
  
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_VALID));
@@ -1541,7 +1541,6 @@ inline void checkStatesAfterCEOME_4Elem4ProcEdge(BulkDataTester &mesh)
 //test post condition
     if(p_rank == 0)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_GHOSTED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED, 0));
@@ -1600,7 +1599,6 @@ inline void checkStatesAfterCEOME_4Elem4ProcEdge(BulkDataTester &mesh)
     }
     else if(p_rank == 1)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED, 0 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_GHOSTED, 0 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED));
@@ -1654,7 +1652,6 @@ inline void checkStatesAfterCEOME_4Elem4ProcEdge(BulkDataTester &mesh)
     }
     else if(p_rank == 2)
     { //amnesia
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_VALID));
  
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  2), STATE_NOT_VALID));
@@ -1684,7 +1681,6 @@ inline void checkStatesAfterCEOME_4Elem4ProcEdge(BulkDataTester &mesh)
     }
     else if(p_rank == 3)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_VALID));
  
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  2), STATE_NOT_VALID));
@@ -2007,7 +2003,6 @@ inline void checkStatesAfterCEOME_8Elem4ProcMoveTop(BulkDataTester &mesh)
 // Check the final state
     if(p_rank == 0)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_GHOSTED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED, 0));
@@ -2094,7 +2089,6 @@ inline void checkStatesAfterCEOME_8Elem4ProcMoveTop(BulkDataTester &mesh)
     }
     else if(p_rank == 1)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_GHOSTED, 0 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED, 0 ));
@@ -2173,7 +2167,6 @@ inline void checkStatesAfterCEOME_8Elem4ProcMoveTop(BulkDataTester &mesh)
     }
     else if(p_rank == 2)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_VALID));
  
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  2), STATE_GHOSTED, 0 ));
@@ -2252,7 +2245,6 @@ inline void checkStatesAfterCEOME_8Elem4ProcMoveTop(BulkDataTester &mesh)
     }
     else if(p_rank == 3)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_GHOSTED, 0 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED, 0));
@@ -2589,7 +2581,6 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh)
 // Check the initial state
     if(p_rank == 0)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_GHOSTED, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 3));
@@ -2640,7 +2631,6 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh)
     }
     else if(p_rank == 1)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_GHOSTED, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 3));
@@ -2691,7 +2681,6 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh)
     }
     else if(p_rank == 2)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_GHOSTED, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 3));
@@ -2742,7 +2731,6 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh)
     }
     else if(p_rank == 3)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 3));
@@ -3140,7 +3128,6 @@ inline void checkStatesAfterCEOME_3Elem4Proc1Edge3D(BulkDataTester &mesh)
 // Check the final state
     if(p_rank == 0)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_GHOSTED, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED, 3));
@@ -3220,7 +3207,6 @@ inline void checkStatesAfterCEOME_3Elem4Proc1Edge3D(BulkDataTester &mesh)
     }
     else if(p_rank == 1)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_GHOSTED, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED, 3));
@@ -3300,7 +3286,6 @@ inline void checkStatesAfterCEOME_3Elem4Proc1Edge3D(BulkDataTester &mesh)
     }
     else if(p_rank == 2)
     { //knows nothing
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_VALID));
  
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  2), STATE_NOT_VALID));
@@ -3343,7 +3328,6 @@ inline void checkStatesAfterCEOME_3Elem4Proc1Edge3D(BulkDataTester &mesh)
     }
     else if(p_rank == 3)
     {
- 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_GHOSTED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK,  1), STATE_OWNED, 3));
