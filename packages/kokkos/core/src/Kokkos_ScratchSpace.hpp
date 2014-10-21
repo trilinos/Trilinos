@@ -75,7 +75,7 @@ private:
 
 public:
 
-  typedef Impl::MemorySpaceTag              kokkos_tag ;
+  //! Tag this class as a memory space
   typedef ScratchMemorySpace                memory_space ;
   typedef ExecSpace                         execution_space ;
   typedef typename ExecSpace::array_layout  array_layout ;

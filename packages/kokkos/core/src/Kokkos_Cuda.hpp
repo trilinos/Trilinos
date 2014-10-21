@@ -90,11 +90,8 @@ public:
   //! \name Type declarations that all Kokkos execution spaces must provide.
   //@{
 
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
-  //! This is an execution space
+  //! Tag this class as a kokkos execution space
   typedef Cuda                  execution_space ;
-  typedef Cuda                  device_type ;
 
 #if defined( KOKKOS_USE_CUDA_UVM )
   //! This execution space's preferred memory space.
@@ -110,6 +107,8 @@ public:
   //! This execution space's preferred array layout.
   typedef LayoutLeft            array_layout ;
 
+  //! For backward compatibility
+  typedef Cuda                  device_type ;
   //! 
   typedef ScratchMemorySpace< Cuda >  scratch_memory_space ;
 

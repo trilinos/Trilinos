@@ -1097,9 +1097,9 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
-  typedef Kokkos::Threads            execution_space ;  ///< Execution space
-  typedef TeamPolicy                 execution_policy ; 
+  //! Tag this class as a kokkos execution policy
+  typedef TeamPolicy       execution_policy ; 
+  typedef Kokkos::Threads  execution_space ;
 
   typedef typename
     Impl::if_c< ! Impl::is_same< Kokkos::Threads , Arg0 >::value , Arg0 , Arg1 >::type
@@ -1137,9 +1137,9 @@ template< unsigned VectorLength
         , class Arg1 >
 class TeamVectorPolicy<VectorLength, Arg0, Arg1, Kokkos::Threads> {
 public:
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
-  typedef Kokkos::Threads            execution_space ;  ///< Execution space
-  typedef TeamVectorPolicy           execution_policy ;
+  //! Tag this class as a kokkos execution policy
+  typedef TeamVectorPolicy  execution_policy ;
+  typedef Kokkos::Threads   execution_space ;
 
 
   typedef typename
