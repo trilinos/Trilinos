@@ -456,7 +456,7 @@
       <name>emin: pattern</name>
       <type>string</type>
       <default>"AkPtent"</default>
-      <description>Sparsity pattern to use for energy minization. Possible values: "AkPtent".</description>
+      <description>Sparsity pattern to use for energy minimization. Possible values: "AkPtent".</description>
     </parameter>
 
     <parameter>
