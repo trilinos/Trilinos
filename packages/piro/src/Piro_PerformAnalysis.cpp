@@ -63,6 +63,14 @@
 #include "GlobiPack_BrentsLineSearch.hpp"
 #endif
 
+#ifdef Piro_ENABLE_ROL
+// NEED SOMETHING LIKE  #include "ROL_Solver.hpp"
+#include "ROL_ThyraVector.hpp"
+#include "ROL_ThyraME_Objective.hpp"
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_Algorithm.hpp"
+#endif
+
 using std::cout; using std::endl; using std::string;
 using Teuchos::RCP; using Teuchos::rcp; using Teuchos::ParameterList;
 using Teuchos::null; using Teuchos::outArg;
@@ -113,13 +121,21 @@ Piro::PerformAnalysis(
 
   }
 #endif
+#ifdef Piro_ENABLE_ROL
+  else if (analysis == "ROL") {
+    *out << "Piro PerformAnalysis: ROL Optimization Being Performed " << endl;
+    status = Piro::PerformROLAnalysis(piroModel,
+                          analysisParams.sublist("ROL"), result);
+
+  }
+#endif
   else {
-    if (analysis == "Dakota" || analysis == "OptiPack" || analysis == "MOOCHO")
+    if (analysis == "Dakota" || analysis == "OptiPack" || analysis == "MOOCHO" || analysis == "ROL")
       *out << "ERROR: Trilinos/Piro was not configured to include \n "
            << "       analysis type: " << analysis << endl;
     else
       *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
-           << "       Valid analysis types are: Solve, Dakota, MOOCHO, OptiPack\n" << endl;
+           << "       Valid analysis types are: Solve, Dakota, MOOCHO, OptiPack, ROL\n" << endl;
     status = 0; // Should not fail tests
   }
 
@@ -273,6 +289,111 @@ Piro::PerformOptiPackAnalysis(
 #endif
 }
 
+int
+Piro::PerformROLAnalysis(
+    Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
+    Teuchos::ParameterList& rolParams,
+    RCP< Thyra::VectorBase<double> >& p)
+{
+#ifdef Piro_ENABLE_ROL
+  using std::string;
+
+  p = Thyra::createMember(piroModel.get_p_space(0));
+  RCP<const Thyra::VectorBase<double> > p_init = piroModel.getNominalValues().get_p(0);
+  Thyra::copy(*p_init, p.ptr());
+
+  std::cout << "in Piro::PerformROLAnalysis" << std::endl;
+  ROL::ThyraVector<double> rolvec(p);
+//  RCP<ROL::Vector<double> > t = rolvec.clone();
+  std::cout << "RolVec Parameter Vector Norm Before Optimization" << rolvec.norm() << std::endl;
+
+
+  // TODO: pass in piroModel
+  ROL::ThyraME_Objective<double> obj;
+
+    int dim = rolvec.dimension(); // Set problem dimension. Must be even.
+
+    Teuchos::ParameterList parlist;
+    // Enumerations
+//    parlist.set("Descent Type", "Quasi-Newton Method");
+//    parlist.set("Secant Type",  "Limited-Memory BFGS");
+/*
+
+    parlist.set("Linesearch Type",                        "Cubic Interpolation");
+    parlist.set("Linesearch Curvature Condition",         "Wolfe");
+    // Linesearch Parameters
+    parlist.set("Maximum Number of Function Evaluations", 20);
+    parlist.set("Sufficient Decrease Parameter",          1.e-4);
+    parlist.set("Curvature Conditions Parameter",         0.9);
+    parlist.set("Backtracking Rate",                      0.5);
+    parlist.set("Initial Linesearch Parameter",           1.0);
+    parlist.set("User Defined Linesearch Parameter",      false);
+    // Krylov Parameters
+    parlist.set("Absolute Krylov Tolerance",              1.e-4);
+    parlist.set("Relative Krylov Tolerance",              1.e-2);
+    parlist.set("Maximum Number of Krylov Iterations",    10);
+*/
+    // Define Step
+    ROL::LineSearchStep<double> step(parlist);
+
+    // Define Status Test
+    double gtol  = 1e-12;  // norm of gradient tolerance
+    double stol  = 1e-14;  // norm of step tolerance
+    int   maxit = 100;    // maximum number of iterations
+    ROL::StatusTest<double> status(gtol, stol, maxit);    
+
+    // Define Algorithm
+    ROL::DefaultAlgorithm<double> algo(step,status,true);
+
+    // Iteration Vector
+
+    // Run Algorithm
+    std::vector<std::string> output = algo.run(rolvec, obj, false);
+    for ( unsigned i = 0; i < output.size(); i++ ) {
+      std::cout << output[i];
+    }
+
+  std::cout << "RolVec Parameter Vector Norm After Optimization" << rolvec.norm() << std::endl;
+
+//AGS ALL THE REST NEEDS TO BE CONVERTED TO ROL
+/*
+  string dakotaIn  = dakotaParams.get("Input File","dakota.in");
+
+  int p_index = dakotaParams.get("Parameter Vector Index", 0);
+  int g_index = dakotaParams.get("Response Vector Index", 0);
+
+  TriKota::Driver dakota(dakotaIn, dakotaOut, dakotaErr, dakotaRes,
+                         dakotaRestartIn, dakotaRestartEvals);
+
+  RCP<TriKota::ThyraDirectApplicInterface> trikota_interface =
+    rcp(new TriKota::ThyraDirectApplicInterface
+         (dakota.getProblemDescDB(), rcp(&piroModel,false), p_index, g_index),
+	false);
+
+  dakota.run(trikota_interface.get());
+
+  Dakota::RealVector finalValues;
+  if (dakota.rankZero())
+    finalValues = dakota.getFinalSolution().all_continuous_variables();
+
+  // Copy Dakota parameters into Thyra
+  p = Thyra::createMember(piroModel.get_p_space(p_index));
+  {
+      Thyra::DetachedVectorView<double> global_p(p);
+      for (int i = 0; i < finalValues.length(); ++i)
+        global_p[i] = finalValues[i];
+  }
+*/
+
+  return 0;
+#else
+ RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+ *out << "ERROR: Trilinos/Piro was not configured to include ROL analysis."
+      << "\nYou must enable TriKota." << endl;
+ return 0;  // should not fail tests
+#endif
+}
+
 
 RCP<const Teuchos::ParameterList>
 Piro::getValidPiroAnalysisParameters()
@@ -287,6 +408,7 @@ Piro::getValidPiroAnalysisParameters()
   validPL->sublist("OptiPack",  false, "");
   validPL->sublist("GlobiPack", false, "");
   validPL->sublist("Dakota",    false, "");
+  validPL->sublist("ROL",       false, "");
 
   return validPL;
 }
