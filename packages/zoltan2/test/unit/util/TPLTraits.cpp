@@ -59,12 +59,14 @@
 #ifdef HAVE_ZOLTAN2_SCOTCH
 // stdint.h for int64_t in scotch header
 #include <stdint.h>
+extern "C"{
 #ifndef HAVE_ZOLTAN2_MPI
 #include "scotch.h"
 #else
 #include "ptscotch.h"
 #endif
-#endif
+}
+#endif   // HAVE_ZOLTAN2_SCOTCH
 
 #ifdef HAVE_ZOLTAN2_PARMETIS
 
@@ -75,7 +77,10 @@
   
 #else
 
+extern "C"{
 #include "parmetis.h"
+}
+
 #if (PARMETIS_MAJOR_VERSION < 4)
 // Zoltan2 requires ParMETIS v4.x.  
 // Make compilation fail for earlier versions of ParMETIS.
