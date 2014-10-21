@@ -3213,10 +3213,6 @@ Ghosting & BulkData::internal_create_ghosting( const std::string & name )
 
 namespace {
 
-void insert_transitive_closure( BulkData& bulk_data,
-                                std::set<EntityProc,EntityLess> & new_send ,
-                                const EntityProc & entry );
-
 void comm_recv_to_send(
   BulkData & mesh ,
   const std::set< EntityKey > & entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs ,
@@ -3508,6 +3504,37 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
     ghosting.m_sync_count = m_sync_count ;
 }
 
+namespace impl {
+
+struct StoreInEntityProcSet {
+    StoreInEntityProcSet(
+            BulkData & mesh_in,
+            std::set<stk::mesh::EntityProc, stk::mesh::EntityLess> & set_in)
+    :mesh(mesh_in)
+    ,myset(set_in) { }
+
+    void operator()(Entity entity) {
+      myset.insert(stk::mesh::EntityProc(entity,proc));
+    }
+
+    BulkData & mesh;
+    std::set<stk::mesh::EntityProc , stk::mesh::EntityLess> & myset;
+    int proc;
+};
+
+struct OnlyGhosts  {
+    OnlyGhosts(BulkData & mesh_in) : mesh(mesh_in) {}
+    bool operator()(Entity entity) {
+        const bool isValid = mesh.is_valid(entity);
+        const bool iDoNotOwnEntity = proc != mesh.parallel_owner_rank(entity);
+        const bool entityIsShared = mesh.in_shared( mesh.entity_key(entity) , proc );
+        return (isValid && iDoNotOwnEntity && !entityIsShared);
+    }
+    BulkData & mesh;
+    int proc;
+};
+} // namespace impl
+
 void BulkData::internal_change_ghosting(
   Ghosting & ghosting ,
   const std::vector<EntityProc> & add_send ,
@@ -3585,9 +3612,13 @@ void BulkData::internal_change_ghosting(
   //------------------------------------
   // Add the specified entities and their closure to the send ghosting
 
+  impl::StoreInEntityProcSet sieps(*this,entitiesToGhostOntoOtherProcessors);
+  impl::OnlyGhosts og(*this);
   for ( std::vector< EntityProc >::const_iterator
         i = add_send.begin() ; i != add_send.end() ; ++i ) {
-    insert_transitive_closure( *this, entitiesToGhostOntoOtherProcessors , *i );
+      og.proc = i->second;
+      sieps.proc = i->second;
+      impl::VisitClosureGeneral(*this,i->first,sieps,og);
   }
 
   // Synchronize the send and receive list.
@@ -3662,42 +3693,8 @@ void BulkData::internal_change_ghosting(
 
 //----------------------------------------------------------------------
 
+
 namespace {
-
-void insert_transitive_closure( BulkData& bulk_data,
-                                std::set<EntityProc,EntityLess> & new_send ,
-                                const EntityProc & entry )
-{
-  // Do not insert if I can determine that this entity is already
-  // owned or shared by the receiving processor.
-
-  bool iDoNotOwnEntity = entry.second != bulk_data.parallel_owner_rank(entry.first);
-  bool entityIsShared = bulk_data.in_shared( bulk_data.entity_key(entry.first) , entry.second );
-  if (  iDoNotOwnEntity && !entityIsShared  ) {
-
-    std::pair< std::set<EntityProc,EntityLess>::iterator , bool >
-      result = new_send.insert( entry );
-
-    if ( result.second ) {
-      // A new insertion, must also insert the closure
-
-      const unsigned erank = bulk_data.entity_rank(entry.first);
-
-      for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
-      {
-        Entity const *irels_j = bulk_data.begin(entry.first, irank);;
-        Entity const *irels_e = bulk_data.end(entry.first, irank);
-        for (; irels_j != irels_e; ++irels_j)
-        {
-          if (bulk_data.is_valid(*irels_j)) {
-            EntityProc tmp( *irels_j , entry.second );
-            insert_transitive_closure( bulk_data, new_send , tmp );
-          }
-        }
-      }
-    }
-  }
-}
 
 // Fill a new send list from the receive list.
 void comm_recv_to_send(

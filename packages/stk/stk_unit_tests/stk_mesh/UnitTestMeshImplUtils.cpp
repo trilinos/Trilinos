@@ -267,9 +267,10 @@ TEST(MeshImplUtils, visit_closure_trivial)
     BulkData mesh(meta, communicator);
 
     Entity entity = Entity();
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitClosure(mesh, entity, siv);
-    EXPECT_EQ( 1u, siv.ev.size() );
+    EXPECT_EQ( 1u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_closure_nominal)
@@ -286,19 +287,20 @@ TEST(MeshImplUtils, visit_closure_nominal)
     get_selected_entities(locally_owned_selector, mesh.buckets(stk::topology::ELEMENT_RANK),element_vector);
     ASSERT_TRUE( !element_vector.empty() );
     Entity element = element_vector[0];
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitClosure(mesh, element, siv);
     if (numProcs == 1)
     {
-        EXPECT_EQ( 14u, siv.ev.size() );
+        EXPECT_EQ( 14u, ev.size() );
     }
     else if (myRank == 0 || myRank == numProcs -1)
     {
-        EXPECT_EQ( 13u, siv.ev.size() );
+        EXPECT_EQ( 13u, ev.size() );
     }
     else
     {
-        EXPECT_EQ( 12u, siv.ev.size() );
+        EXPECT_EQ( 12u, ev.size() );
     }
 }
 
@@ -308,14 +310,15 @@ TEST(MeshImplUtils, visit_closure_face)
     ClosureFixture fix(communicator,2);
     BulkData & mesh = fix.mesh();
 
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();
     EntityVector face_vector;
     get_selected_entities(locally_owned_selector, mesh.buckets(stk::topology::FACE_RANK),face_vector);
     ASSERT_TRUE( !face_vector.empty() );
     Entity face = face_vector[0];
     VisitClosure(mesh, face, siv);
-    EXPECT_EQ( 5u, siv.ev.size() );
+    EXPECT_EQ( 5u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_closure_of_vector)
@@ -326,22 +329,23 @@ TEST(MeshImplUtils, visit_closure_of_vector)
     const int myRank = fix.prank();
     BulkData & mesh = fix.mesh();
 
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();
     EntityVector element_vector;
     get_selected_entities(locally_owned_selector, mesh.buckets(stk::topology::ELEMENT_RANK),element_vector);
     VisitClosure(mesh,element_vector.begin(),element_vector.end(),siv);
     if (numProcs == 1)
     {
-        EXPECT_EQ( 24u, siv.ev.size() );
+        EXPECT_EQ( 24u, ev.size() );
     }
     else if (myRank == 0 || myRank == numProcs-1)
     {
-        EXPECT_EQ( 22u, siv.ev.size() );
+        EXPECT_EQ( 22u, ev.size() );
     }
     else
     {
-        EXPECT_EQ( 20u, siv.ev.size() );
+        EXPECT_EQ( 20u, ev.size() );
     }
 }
 
@@ -353,7 +357,8 @@ TEST(MeshImplUtils, visit_closure_of_vector_locally_owned)
     const int myRank = fix.prank();
     BulkData & mesh = fix.mesh();
 
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();
     EntityVector element_vector;
     get_selected_entities(locally_owned_selector, mesh.buckets(stk::topology::ELEMENT_RANK),element_vector);
@@ -361,19 +366,19 @@ TEST(MeshImplUtils, visit_closure_of_vector_locally_owned)
     VisitClosureGeneral(mesh,element_vector.begin(),element_vector.end(),siv,ovloeo);
     if (numProcs == 1)
     {
-        EXPECT_EQ( 24u, siv.ev.size() );
+        EXPECT_EQ( 24u, ev.size() );
     }
     else if (myRank == 0)
     {
-        EXPECT_EQ( 22u, siv.ev.size() );
+        EXPECT_EQ( 22u, ev.size() );
     }
     else if (myRank == numProcs-1)
     {
-        EXPECT_EQ( 16u, siv.ev.size() );
+        EXPECT_EQ( 16u, ev.size() );
     }
     else
     {
-        EXPECT_EQ( 14u, siv.ev.size() );
+        EXPECT_EQ( 14u, ev.size() );
     }
 }
 
@@ -385,9 +390,10 @@ TEST(MeshImplUtils, visit_upward_closure_trivial)
     BulkData mesh(meta, communicator);
 
     Entity entity = Entity();
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitUpwardClosure(mesh, entity, siv);
-    EXPECT_EQ( 1u, siv.ev.size() );
+    EXPECT_EQ( 1u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_upward_closure_nominal)
@@ -413,19 +419,20 @@ TEST(MeshImplUtils, visit_upward_closure_nominal)
     else if (myRank == 3) {
         node = mesh.get_entity(stk::topology::NODE_RANK,29);
     }
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitUpwardClosure(mesh, node, siv);
     if (myRank == 0) {
-        EXPECT_EQ( 5u, siv.ev.size() );
+        EXPECT_EQ( 5u, ev.size() );
     }
     else if (myRank == 1) {
-        EXPECT_EQ( 7u, siv.ev.size() );
+        EXPECT_EQ( 7u, ev.size() );
     }
     else if (myRank == 2) {
-        EXPECT_EQ( 9u, siv.ev.size() );
+        EXPECT_EQ( 9u, ev.size() );
     }
     else { // myRank == 3
-        EXPECT_EQ( 7u, siv.ev.size() );
+        EXPECT_EQ( 7u, ev.size() );
     }
 }
 
@@ -435,14 +442,15 @@ TEST(MeshImplUtils, visit_upward_closure_face)
     ClosureFixture fix(communicator,2);
     BulkData & mesh = fix.mesh();
 
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();
     EntityVector face_vector;
     get_selected_entities(locally_owned_selector, mesh.buckets(stk::topology::FACE_RANK),face_vector);
     ASSERT_TRUE( !face_vector.empty() );
     Entity face = face_vector[0];
     VisitUpwardClosure(mesh, face, siv);
-    EXPECT_EQ( 2u, siv.ev.size() );
+    EXPECT_EQ( 2u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_upward_closure_of_vector)
@@ -471,19 +479,20 @@ TEST(MeshImplUtils, visit_upward_closure_of_vector)
       entity_vector.push_back(mesh.get_entity(stk::topology::NODE_RANK,23));
     }
 
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitUpwardClosure(mesh,entity_vector.begin(),entity_vector.end(),siv);
     if (myRank == 0) {
-        EXPECT_EQ( 10u, siv.ev.size() );
+        EXPECT_EQ( 10u, ev.size() );
     }
     else if (myRank == 1) {
-        EXPECT_EQ( 1u, siv.ev.size() );
+        EXPECT_EQ( 1u, ev.size() );
     }
     else if (myRank == 2) {
-        EXPECT_EQ( 8u, siv.ev.size() );
+        EXPECT_EQ( 8u, ev.size() );
     }
     else { // (myRank == 3)
-        EXPECT_EQ( 14u, siv.ev.size() );
+        EXPECT_EQ( 14u, ev.size() );
     }
 }
 
@@ -493,10 +502,11 @@ TEST(MeshImplUtils, visit_aura_closure_trivial)
     ClosureFixture fix(communicator,2);
     BulkData & mesh = fix.mesh();
 
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     Entity entity = Entity();
     VisitAuraClosure(mesh,entity,siv);
-    EXPECT_EQ( 1u, siv.ev.size() );
+    EXPECT_EQ( 1u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_aura_closure_of_element)
@@ -508,7 +518,8 @@ TEST(MeshImplUtils, visit_aura_closure_of_element)
     BulkData & mesh = fix.mesh();
     if (numProcs > 4) { return; }
 
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();
     EntityVector element_vector;
     get_selected_entities(locally_owned_selector, mesh.buckets(stk::topology::ELEMENT_RANK),element_vector);
@@ -517,23 +528,23 @@ TEST(MeshImplUtils, visit_aura_closure_of_element)
     VisitAuraClosure(mesh,element,siv);
     if (numProcs == 1)
     {
-        EXPECT_EQ( 24u, siv.ev.size() );
+        EXPECT_EQ( 24u, ev.size() );
     }
     else if (numProcs == 2)
     {
-        EXPECT_EQ( 38u, siv.ev.size() );
+        EXPECT_EQ( 38u, ev.size() );
     }
     else if (myRank == 0 || myRank == numProcs-1)
     {
-        EXPECT_EQ( 36u, siv.ev.size() );
+        EXPECT_EQ( 36u, ev.size() );
     }
     else
     {
         if (numProcs==3) {
-            EXPECT_EQ( 52u, siv.ev.size() );
+            EXPECT_EQ( 52u, ev.size() );
         }
         else {
-            EXPECT_EQ( 50u, siv.ev.size() );
+            EXPECT_EQ( 50u, ev.size() );
         }
     }
 
@@ -553,9 +564,10 @@ TEST(MeshImplUtils, visit_aura_closure_of_corner_node)
     get_selected_entities(locally_owned_selector, mesh.buckets(stk::topology::NODE_RANK),node_vector);
     ASSERT_TRUE( !node_vector.empty() );
     node = node_vector[0];
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitAuraClosure(mesh,node,siv);
-    EXPECT_EQ( 14u, siv.ev.size() );
+    EXPECT_EQ( 14u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_aura_closure_of_center_node)
@@ -572,9 +584,10 @@ TEST(MeshImplUtils, visit_aura_closure_of_center_node)
     get_selected_entities(locally_owned_selector, mesh.buckets(stk::topology::NODE_RANK),node_vector);
     ASSERT_TRUE( node_vector.size() > 1 );
     node = node_vector[1];
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitAuraClosure(mesh,node,siv);
-    EXPECT_EQ( 24u, siv.ev.size() );
+    EXPECT_EQ( 24u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_aura_closure_of_corner_node_in_2procs)
@@ -590,9 +603,10 @@ TEST(MeshImplUtils, visit_aura_closure_of_corner_node_in_2procs)
     get_selected_entities(shared_selector, mesh.buckets(stk::topology::NODE_RANK),node_vector);
     ASSERT_TRUE( !node_vector.empty() );
     Entity node = node_vector[0];
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitAuraClosure(mesh,node,siv);
-    EXPECT_EQ( 22u, siv.ev.size() );
+    EXPECT_EQ( 22u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_aura_closure_of_center_node_in_2procs)
@@ -608,9 +622,10 @@ TEST(MeshImplUtils, visit_aura_closure_of_center_node_in_2procs)
     get_selected_entities(shared_selector, mesh.buckets(stk::topology::NODE_RANK),node_vector);
     ASSERT_TRUE( node_vector.size() > 1 );
     Entity node = node_vector[1];
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitAuraClosure(mesh,node,siv);
-    EXPECT_EQ( 38u, siv.ev.size() );
+    EXPECT_EQ( 38u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_aura_closure_of_side_node_in_3procs)
@@ -629,9 +644,10 @@ TEST(MeshImplUtils, visit_aura_closure_of_side_node_in_3procs)
     else  {
         node = mesh.get_entity(stk::topology::NODE_RANK,56);
     }
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitAuraClosure(mesh,node,siv);
-    EXPECT_EQ( 30u, siv.ev.size() );
+    EXPECT_EQ( 30u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_aura_closure_of_center_node_in_3procs)
@@ -650,9 +666,10 @@ TEST(MeshImplUtils, visit_aura_closure_of_center_node_in_3procs)
     else  {
         node = mesh.get_entity(stk::topology::NODE_RANK,57);
     }
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitAuraClosure(mesh,node,siv);
-    EXPECT_EQ( 47u, siv.ev.size() );
+    EXPECT_EQ( 47u, ev.size() );
 }
 
 TEST(MeshImplUtils, visit_aura_closure_of_side_element_in_3procs)
@@ -665,13 +682,14 @@ TEST(MeshImplUtils, visit_aura_closure_of_side_element_in_3procs)
     if (numProcs != 3 ) { return; }
 
     Entity element = mesh.get_entity(stk::topology::ELEMENT_RANK,21);
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitAuraClosure(mesh,element,siv);
     if (myRank == 0 || myRank == 2) {
-        EXPECT_EQ( 64u, siv.ev.size() );
+        EXPECT_EQ( 64u, ev.size() );
     }
     else {
-        EXPECT_EQ( 93u, siv.ev.size() );
+        EXPECT_EQ( 93u, ev.size() );
     }
 }
 
@@ -685,13 +703,14 @@ TEST(MeshImplUtils, visit_aura_closure_of_center_element_in_3procs)
     if (numProcs != 3 ) { return; }
 
     Entity element = mesh.get_entity(stk::topology::ELEMENT_RANK,22);
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitAuraClosure(mesh,element,siv);
     if (myRank == 0 || myRank == 2) {
-        EXPECT_EQ( 87u, siv.ev.size() );
+        EXPECT_EQ( 87u, ev.size() );
     }
     else  {
-        EXPECT_EQ( 127u, siv.ev.size() );
+        EXPECT_EQ( 127u, ev.size() );
     }
 }
 
@@ -706,9 +725,10 @@ TEST(MeshImplUtils, visit_aura_closure_vector)
     std::vector<Entity> node_vec;
     node_vec.push_back(mesh.get_entity(stk::topology::NODE_RANK,25));
     node_vec.push_back(mesh.get_entity(stk::topology::NODE_RANK,26));
-    StoreInVector siv;
+    EntityVector ev;
+    StoreInVector<EntityVector> siv(ev);
     VisitAuraClosure(mesh,node_vec.begin(),node_vec.end(),siv);
-    EXPECT_EQ( 26u, siv.ev.size() );
+    EXPECT_EQ( 26u, ev.size() );
 }
 
 
@@ -728,17 +748,18 @@ TEST(MeshImplUtils, visit_aura_closure_vector_ghost)
         ev.push_back(mesh.get_entity(stk::topology::NODE_RANK,15));
         ev.push_back(mesh.get_entity(stk::topology::NODE_RANK,16));
         ev.push_back(mesh.get_entity(stk::topology::ELEMENT_RANK,3));
-        StoreInSet sis;
+        std::set<Entity> es;
+        StoreInSet<std::set<Entity> > sis(es);
         OnlyVisitGhostsOnce ovgo(mesh);
         VisitAuraClosureGeneral(mesh,ev.begin(),ev.end(),sis,ovgo);
         if (myRank == 1) {
-            EXPECT_EQ( 9u, sis.es.size() );
+            EXPECT_EQ( 9u, es.size() );
         }
         else if (myRank == 2) {
-            EXPECT_EQ( 19u, sis.es.size() );
+            EXPECT_EQ( 19u, es.size() );
         }
         else if (myRank == 3) {
-            EXPECT_EQ( 9u, sis.es.size() );
+            EXPECT_EQ( 9u, es.size() );
         }
     }
 }

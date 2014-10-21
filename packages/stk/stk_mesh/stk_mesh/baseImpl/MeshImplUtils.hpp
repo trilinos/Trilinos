@@ -144,18 +144,22 @@ void VisitClosureGeneral(
     }
 }
 
+template <typename VECTOR>
 struct StoreInVector {
+    StoreInVector(VECTOR & vec_in) : ev(vec_in) {}
     void operator()(stk::mesh::Entity entity) {
       ev.push_back(entity);
     }
-    stk::mesh::EntityVector ev;
+    VECTOR & ev;
 };
 
+template <typename SET>
 struct StoreInSet {
+    StoreInSet(SET & set_in) : es(set_in) {}
     void operator()(stk::mesh::Entity entity) {
       es.insert(entity);
     }
-    std::set<Entity> es;
+    SET & es;
 };
 
 struct AlwaysVisit {
@@ -306,10 +310,11 @@ void VisitAuraClosureGeneral(
         DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE & do_this,
         DESIRED_ENTITY & desired_entity)
 {
-    StoreInSet ses;
-    VisitClosure(mesh,start,finish,ses);
-    VisitUpwardClosure(mesh,ses.es.begin(),ses.es.end(),ses);
-    VisitClosureGeneral(mesh,ses.es.begin(),ses.es.end(),do_this,desired_entity);
+    std::set<Entity> entity_set;
+    StoreInSet<std::set<Entity> > sis(entity_set);
+    VisitClosure(mesh,start,finish,sis);
+    VisitUpwardClosure(mesh,entity_set.begin(),entity_set.end(),sis);
+    VisitClosureGeneral(mesh,entity_set.begin(),entity_set.end(),do_this,desired_entity);
 }
 
 template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE, class DESIRED_ENTITY>
