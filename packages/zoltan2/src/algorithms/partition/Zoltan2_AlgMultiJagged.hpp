@@ -101,6 +101,46 @@
 
 using std::vector;
 
+namespace Teuchos{
+
+/*! \brief Zoltan2_BoxBoundaries is a reduction operation
+ * to all reduce the all box boundaries.
+*/
+
+template <typename Ordinal, typename T>
+class Zoltan2_BoxBoundaries  : public ValueTypeReductionOp<Ordinal,T>
+{
+private:
+    Ordinal size;
+    T _EPSILON;
+
+public:
+    /*! \brief Default Constructor
+     */
+    Zoltan2_BoxBoundaries ():size(0), _EPSILON (std::numeric_limits<T>::epsilon()){}
+
+    /*! \brief Constructor
+     *   \param nsum  the count of how many sums will be computed at the
+     *             start of the list.
+     *   \param nmin  following the sums, this many minimums will be computed.
+     *   \param nmax  following the minimums, this many maximums will be computed.
+     */
+    Zoltan2_BoxBoundaries (Ordinal s_):
+        size(s_), _EPSILON (std::numeric_limits<T>::epsilon()){}
+
+    /*! \brief Implement Teuchos::ValueTypeReductionOp interface
+     */
+    void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
+    {
+        for (Ordinal i=0; i < count; i++){
+            if (Z2_ABS(inBuffer[i]) >  _EPSILON){
+                inoutBuffer[i] = inBuffer[i];
+            }
+        }
+    }
+};
+} // namespace Teuchos
+
 namespace Zoltan2{
 
 /*! \brief Allocates memory for the given size.
@@ -1638,11 +1678,11 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
 RCP<typename AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::mj_partBoxVector_t>
 AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::get_part_boxes() const 
 {
-	if (this->mj_keep_part_boxes){
-		return this->kept_boxes;
-	} else {
-                throw std::logic_error("Error: part boxes are not stored.");
-	}
+  if (this->mj_keep_part_boxes){
+     return this->kept_boxes;
+  } else {
+     throw std::logic_error("Error: part boxes are not stored.");
+  }
 }
 
 /*! \brief Function returns the part boxes stored
@@ -1653,7 +1693,7 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
 RCP<typename AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::mj_partBox_t>
 AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::get_global_box() const 
 {
-        return this->global_box;
+  return this->global_box;
 }
 
 /*! \brief Function call, if the part boxes are intended to be kept.
@@ -1662,9 +1702,8 @@ AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::get_global_box() const
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_to_keep_part_boxes(){
-	this->mj_keep_part_boxes = 1;
+  this->mj_keep_part_boxes = 1;
 }
-
 
 
 /* \brief Either the mj array (part_no_array) or num_global_parts should be provided in
@@ -6045,12 +6084,18 @@ private:
 
     int mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
 
+    ArrayRCP<mj_part_t> comXAdj_; //communication graph xadj
+    ArrayRCP<mj_part_t> comAdj_; //communication graph adj.
+
     void set_up_partitioning_data(
       const RCP<PartitioningSolution<Adapter> >&solution);
 
     void set_input_parameters(const Teuchos::ParameterList &p);
 
     void free_work_memory();
+
+    RCP<std::vector<Zoltan2::coordinateModelPartBox<mj_scalar_t, mj_part_t> > > 
+        getGlobalBoxBoundaries(const PartitioningSolution<Adapter> *solution);
 public:
 
     Zoltan2_AlgMJ(const RCP<const Environment> &env,
@@ -6072,7 +6117,8 @@ public:
 			max_concurrent_part_calculation(1),
                         check_migrate_avoid_migration_option(0),
 			minimum_migration_imbalance(0.30),
-                        mj_keep_part_boxes(0), num_threads(1), mj_run_as_rcb(0)
+                        mj_keep_part_boxes(0), num_threads(1), mj_run_as_rcb(0),
+                        comXAdj_(), comAdj_()
     {}
     ~Zoltan2_AlgMJ(){}
 
@@ -6085,6 +6131,13 @@ public:
     void partition(const RCP<PartitioningSolution<Adapter> > &solution);
 
     mj_part_t pointAssign(int dim, mj_scalar_t *point) const;
+
+    /*! \brief returns communication graph resulting from MJ partitioning.
+     */
+    void getCommunicationGraph(
+                         const PartitioningSolution<Adapter> *solution,
+                         ArrayRCP<mj_part_t> &comXAdj,
+                         ArrayRCP<mj_part_t> &comAdj);
 };
 
 
@@ -6145,11 +6198,6 @@ void Zoltan2_AlgMJ<Adapter>::partition(
     ArrayRCP<mj_part_t> partId = arcp(result_assigned_part_ids, 0,
                                       this->num_local_coords, true);
     solution->setParts(gnoList, partId, true);
-    if (this->mj_keep_part_boxes){
-    	RCP<mj_partBoxVector_t> output_part_boxes = 
-                             this->mj_partitioner.get_part_boxes();
-        solution->setPartBoxes(output_part_boxes);
-    }
     this->free_work_memory();
 }
 
@@ -6469,6 +6517,104 @@ typename Adapter::part_t Zoltan2_AlgMJ<Adapter>::pointAssign(
   }
 }
 
+template <typename Adapter>
+void Zoltan2_AlgMJ<Adapter>::getCommunicationGraph(
+  const PartitioningSolution<Adapter> *solution,
+  ArrayRCP<typename Zoltan2_AlgMJ<Adapter>::mj_part_t> &comXAdj,
+  ArrayRCP<typename Zoltan2_AlgMJ<Adapter>::mj_part_t> &comAdj) 
+{
+  if(comXAdj_.getRawPtr() == NULL && comAdj_.getRawPtr() == NULL){
+
+    mj_part_t ntasks =  solution->getActualGlobalNumberOfParts();
+    if (mj_part_t (solution->getTargetGlobalNumberOfParts()) > ntasks){
+      ntasks = solution->getTargetGlobalNumberOfParts();
+    }
+    RCP<std::vector<Zoltan2::coordinateModelPartBox<mj_scalar_t, mj_part_t> > > 
+    pBoxes = this->getGlobalBoxBoundaries(solution);
+    int dim = (*pBoxes)[0].getDim();
+    GridHash<mj_scalar_t, mj_part_t> grid(pBoxes, ntasks, dim);
+    grid.getAdjArrays(comXAdj_, comAdj_);
+  }
+  comAdj = comAdj_;
+  comXAdj = comXAdj_;
+}
+
+template <typename Adapter>
+RCP<std::vector<Zoltan2::coordinateModelPartBox<
+                         typename Zoltan2_AlgMJ<Adapter>::mj_scalar_t, 
+                         typename Zoltan2_AlgMJ<Adapter>::mj_part_t> > > 
+Zoltan2_AlgMJ<Adapter>::getGlobalBoxBoundaries(
+  const PartitioningSolution<Adapter> *solution
+)
+{
+  mj_part_t ntasks =  solution->getActualGlobalNumberOfParts();
+  if (mj_part_t (solution->getTargetGlobalNumberOfParts()) > ntasks){
+    ntasks = solution->getTargetGlobalNumberOfParts();
+  }
+
+  RCP<std::vector<Zoltan2::coordinateModelPartBox<mj_scalar_t, mj_part_t> > > 
+  pBoxes = this->mj_partitioner.get_part_boxes();
+
+  int dim = (*pBoxes)[0].getDim();
+  mj_scalar_t *localPartBoundaries = new mj_scalar_t[ntasks * 2 *dim];
+
+  memset(localPartBoundaries, 0, sizeof(mj_scalar_t) * ntasks * 2 *dim);
+
+  mj_scalar_t *globalPartBoundaries = new mj_scalar_t[ntasks * 2 *dim];
+  memset(globalPartBoundaries, 0, sizeof(mj_scalar_t) * ntasks * 2 *dim);
+
+  mj_scalar_t *localPartMins = localPartBoundaries;
+  mj_scalar_t *localPartMaxs = localPartBoundaries + ntasks * dim;
+
+  mj_scalar_t *globalPartMins = globalPartBoundaries;
+  mj_scalar_t *globalPartMaxs = globalPartBoundaries + ntasks * dim;
+
+  mj_part_t boxCount = pBoxes->size();
+  for (mj_part_t i = 0; i < boxCount; ++i){
+    mj_part_t pId = (*pBoxes)[i].getpId();
+      //cout << "me:" << comm->getRank() << " has:" << pId << endl;
+
+    mj_scalar_t *lmins = (*pBoxes)[i].getlmins();
+    mj_scalar_t *lmaxs = (*pBoxes)[i].getlmaxs();
+
+    for (int j = 0; j < dim; ++j){
+      localPartMins[dim * pId + j] = lmins[j];
+      localPartMaxs[dim * pId + j] = lmaxs[j];
+      /*
+      cout << "me:" << comm->getRank()  <<
+              " dim * pId + j:"<< dim * pId + j <<
+              " localMin:" << localPartMins[dim * pId + j] <<
+              " localMax:" << localPartMaxs[dim * pId + j] << endl;
+      */
+    }
+  }
+
+  Teuchos::Zoltan2_BoxBoundaries<int, mj_scalar_t> reductionOp(ntasks * 2 *dim);
+
+  reduceAll<int, mj_scalar_t>(*mj_problemComm, reductionOp,
+            ntasks * 2 *dim, localPartBoundaries, globalPartBoundaries);
+  RCP<std::vector<coordinateModelPartBox<mj_scalar_t, mj_part_t> > > 
+  pB(new std::vector <coordinateModelPartBox <mj_scalar_t, mj_part_t> >(),true);
+  for (mj_part_t i = 0; i < ntasks; ++i){
+    Zoltan2::coordinateModelPartBox <mj_scalar_t, mj_part_t> tpb(i, dim,
+                                               globalPartMins + dim * i,
+                                               globalPartMaxs + dim * i);
+
+    /*
+    for (int j = 0; j < dim; ++j){
+        cout << "me:" << comm->getRank()  <<
+                " dim * pId + j:"<< dim * i + j <<
+                " globalMin:" << globalPartMins[dim * i + j] <<
+                " globalMax:" << globalPartMaxs[dim * i + j] << endl;
+    }
+    */
+    pB->push_back(tpb);
+  }
+  delete []localPartBoundaries;
+  delete []globalPartBoundaries;
+  //RCP < std::vector <Zoltan2::coordinateModelPartBox <mj_scalar_t, mj_part_t> > > tmpRCPBox(pB, true);
+  return pB;
+}
 } // namespace Zoltan2
 
 #endif

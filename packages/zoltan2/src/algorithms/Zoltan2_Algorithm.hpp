@@ -149,6 +149,25 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }
 
+  //! \brief returns serial communication graph of a computed partition
+  //  Returned graph is identical on all processors, and represents the
+  //  global communication pattern in the partition.
+  //  
+  //  \param comXAdj:  (out) the offset array:  offsets into comAdj
+  //                         Format is comXAdj[0] = # nbor parts of part 0
+  //                         Format is comXAdj[i] = Sum of # nbor parts of parts
+  //                                                0 through i
+  //                         TODO:  Change this array to standard CSR format
+  //  \param comAdj    (out) the neighboring parts
+  virtual void getCommunicationGraph(
+    const PartitioningSolution<Adapter> *solution,
+    ArrayRCP<part_t> &comXAdj,
+    ArrayRCP<part_t> &comAdj)
+    // TODO:  Should the return args be ArrayViews?
+  {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+  }
+
 private:
 };
   

@@ -182,7 +182,7 @@ int run_pointAssign_tests(
           pointDrop[i] = coords->getData(i)[localID];
 
         try {
-          part = problem->getSolution()->pointAssign(coordDim, pointDrop);
+          part = problem->getSolution().pointAssign(coordDim, pointDrop);
         }
         CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + ": pointAssign -- OwnedPoints");
 
@@ -212,7 +212,7 @@ int run_pointAssign_tests(
     {
       for (int i = 0; i < coordDim; i++) pointDrop[i] = 0.;
       try {
-        part = problem->getSolution()->pointAssign(coordDim, pointDrop);
+        part = problem->getSolution().pointAssign(coordDim, pointDrop);
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- Origin");
       std::cout << me << " OriginPoint (" << pointDrop[0];
@@ -225,7 +225,7 @@ int run_pointAssign_tests(
     {
       for (int i = 0; i < coordDim; i++) pointDrop[i] = -100.+i;
       try {
-        part = problem->getSolution()->pointAssign(coordDim, pointDrop);
+        part = problem->getSolution().pointAssign(coordDim, pointDrop);
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- Negative Point");
       std::cout << me << " NegativePoint (" << pointDrop[0];
@@ -238,7 +238,7 @@ int run_pointAssign_tests(
     {
       for (int i = 0; i < coordDim; i++) pointDrop[i] = i*5;
       try {
-        part = problem->getSolution()->pointAssign(coordDim, pointDrop);
+        part = problem->getSolution().pointAssign(coordDim, pointDrop);
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- i*5 Point");
       std::cout << me << " i*5-Point (" << pointDrop[0];
@@ -251,7 +251,7 @@ int run_pointAssign_tests(
     {
       for (int i = 0; i < coordDim; i++) pointDrop[i] = 10+i*5;
       try {
-        part = problem->getSolution()->pointAssign(coordDim, pointDrop);
+        part = problem->getSolution().pointAssign(coordDim, pointDrop);
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " pointAssign -- WoopWoop");
       std::cout << me << " WoopWoop-Point (" << pointDrop[0];

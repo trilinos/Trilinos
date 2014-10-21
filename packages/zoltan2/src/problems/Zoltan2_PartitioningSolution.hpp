@@ -70,51 +70,8 @@ class PartitioningSolution;
 #include <windows.h>
 #endif
 
-namespace Teuchos{
-
-/*! \brief Zoltan2_BoxBoundaries is a reduction operation
- * to all reduce the all box boundaries.
-*/
-
-template <typename Ordinal, typename T>
-class Zoltan2_BoxBoundaries  : public ValueTypeReductionOp<Ordinal,T>
-{
-private:
-    Ordinal size;
-    T _EPSILON;
-
-public:
-    /*! \brief Default Constructor
-     */
-    Zoltan2_BoxBoundaries ():size(0), _EPSILON (std::numeric_limits<T>::epsilon()){}
-
-    /*! \brief Constructor
-     *   \param nsum  the count of how many sums will be computed at the
-     *             start of the list.
-     *   \param nmin  following the sums, this many minimums will be computed.
-     *   \param nmax  following the minimums, this many maximums will be computed.
-     */
-    Zoltan2_BoxBoundaries (Ordinal s_):
-        size(s_), _EPSILON (std::numeric_limits<T>::epsilon()){}
-
-    /*! \brief Implement Teuchos::ValueTypeReductionOp interface
-     */
-    void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
-    {
-        for (Ordinal i=0; i < count; i++){
-            if (Z2_ABS(inBuffer[i]) >  _EPSILON){
-                inoutBuffer[i] = inBuffer[i];
-            }
-        }
-    }
-};
-} // namespace Teuchos
-
 
 namespace Zoltan2 {
-
-
-
 
 /*! \brief A PartitioningSolution is a solution to a partitioning problem.
 
@@ -440,15 +397,6 @@ public:
   }
 
 
-  /*! \brief set the Part Box boundaries as a result of geometric partitioning.
-   */
-  void setPartBoxes(
-    RCP<std::vector<
-             Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > outPartBoxes)
-  {
-    this->partBoxes = outPartBoxes;
-  }
-
   /*! \brief returns the part box boundary list.
    */
   RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
@@ -466,7 +414,7 @@ public:
   //   \param dim : the number of dimensions specified for the point in space
   //   \param point : the coordinates of the point in space; array of size dim
   //   \return the part number of a part overlapping the given point
-  part_t pointAssign(int dim, scalar_t *point) 
+  part_t pointAssign(int dim, scalar_t *point) const
   {
     part_t p;
     try {
@@ -506,97 +454,16 @@ public:
 
   /*! \brief returns communication graph resulting from geometric partitioning.
    */
-  void getCommunicationGraph(
-          const Teuchos::Comm<int> *comm,
-          ArrayRCP <part_t> &comXAdj,
-          ArrayRCP <part_t> &comAdj) 
+  void getCommunicationGraph(ArrayRCP <part_t> &comXAdj,
+                             ArrayRCP <part_t> &comAdj) const
   {
-    if(comXAdj_.getRawPtr() == NULL && comAdj_.getRawPtr() == NULL){
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
 
-      part_t ntasks =  this->getActualGlobalNumberOfParts();
-      if (part_t (this->getTargetGlobalNumberOfParts()) > ntasks){
-        ntasks = this->getTargetGlobalNumberOfParts();
-      }
-      RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-      pBoxes = this->getGlobalBoxBoundaries(comm);
-      int dim = (*pBoxes)[0].getDim();
-      GridHash<scalar_t, part_t> grid(pBoxes, ntasks, dim);
-      grid.getAdjArrays(comXAdj_, comAdj_);
+      this->algorithm_->getCommunicationGraph(this, comXAdj, comAdj);
     }
-    comAdj = comAdj_;
-    comXAdj = comXAdj_;
-  }
-
-  RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-  getGlobalBoxBoundaries(const Teuchos::Comm<int> *comm) {
-    part_t ntasks =  this->getActualGlobalNumberOfParts();
-    if (part_t (this->getTargetGlobalNumberOfParts()) > ntasks){
-      ntasks = this->getTargetGlobalNumberOfParts();
-    }
-
-    RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-    pBoxes = this->getPartBoxes();
-
-    int dim = (*pBoxes)[0].getDim();
-    scalar_t *localPartBoundaries = new scalar_t[ntasks * 2 *dim];
-
-    memset(localPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
-
-    scalar_t *globalPartBoundaries = new scalar_t[ntasks * 2 *dim];
-    memset(globalPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
-
-    scalar_t *localPartMins = localPartBoundaries;
-    scalar_t *localPartMaxs = localPartBoundaries + ntasks * dim;
-
-    scalar_t *globalPartMins = globalPartBoundaries;
-    scalar_t *globalPartMaxs = globalPartBoundaries + ntasks * dim;
-
-    part_t boxCount = pBoxes->size();
-    for (part_t i = 0; i < boxCount; ++i){
-      part_t pId = (*pBoxes)[i].getpId();
-      //cout << "me:" << comm->getRank() << " has:" << pId << endl;
-
-      scalar_t *lmins = (*pBoxes)[i].getlmins();
-      scalar_t *lmaxs = (*pBoxes)[i].getlmaxs();
-
-      for (int j = 0; j < dim; ++j){
-        localPartMins[dim * pId + j] = lmins[j];
-        localPartMaxs[dim * pId + j] = lmaxs[j];
-        /*
-        cout << "me:" << comm->getRank()  <<
-                " dim * pId + j:"<< dim * pId + j <<
-                " localMin:" << localPartMins[dim * pId + j] <<
-                " localMax:" << localPartMaxs[dim * pId + j] << endl;
-        */
-      }
-    }
-
-    Teuchos::Zoltan2_BoxBoundaries<int, scalar_t> reductionOp(ntasks * 2 *dim);
-
-    reduceAll<int, scalar_t>(*comm, reductionOp,
-              ntasks * 2 *dim, localPartBoundaries, globalPartBoundaries);
-    RCP<std::vector<coordinateModelPartBox<scalar_t, part_t> > > 
-    pB(new std::vector <coordinateModelPartBox <scalar_t, part_t> > (), true);
-    for (part_t i = 0; i < ntasks; ++i){
-      Zoltan2::coordinateModelPartBox <scalar_t, part_t> tpb(i, dim,
-                                                 globalPartMins + dim * i,
-                                                 globalPartMaxs + dim * i);
-
-      /*
-      for (int j = 0; j < dim; ++j){
-          cout << "me:" << comm->getRank()  <<
-                  " dim * pId + j:"<< dim * i + j <<
-                  " globalMin:" << globalPartMins[dim * i + j] <<
-                  " globalMax:" << globalPartMaxs[dim * i + j] << endl;
-      }
-      */
-      pB->push_back(tpb);
-    }
-    delete []localPartBoundaries;
-    delete []globalPartBoundaries;
-    //RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > tmpRCPBox(pB, true);
-    this->partBoxes = pB;
-    return this->partBoxes;
+    Z2_FORWARD_EXCEPTIONS
   }
 
   /*! \brief Create an import list from the export list.
@@ -706,8 +573,6 @@ private:
 
   //part box boundaries as a result of geometric partitioning algorithm.
   RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > partBoxes;
-  ArrayRCP <part_t> comXAdj_; //communication graph xadj
-  ArrayRCP <part_t> comAdj_; //communication graph adj.
 
   part_t nGlobalParts_;// target global number of parts
   part_t nLocalParts_; // number of parts to be on this process
@@ -820,7 +685,7 @@ template <typename Adapter>
     RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights,
     const RCP<Algorithm<Adapter> > &algorithm)
     : env_(env), comm_(comm), idMap_(idMap),
-      partBoxes(),comXAdj_(), comAdj_(),
+      partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),
@@ -855,7 +720,7 @@ template <typename Adapter>
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
     const RCP<Algorithm<Adapter> > &algorithm)
     : env_(env), comm_(comm), idMap_(idMap),
-      partBoxes(),comXAdj_(), comAdj_(),
+      partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),

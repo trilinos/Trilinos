@@ -1304,6 +1304,8 @@ protected:
 	}
 
 
+// KDD Need to provide access to algorithm for getPartBoxes
+#ifdef gnuPlot
 	void writeGnuPlot(
 			const Teuchos::Comm<int> *comm_,
 			const Zoltan2::PartitioningSolution<Adapter> *soln_,
@@ -1360,6 +1362,7 @@ protected:
 		ff << "replot\n pause -1" << std::endl;
 		ff.close();
 	}
+#endif // gnuPlot
 
 public:
 
@@ -1460,11 +1463,8 @@ public:
 
 
 		envConst->timerStart(MACRO_TIMERS, "Mapping - Communication Graph");
-		((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getCommunicationGraph(
-				comm_,
-				task_communication_xadj,
-				task_communication_adj
-		);
+		soln_->getCommunicationGraph(task_communication_xadj,
+					     task_communication_adj);
 
 		envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Graph");
 	#ifdef gnuPlot
