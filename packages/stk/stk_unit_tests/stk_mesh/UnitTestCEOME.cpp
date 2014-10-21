@@ -625,7 +625,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
 
     for(size_t i = 0; i < nodeSharing.size(); i++)
     {
-        stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i + 1);
+        node = mesh.get_entity(stk::topology::NODE_RANK, i + 1);
         if(CEOUtils::isEntityInSharingCommMap(mesh, node) && !nodeSharing[i])
         {
             modifiedEntities.push_back(node);
