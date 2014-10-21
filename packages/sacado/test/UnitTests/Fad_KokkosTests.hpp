@@ -495,8 +495,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos::deep_copy(v, h_v);
 
   // Create unmanaged view
-  FadViewType v_fad(Kokkos::view_without_managing,
-                    v.ptr_on_device(), num_rows, num_cols, fad_size+1);
+  FadViewType v_fad( v.ptr_on_device(), num_rows, num_cols, fad_size+1);
 
   // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
   fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);
@@ -591,8 +590,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ConstViewType v_const = v;
 
   // Create unmanaged view
-  ConstFadViewType v_fad(Kokkos::view_without_managing, v_const.ptr_on_device(),
-                         num_rows, num_cols, fad_size+1);
+  ConstFadViewType v_fad(v_const.ptr_on_device(), num_rows, num_cols, fad_size+1);
 
   // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
   fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);

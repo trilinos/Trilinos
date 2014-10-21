@@ -46,13 +46,13 @@ public:
     const int curNumNUMA = params.get<int> ("Num NUMA");
     const int curNumCoresPerNUMA = params.get<int> ("Num CoresPerNUMA");
     const int curDevice = params.get<int> ("Device");
-    int verboseInt = params.get<int> ("Verbose");
-    bool verbose = (verboseInt != 0);
+    const bool verbose = getVerboseParameter (params);
+
     if (verbose) {
-      std::cout << "DeviceWrapperNode initializing with \"numthreads\" = "
-                << curNumThreads << ", \"numNUMA\" = " << curNumNUMA
-                << ", \"numCorePerNUMA\" = " << curNumCoresPerNUMA
-                << " \"device\" = " << curDevice << std::endl;
+      std::cout << "DeviceWrapperNode initializing with \"Num Threads\" = "
+                << curNumThreads << ", \"Num NUMA\" = " << curNumNUMA
+                << ", \"num CoresPerNUMA\" = " << curNumCoresPerNUMA
+                << " \"Device\" = " << curDevice << std::endl;
     }
     if (count == 0) {
       init (curNumThreads, curNumNUMA, curNumCoresPerNUMA, curDevice);
@@ -66,26 +66,53 @@ public:
     const int curNumNUMA = params.get<int> ("Num NUMA");
     const int curNumCoresPerNUMA = params.get<int> ("Num CoresPerNUMA");
     const int curDevice = params.get<int> ("Device");
-    int verboseInt = params.get<int> ("Verbose");
-    bool verbose = (verboseInt != 0);
+    const bool verbose = getVerboseParameter (params);
+
     if (verbose) {
-      std::cout << "DeviceWrapperNode initializing with \"numthreads\" = "
-                << curNumThreads << ", \"numNUMA\" = " << curNumNUMA
-                << ", \"numCorePerNUMA\" = " << curNumCoresPerNUMA
-                << " \"device\" = " << curDevice << std::endl;
+      std::cout << "DeviceWrapperNode initializing with \"Num Threads\" = "
+                << curNumThreads << ", \"Num NUMA\" = " << curNumNUMA
+                << ", \"num CoresPerNUMA\" = " << curNumCoresPerNUMA
+                << " \"Device\" = " << curDevice << std::endl;
     }
     if (count == 0) {
-      init (curNumThreads,curNumNUMA,curNumCoresPerNUMA,curDevice);
+      init (curNumThreads, curNumNUMA, curNumCoresPerNUMA, curDevice);
     }
     count++;
   }
 
   ~KokkosDeviceWrapperNode ();
 
+private:
+  /// \brief Get the value of the "Verbose" parameter as a \c bool.
+  ///
+  /// This method lets the "Verbose" parameter have type either \c int
+  /// or \c bool, and returns its value as \c bool.  If the "Verbose"
+  /// parameter does not exist in the given list, return the default
+  /// value, which is \c false.
+  static bool
+  getVerboseParameter (const Teuchos::ParameterList& params)
+  {
+    const bool defaultValue = false; // default value of the parameter
+
+    try { // Is it a bool?
+      return params.get<bool> ("Verbose");
+    }
+    catch (...) {}
+
+    try { // Is it an int?
+      return params.get<int> ("Verbose");
+    }
+    catch (...) {}
+
+    return defaultValue;
+  }
+
+public:
+
   static Teuchos::ParameterList getDefaultParameters ()
   {
     Teuchos::ParameterList params;
-    params.set ("Verbose",     0);
+    params.set ("Verbose", 0);
     params.set ("Num Threads", 1);
     params.set ("Num NUMA", -1);
     params.set ("Num CoresPerNUMA", -1);

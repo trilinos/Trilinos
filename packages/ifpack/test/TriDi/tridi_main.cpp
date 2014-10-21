@@ -52,7 +52,6 @@
 #include <mpi.h>
 #endif
 #include "Epetra_SerialComm.h"
-#include "../../epetra/test/epetra_test_err.h"
 #include "Epetra_Version.h"
 
 // prototypes
@@ -74,8 +73,11 @@ void printHeading(const char* heading);
 void printMat(const char* name, Ifpack_SerialTriDiMatrix& matrix);
 void printArray(double* array, int length);
 
+using namespace std;
+
 int main(int argc, char *argv[])
 {
+
   int ierr = 0;
 
 #ifdef HAVE_MPI

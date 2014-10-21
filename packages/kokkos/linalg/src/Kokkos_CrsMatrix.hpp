@@ -308,6 +308,8 @@ template<typename ScalarType,
          class MemoryTraits = void,
          typename SizeType = size_t>
 class CrsMatrix {
+private:
+  typedef typename Kokkos::ViewTraits<ScalarType*,Device,void,void>::host_mirror_space host_mirror_space ;
 public:
   typedef Device        device_type;
   typedef ScalarType    value_type;
@@ -315,18 +317,8 @@ public:
   typedef MemoryTraits  memory_traits;
   typedef SizeType      size_type;
 
-  // FIXME (mfh 28 Sep 2013) Cuda::host_mirror_device_type is Threads.
-  // Shouldn't CrsMatrix::host_device_type always be the same as its
-  // Device's host_mirror_device_type?
-  //
-  // OpenMP is the default host type if you turned on OpenMP when
-  // building.  OpenMP is not on by default, so if you specified in
-  // the build that you wanted OpenMP, then we say that the default
-  // host type is OpenMP instead of Threads.
-  typedef typename device_type::host_mirror_device_type host_device_type;
-
   //! Type of a host-memory mirror of the sparse matrix.
-  typedef CrsMatrix<ScalarType, OrdinalType, host_device_type, MemoryTraits> HostMirror;
+  typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits> HostMirror;
 
   /// \brief Type of the graph structure of the sparse matrix.
   ///
@@ -2121,8 +2113,8 @@ template <class RangeVector,
       if(x.dimension_1()==1) {
         typedef View<typename DomainVectorType::const_value_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type> DomainVector1D;
         typedef View<typename RangeVectorType::value_type*,typename RangeVector::array_layout ,typename RangeVectorType::device_type,typename RangeVector::memory_traits> RangeVector1D;
-        RangeVector1D y_sub = RangeVector1D(Kokkos::ViewWithoutManaging(),y.ptr_on_device(),y.dimension_0());
-        DomainVector1D x_sub = DomainVector1D(Kokkos::ViewWithoutManaging(),x.ptr_on_device(),x.dimension_0());
+        RangeVector1D y_sub = RangeVector1D(y.ptr_on_device(),y.dimension_0());
+        DomainVector1D x_sub = DomainVector1D(x.ptr_on_device(),x.dimension_0());
 
         return MV_MultiplySingle<RangeVector1D,TCrsMatrix,DomainVector1D,CoeffVector1,CoeffVector2,doalpha,dobeta>
           (betav,y_sub,alphav,A,x_sub);

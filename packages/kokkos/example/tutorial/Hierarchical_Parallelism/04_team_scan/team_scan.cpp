@@ -49,8 +49,8 @@
 #include <cstdio>
 #include <cstdlib>
 
-typedef Kokkos::DefaultExecutionSpace   Device ;
-typedef Device::host_mirror_device_type Host ;
+typedef Kokkos::DefaultExecutionSpace       Device ;
+typedef Kokkos::HostSpace::execution_space  Host ;
 
 typedef Kokkos::TeamPolicy< Device >      team_policy ;
 typedef team_policy::member_type team_member ;

@@ -39,18 +39,18 @@
 // ************************************************************************
 //@HEADER
 
-#include "Tsqr_ConfigDefs.hpp"
+#include <Tsqr_ConfigDefs.hpp>
 #include "Tsqr_CombineTest.hpp"
 
-#include <Teuchos_Assert.hpp>
 #include <Tsqr_Random_NormalGenerator.hpp>
 #include <Tsqr_Random_MatrixGenerator.hpp>
 
 #include <Tsqr_Combine.hpp>
 #include <Tsqr_LocalVerify.hpp>
 #include <Tsqr_Matrix.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>
+
+#include <Teuchos_Assert.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -211,9 +211,9 @@ namespace TSQR {
       print_local_matrix (out, A.nrows(), A.ncols(), A.get(), A.lda());
     }
 
-    template< class MatrixViewType >
+    template<class MatrixViewType>
     static
-    std::vector< typename ScalarTraits< typename MatrixViewType::scalar_type >::magnitude_type >
+    std::vector<typename Teuchos::ScalarTraits<typename MatrixViewType::scalar_type>::magnitudeType>
     localVerify (const MatrixViewType& A,
                  const MatrixViewType& Q,
                  const MatrixViewType& R)
@@ -233,10 +233,10 @@ namespace TSQR {
     /// \return ($\|A - QR\|_F$, $\|I - Q^* Q\|_F$, $\|A\|_F$) for each
     ///   test problem (so, a vector of six elements).
     ///
-    template< class Ordinal, class Scalar >
-    static std::vector< typename ScalarTraits< Scalar >::magnitude_type >
-    verifyCombineTemplate (TSQR::Random::NormalGenerator< Ordinal, Scalar >& gen,
-                           TSQR::Random::NormalGenerator< Ordinal, typename ScalarTraits< Scalar >::magnitude_type >& magGen,
+    template<class Ordinal, class Scalar>
+    static std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+    verifyCombineTemplate (TSQR::Random::NormalGenerator<Ordinal, Scalar>& gen,
+                           TSQR::Random::NormalGenerator<Ordinal, typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& magGen,
                            const Ordinal numRows,
                            const Ordinal numCols,
                            const bool debug)
@@ -250,21 +250,22 @@ namespace TSQR {
       using std::pair;
       using std::vector;
 
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
-      typedef NormalGenerator< Ordinal, Scalar > normgen_type;
-      typedef MatrixGenerator< Ordinal, Scalar, normgen_type > matgen_type;
-      typedef Matrix< Ordinal, Scalar > matrix_type;
-      typedef vector< magnitude_type > results_type;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename STS::magnitudeType magnitude_type;
+      typedef NormalGenerator<Ordinal, Scalar> normgen_type;
+      typedef MatrixGenerator<Ordinal, Scalar, normgen_type> matgen_type;
+      typedef Matrix<Ordinal, Scalar> matrix_type;
+      typedef vector<magnitude_type> results_type;
 
-      if (numRows < numCols)
-        {
-          ostringstream os;
-          os << "# rows < # columns is not allowed.  You specified # rows = "
-             << numRows << " and # columns = " << numCols << ".";
-          throw invalid_argument (os.str());
-        }
-      else if (numCols == 0)
+      if (numRows < numCols) {
+        ostringstream os;
+        os << "# rows < # columns is not allowed.  You specified # rows = "
+           << numRows << " and # columns = " << numCols << ".";
+        throw invalid_argument (os.str());
+      }
+      else if (numCols == 0) {
         throw invalid_argument ("ncols == 0 is not allowed");
+      }
 
       //
       // Generate four different sets of singular values.  Randomly
@@ -432,10 +433,10 @@ namespace TSQR {
 
     /// \brief Simulate one combine step of Sequential TSQR
     ///
-    template< class Ordinal, class Scalar >
-    static std::vector< typename ScalarTraits< Scalar >::magnitude_type >
-    verifyCombineSeqTemplate (TSQR::Random::NormalGenerator< Ordinal, Scalar >& gen,
-                              TSQR::Random::NormalGenerator< Ordinal, typename ScalarTraits< Scalar >::magnitude_type >& magGen,
+    template<class Ordinal, class Scalar>
+    static std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+    verifyCombineSeqTemplate (TSQR::Random::NormalGenerator<Ordinal, Scalar>& gen,
+                              TSQR::Random::NormalGenerator<Ordinal, typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& magGen,
                               const Ordinal numRows,
                               const Ordinal numCols,
                               const bool debug)
@@ -449,7 +450,8 @@ namespace TSQR {
       using std::pair;
       using std::vector;
 
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename STS::magnitudeType magnitude_type;
       typedef NormalGenerator< Ordinal, Scalar > normgen_type;
       typedef MatrixGenerator< Ordinal, Scalar, normgen_type > matgen_type;
       typedef Matrix<Ordinal, Scalar> matrix_type;

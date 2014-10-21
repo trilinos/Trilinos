@@ -252,11 +252,11 @@ int main()
 #if defined( KOKKOS_HAVE_CUDA )
   {
     std::cout << "test_fixture< Cuda >" << std::endl ;
-    Kokkos::Cuda::host_mirror_device_type::initialize();
+    Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
     Kokkos::Example::test_fixture< Kokkos::Cuda >();
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
   }
 #endif
 }

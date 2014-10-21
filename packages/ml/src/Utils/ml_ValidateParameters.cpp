@@ -127,7 +127,7 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   setDoubleParameter("subsmoother: damping factor",1.333,"Damping factor for symmetric Gauss-Seidel",PL,dblParam);
   setIntParameter("subsmoother: edge sweeps",4,"Number of edge smoothing sweeps",PL,intParam);
   setIntParameter("subsmoother: node sweeps",4,"Number of node smoothing sweeps",PL,intParam);
-# ifdef HAVE_PETSC
+# ifdef HAVE_ML_PETSC
   void *petscKSP;
   PL->set("smoother: petsc ksp",petscKSP);
 # endif
@@ -279,9 +279,9 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   strParam.allowString(true);
 
   /* Allocate List for Smoothing Options */
-# if defined(HAVE_PETSC) && defined(HAVE_ML_SUPERLU4_0)
+# if defined(HAVE_ML_PETSC) && defined(HAVE_ML_SUPERLU4_0)
   const int num_smoothers=32;
-# elif defined(HAVE_PETSC) || defined(HAVE_ML_SUPERLU4_0)
+# elif defined(HAVE_ML_PETSC) || defined(HAVE_ML_SUPERLU4_0)
   const int num_smoothers=31;
 #elif defined(HAVE_ML_TekoSmoothers)
   const int num_smoothers=31; // won't work with SUPERLU or PETSC!
@@ -295,7 +295,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
    "Amesos-UMFPACK","Amesos-Superludist","Amesos-MUMPS","user-defined",
    "SuperLU","IFPACK-Chebyshev","self","do-nothing","IC","ICT","ILU","ILUT",
    "Block Chebyshev","IFPACK-Block Chebyshev","line Jacobi","line Gauss-Seidel"
-#  ifdef HAVE_PETSC
+#  ifdef HAVE_ML_PETSC
    ,"petsc"
 #  endif
 #  ifdef HAVE_ML_SUPERLU4_0

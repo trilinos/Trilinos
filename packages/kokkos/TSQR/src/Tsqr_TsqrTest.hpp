@@ -215,7 +215,7 @@ namespace TSQR {
                 const bool human_readable = false,
                 const bool b_debug = false)
     {
-      typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
       using std::cerr;
       using std::cout;
       using std::endl;
@@ -223,207 +223,203 @@ namespace TSQR {
       const bool b_extra_debug = false;
       const int nprocs = scalarComm->size();
       const int my_rank = scalarComm->rank();
-      if (b_debug)
-        {
-          scalarComm->barrier();
-          if (my_rank == 0)
-            cerr << "tsqr_verify:" << endl;
-          scalarComm->barrier();
+      if (b_debug) {
+        scalarComm->barrier ();
+        if (my_rank == 0) {
+          cerr << "tsqr_verify:" << endl;
         }
+        scalarComm->barrier ();
+      }
       const Ordinal nrows_local = numLocalRows (nrows_global, my_rank, nprocs);
 
       // Set up storage for the test problem.
       Matrix< Ordinal, Scalar > A_local (nrows_local, ncols);
       Matrix< Ordinal, Scalar > Q_local (nrows_local, ncols);
-      if (std::numeric_limits< Scalar >::has_quiet_NaN)
-        {
-          A_local.fill (std::numeric_limits< Scalar >::quiet_NaN());
-          Q_local.fill (std::numeric_limits< Scalar >::quiet_NaN());
-        }
-      Matrix< Ordinal, Scalar > R (ncols, ncols, Scalar(0));
+      if (std::numeric_limits<Scalar>::has_quiet_NaN) {
+          A_local.fill (std::numeric_limits<Scalar>::quiet_NaN ());
+          Q_local.fill (std::numeric_limits<Scalar>::quiet_NaN ());
+      }
+      Matrix<Ordinal, Scalar> R (ncols, ncols, Scalar(0));
 
       // Generate the test problem.
       distributedTestProblem (generator, A_local, ordinalComm.get(), scalarComm.get());
-      if (b_debug)
-        {
-          scalarComm->barrier();
-          if (my_rank == 0)
-            cerr << "-- Generated test problem." << endl;
+      if (b_debug) {
+        scalarComm->barrier ();
+        if (my_rank == 0) {
+          cerr << "-- Generated test problem." << endl;
         }
+      }
 
       // Make sure that the test problem (the matrix to factor) was
       // distributed correctly.
-      if (b_extra_debug && b_debug)
-        {
-          if (my_rank == 0)
-            cerr << "Test matrix A:" << endl;
-          scalarComm->barrier ();
-          printGlobalMatrix (cerr, A_local, scalarComm.get(), ordinalComm.get());
-          scalarComm->barrier ();
+      if (b_extra_debug && b_debug) {
+        if (my_rank == 0) {
+          cerr << "Test matrix A:" << endl;
         }
+        scalarComm->barrier ();
+        printGlobalMatrix (cerr, A_local, scalarComm.get(), ordinalComm.get());
+        scalarComm->barrier ();
+      }
 
       // Factoring the matrix stored in A_local overwrites it, so we
       // make a copy of A_local.  Initialize with NaNs to make sure
       // that cache blocking works correctly (if applicable).
       Matrix< Ordinal, Scalar > A_copy (nrows_local, ncols);
-      if (std::numeric_limits< Scalar >::has_quiet_NaN)
-        A_copy.fill (std::numeric_limits< Scalar >::quiet_NaN());
+      if (std::numeric_limits< Scalar >::has_quiet_NaN) {
+        A_copy.fill (std::numeric_limits< Scalar >::quiet_NaN ());
+      }
 
       // actual_cache_size_hint: "cache_size_hint" is just a
       // suggestion.  TSQR determines the cache size hint itself;
       // this remembers it so we can print it out later.
       size_t actual_cache_size_hint;
 
-      if (which == "MpiTbbTSQR")
-        {
+      if (which == "MpiTbbTSQR") {
 #ifdef HAVE_KOKKOSTSQR_TBB
-          using Teuchos::RCP;
-          typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
-          typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
-          typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
+        using Teuchos::RCP;
+        typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
+        typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
+        typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
 
-          RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (num_cores, cache_size_hint));
-          RCP< dist_tsqr_type > dist_tsqr (new dist_tsqr_type (scalarComm));
-          tsqr_type tsqr (node_tsqr, dist_tsqr);
+        RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (num_cores, cache_size_hint));
+        RCP< dist_tsqr_type > dist_tsqr (new dist_tsqr_type (scalarComm));
+        tsqr_type tsqr (node_tsqr, dist_tsqr);
 
-          // Compute the factorization and explicit Q factor.
-          TsqrVerifier< tsqr_type >::verify (tsqr, scalarComm, A_local, A_copy,
-                                             Q_local, R, contiguousCacheBlocks,
-                                             b_debug);
-          // Save the "actual" cache block size
-          actual_cache_size_hint = tsqr.cache_size_hint();
+        // Compute the factorization and explicit Q factor.
+        TsqrVerifier< tsqr_type >::verify (tsqr, scalarComm, A_local, A_copy,
+                                           Q_local, R, contiguousCacheBlocks,
+                                           b_debug);
+        // Save the "actual" cache block size
+        actual_cache_size_hint = tsqr.cache_size_hint();
 #else
-          throw std::logic_error("TSQR not built with Intel TBB support");
+        throw std::logic_error("TSQR not built with Intel TBB support");
 #endif // HAVE_KOKKOSTSQR_TBB
-        }
-      else if (which == "MpiSeqTSQR")
-        {
-          using Teuchos::RCP;
-          typedef SequentialTsqr< Ordinal, Scalar > node_tsqr_type;
-          typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
-          typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
+      }
+      else if (which == "MpiSeqTSQR") {
+        using Teuchos::RCP;
+        typedef SequentialTsqr< Ordinal, Scalar > node_tsqr_type;
+        typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
+        typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
 
-          RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (cache_size_hint));
-          RCP< dist_tsqr_type > dist_tsqr (new dist_tsqr_type (scalarComm));
-          tsqr_type tsqr (node_tsqr, dist_tsqr);
+        RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (cache_size_hint));
+        RCP< dist_tsqr_type > dist_tsqr (new dist_tsqr_type (scalarComm));
+        tsqr_type tsqr (node_tsqr, dist_tsqr);
 
-          // Compute the factorization and explicit Q factor.
-          TsqrVerifier< tsqr_type >::verify (tsqr, scalarComm, A_local, A_copy,
-                                             Q_local, R, contiguousCacheBlocks,
-                                             b_debug);
-          // Save the "actual" cache block size
-          actual_cache_size_hint = tsqr.cache_size_hint();
-        }
-      else
+        // Compute the factorization and explicit Q factor.
+        TsqrVerifier< tsqr_type >::verify (tsqr, scalarComm, A_local, A_copy,
+                                           Q_local, R, contiguousCacheBlocks,
+                                           b_debug);
+        // Save the "actual" cache block size
+        actual_cache_size_hint = tsqr.cache_size_hint();
+      }
+      else {
         throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
+      }
 
       // Print out the Q and R factors
-      if (b_extra_debug && b_debug)
-        {
-          if (my_rank == 0)
-            cerr << endl << "Q factor:" << endl;
-          scalarComm->barrier();
-          printGlobalMatrix (cerr, Q_local, scalarComm.get(), ordinalComm.get());
-          scalarComm->barrier ();
-          if (my_rank == 0)
-            {
-              cerr << endl << "R factor:" << endl;
-              print_local_matrix (cerr, ncols, ncols, R.get(), R.lda());
-              cerr << endl;
-            }
-          scalarComm->barrier ();
+      if (b_extra_debug && b_debug) {
+        if (my_rank == 0) {
+          cerr << endl << "Q factor:" << endl;
         }
+        scalarComm->barrier ();
+        printGlobalMatrix (cerr, Q_local, scalarComm.get (), ordinalComm.get ());
+        scalarComm->barrier ();
+        if (my_rank == 0) {
+          cerr << endl << "R factor:" << endl;
+          print_local_matrix (cerr, ncols, ncols, R.get(), R.lda());
+          cerr << endl;
+        }
+        scalarComm->barrier ();
+      }
 
       // Test accuracy of the resulting factorization
       std::vector< magnitude_type > results =
         global_verify (nrows_local, ncols, A_local.get(), A_local.lda(),
                        Q_local.get(), Q_local.lda(), R.get(), R.lda(),
                        scalarComm.get());
-      if (b_debug)
-        {
-          scalarComm->barrier();
-          if (my_rank == 0)
-            cerr << "-- Finished global_verify" << endl;
+      if (b_debug) {
+        scalarComm->barrier ();
+        if (my_rank == 0) {
+          cerr << "-- Finished global_verify" << endl;
         }
+      }
 
       // Print the results on Proc 0.
-      if (my_rank == 0)
-        {
-          if (human_readable)
-            {
-              std::string human_readable_name;
+      if (my_rank == 0) {
+        if (human_readable) {
+          std::string human_readable_name;
 
-              if (which == "MpiSeqTSQR")
-                human_readable_name = "MPI parallel / cache-blocked TSQR";
-              else if (which == "MpiTbbTSQR")
-                {
+          if (which == "MpiSeqTSQR") {
+            human_readable_name = "MPI parallel / cache-blocked TSQR";
+          }
+          else if (which == "MpiTbbTSQR") {
 #ifdef HAVE_KOKKOSTSQR_TBB
-                  human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
+            human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
 #else
-                  throw std::logic_error("TSQR not built with Intel TBB support");
+            throw std::logic_error("TSQR not built with Intel TBB support");
 #endif // HAVE_KOKKOSTSQR_TBB
-                }
-              else
-                throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
+          }
+          else {
+            throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
+          }
 
-              cout << human_readable_name << ":" << endl
-                   << "Scalar type: " << scalarTypeName << endl
-                   << "# rows: " << nrows_global << endl
-                   << "# columns: " << ncols << endl
-                   << "# MPI processes: " << nprocs << endl;
+          cout << human_readable_name << ":" << endl
+               << "Scalar type: " << scalarTypeName << endl
+               << "# rows: " << nrows_global << endl
+               << "# columns: " << ncols << endl
+               << "# MPI processes: " << nprocs << endl;
 #ifdef HAVE_KOKKOSTSQR_TBB
-              if (which == "MpiTbbTSQR")
-                cout << "# cores per process = " << num_cores << endl;
+          if (which == "MpiTbbTSQR")
+            cout << "# cores per process = " << num_cores << endl;
 #endif // HAVE_KOKKOSTSQR_TBB
-              cout << "Cache size hint in bytes: " << actual_cache_size_hint << endl
-                   << "Contiguous cache blocks? " << contiguousCacheBlocks << endl
-                   << "Absolute residual $\\| A - Q R \\|_2: "
-                   << results[0] << endl
-                   << "Absolute orthogonality $\\| I - Q^* Q \\|_2$: "
-                   << results[1] << endl
-                   << "Test matrix norm $\\| A \\|_F$: "
-                   << results[2] << endl
-                   << endl;
-            }
-          else
-            {
-              if (printFieldNames)
-                {
-                  cout << "%"
-                       << "method"
-                       << ",scalarType"
-                       << ",globalNumRows"
-                       << ",numCols"
-                       << ",numProcs"
-                       << ",numCores"
-                       << ",cacheSizeHint"
-                       << ",contiguousCacheBlocks"
-                       << ",absFrobResid"
-                       << ",absFrobOrthog"
-                       << ",frobA" << endl;
-                }
-
-              cout << which
-                   << "," << scalarTypeName
-                   << "," << nrows_global
-                   << "," << ncols
-                   << "," << nprocs;
-#ifdef HAVE_KOKKOSTSQR_TBB
-              if (which == "MpiTbbTSQR")
-                cout << "," << num_cores;
-              else
-                cout << ",1";
-#else
-              cout << ",1" << endl;
-#endif // HAVE_KOKKOSTSQR_TBB
-              cout << "," << actual_cache_size_hint
-                   << "," << contiguousCacheBlocks
-                   << "," << results[0]
-                   << "," << results[1]
-                   << "," << results[2]
-                   << endl;
-            }
+          cout << "Cache size hint in bytes: " << actual_cache_size_hint << endl
+               << "Contiguous cache blocks? " << contiguousCacheBlocks << endl
+               << "Absolute residual $\\| A - Q R \\|_2: "
+               << results[0] << endl
+               << "Absolute orthogonality $\\| I - Q^* Q \\|_2$: "
+               << results[1] << endl
+               << "Test matrix norm $\\| A \\|_F$: "
+               << results[2] << endl
+               << endl;
         }
+        else {
+          if (printFieldNames) {
+            cout << "%"
+                 << "method"
+                 << ",scalarType"
+                 << ",globalNumRows"
+                 << ",numCols"
+                 << ",numProcs"
+                 << ",numCores"
+                 << ",cacheSizeHint"
+                 << ",contiguousCacheBlocks"
+                 << ",absFrobResid"
+                 << ",absFrobOrthog"
+                 << ",frobA" << endl;
+          }
+
+          cout << which
+               << "," << scalarTypeName
+               << "," << nrows_global
+               << "," << ncols
+               << "," << nprocs;
+#ifdef HAVE_KOKKOSTSQR_TBB
+          if (which == "MpiTbbTSQR") {
+            cout << "," << num_cores;
+          } else {
+            cout << ",1";
+          }
+#else
+          cout << ",1" << endl;
+#endif // HAVE_KOKKOSTSQR_TBB
+          cout << "," << actual_cache_size_hint
+               << "," << contiguousCacheBlocks
+               << "," << results[0]
+               << "," << results[1]
+               << "," << results[2]
+               << endl;
+        }
+      }
     }
 
 

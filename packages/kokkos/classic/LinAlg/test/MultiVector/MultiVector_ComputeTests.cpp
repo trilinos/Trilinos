@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -45,21 +45,10 @@
 #include <Teuchos_TypeNameTraits.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
-
-#include "Kokkos_MultiVector.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
+#include "Kokkos_DefaultNode.hpp"
+#include "Kokkos_MultiVector.hpp"
 #include "Kokkos_Version.hpp"
-
-#include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
-#endif
 
 // FINISH: add some more tests. test GEMM using a finite-difference stencil matrix, compared against a manual operation.
 
@@ -67,26 +56,11 @@ namespace {
 
   using KokkosClassic::MultiVector;
   using KokkosClassic::DefaultArithmetic;
-  using KokkosClassic::SerialNode;
   using Teuchos::ScalarTraits;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::null;
-
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using KokkosClassic::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using KokkosClassic::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using KokkosClassic::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
 
   int N = 1000;
 
@@ -98,59 +72,14 @@ namespace {
   }
 
   template <class Node>
-  RCP<Node> getNode() {
-    assert(false);
+  RCP<Node> getNode () {
+    Teuchos::ParameterList pl;
+    return rcp (new Node (pl));
   }
-
-  template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
-    }
-    return snode;
-  }
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    if (tbbnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tbbnode = rcp(new TBBNode(pl));
-    }
-    return tbbnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  template <>
-  RCP<TPINode> getNode<TPINode>() {
-    if (tpinode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tpinode = rcp(new TPINode(pl));
-    }
-    return tpinode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
-    }
-    return thrustnode;
-  }
-#endif
 
   //
   // UNIT TESTS
-  // 
+  //
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, Scale, Scalar, Node )
   {
@@ -195,26 +124,34 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Scale, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ElemMult, SCALAR, NODE )
 
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+  typedef KokkosClassic::SerialNode KokkosClassic_SerialNode;
 #define UNIT_TEST_SERIALNODE( SCALAR ) \
-      ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, SerialNode )
+  ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_SerialNode )
+#else
+#define UNIT_TEST_SERIALNODE( SCALAR )
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
+  typedef KokkosClassic::TBBNode KokkosClassic_TBBNode;
 #define UNIT_TEST_TBBNODE(SCALAR) \
-      ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, TBBNode )
+  ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_TBBNode )
 #else
 #define UNIT_TEST_TBBNODE(SCALAR)
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  typedef KokkosClassic::TPINode KokkosClassic_TPINode;
 #define UNIT_TEST_TPINODE(SCALAR) \
-      ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, TPINode )
+  ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_TPINode )
 #else
 #define UNIT_TEST_TPINODE(SCALAR)
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
+  typedef KokkosClassic::ThrustGPUNode KokkosClassic_ThrustGPUNode;
 #define UNIT_TEST_THRUSTGPUNODE(SCALAR) \
-      ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, ThrustGPUNode )
+  ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_ThrustGPUNode )
 #else
 #define UNIT_TEST_THRUSTGPUNODE(SCALAR)
 #endif
@@ -227,4 +164,4 @@ namespace {
 
   UNIT_TEST_GROUP_SCALAR( float )
 
-}
+} // namespace (anonymous)

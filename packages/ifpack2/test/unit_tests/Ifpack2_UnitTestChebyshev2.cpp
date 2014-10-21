@@ -365,12 +365,10 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   using std::endl;
 
   // Typedefs for basic Tpetra template parameters.
-  typedef double ST;
-  typedef int LO;
-  //typedef long GO;
-  typedef int GO;
-  //typedef KokkosClassic::SerialNode NT;
-  typedef Tpetra::Map<LO, GO>::node_type NT;
+  typedef Tpetra::MultiVector<>::scalar_type ST;
+  typedef Tpetra::MultiVector<>::local_ordinal_type LO;
+  typedef Tpetra::MultiVector<>::global_ordinal_type GO;
+  typedef Tpetra::MultiVector<>::node_type NT;
 
   // Convenience typedefs.
   typedef Tpetra::Map<LO, GO, NT> map_type;

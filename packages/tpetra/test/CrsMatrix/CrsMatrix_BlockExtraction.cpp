@@ -283,7 +283,7 @@ namespace {
     // create a BlockMap for use in second extraction
     //
     Teuchos::Tuple<GO,7> globalBlockIDs = Teuchos::tuple<GO>(1,2,3,4,5,6,7) ;
-    RCP<const BlockMap> bmap = rcp(new BlockMap(map,globalBlockIDs,block_sizes,map->getNode()));
+    RCP<const BlockMap> bmap = rcp (new BlockMap (map, globalBlockIDs, block_sizes));
     //
     // perform second extraction
     //
@@ -359,7 +359,7 @@ namespace {
     // create a BlockMap for the row and column partitioning (since we will be testing against the block diagonls
     //
     Teuchos::Tuple<GO,6> globalBlockIDs = Teuchos::tuple<GO>(1,2,3,4,5,6);
-    RCP<const BlockMap> bmap = rcp(new BlockMap(map,globalBlockIDs,block_sizes,map->getNode()));
+    RCP<const BlockMap> bmap = rcp (new BlockMap (map, globalBlockIDs, block_sizes));
 
     //
     // perform block diagonal extraction

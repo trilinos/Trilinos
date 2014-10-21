@@ -503,11 +503,12 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
       ENDIF()
 
       # Check for valid usage (sorted by most common to least common)
-      IF (NOT PARSE_TESTONLY AND LIB_IN_SE_PKG AND NOT LIB_TESTONLY)
-        # The library being created here is a regular library and is
-        # dependent on a regular (non-TESTONLY) lib.  This is valid usage of
-        # DEPLIBS.  Also, there is no need to link this new lib the SE
-        # package's upstream dependent SE package and TPL libraries.
+      IF (LIB_IN_SE_PKG AND NOT LIB_TESTONLY) #PARSE_TESTONLY=TRUE/FASLE The
+        # library being created here is a library dependent on a regular
+        # (non-TESTONLY) lib in this SE package.  This is valid usage of
+        # DEPLIBS.  There is no need to link this new lib to the SE package's
+        # upstream dependent SE package and TPL libraries because thse are
+        # already linked into the lib ${LIB}.
         SET(ADD_DEP_PACKAGE_AND_TPL_LIBS FALSE)
       ELSEIF (PARSE_TESTONLY AND LIB_IN_SE_PKG AND NOT LIB_TESTONLY)
         # The library being created here is TESTONLY library and is
@@ -599,7 +600,30 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     ENDFOREACH()
 
     #
-    # Add the dependent SE package and TPL libs
+    # Link in the upstream TEST SE package and TPL libs
+    #
+    # We link these before those in the LIB SE package and TPL libs because
+    # the TEST dependencies tend to be higher in the dependency tree.  It
+    # should not really matter but it looks better on the link line.
+    #
+
+    IF (PARSE_TESTONLY)
+
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        MESSAGE("-- " "Pulling in header and libraries dependencies"
+          " for TEST dependencies ...")
+      ENDIF()
+
+      TRIBITS_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+        ${PACKAGE_NAME}  TEST  LINK_LIBS)
+
+      TRIBITS_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+        ${PACKAGE_NAME}  TEST  LINK_LIBS)
+
+    ENDIF()
+
+    #
+    # Add the dependent LIB SE package and TPL libs
     #
 
     IF (ADD_DEP_PACKAGE_AND_TPL_LIBS)
@@ -608,15 +632,9 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
       # possibly depend on the package's other libraries so we must link to
       # the dependent libraries in dependent libraries and TPLs.
 
-      IF (NOT PARSE_TESTONLY)
-        SET(LIB_OR_TEST_ARG LIB)
-      ELSE()
-        SET(LIB_OR_TEST_ARG TEST)
-      ENDIF()
-
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
         MESSAGE("-- " "Pulling in header and libraries dependencies"
-          " for ${LIB_OR_TEST_ARG} ...")
+          " for LIB dependencies ...")
       ENDIF()
 
       #
@@ -630,10 +648,10 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
       #
 
       TRIBITS_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS(
-        ${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}  LINK_LIBS)
+        ${PACKAGE_NAME}  LIB  LINK_LIBS)
 
       TRIBITS_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
-        ${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}  LINK_LIBS)
+        ${PACKAGE_NAME}  LIB  LINK_LIBS)
 
     ENDIF()
 

@@ -111,15 +111,22 @@ power_method (const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ordinal,N
 template <class Node>
 class runTest {
   public:
-  static void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node) {
+  static void
+  run (Teuchos::ParameterList& myMachPL,
+       const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+       const Teuchos::RCP<Node>& node)
+  {
     using std::cout;
     using std::endl;
-    cout << "Running test with Node==" << Teuchos::typeName(*node) << " on rank " << comm->getRank() << "/" << comm->getSize() << endl;
+    cout << "Running test with Node==" << Teuchos::typeName (*node)
+         << " on rank " << comm->getRank () << "/" << comm->getSize () << endl;
     //
-    // Get the data from the HB file and build the Map,Matrix
+    // Get the data from the HB file and build the Map and Matrix
     //
     typedef double TestScalar;
-    if (comm->getRank() == 0) cout << "running with scalar float" << std::endl;
+    if (comm->getRank () == 0) {
+      cout << "running with scalar float" << endl;
+    }
     Teuchos::RCP< Tpetra::CrsMatrix<TestScalar,int,int,Node> > A;
     try {
       Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("ReadMatrix");
@@ -156,11 +163,11 @@ main (int argc, char **argv)
   // Get test parameters from command-line processor
   //
   Teuchos::CommandLineProcessor cmdp(false,true);
-  std::string fnMachine("mpionly.xml");
-  cmdp.setOption("matrix-file",&fnMatrix,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("machine-file",&fnMachine,"Filename for XML machine description file.");
-  cmdp.setOption("num-iters",&niters,"Number of iterations.");
-  cmdp.setOption("tolerance",&eps,"Convergence tolerance.");
+  std::string fnMachine ("default.xml");
+  cmdp.setOption ("matrix-file", &fnMatrix, "Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption ("machine-file", &fnMachine, "Filename for XML machine description file.");
+  cmdp.setOption ("num-iters", &niters, "Number of iterations.");
+  cmdp.setOption ("tolerance", &eps, "Convergence tolerance.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -169,19 +176,20 @@ main (int argc, char **argv)
   // Supported nodes
   //
   if (comm->getRank() == 0) {
+    using Teuchos::writeParameterListToXmlOStream;
     cout << "Supported nodes/parameters:" << endl;
-    Teuchos::writeParameterListToXmlOStream(*Tpetra::HybridPlatform::listSupportedNodes(), cout);
+    writeParameterListToXmlOStream (* (Tpetra::HybridPlatform::listSupportedNodes ()), cout);
   }
 
   //
   // read machine file and initialize platform
   //
   Teuchos::ParameterList machPL;
-  Teuchos::updateParametersFromXmlFile(fnMachine, inOutArg(machPL));
-  Tpetra::HybridPlatform platform(comm,machPL);
-  platform.runUserCode<runTest>();
+  Teuchos::updateParametersFromXmlFile (fnMachine, inOutArg (machPL));
+  Tpetra::HybridPlatform platform (comm, machPL);
+  platform.runUserCode<runTest> ();
 
-  Teuchos::TimeMonitor::summarize();
+  Teuchos::TimeMonitor::summarize ();
 
   if (testPassed == false) {
     if (comm->getRank() == 0) {

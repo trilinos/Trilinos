@@ -156,6 +156,14 @@ use a 32-bit integer type (such as \c int or \c int32_t) for
 <tt>LocalOrdinal</tt>.  The default type of both \c LocalOrdinal and
 \c GlobalOrdinal is \c int.
 
+You need not specify these types explicitly.  If you do not specify
+them, Tpetra will pick default values.  Furthermore, Tpetra objects
+have typedefs, so you can get these types even if you don't know what
+their default values are.  This is the preferred way to find out their
+default values.  The typedef \c local_ordinal_type tells you the local
+ordinal type, and the typedef \c global_ordinal_type tells you the
+global ordinal type.
+
 It is usually more efficient to use the shortest integer type possible
 for both local and global indices.  "Shortest" means fewest number of
 bits.  Fewer bits mean you use less memory and thus can solve bigger
@@ -167,9 +175,10 @@ algebraic multigrid).
 
 Tpetra differs from Epetra in that you, the user, get to decide the
 types of local and global indices. In Epetra, local and global indices
-both used to have type \c int. With the latest Trilinos release, Epetra
-uses 64-bit integers for global indices, and 32-bit integers (\c int)
-for local indices.  Tpetra lets you decide the types of each.
+both used to have type \c int. With the latest Trilinos release,
+Epetra may use either 32-bit or 64-bit integers for global indices,
+and always uses 32-bit integers (\c int) for local indices.  Tpetra
+lets you decide the types of each.
 
 \subsection Tpetra_Lesson02_Map_categories Different categories of Maps
 

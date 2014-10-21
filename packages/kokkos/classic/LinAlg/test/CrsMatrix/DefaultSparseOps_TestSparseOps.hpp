@@ -69,7 +69,7 @@ namespace {
     CopyOp (T* const out, const T* const in) : out_ (out), in_ (in) {}
 
     // FIXME (mfh 09 Aug 2012) make a device kernel.
-    void execute (const OrdinalType i) {
+    void execute (const OrdinalType i) const {
       out_[i] = in_[i];
     }
   };

@@ -79,6 +79,30 @@ void test_abort()
     Kokkos::HostSpace >::verify();
 }
 
+__global__
+void test_cuda_spaces_int_value( int * ptr )
+{
+  if ( *ptr == 42 ) { *ptr = 2 * 42 ; }
+}
+
+void test_cuda_spaces()
+{
+  if ( Kokkos::CudaUVMSpace::available() ) {
+
+    int * uvm_ptr = (int*) Kokkos::CudaUVMSpace::allocate("uvm_ptr",typeid(int),sizeof(int),1);
+
+    *uvm_ptr = 42 ;
+
+    Kokkos::Cuda::fence();
+    test_cuda_spaces_int_value<<<1,1>>>(uvm_ptr);
+    Kokkos::Cuda::fence();
+
+    EXPECT_EQ( *uvm_ptr, int(2*42) );
+
+    Kokkos::CudaUVMSpace::decrement(uvm_ptr);
+  }
+}
+
 
 void test_device_cuda_view_impl()
 {

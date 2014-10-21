@@ -62,15 +62,14 @@ namespace Tpetra {
 /// This class inherits (is-a) Tpetra::MultiVector, adding block-entry
 /// functionality for referencing/accessing data.
 ///
-/// \warning Please consider this class DEPRECATED.  There are known
-///   outstanding bugs with the current implementations of
-///   variable-block-size sparse matrices and related classes in
-///   Tpetra.
+/// \warning This class is DEPRECATED.  There are known outstanding
+///   bugs with the current implementations of variable-block-size
+///   sparse matrices and related classes in Tpetra.
 template <class Scalar = MultiVector<>::scalar_type,
           class LocalOrdinal = MultiVector<>::local_ordinal_type,
           class GlobalOrdinal = typename MultiVector<LocalOrdinal>::global_ordinal_type,
           class Node = typename MultiVector<LocalOrdinal, GlobalOrdinal>::node_type>
-class BlockMultiVector :
+class TPETRA_DEPRECATED BlockMultiVector :
   public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 public:
   typedef Scalar        scalar_type;

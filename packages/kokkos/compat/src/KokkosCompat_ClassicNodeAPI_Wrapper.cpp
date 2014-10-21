@@ -28,7 +28,7 @@ namespace Kokkos {
       count--;
       if (count == 0 && Threads::is_initialized ()) {
 #ifdef KOKKOS_HAVE_CUDA
-        if (! Impl::is_same<Kokkos::Threads,Cuda::host_mirror_device_type>::value ||
+        if (! Impl::is_same<Kokkos::Threads,HostSpace::execution_space>::value ||
             KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
 #endif
           Threads::finalize ();
@@ -60,7 +60,7 @@ namespace Kokkos {
       count--;
       if (count == 0 && OpenMP::is_initialized ()) {
 #ifdef KOKKOS_HAVE_CUDA
-        if (! Impl::is_same<Kokkos::OpenMP, Cuda::host_mirror_device_type>::value ||
+        if (! Impl::is_same<Kokkos::OpenMP, HostSpace::execution_space>::value ||
             KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
 #endif
         OpenMP::finalize ();
@@ -91,7 +91,7 @@ namespace Kokkos {
       count--;
       if (count == 0 && Serial::is_initialized ()) {
 #ifdef KOKKOS_HAVE_CUDA
-        if (! Impl::is_same<Kokkos::Serial, Cuda::host_mirror_device_type>::value ||
+        if (! Impl::is_same<Kokkos::Serial, HostSpace::execution_space>::value ||
             KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
 #endif
           Serial::finalize ();

@@ -1,0 +1,33 @@
+INCLUDE(TribitsAddExecutable)
+
+TRIBITS_ADD_EXECUTABLE(
+  example_01
+  SOURCES example_01.cpp 
+  ADD_DIR_TO_NAME
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  example_02
+  SOURCES example_02.cpp 
+  ADD_DIR_TO_NAME
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  example_03
+  SOURCES example_03.cpp 
+  ADD_DIR_TO_NAME
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  example_04
+  SOURCES example_04.cpp 
+  ADD_DIR_TO_NAME
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  BurgersControlDataCopy
+  SOURCE_FILES
+    input.xml
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+)

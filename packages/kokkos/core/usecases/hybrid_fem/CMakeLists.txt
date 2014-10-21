@@ -29,6 +29,5 @@ TRIBITS_ADD_EXECUTABLE(
   proxyapp
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS ${LIBRARIES}
   )
 

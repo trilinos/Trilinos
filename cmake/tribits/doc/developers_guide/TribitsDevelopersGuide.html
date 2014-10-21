@@ -6,7 +6,7 @@
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>TriBITS Developers Guide and Reference</title>
 <meta name="author" content="Roscoe A. Bartlett (bartlettra&#64;ornl.gov)" />
-<meta name="date" content="2014-10-09" />
+<meta name="date" content="2014-10-16" />
 <style type="text/css">
 
 /*
@@ -315,9 +315,9 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Author:</th>
 <td>Roscoe A. Bartlett (<a class="reference external" href="mailto:bartlettra&#64;ornl.gov">bartlettra&#64;ornl.gov</a>)</td></tr>
 <tr><th class="docinfo-name">Date:</th>
-<td>2014-10-09</td></tr>
+<td>2014-10-16</td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>TriBITS Development at 2014-10-09</td></tr>
+<td>TriBITS Development at 2014-10-16</td></tr>
 </tbody>
 </table>
 <table class="docutils field-list" frame="void" rules="none">
@@ -7845,12 +7845,25 @@ command one would like and it will get run with MPI in MPI mode just
 link any other MPI-enabled built executable.</blockquote>
 <p><tt class="docutils literal">CMND &lt;cmndExec&gt;</tt></p>
 <blockquote>
-If <tt class="docutils literal">CMND</tt> is specified, then <tt class="docutils literal">&lt;cmndExec&gt;</tt> gives the executable for a
+<p>If <tt class="docutils literal">CMND</tt> is specified, then <tt class="docutils literal">&lt;cmndExec&gt;</tt> gives the executable for a
 command to be run.  In this case, MPI will never be used to run the
 executable even when configured in MPI mode
 (i.e. <tt class="docutils literal">TPL_ENABLE_MPI=ON</tt>).  If one wants to run an arbitrary command
 using MPI, use <tt class="docutils literal">EXEC &lt;fullPathToCmndExec&gt; NOEXEPREFIX NOEXESUFFIX</tt>
-instead.</blockquote>
+instead.  <strong>WARNING:</strong> If you want to run such tests using valgrind, you
+have to use the raw executable as the <tt class="docutils literal">&lt;cmndExec&gt;</tt> argument and <em>not</em>
+the script.  For example, if you have a python script
+<tt class="docutils literal">my_python_test.py</tt> with <tt class="docutils literal">/usr/bin/env pyhton</tt> at the top, you can't
+just use:</p>
+<pre class="literal-block">
+CMND &lt;path&gt;/my_python_test.py ARGS &lt;arg0&gt; &lt;arg1&gt; ...
+</pre>
+<p>The same goes for Perl or any other scripting language.</p>
+<p>Instead, you have to use:</p>
+<pre class="literal-block">
+CMND ${PYTHON_EXECUTABLE} ARGS &lt;path&gt;/my_python_test.py &lt;arg0&gt; &lt;arg1&gt; ...
+</pre>
+</blockquote>
 </blockquote>
 <p>By default, the output (stdout/stderr) for each test command is captured and
 is then echoed to stdout for the overall test.  This is done in order to be

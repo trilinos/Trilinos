@@ -79,7 +79,6 @@ public:
   typedef Qthread                  scratch_memory_space ;
   typedef memory_space::size_type  size_type ;
   typedef Kokkos::LayoutRight      array_layout ;
-  typedef Kokkos::Qthread          host_mirror_device_type ;
 
   //@}
   /*------------------------------------------------------------------------*/

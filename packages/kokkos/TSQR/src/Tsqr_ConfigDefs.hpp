@@ -39,14 +39,14 @@
 // ************************************************************************
 //@HEADER
 
-/// \file Tsqr_ConfigDefs.hpp
-/// \brief File to include in order to get TSQR's configure-time options.
-///
-#ifndef __Tsqr_ConfigDefs_hpp
-#define __Tsqr_ConfigDefs_hpp
+#ifndef TSQR_CONFIGDEFS_HPP
+#define TSQR_CONFIGDEFS_HPP
 
-// Pull in the Kokkos defines first.  These include HAVETSQR_COMPLEX,
-// HAVE_KOKKOSTSQR_FORTRAN, and HAVE_KOKKOSTSQR_TBB.
+/// \file Tsqr_ConfigDefs.hpp
+/// \brief Include this header to get TSQR's configuration options.
+
+// Users should not include KokkosTSQR_config.h directly.
+// Include Tsqr_ConfigDefs.hpp instead.
 #include <KokkosTSQR_config.h>
 
 /// \namespace TSQR
@@ -66,16 +66,15 @@
 /// "Minimizing Communication in Sparse Matrix Solvers."  In
 /// Proceedings of Supercomputing 2009, November 2009.
 ///
-/// James Demmel, Laura Grigori, Mark Frederick Hoemmen, and Julien
-/// Langou.  "Communication-optimal parallel and sequential QR and LU
-/// factorizations."  Technical report, UCB/EECS-2008-89, August 2008.
-///
+/// James Demmel, Laura Grigori, Mark Hoemmen, and Julien Langou.
+/// "Communication-optimal parallel and sequential QR and LU
+/// factorizations."  SIAM Journal on Scientific Computing, Volume 34,
+/// Issue 1, 2012.
 namespace TSQR {
   //
   // We declare the TSQR namespace here so that Doxygen will find it
   // and pull in all its documentation.
   //
-
 
   /// \namespace TSQR::Test
   /// \brief Accuracy and performance tests for TSQR.
@@ -88,7 +87,6 @@ namespace TSQR {
     // find it and pull in all its documentation.
     //
   } // namespace Test
-
 } // namespace TSQR
 
-#endif // __Tsqr_ConfigDefs_hpp
+#endif // TSQR_CONFIGDEFS_HPP

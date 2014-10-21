@@ -54,16 +54,17 @@ protected:
   static void SetUpTestCase()
   {
     Kokkos::Cuda::print_configuration( std::cout );
-    Kokkos::Cuda::host_mirror_device_type::initialize();
+    Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
   }
   static void TearDownTestCase()
   {
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
   }
 };
 
+extern void test_cuda_spaces();
 extern void test_device_cuda_tile();
 extern void test_device_cuda_view_impl();
 extern void test_device_cuda_view_api();
@@ -82,6 +83,11 @@ extern void test_device_cuda_team_scan();
 extern void test_device_cuda_compiler_macros();
 extern void test_device_cuda_memory_space();
 extern void test_device_cuda_team_vector();
+
+TEST_F( cuda, spaces )
+{
+  test_cuda_spaces();
+}
 
 TEST_F( cuda, view_impl )
 {

@@ -43,7 +43,6 @@
 #define __TSQR_TBB_TbbRecursiveTsqr_Def_hpp
 
 #include <TbbTsqr_TbbRecursiveTsqr.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>
 
 // #define TBB_DEBUG 1
@@ -530,23 +529,23 @@ namespace TSQR {
     {
       const ApplyType apply_type (op);
       if (apply_type == ApplyType::ConjugateTranspose &&
-          ScalarTraits< Scalar >::is_complex)
+          Teuchos::ScalarTraits<Scalar>::isComplex)
         throw std::logic_error("Applying Q^H for complex scalar types "
                                "not yet implemented");
 
       const_mat_view Q_view (nrows, ncols_Q, Q, ldq);
       mat_view C_view (nrows, ncols_C, C, ldc);
-      if (! apply_type.transposed())
-        {
-          array_top_blocks_t top_blocks (ncores());
-          build_partition_array (0, ncores()-1, top_blocks, Q_view,
-                                 C_view, contiguous_cache_blocks);
-          apply_helper (0, ncores()-1, Q_view, C_view, top_blocks,
-                        factor_output, contiguous_cache_blocks);
-        }
-      else
-        apply_transpose_helper (op, 0, ncores()-1, Q_view, C_view,
+      if (! apply_type.transposed ()) {
+        array_top_blocks_t top_blocks (ncores ());
+        build_partition_array (0, ncores () - 1, top_blocks, Q_view,
+                               C_view, contiguous_cache_blocks);
+        apply_helper (0, ncores () - 1, Q_view, C_view, top_blocks,
+                      factor_output, contiguous_cache_blocks);
+      }
+      else {
+        apply_transpose_helper (op, 0, ncores () - 1, Q_view, C_view,
                                 factor_output, contiguous_cache_blocks);
+      }
     }
 
 

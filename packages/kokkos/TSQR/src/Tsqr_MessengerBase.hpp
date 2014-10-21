@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -65,11 +65,11 @@ namespace TSQR {
     /// \param sendCount [in] Number of elements in the array
     /// \param destProc [in] Rank of destination process
     /// \param tag [in] MPI tag (ignored)
-    virtual void 
-    send (const Datum sendData[], 
-	  const int sendCount, 
-	  const int destProc, 
-	  const int tag) = 0;
+    virtual void
+    send (const Datum sendData[],
+          const int sendCount,
+          const int destProc,
+          const int tag) = 0;
 
     /// Receive recvData[0:recvCount-1] from process srcProc.
     ///
@@ -77,11 +77,11 @@ namespace TSQR {
     /// \param recvCount [in] Number of elements to receive in the array
     /// \param srcProc [in] Rank of sending process
     /// \param tag [in] MPI tag (ignored)
-    virtual void 
-    recv (Datum recvData[], 
-	  const int recvCount, 
-	  const int srcProc, 
-	  const int tag) = 0;
+    virtual void
+    recv (Datum recvData[],
+          const int recvCount,
+          const int srcProc,
+          const int tag) = 0;
 
     /// \brief Exchange data between processors.
     ///
@@ -99,40 +99,40 @@ namespace TSQR {
     ///   this process is sending data, and from which this process is
     ///   receiving data)
     /// \param tag [in] MPI tag (ignored)
-    virtual void 
-    swapData (const Datum sendData[], 
-	      Datum recvData[], 
-	      const int sendRecvCount, 
-	      const int destProc, 
-	      const int tag) = 0;
+    virtual void
+    swapData (const Datum sendData[],
+              Datum recvData[],
+              const int sendRecvCount,
+              const int destProc,
+              const int tag) = 0;
 
     //! Sum inDatum on all processors, and return the result.
-    virtual Datum 
+    virtual Datum
     globalSum (const Datum& inDatum) = 0;
 
     //! Sum inData[0:count-1] over all processors into outData.
     virtual void
-    globalVectorSum (const Datum inData[], 
-		     Datum outData[], 
-		     const int count) = 0;
+    globalVectorSum (const Datum inData[],
+                     Datum outData[],
+                     const int count) = 0;
 
     /// \brief Compute the global minimum over all processors.
     ///
     /// Assumes that Datum objects are less-than comparable.
-    virtual Datum 
+    virtual Datum
     globalMin (const Datum& inDatum) = 0;
 
     /// \brief Compute the global maximum over all processors.
     ///
     /// Assumes that Datum objects are less-than comparable.
-    virtual Datum 
+    virtual Datum
     globalMax (const Datum& inDatum) = 0;
 
     //! Broadcast data[0:count-1] from root to all processors.
     virtual void
-    broadcast (Datum data[], 
-	       const int count,
-	       const int root) = 0;
+    broadcast (Datum data[],
+               const int count,
+               const int root) = 0;
 
     //! Return this process' rank.
     virtual int rank () const = 0;

@@ -81,7 +81,6 @@ public:
   typedef Kokkos::HostSpace        memory_space ;
   typedef memory_space::size_type  size_type ;
   typedef Kokkos::LayoutRight      array_layout ;
-  typedef Kokkos::Threads          host_mirror_device_type ;
 
   typedef ScratchMemorySpace< Threads >  scratch_memory_space ;
   //@}
@@ -199,6 +198,7 @@ struct VerifyExecutionCanAccessMemorySpace
   , Kokkos::Threads::scratch_memory_space
   >
 {
+  enum { value = true };
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 };

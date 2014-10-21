@@ -46,7 +46,7 @@
 ///
 /// \warning Trilinos users should _not_ include this file directly.
 
-#include "KokkosTSQR_config.h"
+#include <Tsqr_ConfigDefs.hpp>
 
 #ifdef HAVE_KOKKOSTSQR_TBB
 #  include "TbbTsqr.hpp"

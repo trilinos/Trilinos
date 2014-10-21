@@ -121,22 +121,16 @@ test_spmm(const OrdinalType ensemble_length,
   std::vector<vector_type> x(ensemble_length);
   std::vector<vector_type> y(ensemble_length);
   for (ordinal_type e=0; e<ensemble_length; ++e) {
-    x[e] = vector_type(Kokkos::allocate_without_initializing,
-                       "x", fem_length);
-    y[e] = vector_type(Kokkos::allocate_without_initializing,
-                       "y", fem_length);
+    x[e] = vector_type(Kokkos::ViewAllocateWithoutInitializing("x"), fem_length);
+    y[e] = vector_type(Kokkos::ViewAllocateWithoutInitializing("y"), fem_length);
 
     Kokkos::deep_copy( x[e] , value_type(1.0) );
     Kokkos::deep_copy( y[e] , value_type(0.0) );
   }
-  left_multivec_type xl(Kokkos::allocate_without_initializing,
-                        "xl", fem_length, ensemble_length);
-  left_multivec_type yl(Kokkos::allocate_without_initializing,
-                        "yl", fem_length, ensemble_length);
-  // right_multivec_type xr(Kokkos::allocate_without_initializing,
-  //                        "xr", fem_length, ensemble_length);
-  // right_multivec_type yr(Kokkos::allocate_without_initializing,
-  //                        "yr", fem_length, ensemble_length);
+  left_multivec_type xl(Kokkos::ViewAllocateWithoutInitializing("xl"), fem_length, ensemble_length);
+  left_multivec_type yl(Kokkos::ViewAllocateWithoutInitializing("yl"), fem_length, ensemble_length);
+  // right_multivec_type xr(Kokkos::ViewAllocateWithoutInitializing("xr"), fem_length, ensemble_length);
+  // right_multivec_type yr(Kokkos::ViewAllocateWithoutInitializing("yr"), fem_length, ensemble_length);
   Kokkos::deep_copy(xl, value_type(1.0));
   //Kokkos::deep_copy(xr, value_type(1.0));
   Kokkos::deep_copy(yl, value_type(0.0));
@@ -149,8 +143,7 @@ test_spmm(const OrdinalType ensemble_length,
     Kokkos::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
-    matrix_values_type(Kokkos::allocate_without_initializing,
-                       "matrix", graph_length);
+    matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length);
   matrix_type matrix("matrix", fem_length, matrix_values, matrix_graph);
   Kokkos::deep_copy( matrix_values , value_type(1.0) );
 

@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
     if (cuda) {
       typedef Kokkos::Cuda Device;
 
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+      Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
 
       cudaDeviceProp deviceProp;
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
       performance_test_driver<Scalar,Ordinal,Device>(
         nGrid, nIter, ensemble_min, ensemble_max, ensemble_step);
 
-      Kokkos::Cuda::host_mirror_device_type::finalize();
+      Kokkos::HostSpace::execution_space::finalize();
       Kokkos::Cuda::finalize();
     }
 #endif

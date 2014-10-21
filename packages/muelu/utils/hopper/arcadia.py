@@ -386,17 +386,17 @@ def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, 
 
     # construct batch script from template
     os_cmd = "cat " + full_template
-    os_cmd += (" | sed \"s/_SCHED_ARGS_/" + sched_args                + "/g\"" +
-               " | sed \"s/_WIDTH_/"      + str(nnodes*CPN)           + "/g\"" +
-               " | sed \"s/_NODES_/"      + str(nnodes)               + "/g\"" +
-               " | sed \"s/_CORES_/"      + str(nnodes*cpn)           + "/g\"" +
-               " | sed \"s/_MTYPE_/"      + matrix                    + "/g\"" +
+    os_cmd += (" | sed \"s/_SCHED_ARGS_/" + sched_args                + "/\"" +
+               " | sed \"s/_WIDTH_/"      + str(nnodes*CPN)           + "/\"" +
+               " | sed \"s/_NODES_/"      + str(nnodes)               + "/\"" +
+               " | sed \"s/_CORES_/"      + str(nnodes*cpn)           + "/\"" +
+               " | sed \"s/_MTYPE_/"      + matrix                    + "/\"" +
                " | sed \"s/_NX_/"         + str(nx)                   + "/g\"" +
-               " | sed \"s/_EPETRA_/"     + str(petra & 1)            + "/g\"" +
-               " | sed \"s/_TPETRA_/"     + str(petra & 2)            + "/g\"" +
-               " | sed \"s/_UNIFIED_/"    + str(unified)              + "/g\"" +
-               " | sed \"s/_NUM_RUNS_/"   + str(num_runs)             + "/g\"" +
-               " | sed \"s/_NUM_CMDS_/"   + str(len(cmds))            + "/g\"")
+               " | sed \"s/_EPETRA_/"     + str(petra & 1)            + "/\"" +
+               " | sed \"s/_TPETRA_/"     + str(petra & 2)            + "/\"" +
+               " | sed \"s/_UNIFIED_/"    + str(unified)              + "/\"" +
+               " | sed \"s/_NUM_RUNS_/"   + str(num_runs)             + "/\"" +
+               " | sed \"s/_NUM_CMDS_/"   + str(len(cmds))            + "/\"")
 
     for i in range(len(cmds)):
         os_cmd += " | sed \"s/_CMD" + str(i+1) + "_/" + cmds[i] + "/g\""

@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<OP> belosOp = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
 
     // Belos parameter list
-    int maxIts = 20;
+    int maxIts = 100;
     Teuchos::ParameterList belosList;
     belosList.set("Maximum Iterations",    maxIts);
     belosList.set("Convergence Tolerance", 1e-12);

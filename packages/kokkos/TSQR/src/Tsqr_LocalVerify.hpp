@@ -42,7 +42,6 @@
 #ifndef __TSQR_Tsqr_LocalVerify_hpp
 #define __TSQR_Tsqr_LocalVerify_hpp
 
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>
 #include <Teuchos_BLAS.hpp>
 #include <cmath>
@@ -56,26 +55,27 @@
 namespace TSQR {
 
   template< class Ordinal, class Scalar >
-  typename ScalarTraits< Scalar >::magnitude_type
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   local_frobenius_norm (const Ordinal nrows_local,
                         const Ordinal ncols,
                         const Scalar  A_local[],
                         const Ordinal lda_local)
   {
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType magnitude_type;
 
     // FIXME (mfh 22 Apr 2010) This function does no scaling of
     // intermediate quantities, so it might overflow unnecessarily.
     magnitude_type result (0);
-    for (Ordinal j = 0; j < ncols; j++)
-      {
-        const Scalar* const cur_col = &A_local[j*lda_local];
-        for (Ordinal i = 0; i < nrows_local; ++i)
-          {
-            const magnitude_type abs_xi = ScalarTraits< Scalar >::abs (cur_col[i]);
-            result = result + abs_xi * abs_xi;
-          }
+    for (Ordinal j = 0; j < ncols; ++j) {
+      const Scalar* const cur_col = &A_local[j*lda_local];
+      for (Ordinal i = 0; i < nrows_local; ++i) {
+        const magnitude_type abs_xi = STS::magnitude (cur_col[i]);
+        result = result + abs_xi * abs_xi;
       }
+    }
+    // FIXME (mfh 14 Oct 2014) Should we use std::sqrt or even
+    // STS::squareroot here instead?
     return sqrt (result);
   }
 
@@ -126,12 +126,13 @@ namespace TSQR {
 
 
   template< class Ordinal, class Scalar >
-  typename ScalarTraits< Scalar >::magnitude_type
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   localOrthogonality (const Ordinal nrows,
                       const Ordinal ncols,
                       const Scalar Q[],
                       const Ordinal ldq)
   {
+    typedef Teuchos::ScalarTraits<Scalar> STS;
     const Scalar ZERO (0);
     const Scalar ONE (1);
 
@@ -141,12 +142,14 @@ namespace TSQR {
     const Ordinal AbsOrthog_stride = ncols;
 
     // Compute AbsOrthog := Q' * Q - I.  First, compute Q' * Q:
-    if (ScalarTraits< Scalar >::is_complex)
+    if (STS::isComplex) {
       blas.GEMM (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ncols, ncols, nrows,
                  ONE, Q, ldq, Q, ldq, ZERO, &AbsOrthog[0], AbsOrthog_stride);
-    else
+    }
+    else {
       blas.GEMM (Teuchos::TRANS, Teuchos::NO_TRANS, ncols, ncols, nrows,
                  ONE, Q, ldq, Q, ldq, ZERO, &AbsOrthog[0], AbsOrthog_stride);
+    }
 
     // Now, compute (Q^T*Q) - I.
     for (Ordinal j = 0; j < ncols; ++j) {
@@ -160,14 +163,15 @@ namespace TSQR {
 
 
   template< class Ordinal, class Scalar >
-  typename ScalarTraits< Scalar >::magnitude_type
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   local_relative_orthogonality (const Ordinal nrows,
                                 const Ordinal ncols,
                                 const Scalar Q[],
                                 const Ordinal ldq,
-                                const typename ScalarTraits< Scalar >::magnitude_type A_norm_F)
+                                const typename Teuchos::ScalarTraits<Scalar>::magnitudeType A_norm_F)
   {
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType magnitude_type;
     const Scalar ZERO (0);
     const Scalar ONE (1);
 
@@ -178,12 +182,14 @@ namespace TSQR {
     const Ordinal AbsOrthog_stride = ncols;
 
     // Compute AbsOrthog := Q' * Q - I.  First, compute Q' * Q:
-    if (ScalarTraits< Scalar >::is_complex)
+    if (STS::isComplex) {
       blas.GEMM (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ncols, ncols, nrows,
                  ONE, Q, ldq, Q, ldq, ZERO, &AbsOrthog[0], AbsOrthog_stride);
-    else
+    }
+    else {
       blas.GEMM (Teuchos::TRANS, Teuchos::NO_TRANS, ncols, ncols, nrows,
                  ONE, Q, ldq, Q, ldq, ZERO, &AbsOrthog[0], AbsOrthog_stride);
+    }
 
     // Now, compute (Q^T*Q) - I.
     for (Ordinal j = 0; j < ncols; ++j) {
@@ -200,7 +206,7 @@ namespace TSQR {
 
 
   template< class Ordinal, class Scalar >
-  typename ScalarTraits< Scalar >::magnitude_type
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   localResidual (const Ordinal nrows,
                  const Ordinal ncols,
                  const Scalar A[],
@@ -211,9 +217,11 @@ namespace TSQR {
                  const Ordinal ldr)
   {
     using Teuchos::NO_TRANS;
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType magnitude_type;
 
-    std::vector< Scalar > AbsResid (nrows * ncols, std::numeric_limits< Scalar >::quiet_NaN());
+    std::vector<Scalar> AbsResid (nrows * ncols,
+                                  std::numeric_limits<Scalar>::quiet_NaN ());
     const Ordinal AbsResid_stride = nrows;
     Teuchos::BLAS<Ordinal, Scalar> blas;
     const magnitude_type ONE (1);
@@ -228,7 +236,7 @@ namespace TSQR {
 
 
   template< class Ordinal, class Scalar >
-  typename ScalarTraits< Scalar >::magnitude_type
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
   local_relative_residual (const Ordinal nrows,
                            const Ordinal ncols,
                            const Scalar A[],
@@ -237,10 +245,11 @@ namespace TSQR {
                            const Ordinal ldq,
                            const Scalar R[],
                            const Ordinal ldr,
-                           const typename ScalarTraits< Scalar >::magnitude_type A_norm_F)
+                           const typename Teuchos::ScalarTraits<Scalar>::magnitudeType A_norm_F)
   {
     using Teuchos::NO_TRANS;
-    typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType magnitude_type;
 
     std::vector<Scalar> AbsResid (nrows * ncols, std::numeric_limits<Scalar>::quiet_NaN ());
     const Ordinal AbsResid_stride = nrows;
@@ -314,7 +323,7 @@ namespace TSQR {
   /// definitions of magnitude -- this is not just a problem for
   /// complex numbers (that are isomorphic to pairs of real numbers).
   template< class Ordinal, class Scalar >
-  std::vector< typename ScalarTraits< Scalar >::magnitude_type >
+  std::vector< typename Teuchos::ScalarTraits<Scalar>::magnitudeType >
   local_verify (const Ordinal nrows,
                 const Ordinal ncols,
                 const Scalar* const A,
@@ -324,8 +333,9 @@ namespace TSQR {
                 const Scalar* const R,
                 const Ordinal ldr)
   {
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
-    std::vector< magnitude_type > results(3);
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType magnitude_type;
+    std::vector<magnitude_type> results (3);
     // const bool A_contains_NaN = NaN_in_matrix (nrows, ncols, A, lda);
     // const bool Q_contains_NaN = NaN_in_matrix (nrows, ncols, Q, ldq);
     // const bool R_contains_NaN = NaN_in_matrix (ncols, ncols, R, ldr);

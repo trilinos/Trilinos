@@ -23,7 +23,6 @@ TRIBITS_ADD_EXECUTABLE(
   global_2_local_ids
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS kokkoscore kokkoscontainers
   )
 
 

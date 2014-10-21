@@ -11,17 +11,21 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SerialNodeTestAndTiming
-  SOURCES 
+SET(TIMING_INSTALLS "")
+
+IF (KokkosClassic_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SerialNodeTestAndTiming
+    SOURCES 
     NodeTest
     SerialNodeTest
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
-  )
-SET(TIMING_INSTALLS KokkosClassic_SerialNodeTestAndTiming)
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+  APPEND_SET(TIMING_INSTALLS KokkosClassic_SerialNodeTestAndTiming)
+ENDIF ()
 
 IF (KokkosClassic_ENABLE_TBB)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

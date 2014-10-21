@@ -49,7 +49,7 @@
 #include <impl/Kokkos_Timer.hpp>
 #include <cstdlib>
 
-typedef Kokkos::DefaultExecutionSpace::host_mirror_device_type DefaultHostType;
+typedef Kokkos::HostSpace::execution_space DefaultHostType;
 
 template<class GeneratorPool>
 struct generate_random {

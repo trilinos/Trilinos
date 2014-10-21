@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PYTRILINOS_EPETRAEXT_UTIL_H
-#define PYTRILINOS_EPETRAEXT_UTIL_H
+#ifndef PYTRILINOS_EPETRAEXT_UTIL_HPP
+#define PYTRILINOS_EPETRAEXT_UTIL_HPP
 
 // Include the Python prototypes
 #include "Python.h"
@@ -201,4 +201,4 @@ convertArrayOfIntToPython(const Teuchos::Array<int> & tai);
 
 #endif  // HAVE_TEUCHOS
 
-#endif // PYTRILINOS_EPETRAEXT_UTIL_H
+#endif // PYTRILINOS_EPETRAEXT_UTIL_HPP

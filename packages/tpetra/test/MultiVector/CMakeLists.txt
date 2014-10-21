@@ -25,7 +25,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   ${MAXNP}
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
 
 
@@ -42,7 +41,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM mpi
   STANDARD_PASS_OUTPUT
   ${MAXNP}
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
 
 SET(TIMING_INSTALLS "")
@@ -52,7 +50,6 @@ IF (KokkosClassic_ENABLE_TBB AND Tpetra_ENABLE_MPI)
       GEMMTiming_TBB
       SOURCES GEMMTiming_TBB
       COMM mpi
-      DEPLIBS kokkos kokkoslinalg kokkosnodeapi
       )
   APPEND_SET(TIMING_INSTALLS Tpetra_GEMMTiming_TBB)
 ENDIF()
@@ -62,7 +59,6 @@ IF (KokkosClassic_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
       GEMMTiming_TPI
       SOURCES GEMMTiming_TPI
       COMM mpi
-      DEPLIBS kokkos kokkoslinalg kokkosnodeapi
       )
   APPEND_SET(TIMING_INSTALLS Tpetra_GEMMTiming_TPI)
 ENDIF()
@@ -72,7 +68,6 @@ IF (KokkosClassic_ENABLE_Thrust AND KokkosClassic_ENABLE_CUDA_DOUBLE AND Tpetra_
       GEMMTiming_Thrust
       SOURCES GEMMTiming_Thrust
       COMM mpi
-      DEPLIBS kokkos kokkoslinalg kokkosnodeapi
       )
   APPEND_SET(TIMING_INSTALLS Tpetra_GEMMTiming_Thrust)
 ENDIF()

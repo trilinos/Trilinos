@@ -49,7 +49,7 @@ int main()
 #if defined( KOKKOS_HAVE_CUDA )
   {
     // Initialize Host mirror device
-    Kokkos::Cuda::host_mirror_device_type::initialize(1);
+    Kokkos::HostSpace::execution_space::initialize(1);
     const unsigned device_count = Kokkos::Cuda::detect_device_count();
 
     // Use the last device:
@@ -62,7 +62,7 @@ int main()
     Kokkos::Example::feint< Kokkos::Cuda , true  >();
 
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
 
   }
 #endif

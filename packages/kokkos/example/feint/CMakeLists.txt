@@ -28,6 +28,5 @@ TRIBITS_ADD_EXECUTABLE(
   feint
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS kokkoscore
   )
 

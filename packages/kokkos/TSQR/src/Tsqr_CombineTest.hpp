@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -64,7 +64,7 @@ namespace TSQR {
     /// different Scalar types (the same four that LAPACK supports:
     /// double, float, complex<double>, complex<float> -- i.e.,
     /// S,D,C,Z).
-    /// 
+    ///
     /// \param numRows [in] When testing the [R; A] routines, the
     ///   number of rows in the cache block A.
     ///
@@ -80,7 +80,7 @@ namespace TSQR {
     /// \param printFieldNames [in] Whether to print field names (to
     ///   make machine parsing of results easier).
     ///
-    /// \param simulateSequentialTsqr [in] Whether to use 
+    /// \param simulateSequentialTsqr [in] Whether to use
     ///   TSQR::Combine to simulate SequentialTsqr.
     ///
     /// \param debug [in] Whether to print (possibly verbose)
@@ -90,12 +90,12 @@ namespace TSQR {
     ///   testReal and testComplex is true.
     void
     verifyCombine (const int numRows,
-		   const int numCols, 
-		   const bool testReal,
-		   const bool testComplex,
-		   const bool printFieldNames,
-		   const bool simulateSequentialTsqr,
-		   const bool debug);
+                   const int numCols,
+                   const bool testReal,
+                   const bool testComplex,
+                   const bool printFieldNames,
+                   const bool simulateSequentialTsqr,
+                   const bool debug);
 
   } // namespace Test
 } // namespace TSQR

@@ -8650,7 +8650,7 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
 
 #include "ml_petsc.h"
 
-#ifdef HAVE_PETSC
+#ifdef HAVE_ML_PETSC
 int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen,
                       double rhs[])
 {

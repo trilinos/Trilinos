@@ -156,9 +156,9 @@ namespace Tpetra {
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {
     typedef GlobalOrdinal GO;
-    typedef Kokkos::View<const GlobalOrdinal*, typename device_type::host_mirror_device_type> const_host_view_type;
-    typedef Kokkos::View<GlobalOrdinal*, typename device_type::host_mirror_device_type> host_view_type;
     typedef Kokkos::View<GlobalOrdinal*, device_type> device_view_type;
+    typedef Kokkos::View<GlobalOrdinal*, typename device_view_type::host_mirror_space> host_view_type;
+    typedef Kokkos::View<const GlobalOrdinal*, typename device_view_type::host_mirror_space> const_host_view_type;
 
     // Copy the input GID list from host (we assume that
     // Teuchos::ArrayView should only view host memory) to device.
@@ -169,7 +169,7 @@ namespace Tpetra {
     // is viewing host or device memory.  Regardless, we don't own the
     // data and we will need a deep copy anyway, so we might as well
     // copy it.
-    const_host_view_type gidsHost_view (Kokkos::ViewWithoutManaging(),myGlobalIndices.getRawPtr (), myGlobalIndices.size ());
+    const_host_view_type gidsHost_view (myGlobalIndices.getRawPtr (), myGlobalIndices.size ());
     host_view_type gidsHost ("GIDS_Host", myGlobalIndices.size ());
     Kokkos::deep_copy (gidsHost, gidsHost_view);
     device_view_type gidsDevice ("GIDs", myGlobalIndices.size ());
@@ -190,7 +190,7 @@ namespace Tpetra {
     mapDevice_ = device_impl_type (globalNumInds, gidsDevice , indexBase, *comm);
     #ifdef KOKKOS_USE_CUDA_UVM
       const GlobalOrdinal* ptr = gidsDevice.ptr_on_device();
-      mapHost_ = host_impl_type (globalNumInds, const_host_view_type(Kokkos::ViewWithoutManaging(),ptr,myGlobalIndices.size ()), indexBase, *comm);
+      mapHost_ = host_impl_type (globalNumInds, const_host_view_type(ptr,myGlobalIndices.size ()), indexBase, *comm);
     #else
       mapHost_ = host_impl_type (globalNumInds, gidsHost, indexBase, *comm);
     #endif
@@ -515,7 +515,7 @@ namespace Tpetra {
   getNodeElementList () const
   {
     typedef GlobalOrdinal GO;
-    Kokkos::View<const GO*, host_mirror_device_type> myGlobalInds =
+    Kokkos::View<const GO*, host_mirror_space> myGlobalInds =
       mapHost_.getMyGlobalIndices (); // creates it if it doesn't exist
 
     return Teuchos::ArrayView<const GO> (myGlobalInds.ptr_on_device (),
@@ -685,7 +685,7 @@ namespace Tpetra {
                                   newComm, this->getNode ()));
       }
       else {
-        Kokkos::View<const GO*, host_mirror_device_type> myGidsHostView =
+        Kokkos::View<const GO*, host_mirror_space> myGidsHostView =
           mapHost_.getMyGlobalIndices ();
         ArrayView<const GO> myGidsArrayView (myGidsHostView.ptr_on_device (),
                                              myGidsHostView.dimension_0 ());

@@ -417,9 +417,10 @@ int main(int argc, char *argv[]) {
     fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 
     //Determine if example passed
-    RCP<KokkosClassic::SerialNode> serialnode = rcp(new KokkosClassic::SerialNode(pl));
-    RCP<MV> clonedXcpu = Xpetra::clone(*clonedX, serialnode);
-    clonedXcpu->update(1.0, *X, -1.0);
+    RCP<KokkosClassic::DefaultNode::DefaultNodeType> defaultNode =
+      rcp (new KokkosClassic::DefaultNode::DefaultNodeType (pl));
+    RCP<MV> clonedXcpu = Xpetra::clone (*clonedX, defaultNode);
+    clonedXcpu->update (1.0, *X, -1.0);
     Scalar norm;
     clonedXcpu->norm2(Teuchos::arrayView(&norm,1));
     std::cout <<"\nNorm of serial node soln - ThrustGPU node soln = "
@@ -429,10 +430,9 @@ int main(int argc, char *argv[]) {
     if (norm <= Scalar(1e-10))
       passed = true;
     if (passed)
-        std::cout << "Example Passed!" << std::endl;
-      else
-        std::cout << "Example Failed!" << std::endl;
-
+      std::cout << "Example Passed!" << std::endl;
+    else
+      std::cout << "Example Failed!" << std::endl;
   }
   #endif //ifdef HAVE_MUELU_BELOS
 

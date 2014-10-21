@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EPETRA_NUMPYINTSERIALDENSEVECTOR_H
-#define EPETRA_NUMPYINTSERIALDENSEVECTOR_H
+#ifndef EPETRA_NUMPYINTSERIALDENSEVECTOR_HPP
+#define EPETRA_NUMPYINTSERIALDENSEVECTOR_HPP
 
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"

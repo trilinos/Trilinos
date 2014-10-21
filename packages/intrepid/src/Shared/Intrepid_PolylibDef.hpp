@@ -99,7 +99,7 @@
 namespace Intrepid {
 
 /// Maximum number of iterations in polynomial defalation routine Jacobz
-#define INTREPID_POLYLIB_STOP 50 
+#define INTREPID_POLYLIB_STOP 50
 
 /// Define whether to use polynomial deflation (1) or tridiagonal solver (0).
 #define INTREPID_POLYLIB_POLYNOMIAL_DEFLATION 0
@@ -108,7 +108,7 @@ namespace Intrepid {
     /// zero determination using Newton iteration with polynomial deflation
 #define jacobz(n,z,alpha,beta) Jacobz(n,z,alpha,beta)
 #else
-    /// zero determination using eigenvalues of tridiagonal matrix 
+    /// zero determination using eigenvalues of tridiagonal matrix
 #define jacobz(n,z,alpha,beta) JacZeros(n,z,alpha,beta)
 #endif
 
@@ -220,7 +220,7 @@ void IntrepidPolylib::Dgj(Scalar *D,  const Scalar *z, const int np, const Scala
         D[0] = 0.0;
     }
     else{
-        register int i,j; 
+        register int i,j;
         Scalar *pd;
 
         pd = (Scalar *)malloc(np*sizeof(Scalar));
@@ -229,10 +229,10 @@ void IntrepidPolylib::Dgj(Scalar *D,  const Scalar *z, const int np, const Scala
         for (i = 0; i < np; i++){
             for (j = 0; j < np; j++){
 
-                if (i != j) 
+                if (i != j)
                     //D[i*np+j] = pd[j]/(pd[i]*(z[j]-z[i])); <--- This is either a bug, or the derivative matrix is not defined consistently.
                     D[i*np+j] = pd[i]/(pd[j]*(z[i]-z[j]));
-                else    
+                else
                     D[i*np+j] = (alpha - beta + (alpha + beta + two)*z[j])/
                     (two*(one - z[j]*z[j]));
             }
@@ -251,7 +251,7 @@ void IntrepidPolylib::Dgrjm(Scalar *D, const Scalar *z, const int np, const Scal
         D[0] = 0.0;
     }
     else{
-        register int i, j; 
+        register int i, j;
         Scalar   one = 1.0, two = 2.0;
         Scalar   *pd;
 
@@ -264,10 +264,10 @@ void IntrepidPolylib::Dgrjm(Scalar *D, const Scalar *z, const int np, const Scal
 
         for (i = 0; i < np; i++) {
             for (j = 0; j < np; j++){
-                if (i != j) 
+                if (i != j)
                     //D[i*np+j] = pd[j]/(pd[i]*(z[j]-z[i])); <--- This is either a bug, or the derivative matrix is not defined consistently.
                     D[i*np+j] = pd[i]/(pd[j]*(z[i]-z[j]));
-                else { 
+                else {
                     if(j == 0)
                         D[i*np+j] = -(np + alpha + beta + one)*(np - one)/
                         (two*(beta + two));
@@ -291,7 +291,7 @@ void IntrepidPolylib::Dgrjp(Scalar *D, const Scalar *z, const int np, const Scal
         D[0] = 0.0;
     }
     else{
-        register int i, j; 
+        register int i, j;
         Scalar   one = 1.0, two = 2.0;
         Scalar   *pd;
 
@@ -308,7 +308,7 @@ void IntrepidPolylib::Dgrjp(Scalar *D, const Scalar *z, const int np, const Scal
                 if (i != j)
                     //D[i*np+j] = pd[j]/(pd[i]*(z[j]-z[i])); <--- This is either a bug, or the derivative matrix is not defined consistently.
                     D[i*np+j] = pd[i]/(pd[j]*(z[i]-z[j]));
-                else { 
+                else {
                     if(j == np-1)
                         D[i*np+j] = (np + alpha + beta + one)*(np - one)/
                         (two*(alpha + two));
@@ -332,7 +332,7 @@ void IntrepidPolylib::Dglj(Scalar *D, const Scalar *z, const int np, const Scala
         D[0] = 0.0;
     }
     else{
-        register int i, j; 
+        register int i, j;
         Scalar   one = 1.0, two = 2.0;
         Scalar   *pd;
 
@@ -350,7 +350,7 @@ void IntrepidPolylib::Dglj(Scalar *D, const Scalar *z, const int np, const Scala
                 if (i != j)
                     //D[i*np+j] = pd[j]/(pd[i]*(z[j]-z[i])); <--- This is either a bug, or the derivative matrix is not defined consistently.
                     D[i*np+j] = pd[i]/(pd[j]*(z[i]-z[j]));
-                else { 
+                else {
                     if (j == 0)
                         D[i*np+j] = (alpha - (np-1)*(np + alpha + beta))/(two*(beta+ two));
                     else if (j == np-1)
@@ -453,7 +453,7 @@ Scalar IntrepidPolylib::hglj (const int i, const Scalar z, const Scalar *zglj,
 
 
 template <class Scalar>
-void IntrepidPolylib::Imgj(Scalar *im, const Scalar *zgj, const Scalar *zm, const int nz, 
+void IntrepidPolylib::Imgj(Scalar *im, const Scalar *zgj, const Scalar *zm, const int nz,
                            const int mz, const Scalar alpha, const Scalar beta){
         Scalar zp;
         register int i, j;
@@ -509,7 +509,7 @@ void IntrepidPolylib::Imgrjm(Scalar *im, const Scalar *zgrj, const Scalar *zm, c
 
 
 template <class Scalar>
-void IntrepidPolylib::Imgrjp(Scalar *im, const Scalar *zgrj, const Scalar *zm, const int nz, 
+void IntrepidPolylib::Imgrjp(Scalar *im, const Scalar *zgrj, const Scalar *zm, const int nz,
                              const int mz, const Scalar alpha, const Scalar beta)
 {
         Scalar zp;
@@ -537,7 +537,7 @@ void IntrepidPolylib::Imgrjp(Scalar *im, const Scalar *zgrj, const Scalar *zm, c
 
 
 template <class Scalar>
-void IntrepidPolylib::Imglj(Scalar *im, const Scalar *zglj, const Scalar *zm, const int nz, 
+void IntrepidPolylib::Imglj(Scalar *im, const Scalar *zglj, const Scalar *zm, const int nz,
                             const int mz, const Scalar alpha, const Scalar beta)
 {
     Scalar zp;
@@ -565,37 +565,47 @@ void IntrepidPolylib::Imglj(Scalar *im, const Scalar *zglj, const Scalar *zm, co
 
 
 template <class Scalar>
-void IntrepidPolylib::jacobfd(const int np, const Scalar *z, Scalar *poly_in, Scalar *polyd,
-                              const int n, const Scalar alpha, const Scalar beta){
-  register int i;
-  Scalar  zero = 0.0, one = 1.0, two = 2.0;
+void
+IntrepidPolylib::
+jacobfd (const int np, const Scalar *z, Scalar *poly_in, Scalar *polyd,
+         const int n, const Scalar alpha, const Scalar beta)
+{
+  const Scalar zero = 0.0, one = 1.0, two = 2.0;
 
-  if(!np)
+  if (! np) {
     return;
+  }
 
-  if(n == 0){
-    if(poly_in)
-      for(i = 0; i < np; ++i)
+  if (n == 0) {
+    if (poly_in) {
+      for (int i = 0; i < np; ++i) {
         poly_in[i] = one;
-    if(polyd)
-      for(i = 0; i < np; ++i)
+      }
+    }
+    if (polyd) {
+      for (int i = 0; i < np; ++i) {
         polyd[i] = zero;
+      }
+    }
   }
-  else if (n == 1){
-    if(poly_in)
-      for(i = 0; i < np; ++i)
+  else if (n == 1) {
+    if (poly_in) {
+      for (int i = 0; i < np; ++i) {
         poly_in[i] = 0.5*(alpha - beta + (alpha + beta + two)*z[i]);
-    if(polyd)
-      for(i = 0; i < np; ++i)
+      }
+    }
+    if (polyd) {
+      for (int i = 0; i < np; ++i) {
         polyd[i] = 0.5*(alpha + beta + two);
+      }
+    }
   }
-  else{
-    register int k;
+  else {
     Scalar   a1,a2,a3,a4;
-    Scalar   two = 2.0, apb = alpha + beta;
+    Scalar apb = alpha + beta;
     Scalar   *poly, *polyn1,*polyn2;
 
-    if(poly_in){ // switch for case of no poynomial function return
+    if (poly_in) { // switch for case of no poynomial function return
       polyn1 = (Scalar *)malloc(2*np*sizeof(Scalar));
       polyn2 = polyn1+np;
       poly   = poly_in;
@@ -606,12 +616,12 @@ void IntrepidPolylib::jacobfd(const int np, const Scalar *z, Scalar *poly_in, Sc
       poly   = polyn2+np;
     }
 
-    for(i = 0; i < np; ++i){
+    for (int i = 0; i < np; ++i) {
       polyn2[i] = one;
       polyn1[i] = 0.5*(alpha - beta + (alpha + beta + two)*z[i]);
     }
 
-    for(k = 2; k <= n; ++k){
+    for (int k = 2; k <= n; ++k) {
       a1 =  two*k*(k + apb)*(two*k + apb - two);
       a2 = (two*k + apb - one)*(alpha*alpha - beta*beta);
       a3 = (two*k + apb - two)*(two*k + apb - one)*(two*k + apb);
@@ -621,14 +631,14 @@ void IntrepidPolylib::jacobfd(const int np, const Scalar *z, Scalar *poly_in, Sc
       a3 /= a1;
       a4 /= a1;
 
-      for(i = 0; i < np; ++i){
+      for (int i = 0; i < np; ++i) {
         poly  [i] = (a2 + a3*z[i])*polyn1[i] - a4*polyn2[i];
         polyn2[i] = polyn1[i];
         polyn1[i] = poly  [i];
       }
     }
 
-    if(polyd){
+    if (polyd) {
       a1 = n*(alpha - beta);
       a2 = n*(two*n + alpha + beta);
       a3 = two*(n + alpha)*(n + beta);
@@ -636,7 +646,7 @@ void IntrepidPolylib::jacobfd(const int np, const Scalar *z, Scalar *poly_in, Sc
       a1 /= a4;  a2 /= a4;   a3 /= a4;
 
       // note polyn2 points to polyn1 at end of poly iterations
-      for(i = 0; i < np; ++i){
+      for (int i = 0; i < np; ++i) {
         polyd[i]  = (a1- a2*z[i])*poly[i] + a3*polyn2[i];
         polyd[i] /= (one - z[i]*z[i]);
       }
@@ -644,8 +654,6 @@ void IntrepidPolylib::jacobfd(const int np, const Scalar *z, Scalar *poly_in, Sc
 
     free(polyn1);
   }
-
-  return;
 }
 
 

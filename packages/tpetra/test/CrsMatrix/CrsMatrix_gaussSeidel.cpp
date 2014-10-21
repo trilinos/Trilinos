@@ -92,6 +92,32 @@ namespace {
     return normTemp[0];
   }
 
+  // mfh 15 Oct 2014: Unfortunately, Teuchos::ScalarTraits<Scalar>
+  // doesn't define eps() if Scalar is int, unsigned int, etc.
+  // isOrdinal is true for integer types and false for floating-point
+  // types, so we can select on that.
+  template<class Scalar, const bool isOrdinal = Teuchos::ScalarTraits<Scalar>::isOrdinal>
+  struct ComputeEps {
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType eps ();
+  };
+
+  // Partial specialization for non-floating-point (i.e., integer) types.
+  template<class Scalar>
+  struct ComputeEps<Scalar, true> {
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType eps () {
+      return static_cast<Scalar> (0);
+    }
+  };
+
+  // Partial specialization for floating-point types.
+  template<class Scalar>
+  struct ComputeEps<Scalar, false> {
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType eps () {
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      return STS::eps ();
+    }
+  };
+
 //
 // Tests for Tpetra::CrsMatrix::gaussSeidel().
 //
@@ -133,6 +159,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   // Typedefs derived from the above canonical typedefs.
   typedef ScalarTraits<scalar_type> STS;
   typedef typename STS::magnitudeType magnitude_type;
+  typedef ScalarTraits<magnitude_type> STM;
   typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
   // Abbreviation typedefs.
@@ -449,19 +476,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   // few different ways we could fix this.  Please don't just
   // introduce an arbitrary "small" tolerance; read up on rounding
   // error and do the right thing.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    B_norm != B_norm_orig,
-    std::logic_error,
-    "Gauss-Seidel changed the norm of B!  That means either the Gauss-Seidel "
-    "implementation is broken, or we mixed up the order of its arguments.  "
-    "Original ||B||_2 = " << B_norm_orig << "; new ||B||_2 = " << B_norm << ".");
+  //
+  // FIXME (mfh 15 Oct 2014) This is a revision of the above comment.
+  // KokkosClassic::TBBNode doesn't have deterministic reductions;
+  // they might produce slightly different results when called twice
+  // for the same vector.  Thus, we really need some kind of tolerance
+  // for these tests.  For the prefactor, square root of N (the usual
+  // heuristic) was not enough; we had to use N instead.
+  const magnitude_type testTolPrefactor =
+    static_cast<magnitude_type> (B->getGlobalLength ());
+  const magnitude_type testTol =
+    testTolPrefactor * ComputeEps<scalar_type>::eps ();
 
+  const magnitude_type B_norm_diff = STM::magnitude (B_norm - B_norm_orig);
   TEUCHOS_TEST_FOR_EXCEPTION(
-    D_norm != D_norm_orig,
-    std::logic_error,
+    B_norm_diff > testTol, std::logic_error,
+    "Gauss-Seidel changed the norm of B!  |B_norm_orig - B_norm| = "
+    << B_norm_diff << " > testTol = " << testTol << ".  That means either the "
+    "Gauss-Seidel implementation is broken, or we mixed up the order of its "
+    "arguments.  Original ||B||_2 = " << B_norm_orig << "; new ||B||_2 = "
+    << B_norm << ".");
+
+  const magnitude_type D_norm_diff = STM::magnitude (D_norm - D_norm_orig);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    D_norm_diff > testTol, std::logic_error,
     "Gauss-Seidel changed the norm of D (the vector of diagonal entries of the "
-    "matrix)!  That means either the Gauss-Seidel implementation is broken, or "
-    "we mixed up the order of its arguments.  Original ||D||_2 = "
+    "matrix)!  |D_norm_orig - D_norm| = " << D_norm_diff << " > testTol = "
+    << testTol << ".  That means either the Gauss-Seidel implementation is "
+    "broken, or we mixed up the order of its arguments.  Original ||D||_2 = "
     << D_norm_orig << "; new ||D||_2 = " << D_norm << ".");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -514,6 +556,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
   // Typedefs derived from the above canonical typedefs.
   typedef ScalarTraits<scalar_type> STS;
   typedef typename STS::magnitudeType magnitude_type;
+  typedef ScalarTraits<magnitude_type> STM;
   typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
   // Abbreviation typedefs.
@@ -836,19 +879,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
   // few different ways we could fix this.  Please don't just
   // introduce an arbitrary "small" tolerance; read up on rounding
   // error and do the right thing.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    B_norm != B_norm_orig,
-    std::logic_error,
-    "Gauss-Seidel changed the norm of B!  That means either the Gauss-Seidel "
-    "implementation is broken, or we mixed up the order of its arguments.  "
-    "Original ||B||_2 = " << B_norm_orig << "; new ||B||_2 = " << B_norm << ".");
+  //
+  // FIXME (mfh 15 Oct 2014) This is a revision of the above comment.
+  // KokkosClassic::TBBNode doesn't have deterministic reductions;
+  // they might produce slightly different results when called twice
+  // for the same vector.  Thus, we really need some kind of tolerance
+  // for these tests.  For the prefactor, square root of N (the usual
+  // heuristic) was not enough; we had to use N instead.
+  const magnitude_type testTolPrefactor =
+    static_cast<magnitude_type> (B->getGlobalLength ());
+  const magnitude_type testTol =
+    testTolPrefactor * ComputeEps<scalar_type>::eps ();
 
+  const magnitude_type B_norm_diff = STM::magnitude (B_norm - B_norm_orig);
   TEUCHOS_TEST_FOR_EXCEPTION(
-    D_norm != D_norm_orig,
-    std::logic_error,
+    B_norm_diff > testTol, std::logic_error,
+    "Gauss-Seidel changed the norm of B!  |B_norm_orig - B_norm| = "
+    << B_norm_diff << " > testTol = " << testTol << ".  That means either the "
+    "Gauss-Seidel implementation is broken, or we mixed up the order of its "
+    "arguments.  Original ||B||_2 = " << B_norm_orig << "; new ||B||_2 = "
+    << B_norm << ".");
+
+  const magnitude_type D_norm_diff = STM::magnitude (D_norm - D_norm_orig);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    D_norm_diff > testTol, std::logic_error,
     "Gauss-Seidel changed the norm of D (the vector of diagonal entries of the "
-    "matrix)!  That means either the Gauss-Seidel implementation is broken, or "
-    "we mixed up the order of its arguments.  Original ||D||_2 = "
+    "matrix)!  |D_norm_orig - D_norm| = " << D_norm_diff << " > testTol = "
+    << testTol << ".  That means either the Gauss-Seidel implementation is "
+    "broken, or we mixed up the order of its arguments.  Original ||D||_2 = "
     << D_norm_orig << "; new ||D||_2 = " << D_norm << ".");
 
   TEUCHOS_TEST_FOR_EXCEPTION(

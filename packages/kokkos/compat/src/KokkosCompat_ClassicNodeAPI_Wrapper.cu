@@ -15,10 +15,10 @@ namespace Kokkos {
     KokkosDeviceWrapperNode<Kokkos::Cuda>::~KokkosDeviceWrapperNode<Kokkos::Cuda>() {
       count--;
       if(count==0) {
-        if(Cuda::host_mirror_device_type::is_initialized()) {
+        if(HostSpace::execution_space::is_initialized()) {
           // make sure that no Actual DeviceWrapper node of the mirror_device_type is in use
-          if(KokkosDeviceWrapperNode<Cuda::host_mirror_device_type>::count==0) {
-            Cuda::host_mirror_device_type::finalize();
+          if(KokkosDeviceWrapperNode<HostSpace::execution_space>::count==0) {
+            HostSpace::execution_space::finalize();
           }
         }
         if(Cuda::is_initialized())
@@ -36,13 +36,13 @@ namespace Kokkos {
         throw std::runtime_error("Using CudaWrapperNode without UVM is not allowed.");
       #endif
 
-      if(!Kokkos::Cuda::host_mirror_device_type::is_initialized()) {
+      if(!Kokkos::HostSpace::execution_space::is_initialized()) {
         if(NumNUMA>0 && NumCoresPerNUMA>0)
-          Kokkos::Cuda::host_mirror_device_type::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
+          Kokkos::HostSpace::execution_space::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
         else if (NumNUMA > 0)
-          Kokkos::Cuda::host_mirror_device_type::initialize ( NumThreads, NumNUMA );
+          Kokkos::HostSpace::execution_space::initialize ( NumThreads, NumNUMA );
         else
-          Kokkos::Cuda::host_mirror_device_type::initialize ( NumThreads );
+          Kokkos::HostSpace::execution_space::initialize ( NumThreads );
       }
       Kokkos::Cuda::SelectDevice select_device(Device);
       if(!Kokkos::Cuda::is_initialized())

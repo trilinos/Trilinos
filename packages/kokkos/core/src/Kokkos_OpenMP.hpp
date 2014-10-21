@@ -79,7 +79,6 @@ public:
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
   typedef LayoutRight           array_layout ;
-  typedef OpenMP                host_mirror_device_type ;
 
   typedef ScratchMemorySpace< OpenMP > scratch_memory_space ;
 
@@ -157,6 +156,7 @@ struct VerifyExecutionCanAccessMemorySpace
   , Kokkos::OpenMP::scratch_memory_space
   >
 {
+  enum { value = true };
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 };

@@ -52,23 +52,13 @@
 #include <Teuchos_Tuple.hpp>
 #include <stdexcept>
 
+#include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_MultiVectorKernelOps.hpp"
 #include "Kokkos_NodeHelpers.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include "Kokkos_OpenMPNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
-#include "cublas.h"
+#  include "cublas.h"
 #endif
-#include "Kokkos_SerialNode.hpp"
 #include <Teuchos_BLAS.hpp>
 
 
@@ -95,6 +85,8 @@ namespace KokkosClassic {
       }
   };
 
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+
   template <typename Scalar>
   struct NodeGEMM<Scalar,SerialNode> {
     public:
@@ -114,6 +106,8 @@ namespace KokkosClassic {
           blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
       }
   };
+
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
   template <typename Scalar>
@@ -1423,6 +1417,7 @@ namespace KokkosClassic {
     }
   };
 
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
   // Partial specialization for Node=KokkosClassic::SerialNode.
   template <class Scalar>
   class DefaultArithmetic<MultiVector<Scalar, SerialNode> > :
@@ -2262,9 +2257,9 @@ namespace KokkosClassic {
       }
     }
   };
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
-
-
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
   // Full specialization for Scalar=double and Node=KokkosClassic::SerialNode.
   template <>
   class DefaultArithmetic<MultiVector<double, SerialNode> > :
@@ -3048,7 +3043,7 @@ namespace KokkosClassic {
       }
     }
   };
-
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 } // namespace KokkosClassic
 

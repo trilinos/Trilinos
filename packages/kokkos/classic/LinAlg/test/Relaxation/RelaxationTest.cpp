@@ -45,24 +45,12 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
-
-#include "Kokkos_MultiVector.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
 #include "Kokkos_DefaultKernels.hpp"
+#include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultRelaxation.hpp"
-
+#include "Kokkos_MultiVector.hpp"
 #include "Kokkos_Version.hpp"
-
-#include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include "Kokkos_OpenMPNode.hpp"
-#endif
 
 #define TPI_CHUNKS 4
 
@@ -72,30 +60,11 @@ namespace {
   using KokkosClassic::DefaultArithmetic;
   using KokkosClassic::DefaultKernels;
   using KokkosClassic::DefaultRelaxation;
-  using KokkosClassic::SerialNode;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::null;
   using std::endl;
-
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using KokkosClassic::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using KokkosClassic::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using KokkosClassic::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using KokkosClassic::OpenMPNode;
-  RCP<OpenMPNode> ompnode;
-#endif
 
   int N = 10;
 
@@ -108,66 +77,9 @@ namespace {
 
   template <class Node>
   RCP<Node> getNode() {
-    assert(false);
+    Teuchos::ParameterList pl;
+    return rcp (new Node (pl));
   }
-
-  template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
-    }
-    return snode;
-  }
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    if (tbbnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tbbnode = rcp(new TBBNode(pl));
-    }
-    return tbbnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  template <>
-  RCP<TPINode> getNode<TPINode>() {
-    if (tpinode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",TPI_CHUNKS);
-      tpinode = rcp(new TPINode(pl));
-    }
-    return tpinode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  template <>
-  RCP<OpenMPNode> getNode<OpenMPNode>() {
-    if (ompnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      ompnode = rcp(new OpenMPNode(pl));
-    }
-    return ompnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
-    }
-    return thrustnode;
-  }
-#endif
 
   //
   // UNIT TESTS
@@ -456,8 +368,12 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix_1D, Jacobi, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix_1D, Chebyshev, ORDINAL, SCALAR, NODE )
 
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
       ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )
+#else
+#define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR)
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \

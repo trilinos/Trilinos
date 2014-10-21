@@ -2,9 +2,19 @@
 #ifndef __SYMBOLIC_TASK_HPP__
 #define __SYMBOLIC_TASK_HPP__
 
+/// \file symbolic_task.hpp
+/// \brief Provides tasking interface with graphviz output.
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+
 namespace Example { 
   
   using namespace std;
+
+  /// \brief Graphviz color mapping for the generated tasks.
+  static map<string,string> g_graphviz_color = {
+    { "ichol/scalar", "indianred2"},
+    { "ichol/trsm",   "orange2"   },
+    { "ichol/gemm",   "lightblue2"} };
 
   class SymbolicTaskQueue;
 

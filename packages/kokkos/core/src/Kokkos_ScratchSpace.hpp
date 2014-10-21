@@ -79,6 +79,7 @@ public:
   typedef ScratchMemorySpace                memory_space ;
   typedef ExecSpace                         execution_space ;
   typedef typename ExecSpace::array_layout  array_layout ;
+  typedef typename ExecSpace::size_type     size_type ;
 
   template< typename IntType >
   KOKKOS_INLINE_FUNCTION static

@@ -9,7 +9,7 @@ SET(SerializationFiles
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Dependencies_Serialization_test
   SOURCES cxx_main.cpp Dependencies_SerializationTests.cpp
-  DEPLIBS teuchos_xml_pl_test_helpers
+  TESTONLYLIBS teuchos_xml_pl_test_helpers
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )

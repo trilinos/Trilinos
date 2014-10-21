@@ -64,31 +64,34 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   using Teuchos::outArg;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
 
   // Print out the Tpetra software version information.
-  out << Tpetra::version() << endl << endl;
+  out << Tpetra::version () << endl << endl;
+
+  // Type of the Tpetra::Map specialization to use.
+  typedef Tpetra::Map<> map_type;
+
+  // The type of the Tpetra::Vector specialization to use.
+  typedef Tpetra::Vector<> vector_type;
 
   // The "Scalar" type is the type of the values stored in the Tpetra::Vector.
-  typedef double scalar_type;
+  typedef Tpetra::Vector<>::scalar_type scalar_type;
 
   // The "LocalOrdinal" (LO) type is the type of "local" indices.
-  typedef int local_ordinal_type;
+  // The typedef is commented out to avoid "unused typedef" warnings.
+  //
+  //typedef Tpetra::Vector<>::local_ordinal_type local_ordinal_type;
 
   // The "GlobalOrdinal" (GO) type is the type of "global" indices.
-  typedef long global_ordinal_type;
+  typedef Tpetra::Vector<>::global_ordinal_type global_ordinal_type;
 
   // The Kokkos "Node" type describes the type of shared-memory
   // parallelism that Tpetra will use _within_ an MPI process.
-  typedef Kokkos::DefaultNode::DefaultNodeType node_type;
-
-  // Type of the Map used to describe a parallel distribution.
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-
-  // Get a pointer to the default Kokkos Node.  This creates an
-  // instance of the Node if it hasn't yet been created.  We'll
-  // need this when creating the Tpetra::Map objects.
-  RCP<node_type> node = Kokkos::DefaultNode::getDefaultNode ();
+  // The typedef is commented out to avoid "unused typedef" warnings.
+  //
+  //typedef Tpetra::Vector<>::node_type node_type;
 
   //////////////////////////////////////////////////////////////////////
   // Create a Tpetra Map
@@ -101,25 +104,20 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // Map with the number of MPI processes.  That way, you can run this
   // example with any number of MPI processes and every process will
   // still have a positive number of entries.
-  const Tpetra::global_size_t numGlobalEntries = comm->getSize() * 5;
+  const Tpetra::global_size_t numGlobalEntries = comm->getSize () * 5;
 
   // Index base of the Map.  We choose zero-based (C-style) indexing.
   const global_ordinal_type indexBase = 0;
 
   // Construct a Map that puts the same number of equations on each
-  // MPI process.  Pass in the Kokkos Node, so that this line of code
-  // will work with any Kokkos Node type.
+  // MPI process.
   RCP<const map_type> contigMap =
     rcp (new map_type (numGlobalEntries, indexBase, comm,
-                       Tpetra::GloballyDistributed, node));
+                       Tpetra::GloballyDistributed));
 
   //////////////////////////////////////////////////////////////////////
   // Create a Tpetra Vector
   //////////////////////////////////////////////////////////////////////
-
-  // The type of the Tpetra::Vector specialization.
-  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
-    global_ordinal_type, node_type> vector_type;
 
   // Create a Vector with the Map we created above.
   // This version of the constructor will fill in the vector with zeros.
@@ -148,23 +146,25 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 
   {
     // Get a const persisting view of the entries in the Vector.
-    // "Const" means that you cannot modify the entries.
-    // "Persisting" means that the view persists beyond the lifetime of the Vector.
-    // Even after the Vector's destructor is called, the view won't go away.
-    // If the Vector's entries change during the lifetime of a persisting view,
-    // the entries of the persisting view are undefined.
+    // "Const" means that you cannot modify the entries.  "Persisting"
+    // means that the view persists beyond the lifetime of the Vector.
+    // Even after the Vector's destructor is called, the view won't go
+    // away.  If the Vector's entries change during the lifetime of a
+    // persisting view, the entries of the persisting view are
+    // undefined.
     //
-    // An ArrayRCP acts like an array or std::vector,
-    // but is reference-counted like std::shared_ptr or Teuchos::RCP.
-    // You may decrement the reference count manually by assigning Teuchos::null to it.
-    // We put this code in an inner scope (in an extra pair of {})
-    // so that the ArrayRCP will fall out of scope before the next example,
-    // which modifies the entries of the Vector.
-
+    // An ArrayRCP acts like an array or std::vector, but is
+    // reference-counted like std::shared_ptr or Teuchos::RCP.  You
+    // may decrement the reference count manually by assigning
+    // Teuchos::null to it.  We put this code in an inner scope (in an
+    // extra pair of {}) so that the ArrayRCP will fall out of scope
+    // (and therefore be deallocated) before the next example, which
+    // modifies the entries of the Vector.
     ArrayRCP<const scalar_type> x_data = x->get1dView ();
 
-    // x_data.size () may be longer than the number of local rows in the Vector,
-    // so be sure to ask the Vector for its dimensions, rather than the ArrayRCP.
+    // x_data.size () may be longer than the number of local rows in
+    // the Vector, so be sure to ask the Vector for its dimensions,
+    // rather than the ArrayRCP.
     const size_t localLength = x->getLocalLength ();
 
     // Count the local number of entries less than 0.5.
@@ -177,14 +177,17 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     }
 
     // "reduceAll" is a type-safe templated version of MPI_Allreduce.
-    // "outArg" is like taking the address using &, but it makes it
-    // more clear that its argument is an output argument of a function.
+    // "outArg" is like taking the address using &, but makes it more
+    // clear that its argument is an output argument of a function.
     size_t globalCount = 0;
-    reduceAll<int, size_t> (*comm, Teuchos::REDUCE_SUM, localCount, outArg (globalCount));
+    reduceAll<int, size_t> (*comm, REDUCE_SUM, localCount,
+                            outArg (globalCount));
 
-    // Find the total number of entries less than 0.5,
-    // over all processes in the Vector's communicator.
-    out << "x has " << globalCount << " entr" << (globalCount != 1 ? "ies" : "y")
+    // Find the total number of entries less than 0.5, over all
+    // processes in the Vector's communicator.  Note the trick for
+    // pluralizing the word "entry" conditionally on globalCount.
+    out << "x has " << globalCount << " entr"
+        << (globalCount != 1 ? "ies" : "y")
         << " less than 0.5." << endl;
   }
 
@@ -207,7 +210,8 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // so be sure to ask the Vector for its dimensions, rather than the ArrayRCP.
     const size_t localLength = x->getLocalLength ();
     for (size_t k = 0; k < localLength; ++k) {
-      // Add k (the local index) to every entry of x.
+      // Add k (the local index) to every entry of x.  Treat
+      // scalar_type as a function to convert k to scalar_type.
       x_data[k] += scalar_type (k);
     }
 
@@ -228,14 +232,12 @@ main (int argc, char *argv[])
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
   RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
-  const int myRank = comm->getRank();
+  const int myRank = comm->getRank ();
   std::ostream& out = (myRank == 0) ? std::cout : blackHole;
 
-  // We have a communicator and an output stream.
-  // Let's do something with them!
-  exampleRoutine (comm, out);
+  exampleRoutine (comm, out); // This is where the action takes place.
 
   // This tells the Trilinos test framework that the test passed.
   if (myRank == 0) {

@@ -50,7 +50,6 @@
 #include <Tsqr_LocalVerify.hpp>
 #include <Tsqr_Matrix.hpp>
 #include <Tsqr_Util.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <TbbTsqr.hpp>
 
 #include <Teuchos_LAPACK.hpp>
@@ -97,7 +96,8 @@ namespace TSQR {
       typedef Teuchos::Time timer_type;
       typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar, timer_type > node_tsqr_type;
       typedef typename node_tsqr_type::FactorOutput factor_output_type;
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename STS::magnitudeType magnitude_type;
       using std::cerr;
       using std::cout;
       using std::endl;
@@ -284,7 +284,6 @@ namespace TSQR {
       using std::endl;
 
       typedef Teuchos::Time timer_type;
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
       typedef Matrix< ordinal_type, scalar_type > matrix_type;

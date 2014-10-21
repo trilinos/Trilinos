@@ -212,8 +212,8 @@ namespace Tpetra {
 
   private:
     typedef Details::Map<LocalOrdinal, GlobalOrdinal, device_type> device_impl_type;
-    typedef typename device_type::host_mirror_device_type host_mirror_device_type;
-    typedef Details::Map<LocalOrdinal, GlobalOrdinal, host_mirror_device_type> host_impl_type;
+    typedef typename Kokkos::ViewTraits<LocalOrdinal,device_type>::host_mirror_space host_mirror_space;
+    typedef Details::Map<LocalOrdinal, GlobalOrdinal, host_mirror_space> host_impl_type;
 
   public:
 
@@ -567,7 +567,7 @@ namespace Tpetra {
     /// <li> \c OutDeviceType is the same as \c device_type (this Map's
     ///      original Kokkos device type) </il>
     /// <li> \c OutDeviceType is compatible with
-    ///      <tt>device_type::host_mirror_device_type</tt> </li>
+    ///      <tt>host_mirror_space</tt> </li>
     /// </ol>
     ///
     /// \return A Map implementation object of type
@@ -1002,7 +1002,7 @@ namespace Tpetra {
         mapOut.comm_ = mapIn.comm_;
         mapOut.node_ = nodeOut;
         mapOut.mapDevice_.template create_copy_view<InDeviceType> (mapIn.mapDevice_);
-        mapOut.mapHost_.template create_copy_view<typename InDeviceType::host_mirror_device_type> (mapIn.mapHost_);
+        mapOut.mapHost_.template create_copy_view<typename out_map_type::host_mirror_space> (mapIn.mapHost_);
 
         // mfh 02 Apr 2013: While Map only needs to create the Directory
         // on demand in getRemoteIndexList, we have a Directory here that

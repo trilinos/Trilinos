@@ -88,11 +88,13 @@ namespace Zoltan2 {
 
 // stdint.h for int64_t in scotch header
 #include <stdint.h>
+extern "C" {
 #ifndef HAVE_ZOLTAN2_MPI
 #include "scotch.h"
 #else
 #include "ptscotch.h"
 #endif
+}
 
 #ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY
 //
@@ -173,7 +175,7 @@ void AlgPTScotch<Adapter>::partition(
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
-  SCOTCH_Num partnbr;
+  SCOTCH_Num partnbr=0;
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(partnbr, numGlobalParts, env);
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -199,7 +201,7 @@ void AlgPTScotch<Adapter>::partition(
   ArrayView<StridedData<lno_t, scalar_t> > xyz;
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
   size_t nVtx = model->getVertexList(vtxID, xyz, vwgts);
-  SCOTCH_Num vertlocnbr;
+  SCOTCH_Num vertlocnbr=0;
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(vertlocnbr, nVtx, env);
   SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in global nums.
 
@@ -211,7 +213,7 @@ void AlgPTScotch<Adapter>::partition(
 
   size_t nEdge = model->getEdgeList(edgeIds, procIds, offsets, ewgts);
 
-  SCOTCH_Num edgelocnbr;
+  SCOTCH_Num edgelocnbr=0;
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(edgelocnbr, nEdge, env);
   const SCOTCH_Num edgelocsize = edgelocnbr;  // Assumes adj array is compact.
 
@@ -302,7 +304,7 @@ void AlgPTScotch<Adapter>::partition(
   // vertex weight.  I think we should use the latter.
   // Fix this when we add vertex weights.
   for (SCOTCH_Num i = 0; i < partnbr; i++)
-    goalsizes[i] = ceil(velosum * partsizes[i]);
+    goalsizes[i] = SCOTCH_Num(ceil(velosum * partsizes[i]));
   delete [] partsizes;
 
   SCOTCH_archCmpltw(&archdat, partnbr, goalsizes);
@@ -414,7 +416,7 @@ void AlgPTScotch<Adapter>::scale_weights(
     if (fw > max_wgt_local) max_wgt_local = fw;
   }
 
-  Teuchos::reduceAll<int,int>(*problemComm, Teuchos::REDUCE_MAX, 1,
+  Teuchos::reduceAll<int,SCOTCH_Num>(*problemComm, Teuchos::REDUCE_MAX, 1,
                               &nonint_local,  &nonint);
   Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, 1,
                                  &sum_wgt_local, &sum_wgt);

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EPETRA_NUMPYFEVECTOR_H
-#define EPETRA_NUMPYFEVECTOR_H
+#ifndef EPETRA_NUMPYFEVECTOR_HPP
+#define EPETRA_NUMPYFEVECTOR_HPP
 
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"

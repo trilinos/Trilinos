@@ -42,19 +42,17 @@
 */
 
 // Including this is the easy way to get access to all the Node types.
-#include "Kokkos_DefaultNode.hpp"
+#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_ConfigDefs.hpp>
 
 // Don't bother compiling anything, or even including anything else,
 // unless KokkosThreadsWrapperNode is enabled.
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
-#  include "Tpetra_MultiVector.hpp"
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+#  include "Tpetra_MultiVector_decl.hpp"
+#  include "Tpetra_ETIHelperMacros.h"
+#  include "Tpetra_MultiVector_def.hpp"
 
-#  ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-
-#    include "Tpetra_ETIHelperMacros.h"
-#    include "Tpetra_MultiVector_def.hpp"
-
-#    define TPETRA_MULTIVECTOR_KOKKOSTHREADSWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \
+#  define TPETRA_MULTIVECTOR_KOKKOSTHREADSWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \
   TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, Kokkos::Compat::KokkosThreadsWrapperNode )
 
 namespace Tpetra {
@@ -65,5 +63,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#  endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT && KOKKOS_HAVE_PTHREAD
+#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)

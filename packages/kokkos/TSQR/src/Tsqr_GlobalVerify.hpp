@@ -60,13 +60,12 @@ namespace TSQR {
   /// Compute a global sum of (magnitudes of) Scalar values, returning
   /// a magnitude_type.
   ///
-  /// \note Unfortunately, you need c++0x support to have default
-  /// template arguments of template functions.  Otherwise we would
-  /// make this a template function and set the default value of
-  /// isComplex to ScalarTraits<Scalar>::isComplex.  Also, C++
-  /// (before c++0x) doesn't like partial specialization of template
-  /// functions, for no particular reason other than C++ is a
-  /// challenging language to parse.  So, we had to make this a class.
+  /// \note Unfortunately, you need C++11 support to have default
+  ///   template arguments of template functions.  Otherwise we would
+  ///   make this a template function and set the default value of
+  ///   isComplex to Teuchos::ScalarTraits<Scalar>::isComplex.  Also,
+  ///   C++ (before C++11) doesn't like partial specialization of
+  ///   template functions.  So, we had to make this a class.
   template<class Scalar, bool isComplex = Teuchos::ScalarTraits< Scalar >::isComplex>
   class GlobalSummer {
   public:

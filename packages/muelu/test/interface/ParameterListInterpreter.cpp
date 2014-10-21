@@ -143,6 +143,13 @@ int main(int argc, char *argv[]) {
 #endif
         }
         baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
+        std::string resFile = baseFile + ".res";
+        std::ifstream f(resFile.c_str());
+        if (!f.good()) {
+          if (myRank == 0)
+            std::cout << "Warning: comparison file " << resFile << " not found.  Skipping test" << std::endl;
+          continue;
+        }
 
         std::string cmd;
         if (k > 0 && myRank == 0) {

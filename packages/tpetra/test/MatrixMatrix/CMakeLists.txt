@@ -14,7 +14,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${MM_UT_OBJECTS_CUDA}
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS "--matnames-file=\"matrixsystems.xml\" --v"
-  DEPLIBS tpetraext tpetrainout
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies

@@ -1,7 +1,42 @@
 /*! \page partitionPage Partitioning and Load-Balancing
 
+\section partition_contents Contents
+<ul>
+<li> \ref z2_partition_overview
+<li> \ref z2_partition_function
+<li> \ref z2_partition_examples
+</ul>
 
-\section partition_functionality Partitioning Functionality
+<hr>
+
+\section z2_partition_overview Overview of Partitioning with Zoltan2
+
+
+Here we describe a typical way a user might use Zoltan2 for partitioning.
+
+-# Create a Zoltan2::InputAdapter object for your data.  This adapter provides a uniform interface to user data for the Zoltan2 library.  Adapter interfaces exist for the following classes of data:
+
+  - Zoltan2::MatrixInput (a row oriented matrix with optional row weights)
+  - Zoltan2::GraphInput (an undirected weighted graph)
+  - Zoltan2::VectorInput (a single or multi-vector with optional weights, also used for geometric coordinates)
+  - Zoltan2::IdentifierInput (simple collection of identifiers)
+  - Zoltan2::MeshInput: available soon.
+  .
+
+-# Create a Teuchos::ParameterList with your Zoltan2 parameters.  If you are using a third party library (PT-Scotch, ParMetis) you can include a sublist of parameters for this library.  See \ref z2_parameters for a detailed list of parameters.
+
+-# Create a Zoltan2::PartitioningProblem.  It is templated on your Zoltan2::InputAdapter type.  The constructor arguments are typically your input adapter and your parameter list.
+
+-# Call Zoltan2::PartitioningProblem::solve().
+
+-# Obtain a Zoltan2::PartitioningSolution object from the Zoltan2::PartitioningProblem using the getSolution() function.
+
+
+
+
+<hr>
+
+\section z2_partition_function Partitioning Functionality
 
 Partitioning functionality that is available now is:
 <ul>
@@ -9,13 +44,14 @@ Partitioning functionality that is available now is:
 <li> \ref mjPage Multi-jagged for weighted geometric coordinates.
 <li> \ref rcbPage for weighted geometric coordinates.
 <li> \ref scotchPartPage for undirected weighted graphs.
+<li> \ref parmetisPartPage for undirected weighted graphs.
 </ul>
 These algorithms are all parallel.
 
 <hr>
 
 
-\section z2_main_examples_partitioning Partitioning examples
+\section z2_partition_examples Partitioning Examples
 
 Examples include the following:
 
