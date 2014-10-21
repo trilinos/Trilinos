@@ -387,9 +387,6 @@ void BulkDataTester::internal_update_distributed_index_exp(
     //
     std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
 
-    // Return a list of all shared and modified entities, sorted by their entity key.
-    //
-    std::sort(entity_keys.begin(), entity_keys.end());
     shared_new.clear();
     shared_new.resize(entity_keys.size());
     for (size_t i=0; i<entity_keys.size(); ++i)
