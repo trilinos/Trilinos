@@ -92,7 +92,9 @@ public:
 
 #else
 
+extern "C" {
 #include "parmetis.h"
+}
 
 #if (PARMETIS_MAJOR_VERSION < 4)
 
