@@ -31,6 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+
+
 #include <stddef.h>                     // for size_t
 #include <stdlib.h>                     // for exit
 #include <exception>                    // for exception
@@ -98,6 +100,11 @@ using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
 using stk::mesh::fixtures::RingFixture;
 using stk::mesh::fixtures::BoxFixture;
+
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
+const EntityRank EDGE_RANK = stk::topology::EDGE_RANK;
+const EntityRank FACE_RANK = stk::topology::FACE_RANK;
+const EntityRank ELEM_RANK = stk::topology::ELEM_RANK;
 
 //====================
 extern int gl_argc;
@@ -3116,7 +3123,149 @@ TEST(BulkData, ModificationEnd)
     }
 }
 
+TEST(BulkData, set_parallel_owner_rank_but_not_comm_lists)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
 
+    if (numProcs != 1){
+        return;
+    }
+
+    const int spatialDim = 3;
+    stk::mesh::MetaData stkMeshMetaData(spatialDim);
+    BulkDataTester mesh(stkMeshMetaData, communicator);
+    std::string exodusFileName = getOption("-i", "generated:1x1x1|sideset:xXyYzZ");
+    {
+        stk::io::StkMeshIoBroker exodusFileReader(communicator);
+        exodusFileReader.set_bulk_data(mesh);
+        exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+        exodusFileReader.create_input_mesh();
+        exodusFileReader.populate_bulk_data();
+        //int index = exodusFileReader.create_output_mesh("1x1x1.exo", stk::io::WRITE_RESULTS);
+        //exodusFileReader.write_output_mesh(index);
+    }
+    std::vector<Entity> modified_entities;
+    mesh.modification_begin();
+    mesh.modification_end();
+    modified_entities.push_back(mesh.get_entity(stk::topology::NODE_RANK, 1));
+    int destProc = 12;
+    mesh.set_parallel_owner_rank_but_not_comm_lists(mesh.get_entity(NODE_RANK, 1), destProc);
+
+    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, destProc));
+    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_MESH_MODIFIED));
+    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), CEOUtils::STATE_MESH_UNCHANGED));
+    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), CEOUtils::STATE_MESH_UNCHANGED));
+    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), CEOUtils::STATE_MESH_UNCHANGED));
+    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), CEOUtils::STATE_MESH_UNCHANGED));
+    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), CEOUtils::STATE_MESH_UNCHANGED));
+    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), CEOUtils::STATE_MESH_UNCHANGED));
+    EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), CEOUtils::STATE_MESH_UNCHANGED));
+
+    EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 1), CEOUtils::STATE_MESH_MODIFIED));
+
+    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 11), CEOUtils::STATE_MESH_MODIFIED));
+    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 14), CEOUtils::STATE_MESH_MODIFIED));
+    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 15), CEOUtils::STATE_MESH_MODIFIED));
+
+    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 12), CEOUtils::STATE_MESH_UNCHANGED));
+    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 13), CEOUtils::STATE_MESH_UNCHANGED));
+    EXPECT_TRUE(check_state(mesh, EntityKey(FACE_RANK, 16), CEOUtils::STATE_MESH_UNCHANGED));
+
+    mesh.state(mesh.get_entity(NODE_RANK, 1));
+}
+
+
+TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    const int myRank = stk::parallel_machine_rank(communicator);
+
+    if(numProcs != 3)
+    {
+        return;
+    }
+
+    const int spatialDim = 3;
+    stk::mesh::MetaData stkMeshMetaData(spatialDim);
+    BulkDataTester mesh(stkMeshMetaData, communicator);
+    std::string exodusFileName = getOption("-i", "generated:1x1x3");
+    {
+        stk::io::StkMeshIoBroker exodusFileReader(communicator);
+        exodusFileReader.set_bulk_data(mesh);
+        exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+        exodusFileReader.create_input_mesh();
+        exodusFileReader.populate_bulk_data();
+    }
+    std::vector<Entity> modified_entities;
+    if (myRank == 0) {
+        modified_entities.push_back(mesh.get_entity(stk::topology::NODE_RANK, 1));
+    }
+    else if (myRank == 1) {
+        modified_entities.push_back(mesh.get_entity(stk::topology::NODE_RANK, 9));
+    }
+    else {
+        modified_entities.push_back(mesh.get_entity(stk::topology::NODE_RANK, 13));
+    }
+    mesh.my_resolve_ownership_of_modified_entities(modified_entities);
+    if (myRank == 0) {
+        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
+        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+    }
+    else if (myRank == 1) {
+        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), CEOUtils::STATE_OWNED, 0));
+        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
+    }
+    else {
+        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), CEOUtils::STATE_OWNED, 1));
+        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 13), CEOUtils::STATE_OWNED, 2));
+    }
+}
+
+//TEST(BulkData, resolve_ownership_of_modified_entities_nominal)
+//{
+//    MPI_Comm communicator = MPI_COMM_WORLD;
+//    int numProcs = stk::parallel_machine_size(communicator);
+//    const int myRank = stk::parallel_machine_rank(communicator);
+//
+//    if(numProcs != 3)
+//    {
+//        return;
+//    }
+//
+//    const int spatialDim = 3;
+//    stk::mesh::MetaData stkMeshMetaData(spatialDim);
+//    BulkDataTester mesh(stkMeshMetaData, communicator);
+//    std::string exodusFileName = getOption("-i", "generated:1x1x3");
+//    {
+//        stk::io::StkMeshIoBroker exodusFileReader(communicator);
+//        exodusFileReader.set_bulk_data(mesh);
+//        exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+//        exodusFileReader.create_input_mesh();
+//        exodusFileReader.populate_bulk_data();
+//    }
+//    std::vector<Entity> modified_entities;
+//    if (myRank == 0) {
+//
+//    }
+//    else if (myRank == 1) {
+//        modified_entities.push_back(mesh.get_entity(stk::topology::NODE_RANK, 5));
+//    }
+//    else {
+//    }
+//    mesh.my_resolve_ownership_of_modified_entities(modified_entities);
+//    if (myRank == 0) {
+//        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), CEOUtils::STATE_OWNED, 1));
+//    }
+//    else if (myRank == 1) {
+//        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), CEOUtils::STATE_OWNED, 1));
+//    }
+//    else {
+//        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), CEOUtils::STATE_OWNED, 1));
+//    }
+//}
 
 TEST(BulkData, verify_closure_count_is_correct)
 {

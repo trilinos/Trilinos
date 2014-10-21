@@ -1137,9 +1137,10 @@ public:
 
     entity_setter_debug_check(entity);
 
-    int &nonconst_processor_rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];
+    int & nonconst_processor_rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];
     if ( in_owner_rank != nonconst_processor_rank ) {
       nonconst_processor_rank = in_owner_rank;
+
       mark_entity_and_upward_related_entities_as_modified(entity);
       return true;
     }

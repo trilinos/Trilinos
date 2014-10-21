@@ -11,6 +11,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "BulkDataTester.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_mesh/base/Types.hpp"
 
 namespace CEOUtils
 {
@@ -100,7 +101,11 @@ enum EntityStates {
   STATE_GHOSTED_FROM,
   STATE_NOT_GHOSTED_FROM,
   STATE_GHOSTED_TO,
-  STATE_NOT_GHOSTED_TO
+  STATE_NOT_GHOSTED_TO,
+  STATE_MESH_MODIFIED, // state mesh state checks
+  STATE_MESH_UNCHANGED,
+  STATE_MESH_CREATED,
+  STATE_MESH_DELETED
 };
 
 inline bool check_state(const stk::mesh::BulkData & mesh, const EntityKey & entityKey, EntityStates state,
@@ -330,6 +335,38 @@ inline bool check_state(const stk::mesh::BulkData & mesh, const EntityKey & enti
       }
       break;
     }
+    case STATE_MESH_MODIFIED:
+    {
+        if (mesh.state(entity) != stk::mesh::Modified) {
+            oss << "check_state(): Entity" << entityKey << "has mesh state " <<
+                    mesh.state(entity) << " when it should have been Modified." << std::endl;
+        }
+        break;
+    }
+    case STATE_MESH_CREATED:
+    {
+        if (mesh.state(entity) != stk::mesh::Created) {
+            oss << "check_state(): Entity" << entityKey << "has mesh state " <<
+                    mesh.state(entity) << " when it should have been Created." << std::endl;
+        }
+        break;
+    }
+    case STATE_MESH_UNCHANGED:
+    {
+        if (mesh.state(entity) != stk::mesh::Unchanged) {
+            oss << "check_state(): Entity" << entityKey << "has mesh state " <<
+                    mesh.state(entity) << " when it should have been Unchanged." << std::endl;
+        }
+        break;
+    }
+    case STATE_MESH_DELETED:
+    {
+        if (mesh.state(entity) != stk::mesh::Deleted) {
+            oss << "check_state(): Entity" << entityKey << "has mesh state " <<
+                    mesh.state(entity) << " when it should have been Deleted." << std::endl;
+        }
+        break;
+    }
   }
 
   if (oss.str().size() > 0u) {
@@ -528,6 +565,8 @@ inline bool check_relns(const stk::mesh::BulkData & mesh, const EntityKey & enti
     return true;
   }
 }
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////  Mesh Creation Functions With Tests              /////////////////////////////////

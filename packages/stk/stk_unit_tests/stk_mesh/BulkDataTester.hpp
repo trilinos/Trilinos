@@ -51,7 +51,7 @@ public:
     {
     }
 
-    void legacy_internal_change_entity_owner( const std::vector<stk::mesh::EntityProc> & arg_change, bool regenerate_aura = true, modification_optimization mod_optimization = MOD_END_SORT )
+    void my_internal_change_entity_owner( const std::vector<stk::mesh::EntityProc> & arg_change, bool regenerate_aura = true, modification_optimization mod_optimization = MOD_END_SORT )
     {
         this->internal_change_entity_owner(arg_change,regenerate_aura,mod_optimization);
     }

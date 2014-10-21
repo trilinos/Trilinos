@@ -933,46 +933,38 @@ bool BulkData::modification_begin(const std::string description)
   return true ;
 }
 
+namespace impl {
+
+struct MarkAsModified
+{
+    MarkAsModified(BulkData & mesh_in) : mesh(mesh_in) {}
+    void operator()(Entity entity){
+        mesh.set_state(entity, Modified);
+    }
+    BulkData & mesh;
+};
+
+struct OnlyVisitUnchanged
+{
+    OnlyVisitUnchanged(BulkData & mesh_in) : mesh(mesh_in) {}
+    bool operator()(Entity entity){
+        if (mesh.state(entity) == Unchanged) {
+            return true;
+        }
+        return false;
+    }
+    BulkData & mesh;
+};
+
+} //namespace impl
+
 void BulkData::mark_entity_and_upward_related_entities_as_modified(Entity entity)
 {
   TraceIfWatching("stk::mesh::BulkData::log_modified_and_propagate", LOG_ENTITY, entity_key(entity));
 
-  // If already in modified state, return
-  EntityState entity_state = this->state(entity);
-  if (entity_state != Unchanged) {
-    return;
-  }
-
-  // mark this entity as modified
-  this->set_state(entity, Modified);
-
-  // recurse on related entities w/ higher rank
-  // outer loop iterates backwards as an optimization to reduce function call depth.
-  EntityVector temp_entities;
-  Entity const* rels_i = NULL;
-  int num_rels = 0;
-  EntityRank rank_of_original_entity = entity_rank(entity);
-  for (EntityRank irank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count() - 1);
-        irank > rank_of_original_entity;
-        --irank)
-  {
-    if (connectivity_map().valid(rank_of_original_entity, irank)) {
-      num_rels = num_connectivity(entity, irank);
-      rels_i   = begin(entity, irank);
-    }
-    else {
-      num_rels = get_connectivity(*this, entity, irank, temp_entities);
-      rels_i   = &*temp_entities.begin();
-    }
-
-    for (int i = 0; i < num_rels; ++i)
-    {
-      Entity other_entity = rels_i[i];
-      if ( this->state(other_entity) == Unchanged ) {
-        this->mark_entity_and_upward_related_entities_as_modified(other_entity);
-      }
-    }
-  }
+  impl::MarkAsModified mam(*this);
+  impl::OnlyVisitUnchanged ovu(*this);
+  impl::VisitUpwardClosureGeneral(*this, entity, mam, ovu);
 }
 
 size_t BulkData::count_relations(Entity entity) const
@@ -4569,17 +4561,17 @@ void BulkData::resolve_ownership_of_modified_entities( const std::vector<Entity>
         }
     }
 
-    for ( int p = 0 ; p < m_parallel_size ; ++p ) {
-        CommBuffer & buf = comm_all.recv_buffer( p );
+    for ( int receive_proc = 0 ; receive_proc < m_parallel_size ; ++receive_proc ) {
+        CommBuffer & buf = comm_all.recv_buffer( receive_proc );
         EntityKey key ;
         while ( buf.remaining() ) {
             buf.unpack<EntityKey>( key );
             Entity entity = get_entity( key );
 
             // Set owner, will correct part membership later
-            const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, p);
+            const bool changed = this->set_parallel_owner_rank_but_not_comm_lists( entity, receive_proc);
             if (changed) {
-                internal_change_owner_in_comm_data(key, p);
+                internal_change_owner_in_comm_data(key, receive_proc);
             }
         }
     }

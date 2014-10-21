@@ -209,7 +209,6 @@ struct OnlyVisitGhostsOnce
    OnlyVisitOnce ovo;
 };
 
-
 template<class DO_THIS_FOR_ENTITY_IN_CLOSURE>
 void VisitClosure(
         const stk::mesh::BulkData & mesh,
@@ -246,7 +245,7 @@ void VisitUpwardClosureGeneral(
         if (mesh.is_valid(entity_of_interest)) {
             EntityRank entity_of_interest_rank = mesh.entity_rank(entity_of_interest);
             EntityVector entities_of_rank_up;
-            for (EntityRank rank_up = EntityRank(entity_of_interest_rank+1) ; rank_up < stk::topology::END_RANK ; ++rank_up) {
+            for (EntityRank rank_up = EntityRank(stk::topology::END_RANK-1) ; rank_up > entity_of_interest_rank ; --rank_up) {
                 size_t num_entities_of_rank_up = 0;
                 const Entity * entity_up_it = NULL;
                 if (mesh.connectivity_map().valid(mesh.entity_rank(entity_of_interest),rank_up))
