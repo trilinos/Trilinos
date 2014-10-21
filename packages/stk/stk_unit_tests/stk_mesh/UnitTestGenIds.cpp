@@ -104,7 +104,6 @@ private:
     MPI_Comm mComm;
 };
 
-uint64_t getNumIdsPerProc(const uint64_t maxId, const INTMPI numProcs);
 void retrieveIds(const INTMPI root, uint64_t id, MPI_Comm comm, uint64_t numIdsToGetPerProc, std::vector<int>& areIdsBeingUsed);
 bool sendIdToCheck(const INTMPI root, uint64_t id, MPI_Comm comm);
 
@@ -381,13 +380,6 @@ void writeIdsToFile(const std::string &filename, const INTMPI myProcId, const st
     }
     out.close();
 #endif
-}
-
-////////////////////////////////////////////////////////////////////
-
-uint64_t getNumIdsPerProc(const uint64_t maxId, const INTMPI numProcs)
-{
-    return maxId/numProcs;
 }
 
 ////////////////////////////////////////////////////////////////////
