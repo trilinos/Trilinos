@@ -68,12 +68,13 @@ namespace MueLu {
 
   Teuchos::RCP<Teuchos::ParameterList> MasterList::GetProblemSpecificList(std::string const & problemType) {
 
-    if (problemSpecificList_.is_null()) {
+    if ( (problemType != problemType_) || problemSpecificList_.is_null() ) {
       if (DefaultProblemTypeLists_.find(problemType) != DefaultProblemTypeLists_.end()) {
+        problemType_ = problemType;
         problemSpecificList_ = Teuchos::getParametersFromXmlString(DefaultProblemTypeLists_[problemType]);
       } else {
         //TODO provide valid problem types
-        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Invalid problem type");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Invalid problem type " << problemType << ".");
       }
     }
     return problemSpecificList_;
@@ -81,6 +82,7 @@ namespace MueLu {
 
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
   Teuchos::RCP<Teuchos::ParameterList> MasterList::problemSpecificList_ = Teuchos::null;
+  std::string                          MasterList::problemType_ = "unknown";
   const std::string                    MasterList::stringList_ =' > $code_file
 
 xsltproc paramlist.xsl masterList.xml >> $code_file
