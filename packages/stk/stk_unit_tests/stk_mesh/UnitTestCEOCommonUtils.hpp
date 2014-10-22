@@ -4552,6 +4552,11 @@ inline void checkStatesAfterCEO_4Elem4ProcRotate(BulkDataTester &mesh, stk::mesh
     //       | 1/0 | 2/1 |          | 1/3 | 2/0 |
     //       |     |     |          |     |     |
     //      1/0---2/0---3/1        1/3---2/3---3/0
+    //
+    //NOTES: sharing for nodes that have changed owner has not been deleted, still in previous state
+    //       ghosting deleted entirely
+    //       shared_part updated to match the commmap/list version of sharing
+    //       aura_part never present (no ghosting)
 
     const int p_rank = mesh.parallel_rank();
 
