@@ -1,0 +1,24 @@
+#! /bin/sh
+
+EXTRA_ARGS=$@
+
+/usr/local/bin/cmake \
+    -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+    -D CMAKE_INSTALL_PREFIX:PATH=/Users/hudson \
+    -D BUILD_SHARED_LIBS:BOOL=ON \
+    -D TPL_ENABLE_MPI:BOOL=ON \
+    -D MPI_BASE_DIR:PATH=/usr/local \
+    -D MPI_EXEC:FILEPATH=/usr/local/bin/mpiexec \
+    -D 'MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING=--mca;oob_tcp_if_include;lo0' \
+    -D Trilinos_ENABLE_EXPORT_MAKEFILES:BOOL=OFF \
+    -D TPL_ENABLE_BoostLib:BOOL=ON \
+    -D Trilinos_ENABLE_Fortran:BOOL=OFF \
+    -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+    -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+    -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+    -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+    -D Trilinos_ENABLE_PyTrilinos:BOOL=ON \
+    -D PyTrilinos_ENABLE_TESTS:BOOL=ON \
+    -D PyTrilinos_ENABLE_EXAMPLES:BOOL=ON \
+    -D PyTrilinos_INSTALL_PREFIX:PATH=/Users/hudson \
+    $EXTRA_ARGS
