@@ -91,25 +91,14 @@ echo ';' >> $code_file
 
 echo '  std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>' >> $code_file
 
-echo '("Poisson-2D",' >> $code_file
-xsltproc --stringparam prob_type "Poisson-2D" probtypelist.xsl masterList.xml >> $code_file
-echo ')' >> $code_file
+PROBLEM_TYPES=( "Poisson-2D" "Poisson-3D" "Elasticity-2D" "Elasticity-3D" "MHD" "ConvectionDiffusion" )
 
-echo '("Poisson-3D",' >> $code_file
-xsltproc --stringparam prob_type "Poisson-3D" probtypelist.xsl masterList.xml >> $code_file
-echo ')' >> $code_file
-
-echo '("Elasticity-2D",' >> $code_file
-xsltproc --stringparam prob_type "Elasticity-2D" probtypelist.xsl masterList.xml >> $code_file
-echo ')' >> $code_file
-
-echo '("Elasticity-3D",' >> $code_file
-xsltproc --stringparam prob_type "Elasticity-3D" probtypelist.xsl masterList.xml >> $code_file
-echo ')' >> $code_file
-
-echo '("MHD",' >> $code_file
-xsltproc --stringparam prob_type "MHD" probtypelist.xsl masterList.xml >> $code_file
-echo ')' >> $code_file
+for i in "${PROBLEM_TYPES[@]}"
+do
+  echo "(\"$i\"," >> $code_file
+  xsltproc --stringparam prob_type "$i" probtypelist.xsl masterList.xml >> $code_file
+  echo ')' >> $code_file
+done
 
 echo ';
 
