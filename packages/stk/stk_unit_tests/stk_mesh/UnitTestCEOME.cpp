@@ -424,6 +424,8 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveLeft)
 
     mesh.change_entity_owner_exp(change);
 
+    CEOUtils::checkStatesAfterCEO_3Elem2ProcMoveLeft(mesh);
+
     ////////////////////////////////////////////////////////////////////////////
 
     //   id/owner_proc
