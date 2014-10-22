@@ -54,87 +54,80 @@
 #include <Tpetra_Version.hpp>
 #include <iostream>
 
+// Timer for use in example().
+Teuchos::RCP<Teuchos::Time> exportTimer;
 
-template<class TpetraMatrixType>
-class MatrixFactory {
-public:
+// Create and return a simple example CrsMatrix, with row distribution
+// over the given Map.
+//
+// CrsMatrixType: The type of the Tpetra::CrsMatrix specialization to use.
+template<class CrsMatrixType>
+Teuchos::RCP<const CrsMatrixType>
+createMatrix (const Teuchos::RCP<const typename CrsMatrixType::map_type>& map)
+{
+  using Teuchos::arcp;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::Time;
+  using Teuchos::TimeMonitor;
+  using Teuchos::tuple;
+  typedef Tpetra::global_size_t GST;
   // Fetch typedefs from the Tpetra::CrsMatrix.
-  typedef typename TpetraMatrixType::scalar_type scalar_type;
-  typedef typename TpetraMatrixType::local_ordinal_type local_ordinal_type;
-  typedef typename TpetraMatrixType::global_ordinal_type global_ordinal_type;
-  typedef typename TpetraMatrixType::node_type node_type;
+  typedef typename CrsMatrixType::scalar_type scalar_type;
+  typedef typename CrsMatrixType::local_ordinal_type LO;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
 
-  // The type of Map objects to use.
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  // Create a timer for sparse matrix creation.
+  RCP<Time> timer = TimeMonitor::getNewCounter ("Sparse matrix creation");
 
-  // Create and return a simple example CrsMatrix, with row
-  // distribution over the given Map.
-  Teuchos::RCP<const TpetraMatrixType>
-  create (const Teuchos::RCP<const map_type>& map) const
-  {
-    using Teuchos::arcp;
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::Time;
-    using Teuchos::TimeMonitor;
-    using Teuchos::tuple;
-    typedef Tpetra::global_size_t GST;
+  // Time the whole scope of this routine, not counting timer lookup.
+  TimeMonitor monitor (*timer);
 
-    // Create a timer for sparse matrix creation.
-    RCP<Time> timer = TimeMonitor::getNewCounter ("Sparse matrix creation");
+  // Create a Tpetra::Matrix using the Map, with dynamic allocation.
+  RCP<CrsMatrixType> A (new CrsMatrixType (map, 3));
 
-    // Time the whole scope of this routine, not counting timer lookup.
-    TimeMonitor monitor (*timer);
+  // Add rows one at a time.  Off diagonal values will always be -1.
+  const scalar_type two    = static_cast<scalar_type> ( 2.0);
+  const scalar_type negOne = static_cast<scalar_type> (-1.0);
 
-    // Create a Tpetra::Matrix using the Map, with dynamic allocation.
-    RCP<TpetraMatrixType> A = rcp (new TpetraMatrixType (map, 3));
+  const GST numGlobalIndices = map->getGlobalNumElements ();
+  // const size_t numMyElements = map->getNodeNumElements ();
 
-    // Add rows one at a time.  Off diagonal values will always be -1.
-    const scalar_type two    = static_cast<scalar_type>( 2.0);
-    const scalar_type negOne = static_cast<scalar_type>(-1.0);
+  // The list of global elements owned by this MPI process.
+  ArrayView<const GO> myGlobalElements = map->getNodeElementList ();
 
-    const GST numGlobalElements = map->getGlobalNumElements ();
-    //    const size_t numMyElements = map->getNodeNumElements ();
+  typedef typename ArrayView<const GO>::const_iterator iter_type;
+  for (iter_type it = myGlobalElements.begin(); it != myGlobalElements.end(); ++it) {
+    const LO i_local = *it;
+    const GO i_global = map->getGlobalElement (i_local);
 
-    // The list of global elements owned by this MPI process.
-    ArrayView<const global_ordinal_type> myGlobalElements =
-      map->getNodeElementList ();
-
-    typedef typename ArrayView<const global_ordinal_type>::const_iterator iter_type;
-    for (iter_type it = myGlobalElements.begin(); it != myGlobalElements.end(); ++it) {
-      const local_ordinal_type i_local = *it;
-      const global_ordinal_type i_global = map->getGlobalElement (i_local);
-
-      // Can't insert local indices without a column map, so we insert
-      // global indices here.
-      if (i_global == 0) {
-        A->insertGlobalValues (i_global,
-                              tuple (i_global, i_global+1),
-                              tuple (two, negOne));
-      } else if (static_cast<GST> (i_global) == numGlobalElements - 1) {
-        A->insertGlobalValues (i_global,
-                              tuple (i_global-1, i_global),
-                              tuple (negOne, two));
-      } else {
-        A->insertGlobalValues (i_global,
-                              tuple (i_global-1, i_global, i_global+1),
-                              tuple (negOne, two, negOne));
-      }
+    // Can't insert local indices without a column map, so we insert
+    // global indices here.
+    if (i_global == 0) {
+      A->insertGlobalValues (i_global,
+                             tuple (i_global, i_global+1),
+                             tuple (two, negOne));
+    } else if (static_cast<GST> (i_global) == numGlobalIndices - 1) {
+      A->insertGlobalValues (i_global,
+                             tuple (i_global-1, i_global),
+                             tuple (negOne, two));
+    } else {
+      A->insertGlobalValues (i_global,
+                             tuple (i_global-1, i_global, i_global+1),
+                             tuple (negOne, two, negOne));
     }
-
-    // Finish up the matrix.
-    A->fillComplete ();
-    return A;
   }
-};
+
+  // Finish up the matrix.
+  A->fillComplete ();
+  return A;
+}
 
 
-template<class NodeType>
 void
 example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-         const Teuchos::RCP<NodeType>& node,
          std::ostream& out,
          std::ostream& err)
 {
@@ -146,54 +139,44 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   using Teuchos::TimeMonitor;
   typedef Tpetra::global_size_t GST;
 
-  // Print out the Tpetra software version information.
-  out << Tpetra::version() << endl << endl;
-
   // Set up Tpetra typedefs.
   typedef double scalar_type;
-  typedef int local_ordinal_type;
-  typedef long global_ordinal_type;
-  typedef NodeType node_type;
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type> matrix_type;
+  typedef Tpetra::CrsMatrix<scalar_type> crs_matrix_type;
+  typedef Tpetra::Map<> map_type;
+  typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
 
-  // The type of the Tpetra::Map that describes how the matrix is distributed.
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  // Print out the Tpetra software version information.
+  out << Tpetra::version () << endl << endl;
 
   // The global number of rows in the matrix A to create.  We scale
   // this relative to the number of (MPI) processes, so that no matter
   // how many MPI processes you run, every process will have 10 rows.
-  const GST numGlobalElements = 10 * comm->getSize ();
-
+  const GST numGlobalIndices = 10 * comm->getSize ();
   const global_ordinal_type indexBase = 0;
 
   // Construct a Map that is global (not locally replicated), but puts
   // all the equations on MPI Proc 0.
   RCP<const map_type> procZeroMap;
   {
-    const size_t numLocalElements =
-      (comm->getRank() == 0) ? numGlobalElements : 0;
-    procZeroMap = rcp (new map_type (numGlobalElements, numLocalElements,
-                                     indexBase, comm, node));
+    const int myRank = comm->getRank ();
+    const size_t numLocalIndices = (myRank == 0) ? numGlobalIndices : 0;
+    procZeroMap = rcp (new map_type (numGlobalIndices, numLocalIndices,
+                                     indexBase, comm));
   }
 
   // Construct a Map that puts approximately the same number of
   // equations on each processor.
   RCP<const map_type> globalMap =
-    rcp (new map_type (numGlobalElements, indexBase, comm,
-                       Tpetra::GloballyDistributed, node));
+    rcp (new map_type (numGlobalIndices, indexBase, comm,
+                       Tpetra::GloballyDistributed));
 
   // Create a sparse matrix using procZeroMap.
-  RCP<const matrix_type> A = MatrixFactory<matrix_type> ().create (procZeroMap);
+  RCP<const crs_matrix_type> A = createMatrix<crs_matrix_type> (procZeroMap);
 
   //
-  // We've created a sparse matrix that lives entirely on MPI Proc 0.
+  // We've created a sparse matrix that lives entirely on Process 0.
   // Now we want to distribute it over all the processes.
   //
-
-  // Make a timer for sparse matrix redistribution.
-  RCP<Time> exportTimer =
-    TimeMonitor::getNewCounter ("Sparse matrix redistribution");
 
   // Redistribute the matrix.  Since both the source and target Maps
   // are one-to-one, we could use either an Import or an Export.  If
@@ -201,8 +184,14 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // Import; if only the target Map were one-to-one, we would have to
   // use an Export.  We do not allow redistribution using Import or
   // Export if neither source nor target Map is one-to-one.
-  RCP<matrix_type> B;
+  RCP<crs_matrix_type> B;
   {
+    // We created exportTimer in main().  It's a global timer.
+    // Actually starting and stopping the timer is local, but
+    // computing timer statistics (e.g., in TimeMonitor::summarize(),
+    // called in main()) is global.  There are ways to restrict the
+    // latter to any given MPI communicator; the default is
+    // MPI_COMM_WORLD.
     TimeMonitor monitor (*exportTimer); // Time the redistribution
 
     // Make an export object with procZeroMap as the source Map, and
@@ -213,12 +202,11 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // Tpetra object types, or for Tpetra objects of the same type but
     // different Scalar template parameters (e.g., Scalar=float or
     // Scalar=double).
-    typedef Tpetra::Export<local_ordinal_type, global_ordinal_type,
-                           node_type> export_type;
+    typedef Tpetra::Export<> export_type;
     export_type exporter (procZeroMap, globalMap);
 
     // Make a new sparse matrix whose row map is the global Map.
-    B = rcp (new matrix_type (globalMap, 0));
+    B = rcp (new crs_matrix_type (globalMap, 0));
 
     // Redistribute the data, NOT in place, from matrix A (which lives
     // entirely on Proc 0) to matrix B (which is distributed evenly over
@@ -234,7 +222,6 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 int
 main (int argc, char *argv[])
 {
-  using std::endl;
   using Teuchos::RCP;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
@@ -242,30 +229,25 @@ main (int argc, char *argv[])
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
   RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
-  typedef Kokkos::DefaultNode::DefaultNodeType node_type;
-  RCP<node_type> node = Kokkos::DefaultNode::getDefaultNode ();
-
-  const int myRank = comm->getRank();
-  //const int numProcs = comm->getSize();
+  const int myRank = comm->getRank ();
+  // const int numProcs = comm->getSize ();
   std::ostream& out = (myRank == 0) ? std::cout : blackHole;
   std::ostream& err = (myRank == 0) ? std::cerr : blackHole;
 
-  // Make a timer for sparse matrix redistribution.
-  //
-  // If you are using Trilinos 10.6 instead of the development branch
-  // (10.7), just delete this line of code, and make the other change
-  // mentioned above.
-  RCP<Time >exportTimer =
-    TimeMonitor::getNewCounter ("Sparse matrix redistribution");
+  // Make global timer for sparse matrix redistribution.
+  // We will use (start and stop) this timer in example().
+  exportTimer = TimeMonitor::getNewCounter ("Sparse matrix redistribution");
 
-  // Run the whole example: create the sparse matrix, and compute the preconditioner.
-  example (comm, node, out, err);
+  example (comm, out, err); // Run the whole example.
 
   // Summarize global performance timing results, for all timers
   // created using TimeMonitor::getNewCounter().
   TimeMonitor::summarize (out);
+
+  // Make sure that the timer goes away before main() exits.
+  exportTimer = Teuchos::null;
 
   // This tells the Trilinos test framework that the test passed.
   if (myRank == 0) {
