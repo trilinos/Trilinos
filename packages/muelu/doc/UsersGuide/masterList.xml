@@ -334,6 +334,11 @@
       <type>string</type>
       <default>"old"</default>
       <MHD>"new"</MHD>
+      <Poisson-2D>"new"</Poisson-2D>
+      <Poisson-3D>"new"</Poisson-3D>
+      <Elasticity-2D>"new"</Elasticity-2D>
+      <Elasticity-3D>"new"</Elasticity-3D>
+      <ConvectionDiffusion>"new"</ConvectionDiffusion>
       <description>old = Tobias, new = ML</description>
       <visible>false</visible>
     </parameter>
