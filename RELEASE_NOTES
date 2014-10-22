@@ -1,5 +1,207 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 11.10 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 11.10 general release contains 54 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
+Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards,
+ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra,
+Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra, Zoltan, Zoltan2.
+
+Anasazi
+
+  - Improved examples and added more explanatory comments.
+    Thanks to Alicia Klinvex (Purdue) for review and suggestions.
+
+Ifpack2
+
+  - Fixed bug in ReorderFilter (related to Bug 6117).
+    ReorderFilter was computing the number of entries for the wrong row,
+    which caused temporaries (either in Ifpack2::ReorderFilter or in
+    MueLu) to be allocated with the wrong size.  This may be related to
+    Bug 6117.
+
+  - LocalFilter::apply now checks whether X aliases Y.
+
+  - Performance improvements to apply() of BlockRelaxation, LocalFilter,
+    and Relaxation (10-11 Apr 2014).
+
+
+STK
+
+  - New STK introduced.
+
+    A new version of STK has been introduced including a number of performance
+    improvements. The API of STK has changed from the previous version such that
+    it is unlikely that codes that used STK will work without modification. The
+    old STK is still available for use, but will be removed in a future release.
+    The old STK is now in a new namespace "stk_classic" which will also require
+    some changes to continue to use. There is a script that can be used to help.
+    The script can be found in
+    packages/stk/stk_classic/conversion_scripts/stk_to_stk_classic. Use of the
+    script is discussed below.
+
+    STK and STKClassic share many header names so it is not advisable to enable
+    both in a single build of Trilinos. Linking to both STK and STKClassic
+    at the same time is not supported.
+
+  - The new STK uses subpackages to better support inter-STK dependencies.
+  
+  - New TPL dependencies. The new STK now depends on Boost 1.54.0 and has been
+    tested with boost 1.55.0. A subset of Boost libraries are required by STK
+    instead of just Boost headers. This requires using the Trilinos TPL named
+    BoostLib, rather than the Boost TPL.
+
+    In addition the subpackage STKSearchUtil has a required dependency on GLM.
+    Currently only GLM version 0.9.4.3 has been tested.
+
+  - the old STK is now a subpackage of STK called STKClassic.
+
+    This version is largely the same as the old STK, however, there are a few
+    important differences.
+
+      * The namespace has been changed from stk to stk_classic.
+      * The package name STK is no longer used to enable this version. Instead
+        STKClassic should be used.
+
+    If you only want to use the old STK it is advisable to enable only
+    STKClassic with the varibale Trilinos_ENABLE_STKClassic and not any part of
+    the new STK when configuring Trilinos. This will ensure that there is no
+    opportunity to inadvertantly link against any part of the new STK.
+
+  - Old STK moved to new namespace stk_classic.
+    
+    The new STK retains the use of the namespace STK. To avoid potential
+    conflicts STKClassic has been moved to the namespace stk_classic. There is a
+    script provided to convert stk namespace to stk_classic. To use the script
+    just cd into a directory containing files you'd like to update and run
+    packages/stk/stk_classic/conversion_script/stk_to_stk_classic (do not copy
+    the script to the directory you want to modify). The script will update any
+    files in the current directory and any subdirectories of the directory you
+    are modifying.
+
+     * You should not copy the script to the directory you are modifying.
+     * There is a possibility that some instances of the old namespace will be
+       not be fixed correctly and may need some manual attention. However, the
+       script should catch most uses of the stk namespace.
+     * If you had any namespaces like <project name>stk they will be updated
+       as well, however it is more likely that not all instances of such
+       namespaces will not be updated properly.
+
+  - STK Percept and Rebalance have been removed.
+   
+    The Percept and Rebalance capabilities have been moved out of STK. The old 
+    versions are still available in STKClassic, but the new version will no
+    longer support those capabilities. There will be a new Trilinos package that
+    will contain the features from Percept and Rebalance in a future Trilinos
+    release.
+
+Tpetra
+
+  - Continued work on the Kokkos refactor version of Tpetra
+
+    We plan to replace the current "classic" version of Tpetra with a
+    "Kokkos refactor" version, that uses new Kokkos for thread-parallel
+    computational kernels and data structures.  The classic version
+    continues to be the default, but the Kokkos refactor version is
+    available via partial specialization on the Node type.  
+
+    You may try out the Kokkos refactor version of Tpetra by doing the
+    following:
+
+      1. Enable the KokkosCore, KokkosCompat, KokkosContainers,
+         KokkosLinAlg, and KokkosMpiComm (which does not require MPI)
+         subpackages.
+
+      2. Set the CMake option Tpetra_ENABLE_Kokkos_Refactor to ON.
+
+      3. Include either Kokkos_DefaultNode.hpp or
+         KokkosCompat_ClassicNodeAPI_Wrapper.hpp, if they are not already
+         included by the relevant Tpetra header files.
+
+      4. Use the appropriate Node type in the Kokkos::Compat namespace:
+         KokkosCudaWrapperNode with the Kokkos::Cuda device,
+         KokkosOpenMPWrapperNode with the Kokkos::OpenMP device,
+         KokkosThreadsWrapperNode with the Kokkos::Threads device, or
+         KokkosSerialWrapperNode with the Kokkos::SerialNode.
+
+    We plan to deprecate the KokkosClassic namespace and its contents in
+    the next minor release (scheduled for October), with the goal of
+    removing it entirely by the next major release.
+
+  - CrsMatrix: replaceGlobalValues, sumIntoGlobalValues,
+    replaceLocalValues, and sumIntoLocalValues now return error codes,
+    instead of throwing on invalid row or column indices
+
+    This will facilitate thread parallelism, and porting Tpetra to use new
+    Kokkos.  It also partially addresses Bug 4918 (of which Bug 5806 is a
+    duplicate).  The error code tells users both whether the row index was
+    valid, and the number of valid column indices.  If the return value
+    equals the number of input column indices, the method succeeded.
+
+  - CrsGraph, CrsMatrix: getLocalRowCopy now does not throw if the input
+    row index is invalid; instead, it sets numEntries=0 and returns.
+
+    This will facilitate thread parallelism, and porting Tpetra to use new
+    Kokkos.  It is also semantically consistent: if the calling process
+    doesn't own that row, then the calling process owns zero entries in
+    that row, so it's correct to set numEntries=0 and return without
+    throwing.
+
+  - New function: Tpetra::Details::makeOptimizedColMap
+
+  - MultiVector and Map now have full default template parameters
+
+    Now, if you write Tpetra::MultiVector<> (empty angle brackets
+    required), that sets Scalar=double.  If you write Tpetra::Map<>
+    (again, empty angle brackets required), that sets LocalOrdinal=int.
+    Tpetra includes a unit test for this feature.
+
+  - New classes in Tpetra::Experimental namespace: BlockCrsMatrix,
+    BlockMultiVector, and BlockVector (constant-size small blocks, with
+    block size determined at run time)
+
+  - Fixes for Bug 6139 and 6127
+
+  - Tpetra::MatrixMarket::{writeMap, writeMapFile} can now handle an
+    overlapping Map.
+
+  - Import and Export now inherit from a common base class
+    (useful for implementing communication methods)
+
+  - Refactored and improved examples
+
+  - CrsMatrix: fillComplete with a const graph now uses the graph's
+    domain and range Maps (thus fixing an unnumbered bug, in which
+    CrsMatrix was instead using the row Map for both)
+
+  - Map now implements view semantics
+
+    "View semantics" means that Map's copy constructor and assignment
+    operator (operator=) do a shallow copy, and that empty construction is
+    possible.  The new test for isOneToOne (see below) is the first Tpetra
+    test that assumes view semantics of Map.
+
+  - Map now has an isOneToOne predicate.
+
+    isOneToOne is a collective which tests whether the Map is one to one
+    (that is, whether every global index is owned by at most one process
+    in the Map's communicator).
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 11.8 Release Notes                                         #
 #                                                                             #
 ###############################################################################
