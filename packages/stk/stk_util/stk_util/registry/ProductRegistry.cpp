@@ -233,7 +233,7 @@ product_registry_add_tpl(
 size_t
 product_registry_size()
 {
-  return stk::ProductRegistry::instance().getProductMap().size();
+  return stk::ProductRegistry::instance().productMap_size();
 }
 
 } // extern "C"

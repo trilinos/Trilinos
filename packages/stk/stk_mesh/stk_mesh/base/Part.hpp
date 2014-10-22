@@ -94,7 +94,7 @@ public:
 
   stk::topology topology() const { return m_partImpl.topology(); }
 
-  /** \brief  Application-defined text name of this part */
+  /** \brief  Application-defined text name of this part, must be unique within the set of parts owned by a MetaData*/
   const std::string & name() const { return m_partImpl.name(); }
 
   bool force_no_induce() const { return m_partImpl.force_no_induce(); }

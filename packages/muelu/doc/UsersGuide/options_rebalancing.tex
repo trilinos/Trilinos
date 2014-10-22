@@ -1,0 +1,16 @@
+
+\cbb{repartition: enable}{bool}{false}{Rebalancing on/off switch.}
+
+\cbb{repartition: partitioner}{string}{"zoltan2"}{Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).}
+
+\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library.}
+
+\cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.}
+
+\cbb{repartition: min rows per proc}{int}{800}{Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.}
+
+\cbb{repartition: max imbalance}{double}{1.2}{Maximum nonzero imbalance ratio. If the actual number is larger, the rebalancing occurs.}
+
+\cbb{repartition: remap parts}{bool}{true}{Postprocessing for partitioning to reduce data migration.}
+
+\cbb{repartition: rebalance P and R}{bool}{true}{Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}

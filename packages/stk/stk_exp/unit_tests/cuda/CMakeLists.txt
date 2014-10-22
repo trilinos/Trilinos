@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR}/unit_tests/cuda)
 FILE(GLOB SOURCES *.cpp)
 
 IF(TPL_ENABLE_CUDA)
-  CUDA_COMPILE(OBJECTS_CUDA check_cuda.cu cuda_saxpy.cu)
+  CUDA_COMPILE(OBJECTS_CUDA check_cuda.cu cuda_saxpy.cu cuda_memory.cu)
   LIST( APPEND SOURCES ${OBJECTS_CUDA} )
 ENDIF()
 

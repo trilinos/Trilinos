@@ -9,7 +9,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Transfer   stk_transfer    SS  OPTIONAL
   Unit_tests stk_unit_tests  SS  OPTIONAL
   Doc_tests  stk_doc_tests   SS  OPTIONAL
-  Exp        stk_exp         SS  OPTIONAL
+  Exp        stk_exp         EX  OPTIONAL
 )
 
 SET(LIB_REQUIRED_DEP_PACKAGES)

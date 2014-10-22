@@ -86,7 +86,7 @@ totalTestRuntime  2            SKIP  SKIP          SKIP  SKIP          SKIP  SKI
   childTimer1     2            SKIP  SKIP          SKIP  SKIP          SKIP  SKIP           \
                                0.200 SKIP          0.100 SKIP          0.100 SKIP           \
                                                                                             \
-Took 0.0004 seconds to generate the table above.                                            \
+Took SKIP seconds to generate the table above.                                            \
                     ";
             bool isThisAValgrindRun = RUNNING_ON_VALGRIND >= 1;
             if ( !isThisAValgrindRun )

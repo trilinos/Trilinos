@@ -652,17 +652,19 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
   T *x_coord=NULL;
   T *y_coord=NULL;
   T *z_coord=NULL;
-  switch(globals.Num_Dim) {
-  case 3:
-    z_coord = globals.Coor[iproc][2];
-    /* FALLTHROUGH */
-  case 2:
-    y_coord = globals.Coor[iproc][1];
-    /* FALLTHROUGH */
-  case 1:
-    x_coord = globals.Coor[iproc][0];
-
-    break;
+  if (itotal_nodes > 0) {
+    switch(globals.Num_Dim) {
+    case 3:
+      z_coord = globals.Coor[iproc][2];
+      /* FALLTHROUGH */
+    case 2:
+      y_coord = globals.Coor[iproc][1];
+      /* FALLTHROUGH */
+    case 1:
+      x_coord = globals.Coor[iproc][0];
+      
+      break;
+    }
   }
 
   /* Output the coordinates to the parallel Exodus file */

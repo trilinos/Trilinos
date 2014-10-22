@@ -134,6 +134,12 @@ import numpy
   typedef KokkosClassic::DefaultNode::DefaultNodeType KokkosDefaultNode;
 %}
 
+//////////////////////////////////
+// Tpetra configuration support //
+//////////////////////////////////
+%include "Tpetra_config.h"
+%include "Tpetra_ConfigDefs.hpp"
+
 ////////////////////////////
 // Tpetra version support //
 ////////////////////////////

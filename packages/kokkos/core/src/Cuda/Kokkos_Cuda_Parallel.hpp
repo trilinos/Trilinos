@@ -706,9 +706,11 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
-  typedef Kokkos::Cuda               execution_space ;  ///< Execution space
-  typedef TeamPolicy                 execution_policy ;
+  //! Tag this class as a kokkos execution policy
+  typedef TeamPolicy     execution_policy ;
+
+  //! Execution space of this execution policy
+  typedef Kokkos::Cuda  execution_space ;
 
 
   typedef typename
@@ -761,9 +763,11 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef Kokkos::Cuda               execution_space ;  ///< Execution space
-  typedef TeamVectorPolicy           execution_policy ;
+  //! Tag this class as a kokkos execution policy
+  typedef TeamVectorPolicy  execution_policy ;
+
+  //! Execution space of this execution policy
+  typedef Kokkos::Cuda      execution_space ;
 
 
   typedef typename

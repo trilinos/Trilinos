@@ -814,10 +814,10 @@ TEST(CoarseSearch, RotationalPeriodicBC)
 
   check_rotation_matrix(pbc_search, rotationAngle);
 }
-
-#if defined (__INTEL_COMPILER) && (__INTEL_COMPILER == 1400) && (__INTEL_COMPILER_UPDATE == 3)
-#pragma GCC optimization_level 0
-#endif 
+// Manoj; took this out again after removal of glm libraries from Periodic BC Search
+//#if defined (__INTEL_COMPILER) && (__INTEL_COMPILER == 1400) && (__INTEL_COMPILER_UPDATE == 3)
+//#pragma GCC optimization_level 0
+//#endif
 
 TEST(CoarseSearch, OffsetRotationalPeriodicBC)
 {
@@ -875,6 +875,8 @@ TEST(CoarseSearch, OffsetRotationalPeriodicBC)
   pbc_search.add_rotational_periodic_pair(side_0_selector,
                                           side_3_selector,
                                           rotationAngle,
+
+
                                           rotationAxis,
                                           axisLocation);
 
@@ -899,3 +901,147 @@ TEST(CoarseSearch, OffsetRotationalPeriodicBC)
 
   check_rotation_matrix(pbc_search, rotationAngle);
 }
+
+TEST(PeriodicBoundarySearch, testRotationMatrixForRotationAboutZ)
+{
+    const double PI = 3.14159265358979323846;
+    double angleInRadians = PI/2;
+    double axis[3] = { 0, 0, 1 };
+
+    stk::mesh::matrix3x3 matrix1;
+    stk::mesh::fillRotationMatrix(angleInRadians, axis[0], axis[1], axis[2], matrix1);
+
+    stk::mesh::matrix3x3 goldMatrix;
+
+    goldMatrix.setData(0, 0);
+    goldMatrix.setData(1, -1);
+    goldMatrix.setData(2, 0);
+
+    goldMatrix.setData(3, 1);
+    goldMatrix.setData(4, 0);
+    goldMatrix.setData(5, 0);
+
+    goldMatrix.setData(6, 0);
+    goldMatrix.setData(7, 0);
+    goldMatrix.setData(8, 1);
+
+    EXPECT_EQ(goldMatrix.getData(0), 0);
+    EXPECT_EQ(goldMatrix.getData(1), -1);
+    EXPECT_EQ(goldMatrix.getData(2), 0);
+    EXPECT_EQ(goldMatrix.getData(3), 1);
+    EXPECT_EQ(goldMatrix.getData(4), 0);
+    EXPECT_EQ(goldMatrix.getData(5), 0);
+    EXPECT_EQ(goldMatrix.getData(6), 0);
+    EXPECT_EQ(goldMatrix.getData(7), 0);
+    EXPECT_EQ(goldMatrix.getData(8), 1);
+
+    EXPECT_EQ(goldMatrix.getData(0,0), 0);
+    EXPECT_EQ(goldMatrix.getData(0,1), -1);
+    EXPECT_EQ(goldMatrix.getData(0,2), 0);
+    EXPECT_EQ(goldMatrix.getData(1,0), 1);
+    EXPECT_EQ(goldMatrix.getData(1,1), 0);
+    EXPECT_EQ(goldMatrix.getData(1,2), 0);
+    EXPECT_EQ(goldMatrix.getData(2,0), 0);
+    EXPECT_EQ(goldMatrix.getData(2,1), 0);
+    EXPECT_EQ(goldMatrix.getData(2,2), 1);
+
+    double tol = 1e-6;
+
+    EXPECT_EQ(9, goldMatrix.numEntries());
+
+    for (int i=0;i<goldMatrix.numEntries();i++)
+    {
+        EXPECT_NEAR(goldMatrix.getData(i), matrix1.getData(i), tol) << " for index = " << i;
+    }
+
+    for (int row=0;row<3;row++)
+    {
+        for (int col=0;col<3;col++)
+        {
+            EXPECT_NEAR(goldMatrix.getData(row,col), matrix1.getData(row,col), tol) << " for (row,col) = (" << row << "," << col << ")";
+        }
+    }
+
+    double coordinate[3] = { 1, 0, 0 };
+    double result[3] = { 0, 0, 0 };
+    double goldResult[3] = { 0, 1, 0 };
+
+    matrix1.transformVec(coordinate, result);
+
+    for (int i=0;i<3;i++)
+    {
+        EXPECT_NEAR(goldResult[i], result[i], tol) << " for index = " << i;
+    }
+}
+
+
+TEST(PeriodicBoundarySearch, testRotationMatrixForRotationAboutY)
+{
+    const double PI = 3.14159265358979323846;
+    double angleInRadians = PI/6;
+    double axis[3] = { 0, 1, 0 };
+
+    stk::mesh::matrix3x3 matrix1;
+    stk::mesh::fillRotationMatrix(angleInRadians, axis[0], axis[1], axis[2], matrix1);
+
+    stk::mesh::matrix3x3 goldMatrix;
+
+
+    goldMatrix.setData(0, cos(angleInRadians));
+    goldMatrix.setData(1, 0);
+    goldMatrix.setData(2, sin(angleInRadians));
+
+    goldMatrix.setData(3, 0);
+    goldMatrix.setData(4, 1);
+    goldMatrix.setData(5, 0);
+
+    goldMatrix.setData(6, -sin(angleInRadians));
+    goldMatrix.setData(7, 0);
+    goldMatrix.setData(8, cos(angleInRadians));
+
+    double tol = 1e-6;
+
+    EXPECT_EQ(9, goldMatrix.numEntries());
+
+    for (int i=0;i<goldMatrix.numEntries();i++)
+    {
+        EXPECT_NEAR(goldMatrix.getData(i), matrix1.getData(i), tol) << " for index = " << i;
+    }
+}
+
+TEST(PeriodicBoundarySearch, testRotationMatrixForRotationAboutX)
+{
+    const double PI = 3.14159265358979323846;
+    double angleInRadians = PI/3;
+
+    double axis[3] = { 2, 0, 0 };
+
+    stk::mesh::matrix3x3 matrix1;
+    stk::mesh::fillRotationMatrix(angleInRadians, axis[0], axis[1], axis[2], matrix1);
+
+    stk::mesh::matrix3x3 goldMatrix;
+
+
+    goldMatrix.setData(0, 1);
+    goldMatrix.setData(1, 0);
+    goldMatrix.setData(2, 0);
+
+    goldMatrix.setData(3, 0);
+    goldMatrix.setData(4, cos(angleInRadians));
+    goldMatrix.setData(5, -sin(angleInRadians));
+
+    goldMatrix.setData(6, 0);
+    goldMatrix.setData(7, sin(angleInRadians));
+    goldMatrix.setData(8, cos(angleInRadians));
+
+    double tol = 1e-6;
+
+    EXPECT_EQ(9, goldMatrix.numEntries());
+
+    for (int i=0;i<goldMatrix.numEntries();i++)
+    {
+        EXPECT_NEAR(goldMatrix.getData(i), matrix1.getData(i), tol) << " for index = " << i;
+    }
+}
+
+

@@ -100,20 +100,6 @@ Entity EntityRepository::get_entity(const EntityKey &key) const
   return i != m_entities.end() ? i->second : Entity() ;
 }
 
-void EntityRepository::change_entity_bucket( Bucket & b, Entity e,
-                                             unsigned ordinal)
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::change_entity_bucket", LOG_ENTITY, b.mesh().entity_key(e));
-  DiagIfWatching(LOG_ENTITY, b.mesh().entity_key(e), "New bucket: " << b << ", ordinal: " << ordinal);
-
-  const bool modified_parts = ! (b.mesh().bucket_ptr(e) != NULL) ||
-                              ! b.in_same_partition( b.mesh().bucket(e) );
-  if ( modified_parts ) {
-    b.mesh().mark_entity_and_upward_related_entities_as_modified(e);
-  }
-  b.mesh().set_mesh_index(e, &b, ordinal);
-}
-
 void EntityRepository::update_entity_key(EntityKey new_key, EntityKey old_key, Entity entity)
 {
   ThrowAssert(m_entities.find(new_key) == m_entities.end());

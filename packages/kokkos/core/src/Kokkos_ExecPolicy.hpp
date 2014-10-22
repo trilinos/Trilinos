@@ -148,11 +148,11 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef ExecSpace                  execution_space ;
-  typedef RangePolicy                execution_policy ;
-  typedef IntType                    member_type ;
-  typedef WorkTag                    work_tag ;
+  //! Tag this class as an execution policy
+  typedef RangePolicy  execution_policy ;
+  typedef ExecSpace    execution_space ;
+  typedef IntType      member_type ;
+  typedef WorkTag      work_tag ;
 
   KOKKOS_INLINE_FUNCTION member_type begin() const { return m_begin ; }
   KOKKOS_INLINE_FUNCTION member_type end()   const { return m_end ; }
@@ -240,10 +240,10 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
-  typedef ExecSpace                  execution_space ;  ///< Execution space
-  typedef TeamPolicy                 execution_policy ;
-  typedef WorkTag                    work_tag ;
+  //! Tag this class as an execution policy
+  typedef TeamPolicy  execution_policy ;
+  typedef ExecSpace   execution_space ;
+  typedef WorkTag     work_tag ;
 
   /** \brief  Query maximum team size for a given functor.
    *
@@ -365,10 +365,10 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;      ///< Concept tag
-  typedef ExecSpace                  execution_space ; ///< Execution space
-  typedef TeamVectorPolicy           execution_policy ;
-  typedef WorkTag                    work_tag ;
+  //! Tag this class as a kokkos execution policy
+  typedef TeamVectorPolicy  execution_policy ;
+  typedef ExecSpace         execution_space ;
+  typedef WorkTag           work_tag ;
 
   /** \brief  Query maximum team size for a given functor.
    *

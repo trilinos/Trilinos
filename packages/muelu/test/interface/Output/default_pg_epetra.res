@@ -12,7 +12,7 @@ Level 1
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1
     
-   aggregation: mode = old   [default]
+   aggregation: mode = new   [unused]
    aggregation: max agg size = 2147483647   [default]
    aggregation: min agg size = 2   [default]
    aggregation: max selected neighbors = 0   [default]
@@ -75,7 +75,7 @@ Level 2
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1
     
-   aggregation: mode = old   [default]
+   aggregation: mode = new   [unused]
    aggregation: max agg size = 2147483647   [default]
    aggregation: min agg size = 2   [default]
    aggregation: max selected neighbors = 0   [default]
