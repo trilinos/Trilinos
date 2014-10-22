@@ -874,14 +874,15 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
     //    |     |     |        |     |     |
     //   2/0---3/0---6/0      2/0---3/0---6/1
 
-//    stk::mesh::MetaData & meta = bulk.mesh_meta_data();
-//    stk::mesh::Part * elem_part = meta.get_part("elem_part");
-//    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
-//
-//    Part * universal_part = &meta.universal_part();
-//    Part * owned_part     = &meta.locally_owned_part();
-//    Part * shared_part    = &meta.globally_shared_part();
-//    Part * aura_part      = &meta.aura_part();
+    stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+    stk::mesh::Part * elem_part = meta.get_part("elem_part");
+    stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+
+    Part * universal_part = &meta.universal_part();
+    Part * owned_part     = &meta.locally_owned_part();
+    //// CEO by itself does not fix up shared_part and aura_part memberships!
+    //    Part * shared_part    = &meta.globally_shared_part();
+    //    Part * aura_part      = &meta.aura_part();
 
     int p_rank = bulk.parallel_rank();
     if(p_rank == 0)
@@ -890,7 +891,7 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
         EXPECT_TRUE(check_state(bulk, EntityKey(ELEM_RANK, 1), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(bulk, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(bulk, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED_TO));
-//        EXPECT_TRUE(check_parts(bulk, EntityKey(ELEM_RANK, 1), universal_part, owned_part, elem_part, topo_part));
+        EXPECT_TRUE(check_parts(bulk, EntityKey(ELEM_RANK, 1), universal_part, owned_part, elem_part, topo_part));
 //        EXPECT_TRUE(check_relns(bulk, EntityKey(ELEM_RANK, 1), NODE_RANK, 1, 2, 3, 4));
 
         EXPECT_TRUE(check_state(bulk, EntityKey(ELEM_RANK, 2), STATE_NOT_VALID));
@@ -904,7 +905,7 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED_TO));
-//        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 1), universal_part, owned_part, elem_part, topo_part));
+        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 1), universal_part, owned_part, elem_part, topo_part));
 //        EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 1), ELEM_RANK, 1));
 
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 2), STATE_VALID));
@@ -912,7 +913,7 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_TO ));
-//        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 2), universal_part, owned_part, elem_part, topo_part));
+        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 2), universal_part, owned_part, elem_part, topo_part));
 //        EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 2), ELEM_RANK, 1));
 
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 3), STATE_VALID));
@@ -920,7 +921,7 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_TO));
-//        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 3), universal_part, owned_part, shared_part, elem_part, topo_part));
+        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 3), universal_part, owned_part, elem_part, topo_part));
 //        EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 3), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_VALID));
@@ -928,7 +929,7 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_TO));
-//        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 4), universal_part, shared_part, elem_part, topo_part));
+        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 4), universal_part, elem_part, topo_part));
 //        EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 4), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_VALID));
@@ -956,7 +957,7 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
         EXPECT_TRUE(check_state(bulk, EntityKey(ELEM_RANK, 2), STATE_VALID));
         EXPECT_TRUE(check_state(bulk, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(bulk, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED_FROM));
-//        EXPECT_TRUE(check_parts(bulk, EntityKey(ELEM_RANK, 2), universal_part, owned_part, elem_part, topo_part));
+        EXPECT_TRUE(check_parts(bulk, EntityKey(ELEM_RANK, 2), universal_part, owned_part, elem_part, topo_part));
 //        EXPECT_TRUE(check_relns(bulk, EntityKey(ELEM_RANK, 2), NODE_RANK, 4, 3, 6, 5));
 
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 1), STATE_NOT_VALID));
@@ -977,14 +978,14 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 3), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_FROM));
-//        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 3), universal_part, shared_part, elem_part, topo_part));
+        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 3), universal_part, elem_part, topo_part));
 //        EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 3), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_VALID));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_FROM));
-//        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 4), universal_part, owned_part, shared_part, elem_part, topo_part));
+        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 4), universal_part, owned_part, elem_part, topo_part));
 //        EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 4), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_VALID));
@@ -992,7 +993,7 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_TO));
-//        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 5), universal_part, owned_part, elem_part, topo_part));
+        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 5), universal_part, owned_part, elem_part, topo_part));
 //        EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 5), ELEM_RANK, 2));
 
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 6), STATE_VALID));
@@ -1000,7 +1001,7 @@ inline void checkStatesAfterCEO_2Elem2ProcMove(BulkDataTester &bulk)
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_TO));
-//        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 6), universal_part, owned_part, elem_part, topo_part));
+        EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 6), universal_part, owned_part, elem_part, topo_part));
 //        EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 6), ELEM_RANK, 2));
     }
 }
