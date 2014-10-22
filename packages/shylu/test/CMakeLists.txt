@@ -19,19 +19,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     NUM_MPI_PROCS 4
     )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	epetra_interface
-	SOURCES epetra_interface_test.cpp 
-	COMM mpi
-	NUM_MPI_PROCS 4
-	)
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#	epetra_interface
+#	SOURCES epetra_interface_test.cpp 
+#	COMM mpi
+#	NUM_MPI_PROCS 4
+#	)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	tpetra_interface
-	SOURCES tpetra_interface_test.cpp 
-	COMM mpi
-	NUM_MPI_PROCS 4
-	)
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#	tpetra_interface
+#	SOURCES tpetra_interface_test.cpp 
+#	COMM mpi
+#	NUM_MPI_PROCS 4
+#	)
 
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUDriverFiles
@@ -40,5 +40,5 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUDriverFiles
     shylu_iqr_parameters.seq.xml
     ShyLU_epetra_interface.xml
 #    EXEDEPS aztec_driver belos_driver
-    EXEDEPS belos_driver iqr_driver epetra_interface tpetra_interface
+    EXEDEPS belos_driver iqr_driver
     )
