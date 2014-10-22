@@ -1060,7 +1060,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcRotate)
 
     ////////////////////////////////////////////////////////////////////////////
 
-    CEOUtils::checkStatesAfterCEOME_4Elem4ProcRotate(mesh);
+    CEOUtils::checkStatesAfterCEOME_4Elem4ProcRotate(mesh, meta);
 }
 
 TEST(CEOME, change_entity_owner_3Elem4Proc1Edge3D)
