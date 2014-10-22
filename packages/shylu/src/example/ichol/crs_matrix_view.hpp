@@ -26,7 +26,7 @@ namespace Example {
     typedef typename CrsMatBaseType::space_type    space_type;
     typedef typename CrsMatBaseType::memory_traits memory_traits;
 
-    typedef CrsRowView<CrsMatBaseType> crs_row_view_type;
+    typedef CrsRowView<CrsMatBaseType> row_view_type;
 
     template<typename T> using range_type = pair<T,T>;
 
@@ -41,7 +41,7 @@ namespace Example {
   public:
     //
     KOKKOS_INLINE_FUNCTION
-    void setView(const CrsMatBaseType *base,
+    void setView(CrsMatBaseType *base,
                  const ordinal_type offm, const ordinal_type m,
                  const ordinal_type offn, const ordinal_type n) {
       _base = base;
@@ -66,9 +66,9 @@ namespace Example {
     ordinal_type  NumCols() const { return _n; }
 
     KOKKOS_INLINE_FUNCTION
-    crs_row_view_type extractRow(const ordinal_type i) const { 
-      typedef typename crs_row_view_type::value_type_array   value_type_array;
-      typedef typename crs_row_view_type::ordinal_type_array ordinal_type_array;
+    row_view_type extractRow(const ordinal_type i) const { 
+      typedef typename row_view_type::value_type_array   value_type_array;
+      typedef typename row_view_type::ordinal_type_array ordinal_type_array;
 
       // grep a row from base
       ordinal_type ii = _offm + i;  
@@ -86,7 +86,7 @@ namespace Example {
       cols = Kokkos::subview<ordinal_type_array>(cols, range);
       vals = Kokkos::subview<value_type_array>(vals, range);
 
-      return crs_row_view_type(_offn, _n, view_end - view_begin, cols, vals);
+      return row_view_type(_offn, _n, view_end - view_begin, cols, vals);
     }
 
     CrsMatrixView()
@@ -127,7 +127,7 @@ namespace Example {
 
       if (_base != NULL) {
         os << endl
-           << " -- CrsMatrixView::" << _base->Label() << " --" << endl
+           << " -- "<< _base->Label() << "::View --" << endl
            << "    Offset in Rows = " << _offm << endl
            << "    Offset in Cols = " << _offn << endl
            << "    # of Rows      = " << _m << endl
@@ -136,7 +136,7 @@ namespace Example {
         const int w = 6;
         for (ordinal_type i=0;i<_m;++i) {
           os << endl;
-          crs_row_view_type row = extractRow(i);
+          row_view_type row = extractRow(i);
           row.showMe(os);
         }
       } else {
