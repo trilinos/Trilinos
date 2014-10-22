@@ -987,6 +987,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcRotate)
 
     mesh.change_entity_owner_exp(entities_to_move);
 
+    CEOUtils::checkStatesAfterCEO_4Elem4ProcRotate(mesh, meta);
     std::vector<std::pair<int, int> > entities;
 
     int numNodes = 9;
