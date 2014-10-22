@@ -72,12 +72,9 @@ KLU2<Matrix,Vector>::KLU2(
   , rowind_()
   , colptr_()
 {
-  // TODO : Initialize
-  std::cout << "I am in initialize" << std::endl;
   ::KLU2::klu_defaults<scalar_type, local_ordinal_type> (&(data_.common_)) ;
   data_.symbolic_ = NULL;
   data_.numeric_ = NULL;
-  std::cout << "I am in initialize out of KLU2" << std::endl;
 
   // Override some default options
   // TODO: use data_ here to init
@@ -119,7 +116,6 @@ KLU2<Matrix,Vector>::preOrdering_impl()
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
 #endif
-    std::cout << "I am in preordering" << std::endl;
 
   return(0);
 }
@@ -129,11 +125,9 @@ template <class Matrix, class Vector>
 int
 KLU2<Matrix,Vector>::symbolicFactorization_impl()
 {
-  std::cout << "I am in symbfact" << std::endl;
   data_.symbolic_ = ::KLU2::klu_analyze<scalar_type, local_ordinal_type>
                 ((local_ordinal_type)this->globalNumCols_, colptr_.getRawPtr(),
                  rowind_.getRawPtr(), &(data_.common_)) ;
-  std::cout << "Out of klu2_analyze" << std::endl;
 
 #ifdef HAVE_AMESOS2_DEBUG
     // TODO ": This should move to symbolic
@@ -145,7 +139,6 @@ KLU2<Matrix,Vector>::symbolicFactorization_impl()
     "Error in converting to KLU2 SuperMatrix: wrong number of global rows." );
 #endif
 
-  std::cout << "Returning from symbolic impl .." << std::endl;
   return(0);
 }
 
@@ -160,7 +153,6 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
   // factorization.  Stores and other data will be allocated in gstrf.
   // Only rank 0 has valid pointers, TODO: for KLU2
 
-  std::cout << "I am in numericfact" << std::endl;
 
   int info = 0;
   if ( this->root_ ){
@@ -180,7 +172,6 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
     data_.numeric_ = ::KLU2::klu_factor<scalar_type, local_ordinal_type>
                 (colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr(),
                 data_.symbolic_, &(data_.common_)) ;
-    std::cout << "Out of klu2_factor" << std::endl;
 
     }
 
@@ -216,7 +207,6 @@ KLU2<Matrix,Vector>::solve_impl(
 {
   using Teuchos::as;
 
-  std::cout << "I am in solve" << std::endl;
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
@@ -234,7 +224,6 @@ KLU2<Matrix,Vector>::solve_impl(
                                                ROOTED);
   }
 
-    std::cout << bValues << std::endl;
 
   int ierr = 0; // returned error code
 
@@ -252,8 +241,6 @@ KLU2<Matrix,Vector>::solve_impl(
                 (local_ordinal_type)this->globalNumCols_, 
                 (local_ordinal_type)nrhs,
                 bValues.getRawPtr(),  &(data_.common_)) ;
-    std::cout << "Out of klu2_solve" << std::endl;
-    std::cout << bValues << std::endl;
 
     }
 
@@ -281,12 +268,10 @@ KLU2<Matrix,Vector>::solve_impl(
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-    std::cout << "In do_put" << std::endl;
     Util::put_1d_data_helper<
       MultiVecAdapter<Vector>,slu_type>::do_put(X, bValues(),
                                          as<size_t>(ld_rhs),
                                          ROOTED);
-    std::cout << "Out of do_put" << std::endl;
   }
 
 
@@ -301,7 +286,6 @@ KLU2<Matrix,Vector>::matrixShapeOK_impl() const
   // The KLU2 factorization routines can handle square as well as
   // rectangular matrices, but KLU2 can only apply the solve routines to
   // square matrices, so we check the matrix for squareness.
-    std::cout << "I am in matrixshapeok" << std::endl;
   return( this->matrixA_->getGlobalNumRows() == this->matrixA_->getGlobalNumCols() );
 }
 
@@ -314,9 +298,7 @@ KLU2<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterLis
   using Teuchos::getIntegralValue;
   using Teuchos::ParameterEntryValidator;
 
-    std::cout << "I am in setParameters" << std::endl;
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
-    std::cout << "out of setParameters" << std::endl;
 
   // The KLU2 transpose option can override the Amesos2 option
   //if( parameterList->isParameter("Trans") ){
@@ -337,16 +319,13 @@ KLU2<Matrix,Vector>::getValidParameters_impl() const
 
   static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
-    std::cout << "I am in getValidParams" << std::endl;
   if( is_null(valid_params) ){
-    std::cout << "New paramlist" << std::endl;
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
     pl->set("Equil", true, "Whether to equilibrate the system before solve, does nothing now");
 
     valid_params = pl;
   }
-    std::cout << "Out of the null test " << std::endl;
 
   return valid_params;
 }
@@ -361,8 +340,6 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
-
-    std::cout << "I am in loadA" << std::endl;
 
   // Only the root image needs storage allocated
   if( this->root_ ){
