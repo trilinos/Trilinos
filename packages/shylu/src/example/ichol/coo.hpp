@@ -26,9 +26,9 @@ namespace Example {
     ordinal_type& Col() { return _j;   }
     value_type&   Val() { return _val; }
 
-    ordinal_type& Row() const { return _i;   } 
-    ordinal_type& Col() const { return _j;   }
-    value_type&   Val() const { return _val; }
+    ordinal_type  Row() const { return _i;   } 
+    ordinal_type  Col() const { return _j;   }
+    value_type    Val() const { return _val; }
     
     Coo() {}
 

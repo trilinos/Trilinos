@@ -6,7 +6,7 @@ info :
 
 OBJ   = 
 
-TEST  = crs_matrix_base
+TEST  = crs_row_view
 
 TESTS = \
 	crs_matrix_base \
@@ -31,7 +31,8 @@ include $(TRILINOS_DIR)/include/Makefile.export.Kokkos
 include $(TRILINOS_DIR)/include/Makefile.export.KokkosExample
 
 CC = g++
-CCFLAGS = -g -O0 -std=c++11 -mavx -fopenmp 
+CCFLAGS = -g -O3 -std=c++11 -fopenmp -march=native
+## -Wa,-q
 
 CCINCS = -I. -I${QTHREADS_DIR}/include -I${TRILINOS_DIR}/include -I${SCOTCH_DIR}/include
 CCWARN = -Wno-pointer-arith

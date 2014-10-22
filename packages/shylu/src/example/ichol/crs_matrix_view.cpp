@@ -1,9 +1,9 @@
+#include <Kokkos_Core.hpp>
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
-#include "crs_row_view.hpp"
 #include "crs_matrix_view.hpp"
-
+#include "crs_row_view.hpp"
 
 using namespace std;
 
@@ -11,7 +11,9 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef size_t size_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
+typedef Kokkos::OpenMP host_type;
+
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,host_type> CrsMatrixBase;
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 
 int main (int argc, char *argv[]) {
@@ -19,8 +21,13 @@ int main (int argc, char *argv[]) {
     cout << "Usage: " << argv[0] << " filename" << endl;
     return -1;
   }
-  
-  CrsMatrixBase A;
+
+  Kokkos::initialize();
+  cout << "Default execution space initialized = "
+       << typeid(Kokkos::DefaultExecutionSpace).name()
+       << endl;
+
+  CrsMatrixBase A("A, imported from a file");
 
   ifstream in;
   in.open(argv[1]);
@@ -30,10 +37,12 @@ int main (int argc, char *argv[]) {
   }
   A.importMatrixMarket(in);
 
-  CrsMatrixView AA(A,   2, 6, 
-                   /**/ 3, 8);
-  
-  cout << AA << endl;
+  {
+    CrsMatrixView AA(A, /**/ 2, 6, /**/ 3, 8);
+    cout << AA << endl;
+  }
+
+  Kokkos::finalize();
 
   return 0;
 }
