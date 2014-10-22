@@ -108,7 +108,7 @@ enum EntityStates {
   STATE_MESH_DELETED
 };
 
-inline bool check_state(const stk::mesh::BulkData & mesh, const EntityKey & entityKey, EntityStates state,
+inline bool check_state(const BulkDataTester & mesh, const EntityKey & entityKey, EntityStates state,
                  int p0 = -1, int p1 = -1, int p2 = -1, int p3 = -1, int p4 = -1, int p5 = -1)
 {
   // Check to see if the state is as expected for the provided EntityKey.
@@ -243,6 +243,18 @@ inline bool check_state(const stk::mesh::BulkData & mesh, const EntityKey & enti
         oss << "check_state(): Must provide one processor with STATE_GHOSTED_FROM_FROM check." << std::endl;
         break;   //need to break otherwise following call can segfault
       }
+      bool entityIsInvalid = mesh.get_entity(entityKey) == Entity();
+      const int owner_rank_directly_from_comm_map = mesh.my_entity_comm_map().owner_rank(entityKey);
+      if ( entityIsInvalid && owner_rank_directly_from_comm_map == expectedProcs[0] )
+      {
+          break;
+      }
+      else if ( entityIsInvalid )
+      {
+        oss << "check_state(): Entity " << entityKey << " was not ghosted from proc " << owner_rank_directly_from_comm_map << " when it should have" << std::endl
+            << "               been ghosted from proc " << expectedProcs[0] << "." << std::endl;
+        break;
+      }
       if (!mesh.in_receive_ghost( mesh.aura_ghosting() , entityKey )) {
         oss << "check_state(): Entity " << entityKey << " was not ghosted from any proc when it should have" << std::endl
             << "               been ghosted from proc " << expectedProcs[0] << "." << std::endl;
@@ -258,6 +270,17 @@ inline bool check_state(const stk::mesh::BulkData & mesh, const EntityKey & enti
     }
     case STATE_NOT_GHOSTED_FROM:
     {
+      bool entityIsInvalid = mesh.get_entity(entityKey) == Entity();
+      const int owner_rank_directly_from_comm_map = mesh.my_entity_comm_map().owner_rank(entityKey);
+      if ( entityIsInvalid && owner_rank_directly_from_comm_map == stk::mesh::InvalidProcessRank)
+      {
+        break;
+      }
+      else if ( entityIsInvalid )
+      {
+        oss << "check_state(): Entity " << entityKey << " was ghosted from proc " <<  owner_rank_directly_from_comm_map << "." << std::endl;
+        break;
+      }
       if (!expectedProcs.empty()) {
         oss << "check_state(): Cannot provide processors with STATE_NOT_GHOSTED_FROM_FROM check." << std::endl;
       }
@@ -2349,12 +2372,12 @@ inline void checkStatesAfterCEO_3Elem2ProcMoveLeft(BulkDataTester &mesh)
 
   /**/  EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_VALID));
   /**/  EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_SHARED, 0));
-        // EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED_FROM, 0));
+  /**/  EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED_FROM, 0)); ///////
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_TO));
 
   /**/  EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_VALID));
   /**/  EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED, 0));
-        //EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_FROM));
+  /**/  EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED_FROM, 0)); ///////
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_TO));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_VALID));
