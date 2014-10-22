@@ -1131,7 +1131,7 @@ TEST(CEOME, change_entity_owner_3Elem4Proc1Edge3D)
 
     mesh.change_entity_owner_exp(entities_to_move);
 
-//    CEOUtils::checkStatesAfterCEO_3Elem4Proc1Edge3D(mesh);
+    CEOUtils::checkStatesAfterCEO_3Elem4Proc1Edge3D(mesh);
 
     ////////////////////////////////////////////////////////////////////////////
 
