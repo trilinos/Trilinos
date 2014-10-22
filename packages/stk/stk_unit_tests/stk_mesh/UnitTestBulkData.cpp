@@ -102,7 +102,6 @@ using stk::mesh::fixtures::RingFixture;
 using stk::mesh::fixtures::BoxFixture;
 
 const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-const EntityRank EDGE_RANK = stk::topology::EDGE_RANK;
 const EntityRank FACE_RANK = stk::topology::FACE_RANK;
 const EntityRank ELEM_RANK = stk::topology::ELEM_RANK;
 
@@ -419,10 +418,10 @@ TEST(BulkData, testCreateMore)
      // which will be an error.  Must create an owned entity
      // to use them, thus they become shared.
 
-     Entity e0 = bulk.declare_entity( NODE_RANK , ids[ id_get ] , no_parts );
-     Entity e1 = bulk.declare_entity( NODE_RANK , ids[ id_get + 1 ] , no_parts );
+     Entity e0 = bulk.declare_entity( stk::topology::NODE_RANK , ids[ id_get ] , no_parts );
+     Entity e1 = bulk.declare_entity( stk::topology::NODE_RANK , ids[ id_get + 1 ] , no_parts );
 
-     Entity eU = bulk.declare_entity( EDGE_RANK , 1 , no_parts );
+     Entity eU = bulk.declare_entity( stk::topology::EDGE_RANK , 1 , no_parts );
 
      bulk.declare_relation( eU , e0 , 0 );
      bulk.declare_relation( eU , e1 , 1 );
@@ -486,41 +485,41 @@ TEST(BulkData, testBulkDataRankBeginEnd)
 
     //now declare an edge...
     EntityId edge_id = 1;
-    bulk.declare_entity(EDGE_RANK, edge_id);
+    bulk.declare_entity(stk::topology::EDGE_RANK, edge_id);
 
-    iter = bulk.begin_entities(NODE_RANK);
-    end = bulk.end_entities(NODE_RANK);
+    iter = bulk.begin_entities(stk::topology::NODE_RANK);
+    end = bulk.end_entities(stk::topology::NODE_RANK);
 
     //insist that there is still 1 node:
     ASSERT_TRUE(iter != end);
     ASSERT_TRUE(std::distance(iter,end) == 1u);
 
-    iter = bulk.begin_entities(EDGE_RANK);
-    end = bulk.end_entities(EDGE_RANK);
+    iter = bulk.begin_entities(stk::topology::EDGE_RANK);
+    end = bulk.end_entities(stk::topology::EDGE_RANK);
 
     //insist that there is 1 edge:
     ASSERT_TRUE(iter != end);
     ASSERT_TRUE(std::distance(iter,end) == 1u);
 
     node_id = 2;
-    bulk.declare_entity(NODE_RANK, node_id);
+    bulk.declare_entity(stk::topology::NODE_RANK, node_id);
 
-    iter = bulk.begin_entities(NODE_RANK);
-    end = bulk.end_entities(NODE_RANK);
+    iter = bulk.begin_entities(stk::topology::NODE_RANK);
+    end = bulk.end_entities(stk::topology::NODE_RANK);
 
     //insist that there are 2 nodes:
     ASSERT_TRUE(iter != end);
     ASSERT_TRUE(std::distance(iter,end) == 2u);
 
-    iter = bulk.begin_entities(EDGE_RANK);
-    end = bulk.end_entities(EDGE_RANK);
+    iter = bulk.begin_entities(stk::topology::EDGE_RANK);
+    end = bulk.end_entities(stk::topology::EDGE_RANK);
 
     //insist that there is still 1 edge:
     ASSERT_TRUE(iter != end);
     ASSERT_TRUE(std::distance(iter,end) == 1u);
 
-    iter = bulk.begin_entities(FACE_RANK);
-    end = bulk.end_entities(FACE_RANK);
+    iter = bulk.begin_entities(stk::topology::FACE_RANK);
+    end = bulk.end_entities(stk::topology::FACE_RANK);
 
     //insist that there are no faces:
     ASSERT_TRUE(iter == end);
