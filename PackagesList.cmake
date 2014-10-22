@@ -120,8 +120,8 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Claps                 packages/claps                    EX
   AztecOO               packages/aztecoo                  PS
   Galeri                packages/galeri                   PS
-  Amesos2               packages/amesos2                  SS
   Amesos                packages/amesos                   PS
+  Amesos2               packages/amesos2                  SS
   Pamgen                packages/pamgen                   PS
   SEACAS                packages/seacas                   SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
   Trios                 packages/trios                    EX #temporary
