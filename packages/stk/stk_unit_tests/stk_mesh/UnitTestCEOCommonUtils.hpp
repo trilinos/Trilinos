@@ -3651,7 +3651,11 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
 
     const int p_rank = mesh.parallel_rank();
 
+
     stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
+    stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_2", stk::topology::QUAD_4_2D);
+    stk::mesh::Part& block_3 = meta.declare_part_with_topology("block_3", stk::topology::QUAD_4_2D);
+    stk::mesh::Part& block_4 = meta.declare_part_with_topology("block_4", stk::topology::QUAD_4_2D);
     meta.commit();
 
 // 1 elem-id for each proc
@@ -3678,7 +3682,18 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
     mesh.modification_begin();
 
     stk::mesh::EntityId elemID = proc_elemIDs[p_rank];
-    stk::mesh::declare_element(mesh, block_1, elemID, elem_nodeIDs[p_rank]);
+    if (0 == p_rank) {
+        stk::mesh::declare_element(mesh, block_1, elemID, elem_nodeIDs[p_rank]);
+    }
+    else if (1 == p_rank) {
+        stk::mesh::declare_element(mesh, block_2, elemID, elem_nodeIDs[p_rank]);
+    }
+    else if (2 == p_rank) {
+        stk::mesh::declare_element(mesh, block_3, elemID, elem_nodeIDs[p_rank]);
+    }
+    else if (3 == p_rank) {
+        stk::mesh::declare_element(mesh, block_4, elemID, elem_nodeIDs[p_rank]);
+    }
 
     for(int proc = 0; proc < numSharedNodeTriples; ++proc)
     {
@@ -3694,6 +3709,9 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
     mesh.modification_end();
 
     stk::mesh::Part * block1_part = meta.get_part("block_1");
+    stk::mesh::Part * block2_part = meta.get_part("block_2");
+    stk::mesh::Part * block3_part = meta.get_part("block_3");
+    stk::mesh::Part * block4_part = meta.get_part("block_4");
     stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
 
     Part * universal_part = &meta.universal_part();
@@ -3729,19 +3747,19 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED_FROM, 1 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 2), NODE_RANK, 2, 3, 6, 5));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED_FROM, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 3), NODE_RANK, 5, 6, 9, 8));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED_FROM, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 4), NODE_RANK, 4, 5, 8, 7));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0));
@@ -3755,56 +3773,56 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_SHARED, 1 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_GHOSTED_TO, 2, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), universal_part, owned_part, shared_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), universal_part, owned_part, shared_part, topo_part, block1_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 2), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED_FROM, 1 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 3), ELEM_RANK, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED_TO, 1, 2));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), shared_part, universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), shared_part, universal_part, owned_part, topo_part, block1_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 4), ELEM_RANK, 1, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED, 1, 2, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, owned_part, shared_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, owned_part, shared_part, topo_part, block1_part, block2_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 5), ELEM_RANK, 1, 2, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_GHOSTED_FROM, 1 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), aura_part, universal_part, topo_part, block2_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 6), ELEM_RANK, 2, 3));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED_FROM, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 7), ELEM_RANK, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_GHOSTED_FROM, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), aura_part, universal_part, topo_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 8), ELEM_RANK, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_GHOSTED_FROM, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 9), ELEM_RANK, 3));
     }
     else if (p_rank == 1)
@@ -3818,19 +3836,19 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED_TO, 0, 2, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), universal_part, owned_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 2), NODE_RANK, 2, 3, 6, 5));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED_FROM, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 3), NODE_RANK, 5, 6, 9, 8));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED_FROM, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 4), NODE_RANK, 4, 5, 8, 7));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0));
@@ -3844,56 +3862,56 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_SHARED, 0 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), universal_part, shared_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), universal_part, shared_part, topo_part, block1_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 2), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED_TO, 0, 2, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), universal_part, owned_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 3), ELEM_RANK, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED_FROM, 0 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), aura_part, universal_part, topo_part, block1_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 4), ELEM_RANK, 1, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED, 0, 2, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part, block2_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 5), ELEM_RANK, 1, 2, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_SHARED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_GHOSTED_TO, 0, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), shared_part, universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), shared_part, universal_part, owned_part, topo_part, block2_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 6), ELEM_RANK, 2, 3));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED_FROM, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 7), ELEM_RANK, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_GHOSTED_FROM, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), aura_part, universal_part, topo_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 8), ELEM_RANK, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_GHOSTED_FROM, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 9), ELEM_RANK, 3));
     }
     else if (p_rank == 2)
@@ -3907,19 +3925,19 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED_FROM, 1 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 2), NODE_RANK, 2, 3, 6, 5));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED_TO, 0, 1, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), universal_part, owned_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 3), NODE_RANK, 5, 6, 9, 8));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED_FROM, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 4), NODE_RANK, 4, 5, 8, 7));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0));
@@ -3933,56 +3951,56 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_GHOSTED_FROM, 0 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), aura_part, universal_part, topo_part, block1_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 2), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED_FROM, 1 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 3), ELEM_RANK, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED_FROM, 0 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), aura_part, universal_part, topo_part, block1_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 4), ELEM_RANK, 1, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED, 0, 1, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part, block2_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 5), ELEM_RANK, 1, 2, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_SHARED, 1 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), shared_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), shared_part, universal_part, topo_part, block2_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 6), ELEM_RANK, 2, 3));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED_FROM, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 7), ELEM_RANK, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_SHARED, 3 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_GHOSTED_TO, 0, 1));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), shared_part, universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), shared_part, universal_part, owned_part, topo_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 8), ELEM_RANK, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_GHOSTED_TO, 0, 1, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), universal_part, owned_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 9), ELEM_RANK, 3));
     }
     else if (p_rank == 3)
@@ -3996,19 +4014,19 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED_FROM, 1 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 2), NODE_RANK, 2, 3, 6, 5));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED_FROM, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 3), NODE_RANK, 5, 6, 9, 8));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED_TO, 0, 1, 2));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), universal_part, owned_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 4), NODE_RANK, 4, 5, 8, 7));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 0));
@@ -4022,56 +4040,56 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(BulkDataTester &mesh, stk::mesh::
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_GHOSTED_FROM, 0 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), aura_part, universal_part, topo_part, block1_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 2), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED_FROM, 1 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 3), ELEM_RANK, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED, 0 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), universal_part, shared_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), universal_part, shared_part, topo_part, block1_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 4), ELEM_RANK, 1, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED, 0, 1, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part, block2_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 5), ELEM_RANK, 1, 2, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_GHOSTED_FROM, 1 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), aura_part, universal_part, topo_part, block2_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 6), ELEM_RANK, 2, 3));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED_TO, 0, 1, 2));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), universal_part, owned_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 7), ELEM_RANK, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_SHARED, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), shared_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), shared_part, universal_part, topo_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 8), ELEM_RANK, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_GHOSTED_FROM, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 9), ELEM_RANK, 3));
     }
 }
@@ -4093,6 +4111,9 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh, stk::me
     const int p_rank = mesh.parallel_rank();
 
     stk::mesh::Part * block1_part = meta.get_part("block_1");
+    stk::mesh::Part * block2_part = meta.get_part("block_2");
+    stk::mesh::Part * block3_part = meta.get_part("block_3");
+    stk::mesh::Part * block4_part = meta.get_part("block_4");
     stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
 
     Part * universal_part = &meta.universal_part();
@@ -4126,19 +4147,19 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh, stk::me
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED_TO, 1, 2, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), universal_part, owned_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 2), NODE_RANK, 2, 3, 6, 5));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED_FROM, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 3), NODE_RANK, 5, 6, 9, 8));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED_FROM, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 4), NODE_RANK, 4, 5, 8, 7));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 3));
@@ -4152,56 +4173,56 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh, stk::me
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_SHARED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), universal_part, shared_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), universal_part, shared_part, topo_part, block1_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 2), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED_TO, 1, 2, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), universal_part, owned_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 3), ELEM_RANK, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED_FROM, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), aura_part, universal_part, topo_part, block1_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 4), ELEM_RANK, 1, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED, 1, 2, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part, block2_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 5), ELEM_RANK, 1, 2, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_SHARED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_GHOSTED_TO, 2, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), shared_part, universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), shared_part, universal_part, owned_part, topo_part, block2_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 6), ELEM_RANK, 2, 3));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED_FROM, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 7), ELEM_RANK, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_GHOSTED_FROM, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), aura_part, universal_part, topo_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 8), ELEM_RANK, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_GHOSTED_FROM, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 9), ELEM_RANK, 3));
     }
     else if (p_rank == 1)
@@ -4215,19 +4236,19 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh, stk::me
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED_FROM, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 2), NODE_RANK, 2, 3, 6, 5));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED_TO, 0, 2, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), universal_part, owned_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 3), NODE_RANK, 5, 6, 9, 8));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED_FROM, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 4), NODE_RANK, 4, 5, 8, 7));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 3));
@@ -4241,56 +4262,56 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh, stk::me
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_GHOSTED_FROM, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), aura_part, universal_part, topo_part, block1_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 2), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED_FROM, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 3), ELEM_RANK, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED_FROM, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), aura_part, universal_part, topo_part, block1_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 4), ELEM_RANK, 1, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED, 0, 2, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part, block2_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 5), ELEM_RANK, 1, 2, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_SHARED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), shared_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), shared_part, universal_part, topo_part, block2_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 6), ELEM_RANK, 2, 3));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED_FROM, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 7), ELEM_RANK, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_SHARED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_GHOSTED_TO, 0, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), shared_part, universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), shared_part, universal_part, owned_part, topo_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 8), ELEM_RANK, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_GHOSTED_TO, 0, 2, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), universal_part, owned_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 9), ELEM_RANK, 3));
     }
     else if (p_rank == 2)
@@ -4304,19 +4325,19 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh, stk::me
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED_FROM, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 2), NODE_RANK, 2, 3, 6, 5));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED_FROM, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 3), NODE_RANK, 5, 6, 9, 8));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED_TO, 0, 1, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), universal_part, owned_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 4), NODE_RANK, 4, 5, 8, 7));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 3));
@@ -4330,56 +4351,56 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh, stk::me
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_GHOSTED_FROM, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), aura_part, universal_part, topo_part, block1_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 2), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED_FROM, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 3), ELEM_RANK, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), shared_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), shared_part, universal_part, topo_part, block1_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 4), ELEM_RANK, 1, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED, 0, 1, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), universal_part, shared_part, topo_part, block1_part, block2_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 5), ELEM_RANK, 1, 2, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_GHOSTED_FROM, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), aura_part, universal_part, topo_part, block2_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 6), ELEM_RANK, 2, 3));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED_TO, 0, 1, 3));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), universal_part, owned_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 7), ELEM_RANK, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_SHARED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED_TO));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED_FROM));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), shared_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), shared_part, universal_part, topo_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 8), ELEM_RANK, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED_TO));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_GHOSTED_FROM, 1));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 9), ELEM_RANK, 3));
     }
     else if (p_rank == 3)
@@ -4393,19 +4414,19 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh, stk::me
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_GHOSTED_FROM, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 2), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 2), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 2), NODE_RANK, 2, 3, 6, 5));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_GHOSTED_FROM, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 3), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 3), NODE_RANK, 5, 6, 9, 8));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_GHOSTED_FROM, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(ELEM_RANK, 4), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(ELEM_RANK, 4), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(ELEM_RANK, 4), NODE_RANK, 4, 5, 8, 7));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 1), STATE_OWNED, 3));
@@ -4419,56 +4440,56 @@ inline void checkStatesAfterCEOME_4Elem4ProcRotate(BulkDataTester &mesh, stk::me
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_SHARED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 2), STATE_GHOSTED_TO, 1, 2));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), shared_part, universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 2), shared_part, universal_part, owned_part, topo_part, block1_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 2), ELEM_RANK, 1, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_GHOSTED_FROM, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 3), aura_part, universal_part, topo_part, block2_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 3), ELEM_RANK, 2));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_SHARED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 4), STATE_GHOSTED_TO, 0, 1));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), shared_part, universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 4), shared_part, universal_part, owned_part, topo_part, block1_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 4), ELEM_RANK, 1, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_OWNED, 3));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_SHARED, 0, 1, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_FROM));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), shared_part, universal_part, owned_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 5), shared_part, universal_part, owned_part, topo_part, block1_part, block2_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 5), ELEM_RANK, 1, 2, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_GHOSTED_FROM, 0));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 6), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 6), aura_part, universal_part, topo_part, block2_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 6), ELEM_RANK, 2, 3));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_OWNED, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED_FROM, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), aura_part, universal_part, topo_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 7), ELEM_RANK, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_GHOSTED_FROM, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), aura_part, universal_part, topo_part, block3_part, block4_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 8), ELEM_RANK, 3, 4));
 
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_OWNED, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_GHOSTED_FROM, 1));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 9), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block1_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 9), aura_part, universal_part, topo_part, block3_part));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 9), ELEM_RANK, 3));
     }
 }
