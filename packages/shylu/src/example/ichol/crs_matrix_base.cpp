@@ -1,8 +1,6 @@
 #include <Kokkos_Core.hpp>
-#include <iostream>
-#include <typeinfo>
-
 #include "util.hpp"
+
 #include "crs_matrix_base.hpp"
 
 using namespace std;
@@ -11,7 +9,12 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef size_t size_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
+typedef Kokkos::OpenMP host_type;
+typedef Kokkos::OpenMP device_type;
+
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,host_type> CrsMatrixBase;
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,device_type> CrsMatrixBaseDevice;
+
 typedef Example::Uplo Uplo;
 
 int main (int argc, char *argv[]) {
@@ -27,12 +30,12 @@ int main (int argc, char *argv[]) {
 
   { // Test on an empty matrix
     CrsMatrixBase A("Empty A");
-    A.showMe(cout);
+    cout << A << endl;
   }
 
   { // Test on matrix allocation
     CrsMatrixBase A("A, 3x3 Allocated", 3, 3, 9);
-    A.showMe(cout);
+    cout << A << endl;
   }
 
   { // Test on attaching buffers
@@ -56,20 +59,20 @@ int main (int argc, char *argv[]) {
                     m, n, nnz,
                     ap, aj, ax);
     
-    A.showMe(cout);
+    cout << A << endl;
 
     // Test on copying operations
     CrsMatrixBase B(A);
     B.setLabel("B, shallow-copy of A");
-    B.showMe(cout);
+    cout << B << endl;
 
     CrsMatrixBase C("C, deep-copy of A");
     C.copy(A);
-    C.showMe(cout);
+    cout << C << endl;
 
     CrsMatrixBase D("D, deep-copy of A lower triangular");
     D.copy(Uplo::Lower, A);
-    D.showMe(cout);
+    cout << D << endl;
 
     CrsMatrixBase::ordinal_type_array p ("External::PermVector", n);
     CrsMatrixBase::ordinal_type_array ip("External::InvPermVector", m);    
@@ -82,7 +85,16 @@ int main (int argc, char *argv[]) {
 
     CrsMatrixBase E("E, permuted in A");
     E.copy(p, ip, A);
-    E.showMe(cout);
+    cout << E << endl;
+
+    // Heterogeneous copy
+    CrsMatrixBaseDevice F("F, allocated in the device");
+    F.copy(A);
+    
+    CrsMatrixBase G("G, allocated in the host");    
+    G.copy(F);
+
+    cout << G << endl;
   }
 
   { // File input
@@ -92,9 +104,10 @@ int main (int argc, char *argv[]) {
       cout << "Error in open the file: " << argv[1] << endl;
       return -1;
     }
-    CrsMatrixBase A("Imported A");
+    CrsMatrixBase A("A, imported from a file");
     A.importMatrixMarket(in);
-    A.showMe(cout);
+
+    cout << A << endl;
   }
 
   Kokkos::finalize();

@@ -2,14 +2,20 @@
 #ifndef __TRSM_HPP__
 #define __TRSM_HPP__
 
+/// \file trsm.hpp
+/// \brief Sparse triangular solve on given sparse patterns and multiple rhs.
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+ 
 namespace Example { 
 
   using namespace std;
   
-  template<typename CrsMatViewType>
-  inline int
+  template<typename ScalarType,
+           typename CrsMatViewType>
+  KOKKOS_INLINE_FUNCTION 
+  int
   trsm_r_l_t(const int diag,
-             const typename CrsMatViewType::value_type alpha,
+             const ScalarType alpha,
              const CrsMatViewType A,
              const CrsMatViewType B) {
     

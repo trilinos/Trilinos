@@ -105,18 +105,14 @@ namespace Example {
            typename MT>
   inline ostream& 
   CrsMatrixBase<VT,OT,ST,SpT,MT>::showMe(ostream &os) const {
-    //streamsize prec = os.precision();
-    //os.precision(15);
-    //os << scientific;
-
     os << " -- " << _label << " -- " << endl
-       << "    # of Rows        = " << _m << endl
-       << "    # of Cols        = " << _n << endl
-       << "    # of NonZeros    = " << _nnz << endl
+       << "    # of Rows          = " << _m << endl
+       << "    # of Cols          = " << _n << endl
+       << "    # of NonZeros      = " << _nnz << endl
        << endl
-       << "    RowPtrArray size = " << _ap.size() << endl
-       << "    ColIdxArray size = " << _aj.size() << endl 
-       << "    ValueArray  size = " << _ax.size() << endl
+       << "    RowPtrArray length = " << _ap.dimension_0() << endl
+       << "    ColsArray   length = " << _aj.dimension_0() << endl 
+       << "    ValuesArray length = " << _ax.dimension_0() << endl
        << endl;
       
     const int w = 15;
@@ -132,9 +128,6 @@ namespace Example {
              << setw(w) << _ax[j] << endl;
       }
     }
-
-    //os.unsetf(ios::scientific);
-    //os.precision(prec);
 
     return os;
   }
