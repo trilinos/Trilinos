@@ -6,7 +6,7 @@
       <name>problem: type</name>
       <type>string</type>
       <default>"unknown"</default>
-      <description>Type of problem to be solved.  Possible values: "unknown", "Poisson-2D", "Poisson-3D", "Elasticity-2D", "Elasticity-3D", "MHD".</description>
+      <description>Type of problem to be solved.  Possible values: "unknown", "Poisson-2D", "Poisson-3D", "Elasticity-2D", "Elasticity-3D", "MHD", "ConvectionDiffusion".</description>
     </parameter>
 
     <parameter>
@@ -20,10 +20,12 @@
       <name>number of equations</name>
       <type>int</type>
       <default>1</default>
-      <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
+      <default>1</default>
+      <Poisson-2D>1</Poisson-2D>
+      <Poisson-3D>1</Poisson-3D>
       <Elasticity-2D>3</Elasticity-2D>
       <Elasticity-3D>6</Elasticity-3D>
-      <MHD>8</MHD>
+      <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
     </parameter>
 
     <parameter>
@@ -44,6 +46,7 @@
       <name>problem: symmetric</name>
       <type>bool</type>
       <default>true</default>
+      <ConvectionDiffusion>false</ConvectionDiffusion>
       <description>Symmetry of a problem.</description>
     </parameter>
 
@@ -67,6 +70,7 @@
       <Elasticity-2D>"CHEBYSHEV"</Elasticity-2D>
       <Elasticity-3D>"CHEBYSHEV"</Elasticity-3D>
       <MHD>"SCHWARZ"</MHD>
+      <ConvectionDiffusion>"RELAXATION"</ConvectionDiffusion>
       <description>Smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
     </parameter>
 
@@ -87,6 +91,64 @@
     <parameter>
       <name>smoother: params</name>
       <type>\parameterlist</type>
+      <MHD>
+        <parameter>
+          <name>schwarz: overlap level</name>
+          <type>int</type>
+          <default>1</default>
+        </parameter>
+        <parameter>
+          <name>schwarz: combine mode</name>
+          <type>string</type>
+          <default>"Zero"</default> 
+        </parameter>
+        <parameter>
+          <name>schwarz: use reordering</name>
+          <type>bool</type>
+          <default>false</default>
+        </parameter>
+
+        <parameter>
+          <name>subdomain solver name</name>
+          <type>string</type>
+          <default>"RILUK"</default>/>
+        </parameter>
+        <parameter>
+          <name>subdomain solver parameters</name>
+          <type>\parameterlist</type>
+
+            <parameter>
+              <name>fact: iluk level-of-fill</name>
+              <type>int</type>
+              <default>0</default>
+            </parameter>
+
+            <parameter>
+              <name>fact: absolute threshold</name>
+              <type>double</type>
+              <default>0.</default>
+            </parameter>
+
+            <parameter>
+              <name>fact: relative threshold</name>
+              <type>double</type>
+              <default>1.</default>
+            </parameter>
+
+            <parameter>
+              <name>fact: relax value</name>
+              <type>double</type>
+              <default>0.</default>
+            </parameter>
+        </parameter>
+      </MHD>
+      <ConvectionDiffusion>
+        <parameter>
+          <name>relaxation: type</name>
+          <type>string</type>
+          <default>"Gauss-Seidel"</default>
+        </parameter>
+      </ConvectionDiffusion>
       <description>Smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
     </parameter>
 
@@ -318,7 +380,12 @@
       <name>multigrid algorithm</name>
       <type>string</type>
       <default>"sa"</default>
+      <Poisson-2D>"sa"</Poisson-2D>
+      <Poisson-3D>"sa"</Poisson-3D>
+      <Elasticity-2D>"sa"</Elasticity-2D>
+      <Elasticity-3D>"sa"</Elasticity-3D>
       <MHD>"unsmoothed"</MHD>
+      <ConvectionDiffusion>"pg"</ConvectionDiffusion>
       <description>Multigrid method. Possible values: "unsmoothed", "sa", "emin", "pg".</description>
     </parameter>
 
@@ -340,6 +407,7 @@
       <name>sa: use filtered matrix</name>
       <type>bool</type>
       <default>true</default>
+      <ConvectionDiffusion>true</ConvectionDiffusion>
       <description>Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
     </parameter>
 
@@ -406,7 +474,7 @@
       <name>emin: pattern</name>
       <type>string</type>
       <default>"AkPtent"</default>
-      <description>Sparsity pattern to use for energy minization. Possible values: "AkPtent".</description>
+      <description>Sparsity pattern to use for energy minimization. Possible values: "AkPtent".</description>
     </parameter>
 
     <parameter>

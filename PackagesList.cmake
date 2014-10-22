@@ -150,6 +150,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   ROL                   packages/rol                      EX
   Aristos               packages/aristos                  EX
   Stokhos               packages/stokhos                  SS
+  ROL                   packages/rol                      EX
   Piro                  packages/piro                     SS
   Panzer                packages/panzer                   SS
   Sundance              packages/Sundance                 SS # Could be PS based on deps (BUG: 4669)

@@ -241,8 +241,11 @@ public:
     if (!availAdjs(sourcetarget, through))
       return false;
     else {
-      zgid_t const *element_num_map=NULL;
-      getIDsView(element_num_map);
+      zgid_t const *Ids=NULL;
+      getIDsView(Ids);
+      lno_t const *offsets=NULL;
+      zgid_t const *adjacencyIds=NULL;
+      getAdjsView(sourcetarget, through, offsets, adjacencyIds);
       
       return true;
     }
