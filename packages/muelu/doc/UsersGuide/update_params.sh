@@ -93,8 +93,7 @@ echo '  std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ =
 
 PROBLEM_TYPES=( "Poisson-2D" "Poisson-3D" "Elasticity-2D" "Elasticity-3D" "MHD" "ConvectionDiffusion" )
 
-for i in "${PROBLEM_TYPES[@]}"
-do
+for i in "${PROBLEM_TYPES[@]}"; do
   echo "(\"$i\"," >> $code_file
   xsltproc --stringparam prob_type "$i" probtypelist.xsl masterList.xml >> $code_file
   echo ')' >> $code_file
@@ -104,6 +103,11 @@ echo ';
 
 }
 ' >> $code_file
+
+SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" )
+for i in "${SECTIONS[@]}"; do
+  xsltproc --stringparam section "$i" options.xsl masterList.xml > options_general.tex
+done
 
 # fix quotation
 sed -i '/<Parameter/ s/\\""/\\"/g' $code_file
