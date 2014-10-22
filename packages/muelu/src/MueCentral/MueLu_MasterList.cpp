@@ -147,7 +147,11 @@ namespace MueLu {
 
     "<ParameterList name=\"MueLu\">"
     
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
+          
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+          
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
   )
@@ -155,7 +159,11 @@ namespace MueLu {
 
     "<ParameterList name=\"MueLu\">"
     
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
+          
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+          
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
   )
@@ -167,6 +175,8 @@ namespace MueLu {
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
           
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+          
     "</ParameterList>"
   )
 ("Elasticity-3D",
@@ -176,6 +186,8 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"6\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+          
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
   )
@@ -214,6 +226,26 @@ namespace MueLu {
             "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"true\"/>"
           
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"unsmoothed\"/>"
+          
+    "</ParameterList>"
+  )
+("ConvectionDiffusion",
+
+    "<ParameterList name=\"MueLu\">"
+    
+            "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"false\"/>"
+          
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
+          
+    "<ParameterList name=\"smoother: params\">"
+    
+        "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Gauss-Seidel\"/>"
+        
+    "</ParameterList>"
+  
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"pg\"/>"
+          
+            "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
           
     "</ParameterList>"
   )
