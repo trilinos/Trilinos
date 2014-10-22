@@ -10,6 +10,7 @@ EXTRA_ARGS=$@
     -D MPI_BASE_DIR:PATH=/usr/local \
     -D MPI_EXEC:FILEPATH=/usr/local/bin/mpiexec \
     -D 'MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING=--mca;oob_tcp_if_include;lo0' \
+    -D PYTHON_EXECUTABLE:FILEPATH=/usr/local/bin/python \
     -D SWIG_EXCECUTABLE:FILEPATH=/usr/local/bin/swig \
     -D Trilinos_ENABLE_EXPORT_MAKEFILES:BOOL=OFF \
     -D TPL_ENABLE_BoostLib:BOOL=ON \
