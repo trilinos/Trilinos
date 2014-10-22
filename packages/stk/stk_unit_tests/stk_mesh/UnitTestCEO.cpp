@@ -102,14 +102,6 @@ namespace
 {
 //==============================================================================
 
-void update_mesh_based_on_changed_sharing_info(BulkDataTester& bulk, std::vector<stk::mesh::Entity>& modifiedEntities)
-{
-    bulk.my_resolve_ownership_of_modified_entities(modifiedEntities);
-    bulk.my_move_entities_to_proper_part_ownership(modifiedEntities);
-    bulk.my_update_comm_list_based_on_changes_in_comm_map();
-    bulk.my_update_comm_list(modifiedEntities);
-}
-
 TEST(CEO, change_entity_owner_2Elem2ProcMove)
 {
     stk::ParallelMachine pm = MPI_COMM_WORLD;
