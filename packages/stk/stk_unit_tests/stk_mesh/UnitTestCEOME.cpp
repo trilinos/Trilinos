@@ -139,6 +139,8 @@ TEST(CEOME, change_entity_owner_2Elem2ProcMove)
 
     bulk.change_entity_owner_exp(entity_procs);
 
+    CEOUtils::checkStatesAfterCEO_2Elem2ProcMove(bulk);
+
     ////////////////////////////////////////////////////////////////////////////
 
     //   id/owner_proc
