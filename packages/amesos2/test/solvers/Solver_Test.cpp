@@ -1307,7 +1307,7 @@ bool test_tpetra(const string& mm_file,
 #endif    // HAVE_TEUCHOS_QD
 #ifdef HAVE_TEUCHOS_COMPLEX
       if( scalar == "complex" ){
-#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_COMPLEX_FLOAT))
+#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_COMPLEX_FLOAT) && !(defined HAVE_AMESOS2_KLU2))
         if( mag == "float" ){
           typedef std::complex<float> cmplx;
           if( lo == "int" ){

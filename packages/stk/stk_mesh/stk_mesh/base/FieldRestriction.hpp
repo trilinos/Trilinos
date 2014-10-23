@@ -89,7 +89,7 @@ class FieldRestriction {
   const Selector& selector() const { return m_selector; }
 
   void set_num_scalars_per_entity(size_type value) { m_num_scalars_per_entity = value; }
-  const size_type num_scalars_per_entity() const { return m_num_scalars_per_entity; }
+  size_type num_scalars_per_entity() const { return m_num_scalars_per_entity; }
 
   void set_dimension(size_type dim) { m_dimension = dim; }
   size_type dimension() const { return m_dimension; }

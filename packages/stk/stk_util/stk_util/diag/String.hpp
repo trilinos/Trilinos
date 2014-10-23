@@ -316,7 +316,7 @@ public:
   ~StringBase();
 
   StringBase();
-  explicit StringBase( const std::string &);
+  StringBase( const std::string &);
 
   StringBase( const_iterator );
   template <class It>

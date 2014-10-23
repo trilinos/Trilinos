@@ -16,7 +16,7 @@
 #include <memory>
 
 #include <cmath>
-
+#include <complex>
 
 /// \file util.hpp
 /// \brief Utility functions and constant integer class like an enum class.

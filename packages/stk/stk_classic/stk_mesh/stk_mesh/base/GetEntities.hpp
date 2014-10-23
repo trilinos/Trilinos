@@ -37,7 +37,7 @@ namespace mesh {
  */
 void count_entities( const Selector & selector ,
                      const BulkData & mesh ,
-                     std::vector<EntityRank> & count );
+                     std::vector<size_t> & count );
 
 /** \brief Get all entities of the specified type, sorted by ID.  */
 void get_entities( const BulkData & mesh , EntityRank entity_rank,

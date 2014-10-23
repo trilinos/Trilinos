@@ -894,8 +894,12 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
       globals.Num_External_Nodes[iproc];
 
     /* Allocate permament storage for the coordinates */
-    globals.Coor[iproc] = (T **) array_alloc(__FILE__, __LINE__,
-					     2, globals.Num_Dim, itotal_nodes, sizeof(T));
+    if (itotal_nodes > 0) {
+      globals.Coor[iproc] = (T **) array_alloc(__FILE__, __LINE__,
+					       2, globals.Num_Dim, itotal_nodes, sizeof(T));
+    } else {
+      globals.Coor[iproc] = NULL;
+    }
   }
 
   /* Allocate temporary space to hold 1 dimensions worth of coordinates... */

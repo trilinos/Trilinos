@@ -482,14 +482,14 @@ struct FortranBLAS<float>
     static float dot( const int & kmax, const float x[], const float y[])
     {
         const int one = 1;
-        return float(SIERRA_FORTRAN(sdot)(&kmax,x,&one,y,&one));
+        return static_cast<float>(SIERRA_FORTRAN(sdot)(&kmax,x,&one,y,&one));
     }
 
     inline
     static float nrm2( const int & kmax, const float x[])
     {
         const int one = 1;
-        return sqrt(float(SIERRA_FORTRAN(sdot)(&kmax,x,&one,x,&one)));
+        return sqrt(static_cast<float>(SIERRA_FORTRAN(sdot)(&kmax,x,&one,x,&one)));
     }
 
     inline
@@ -524,7 +524,7 @@ struct FortranBLAS<float>
     static float asum( const int & kmax, const float x[])
     {
         const int one = 1;
-        return float(SIERRA_FORTRAN(sasum)(&kmax,x,&one));
+        return static_cast<float>(SIERRA_FORTRAN(sasum)(&kmax,x,&one));
     }
 
     inline

@@ -42,26 +42,26 @@
 
 //-------------------------------------------------------------------------------------------------------------------
 // Verify that a result generated from the unique ids function meets all properties nessecary of unique ids
-void  VerifyUniqueIds(unsigned maxAllowableId, 
-                          std::vector<unsigned>& existingIdsLocal,
-                          std::vector<unsigned>&  newIdsLocal,
+void  VerifyUniqueIds(uint64_t maxAllowableId, 
+                          std::vector<uint64_t>& existingIdsLocal,
+                          std::vector<uint64_t>&  newIdsLocal,
                           stk::ParallelMachine comm) {
   //
   //  Generate a global list of all ids created matched and all ids that existed perviously
   //
-  std::vector<unsigned> existingIdsGlobal;
+  std::vector<uint64_t> existingIdsGlobal;
   stk::parallel_vector_concat(comm, existingIdsLocal, existingIdsGlobal);
   std::sort(existingIdsGlobal.begin(), existingIdsGlobal.end());
 
-  std::vector<unsigned> newIdsGlobal;
+  std::vector<uint64_t> newIdsGlobal;
   stk::parallel_vector_concat(comm, newIdsLocal, newIdsGlobal);
 
      
   //
   //  Verify properties of the returned ids
   //
-  for(unsigned i=0; i<newIdsGlobal.size(); ++i) {
-    unsigned curNewID = newIdsGlobal[i];
+  for(uint64_t i=0; i<newIdsGlobal.size(); ++i) {
+    uint64_t curNewID = newIdsGlobal[i];
     //    1)  Verify all ids must be less than or equal to maxAllowableId
     EXPECT_LE(curNewID, maxAllowableId); 
     //    2)  Verify no overlap between existing and new id set
@@ -82,23 +82,23 @@ TEST(UnitTestParallel, testGenerateParallelUniqueIDs) {
   //    Each processor starts with 1000 unique densly packed ids ordered 1->N.  Add 10 new ids per processor
   //    produced by kill every 100th element creating 10 new elements per processor.
   //
-  unsigned maxAllowableId = ~0U;
+  uint64_t maxAllowableId = ~0U;
 
   {
-    std::vector<unsigned> newIds;
-    std::vector<unsigned> existingIds(1000);
-    unsigned firstId = mpi_rank*1000;
+    std::vector<uint64_t> newIds;
+    std::vector<uint64_t> existingIds(1000);
+    uint64_t firstId = mpi_rank*1000;
 
-    for(unsigned i=0; i<1000; ++i) {
-      unsigned currentElemId = firstId+i;
+    for(uint64_t i=0; i<1000; ++i) {
+      uint64_t currentElemId = firstId+i;
       existingIds[i] = currentElemId;
     }
     newIds = stk::generate_parallel_unique_ids(maxAllowableId, existingIds, 10, MPI_COMM_WORLD);
 
-    unsigned localSize = newIds.size();
-    unsigned globalSize;
-    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
-    EXPECT_EQ(globalSize, (unsigned)mpi_size*10);
+    uint64_t localSize = newIds.size();
+    uint64_t globalSize;
+    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(globalSize, (uint64_t)mpi_size*10);
  
     VerifyUniqueIds(maxAllowableId, existingIds, newIds, MPI_COMM_WORLD);
   }
@@ -107,15 +107,15 @@ TEST(UnitTestParallel, testGenerateParallelUniqueIDs) {
   //
   {
     int numRequest=0;
-    std::vector<unsigned> newIds;
-    std::vector<unsigned> existingIds;
-    unsigned destProc = mpi_size/2;    
+    std::vector<uint64_t> newIds;
+    std::vector<uint64_t> existingIds;
+    uint64_t destProc = mpi_size/2;    
     for(int i=0; i<1000*mpi_size; ++i) {
       destProc += i;
-      if(destProc >= (unsigned)mpi_size) {
+      if(destProc >= (uint64_t)mpi_size) {
         destProc = destProc%mpi_size;
       }
-      if(destProc == (unsigned)mpi_rank) {
+      if(destProc == (uint64_t)mpi_rank) {
         existingIds.push_back(i);
         if(i%100 == 0) {
           numRequest++;
@@ -124,24 +124,57 @@ TEST(UnitTestParallel, testGenerateParallelUniqueIDs) {
     }
     newIds = stk::generate_parallel_unique_ids(maxAllowableId, existingIds, numRequest, MPI_COMM_WORLD);
 
-    unsigned localSize = newIds.size();
-    unsigned globalSize;
-    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
-    EXPECT_EQ(globalSize, (unsigned)mpi_size*10);
+    uint64_t localSize = newIds.size();
+    uint64_t globalSize;
+    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(globalSize, (uint64_t)mpi_size*10);
 
     VerifyUniqueIds(maxAllowableId, existingIds, newIds, MPI_COMM_WORLD);
   }
+  //
+  //  Test 2.5, same as case one, except all new ids to be created on one processor
+  //
+    {
+    int numRequest=0;
+    std::vector<uint64_t> newIds;
+    std::vector<uint64_t> existingIds;
+    uint64_t destProc = mpi_size/2;    
+    for(int i=0; i<1000*mpi_size; ++i) {
+      destProc += i;
+      if(destProc >= (uint64_t)mpi_size) {
+        destProc = destProc%mpi_size;
+      }
+      if(destProc == (uint64_t)mpi_rank) {
+        existingIds.push_back(i);
+      }
+    }
+
+    if(mpi_rank == mpi_size/2) {
+      numRequest = mpi_size*10;
+    }
+
+
+    newIds = stk::generate_parallel_unique_ids(maxAllowableId, existingIds, numRequest, MPI_COMM_WORLD);
+
+    uint64_t localSize = newIds.size();
+    uint64_t globalSize;
+    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(globalSize, (uint64_t)mpi_size*10);
+
+    VerifyUniqueIds(maxAllowableId, existingIds, newIds, MPI_COMM_WORLD);
+  }
+
   //
   //  Test 3, sparse fill
   //
 
   {
-    std::vector<unsigned> newIds;
-    std::vector<unsigned> existingIds(1000);
-    unsigned firstId = mpi_rank*1000;
+    std::vector<uint64_t> newIds;
+    std::vector<uint64_t> existingIds(1000);
+    uint64_t firstId = mpi_rank*1000;
 
-    for(unsigned i=0; i<1000; ++i) {
-      unsigned currentElemId = firstId+i;
+    for(uint64_t i=0; i<1000; ++i) {
+      uint64_t currentElemId = firstId+i;
       existingIds[i] = currentElemId;
     }
 
@@ -151,10 +184,10 @@ TEST(UnitTestParallel, testGenerateParallelUniqueIDs) {
 
     newIds = stk::generate_parallel_unique_ids(maxAllowableId, existingIds, 10, MPI_COMM_WORLD);
 
-    unsigned localSize = newIds.size();
-    unsigned globalSize;
-    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
-    EXPECT_EQ(globalSize, (unsigned)mpi_size*10);
+    uint64_t localSize = newIds.size();
+    uint64_t globalSize;
+    MPI_Allreduce(&localSize, &globalSize, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(globalSize, (uint64_t)mpi_size*10);
  
     VerifyUniqueIds(maxAllowableId, existingIds, newIds, MPI_COMM_WORLD);
   }

@@ -19,7 +19,7 @@
 // 
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Mike A. Heroux (maherou@sandia.gov)
 //
@@ -49,9 +49,14 @@ int    Ap [ ] = {0, 2, 5, 9, 10, 12} ;
 int    Ai [ ] = { 0,  1,  0,   2,  4,  1,  2,  3,   4,  2,  1,  4} ;
 double Ax [ ] = {2., 3., 3., -1., 4., 4., -3., 1., 2., 2., 6., 1.} ;
 double b [ ] = {8., 45., -3., 3., 19.} ;
+float Ax_f [ ] = {2., 3., 3., -1., 4., 4., -3., 1., 2., 2., 6., 1.} ;
+float b_f [ ] = {8., 45., -3., 3., 19.} ;
 
 std::complex<double> Ax_cd [] = {2., 3., 3., -1., 4., 4., -3., 1., 2., 2., 6., 1.} ;
 std::complex<double> b_cd [ ] = {8., 45., -3., 3., 19.} ;
+
+std::complex<float> Ax_cf [] = {2., 3., 3., -1., 4., 4., -3., 1., 2., 2., 6., 1.} ;
+std::complex<float> b_cf [ ] = {8., 45., -3., 3., 19.} ;
 
 int main (void)
 {
@@ -66,6 +71,18 @@ int main (void)
     klu_free_symbolic<double, int> (&Symbolic, &Common) ;
     klu_free_numeric<double, int> (&Numeric, &Common) ;
     for (i = 0 ; i < n ; i++) printf ("x [%d] = %g\n", i, b [i]) ;
+
+    std::cout << "Float case " << std::endl ;
+    klu_symbolic<float, int> *Symbolic_ff ;
+    klu_numeric<float, int> *Numeric_ff ;
+    klu_common<float, int> Common_ff ;
+    klu_defaults<float, int> (&Common_ff) ;
+    Symbolic_ff = klu_analyze<float, int> (n, Ap, Ai, &Common_ff) ;
+    Numeric_ff = klu_factor<float, int> (Ap, Ai, Ax_f, Symbolic_ff, &Common_ff) ;
+    klu_solve<float, int> (Symbolic_ff, Numeric_ff, 5, 1, b_f, &Common_ff) ;
+    klu_free_symbolic<float, int> (&Symbolic_ff, &Common_ff) ;
+    klu_free_numeric<float, int> (&Numeric_ff, &Common_ff) ;
+    for (i = 0 ; i < n ; i++) printf ("x [%d] = %g\n", i, b_f [i]) ;
 
 #ifdef HAVE_TEUCHOS_COMPLEX
     std::cout << "Complex double case " << std::endl ;
@@ -82,6 +99,20 @@ int main (void)
     for (i = 0 ; i < n ; i++) 
         std::cout << "x [" << i << "] = "<< b_cd[i] << std::endl ;
 #endif
+
+/*    std::cout << "Complex float case " << std::endl ;
+    typedef std::complex<float> ComplexF ;
+    klu_symbolic<ComplexF, int> *Symbolic_F ;
+    klu_numeric<ComplexF, int> *Numeric_F ;
+    klu_common<ComplexF, int> Common_F ;
+    klu_defaults<ComplexF, int> (&Common_F) ;
+    Symbolic_F = klu_analyze<ComplexF, int> (n, Ap, Ai, &Common_F) ;
+    Numeric_F = klu_factor<ComplexF, int> (Ap, Ai, Ax_cf, Symbolic_F, &Common_F) ;
+    klu_solve<ComplexF, int> (Symbolic_F, Numeric_F, 5, 1, b_cf, &Common_F) ;
+    klu_free_symbolic<ComplexF, int> (&Symbolic_F, &Common_F) ;
+    klu_free_numeric<ComplexF, int> (&Numeric_F, &Common_F) ;
+    for (i = 0 ; i < n ; i++) 
+        std::cout << "x [" << i << "] = "<< b_cd[i] << std::endl ;*/
 
     return (0) ;
 }

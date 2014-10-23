@@ -23,3 +23,6 @@ MueLu provides a number of different multigrid algorithms:
  - Petrov-Galerkin aggregation AMG for convection-diffusion problems
  - aggregation-based AMG for problems arising from the eddy current formulation
    of Maxwell’s equations
+
+A PDF user's guide is located in muelu/doc/UsersGuide.  To compile it, simply
+run "make".

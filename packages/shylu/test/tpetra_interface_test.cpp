@@ -2,9 +2,12 @@
 #include <iostream>
 #include <sstream>
 
-#include "Zoltan2_config.h"
+#include "shylu.h"
+#include "shylu_partition_interface.hpp"
+#include "ShyLU_config.h"
 
 //Tperta
+#ifdef HAVE_SHYLU_TPETRA
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -13,7 +16,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
 #include <MatrixMarket_Tpetra.hpp>
-
+#endif
 
 
 #ifdef HAVE_MPI
@@ -29,9 +32,12 @@
 #include "Epetra_LinearProblem.h"
 
 // Teuchos includes
+#ifdef HAVE_SHYLU_TPETRA
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
+#endif
 
 // EpetraExt includes
 #include "EpetraExt_RowMatrixOut.h"
@@ -74,7 +80,6 @@ using namespace std;
 int main(int argc, char** argv)
 {
 
-
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, 0);
   Teuchos::RCP <const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
     int myPID = comm->getRank();
@@ -110,7 +115,7 @@ int main(int argc, char** argv)
 
   /*----------------partitioning_interface--------------*/
   /*-----------Will use check the epetra matrix on partition_interface------*/
- 
+
  
   pLUList->set("Partitioning Package","Zoltan2"); 
   Teuchos::ParameterList ptemp = pLUList->sublist("Zoltan2 Input");
@@ -122,10 +127,18 @@ int main(int argc, char** argv)
   cout << " \n\n--------------------BIG BREAK --------------\n\n";
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
 
-  PartitionInterface<Matrix_t, Vector_t> partI3(A.get(), pLUList.get());
+
+#ifdef HAVE_SHYLU_ZOLTAN2
+
+  cout << "HSTER";
+
+  ShyLU::PartitionInterface<Matrix_t, Vector_t> partI3(A.get(), pLUList.get());
   partI3.partition();
  
   cout << "Done with graph - parmetis" << endl;
+
+#endif
+
 
   
 }

@@ -62,6 +62,7 @@
 
 #include "stk_mesh/base/CreateEdges.hpp"
 #include "stk_mesh/base/SkinMesh.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 
 #include <stdio.h> // getline
 
@@ -1105,7 +1106,7 @@ void checkThatMeshIsParallelConsistent(stk::mesh::BulkData& stkMeshBulkData)
 {
     std::ostringstream msg ;
     bool is_consistent = true;
-    is_consistent = comm_mesh_verify_parallel_consistency( stkMeshBulkData , msg );
+    is_consistent = stk::mesh::impl::comm_mesh_verify_parallel_consistency( stkMeshBulkData , msg );
     EXPECT_TRUE(is_consistent) << msg.str();
 }
 
@@ -1361,7 +1362,7 @@ void connectElementToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entit
         stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeIdsForEdge[i]);
         nodeIds[i] = stkMeshBulkData.get_entity(nodeKey);
     }
-    stk::mesh::connectEntityToEdge(stkMeshBulkData, element, edge, nodeIds);
+    stk::mesh::impl::connectEntityToEdge(stkMeshBulkData, element, edge, nodeIds);
 }
 
 void create_edges(BulkDataTester& stkMeshBulkData, std::vector<stk::mesh::EntityId>& edgeIds,

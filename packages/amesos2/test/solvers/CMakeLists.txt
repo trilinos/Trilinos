@@ -4,6 +4,19 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES Solver_Test
   )
 
+##### KLU2 Tests #####
+IF (${PACKAGE_NAME}_ENABLE_KLU2)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    KLU2_UnitTests
+    SOURCES
+      KLU2_UnitTests
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    CATEGORIES NIGHTLY
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()
+
 ##### SuperLu Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLU)
