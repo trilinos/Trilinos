@@ -7,5 +7,4 @@ TRIBITS_ADD_EXECUTABLE(
   tutorial_05_simple_atomics
   SOURCES simple_atomics.cpp
   COMM serial mpi
-  DEPLIBS kokkoscore
   )
