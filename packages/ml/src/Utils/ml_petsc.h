@@ -18,7 +18,7 @@
 #ifndef ML_PETSC_H
 #define ML_PETSC_H
 
-#ifdef HAVE_PETSC
+#ifdef HAVE_ML_PETSC
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +32,6 @@ extern "C" {
 typedef PC ML_PetscPC;
 typedef KSP ML_PetscKSP;
 
-#endif /*ifdef HAVE_PETSC*/
+#endif /*ifdef HAVE_ML_PETSC*/
 
 #endif /* define ML_PETSC_H */

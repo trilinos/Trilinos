@@ -53,13 +53,13 @@
 #define _NOX_PETSC_EXAMPLE_1D_FD
 
 #include "petscsnes.h"
-#include "petscda.h"
+#include "petscdmda.h"
 
 /*
    User-defined application context
 */
 typedef struct {
-   DA        da;     /* distributed array */
+   DM        da;     /* distributed array */
    int       rank;   /* rank of processor */
    int       size;   /* size of communicator */
    PetscReal h;      /* mesh spacing */

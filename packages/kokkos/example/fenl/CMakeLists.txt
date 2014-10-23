@@ -31,6 +31,5 @@ TRIBITS_ADD_EXECUTABLE(
   fenl
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS kokkoscorelinalg kokkoscontainers kokkoscore
   )
 

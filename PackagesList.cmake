@@ -120,8 +120,8 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Claps                 packages/claps                    EX
   AztecOO               packages/aztecoo                  PS
   Galeri                packages/galeri                   PS
-  Amesos2               packages/amesos2                  SS
   Amesos                packages/amesos                   PS
+  Amesos2               packages/amesos2                  SS
   Pamgen                packages/pamgen                   PS
   SEACAS                packages/seacas                   SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
   Trios                 packages/trios                    EX #temporary
@@ -149,6 +149,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   MOOCHO                packages/moocho                   PS
   Aristos               packages/aristos                  EX
   Stokhos               packages/stokhos                  SS
+  ROL                   packages/rol                      EX
   Piro                  packages/piro                     SS
   Panzer                packages/panzer                   SS
   Sundance              packages/Sundance                 SS # Could be PS based on deps (BUG: 4669)

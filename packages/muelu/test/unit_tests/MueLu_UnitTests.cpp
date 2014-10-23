@@ -66,6 +66,7 @@ int main(int argc, char* argv[])
 
   bool success = false;
   bool verbose = true;
+  int ierr = -1;
   try {
     // Note: the command line parameter --linAlgebra= is take into account.
     // Xpetra parameters are added to the Teuchos::CommandLineProcessor of Teuchos::UnitTestRepository in MueLu_TestHelpers.cpp
@@ -98,9 +99,11 @@ int main(int argc, char* argv[])
     comm->barrier();
 #endif
 
+    ierr = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+
     success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+  return (success ? ierr : EXIT_FAILURE);
 }

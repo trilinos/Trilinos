@@ -226,7 +226,19 @@ executable or some general command executable and is defined as either
     executable even when configured in MPI mode
     (i.e. ``TPL_ENABLE_MPI=ON``).  If one wants to run an arbitrary command
     using MPI, use ``EXEC <fullPathToCmndExec> NOEXEPREFIX NOEXESUFFIX``
-    instead.
+    instead.  **WARNING:** If you want to run such tests using valgrind, you
+    have to use the raw executable as the ``<cmndExec>`` argument and *not*
+    the script.  For example, if you have a python script
+    ``my_python_test.py`` with ``/usr/bin/env pyhton`` at the top, you can't
+    just use::
+
+      CMND <path>/my_python_test.py ARGS <arg0> <arg1> ...
+
+    The same goes for Perl or any other scripting language.
+
+    Instead, you have to use::
+
+      CMND ${PYTHON_EXECUTABLE} ARGS <path>/my_python_test.py <arg0> <arg1> ...
 
 By default, the output (stdout/stderr) for each test command is captured and
 is then echoed to stdout for the overall test.  This is done in order to be

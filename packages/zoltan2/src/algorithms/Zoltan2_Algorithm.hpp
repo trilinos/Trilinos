@@ -102,7 +102,7 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }
   
-  //! \brief Coloring method
+  //! \brief Matching method
   virtual void match() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
 
   //! \brief Partitioning method

@@ -6,7 +6,7 @@ ELSE()
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     FECrsMatrix_test
     SOURCES cxx_main.cpp ExecuteTestProblems.cpp
-    DEPLIBS epetratest
+    TESTONLYLIBS epetratest
     ARGS -v
     COMM serial mpi
     NUM_MPI_PROCS 1
@@ -15,7 +15,7 @@ ELSE()
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     FEmatrix2
     SOURCES fematrix2.cpp
-    DEPLIBS epetratest
+    TESTONLYLIBS epetratest
     ARGS -v
     COMM serial mpi
     NUM_MPI_PROCS 1

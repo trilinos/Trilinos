@@ -64,7 +64,7 @@ struct TestRange {
   struct VerifyResetTag {};
 
   TestRange( const size_t N )
-    : m_flags( Kokkos::allocate_without_initializing , "flags" , N )
+    : m_flags( Kokkos::ViewAllocateWithoutInitializing("flags"), N )
     {}
 
   static void test_for( const size_t N )

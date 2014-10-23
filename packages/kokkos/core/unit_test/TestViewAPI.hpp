@@ -652,8 +652,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left(  "left" )
-    , right( "right" )
+    , left(  std::string("left") )
+    , right( std::string("right") )
     , left_stride( left )
     , right_stride( right )
     , left_alloc( allocation_count( left ) )
@@ -753,8 +753,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left(  "left" )
-    , right( "right" )
+    , left(  Kokkos::ViewAllocate("left") )
+    , right( Kokkos::ViewAllocate("right") )
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
@@ -850,8 +850,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left(  "left" )
-    , right( "right" )
+    , left(  Kokkos::ViewAllocate() )
+    , right( Kokkos::ViewAllocate() )
     , left_stride( left )
     , right_stride( right )
     , left_alloc( allocation_count( left ) )
@@ -892,7 +892,22 @@ class TestViewAPI
 {
 public:
   typedef DeviceType        device ;
-  typedef typename DeviceType::host_mirror_device_type host ;
+
+  enum { N0 = 1000 ,
+         N1 = 3 ,
+         N2 = 5 ,
+         N3 = 7 };
+
+  typedef Kokkos::View< T , device > dView0 ;
+  typedef Kokkos::View< T* , device > dView1 ;
+  typedef Kokkos::View< T*[N1] , device > dView2 ;
+  typedef Kokkos::View< T*[N1][N2] , device > dView3 ;
+  typedef Kokkos::View< T*[N1][N2][N3] , device > dView4 ;
+  typedef Kokkos::View< const T*[N1][N2][N3] , device > const_dView4 ;
+
+  typedef Kokkos::View< T****, device, Kokkos::MemoryUnmanaged > dView4_unmanaged ;
+
+  typedef typename dView0::host_mirror_space host ;
 
   TestViewAPI()
   {
@@ -914,20 +929,6 @@ public:
     TestViewOperator_LeftAndRight< int[2][3] , device >::apply();
     TestViewOperator_LeftAndRight< int[2] , device >::apply();
   }
-
-  enum { N0 = 1000 ,
-         N1 = 3 ,
-         N2 = 5 ,
-         N3 = 7 };
-
-  typedef Kokkos::View< T , device > dView0 ;
-  typedef Kokkos::View< T* , device > dView1 ;
-  typedef Kokkos::View< T*[N1] , device > dView2 ;
-  typedef Kokkos::View< T*[N1][N2] , device > dView3 ;
-  typedef Kokkos::View< T*[N1][N2][N3] , device > dView4 ;
-  typedef Kokkos::View< const T*[N1][N2][N3] , device > const_dView4 ;
-
-  typedef Kokkos::View< T****, device, Kokkos::MemoryUnmanaged > dView4_unmanaged ;
 
   static void run_test_mirror()
   {
@@ -1032,8 +1033,7 @@ public:
 
     {
       // Destruction of this view should be harmless
-      const_dView4 unmanaged_from_ptr_const_dx( Kokkos::view_without_managing ,
-                                                dx.ptr_on_device() ,
+      const_dView4 unmanaged_from_ptr_const_dx( dx.ptr_on_device() ,
                                                 dx.dimension_0() ,
                                                 dx.dimension_1() ,
                                                 dx.dimension_2() ,

@@ -138,7 +138,7 @@ namespace Tpetra {
     ///
     /// \note This constructor is invoked by Map's constructor, using
     ///   the Map's <tt>this</tt> pointer as the input argument.
-    explicit TEUCHOS_DEPRECATED Directory (const map_type& map);
+    explicit TPETRA_DEPRECATED Directory (const map_type& map);
 
     /// \brief Constructor (using a tie break class to decide ownership).
     ///
@@ -147,7 +147,7 @@ namespace Tpetra {
     ///
     /// \note This constructor is NOT invoked by Map's constructor,
     ///   and for now only works with noncontiguous Maps.
-    explicit TEUCHOS_DEPRECATED
+    explicit TPETRA_DEPRECATED
     Directory (const map_type& map,
                const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal>& tie_break);
 
@@ -155,7 +155,7 @@ namespace Tpetra {
     ///
     /// This constructor is DEPRECATED.  Please use the constructor
     /// that takes a <tt>const map_type&</tt>.
-    explicit TEUCHOS_DEPRECATED
+    explicit TPETRA_DEPRECATED
     Directory (const Teuchos::RCP<const map_type>& map);
 
     /// \brief Default constructor: the only one you should use.

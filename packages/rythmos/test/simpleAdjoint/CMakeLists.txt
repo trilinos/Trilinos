@@ -10,7 +10,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE(
   simpleAdjoint
   SOURCES ${SOURCES}
-  DEPLIBS rythmos_test_models
+  TESTONLYLIBS rythmos_test_models
   COMM serial mpi  
   )
 

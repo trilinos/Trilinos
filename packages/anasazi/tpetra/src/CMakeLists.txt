@@ -48,7 +48,6 @@ ELSE ()
     anasazitpetra
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
-    DEPLIBS anasazi tpetra kokkos
     )
 ENDIF ()
 

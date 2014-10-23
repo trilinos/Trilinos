@@ -6392,7 +6392,7 @@ int ML_Gen_Smoother_SubdomainOverlap(ML *ml, int level, int overlap) {
   return 0;
 }
 
-#ifdef HAVE_PETSC
+#ifdef HAVE_ML_PETSC
 int ML_Gen_Smoother_Petsc(ML *ml, int level, int pre_or_post, int ntimes, ML_PetscKSP petscKSP)
 {
    int (*fun)(ML_Smoother *, int, double *, int, double *);
@@ -6418,7 +6418,7 @@ int ML_Gen_Smoother_Petsc(ML *ml, int level, int pre_or_post, int ntimes, ML_Pet
 
    return(status);
 } /*ML_Gen_Smoother_Petsc*/
-#endif /*ifdef HAVE_PETSC*/
+#endif /*ifdef HAVE_ML_PETSC*/
 
 #include "ml_amesos.h"
 #define newrap       /* Should always be defined for better performance */

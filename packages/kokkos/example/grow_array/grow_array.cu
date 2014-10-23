@@ -54,11 +54,11 @@
 #if defined( KOKKOS_HAVE_CUDA )
 void grow_array_cuda( int length_array , int span_values )
 {
-  Kokkos::Cuda::host_mirror_device_type::initialize(1);
+  Kokkos::HostSpace::execution_space::initialize(1);
   Kokkos::Cuda::initialize();
   Example::GrowArrayFunctor< Kokkos::Cuda >( length_array , span_values );
   Kokkos::Cuda::finalize();
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
 }
 #endif
 

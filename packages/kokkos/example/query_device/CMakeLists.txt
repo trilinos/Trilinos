@@ -10,6 +10,5 @@ TRIBITS_ADD_EXECUTABLE(
   query_device
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS kokkoscore
   )
 

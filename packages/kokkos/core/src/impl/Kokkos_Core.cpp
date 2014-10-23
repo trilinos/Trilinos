@@ -69,20 +69,20 @@ namespace Kokkos {
     }
   }
 
-  typedef Kokkos::DefaultExecutionSpace::host_mirror_device_type  DefaultHostMirrorSpaceType ;
+  typedef Kokkos::HostSpace::execution_space  DefaultHostExecutionSpace ;
 
-  enum { DefaultIsNotHostSpace = ! Impl::is_same< Kokkos::DefaultExecutionSpace , DefaultHostMirrorSpaceType >::value };
+  enum { DefaultIsNotHostSpace = ! Impl::is_same< Kokkos::DefaultExecutionSpace , DefaultHostExecutionSpace >::value };
 
   namespace Impl {
     void initialize_internal(const int& nthreads, const int& numa, const int& device) {
       if(DefaultIsNotHostSpace) {
         if(nthreads>0) {
           if(numa>0)
-            DefaultHostMirrorSpaceType::initialize(nthreads,numa);
+            DefaultHostExecutionSpace::initialize(nthreads,numa);
           else
-            DefaultHostMirrorSpaceType::initialize(nthreads);
+            DefaultHostExecutionSpace::initialize(nthreads);
         } else
-          DefaultHostMirrorSpaceType::initialize();
+          DefaultHostExecutionSpace::initialize();
       }
 
       #ifdef KOKKOS_HAVE_CUDA
@@ -107,7 +107,7 @@ namespace Kokkos {
 
   void initialize() {
     if ( DefaultIsNotHostSpace ) {
-      Kokkos::DefaultExecutionSpace::host_mirror_device_type::initialize();
+      Kokkos::HostSpace::execution_space::initialize();
     }
     Kokkos::DefaultExecutionSpace::initialize();
   }
@@ -351,14 +351,14 @@ namespace Kokkos {
 
   void finalize() {
     if(DefaultIsNotHostSpace) {
-      DefaultHostMirrorSpaceType::finalize();
+      DefaultHostExecutionSpace::finalize();
     }
     Kokkos::DefaultExecutionSpace::finalize();
   }
 
   void fence() {
     if(DefaultIsNotHostSpace) {
-      DefaultHostMirrorSpaceType::fence();
+      DefaultHostExecutionSpace::fence();
     }
     Kokkos::DefaultExecutionSpace::fence();
   }

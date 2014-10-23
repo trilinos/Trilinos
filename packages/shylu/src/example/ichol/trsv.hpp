@@ -2,12 +2,17 @@
 #ifndef __TRSV_HPP__
 #define __TRSV_HPP__
 
+/// \file trsv.hpp
+/// \brief Sparse triangular matrix solve on given sparse patterns and a single rhs.
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+
 namespace Example { 
 
   using namespace std;
   
   template<typename CrsMatViewType>
-  inline int
+  KOKKOS_INLINE_FUNCTION 
+  int
   trsv_l_n_t(const int diag,
              const CrsMatViewType A,
              const CrsMatViewType x) {
@@ -70,7 +75,7 @@ namespace Example {
         auto xx = x2.extractRow(0);
         for (ordinal_type j=0;j<xx.NumNonZeros();++j) {
           auto aa = a21.extractRow(xx.Col(j));
-          xx.Value(j) -= (aa.get(0)*xi_val);
+          xx.Value(j) -= (aa.ValueAtColumn(0)*xi_val);
         }
       }
       

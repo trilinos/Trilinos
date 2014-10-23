@@ -1,3 +1,41 @@
+Release Notes for PyTrilinos 4.12 (Trilinos 11.12)
+==================================================
+
+General
+  * Got rid of NestedEpetra paradigm and now use relative imports to
+    address the problem that NestedEpetra wass supposed to solve.
+  * Changed build system for docstrings.  The docstrings are no longer
+    stored in the repository.  If the user wants docstrings, then
+    doxygen needs to be installed.  Docstrings are built during the
+    configuration phase.
+  * Fixed warnings due to Epetra 32/64 bit handling
+  * Added mpi4py support.  Specifically, the Eptra_MpiComm
+    constructors and Teuchos::MpiComm<> constructors can now take MPI
+    sub-communicators, provided by mpi4py.MPI.Comm class.  Ignored if
+    mpi4py is not found.
+  * Updated Developers Guide
+
+Teuchos module
+  * Support for the Teuchos::DataAccess enumeration.  This enables
+    certain Tpetra and Domi constructors
+  * Add Teuchos::Arrays of int, long, float and double, as valid types
+    for PyTrilinos ParameterLists
+
+DistArray Protocol
+  * Added support for the DistArray Protocol.  This is preliminary and
+    unfortunatley, does not provide any functionality with this
+    release.
+
+LOCA module
+  * Re-instated the LOCA wrappers.  These are still experimentaland
+    require SWIG 3.0.0 and Python 2.5.
+  * Re-introduction of the LOCA interface required the introduction of
+    relative imports, which require Python 2.5 or higher.
+
+Isorropia module
+  * Refactor of Isorropia directory structure.  This should not affect
+    users.
+
 Release Notes for PyTrilinos 4.10 (Trilinos 11.8)
 =================================================
 

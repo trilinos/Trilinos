@@ -61,9 +61,9 @@ namespace Kokkos {
 class HostSpace {
 public:
 
-  typedef Impl::MemorySpaceTag  kokkos_tag ;
-  typedef HostSpace             memory_space ;
-  typedef size_t                size_type ;
+  //! Tag this class as a kokkos memory space
+  typedef HostSpace  memory_space ;
+  typedef size_t     size_type ;
 
   // Default execution space for this memory space
 #if defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )

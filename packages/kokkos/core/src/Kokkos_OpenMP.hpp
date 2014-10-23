@@ -72,17 +72,16 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
-  typedef OpenMP                device_type ;
+  //! Tag this class as a kokkos execution space
   typedef OpenMP                execution_space ;
-  typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
   typedef LayoutRight           array_layout ;
-  typedef OpenMP                host_mirror_device_type ;
+  typedef HostSpace::size_type  size_type ;
 
   typedef ScratchMemorySpace< OpenMP > scratch_memory_space ;
 
+  //! For backward compatibility
+  typedef OpenMP                device_type ;
   //@}
   //------------------------------------
   //! \name Functions that all Kokkos devices must implement.
@@ -157,6 +156,7 @@ struct VerifyExecutionCanAccessMemorySpace
   , Kokkos::OpenMP::scratch_memory_space
   >
 {
+  enum { value = true };
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 };

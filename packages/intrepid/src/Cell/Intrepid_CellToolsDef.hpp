@@ -50,7 +50,7 @@
 #define INTREPID_CELLTOOLSDEF_HPP
 
 // disable clang warnings
-#ifdef __clang__
+#if defined (__clang__) && !defined (__INTEL_COMPILER)
 #pragma clang system_header
 #endif
 

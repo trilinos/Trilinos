@@ -89,18 +89,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
   )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_RTI
-  HAVE_TPETRA_RTI
-  "Enabling Tpetra Reduction/Transformation Interface."
-  ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
-  )
-IF (${PACKAGE_NAME}_ENABLE_RTI)
-  MESSAGE(STATUS "Enabling Tpetra/RTI")
-ELSE()
-  MESSAGE(STATUS "Not enabling Tpetra/RTI")
-ENDIF()
-
 IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_TEUCHOS_BLASFLOAT) 
   GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT ON)
 ELSE()
@@ -311,7 +299,7 @@ IF (Tpetra_ENABLE_Kokkos_Refactor AND
      NOT Tpetra_ENABLE_KokkosContainers OR
      NOT Tpetra_ENABLE_KokkosAlgorithms OR
      NOT Tpetra_ENABLE_KokkosMpiComm))
-  MESSAGE(FATAL_ERROR "Dear user: You enabled the Tpetra_ENABLE_Kokkos_Refactor option, which turns on the Kokkos Refactor version of Tpetra.  However, you did not enable all required packages in order for this to work.  The Kokkos Refactor version of Tpetra depends on some Kokkos subpackages which currently do not build by default.  For now, you must enable them explicitly in order to use the Kokkos Refactor version of Tpetra.  Please enable Kokkos subpackages Core, Compat, LinAlg, Containers, Algorithms, and MpiComm.  Despite the name \"MpiComm\", you may enable that subpackage even if not building Trilinos with MPI support.  Enable these subpackages by adding the following to your CMake configuration:\n-D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON\n-D Trilinos_ENABLE_KokkosCore:BOOL=ON\n-D Trilinos_ENABLE_KokkosCompat:BOOL=ON\n-D Trilinos_ENABLE_KokkosLinAlg:BOOL=ON\n-D Trilinos_ENABLE_KokkosContainers:BOOL=ON\n-D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON\n-D Trilinos_ENABLE_KokkosMpiComm:BOOL=ON\nIf you are running Trilinos' check-in test script, you must enable these subpackages explicitly, using arguments to --enable-packages, like this:\n--enable-packages=KokkosCore,KokkosCompat,KokkosContainers,KokkosLinAlg,KokkosAlgorithms,KokkosMpiComm,<YOUR_PACKAGES>\n(Replace <YOUR_PACKAGES> with the other packages you want to enable.)  Also, the check-in test script will not enable these subpackages with the default builds MPI_DEBUG and SERIAL_RELEASE, so you must create another configuration and use it with the --extra-builds=... command-line argument.")
+  MESSAGE(FATAL_ERROR "Dear user: You enabled the Tpetra_ENABLE_Kokkos_Refactor option, which turns on the Kokkos Refactor version of Tpetra.  However, you did not enable all required packages in order for this to work.  The Kokkos Refactor version of Tpetra depends on some Kokkos subpackages which currently do not build by default.  For now, you must enable them explicitly in order to use the Kokkos Refactor version of Tpetra.  Please enable Kokkos subpackages Core, Compat, LinAlg, Containers, Algorithms, and MpiComm.  Despite the name \"MpiComm\", you may enable that subpackage even if not building Trilinos with MPI support.  Enable these subpackages by adding the following to your CMake configuration:\n-D Trilinos_ENABLE_KokkosCore:BOOL=ON\n-D Trilinos_ENABLE_KokkosCompat:BOOL=ON\n-D Trilinos_ENABLE_KokkosLinAlg:BOOL=ON\n-D Trilinos_ENABLE_KokkosContainers:BOOL=ON\n-D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON\n-D Trilinos_ENABLE_KokkosMpiComm:BOOL=ON\nIf you are running Trilinos' check-in test script, you must enable these subpackages explicitly, using arguments to --enable-packages, like this:\n--enable-packages=KokkosCore,KokkosCompat,KokkosContainers,KokkosLinAlg,KokkosAlgorithms,KokkosMpiComm,<YOUR_PACKAGES>\n(Replace <YOUR_PACKAGES> with the other packages you want to enable.)  Also, the check-in test script will not enable these subpackages with the default builds MPI_DEBUG and SERIAL_RELEASE, so you must create another configuration and use it with the --extra-builds=... command-line argument.")
 ENDIF()
 
 IF (Tpetra_ENABLE_Kokkos_Refactor)
@@ -332,6 +320,22 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 
 IF (Tpetra_ENABLE_Kokkos_Refactor_Map AND NOT Tpetra_Have_Kokkos_Refactor)
   MESSAGE( FATAL_ERROR "If Tpetra_ENABLE_Kokkos_Refactor_Map is ON, then Tpetra's Kokkos refactor code must be enabled as well.  This requires Tpetra_ENABLE_Kokkos_Refactor to be ON, and the Core, Compat, LinAlg, Containers, and MpiComm subpackages of Kokkos to be enabled." )
+ENDIF ()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_RTI
+  HAVE_TPETRA_RTI
+  "Enable Tpetra's Reduction/Transformation Interface (RTI).  It is OFF by default.  Note that RTI is currently incompatible with the new Kokkos wrapper Nodes."
+  OFF
+  )
+IF (${PACKAGE_NAME}_ENABLE_RTI)
+  MESSAGE(STATUS "Enabling Tpetra/RTI")
+ELSE()
+  MESSAGE(STATUS "Not enabling Tpetra/RTI")
+ENDIF()
+
+IF (Tpetra_ENABLE_KokkosCompat AND ${PACKAGE_NAME}_ENABLE_RTI)
+  MESSAGE(FATAL_ERROR "You enabled the Reduction/Transformation Interface (RTI) in Tpetra by setting Tpetra_ENABLE_RTI, and you also enabled the KokkosCompat subpackage of Kokkos.  The new Kokkos wrapper Nodes in the KokkosCompat package are currently incompatible with RTI.  Note that this has nothing to do with the Kokkos refactor version of Tpetra; it's just that the new Kokkos wrapper Nodes are a bit less tolerant.")
 ENDIF ()
 
 #

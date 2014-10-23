@@ -18,8 +18,8 @@
 // Lesser General Public License for more details.
 // 
 // You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// License along int with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Mike A. Heroux (maherou@sandia.gov)
 //
@@ -99,35 +99,35 @@ struct KLU_OrdinalTraits<int>
 };
 
 template<>
-struct KLU_OrdinalTraits<long>
+struct KLU_OrdinalTraits<long int>
 {
-    static inline long btf_order (long n, long *Ap, long *Ai,
-        double maxwork, double *work, long *P, long *Q, long *R, long *nmatch,
-        long *Work)
+    static inline long int btf_order (long int n, long int *Ap, long int *Ai,
+        double maxwork, double *work, long int *P, long int *Q, long int *R, long int *nmatch,
+        long int *Work)
     {
         return (amesos_btf_l_order (n, Ap, Ai, maxwork, work, P, Q, R, nmatch,
                     Work));
     }
 
-    static inline long btf_strongcomp (long n, long *Ap, long *Ai, long *Q,
-        long *P, long *R, long *Work)
+    static inline long int btf_strongcomp (long int n, long int *Ap, long int *Ai, long int *Q,
+        long int *P, long int *R, long int *Work)
     {
         return(amesos_btf_l_strongcomp (n, Ap, Ai, Q, P, R, Work)) ;
     }
 
-    static inline long amd_order (long n, long *Ap, long *Ai, long *P,
+    static inline long int amd_order (long int n, long int *Ap, long int *Ai, long int *P,
         double *Control, double *Info)
     {
         return (amesos_amd_l_order(n, Ap, Ai, P, Control, Info)) ;
     }
 
-    static inline long colamd (long n_row, long n_col, long Alen, long *A,
-        long *p, double *knobs, long *stats)
+    static inline long int colamd (long int n_row, long int n_col, long int Alen, long int *A,
+        long int *p, double *knobs, long int *stats)
     {
         amesos_colamd_l (n_row, n_col, Alen, A, p, knobs, stats);
     }
 
-    static inline long colamd_recommended (long nnz, long n_row, long n_col)
+    static inline long int colamd_recommended (long int nnz, long int n_row, long int n_col)
     {
         return(amesos_colamd_l_recommended(nnz, n_row, n_col));
     }

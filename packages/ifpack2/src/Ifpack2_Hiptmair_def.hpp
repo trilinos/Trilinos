@@ -364,7 +364,6 @@ applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type> MV;
   const scalar_type ZERO = STS::zero ();

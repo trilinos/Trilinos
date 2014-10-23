@@ -1,36 +1,3 @@
-// Copyright (c) 2013, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-// 
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-// 
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-// 
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
-
 #include <gtest/gtest.h>
 
 #include <stk_util/stk_config.h>
@@ -45,7 +12,7 @@
 namespace {
 
 #if defined(KOKKOS_HAVE_PTHREAD)
-#define KOKKOS_THREAD_DEVICE KOKKOS_THREAD_DEVICE
+#define KOKKOS_THREAD_DEVICE Kokkos::Threads
 #elif defined(KOKKOS_HAVE_OPENMP)
 #define KOKKOS_THREAD_DEVICE Kokkos::OpenMP
 #else
@@ -76,8 +43,10 @@ protected:
 
     KOKKOS_THREAD_DEVICE::initialize( num_threads );
 
+#if defined(KOKKOS_HAVE_OPENMP) || defined(KOKKOS_HAVE_PTHREAD)
     std::cout << "Kokkos thread device 'print_configuration' output:\n";
     KOKKOS_THREAD_DEVICE::print_configuration(std::cout, true);
+#endif
 
     std::cout << "\nNumber of Threads: " << num_threads << std::endl;
   }
@@ -101,10 +70,10 @@ TEST_F( KokkosThreads, SerialInitialize)
   // View will default initialize all the values unless it is explicitly disabled, ie,
   // Kokkos::View<unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> a("node views", RUN_TIME_DIMENSION);
   // zero fills the array, but
-  // Kokkos::View<unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> a( Kokkos::allocate_without_initializing, "node views", RUN_TIME_DIMENSION);
+  // Kokkos::View<unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> a( Kokkos::ViewAllocateWithoutInitializing("node views"), RUN_TIME_DIMENSION);
   // will allocate without initializing the array
 
-  Kokkos::View<unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> a( Kokkos::allocate_without_initializing, "node views", RUN_TIME_DIMENSION);
+  Kokkos::View<unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> a( Kokkos::ViewAllocateWithoutInitializing("node views"), RUN_TIME_DIMENSION);
 
   for (size_t i=0; i < a.dimension_0(); ++i) {
     for (size_t x=0; x < a.dimension_1(); ++x) {
@@ -127,7 +96,7 @@ TEST_F( KokkosThreads, SerialInitialize)
 #if defined (KOKKOS_HAVE_C_PLUS_PLUS_11_LAMBDA)
 TEST_F( KokkosThreads, LambdaInitialize)
 {
-  Kokkos::View<unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> a( Kokkos::allocate_without_initializing, "node views", RUN_TIME_DIMENSION);
+  Kokkos::View<unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> a( Kokkos::ViewAllocateWithoutInitializing("node views"), RUN_TIME_DIMENSION);
 
   Kokkos::parallel_for<KOKKOS_THREAD_DEVICE>(
     a.dimension_0() ,
@@ -274,7 +243,7 @@ TEST_F( KokkosThreads, ParallelInitialize)
   typedef Kokkos::View<unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> view_type;
   typedef Kokkos::View<const unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> const_view_type;
 
-  view_type a(Kokkos::allocate_without_initializing, "node views", RUN_TIME_DIMENSION);
+  view_type a(Kokkos::ViewAllocateWithoutInitializing("node views"), RUN_TIME_DIMENSION);
 
   // call the InitializeView functor
   {

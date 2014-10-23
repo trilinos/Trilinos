@@ -333,10 +333,10 @@ public:
 
   // Host mirror
   typedef View< typename Impl::RebindStokhosStorageDevice<
-                typename traits::non_const_data_type ,
-                typename traits::device_type::host_mirror_device_type >::type ,
+                  typename traits::non_const_data_type ,
+                  typename traits::host_mirror_space >::type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 void > HostMirror ;
 
   // Equivalent array type for this view.
@@ -354,13 +354,13 @@ public:
   // Equivalent host array type for this view.
   typedef View< typename analyze_sacado_shape::array_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 typename traits::memory_traits > host_array_type ;
 
   // Equivalent const host array type for this view.
   typedef View< typename analyze_sacado_shape::const_array_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 typename traits::memory_traits > host_const_array_type ;
 
   // Equivalent flattened array type for this view.
@@ -485,14 +485,12 @@ public:
   //------------------------------------
   // Allocation of a managed view with possible alignment padding.
 
-  typedef Impl::if_c< traits::is_managed ,
-                      std::string ,
-                      Impl::ViewError::allocation_constructor_requires_managed >
-   if_allocation_constructor ;
-
+  template< class AllocationProperties >
   explicit inline
-  View( const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
+  View( const AllocationProperties & prop ,
+        // Impl::ViewAllocProp::size_type exists when the traits and allocation properties
+        // are valid for allocating viewed memory.
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -502,6 +500,8 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_storage_size =
@@ -510,45 +510,26 @@ public:
         m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
+        m_allocation.allocate( Alloc::label( prop ),
                                m_offset_map,
                                m_sacado_size.value );
 
-      deep_copy( *this , intrinsic_scalar_type() );
+      if ( Alloc::initialize() ) {
+        deep_copy( *this , intrinsic_scalar_type() );
+      }
     }
 
+  template< class AllocationProperties , typename iType >
   explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        const size_t n7 = 0 )
+  View( const AllocationProperties & prop ,
+        const iType * const n ,
+        // Impl::ViewAllocProp::size_type exists when the traits and allocation properties
+        // are valid for allocating viewed memory.
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type = 0 )
     : m_ptr_on_device(0)
     {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_stride = 1 ;
-      m_storage_size =
-        Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
-      if (m_storage_size == 0)
-        m_storage_size = global_sacado_mp_vector_size;
-      m_sacado_size = m_storage_size;
-      m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
-                               m_offset_map,
-                               m_sacado_size.value );
-    }
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
-  template <typename iType>
-  explicit inline
-  View( const typename if_allocation_constructor::type & label ,
-        const iType * const n )
-    : m_ptr_on_device(0)
-    {
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
       const size_t n2 = Rank >= 2 ? n[2] : 0 ;
@@ -565,39 +546,13 @@ public:
         m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
+        m_allocation.allocate( Alloc::label( prop ),
                                m_offset_map,
                                m_sacado_size.value );
 
-      deep_copy( *this , intrinsic_scalar_type() );
-    }
-
-  template <typename iType>
-  explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const typename if_allocation_constructor::type & label ,
-        const iType * const n )
-    : m_ptr_on_device(0)
-    {
-      const size_t n0 = Rank >= 0 ? n[0] : 0 ;
-      const size_t n1 = Rank >= 1 ? n[1] : 0 ;
-      const size_t n2 = Rank >= 2 ? n[2] : 0 ;
-      const size_t n3 = Rank >= 3 ? n[3] : 0 ;
-      const size_t n4 = Rank >= 4 ? n[4] : 0 ;
-      const size_t n5 = Rank >= 5 ? n[5] : 0 ;
-      const size_t n6 = Rank >= 6 ? n[6] : 0 ;
-      const size_t n7 = Rank >= 7 ? n[7] : 0 ;
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_stride = 1 ;
-      m_storage_size =
-        Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
-      if (m_storage_size == 0)
-        m_storage_size = global_sacado_mp_vector_size;
-      m_sacado_size = m_storage_size;
-      m_ptr_on_device =
-        m_allocation.allocate( if_allocation_constructor::select( label ),
-                               m_offset_map,
-                               m_sacado_size.value );
+      if ( Alloc::initialize() ) {
+        deep_copy( *this , intrinsic_scalar_type() );
+      }
     }
 
   //------------------------------------
@@ -614,35 +569,9 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
-          ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::non_const_value_type>::value ) &&
-          ! traits::is_managed ),
-        const size_t >::type n7 = 0 )
-    : m_ptr_on_device(ptr)
-    {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_stride = 1 ;
-      m_storage_size = Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
-      if (m_storage_size == 0)
-        m_storage_size = global_sacado_mp_vector_size;
-      m_sacado_size = m_storage_size;
-      m_allocation.assign(ptr);
-      m_tracking = false;
-    }
-
-  template< typename T >
-  View( const ViewWithoutManaging & ,
-        T * ptr ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        typename Impl::enable_if<(
-          Impl::is_same<T,typename traits::value_type>::value ||
-          Impl::is_same<T,typename traits::non_const_value_type>::value ),
+            Impl::is_same<T,typename traits::value_type>::value ||
+            Impl::is_same<T,typename traits::non_const_value_type>::value
+          ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
     {

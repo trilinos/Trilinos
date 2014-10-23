@@ -1720,7 +1720,7 @@ myaztecParams = m_smootherAztecParams;
       // We assume the PETSc application has set up the KSP object entirely.
       // ML just applies it.
 
-#     ifdef HAVE_PETSC
+#     ifdef HAVE_ML_PETSC
 
 
 /*
@@ -1752,7 +1752,7 @@ myaztecParams = m_smootherAztecParams;
           true,
           ErrorMsg_ << "You must configure ML with PETSc support enabled."
           );
-#     endif /*ifdef HAVE_PETSC*/
+#     endif /*ifdef HAVE_ML_PETSC*/
     } else if( MySmoother == "teko" ) {
 #ifdef HAVE_ML_TekoSmoothers
       // ======================================== //

@@ -202,9 +202,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
 #
 # Tpetra has a required dependency on Teuchos and Kokkos,
 # so we don't have to name those packages explicitly here.
-# Note:  Test is hard-coded to SerialNode, so that must be enabled.
-IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_Tpetra AND
-    KokkosClassic_ENABLE_Serial)
+# This test uses the default Kokkos Node type.
+IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
     epetraTpetraImportBenchmark
     SOURCES epetraTpetraImportBenchmark.cpp

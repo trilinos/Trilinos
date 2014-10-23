@@ -23,7 +23,8 @@
 //
 
 // Do something with the given communicator.  In this case, we just
-// print Tpetra's version to stdout on Process 0.
+// print Tpetra's version to stdout on Process 0 in the given
+// communicator.
 void
 exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
@@ -56,10 +57,13 @@ main (int argc, char *argv[])
   MPI_Comm yourComm = MPI_COMM_WORLD;
 
   // If your code plans to use MPI on its own, as well as through
-  // Trilinos, you should strongly consider giving Trilinos a copy
-  // of your MPI_Comm (created via MPI_Comm_dup).  Trilinos may in
-  // the future duplicate the MPI_Comm automatically, but it does
-  // not currently do this.
+  // Trilinos, consider giving Trilinos a copy of your MPI_Comm
+  // (created via MPI_Comm_dup) rather than your MPI_Comm directly.
+  // Trilinos may in the future duplicate the MPI_Comm automatically,
+  // but it does not currently do this.  Duplicating the MPI_Comm is
+  // not necessary, but may make it easier for you to overlap
+  // asynchronous communication operations performed by Trilinos with
+  // those performed by your code.
 
   // Wrap the MPI_Comm.  If you wrap it in this way, you are telling
   // Trilinos that you are responsible for calling MPI_Comm_free on
@@ -69,13 +73,7 @@ main (int argc, char *argv[])
   // passing the result of Teuchos::opaqueWrapper to MpiComm's
   // constructor.)
 
-  RCP<const Comm<int> > comm = rcp (new MpiComm<int> (yourComm));
-
-  // In old versions of Trilinos, the above line of code might not
-  // compile.  You might have to do the following:
-  //
-  // using Teuchos::opaqueWrapper;
-  // RCP<const Comm<int> > comm = rcp (new MpiComm<int> (opaqueWrapper (yourComm)));
+  RCP<const Comm<int> > comm (new MpiComm<int> (yourComm));
 
   // Get my process' rank, and the total number of processes.
   // Equivalent to MPI_Comm_rank resp. MPI_Comm_size.
@@ -94,11 +92,13 @@ main (int argc, char *argv[])
     cout << "End Result: TEST PASSED" << endl;
   }
 
-  // If you need to call MPI_Comm_free on your MPI_Comm, now would
-  // be the time to do so, before calling MPI_Finalize.  You may also
-  // automate this process; ask the tutorial presenter for more information.
+  // If you need to call MPI_Comm_free on your MPI_Comm, now would be
+  // the time to do so, before calling MPI_Finalize.  You may also
+  // automate this process; ask the tutorial presenter for more
+  // information.
 
-  // Since you called MPI_Init, you are responsible for calling MPI_Finalize.
+  // Since you called MPI_Init, you are responsible for calling
+  // MPI_Finalize.
   (void) MPI_Finalize ();
   return 0;
 }

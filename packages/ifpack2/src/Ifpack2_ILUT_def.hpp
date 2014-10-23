@@ -44,7 +44,7 @@
 #define IFPACK2_ILUT_DEF_HPP
 
 // disable clang warnings
-#ifdef __clang__
+#if defined (__clang__) && !defined (__INTEL_COMPILER)
 #pragma clang system_header
 #endif
 

@@ -42,12 +42,12 @@
 */
 
 // Including this is the easy way to get access to all the Node types.
-#include "Kokkos_DefaultNode.hpp"
+#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_ConfigDefs.hpp>
 
-#include "Tpetra_MultiVector.hpp"
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_SERIAL)
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-
+#  include "Tpetra_MultiVector_decl.hpp"
 #  include "Tpetra_ETIHelperMacros.h"
 #  include "Tpetra_MultiVector_def.hpp"
 
@@ -62,4 +62,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_SERIAL)

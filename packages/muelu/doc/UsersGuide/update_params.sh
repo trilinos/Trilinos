@@ -53,6 +53,7 @@ echo '// @HEADER
 // @HEADER
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
+#include "MueLu_Exceptions.hpp"
 #include "MueLu_MasterList.hpp"
 
 namespace MueLu {
@@ -65,15 +66,48 @@ namespace MueLu {
     return masterList_;
   }
 
+  Teuchos::RCP<Teuchos::ParameterList> MasterList::GetProblemSpecificList(std::string const & problemType) {
+
+    if ( (problemType != problemType_) || problemSpecificList_.is_null() ) {
+      if (DefaultProblemTypeLists_.find(problemType) != DefaultProblemTypeLists_.end()) {
+        problemType_ = problemType;
+        problemSpecificList_ = Teuchos::getParametersFromXmlString(DefaultProblemTypeLists_[problemType]);
+      } else {
+        //TODO provide valid problem types
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Invalid problem type " << problemType << ".");
+      }
+    }
+    return problemSpecificList_;
+  }
+
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> MasterList::problemSpecificList_ = Teuchos::null;
+  std::string                          MasterList::problemType_ = "unknown";
   const std::string                    MasterList::stringList_ =' > $code_file
 
 xsltproc paramlist.xsl masterList.xml >> $code_file
+
+echo ';' >> $code_file
+
+echo '  std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>' >> $code_file
+
+PROBLEM_TYPES=( "Poisson-2D" "Poisson-3D" "Elasticity-2D" "Elasticity-3D" "MHD" "ConvectionDiffusion" )
+
+for i in "${PROBLEM_TYPES[@]}"; do
+  echo "(\"$i\"," >> $code_file
+  xsltproc --stringparam prob_type "$i" probtypelist.xsl masterList.xml >> $code_file
+  echo ')' >> $code_file
+done
 
 echo ';
 
 }
 ' >> $code_file
+
+SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" )
+for i in "${SECTIONS[@]}"; do
+  xsltproc --stringparam section "$i" options.xsl masterList.xml > options_general.tex
+done
 
 # fix quotation
 sed -i '/<Parameter/ s/\\""/\\"/g' $code_file

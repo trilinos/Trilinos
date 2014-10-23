@@ -101,19 +101,8 @@ enum MeshEntityType {
 
 */
 
-  template <typename User>
-  class MeshAdapter : public BaseAdapter<User> {
-private:
-  enum MeshEntityType primaryEntityType; // Entity type
-                                         // to be partitioned, ordered,
-                                         // colored, matched, etc.
-  enum MeshEntityType adjacencyEntityType; // Entity type defining first-order
-                                           // adjacencies; adjacencies are of
-                                           // this type.  
-  enum MeshEntityType secondAdjacencyEntityType; // Bridge entity type
-                                                 // defining second-order
-                                                 // adjacencies.
-
+template <typename User>
+class MeshAdapter : public BaseAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -248,7 +237,19 @@ public:
   /*! \brief Returns whether a second adjacency combination is available.
    */
   virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
-			    MeshEntityType through) const { return false;}
+			    MeshEntityType through) const {
+    if (!availAdjs(sourcetarget, through))
+      return false;
+    else {
+      zgid_t const *Ids=NULL;
+      getIDsView(Ids);
+      lno_t const *offsets=NULL;
+      zgid_t const *adjacencyIds=NULL;
+      getAdjsView(sourcetarget, through, offsets, adjacencyIds);
+      
+      return true;
+    }
+  }
 
 
   /*! \brief Returns the number of second adjacencies on this process.
@@ -257,7 +258,13 @@ public:
    *   balance_entity_type==MeshEntityType, adjacency_through==MeshEntityType
    */
   virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
-                                    MeshEntityType through) const { return 0; }
+                                    MeshEntityType through) const {
+    if (!avail2ndAdjs(sourcetarget, through))
+      return 0;
+    else {
+      return nadj_;
+    }
+  }
 
   /*! \brief Sets pointers to this process' mesh second adjacencies.
       \param sourcetarget
@@ -276,9 +283,14 @@ public:
                               const lno_t *&offsets,
                               const zgid_t *&adjacencyIds) const
   {
-    offsets = NULL;
-    adjacencyIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    if (!avail2ndAdjs(sourcetarget, through)) {
+      offsets = NULL;
+      adjacencyIds = NULL;
+      Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    } else {
+      offsets = start_;
+      adjacencyIds =  adj_;
+    }
   }
 
 
@@ -447,6 +459,20 @@ public:
   {
     return useDegreeAsWeightOf(getPrimaryEntityType(), idx);
   }
+
+private:
+  enum MeshEntityType primaryEntityType; // Entity type
+                                         // to be partitioned, ordered,
+                                         // colored, matched, etc.
+  enum MeshEntityType adjacencyEntityType; // Entity type defining first-order
+                                           // adjacencies; adjacencies are of
+                                           // this type.  
+  enum MeshEntityType secondAdjacencyEntityType; // Bridge entity type
+                                                 // defining second-order
+                                                 // adjacencies.
+  lno_t *start_;
+  zgid_t *adj_;
+  size_t nadj_;
 };
   
 }  //namespace Zoltan2

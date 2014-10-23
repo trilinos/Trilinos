@@ -122,14 +122,23 @@ namespace Epetra {
     /// \typedef node_type
     ///
     /// TSQR depends on a Kokkos Node type.  We could use the
-    /// KokkosClassic::DefaultNode::DefaultNodeType typedef, but (a) we want
-    /// to ensure the expected "sequential within one MPI process"
-    /// semantics of Epetra, and (b) we don't have a good
+    /// KokkosClassic::DefaultNode::DefaultNodeType typedef, but (a)
+    /// we want to ensure the expected "sequential within one MPI
+    /// process" semantics of Epetra, and (b) we don't have a good
     /// platform-independent automatic mechanism for determining how
     /// many threads each MPI process should use, when running
     /// multiple MPI processes on a node.  Thus, we use
-    /// KokkosClassic::SerialNode.
+    /// KokkosClassic::SerialNode if it is available.  If it's not,
+    /// all we can do is use the default Node type.
+    ///
+    /// FIXME (mfh 15 Oct 2014) What if the default Node type does not
+    /// have a host memory space as its default memory space, e.g., a
+    /// CUDA Node?  That would make it incompatible with Epetra.
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
     typedef KokkosClassic::SerialNode node_type;
+#else
+    typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
     /// \typedef dense_matrix_type
     ///
@@ -350,7 +359,7 @@ namespace Epetra {
     {
       (void) mv; // Epetra objects don't have a Kokkos Node.
 
-      // KokkosClassic::SerialNode wants an empty ParameterList.
+      // Create Node with empty ParameterList.
       Teuchos::ParameterList plist;
       Teuchos::RCP<node_type> node (new node_type (plist));
       node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, node);
@@ -414,7 +423,7 @@ namespace Epetra {
       // don't have a Kokkos Node, so we make a temporary node just
       // for the KMV.
       //
-      // KokkosClassic::SerialNode wants an empty ParameterList.
+      // Create Node with empty ParameterList.
       Teuchos::ParameterList plist;
       Teuchos::RCP<node_type> node (new node_type (plist));
       KMV A_kmv (node);

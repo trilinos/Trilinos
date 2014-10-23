@@ -7,6 +7,5 @@ TRIBITS_ADD_EXECUTABLE(
      TomVankaTest
      SOURCES TomVankaTest.cpp
      COMM serial mpi
-     DEPLIBS ifpack2 tpetra
 )
 

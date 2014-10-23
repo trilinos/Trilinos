@@ -21,6 +21,5 @@ TRIBITS_ADD_EXECUTABLE(
   grow_array
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS kokkoscore
   )
 

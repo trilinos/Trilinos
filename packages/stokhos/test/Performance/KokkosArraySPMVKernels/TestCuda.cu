@@ -94,7 +94,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
 {
   typedef unsigned long long int IntType ;
 
-  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::HostSpace::execution_space::initialize();
   Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
   Kokkos::Cuda::print_configuration( std::cout );
 
@@ -110,7 +110,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
   unit_test::performance_test_driver<Scalar,Kokkos::Cuda>::run(
     test_flat, test_orig, test_lin, test_block, symmetric);
 
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
   Kokkos::Cuda::finalize();
 
   cudaDeviceReset();

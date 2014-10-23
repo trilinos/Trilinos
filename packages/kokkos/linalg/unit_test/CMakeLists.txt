@@ -22,7 +22,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   FAIL_REGULAR_EXPRESSION "  FAILED  "
-  DEPLIBS kokkoscore kokkoscorelinalg
   )
 
 IF(Kokkos_ENABLE_Cuda)
@@ -31,7 +30,6 @@ IF(Kokkos_ENABLE_Cuda)
     SOURCES test-arith-traits.cpp ${OBJECTS_CUDA}
     COMM serial mpi
     NUM_MPI_PROCS 1
-    DEPLIBS kokkoscore kokkoscorelinalg
     )
 ELSE()
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -39,7 +37,6 @@ ELSE()
     SOURCES test-arith-traits.cpp
     COMM serial mpi
     NUM_MPI_PROCS 1
-    DEPLIBS kokkoscore kokkoscorelinalg
     )
 ENDIF() # Kokkos_ENABLE_Cuda
 

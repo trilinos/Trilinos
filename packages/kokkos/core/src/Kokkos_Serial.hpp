@@ -77,11 +77,7 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
-
-  //! The device type (same as this class).
-  typedef Serial                device_type ;
+  //! Tag this class as an execution space:
   typedef Serial                execution_space ;
   //! The size_type typedef best suited for this device.
   typedef HostSpace::size_type  size_type ;
@@ -89,14 +85,12 @@ public:
   typedef HostSpace             memory_space ;
   //! This device's preferred array layout.
   typedef LayoutRight           array_layout ;
-  /// \brief This device's host mirror type.
-  ///
-  /// Serial is a host device, so the host mirror type is the same as
-  /// the device type itself.
-  typedef Serial                host_mirror_device_type ;
 
   /// \brief  Scratch memory space
   typedef ScratchMemorySpace< Kokkos::Serial >  scratch_memory_space ;
+
+  //! For backward compatibility:
+  typedef Serial                device_type ;
 
   //@}
 
@@ -188,6 +182,7 @@ struct VerifyExecutionCanAccessMemorySpace
   , Kokkos::Serial::scratch_memory_space
   >
 {
+  enum { value = true };
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 };
@@ -484,9 +479,11 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
-  typedef TeamPolicy                 execution_policy ; ///< Execution policy
-  typedef Kokkos::Serial             execution_space ;  ///< Execution space
+  //! Tag this class as a kokkos execution policy
+  typedef TeamPolicy      execution_policy ;
+
+  //! Execution space of this execution policy:
+  typedef Kokkos::Serial  execution_space ;
 
   typedef typename
     Impl::if_c< ! Impl::is_same< Kokkos::Serial , Arg0 >::value , Arg0 , Arg1 >::type
@@ -527,9 +524,11 @@ private:
 
 public:
 
-  typedef Impl::ExecutionPolicyTag   kokkos_tag ;       ///< Concept tag
-  typedef TeamVectorPolicy           execution_policy ; ///< Execution policy
-  typedef Kokkos::Serial             execution_space ;  ///< Execution space
+  //! Tag this class as a kokkos execution policy
+  typedef TeamVectorPolicy  execution_policy ;
+
+  //! Execution space of this execution policy:
+  typedef Kokkos::Serial    execution_space ;
 
   typedef typename
     Impl::if_c< ! Impl::is_same< Kokkos::Serial , Arg0 >::value , Arg0 , Arg1 >::type

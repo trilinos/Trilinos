@@ -164,6 +164,17 @@ public:
   template< class A1 , class A2 >
   void wait( const Future<A1,A2> & future ) { wait( future.m_task ); }
 
+  template< class A1 , class A2 , class A3 , class A4 >
+  void add_dependence( const Future<A1,A2> & f 
+                     , const Future<A3,A4> & dep
+                     )
+    {
+      int i = 0 ;
+      for ( ; i < MAX_DEPENDENCE && 0 != f.m_task->m_dep[i] ; ++i );
+      verify_set_dependence( f.m_task , i );
+      assign( & f.m_task->m_dep[i] , dep.m_task );
+    }
+
   template< class A1 , class A2 >
   void set_dependence( task_root_type * t
                      , const Future<A1,A2> * const dep
@@ -177,6 +188,10 @@ public:
       for ( ; i < n ; ++i ) assign( & t->m_dep[i] , dep[i].m_task );
       for ( ; i < MAX_DEPENDENCE ; ++i ) assign( & t->m_dep[i] , 0 );
     }
+
+  template< class A1 , class A2 >
+  void schedule( const Future<A1,A2> & f ) { schedule( f.m_task ); }
+
 
 private:
 
@@ -317,66 +332,6 @@ namespace Kokkos {
 //----------------------------------------------------------------------------
 
 template<>
-class TaskPolicy< Impl::TaskDepends< Kokkos::Serial > >
-{
-public:
-
-  typedef Kokkos::Serial execution_space ;
-
-private:
-
-  enum { MAX_DEPENDENCE = Impl::TaskMember< execution_space >::MAX_DEPENDENCE };
-
-  Kokkos::Impl::TaskManager< execution_space >  & m_task_manager ;
-  Kokkos::Future< execution_space >               m_depends[ MAX_DEPENDENCE ];
-
-  TaskPolicy();
-  TaskPolicy & operator = ( const TaskPolicy & );
-
-public:
-
-  template< typename A1 , typename A2 >
-  TaskPolicy( Kokkos::Impl::TaskManager< execution_space > & manager
-            , const size_t n
-            , const Future< A1 , A2 > * const dep )
-    : m_task_manager( manager )
-    {
-      int i = 0 ;
-      for ( ; i < n ; ++i ) m_depends[i] = dep[i] ;
-      for ( ; i < MAX_DEPENDENCE ; ++i ) m_depends[i] = Future< execution_space >();
-    }
-
-  // Spawn a serial task:
-  template< class FunctorType , class ValueType >
-  Future< ValueType , execution_space >
-  spawn( const FunctorType & functor ) const
-    {
-      // Allocate a copy functor and insert into queue
-      typedef Impl::TaskMember< execution_space , typename FunctorType::value_type , FunctorType > member_type ;
-      member_type * m = new member_type( functor );
-      m_task_manager.set_dependence( m , m_depends );
-      m_task_manager.schedule( m );
-      return Future< ValueType , execution_space >( m );
-    }
-
-  // Construct a task policy for foreach-range tasks:
-  // spawn( task_policy.depends(N,d).foreach(RangePolicy) , functor );
-  // spawn( task_policy.foreach(RangePolicy) , functor );
-  template< class ExecPolicy >
-  TaskPolicy< Impl::TaskForEach< ExecPolicy > >
-  foreach( const ExecPolicy & arg_policy )
-    { return TaskPolicy< Impl::TaskForEach< ExecPolicy > >( m_task_manager , arg_policy , m_depends ); }
-
-  // Construct a task policy for reduce-range tasks:
-  template< class ExecPolicy >
-  TaskPolicy< Impl::TaskForEach< ExecPolicy > >
-  reduce( const ExecPolicy & arg_policy )
-    { return TaskPolicy< Impl::TaskReduce< ExecPolicy > >( m_task_manager , arg_policy , m_depends ); }
-};
-
-//----------------------------------------------------------------------------
-
-template<>
 class TaskPolicy< Kokkos::Serial >
 {
 public:
@@ -425,6 +380,8 @@ public:
   template< class A1 , class A2 >
   void wait( const Future<A1,A2> & future ) const { m_task_manager.wait( future ); }
 
+  // TODO: Clear dependences in preparation for { add_dependence } followed by respawn
+
   template< class FunctorType , class A1 , class A2 >
   void respawn( FunctorType * task_functor
               , const Future<A1,A2> * const dep
@@ -439,28 +396,40 @@ public:
       m_task_manager.schedule( static_cast< member_type * >( task_functor ) );
     }
 
-  // Allocate a copy functor and insert into queue
+  // Allocate a copy of a functor
+  template< class FunctorType >
+  Future< typename FunctorType::value_type , execution_space >
+  create( const FunctorType & functor , const int ) const
+    {
+      typedef typename FunctorType::value_type value_type ;
+      typedef Impl::TaskMember< execution_space , value_type , FunctorType >  member_type ;
+      return Future< value_type , execution_space >( new member_type( functor ) );
+    }
+
+  template< class A1 , class A2 , class A3 , class A4 >
+  void add_dependence( const Future<A1,A2> & f 
+                     , const Future<A3,A4> & dep
+                     , typename Impl::enable_if
+                        < Impl::is_same< typename Future<A1,A2>::execution_space , execution_space >::value
+                          &&
+                          Impl::is_same< typename Future<A3,A4>::execution_space , execution_space >::value
+                        >::type * = 0
+                      )
+    { m_task_manager.add_dependence( f , dep ); }
+
+  template< class ValueType >
+  void spawn( const Future< ValueType , execution_space > & f ) const
+    { m_task_manager.schedule( f ); }
+
+  // Allocate a copy of a functor and insert into queue
   template< class FunctorType >
   Future< typename FunctorType::value_type , execution_space >
   spawn( const FunctorType & functor ) const
     {
-      typedef typename FunctorType::value_type value_type ;
-      typedef Impl::TaskMember< execution_space , value_type , FunctorType >  member_type ;
-      member_type * m = new member_type( functor );
-      m_task_manager.schedule( m );
-      return Future< value_type , execution_space >( m );
+      Future< typename FunctorType::value_type , execution_space > f = TaskPolicy::create( functor , 0 );
+      TaskPolicy::spawn( f );
+      return f ;
     }
-
-  // Construct a task policy with dependences:
-  // spawn( task_policy.depends(N,d) , functor );
-  template< class A1 , class A2 >
-  TaskPolicy< Impl::TaskDepends< execution_space > >
-  depends( const Future< A1 , A2 > * const d
-         , typename Impl::enable_if<
-             ( Impl::is_same< typename Future<A1,A2>::execution_space , execution_space >::value
-             ), const int >::type n 
-         )
-    { return TaskPolicy< Impl::TaskDepends< execution_space > >( m_task_manager , n , d ); }
 
   // Construct a task policy for foreach-range tasks:
   // spawn( task_policy.depends(N,d).foreach(RangePolicy) , functor );

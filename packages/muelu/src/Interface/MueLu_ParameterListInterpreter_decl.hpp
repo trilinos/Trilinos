@@ -120,9 +120,18 @@ namespace MueLu {
 
        The routine checks whether it is a parameter list in the easy parameter format or the more advanced factory-based parameter format and calls the corresponding interpreter routine.
 
-       @param[in] paramList: ParameterList containing the MueLu parameters.
+       When finished, the parameter list is set that will used by the hierarchy build phase.
 
-     */
+       This method includes validation and some pre-parsing of the list for:
+           - verbosity level
+           - data to export
+           - cycle type
+           - max coarse size
+           - max levels
+           - number of equations
+
+       @param[in] paramList: ParameterList containing the MueLu parameters.
+    */
     void SetParameterList(const Teuchos::ParameterList& paramList);
 
     //! Call the SetupHierarchy routine from the HiearchyManager object.

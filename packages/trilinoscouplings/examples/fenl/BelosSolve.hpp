@@ -83,7 +83,10 @@ struct FillCoords {
   FillCoords( const coords_type& coords, const coords_vec_type& coords_vec )
     : m_coords(coords), m_coords_vec(coords_vec), m_dim(coords.dimension_1())
   {
-    Kokkos::parallel_for( m_coords.dimension_0(), *this );
+    // Note:  coords contains off-processor halo nodes and thus is longer
+    // than coords_vec, which is the same length as the solution vector.
+    // These extra halo nodes are stored at the end.
+    Kokkos::parallel_for( m_coords_vec.dimension_0(), *this );
   }
 
   KOKKOS_INLINE_FUNCTION

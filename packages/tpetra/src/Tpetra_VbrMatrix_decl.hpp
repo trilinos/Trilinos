@@ -114,12 +114,16 @@ to the optimized-storage state by calling the method fillComplete().
 
 Once in the optimized-storage state, the VbrMatrix can not be returned to the
 non-optimized-storage state.
+
+\warning This class is DEPRECATED.  There are known outstanding
+  bugs with the current implementations of variable-block-size
+  sparse matrices and related classes in Tpetra.
 */
 template<class Scalar = Operator<>::scalar_type,
          class LocalOrdinal = typename Operator<Scalar>::local_ordinal_type,
          class GlobalOrdinal = typename Operator<Scalar, LocalOrdinal>::global_ordinal_type,
          class Node = typename Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-class VbrMatrix :
+class TPETRA_DEPRECATED VbrMatrix :
   public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
   public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 public:

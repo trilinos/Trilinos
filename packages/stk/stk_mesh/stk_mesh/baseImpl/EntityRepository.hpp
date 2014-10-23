@@ -76,8 +76,6 @@ public:
     std::pair<Entity ,bool>
     internal_create_entity( const EntityKey & key, size_t preferred_offset = 0 );
 
-    void change_entity_bucket( Bucket & b, Entity e, unsigned ordinal);
-
     void update_entity_key(EntityKey new_key, EntityKey old_key, Entity entity);
 
     void destroy_entity(EntityKey key, Entity entity);

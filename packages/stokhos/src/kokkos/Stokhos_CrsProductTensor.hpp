@@ -83,8 +83,8 @@ public:
   typedef ValueType   value_type;
   typedef Memory      memory_type;
 
-  typedef typename device_type::host_mirror_device_type host_mirror_device_type;
-  typedef CrsProductTensor<value_type, host_mirror_device_type> HostMirror;
+  typedef typename Kokkos::ViewTraits< size_type*, device_type,void,void >::host_mirror_space host_mirror_space ;
+  typedef CrsProductTensor<value_type, host_mirror_space> HostMirror;
 
 // Vectorsize used in multiply algorithm
 #if defined(__AVX__)
@@ -119,7 +119,6 @@ private:
   typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type >  vec_type;
   typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > coord_array_type;
   typedef Kokkos::View< size_type*[2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
-  //typedef Kokkos::View< size_type*[2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
   typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type > value_array_type;
   typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > entry_array_type;
   typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > row_map_array_type;
@@ -332,9 +331,9 @@ public:
     CrsProductTensor tensor;
     tensor.m_coord = coord_array_type("tensor_coord", entry_count );
     tensor.m_coord2 = coord2_array_type( "tensor_coord2", entry_count );
-    tensor.m_value = value_array_type( Kokkos::allocate_without_initializing, "tensor_value", entry_count );
-    tensor.m_num_entry = entry_array_type( Kokkos::allocate_without_initializing, "tensor_num_entry", dimension );
-    tensor.m_row_map = row_map_array_type( Kokkos::allocate_without_initializing, "tensor_row_map", dimension+1 );
+    tensor.m_value = value_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_value"), entry_count );
+    tensor.m_num_entry = entry_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_num_entry"), dimension );
+    tensor.m_row_map = row_map_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_row_map"), dimension+1 );
     tensor.m_dim = dimension;
     tensor.m_entry_max = 0;
     tensor.m_avg_entries_per_row = avg_entries_per_row;
@@ -427,9 +426,9 @@ public:
     CrsProductTensor tensor;
     tensor.m_coord = coord_array_type("tensor_coord", entry_count );
     tensor.m_coord2 = coord2_array_type( "tensor_coord2", entry_count );
-    tensor.m_value = value_array_type( Kokkos::allocate_without_initializing, "tensor_value", entry_count );
-    tensor.m_num_entry = entry_array_type( Kokkos::allocate_without_initializing, "tensor_num_entry", dimension );
-    tensor.m_row_map = row_map_array_type( Kokkos::allocate_without_initializing, "tensor_row_map", dimension+1 );
+    tensor.m_value = value_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_value"), entry_count );
+    tensor.m_num_entry = entry_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_num_entry"), dimension );
+    tensor.m_row_map = row_map_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_row_map"), dimension+1 );
     tensor.m_dim = dimension;
     tensor.m_entry_max = 1;
     tensor.m_avg_entries_per_row = 1;

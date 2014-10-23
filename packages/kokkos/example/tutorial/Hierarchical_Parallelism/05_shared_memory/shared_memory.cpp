@@ -49,10 +49,10 @@
 #include <cstdio>
 #include <cstdlib>
 
-typedef Kokkos::DefaultExecutionSpace   ExecutionSpace ;
-typedef Kokkos::DefaultHostExecutionSpace HostExecutionSpace ;
-typedef Kokkos::TeamPolicy< ExecutionSpace >      team_policy ;
-typedef team_policy::member_type team_member ;
+typedef Kokkos::DefaultExecutionSpace         ExecutionSpace ;
+typedef Kokkos::HostSpace::execution_space    HostExecutionSpace ;
+typedef Kokkos::TeamPolicy< ExecutionSpace >  team_policy ;
+typedef team_policy::member_type              team_member ;
 
 #define TEAM_SIZE 16
 

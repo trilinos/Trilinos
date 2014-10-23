@@ -1,0 +1,12 @@
+
+\cbb{problem: type}{string}{"unknown"}{Type of problem to be solved.  Possible values: see Table~\ref{t:problem_types}.}
+
+\cbb{verbosity}{string}{"high"}{Control of the amount of printed information. Possible values: "none", "low", "medium", "high", "extreme".}
+
+\cbb{number of equations}{int}{1}{Number of PDE equations at each grid node. Only constant block size is considered.}
+
+\cbb{max levels}{int}{10}{Maximum number of levels in a hierarchy.}
+
+\cbb{cycle type}{string}{"V"}{Multigrid cycle type. Possible values: "V", "W".}
+
+\cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}

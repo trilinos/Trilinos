@@ -179,6 +179,8 @@
 
 #if ! defined( __CUDA_ARCH__ ) /* Not compiling Cuda code to 'ptx'. */
 
+/* Intel compiler for host code */
+
 #if defined( __INTEL_COMPILER )
   #define KOKKOS_COMPILER_INTEL __INTEL_COMPILER
 #elif defined( __ICC )
@@ -189,6 +191,7 @@
   #define KOKKOS_COMPILER_INTEL __ECC
 #endif
 
+/* CRAY compiler for host code */
 #if defined( _CRAYC )
   #define KOKKOS_COMPILER_CRAYC _CRAYC
 #endif
@@ -204,7 +207,7 @@
   #define KOKKOS_COMPILER_APPLECC __APPLE_CC__
 #endif
 
-#if defined( __clang__ )
+#if defined (__clang__) && !defined (KOKKOS_COMPILER_INTEL)
   #define KOKKOS_COMPILER_CLANG __clang_major__*100+__clang_minor__*10+__clang_patchlevel__
 #endif
 
@@ -234,7 +237,9 @@
     #define KOKKOS_ENABLE_ASM 1
   #endif
 
-  #define KOKKOS_FORCEINLINE_FUNCTION  __forceinline
+  #if ! defined( KOKKOS_FORCEINLINE_FUNCTION )
+    #define KOKKOS_FORCEINLINE_FUNCTION  __forceinline
+  #endif
 
   #if defined( __MIC__ )
     // Compiling for Xeon Phi
@@ -264,6 +269,7 @@
 #endif
 
 /*--------------------------------------------------------------------------*/
+/* CLANG compiler macros */
 
 #if defined( KOKKOS_COMPILER_CLANG )
 
@@ -273,11 +279,14 @@
   //#define KOKKOS_HAVE_PRAGMA_VECTOR 1
   //#define KOKKOS_HAVE_PRAGMA_SIMD 1
 
-  #define KOKKOS_FORCEINLINE_FUNCTION  inline __attribute__((always_inline))
+  #if ! defined( KOKKOS_FORCEINLINE_FUNCTION )
+    #define KOKKOS_FORCEINLINE_FUNCTION  inline __attribute__((always_inline))
+  #endif
 
 #endif
 
 /*--------------------------------------------------------------------------*/
+/* GNU Compiler macros */
 
 #if defined( KOKKOS_COMPILER_GNU ) 
 
@@ -287,7 +296,9 @@
   //#define KOKKOS_HAVE_PRAGMA_VECTOR 1
   //#define KOKKOS_HAVE_PRAGMA_SIMD 1
 
-  #define KOKKOS_FORCEINLINE_FUNCTION inline __attribute__((always_inline))
+  #if ! defined( KOKKOS_FORCEINLINE_FUNCTION )
+    #define KOKKOS_FORCEINLINE_FUNCTION inline __attribute__((always_inline))
+  #endif
 
   #if ! defined( KOKKOS_ENABLE_ASM ) && \
       ! ( defined( __powerpc) || \

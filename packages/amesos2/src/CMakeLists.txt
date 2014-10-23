@@ -79,6 +79,12 @@ APPEND_SET(HEADERS
 # will know to include this file in the dependency analysis
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Source)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/AMD/Include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/COLAMD/Include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/BTF/Include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/UFconfig)
 
 APPEND_SET(HEADERS
   Amesos2.hpp
@@ -156,6 +162,24 @@ IF (${PACKAGE_NAME}_ENABLE_LAPACK)
   APPEND_SET(SOURCES
     Amesos2_Lapack.cpp
     )
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_KLU2)
+  APPEND_SET(HEADERS
+    Amesos2_KLU2.hpp
+    Amesos2_KLU2_decl.hpp
+    Amesos2_KLU2_def.hpp
+    Amesos2_KLU2_FunctionMap.hpp
+    Amesos2_KLU2_TypeMap.hpp
+    )
+
+   APPEND_SET(SOURCES
+     Amesos2_KLU2_TypeMap.cpp
+     )
+
+   APPEND_SET(SOURCES
+      Amesos2_KLU2.cpp
+      )
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLU)
@@ -252,9 +276,9 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     )
 ENDIF()
 
-#IF (Trilinos_ENABLE_Amesos)
-    #ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
-#ENDIF()
+IF (Trilinos_ENABLE_Amesos)
+    ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
+ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
    IF (${PACKAGE_NAME}_ENABLE_Cholmod)	

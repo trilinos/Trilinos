@@ -48,7 +48,7 @@
 #include <typeinfo>
 
 int main() {
-  // initialize DefaultExecutionSpace (and potentially its host_mirror_device_type)
+  // initialize DefaultExecutionSpace (and potentially HostSpace::execution_space)
   Kokkos::initialize();
   printf("Hello World running on %s\n",typeid(Kokkos::DefaultExecutionSpace).name());
 
@@ -57,7 +57,7 @@ int main() {
     printf("HelloWorld %i\n",i);
   });
   
-  // finalize DefaultExecutionSpace (and potentially its host_mirror_device_type)
+  // finalize DefaultExecutionSpace (and potentially HostSpace::execution_space)
   Kokkos::finalize();
 }
 

@@ -63,10 +63,10 @@ namespace Kokkos {
 class CudaSpace {
 public:
 
-  typedef Impl::MemorySpaceTag  kokkos_tag ;
+  //! Tag this class as a kokkos memory space
   typedef CudaSpace             memory_space ;
-  typedef unsigned int          size_type ;
   typedef Kokkos::Cuda          execution_space ;
+  typedef unsigned int          size_type ;
 
   /** \brief  Allocate a contiguous block of memory on the Cuda device
    *          with size = scalar_size * scalar_count.
@@ -143,10 +143,13 @@ namespace Kokkos {
 class CudaUVMSpace {
 public:
 
-  typedef Impl::MemorySpaceTag  kokkos_tag ;
+  //! Tag this class as a kokkos memory space
   typedef CudaUVMSpace          memory_space ;
-  typedef unsigned int          size_type ;
   typedef Cuda                  execution_space ;
+  typedef unsigned int          size_type ;
+
+  /** \brief  If UVM capability is available */
+  static bool available();
 
   /** \brief  Allocate a contiguous block of memory on the Cuda device
    *          with size = scalar_size * scalar_count.
@@ -217,7 +220,7 @@ namespace Kokkos {
 class CudaHostPinnedSpace {
 public:
 
-  typedef Impl::MemorySpaceTag        kokkos_tag ;
+  //! Tag this class as a kokkos memory space
   typedef CudaHostPinnedSpace         memory_space ;
   typedef unsigned int                size_type ;
 
@@ -380,7 +383,7 @@ namespace Impl {
 template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::HostSpace >
 {
-  enum {value = 0};
+  enum { value = false };
   KOKKOS_INLINE_FUNCTION static void verify( void )
     { Kokkos::cuda_abort("Cuda code attempted to access HostSpace memory"); }
 
@@ -392,18 +395,18 @@ struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::HostSpac
 template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::CudaUVMSpace >
 {
-  enum {value = 1};
-  inline static void verify( void ) { }
-  inline static void verify( const void * ) { }
+  enum { value = true };
+  KOKKOS_INLINE_FUNCTION static void verify( void ) { }
+  KOKKOS_INLINE_FUNCTION static void verify( const void * ) { }
 };
 
 /** Running in CudaSpace accessing CudaHostPinnedSpace: ok */
 template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::CudaHostPinnedSpace >
 {
-  enum {value = 1};
-  inline static void verify( void ) { }
-  inline static void verify( const void * ) { }
+  enum { value = true };
+  KOKKOS_INLINE_FUNCTION static void verify( void ) { }
+  KOKKOS_INLINE_FUNCTION static void verify( const void * ) { }
 };
 
 /** Running in CudaSpace attempting to access an unknown space: error */
@@ -412,7 +415,7 @@ struct VerifyExecutionCanAccessMemorySpace<
   typename enable_if< ! is_same<Kokkos::CudaSpace,OtherSpace>::value , Kokkos::CudaSpace >::type ,
   OtherSpace >
 {
-  enum {value = 0};
+  enum { value = false };
   KOKKOS_INLINE_FUNCTION static void verify( void )
     { Kokkos::cuda_abort("Cuda code attempted to access unknown Space memory"); }
 
@@ -425,22 +428,16 @@ struct VerifyExecutionCanAccessMemorySpace<
 template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaSpace >
 {
-#if defined( KOKKOS_USE_CUDA_UVM )
-  enum {value = 1};
-  inline static void verify( void ) { }
-  inline static void verify( const void * ) { }
-#else
-  enum {value = 0};
+  enum { value = false };
   inline static void verify( void ) { CudaSpace::access_error(); }
   inline static void verify( const void * p ) { CudaSpace::access_error(p); }
-#endif
 };
 
 /** Running in HostSpace accessing CudaUVMSpace is OK */
 template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaUVMSpace >
 {
-  enum {value = 1};
+  enum { value = true };
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 };
@@ -449,7 +446,7 @@ struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaUVMS
 template<>
 struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::CudaHostPinnedSpace >
 {
-  enum {value = 1};
+  enum { value = true };
   KOKKOS_INLINE_FUNCTION static void verify( void ) {}
   KOKKOS_INLINE_FUNCTION static void verify( const void * ) {}
 };

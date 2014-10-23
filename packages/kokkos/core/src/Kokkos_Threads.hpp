@@ -73,17 +73,17 @@ class Threads {
 public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
-
-  typedef Threads                  device_type ;
+  //! Tag this class as a kokkos execution space
   typedef Threads                  execution_space ;
   typedef Kokkos::HostSpace        memory_space ;
-  typedef memory_space::size_type  size_type ;
   typedef Kokkos::LayoutRight      array_layout ;
-  typedef Kokkos::Threads          host_mirror_device_type ;
+  typedef memory_space::size_type  size_type ;
 
   typedef ScratchMemorySpace< Threads >  scratch_memory_space ;
+
+  //! For backward compatibility
+  typedef Threads                  device_type ;
+
   //@}
   /*------------------------------------------------------------------------*/
   //! \name Static functions that all Kokkos devices must implement.
@@ -199,6 +199,7 @@ struct VerifyExecutionCanAccessMemorySpace
   , Kokkos::Threads::scratch_memory_space
   >
 {
+  enum { value = true };
   inline static void verify( void ) { }
   inline static void verify( const void * ) { }
 };

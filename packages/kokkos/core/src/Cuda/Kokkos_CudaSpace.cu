@@ -140,6 +140,17 @@ public:
   typedef          Kokkos::Impl::MemoryTracking< Attribute >         tracking_type ;
   typedef typename Kokkos::Impl::MemoryTracking< Attribute >::Entry  entry_type ;
 
+  bool available() const
+    {
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION )
+      enum { UVM_available = true };
+#else
+      enum { UVM_available = false };
+#endif
+
+      return ( m_space_tag != CudaUVMSpaceTag ) || UVM_available ;
+    }
+
 private:
 
   tracking_type   m_tracking ;
@@ -378,11 +389,7 @@ public :
 CudaMemoryTracking &
 cuda_space_singleton()
 {
-#if defined( KOKKOS_USE_CUDA_UVM )
-  static CudaMemoryTracking s( CudaMemoryTracking::CudaUVMSpaceTag , "Kokkos::CudaSpace");
-#else
   static CudaMemoryTracking s( CudaMemoryTracking::CudaSpaceTag , "Kokkos::CudaSpace");
-#endif
   return s ;
 }
 
@@ -482,6 +489,11 @@ void CudaSpace::access_error( const void * const ptr )
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+
+bool CudaUVMSpace::available()
+{
+  return Impl::cuda_uvm_space_singleton().available();
+}
 
 void * CudaUVMSpace::allocate(
   const std::string    & label ,

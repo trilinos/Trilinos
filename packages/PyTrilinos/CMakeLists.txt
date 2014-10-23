@@ -38,7 +38,7 @@ IF(NOT BUILD_SHARED_LIBS)
 ENDIF()
 
 # Set the package version number
-SET(PyTrilinos_VERSION 4.10d)
+SET(PyTrilinos_VERSION 5.0d)
 
 # Define the list of PyTrilinos packages and modules.  Packages are
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
@@ -176,16 +176,15 @@ ENDIF(NOX_ENABLE_LOCA)
 # ENDIF(PyTrilinos_ENABLE_Domi)
 
 # Python interpreter, library, and header files are required.
-FIND_PACKAGE(PythonInterp 2.2 REQUIRED)
-FIND_PACKAGE(PythonLibs 2.2 REQUIRED)
+FIND_PACKAGE(PythonInterp 2.5 REQUIRED)
+FIND_PACKAGE(PythonLibs 2.5 REQUIRED)
 FIND_PACKAGE(PythonInclude REQUIRED)
 
 # Python module numpy is required
 FIND_PACKAGE(NumPy 1.0 REQUIRED)
 
 # Simple wrapper interface generator (SWIG) is required
-SET(SWIG_VERSION_FLOOR   2.0.0)
-SET(SWIG_VERSION_CEILING 2.0.8)
+SET(SWIG_VERSION_FLOOR   3.0.0)
 FIND_PACKAGE(SWIG REQUIRED)
 IF(${SWIG_VERSION} VERSION_LESS ${SWIG_VERSION_FLOOR})
   MESSAGE(FATAL_ERROR
@@ -193,12 +192,6 @@ IF(${SWIG_VERSION} VERSION_LESS ${SWIG_VERSION_FLOOR})
     " is less than minimum version " ${SWIG_VERSION_FLOOR}
     )
 ENDIF()
-# IF(${SWIG_VERSION} VERSION_GREATER ${SWIG_VERSION_CEILING})
-#   MESSAGE(FATAL_ERROR
-#     "SWIG version " ${SWIG_VERSION}
-#     " is greater than maximum version " ${SWIG_VERSION_CEILING}
-#     )
-# ENDIF()
 # ${SWIG_USE_FILE} is hard-coded to be the installed UseSWIG.cmake
 # file.  We want to include the local, modified version.
 INCLUDE(UseSWIG)
@@ -229,6 +222,23 @@ ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 # Set the PyTrilinos install prefix
 SET(PyTrilinos_INSTALL_PREFIX ${PyTrilinos_DEFAULT_INSTALL_PREFIX}
   CACHE PATH "The path prefix for where PyTrilinos will be installed, e.g. /usr/local")
+
+# The default status for whether we build docstrings for PyTrilinos is
+# based on whether the user has doxygen installed.
+FIND_PACKAGE(Doxygen)
+IF(DOXYGEN_FOUND)
+  SET(PyTrilinos_DOCSTRINGS_DEFAULT ON)
+ELSE(DOXYGEN_FOUND)
+  SET(PyTrilinos_DOCSTRINGS_DEFAULT OFF)
+  MESSAGE(STATUS "doxygen not found!")
+ENDIF(DOXYGEN_FOUND)
+
+# Set the PyTrilinos docstrings flag
+SET(PyTrilinos_DOCSTRINGS ${PyTrilinos_DOCSTRINGS_DEFAULT} CACHE BOOL
+    "a flag that determines whether Python docstrings will be built using doxygen")
+IF(PyTrilinos_DOCSTRINGS AND NOT DOXYGEN_FOUND)
+  MESSAGE(ERROR "PyTrilinos docstrings enabled but doxygen not found")
+ENDIF(PyTrilinos_DOCSTRINGS AND NOT DOXYGEN_FOUND)
 
 # Add the util directory
 ADD_SUBDIRECTORY(util)

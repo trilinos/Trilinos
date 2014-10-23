@@ -481,6 +481,7 @@ int main(int argc, char *argv[]) {
 
         if (isDriver) {
           if (openedOut != NULL) {
+            TEUCHOS_ASSERT(savedOut >= 0);
             dup2(savedOut, STDOUT_FILENO);
             fclose(openedOut);
             openedOut = NULL;

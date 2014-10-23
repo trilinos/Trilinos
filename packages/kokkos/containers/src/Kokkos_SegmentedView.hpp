@@ -57,10 +57,10 @@ struct delete_segmented_view;
 
 template<class MemorySpace>
 inline
-void DeviceSetAllocatableMemorySize(size_t size) {
-}
+void DeviceSetAllocatableMemorySize(size_t) {}
 
-#ifdef KOKKOS_HAVE_CUDA
+#if defined( KOKKOS_HAVE_CUDA )
+
 template<>
 inline
 void DeviceSetAllocatableMemorySize<Kokkos::CudaSpace>(size_t size) {
@@ -72,9 +72,7 @@ void DeviceSetAllocatableMemorySize<Kokkos::CudaSpace>(size_t size) {
   cudaDeviceGetLimit(&size_limit,cudaLimitMallocHeapSize);
 #endif
 }
-#endif
 
-#ifdef KOKKOS_HAVE_CUDA_UVM
 template<>
 inline
 void DeviceSetAllocatableMemorySize<Kokkos::CudaUVMSpace>(size_t size) {
@@ -85,9 +83,9 @@ void DeviceSetAllocatableMemorySize<Kokkos::CudaUVMSpace>(size_t size) {
     cudaDeviceSetLimit(cudaLimitMallocHeapSize,2*size);
   cudaDeviceGetLimit(&size_limit,cudaLimitMallocHeapSize);
 #endif
-};
-#endif
+}
 
+#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 
 }
 
