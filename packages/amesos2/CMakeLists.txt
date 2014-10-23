@@ -73,8 +73,8 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 # D) Do standard postprocessing
 #
 
-TRIBITS_EXCLUDE_FILES(
-  src/SuiteSparse
-  )
+#leaving in place for future excludes
+#TRIBITS_EXCLUDE_FILES(
+#  )
 
 TRIBITS_PACKAGE_POSTPROCESS()
