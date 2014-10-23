@@ -70,9 +70,6 @@ public:
 
   enum { MAX_DEPENDENCE = 13 };
 
-  /**\brief  States of a task */
-  enum { STATE_CONSTRUCTING = 0 , STATE_WAITING = 1 , STATE_EXECUTING = 2 , STATE_COMPLETE = 4 };
-
   /**\brief  Base dependence count when a task is allocated.
    *         A separate dependence array is allocated when the number
    *         of dependences exceeds this count.
@@ -114,13 +111,13 @@ public:
 
   inline
   TaskMember * get_dependence( int i ) const
-    { return ( STATE_EXECUTING == m_state && 0 <= i && i < MAX_DEPENDENCE ) ? m_dep[i] : (TaskMember*) 0 ; }
+    { return ( Kokkos::TASK_STATE_EXECUTING == m_state && 0 <= i && i < MAX_DEPENDENCE ) ? m_dep[i] : (TaskMember*) 0 ; }
 
   inline
   int get_dependence() const
     {
       int i = 0 ;
-      if ( STATE_EXECUTING == m_state ) { for ( ; i < MAX_DEPENDENCE && m_dep[i] != 0 ; ++i ); }
+      if ( Kokkos::TASK_STATE_EXECUTING == m_state ) { for ( ; i < MAX_DEPENDENCE && m_dep[i] != 0 ; ++i ); }
       return i ;
     }
 };
@@ -186,6 +183,10 @@ public:
 
   template< class A1 , class A2 >
   void wait( const Future<A1,A2> & f ) { wait( f.m_task ); }
+
+  KOKKOS_INLINE_FUNCTION static
+  Kokkos::TaskState get_task_state( const Impl::TaskMember< Kokkos::Qthread > * const task )
+    { return 0 != task ? Kokkos::TaskState(*((volatile const int *)( & task->m_state ))) : Kokkos::TASK_STATE_NULL ; }
 
   TaskManager();
   TaskManager( const TaskManager & );
