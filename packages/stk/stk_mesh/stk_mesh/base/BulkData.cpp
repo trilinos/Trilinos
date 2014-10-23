@@ -298,39 +298,42 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
                     , FieldDataManager *field_data_manager
                     , unsigned bucket_capacity
                     )
-  : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
-    m_entity_repo(*this),
-    m_entity_comm_list(),
+  :
+#ifdef SIERRA_MIGRATION
+    m_check_invalid_rels(true),
+#endif
+    m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
+    m_entity_comm_map(),
     m_ghosting(),
-    m_ghost_parts(),
-    m_deleted_entities(),
-    m_deleted_entities_current_modification_cycle(),
-    m_ghost_reuse_map(),
     m_mesh_meta_data( mesh_meta_data ),
     m_parallel_machine( parallel ),
     m_parallel_size( parallel_machine_size( parallel ) ),
     m_parallel_rank( parallel_machine_rank( parallel ) ),
     m_sync_count( 0 ),
     m_sync_state( MODIFIABLE ),
+    m_mark_entity(),
+    m_add_node_sharing_called(false),
+    m_closure_count(),
+    m_entity_repo(*this),
+    m_entity_comm_list(),
+    m_volatile_fast_shared_comm_map(),
+    m_ghost_parts(),
+    m_deleted_entities(),
+    m_deleted_entities_current_modification_cycle(),
+    m_ghost_reuse_map(),
     m_meta_data_verified( false ),
     m_mesh_finalized(false),
     m_modification_begin_description("UNSET"),
-#ifdef SIERRA_MIGRATION
-    m_add_fmwk_data(add_fmwk_data),
-    m_fmwk_bulk_ptr(NULL),
-    m_check_invalid_rels(true),
-#endif
     m_num_fields(-1), // meta data not necessarily committed yet
     m_keep_fields_updated(true),
     m_mesh_indexes(),
     m_entity_keys(),
     m_entity_states(),
-    m_mark_entity(),
-    m_add_node_sharing_called(false),
-    m_closure_count(),
     m_entity_sync_counts(),
     m_local_ids(),
 #ifdef SIERRA_MIGRATION
+    m_add_fmwk_data(add_fmwk_data),
+    m_fmwk_bulk_ptr(NULL),
     m_fmwk_aux_relations(),
     m_fmwk_global_ids(),
     m_fmwk_shared_attrs(),
@@ -339,14 +342,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_default_field_data_manager(mesh_meta_data.entity_rank_count()),
     m_field_data_manager(field_data_manager),
     m_selector_to_buckets_map(),
-#ifdef GATHER_GET_BUCKETS_METRICS
-    m_selector_to_count_map(),
-    m_num_memoized_get_buckets_calls(0),
-    m_num_non_memoized_get_buckets_calls(0),
-    m_num_buckets_inserted_in_cache(0),
-    m_num_buckets_removed_from_cache(0),
-    m_num_modifications(0),
-#endif
     m_bucket_repository(
         *this,
         mesh_meta_data.entity_rank_count(),
@@ -355,12 +350,20 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
         bucket_capacity)
 #ifdef STK_MESH_MODIFICATION_COUNTERS
-,
-    m_modification_counters()
+    , m_num_bulk_data_counter++,
+    m_modification_counters(),
+    m_entity_modification_counters(),
+#endif
+#ifdef GATHER_GET_BUCKETS_METRICS
+    , m_selector_to_count_map(),
+    m_num_memoized_get_buckets_calls(0),
+    m_num_non_memoized_get_buckets_calls(0),
+    m_num_buckets_inserted_in_cache(0),
+    m_num_buckets_removed_from_cache(0),
+    m_num_modifications(0)
 #endif
 {
 #ifdef STK_MESH_MODIFICATION_COUNTERS
-  m_num_bulk_data_counter++;
   std::ofstream outfile(create_modification_counts_filename().c_str());
   write_modification_labels_to_stream(outfile);
   outfile.close();

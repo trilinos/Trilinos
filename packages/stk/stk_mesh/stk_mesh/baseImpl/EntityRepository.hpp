@@ -51,7 +51,7 @@ class EntityRepository {
 
 public:
 
-  typedef std::map<EntityKey,Entity> EntityMap;
+    typedef std::map<EntityKey,Entity> EntityMap;
 
     typedef EntityMap::const_iterator const_iterator;
     typedef EntityMap::iterator iterator;

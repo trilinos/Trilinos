@@ -132,7 +132,13 @@ public:
 
     void internal_resolve_parallel_create_exp();
     void internal_update_distributed_index_exp(std::vector<stk::mesh::Entity> & shared_new );
+
     bool internal_modification_end_for_change_entity_owner_exp( bool regenerate_aura, modification_optimization opt );
+
+    stk::mesh::impl::BucketRepository& my_bucket_repository()
+    {
+        return this->bucket_repository();
+    }
 };
 
 

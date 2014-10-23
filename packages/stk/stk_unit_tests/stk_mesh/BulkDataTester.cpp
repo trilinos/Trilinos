@@ -499,19 +499,20 @@ bool BulkDataTester::internal_modification_end_for_change_entity_owner_exp( bool
   //a single larger bucket, and also does a sort.
   //If optimize_buckets has not been requested, still do the sort.
 
+  stk::mesh::impl::BucketRepository &bucket_repository = my_bucket_repository();
   if ( opt == MOD_END_COMPRESS_AND_SORT ) {
     //doesn't fail if not called (np1-np4)
-    m_bucket_repository.optimize_buckets();
+      bucket_repository.optimize_buckets();
   }
   else {
     //doesn't fail if not called (np1-np4)
-    m_bucket_repository.internal_sort_bucket_entities();
+      bucket_repository.internal_sort_bucket_entities();
   }
 
   // ------------------------------
 
   //doesn't fail if not called (np1-np4)
-  m_bucket_repository.internal_modification_end();
+  bucket_repository.internal_modification_end();
 
   //doesn't fail if not called (np1-np4)
   internal_update_fast_comm_maps();
