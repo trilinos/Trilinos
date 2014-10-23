@@ -77,6 +77,10 @@ struct find_2_tuples {
 
   KOKKOS_INLINE_FUNCTION
   void operator() ( const team_member & thread) const {
+    // FIXME (mfh 23 Oct 2014) It seems like we should use
+    // thread.team_size() here, instead of TEAM_SIZE.  However, the
+    // example still fails in that case.  Not sure what to do.
+
     shared_2d_int l_histogram(thread.team_shmem(),TEAM_SIZE,TEAM_SIZE);
     shared_1d_int l_data(thread.team_shmem(),chunk_size+1);
 
@@ -117,7 +121,7 @@ struct find_2_tuples {
 
 int main(int narg, char* args[]) {
   Kokkos::initialize(narg,args);
-  
+
   int chunk_size = 1024;
   int nchunks = 100000; //1024*1024;
   Kokkos::DualView<int*> data("data",nchunks*chunk_size+1);
@@ -127,7 +131,7 @@ int main(int narg, char* args[]) {
   for(int i = 0; i < data.dimension_0(); i++) {
     data.h_view(i) = rand()%TEAM_SIZE;
   }
-  data.modify<Host>();
+  data.modify<Kokkos::HostSpace>();
   data.sync<ExecutionSpace>();
 
   Kokkos::DualView<int**> histogram("histogram",TEAM_SIZE,TEAM_SIZE);
@@ -140,7 +144,7 @@ int main(int narg, char* args[]) {
   Kokkos::fence();
   double time = timer.seconds();
 
-  histogram.sync<Host>();
+  histogram.sync<Kokkos::HostSpace>();
 
   printf("Time: %lf \n\n",time);
   int sum = 0;
