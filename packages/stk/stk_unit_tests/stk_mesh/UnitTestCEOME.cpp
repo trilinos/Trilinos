@@ -234,6 +234,8 @@ TEST(CEOME, change_entity_owner_2Elem2ProcFlip)
     }
     mesh.change_entity_owner_exp(entity_procs_flip);
 
+    CEOUtils::checkStatesAfterCEO_2Elem2ProcFlip(mesh);
+
     ////////////////////////////////////////////////////////////////////////////
 
     std::vector<bool> nodeSharing;
