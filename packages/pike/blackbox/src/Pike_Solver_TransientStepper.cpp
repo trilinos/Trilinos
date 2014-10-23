@@ -91,10 +91,16 @@ namespace pike {
   { solver_->initialize(); }
 
   pike::SolveStatus TransientStepper::step()
-  { TEUCHOS_ASSERT(false); }
+  { 
+    // NOT implemented yet!
+    TEUCHOS_ASSERT(false);
+  }
 
   pike::SolveStatus TransientStepper::solve()
-  { TEUCHOS_ASSERT(false); }
+  {
+    // Not implemented yet!
+    TEUCHOS_ASSERT(false);
+  }
 
   void TransientStepper::finalize()
   { solver_->finalize(); }
@@ -102,7 +108,7 @@ namespace pike {
   void TransientStepper::reset()
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-			       "Error in pike::TransientStepper::reset() - The reset() method has been called on a Transient Solver.  This is currently not allowed!  Please contact the developers.");
+			       "Error in pike::TransientStepper::reset() - The reset() method has been called on a Transient Solver.  This is currently not allowed!");
   }
 
   pike::SolveStatus TransientStepper::getStatus() const
