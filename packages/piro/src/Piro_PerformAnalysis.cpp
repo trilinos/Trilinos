@@ -303,42 +303,50 @@ Piro::PerformROLAnalysis(
   Thyra::copy(*p_init, p.ptr());
 
   std::cout << "in Piro::PerformROLAnalysis" << std::endl;
-  ROL::ThyraVector<double> rolvec(p);
-//  RCP<ROL::Vector<double> > t = rolvec.clone();
-  std::cout << "RolVec Parameter Vector Norm Before Optimization" << rolvec.norm() << std::endl;
+  ROL::ThyraVector<double> rol_p(p);
+//  RCP<ROL::Vector<double> > t = rol_p.clone();
+  std::cout << "Parameter Vector Norm Before Optimization " << rol_p.norm() << std::endl;
 
 
   // TODO: pass in piroModel
-  ROL::ThyraME_Objective<double> obj;
+  ROL::ThyraME_Objective<double> obj(piroModel);
 
-    int dim = rolvec.dimension(); // Set problem dimension. Must be even.
+
+  Teuchos::RCP<Thyra::VectorBase<double> > rand_vec = p->clone_v();
+  ::Thyra::put_scalar(1.0, outArg(*rand_vec));
+  //{
+  //  Thyra::DetachedVectorView<double> global_vec(rand_vec);
+  //  for (int i = 0; i < global_vec.subDim(); ++i)
+  //    global_vec[i] = double(rand())/RAND_MAX-0.5;
+  //}
+
+
+
+    ROL::ThyraVector<double> rol_direction(rand_vec);
+    double norm = rol_direction.norm();
+    std::cout << "direction Norm (should be 1) " << rol_direction.norm() << "  " << rol_direction.dimension() << std::endl;
+    if(norm > 0.0)
+      rol_direction.scale(1./norm);
+    ::Thyra::put_scalar(1.0, outArg(*rand_vec));
+    rol_p.putScalar(4);
+
+
+    std::vector < std::vector<double> > gCheck = obj.checkGradient(rol_p, rol_direction, true);
+
+
+    int dim = rol_p.dimension(); // Set problem dimension. Must be even.
 
     Teuchos::ParameterList parlist;
     // Enumerations
-//    parlist.set("Descent Type", "Quasi-Newton Method");
-//    parlist.set("Secant Type",  "Limited-Memory BFGS");
-/*
-
-    parlist.set("Linesearch Type",                        "Cubic Interpolation");
+    parlist.set("Descent Type", "Quasi-Newton Method");
+    parlist.set("Secant Type",  "Limited-Memory BFGS");
     parlist.set("Linesearch Curvature Condition",         "Wolfe");
-    // Linesearch Parameters
-    parlist.set("Maximum Number of Function Evaluations", 20);
-    parlist.set("Sufficient Decrease Parameter",          1.e-4);
-    parlist.set("Curvature Conditions Parameter",         0.9);
-    parlist.set("Backtracking Rate",                      0.5);
-    parlist.set("Initial Linesearch Parameter",           1.0);
-    parlist.set("User Defined Linesearch Parameter",      false);
-    // Krylov Parameters
-    parlist.set("Absolute Krylov Tolerance",              1.e-4);
-    parlist.set("Relative Krylov Tolerance",              1.e-2);
-    parlist.set("Maximum Number of Krylov Iterations",    10);
-*/
     // Define Step
     ROL::LineSearchStep<double> step(parlist);
 
     // Define Status Test
-    double gtol  = 1e-12;  // norm of gradient tolerance
-    double stol  = 1e-14;  // norm of step tolerance
+    double gtol  = 1e-4;  // norm of gradient tolerance
+    double stol  = 1e-6;  // norm of step tolerance
     int   maxit = 100;    // maximum number of iterations
     ROL::StatusTest<double> status(gtol, stol, maxit);    
 
@@ -348,12 +356,12 @@ Piro::PerformROLAnalysis(
     // Iteration Vector
 
     // Run Algorithm
-    std::vector<std::string> output = algo.run(rolvec, obj, false);
+    std::vector<std::string> output = algo.run(rol_p, obj, true);
     for ( unsigned i = 0; i < output.size(); i++ ) {
       std::cout << output[i];
     }
 
-  std::cout << "RolVec Parameter Vector Norm After Optimization" << rolvec.norm() << std::endl;
+  std::cout << "Parameter Vector Norm After Optimization " << rol_p.norm() << std::endl;
 
 //AGS ALL THE REST NEEDS TO BE CONVERTED TO ROL
 /*
