@@ -75,17 +75,17 @@ void Mgr::assign( Task ** const lhs , Task * const rhs )
       // Reference count at zero, delete it
 
      // Should only be deallocating a completed task
-      if ( (**lhs).m_state != Task::STATE_COMPLETE ) {
+      if ( (**lhs).m_state != Kokkos::TASK_STATE_COMPLETE ) {
         throw std::runtime_error(
-          std::string("Kokkos::Impl::TaskManager<Kokkos::Serial>::decrement ERROR: not STATE_COMPLETE") );
+          std::string("Kokkos::Impl::TaskManager<Kokkos::Serial>::decrement ERROR: not TASK_STATE_COMPLETE") );
       }
 
       // A completed task should not have dependences...
-      if ( (**lhs).m_state == Task::STATE_COMPLETE ) {
+      if ( (**lhs).m_state == Kokkos::TASK_STATE_COMPLETE ) {
         for ( int i = 0 ; i < MAX_DEPENDENCE ; ++i ) {
           if ( (**lhs).m_dep[i] ) {
             throw std::runtime_error(
-              std::string("Kokkos::Impl::TaskManager<Kokkos::Serial>::decrement ERROR: STATE_COMPLETE has dependences") );
+              std::string("Kokkos::Impl::TaskManager<Kokkos::Serial>::decrement ERROR: TASK_STATE_COMPLETE has dependences") );
           }
         }
       }
@@ -109,8 +109,8 @@ void Mgr::verify_set_dependence( Task * t , int n )
 {
   // Must be either constructing for original spawn or executing for a respawn.
 
-  if ( Task::STATE_CONSTRUCTING != t->m_state &&
-       Task::STATE_EXECUTING    != t->m_state ) {
+  if ( Kokkos::TASK_STATE_CONSTRUCTING != t->m_state &&
+       Kokkos::TASK_STATE_EXECUTING    != t->m_state ) {
     throw std::runtime_error(std::string("Kokkos::Impl::TaskManager<Kokkos::Serial> spawn or respawn state error"));
   }
 
@@ -129,7 +129,7 @@ void Mgr::schedule( Task * t )
 
   // Is waiting for execution
 
-  t->m_state = Task::STATE_WAITING ;
+  t->m_state = Kokkos::TASK_STATE_WAITING ;
 
   // Insert this task into another dependence that is not complete
 
@@ -162,18 +162,18 @@ void Mgr::wait( Task * )
 
     task->m_next = 0 ;
 
-    // precondition: task->m_state = STATE_WAITING
-    // precondition: task->m_dep[i]->m_state == STATE_COMPLETE  for all i
+    // precondition: task->m_state = TASK_STATE_WAITING
+    // precondition: task->m_dep[i]->m_state == TASK_STATE_COMPLETE  for all i
     // precondition: does not exist T such that T->m_wait = task
     // precondition: does not exist T such that T->m_next = task
 
-    task->m_state = Task::STATE_EXECUTING ;
+    task->m_state = Kokkos::TASK_STATE_EXECUTING ;
 
     (*task->m_apply)( task );
 
-    if ( task->m_state == Task::STATE_EXECUTING ) {
+    if ( task->m_state == Kokkos::TASK_STATE_EXECUTING ) {
       // task did not respawn itself
-      task->m_state = Task::STATE_COMPLETE ;
+      task->m_state = Kokkos::TASK_STATE_COMPLETE ;
 
       // release dependences:
       for ( int i = 0 ; i < MAX_DEPENDENCE ; ++i ) {

@@ -760,12 +760,12 @@ void unpack_not_owned_verify_report_errors(const BulkData& mesh,
     part_ordinals = bucket.superset_part_ordinals();
 
   error_log << "P" << p_rank << ": " ;
-  error_log << key.id();
+  error_log << key;
   error_log << " owner(" << mesh.parallel_owner_rank(entity) << ")" ;
 
   if ( bad_key || bad_own ) {
     error_log << " != received " ;
-    error_log << recv_entity_key.id();
+    error_log << recv_entity_key;
     error_log << " owner(" << recv_owner_rank
               << ")" << std::endl ;
   }

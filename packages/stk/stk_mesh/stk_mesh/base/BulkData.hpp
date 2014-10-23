@@ -1254,9 +1254,11 @@ private:
   // Simply a list of data for entities that are being communicated
   EntityCommListInfoVector            m_entity_comm_list;
 
+protected:
   // The full database of comm info for all communicated entities.
   EntityCommDatabase m_entity_comm_map;
 
+private:
   // Only works outside of modification cycles.
   // m_volatile_fast_shared_comm_map[entity_rank][parallel_rank] -> FastMeshIndexes
   //   Means that the entities represented by FastMeshIndexes are shared with proc parallel_rank

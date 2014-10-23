@@ -144,9 +144,9 @@ optional. If an optional dependency is not present, the tests requiring that
 dependency are not built.
 
 \begin{mycomment}
-\amesos/\amesostwo are necessary if one wants to use a sparse direct solve on the coarsest level.
-\zoltan/\zoltantwo are necessary if one wants to use matrix rebalancing in parallel runs (see~\S\ref{sec:performance}).
-\aztecoo/\belos are necessary if one wants to test \muelu{} as a preconditioner instead of a solver.
+\amesos{}/\amesostwo{} are necessary if one wants to use a sparse direct solve on the coarsest level.
+\zoltan{}/\zoltantwo{} are necessary if one wants to use matrix rebalancing in parallel runs (see~\S\ref{sec:performance}).
+\aztecoo{}/\belos{} are necessary if one wants to test \muelu{} as a preconditioner instead of a solver.
 \end{mycomment}
 
 \begin{mycomment}
@@ -214,7 +214,7 @@ a linear solver. For further details, a user may refer to the \texttt{examples} 
 First, we create the \muelu{} multigrid preconditioner. It can be done in a few
 ways. For instance, multigrid parameters can be read from an XML file
 (e.g., \textit{mueluOptions.xml} in the example below).
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
     Teuchos::RCP<Tpetra::CrsMatrix<> > A;
     // create A here ...
     std::string optionsFile = "mueluOptions.xml";
@@ -223,7 +223,7 @@ ways. For instance, multigrid parameters can be read from an XML file
 \end{lstlisting}
 The XML file contains multigrid options. A typical file with \muelu{} parameters
 looks like the following.
-\begin{lstlisting}
+\begin{lstlisting}[language=XML]
 <ParameterList name="MueLu">
 
   <Parameter name="verbosity" type="string" value="low"/>
@@ -256,7 +256,7 @@ parameter choices is given in \S\ref{sec:muelu_options} of this User's Guide.
 
 Users can also construct a multigrid preconditioner using a provided \parameterlist
 without accessing any files in the following manner.
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
   Teuchos::RCP<Tpetra::CrsMatrix<> > A;
   // create A here ...
   Teuchos::ParameterList paramList;
@@ -271,7 +271,7 @@ without accessing any files in the following manner.
 
 Besides the linear operator $A$, we also need an initial guess vector for the
 solution $X$ and a right hand side vector $B$ for solving a linear system.
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
     Teuchos::RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
     // Create initial vectors
@@ -288,14 +288,14 @@ with the operator $A$. Finally, an initial guess is initialized with zeros.
 
 Then, one can define a \texttt{Belos::LinearProblem} object where the
 \texttt{mueLuPreconditioner} is used for left preconditioning
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
     Belos::LinearProblem<> problem( A, X, B );
     problem->setLeftPrec(mueLuPreconditioner);
     bool set = problem.setProblem();
 \end{lstlisting}
 
 Next, we set up a \belos{} solver using some basic parameters
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
     Teuchos::ParameterList belosList;
     belosList.set( "Block Size", 1 );
     belosList.set( "Maximum Iterations", 100 );
@@ -307,7 +307,7 @@ Next, we set up a \belos{} solver using some basic parameters
 \end{lstlisting}
 
 Finally, we solve the system.
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
     Belos::ReturnType ret = solver.solve();
 \end{lstlisting}
 
@@ -319,7 +319,7 @@ For \epetra, users have two library options: \belos{} (recommended) and \aztecoo
 
 Constructing a \muelu{} preconditioner for Epetra operators is done in a similar
 manner to Tpetra.
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
     Teuchos::RCP<Epetra_CrsMatrix> A;
     // create A here ...
     Teuchos::RCP<MueLu::EpetraOperator> mueLuPreconditioner;
@@ -331,7 +331,7 @@ could be the same as~\S\ref{sec:tpetraexample}.
 
 Furthermore, we assume that a right hand side vector and a solution vector with
 the initial guess are defined.
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
     Teuchos::RCP<const Epetra_Map> map = A->DomainMap();
     Teuchos::RCP<Epetra_Vector> B = Teuchos::rcp(new Epetra_Vector(map));
     Teuchos::RCP<Epetra_Vector> X = Teuchos::rcp(new Epetra_Vector(map));
@@ -339,19 +339,19 @@ the initial guess are defined.
 \end{lstlisting}
 
 Then, an \texttt{Epetra\_LinearProblem} can be defined.
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
     Epetra_LinearProblem epetraProblem(A.get(), X.get(), B.get());
 \end{lstlisting}
 
 The following code constructs an \aztecoo{} CG solver.
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
     AztecOO aztecSolver(epetraProblem);
     aztecSolver.SetAztecOption(AZ_solver, AZ_cg);
     aztecSolver.SetPrecOperator(mueLuPreconditioner.get());
 \end{lstlisting}
 
 Finally, the linear system is solved.
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
     int maxIts = 100;
     double tol = 1e-10;
     aztecSolver.Iterate(maxIts, tol);

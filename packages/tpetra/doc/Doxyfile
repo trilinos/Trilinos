@@ -53,7 +53,8 @@ INPUT                  = index.doc groups.doc \
                          ../example/Lesson02-Map-Vector/index.doc \
                          ../example/Lesson03-Power-Method/index.doc \
                          ../example/Lesson04-Sparse-Matrix-Fill/index.doc \
-                         ../example/Lesson05-Redistribution/index.doc
+                         ../example/Lesson05-Redistribution/index.doc \
+                         ../example/Lesson06-Custom-Operator/index.doc
 FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \

@@ -3760,7 +3760,7 @@ TEST(BulkData, change_entity_owner_4Elem4ProcRotate)
 
   mesh.change_entity_owner(entities_to_move);
 
-  CEOUtils::checkStatesAfterCEOME_4Elem4ProcRotate(mesh);
+  CEOUtils::checkStatesAfterCEOME_4Elem4ProcRotate(mesh, meta);
 }
 
 TEST(BulkData, change_entity_owner_3Elem4Proc1Edge3D)

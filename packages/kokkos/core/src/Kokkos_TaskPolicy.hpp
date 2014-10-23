@@ -84,6 +84,15 @@ struct TaskScan { typedef typename ExecPolicy::execution_space  execution_space 
 
 namespace Kokkos {
 
+/**\brief  States of a task */
+enum TaskState
+  { TASK_STATE_NULL         = 0  ///<  Does not exist
+  , TASK_STATE_CONSTRUCTING = 1  ///<  Is under construction
+  , TASK_STATE_WAITING      = 2  ///<  Is waiting for execution
+  , TASK_STATE_EXECUTING    = 4  ///<  Is executing
+  , TASK_STATE_COMPLETE     = 8  ///<  Execution is complete
+  };
+
 /**
  *
  *  Future< space >  // value_type == void
@@ -132,6 +141,11 @@ public:
 
   typedef ValueType       value_type;
   typedef ExecutionSpace  execution_space ;
+
+  //----------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  TaskState get_task_state() const { return TaskManager::get_task_state( m_task ); }
 
   //----------------------------------------
 
