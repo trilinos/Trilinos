@@ -36,17 +36,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	NUM_MPI_PROCS 4
 	)
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTpetraInterface
-	SOURCE_FILES test.xml
-	EXEDEPS tpetra_interface
-	)
-
 ENDIF()
 
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUDriverFiles
     SOURCE_FILES ShyLU.xml shylu_iqr_parameters.xml
-    shylu_no_iqr_parameters.xml wathen96.mtx wathenSmall.mtx
+    shylu_no_iqr_parameters.xml wathen96.mtx wathenSmall.mtx wathenTiny.mtx
     shylu_iqr_parameters.seq.xml
     ShyLU_epetra_interface.xml
 #    EXEDEPS aztec_driver belos_driver
