@@ -447,9 +447,16 @@ Condest(const Ifpack_CondestType CT,
 //==============================================================================
 void Ifpack_Chebyshev::SetLabel()
 {
-  Label_ = "\"Ifpack Chebyshev polynomial\": {degree: " + Ifpack_toString(PolyDegree_)
-           + ", lambdaMax: " + Ifpack_toString(LambdaMax_) + ", alpha: " + Ifpack_toString(EigRatio_)
-           + ", lambdaMin: " + Ifpack_toString(LambdaMin_) + "}";
+  std::ostringstream oss;
+  oss << "\"Ifpack Chebyshev polynomial\": {"
+      << "Initialized: " << (IsInitialized() ? "true" : "false")
+      << ", Computed: " << (IsComputed() ? "true" : "false")
+      << ", degree: " << PolyDegree_
+      << ", lambdaMax: " << LambdaMax_
+      << ", alpha: "  << EigRatio_
+      << ", lambdaMin: " << LambdaMin_
+      << "}";
+  Label_ = oss.str();
 }
 
 //==============================================================================
