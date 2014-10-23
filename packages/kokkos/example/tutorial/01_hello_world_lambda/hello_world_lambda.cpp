@@ -47,17 +47,58 @@
 #include <cstdio>
 #include <typeinfo>
 
-int main() {
-  // initialize DefaultExecutionSpace (and potentially HostSpace::execution_space)
-  Kokkos::initialize();
-  printf("Hello World running on %s\n",typeid(Kokkos::DefaultExecutionSpace).name());
+//
+// "Hello world" example: start up Kokkos, execute a parallel for loop
+// using a lambda (C++11 anonymous function) to define the loop body,
+// and shut down Kokkos.
+//
 
-  // run lambda with 15 iterations in parallel on DefaultExecutionSpace
-  Kokkos::parallel_for(15, [=] (int i) {
-    printf("HelloWorld %i\n",i);
+int main() {
+  // You must call initialize() before you may call Kokkos.  Without
+  // any arguments, this initializes the default execution space (and
+  // potentially its host execution space) with default parameters.
+  // You may also pass in argc and argv, analogously to MPI_Init().
+  Kokkos::initialize ();
+
+  // Print the name of Kokkos' default execution space.  We're using
+  // typeid here, so the name might get a bit mangled by the linker,
+  // but you should still be able to figure out what it is.
+  printf ("Hello World on Kokkos execution space %s\n",
+          typeid (Kokkos::DefaultExecutionSpace).name ());
+
+  // Run lambda on the default Kokkos execution space in parallel,
+  // with a parallel for loop count of 15.  The lambda's argument is
+  // an integer which is the parallel for's loop index.  As you learn
+  // about different kinds of parallelism, you will find out that
+  // there are other valid argument types as well.
+  //
+  // NOTE: The lambda's argument MUST be passed by value, NOT by
+  // reference!  Passing it in by reference may cause incorrect
+  // results.  Different iterations of the parallel loop need to have
+  // their own values of the loop counter, which is why you pass it in
+  // by value and not reference.
+  //
+  // The Kokkos::DefaultExecutionSpace typedef gives the default
+  // execution space.  Depending on how Kokkos was configured, this
+  // could be OpenMP, Threads, Cuda, Serial, or even some other
+  // execution space.
+  //
+  // The following line of code would look like this in OpenMP:
+  //
+  // #pragma omp parallel for
+  // for (int i = 0; i < 15; ++i) {
+  //   printf ("Hello from i = %i\n", i);
+  // }
+  //
+  // You may notice that the printed numbers do not print out in
+  // order.  Parallel for loops may execute in any order.
+  Kokkos::parallel_for (15, [=] (const int i) {
+    printf ("Hello from i = %i\n", i);
   });
-  
-  // finalize DefaultExecutionSpace (and potentially HostSpace::execution_space)
-  Kokkos::finalize();
+
+  // You must call finalize() after you are done using Kokkos.  This
+  // shuts down the default execution space (and possibly its host
+  // execution space).
+  Kokkos::finalize ();
 }
 
