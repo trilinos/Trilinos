@@ -531,6 +531,11 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     stk::mesh::EntityKey elem_key_chg_own;
     CEOUtils::fillMeshfor4Elem4ProcEdgeAndTest(mesh, meta_data, elem_key_chg_own);
 
+    if (p_rank == 1) {
+        // Fill elem_field data on nodes 5 and 6 with data.
+
+    }
+
     std::vector<EntityProc> change;
     if(p_rank == 2)
     {
