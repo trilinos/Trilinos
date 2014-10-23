@@ -531,9 +531,15 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     stk::mesh::EntityKey elem_key_chg_own;
     CEOUtils::fillMeshfor4Elem4ProcEdgeAndTest(mesh, meta_data, elem_key_chg_own);
 
-    if (p_rank == 1) {
+    if (p_rank == 1 || p_rank == 2) {
         // Fill elem_field data on nodes 5 and 6 with data.
-
+        Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
+        Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
+        stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
+        double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
+        *elem_field_data_node5 = 5.0;
+        double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
+        *elem_field_data_node6 = 6.0;
     }
 
     std::vector<EntityProc> change;
@@ -573,9 +579,9 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     //
     //         id/proc                             id/proc
     //        1/0---3/0---5/1---7/2---9/3         1/0---3/0---5/1---7/0---9/3
-    //        |      |     |    {|     |          |      |     |    {|     |
-    //        | 1/0  | 2/1 | 3/2{| 4/3 |          | 1/0  | 2/1 | 3/0{| 4/3 |
-    //        |      |     |    {|     |          |      |     |    {|     |
+    //        |      |     |    +|     |          |      |     |    +|     |
+    //        | 1/0  | 2/1 | 3/2+| 4/3 |          | 1/0  | 2/1 | 3/0+| 4/3 |
+    //        |      |     |    +|     |          |      |     |    +|     |
     //        2/0---4/0---6/1---8/2---10/3        2/0---4/0---6/1---8/0---10/3
 
     size_t numNodes = 10;
@@ -681,6 +687,18 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
 
     ////////////////////////////////////////////////////////////////////////////
     CEOUtils::checkStatesAfterCEOME_4Elem4ProcEdge(mesh);
+
+    if (p_rank == 1 || p_rank == 0) {
+        // Fill elem_field data on nodes 5 and 6 with data.
+        Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
+        Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
+        stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
+        double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
+        EXPECT_EQ( 5.0, *elem_field_data_node5 );
+        double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
+        EXPECT_EQ( 6.0, *elem_field_data_node6 );
+    }
+
 }
 
 TEST(CEOME, change_entity_owner_8Elem4ProcMoveTop)

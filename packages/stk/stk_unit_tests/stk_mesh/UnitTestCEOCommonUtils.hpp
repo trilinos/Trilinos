@@ -415,7 +415,8 @@ inline bool check_state(const BulkDataTester & mesh, const EntityKey & entityKey
 inline bool check_parts(const stk::mesh::BulkData & mesh, const EntityKey & entityKey,
                  stk::mesh::Part *p0 = NULL, stk::mesh::Part *p1 = NULL, stk::mesh::Part *p2 = NULL,
                  stk::mesh::Part *p3 = NULL, stk::mesh::Part *p4 = NULL, stk::mesh::Part *p5 = NULL,
-                 stk::mesh::Part *p6 = NULL, stk::mesh::Part *p7 = NULL, stk::mesh::Part *p8 = NULL)
+                 stk::mesh::Part *p6 = NULL, stk::mesh::Part *p7 = NULL, stk::mesh::Part *p8 = NULL,
+                 stk::mesh::Part *p9 = NULL, stk::mesh::Part *p10 = NULL, stk::mesh::Part *p11 = NULL)
 {
   // Check to see if the state is as expected for the provided EntityKey.
   //
@@ -425,33 +426,18 @@ inline bool check_parts(const stk::mesh::BulkData & mesh, const EntityKey & enti
   //   STATE_GHOSTED_FROM: Processor that we ghost the Entity from
   //
   PartVector expectedParts;
-  if (p0 != NULL) {
-    expectedParts.push_back(p0);
-  }
-  if (p1 != NULL) {
-    expectedParts.push_back(p1);
-  }
-  if (p2 != NULL) {
-    expectedParts.push_back(p2);
-  }
-  if (p3 != NULL) {
-    expectedParts.push_back(p3);
-  }
-  if (p4 != NULL) {
-    expectedParts.push_back(p4);
-  }
-  if (p5 != NULL) {
-    expectedParts.push_back(p5);
-  }
-  if (p6 != NULL) {
-    expectedParts.push_back(p6);
-  }
-  if (p7 != NULL) {
-    expectedParts.push_back(p7);
-  }
-  if (p8 != NULL) {
-    expectedParts.push_back(p8);
-  }
+  if ( p0 != NULL) { expectedParts.push_back(p0 ); }
+  if ( p1 != NULL) { expectedParts.push_back(p1 ); }
+  if ( p2 != NULL) { expectedParts.push_back(p2 ); }
+  if ( p3 != NULL) { expectedParts.push_back(p3 ); }
+  if ( p4 != NULL) { expectedParts.push_back(p4 ); }
+  if ( p5 != NULL) { expectedParts.push_back(p5 ); }
+  if ( p6 != NULL) { expectedParts.push_back(p6 ); }
+  if ( p7 != NULL) { expectedParts.push_back(p7 ); }
+  if ( p8 != NULL) { expectedParts.push_back(p8 ); }
+  if ( p9 != NULL) { expectedParts.push_back(p9 ); }
+  if (p10 != NULL) { expectedParts.push_back(p10); }
+  if (p11 != NULL) { expectedParts.push_back(p11); }
 
   std::sort(expectedParts.begin(), expectedParts.end());
 
@@ -3055,7 +3041,7 @@ inline void fillMeshfor4Elem4ProcEdgeAndTest(BulkDataTester &mesh, stk::mesh::Me
         EXPECT_TRUE(check_state(mesh, EntityKey(EDGE_RANK, 1), STATE_NOT_SHARED));
         EXPECT_TRUE(check_state(mesh, EntityKey(EDGE_RANK, 1), STATE_GHOSTED_FROM, 2));
         EXPECT_TRUE(check_state(mesh, EntityKey(EDGE_RANK, 1), STATE_NOT_GHOSTED_TO));
-        EXPECT_TRUE(check_parts(mesh, EntityKey(EDGE_RANK, 1), universal_part, aura_part, elem_part, elem_topo_part, edge_part, edge_topo_part));
+        EXPECT_TRUE(check_parts(mesh, EntityKey(EDGE_RANK, 1), universal_part, aura_part, elem_part, elem_topo_part, edge_part, edge_topo_part, elem_block));
         EXPECT_TRUE(check_relns(mesh, EntityKey(EDGE_RANK, 1), NODE_RANK, 7, 8));
         EXPECT_TRUE(check_relns(mesh, EntityKey(EDGE_RANK, 1), ELEM_RANK, 3));
 
@@ -3113,7 +3099,7 @@ inline void fillMeshfor4Elem4ProcEdgeAndTest(BulkDataTester &mesh, stk::mesh::Me
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_GHOSTED_FROM, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 7), STATE_NOT_GHOSTED_TO));
         EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 7), universal_part, aura_part, elem_part, elem_topo_part,
-                                                               edge_part, edge_topo_part, node_part, node_topo_part));
+                                                               edge_part, edge_topo_part, node_part, node_topo_part, elem_block));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 7), EDGE_RANK, 1));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 7), ELEM_RANK, 3));
 
@@ -3123,7 +3109,7 @@ inline void fillMeshfor4Elem4ProcEdgeAndTest(BulkDataTester &mesh, stk::mesh::Me
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_GHOSTED_FROM, 2 ));
         EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 8), STATE_NOT_GHOSTED_TO));
         EXPECT_TRUE(check_parts(mesh, EntityKey(NODE_RANK, 8), universal_part, aura_part, elem_part, elem_topo_part,
-                                                               edge_part, edge_topo_part, node_part, node_topo_part));
+                                                               edge_part, edge_topo_part, node_part, node_topo_part, elem_block));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 8), EDGE_RANK, 1));
         EXPECT_TRUE(check_relns(mesh, EntityKey(NODE_RANK, 8), ELEM_RANK, 3));
 
