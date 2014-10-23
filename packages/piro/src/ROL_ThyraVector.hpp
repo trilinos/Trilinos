@@ -86,16 +86,14 @@ public:
   */
   Real dot( const Vector<Real> &x ) const {
     Real val[1];
-    ThyraVector &ex = Teuchos::dyn_cast<ThyraVector>(const_cast <Vector<Real>&>(x));
-    Teuchos::RCP<const Thyra::VectorBase<Real> > xvalptr = ex.getVector();
-
-    return thyra_vec_->space()->scalarProd(*thyra_vec_, *xvalptr);
+    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    return ::Thyra::dot<Real>(*thyra_vec_, *ex.thyra_vec_);
   }
 
   /** \brief Returns \f$ \| y \| \f$ where \f$y = \mbox{*this}\f$.
   */
   Real norm() const {
-    return (Real) sqrt(thyra_vec_->space()->scalarProd(*thyra_vec_, *thyra_vec_));
+    return ::Thyra::norm_2<Real>(*thyra_vec_);
   } 
 
   /** \brief Clone to make a new (uninitialized) vector.
@@ -108,12 +106,11 @@ public:
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
   */
   void axpy( const Real alpha, const Vector<Real> &x ) {
-    ThyraVector &ex = Teuchos::dyn_cast<ThyraVector>(const_cast <Vector<Real>&>(x));
-    Teuchos::RCP<const Thyra::VectorBase<Real> > xvalptr = ex.getVector();
+    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
 
   ::Thyra::linear_combination<Real>(
       Teuchos::tuple<Real>(alpha)(),
-      Teuchos::tuple<Teuchos::Ptr<const ::Thyra::VectorBase<Real> > >(xvalptr.ptr())(),
+      Teuchos::tuple<Teuchos::Ptr<const ::Thyra::VectorBase<Real> > >(ex.getVector().ptr())(),
       1.0,
       outArg(*thyra_vec_)
       );
@@ -125,23 +122,24 @@ public:
     ::Thyra::put_scalar(0.0, outArg(*thyra_vec_));
   }
 
+  void putScalar(Real alpha) {
+      ::Thyra::put_scalar(alpha, outArg(*thyra_vec_));
+    }
+
   Teuchos::RCP<const Thyra::VectorBase<Real> > getVector() const {
-    return this->thyra_vec_;
+    return thyra_vec_;
+  }
+
+  Teuchos::RCP<Thyra::VectorBase<Real> > getNonConstVector()  {
+    return thyra_vec_;
   }
 
   Teuchos::RCP<Vector<Real> > basis( const int i ) const {
-
-    exit(1);
-
     Teuchos::RCP<Thyra::VectorBase<Real> > basisThyraVec = thyra_vec_->clone_v(); 
     ::Thyra::put_scalar(0.0, outArg(*basisThyraVec));
-    {
-      Thyra::DetachedVectorView<Real> global_p(basisThyraVec);
-      global_p[i] = 1.0; 
-    }
+    ::Thyra::set_ele(i,1.0,outArg(*basisThyraVec));
 
-    Teuchos::RCP<ThyraVector> basisVec = Teuchos::rcp(new ThyraVector(basisThyraVec));
-    return basisVec;
+    return Teuchos::rcp(new ThyraVector(basisThyraVec));
   }
 
   int dimension() const {return thyra_vec_->space()->dim();}
