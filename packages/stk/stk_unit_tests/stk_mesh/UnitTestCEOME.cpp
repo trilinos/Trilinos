@@ -574,6 +574,8 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
 
     mesh.change_entity_owner_exp(change);
 
+    CEOUtils::checkStatesAfterCEO_4Elem4ProcEdge(mesh);
+
     ////////////////////////////////////////////////////////////////////////////
 
     //
