@@ -734,6 +734,8 @@ TEST(CEOME, change_entity_owner_8Elem4ProcMoveTop)
 
     mesh.change_entity_owner_exp(entities_to_move);
 
+    CEOUtils::checkStatesAfterCEO_8Elem4ProcMoveTop(mesh);
+
     ////////////////////////////////////////////////////////////////////////////
 
     //     id/proc                           id/proc
