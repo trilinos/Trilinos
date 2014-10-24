@@ -70,9 +70,6 @@ public:
 
   enum { MAX_DEPENDENCE = 13 };
 
-  /**\brief  States of a task */
-  enum { STATE_CONSTRUCTING = 0 , STATE_WAITING = 1 , STATE_EXECUTING = 2 , STATE_COMPLETE = 4 };
-
   /**\brief  Base dependence count when a task is allocated.
    *         A separate dependence array is allocated when the number
    *         of dependences exceeds this count.
@@ -114,13 +111,13 @@ public:
 
   inline
   TaskMember * get_dependence( int i ) const
-    { return ( STATE_EXECUTING == m_state && 0 <= i && i < MAX_DEPENDENCE ) ? m_dep[i] : (TaskMember*) 0 ; }
+    { return ( Kokkos::TASK_STATE_EXECUTING == m_state && 0 <= i && i < MAX_DEPENDENCE ) ? m_dep[i] : (TaskMember*) 0 ; }
 
   inline
   int get_dependence() const
     {
       int i = 0 ;
-      if ( STATE_EXECUTING == m_state ) { for ( ; i < MAX_DEPENDENCE && m_dep[i] != 0 ; ++i ); }
+      if ( Kokkos::TASK_STATE_EXECUTING == m_state ) { for ( ; i < MAX_DEPENDENCE && m_dep[i] != 0 ; ++i ); }
       return i ;
     }
 };
@@ -152,6 +149,22 @@ public:
   void destroy( task_root_type * t )
     { static_cast< DerivedTaskMember * >( t )->~DerivedTaskMember(); }
 
+  template< class A1 , class A2 , class A3 , class A4 >
+  void add_dependence( const Future<A1,A2> & f
+                     , const Future<A3,A4> & dep
+                     )
+    {
+      int i = 0 ;
+      for ( ; i < MAX_DEPENDENCE && 0 != f.m_task->m_dep[i] ; ++i );
+      verify_set_dependence( f.m_task , i );
+      assign( & f.m_task->m_dep[i] , dep.m_task );
+    }
+
+  template< class A1 , class A2 >
+  static
+  void schedule( const Future<A1,A2> f )
+    { schedule( f.m_task ); }
+
   template< class A1 , class A2 >
   static
   void schedule( task_root_type * t
@@ -170,6 +183,10 @@ public:
 
   template< class A1 , class A2 >
   void wait( const Future<A1,A2> & f ) { wait( f.m_task ); }
+
+  KOKKOS_INLINE_FUNCTION static
+  Kokkos::TaskState get_task_state( const Impl::TaskMember< Kokkos::Qthread > * const task )
+    { return 0 != task ? Kokkos::TaskState(*((volatile const int *)( & task->m_state ))) : Kokkos::TASK_STATE_NULL ; }
 
   TaskManager();
   TaskManager( const TaskManager & );
@@ -311,67 +328,6 @@ public:
 
 namespace Kokkos {
 
-//----------------------------------------------------------------------------
-
-template<>
-class TaskPolicy< Impl::TaskDepends< Kokkos::Qthread > >
-{
-public:
-
-  typedef Kokkos::Qthread execution_space ;
-
-private:
-
-  enum { MAX_DEPENDENCE = Impl::TaskMember< execution_space >::MAX_DEPENDENCE };
-
-  Kokkos::Impl::TaskManager< execution_space >  & m_task_manager ;
-  Kokkos::Future< execution_space >               m_depends[ MAX_DEPENDENCE ];
-
-  TaskPolicy();
-  TaskPolicy & operator = ( const TaskPolicy & );
-
-public:
-
-  template< typename A1 , typename A2 >
-  TaskPolicy( Kokkos::Impl::TaskManager< execution_space > & manager
-            , const size_t n
-            , const Future< A1 , A2 > * const dep )
-    : m_task_manager( manager )
-    {
-      int i = 0 ;
-      for ( ; i < n ; ++i ) m_depends[i] = dep[i] ;
-      for ( ; i < MAX_DEPENDENCE ; ++i ) m_depends[i] = Future< execution_space >();
-    }
-
-  // Spawn a serial task:
-  template< class FunctorType , class ValueType >
-  Future< ValueType , execution_space >
-  spawn( const FunctorType & functor ) const
-    {
-      // Allocate a copy functor and insert into queue
-      typedef Impl::TaskMember< execution_space , typename FunctorType::value_type , FunctorType > member_type ;
-      member_type * m = new( m_task_manager.memory_allocate( sizeof(member_type) ) ) member_type( functor );
-      m_task_manager.schedule( m , m_depends , MAX_DEPENDENCE );
-      return Future< ValueType , execution_space >( m );
-    }
-
-  // Construct a task policy for foreach-range tasks:
-  // spawn( task_policy.depends(N,d).foreach(RangePolicy) , functor );
-  // spawn( task_policy.foreach(RangePolicy) , functor );
-  template< class ExecPolicy >
-  TaskPolicy< Impl::TaskForEach< ExecPolicy > >
-  foreach( const ExecPolicy & arg_policy )
-    { return TaskPolicy< Impl::TaskForEach< ExecPolicy > >( m_task_manager , arg_policy , m_depends ); }
-
-  // Construct a task policy for reduce-range tasks:
-  template< class ExecPolicy >
-  TaskPolicy< Impl::TaskForEach< ExecPolicy > >
-  reduce( const ExecPolicy & arg_policy )
-    { return TaskPolicy< Impl::TaskReduce< ExecPolicy > >( m_task_manager , arg_policy , m_depends ); }
-};
-
-//----------------------------------------------------------------------------
-
 template<>
 class TaskPolicy< Kokkos::Qthread >
 {
@@ -434,6 +390,33 @@ public:
       m_task_manager.schedule( static_cast< member_type * >( task_functor ) , dep , n );
     }
 
+  // Allocate a copy of a functor
+  template< class FunctorType >
+  Future< typename FunctorType::value_type , execution_space >
+  create( const FunctorType & functor , const int ) const
+    {
+      typedef typename FunctorType::value_type value_type ;
+      typedef Impl::TaskMember< execution_space , value_type , FunctorType >  member_type ;
+      return Future< typename FunctorType::value_type , execution_space >
+        ( new( m_task_manager.memory_allocate( sizeof(member_type) ) ) member_type( functor ) );
+    }
+
+  template< class A1 , class A2 , class A3 , class A4 >
+  void add_dependence( const Future<A1,A2> & f
+                     , const Future<A3,A4> & dep
+                     , typename Impl::enable_if
+                        < Impl::is_same< typename Future<A1,A2>::execution_space , execution_space >::value
+                          &&
+                          Impl::is_same< typename Future<A3,A4>::execution_space , execution_space >::value
+                        >::type * = 0
+                      )
+    { m_task_manager.add_dependence( f , dep ); }
+
+  template< class ValueType >
+  void spawn( const Future< ValueType , execution_space > & f ) const
+    { m_task_manager.schedule( f ); }
+
+
   // Allocate a copy functor and insert into queue
   template< class FunctorType >
   Future< typename FunctorType::value_type , execution_space >
@@ -445,17 +428,6 @@ public:
       m_task_manager.schedule( m );
       return Future< value_type , execution_space >( m );
     }
-
-  // Construct a task policy with dependences:
-  // spawn( task_policy.depends(N,d) , functor );
-  template< class A1 , class A2 >
-  TaskPolicy< Impl::TaskDepends< execution_space > >
-  depends( const Future< A1 , A2 > * const d
-         , typename Impl::enable_if<
-             ( Impl::is_same< typename Future<A1,A2>::execution_space , execution_space >::value
-             ), const int >::type n 
-         )
-    { return TaskPolicy< Impl::TaskDepends< execution_space > >( m_task_manager , n , d ); }
 
   // Construct a task policy for foreach-range tasks:
   // spawn( task_policy.depends(N,d).foreach(RangePolicy) , functor );

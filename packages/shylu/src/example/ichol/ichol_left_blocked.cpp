@@ -1,9 +1,9 @@
+#include <Kokkos_Core.hpp>
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
-
-#include "crs_row_view.hpp"
 #include "crs_matrix_view.hpp"
+#include "crs_row_view.hpp"
 
 #include "ichol_left_blocked.hpp"
 
@@ -13,7 +13,9 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type> CrsMatrixBase;
+typedef Kokkos::OpenMP host_type; 
+
+typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,host_type> CrsMatrixBase;
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 
 typedef Example::Uplo Uplo;
@@ -23,8 +25,13 @@ int main (int argc, char *argv[]) {
     cout << "Usage: " << argv[0] << " filename" << " blksize" << endl;
     return -1;
   }
+
+  Kokkos::initialize();
+  cout << "Default execution space initialized = "
+       << typeid(Kokkos::DefaultExecutionSpace).name()
+       << endl;
   
-  CrsMatrixBase A;
+  CrsMatrixBase Abase("Abase");
 
   ifstream in;
   in.open(argv[1]);
@@ -32,16 +39,23 @@ int main (int argc, char *argv[]) {
     cout << "Error in open the file: " << argv[1] << endl;
     return -1;
   }
-  A.importMatrixMarket(in);
-  A.showMe(cout);
+  Abase.importMatrixMarket(in);
+  cout << Abase << endl;
 
-  CrsMatrixBase L(A, Uplo::Lower);
+  CrsMatrixBase Lbase("Lower Triangular of Abase");
+  Lbase.copy(Uplo::Lower, Abase);
 
-  int r_val = Example::ichol_left_blocked_lower(CrsMatrixView(L), atoi(argv[2]));
-  if (r_val != 0) 
-    cout << " Error = " << r_val << endl;
+  {
+    CrsMatrixView L(Lbase);
 
-  L.showMe(cout);  
+    int r_val = Example::ichol_left_blocked_lower(L, atoi(argv[2]));
+    if (r_val != 0) 
+      cout << " Error = " << r_val << endl;
+  }
+
+  cout << Lbase << endl;
+
+  Kokkos::finalize();
 
   return 0;
 }

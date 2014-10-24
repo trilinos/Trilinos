@@ -28,19 +28,13 @@
 # ************************************************************************
 # @HEADER
 
-FIND_PACKAGE(Doxygen)
-
-IF(NOT DOXYGEN_FOUND)
-  MESSAGE(STATUS "doxygen not found!")
-ENDIF(NOT DOXYGEN_FOUND)
-
 SET(ADDITIONAL_CLEAN_FILES "")
 
 FOREACH(Package ${PyTrilinos_PACKAGES})
 
   IF(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${Package}_dox.i)
 
-    IF(DOXYGEN_FOUND)
+    IF(PyTrilinos_DOCSTRINGS)
 
       IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile_${Package}.in)
 
@@ -54,7 +48,7 @@ FOREACH(Package ${PyTrilinos_PACKAGES})
 
       ENDIF()
 
-    ELSE(DOXYGEN_FOUND)
+    ELSE(PyTrilinos_DOCSTRINGS)
 
       EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E touch
         ${CMAKE_CURRENT_BINARY_DIR}/${Package}_dox.i
@@ -62,7 +56,7 @@ FOREACH(Package ${PyTrilinos_PACKAGES})
       MESSAGE(STATUS
         "PyTrilinos.${Package} will not have doxygen-generated docstrings")
 
-    ENDIF(DOXYGEN_FOUND)
+    ENDIF(PyTrilinos_DOCSTRINGS)
 
     IF(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${Package}_dox.i)
       LIST(APPEND ADDITIONAL_CLEAN_FILES ${Package}_dox.i)

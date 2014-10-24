@@ -31,6 +31,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 #
 # Include packages/src directory
 #
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/interfaces)
@@ -57,6 +58,8 @@ APPEND_SET(HEADERS
   epetra/shylu_internal.h
   epetra/shylu_config.h
   interfaces/shylu_partition_interface.hpp
+  interfaces/shylu_partition_interface_def.hpp
+  interfaces/shylu_partition_interface_decl.hpp
   )
 
 # Set sources

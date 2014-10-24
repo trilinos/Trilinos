@@ -367,6 +367,8 @@ int Ifpack_Chebyshev::Compute()
   ComputeTime_ += Time_->ElapsedTime();
   IsComputed_ = true;
 
+  SetLabel();
+
   return(0);
 }
 
@@ -445,7 +447,16 @@ Condest(const Ifpack_CondestType CT,
 //==============================================================================
 void Ifpack_Chebyshev::SetLabel()
 {
-  Label_ = "IFPACK (Chebyshev polynomial), degree=" + Ifpack_toString(PolyDegree_);
+  std::ostringstream oss;
+  oss << "\"Ifpack Chebyshev polynomial\": {"
+      << "Initialized: " << (IsInitialized() ? "true" : "false")
+      << ", Computed: " << (IsComputed() ? "true" : "false")
+      << ", degree: " << PolyDegree_
+      << ", lambdaMax: " << LambdaMax_
+      << ", alpha: "  << EigRatio_
+      << ", lambdaMin: " << LambdaMin_
+      << "}";
+  Label_ = oss.str();
 }
 
 //==============================================================================

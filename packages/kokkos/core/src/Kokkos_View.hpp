@@ -117,41 +117,71 @@ private:
   // can only be Arg1, Space can be Arg1 or Arg2, and
   // MemoryTraits can be Arg1, Arg2 or Arg3
 
-  enum { Arg1IsLayout = Impl::is_layout<Arg1>::value };
+  enum { Arg1IsLayout = Impl::is_array_layout<Arg1>::value };
 
   enum { Arg1IsSpace = Impl::is_space<Arg1>::value };
   enum { Arg2IsSpace = Impl::is_space<Arg2>::value };
 
-  enum { Arg1IsMemoryTraits = Impl::is_memorytraits<Arg1>::value };
-  enum { Arg2IsMemoryTraits = Impl::is_memorytraits<Arg2>::value };
-  enum { Arg3IsMemoryTraits = Impl::is_memorytraits<Arg3>::value };
+  enum { Arg1IsMemoryTraits = Impl::is_memory_traits<Arg1>::value };
+  enum { Arg2IsMemoryTraits = Impl::is_memory_traits<Arg2>::value };
+  enum { Arg3IsMemoryTraits = Impl::is_memory_traits<Arg3>::value };
+
+  enum { Arg1IsVoid = Impl::is_same< Arg1 , void >::value };
+  enum { Arg2IsVoid = Impl::is_same< Arg2 , void >::value };
+  enum { Arg3IsVoid = Impl::is_same< Arg3 , void >::value };
+
+  // Arg1 is Layout, Space, MemoryTraits, or void
+  typedef typename
+    Impl::StaticAssert<
+      ( 1 == Arg1IsLayout + Arg1IsSpace + Arg1IsMemoryTraits + Arg1IsVoid )
+      , Arg1 >::type Arg1Verified ;
+
+  // If Arg1 is Layout       then Arg2 is Space, MemoryTraits, or void
+  // If Arg1 is Space        then Arg2 is MemoryTraits or void
+  // If Arg1 is MemoryTraits then Arg2 is void
+  // If Arg1 is Void         then Arg2 is void
+  typedef typename
+    Impl::StaticAssert<
+      ( Arg1IsLayout       && ( 1 == Arg2IsSpace + Arg2IsMemoryTraits + Arg2IsVoid ) ) ||
+      ( Arg1IsSpace        && ( 0 == Arg2IsSpace ) && ( 1 == Arg2IsMemoryTraits + Arg2IsVoid ) ) ||
+      ( Arg1IsMemoryTraits && Arg2IsVoid ) ||
+      ( Arg1IsVoid         && Arg2IsVoid )
+      , Arg2 >::type Arg2Verified ;
+
+  // Arg3 is MemoryTraits or void and at most one argument is MemoryTraits
+  typedef typename
+    Impl::StaticAssert<
+      ( 1 == Arg3IsMemoryTraits + Arg3IsVoid ) &&
+      ( Arg1IsMemoryTraits + Arg2IsMemoryTraits + Arg3IsMemoryTraits <= 1 )
+      , Arg3 >::type Arg3Verified ;
 
   // Arg1 or Arg2 may have execution and memory spaces
-  typedef typename Impl::if_c<( Arg1IsSpace ), Arg1 ,
-          typename Impl::if_c<( Arg2IsSpace ), Arg2 ,
+  typedef typename Impl::if_c<( Arg1IsSpace ), Arg1Verified ,
+          typename Impl::if_c<( Arg2IsSpace ), Arg2Verified ,
           Kokkos::DefaultExecutionSpace
           >::type >::type::execution_space  ExecutionSpace ;
 
-  typedef typename Impl::if_c<( Arg1IsSpace ), Arg1 ,
-          typename Impl::if_c<( Arg2IsSpace ), Arg2 ,
+  typedef typename Impl::if_c<( Arg1IsSpace ), Arg1Verified ,
+          typename Impl::if_c<( Arg2IsSpace ), Arg2Verified ,
           Kokkos::DefaultExecutionSpace
           >::type >::type::memory_space  MemorySpace ;
 
   typedef typename Impl::is_space<
-    typename Impl::if_c<( Arg1IsSpace ), Arg1 ,
-    typename Impl::if_c<( Arg2IsSpace ), Arg2 ,
+    typename Impl::if_c<( Arg1IsSpace ), Arg1Verified ,
+    typename Impl::if_c<( Arg2IsSpace ), Arg2Verified ,
     Kokkos::DefaultExecutionSpace
     >::type >::type >::host_mirror_space  HostMirrorSpace ;
 
   // Arg1 may be array layout
-  typedef typename Impl::if_c< Arg1IsLayout , Arg1 ,
+  typedef typename Impl::if_c< Arg1IsLayout , Arg1Verified ,
           typename ExecutionSpace::array_layout
           >::type ArrayLayout ;
 
   // Arg1, Arg2, or Arg3 may be memory traits
-  typedef typename Impl::if_c< Arg1IsMemoryTraits , Arg1 ,
-          typename Impl::if_c< Arg2IsMemoryTraits , Arg2 ,
-          typename Impl::if_c< Arg3IsMemoryTraits , Arg3 , MemoryManaged
+  typedef typename Impl::if_c< Arg1IsMemoryTraits , Arg1Verified ,
+          typename Impl::if_c< Arg2IsMemoryTraits , Arg2Verified ,
+          typename Impl::if_c< Arg3IsMemoryTraits , Arg3Verified ,
+          MemoryManaged
           >::type >::type >::type  MemoryTraits ;
 
   typedef Impl::AnalyzeShape<DataType> analysis ;

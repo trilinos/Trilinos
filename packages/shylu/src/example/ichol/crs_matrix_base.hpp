@@ -3,7 +3,7 @@
 #define __CRS_MATRIX_BASE_HPP__
 
 /// \file crs_matrix_base.hpp
-/// \brief The base CRS matrix interfaces to user provided input matrices.
+/// \brief CRS matrix base object interfaces to user provided input matrices.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include <Kokkos_Core.hpp>
@@ -63,63 +63,45 @@ namespace Example {
         _ap = size_type_array(_label+"::RowPtrArray", m+1);
       
       if (_aj.dimension_0() < nnz)
-        _aj = ordinal_type_array(_label+"::ColIdxArray", nnz);
+        _aj = ordinal_type_array(_label+"::ColsArray", nnz);
       
       if (_ax.dimension_0() < nnz)
-        _ax = value_type_array(_label+"::ValueArray", nnz);
+        _ax = value_type_array(_label+"::ValuesArray", nnz);
     }
 
   public:
 
     KOKKOS_INLINE_FUNCTION
-    void 
-    setLabel(string label) {
-      _label = label;
-    }
+    void setLabel(string label) { _label = label; }
 
     KOKKOS_INLINE_FUNCTION
-    string 
-    Label() const {
-      return _label;
-    }
+    string Label() const { return _label; }
 
     KOKKOS_INLINE_FUNCTION
-    ordinal_type  
-    NumRows() const { 
-      return _m;
-    }
+    ordinal_type NumRows() const { return _m; }
 
     KOKKOS_INLINE_FUNCTION
-    ordinal_type  
-    NumCols() const { 
-      return _n; 
-    }
+    ordinal_type NumCols() const { return _n; }
 
     KOKKOS_INLINE_FUNCTION
-    size_type     
-    NumNonZeros() const { 
-      return _nnz;  
-    }
+    size_type NumNonZeros() const { return _nnz; }
 
-    KOKKOS_INLINE_FUNCTION
-    size_type_array
-    RowPtr(const ordinal_type begin = 0,
-           const ordinal_type end   = NumRows() + 1) const { 
-      return Kokkos::subview<size_type_array>(_ap, range_type<ordinal_type>(begin, min(end,_ap.dimension_0())));
-    }
-
+    // KOKKOS_INLINE_FUNCTION
+    // size_type
+    // RowPtr(const ordinal_type i) const { 
+    //   return _ap[i];
+    // }
+    
     KOKKOS_INLINE_FUNCTION
     ordinal_type_array 
-    ColIndex(const ordinal_type begin = 0,
-             const ordinal_type end   = NumRows() + 1) const { 
-      return Kokkos::subview<ordinal_type_array>(_aj, range_type<size_type>(begin, min(end,_aj.dimension_0())));
+    ColsInRow(const ordinal_type i) const {
+      return Kokkos::subview<ordinal_type_array>(_aj, range_type<size_type>(_ap[i],_ap[i+1]));
     }
-
+    
     KOKKOS_INLINE_FUNCTION
     value_type_array   
-    Value(const ordinal_type begin = 0,
-          const ordinal_type end   = NumRows() + 1) const {
-      return Kokkos::subview<ordinal_type_array>(_ax, range_type<size_type>(begin, min(end,_ax.dimension_0())));
+    ValuesInRow(const ordinal_type i) const {
+      return Kokkos::subview<value_type_array>(_ax, range_type<size_type>(_ap[i],_ap[i+1]));
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -176,8 +158,8 @@ namespace Example {
         _n(n),
         _nnz(nnz),
         _ap(_label+"::RowPtrArray", m+1),
-        _aj(_label+"::ColIdxArray", nnz),
-        _ax(_label+"::ValueArray", nnz)
+        _aj(_label+"::ColsArray", nnz),
+        _ax(_label+"::ValuesArray", nnz)
     { }
 
     /// \brief Constructor to attach external arrays to the matrix.
@@ -326,7 +308,7 @@ namespace Example {
     //   for (ordinal_type i=0;i<_m;++i) {
     //     ordinal_type jsize = (*b.RowPtr(i+1) - *b.RowPtr(i));
     //     _ap[i] = _nnz;
-    //     ordinal_type *ci = b.ColIndex(i);
+    //     ordinal_type *ci = b.Cols(i);
     //     for (ordinal_type j=0;j<jsize;++j) {
     //       _aj[_nnz] = ci[j];
     //       _ax[_nnz].setView(&b,         i, 1,
@@ -345,8 +327,8 @@ namespace Example {
     int importMatrixMarket(ifstream &file);
     ostream& showMe(ostream &os) const;
     int convertGraph(size_type &nnz,
-                    size_type *rptr,
-                    ordinal_type *cidx) const; 
+                     size_type *rptr,
+                     ordinal_type *cidx) const; 
   };
 
 }
