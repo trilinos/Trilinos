@@ -246,7 +246,7 @@ public:
       lno_t const *offsets=NULL;
       zgid_t const *adjacencyIds=NULL;
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
-      
+      return false;
       return true;
     }
   }
