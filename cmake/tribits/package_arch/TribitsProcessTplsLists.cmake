@@ -80,7 +80,7 @@ INCLUDE(Split)
 #    find module will be assumed to be under that this directory with the
 #    standard name (e.g. ``cmake/tpls/FindTPL<tplName>.cmake``).  A standard
 #    way to write a ``FindTPL<tplName>.cmake`` module is to use the function
-#    `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
+#    `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_.
 #
 # 2. **CLASSIFICATION** (``<pkgi_classif>``): Gives the `SE Package Test
 #    Group`_ `PT`_, `ST`_, or `EX`_ and the maturity level ``EP``, ``RS``,

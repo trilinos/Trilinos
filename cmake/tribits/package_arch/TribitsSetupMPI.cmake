@@ -41,7 +41,6 @@ INCLUDE(AdvancedSet)
 INCLUDE(MultilineSet)
 INCLUDE(PrintNonemptyVar)
 INCLUDE(FindProgramPlus)
-INCLUDE(TribitsTplDeclareLibraries)
 
 
 FUNCTION(TRIBITS_EXTRACT_BASE_DIR FILE_PATH BASE_DIR)

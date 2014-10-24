@@ -1,0 +1,6 @@
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( HeadersAndLibsTpl
+  REQUIRED_HEADERS HeadersAndLibsTpl_header1.hpp HeadersAndLibsTpl_header2.hpp
+  MUST_FIND_ALL_HEADERS
+  REQUIRED_LIBS_NAMES haltpl1 haltpl2 
+  MUST_FIND_ALL_LIBS
+  )

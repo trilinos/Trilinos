@@ -2057,7 +2057,7 @@ For each TPL referenced in a `<repoDir>/TPLsList.cmake`_ file using the macro
 ``FindTPL${TPL_NAME}.cmake``, that once processed, produces the variables
 ``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  Most
 ``FindTPL${TPL_NAME}.cmake`` files just use the function
-`TRIBITS_TPL_DECLARE_LIBRARIES()`_ the define the TriBITS TPL.  A simple
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ the define the TriBITS TPL.  A simple
 example of such a file is the standard TriBITS ``FindTPLPETSC.cmake`` module
 which is currently:
 
@@ -2104,20 +2104,20 @@ non-cache variables:
     TPL if desired.
 
 The specification given in `Enabling support for an optional Third-Party
-Library (TPL)`_ and `TRIBITS_TPL_DECLARE_LIBRARIES()`_ describes how the a
+Library (TPL)`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ describes how the a
 ``FindTPL${TPL_NAME}.cmake`` module should behave and allow users to override
 and specialize how a TPL is determined.  However, note that the TriBITS system
 does not require the usage of of the function
-``TRIBITS_TPL_DECLARE_LIBRARIES()`` and does not even care about the TPL
+``TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`` and does not even care about the TPL
 module name ``FindTPL${TPL_NAME}.cmake``.  All that is required is that some
 CMake file fragment exist that once included, will define the variables
 ``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  However, to be
 user friendly, such a CMake file should respond to the same variables as
-accepted by the standard ``TRIBITS_TPL_DECLARE_LIBRARIES()`` function.
+accepted by the standard ``TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`` function.
 
 The core variables related to an enabled TPL are ``${TPL_NAME}_LIBRARIES``,
 ``${TPL_NAME}_INCLUDE_DIRS``, and ``${TPL_NAME}_TESTGROUP`` as defined in
-`TRIBITS_TPL_DECLARE_LIBRARIES()`_ need to be defined.  For more details, see
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ need to be defined.  For more details, see
 `TRIBITS_REPOSITORY_DEFINE_TPLS()`_.
 
 Processing of TriBITS Files: Ordering and Details
@@ -5137,7 +5137,7 @@ To add a new TriBITS TPL, do the following:
    dependency.
 
 2) Create the TPL find module, e.g. ``<repoDir>/tpls/FindTPL<tplName>.cmake``
-   (see `TriBITS TPL`_ and `TRIBITS_TPL_DECLARE_LIBRARIES()`_ for details).
+   (see `TriBITS TPL`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ for details).
    List the default required header files and/or libraries that must be
    provided by the TPL.
 

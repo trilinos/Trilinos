@@ -2907,6 +2907,7 @@ class test_checkin_test(unittest.TestCase):
        +"\-DBUILD_SHARED:BOOL=ON\n" \
        +"\-DTrilinos_TRIBITS_DIR:PATH=.*\n" \
        +"\-DTrilinos_TEST_CATEGORIES:STRING=BASIC\n" \
+       +"\-DTrilinos_ENABLE_SECONDARY_TESTED_CODE:BOOL=OFF\n" \
        +"\-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
        +"\-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n"
        +"\-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc\n" \

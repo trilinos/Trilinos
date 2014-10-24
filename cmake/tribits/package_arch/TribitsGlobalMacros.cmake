@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-
+# Standard TriBITS system includes
 INCLUDE(TribitsConstants)
 INCLUDE(TribitsProcessExtraRepositoriesList)
 INCLUDE(TribitsProcessPackagesAndDirsLists)
@@ -48,7 +48,9 @@ INCLUDE(TribitsTestCategories)
 INCLUDE(TribitsGeneralMacros)
 INCLUDE(TribitsAddTestHelpers)
 INCLUDE(TribitsVerbosePrintVar)
+INCLUDE(TribitsProcessEnabledTpl)
 
+# Standard TriBITS utilities includes
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(AdvancedOption)
 INCLUDE(AdvancedSet)
@@ -64,7 +66,15 @@ INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(Split)
 INCLUDE(TimingUtils)
 
+# Standard CMake includes
 INCLUDE(CheckIncludeFileCXX)
+
+# Include here so it does not need to be included in each individual
+# FindTPL<TPLNAME>.cmake file over and over.
+INCLUDE(TribitsTplFindIncludeDirsAndLibraries)
+INCLUDE(TribitsTplDeclareLibraries) # Deprecated
+# ABOVE: We need to include TribitsTplDeclareLibraries.cmake until all client
+# projects stop using it.
 
 
 #
@@ -1608,31 +1618,9 @@ MACRO(TRIBITS_PROCESS_ENABLED_TPLS)
     TIMER_GET_RAW_SECONDS(CONFIGURE_TPLS_TIME_START_SECONDS)
   ENDIF()
 
-  # Include here so it does not need to be included in each individual
-  # FindTPL<TPLNAME>.cmake file over and over.
-  INCLUDE(TribitsTplDeclareLibraries)
-
   FOREACH(TPL_NAME ${${PROJECT_NAME}_TPLS})
     IF (TPL_ENABLE_${TPL_NAME})
-      MESSAGE(STATUS "Processing enabled TPL: ${TPL_NAME}")
-      IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
-        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-          PRINT_VAR(${TPL_NAME}_FINDMOD)
-        ENDIF()
-        IF (IS_ABSOLUTE ${${TPL_NAME}_FINDMOD})
-          #MESSAGE("${${TPL_NAME}_FINDMOD} is absolute!")
-          SET(CURRENT_TPL_PATH "${${TPL_NAME}_FINDMOD}")
-        ELSE()
-          #MESSAGE("${${TPL_NAME}_FINDMOD} is *NOT* absolute!")
-          SET(CURRENT_TPL_PATH "${PROJECT_SOURCE_DIR}/${${TPL_NAME}_FINDMOD}")
-        ENDIF()
-        #PRINT_VAR(CURRENT_TPL_PATH)
-        TRIBITS_TRACE_FILE_PROCESSING(TPL  INCLUDE  "${CURRENT_TPL_PATH}")
-        INCLUDE("${CURRENT_TPL_PATH}")
-        ASSERT_DEFINED(TPL_${TPL_NAME}_INCLUDE_DIRS)
-        ASSERT_DEFINED(TPL_${TPL_NAME}_LIBRARIES)
-        ASSERT_DEFINED(TPL_${TPL_NAME}_LIBRARY_DIRS)
-      ENDIF()
+      TRIBITS_PROCESS_ENABLED_TPL(${TPL_NAME})
     ENDIF()
   ENDFOREACH()
 

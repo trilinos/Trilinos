@@ -37,16 +37,40 @@
 # ************************************************************************
 # @HEADER
 
-# Either the MPI compiler wrappers take care of these or the user has to set
-# the explicitly using basic compile flags and ${PROJECT_NAME}_EXTRA_LINK_FLAGS.
-GLOBAL_SET(TPL_MPI_INCLUDE_DIRS)
-GLOBAL_SET(TPL_MPI_LIBRARIES)
-GLOBAL_SET(TPL_MPI_LIBRARY_DIRS)
+#
+# This file is run as a cmake -P script to test out the
+# TribitsProcessEnabledTpl.cmake and
+# TribitsTplFindIncludeDirsAndLibraries.cmake modules.
+#
 
-IF(WIN32 AND TPL_ENABLE_MPI)
-  FIND_PACKAGE(MPI)
-  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-  GLOBAL_SET(TPL_MPI_INCLUDE_DIRS ${MPI_INCLUDE_PATH})
-  GLOBAL_SET(TPL_MPI_LIBRARIES ${MPI_LIBRARIES})
+# Passed in on command-line
+MESSAGE("${PROJECT_NAME} = ${PROJECT_NAME}")
+MESSAGE("${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
+
+SET( CMAKE_MODULE_PATH
+  "${${PROJECT_NAME}_TRIBITS_DIR}/utils"
+  "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch"
+  )
+
+INCLUDE(TribitsProcessEnabledTpl)
+
+# Passed in on command-line
+PRINT_VAR("TPL_NAME")
+PRINT_VAR("TPL_${TPL_NAME}_ENABLING_PKG")
+PRINT_VAR("${TPL_NAME}_FINDMOD")
+
+# Set up other vars
+SET(TPL_ENABLE_${TPL_NAME} ON  CACHE STRING  "The default for testing")
+SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
+IF (TPL_FIND_SHARED_LIBS)
+  SET(CMAKE_FIND_LIBRARY_SUFFIXES .so )
 ENDIF()
 
+# Do the processing of the TPL
+MESSAGE("")
+TRIBITS_PROCESS_ENABLED_TPL(${TPL_NAME})
+MESSAGE("")
+MESSAGE("Exported TPL_ENABLE_${TPL_NAME}='${TPL_ENABLE_${TPL_NAME}}'")
+MESSAGE("Exported TPL_${TPL_NAME}_NOT_FOUND='${TPL_${TPL_NAME}_NOT_FOUND}'")
+MESSAGE("Exported TPL_${TPL_NAME}_LIBRARIES='${TPL_${TPL_NAME}_LIBRARIES}'")
+MESSAGE("Exported TPL_${TPL_NAME}_INCLUDE_DIRS='${TPL_${TPL_NAME}_INCLUDE_DIRS}'")
