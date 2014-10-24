@@ -354,7 +354,7 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
         IF (NOT LIBNAME_SET_LIB)
           MESSAGE(
             "-- ERROR: Did not find any library in the set \"${LIBNAME_SET}\""
-             " for the TPL '${TPL_NAME}!'")
+             " for the TPL '${TPL_NAME}'!")
           MESSAGE("\n"
             "-- TIP: If the TPL '${TPL_NAME}' is on your system then you can set:\n"
             "\n"
@@ -365,7 +365,7 @@ FUNCTION(TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES TPL_NAME)
             "\n"
             "     -DTPL_${TPL_NAME}_LIBRARIES='<path-to-libs0>;<path-to-libs1>;...'\n"
             "\n"
-            "   to point to the full directory paths for the libraries which will\n"
+            "   to point to the full paths for the libraries which will\n"
             "   bypass any search for libraries and these libraries will be used without\n"
             "   question in the build.  (But this will result in a build-time error\n"
             "   obviously if all all of the necssary symbols are not found.)\n")
