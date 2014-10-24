@@ -46,12 +46,23 @@
 #include <Kokkos_Core.hpp>
 #include <cstdio>
 
+// The type of a two-dimensional N x 3 array of double.
+// It lives in Kokkos' default memory space.
 typedef Kokkos::View<double*[3]> view_type;
+
+// The "HostMirror" type corresponding to view_type above is also a
+// two-dimensional N x 3 array of double.  However, it lives in the
+// host memory space corresponding to view_type's memory space.  For
+// example, if view_type lives in CUDA device memory, host_view_type
+// lives in host (CPU) memory.  Furthermore, declaring host_view_type
+// as the host mirror of view_type means that host_view_type has the
+// same layout as view_type.  This makes it easier to copy between the
+// two Views.
 typedef view_type::HostMirror host_view_type;
 
-struct squaresum {
+struct ReduceFunctor {
   view_type a;
-  squaresum(view_type a_):a(a_) {}
+  ReduceFunctor (view_type a_) : a (a_) {}
   typedef int value_type; //Specify type for reduction value, lsum
 
   KOKKOS_INLINE_FUNCTION
@@ -59,23 +70,30 @@ struct squaresum {
     lsum += a(i,0)-a(i,1)+a(i,2);
   }
 };
- 
+
 int main() {
   Kokkos::initialize();
 
-  view_type a("A",10);
-  host_view_type h_a = Kokkos::create_mirror_view(a); 
-  
-  for(int i = 0; i < 10; i++)
-    for(int j = 0; j < 3; j++)
-      h_a(i,j) = i*10 + j;
+  view_type a ("A", 10);
+  // If view_type and host_mirror_type live in the same memory space,
+  // a "mirror view" is just an alias, and deep_copy does nothing.
+  // Otherwise, a mirror view of a device View lives in host memory,
+  // and deep_copy does a deep copy.
+  host_view_type h_a = Kokkos::create_mirror_view (a);
 
-  Kokkos::deep_copy(a,h_a);
+  // The View h_a lives in host (CPU) memory, so it's legal to fill
+  // the view sequentially using ordinary code, like this.
+  for (int i = 0; i < 10; i++) {
+    for (int j = 0; j < 3; j++) {
+      h_a(i,j) = i*10 + j;
+    }
+  }
+  Kokkos::deep_copy (a, h_a); // Copy from host to device.
 
   int sum = 0;
-  Kokkos::parallel_reduce(10,squaresum(a),sum);
-  printf("Result is %i\n",sum);  
+  Kokkos::parallel_reduce (10, ReduceFunctor (a), sum);
+  printf ("Result is %i\n",sum);
 
-  Kokkos::finalize();
+  Kokkos::finalize ();
 }
 
