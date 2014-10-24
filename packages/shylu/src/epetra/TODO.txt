@@ -19,3 +19,6 @@ Refactor the three copies of the computeApproxSchur for wide, narrow and
 guided probing into something manageable.
 
 Start using the debug manager correctly.
+
+Tpetra version - started.
+
