@@ -110,6 +110,30 @@ namespace pike {
 
     for (std::vector<std::string>::const_iterator l=log->begin(); l != log->end(); ++l)
       out << *l << std::endl;
+
+    // Test extra logger functions for overage testing.  These are
+    // just pass through functions to the underlying ME
+    Teuchos::RCP<std::vector<std::string> > logRCP = app1Logged->getNonConstLog();
+    Teuchos::RCP<const std::vector<std::string> > nonconstLogRCP = app1Logged->getLog();
+    TEST_EQUALITY(app1Logged->isLocallyConverged(), true);
+    TEST_EQUALITY(app1Logged->isGloballyConverged(), false);
+    TEST_EQUALITY(app1Logged->getResponseName(0), "Mock Response");
+    TEST_EQUALITY(app1Logged->supportsResponse("Mock Response"), true);
+    TEST_EQUALITY(app1Logged->getNumberOfResponses(),1);
+    TEST_EQUALITY(app1Logged->supportsParameter("Mock Parameter"), true);
+    TEST_EQUALITY(app1Logged->getNumberOfParameters(), 1);
+    TEST_EQUALITY(app1Logged->getParameterIndex("Mock Parameter"), 0);
+    Teuchos::Array<double> a(1);
+    app1Logged->setParameter(0,a);
+    TEST_EQUALITY(app1Logged->isTransient(), false);
+    TEST_EQUALITY(app1Logged->getCurrentTime(), 0.0);
+    TEST_EQUALITY(app1Logged->getTentativeTime(), 0.0);
+    TEST_EQUALITY(app1Logged->solvedTentativeStep(), false);
+    TEST_EQUALITY(app1Logged->getCurrentTimeStepSize(), 1.0);
+    TEST_EQUALITY(app1Logged->getDesiredTimeStepSize(), 1.0);
+    TEST_EQUALITY(app1Logged->getMaxTimeStepSize(), 1.0);
+    app1Logged->setNextTimeStepSize(1.0);
+    app1Logged->acceptTimeStep();
   }
 
 }

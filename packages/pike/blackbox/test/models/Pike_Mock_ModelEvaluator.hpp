@@ -44,14 +44,26 @@ namespace pike_test {
     bool isGloballyConverged() const;
 
     Teuchos::ArrayView<const double> getResponse(const int i) const;
-
     int getResponseIndex(const std::string& rName) const;
-
     std::string getResponseName(const int i) const;
-
     bool supportsResponse(const std::string& rName) const;
-
     int getNumberOfResponses() const;
+
+    bool supportsParameter(const std::string& pName) const;
+    int getNumberOfParameters() const;
+    std::string getParameterName(const int l) const;    
+    int getParameterIndex(const std::string& pName) const;
+    void setParameter(const int l, const Teuchos::ArrayView<const double>& p);
+
+    bool isTransient() const;
+    double getCurrentTime() const;
+    double getTentativeTime() const;
+    bool solvedTentativeStep() const;
+    double getCurrentTimeStepSize() const;
+    double getDesiredTimeStepSize() const;    
+    double getMaxTimeStepSize() const;
+    void setNextTimeStepSize(const double& dt);
+    void acceptTimeStep();
 
     void setSolver(const Teuchos::RCP<pike::Solver>& solver);
 
@@ -67,6 +79,9 @@ namespace pike_test {
     std::map<std::string,int> responseMap_;
     std::vector<std::string> responseNames_;
     std::vector<std::vector<double> > responseValues_; 
+    std::map<std::string,int> parameterMap_;
+    std::vector<std::string> parameterNames_;
+    std::vector<std::vector<double> > parameterValues_; 
   };
 
   /** \brief non-member ctor

@@ -124,4 +124,56 @@ namespace pike_test {
 
   }
 
+  // For testing the default error handling in the base class.
+  class DefaultModelTest : public pike::BlackBoxModelEvaluator {
+  public:    
+    std::string name() const
+    { return "DefaultModelTest"; }
+
+    void solve() {}
+
+    bool isLocallyConverged() const
+    { return true; }
+
+  };
+
+  TEUCHOS_UNIT_TEST(app, default_me)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    DefaultModelTest model;
+
+    TEST_EQUALITY(model.name(), "DefaultModelTest");
+    model.solve();
+    TEST_EQUALITY(model.isLocallyConverged(), true);
+
+
+    // Default implementation in model evaluator
+    TEST_EQUALITY(model.isGloballyConverged(), true);
+
+    TEST_EQUALITY(model.supportsParameter("?"), false);
+    TEST_EQUALITY(model.getNumberOfParameters(), 0);
+    TEST_THROW(model.getParameterName(0), std::logic_error);
+    TEST_THROW(model.getParameterIndex("?"), std::logic_error);
+    Teuchos::Array<double> a(5);
+    TEST_THROW(model.setParameter(0,a), std::logic_error);
+
+    TEST_EQUALITY(model.supportsResponse("?"), false);
+    TEST_EQUALITY(model.getNumberOfResponses(), 0);
+    TEST_THROW(model.getResponseName(0), std::logic_error);
+    TEST_THROW(model.getResponseIndex("?"), std::logic_error);
+    TEST_THROW(model.getResponse(0), std::logic_error);
+
+    TEST_EQUALITY(model.isTransient(), false);
+    TEST_THROW(model.getCurrentTime(), std::logic_error);
+    TEST_THROW(model.getTentativeTime(), std::logic_error);
+    TEST_THROW(model.solvedTentativeStep(), std::logic_error);
+    TEST_THROW(model.getCurrentTimeStepSize(), std::logic_error);
+    TEST_THROW(model.getDesiredTimeStepSize(), std::logic_error);
+    TEST_THROW(model.getMaxTimeStepSize(), std::logic_error);
+    TEST_THROW(model.setNextTimeStepSize(1.0), std::logic_error);
+    TEST_THROW(model.acceptTimeStep(), std::logic_error);
+  }
+
 }

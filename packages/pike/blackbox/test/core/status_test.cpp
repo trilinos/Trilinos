@@ -47,6 +47,11 @@ namespace pike {
 
     TEST_EQUALITY(solver->getStatus(),pike::FAILED);
     TEST_EQUALITY(solver->getNumberOfIterations(),4);
+
+    // Test the reset on solver and status tests
+    solver->reset();
+    TEST_EQUALITY(solver->getStatus(), pike::UNCHECKED);
+    TEST_EQUALITY(maxIters->getStatus(), pike::UNCHECKED);
   }
 
   TEUCHOS_UNIT_TEST(status_test, LocalModelConvergence)
@@ -89,6 +94,11 @@ namespace pike {
 
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
     TEST_EQUALITY(solver->getNumberOfIterations(),10);
+
+    // Test the reset on solver and status tests
+    solver->reset();
+    TEST_EQUALITY(solver->getStatus(), pike::UNCHECKED);
+    TEST_EQUALITY(tests->getStatus(), pike::UNCHECKED);
   }
 
   TEUCHOS_UNIT_TEST(status_test, LocalModelFailure)
@@ -129,6 +139,11 @@ namespace pike {
 
     TEST_EQUALITY(solver->getStatus(),pike::FAILED);
     TEST_EQUALITY(solver->getNumberOfIterations(),7);
+
+    // Test the reset on solver and status tests
+    solver->reset();
+    TEST_EQUALITY(solver->getStatus(), pike::UNCHECKED);
+    TEST_EQUALITY(tests->getStatus(), pike::UNCHECKED);
   }
 
   TEUCHOS_UNIT_TEST(status_test, GlobalModelConvergence)
@@ -169,6 +184,11 @@ namespace pike {
 
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
     TEST_EQUALITY(solver->getNumberOfIterations(),8);
+
+    // Test the reset on solver and status tests
+    solver->reset();
+    TEST_EQUALITY(solver->getStatus(), pike::UNCHECKED);
+    TEST_EQUALITY(tests->getStatus(), pike::UNCHECKED);
   }
 
   TEUCHOS_UNIT_TEST(status_test, ScalarResponseRelativeError)
@@ -203,6 +223,12 @@ namespace pike {
 
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
     TEST_EQUALITY(solver->getNumberOfIterations(),5);
+
+    // Test the reset on solver and status tests
+    solver->reset();
+    TEST_EQUALITY(solver->getStatus(), pike::UNCHECKED);
+    TEST_EQUALITY(relTol->getStatus(), pike::UNCHECKED);
+    TEST_EQUALITY(solver->getNumberOfIterations(),0);
   }
 
   TEUCHOS_UNIT_TEST(status_test, Composite_AND)
@@ -251,6 +277,11 @@ namespace pike {
 
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
     TEST_EQUALITY(solver->getNumberOfIterations(),7);
+
+    // Test solver and status test reset
+    TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
+    solver->reset();
+    TEST_EQUALITY(converged->getStatus(),pike::UNCHECKED);
   }
 
   TEUCHOS_UNIT_TEST(status_test, Composite_OR)
@@ -299,6 +330,11 @@ namespace pike {
 
     TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
     TEST_EQUALITY(solver->getNumberOfIterations(),5);
+
+    // Test solver and status test reset
+    TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
+    solver->reset();
+    TEST_EQUALITY(converged->getStatus(),pike::UNCHECKED);
   }
 
   TEUCHOS_UNIT_TEST(status_test, Composite_NESTED)
@@ -357,8 +393,13 @@ namespace pike {
     solver->solve();
 
     TEST_EQUALITY(solver->getStatus(),pike::FAILED);
-    TEST_EQUALITY(solver->getNumberOfIterations(),6);
-  }
+    TEST_EQUALITY(solver->getNumberOfIterations(),6); 
+
+    // Test solver and status test reset
+    TEST_EQUALITY(solver->getStatus(),pike::FAILED);
+    solver->reset();
+    TEST_EQUALITY(tests->getStatus(),pike::UNCHECKED);
+ }
 
   TEUCHOS_UNIT_TEST(status_test, Factory)
   {
