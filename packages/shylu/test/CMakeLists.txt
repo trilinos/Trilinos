@@ -41,7 +41,7 @@ ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUDriverFiles
     SOURCE_FILES ShyLU.xml shylu_iqr_parameters.xml
-    shylu_no_iqr_parameters.xml wathen96.mtx wathenSmall.mtx
+    shylu_no_iqr_parameters.xml wathen96.mtx wathenSmall.mtx wathenTiny.mtx
     shylu_iqr_parameters.seq.xml
     ShyLU_epetra_interface.xml
 #    EXEDEPS aztec_driver belos_driver
