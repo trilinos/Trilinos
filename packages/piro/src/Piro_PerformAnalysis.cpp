@@ -64,7 +64,6 @@
 #endif
 
 #ifdef Piro_ENABLE_ROL
-// NEED SOMETHING LIKE  #include "ROL_Solver.hpp"
 #include "ROL_ThyraVector.hpp"
 #include "ROL_ThyraME_Objective.hpp"
 #include "ROL_LineSearchStep.hpp"
@@ -345,7 +344,7 @@ Piro::PerformROLAnalysis(
     ROL::LineSearchStep<double> step(parlist);
 
     // Define Status Test
-    double gtol  = 1e-4;  // norm of gradient tolerance
+    double gtol  = 1e-6;  // norm of gradient tolerance
     double stol  = 1e-6;  // norm of step tolerance
     int   maxit = 100;    // maximum number of iterations
     ROL::StatusTest<double> status(gtol, stol, maxit);    
