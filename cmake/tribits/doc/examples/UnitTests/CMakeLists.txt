@@ -253,8 +253,6 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_ST_NoFortran
       "Final set of non-enabled packages:  MixedLang WrapExternal 2"
       "Processing enabled TPL: HeaderOnlyTpl"
       "-- File Trace: TPL        INCLUDE    .+/TribitsExampleProject/cmake/tpls/FindTPLHeaderOnlyTpl.cmake"
-      "--   Found TPL 'HeaderOnlyTpl' header file '.+/doc/examples/tpls/HeaderOnlyTpl/HeaderOnlyTpl_stuff.hpp'"
-      "-- Found TPL 'HeaderOnlyTpl' header path '.+/doc/examples/tpls/HeaderOnlyTpl'"
       "-- TPL_HeaderOnlyTpl_INCLUDE_DIRS='.+/doc/examples/tpls/HeaderOnlyTpl'"
       "Performing Test HAVE_SIMPLECXX___INT64"
       "Configuring done"
@@ -1343,9 +1341,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_HeaderOnlyTpl_Fail
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
       "Processing enabled TPL: HeaderOnlyTpl .enabled by SimpleCxx, disable with -DTPL_ENABLE_HeaderOnlyTpl=OFF."
-      "-- Must find all headers in header sets .HeaderOnlyTpl_stuff.hpp."
       "-- Searching in HeaderOnlyTpl_INCLUDE_DIRS='/path_does_not_exist'"
-      "-- Searching for headers in set .HeaderOnlyTpl_stuff.hpp."
       "-- TIP: If the TPL 'HeaderOnlyTpl' is on your system then you can set:"
       "-DHeaderOnlyTpl_INCLUDE_DIRS='<dir0>[;]<dir1>[;]...'"
       "-DTPL_HeaderOnlyTpl_INCLUDE_DIRS='<dir0>[;]<dir1>[;]...'"

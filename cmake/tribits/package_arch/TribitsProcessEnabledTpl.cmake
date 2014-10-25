@@ -93,9 +93,7 @@ FUNCTION(TRIBITS_PROCESS_ENABLED_TPL  TPL_NAME)
         MESSAGE(
           "TIP: One way to get past the configure failure for the\n"
           "TPL '${TPL_NAME}' is to simply disable it with:\n"
-          "\n"
           "  -DTPL_ENABLE_${TPL_NAME}=OFF\n"
-          "\n"
           "which will disable it and will recursively disable all of the\n"
           "downstream packages that have required dependencies on it, including\n"
           "the package '${TPL_${TPL_NAME}_ENABLING_PKG}' which triggered its enable.\n"
@@ -107,9 +105,7 @@ FUNCTION(TRIBITS_PROCESS_ENABLED_TPL  TPL_NAME)
         MESSAGE(
           "TIP: Even though the TPL '${TPL_NAME}' was explicitly enabled in input,\n"
           "it can be disabled with:\n"
-          "\n"
           "  -DTPL_ENABLE_${TPL_NAME}=OFF\n"
-          "\n"
           "which will disable it and will recursively disable all of the\n"
           "downstream packages that have required dependencies on it.\n"
           "When you reconfigure, just grep the cmake stdout for '${TPL_NAME}'\n"
