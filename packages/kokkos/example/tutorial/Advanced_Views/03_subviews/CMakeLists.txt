@@ -7,5 +7,4 @@ TRIBITS_ADD_EXECUTABLE(
   tutorial_advancedviews_03_subviews
   SOURCES subviews.cpp
   COMM serial mpi
-  DEPLIBS kokkoscore
   )

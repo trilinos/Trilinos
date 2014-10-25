@@ -230,6 +230,73 @@ void test_norm2( const int n )
 
 //----------------------------------------------------------------------------
 
+template< class Space >
+struct TaskDep {
+
+  typedef int value_type ;
+  typedef Kokkos::TaskPolicy< Space > policy_type ;
+
+  const policy_type policy ;
+  const int         input ;
+
+  TaskDep( const policy_type & arg_p , const int arg_i )
+    : policy( arg_p ), input( arg_i ) {}
+
+  void apply( int & val )
+  {
+    val = input ;
+    const int num = policy.get_dependence( this );
+
+    for ( int i = 0 ; i < num ; ++i ) {
+      Kokkos::Future<int,Space> f = policy.get_dependence( this , i );
+      val += f.get();
+    }
+  }
+};
+
+
+template< class Space >
+void test_task_dep( const int n )
+{
+  enum { NTEST = 64 };
+
+  Kokkos::TaskPolicy< Space > policy ;
+
+  Kokkos::Future<int,Space> f[ NTEST ];
+
+  for ( int i = 0 ; i < NTEST ; ++i ) {
+    // Create task in the "constructing" state with capacity for 'n+1' dependences
+    f[i] = policy.create( TaskDep<Space>(policy,0) , n + 1 );
+    if ( f[i].get_task_state() != Kokkos::TASK_STATE_CONSTRUCTING ) {
+      Kokkos::Impl::throw_runtime_exception("get_task_state() != Kokkos::TASK_STATE_CONSTRUCTING");
+    }
+    // Only use 'n' dependences
+    for ( int j = 0 ; j < n ; ++j ) {
+      Kokkos::Future<int,Space> nested = policy.spawn( TaskDep<Space>(policy,j+1) );
+      // Add dependence to a "constructing" task
+      policy.add_dependence( f[i] , nested );
+    }
+    // Spawn task from the "constructing" to the "waiting" state
+    policy.spawn( f[i] );
+  }
+
+  const int answer = n % 1 ? n * ( ( n + 1 ) / 2 ) : ( n / 2 ) * ( n + 1 );
+
+  int error = 0 ;
+  for ( int i = 0 ; i < NTEST ; ++i ) {
+    Kokkos::wait( policy , f[i] );
+    if ( f[i].get_task_state() != Kokkos::TASK_STATE_COMPLETE ) {
+      Kokkos::Impl::throw_runtime_exception("get_task_state() != Kokkos::TASK_STATE_COMPLETE");
+    }
+    if ( answer != f[i].get() && 0 == error ) {
+      std::cout << "test_task_dep(" << n << ") ERROR at[" << i << "]"
+                << " answer(" << answer << ") != result(" << f[i].get() << ")" << std::endl ;
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+
 } // namespace TestTaskPolicy
 
 #endif /* #ifndef KOKKOS_UNITTEST_TASKPOLICY_HPP */

@@ -185,8 +185,8 @@ void test_communicate_field_data_all_ghosting(stk::mesh::BulkData& mesh, int num
 
     double stk_comm_time_bulk = stk::cpu_time() - start_time;
 
-    double max_time_with_loop;
-    double max_time_bulk;
+    double max_time_with_loop=0;
+    double max_time_bulk=0;
     MPI_Reduce(static_cast<void*>(&stk_comm_time_with_loop), static_cast<void*>(&max_time_with_loop), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, mesh.parallel());
     MPI_Reduce(static_cast<void*>(&stk_comm_time_bulk), static_cast<void*>(&max_time_bulk), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, mesh.parallel());
 
@@ -220,7 +220,7 @@ void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, const stk::
 
     double stk_comm_time = stk::cpu_time() - start_time;
 
-    double max_time;
+    double max_time=0;
     MPI_Reduce(static_cast<void*>(&stk_comm_time), static_cast<void*>(&max_time), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, MPI_COMM_WORLD);
 
     if ( my_proc == 0 ) {

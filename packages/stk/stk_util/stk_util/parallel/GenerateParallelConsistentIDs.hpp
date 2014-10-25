@@ -83,26 +83,26 @@ namespace stk {
 
 
   template <typename OrderType> 
-  std::vector<unsigned> generate_parallel_consistent_ids(const unsigned maxAllowedId,
-                                                         const std::vector<unsigned>& existingIds,
+  std::vector<uint64_t> generate_parallel_consistent_ids(const uint64_t maxAllowedId,
+                                                         const std::vector<uint64_t>& existingIds,
                                                          const std::vector<OrderType>& localOrderArray,
                                                          const ParallelMachine comm) {
 
-    std::vector<unsigned> newIds;
+    std::vector<uint64_t> newIds;
     //
     //  Extract global max existing id.  For basic use case just start generating ids starting
     //  at the previous max_id + 1.  
 
-    unsigned localMaxId   = 0;
-    unsigned globalMaxId;    
-    for(unsigned i=0; i<existingIds.size(); ++i) {
+    uint64_t localMaxId   = 0;
+    uint64_t globalMaxId;    
+    for(uint64_t i=0; i<existingIds.size(); ++i) {
       if(existingIds[i] > localMaxId) {
         localMaxId = existingIds[i];
       }
     }
 
     int mpiResult = MPI_SUCCESS ;  
-    mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, MPI_UNSIGNED, MPI_MAX, comm);
+    mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, MPI_UNSIGNED_LONG, MPI_MAX, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
       return newIds;
@@ -115,14 +115,14 @@ namespace stk {
     std::vector<OrderType> globalOrderArray;
     stk::parallel_vector_concat(comm, localOrderArray, globalOrderArray);
 
-    unsigned globalNumIdsRequested = globalOrderArray.size();
+    uint64_t globalNumIdsRequested = globalOrderArray.size();
     if(globalNumIdsRequested == 0) return newIds;
 
     //
     //  Sort the ordering array and confirm it has no duplicated keys
     //
     std::sort(globalOrderArray.begin(), globalOrderArray.end());
-    for(unsigned i=0; i<globalNumIdsRequested-1; ++i) {
+    for(uint64_t i=0; i<globalNumIdsRequested-1; ++i) {
       if(globalOrderArray[i] == globalOrderArray[i+1]) {
         std::ostringstream msg;
         msg << "In generate_parallel_consistent_ids, an ordering array with non unique keys provided \n";
@@ -140,17 +140,17 @@ namespace stk {
     //  Note, below computations organized to avoid potential overflow
     //
     newIds.reserve(localOrderArray.size());
-    unsigned availableIds = maxAllowedId - globalMaxId;
+    uint64_t availableIds = maxAllowedId - globalMaxId;
     if(availableIds < globalNumIdsRequested) {
       //
       // Run fallback fill algorithm
       //
-      unsigned numNewIdsLocal = localOrderArray.size();
-      unsigned myFirstNewId;
-      mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, MPI_UNSIGNED, MPI_SUM, comm);
+      uint64_t numNewIdsLocal = localOrderArray.size();
+      uint64_t myFirstNewId;
+      mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
       myFirstNewId -= numNewIdsLocal;
-      std::vector<unsigned> allowedIdsLocal;
-      std::vector<unsigned> allowedIdsGlobal;
+      std::vector<uint64_t> allowedIdsLocal;
+      std::vector<uint64_t> allowedIdsGlobal;
       int returnCode = parallel_index_gap_finder_global(comm, 0, maxAllowedId, 
                                        existingIds, numNewIdsLocal, globalNumIdsRequested, 
                                        myFirstNewId, allowedIdsLocal);
@@ -162,7 +162,7 @@ namespace stk {
 
       parallel_vector_concat(comm, allowedIdsLocal, allowedIdsGlobal);
      
-      for(unsigned i=0, n=localOrderArray.size(); i<n; ++i) {
+      for(uint64_t i=0, n=localOrderArray.size(); i<n; ++i) {
         typename std::vector<OrderType>::iterator index = std::lower_bound(globalOrderArray.begin(), globalOrderArray.end(), localOrderArray[i]);
         assert(index != globalOrderArray.end());
         int offset = std::distance(globalOrderArray.begin(), index);
@@ -171,7 +171,7 @@ namespace stk {
 
     } else {
 
-      for(unsigned i=0, n=localOrderArray.size(); i<n; ++i) {
+      for(uint64_t i=0, n=localOrderArray.size(); i<n; ++i) {
         typename std::vector<OrderType>::iterator index = std::lower_bound(globalOrderArray.begin(), globalOrderArray.end(), localOrderArray[i]);
         assert(index != globalOrderArray.end());
         int offset = std::distance(globalOrderArray.begin(), index);

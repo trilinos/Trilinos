@@ -2,6 +2,10 @@
 #ifndef __ICHOL_LEFT_UNBLOCKED_HPP__
 #define __ICHOL_LEFT_UNBLOCKED_HPP__
 
+/// \file ichol_left_unblocked.hpp
+/// \brief Unblocked incomplete Chloesky factorization.
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+
 #include "partition.hpp"
 #include "scale.hpp"
 #include "dot.hpp"
@@ -13,10 +17,12 @@ namespace Example {
   
   // use Lower Triangular part only
   template<typename CrsMatViewType>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  int 
   ichol_left_unblocked_lower(const CrsMatViewType A) {
-    typedef typename CrsMatViewType::value_type   value_type;
-    typedef typename CrsMatViewType::ordinal_type ordinal_type;
+    typedef typename CrsMatViewType::value_type    value_type;
+    typedef typename CrsMatViewType::ordinal_type  ordinal_type;
+    typedef typename CrsMatViewType::row_view_type row_view_type;
 
     // if succeed, return 0 
     int r_val = 0;
@@ -38,7 +44,7 @@ namespace Example {
       // -----------------------------------------------------
 
       // extract diagonal from alpha11 
-      auto alpha = alpha11.extractRow(0);
+      row_view_type alpha = alpha11.extractRow(0);
       ordinal_type id = alpha.Index(0);
       value_type &alpha_val = (id < 0 ? zero : alpha.Value(id));
                            
@@ -49,17 +55,17 @@ namespace Example {
       }
 
       // update on alpha_val
-      auto r10t = a10t.extractRow(0);
+      row_view_type r10t = a10t.extractRow(0);
       alpha_val -= dot(r10t, r10t);
 
       // sparse gemv 
       gemv_nt_t(-1.0, A20, a10t, 1.0, a21);
 
       // sqrt on diag
-      alpha_val = sqrt(alpha_val);
+      alpha_val = sqrt(real(alpha_val));
 
       // sparse inverse scale
-      scale(1.0/alpha_val, a21);
+      scale(1.0/real(alpha_val), a21);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00,  a01,     A02,  /**/ ATL, ATR,

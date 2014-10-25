@@ -1,169 +1,319 @@
-\documentclass{article}[11pt]
-\usepackage{fancyhdr, tabularx, verbatim, epsfig}
-\usepackage{amssymb,psboxit}
-\usepackage{rotating}
-\usepackage[pdftex,
-            pdfpagemode=none,
-            pdfstartview=FitH]{hyperref}
+%
+% $Id: SANDExampleReportNotstrict.tex,v 1.26 2009-05-01 20:59:19 rolf Exp $
+%
+% This is an example LaTeX file which uses the SANDreport class file.
+% It shows how a SAND report should be formatted, what sections and
+% elements it should contain, and how to use the SANDreport class.
+% It uses the LaTeX report class, but not the strict option.
+%
+% Get the latest version of the class file and more at
+%    http://www.cs.sandia.gov/~rolf/SANDreport
+%
+% This file and the SANDreport.cls file are based on information
+% contained in "Guide to Preparing {SAND} Reports", Sand98-0730, edited
+% by Tamara K. Locke, and the newer "Guide to Preparing SAND Reports and
+% Other Communication Products", SAND2002-2068P.
+% Please send corrections and suggestions for improvements to
+% Rolf Riesen, Org. 9223, MS 1110, rolf@cs.sandia.gov
+%
+\documentclass[pdf,12pt,report]{SANDreport}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage{calc}
+\usepackage{color}
+\usepackage{eso-pic}
+\usepackage{fancyhdr}
+\usepackage{ifthen}
+\usepackage{indentfirst}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage[colorlinks, bookmarksopen, %pagebackref=true, backref=page,
+             linkcolor={blue},
+             anchorcolor={black},
+             citecolor={blue},
+             filecolor={magenta},
+             menucolor={blue},
+             pagecolor={red},
+             plainpages=false,pdfpagelabels,
+             pdfauthor={Jonathan J. Hu, Andrey Prokopenko, Tobias Wiesner, Chris Siefert, Ray Tuminaro},
+             pdftitle={MueLu User's Guide},
+             pdfkeywords={MueLu,AMG,multigrid,guide,user},
+             urlcolor={blue}]{hyperref}
+\usepackage{listings}
+\usepackage{mathptmx}	% Use the Postscript Times font
+\usepackage{multirow}
+\usepackage{pifont}
+\usepackage[FIGBOTCAP,normal,bf,tight]{subfigure}
+\usepackage{tabularx}
+\usepackage{verbatim}
 \usepackage{xspace}
+\usepackage{flowchart} % also loads tikz
+\usepackage{algorithm}
+\usetikzlibrary{arrows}
 
-\usepackage{graphicx,type1cm,eso-pic,color}
+%\usepackage{draftwatermark}
+%\SetWatermarkScale{.5}
 
-% Lightly print `DRAFT' on every page of the document
-\makeatletter
-\AddToShipoutPicture{%
-  \setlength{\@tempdimb}{.5\paperwidth}%
-    \setlength{\@tempdimc}{.5\paperheight}%
-    \setlength{\unitlength}{1pt}%
-    \put(\strip@pt\@tempdimb,\strip@pt\@tempdimc){%
-      \makebox(0,0){\rotatebox{45}{\textcolor[gray]{0.93}%
-        {\fontsize{5cm}{5cm}\selectfont{DRAFT}}}}%
-    }%
+\algrenewcommand{\algorithmiccomment}[1]{\hskip3em // #1}
+
+
+% If you want to relax some of the SAND98-0730 requirements, use the "relax"
+% option. It adds spaces and boldface in the table of contents, and does not
+% force the page layout sizes.
+% e.g. \documentclass[relax,12pt]{SANDreport}
+%
+% You can also use the "strict" option, which applies even more of the
+% SAND98-0730 guidelines. It gets rid of section numbers which are often
+% useful; e.g. \documentclass[strict]{SANDreport}
+
+
+
+% ---------------------------------------------------------------------------- %
+%
+% Set the title, author, and date
+%
+\title{MueLu User's Guide 1.0 \\
+(Trilinos version 11.12)}
+
+\author{Andrey Prokopenko \\
+  Scalable Algorithms \\
+  Sandia National Laboratories\\
+  Mailstop 1318 \\
+  P.O.~Box 5800 \\
+  Albuquerque, NM 87185-1318\\
+  aprokop@sandia.gov\\
+  \and
+  Tobias Wiesner \\
+  Institute for Computational Mechanics \\
+  Technische Universit\"at M\"unchen\\
+  Boltzmanstra\ss e 15 \\
+  85747 Garching, Germany\\
+  wiesner@lnm.mw.tum.de\\
+  \and
+  Jonathan J. Hu \\
+  Scalable Algorithms \\
+  Sandia National Laboratories\\
+  Mailstop 9159 \\
+  P.O.~Box 0969 \\
+  Livermore, CA 94551-0969\\
+  jhu@sandia.gov
+  \and
+  Christopher M. Siefert\\
+  Computational Multiphysics\\
+  Sandia National Laboratories\\
+  Mailstop 1322 \\
+  P.O.~Box 5800 \\
+  Albuquerque, NM 87185-1322\\
+  csiefer@sandia.gov
+  \and
+  Raymond S. Tuminaro\\
+  Computational Mathematics\\
+  Sandia National Laboratories\\
+  Mailstop 9159 \\
+  P.O.~Box 0969 \\
+  Livermore, CA 94551-0969\\
+  rstumin@sandia.gov
 }
-\makeatother
 
+% There is a "Printed" date on the title page of a SAND report, so
+% the generic \date should generally be empty.
+\date{}
 
-\hypersetup{
-  pdfauthor  = {Jonathan J. Hu, Andrey Prokopenko},
-  pdftitle   = {MueLu 0.01 User's Guide},
-  colorlinks = {true},
-  citecolor  = {blue},
+\input{definitions}
+
+\newtheorem*{mycomment}{\ding{42}}
+\newtheoremstyle{plain}
+  {\topsep}   % ABOVESPACE
+  {\topsep}   % BELOWSPACE
+  {\normalfont}  % BODYFONT
+  {0pt}       % INDENT (empty value is the same as 0pt)
+  {\bfseries} % HEADFONT
+  {}         % HEADPUNCT
+  {5pt plus 1pt minus 1pt} % HEADSPACE
+  {}          % CUSTOM-HEAD-SPEC
+
+% further declarations and additional commands
+\definecolor{hellgelb}{rgb}{1,1,0.8}   % background color for C++ listings
+\definecolor{darkgreen}{rgb}{0.0, 0.2, 0.13}
+%\definecolor{hellrot}{HTML}{FFA4C2}    % background color for xml files
+
+% settings for listings package
+\lstset{
+  backgroundcolor=\color{hellgelb},
+  basicstyle=\ttfamily\small,
+  breakautoindent=true,
+  breaklines=true,
+  captionpos=b,
+  columns=flexible,
+  commentstyle=\color{darkgreen},
+  extendedchars=true,
+  float=hbp,
+  frame=single,
+  identifierstyle=\color{black},
+  keywordstyle=\color{blue},
+  numbers=none,
+  numberstyle=\tiny,
+  showspaces=false,
+  showstringspaces=false,
+  stringstyle=\color{purple},
+  tabsize=2,
 }
 
-\def\optionbox#1#2{\noindent$\hphantom{ii}${\parbox[t]{1.5in}{\it
-#1}}{\parbox[t]{4.8in}{#2}} \\[1.1em]}
 
-\def\choicebox#1#2{\noindent$\hphantom{th}$\parbox[t]{3.0in}{\sf
-#1}\parbox[t]{3.35in}{#2}\\[0.8em]}
-
-\def\structbox#1#2{\noindent$\hphantom{hix}${\parbox[t]{2.10in}{\it
-#1}}{\parbox[t]{3.9in}{#2}} \\[.02cm]}
-
-\def\protobox#1{\vspace{2em}{\flushleft{\bf Prototype}
-\hrulefill}\flushleft{\fbox{\parbox[t]{6in}{\vspace{1em}{\sf
-#1}\vspace{1em}}}}}
+% ---------------------------------------------------------------------------- %
+% Set some things we need for SAND reports. These are mandatory
+%
+\SANDnum{SAND2014-18874}
+\SANDprintDate{October 2014}
+\SANDauthor{Andrey Prokopenko, Jonathan J. Hu, Tobias A. Wiesner, Christopher M. Siefert, Raymond S. Tuminaro}
 
 
-\setlength{\oddsidemargin} {0.1\oddsidemargin}
-\setlength{\evensidemargin}{0.5\evensidemargin}
-\setlength{\topmargin}     {0.0\topmargin}
-\setlength{\textheight}    {1.16\textheight}
-\setlength{\textwidth}     {1.35\textwidth}
+% ---------------------------------------------------------------------------- %
+% Include the markings required for your SAND report. The default is "Unlimited
+% Release". You may have to edit the file included here, or create your own
+% (see the examples provided).
+%
+% \include{MarkUR} % Not needed for unlimted release reports
 
-\newcommand{\amesos}       {\textsc{Amesos}\xspace}
-\newcommand{\anasazi}      {\textsc{Anasazi}\xspace}
-\newcommand{\aztecoo}      {\textsc{AztecOO}\xspace}
-\newcommand{\belos}        {\textsc{Belos}\xspace}
-\newcommand{\epetra}       {\textsc{Epetra}\xspace}
-\newcommand{\epetraext}    {\textsc{EpetraExt}\xspace}
-\newcommand{\galeri}       {\textsc{Galeri}\xspace}
-\newcommand{\ifpack}       {\textsc{Ifpack}\xspace}
-\newcommand{\ifpacktwo}    {\textsc{Ifpack2}\xspace}
-\newcommand{\loca}         {\textsc{Loca}\xspace}
-\newcommand{\ml}           {\textsc{ML}\xspace}
-\newcommand{\muelu}        {\textsc{MueLu}\xspace}
-\newcommand{\nox}          {\textsc{NOX}\xspace}
-\newcommand{\stratimikos}  {\textsc{Stratimikos}\xspace}
-\newcommand{\teuchos}      {\textsc{Teuchos}\xspace}
-\newcommand{\trilinos}     {\textsc{Trilinos}\xspace}
-\newcommand{\zoltan}       {\textsc{Zoltan}\xspace}
-\newcommand{\zoltantwo}    {\textsc{Zoltan2}\xspace}
 
-\newcommand{\klu}          {\textsc{Klu}\xspace}
-\newcommand{\metis}        {\textsc{Metis}\xspace}
-\newcommand{\mumps}        {\textsc{Mumps}\xspace}
-\newcommand{\umfpack}      {\textsc{Umfpack}\xspace}
-\newcommand{\superlu}      {\textsc{SuperLU}\xspace}
-\newcommand{\superludist}  {\textsc{SuperLU\_dist}\xspace}
-\newcommand{\parmetis}     {\textsc{ParMetis}\xspace}
-\newcommand{\paraview}     {\textsc{ParaView}\xspace}
+% ---------------------------------------------------------------------------- %
+% The following definition does not have a default value and will not
+% print anything, if not defined
+%
+%\SANDsupersed{SAND1901-0001}{January 1901}
+%\input{MarkOUO}
 
-\newcommand{\parameterlist}{\texttt{ParameterList}\xspace}
 
-\newcommand \trilinosWeb   {trilinos.sandia.gov\xspace}
-
-\newcommand{\cba}[3]{\choicebox{\texttt{#1}}{[{\texttt #2}] #3}}
-\newcommand{\cbb}[4]{\choicebox{\texttt{#1}}{[{\texttt #2}] #4 {\bf Default:~}#3.}}
-\newcommand{\cbc}[4]{\choicebox{\texttt{\color{red}#1}}{[{\texttt #2}] #4 {\bf Default:~}#3.}}
-
-\newcommand{\comm}[2]{\bigskip
-                      \begin{tabular}{|p{4.5in}|}\hline
-                      \multicolumn{1}{|c|}{{\bf Comment by #1}}\\ \hline
-                      #2\\ \hline
-                      \end{tabular}\\
-                      \bigskip
-                     }
-
+% ---------------------------------------------------------------------------- %
+%
+% Start the document
+%
 \begin{document}
-% \bibliographystyle{siam}
-\setcounter{page}{3}
+    \maketitle
 
-\large
-
-\begin{center}
-SAND????-????
-Unlimited Release \\
-Printed Oct 2013
-\end{center}
-
-\vspace{0.2in}
-
-\begin{center}
-{\Large {\bf MueLu 0.01 User's Guide}}
-
-\vspace*{0.8in}
-Andrey Prokopenko \\
-Computational Math \& Algorithms \\
-Sandia National Laboratories\\
-Mailstop 1318 \\
-P.O.~Box 5800 \\
-Albuquerque, NM 87185-1318\\[10pt]
-Jonathan J. Hu \\
-Computational Math \& Algorithms \\
-Sandia National Laboratories\\
-Mailstop 9159 \\
-P.O.~Box 0969 \\
-Livermore, CA 94551-0969
+    % ------------------------------------------------------------------------ %
+    % An Abstract is required for SAND reports
+    %
+    \begin{abstract}
+	\input{abstract}
+    \end{abstract}
 
 
-\vspace*{1in}
-
-\end{center}
-
-\begin{abstract}
-
-Blah-blah-blah.
-
-\end{abstract}
-
-\clearpage
-\newpage
-
-\vfill
-\begin{center}
-(page intentionally left blank)
-\end{center}
-\clearpage
-\newpage
+    % ------------------------------------------------------------------------ %
+    % An Acknowledgement section is optional but important, if someone made
+    % contributions or helped beyond the normal part of a work assignment.
+    % Use \section* since we don't want it in the table of context
+    %
+    \clearpage
+    \chapter*{Acknowledgment}
+	\input{acknowledgment}
 
 
-\tableofcontents
-\newpage
+    % ------------------------------------------------------------------------ %
+    % The table of contents and list of figures and tables
+    % Comment out \listoffigures and \listoftables if there are no
+    % figures or tables. Make sure this starts on an odd numbered page
+    %
+    \cleardoublepage		% TOC needs to start on an odd page
+    \tableofcontents
+    \listoffigures
+    \listoftables
 
-%-----------------------------%
-\section{\muelu options}
-%-----------------------------%
-In this section, we report the complete list of input parameters. Input parameters are passed to \muelu in a single \parameterlist.
 
-Some of the parameters that affect the preconditioner may in principle be different from level to level. By default, the parameter affects all levels
-in the multigrid hierarchy. To change the behaviour on a particular level, say level $d$, one is to construct a sublist of a \parameterlist with the
-name "level $d$".
+    % ---------------------------------------------------------------------- %
+    % An optional preface or Foreword
+    %\clearpage
+    %\chapter*{Preface}
+    %\addcontentsline{toc}{chapter}{Preface}
+	%\input{CommonPreface}
 
-Rather than implementing all possible algorithms, \muelu relies on other \trilinos packages. For instance, smoothers are provided by \ifpack or
-\ifpacktwo. Many of those algorithms take a list of parameters specifying their behaviour. \muelu simply passes this list to the proper package.
 
-\
+    % ---------------------------------------------------------------------- %
+    % An optional executive summary
+    %\clearpage
+    %\chapter*{Summary}
+    %\addcontentsline{toc}{chapter}{Summary}
+	%\input{CommonSummary}
 
-\input{paramlist}
+
+    % ---------------------------------------------------------------------- %
+    % An optional glossary. We don't want it to be numbered
+    %\clearpage
+    %\chapter*{Nomenclature}
+    %\addcontentsline{toc}{chapter}{Nomenclature}
+    %\begin{description}
+	%\item[dry spell]
+	%    using a dry erase marker to spell words
+	%\item[dry wall]
+	%    the writing on the wall
+	%\item[dry humor]
+	%    when people just do not understand
+	%\item[DRY]
+	%    Don't Repeat Yourself
+    %\end{description}
+
+
+    % ---------------------------------------------------------------------- %
+    % This is where the body of the report begins; usually with an Introduction
+    %
+    \SANDmain		% Start the main part of the report
+
+    %-----------------------------%
+    \chapter{Introduction}\label{sec:introduction}
+    %-----------------------------%
+    \input{introduction}
+
+    %-----------------------------%
+    \chapter{Multigrid background}\label{sec:multigrid}
+    %-----------------------------%
+    \input{multigrid}
+
+
+    %-----------------------------%
+    \chapter{Getting Started}\label{sec:getting started}
+    %-----------------------------%
+    \input{starting}
+
+    %-----------------------------%
+    \chapter{Performance tips}\label{sec:performance}
+    %-----------------------------%
+    \input{performance}
+
+    %-----------------------------%
+    \chapter{\muelu{} options} \label{sec:options}
+    %-----------------------------%
+    \input{options}
+
+    %\nocite{*}
+
+    % ---------------------------------------------------------------------- %
+    % References
+    %
+    \clearpage
+    % If hyperref is included, then \phantomsection is already defined.
+    % If not, we need to define it.
+    \providecommand*{\phantomsection}{}
+    \phantomsection
+    \addcontentsline{toc}{chapter}{References}
+    \bibliographystyle{plain}
+    \bibliography{mueluguide}
+
+
+    % ---------------------------------------------------------------------- %
+    %
+    \appendix
+    \chapter{Copyright and License}
+    \input{license}
+    %\chapter{Historical Perspective}
+	%\input{CommonHistory}
+
+
+    %\chapter{Some Other Appendix}
+	%\input{CommonAppendix}
+
+    % \printindex
+
+    \include{SANDdistribution}
 
 \end{document}

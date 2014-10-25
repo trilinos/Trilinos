@@ -46,21 +46,53 @@
 #include <Kokkos_Core.hpp>
 #include <cstdio>
 
+// Reduction functor for computing the sum of squares.
+//
+// More advanced reduction examples will show how to control the
+// reduction's "join" operator.  If the join operator is not provided,
+// it defaults to binary operator+ (adding numbers together).
 struct squaresum {
-  typedef int value_type; //Specify type for reduction target, lsum
+  // Specify the type of the reduction value with a "value_type"
+  // typedef.  In this case, the reduction value has type int.
+  typedef int value_type;
+
+  // The reduction functor's operator() looks a little different than
+  // the parallel_for functor's operator().  For the reduction, we
+  // pass in both the loop index i, and the intermediate reduction
+  // value lsum.  The latter MUST be passed in by nonconst reference.
+  // (If the reduction type is an array like int[], indicating an
+  // array reduction result, then the second argument is just int[].)
   KOKKOS_INLINE_FUNCTION
-  void operator() (int i, int &lsum) const {
-    lsum+= i*i;
+  void operator () (const int i, int& lsum) const {
+    lsum += i*i; // compute the sum of squares
   }
 };
- 
-int main() {
-  Kokkos::initialize();
- 
-  int sum = 0;
-  Kokkos::parallel_reduce(10,squaresum(),sum);
-  printf("Sum of first %i square numbers is %i\n",9,sum);  
 
-  Kokkos::finalize();
+int main() {
+  Kokkos::initialize ();
+  const int n = 10;
+
+  // Compute the sum of squares of integers from 0 to n-1, in
+  // parallel, using Kokkos.
+  int sum = 0;
+  Kokkos::parallel_reduce (n, squaresum (), sum);
+  printf ("Sum of squares of integers from 0 to %i, "
+          "computed in parallel, is %i\n", n - 1, sum);
+
+  // Compare to a sequential loop.
+  int seqSum = 0;
+  for (int i = 0; i < n; ++i) {
+    seqSum += i*i;
+  }
+  printf ("Sum of squares of integers from 0 to %i, "
+          "computed sequentially, is %i\n", n - 1, seqSum);
+
+  Kokkos::finalize ();
+
+  if (sum == seqSum) {
+    return 0;
+  } else {
+    return -1;
+  }
 }
 

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 
+//#include "Zoltan2_config.h"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -53,8 +54,8 @@
 #include "EpetraExt_CrsMatrixIn.h"
 
 //Our test interfaces
-#include "shylu_test_interface.hpp"
-#include "have_interface.hpp"
+#include "shylu.h"
+#include "shylu_partition_interface.hpp"
 
 using namespace std;
 
@@ -108,18 +109,85 @@ int main(int argc, char** argv)
   string pListFileName = "ShyLU_epetra_interface.xml";
   pLUList = Teuchos::getParametersFromXmlFile(pListFileName);
 
-  if(myPID ==0)
-    {
-      cout << "Starting Have Check on parameter list" << endl;
-
-      int one = test<double>(1.0);
-      int interface_test = have_interface <Epetra_CrsMatrix>(*A, *pLUList);
-      
-    }
 
   /*----------------partitioning_interface--------------*/
   /*-----------Will use check the epetra matrix on partition_interface------*/
   
-   int part_error = shylu_interface::partitioning_interface(A, AHat, b, bHat, *pLUList);
-   cout << "partitioned done\n";
+
+  //Isorropia Test - graph/Parmetis
+  pLUList->set("Partitioning Package","Isorropia");
+  Teuchos::ParameterList ptemp;
+  ptemp = pLUList->sublist("Isorropia Input");
+  
+  Teuchos::ParameterList pptemp;
+  pptemp = ptemp.sublist("Zoltan");
+  pptemp.set("GRAPH_PACKAGE", "Parmetis");
+  pptemp.set("DEBUG_LEVEL", "1");
+  
+  ptemp.set("partitioning method", "graph");
+  ptemp.set("Zoltan", pptemp);
+  pLUList->set("Isorropia Input", ptemp);
+  
+  cout << " \n\n--------------------BIG BREAK --------------\n\n";
+  Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
+
+  
+  ShyLU::PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector> partI(A, pLUList.get());
+  partI.partition();
+  AHat = partI.reorderMatrix();
+  bHat = partI.reorderVector(b);
+
+   cout << "Done with graph - parmetis" << endl;
+
+   /*
+
+   //Isorropia Test - Graph/PT-Scotch
+  pLUList->set("Partitioning Package","Isorropia"); 
+  ptemp = pLUList->sublist("Isorropia Input");
+  
+  //Teuchos::ParameterList pptemp;
+  pptemp = ptemp.sublist("Zoltan");
+  pptemp.set("GRAPH_PACKAGE", "scotch");
+  pptemp.set("DEBUG_LEVEL", "1");
+ 
+
+  ptemp.set("partitioning method", "graph");
+  ptemp.set("Zoltan", pptemp);
+  pLUList->set("Isorropia Input", ptemp);
+  
+  cout << " \n\n--------------------BIG BREAK --------------\n\n";
+  Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
+
+  PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector> partI2(A, pLUList.get());
+  partI2.partition();
+  AHat = partI2.reorderMatrix();
+  bHat = partI2.reorderVector(b);
+  cout << "Done with graph - pt-scotch" << endl;
+
+   */
+
+  //Zoltan2 Test 
+
+#if defined(HAVE_SHYLU_ZOLTAN2) || defined(HAVE_SHYLU_ZOLTAN2)
+  
+   //Isorropia Test - Graph/ParMetis
+  pLUList->set("Partitioning Package","Zoltan2"); 
+  ptemp = pLUList->sublist("Zoltan2 Input");
+  ptemp.set("algorithm", "parmetis");
+  ptemp.set("debug_level", "detailed_status");
+  pLUList->set("Zoltan2 Input", ptemp);
+  
+  
+  cout << " \n\n--------------------BIG BREAK --------------\n\n";
+  Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
+
+  ShyLU::PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector> partI3(A, pLUList.get());
+  partI3.partition();
+  AHat = partI3.reorderMatrix();
+  bHat = partI3.reorderVector(b);
+  cout << "Done with graph - parmetis" << endl;
+
+  
+#endif
 }
+

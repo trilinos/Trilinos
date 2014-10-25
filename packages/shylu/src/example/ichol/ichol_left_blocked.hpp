@@ -2,6 +2,10 @@
 #ifndef __ICHOL_LEFT_BLOCKED_HPP__
 #define __ICHOL_LEFT_BLOCKED_HPP__
 
+/// \file ichol_left_blocked.hpp
+/// \brief Blocked incomplete Chloesky factorization.
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+
 #include "partition.hpp"
 
 #include "scale.hpp"
@@ -21,7 +25,8 @@ namespace Example {
   
   // use Lower Triangular part only
   template<typename CrsMatViewType>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  int 
   ichol_left_blocked_lower(const CrsMatViewType A,
                            const typename CrsMatViewType::ordinal_type mb) {
     typedef typename CrsMatViewType::value_type   value_type;

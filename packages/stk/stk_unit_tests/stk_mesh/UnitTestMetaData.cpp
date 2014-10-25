@@ -49,6 +49,8 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/NamedPair.hpp"
+#include "unit_tests/BulkDataTester.hpp"
+
 namespace stk { namespace mesh { class Part; } }
 
 
@@ -134,7 +136,7 @@ TEST( UnitTestMetaData, testEntityRepository )
 
   meta.commit();
 
-  stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD );
+  BulkDataTester bulk ( meta , MPI_COMM_WORLD );
   std::vector<stk::mesh::Part *>  add_part;
   add_part.push_back ( &part );
   std::vector<stk::mesh::Part *> elem_parts;
@@ -165,20 +167,20 @@ TEST( UnitTestMetaData, testEntityRepository )
     bulk.declare_relation(elem, nodes[ord], ord);
   }
 
-  bulk.entity_comm_map_clear(bulk.entity_key(elem));
+  bulk.my_entity_comm_map_clear(bulk.entity_key(elem));
 
-  bulk.entity_comm_map_clear_ghosting(bulk.entity_key(elem));
+  bulk.my_entity_comm_map_clear_ghosting(bulk.entity_key(elem));
 
   const stk::mesh::Ghosting & ghost = bulk.aura_ghosting();
 
   bulk.modification_end();
 
-  ASSERT_FALSE(bulk.entity_comm_map_erase(bulk.entity_key(elem), ghost));
+  ASSERT_FALSE(bulk.my_entity_comm_map_erase(bulk.entity_key(elem), ghost));
 
   const stk::mesh::EntityCommInfo comm_info( ghost.ordinal() , 0 );
 
-  ASSERT_FALSE(bulk.entity_comm_map_erase(bulk.entity_key(elem), comm_info));
-  ASSERT_TRUE(bulk.entity_comm_map_insert(elem, comm_info));
+  ASSERT_FALSE(bulk.my_entity_comm_map_erase(bulk.entity_key(elem), comm_info));
+  ASSERT_TRUE(bulk.my_entity_comm_map_insert(elem, comm_info));
 }
 
 TEST( UnitTestMetaData, noEntityTypes )

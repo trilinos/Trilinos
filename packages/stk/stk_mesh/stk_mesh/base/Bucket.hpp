@@ -38,7 +38,6 @@
 #include <algorithm>                    // for lower_bound
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/BucketConnectivity.hpp>  // for BucketConnectivity
-#include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Part.hpp>       // for contains_ordinal, Part
 #include <stk_mesh/base/Types.hpp>

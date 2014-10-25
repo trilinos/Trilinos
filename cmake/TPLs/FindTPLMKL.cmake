@@ -70,7 +70,7 @@
 # pseudorandom number generators.  That's why we require a header
 # file, to access the function declarations.
 
-TRIBITS_TPL_DECLARE_LIBRARIES( MKL
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MKL
   REQUIRED_HEADERS mkl.h
   REQUIRED_LIBS_NAMES mkl_rt
   )

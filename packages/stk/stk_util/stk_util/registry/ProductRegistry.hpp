@@ -140,14 +140,22 @@ public:
     m_productName = product_name;
   }
 
-  /**
-   * @brief Member function <b>getProductMap</b> returns a reference to the map of
-   * all products.
-   *
-   * @return			a <b>ProductMap</b> reference to the product map.
-   */
-  ProductMap &getProductMap() const {
-    return m_productMap;
+  ProductMap::const_iterator productMap_begin() const {
+      return m_productMap.begin();
+  }
+  ProductMap::iterator productMap_begin() {
+      return m_productMap.begin();
+  }
+
+  ProductMap::const_iterator productMap_end() const {
+      return m_productMap.end();
+  }
+  ProductMap::iterator productMap_end() {
+      return m_productMap.end();
+  }
+
+  size_t productMap_size() const {
+      return m_productMap.size();
   }
 
   /**

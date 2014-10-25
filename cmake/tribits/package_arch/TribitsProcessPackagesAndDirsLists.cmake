@@ -144,7 +144,8 @@ ENDMACRO()
 # @MACRO: TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
 #
 # Allow listed packages to be missing.  This macro is typically called in a
-# Package's Dependencies.cmake file.
+# Package's `<packageDir>/cmake/Dependencies.cmake`_ file but it can also be
+# called in a `<repoDir>/PackagesLists.cmake`_ file.
 #
 # Usage::
 #

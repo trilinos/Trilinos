@@ -6,7 +6,7 @@
       <name>problem: type</name>
       <type>string</type>
       <default>"unknown"</default>
-      <description>Type of problem to be solved.  Possible values: "unknown", "Poisson-2D", "Poisson-3D", "Elasticity-2D", "Elasticity-3D", "MHD".</description>
+      <description>Type of problem to be solved.  Possible values: see Table~\ref{t:problem_types}.</description>
     </parameter>
 
     <parameter>
@@ -20,17 +20,19 @@
       <name>number of equations</name>
       <type>int</type>
       <default>1</default>
-      <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
+      <default>1</default>
+      <Poisson-2D>1</Poisson-2D>
+      <Poisson-3D>1</Poisson-3D>
       <Elasticity-2D>3</Elasticity-2D>
       <Elasticity-3D>6</Elasticity-3D>
-      <MHD>8</MHD>
+      <description>Number of PDE equations at each grid node. Only constant block size is considered.</description>
     </parameter>
 
     <parameter>
       <name>max levels</name>
       <type>int</type>
       <default>10</default>
-      <description>Maximum number of levels.</description>
+      <description>Maximum number of levels in a hierarchy.</description>
     </parameter>
 
     <parameter>
@@ -44,7 +46,8 @@
       <name>problem: symmetric</name>
       <type>bool</type>
       <default>true</default>
-      <description>Symmetry of a problem.</description>
+      <ConvectionDiffusion>false</ConvectionDiffusion>
+      <description>Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.</description>
     </parameter>
 
   </general>
@@ -55,51 +58,107 @@
       <name>smoother: pre or post</name>
       <type>string</type>
       <default>"both"</default>
-      <description>Smoother combination. Possible values: "pre", "post", "both", "none".</description>
+      <description>Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).</description>
     </parameter>
 
     <parameter>
       <name>smoother: type</name>
       <type>string</type>
-      <default>"gs"</default>
       <Poisson-2D>"CHEBYSHEV"</Poisson-2D>
       <Poisson-3D>"CHEBYSHEV"</Poisson-3D>
       <Elasticity-2D>"CHEBYSHEV"</Elasticity-2D>
       <Elasticity-3D>"CHEBYSHEV"</Elasticity-3D>
       <MHD>"SCHWARZ"</MHD>
+      <ConvectionDiffusion>"RELAXATION"</ConvectionDiffusion>
       <description>Smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
     </parameter>
 
     <parameter>
       <name>smoother: pre type</name>
       <type>string</type>
-      <default>"gs"</default>
       <description>Pre-smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
     </parameter>
 
     <parameter>
       <name>smoother: post type</name>
       <type>string</type>
-      <default>"gs"</default>
       <description>Post-smoother type. Possible values: see Table~\ref{tab:smoothers}.</description>
     </parameter>
 
     <parameter>
       <name>smoother: params</name>
       <type>\parameterlist</type>
-      <description>Smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
+      <MHD>
+        <parameter>
+          <name>schwarz: overlap level</name>
+          <type>int</type>
+          <default>1</default>
+        </parameter>
+        <parameter>
+          <name>schwarz: combine mode</name>
+          <type>string</type>
+          <default>"Zero"</default>
+        </parameter>
+        <parameter>
+          <name>schwarz: use reordering</name>
+          <type>bool</type>
+          <default>false</default>
+        </parameter>
+
+        <parameter>
+          <name>subdomain solver name</name>
+          <type>string</type>
+          <default>"RILUK"</default>/>
+        </parameter>
+        <parameter>
+          <name>subdomain solver parameters</name>
+          <type>\parameterlist</type>
+
+            <parameter>
+              <name>fact: iluk level-of-fill</name>
+              <type>int</type>
+              <default>0</default>
+            </parameter>
+
+            <parameter>
+              <name>fact: absolute threshold</name>
+              <type>double</type>
+              <default>0.</default>
+            </parameter>
+
+            <parameter>
+              <name>fact: relative threshold</name>
+              <type>double</type>
+              <default>1.</default>
+            </parameter>
+
+            <parameter>
+              <name>fact: relax value</name>
+              <type>double</type>
+              <default>0.</default>
+            </parameter>
+        </parameter>
+      </MHD>
+      <ConvectionDiffusion>
+        <parameter>
+          <name>relaxation: type</name>
+          <type>string</type>
+          <default>"Gauss-Seidel"</default>
+        </parameter>
+      </ConvectionDiffusion>
+      <description>Smoother parameters. For standard smoothers, \muelu passes them directly to the appropriate package library.</description>
     </parameter>
 
     <parameter>
       <name>smoother: pre params</name>
       <type>\parameterlist</type>
-      <description>Pre-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
+      <description>Pre-smoother parameters. For standard smoothers, \muelu passes them directly to the appropriate package library.</description>
     </parameter>
 
     <parameter>
       <name>smoother: post params</name>
       <type>\parameterlist</type>
-      <description>Post-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.</description>
+      <description>Post-smoother parameters. For standard smoothers, \muelu passes them directly to the appropriate package library.</description>
     </parameter>
 
     <parameter>
@@ -127,20 +186,20 @@
       <name>coarse: max size</name>
       <type>int</type>
       <default>2000</default>
-      <description>Maximum dimension of the coarse grid. \muelu will stop coarsening once it is achieved.</description>
+      <description>Maximum dimension of a coarse grid. \muelu will stop coarsening once it is achieved.</description>
     </parameter>
 
     <parameter>
       <name>coarse: type</name>
       <type>string</type>
       <default>"SuperLU"</default>
-      <description>Coarse solver. Possible values: see Table~\ref{tab:coarse}.</description>
+      <description>Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.</description>
     </parameter>
 
     <parameter>
       <name>coarse: params</name>
       <type>\parameterlist</type>
-      <description>Coarse solver parameters. \muelu passes them directly to coarse solver.</description>
+      <description>Coarse solver parameters. \muelu passes them directly to the appropriate package library.</description>
     </parameter>
 
     <parameter>
@@ -158,37 +217,38 @@
       <name>aggregation: type</name>
       <type>string</type>
       <default>"uncoupled"</default>
-      <description>Aggregation scheme. Possible values: "uncoupled", "coupled".</description>
+      <description>Aggregation scheme. Possible values: see Table~\ref{t:aggregation}.</description>
+
     </parameter>
 
     <parameter>
       <name>aggregation: ordering</name>
       <type>string</type>
       <default>"natural"</default>
-      <description>Ordering strategy. Possible values: "natural", "graph", "random".</description>
+      <description>Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).</description>
     </parameter>
 
     <!--
-      <parameter>
-        <name>aggregation: symmetrize</name>
-          <type>bool</type>
-            <default>false</default>
-              <description>Symmetrize connectivity graph for nonsymmetric matrices.</description>
-              </parameter>
-            -->
+    <parameter>
+      <name>aggregation: symmetrize</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Symmetrize connectivity graph for nonsymmetric matrices.</description>
+    </parameter>
+    -->
 
     <parameter>
       <name>aggregation: drop scheme</name>
       <type>string</type>
       <default>"classical"</default>
-      <description>Aggregation connectivity dropping scheme. Possible values: "classical", "distance laplacian".</description>
+      <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".</description>
     </parameter>
 
     <parameter>
       <name>aggregation: drop tol</name>
       <type>double</type>
       <default>0.0</default>
-      <description>Aggregation dropping threshold.</description>
+      <description>Connectivity dropping threshold for a graph used in aggregation.</description>
     </parameter>
 
     <parameter>
@@ -202,8 +262,8 @@
     <parameter>
       <name>aggregation: max agg size</name>
       <type>int</type>
-      <default>2147483647</default>
-      <description>Maximum size of an aggregate.</description>
+      <default>-1</default>
+      <description>Maximum size of an aggregate (-1 means unlimited).</description>
       <visible>true</visible>
     </parameter>
 
@@ -211,7 +271,7 @@
       <name>aggregation: max selected neighbors</name>
       <type>int</type>
       <default>0</default>
-      <description>Number of maximum neighbor nodes that are already aggregated already. If a new aggregate has some neighbors that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.</description>
+      <description>Maximum number of neighbour nodes that are already aggregated. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.</description>
       <visible>false</visible>
     </parameter>
 
@@ -274,6 +334,11 @@
       <type>string</type>
       <default>"old"</default>
       <MHD>"new"</MHD>
+      <Poisson-2D>"new"</Poisson-2D>
+      <Poisson-3D>"new"</Poisson-3D>
+      <Elasticity-2D>"new"</Elasticity-2D>
+      <Elasticity-3D>"new"</Elasticity-3D>
+      <ConvectionDiffusion>"new"</ConvectionDiffusion>
       <description>old = Tobias, new = ML</description>
       <visible>false</visible>
     </parameter>
@@ -285,7 +350,7 @@
     <parameter>
       <name>export data</name>
       <type>\parameterlist</type>
-      <description>Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", "P", "R") of type "string" and value "\{levels separated by commas\}". A matrix is saved in two files: a) data is saved in the MatrixMarket format in a file called "A\_level.mm", or similar; b) row map is saved in the MatrixMarket format in a file called "rowmap\_A\_level.mm", or similar.</description>
+      <description>Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.</description>
     </parameter>
 
     <parameter>
@@ -318,8 +383,13 @@
       <name>multigrid algorithm</name>
       <type>string</type>
       <default>"sa"</default>
+      <Poisson-2D>"sa"</Poisson-2D>
+      <Poisson-3D>"sa"</Poisson-3D>
+      <Elasticity-2D>"sa"</Elasticity-2D>
+      <Elasticity-3D>"sa"</Elasticity-3D>
       <MHD>"unsmoothed"</MHD>
-      <description>Multigrid method. Possible values: "unsmoothed", "sa", "emin", "pg".</description>
+      <ConvectionDiffusion>"pg"</ConvectionDiffusion>
+      <description>Multigrid method. Possible values: see Table~\ref{t:mgs}.</description>
     </parameter>
 
     <parameter>
@@ -332,7 +402,7 @@
     <parameter>
       <name>sa: damping factor</name>
       <type>double</type>
-      <default>1.33333333</default>
+      <default>1.33</default>
       <description>Damping factor for smoothed aggregation.</description>
     </parameter>
 
@@ -340,6 +410,7 @@
       <name>sa: use filtered matrix</name>
       <type>bool</type>
       <default>true</default>
+      <ConvectionDiffusion>true</ConvectionDiffusion>
       <description>Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
     </parameter>
 
@@ -363,14 +434,14 @@
       <name>filtered matrix: use lumping</name>
       <type>bool</type>
       <default>true</default>
-      <description>During construction of a filtered matrix, we have an option to add dropped entries to the diagonal. This is useful for preserving constant nullspace for the Laplacian type matrix.</description>
+      <description>Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.</description>
     </parameter>
 
     <parameter>
       <name>filtered matrix: reuse eigenvalue</name>
       <type>bool</type>
       <default>true</default>
-      <description>During construction of a filtered matrix, we have an option to get the eigenvalue estimate from the original matrix. This allows us to skip heavy computation.</description>
+      <description>Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.</description>
     </parameter>
 
     <parameter>
@@ -385,7 +456,7 @@
       <name>emin: iterative method</name>
       <type>string</type>
       <default>"cg"</default>
-      <description>Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg", "sd".</description>
+      <description>Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "sd" (steepest descent).</description>
     </parameter>
 
     <parameter>
@@ -406,7 +477,7 @@
       <name>emin: pattern</name>
       <type>string</type>
       <default>"AkPtent"</default>
-      <description>Sparsity pattern to use for energy minization. Possible values: "AkPtent".</description>
+      <description>Sparsity pattern to use for energy minimization. Possible values: "AkPtent".</description>
     </parameter>
 
     <parameter>
@@ -423,41 +494,41 @@
       <name>repartition: enable</name>
       <type>bool</type>
       <default>false</default>
-      <description>Repartitioning on/off switch.</description>
+      <description>Rebalancing on/off switch.</description>
     </parameter>
 
     <parameter>
       <name>repartition: partitioner</name>
       <type>string</type>
       <default>"zoltan2"</default>
-      <description>Partitioning package to use. Possible values: "zoltan", "zoltan2".</description>
+      <description>Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).</description>
     </parameter>
 
     <parameter>
       <name>repartition: params</name>
       <type>\parameterlist</type>
-      <description>Partitioner parameters. \muelu passes them directly to partitioner.</description>
+      <description>Partitioner parameters. \muelu passes them directly to the appropriate package library.</description>
     </parameter>
 
     <parameter>
       <name>repartition: start level</name>
       <type>int</type>
       <default>2</default>
-      <description>Minimum level to run partitioner. \muelu does not repartition for finer levels.</description>
+      <description>Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.</description>
     </parameter>
 
     <parameter>
       <name>repartition: min rows per proc</name>
       <type>int</type>
       <default>800</default>
-      <description>Desired minimum number of rows per processor. If actual number if smaller, then repartitioning occurs.</description>
+      <description>Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.</description>
     </parameter>
 
     <parameter>
       <name>repartition: max imbalance</name>
       <type>double</type>
       <default>1.2</default>
-      <description>Desired maximum nonzero imbalance ratio.</description>
+      <description>Maximum nonzero imbalance ratio. If the actual number is larger, the rebalancing occurs.</description>
     </parameter>
 
     <parameter>
@@ -479,7 +550,7 @@
       <name>repartition: print partition distribution</name>
       <type>bool</type>
       <default>false</default>
-      <description>Print partition distribution with '+' and '.'</description>
+      <description>Partition distribution printout.</description>
       <visible>false</visible>
     </parameter>
 
@@ -487,7 +558,7 @@
       <name>repartition: rebalance P and R</name>
       <type>bool</type>
       <default>true</default>
-      <description>Do rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.</description>
+      <description>Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.</description>
     </parameter>
 
   </rebalancing>

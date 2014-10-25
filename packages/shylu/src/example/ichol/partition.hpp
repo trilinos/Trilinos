@@ -2,12 +2,17 @@
 #ifndef __PARTITION_HPP__
 #define __PARTITION_HPP__
 
+/// \file partition.hpp
+/// \brief Matrix partitioning utilities.
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+
 namespace Example { 
 
   using namespace std;
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Part_2x2(const MatView A, MatView &ATL, MatView &ATR, 
            /**************/ MatView &ABL, MatView &ABR,
            const typename MatView::ordinal_type bm, 
@@ -40,12 +45,11 @@ namespace Example {
     ABR.setView(A.BaseObject(),
                 A.OffsetRows() + ATL.NumRows(), A.NumRows() - ATL.NumRows(),
                 A.OffsetCols() + ATL.NumCols(), A.NumCols() - ATL.NumCols());
-    
-    return 0;
   }
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Part_1x2(const MatView A, MatView &AL, MatView &AR, 
            const typename MatView::ordinal_type bn,
            const int side) {
@@ -68,12 +72,11 @@ namespace Example {
     AR.setView(A.BaseObject(),
                A.OffsetRows(),                A.NumRows(),
                A.OffsetCols() + AL.NumCols(), A.NumCols() - AL.NumCols());
-    
-    return 0;
   }
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Part_2x1(const MatView A, MatView &AT, 
            /*************/  MatView &AB, 
            const typename MatView::ordinal_type bm,
@@ -97,12 +100,11 @@ namespace Example {
     AB.setView(A.BaseObject(),
                A.OffsetRows() + AT.NumRows(), A.NumRows() - AT.NumRows(),
                A.OffsetCols(),                A.NumCols());
-    
-    return 0;
   }
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Part_2x2_to_3x3(const MatView ATL, const MatView ATR, MatView &A00, MatView &A01, MatView &A02,
                   /***********************************/ MatView &A10, MatView &A11, MatView &A12,
                   const MatView ABL, const MatView ABR, MatView &A20, MatView &A21, MatView &A22,
@@ -135,12 +137,11 @@ namespace Example {
       ERROR(MSG_INVALID_INPUT(side));
       break;
     }
-
-    return 0;
   }
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Part_2x1_to_3x1(const MatView AT, MatView &A0, 
                   /***************/ MatView &A1, 
                   const MatView AB, MatView &A2, 
@@ -163,12 +164,11 @@ namespace Example {
       ERROR(MSG_INVALID_INPUT(side));
       break;
     }
-
-    return 0;
   }
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Part_1x2_to_1x3(const MatView AL, const MatView AR, 
                   MatView &A0, MatView &A1, MatView &A2,
                   const typename MatView::ordinal_type bn, 
@@ -189,46 +189,40 @@ namespace Example {
       ERROR(MSG_INVALID_INPUT(side));
       break;
     }
-
-    return 0;
   }
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Merge_2x2(const MatView ATL, const MatView ATR, 
             const MatView ABL, const MatView ABR, MatView &A) {
-
     A.setView(ATL.BaseObject(),
               ATL.OffsetRows(), ATL.NumRows() + ABR.NumRows(), 
               ATL.OffsetCols(), ATL.NumCols() + ABR.NumCols());
-
-    return 0;
   }
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Merge_1x2(const MatView AL, const MatView AR, MatView &A) {
     A.setView(AL.BaseObject(),
               AL.OffsetRows(), AL.NumRows(),
               AL.OffsetCols(), AL.NumCols() + AR.NumCols());
-    
-    return 0;
   }
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Merge_2x1(const MatView AT, 
             const MatView AB, MatView &A) {
-
     A.setView(AT.BaseObject(),
               AT.OffsetRows(), AT.NumRows() + AB.NumRows(),
               AT.OffsetCols(), AT.NumCols());
-
-    return 0;
   }
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Merge_3x3_to_2x2(const MatView A00, const MatView A01, const MatView A02, MatView &ATL, MatView &ATR, 
                    const MatView A10, const MatView A11, const MatView A12,
                    const MatView A20, const MatView A21, const MatView A22, MatView &ABL, MatView &ABR,
@@ -258,12 +252,11 @@ namespace Example {
       ERROR(MSG_INVALID_INPUT(side));
       break;
     }
-
-    return 0;
   }
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Merge_3x1_to_2x1(const MatView A0, MatView &AT, 
                    const MatView A1, 
                    const MatView A2, MatView &AB, 
@@ -284,12 +277,11 @@ namespace Example {
       ERROR(MSG_INVALID_INPUT(side));
       break;
     }
-
-    return 0;
   }
 
   template<typename MatView>
-  inline int 
+  KOKKOS_INLINE_FUNCTION 
+  void 
   Merge_1x3_to_1x2(const MatView A0, const MatView A1, const MatView A2, 
                    MatView &AL, MatView &AR, 
                    const int side) {
@@ -308,8 +300,6 @@ namespace Example {
       ERROR(MSG_INVALID_INPUT(side));
       break;
     }
-
-    return 0;
   }
 
 

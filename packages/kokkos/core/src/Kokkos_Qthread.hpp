@@ -70,15 +70,17 @@ class Qthread {
 public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::ExecutionSpaceTag  kokkos_tag ;
 
-  typedef Qthread                  device_type ;
+  //! Tag this class as an execution space
   typedef Qthread                  execution_space ;
+
   typedef Kokkos::HostSpace        memory_space ;
   typedef Qthread                  scratch_memory_space ;
   typedef memory_space::size_type  size_type ;
   typedef Kokkos::LayoutRight      array_layout ;
+
+  //! For backward compatibility:
+  typedef Qthread                  device_type ;
 
   //@}
   /*------------------------------------------------------------------------*/

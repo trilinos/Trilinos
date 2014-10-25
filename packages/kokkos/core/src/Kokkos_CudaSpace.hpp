@@ -63,10 +63,10 @@ namespace Kokkos {
 class CudaSpace {
 public:
 
-  typedef Impl::MemorySpaceTag  kokkos_tag ;
+  //! Tag this class as a kokkos memory space
   typedef CudaSpace             memory_space ;
-  typedef unsigned int          size_type ;
   typedef Kokkos::Cuda          execution_space ;
+  typedef unsigned int          size_type ;
 
   /** \brief  Allocate a contiguous block of memory on the Cuda device
    *          with size = scalar_size * scalar_count.
@@ -143,10 +143,10 @@ namespace Kokkos {
 class CudaUVMSpace {
 public:
 
-  typedef Impl::MemorySpaceTag  kokkos_tag ;
+  //! Tag this class as a kokkos memory space
   typedef CudaUVMSpace          memory_space ;
-  typedef unsigned int          size_type ;
   typedef Cuda                  execution_space ;
+  typedef unsigned int          size_type ;
 
   /** \brief  If UVM capability is available */
   static bool available();
@@ -220,7 +220,7 @@ namespace Kokkos {
 class CudaHostPinnedSpace {
 public:
 
-  typedef Impl::MemorySpaceTag        kokkos_tag ;
+  //! Tag this class as a kokkos memory space
   typedef CudaHostPinnedSpace         memory_space ;
   typedef unsigned int                size_type ;
 

@@ -7,5 +7,4 @@ TRIBITS_ADD_EXECUTABLE(
   tutorial_03_simple_view
   SOURCES simple_view.cpp
   COMM serial mpi
-  DEPLIBS kokkoscore
   )

@@ -331,6 +331,21 @@ void NemSpread<T,INT>::load_lb_info(void)
 
   safe_free((void **) &comm_vec);
 
+  for (int iproc=0; iproc <Proc_Info[2]; iproc++) {
+    if (globals.Num_Internal_Nodes[iproc] == 0 &&
+	globals.Num_Border_Nodes[iproc] == 0 &&
+	globals.Num_External_Nodes[iproc] == 0) {
+      fprintf(stderr, "\n%s: WARNING, Processor %d has no nodes!\n",
+	      yo, iproc);
+      
+    }
+    if (globals.Num_Internal_Elems[iproc] == 0 &&
+	globals.Num_Border_Elems[iproc] == 0) {
+      fprintf(stderr, "\n%s: WARNING, Processor %d has no elements!\n",
+	      yo, iproc);
+    }
+  }
+
   /*========================================================================*/
 
   if(Debug_Flag)

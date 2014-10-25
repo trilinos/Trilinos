@@ -242,6 +242,8 @@ bool unpack_field_values(const BulkData& mesh,
 
 //----------------------------------------------------------------------
 
+// A cached find function that stores the result in m_last_lookup if successful and returns true.
+// Otherwise, the find failed and it returns false.
 bool EntityCommDatabase::cached_find(const EntityKey& key) const
 {
   if (m_last_lookup != m_comm_map.end() && key == m_last_lookup->first) {
@@ -284,6 +286,8 @@ PairIterEntityComm EntityCommDatabase::shared_comm_info( const EntityKey & key )
   EntityCommInfoVector::const_iterator i = comm_map.begin();
   EntityCommInfoVector::const_iterator e = comm_map.end();
 
+  // EntityCommInfo(1,0) is the smallest entry in the table that is not shared,
+  // and we want everything before this, i.e. the shared stuff.
   e = std::lower_bound( i , e , EntityCommInfo(1,     // ghost id, 1->aura
                                                0 ) ); // proc
 
