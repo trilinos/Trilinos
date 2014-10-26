@@ -18,7 +18,7 @@ Level 1
        lightweight wrap = 1
 
       aggregation: mode = old   [default]
-      aggregation: max agg size = 2147483647   [default]
+      aggregation: max agg size = -1   [default]
       aggregation: min agg size = 2   [default]
       aggregation: max selected neighbors = 0   [default]
       aggregation: ordering = natural   [default]
@@ -48,7 +48,7 @@ Level 1
 
      [empty list]
 
-    sa: damping factor = 1.33333   [default]
+    sa: damping factor = 1.33   [default]
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
 
@@ -98,7 +98,7 @@ Level 2
        lightweight wrap = 1
 
       aggregation: mode = old   [default]
-      aggregation: max agg size = 2147483647   [default]
+      aggregation: max agg size = -1   [default]
       aggregation: min agg size = 2   [default]
       aggregation: max selected neighbors = 0   [default]
       aggregation: ordering = natural   [default]
@@ -128,7 +128,7 @@ Level 2
 
      [empty list]
 
-    sa: damping factor = 1.33333   [default]
+    sa: damping factor = 1.33   [default]
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
 
