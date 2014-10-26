@@ -43,13 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_MaxLinkAggregationAlgorithm_def.hpp
- *
- *  Created on: Sep 18, 2012
- *      Author: Tobias Wiesner
- */
-
 #ifndef MUELU_MAXLINKAGGREGATIONALGORITHM_DEF_HPP_
 #define MUELU_MAXLINKAGGREGATIONALGORITHM_DEF_HPP_
 
@@ -74,7 +67,7 @@ namespace MueLu {
   BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    LO MaxNodesPerAggregate = params.get<LO>("aggregation: max agg size");
+    int MaxNodesPerAggregate = params.get<int>("aggregation: max agg size");
 
     // vertex ids for output
     ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
