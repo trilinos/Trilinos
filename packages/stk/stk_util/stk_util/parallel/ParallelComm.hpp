@@ -36,6 +36,7 @@
 
 #include <cstddef>                      // for size_t, ptrdiff_t
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <boost/static_assert.hpp>
 
 // #define TRACKABLE_STK_PARALLEL_COMM
 
@@ -106,6 +107,12 @@ public:
 
   /** Pack a value to be sent:  buf.pack<type>( value ) */
   template<typename T> CommBuffer &pack( const T & value );
+
+  /** Do not try to pack a pointer for global communication */
+  template<typename T> CommBuffer &pack( const T* value ) {
+    BOOST_STATIC_ASSERT_MSG(sizeof(T)<0, "Cannot pack a pointer for global communication");
+    return *this;
+  }
 
   /** Pack an array of values to be sent:  buf.pack<type>( ptr , num ) */
   template<typename T> CommBuffer &pack( const T * value , size_t number );
