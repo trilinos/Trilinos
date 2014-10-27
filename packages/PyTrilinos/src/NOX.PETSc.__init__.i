@@ -28,30 +28,34 @@
 // ***********************************************************************
 // @HEADER
 
-%define %nox_petsc_docstring
+%define %nox_epetra_docstring
 "
-PyTrilinos.NOX.PETSc is the python interface to namespace PETSc for
+PyTrilinos.NOX.Epetra is the python interface to namespace Epetra for
 the Trilinos package NOX:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of NOX.PETSc is to provide a concrete interface beteen
-NOX and PETSc.
+The purpose of NOX.Epetra is to provide a concrete interface beteen
+NOX and Epetra.
 
-NOX.PETSc provides the following user-level classes:
+NOX.Epetra provides the following user-level classes:
 
-    * Group                    - PETSc implementation of Abstract.Group
-    * Vector                   - PETSc implementation of Abstract.Vector
-    * SharedJacobian           - PETSc shared Jacobian class
-    * Options
+    * Group                    - Epetra implementation of Abstract.Group
+    * Vector                   - Epetra implementation of Abstract.Vector
+    * FiniteDifference         - Class for estimating Jacobian w/finite differences
+    * FiniteDifferenceColoring - FiniteDifference class, w/coloring efficiencies
+    * MatrixFree               - Base class for Jacobian-free algorithms
+    * Scaling                  - Class for controlling scalling of algebraic objects
+    * LinearSystem             - Base class for interface to linear solvers
+    * LinearSystemAztecOO      - Concrete implementation of LinearSystem
 "
 %enddef
 
-%module(package      = "PyTrilinos.NOX.PETSc",
+%module(package      = "PyTrilinos.NOX.Epetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-	docstring    = %nox_petsc_docstring) __init__
+	docstring    = %nox_epetra_docstring) __init__
 
 %{
 // System includes
@@ -74,20 +78,79 @@ NOX.PETSc provides the following user-level classes:
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
 
-// NOX / PETSc includes
-#include "NOX_Petsc.H"
+// Epetra includes
+#include "Epetra_BLAS.h"
+#include "Epetra_Object.h"
+#include "Epetra_CompObject.h"
+#include "Epetra_SrcDistObject.h"
+#include "Epetra_DistObject.h"
+#include "Epetra_LocalMap.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
+#include "Epetra_Operator.h"
+#include "Epetra_InvOperator.h"
+#include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
+#include "Epetra_CrsGraph.h"
+#include "Epetra_MapColoring.h"
+#include "Epetra_JadMatrix.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_SerialDistributor.h"
+#include "Epetra_DLLExportMacro.h"
+#include "PyTrilinos_Epetra_Util.hpp"
+
+// EpetraExt includes
+#ifdef HAVE_NOX_EPETRAEXT
+#include "EpetraExt_MapColoring.h"
+#include "EpetraExt_MapColoringIndex.h"
+#include "EpetraExt_ModelEvaluator.h"
+#endif
+
+// NOX includes
+#include "NOX_Abstract_Group.H"
+#include "NOX_Abstract_Vector.H"
+#include "NOX_Epetra_Group.H"
+#include "NOX_Epetra_Vector.H"
+#include "NOX_Epetra_FiniteDifference.H"
+#include "NOX_Epetra_FiniteDifferenceColoring.H"
+#include "NOX_Epetra_MatrixFree.H"
+#include "NOX_Epetra_Scaling.H"
+#include "NOX_Epetra_LinearSystem.H"
+#undef HAVE_STDINT_H
+#undef HAVE_INTTYPES_H
+#undef HAVE_SYS_TIME_H
+#include "NOX_Epetra_LinearSystem_AztecOO.H"
+#include "NOX_Epetra_ModelEvaluatorInterface.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
+#include "Epetra_NumPyFEVector.hpp"
+#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
+#include "Epetra_NumPyIntSerialDenseVector.hpp"
+#include "Epetra_NumPyIntVector.hpp"
+#include "Epetra_NumPyMultiVector.hpp"
+#include "Epetra_NumPySerialDenseMatrix.hpp"
+#include "Epetra_NumPySerialDenseVector.hpp"
+#include "Epetra_NumPySerialSymDenseMatrix.hpp"
+#include "Epetra_NumPyVector.hpp"
 
 // Namespace flattening
-// using Teuchos::RCP;
-// using Teuchos::rcp;
-// using namespace NOX;
-// using namespace NOX::Abstract;
-// using namespace NOX::Epetra;
+using Teuchos::RCP;
+using Teuchos::rcp;
+using namespace NOX;
+using namespace NOX::Abstract;
+using namespace NOX::Epetra;
 %}
+
+// Configuration
+%include "Epetra_DLLExportMacro.h"
 
 // General exception handling
 %include "exception.i"
@@ -143,144 +206,25 @@ NOX.PETSc provides the following user-level classes:
 // Trilinos interface import
 %import "Teuchos.i"
 
-//////////////
-// Typemaps //
-//////////////
+// Support for Teuchos::RCPs
+%teuchos_rcp(NOX::Epetra::LinearSystem)
+%teuchos_rcp(NOX::Epetra::LinearSystemAztecOO)
+%teuchos_rcp(NOX::Epetra::Scaling)
+%teuchos_rcp(NOX::Epetra::VectorSpace)
 
-// Make Epetra_Vector and NOX::Epetra::Vector input arguments
-// interchangeable
-// %typemap(in) NOX::Epetra::Vector &
-// (void* argp=0, int res=0, Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > tempshared,
-//  bool cleanup=false)
-// {
-//   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
-//   if (!SWIG_IsOK(res))
-//   {
-//     int newmem = 0;
-//     res = SWIG_ConvertPtrAndOwn($input,
-// 				&argp,
-// 				$descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *),
-// 				%convertptr_flags, &newmem);
-//     if (!SWIG_IsOK(res))
-//     {
-//       %argument_fail(res, "$type", $symname, $argnum);
-//     }
-//     if (!argp)
-//     {
-//       %argument_nullref("$type", $symname, $argnum);
-//     }
-//     if (newmem & SWIG_CAST_NEW_MEMORY)
-//     {
-//       tempshared = *%reinterpret_cast(argp, Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *);
-//       delete %reinterpret_cast(argp, Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *);
-//       $1 = new NOX::Epetra::Vector(Teuchos::rcp_dynamic_cast< Epetra_Vector >(tempshared),
-// 				   NOX::Epetra::Vector::CreateView);
-//       cleanup = true;
-//     }
-//     else
-//     {
-//       tempshared = *%reinterpret_cast(argp, Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *);
-//       $1 = new NOX::Epetra::Vector(Teuchos::rcp_dynamic_cast< Epetra_Vector >(tempshared),
-// 				   NOX::Epetra::Vector::CreateView);
-//       cleanup = true;
-//     }
-//   }
-//   else
-//   {
-//     $1 = %reinterpret_cast(argp, NOX::Epetra::Vector*);
-//   }
-// }
-// %typecheck(1190) NOX::Epetra::Vector &
-// {
-//   $1 = SWIG_CheckState(SWIG_ConvertPtr($input, 0, $descriptor, 0)) ? 1 : 0;
-//   if (!$1)
-//     $1 = SWIG_CheckState(SWIG_ConvertPtrAndOwn($input, 0,
-// 			       $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *),
-// 			       %convertptr_flags, 0)) ? 1 : 0;
-// }
-// %typemap(freearg) NOX::Epetra::Vector &
-// {
-//   if (cleanup$argnum) delete $1;
-// }
+// Include typemaps for converting raw types to NOX.Abstract types
+%include "NOX.Abstract_typemaps.i"
 
-// // Convert NOX::Abstract::Vector return arguments to Epetra.Vectors
-// %typemap(out) NOX::Abstract::Vector &
-// (NOX::Epetra::Vector* nevResult  = NULL)
-// {
-//   nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
-//   if (nevResult == NULL)
-//   {
-//     // If we cannot downcast, then return the NOX::Abstract::Vector
-//     $result = SWIG_NewPointerObj((void*)&$1, $descriptor, 1);
-//   }
-//   else
-//   {
-//     PyTrilinos::Epetra_NumPyVector enpvResult(View, nevResult->getEpetraVector(), 0);
-//     Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *smartresult = 
-//       new Teuchos::RCP< PyTrilinos::Epetra_NumPyVector >(enpvResult, bool($owner));
-//     %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
-// 				   $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *),
-// 				   SWIG_POINTER_OWN));
-//   }
-// }
+// Epetra import
+%import "Epetra.i"
 
-// // Convert NOX::Epetra::LinearSystem objects to
-// // NOX::Epetra::LinearSystemAztecOO
-// %typemap(out) Teuchos::RCP< NOX::Epetra::LinearSystem >
-// (NOX::Epetra::LinearSystem*        nelsPtr     = NULL,
-//  NOX::Epetra::LinearSystemAztecOO* nelsaResult = NULL)
-// {
-//   nelsPtr = $1.get();
-//   nelsaResult = dynamic_cast< NOX::Epetra::LinearSystemAztecOO*>(nelsPtr);
-//   if (nelsaResult == NULL)
-//   {
-//     //If we cannot downcast then return the NOX::Epetra::LinearSystem
-//     %set_output(SWIG_NewPointerObj(%as_voidptr(&$1),
-// 				   $descriptor(Teuchos::RCP< NOX::Epetra::LinearSystem > *),
-// 				   SWIG_POINTER_OWN));
-//   }
-//   else
-//   {
-//     Teuchos::RCP< NOX::Epetra::LinearSystemAztecOO > *smartresult =
-//       new Teuchos::RCP< NOX::Epetra::LinearSystemAztecOO >(nelsaResult);
-//     %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
-// 				   $descriptor(Teuchos::RCP< NOX::Epetra::LinearSystemAztecOO > *),
-// 				   SWIG_POINTER_OWN));
-//   }
-// }
+// EpetraExt import
+#ifdef HAVE_NOX_EPETRAEXT
+%ignore EpetraExt::Add;
+%include "EpetraExt.i"
+#endif
 
-// %typemap(out) Teuchos::RCP< const NOX::Epetra::LinearSystem >
-// (const NOX::Epetra::LinearSystem*        nelsPtr     = NULL,
-//  const NOX::Epetra::LinearSystemAztecOO* nelsaResult = NULL)
-// {
-//   nelsPtr = $1.get();
-//   nelsaResult = dynamic_cast< const NOX::Epetra::LinearSystemAztecOO*>(nelsPtr);
-//   if (nelsaResult == NULL)
-//   {
-//     //If we cannot downcast then return the NOX::Epetra::LinearSystem
-//     %set_output(SWIG_NewPointerObj(%as_voidptr(&$1),
-// 				   $descriptor(Teuchos::RCP< NOX::Epetra::LinearSystem > *),
-// 				   SWIG_POINTER_OWN));
-//   }
-//   else
-//   {
-//     Teuchos::RCP< const NOX::Epetra::LinearSystemAztecOO > *smartresult =
-//       new Teuchos::RCP< const NOX::Epetra::LinearSystemAztecOO >(nelsaResult);
-//     %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
-// 				   $descriptor(Teuchos::RCP< NOX::Epetra::LinearSystemAztecOO > *),
-// 				   SWIG_POINTER_OWN));
-//   }
-// }
-
-// NOX Abstract import.  If we were to simply do %import
-// "NOX.Abstract.i", we would get errors that the PyTrilinos module
-// does not have an object NOX when the generated Python module
-// defines the PyTrilinos.NOX.Epetra.Group class deriving from the
-// PyTrilinos.NOX.Abstract.Group.  The fix is to %import an Abstract
-// module that does not know it is in the PyTrilinos.NOX package.
-// That is the purpose of the NOX.Abstract_RelPath.i SWIG interface
-// file.  For the generated Python module to be able to find it, we
-// also have to update the sys.path list.
+// Allow import from the parent directory
 %pythoncode
 %{
 import sys, os.path as op
@@ -288,7 +232,21 @@ parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
-%import "NOX.Abstract_RelPath.i"
+
+// NOX base classes
+// %ignore *::getX;
+// %ignore *::getF;
+// %ignore *::getGradient;
+// %ignore *::getNewton;
+// %rename(getX       ) *::getXPtr;
+// %rename(getF       ) *::getFPtr;
+// %rename(getGradient) *::getGradientPtr;
+// %rename(getNewton  ) *::getNewtonPtr;
+%teuchos_rcp(NOX::Abstract::Group)
+%import(module="Abstract") "NOX_Abstract_Group.H"
+%import(module="Abstract") "NOX_Abstract_PrePostOperator.H"
+%import(module="Abstract") "NOX_Abstract_MultiVector.H"
+%import(module="Abstract") "NOX_Abstract_Vector.H"
 
 // NOX::Epetra::Interface imports
 %teuchos_rcp(NOX::Epetra::Interface::Required)
