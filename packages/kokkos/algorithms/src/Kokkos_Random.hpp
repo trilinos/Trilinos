@@ -285,49 +285,161 @@ namespace Kokkos {
   template<class Generator>
   struct rand<Generator,unsigned int> {
     KOKKOS_INLINE_FUNCTION
-    static unsigned int max(){return Generator::MAX_URAND;}
+    static unsigned int max () {
+      return Generator::MAX_URAND;
+    }
     KOKKOS_INLINE_FUNCTION
-    static unsigned int draw(Generator& gen)
-                          {return gen.urand();}
+    static unsigned int draw (Generator& gen) {
+      return gen.urand ();
+    }
     KOKKOS_INLINE_FUNCTION
-    static unsigned int draw(Generator& gen, const unsigned int& range)
-                          {return gen.urand(range);}
+    static unsigned int draw(Generator& gen, const unsigned int& range) {
+      return gen.urand (range);
+    }
     KOKKOS_INLINE_FUNCTION
-    static unsigned int draw(Generator& gen, const unsigned int& start, const unsigned int& end)
-                          {return gen.urand(start,end);}
-
+    static unsigned int
+    draw (Generator& gen, const unsigned int& start, const unsigned int& end) {
+      return gen.urand (start, end);
+    }
   };
 
   template<class Generator>
-  struct rand<Generator,int64_t> {
+  struct rand<Generator,long> {
     KOKKOS_INLINE_FUNCTION
-    static int64_t max(){return Generator::MAX_RAND64;}
+    static long max () {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (long) == 4 ?
+        static_cast<long> (Generator::MAX_RAND) :
+        static_cast<long> (Generator::MAX_RAND64);
+    }
     KOKKOS_INLINE_FUNCTION
-    static int64_t draw(Generator& gen)
-                          {return gen.rand64();}
+    static long draw (Generator& gen) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (long) == 4 ?
+        static_cast<long> (gen.rand ()) :
+        static_cast<long> (gen.rand64 ());
+    }
     KOKKOS_INLINE_FUNCTION
-    static int64_t draw(Generator& gen, const int64_t& range)
-                          {return gen.rand64(range);}
+    static long draw (Generator& gen, const long& range) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (long) == 4 ?
+        static_cast<long> (gen.rand (static_cast<int> (range))) :
+        static_cast<long> (gen.rand64 (range));
+    }
     KOKKOS_INLINE_FUNCTION
-    static int64_t draw(Generator& gen, const int64_t& start, const int64_t& end)
-                          {return gen.rand64(start,end);}
-
+    static long draw (Generator& gen, const long& start, const long& end) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (long) == 4 ?
+        static_cast<long> (gen.rand (static_cast<int> (start),
+                                     static_cast<int> (end))) :
+        static_cast<long> (gen.rand64 (start, end));
+    }
   };
 
   template<class Generator>
-  struct rand<Generator,uint64_t> {
+  struct rand<Generator,unsigned long> {
     KOKKOS_INLINE_FUNCTION
-    static uint64_t max(){return Generator::MAX_URAND64;}
+    static unsigned long max () {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (unsigned long) == 4 ?
+        static_cast<unsigned long> (Generator::MAX_URAND) :
+        static_cast<unsigned long> (Generator::MAX_URAND64);
+    }
     KOKKOS_INLINE_FUNCTION
-    static uint64_t draw(Generator& gen)
-                          {return gen.urand64();}
+    static unsigned long draw (Generator& gen) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (unsigned long) == 4 ?
+        static_cast<unsigned long> (gen.urand ()) :
+        static_cast<unsigned long> (gen.urand64 ());
+    }
     KOKKOS_INLINE_FUNCTION
-    static uint64_t draw(Generator& gen, const uint64_t& range)
-                          {return gen.urand64(range);}
+    static unsigned long draw(Generator& gen, const unsigned long& range) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (unsigned long) == 4 ?
+        static_cast<unsigned long> (gen.urand (static_cast<unsigned int> (range))) :
+        static_cast<unsigned long> (gen.urand64 (range));
+    }
     KOKKOS_INLINE_FUNCTION
-    static uint64_t draw(Generator& gen, const uint64_t& start, const uint64_t& end)
-                          {return gen.urand64(start,end);}
+    static unsigned long
+    draw (Generator& gen, const unsigned long& start, const unsigned long& end) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (unsigned long) == 4 ?
+        static_cast<unsigned long> (gen.urand (static_cast<unsigned int> (start),
+                                               static_cast<unsigned int> (end))) :
+        static_cast<unsigned long> (gen.urand64 (start, end));
+    }
+  };
 
+  // NOTE (mfh 26 oct 2014) This is a partial specialization for long
+  // long, a C99 / C++11 signed type which is guaranteed to be at
+  // least 64 bits.  Do NOT write a partial specialization for
+  // int64_t!!!  This is just a typedef!  It could be either long or
+  // long long.  We don't know which a priori, and I've seen both.
+  // The types long and long long are guaranteed to differ, so it's
+  // always safe to specialize for both.
+  template<class Generator>
+  struct rand<Generator, long long> {
+    KOKKOS_INLINE_FUNCTION
+    static long long max () {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return Generator::MAX_RAND64;
+    }
+    KOKKOS_INLINE_FUNCTION
+    static long long draw (Generator& gen) {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return gen.rand64 ();
+    }
+    KOKKOS_INLINE_FUNCTION
+    static long long draw (Generator& gen, const long long& range) {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return gen.rand64 (range);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static long long draw (Generator& gen, const long long& start, const long long& end) {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return gen.rand64 (start, end);
+    }
+  };
+
+  // NOTE (mfh 26 oct 2014) This is a partial specialization for
+  // unsigned long long, a C99 / C++11 unsigned type which is
+  // guaranteed to be at least 64 bits.  Do NOT write a partial
+  // specialization for uint64_t!!!  This is just a typedef!  It could
+  // be either unsigned long or unsigned long long.  We don't know
+  // which a priori, and I've seen both.  The types unsigned long and
+  // unsigned long long are guaranteed to differ, so it's always safe
+  // to specialize for both.
+  template<class Generator>
+  struct rand<Generator,unsigned long long> {
+    KOKKOS_INLINE_FUNCTION
+    static unsigned long long max () {
+      // FIXME (mfh 26 Oct 2014) It's legal for unsigned long long to be > 64 bits.
+      return Generator::MAX_URAND64;
+    }
+    KOKKOS_INLINE_FUNCTION
+    static unsigned long long draw (Generator& gen) {
+      // FIXME (mfh 26 Oct 2014) It's legal for unsigned long long to be > 64 bits.
+      return gen.urand64 ();
+    }
+    KOKKOS_INLINE_FUNCTION
+    static unsigned long long draw (Generator& gen, const unsigned long long& range) {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return gen.urand64 (range);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static unsigned long long
+    draw (Generator& gen, const unsigned long long& start, const unsigned long long& end) {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return gen.urand64 (start, end);
+    }
   };
 
   template<class Generator>
