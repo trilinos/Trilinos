@@ -254,35 +254,6 @@ void BulkData::resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vec
 
 /////////////////////////////////////// End functions for create edges
 
-parallel::DistributedIndex::KeySpanVector
-convert_entity_keys_to_spans( const MetaData & meta )
-{
-  // Make sure the distributed index can handle the EntityKey
-
-  enum { OK = StaticAssert<
-                SameType< uint64_t,
-                          parallel::DistributedIndex::KeyType >::value >::OK };
-
-  // Default constructed EntityKey has all bits set.
-
-  const EntityKey invalid_key ;
-  const EntityId  min_id = 1 ;
-  const EntityId  max_id = invalid_key.id();
-
-  const EntityRank rank_count = static_cast<EntityRank>(meta.entity_rank_count());
-
-  parallel::DistributedIndex::KeySpanVector spans( rank_count );
-
-  for ( EntityRank rank = stk::topology::NODE_RANK ; rank < rank_count ; ++rank ) {
-    EntityKey key_min( rank , min_id );
-    EntityKey key_max( rank , max_id );
-    spans[rank].first  = key_min;
-    spans[rank].second = key_max;
-  }
-
-  return spans ;
-}
-
 //----------------------------------------------------------------------
 
 #ifdef STK_MESH_MODIFICATION_COUNTERS
@@ -302,7 +273,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 #ifdef SIERRA_MIGRATION
     m_check_invalid_rels(true),
 #endif
-    m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
+    m_entities_index( parallel, impl::convert_entity_keys_to_spans(mesh_meta_data) ),
     m_entity_comm_map(),
     m_ghosting(),
     m_mesh_meta_data( mesh_meta_data ),
@@ -2626,13 +2597,13 @@ void BulkData::internal_compute_proposed_owned_closure_count(const std::vector<E
 }
 
 namespace {
-void print_entity_to_dependent_processors_map(std::string title, int parallel_rank, const BulkData::NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
+void print_entity_to_dependent_processors_map(std::string title, int parallel_rank, const stk::mesh::NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
 {
 #ifndef NDEBUG
   {
       std::ostringstream oss;
       oss << "\n";
-      BulkData::NodeToDependentProcessorsMap::const_iterator dep_proc_it = entity_to_dependent_processors_map.begin();
+      stk::mesh::NodeToDependentProcessorsMap::const_iterator dep_proc_it = entity_to_dependent_processors_map.begin();
       for (; dep_proc_it != entity_to_dependent_processors_map.end() ; ++dep_proc_it ) {
           EntityKey key = dep_proc_it->first;
           const std::set<int> & sharing_procs = dep_proc_it->second;

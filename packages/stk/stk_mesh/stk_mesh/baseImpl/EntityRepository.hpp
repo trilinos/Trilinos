@@ -101,7 +101,11 @@ void EntityRepository::destroy_entity(EntityKey key, Entity entity)
 }
 
 } // namespace impl
+
+typedef stk::mesh::impl::EntityRepository::const_iterator const_entity_iterator;
+
 } // namespace mesh
 } // namespace stk
+
 
 #endif // stk_mesh_baseImpl_EntityRepository_hpp

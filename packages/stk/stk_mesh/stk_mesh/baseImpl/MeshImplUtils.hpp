@@ -73,7 +73,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
 void internal_get_processor_dependencies_shared_or_ghosted(
           const BulkData &mesh,
           const EntityProc                  shared_or_ghosted_entry ,
-          BulkData::NodeToDependentProcessorsMap & owned_node_sharing_map);
+          stk::mesh::NodeToDependentProcessorsMap & owned_node_sharing_map);
 
 void internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,
@@ -348,6 +348,8 @@ void VisitAuraClosure(
     OnlyVisitOnce ovo;
     VisitAuraClosureGeneral(mesh,entity_of_interest,do_this,ovo);
 }
+
+parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
 
 
 

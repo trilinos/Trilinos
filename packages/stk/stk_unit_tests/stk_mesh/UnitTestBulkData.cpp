@@ -468,8 +468,8 @@ TEST(BulkData, testBulkDataRankBeginEnd)
     MetaData meta(spatial_dim, stk::mesh::entity_rank_names());
     BulkData bulk(meta, pm);
     bulk.modification_begin();
-    BulkData::const_entity_iterator iter = bulk.begin_entities(stk::topology::NODE_RANK);
-    BulkData::const_entity_iterator end = bulk.end_entities(stk::topology::NODE_RANK);
+    stk::mesh::const_entity_iterator iter = bulk.begin_entities(stk::topology::NODE_RANK);
+    stk::mesh::const_entity_iterator end = bulk.end_entities(stk::topology::NODE_RANK);
 
     ASSERT_TRUE(iter == end);
 
@@ -1429,7 +1429,7 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
   //                   {elem1, 1}
 
   {
-    BulkData::NodeToDependentProcessorsMap entity_to_dependent_processors_map;
+    stk::mesh::NodeToDependentProcessorsMap entity_to_dependent_processors_map;
     for (std::vector<EntityProc>::const_iterator shared_giving_away_eproc = shared_change.begin();
          shared_giving_away_eproc != shared_change.end(); ++shared_giving_away_eproc)
     {
@@ -1444,7 +1444,7 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
     if (p_rank == 1)
     {
       EXPECT_EQ(1u, entity_to_dependent_processors_map.size());
-      BulkData::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
+      stk::mesh::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
       EXPECT_TRUE(node4_it != entity_to_dependent_processors_map.end());
       const std::set<int> & node4_procs = node4_it->second;
       EXPECT_EQ(1, *(node4_procs.begin()));
@@ -1452,7 +1452,7 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
   }
 
   {
-    BulkData::NodeToDependentProcessorsMap entity_to_dependent_processors_map;
+    stk::mesh::NodeToDependentProcessorsMap entity_to_dependent_processors_map;
     for (std::vector<EntityProc>::const_iterator ghosted_giving_away_eproc = ghosted_change.begin();
          ghosted_giving_away_eproc != ghosted_change.end(); ++ghosted_giving_away_eproc)
     {
@@ -1463,10 +1463,10 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
     if (p_rank == 0)
     {
       EXPECT_EQ(4u, entity_to_dependent_processors_map.size());
-      BulkData::NodeToDependentProcessorsMap::const_iterator node3_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
-      BulkData::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
-      BulkData::NodeToDependentProcessorsMap::const_iterator node5_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 5));
-      BulkData::NodeToDependentProcessorsMap::const_iterator node6_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
+      stk::mesh::NodeToDependentProcessorsMap::const_iterator node3_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
+      stk::mesh::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
+      stk::mesh::NodeToDependentProcessorsMap::const_iterator node5_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 5));
+      stk::mesh::NodeToDependentProcessorsMap::const_iterator node6_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
       ASSERT_TRUE(node3_it != entity_to_dependent_processors_map.end());
       ASSERT_TRUE(node4_it != entity_to_dependent_processors_map.end());
       ASSERT_TRUE(node5_it != entity_to_dependent_processors_map.end());
@@ -1487,10 +1487,10 @@ TEST(BulkData, test_internal_get_processor_dependencies_shared_or_ghosted_2EltsF
     if (p_rank == 1)
     {
       EXPECT_EQ(4u, entity_to_dependent_processors_map.size());
-      BulkData::NodeToDependentProcessorsMap::const_iterator node1_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 1));
-      BulkData::NodeToDependentProcessorsMap::const_iterator node2_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 2));
-      BulkData::NodeToDependentProcessorsMap::const_iterator node3_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
-      BulkData::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
+      stk::mesh::NodeToDependentProcessorsMap::const_iterator node1_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 1));
+      stk::mesh::NodeToDependentProcessorsMap::const_iterator node2_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 2));
+      stk::mesh::NodeToDependentProcessorsMap::const_iterator node3_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
+      stk::mesh::NodeToDependentProcessorsMap::const_iterator node4_it = entity_to_dependent_processors_map.find(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
       ASSERT_TRUE(node1_it != entity_to_dependent_processors_map.end());
       ASSERT_TRUE(node2_it != entity_to_dependent_processors_map.end());
       ASSERT_TRUE(node3_it != entity_to_dependent_processors_map.end());
@@ -1540,7 +1540,7 @@ TEST(BulkData, test_nominal_internal_get_processor_dependencies_shared_or_ghoste
     {
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 6);
         int dest_proc = 3;
-        BulkData::NodeToDependentProcessorsMap owned_node_sharing_map;
+        stk::mesh::NodeToDependentProcessorsMap owned_node_sharing_map;
         stk::mesh::impl::internal_get_processor_dependencies_shared_or_ghosted(bulk, stk::mesh::EntityProc(elem, dest_proc), owned_node_sharing_map);
 
         EntityKey node7_key(stk::topology::NODE_RANK,7);

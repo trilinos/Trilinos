@@ -60,7 +60,6 @@
 #include <vector>                       // for vector
 #include "boost/functional/hash/extensions.hpp"  // for hash
 #include "boost/tuple/detail/tuple_basic.hpp"  // for get
-#include "boost/unordered/unordered_map.hpp"  // for unordered_map
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type, etc
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
@@ -68,6 +67,7 @@
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+
 namespace sierra { namespace Fmwk { class MeshBulkData; } }
 namespace sierra { namespace Fmwk { class MeshObjSharedAttr; } }
 namespace stk { namespace mesh { class FieldBase; } }
@@ -75,113 +75,16 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 
-
-//----------------------------------------------------------------------
-
-// Use macro below to enable metric gathering for get_buckets memoization
-//#define GATHER_GET_BUCKETS_METRICS
-
-// Use macro below to activate counters that track calls to mesh-modification routines
-//#define STK_MESH_MODIFICATION_COUNTERS
-
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-#define INCREMENT_MODIFICATION_COUNTER(METHOD_TYPE, MOD_TYPE) {++m_modification_counters[METHOD_TYPE][MOD_TYPE];}
-#define INCREMENT_ENTITY_MODIFICATION_COUNTER(METHOD_TYPE, RANK,MOD_TYPE) {++m_entity_modification_counters[METHOD_TYPE][RANK][MOD_TYPE];}
-#else
-#define INCREMENT_MODIFICATION_COUNTER(METHOD_TYPE, MOD_TYPE) {}
-#define INCREMENT_ENTITY_MODIFICATION_COUNTER(METHOD_TYPE, RANK,MOD_TYPE) {}
-#endif
+#include "EntityCommListInfo.hpp"
+#include "EntityLess.hpp"
+#include "StkDebuggingMacros.hpp"
+#include "SharedEntityType.hpp"
 
 namespace stk {
 namespace mesh {
-
-namespace impl { class EntityRepository; }
-
-class BulkData;
-
-struct EntityLess {
-  inline EntityLess(const BulkData& mesh);
-  /** \brief  Comparison operator */
-  inline bool operator()(const Entity lhs, const Entity rhs) const;
-  inline bool operator()(const Entity lhs, const EntityKey & rhs) const;
-  inline bool operator()( const EntityProc & lhs, const EntityProc & rhs) const;
-  inline bool operator()( const EntityProc & lhs, const Entity rhs) const;
-  inline bool operator()( const EntityProc & lhs, const EntityKey & rhs) const;
-  inline EntityLess& operator=(const EntityLess& rhs);
-  const BulkData* m_mesh;
-}; //struct EntityLess
-
-struct shared_entity_type
-{
-  stk::topology::topology_t topology;
-  std::vector<EntityKey>    nodes;
-  EntityKey                 local_key;
-  EntityKey                 global_key;
-  std::vector<int>          sharing_procs;
-
-  friend inline bool operator < (shared_entity_type const& l, shared_entity_type const& r)
-  {
-    if (l.topology < r.topology)   return true;
-    if (l.topology > r.topology)   return false;
-    return l.nodes < r.nodes;
-  }
-
-  friend inline bool operator == (shared_entity_type const& l, shared_entity_type const& r)
-  {
-
-    bool sameTopologyAndNodes =  (l.topology == r.topology) && (l.nodes==r.nodes);
-    return sameTopologyAndNodes;
-  }
-};
-
-parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
-
-struct EntityCommListInfo
-{
-  EntityKey key;
-  Entity    entity; // Might be invalid if entity has been deleted.
-  int  owner;
-  const EntityComm* entity_comm; // Might be NULL if entity has been deleted.
-};
-
-typedef TrackedVectorMetaFunc<EntityCommListInfo, EntityCommTag>::type EntityCommListInfoVector;
-
-#ifdef __IBMCPP__
-typedef std::vector<std::vector<FastMeshIndex> > VolatileFastSharedCommMapOneRank;
-#else
-typedef TrackedVectorMetaFunc<
-  TrackedVectorMetaFunc<FastMeshIndex, VolatileFastSharedCommMapTag>::type,
-  VolatileFastSharedCommMapTag>::type VolatileFastSharedCommMapOneRank;
-#endif
-
-inline
-bool operator<(const EntityKey& key, const EntityCommListInfo& comm)
-{ return key < comm.key; }
-
-inline
-bool operator<(const EntityCommListInfo& comm, const EntityKey& key)
-{ return comm.key < key; }
-
-inline
-bool operator<(const EntityCommListInfo& lhs, const EntityCommListInfo& rhs)
-{ return lhs.key < rhs.key; }
-
-inline
-bool operator==(const EntityCommListInfo& lhs, const EntityCommListInfo& rhs)
-{ return lhs.key == rhs.key; }
-
-inline
-bool operator!=(const EntityCommListInfo& lhs, const EntityCommListInfo& rhs)
-{ return !(lhs == rhs); }
-
-struct IsInvalid
-{
-  bool operator()(const EntityCommListInfo& comm) const
-  {
-    return comm.key == EntityKey();
-  }
-};
 
 class BulkData {
 
@@ -213,25 +116,6 @@ public:
       INTERNAL,
       NumMethodTypes
   };
-
-  typedef boost::unordered_map<EntityKey, size_t> GhostReuseMap;
-  typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
-#ifdef __IBMCPP__
-  // The IBM compiler is easily confused by complex template types...
-  typedef BucketVector                                                   TrackedBucketVector;
-  typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector> SelectorBucketMap;
-  typedef std::vector<VolatileFastSharedCommMapOneRank>                  VolatileFastSharedCommMap;
-#else
-  typedef TrackedVectorMetaFunc<Bucket*, SelectorMapTag>::type  TrackedBucketVector;
-  typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector,
-                   std::less<std::pair<EntityRank, Selector> >,
-                   tracking_allocator<std::pair<std::pair<EntityRank, Selector>, TrackedBucketVector>, SelectorMapTag> > SelectorBucketMap;
-  typedef TrackedVectorMetaFunc<VolatileFastSharedCommMapOneRank, VolatileFastSharedCommMapTag>::type VolatileFastSharedCommMap;
-
-#endif
-  typedef impl::EntityRepository::const_iterator const_entity_iterator;
-  typedef std::map<EntityKey,std::set<int> > NodeToDependentProcessorsMap;
-  typedef std::map<EntityKey,int> NewOwnerMap;
 
   /** \brief  Construct mesh bulk data manager conformal to the given
    *          \ref stk::mesh::MetaData "meta data manager" and will

@@ -39,6 +39,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <exampleMeshes/StkMeshFromGeneratedMesh.h>
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
 namespace {
 
@@ -104,7 +105,7 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
         stk::mesh::MetaData &stkMeshMetaData = *stkMesh.getMetaData();
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
-        stk::parallel::DistributedIndex::KeySpanVector spans = stk::mesh::convert_entity_keys_to_spans(stkMeshMetaData);
+        stk::parallel::DistributedIndex::KeySpanVector spans = stk::mesh::impl::convert_entity_keys_to_spans(stkMeshMetaData);
         DistributedIndexTester distributedIndex(communicator, spans);
 
         updateDistributedIndexUsingStkMesh(stkMeshBulkData, myProc, distributedIndex);

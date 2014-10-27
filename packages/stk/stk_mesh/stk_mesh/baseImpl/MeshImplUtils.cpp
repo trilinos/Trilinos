@@ -37,6 +37,8 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/util/SameType.hpp>
+#include <stk_util/util/StaticAssert.hpp>
 
 #include <vector>
 
@@ -517,7 +519,7 @@ void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<Entity
 void internal_get_processor_dependencies_shared_or_ghosted(
   const BulkData &mesh,
   const EntityProc                  shared_or_ghosted_entity ,
-  BulkData::NodeToDependentProcessorsMap & node_to_dependent_processors_map)
+  stk::mesh::NodeToDependentProcessorsMap & node_to_dependent_processors_map)
 {
     Entity moving_entity = shared_or_ghosted_entity.first;
     int new_owning_proc = shared_or_ghosted_entity.second;
@@ -1388,6 +1390,32 @@ void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mes
   }
 }
 
+parallel::DistributedIndex::KeySpanVector
+convert_entity_keys_to_spans( const MetaData & meta )
+{
+  // Make sure the distributed index can handle the EntityKey
+
+  enum { OK = StaticAssert< SameType< uint64_t, parallel::DistributedIndex::KeyType >::value >::OK };
+
+  // Default constructed EntityKey has all bits set.
+
+  const EntityKey invalid_key ;
+  const EntityId  min_id = 1 ;
+  const EntityId  max_id = invalid_key.id();
+
+  const EntityRank rank_count = static_cast<EntityRank>(meta.entity_rank_count());
+
+  parallel::DistributedIndex::KeySpanVector spans( rank_count );
+
+  for ( EntityRank rank = stk::topology::NODE_RANK ; rank < rank_count ; ++rank ) {
+    EntityKey key_min( rank , min_id );
+    EntityKey key_max( rank , max_id );
+    spans[rank].first  = key_min;
+    spans[rank].second = key_max;
+  }
+
+  return spans ;
+}
 
 } // namespace impl
 } // namespace mesh
