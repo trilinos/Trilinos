@@ -507,15 +507,15 @@ bool BulkDataTester::internal_modification_end_for_change_entity_owner_exp( bool
   stk::mesh::impl::BucketRepository &bucket_repository = my_bucket_repository();
   if ( opt == MOD_END_COMPRESS_AND_SORT ) {
     //doesn't fail if not called (np1-np4)
-    m_bucket_repository.optimize_buckets();  //NO TESTS FOR BUCKETS
+    bucket_repository.optimize_buckets();  //NO TESTS FOR BUCKETS
   }
   else {
     //doesn't fail if not called (np1-np4)
-    m_bucket_repository.internal_sort_bucket_entities();  //NO TESTS FOR BUCKETS
+    bucket_repository.internal_sort_bucket_entities();  //NO TESTS FOR BUCKETS
   }
 
   //doesn't fail if not called (np1-np4)
-  m_bucket_repository.internal_modification_end();  //NO TESTS FOR BUCKETS
+  bucket_repository.internal_modification_end();  //NO TESTS FOR BUCKETS
 
   //doesn't fail if not called (np1-np4)
   internal_update_fast_comm_maps(); //NO TESTS FOR FIELDS
