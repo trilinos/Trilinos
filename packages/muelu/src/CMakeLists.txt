@@ -127,13 +127,6 @@ if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
     ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother_OpenMP.cpp)
   LIST(REMOVE_ITEM CU_SOURCES
     ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother_Cuda.cu)
-  LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_SchwarzSmoother.hpp)
-  LIST(REMOVE_ITEM SOURCES
-    ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother.cpp
-    ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother_Threads.cpp
-    ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother_OpenMP.cpp)
-   LIST(REMOVE_ITEM CU_SOURCES
-    ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother_Cuda.cu)
 ENDIF()
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
