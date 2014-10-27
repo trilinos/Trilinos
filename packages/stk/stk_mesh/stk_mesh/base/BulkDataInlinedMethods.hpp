@@ -114,11 +114,6 @@ BulkData & BulkData::get( const Ghosting & ghost) {
 }
 
 inline
-BulkData & BulkData::get( const impl::BucketRepository & bucket_repo ) {
-  return bucket_repo.mesh();
-}
-
-inline
 unsigned BulkData::num_connectivity(Entity entity, EntityRank rank) const
 {
   ThrowAssert(bucket_ptr(entity));

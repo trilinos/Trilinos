@@ -148,7 +148,6 @@ public:
 
   inline static BulkData & get( const Bucket & bucket);
   inline static BulkData & get( const Ghosting & ghost);
-  inline static BulkData & get( const impl::BucketRepository & bucket_repo );
 
   //------------------------------------
   /** \brief  The meta data manager for this bulk data manager. */
@@ -230,8 +229,6 @@ public:
    * If field-data was already allocated and staying in sync, then this call is a no-op.
    */
   void allocate_field_data();
-
-  void verify_relations(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank) const;
 
   inline bool final_modification_end();
 
@@ -551,6 +548,12 @@ public:
   inline int parallel_owner_rank(Entity entity) const;
   inline unsigned local_id(Entity entity) const;
 
+  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
+  inline void set_entity_key(Entity entity, EntityKey key);
+  inline void set_state(Entity entity, EntityState entity_state);
+  inline void set_synchronized_count(Entity entity, size_t sync_count);
+  inline void set_local_id(Entity entity, unsigned id);
+
 #ifdef SIERRA_MIGRATION
 
   //this typedef for FmwkId must use the same type as the typedef
@@ -586,12 +589,6 @@ public:
   inline void compress_relation_capacity(Entity entity);
   bool add_fmwk_data() const { return m_add_fmwk_data; }
 #endif
-
-  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
-  inline void set_entity_key(Entity entity, EntityKey key);
-  inline void set_state(Entity entity, EntityState entity_state);
-  inline void set_synchronized_count(Entity entity, size_t sync_count);
-  inline void set_local_id(Entity entity, unsigned id);
 
   //
   // Connectivity getter methods. For each entity, you can get connected entities

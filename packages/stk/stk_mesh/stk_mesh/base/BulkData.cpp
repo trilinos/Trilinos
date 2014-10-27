@@ -5591,38 +5591,6 @@ template <>
 Permutation const *get_end_relation_data<Permutation>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
 { return bucket.end_permutations(bucket_ordinal, rank); }
 
-template <typename T>
-void verify_relation_data(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{
-  T const * old_it = get_begin_relation_data<T>(bucket, bucket_ordinal, rank);
-  T const * old_it_end = get_end_relation_data<T>(bucket, bucket_ordinal, rank);
-
-  T const * new_data_begin = get_begin_itr<T>(bucket, bucket_ordinal, rank);
-  T const * new_data_end   = get_end_itr<T>(bucket, bucket_ordinal, rank);
-
-  ThrowRequire( std::distance(new_data_begin, new_data_end ) ==
-                std::distance(old_it, old_it_end ) );
-
-  ThrowRequire( std::distance(new_data_begin, new_data_end) ==
-                bucket.num_connectivity(bucket_ordinal, rank) );
-
-  T const * new_it = new_data_begin;
-  for (; old_it != old_it_end ; ++old_it , ++new_it) {
-    T old_data = *old_it;
-    T new_data = *new_it;
-    ThrowRequire(old_data == new_data);
-  }
-}
-
-}
-
-void BulkData::verify_relations(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank) const
-{
-  verify_relation_data<Entity>(bucket, bucket_ordinal, rank);
-  verify_relation_data<ConnectivityOrdinal>(bucket, bucket_ordinal, rank);
-  if (bucket.has_permutation(rank)) {
-    verify_relation_data<Permutation>(bucket, bucket_ordinal, rank);
-  }
 }
 
 //----------------------------------------------------------------------
