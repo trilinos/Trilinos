@@ -1,0 +1,315 @@
+test_lu
+904: vanHeukelum/cage3:                         your   resid: 6.93889e-18 klu_time:5.8e-05 mylu_time:0.000361 speedup: 0.160665
+449: Grund/b1_ss:                         your   resid: 0 klu_time:5.6e-05 mylu_time:5.5e-05 speedup: 1.01818
+905: vanHeukelum/cage4: 	    skip
+1524: Pajek/Stranke94:                         your   resid: 5.14265e-17 klu_time:6.3e-05 mylu_time:6.2e-05 speedup: 1.01613
+1440: Oberwolfach/LFAT5:                         your   resid: 1.13086e-21 klu_time:6.1e-05 mylu_time:6.1e-05 speedup: 1
+1438: Oberwolfach/LF10:                         your   resid: 2.64e-18 klu_time:6.3e-05 mylu_time:6.3e-05 speedup: 1
+2203: JGD_Trefethen/Trefethen_20b:                         your   resid: 1.90272e-16 klu_time:8.1e-05 mylu_time:7.4e-05 speedup: 1.09459
+2204: JGD_Trefethen/Trefethen_20:                         your   resid: 1.9292e-16 klu_time:8.5e-05 mylu_time:7.9e-05 speedup: 1.07595
+1516: Pajek/Ragusa18: 	    skip (zero pivot encountered)
+1515: Pajek/Ragusa16: 	    skip (zero pivot encountered)
+436: FIDAP/ex5:                         your   resid: 4.91127e-17 klu_time:8.7e-05 mylu_time:7.9e-05 speedup: 1.10127
+232: HB/pores_1:                         your   resid: 4.58233e-19 klu_time:9.7e-05 mylu_time:8.1e-05 speedup: 1.19753
+1199: Hamrle/Hamrle1:                         your   resid: 1.75809e-19 klu_time:7.9e-05 mylu_time:6.8e-05 speedup: 1.16176
+1480: Pajek/GD01_c: 	    skip (zero pivot encountered)
+1474: Pajek/football: 	    skip (zero pivot encountered)
+906: vanHeukelum/cage5:                         your   resid: 1.53523e-16 klu_time:9.9e-05 mylu_time:9.6e-05 speedup: 1.03125
+1493: Pajek/GD97_b: 	    skip (zero pivot encountered)
+23: HB/bcsstk01:                         your   resid: 1.41894e-16 klu_time:0.000164 mylu_time:0.000141 speedup: 1.16312
+56: HB/bcsstm01: 	    skip (zero pivot encountered)
+872: Pothen/mesh1e1:                         your   resid: 1.92873e-16 klu_time:0.000129 mylu_time:0.000107 speedup: 1.20561
+873: Pothen/mesh1em1:                         your   resid: 1.2339e-16 klu_time:0.000144 mylu_time:0.00011 speedup: 1.30909
+874: Pothen/mesh1em6:                         your   resid: 1.18751e-16 klu_time:0.000131 mylu_time:0.000106 speedup: 1.23585
+464: Grund/d_ss:                         your   resid: 4.43613e-21 klu_time:0.000101 mylu_time:7.7e-05 speedup: 1.31169
+172: HB/impcol_b:                         your   resid: 3.47101e-17 klu_time:0.000131 mylu_time:0.000112 speedup: 1.16964
+293: Bai/bfwa62:                         your   resid: 1.52071e-16 klu_time:0.000135 mylu_time:0.000107 speedup: 1.26168
+296: Bai/bfwb62:                         your   resid: 1.07623e-16 klu_time:0.000128 mylu_time:0.000108 speedup: 1.18519
+1498: Pajek/GD99_b: 	    skip (zero pivot encountered)
+24: HB/bcsstk02:                         your   resid: 2.20905e-16 klu_time:0.000576 mylu_time:0.000495 speedup: 1.16364
+57: HB/bcsstm02:                         your   resid: 0 klu_time:6.3e-05 mylu_time:6.3e-05 speedup: 1
+2338: Rommes/ww_36_pmec_36:                         your   resid: 8.76139e-19 klu_time:0.000194 mylu_time:0.000156 speedup: 1.24359
+262: HB/west0067:                         your   resid: 7.22875e-17 klu_time:0.000181 mylu_time:0.000117 speedup: 1.54701
+1943: JGD_CAG/CAG_mat72:                         your   resid: 1.93082e-17 klu_time:0.000202 mylu_time:0.000156 speedup: 1.29487
+2400: Newman/lesmis: 	    skip (zero pivot encountered)
+253: HB/steam3:                         your   resid: 5.35682e-20 klu_time:9.9e-05 mylu_time:8.7e-05 speedup: 1.13793
+1519: Pajek/Sandi_authors: 	    skip (zero pivot encountered)
+462: Grund/d_dyn:                         your   resid: 2.78517e-18 klu_time:0.000131 mylu_time:9.3e-05 speedup: 1.4086
+463: Grund/d_dyn1:                         your   resid: 7.21516e-17 klu_time:0.000144 mylu_time:9.5e-05 speedup: 1.51579
+1641: Bai/tols90:                         your   resid: 2.10125e-16 klu_time:0.000203 mylu_time:0.000829 speedup: 0.244873
+907: vanHeukelum/cage6:                         your   resid: 2.71051e-16 klu_time:0.000284 mylu_time:0.000256 speedup: 1.10938
+220: HB/nos4:                         your   resid: 1.49679e-16 klu_time:0.000207 mylu_time:0.000162 speedup: 1.27778
+318: Bai/olm100:                         your   resid: 3.80121e-18 klu_time:0.000116 mylu_time:9.2e-05 speedup: 1.26087
+337: Bai/tub100:                         your   resid: 4.70086e-17 klu_time:0.00012 mylu_time:8.9e-05 speedup: 1.34831
+1326: Morandini/rotor1:                         your   resid: 1.76535e-19 klu_time:0.000274 mylu_time:0.000182 speedup: 1.50549
+861: MathWorks/pivtol:                         your   resid: 3.35239e-17 klu_time:0.000106 mylu_time:8.2e-05 speedup: 1.29268
+306: Bai/ck104:                         your   resid: 3.97821e-17 klu_time:0.000162 mylu_time:0.000118 speedup: 1.37288
+2097: JGD_Homology/n3c6-b1: 	    skip (zero pivot encountered)
+25: HB/bcsstk03:                         your   resid: 6.38599e-17 klu_time:0.000126 mylu_time:0.000112 speedup: 1.125
+58: HB/bcsstm03: 	    skip (zero pivot encountered)
+161: HB/gre_115:                         your   resid: 2.35922e-16 klu_time:0.00025 mylu_time:0.000204 speedup: 1.22549
+2397: Newman/football:                         your   resid: 5.67922e-16 klu_time:0.002369 mylu_time:0.001487 speedup: 1.59314
+1325: Morandini/robot:                         your   resid: 6.62017e-18 klu_time:0.000338 mylu_time:0.000173 speedup: 1.95376
+1506: Pajek/Journals:                         your   resid: 2.99492e-16 klu_time:0.002432 mylu_time:0.002936 speedup: 0.828338
+6: HB/arc130:                         your   resid: 9.07086e-21 klu_time:0.000218 mylu_time:0.000138 speedup: 1.57971
+188: HB/lns_131:                         your   resid: 2.04354e-24 klu_time:0.000267 mylu_time:0.000166 speedup: 1.60843
+192: HB/lnsp_131:                         your   resid: 2.04354e-24 klu_time:0.000269 mylu_time:0.000168 speedup: 1.60119
+26: HB/bcsstk04:                         your   resid: 3.01597e-16 klu_time:0.000728 mylu_time:0.001115 speedup: 0.652915
+59: HB/bcsstm04: 	    skip (zero pivot encountered)
+263: HB/west0132:                         your   resid: 4.62555e-18 klu_time:0.000188 mylu_time:0.000109 speedup: 1.72477
+1195: Rajat/rajat11:                         your   resid: 7.40141e-18 klu_time:0.000191 mylu_time:0.000114 speedup: 1.67544
+334: Bai/rw136:                         your   resid: 2.83461e-16 klu_time:0.000296 mylu_time:0.000206 speedup: 1.43689
+173: HB/impcol_c:                         your   resid: 1.15648e-19 klu_time:0.000166 mylu_time:8.7e-05 speedup: 1.90805
+44: HB/bcsstk22:                         your   resid: 1.60458e-16 klu_time:0.000216 mylu_time:0.000181 speedup: 1.19337
+72: HB/bcsstm22:                         your   resid: 0 klu_time:0.000127 mylu_time:9.5e-05 speedup: 1.33684
+206: HB/lund_a:                         your   resid: 3.241e-16 klu_time:0.00049 mylu_time:0.000946 speedup: 0.51797
+207: HB/lund_b:                         your   resid: 3.25486e-16 klu_time:0.000474 mylu_time:0.000827 speedup: 0.573156
+2559: CPM/cz148:                         your   resid: 1.9417e-16 klu_time:0.00047 mylu_time:0.000499 speedup: 0.941884
+2205: JGD_Trefethen/Trefethen_150:                         your   resid: 9.14949e-16 klu_time:0.001381 mylu_time:0.001938 speedup: 0.71259
+27: HB/bcsstk05:                         your   resid: 3.88181e-16 klu_time:0.000525 mylu_time:0.000563 speedup: 0.932504
+60: HB/bcsstm05:                         your   resid: 0 klu_time:6.5e-05 mylu_time:6.1e-05 speedup: 1.06557
+264: HB/west0156:                         your   resid: 5.94589e-24 klu_time:0.000147 mylu_time:8.5e-05 speedup: 1.72941
+313: Bai/lop163:                         your   resid: 1.27578e-16 klu_time:0.00039 mylu_time:0.000445 speedup: 0.876404
+265: HB/west0167:                         your   resid: 4.63252e-18 klu_time:0.000192 mylu_time:0.000121 speedup: 1.58678
+212: HB/mcca:                         your   resid: 4.72164e-17 klu_time:0.000594 mylu_time:0.000458 speedup: 1.29694
+1198: Rajat/rajat14:                         your   resid: 4.73423e-18 klu_time:0.000314 mylu_time:0.000367 speedup: 0.855586
+141: HB/fs_183_1:                         your   resid: 8.74904e-18 klu_time:0.000407 mylu_time:0.000165 speedup: 2.46667
+142: HB/fs_183_3:                         your   resid: 1.0262e-21 klu_time:0.000468 mylu_time:0.000206 speedup: 2.27184
+143: HB/fs_183_4:                         your   resid: 2.7683e-19 klu_time:0.000421 mylu_time:0.000206 speedup: 2.04369
+144: HB/fs_183_6:                         your   resid: 6.13054e-23 klu_time:0.000393 mylu_time:0.000154 speedup: 2.55195
+162: HB/gre_185:                         your   resid: 4.37996e-16 klu_time:0.001185 mylu_time:0.000993 speedup: 1.19335
+2406: Arenas/jazz:                         your   resid: 4.36873e-16 klu_time:0.002413 mylu_time:0.00457 speedup: 0.528009
+2206: JGD_Trefethen/Trefethen_200b:                         your   resid: 1.10915e-15 klu_time:0.003118 mylu_time:0.003764 speedup: 0.828374
+298: Bai/bwm200:                         your   resid: 9.3734e-17 klu_time:0.000164 mylu_time:0.000116 speedup: 1.41379
+1630: Bai/rdb200:                         your   resid: 3.34118e-16 klu_time:0.000457 mylu_time:0.001151 speedup: 0.397046
+1631: Bai/rdb200l:                         your   resid: 2.26316e-16 klu_time:0.00051 mylu_time:0.001185 speedup: 0.43038
+2207: JGD_Trefethen/Trefethen_200:                         your   resid: 9.24531e-16 klu_time:0.003351 mylu_time:0.003473 speedup: 0.964872
+171: HB/impcol_a:                         your   resid: 2.60566e-18 klu_time:0.000238 mylu_time:0.000138 speedup: 1.72464
+163: HB/gre_216a:                         your   resid: 5.25621e-16 klu_time:0.001209 mylu_time:0.001282 speedup: 0.943058
+164: HB/gre_216b:                         your   resid: 1.11246e-16 klu_time:0.000952 mylu_time:0.000884 speedup: 1.07692
+406: FIDAP/ex1:                         your   resid: 2.45561e-16 klu_time:0.001118 mylu_time:0.004178 speedup: 0.267592
+175: HB/impcol_e:                         your   resid: 2.86715e-18 klu_time:0.000318 mylu_time:0.00016 speedup: 1.9875
+323: Bai/pde225:                         your   resid: 2.6786e-16 klu_time:0.00039 mylu_time:0.000499 speedup: 0.781563
+217: HB/nos1:                         your   resid: 9.55429e-17 klu_time:0.000161 mylu_time:0.000235 speedup: 0.685106
+239: HB/saylr1:                         your   resid: 9.73503e-17 klu_time:0.000428 mylu_time:0.000577 speedup: 0.741768
+251: HB/steam1:                         your   resid: 1.31383e-16 klu_time:0.001083 mylu_time:0.001543 speedup: 0.701879
+215: HB/nnc261:                         your   resid: 1.59591e-16 klu_time:0.001351 mylu_time:0.000583 speedup: 2.31732
+1864: Muite/Chebyshev1:                         your   resid: 2.58901e-20 klu_time:0.000423 mylu_time:0.005519 speedup: 0.0766443
+877: Pothen/mesh3e1:                         your   resid: 3.78992e-16 klu_time:0.000636 mylu_time:0.000652 speedup: 0.97546
+878: Pothen/mesh3em5:                         your   resid: 2.66453e-16 klu_time:0.000579 mylu_time:0.000641 speedup: 0.903276
+2392: Newman/celegansneural: 	    skip (zero pivot encountered)
+824: TOKAMAK/utm300:                         your   resid: 2.4604e-16 klu_time:0.001117 mylu_time:0.001668 speedup: 0.669664
+2194: JGD_SPG/08blocks:                         your   resid: 0 klu_time:0.000161 mylu_time:9.6e-05 speedup: 1.67708
+2208: JGD_Trefethen/Trefethen_300:                         your   resid: 1.13993e-15 klu_time:0.010403 mylu_time:0.011461 speedup: 0.907687
+1189: Rajat/rajat05:                         your   resid: 6.93019e-17 klu_time:0.000365 mylu_time:0.000191 speedup: 1.91099
+875: Pothen/mesh2e1:                         your   resid: 6.06271e-17 klu_time:0.00066 mylu_time:0.000557 speedup: 1.18492
+876: Pothen/mesh2em5:                         your   resid: 1.09259e-16 klu_time:0.000669 mylu_time:0.00055 speedup: 1.21636
+2560: CPM/cz308:                         your   resid: 4.52103e-16 klu_time:0.000931 mylu_time:0.001856 speedup: 0.501616
+1477: Pajek/GD01_a: 	    skip (zero pivot encountered)
+380: DRIVCAV/cavity01:                         your   resid: 7.82438e-16 klu_time:0.003665 mylu_time:0.004152 speedup: 0.882707
+381: DRIVCAV/cavity02:                         your   resid: 4.96816e-16 klu_time:0.003597 mylu_time:0.003661 speedup: 0.982518
+382: DRIVCAV/cavity03:                         your   resid: 2.82272e-16 klu_time:0.004053 mylu_time:0.00338 speedup: 1.19911
+383: DRIVCAV/cavity04:                         your   resid: 4.51846e-16 klu_time:0.003775 mylu_time:0.003279 speedup: 1.15127
+1529: Pajek/USAir97: 	    skip (zero pivot encountered)
+908: vanHeukelum/cage7:                         your   resid: 7.34405e-16 klu_time:0.003383 mylu_time:0.003141 speedup: 1.07705
+1639: Bai/tols340:                         your   resid: 2.22615e-17 klu_time:0.000272 mylu_time:0.000847 speedup: 0.321133
+165: HB/gre_343:                         your   resid: 1.88738e-15 klu_time:0.00374 mylu_time:0.003543 speedup: 1.0556
+229: HB/plat362:                         your   resid: 3.27343e-16 klu_time:0.002802 mylu_time:0.007905 speedup: 0.354459
+231: HB/plskz362:                         your   resid: 3.04413e-16 klu_time:0.000924 mylu_time:0.000621 speedup: 1.48792
+254: HB/str_0:                         your   resid: 0 klu_time:0.000473 mylu_time:0.000164 speedup: 2.88415
+255: HB/str_200:                         your   resid: 2.418e-17 klu_time:0.000726 mylu_time:0.000427 speedup: 1.70023
+256: HB/str_400:                         your   resid: 2.27947e-17 klu_time:0.00075 mylu_time:0.000352 speedup: 2.13068
+257: HB/str_600:                         your   resid: 1.01726e-16 klu_time:0.000892 mylu_time:0.000481 speedup: 1.85447
+1942: JGD_CAG/CAG_mat364:                         your   resid: 5.81677e-17 klu_time:0.004528 mylu_time:0.003087 speedup: 1.4668
+926: FEMLAB/poisson2D:                         your   resid: 2.79553e-16 klu_time:0.000766 mylu_time:0.000599 speedup: 1.2788
+266: HB/west0381:                         your   resid: 1.24379e-16 klu_time:0.001505 mylu_time:0.00251 speedup: 0.599602
+1523: Pajek/SmallW: 	    skip (zero pivot encountered)
+292: Bai/bfwa398:                         your   resid: 3.61099e-16 klu_time:0.000882 mylu_time:0.001449 speedup: 0.608696
+295: Bai/bfwb398:                         your   resid: 2.36866e-16 klu_time:0.00232 mylu_time:0.00075 speedup: 3.09333
+307: Bai/ck400:                         your   resid: 2.6453e-17 klu_time:0.000369 mylu_time:0.000304 speedup: 1.21382
+316: Bai/odepa400:                         your   resid: 1.58603e-17 klu_time:0.000241 mylu_time:0.000229 speedup: 1.0524
+317: Bai/odepb400: 	    skip (zero pivot encountered)
+929: FEMLAB/problem1:                         your   resid: 4.45566e-16 klu_time:0.000975 mylu_time:0.001501 speedup: 0.649567
+314: Bai/mhda416:                         your   resid: 3.5076e-18 klu_time:0.004548 mylu_time:0.005787 speedup: 0.785899
+315: Bai/mhdb416:                         your   resid: 6.27207e-18 klu_time:0.000302 mylu_time:0.000326 speedup: 0.92638
+28: HB/bcsstk06:                         your   resid: 8.2592e-16 klu_time:0.005622 mylu_time:0.013417 speedup: 0.419021
+29: HB/bcsstk07:                         your   resid: 8.2592e-16 klu_time:0.005348 mylu_time:0.012559 speedup: 0.42583
+61: HB/bcsstm06:                         your   resid: 0 klu_time:0.000129 mylu_time:0.000194 speedup: 0.664948
+62: HB/bcsstm07:                         your   resid: 3.85367e-16 klu_time:0.005454 mylu_time:0.019988 speedup: 0.272864
+174: HB/impcol_d:                         your   resid: 4.44089e-17 klu_time:0.000671 mylu_time:0.000502 speedup: 1.33665
+1112: Sandia/oscil_dcop_01:                         your   resid: 7.26141e-18 klu_time:0.000618 mylu_time:0.000289 speedup: 2.13841
+1113: Sandia/oscil_dcop_02:                         your   resid: 7.26141e-18 klu_time:0.000586 mylu_time:0.000287 speedup: 2.04181
+1114: Sandia/oscil_dcop_03:                         your   resid: 7.26141e-18 klu_time:0.000588 mylu_time:0.000288 speedup: 2.04167
+1115: Sandia/oscil_dcop_04:                         your   resid: 8.49393e-19 klu_time:0.000647 mylu_time:0.000296 speedup: 2.18581
+1116: Sandia/oscil_dcop_05:                         your   resid: 8.49393e-19 klu_time:0.000626 mylu_time:0.000295 speedup: 2.12203
+1117: Sandia/oscil_dcop_06:                         your   resid: 1.77835e-18 klu_time:0.000556 mylu_time:0.000295 speedup: 1.88475
+1118: Sandia/oscil_dcop_07:                         your   resid: 1.7784e-18 klu_time:0.00049 mylu_time:0.000382 speedup: 1.28272
+1119: Sandia/oscil_dcop_08:                         your   resid: 1.77829e-18 klu_time:0.000483 mylu_time:0.000376 speedup: 1.28457
+1120: Sandia/oscil_dcop_09:                         your   resid: 1.77851e-18 klu_time:0.000478 mylu_time:0.000299 speedup: 1.59866
+1121: Sandia/oscil_dcop_10:                         your   resid: 1.77839e-18 klu_time:0.000601 mylu_time:0.000293 speedup: 2.05119
+1122: Sandia/oscil_dcop_11:                         your   resid: 1.77834e-18 klu_time:0.000612 mylu_time:0.000291 speedup: 2.10309
+1123: Sandia/oscil_dcop_12:                         your   resid: 1.77845e-18 klu_time:0.000554 mylu_time:0.000292 speedup: 1.89726
+1124: Sandia/oscil_dcop_13:                         your   resid: 1.77828e-18 klu_time:0.000472 mylu_time:0.000381 speedup: 1.23885
+1125: Sandia/oscil_dcop_14:                         your   resid: 1.77839e-18 klu_time:0.000491 mylu_time:0.000293 speedup: 1.67577
+1126: Sandia/oscil_dcop_15:                         your   resid: 1.77829e-18 klu_time:0.000569 mylu_time:0.000297 speedup: 1.91582
+1127: Sandia/oscil_dcop_16:                         your   resid: 1.77839e-18 klu_time:0.00056 mylu_time:0.000307 speedup: 1.8241
+1128: Sandia/oscil_dcop_17:                         your   resid: 1.7785e-18 klu_time:0.000487 mylu_time:0.000297 speedup: 1.63973
+1129: Sandia/oscil_dcop_18:                         your   resid: 1.77836e-18 klu_time:0.00068 mylu_time:0.000436 speedup: 1.55963
+1130: Sandia/oscil_dcop_19:                         your   resid: 1.77845e-18 klu_time:0.000638 mylu_time:0.0003 speedup: 2.12667
+1131: Sandia/oscil_dcop_20:                         your   resid: 1.77839e-18 klu_time:0.00049 mylu_time:0.000296 speedup: 1.65541
+1132: Sandia/oscil_dcop_21:                         your   resid: 1.77834e-18 klu_time:0.000483 mylu_time:0.000293 speedup: 1.64846
+1133: Sandia/oscil_dcop_22:                         your   resid: 1.77834e-18 klu_time:0.000485 mylu_time:0.000302 speedup: 1.60596
+1134: Sandia/oscil_dcop_23:                         your   resid: 1.77828e-18 klu_time:0.000485 mylu_time:0.000293 speedup: 1.65529
+1135: Sandia/oscil_dcop_24:                         your   resid: 1.77839e-18 klu_time:0.000469 mylu_time:0.000294 speedup: 1.59524
+1136: Sandia/oscil_dcop_25:                         your   resid: 1.77839e-18 klu_time:0.000472 mylu_time:0.000306 speedup: 1.54248
+1137: Sandia/oscil_dcop_26:                         your   resid: 1.77845e-18 klu_time:0.000486 mylu_time:0.000295 speedup: 1.64746
+1138: Sandia/oscil_dcop_27:                         your   resid: 1.77839e-18 klu_time:0.000474 mylu_time:0.000312 speedup: 1.51923
+1139: Sandia/oscil_dcop_28:                         your   resid: 1.77828e-18 klu_time:0.000486 mylu_time:0.000303 speedup: 1.60396
+1140: Sandia/oscil_dcop_29:                         your   resid: 1.77839e-18 klu_time:0.000469 mylu_time:0.000312 speedup: 1.50321
+1141: Sandia/oscil_dcop_30:                         your   resid: 1.77828e-18 klu_time:0.000504 mylu_time:0.000294 speedup: 1.71429
+1142: Sandia/oscil_dcop_31:                         your   resid: 1.77839e-18 klu_time:0.000487 mylu_time:0.000296 speedup: 1.64527
+1143: Sandia/oscil_dcop_32:                         your   resid: 1.77845e-18 klu_time:0.000473 mylu_time:0.000295 speedup: 1.60339
+1144: Sandia/oscil_dcop_33:                         your   resid: 1.77839e-18 klu_time:0.000473 mylu_time:0.000297 speedup: 1.59259
+1145: Sandia/oscil_dcop_34:                         your   resid: 1.77834e-18 klu_time:0.00047 mylu_time:0.000312 speedup: 1.50641
+1146: Sandia/oscil_dcop_35:                         your   resid: 1.77839e-18 klu_time:0.000485 mylu_time:0.000295 speedup: 1.64407
+1147: Sandia/oscil_dcop_36:                         your   resid: 1.77834e-18 klu_time:0.000467 mylu_time:0.000297 speedup: 1.57239
+1148: Sandia/oscil_dcop_37:                         your   resid: 1.77839e-18 klu_time:0.000483 mylu_time:0.000295 speedup: 1.63729
+1149: Sandia/oscil_dcop_38:                         your   resid: 1.77845e-18 klu_time:0.000479 mylu_time:0.000294 speedup: 1.62925
+1150: Sandia/oscil_dcop_39:                         your   resid: 1.77834e-18 klu_time:0.000494 mylu_time:0.000295 speedup: 1.67458
+1151: Sandia/oscil_dcop_40:                         your   resid: 1.77834e-18 klu_time:0.000497 mylu_time:0.000304 speedup: 1.63487
+1152: Sandia/oscil_dcop_41:                         your   resid: 1.77834e-18 klu_time:0.000502 mylu_time:0.000306 speedup: 1.64052
+1153: Sandia/oscil_dcop_42:                         your   resid: 1.77834e-18 klu_time:0.000509 mylu_time:0.000298 speedup: 1.70805
+1154: Sandia/oscil_dcop_43:                         your   resid: 1.77834e-18 klu_time:0.000513 mylu_time:0.000295 speedup: 1.73898
+1155: Sandia/oscil_dcop_44:                         your   resid: 1.77834e-18 klu_time:0.000516 mylu_time:0.000299 speedup: 1.72575
+1156: Sandia/oscil_dcop_45:                         your   resid: 1.77834e-18 klu_time:0.000499 mylu_time:0.000316 speedup: 1.57911
+1157: Sandia/oscil_dcop_46:                         your   resid: 1.77834e-18 klu_time:0.00048 mylu_time:0.000314 speedup: 1.52866
+1158: Sandia/oscil_dcop_47:                         your   resid: 1.77834e-18 klu_time:0.000478 mylu_time:0.000303 speedup: 1.57756
+1159: Sandia/oscil_dcop_48:                         your   resid: 1.77834e-18 klu_time:0.000477 mylu_time:0.00032 speedup: 1.49062
+1160: Sandia/oscil_dcop_49:                         your   resid: 1.77834e-18 klu_time:0.000472 mylu_time:0.000324 speedup: 1.45679
+1161: Sandia/oscil_dcop_50:                         your   resid: 1.77834e-18 klu_time:0.000473 mylu_time:0.000316 speedup: 1.49684
+1162: Sandia/oscil_dcop_51:                         your   resid: 1.77834e-18 klu_time:0.000487 mylu_time:0.000307 speedup: 1.58632
+1163: Sandia/oscil_dcop_52:                         your   resid: 1.77834e-18 klu_time:0.00049 mylu_time:0.000299 speedup: 1.6388
+1164: Sandia/oscil_dcop_53:                         your   resid: 1.77834e-18 klu_time:0.000487 mylu_time:0.000301 speedup: 1.61794
+1165: Sandia/oscil_dcop_54:                         your   resid: 1.77834e-18 klu_time:0.000474 mylu_time:0.000313 speedup: 1.51438
+1166: Sandia/oscil_dcop_55:                         your   resid: 1.77834e-18 klu_time:0.000473 mylu_time:0.000317 speedup: 1.49211
+1167: Sandia/oscil_dcop_56:                         your   resid: 1.77834e-18 klu_time:0.000473 mylu_time:0.000316 speedup: 1.49684
+1168: Sandia/oscil_dcop_57:                         your   resid: 1.77834e-18 klu_time:0.000491 mylu_time:0.0003 speedup: 1.63667
+1169: Sandia/oscil_trans_01:                         your   resid: 1.45228e-17 klu_time:0.000498 mylu_time:0.000273 speedup: 1.82418
+167: HB/hor_131:                         your   resid: 4.27518e-16 klu_time:0.005052 mylu_time:0.011855 speedup: 0.426149
+416: FIDAP/ex2:                         your   resid: 3.03563e-16 klu_time:0.006125 mylu_time:0.014479 speedup: 0.423026
+1634: Bai/rdb450:                         your   resid: 8.63587e-16 klu_time:0.001451 mylu_time:0.00259 speedup: 0.560232
+1635: Bai/rdb450l:                         your   resid: 3.62056e-16 klu_time:0.00138 mylu_time:0.00509 speedup: 0.27112
+1494: Pajek/GD97_c: 	    skip (zero pivot encountered)
+2407: Arenas/celegans_metabolic: 	    skip (zero pivot encountered)
+221: HB/nos5:                         your   resid: 5.54386e-16 klu_time:0.006464 mylu_time:0.009572 speedup: 0.675303
+267: HB/west0479:                         your   resid: 4.75914e-18 klu_time:0.000892 mylu_time:0.000544 speedup: 1.63971
+329: Bai/rbsa480:                         your   resid: 1.23023e-15 klu_time:0.047478 mylu_time:0.025933 speedup: 1.83079
+330: Bai/rbsb480:                         your   resid: 1.21881e-15 klu_time:0.038494 mylu_time:0.025241 speedup: 1.52506
+42: HB/bcsstk20:                         your   resid: 4.81981e-18 klu_time:0.000492 mylu_time:0.007529 speedup: 0.0653473
+70: HB/bcsstm20:                         your   resid: 0 klu_time:0.000152 mylu_time:0.000102 speedup: 1.4902
+2: HB/494_bus:                         your   resid: 9.09144e-17 klu_time:0.000434 mylu_time:0.000266 speedup: 1.63158
+209: HB/mbeacxc: 	    skip (zero pivot encountered)
+210: HB/mbeaflw: 	    skip (zero pivot encountered)
+211: HB/mbeause: 	    skip (zero pivot encountered)
+335: Bai/rw496:                         your   resid: 3.30635e-16 klu_time:0.002072 mylu_time:0.002112 speedup: 0.981061
+268: HB/west0497:                         your   resid: 5.2051e-18 klu_time:0.00053 mylu_time:0.000275 speedup: 1.92727
+321: Bai/olm500:                         your   resid: 4.9471e-18 klu_time:0.000328 mylu_time:0.000221 speedup: 1.48416
+1328: MathWorks/tomography:                         your   resid: 4.44969e-15 klu_time:0.008548 mylu_time:0.041648 speedup: 0.205244
+2209: JGD_Trefethen/Trefethen_500:                         your   resid: 8.90133e-16 klu_time:0.039649 mylu_time:0.048826 speedup: 0.812047
+190: HB/lns_511:                         your   resid: 7.94615e-22 klu_time:0.007665 mylu_time:0.00448 speedup: 1.71094
+193: HB/lnsp_511:                         your   resid: 7.94615e-22 klu_time:0.007813 mylu_time:0.004379 speedup: 1.7842
+166: HB/gre_512:                         your   resid: 1.1588e-15 klu_time:0.005344 mylu_time:0.005858 speedup: 0.912257
+310: Bai/dw256A:                         your   resid: 5.18042e-16 klu_time:0.001044 mylu_time:0.002569 speedup: 0.406384
+311: Bai/dw256B:                         your   resid: 3.44687e-16 klu_time:0.001154 mylu_time:0.00163 speedup: 0.707975
+1616: Bai/dwa512:                         your   resid: 5.18042e-16 klu_time:0.001093 mylu_time:0.00363 speedup: 0.301102
+1617: Bai/dwb512:                         your   resid: 3.44687e-16 klu_time:0.001256 mylu_time:0.001578 speedup: 0.795944
+2357: Rommes/M10PI_n1: 	    skip (zero pivot encountered)
+2365: Rommes/S10PI_n1: 	    skip (zero pivot encountered)
+234: HB/pores_3:                         your   resid: 1.64447e-16 klu_time:0.000893 mylu_time:0.001676 speedup: 0.532816
+145: HB/fs_541_1:                         your   resid: 1.81596e-18 klu_time:0.002546 mylu_time:0.007864 speedup: 0.323754
+146: HB/fs_541_2:                         your   resid: 1.1089e-17 klu_time:0.002292 mylu_time:0.013777 speedup: 0.166364
+147: HB/fs_541_3:                         your   resid: 3.43889e-18 klu_time:0.002263 mylu_time:0.013255 speedup: 0.170728
+148: HB/fs_541_4:                         your   resid: 7.72264e-18 klu_time:0.002946 mylu_time:0.009373 speedup: 0.314307
+339: Boeing/bcsstk34:                         your   resid: 3.94329e-16 klu_time:0.02161 mylu_time:0.02763 speedup: 0.782121
+344: Boeing/bcsstm34:                         your   resid: 8.69633e-16 klu_time:0.032834 mylu_time:0.138563 speedup: 0.236961
+252: HB/steam2:                         your   resid: 6.10595e-16 klu_time:0.007945 mylu_time:0.017281 speedup: 0.459753
+2015: JGD_Homology/ch5-5-b3: 	    skip (zero pivot encountered)
+2561: CPM/cz628:                         your   resid: 3.30766e-16 klu_time:0.002755 mylu_time:0.004254 speedup: 0.647626
+1476: Pajek/GD00_c: 	    skip (zero pivot encountered)
+269: HB/west0655:                         your   resid: 4.75914e-18 klu_time:0.002065 mylu_time:0.001602 speedup: 1.28901
+308: Bai/ck656:                         your   resid: 2.6248e-17 klu_time:0.000575 mylu_time:0.000277 speedup: 2.07581
+418: FIDAP/ex21:                         your   resid: 3.5532e-16 klu_time:0.016958 mylu_time:0.022915 speedup: 0.740039
+3: HB/662_bus:                         your   resid: 5.02212e-17 klu_time:0.000682 mylu_time:0.000495 speedup: 1.37778
+247: HB/shl_0:                         your   resid: 0 klu_time:0.000343 mylu_time:0.000159 speedup: 2.15723
+248: HB/shl_200:                         your   resid: 0 klu_time:0.000434 mylu_time:0.000165 speedup: 2.6303
+249: HB/shl_400:                         your   resid: 0 klu_time:0.000379 mylu_time:0.000163 speedup: 2.32515
+216: HB/nnc666:                         your   resid: 1.9654e-16 klu_time:0.014395 mylu_time:0.002872 speedup: 5.01219
+222: HB/nos6:                         your   resid: 3.35149e-16 klu_time:0.00286 mylu_time:0.002651 speedup: 1.07884
+149: HB/fs_680_1:                         your   resid: 8.08644e-17 klu_time:0.000648 mylu_time:0.000309 speedup: 2.09709
+150: HB/fs_680_2:                         your   resid: 1.0109e-17 klu_time:0.00063 mylu_time:0.000315 speedup: 2
+151: HB/fs_680_3:                         your   resid: 4.0436e-17 klu_time:0.000682 mylu_time:0.000322 speedup: 2.11801
+2361: Rommes/M10PI_n: 	    skip (zero pivot encountered)
+2369: Rommes/S10PI_n: 	    skip (zero pivot encountered)
+4: HB/685_bus:                         your   resid: 1.88064e-17 klu_time:0.000994 mylu_time:0.001069 speedup: 0.929841
+2210: JGD_Trefethen/Trefethen_700:                         your   resid: 1.20418e-15 klu_time:0.116992 mylu_time:0.119114 speedup: 0.982185
+357: Boeing/msc00726:                         your   resid: 9.92532e-16 klu_time:0.084342 mylu_time:0.117217 speedup: 0.719537
+223: HB/nos7:                         your   resid: 3.923e-16 klu_time:0.004956 mylu_time:0.016416 speedup: 0.301901
+152: HB/fs_760_1:                         your   resid: 6.64125e-20 klu_time:0.005132 mylu_time:0.004649 speedup: 1.10389
+153: HB/fs_760_2:                         your   resid: 1.07655e-16 klu_time:0.011503 mylu_time:0.005109 speedup: 2.25152
+154: HB/fs_760_3:                         your   resid: 1.04811e-16 klu_time:0.014447 mylu_time:0.006252 speedup: 2.31078
+213: HB/mcfe:                         your   resid: 2.08724e-16 klu_time:0.019623 mylu_time:0.013191 speedup: 1.48761
+1627: Bai/qh768:                         your   resid: 1.45001e-19 klu_time:0.001075 mylu_time:0.00054 speedup: 1.99074
+1360: PARSEC/Si2:                         your   resid: 2.00938e-15 klu_time:0.151016 mylu_time:0.226982 speedup: 0.665321
+294: Bai/bfwa782:                         your   resid: 4.70664e-16 klu_time:0.005022 mylu_time:0.005093 speedup: 0.986059
+297: Bai/bfwb782:                         your   resid: 3.80843e-16 klu_time:0.002375 mylu_time:0.003176 speedup: 0.747796
+1327: Morandini/rotor2:                         your   resid: 5.66656e-17 klu_time:0.006162 mylu_time:0.008497 speedup: 0.725197
+470: Gset/G10:                         your   resid: 1.84931e-15 klu_time:0.419056 mylu_time:0.731205 speedup: 0.573103
+471: Gset/G11:                         your   resid: 3.67761e-16 klu_time:0.003113 mylu_time:0.003081 speedup: 1.01039
+472: Gset/G12:                         your   resid: 8.50882e-16 klu_time:0.00501 mylu_time:0.00428 speedup: 1.17056
+473: Gset/G13:                         your   resid: 1.26288e-15 klu_time:0.008746 mylu_time:0.004938 speedup: 1.77116
+478: Gset/G18:                         your   resid: 1.42275e-15 klu_time:0.083609 mylu_time:0.36008 speedup: 0.232196
+479: Gset/G19:                         your   resid: 2.40186e-15 klu_time:0.10058 mylu_time:0.381905 speedup: 0.263364
+481: Gset/G20:                         your   resid: 2.49394e-15 klu_time:0.087261 mylu_time:0.322586 speedup: 0.270505
+482: Gset/G21:                         your   resid: 2.04178e-15 klu_time:0.119359 mylu_time:0.339398 speedup: 0.351679
+524: Gset/G6:                         your   resid: 1.64918e-15 klu_time:0.456046 mylu_time:0.661661 speedup: 0.689244
+533: Gset/G7:                         your   resid: 1.62265e-15 klu_time:0.450642 mylu_time:0.664156 speedup: 0.678518
+534: Gset/G8:                         your   resid: 1.68404e-15 klu_time:0.439549 mylu_time:0.675132 speedup: 0.651056
+535: Gset/G9:                         your   resid: 1.65849e-15 klu_time:0.403353 mylu_time:0.631739 speedup: 0.63848
+1636: Bai/rdb800l:                         your   resid: 4.88125e-16 klu_time:0.005902 mylu_time:0.013813 speedup: 0.427279
+41: HB/bcsstk19:                         your   resid: 1.23315e-16 klu_time:0.001644 mylu_time:0.012287 speedup: 0.1338
+69: HB/bcsstm19:                         your   resid: 0 klu_time:0.000435 mylu_time:0.000204 speedup: 2.13235
+82: HB/bp_0:                         your   resid: 0 klu_time:0.001007 mylu_time:0.000257 speedup: 3.91829
+83: HB/bp_1000:                         your   resid: 5.23294e-17 klu_time:0.002209 mylu_time:0.002835 speedup: 0.779189
+84: HB/bp_1200:                         your   resid: 6.02024e-17 klu_time:0.003074 mylu_time:0.003377 speedup: 0.910275
+85: HB/bp_1400:                         your   resid: 2.94353e-17 klu_time:0.002803 mylu_time:0.003503 speedup: 0.800171
+86: HB/bp_1600:                         your   resid: 2.79677e-17 klu_time:0.002817 mylu_time:0.003813 speedup: 0.738788
+87: HB/bp_200:                         your   resid: 9.86286e-18 klu_time:0.001415 mylu_time:0.000829 speedup: 1.70688
+88: HB/bp_400:                         your   resid: 3.01498e-17 klu_time:0.002631 mylu_time:0.000738 speedup: 3.56504
+89: HB/bp_600:                         your   resid: 2.71867e-17 klu_time:0.002519 mylu_time:0.00126 speedup: 1.99921
+90: HB/bp_800:                         your   resid: 5.23294e-17 klu_time:0.001847 mylu_time:0.002889 speedup: 0.639322
+419: FIDAP/ex22:                         your   resid: 2.76813e-16 klu_time:0.009381 mylu_time:0.01836 speedup: 0.510948
+280: HB/young3c:                         your   resid: 7.44579e-16 klu_time:0.001769 mylu_time:0.004431 speedup: 0.399233
+422: FIDAP/ex25:                         your   resid: 2.3519e-16 klu_time:0.030524 mylu_time:0.031109 speedup: 0.981195
+328: Bai/qh882:                         your   resid: 2.4476e-19 klu_time:0.00119 mylu_time:0.000604 speedup: 1.9702
+226: HB/orsirr_2:                         your   resid: 4.09705e-16 klu_time:0.006684 mylu_time:0.020698 speedup: 0.32293
+159: HB/gr_30_30:                         your   resid: 5.63094e-16 klu_time:0.007907 mylu_time:0.007327 speedup: 1.07916
+325: Bai/pde900:                         your   resid: 3.29462e-16 klu_time:0.004477 mylu_time:0.004085 speedup: 1.09596
+2334: Fluorem/DK01R:                         your   resid: 8.15595e-17 klu_time:0.004786 mylu_time:0.003185 speedup: 1.50267
+1478: Pajek/GD01_A: 	    skip (zero pivot encountered)
+218: HB/nos2:                         your   resid: 9.66367e-17 klu_time:0.000603 mylu_time:0.000324 speedup: 1.86111
+219: HB/nos3:                         your   resid: 5.18293e-16 klu_time:0.010998 mylu_time:0.011962 speedup: 0.919411
+300: Bai/cdde1:                         your   resid: 4.59106e-16 klu_time:0.005222 mylu_time:0.005128 speedup: 1.01833
+301: Bai/cdde2:                         your   resid: 7.86168e-16 klu_time:0.005592 mylu_time:0.004807 speedup: 1.1633
+302: Bai/cdde3:                         your   resid: 1.0511e-15 klu_time:0.005434 mylu_time:0.004285 speedup: 1.26814
+303: Bai/cdde4:                         your   resid: 5.99837e-16 klu_time:0.005254 mylu_time:0.005142 speedup: 1.02178
+304: Bai/cdde5:                         your   resid: 7.99886e-16 klu_time:0.00532 mylu_time:0.004726 speedup: 1.12569
+305: Bai/cdde6:                         your   resid: 8.44937e-16 klu_time:0.004586 mylu_time:0.00514 speedup: 0.892218
+333: Bai/rdb968:                         your   resid: 6.83962e-16 klu_time:0.008091 mylu_time:0.022303 speedup: 0.362776
+424: FIDAP/ex27:                         your   resid: 4.69638e-16 klu_time:0.059642 mylu_time:0.0734 speedup: 0.812561
+270: HB/west0989:                         your   resid: 4.74777e-18 klu_time:0.001257 mylu_time:0.000701 speedup: 1.79315
+187: HB/jpwh_991:                         your   resid: 5.26976e-16 klu_time:0.01204 mylu_time:0.021578 speedup: 0.557976
+240: HB/saylr3: 	    skip (zero pivot encountered)
+242: HB/sherman1:                         your   resid: 3.44859e-16 klu_time:0.003076 mylu_time:0.002631 speedup: 1.16914
+319: Bai/olm1000:                         your   resid: 4.96695e-18 klu_time:0.000644 mylu_time:0.000571 speedup: 1.12785
+338: Bai/tub1000:                         your   resid: 5.87087e-17 klu_time:0.000627 mylu_time:0.000394 speedup: 1.59137
+diary off

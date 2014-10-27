@@ -68,10 +68,10 @@ namespace MueLu {
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    std::string ordering       = params.get<std::string>("aggregation: ordering");
-    LO maxNeighAlreadySelected = params.get<LO>         ("aggregation: max selected neighbors");
-    LO minNodesPerAggregate    = params.get<LO>         ("aggregation: min agg size");
-    LO maxNodesPerAggregate    = params.get<LO>         ("aggregation: max agg size");
+    std::string ordering        = params.get<std::string>("aggregation: ordering");
+    int maxNeighAlreadySelected = params.get<int>         ("aggregation: max selected neighbors");
+    int minNodesPerAggregate    = params.get<int>         ("aggregation: min agg size");
+    int maxNodesPerAggregate    = params.get<int>         ("aggregation: max agg size");
 
     TEUCHOS_TEST_FOR_EXCEPTION(maxNodesPerAggregate < minNodesPerAggregate, Exceptions::RuntimeError,
                                "MueLu::UncoupledAggregationAlgorithm::BuildAggregates: minNodesPerAggregate must be smaller or equal to MaxNodePerAggregate!");

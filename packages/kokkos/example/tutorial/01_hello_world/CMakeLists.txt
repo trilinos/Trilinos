@@ -7,6 +7,5 @@ TRIBITS_ADD_EXECUTABLE(
   tutorial_01_hello_world
   SOURCES hello_world.cpp
   COMM serial mpi
-  DEPLIBS kokkoscore
   )
 

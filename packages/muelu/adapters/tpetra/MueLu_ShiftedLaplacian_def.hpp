@@ -349,7 +349,10 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
     precList_.set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: subdomain solver parameters").set("fact: ilut level-of-fill", ilu_leveloffill_);
-    precList_.sublist("schwarz: subdomain solver parameters").set("fact: drop tolerance", ilu_drop_tol_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: absolute threshold", ilu_abs_thresh_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: relative threshold", ilu_rel_thresh_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: drop tolerance",     ilu_drop_tol_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: relax value",        ilu_relax_val_);
   }
   else if(Smoother_=="superilu") {
     precType_ = "superlu";
@@ -370,14 +373,13 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
     precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
   }
   // construct smoother
-  if(Smoother_=="schwarz") {
-    smooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
-  }
-  else {
-    smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,schwarz_overlap_) );
-  }
+  smooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
+#if defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLU)
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
+#else
+  coarsestSmooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
+#endif
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
 
   // Use stiffness matrix to setup prolongation/restriction operators
@@ -578,7 +580,10 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupNormalRAP() 
     precList_.set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: subdomain solver parameters").set("fact: ilut level-of-fill", ilu_leveloffill_);
-    precList_.sublist("schwarz: subdomain solver parameters").set("fact: drop tolerance", ilu_drop_tol_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: absolute threshold", ilu_abs_thresh_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: relative threshold", ilu_rel_thresh_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: drop tolerance",     ilu_drop_tol_);
+    precList_.sublist("schwarz: subdomain solver parameters").set("fact: relax value",        ilu_relax_val_);
   }
   else if(Smoother_=="superilu") {
     precType_ = "superlu";
@@ -599,14 +604,13 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupNormalRAP() 
     precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
   }
   // construct smoother
-  if(Smoother_=="schwarz") {
-    smooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
-  }
-  else {
-    smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,schwarz_overlap_) );
-  }
+  smooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
+#if defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLU)
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
+#else
+  coarsestSmooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
+#endif
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
   Manager_ -> SetFactory("Smoother", smooFact_);
   Manager_ -> SetFactory("CoarseSolver", coarsestSmooFact_);

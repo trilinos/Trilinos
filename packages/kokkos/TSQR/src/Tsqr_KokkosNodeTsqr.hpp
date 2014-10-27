@@ -467,7 +467,7 @@ namespace TSQR {
         combine.apply_first (applyType, C_top.nrows(), C_top.ncols(),
                              Q_top.ncols(), Q_top.get(), Q_top.lda(),
                              &tau[0], C_top.get(), C_top.lda(), &work[0]);
-      } const
+      }
 
       void
       applyCacheBlock (Combine<LocalOrdinal, Scalar>& combine,

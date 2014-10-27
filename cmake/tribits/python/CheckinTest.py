@@ -1880,7 +1880,11 @@ def checkinTest(baseDir, inOptions, configuration={}):
       ["PT"],
       True,
       False,
-      commonConfigOptions + buildopts)
+      commonConfigOptions \
+      + [ cmakeScopedDefine(inOptions.projectName,
+          "ENABLE_SECONDARY_TESTED_CODE:BOOL", "OFF") ] \
+      + buildopts \
+      )
       
   if inOptions.stExtraBuilds:
     for ssExtraBuild in inOptions.stExtraBuilds.split(','):

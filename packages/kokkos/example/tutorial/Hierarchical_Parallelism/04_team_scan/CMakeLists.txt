@@ -7,5 +7,4 @@ TRIBITS_ADD_EXECUTABLE(
   tutorial_hierarchicalparallelism_04_team_scan
   SOURCES team_scan.cpp
   COMM serial mpi
-  DEPLIBS kokkoscontainers kokkoscore
   )

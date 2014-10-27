@@ -267,6 +267,9 @@ void test_task_dep( const int n )
   for ( int i = 0 ; i < NTEST ; ++i ) {
     // Create task in the "constructing" state with capacity for 'n+1' dependences
     f[i] = policy.create( TaskDep<Space>(policy,0) , n + 1 );
+    if ( f[i].get_task_state() != Kokkos::TASK_STATE_CONSTRUCTING ) {
+      Kokkos::Impl::throw_runtime_exception("get_task_state() != Kokkos::TASK_STATE_CONSTRUCTING");
+    }
     // Only use 'n' dependences
     for ( int j = 0 ; j < n ; ++j ) {
       Kokkos::Future<int,Space> nested = policy.spawn( TaskDep<Space>(policy,j+1) );
@@ -282,6 +285,9 @@ void test_task_dep( const int n )
   int error = 0 ;
   for ( int i = 0 ; i < NTEST ; ++i ) {
     Kokkos::wait( policy , f[i] );
+    if ( f[i].get_task_state() != Kokkos::TASK_STATE_COMPLETE ) {
+      Kokkos::Impl::throw_runtime_exception("get_task_state() != Kokkos::TASK_STATE_COMPLETE");
+    }
     if ( answer != f[i].get() && 0 == error ) {
       std::cout << "test_task_dep(" << n << ") ERROR at[" << i << "]"
                 << " answer(" << answer << ") != result(" << f[i].get() << ")" << std::endl ;

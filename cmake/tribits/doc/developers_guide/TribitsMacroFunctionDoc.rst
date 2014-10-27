@@ -2859,7 +2859,8 @@ TRIBITS_TPL_DECLARE_LIBRARIES()
 
 Function that sets up cache variables for users to specify where to find a
 `TriBITS TPL`_'s headers and libraries.  This function is typically called
-inside of a ``FindTPL<tplName>.cmake`` file (see `${TPL_NAME}_FINDMOD`_).
+inside of a ``FindTPL<tplName>.cmake`` moulde file (see
+`${TPL_NAME}_FINDMOD`_).
 
 Usage::
 
@@ -2880,22 +2881,22 @@ The input arguments to this function are:
   ``<tplName>``
 
     Name of the TPL that is listed in a `<repoDir>/TPLsList.cmake`_ file.
-    Below, this is referred to as the local CMake variable ``TPL_NAME``.
 
   ``REQUIRED_HEADERS``
 
     List of header files that are searched in order to find the TPL's
-    include directories files using ``FIND_PATH()``.
+    include directories files using ``FIND_PATH()``. 
 
   ``MUST_FIND_ALL_HEADERS``
 
     If set, then all of the header files listed in ``REQUIRED_HEADERS`` must
-    be found in order for ``TPL_${TPL_NAME}_INCLUDE_DIRS`` to be defined.
+    be found in order for ``TPL_<tplName>_INCLUDE_DIRS`` to be defined.
 
   ``REQUIRED_LIBS_NAMES``
 
     List of libraries that are searched for when looking for the TPL's
-    libraries using ``FIND_LIBRARY()``.
+    libraries using ``FIND_LIBRARY()``.  This list can be overridden by the
+    user by setting ``<tplName>_LIBRARY_DIRS`` (see below).
 
   ``MUST_FIND_ALL_LIBS``
 
@@ -2911,22 +2912,19 @@ support for an optional Third-Party Library (TPL)`_.
 
 The following (cache) variables, if set, will be used by that this function:
 
-  ``${TPL_NAME}_INCLUDE_DIRS`` (type ``PATH``)
+  ``<tplName>_INCLUDE_DIRS`` (type ``PATH``)
 
     List of paths to search first for header files defined in
     ``REQUIRED_HEADERS``.
 
-  ``${TPL_NAME}_INCLUDE_NAMES`` (type ``STRING``)
-
-    List of include file names to be looked for instead of what is specified
-    in ``REQUIRED_HEADERS``.
-
-  ``${TPL_NAME}_LIBRARY_DIRS`` (type ``PATH``)
+  ``<tplName>_LIBRARY_DIRS`` (type ``PATH``)
 
     The list of directories to search first for libraries defined in
-    ``REQUIRED_LIBS_NAMES``.
+    ``REQUIRED_LIBS_NAMES``.  If, for some reason, no libraries should be
+    linked in for this particular configuration, then setting
+    ``<tplName>_LIBRARY_DIRS=OFF`` will 
 
-  ``${TPL_NAME}_LIBRARY_NAMES`` (type ``STRING``)
+  ``<tplName>_LIBRARY_NAMES`` (type ``STRING``)
 
     List of library names to be looked for instead of what is specified in
     ``REQUIRED_LIBS_NAMES``.
@@ -2935,20 +2933,54 @@ This function sets global variables to return state so it can be called from
 anywhere in the call stack.  The following cache variables are defined that
 are intended for the user to set and/or use:
 
-  ``TPL_${TPL_NAME}_INCLUDE_DIRS`` (type ``PATH``)
+  ``TPL_<tplName>_INCLUDE_DIRS`` (type ``PATH``)
 
     A list of common-separated full directory paths that contain the TPL's
     header files.  If this variable is set before calling this function,
     then no headers are searched for and this variable will be assumed to
     have the correct list of header paths.
 
-  ``TPL_${TPL_NAME}_LIBRARIES`` (type ``FILEPATH``)
+  ``TPL_<tplName>_LIBRARIES`` (type ``FILEPATH``)
 
     A list of commons-separated full library names (i.e. output from
     ``FIND_LIBRARY()``) for all of the libraries found for the TPL.  If this
     variable is set before calling this function, then no libraries are
     searched for and this variable will be assumed to have the correct list
     of libraries to link to.
+
+  ``TPL_<tplName>_NOT_FOUND`` (type ``BOOL``)
+
+    Will be set to ``ON`` if all of the parts of the TPL could not be found.
+
+ToDo: Document the behavior of this function for finding headers and
+libraries and when a find is successful and when it is not.
+
+Note, if ``TPL_TENTATIVE_ENABLE_<tplName>=ON``, then if all of the parts of
+the TPL can't be found, then ``TPL_ENABLE_<tplName>`` will be (forced) set
+to ``OFF`` in the cache.  See `TRIBITS_TPL_TENTATIVELY_ENABLE()`_.
+
+TRIBITS_TPL_TENTATIVELY_ENABLE()
+++++++++++++++++++++++++++++++++
+
+Function that sets up for an optionally enabled TPL that is attempted to be
+enabled but will be disabled if all of the parts are not found.
+
+Usage::
+
+  TRIBITS_TPL_TENTATIVELY_ENABLE(<tplName>)
+
+This function can be called from any CMakeLists.txt file to put a TPL in
+tentative enable mode.
+
+This should only be used for optional TPLs.  It will not work correctly for
+required TPLs because any enabled packages that require this TPL will not be
+disabled and instead will fail to configure or fail to build.
+
+All this function does is to force set ``TPL_ENABLE_<tplName>=ON`` if it has
+not already been set. and ``TPL_TENTATIVE_ENABLE_<tplName>`` in the cache.
+
+NOTE: This function will only tentatively enable a TPL it its enable has not
+be explicitly set on input, i.e. if ``TPL_ENABLE_<tplName>=""``.
 
 TRIBITS_VERBOSE_PRINT_VAR()
 +++++++++++++++++++++++++++

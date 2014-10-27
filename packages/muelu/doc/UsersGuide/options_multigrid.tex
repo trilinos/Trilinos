@@ -1,22 +1,23 @@
 
 \cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: see Table~\ref{t:mgs}.}
-
+          
 \cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
-
+          
 \cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
-
+          
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
-
+          
 \cbb{filtered matrix: use lumping}{bool}{true}{Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.}
-
+          
 \cbb{filtered matrix: reuse eigenvalue}{bool}{true}{Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.}
-
+          
 \cbb{emin: iterative method}{string}{"cg"}{Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "sd" (steepest descent).}
-
+          
 \cbb{emin: num iterations}{int}{2}{Number of iterations to minimize initial prolongator energy in energy-minimization.}
-
+          
 \cbb{emin: num reuse iterations}{int}{1}{Number of iterations to minimize the reused prolongator energy in energy-minimization.}
-
+          
 \cbb{emin: pattern}{string}{"AkPtent"}{Sparsity pattern to use for energy minimization. Possible values: "AkPtent".}
-
+          
 \cbb{emin: pattern order}{int}{1}{Matrix order for the "AkPtent" pattern.}
+          
