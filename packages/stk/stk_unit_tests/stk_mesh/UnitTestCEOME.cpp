@@ -599,6 +599,9 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     size_t numNodes = 10;
     std::vector<bool> nodeSharing;
     std::vector<int> nodeSharingProcs;
+    size_t numEdges = 1;
+    std::vector<bool> edgeSharing;
+    std::vector<int> edgeSharingProcs;
 
     std::vector<stk::mesh::Entity> modifiedEntities;
 
@@ -608,6 +611,10 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
         nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
         int procIdsNode[] = {-1, -1, 1, 1, 1, 1, 3, 3, -1, -1};
         nodeSharingProcs.assign(procIdsNode, procIdsNode + numNodes);
+        bool isEdgeShared[] = {true};
+        int procIdsEdge[] = {3};
+        edgeSharing.assign(isEdgeShared, isEdgeShared + numEdges);
+        edgeSharingProcs.assign(procIdsEdge, procIdsEdge + numEdges);
     }
     else if(p_rank == 1)
     {
@@ -615,6 +622,10 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
         nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
         int procIdsNode[] = {-1, -1, 0, 0, 0, 0, -1, -1, -1, -1};
         nodeSharingProcs.assign(procIdsNode, procIdsNode + numNodes);
+        bool isEdgeShared[] = {false};
+        int procIdsEdge[] = {-1};
+        edgeSharing.assign(isEdgeShared, isEdgeShared + numEdges);
+        edgeSharingProcs.assign(procIdsEdge, procIdsEdge + numEdges);
     }
     else if(p_rank == 2)
     {
@@ -622,6 +633,10 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
         nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
         int procIdsNode[] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
         nodeSharingProcs.assign(procIdsNode, procIdsNode + numNodes);
+        bool isEdgeShared[] = {false};
+        int procIdsEdge[] = {-1};
+        edgeSharing.assign(isEdgeShared, isEdgeShared + numEdges);
+        edgeSharingProcs.assign(procIdsEdge, procIdsEdge + numEdges);
     }
     else
     {
@@ -629,6 +644,10 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
         nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
         int procIdsNode[] = {-1, -1, -1, -1, -1, -1, 0, 0, -1, -1};
         nodeSharingProcs.assign(procIdsNode, procIdsNode + numNodes);
+        bool isEdgeShared[] = {true};
+        int procIdsEdge[] = {0};
+        edgeSharing.assign(isEdgeShared, isEdgeShared + numEdges);
+        edgeSharingProcs.assign(procIdsEdge, procIdsEdge + numEdges);
     }
 
     EXPECT_EQ(numNodes, nodeSharing.size());
@@ -651,16 +670,35 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
         }
     }
 
+//    {
+//        stk::mesh::EntityKey key(stk::topology::EDGE_RANK, 1);
+//        stk::mesh::Entity edge = mesh.get_entity(key);
+////        mesh.mark_entity(edge,stk::mesh::BulkData::POSSIBLY_SHARED);
+//        if(CEOUtils::isEntityInSharingCommMap(mesh, edge) )
+//        {
+//            modifiedEntities.push_back(edge);
+//        }
+//        CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
+//    }
+    for(size_t i = 0; i < edgeSharing.size(); i++)
     {
-        stk::mesh::EntityKey key(stk::topology::EDGE_RANK, 1);
-        stk::mesh::Entity edge = mesh.get_entity(key);
-//        mesh.mark_entity(edge,stk::mesh::BulkData::POSSIBLY_SHARED);
-        if(CEOUtils::isEntityInSharingCommMap(mesh, edge) )
+        stk::mesh::Entity edge = mesh.get_entity(stk::topology::EDGE_RANK, i + 1);
+
+        if(CEOUtils::isEntityInSharingCommMap(mesh, edge) && !edgeSharing[i])
         {
             modifiedEntities.push_back(edge);
         }
+
+        stk::mesh::EntityKey key(stk::topology::EDGE_RANK, i + 1);
         CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
+
+        if(edgeSharing[i])
+        {
+            CEOUtils::addSharingInfo(mesh, edge, stk::mesh::BulkData::SHARED, edgeSharingProcs[i]);
+            modifiedEntities.push_back(edge);
+        }
     }
+
 
     update_mesh_based_on_changed_sharing_info(mesh, modifiedEntities);
 
