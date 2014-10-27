@@ -43,6 +43,18 @@
 //@HEADER
 */
 
+//
+// First Kokkos::View (multidimensional array) example:
+//   1. Start up Kokkos
+//   2. Allocate a Kokkos::View
+//   3. Execute a parallel_for and a parallel_reduce over that View's data
+//   4. Shut down Kokkos
+//
+// Compare this example to 03_simple_view_lambda, which uses C++11
+// lambdas to define the loop bodies of the parallel_for and
+// parallel_reduce.
+//
+
 #include <Kokkos_Core.hpp>
 #include <cstdio>
 
@@ -50,18 +62,17 @@
 // of dimensions is specified at compile time, as part of the type of
 // the View.  This array has two dimensions.  The first one
 // (represented by the asterisk) is a run-time dimension, and the
-// second (represented by [3]) is a compile-time dimension.
-//
-// Thus, this View type is an N x 3 array of type double, where N is
+// second (represented by [3]) is a compile-time dimension.  Thus,
+// this View type is an N x 3 array of type double, where N is
 // specified at run time in the View's constructor.
 //
 // The first dimension of the View is the dimension over which it is
 // efficient for Kokkos to parallelize.
 typedef Kokkos::View<double*[3]> view_type;
 
-// parallel_for functor that fill the View given to its constructor.
+// parallel_for functor that fills the View given to its constructor.
 // The View must already have been allocated.
-struct init_view {
+struct InitView {
   view_type a;
 
   // Views have "view semantics."  This means that they behave like
@@ -69,7 +80,7 @@ struct init_view {
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  init_view (view_type a_) :
+  InitView (view_type a_) :
     a (a_)
   {}
 
@@ -103,20 +114,31 @@ struct ReduceFunctor {
   }
 };
 
-int main() {
-  Kokkos::initialize ();
+int main (int argc, char* argv[]) {
+  Kokkos::initialize (argc, argv);
+  const int N = 10;
 
-  // Initialize the View.  The first dimension is a run-time parameter
+  // Allocate the View.  The first dimension is a run-time parameter
   // N.  We set N = 10 here.  The second dimension is a compile-time
   // parameter, 3.  We don't specify it here because we already set it
   // by declaring the type of the View.
-  view_type a ("A", 10);
+  //
+  // Views get initialized to zero by default.  This happens in
+  // parallel, using the View's memory space's default execution
+  // space.  Parallel initialization ensures first-touch allocation.
+  // There is a way to shut off default initialization.
+  //
+  // You may NOT allocate a View inside of a parallel_{for, reduce,
+  // scan}.  Treat View allocation as a "thread collective."
+  //
+  // The string "A" is just the label; it only matters for debugging.
+  // Different Views may have the same label.
+  view_type a ("A", N);
 
-  Kokkos::parallel_for (10, init_view (a));
+  Kokkos::parallel_for (N, InitView (a));
   double sum = 0;
-  Kokkos::parallel_reduce (10, ReduceFunctor (a), sum);
+  Kokkos::parallel_reduce (N, ReduceFunctor (a), sum);
   printf ("Result: %lf\n", sum);
-
   Kokkos::finalize ();
 }
 
