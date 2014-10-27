@@ -48,17 +48,27 @@
 #include <typeinfo>
 
 //
-// "Hello world" example: start up Kokkos, execute a parallel for loop
-// using a lambda (C++11 anonymous function) to define the loop body,
-// and shut down Kokkos.
+// "Hello world" parallel_for example:
+//   1. Start up Kokkos
+//   2. Execute a parallel for loop in the default execution space,
+//      using a C++11 lambda to define the loop body
+//   3. Shut down Kokkos
+//
+// This example only builds if C++11 is enabled.  Compare this example
+// to 01_hello_world, which uses functors (explicitly defined classes)
+// to define the loop body of the parallel_for.  Both functors and
+// lambdas have their places.
 //
 
-int main() {
-  // You must call initialize() before you may call Kokkos.  Without
-  // any arguments, this initializes the default execution space (and
-  // potentially its host execution space) with default parameters.
-  // You may also pass in argc and argv, analogously to MPI_Init().
-  Kokkos::initialize ();
+int main (int argc, char* argv[]) {
+  // You must call initialize() before you may call Kokkos.
+  //
+  // With no arguments, this initializes the default execution space
+  // (and potentially its host execution space) with default
+  // parameters.  You may also pass in argc and argv, analogously to
+  // MPI_Init().  It reads and removes command-line arguments that
+  // start with "--kokkos-".
+  Kokkos::initialize (argc, argv);
 
   // Print the name of Kokkos' default execution space.  We're using
   // typeid here, so the name might get a bit mangled by the linker,
@@ -78,11 +88,6 @@ int main() {
   // their own values of the loop counter, which is why you pass it in
   // by value and not reference.
   //
-  // The Kokkos::DefaultExecutionSpace typedef gives the default
-  // execution space.  Depending on how Kokkos was configured, this
-  // could be OpenMP, Threads, Cuda, Serial, or even some other
-  // execution space.
-  //
   // The following line of code would look like this in OpenMP:
   //
   // #pragma omp parallel for
@@ -96,9 +101,7 @@ int main() {
     printf ("Hello from i = %i\n", i);
   });
 
-  // You must call finalize() after you are done using Kokkos.  This
-  // shuts down the default execution space (and possibly its host
-  // execution space).
+  // You must call finalize() after you are done using Kokkos.
   Kokkos::finalize ();
 }
 
