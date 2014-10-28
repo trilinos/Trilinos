@@ -3957,24 +3957,6 @@ TEST(BulkData, STK_ParallelPartConsistency_ChangeBlock)
 
   mesh.modification_end();
 
-  for (stk::mesh::EntityRank erank = stk::topology::NODE_RANK; erank <= stk::topology::ELEMENT_RANK; ++erank)
-  {
-    std::vector<stk::mesh::Entity> entities;
-    stk::mesh::get_entities(mesh, erank, entities);
-    for(size_t e=0; e<entities.size(); ++e)
-    {
-      stk::mesh::Entity entity = entities[e];
-      std::cout << "Entity " << mesh.entity_key(entity) << " Parts: ";
-      const stk::mesh::PartVector & entity_parts = mesh.bucket(entity).supersets();
-      for(stk::mesh::PartVector::const_iterator part_iter = entity_parts.begin(); part_iter != entity_parts.end(); ++part_iter)
-      {
-        const stk::mesh::Part * const part = *part_iter;
-        std::cout << "\"" << part->name() << "\"" << " ";
-      }
-      std::cout << std::endl;
-    }
-  }
-
   // check that shared nodes are now members of both blocks
   EXPECT_TRUE(mesh.bucket(node2).member(block_1));
   EXPECT_TRUE(mesh.bucket(node5).member(block_1));
