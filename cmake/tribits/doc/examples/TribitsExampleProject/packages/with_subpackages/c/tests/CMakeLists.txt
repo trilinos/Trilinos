@@ -1,3 +1,6 @@
+IF(WithSubpackagesB_ENABLE_ExternalPkg)
+  SET(EXPECTED_EXTERNALPKG_DEPS "ExternalPkg no_deps ")
+ENDIF()
 
 TRIBITS_ADD_TEST( c_util
   NOEXEPREFIX  NOEXESUFFIX
@@ -5,7 +8,7 @@ TRIBITS_ADD_TEST( c_util
   NAME test_of_c_util
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION
-    "Called c_util: A no_deps no_deps no_deps"
+    "Called c_util: A no_deps ${EXPECTED_EXTERNALPKG_DEPS}no_deps no_deps"
   ADDED_TESTS_NAMES_OUT  c_util_TEST_NAME
   )
 

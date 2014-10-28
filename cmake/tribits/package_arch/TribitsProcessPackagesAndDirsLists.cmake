@@ -41,6 +41,7 @@
 INCLUDE(SetCacheOnOffEmpty)
 INCLUDE(MultilineSet)
 INCLUDE(AdvancedOption)
+INCLUDE(AdvancedSet)
 INCLUDE(AssertDefined)
 INCLUDE(PrintVar)
 INCLUDE(MessageWrapper)
@@ -141,56 +142,60 @@ ENDMACRO()
 
 
 #
-# @MACRO: TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
+# @FUNCTION: TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
 #
-# Allow listed packages to be missing.  This macro is typically called in a
-# Package's `<packageDir>/cmake/Dependencies.cmake`_ file but it can also be
-# called in a `<repoDir>/PackagesLists.cmake`_ file.
+# Allow listed packages to be missing and automatically excluded from the
+# package dependency data-structures.
 #
 # Usage::
 #
 #   TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<pkg0> <plg1> ...)
 #
 # If the missing upstream SE package ``<pkgi>`` is optional, then the effect
-# will be to simply ignore the missing package and remove it from the
-# dependency list for downstream SE packages that have an optional dependency
-# on the missing upstream SE package.  However, all downstream SE packages
-# that have a required dependency on the missing upstream SE package
+# will be to simply ignore the missing package (never added to package's list
+# and not added to dependency data-structures) and remove it from the
+# dependency lists for downstream SE packages that have an optional dependency
+# on the missing upstream SE package ``<pkgi>``.  However, all downstream SE
+# packages that have a required dependency on the missing upstream SE package
 # ``<pkgi>`` will be hard disabled,
 # i.e. ``${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF``.
+# 
+# This macro just sets the cache variable
+# ``<pkgi>_ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE`` for each SE package
+# ``<pkgi>``.  **WARNING**: Using this function effectively turns off error
+# checking for misspelled package names so it is important to only use it when
+# it absolutely is needed.  Therefore, when doing development involving these
+# packages, it is usually a good idea to set::
 #
-# This function is typically used for marking packages in external TriBITS
-# repos where the repos might be missing.  This allows the downstream repos
-# and packages to still be enabled (assuming they don't have required
-# dependencies on the missing packages) when one or more upstream repos are
-# missing.
+#   -D<pkgi>_ALLOW_MISSING_EXTERNAL_PACKAGE=FALSE
 #
-# Using this function effectively turns off error checking for misspelled
-# package names so it is important to only use it when it absolutely is
-# needed.  The typical place to call this macro is in the
-# `<packageDir>/cmake/Dependencies.cmake`_ files for the packages who list
-# dependencies on the possibility missing upstream SE package(s).  Therefore,
-# if a given package is not defined, the ``Dependencies.cmake`` file that
-# calls this macro will not be processed and the error checking for the listed
-# packages will not be turned off.  Otherwise, this macro can also be called
-# from any file processed at the top-level scope *before* all of the
-# ``<packageDir>/cmake/Dependencies.cmake`` files are processed (see `Reduced
-# Package Dependency Processing`_).  For tweaking at the project level, likely
-# the best place to call this macro is in the file
-# `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_.  In this way, it will
-# not turn off error checking in other projects where the given packages may
-# always be required and therefore one does not want to turn off error
-# checking for mispelled package names.
+# so that it will catch errors in the mispelling of package names or source
+# directories.
 #
-# NOTE: Currently, this macro just sets the non-cache local variables
-# ``<pkgi>__ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE``.  Therefore this macro must
-# be called from the top-level CMake project scope for it to have an effect.
+# This macro is typically called in one of two different contexts:
 #
-MACRO(TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES)
+# * Called from `<packageDir>/cmake/Dependencies.cmake`_ when the upstream
+#   package ``<pkgi>`` is defined in an optional upstream `TriBITS
+#   Repository`_.  This allows the downstream repos and packages to still be
+#   enabled (assuming they don't have required dependencies on the missing
+#   packages) when one or more upstream repos are missing.
+#
+# * Called from `<repoDir>/PackagesList.cmake`_ when the package ``<pkgi>``
+#   might be defined in an optional non-TriBITS repo (see `How to insert a
+#   package into an upstream repo`_).
+#
+# For some meta-projects that composes packages from may different TriBITS
+# repositories, one might need to call this function from the file
+# `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_.
+#
+FUNCTION(TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES)
   FOREACH(TRIBITS_PACKAGE ${ARGN})
-    SET(${TRIBITS_PACKAGE}_ALLOW_MISSING_EXTERNAL_PACKAGE TRUE)
+    ADVANCED_SET(${TRIBITS_PACKAGE}_ALLOW_MISSING_EXTERNAL_PACKAGE TRUE
+      CACHE BOOL
+      "Default set by TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()!"
+      )
   ENDFOREACH()
-ENDMACRO()
+ENDFUNCTION()
 
 
 #
@@ -513,7 +518,10 @@ MACRO(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
         SET(PACKAGE_EXISTS FALSE)
       ENDIF()
 
-      IF (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES AND NOT PACKAGE_EXISTS)
+      IF (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES
+        AND NOT PACKAGE_EXISTS
+        AND NOT ${TRIBITS_PACKAGE}_ALLOW_MISSING_EXTERNAL_PACKAGE
+        )
         MESSAGE(
           "\n***"
           "\n*** Error, the package ${TRIBITS_PACKAGE} directory ${PACKAGE_ABS_DIR} does not exist!"

@@ -1341,7 +1341,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_HeaderOnlyTpl_Fail
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
       "Processing enabled TPL: HeaderOnlyTpl .enabled by SimpleCxx, disable with -DTPL_ENABLE_HeaderOnlyTpl=OFF."
-      "-- Searching in HeaderOnlyTpl_INCLUDE_DIRS='/path_does_not_exist'"
+      "-- Searching for headers in HeaderOnlyTpl_INCLUDE_DIRS='/path_does_not_exist'"
       "-- TIP: If the TPL 'HeaderOnlyTpl' is on your system then you can set:"
       "-DHeaderOnlyTpl_INCLUDE_DIRS='<dir0>[;]<dir1>[;]...'"
       "-DTPL_HeaderOnlyTpl_INCLUDE_DIRS='<dir0>[;]<dir1>[;]...'"
@@ -1396,4 +1396,76 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_HeaderOnlyTpl_HardEnable_Fail
       "-- Configuring incomplete, errors occurred!"
   )
 
-# ToDo: Add test for tentatively enabled HeaderOnlyTpl TPL and assert behavior ...
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ExternalPkg
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  OVERALL_NUM_MPI_PROCS 1
+
+  TEST_0
+    MESSAGE "Copy TribitsExampleProject so that we can copy in ExteranlPkg."
+    CMND cp
+    ARGS -r ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject .
+
+  TEST_1
+    MESSAGE "Configure to get the compiler options"
+    CMND ${CMAKE_COMMAND}
+    ARGS
+      ${COMMON_ENV_ARGS_PASSTHROUGH}
+      -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -DTribitsExProj_ENABLE_Fortran=OFF
+      -DTribitsExProj_ENABLE_DEBUG=OFF
+      TribitsExampleProject
+    PASS_REGULAR_EXPRESSION_ALL
+      "Configuring done"
+      "Generating done"
+
+  TEST_2
+    MESSAGE "Configure asserting existence of missing ExternalPkg"
+    CMND ${CMAKE_COMMAND}
+    ARGS
+      -DExternalPkg_ALLOW_MISSING_EXTERNAL_PACKAGE=FALSE
+      .
+    PASS_REGULAR_EXPRESSION_ALL
+      "Error, the package ExternalPkg directory .+/TribitsExampleProject/ExternalPkg does not exist!"
+      "CMake Error at .+/TribitsProcessPackagesAndDirsLists.cmake:[0-9]+ .MESSAGE.:"
+      "Configuring incomplete, errors occurred!"
+
+  TEST_3
+    MESSAGE "Copy ExteranlPkg to base dir."
+    CMND cp
+    ARGS -r ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/ExternalPkg
+      TribitsExampleProject/.
+
+
+  TEST_4
+    MESSAGE "Configure all packages"
+    CMND ${CMAKE_COMMAND}
+    ARGS
+      -DTribitsExProj_ENABLE_ALL_PACKAGES=ON 
+      -DTribitsExProj_ENABLE_SECONDARY_TESTED_CODE=ON
+      -DTribitsExProj_ENABLE_TESTS=ON
+     .
+    PASS_REGULAR_EXPRESSION_ALL
+      "Setting TribitsExProj_ENABLE_ExternalPkg=ON"
+      "Final set of enabled packages:  SimpleCxx ExternalPkg .+"
+      "Final set of enabled SE packages:  SimpleCxx ExternalPkg .+"
+      "Configuring done"
+      "Generating done"
+
+  TEST_5 CMND make
+    ARGS ${CTEST_BUILD_FLAGS}
+    PASS_REGULAR_EXPRESSION_ALL
+      "Built target externalpkg"
+      "Linking CXX executable ExternalPkg_test.exe"
+
+  TEST_6 CMND ${CMAKE_CTEST_COMMAND} ARGS -VV
+    PASS_REGULAR_EXPRESSION_ALL
+      "ExternalPkg_test${TEST_MPI_1_SUFFIX} [.]+   Passed"
+      "100% tests passed, 0 tests failed out of"
+
+  # ToDo: Add usage of ExternalPkg in downstream package.
+
+  )
+
+
+

@@ -1129,8 +1129,9 @@ In short, a TriBITS Repository:
   ``${REPOSITORY_NAME}_SOURCE_DIR`` and ``${REPOSITORY_NAME}_BINARY_DIR``.
 * Defines a common set of initializations and other hooks for a all the
   packages in the repository.
-* Typically maps to a VC (i.e. git) repository and therefore represents a
-  unit of integration, versioning and reuse.
+* Typically maps to a VC (i.e. git) repository and therefore represents a unit
+  of integration, versioning and reuse.  (But core TriBITS has no dependency
+  on any VC tool.)
 
 For more details on the definition of a TriBITS Repository, see:
 
@@ -1175,10 +1176,11 @@ with their directories and other properties.  For example, the file
    :literal:
 
 Other commands that are appropriate to use in this file include
-`TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.  Also, if the binary directory for
-any package ``<packageName>`` needs to be changed from the default, then the
-variable ``<packageName>_SPECIFIED_BINARY_DIR`` can be set.  One can see an
-example of this in the file ``TriBITS/PackageList.cmake`` which shows
+`TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_ and
+`TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.  Also, if the binary directory
+for any package ``<packageName>`` needs to be changed from the default, then
+the variable ``<packageName>_SPECIFIED_BINARY_DIR`` can be set.  One can see
+an example of this in the file ``TriBITS/PackageList.cmake`` which shows
 
 .. include:: ../../PackagesList.cmake
    :literal:
@@ -2670,9 +2672,10 @@ order listed in the ``TribitsExampleProject/PackagesList.cmake`` file:
    :literal:
 
 From this file, we get the list of top-level packages ``SimpleCxx``,
-``MixedLang``, ``WithSubpackages``, and ``WrapExternal`` (and their
-base package directories and testing group, see
-`<repoDir>/PackagesList.cmake`_).
+``MixedLang``, ``WithSubpackages``, and ``WrapExternal`` (and their base
+package directories and testing group, see `<repoDir>/PackagesList.cmake`_).
+(NOTE: By default the package ``ExternalPkg`` is not defined because its
+directory is missing, see `How to insert a package into an upstream repo`_.)
 
 A full listing of package files in `TribitsExampleProject Files and
 Directories`_ is only shown for the ``SimpleCxx`` package directory
@@ -5341,27 +5344,75 @@ How to insert a package into an upstream repo
 ---------------------------------------------
 
 Sometimes it is desired to insert a package from a downstream VC repo into an
-upstream repo in order for one or more packages in the upstream repo to define
-a dependency on that package.  While TriBITS does not provide direct support
-for doing this, it is easy to set up.  For example, say you want to add the
-package ``PackageFromDownstreamRepo`` who's source is provided in a downstream
-VC repo (i.e. listed later in the
-`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file).  This was done in
-several different TriBITS projects at one point such as Trilinos (with Dakota
-wrapped in the TriKota package) and in the MPACT project (with one of their
-sensitive packages).  There are a few different ways to accomplish this and
-choosing an approach depends on a few details.  One issue is that the
-downstream repo and the extra package may be allowed to be missing.  If so,
-then all of the packages that define a dependency on the potentially missing
-package must declare that the package might be missing by calling
-`TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_ in the SE package's
-``Dependencies.cmake`` file.
+upstream `TriBITS Repository`_ in order for one or more packages in the
+upstream repo to define a dependency on that package.  The way this is
+supported in TriBITS is to just list the inserted package into the
+``PackagesList.cmake`` file of the upstream TriBITS repo after the packages it
+depends on and before the packages that will use it then call the
+`TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_ function to allow the package to
+be missing.  This is demonstrated in `TribitsExampleProject`_ with the package
+``ExternalPkg`` which is **not** included in the default
+``TribitsExampleProject`` source tree.  The
+`TribitsExampleProject`_/``PackagesList.cmake`` file looks like:
 
-.. ToDo: Create an example where a package is inserted into
-.. TribitsExampleProject and is listed as an extra repo in an
-.. ExtraRepositoriesList.cmake file.  To test and demonstrate this example we
-.. would have to copy the TribitsExampleProject source into the build tree,
-.. then copy in the extra package source, then configure the project.
+.. include:: ../examples/TribitsExampleProject/PackagesList.cmake
+   :literal:
+
+In this example, the subpackage ``ExternalPkg`` has a required dependency on
+``SimpleCxx`` and ``WithSubpackagesB`` has an optional dependency on
+``ExternalPkg``.  Therefore, the inserted package ``ExternalPkg`` has upstream
+and downstream dependencies.
+
+What the function ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`` does is to
+tell TriBITS to treat ``ExternalPkg`` the same as any other package if the
+directory ``TribitsExampleProject/ExternalPkg`` exists and to otherwise
+complete ignore the package ``ExternalPkg`` if the source for the package does
+not exist.  In addition, TriBITS will automatically disable of all downstream
+package dependencies for the missing package.
+
+The way one would set up ``TribitsExampleProject`` to enable ``ExternalPkg``,
+if these were in separate VC (e.g. git) repos for example, would be to do::
+
+  $ git clone <some-url-base>/TribitsExampleProject
+  $ cd TribitsExampleProject
+  $ git clone <some-other-url-base>/ExteranlPkg
+  $ echo /ExternalPkg/ >> .git/info/excludes
+
+Then, when you configure ``TribitsExampleProject``, the package
+``ExternalPkg`` would automatically appear and could then be enabled or
+disabled like any other TriBITS package.  The TriBITS test
+``Tribits_TribitsExampleProject_ExternalPkg`` demonstrates this.
+
+Assuming that one would put the (new) external package in a separate VC repo,
+one would perform the following steps:
+
+1) Pick a name for the new inserted external package ``<insertedPackageName>``
+   (see `Globally unique TriBITS package names`_).  (NOTE: The external
+   package may already exist in which case the name would already be
+   selected).
+
+2) Create a new VC repo containing the new package ``<insertedPackageName>``
+   or add it to an existing extra VC repo. (Or, add the new package to an
+   existing downstream repo but don't add it to the ``PackagesList.cmake``
+   file to downstream repo.  That would define the package twice!)
+
+3) Clone the downstream VC repo under the upstream TriBITS repository.  (This
+   is currently needed since TriBITS only allows package dirs to be contained
+   under the repository directory.)
+
+4) Insert the package into the `<repoDir>/PackagesList.cmake`_ file as
+   described in `How to Add a new TriBITS Package`_ except one must also call
+   ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<insertedPackageName>)`` as
+   described above.
+
+5) Flesh out the new package and use it in downstream SE packages just like it
+   was any other package.  But note that any downstream SE package that has a
+   required dependency on ``<insertedPackageName>`` will always be hard
+   disabled when the source for ``<insertedPackageName>`` is missing.
+
+6) When configuring and building to get the package working, add
+   ``-D<insertedPackageName>_ALLOW_MISSING_EXTERNAL_PACKAGE=FALSE`` so that
+   TriBITS will catch mistakes in specifying the package directory.
 
 
 Additional Topics
