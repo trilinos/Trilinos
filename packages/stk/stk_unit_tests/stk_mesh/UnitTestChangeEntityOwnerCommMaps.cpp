@@ -106,11 +106,11 @@ public:
         m_stkMeshMetaData(stkMeshMetaData),
         m_commListNodeFieldName("CommListNode"),
         m_commListNodeField(NULL),
-        m_sharingCommMapNodeFieldName("SharingCommMapNode"),
+        m_sharingCommMapNodeFieldName("NodeCommInfo"),
         m_sharingCommMapNodeField(NULL),
         m_auraCommMapNodeFieldName("AuraCommMapNode"),
         m_auraCommMapNodeField(NULL),
-        m_auraCommMapElementFieldName("AuraCommMapElement"),
+        m_auraCommMapElementFieldName("ElementCommInfo"),
         m_auraCommMapElementField(NULL)
     { }
     ~FieldMgr() {}
@@ -930,11 +930,12 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
 {
     const stk::mesh::BucketVector &nodeBuckets = bulkData.buckets(stk::topology::NODE_RANK);
 
-    int ghostedToThisProcValue = 10;
-    int ownedAndNotShareEntityValue = 0;
-    int ghostedToAnotherProcValue = 8;
-    int ownedAndSharedNodeValue = 2;
-    int sharedOnlyNodeValue = 5;
+    const int ownedValue = 0;
+    const int ownedAndSharedValue = 4;
+    const int ownedAndGhostedValue = 6;
+    const int ownedAndSharedAndGhostedValue = 11;
+    const int sharedToThisProcValue = 16;
+    const int ghostedToThisProcValue = 20;
 
     for(size_t i = 0; i < nodeBuckets.size(); i++)
     {
@@ -967,23 +968,25 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
                     *auraCommMapNode = 0;
                 }
 
-                // 0: owned only
-                // 1: owned and shared
-                // 2: shared only
-                // 3: ghosted to me
-
                 if(CEOUtils::isEntityInSharingCommMap(bulkData, bucket[j]))
                 {
                     if ( bucket.owned() )
                     {
-                        *sharedCommMapNode = ownedAndSharedNodeValue;
+                        if(CEOUtils::isEntityInGhostingCommMap(bulkData, bucket[j]))
+                        {
+                            *sharedCommMapNode = ownedAndSharedAndGhostedValue;
+                        }
+                        else
+                        {
+                            *sharedCommMapNode = ownedAndSharedValue;
+                        }
                     }
                     else
                     {
-                        *sharedCommMapNode = sharedOnlyNodeValue;
+                        *sharedCommMapNode = sharedToThisProcValue;
                     }
                 }
-                else
+                else if(CEOUtils::isEntityInGhostingCommMap(bulkData, bucket[j]))
                 {
                     if (bucket.in_aura() )
                     {
@@ -991,8 +994,12 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
                     }
                     else
                     {
-                        *sharedCommMapNode = ownedAndNotShareEntityValue;
+                        *sharedCommMapNode = ownedAndGhostedValue;
                     }
+                }
+                else
+                {
+                    *sharedCommMapNode = ownedValue;
                 }
 
                 if(CEOUtils::isEntityValidOnCommList(bulkData, bucket[j]))
@@ -1030,12 +1037,12 @@ void putCommInfoDataOnFields(stk::mesh::BulkData &bulkData, FieldMgr &fieldMgr)
                     }
                     else
                     {
-                        *auraCommMap = ghostedToAnotherProcValue;
+                        *auraCommMap = ownedAndGhostedValue;
                     }
                 }
                 else
                 {
-                    *auraCommMap = ownedAndNotShareEntityValue;
+                    *auraCommMap = ownedValue;
                 }
             }
         }
