@@ -138,7 +138,7 @@ extern int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                      int **ParamPptr, int **ParamPcols, double **ParamPvals);
 extern int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data);
 extern int ML_compute_line_info(int LayerId[], int VertLineId[],
-                              int Ndof, int DofsPerNode,
+                              int Ndof, int DofsPerNode,char semicoarsen_coordinate,
                               int MeshNumbering, int NumNodesPerVertLine,
                               ML_Aggregate_Viz_Stats *grid_info,ML_Comm *comm);
 

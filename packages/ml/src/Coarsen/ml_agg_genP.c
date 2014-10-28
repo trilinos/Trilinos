@@ -3231,7 +3231,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      VertLineId = (int *) ML_allocate(sizeof(int)*(Nnodes+1));
 
      NumZDir = ML_compute_line_info(LayerId, VertLineId,Amat->invec_leng,
-            Amat->num_PDEs, Zorientation, NumZDir, ml->Grid[level].Grid, ml->comm);
+            Amat->num_PDEs,  ag->semicoarsen_coordinate,Zorientation, NumZDir, ml->Grid[level].Grid, ml->comm);
   }
   if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir > 1) ) {
      widget.nz = NumZDir;
@@ -4450,9 +4450,9 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
 }
 
 int ML_compute_line_info(int LayerId[], int VertLineId[],
-                                    int Ndof, int DofsPerNode,
-                                    int MeshNumbering, int NumNodesPerVertLine,
-                                    ML_Aggregate_Viz_Stats *grid_info, ML_Comm *comm)
+                         int Ndof, int DofsPerNode, char semicoarsen_coordinate,
+                         int MeshNumbering, int NumNodesPerVertLine,
+                         ML_Aggregate_Viz_Stats *grid_info, ML_Comm *comm)
 {
    double *xvals= NULL, *yvals = NULL, *zvals = NULL;
    int    Nnodes, NVertLines, MyNode;
@@ -4470,6 +4470,18 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
       if (grid_info != NULL) xvals = grid_info->x;
       if (grid_info != NULL) yvals = grid_info->y;
       if (grid_info != NULL) zvals = grid_info->z;
+
+      ztemp = zvals;
+      if (semicoarsen_coordinate == 'x') 
+         { zvals = xvals; if (ztemp == NULL) xvals=yvals; else xvals= ztemp;}
+      if (semicoarsen_coordinate == 'y') 
+         { zvals = yvals; if (ztemp == NULL) yvals=xvals; else yvals= ztemp;}
+      if (semicoarsen_coordinate == 'z') {
+        if ( (zvals == NULL) && (xvals != NULL) && (yvals != NULL) ) {
+         printf("Cannot coarsen 2D problems in z direction. Must set semicoarsen_coordinate to x or y\n");
+         exit(1);
+        }
+      }
 
       if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) RetVal = -1;
    }
