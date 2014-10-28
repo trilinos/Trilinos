@@ -512,7 +512,7 @@ namespace MueLu {
       ifpackType = "CHEBYSHEV";
 
       MUELU_COPY_PARAM(paramList, "smoother: sweeps",          int, 2,  smootherParamList, "chebyshev: degree");
-      MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 30, smootherParamList, "chebyshev: alpha");
+      MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", int, 30, smootherParamList, "chebyshev: alpha");
 
       smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
       smooProto->SetFactory("A", AFact);
