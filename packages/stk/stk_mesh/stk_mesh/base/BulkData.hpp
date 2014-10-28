@@ -710,6 +710,8 @@ public:
 
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
   void internal_sync_comm_list_owners();
+  bool use_entity_ids_for_resolving_sharing() const { return m_use_identifiers_for_resolving_sharing; }
+  void set_use_entity_ids_for_resolving_sharing(bool input) { m_use_identifiers_for_resolving_sharing = input; }
 
 protected: //functions
   void update_deleted_entities_container();
@@ -1015,6 +1017,7 @@ private: // data
   FieldDataManager *m_field_data_manager;
   mutable SelectorBucketMap m_selector_to_buckets_map;
   impl::BucketRepository m_bucket_repository; // needs to be destructed first!
+  bool m_use_identifiers_for_resolving_sharing;
 
 #ifdef STK_MESH_MODIFICATION_COUNTERS
   static unsigned m_num_bulk_data_counter;

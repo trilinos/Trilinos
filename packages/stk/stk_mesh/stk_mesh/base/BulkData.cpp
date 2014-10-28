@@ -190,7 +190,18 @@ void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsTh
                 std::vector<shared_entity_type>::iterator shared_itr = std::lower_bound(shared_entity_map.begin(), shared_entity_map.end(), sentity);
 
                 //update the global global_key
-                if(shared_itr != shared_entity_map.end() && *shared_itr == sentity)
+                bool entitiesHaveSameNodes = shared_itr != shared_entity_map.end() && *shared_itr == sentity;
+                bool entitiesAreTheSame = false;
+                if ( mesh.use_entity_ids_for_resolving_sharing() )
+                {
+                    entitiesAreTheSame = entitiesHaveSameNodes && shared_itr->local_key == sentity.local_key;
+                }
+                else
+                {
+                    entitiesAreTheSame = entitiesHaveSameNodes;
+                }
+
+                if( entitiesAreTheSame )
                 {
                     Entity entity = mesh.get_entity(shared_itr->local_key);
                     shared_itr->sharing_procs.push_back(ip);
@@ -319,7 +330,8 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
         arg_connectivity_map != NULL ? *arg_connectivity_map :
         (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::default_map_2d() : ConnectivityMap::default_map()),
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
-        bucket_capacity)
+        bucket_capacity),
+    m_use_identifiers_for_resolving_sharing(false)
 #ifdef STK_MESH_MODIFICATION_COUNTERS
     , m_num_bulk_data_counter++,
     m_modification_counters(),
