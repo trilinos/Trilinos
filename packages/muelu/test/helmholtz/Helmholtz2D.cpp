@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     int model;
 
     std::ifstream inputfile;
-    inputfile.open("helm2D.xml");
+    inputfile.open("helm2D.inp");
     inputfile >> nx       >> ny       >> nz ;
     if(comm->getRank()==0)
       std::cout<<"nx: "<<nx<<"  ny: "<<ny<<"  nz: "<<nz<<std::endl;

@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     int model;
 
     std::ifstream inputfile;
-    inputfile.open("helm3D.xml");
+    inputfile.open("helm3D.inp");
     inputfile >> nx       >> ny       >> nz ;
     if(comm->getRank()==0)
       std::cout<<"nx: "<<nx<<"  ny: "<<ny<<"  nz: "<<nz<<std::endl;
@@ -164,10 +164,6 @@ int main(int argc, char *argv[]) {
 
     RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_helmholtz =
       Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_helmholtz.GetMatrixType(), map, matrixParams_helmholtz);
-    RCP<Matrix> Kmat, Mmat;
-    std::pair< RCP<Matrix>, RCP<Matrix> > system = Pr_helmholtz->BuildMatrices();
-    Kmat = system.first;
-    Mmat = system.second;
     RCP<Matrix> Amat = Pr_helmholtz->BuildMatrix();
 
     RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_shifted =
@@ -185,22 +181,10 @@ int main(int argc, char *argv[]) {
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
     RCP<ShiftedLaplacian> SLSolver = rcp( new ShiftedLaplacian );
-    SLSolver -> setstiff(Kmat);
-    SLSolver -> setmass(Mmat);
     SLSolver -> setProblemMatrix(Amat);
     SLSolver -> setPreconditioningMatrix(Pmat);
-    // determine shifts for RAPShiftFactory
-    std::vector<SC> shifts;
-    int maxLevels=5;
-    for(int i=0; i<maxLevels; i++) {
-      double alpha=1.0;
-      double beta=shift+((double) i)*0.2;
-      SC curshift(alpha,beta);
-      shifts.push_back(-curshift);
-    }
-    SLSolver -> setLevelShifts(shifts);
     SLSolver -> initialize();
-    SLSolver -> setupSlowRAP();
+    SLSolver -> setupNormalRAP();
 
     tm = Teuchos::null;
 
