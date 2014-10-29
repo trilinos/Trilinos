@@ -86,10 +86,9 @@ struct localsum {
   // For example, the const_data_type version of double** is const
   // double**.
   Kokkos::View<idx_type::const_data_type, idx_type::array_layout, Device> idx;
-  // "array_type" is a typedef in View (and DualView) which is the
-  // array version of the value(s) stored in the View.  For example,
-  // the array_type version of double** is double*.
-  Kokkos::View<view_type::array_type, view_type::array_layout, Device> dest;
+  // "array_intrinsic_type" is a typedef in ViewTraits (and DualView) which is the
+  // array version of the value(s) stored in the View.
+  Kokkos::View<view_type::array_intrinsic_type, view_type::array_layout, Device> dest;
   Kokkos::View<view_type::const_data_type, view_type::array_layout,
                Device, Kokkos::MemoryRandomAccess> src;
 

@@ -220,10 +220,10 @@ public:
 
   typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
-  typedef typename nested::array_type *        array_type ;
-  typedef typename nested::const_array_type *  const_array_type ;
+  typedef typename nested::array_intrinsic_type *        array_intrinsic_type ;
+  typedef typename nested::const_array_intrinsic_type *  const_array_intrinsic_type ;
 
-  typedef array_type non_const_array_type ;
+  typedef array_intrinsic_type non_const_array_intrinsic_type ;
 
   typedef       Sacado::Fad::DFad< ValueType >  type ;
   typedef const Sacado::Fad::DFad< ValueType >  const_type ;

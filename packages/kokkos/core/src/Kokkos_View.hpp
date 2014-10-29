@@ -198,9 +198,9 @@ public:
   //------------------------------------
   // Array of intrinsic scalar type traits:
 
-  typedef typename analysis::array_type            array_type ;
-  typedef typename analysis::const_array_type      const_array_type ;
-  typedef typename analysis::non_const_array_type  non_const_array_type ;
+  typedef typename analysis::array_intrinsic_type            array_intrinsic_type ;
+  typedef typename analysis::const_array_intrinsic_type      const_array_intrinsic_type ;
+  typedef typename analysis::non_const_array_intrinsic_type  non_const_array_intrinsic_type ;
 
   //------------------------------------
   // Value type traits:
@@ -335,17 +335,6 @@ struct scalar_operator_called_from_non_scalar_view {};
 } /* namespace ViewError */
 
 //----------------------------------------------------------------------------
-
-template< class Type >
-struct IsViewLabel : public Kokkos::Impl::false_type {};
-
-template<>
-struct IsViewLabel<std::string> : public Kokkos::Impl::true_type {};
-
-template< unsigned N >
-struct IsViewLabel<char[N]> : public Kokkos::Impl::true_type {};
-
-//----------------------------------------------------------------------------
 /** \brief  Enable view parentheses operator for
  *          match of layout and integral arguments.
  *          If correct rank define type from traits,
@@ -468,7 +457,7 @@ namespace Kokkos {
  * \endcode
  */
 template< class DataType ,
-          class Arg1Type = void , /* ArrayLayout, SpaceType or MemoryTraits*/
+          class Arg1Type = void , /* ArrayLayout, SpaceType, or MemoryTraits */
           class Arg2Type = void , /* SpaceType or MemoryTraits */
           class Arg3Type = void , /* MemoryTraits */
           class Specialize =
@@ -524,7 +513,7 @@ private:
 
 public:
 
-  typedef View< typename traits::array_type ,
+  typedef View< typename traits::array_intrinsic_type ,
                 typename traits::array_layout ,
                 typename traits::execution_space ,
                 typename traits::memory_traits > array_type ;
