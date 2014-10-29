@@ -99,19 +99,13 @@ namespace MueLu {
 
     //! Constructors
     ShiftedLaplacian():
-      Problem_("acoustic"),
       numPDEs_(1),
-      numSetups_(0),
       Smoother_("schwarz"),
       Aggregation_("uncoupled"),
       Nullspace_("constant"),
       numLevels_(5),
       coarseGridSize_(100),
       omega_(2.0*M_PI),
-      ashift1_((SC) 0.0),
-      ashift2_((SC) -1.0),
-      pshift1_((SC) 0.0),
-      pshift2_((SC) -1.0),
       iters_(500),
       blksize_(1),
       tol_(1.0e-4),
@@ -166,7 +160,6 @@ namespace MueLu {
     void setParameters(Teuchos::RCP< Teuchos::ParameterList > paramList);
 
     // Set matrices
-    void setLaplacian(RCP<Matrix>& L);
     void setProblemMatrix(RCP<Matrix>& A);
     void setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraA);
     void setPreconditioningMatrix(RCP<Matrix>& P);
@@ -175,61 +168,58 @@ namespace MueLu {
     void setstiff(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraK);
     void setmass(RCP<Matrix>& M);
     void setmass(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraM);
-    void setdamp(RCP<Matrix>& C);
-    void setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraC);
     void setcoords(RCP<MultiVector>& Coords);
     void setNullSpace(RCP<MultiVector> NullSpace);
-    void setProblemShifts(Scalar ashift1, Scalar ashift2);
-    void setPreconditioningShifts(Scalar pshift1, Scalar pshift2);
     void setLevelShifts(std::vector<Scalar> levelshifts);
 
-    // various initialization/setup functions
+    // initialize: set parameters and factories, construct
+    // prolongation and restriction matrices
     void initialize();
+    // setupFastRAP: setup hierarchy with
+    // prolongators of the stiffness matrix
+    // constant complex shifts
     void setupFastRAP();
+    // setupSlowRAP: setup hierarchy with
+    // prolongators of the stiffness matrix
+    // variable complex shifts
     void setupSlowRAP();
+    // setupNormalRAP: setup hierarchy with
+    // prolongators of the preconditioning matrix
     void setupNormalRAP();
+    // setupSolver: initialize Belos solver
+    void setupSolver();
+    // resetLinearProblem: for multiple frequencies;
+    // reset the Belos operator if the frequency changes
     void resetLinearProblem();
 
     // Solve phase
     int solve(const RCP<TMV> B, RCP<TMV>& X);
-    void multigrid_apply(const RCP<MultiVector> B, RCP<MultiVector>& X);
-    void multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B, RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X);
+    void multigrid_apply(const RCP<MultiVector> B,
+			 RCP<MultiVector>& X);
+    void multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B,
+			 RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X);
     int GetIterations();
     double GetResidual();
 
   private:
 
     // Problem options
-    // Problem  -> acoustic, elastic, acoustic-elastic
     // numPDEs_ -> number of DOFs at each node
-
-    std::string Problem_;
-    int numPDEs_, numSetups_;
+    int numPDEs_;
 
     // Multigrid options
     // numLevels_      -> number of Multigrid levels
     // coarseGridSize_ -> size of coarsest grid (if current level has less DOFs, stop coarsening)
-
     std::string Smoother_, Aggregation_, Nullspace_;
     int numLevels_, coarseGridSize_;
 
-    // Shifted Laplacian parameters
-    // To be compatible with both real and complex scalar types,
-    // problem and preconditioning matrices are constructed in the following way:
-    //    A = K + ashift1*omega*C + (ashift2*omega^2)*M
-    //    P = K + pshift1*omega*C + (pshift2*omega^2)*M
-    // where K, C, and M are the stiffness, damping, and mass matrices, and
-    // ashift1, ashift2, pshift1, pshift2 are user-defined scalar values.
-
-    double     omega_;
-    SC         ashift1_, ashift2_, pshift1_, pshift2_;
+    // Shifted Laplacian/Helmholtz parameters
+    double          omega_;
     std::vector<SC> levelshifts_;
 
     // Krylov solver inputs
     // iters  -> max number of iterations
     // tol    -> residual tolerance
-    // FMGRES -> if true, FGMRES is chosen as solver
-
     int    iters_, blksize_;
     double tol_;
     int    nsweeps_, ncycles_;
@@ -259,12 +249,10 @@ namespace MueLu {
 
     // Xpetra matrices
     // K_ -> stiffness matrix
-    // C_ -> damping matrix
     // M_ -> mass matrix
-    // L_ -> Laplacian
     // A_ -> Problem matrix
     // P_ -> Preconditioning matrix
-    RCP<Matrix>                       K_, C_, M_, L_, A_, P_;
+    RCP<Matrix>                       K_, M_, A_, P_;
     RCP<MultiVector>                  Coords_, NullSpace_;
 
     // Multigrid Hierarchy and Factory Manager
