@@ -767,6 +767,8 @@ BulkData::~BulkData()
     delete m_ghosting.back();
     m_ghosting.pop_back();
   }
+
+  mesh_meta_data().set_mesh_bulk_data(NULL);
 }
 
 void BulkData::get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes)
