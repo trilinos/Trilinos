@@ -206,6 +206,7 @@ TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
     MPI_Comm_size(comm, &numProcs);
     if(numProcs == 3)
     {
+//        std::string exodusFileName = "generated:1x1x6|sideset:xXyYzZ|nodeset:xXyYzZ";
         std::string exodusFileName = "generated:1x1x6";
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
@@ -740,7 +741,10 @@ void createSerialSubMesh(const stk::mesh::MetaData &meta, stk::mesh::BulkData& s
         {
             part = &newMeta.declare_part(allparts[i]->name());
         }
-        stk::io::put_io_part_attribute(*part);
+        if(stk::io::is_part_io_part(*allparts[i]))
+        {
+            stk::io::put_io_part_attribute(*part);
+        }
     }
 
     const stk::mesh::FieldVector &fields = meta.get_fields();
@@ -760,7 +764,7 @@ void createSerialSubMesh(const stk::mesh::MetaData &meta, stk::mesh::BulkData& s
                 newParts[k] = &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal());
             }
             stk::mesh::Selector selectNewParts = stk::mesh::selectUnion(newParts);
-            stk::mesh::put_field(*newField, selectNewParts, newMeta.spatial_dimension());
+            stk::mesh::put_field(*newField, selectNewParts, fields[i]->max_size(fields[i]->entity_rank()));
         }
     }
 
@@ -775,26 +779,35 @@ void createSerialSubMesh(const stk::mesh::MetaData &meta, stk::mesh::BulkData& s
         for(size_t i = 0; i < buckets.size(); i++)
         {
             stk::mesh::Bucket &bucket = *buckets[i];
+            for(size_t j = 0; j < bucket.size(); j++)
             {
-                for(size_t j = 0; j < bucket.size(); j++)
+                const stk::mesh::PartVector &oldParts = bucket.supersets();
+                stk::mesh::PartVector newParts(oldParts.size(), 0);
+                for(size_t k = 0; k < oldParts.size(); k++)
                 {
-                    const stk::mesh::PartVector &oldParts = bucket.supersets();
-                    stk::mesh::PartVector newParts(oldParts.size(), 0);
-                    for(size_t k = 0; k < oldParts.size(); k++)
+                    newParts[k] = &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal());
+                }
+                stk::mesh::Entity newEntity = newBulkData.declare_entity(rank, stkMeshBulkData.identifier(bucket[j]), newParts);
+                oldToNewEntityMap[bucket[j]] = newEntity;
+            }
+        }
+    }
+    for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
+    {
+        const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(rank, subMeshSelector);
+        for(size_t i = 0; i < buckets.size(); i++)
+        {
+            stk::mesh::Bucket &bucket = *buckets[i];
+            for(size_t j = 0; j < bucket.size(); j++)
+            {
+                stk::mesh::Entity newEntity = oldToNewEntityMap[bucket[j]];
+                for(stk::mesh::EntityRank downRank = stk::topology::NODE_RANK; downRank < rank; downRank++)
+                {
+                    unsigned numConnectedEntities= stkMeshBulkData.num_connectivity(bucket[j], downRank);
+                    const stk::mesh::Entity *connectedEntities = stkMeshBulkData.begin(bucket[j], downRank);
+                    for(unsigned connectOrder = 0; connectOrder < numConnectedEntities; connectOrder++)
                     {
-                        newParts[k] = &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal());
-                    }
-                    stk::mesh::Entity newEntity = newBulkData.declare_entity(rank, stkMeshBulkData.identifier(bucket[j]), newParts);
-                    oldToNewEntityMap[bucket[j]] = newEntity;
-
-                    if ( rank != stk::topology::NODE_RANK )
-                    {
-                        unsigned numNodes = stkMeshBulkData.num_nodes(bucket[j]);
-                        const stk::mesh::Entity *nodes = stkMeshBulkData.begin_nodes(bucket[j]);
-                        for(unsigned nodeOrder = 0; nodeOrder < numNodes; nodeOrder++)
-                        {
-                            newBulkData.declare_relation(newEntity, oldToNewEntityMap[nodes[nodeOrder]], nodeOrder);
-                        }
+                        newBulkData.declare_relation(newEntity, oldToNewEntityMap[connectedEntities[connectOrder]], connectOrder);
                     }
                 }
             }
