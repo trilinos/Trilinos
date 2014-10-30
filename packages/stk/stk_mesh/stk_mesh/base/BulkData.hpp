@@ -325,7 +325,10 @@ public:
    */
   void add_node_sharing( Entity node, int sharing_proc );
 
-  void change_entity_id( EntityId id, Entity entity);
+  /** \brief Change an entity's EntityId, for Framework implementation.
+   *         Only intended for use in supporting Framework implementation.
+   */
+  void change_entity_id( EntityId id, Entity entity);   // Deprecated?
 
   /** \brief  Change the parallel-locally-owned entity's
    *          part membership by adding and/or removing parts
