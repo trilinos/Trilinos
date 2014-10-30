@@ -183,7 +183,7 @@ private:
 };
 
 void testSubMesh(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr);
-void createSerialSubMesh(const stk::mesh::MetaData &meta, stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Selector subMeshSelector, stk::mesh::MetaData &newMeta, stk::mesh::BulkData &newBulkData);
+void createSerialSubMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::BulkData& oldBulkData, stk::mesh::Selector subMeshSelector, stk::mesh::MetaData &newMeta, stk::mesh::BulkData &newBulkData);
 
 void checkCommMaps(std::string message, stk::mesh::BulkData &stkMeshBulkData, int numElements, bool ownerOfElement[], bool isElementInAuraCommMap[], bool isElementValid[],
             int numNodes, bool ownerOfNode[], bool isNodeInSharedCommMap[], bool isNodeInAuraCommMap[], bool isNodeValid[]);
@@ -727,9 +727,9 @@ void moveElements2And3ToProc2(stk::mesh::BulkData &stkMeshBulkData)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void createSerialSubMesh(const stk::mesh::MetaData &meta, stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Selector subMeshSelector, stk::mesh::MetaData &newMeta, stk::mesh::BulkData &newBulkData)
+void copyPartsToNewMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta)
 {
-    const stk::mesh::PartVector &allparts = meta.get_mesh_parts();
+    const stk::mesh::PartVector &allparts = oldMeta.get_mesh_parts();
     for(size_t i = 0; i < allparts.size(); i++)
     {
         stk::mesh::Part *part = NULL;
@@ -746,12 +746,19 @@ void createSerialSubMesh(const stk::mesh::MetaData &meta, stk::mesh::BulkData& s
             stk::io::put_io_part_attribute(*part);
         }
     }
+}
 
-    const stk::mesh::FieldVector &fields = meta.get_fields();
+void copyFieldsToNewMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta)
+{
+    const stk::mesh::FieldVector &fields = oldMeta.get_fields();
     for(size_t i = 0; i < fields.size(); i++)
     {
-        stk::mesh::FieldBase* newField = newMeta.declare_field_base(fields[i]->name(), fields[i]->entity_rank(), fields[i]->data_traits(),
-                fields[i]->field_array_rank(), fields[i]->dimension_tags(), fields[i]->number_of_states());
+        stk::mesh::FieldBase* newField = newMeta.declare_field_base(fields[i]->name(),
+                                                                    fields[i]->entity_rank(),
+                                                                    fields[i]->data_traits(),
+                                                                    fields[i]->field_array_rank(),
+                                                                    fields[i]->dimension_tags(),
+                                                                    fields[i]->number_of_states());
 
         stk::mesh::Selector selectFieldParts = stk::mesh::selectField(*fields[i]);
         stk::mesh::PartVector oldParts;
@@ -759,7 +766,7 @@ void createSerialSubMesh(const stk::mesh::MetaData &meta, stk::mesh::BulkData& s
         if(!oldParts.empty())
         {
             stk::mesh::PartVector newParts(oldParts.size());
-            for(size_t k=0; k<oldParts.size(); k++)
+            for(size_t k = 0; k < oldParts.size(); k++)
             {
                 newParts[k] = &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal());
             }
@@ -767,15 +774,17 @@ void createSerialSubMesh(const stk::mesh::MetaData &meta, stk::mesh::BulkData& s
             stk::mesh::put_field(*newField, selectNewParts, fields[i]->max_size(fields[i]->entity_rank()));
         }
     }
+}
 
-    newMeta.commit();
-
-    std::map<stk::mesh::Entity, stk::mesh::Entity> oldToNewEntityMap;
-
-    newBulkData.modification_begin();
+void copySelectedEntitiesToNewMesh(const stk::mesh::BulkData& oldBulkData,
+                                   const stk::mesh::Selector subMeshSelector,
+                                   std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
+                                   stk::mesh::MetaData &newMeta,
+                                   stk::mesh::BulkData &newBulkData)
+{
     for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
     {
-        const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(rank, subMeshSelector);
+        const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
         for(size_t i = 0; i < buckets.size(); i++)
         {
             stk::mesh::Bucket &bucket = *buckets[i];
@@ -787,59 +796,93 @@ void createSerialSubMesh(const stk::mesh::MetaData &meta, stk::mesh::BulkData& s
                 {
                     newParts[k] = &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal());
                 }
-                stk::mesh::Entity newEntity = newBulkData.declare_entity(rank, stkMeshBulkData.identifier(bucket[j]), newParts);
+                stk::mesh::Entity newEntity = newBulkData.declare_entity(rank, oldBulkData.identifier(bucket[j]), newParts);
                 oldToNewEntityMap[bucket[j]] = newEntity;
             }
         }
     }
+}
+
+void copyRelationsToNewMesh(const stk::mesh::BulkData& oldBulkData,
+                            const stk::mesh::Selector subMeshSelector,
+                            const std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
+                            stk::mesh::BulkData &newBulkData)
+{
     for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
     {
-        const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(rank, subMeshSelector);
+        const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
         for(size_t i = 0; i < buckets.size(); i++)
         {
             stk::mesh::Bucket &bucket = *buckets[i];
             for(size_t j = 0; j < bucket.size(); j++)
             {
-                stk::mesh::Entity newEntity = oldToNewEntityMap[bucket[j]];
+                stk::mesh::Entity newFromEntity = oldToNewEntityMap.find(bucket[j])->second;
                 for(stk::mesh::EntityRank downRank = stk::topology::NODE_RANK; downRank < rank; downRank++)
                 {
-                    unsigned numConnectedEntities= stkMeshBulkData.num_connectivity(bucket[j], downRank);
-                    const stk::mesh::Entity *connectedEntities = stkMeshBulkData.begin(bucket[j], downRank);
+                    unsigned numConnectedEntities = oldBulkData.num_connectivity(bucket[j], downRank);
+                    const stk::mesh::Entity *connectedEntities = oldBulkData.begin(bucket[j], downRank);
                     for(unsigned connectOrder = 0; connectOrder < numConnectedEntities; connectOrder++)
                     {
-                        newBulkData.declare_relation(newEntity, oldToNewEntityMap[connectedEntities[connectOrder]], connectOrder);
+                        stk::mesh::Entity newToEntity = oldToNewEntityMap.find(connectedEntities[connectOrder])->second;
+                        newBulkData.declare_relation(newFromEntity, newToEntity, connectOrder);
                     }
                 }
             }
         }
     }
-    newBulkData.modification_end();
+}
 
+void copyFieldDataToNewMesh(const stk::mesh::MetaData &oldMeta,
+                            const stk::mesh::BulkData& oldBulkData,
+                            const stk::mesh::Selector subMeshSelector,
+                            const std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
+                            stk::mesh::MetaData &newMeta)
+{
+    const stk::mesh::FieldVector &oldFields = oldMeta.get_fields();
     const stk::mesh::FieldVector &newFields = newMeta.get_fields();
     for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
     {
-        const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(rank, subMeshSelector);
+        const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
         for(size_t i = 0; i < buckets.size(); i++)
         {
             stk::mesh::Bucket &bucket = *buckets[i];
+            for(size_t k = 0; k < oldFields.size(); k++)
             {
-                for(size_t k = 0; k < fields.size(); k++)
+                if(bucket.field_data_is_allocated(*oldFields[k]))
                 {
-                    if(bucket.field_data_is_allocated(*fields[k]))
+                    for(size_t j = 0; j < bucket.size(); j++)
                     {
-                        for(size_t j = 0; j < bucket.size(); j++)
-                        {
-                            stk::mesh::Entity oldEntity = bucket[j];
-                            stk::mesh::Entity newEntity = oldToNewEntityMap[oldEntity];
-                            void *oldData = stk::mesh::field_data(*fields[k], oldEntity);
-                            void *newData = stk::mesh::field_data(*newFields[k], newEntity);
-                            memcpy(newData, oldData, stk::mesh::field_bytes_per_entity(*fields[k], oldEntity));
-                        }
+                        stk::mesh::Entity oldEntity = bucket[j];
+                        stk::mesh::Entity newEntity = oldToNewEntityMap.find(oldEntity)->second;
+                        void *oldData = stk::mesh::field_data(*oldFields[k], oldEntity);
+                        void *newData = stk::mesh::field_data(*newFields[k], newEntity);
+                        memcpy(newData, oldData, stk::mesh::field_bytes_per_entity(*oldFields[k], oldEntity));
                     }
                 }
             }
         }
     }
+}
+
+void createSerialSubMesh(const stk::mesh::MetaData &oldMeta,
+                         stk::mesh::BulkData& oldBulkData,
+                         stk::mesh::Selector subMeshSelector,
+                         stk::mesh::MetaData &newMeta,
+                         stk::mesh::BulkData &newBulkData)
+{
+    copyPartsToNewMesh(oldMeta, newMeta);
+    copyFieldsToNewMesh(oldMeta, newMeta);
+
+    newMeta.commit();
+
+    std::map<stk::mesh::Entity, stk::mesh::Entity> oldToNewEntityMap;
+
+    newBulkData.modification_begin();
+    copySelectedEntitiesToNewMesh(oldBulkData, subMeshSelector, oldToNewEntityMap, newMeta, newBulkData);
+    copyRelationsToNewMesh(oldBulkData, subMeshSelector, oldToNewEntityMap, newBulkData);
+    newBulkData.modification_end();
+
+    copyFieldDataToNewMesh(oldMeta, oldBulkData, subMeshSelector, oldToNewEntityMap, newMeta);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
