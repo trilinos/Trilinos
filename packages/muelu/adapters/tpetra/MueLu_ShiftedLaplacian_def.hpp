@@ -314,7 +314,12 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
 
-  // Use stiffness matrix to setup prolongation/restriction operators
+  // For setupSlowRAP and setupFastRAP, the prolongation/restriction matrices
+  // are constructed with the stiffness matrix. These matrices are kept for future
+  // setup calls; this is achieved by calling Hierarchy->Keep(). It is particularly
+  // useful for multiple frequency problems - when the frequency/preconditioner
+  // changes, you only compute coarse grids (RAPs) and setup level smoothers when
+  // you call Hierarchy->Setup().
   if(K_!=Teuchos::null) {
     Manager_ -> SetFactory("Smoother", Teuchos::null);
     Manager_ -> SetFactory("CoarseSolver", Teuchos::null);
