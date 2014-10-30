@@ -182,7 +182,7 @@ private:
     stk::mesh::Field<double> *m_auraCommMapElementField;
 };
 
-void testSubMesh(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr);
+void testSubMesh(stk::mesh::BulkData &oldBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr);
 void createSerialSubMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::BulkData& oldBulkData, stk::mesh::Selector subMeshSelector, stk::mesh::MetaData &newMeta, stk::mesh::BulkData &newBulkData);
 
 void checkCommMaps(std::string message, stk::mesh::BulkData &stkMeshBulkData, int numElements, bool ownerOfElement[], bool isElementInAuraCommMap[], bool isElementValid[],
@@ -296,7 +296,7 @@ TEST(UnitTestChangeEntityOwner, testCreateSubMesh)
     MPI_Comm_size(comm, &numProcs);
     if(numProcs == 2)
     {
-        std::string exodusFileName = "generated:1x1x4";
+        std::string exodusFileName = "generated:1x1x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         const int spatialDim = 3;
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
         stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, comm);
@@ -887,56 +887,63 @@ void createSerialSubMesh(const stk::mesh::MetaData &oldMeta,
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void testSubMesh(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr)
+void testSubMesh(stk::mesh::BulkData &oldBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements, FieldMgr &parallelFieldMgr)
 {
-    const stk::mesh::MetaData &stkMeshMetaData = stkMeshBulkData.mesh_meta_data();
-    stk::mesh::MetaData newMetaData(3);
-    stk::mesh::BulkData nBulkData(newMetaData, MPI_COMM_SELF);
+    const stk::mesh::MetaData &oldMetaData = oldBulkData.mesh_meta_data();
+    stk::mesh::MetaData newMetaData(oldMetaData.spatial_dimension());
+    stk::mesh::BulkData newBulkData(newMetaData, MPI_COMM_SELF);
 
-    // Need to test io_part attribute item
-    // Need to make sure field data is converted properly
+    createSerialSubMesh(oldMetaData, oldBulkData, select, newMetaData, newBulkData);
 
-    createSerialSubMesh(stkMeshMetaData, stkMeshBulkData, select, newMetaData, nBulkData);
-
-    std::vector<unsigned> entityCounts;
-    stk::mesh::count_entities(newMetaData.universal_part(), nBulkData, entityCounts);
-    EXPECT_EQ(goldNumberElements, entityCounts[stk::topology::ELEMENT_RANK]);
-    EXPECT_EQ(goldNumberNodes, entityCounts[stk::topology::NODE_RANK]);
-    EXPECT_EQ(stkMeshMetaData.get_parts().size(), newMetaData.get_parts().size());
-    EXPECT_EQ(stkMeshMetaData.get_fields().size(), newMetaData.get_fields().size());
-
-    stk::mesh::Entity element = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToTestId);
-    stk::mesh::Entity elementSerial = nBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToTestId);
-
-    EXPECT_EQ(stkMeshBulkData.identifier(element), nBulkData.identifier(elementSerial));
-
-    std::set<stk::mesh::EntityId> parallelNodeIds;
-    std::set<stk::mesh::EntityId> serialNodeIds;
-
-    unsigned numNodesParallel = stkMeshBulkData.num_nodes(element);
-    unsigned numNodesSerial = nBulkData.num_nodes(elementSerial);
-
-    ASSERT_EQ(numNodesParallel, numNodesSerial);
-
-    const stk::mesh::Entity *nodesParallel = stkMeshBulkData.begin_nodes(element);
-    const stk::mesh::Entity *nodesSerial = nBulkData.begin_nodes(elementSerial);
-
-    for(unsigned i = 0; i < numNodesParallel; i++)
+    const stk::mesh::PartVector &oldParts = oldMetaData.get_parts();
+    const stk::mesh::PartVector &newParts = newMetaData.get_parts();
+    ASSERT_EQ(oldParts.size(), newParts.size());
+    for(size_t i=0; i<oldParts.size(); i++)
     {
-        parallelNodeIds.insert(stkMeshBulkData.identifier(nodesParallel[i]));
-        serialNodeIds.insert(nBulkData.identifier(nodesSerial[i]));
+        EXPECT_EQ(oldParts[i]->name(), newParts[i]->name());
+        EXPECT_EQ(stk::io::is_part_io_part(*oldParts[i]), stk::io::is_part_io_part(*newParts[i]));
     }
 
+
+    std::vector<unsigned> entityCounts;
+    stk::mesh::count_entities(newMetaData.universal_part(), newBulkData, entityCounts);
+    EXPECT_EQ(goldNumberElements, entityCounts[stk::topology::ELEMENT_RANK]);
+    EXPECT_EQ(goldNumberNodes, entityCounts[stk::topology::NODE_RANK]);
+
+    stk::mesh::Entity elementParallel = oldBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToTestId);
+    stk::mesh::Entity elementSerial = newBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToTestId);
+    EXPECT_EQ(oldBulkData.identifier(elementParallel), newBulkData.identifier(elementSerial));
+    unsigned numNodesParallel = oldBulkData.num_nodes(elementParallel);
+    unsigned numNodesSerial = newBulkData.num_nodes(elementSerial);
+    ASSERT_EQ(numNodesParallel, numNodesSerial);
+
+    const stk::mesh::Entity *nodesParallel = oldBulkData.begin_nodes(elementParallel);
+    const stk::mesh::Entity *nodesSerial = newBulkData.begin_nodes(elementSerial);
+    std::set<stk::mesh::EntityId> parallelNodeIds;
+    std::set<stk::mesh::EntityId> serialNodeIds;
+    for(unsigned i = 0; i < numNodesParallel; i++)
+    {
+        parallelNodeIds.insert(oldBulkData.identifier(nodesParallel[i]));
+        serialNodeIds.insert(newBulkData.identifier(nodesSerial[i]));
+    }
     EXPECT_TRUE(parallelNodeIds == serialNodeIds);
+
+
+    const stk::mesh::FieldVector &oldFields = oldMetaData.get_fields();
+    const stk::mesh::FieldVector &newFields = newMetaData.get_fields();
+    ASSERT_EQ(oldFields.size(), newFields.size());
+    for(size_t i=0; i<oldFields.size(); i++)
+    {
+        EXPECT_EQ(oldFields[i]->name(), newFields[i]->name());
+    }
 
     FieldMgr serialFieldMgr(newMetaData);
     serialFieldMgr.storeFieldPointers();
-
     std::set<stk::mesh::EntityId>::iterator iter = serialNodeIds.begin();
     for (; iter != serialNodeIds.end(); iter++)
     {
-        stk::mesh::Entity serialNode = nBulkData.get_entity(stk::topology::NODE_RANK, *iter);
-        stk::mesh::Entity parallelNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, *iter);
+        stk::mesh::Entity serialNode = newBulkData.get_entity(stk::topology::NODE_RANK, *iter);
+        stk::mesh::Entity parallelNode = oldBulkData.get_entity(stk::topology::NODE_RANK, *iter);
         EXPECT_EQ(serialFieldMgr.getFieldValue(serialFieldMgr.getAuraCommMapNodeField(), serialNode),
                 parallelFieldMgr.getFieldValue(parallelFieldMgr.getAuraCommMapNodeField(), parallelNode) );
         EXPECT_EQ(serialFieldMgr.getFieldValue(serialFieldMgr.getCommListNodeField(), serialNode),
@@ -944,9 +951,8 @@ void testSubMesh(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Selector selec
         EXPECT_EQ(serialFieldMgr.getFieldValue(serialFieldMgr.getSharingCommMapNodeField(), serialNode),
                 parallelFieldMgr.getFieldValue(parallelFieldMgr.getSharingCommMapNodeField(), parallelNode) );
     }
-
     EXPECT_EQ(serialFieldMgr.getFieldValue(serialFieldMgr.getAuraCommMapElementField(), elementSerial),
-            parallelFieldMgr.getFieldValue(parallelFieldMgr.getAuraCommMapElementField(), element) );
+            parallelFieldMgr.getFieldValue(parallelFieldMgr.getAuraCommMapElementField(), elementParallel) );
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
