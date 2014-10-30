@@ -89,7 +89,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teu
   ilu_fill_tol_        = paramList->get("MueLu: fill tol",    0.01);
   schwarz_overlap_     = paramList->get("MueLu: overlap",        0);
   schwarz_usereorder_  = paramList->get("MueLu: use reorder", true);
-  useKrylov_           = paramList->get("MueLu: use Krylov",  true);
   int combinemode      = paramList->get("MueLu: combine mode",   1);
   if(combinemode==0)   { schwarz_combinemode_ = Tpetra::ZERO;     }
   else                 { schwarz_combinemode_ = Tpetra::ADD;      }
@@ -103,9 +102,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setProblemMatrix(
   A_=A;
   if(A_!=Teuchos::null)
     TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);
-  ProblemMatrixSet_=true;
-  GridTransfersExist_=false;
-
   if(LinearProblem_!=Teuchos::null)
     LinearProblem_ -> setOperator ( TpetraA_ );
 
@@ -115,9 +111,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraA) {
 
   TpetraA_=TpetraA;
-  ProblemMatrixSet_=true;
-  GridTransfersExist_=false;
-
   if(LinearProblem_!=Teuchos::null)
     LinearProblem_ -> setOperator ( TpetraA_ );
 
@@ -127,7 +120,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setPreconditioningMatrix(RCP<Matrix>& P) {
 
   P_=P;
-  PreconditioningMatrixSet_=true;
   GridTransfersExist_=false;
 
 }
@@ -138,7 +130,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setPreconditionin
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraP) );
   P_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
-  PreconditioningMatrixSet_=true;
   GridTransfersExist_=false;
 
 }
@@ -147,8 +138,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setstiff(RCP<Matrix>& K) {
 
   K_=K;
-  StiffMatrixSet_=true;
-  GridTransfersExist_=false;
 
 }
 
@@ -158,8 +147,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setstiff(RCP< Tpe
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraK) );
   K_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
-  StiffMatrixSet_=true;
-  GridTransfersExist_=false;
 
 }
 
@@ -167,8 +154,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setmass(RCP<Matrix>& M) {
 
   M_=M;
-  MassMatrixSet_=true;
-  GridTransfersExist_=false;
 
 }
 
@@ -178,8 +163,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setmass(RCP< Tpet
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraM) );
   M_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
-  MassMatrixSet_=true;
-  GridTransfersExist_=false;
 
 }
 
@@ -202,8 +185,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setLevelShifts(st
 
   levelshifts_=levelshifts;
   numLevels_=levelshifts_.size();
-  LevelShiftsSet_=true;
-  VariableShift_=true;
 
 }
 
@@ -387,15 +368,11 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupFastRAP() {
 
   int numLevels = Hierarchy_ -> GetNumLevels();
-
   Manager_ -> SetFactory("Smoother", smooFact_);
   Manager_ -> SetFactory("CoarseSolver", coarsestSmooFact_);
   Hierarchy_ -> GetLevel(0) -> Set("A", P_);
   Hierarchy_ -> Setup(*Manager_, 0, numLevels);
-
-  if(useKrylov_==true) {
-    setupSolver();
-  }
+  setupSolver();
 
 }
 
@@ -404,9 +381,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupSlowRAP() {
 
   int numLevels = Hierarchy_ -> GetNumLevels();
-
   Acshift_->SetShifts(levelshifts_);
-
   Manager_ -> SetFactory("Smoother", smooFact_);
   Manager_ -> SetFactory("CoarseSolver", coarsestSmooFact_);
   Manager_ -> SetFactory("A", Acshift_);
@@ -416,10 +391,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupSlowRAP() {
   Hierarchy_ -> GetLevel(0) -> Set("K", K_);
   Hierarchy_ -> GetLevel(0) -> Set("M", M_);
   Hierarchy_ -> Setup(*Manager_, 0, numLevels);
-
-  if(useKrylov_==true) {
-    setupSolver();
-  }
+  setupSolver();
 
 }
 
@@ -438,10 +410,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupNormalRAP() 
     Hierarchy_ -> Setup(*Manager_, 0, numLevels_);
     GridTransfersExist_=true;
   }
-
-  if(useKrylov_==true) {
-    setupSolver();
-  }
+  setupSolver();
 
 }
 
@@ -465,27 +434,23 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupSolver() {
     SolverManager_ = SolverFactory_->create( solverName, BelosList_ );
     SolverManager_ -> setProblem( LinearProblem_ );
   }
-  
+
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::resetLinearProblem()
 {
-  if(useKrylov_==true) {
-    LinearProblem_ -> setOperator (  TpetraA_  );
-  }
+  LinearProblem_ -> setOperator (  TpetraA_  );
 }
 
 // Solve phase
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::solve(const RCP<TMV> B, RCP<TMV>& X)
 {
-  if(useKrylov_==true) {
-    // Set left and right hand sides for Belos
-    LinearProblem_ -> setProblem(X, B);
-    // iterative solve
-    SolverManager_ -> solve();
-  }
+  // Set left and right hand sides for Belos
+  LinearProblem_ -> setProblem(X, B);
+  // iterative solve
+  SolverManager_ -> solve();
   return 0;
 }
 
@@ -494,10 +459,8 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(const RCP<MultiVector> B,
 									       RCP<MultiVector>& X)
 {
-
   // Set left and right hand sides for Belos
   Hierarchy_ -> Iterate(*B, *X, 1, true, 0);
-
 }
 
 // Solve phase
@@ -505,41 +468,28 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B,
 									       RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X)
 {
-
   Teuchos::RCP< Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > XpetraX
     = Teuchos::rcp( new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(X) );
   Teuchos::RCP< Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > XpetraB
     = Teuchos::rcp( new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(B) );
-
   // Set left and right hand sides for Belos
   Hierarchy_ -> Iterate(*XpetraB, *XpetraX, 1, true, 0);
-
 }
 
 // Get most recent iteration count
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetIterations()
 {
-  if(useKrylov_==true) {
-    int numiters = SolverManager_ -> getNumIters();
-    return numiters;
-  }
-  else {
-    return 0;
-  }
+  int numiters = SolverManager_ -> getNumIters();
+  return numiters;
 }
 
 // Get most recent solver tolerance achieved
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 double ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetResidual()
 {
-  if(useKrylov_==true) {
-    double residual = SolverManager_ -> achievedTol();
-    return residual;
-  }
-  else {
-    return 0.0;
-  }
+  double residual = SolverManager_ -> achievedTol();
+  return residual;
 }
 
 }

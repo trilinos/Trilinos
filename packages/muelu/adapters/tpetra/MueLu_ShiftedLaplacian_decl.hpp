@@ -140,17 +140,7 @@ namespace MueLu {
       schwarz_combinemode_(Tpetra::ADD),
       schwarz_ordermethod_("rcm"),
       GridTransfersExist_(false),
-      UseLaplacian_(true),
-      VariableShift_(false),
-      LaplaceOperatorSet_(false),
-      ProblemMatrixSet_(false),
-      PreconditioningMatrixSet_(false),
-      StiffMatrixSet_(false),
-      MassMatrixSet_(false),
-      DampMatrixSet_(false),
-      LevelShiftsSet_(false),
-      isSymmetric_(true),
-      useKrylov_(true)
+      isSymmetric_(true)
     { }
 
     // Destructor
@@ -242,10 +232,7 @@ namespace MueLu {
 
     // flags for setup
     bool GridTransfersExist_;
-    bool UseLaplacian_, VariableShift_;
-    bool LaplaceOperatorSet_, ProblemMatrixSet_, PreconditioningMatrixSet_;
-    bool StiffMatrixSet_, MassMatrixSet_, DampMatrixSet_, LevelShiftsSet_;
-    bool isSymmetric_, useKrylov_;
+    bool isSymmetric_;
 
     // Xpetra matrices
     // K_ -> stiffness matrix
