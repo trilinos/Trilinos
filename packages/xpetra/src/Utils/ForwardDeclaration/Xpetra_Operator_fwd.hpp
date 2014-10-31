@@ -43,16 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP
-#define XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP
+#ifndef XPETRA_OPERATOR_FWD_HPP
+#define XPETRA_OPERATOR_FWD_HPP
 
 namespace Xpetra {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class $TMPL_CLASS;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Operator;
 }
 
-#ifndef XPETRA_$TMPL_UPPERCASECLASS_SHORT
-#define XPETRA_$TMPL_UPPERCASECLASS_SHORT
+#ifndef XPETRA_OPERATOR_SHORT
+#define XPETRA_OPERATOR_SHORT
 #endif
 
-#endif // XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP
+#endif // XPETRA_OPERATOR_FWD_HPP

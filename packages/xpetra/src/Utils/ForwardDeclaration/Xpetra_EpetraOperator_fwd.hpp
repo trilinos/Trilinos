@@ -43,16 +43,20 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP
-#define XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP
+#ifndef XPETRA_EPETRAOPERATOR_FWD_HPP
+#define XPETRA_EPETRAOPERATOR_FWD_HPP
+
+#include <Epetra_ConfigDefs.h>
 
 namespace Xpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class $TMPL_CLASS;
+  template<class GO> class EpetraOperatorT;
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+  typedef EpetraOperatorT<int> EpetraOperator;
+#endif
 }
 
-#ifndef XPETRA_$TMPL_UPPERCASECLASS_SHORT
-#define XPETRA_$TMPL_UPPERCASECLASS_SHORT
+#ifndef XPETRA_EPETRAOPERATOR_SHORT
+#define XPETRA_EPETRAOPERATOR_SHORT
 #endif
 
-#endif // XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP
+#endif // XPETRA_EPETRAOPERATOR_FWD_HPP
