@@ -145,3 +145,14 @@ __all__.append('Epetra')
 from . import Epetra
 %}
 #endif
+
+// NOX.PETSc namespace
+#ifdef HAVE_NOX_PETSC
+%pythoncode
+%{
+
+# PETSc namespace
+__all__.append('PETSc')
+from . import PETSc
+%}
+#endif

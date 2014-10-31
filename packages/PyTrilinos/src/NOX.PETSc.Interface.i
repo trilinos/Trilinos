@@ -28,86 +28,90 @@
 // ***********************************************************************
 // @HEADER
 
-%define %nox_epetra_interface_docstring
+%define %nox_petsc_interface_docstring
 "
-PyTrilinos.NOX.Epetra.Interface is the python interface to the
-Epetra::Interface namespace of the Trilinos package NOX:
+PyTrilinos.NOX.PETSc.Interface is the python interface to the
+PETSc::Interface namespace of the Trilinos package NOX:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of NOX.Epetra.Interface is to provide base classes the
+The purpose of NOX.PETSc.Interface is to provide base classes the
 user should derive from in order to define the nonlinear function to
 be solved, and if needed, its Jacobian and the desired preconditioner.
 
-NOX.Epetra.Interface provides the following user-level classes:
+NOX.Epetra.Interface provides the following user-level class:
 
-    * Required        - Required class for computing the nonlinear function
-    * Jacobian        - Class for computing the Jacobian (if needed)
-    * Preconditioner  - Class for computing the preconditioner (if needed)
+    * Interface       - Required class for computing the nonlinear function
 "
 %enddef
 
-%module(package      = "PyTrilinos.NOX.Epetra",
+%module(package      = "PyTrilinos.NOX.PETSc",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-	docstring    = %nox_epetra_interface_docstring) Interface
+	docstring    = %nox_petsc_interface_docstring) Interface
 
 %{
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_PythonException.hpp"
+
 // NumPy includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
 // Teuchos includes
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// #include "PyTrilinos_Teuchos_Util.hpp"
+
+// PETSc include
+#include "petsc.h"
 
 // Epetra includes
-#include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_Time.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
+// #include "Epetra_LocalMap.h"
+// #include "Epetra_MapColoring.h"
+// #include "Epetra_SrcDistObject.h"
+// #include "Epetra_IntVector.h"
+// #include "Epetra_MultiVector.h"
+// #include "Epetra_Vector.h"
+// #include "Epetra_FEVector.h"
+// #include "Epetra_Operator.h"
+// #include "Epetra_RowMatrix.h"
+// #include "Epetra_BasicRowMatrix.h"
+// #include "Epetra_JadMatrix.h"
+// #include "Epetra_InvOperator.h"
+// #include "Epetra_FEVbrMatrix.h"
+// #include "Epetra_FECrsMatrix.h"
+// #include "Epetra_SerialDistributor.h"
+// #include "Epetra_SerialDenseSVD.h"
+// #include "Epetra_SerialDenseSolver.h"
+// #include "Epetra_Import.h"
+// #include "Epetra_Export.h"
+// #include "Epetra_OffsetIndex.h"
+// #include "Epetra_Time.h"
+// #ifdef HAVE_MPI
+// #include "Epetra_MpiComm.h"
+// #endif
 
 // Local Epetra includes
-#include "PyTrilinos_Epetra_Util.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPyVector.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
+// #include "PyTrilinos_Epetra_Util.hpp"
+// #include "Epetra_NumPyIntVector.hpp"
+// #include "Epetra_NumPyMultiVector.hpp"
+// #include "Epetra_NumPyVector.hpp"
+// #include "Epetra_NumPyFEVector.hpp"
+// #include "Epetra_NumPyIntSerialDenseMatrix.hpp"
+// #include "Epetra_NumPyIntSerialDenseVector.hpp"
+// #include "Epetra_NumPySerialDenseMatrix.hpp"
+// #include "Epetra_NumPySerialSymDenseMatrix.hpp"
+// #include "Epetra_NumPySerialDenseVector.hpp"
 
-// NOX::Epetra::Interface includes
-#include "NOX_Epetra_Interface_Required.H"
-#include "NOX_Epetra_Interface_Jacobian.H"
-#include "NOX_Epetra_Interface_Preconditioner.H"
+// NOX::Petsc::Interface includes
+#include "NOX_Petsc_Interface.H"
 %}
 
 // General ignore directives
@@ -123,7 +127,7 @@ NOX.Epetra.Interface provides the following user-level classes:
 %import "Teuchos.i"
 
 // Epetra module imports
-%import "Epetra.i"
+// %import "Epetra.i"
 
 // Exception handling
 %include "exception.i"
@@ -160,52 +164,36 @@ NOX.Epetra.Interface provides the following user-level classes:
   }
 }
 
-// Teuchos::RCPs typemaps
-%teuchos_rcp(NOX::Epetra::Interface::Required)
-%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
-%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
-
 ///////////////////////
 // NOX_Utils support //
 ///////////////////////
-%import "NOX_Utils.i"
+// %import "NOX_Utils.i"
 
-///////////////////////////////////////////
-// NOX_Epetra_Interface_Required support //
-///////////////////////////////////////////
-%feature("autodoc",
-"computeF(self, Epetra.Vector x, Epetra.Vector F, FillType flag) -> bool
+/////////////////////////////////
+// NOX_Petsc_Interface support //
+/////////////////////////////////
+// %feature("autodoc",
+// "computeF(self, Epetra.Vector x, Epetra.Vector F, FillType flag) -> bool
 
-  Virtual method in C++ that is intended to be overridden by user.
-  This method defines the nonlinear function to be solved.  Arguments
-  x and F will be provided as numpy-hybrid Epetra.Vector objects.
-  Return True if the computation is successful.
+//   Virtual method in C++ that is intended to be overridden by user.
+//   This method defines the nonlinear function to be solved.  Arguments
+//   x and F will be provided as numpy-hybrid Epetra.Vector objects.
+//   Return True if the computation is successful.
 
-  It is strongly recommended that computeF() not raise any exceptions,
-  accidental or otherwise.  This can be prevented by wrapping your
-  algorithm in a try block:
+//   It is strongly recommended that computeF() not raise any exceptions,
+//   accidental or otherwise.  This can be prevented by wrapping your
+//   algorithm in a try block:
 
-    try:
-      # Your code here...
-    except Exception, e:
-      print 'Python exception raised in computeF():'
-      print e
-      return False
+//     try:
+//       # Your code here...
+//     except Exception, e:
+//       print 'Python exception raised in computeF():'
+//       print e
+//       return False
 
-  By returning False, you tell NOX that computeF() was unsuccessful.
-")
-NOX::Epetra::Interface::Required::computeF;
-%feature("director") NOX::Epetra::Interface::Required;
-%include "NOX_Epetra_Interface_Required.H"
-
-///////////////////////////////////////////
-// NOX_Epetra_Interface_Jacobian support //
-///////////////////////////////////////////
-%feature("director") NOX::Epetra::Interface::Jacobian;
-%include "NOX_Epetra_Interface_Jacobian.H"
-
-/////////////////////////////////////////////////
-// NOX_Epetra_Interface_Preconditioner support //
-/////////////////////////////////////////////////
-%feature("director") NOX::Epetra::Interface::Preconditioner;
-%include "NOX_Epetra_Interface_Preconditioner.H"
+//   By returning False, you tell NOX that computeF() was unsuccessful.
+// ")
+// NOX::Epetra::Interface::Required::computeF;
+%teuchos_rcp(NOX::Petsc::Interface::Interface)
+%feature("director") NOX::Petsc::Interface::Interface;
+%include "NOX_Petsc_Interface.H"

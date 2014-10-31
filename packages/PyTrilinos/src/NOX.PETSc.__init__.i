@@ -28,49 +28,35 @@
 // ***********************************************************************
 // @HEADER
 
-%define %nox_epetra_docstring
+%define %nox_petsc_docstring
 "
-PyTrilinos.NOX.Epetra is the python interface to namespace Epetra for
+PyTrilinos.NOX.PETSc is the python interface to namespace PETSc for
 the Trilinos package NOX:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of NOX.Epetra is to provide a concrete interface beteen
-NOX and Epetra.
+The purpose of NOX.PETSc is to provide a concrete interface beteen
+NOX and PETSc.
 
-NOX.Epetra provides the following user-level classes:
+NOX.PETSC provides the following user-level classes:
 
-    * Group                    - Epetra implementation of Abstract.Group
-    * Vector                   - Epetra implementation of Abstract.Vector
-    * FiniteDifference         - Class for estimating Jacobian w/finite differences
-    * FiniteDifferenceColoring - FiniteDifference class, w/coloring efficiencies
-    * MatrixFree               - Base class for Jacobian-free algorithms
-    * Scaling                  - Class for controlling scalling of algebraic objects
-    * LinearSystem             - Base class for interface to linear solvers
-    * LinearSystemAztecOO      - Concrete implementation of LinearSystem
+    * Group                    - PETSc implementation of Abstract.Group
+    * Vector                   - PETSc implementation of Abstract.Vector
+    * SharedJacobian           - PETSc implementation of SharedJacobian
 "
 %enddef
 
-%module(package      = "PyTrilinos.NOX.Epetra",
+%module(package      = "PyTrilinos.NOX.PETSc",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-	docstring    = %nox_epetra_docstring) __init__
+	docstring    = %nox_petsc_docstring) __init__
 
 %{
-// System includes
-#include <vector>
-
 // Configuration
 #include "PyTrilinos_config.h"
 
 // Teuchos includes
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
@@ -78,79 +64,16 @@ NOX.Epetra provides the following user-level classes:
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
 
-// Epetra includes
-#include "Epetra_BLAS.h"
-#include "Epetra_Object.h"
-#include "Epetra_CompObject.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_DistObject.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVbrMatrix.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_JadMatrix.h"
-#include "Epetra_SerialDenseSVD.h"
-#include "Epetra_SerialDistributor.h"
-#include "Epetra_DLLExportMacro.h"
-#include "PyTrilinos_Epetra_Util.hpp"
-
-// EpetraExt includes
-#ifdef HAVE_NOX_EPETRAEXT
-#include "EpetraExt_MapColoring.h"
-#include "EpetraExt_MapColoringIndex.h"
-#include "EpetraExt_ModelEvaluator.h"
-#endif
-
 // NOX includes
-#include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Epetra_Group.H"
-#include "NOX_Epetra_Vector.H"
-#include "NOX_Epetra_FiniteDifference.H"
-#include "NOX_Epetra_FiniteDifferenceColoring.H"
-#include "NOX_Epetra_MatrixFree.H"
-#include "NOX_Epetra_Scaling.H"
-#include "NOX_Epetra_LinearSystem.H"
-#undef HAVE_STDINT_H
-#undef HAVE_INTTYPES_H
-#undef HAVE_SYS_TIME_H
-#include "NOX_Epetra_LinearSystem_AztecOO.H"
-#include "NOX_Epetra_ModelEvaluatorInterface.H"
+#include "NOX_Petsc.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPyVector.hpp"
 
 // Namespace flattening
-using Teuchos::RCP;
-using Teuchos::rcp;
-using namespace NOX;
-using namespace NOX::Abstract;
-using namespace NOX::Epetra;
+using namespace NOX::Petsc;
 %}
-
-// Configuration
-%include "Epetra_DLLExportMacro.h"
 
 // General exception handling
 %include "exception.i"
@@ -199,6 +122,7 @@ using namespace NOX::Epetra;
 %ignore *::print(std::ostream &, int) const;
 %ignore *::operator=;
 %ignore *::operator<<;
+%ignore *::operator[];
 
 // SWIG library includes
 %include "stl.i"
@@ -207,22 +131,11 @@ using namespace NOX::Epetra;
 %import "Teuchos.i"
 
 // Support for Teuchos::RCPs
-%teuchos_rcp(NOX::Epetra::LinearSystem)
-%teuchos_rcp(NOX::Epetra::LinearSystemAztecOO)
-%teuchos_rcp(NOX::Epetra::Scaling)
-%teuchos_rcp(NOX::Epetra::VectorSpace)
 
+// *** Don't erase !!! ***
 // Include typemaps for converting raw types to NOX.Abstract types
-%include "NOX.Abstract_typemaps.i"
-
-// Epetra import
-%import "Epetra.i"
-
-// EpetraExt import
-#ifdef HAVE_NOX_EPETRAEXT
-%ignore EpetraExt::Add;
-%include "EpetraExt.i"
-#endif
+//%include "NOX.Abstract_typemaps.i"
+// ***
 
 // Allow import from the parent directory
 %pythoncode
@@ -234,454 +147,340 @@ del sys, op
 %}
 
 // NOX base classes
-// %ignore *::getX;
-// %ignore *::getF;
-// %ignore *::getGradient;
-// %ignore *::getNewton;
-// %rename(getX       ) *::getXPtr;
-// %rename(getF       ) *::getFPtr;
-// %rename(getGradient) *::getGradientPtr;
-// %rename(getNewton  ) *::getNewtonPtr;
 %teuchos_rcp(NOX::Abstract::Group)
 %import(module="Abstract") "NOX_Abstract_Group.H"
 %import(module="Abstract") "NOX_Abstract_PrePostOperator.H"
 %import(module="Abstract") "NOX_Abstract_MultiVector.H"
 %import(module="Abstract") "NOX_Abstract_Vector.H"
 
-// NOX::Epetra::Interface imports
-%teuchos_rcp(NOX::Epetra::Interface::Required)
-%import(module="Interface") "NOX_Epetra_Interface_Required.H"
-%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
-%import(module="Interface") "NOX_Epetra_Interface_Jacobian.H"
-%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
-%import(module="Interface") "NOX_Epetra_Interface_Preconditioner.H"
+// NOX::Petsc::Interface imports
+%teuchos_rcp(NOX::Petsc::Interface)
+%import(module="Interface") "NOX_Petsc_Interface.H"
+
+/////////////////////////////
+// NOX.Petsc.Group support //
+/////////////////////////////
+%teuchos_rcp(NOX::Petsc::Group)
+%rename(Group_None) NOX::Petsc::Group::None;
+%include "NOX_Petsc_Group.H"
 
 //////////////////////////////
-// NOX.Epetra.Group support //
+// NOX.Petsc.Vector support //
 //////////////////////////////
-%teuchos_rcp(NOX::Epetra::Group)
-%rename(Group_None) NOX::Epetra::Group::None;
-%include "NOX_Epetra_Group.H"
+struct Vec;
+%ignore NOX::Petsc::Vector::Vector(const Vec &, std::string,  NOX::CopyType);
+%include "NOX_Petsc_Vector.H"
 
-///////////////////////////////
-// NOX.Epetra.Vector support //
-///////////////////////////////
-%ignore NOX::Epetra::Vector(Epetra_Vector&, NOX::CopyType, bool);
-%ignore NOX::Epetra::Vector::getEpetraVector() const;
-%include "NOX_Epetra_Vector.H"
-
-/////////////////////////////////////////
-// NOX.Epetra.FiniteDifference support //
-/////////////////////////////////////////
-%teuchos_rcp(NOX::Epetra::FiniteDifference)
-%include "NOX_Epetra_FiniteDifference.H"
-
-/////////////////////////////////////////////////
-// NOX.Epetra.FiniteDifferenceColoring support //
-/////////////////////////////////////////////////
-#ifdef HAVE_NOX_EPETRAEXT
-%teuchos_rcp(NOX::Epetra::FiniteDifferenceColoring)
-namespace NOX
-{
-namespace Epetra
-{
-%extend FiniteDifferenceColoring
-{
-  FiniteDifferenceColoring(Teuchos::ParameterList & printingParams,
-			   const Teuchos::RCP< Interface::Required > & i,
-			   const NOX::Epetra::Vector & initialGuess,
-			   const Teuchos::RCP< Epetra_CrsGraph > & rawGraph,
-			   bool parallelColoring = false,
-			   bool distance1 = false,
-			   double beta = 1.0e-6,
-			   double alpha = 1.0e-4)
-  {
-    // Construct the coloring algorithm functor and generate the color map
-    EpetraExt::CrsGraph_MapColoring *mapColor = new EpetraExt::CrsGraph_MapColoring();
-    const Teuchos::RCP< Epetra_MapColoring > colorMap = Teuchos::rcp(&(*mapColor)(*rawGraph));
-    // Construct the color index functor and generate the column indexes
-    EpetraExt::CrsGraph_MapColoringIndex *mapColorIndex =
-      new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
-    const Teuchos::RCP< std::vector< Epetra_IntVector > > columns =
-      Teuchos::rcp(&(*mapColorIndex)(*rawGraph));
-    // Construct the FiniteDifferenceColoring object
-    FiniteDifferenceColoring *fdc =
-      new FiniteDifferenceColoring(printingParams, i, initialGuess, rawGraph, colorMap,
-				   columns, parallelColoring, distance1, beta, alpha);
-    // Delete temporary functors
-    delete mapColor;
-    delete mapColorIndex;
-    // Return the pointer to FiniteDifferenceColoring object
-    return fdc;
-  }
-}
-%ignore FiniteDifferenceColoring::FiniteDifferenceColoring;
-}
-}
-%include "NOX_Epetra_FiniteDifferenceColoring.H"
-#endif
-
-///////////////////////////////////
-// NOX.Epetra.MatrixFree support //
-///////////////////////////////////
-%teuchos_rcp(NOX::Epetra::MatrixFree)
-%include "NOX_Epetra_MatrixFree.H"
-
-////////////////////////////////
-// NOX.Epetra.Scaling support //
-////////////////////////////////
-%ignore operator<<(ostream&, NOX::Epetra::Scaling&);
-%rename(Scaling_None) NOX::Epetra::Scaling::None;
-%include "NOX_Epetra_Scaling.H"
-
-/////////////////////////////////////
-// NOX.Epetra.LinearSystem support //
-/////////////////////////////////////
-%feature("director") NOX::Epetra::LinearSystem;
-// The following #define is to change the name of NOX method
-// arguments that conflict with a SWIG director method argument
-#define result nox_result
-%include "NOX_Epetra_LinearSystem.H"
-#undef result
-
-////////////////////////////////////////////
-// NOX.Epetra.LinearSystemAztecOO support //
-////////////////////////////////////////////
-// There are two LinearSystemAztecOO constructors that are similar,
-// but different.  SWIG gets confused and thinks one overshadows the
-// other.  This suppresses the warning.
-%warnfilter(509) NOX::Epetra::LinearSystemAztecOO::LinearSystemAztecOO;
-%include "NOX_Epetra_LinearSystem_AztecOO.H"
-
-////////////////////////////////////////////////
-// NOX.Epetra.ModelEvaluatorInterface support //
-////////////////////////////////////////////////
-#ifdef HAVE_NOX_EPETRAEXT
-%teuchos_rcp(NOX::Epetra::ModelEvaluatorInterface)
-%import "EpetraExt.i"
-namespace NOX
-{
-namespace Epetra
-{
-%extend ModelEvaluatorInterface
-{
-  ModelEvaluatorInterface(EpetraExt::ModelEvaluator & eeme)
-  {
-    Teuchos::RCP<EpetraExt::ModelEvaluator> eeme_ptr = Teuchos::rcpFromRef(eeme);
-    return new ModelEvaluatorInterface(eeme_ptr);
-  }
-}
-// Only accept the above constructor for wrapping
-%ignore ModelEvaluatorInterface::ModelEvaluatorInterface;
-}
-}
-%include "NOX_Epetra_ModelEvaluatorInterface.H"
-#endif
+//////////////////////////////////////
+// NOX.Petsc.SharedJacobian support //
+//////////////////////////////////////
+%teuchos_rcp(NOX::Petsc::SharedJacobian)
+%include "NOX_Petsc_SharedJacobian.H"
 
 // Turn off the exception handling
 %exception;
 
-///////////////////////
-// Default factories //
-///////////////////////
+// ///////////////////////
+// // Default factories //
+// ///////////////////////
 
-// defaultSolver() and supporting functions
-%pythoncode
-%{
-def defaultNonlinearParameters(comm=None, verbosity=0, outputPrec=3,
-                               maxIterations=800, tolerance=1.0e-4):
-    """
-    defaultNonlinearParameters(comm=None, verbosity=0, outputPrec=3,
-                               maxIterations=800, tolerance=1.0e-4) -> dict
+// // defaultSolver() and supporting functions
+// %pythoncode
+// %{
+// def defaultNonlinearParameters(comm=None, verbosity=0, outputPrec=3,
+//                                maxIterations=800, tolerance=1.0e-4):
+//     """
+//     defaultNonlinearParameters(comm=None, verbosity=0, outputPrec=3,
+//                                maxIterations=800, tolerance=1.0e-4) -> dict
 
-    Return a dictionary that can serve as a default list of parameters for a NOX
-    solver.  Entries can be altered before passing to a NOX solver constructor.
+//     Return a dictionary that can serve as a default list of parameters for a NOX
+//     solver.  Entries can be altered before passing to a NOX solver constructor.
 
-    comm          - Epetra communicator object.  If not provided, the function
-                    uses an Epetra.SerialComm communicator.
+//     comm          - Epetra communicator object.  If not provided, the function
+//                     uses an Epetra.SerialComm communicator.
 
-    verbosity     - A simple indication of verbosity level.  0: errors and test
-                    details.  1: debugging, warnings, details, parameters and
-                    linear solver details.  2: inner iteration, outer iteration
-                    status test and outer iteration.  Default 0.
+//     verbosity     - A simple indication of verbosity level.  0: errors and test
+//                     details.  1: debugging, warnings, details, parameters and
+//                     linear solver details.  2: inner iteration, outer iteration
+//                     status test and outer iteration.  Default 0.
 
-    outputPrec    - Number of significant digits to output.  Default 3.
+//     outputPrec    - Number of significant digits to output.  Default 3.
 
-    maxIterations - Maximum allowable linear (inner) iterations.  Default 800.
+//     maxIterations - Maximum allowable linear (inner) iterations.  Default 800.
 
-    tolerance     - Linear solver tolerance level.  Default 1.0e-4.
-    """
-    # Communicator
-    if comm is None:
-        comm = PyTrilinos.Epetra.SerialComm()
-    myPID = comm.MyPID()
+//     tolerance     - Linear solver tolerance level.  Default 1.0e-4.
+//     """
+//     # Communicator
+//     if comm is None:
+//         comm = PyTrilinos.Epetra.SerialComm()
+//     myPID = comm.MyPID()
 
-    # Create the printing parameter list
-    Utils = PyTrilinos.NOX.Utils
-    outputInfo = Utils.Error + Utils.TestDetails
-    if verbosity: outputInfo += Utils.Debug      + \
-                                Utils.Warning    + \
-                                Utils.Details    + \
-                                Utils.Parameters + \
-                                Utils.LinearSolverDetails
-    if verbosity > 1: outputInfo += Utils.InnerIteration           + \
-                                    Utils.OuterIterationStatusTest + \
-                                    Utils.OuterIteration
-    printParams = {"MyPID"              : myPID,
-                   "Output Precision"   : outputPrec,
-                   "Output Processor"   : 0,
-                   "Output Information" : outputInfo}
+//     # Create the printing parameter list
+//     Utils = PyTrilinos.NOX.Utils
+//     outputInfo = Utils.Error + Utils.TestDetails
+//     if verbosity: outputInfo += Utils.Debug      + \
+//                                 Utils.Warning    + \
+//                                 Utils.Details    + \
+//                                 Utils.Parameters + \
+//                                 Utils.LinearSolverDetails
+//     if verbosity > 1: outputInfo += Utils.InnerIteration           + \
+//                                     Utils.OuterIterationStatusTest + \
+//                                     Utils.OuterIteration
+//     printParams = {"MyPID"              : myPID,
+//                    "Output Precision"   : outputPrec,
+//                    "Output Processor"   : 0,
+//                    "Output Information" : outputInfo}
 
-    # Create the linear solver parameter list
-    lsParams = {"Aztec Solver"    : "GMRES",
-                "Max Iterations"  : maxIterations,
-                "Tolerance"       : tolerance,
-                "Preconditioner"  : "Ifpack",
-                "Max Age Of Prec" : 5       }
+//     # Create the linear solver parameter list
+//     lsParams = {"Aztec Solver"    : "GMRES",
+//                 "Max Iterations"  : maxIterations,
+//                 "Tolerance"       : tolerance,
+//                 "Preconditioner"  : "Ifpack",
+//                 "Max Age Of Prec" : 5       }
 
-    # Create the nonlinear solver parameter list
-    nlParams = {"Nonlinear Solver" : "Line Search Based",
-                "Printing"         : printParams,
-                "Line Search"      : {"Method" : "Full Step"},
-                "Direction"        : {"Method" : "Newton"},
-                "Newton"           : {"Forcing Term Method" : "Constant"},
-                "Linear Solver"    : lsParams,
-                "Solver Options"   : {"Status Test Check Type" : "Complete"}
-                }
+//     # Create the nonlinear solver parameter list
+//     nlParams = {"Nonlinear Solver" : "Line Search Based",
+//                 "Printing"         : printParams,
+//                 "Line Search"      : {"Method" : "Full Step"},
+//                 "Direction"        : {"Method" : "Newton"},
+//                 "Newton"           : {"Forcing Term Method" : "Constant"},
+//                 "Linear Solver"    : lsParams,
+//                 "Solver Options"   : {"Status Test Check Type" : "Complete"}
+//                 }
     
-    return nlParams
+//     return nlParams
 
-def defaultGroup(nonlinearParameters, initGuess, reqInterface, jacInterface=None,
-                 jacobian=None, precInterface=None, preconditioner=None):
-    """
-    defaultGroup(nonlinearParameters, initGuess, reqInterface, jacInterface=None,
-                 jacobian=None, precInterface=None, preconditioner=None) -> Group
+// def defaultGroup(nonlinearParameters, initGuess, reqInterface, jacInterface=None,
+//                  jacobian=None, precInterface=None, preconditioner=None):
+//     """
+//     defaultGroup(nonlinearParameters, initGuess, reqInterface, jacInterface=None,
+//                  jacobian=None, precInterface=None, preconditioner=None) -> Group
 
-    Return a NOX.Epetra.Group based upon the given input arguments:
+//     Return a NOX.Epetra.Group based upon the given input arguments:
 
-    nonlinearParameters - a dict with nonlinear parameters.  Can be obtained
-                          from defaultNonlinearParameters()
-    initGuess           - an initial guess Epetra.Vector.
-    reqInterface        - a NOX.Epetra.Interface.Required object that defines
-                          the interface to the nonlinear problem.  May be
-                          None if both the Jacobian and preconditioner are
-                          provided.
-    jacInterface        - a NOX.Epetra.Interface.Jacobian object that defines the
-                          Jacobian of the nonlinear problem.  Default None.
-    jacobian            - if jacInterface is provided, this is the Epetra.Operator
-                          that defines the Jacobian matrix.  Default None.
-    precInterface       - a NOX.Epetra.Interface.Preconditioner object that defines
-                          the preconditioner to the nonlinear problem.  Default None.
-    preconditioner      - if precInterface is provided, this is the
-                          Epetra.Operator that defines the preconditioner.
-                          Default None.
-    """
+//     nonlinearParameters - a dict with nonlinear parameters.  Can be obtained
+//                           from defaultNonlinearParameters()
+//     initGuess           - an initial guess Epetra.Vector.
+//     reqInterface        - a NOX.Epetra.Interface.Required object that defines
+//                           the interface to the nonlinear problem.  May be
+//                           None if both the Jacobian and preconditioner are
+//                           provided.
+//     jacInterface        - a NOX.Epetra.Interface.Jacobian object that defines the
+//                           Jacobian of the nonlinear problem.  Default None.
+//     jacobian            - if jacInterface is provided, this is the Epetra.Operator
+//                           that defines the Jacobian matrix.  Default None.
+//     precInterface       - a NOX.Epetra.Interface.Preconditioner object that defines
+//                           the preconditioner to the nonlinear problem.  Default None.
+//     preconditioner      - if precInterface is provided, this is the
+//                           Epetra.Operator that defines the preconditioner.
+//                           Default None.
+//     """
 
-    # Sanity checks to prevent more cryptic problems down the road...
-    if jacInterface is None or precInterface is None:
-        assert isinstance(reqInterface, Interface.Required)
-    if jacInterface is not None:
-        assert isinstance(jacInterface, Interface.Jacobian        )
-        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
-    if precInterface is not None:
-        assert isinstance(precInterface , Interface.Preconditioner  )
-        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
+//     # Sanity checks to prevent more cryptic problems down the road...
+//     if jacInterface is None or precInterface is None:
+//         assert isinstance(reqInterface, Interface.Required)
+//     if jacInterface is not None:
+//         assert isinstance(jacInterface, Interface.Jacobian        )
+//         assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
+//     if precInterface is not None:
+//         assert isinstance(precInterface , Interface.Preconditioner  )
+//         assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
 
-    # Extract parameter lists
-    printParams = nonlinearParameters["Printing"     ]
-    lsParams    = nonlinearParameters["Linear Solver"]
+//     # Extract parameter lists
+//     printParams = nonlinearParameters["Printing"     ]
+//     lsParams    = nonlinearParameters["Linear Solver"]
 
-    # Construct a NOX.Epetra.Vector from the Epetra.Vector
-    clone = Vector(initGuess, Vector.CreateView)
+//     # Construct a NOX.Epetra.Vector from the Epetra.Vector
+//     clone = Vector(initGuess, Vector.CreateView)
 
-    # Construct the linear system
-    if jacInterface:
-        if precInterface:
-            linSys = LinearSystemAztecOO(printParams, lsParams,
-                                         jacInterface, jacobian,
-                                         precInterface, preconditioner,
-                                         clone)
-        else:
-            linSys = LinearSystemAztecOO(printParams, lsParams,
-                                         reqInterface,
-                                         jacInterface, jacobian,
-                                         clone)
-    else:
-        if precInterface:
-            linSys = LinearSystemAztecOO(printParams, lsParams,
-                                         reqInterface,
-                                         precInterface, preconditioner,
-                                         clone)
-        else:
-            linSys = LinearSystemAztecOO(printParams, lsParams,
-                                         reqInterface,
-                                         clone)
+//     # Construct the linear system
+//     if jacInterface:
+//         if precInterface:
+//             linSys = LinearSystemAztecOO(printParams, lsParams,
+//                                          jacInterface, jacobian,
+//                                          precInterface, preconditioner,
+//                                          clone)
+//         else:
+//             linSys = LinearSystemAztecOO(printParams, lsParams,
+//                                          reqInterface,
+//                                          jacInterface, jacobian,
+//                                          clone)
+//     else:
+//         if precInterface:
+//             linSys = LinearSystemAztecOO(printParams, lsParams,
+//                                          reqInterface,
+//                                          precInterface, preconditioner,
+//                                          clone)
+//         else:
+//             linSys = LinearSystemAztecOO(printParams, lsParams,
+//                                          reqInterface,
+//                                          clone)
 
-    # Construct and return the default Group
-    group = Group(printParams, reqInterface, clone, linSys)
-    group.linSys = linSys   ### By adding linSys as an attribute to the Group
-                            ### variable, we ensure that linSys does not get
-                            ### destroyed.  This is a workaround for a
-                            ### Teuchos::RCP wrapper bug.
-    return group
+//     # Construct and return the default Group
+//     group = Group(printParams, reqInterface, clone, linSys)
+//     group.linSys = linSys   ### By adding linSys as an attribute to the Group
+//                             ### variable, we ensure that linSys does not get
+//                             ### destroyed.  This is a workaround for a
+//                             ### Teuchos::RCP wrapper bug.
+//     return group
 
-def defaultStatusTest(absTol=None, relTol=None, relGroup=None, updateTol=None,
-                      wAbsTol=None, wRelTol=None, maxIters=None,
-                      finiteValue=False):
-    """
-    defaultStatusTest(absTol=None, relTol=None, relGroup=None, updateTol=None,
-                      wAbsTol=None, wRelTol=None, maxIters=None,
-                      finiteValue=False) -> StatusTest
+// def defaultStatusTest(absTol=None, relTol=None, relGroup=None, updateTol=None,
+//                       wAbsTol=None, wRelTol=None, maxIters=None,
+//                       finiteValue=False):
+//     """
+//     defaultStatusTest(absTol=None, relTol=None, relGroup=None, updateTol=None,
+//                       wAbsTol=None, wRelTol=None, maxIters=None,
+//                       finiteValue=False) -> StatusTest
 
-    Return a StatusTest object based upon the input arguments:
+//     Return a StatusTest object based upon the input arguments:
 
-    absTol      - if specified, include an absolute residual status test, using
-                  this value as the tolerance
-    relTol      - if specified, along with relGroup, include a relative residual
-                  status test, using this value as the tolerance
-    relGroup    - if specified, along with relTol, include a relative residual
-                  status test, using this Group to determine the scaling
-    updateTol   - if specified, include an update status test, using this value
-                  as the tolerance
-    wAbsTol     - if specified, along with wRelTol, include a weighted RMS
-                  status test, using this value as the absolute tolerance
-    wRelTol     - if specified, along with wAbsTol, include a weighted RMS
-                  status test, using this value as the relative tolerance
-    maxIters    - if specified, include a maximum iterations status test, using
-                  this value as the maximum allowable iterations
-    finiteValue - if True, include a finite value status test.  Default False.
-    """
-    # Build the convergence portion of the status test
-    StatusTest = PyTrilinos.NOX.StatusTest
-    converged  = StatusTest.Combo(StatusTest.Combo.AND)
-    converged.tests = [ ]   ### By adding this list of tests as an attribute to
-                            ### the StatusTest variables, we ensure that linSys
-                            ### does not get destroyed.  This is a workaround
-                            ### for a Teuchos::RCP wrapper bug.
+//     absTol      - if specified, include an absolute residual status test, using
+//                   this value as the tolerance
+//     relTol      - if specified, along with relGroup, include a relative residual
+//                   status test, using this value as the tolerance
+//     relGroup    - if specified, along with relTol, include a relative residual
+//                   status test, using this Group to determine the scaling
+//     updateTol   - if specified, include an update status test, using this value
+//                   as the tolerance
+//     wAbsTol     - if specified, along with wRelTol, include a weighted RMS
+//                   status test, using this value as the absolute tolerance
+//     wRelTol     - if specified, along with wAbsTol, include a weighted RMS
+//                   status test, using this value as the relative tolerance
+//     maxIters    - if specified, include a maximum iterations status test, using
+//                   this value as the maximum allowable iterations
+//     finiteValue - if True, include a finite value status test.  Default False.
+//     """
+//     # Build the convergence portion of the status test
+//     StatusTest = PyTrilinos.NOX.StatusTest
+//     converged  = StatusTest.Combo(StatusTest.Combo.AND)
+//     converged.tests = [ ]   ### By adding this list of tests as an attribute to
+//                             ### the StatusTest variables, we ensure that linSys
+//                             ### does not get destroyed.  This is a workaround
+//                             ### for a Teuchos::RCP wrapper bug.
 
-    if absTol:
-        absTest = StatusTest.NormF(absTol)
-        converged.addStatusTest(absTest)
-        converged.tests.append(absTest)
-    if relGroup and relTol:
-        relTest = StatusTest.NormF(relGroup,relTol)
-        converged.addStatusTest(relTest)
-        converged.tests.append(relTest)
-    if wAbsTol and wRelTol:
-        wrmsTest = StatusTest.NormWRMS(wRelTol,wAbsTol)
-        converged.addStatusTest(wrmsTest)
-        converged.tests.append(wrmsTest)
-    if updateTol:
-        updateTest = StatusTest.NormUpdate(updateTol)
-        converged.addStatusTest(updateTest)
-        converged.tests.append(updateTest)
+//     if absTol:
+//         absTest = StatusTest.NormF(absTol)
+//         converged.addStatusTest(absTest)
+//         converged.tests.append(absTest)
+//     if relGroup and relTol:
+//         relTest = StatusTest.NormF(relGroup,relTol)
+//         converged.addStatusTest(relTest)
+//         converged.tests.append(relTest)
+//     if wAbsTol and wRelTol:
+//         wrmsTest = StatusTest.NormWRMS(wRelTol,wAbsTol)
+//         converged.addStatusTest(wrmsTest)
+//         converged.tests.append(wrmsTest)
+//     if updateTol:
+//         updateTest = StatusTest.NormUpdate(updateTol)
+//         converged.addStatusTest(updateTest)
+//         converged.tests.append(updateTest)
 
-    # Return if done
-    if not (maxIters or finiteValue):
-        return converged
+//     # Return if done
+//     if not (maxIters or finiteValue):
+//         return converged
 
-    # Add the divergence portion of the default status test
-    combo = StatusTest.Combo(StatusTest.Combo.OR)
-    combo.tests = [ ]
-    if finiteValue:
-        fvTest = StatusTest.FiniteValue()
-        combo.addStatusTest(fvTest)
-        combo.tests.append(fvTest)
-    combo.addStatusTest(converged)
-    combo.tests.append(converged)
-    if maxIters:
-        maxIterTest = StatusTest.MaxIters(maxIters)
-        combo.addStatusTest(maxIterTest)
-        combo.tests.append(maxIterTest)
-    return combo
+//     # Add the divergence portion of the default status test
+//     combo = StatusTest.Combo(StatusTest.Combo.OR)
+//     combo.tests = [ ]
+//     if finiteValue:
+//         fvTest = StatusTest.FiniteValue()
+//         combo.addStatusTest(fvTest)
+//         combo.tests.append(fvTest)
+//     combo.addStatusTest(converged)
+//     combo.tests.append(converged)
+//     if maxIters:
+//         maxIterTest = StatusTest.MaxIters(maxIters)
+//         combo.addStatusTest(maxIterTest)
+//         combo.tests.append(maxIterTest)
+//     return combo
 
-def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
-                  precInterface=None, preconditioner=None, nlParams=None,
-                  absTol=1.0e-8, relTol=1.0e-2, relGroup=None, updateTol=1.0e-5,
-                  wAbsTol=1.0e-8, wRelTol=1.0e-2, maxIters=20, finiteValue=True):
-    """
-    defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
-                  precInterface=None, preconditioner=None, nlParams=None) -> Solver
+// def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
+//                   precInterface=None, preconditioner=None, nlParams=None,
+//                   absTol=1.0e-8, relTol=1.0e-2, relGroup=None, updateTol=1.0e-5,
+//                   wAbsTol=1.0e-8, wRelTol=1.0e-2, maxIters=20, finiteValue=True):
+//     """
+//     defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
+//                   precInterface=None, preconditioner=None, nlParams=None) -> Solver
 
-    Return a default NOX Solver based on the given arguments:
+//     Return a default NOX Solver based on the given arguments:
 
-    initGuess      - an Epetra.Vector initial guess
-    reqInterface   - a NOX.Epetra.Interface.Required object that defines
-                     the interface to the nonlinear problem.  May be
-                     None if both the Jacobian and preconditioner are
-                     provided.
-    jacInterface   - a NOX.Epetra.Interface.Jacobian object that defines the
-                     Jacobian of the nonlinear problem.  Default None.
-    jacobian       - if jacInterface is provided, this should also be provided
-                     and is the Epetra.Operator that defines the Jacobian
-                     matrix.  Default None. 
-    precInterface  - a NOX.Epetra.Interface.Preconditioner object that defines
-                     the preconditioner to the nonlinear problem.  Default None.
-    preconditioner - if precInterface is provided, this should also be provided
-                     and is the Epetra.Operator that defines the preconditioner.
-                     Default None.
-    nlParams       - dict that contains a list of nonlinear parameters.  Default
-                     None, in which case defaultNonlinearParameters() is used.
-    absTol         - if not None, include an absolute residual status test,
-                     using this value as the tolerance.  Default 1.0e-8.
-    relTol         - if not None, include a relative residual status test, using
-                     this value as the tolerance.  Default 1.0e-2.
-    relGroup       - if relTol is specified, use this Group to determine the
-                     scaling.  If relGroup is None, use the result of
-                     defaultGroup().  Default None.
-    updateTol      - if not None, include an update status test, using this
-                     value as the tolerance.  Default 1.0e-5.
-    wAbsTol        - if not None, along with wRelTol, include a weighted RMS
-                     status test, using this value as the absolute tolerance.
-                     Default 1.0e-8.
-    wRelTol        - if not None, along with wAbsTol, include a weighted RMS
-                     status test, using this value as the relative tolerance.
-                     Default 1.0e-2.
-    maxIters       - if not None, include a maximum nonlinear iterations status
-                     test, using this value as the maximum allowable iterations.
-                     Default 20. 
-    finiteValue    - if True, include a finite value status test.  Default
-                     True. 
-    """
+//     initGuess      - an Epetra.Vector initial guess
+//     reqInterface   - a NOX.Epetra.Interface.Required object that defines
+//                      the interface to the nonlinear problem.  May be
+//                      None if both the Jacobian and preconditioner are
+//                      provided.
+//     jacInterface   - a NOX.Epetra.Interface.Jacobian object that defines the
+//                      Jacobian of the nonlinear problem.  Default None.
+//     jacobian       - if jacInterface is provided, this should also be provided
+//                      and is the Epetra.Operator that defines the Jacobian
+//                      matrix.  Default None. 
+//     precInterface  - a NOX.Epetra.Interface.Preconditioner object that defines
+//                      the preconditioner to the nonlinear problem.  Default None.
+//     preconditioner - if precInterface is provided, this should also be provided
+//                      and is the Epetra.Operator that defines the preconditioner.
+//                      Default None.
+//     nlParams       - dict that contains a list of nonlinear parameters.  Default
+//                      None, in which case defaultNonlinearParameters() is used.
+//     absTol         - if not None, include an absolute residual status test,
+//                      using this value as the tolerance.  Default 1.0e-8.
+//     relTol         - if not None, include a relative residual status test, using
+//                      this value as the tolerance.  Default 1.0e-2.
+//     relGroup       - if relTol is specified, use this Group to determine the
+//                      scaling.  If relGroup is None, use the result of
+//                      defaultGroup().  Default None.
+//     updateTol      - if not None, include an update status test, using this
+//                      value as the tolerance.  Default 1.0e-5.
+//     wAbsTol        - if not None, along with wRelTol, include a weighted RMS
+//                      status test, using this value as the absolute tolerance.
+//                      Default 1.0e-8.
+//     wRelTol        - if not None, along with wAbsTol, include a weighted RMS
+//                      status test, using this value as the relative tolerance.
+//                      Default 1.0e-2.
+//     maxIters       - if not None, include a maximum nonlinear iterations status
+//                      test, using this value as the maximum allowable iterations.
+//                      Default 20. 
+//     finiteValue    - if True, include a finite value status test.  Default
+//                      True. 
+//     """
 
-    # Sanity checks to prevent more cryptic problems down the road...
-    if jacInterface is None or precInterface is None:
-        assert isinstance(reqInterface, Interface.Required)
-    if jacInterface is not None:
-        assert isinstance(jacInterface, Interface.Jacobian        )
-        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
-    if precInterface is not None:
-        assert isinstance(precInterface , Interface.Preconditioner  )
-        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
+//     # Sanity checks to prevent more cryptic problems down the road...
+//     if jacInterface is None or precInterface is None:
+//         assert isinstance(reqInterface, Interface.Required)
+//     if jacInterface is not None:
+//         assert isinstance(jacInterface, Interface.Jacobian        )
+//         assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
+//     if precInterface is not None:
+//         assert isinstance(precInterface , Interface.Preconditioner  )
+//         assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
 
-    # Get the communicator
-    comm = initGuess.Comm()
+//     # Get the communicator
+//     comm = initGuess.Comm()
 
-    # Get the nonlinear parameters
-    if nlParams is None:
-        nlParams = defaultNonlinearParameters(comm,2)
+//     # Get the nonlinear parameters
+//     if nlParams is None:
+//         nlParams = defaultNonlinearParameters(comm,2)
 
-    # Build the default Group
-    group = defaultGroup(nlParams, initGuess, reqInterface, jacInterface,
-                         jacobian, precInterface, preconditioner)
+//     # Build the default Group
+//     group = defaultGroup(nlParams, initGuess, reqInterface, jacInterface,
+//                          jacobian, precInterface, preconditioner)
 
-    # Get the default StatusTest
-    if relTol and (relGroup is None): relGroup = group
-    statusTest = defaultStatusTest(absTol      = absTol,
-                                   relTol      = relTol,
-                                   relGroup    = relGroup,
-                                   updateTol   = updateTol,
-                                   wAbsTol     = wAbsTol,
-                                   wRelTol     = wRelTol,
-                                   maxIters    = maxIters,
-                                   finiteValue = finiteValue)
+//     # Get the default StatusTest
+//     if relTol and (relGroup is None): relGroup = group
+//     statusTest = defaultStatusTest(absTol      = absTol,
+//                                    relTol      = relTol,
+//                                    relGroup    = relGroup,
+//                                    updateTol   = updateTol,
+//                                    wAbsTol     = wAbsTol,
+//                                    wRelTol     = wRelTol,
+//                                    maxIters    = maxIters,
+//                                    finiteValue = finiteValue)
 
-    # Return the default Solver
-    solver = PyTrilinos.NOX.Solver.buildSolver(group, statusTest, nlParams)
-    #solver.group      = group        ### By adding group, statusTest and
-    solver.statusTest = statusTest   ### nlParams as attributes to the Solver
-    solver.nlParams   = nlParams     ### variable, we ensure that they do not
-                                     ### get destroyed.  This is a workaround for
-                                     ### a Teuchos::RCP wrapper bug.
-    return solver
-%}
+//     # Return the default Solver
+//     solver = PyTrilinos.NOX.Solver.buildSolver(group, statusTest, nlParams)
+//     #solver.group      = group        ### By adding group, statusTest and
+//     solver.statusTest = statusTest   ### nlParams as attributes to the Solver
+//     solver.nlParams   = nlParams     ### variable, we ensure that they do not
+//                                      ### get destroyed.  This is a workaround for
+//                                      ### a Teuchos::RCP wrapper bug.
+//     return solver
+// %}
