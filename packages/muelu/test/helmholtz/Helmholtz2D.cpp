@@ -163,10 +163,11 @@ int main(int argc, char *argv[]) {
     SLSolver -> initialize();
 
     // vector of frequencies
-    std::vector<double> omegas; omegas.resize(3);
+    std::vector<double> omegas;
+    omegas.push_back(0);
     omegas[0]=omega;
-    omegas[1]=omega+10;
-    omegas[2]=omega+20;
+    //omegas[1]=omega+10;
+    //omegas[2]=omega+20;
     int total_iters = 0;
 
     // loop over frequencies
