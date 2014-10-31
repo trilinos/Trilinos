@@ -598,7 +598,7 @@ std::string CudaHostPinnedSpace::query_label( const void * p )
 
 } // namespace Kokkos
 
-#endif KOKKOS_HAVE_CUDA
+#endif // KOKKOS_HAVE_CUDA
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
