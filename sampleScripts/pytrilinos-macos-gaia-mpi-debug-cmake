@@ -34,7 +34,6 @@ EXTRA_ARGS=$@
     -D Trilinos_ENABLE_ML:BOOL=ON \
     -D Trilinos_ENABLE_NOX:BOOL=ON \
     -D NOX_ENABLE_LOCA:BOOL=ON \
-    -D Trilinos_ENABLE_:BOOL=ON \
     -D Trilinos_ENABLE_PyTrilinos:BOOL=ON \
     -D PyTrilinos_ENABLE_TESTS:BOOL=ON \
     -D PyTrilinos_ENABLE_EXAMPLES:BOOL=ON \
