@@ -50,6 +50,8 @@
 /// \warning This interface is not ready for exposure to users yet.
 ///   Users beware!
 
+#include <Kokkos_complex.hpp>
+
 #include <cfloat>
 #include <climits>
 #include <cmath>
@@ -1079,6 +1081,248 @@ public:
   }
   static mag_type rmax () {
     return LDBL_MAX;
+  }
+};
+
+
+template<>
+class ArithTraits< ::Kokkos::complex<float> > {
+public:
+  typedef ::Kokkos::complex<float> val_type;
+  typedef float mag_type;
+
+  static const bool is_specialized = true;
+  static const bool is_signed = true;
+  static const bool is_integer = false;
+  static const bool is_exact = false;
+  static const bool is_complex = true;
+
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+    return ArithTraits<mag_type>::isInf (x.real ()) ||
+      ArithTraits<mag_type>::isInf (x.imag ());
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+    return ArithTraits<mag_type>::isNan (x.real ()) ||
+      ArithTraits<mag_type>::isNan (x.imag ());
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
+    return ::Kokkos::abs (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
+    return val_type (ArithTraits<mag_type>::zero (), ArithTraits<mag_type>::zero ());
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
+    return val_type (ArithTraits<mag_type>::one (), ArithTraits<mag_type>::zero ());
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
+    return val_type (ArithTraits<mag_type>::min (), ArithTraits<mag_type>::min ()); // ???
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
+    return val_type (ArithTraits<mag_type>::max (), ArithTraits<mag_type>::max ()); // ???
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
+    return x.real ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+    return x.imag ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
+    return ::Kokkos::conj (x);
+  }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
+  //   return ::pow (x, y);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+  //   return ::sqrt (x);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
+  //   return ::log (x);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
+  //   return ::log10 (x);
+  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
+    // ???
+    return val_type (ArithTraits<mag_type>::nan (), ArithTraits<mag_type>::nan ());
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
+    return ArithTraits<mag_type>::epsilon (); // ???
+  }
+
+  // Backwards compatibility with Teuchos::ScalarTraits.
+  typedef mag_type magnitudeType;
+  typedef ::Kokkos::complex<ArithTraits<mag_type>::halfPrecision> halfPrecision;
+  typedef ::Kokkos::complex<ArithTraits<mag_type>::doublePrecision> doublePrecision;
+
+  static const bool isComplex = true;
+  static const bool isOrdinal = false;
+  static const bool isComparable = false;
+  static const bool hasMachineParameters = ArithTraits<mag_type>::hasMachineParameters;
+  static bool isnaninf (const val_type& x) {
+    return isNan (x) || isInf (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type magnitude (const val_type x) {
+    return abs (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
+    return conj (x);
+  }
+  static std::string name () {
+    return "Kokkos::complex<float>";
+  }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
+  //   return sqrt (x);
+  // }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type eps () {
+    return epsilon ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type sfmin () {
+    return ArithTraits<mag_type>::sfmin (); // ???
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int base () {
+    return ArithTraits<mag_type>::base ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type prec () {
+    return ArithTraits<mag_type>::prec (); // ???
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int t () {
+    return ArithTraits<mag_type>::t ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rnd () {
+    return ArithTraits<mag_type>::rnd ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int emin () {
+    return ArithTraits<mag_type>::emin ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmin () {
+    return ArithTraits<mag_type>::rmin ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int emax () {
+    return ArithTraits<mag_type>::emax ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmax () {
+    return ArithTraits<mag_type>::rmax ();
+  }
+};
+
+
+template<>
+class ArithTraits< ::Kokkos::complex<double> > {
+public:
+  typedef ::Kokkos::complex<double> val_type;
+  typedef double mag_type;
+
+  static const bool is_specialized = true;
+  static const bool is_signed = true;
+  static const bool is_integer = false;
+  static const bool is_exact = false;
+  static const bool is_complex = true;
+
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+    return ArithTraits<mag_type>::isInf (x.real ()) ||
+      ArithTraits<mag_type>::isInf (x.imag ());
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+    return ArithTraits<mag_type>::isNan (x.real ()) ||
+      ArithTraits<mag_type>::isNan (x.imag ());
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
+    return ::Kokkos::abs (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
+    return val_type (ArithTraits<mag_type>::zero (), ArithTraits<mag_type>::zero ());
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
+    return val_type (ArithTraits<mag_type>::one (), ArithTraits<mag_type>::zero ());
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
+    return val_type (ArithTraits<mag_type>::min (), ArithTraits<mag_type>::min ()); // ???
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
+    return val_type (ArithTraits<mag_type>::max (), ArithTraits<mag_type>::max ()); // ???
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
+    return x.real ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+    return x.imag ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
+    return ::Kokkos::conj (x);
+  }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
+  //   return ::pow (x, y);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+  //   return ::sqrt (x);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
+  //   return ::log (x);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
+  //   return ::log10 (x);
+  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
+    // ???
+    return val_type (ArithTraits<mag_type>::nan (), ArithTraits<mag_type>::nan ());
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
+    return ArithTraits<mag_type>::epsilon (); // ???
+  }
+
+  // Backwards compatibility with Teuchos::ScalarTraits.
+  typedef mag_type magnitudeType;
+  typedef ::Kokkos::complex<ArithTraits<mag_type>::halfPrecision> halfPrecision;
+  typedef ::Kokkos::complex<ArithTraits<mag_type>::doublePrecision> doublePrecision;
+
+  static const bool isComplex = true;
+  static const bool isOrdinal = false;
+  static const bool isComparable = false;
+  static const bool hasMachineParameters = ArithTraits<mag_type>::hasMachineParameters;
+  static bool isnaninf (const val_type& x) {
+    return isNan (x) || isInf (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type magnitude (const val_type x) {
+    return abs (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
+    return conj (x);
+  }
+  static std::string name () {
+    return "Kokkos::complex<double>";
+  }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
+  //   return sqrt (x);
+  // }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type eps () {
+    return epsilon ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type sfmin () {
+    return ArithTraits<mag_type>::sfmin (); // ???
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int base () {
+    return ArithTraits<mag_type>::base ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type prec () {
+    return ArithTraits<mag_type>::prec (); // ???
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int t () {
+    return ArithTraits<mag_type>::t ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rnd () {
+    return ArithTraits<mag_type>::rnd ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int emin () {
+    return ArithTraits<mag_type>::emin ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmin () {
+    return ArithTraits<mag_type>::rmin ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int emax () {
+    return ArithTraits<mag_type>::emax ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmax () {
+    return ArithTraits<mag_type>::rmax ();
   }
 };
 
