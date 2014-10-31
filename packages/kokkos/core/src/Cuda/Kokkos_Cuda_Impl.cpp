@@ -45,6 +45,10 @@
 /* Kokkos interfaces */
 
 #include <Kokkos_Core.hpp>
+
+/* only compile this file if CUDA is enabled for Kokkos */
+#ifdef KOKKOS_HAVE_CUDA
+
 #include <Cuda/Kokkos_Cuda_Internal.hpp>
 #include <impl/Kokkos_Error.hpp>
 
@@ -650,5 +654,6 @@ unsigned Cuda::team_recommended()
 
 } // namespace Kokkos
 
+#endif // KOKKOS_HAVE_CUDA
 //----------------------------------------------------------------------------
 
