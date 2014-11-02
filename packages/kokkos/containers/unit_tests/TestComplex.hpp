@@ -93,10 +93,36 @@ namespace Impl {
   }
 
   template <typename RealType>
+  void testDivide () {
+    typedef Kokkos::complex<RealType> complex_type;
+
+    // Test division of a complex number by a real number.
+    complex_type z1 (1.0, -1.0);
+    complex_type z2 (1.0 / 2.0, -1.0 / 2.0);
+    ASSERT_TRUE( z1 / 2.0 == z2 );
+
+    // (-1+2i)/(1-i) == ((-1+2i)(1+i)) / ((1-i)(1+i))
+    // (-1+2i)(1+i) == -3 + i
+    complex_type z3 (-1.0, 2.0);
+    complex_type z4 (1.0, -1.0);
+    complex_type z5 (-3.0, 1.0);
+    ASSERT_TRUE(z3 * Kokkos::conj (z4) == z5 );
+
+    // Test division of a complex number by a complex number.
+    // This assumes that RealType is a floating-point type.
+    complex_type z6 (Kokkos::real (z5) / 2.0,
+                     Kokkos::imag (z5) / 2.0);
+
+    complex_type z7 = z3 / z4;
+    ASSERT_TRUE( z7 == z6 );
+  }
+
+  template <typename RealType>
   void testOutsideKernel () {
     testComplexConstructors<RealType> ();
     testPlus<RealType> ();
     testTimes<RealType> ();
+    testDivide<RealType> ();
   }
 
 

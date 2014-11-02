@@ -53,7 +53,9 @@ namespace Kokkos {
 /// \brief Partial reimplementation of std::complex that works as the
 ///   result of a Kokkos::parallel_reduce.
 /// \tparam RealType The type of the real and imaginary parts of the
-///   complex number.
+///   complex number.  As with std::complex, this is only defined for
+///   \c float, \c double, and <tt>long double</tt>.  The latter is
+///   currently forbidden in CUDA device kernels.
 template<class RealType>
 class complex {
 private:
@@ -70,7 +72,7 @@ public:
 
   //! Copy constructor.
   KOKKOS_INLINE_FUNCTION complex (const complex<RealType>& src) :
-    re_ (src.real ()), im_ (src.imag ())
+    re_ (src.re_), im_ (src.im_)
   {}
 
   /// \brief Conversion constructor from std::complex.
@@ -100,8 +102,8 @@ public:
   template<class InputRealType>
   KOKKOS_INLINE_FUNCTION
   complex<RealType>& operator= (const complex<InputRealType>& src) {
-    re_ = src.real ();
-    im_ = src.imag ();
+    re_ = src.re_;
+    im_ = src.im_;
     return *this;
   }
 
@@ -148,15 +150,15 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   complex<RealType>& operator += (const complex<RealType>& src) {
-    re_ += src.real ();
-    im_ += src.imag ();
+    re_ += src.re_;
+    im_ += src.im_;
     return *this;
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator += (const volatile complex<RealType>& src) volatile {
-    re_ += src.real ();
-    im_ += src.imag ();
+    re_ += src.re_;
+    im_ += src.im_;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -172,8 +174,8 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   complex<RealType>& operator -= (const complex<RealType>& src) {
-    re_ -= src.real ();
-    im_ -= src.imag ();
+    re_ -= src.re_;
+    im_ -= src.im_;
     return *this;
   }
 
@@ -185,8 +187,8 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   complex<RealType>& operator *= (const complex<RealType>& src) {
-    const RealType realPart = real () * src.real () - imag () * src.imag ();
-    const RealType imagPart = real () * src.imag () + imag () * src.real ();
+    const RealType realPart = re_ * src.re_ - im_ * src.im_;
+    const RealType imagPart = re_ * src.im_ + im_ * src.re_;
     re_ = realPart;
     im_ = imagPart;
     return *this;
@@ -194,8 +196,8 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void operator *= (const volatile complex<RealType>& src) volatile {
-    const RealType realPart = real () * src.real () - imag () * src.imag ();
-    const RealType imagPart = real () * src.imag () + imag () * src.real ();
+    const RealType realPart = re_ * src.re_ - im_ * src.im_;
+    const RealType imagPart = re_ * src.im_ + im_ * src.re_;
     re_ = realPart;
     im_ = imagPart;
   }
@@ -215,10 +217,26 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   complex<RealType>& operator /= (const complex<RealType>& y) {
-    // FIXME (mfh 31 Oct 2014) Scale to avoid unwarranted overflow.
-    const RealType abs_y = abs (y);
-    const complex<RealType> y_conj_scaled (y.real () / abs_y, -y.imag () / abs_y);
-    (*this) *= y_conj_scaled;
+    // Scale (by the "1-norm" of y) to avoid unwarranted overflow.
+    // If the real part is +/-Inf and the imaginary part is -/+Inf,
+    // this won't change the result.
+    const RealType s = ::fabs (real (y)) + ::fabs (imag (y));
+
+    // If s is 0, then y is zero, so x/y == real(x)/0 + i*imag(x)/0.
+    // In that case, the relation x/y == (x/s) / (y/s) doesn't hold,
+    // because y/s is NaN.
+    if (s == 0.0) {
+      this->re_ /= s;
+      this->im_ /= s;
+    }
+    else {
+      const complex<RealType> x_scaled (this->re_ / s, this->im_ / s);
+      const complex<RealType> y_conj_scaled (y.re_ / s, -(y.im_) / s);
+      const RealType y_scaled_abs = y_conj_scaled.re_ * y_conj_scaled.re_ +
+        y_conj_scaled.im_ * y_conj_scaled.im_; // abs(y) == abs(conj(y))
+      *this = x_scaled * y_conj_scaled;
+      *this /= y_scaled_abs;
+    }
     return *this;
   }
 
@@ -300,15 +318,40 @@ complex<RealType> conj (const complex<RealType>& x) {
   return complex<RealType> (real (x), -imag (x));
 }
 
+
+//! Binary operator / for complex and real numbers
+template<class RealType1, class RealType2>
+KOKKOS_INLINE_FUNCTION
+complex<RealType1>
+operator / (const complex<RealType1>& x, const RealType2& y) {
+  return complex<RealType1> (real (x) / y, imag (x) / y);
+}
+
 //! Binary operator / for complex.
 template<class RealType>
 KOKKOS_INLINE_FUNCTION
 complex<RealType>
 operator / (const complex<RealType>& x, const complex<RealType>& y) {
-  // FIXME (mfh 31 Oct 2014) Scale to avoid unwarranted overflow.
-  const RealType abs_y = abs (y);
-  const complex<RealType> y_conj_scaled (real (y) / abs_y, -imag (y) / abs_y);
-  return x * y_conj_scaled;
+  // Scale (by the "1-norm" of y) to avoid unwarranted overflow.
+  // If the real part is +/-Inf and the imaginary part is -/+Inf,
+  // this won't change the result.
+  const RealType s = ::fabs (real (y)) + ::fabs (imag (y));
+
+  // If s is 0, then y is zero, so x/y == real(x)/0 + i*imag(x)/0.
+  // In that case, the relation x/y == (x/s) / (y/s) doesn't hold,
+  // because y/s is NaN.
+  if (s == 0.0) {
+    return complex<RealType> (real (x) / s, imag (x) / s);
+  }
+  else {
+    const complex<RealType> x_scaled (real (x) / s, imag (x) / s);
+    const complex<RealType> y_conj_scaled (real (y) / s, -imag (y) / s);
+    const RealType y_scaled_abs = real (y_conj_scaled) * real (y_conj_scaled) +
+      imag (y_conj_scaled) * imag (y_conj_scaled); // abs(y) == abs(conj(y))
+    complex<RealType> result = x_scaled * y_conj_scaled;
+    result /= y_scaled_abs;
+    return result;
+  }
 }
 
 //! Equality operator for two complex numbers.
@@ -355,8 +398,8 @@ bool operator != (const RealType& x, const complex<RealType>& y) {
 
 template<class RealType>
 std::ostream& operator << (std::ostream& os, const complex<RealType>& x) {
-  const std::complex<RealType> x_std = x;
-  os << x;
+  const std::complex<RealType> x_std (Kokkos::real (x), Kokkos::imag (x));
+  os << x_std;
   return os;
 }
 
