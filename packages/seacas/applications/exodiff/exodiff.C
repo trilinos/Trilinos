@@ -1314,7 +1314,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  if (interface.show_all_diffs) {
 	    if (d > interface.node_var[n_idx].value) {
 	      diff_flag = true;
-	      sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
+	      sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")",
 		      name_length,
 		      name.c_str(), interface.node_var[n_idx].abrstr(),
 		      vals1[n], vals2[n2], d, (size_t)id_map[n]);
@@ -1345,7 +1345,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       if (max_diff.diff > interface.node_var[n_idx].value) {
 	diff_flag = true;
 	if (!interface.quiet_flag) {
-	  sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
+	  sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")",
 		  name_length,
 		  name.c_str(), interface.node_var[n_idx].abrstr(),
 		  max_diff.val1, max_diff.val2,
@@ -1483,7 +1483,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	      if (d > interface.elmt_var[e_idx].value) {
 		diff_flag = true;
 		sprintf(buf,
-			"   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block "ST_ZU", elmt "ST_ZU")",
+			"   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block " ST_ZU ", elmt " ST_ZU ")",
 			name_length, name.c_str(),
 			interface.elmt_var[e_idx].abrstr(),
 			vals1[e], v2, d, block_id, (size_t)id_map[global_elmt_index]);
@@ -1530,7 +1530,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
         
 	if (!interface.quiet_flag) {
 	  sprintf(buf,
-		  "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block "ST_ZU", elmt "ST_ZU")",
+		  "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block " ST_ZU ", elmt " ST_ZU ")",
 		  name_length, name.c_str(),
 		  interface.elmt_var[e_idx].abrstr(),
 		  max_diff.val1, max_diff.val2,
@@ -1641,7 +1641,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	      if (d > interface.ns_var[e_idx].value) {
 		diff_flag = true;
 		sprintf(buf,
-			"   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set "ST_ZU", node "ST_ZU")",
+			"   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", node " ST_ZU ")",
 			name_length, name.c_str(), interface.ns_var[e_idx].abrstr(),
 			vals1[idx1], v2, d, nset1->Id(), e);
 		std::cout << buf << std::endl;
@@ -1693,7 +1693,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	if (!interface.quiet_flag) {
 	  Node_Set<INT> *nset = file1.Get_Node_Set_by_Id(max_diff.blk);
 	  sprintf(buf,
-		  "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set "ST_ZU", node "ST_ZU")",
+		  "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", node " ST_ZU ")",
 		  name_length,
 		  name.c_str(),
 		  interface.ns_var[e_idx].abrstr(),
@@ -1801,7 +1801,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	      if (d > interface.ss_var[e_idx].value) {
 		diff_flag = true;
 		sprintf(buf,
-			"   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set "ST_ZU", side "ST_ZU".%d)",
+			"   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU ".%d)",
 			name_length, name.c_str(), interface.ss_var[e_idx].abrstr(),
 			vals1[ind1], v2, d,
 			(size_t)sset1->Id(),
@@ -1854,7 +1854,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	if (!interface.quiet_flag) {
 	  Side_Set<INT> *sset = file1.Get_Side_Set_by_Id(max_diff.blk);
 	  sprintf(buf,
-		  "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set "ST_ZU", side "ST_ZU".%d)",
+		  "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU ".%d)",
 		  name_length,
 		  name.c_str(),
 		  interface.ss_var[e_idx].abrstr(),
@@ -1957,7 +1957,7 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
 	  if (d > interface.elmt_att[tol_idx].value) {
 	    diff_flag = true;
 	    sprintf(buf,
-		    "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block "ST_ZU", elmt "ST_ZU")",
+		    "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block " ST_ZU ", elmt " ST_ZU ")",
 		    name_length, name.c_str(),
 		    interface.elmt_att[tol_idx].abrstr(),
 		    vals1[e], vals2[e], d, block_id, (size_t)id_map[global_elmt_index]);
@@ -1992,7 +1992,7 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
         
 	if (!interface.quiet_flag) {
 	  sprintf(buf,
-		  "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block "ST_ZU", elmt "ST_ZU")",
+		  "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (block " ST_ZU ", elmt " ST_ZU ")",
 		  name_length, name.c_str(),
 		  interface.elmt_att[tol_idx].abrstr(),
 		  max_diff.val1, max_diff.val2,
@@ -2066,7 +2066,7 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
       std::cout << std::endl << "NODAL VARIABLES relative 1.e-6 floor 0.0\n";
       name_length = max_string_length(interface.node_var_names);
       for (i = 0; i < n; ++i) {
-	sprintf(buf, "\t%-*s  # min: %15.8g @ t%d,n"ST_ZU"\tmax: %15.8g @ t%d,n"ST_ZU"\n",
+	sprintf(buf, "\t%-*s  # min: %15.8g @ t%d,n" ST_ZU "\tmax: %15.8g @ t%d,n" ST_ZU "\n",
 		name_length, ((interface.node_var_names)[i]).c_str(),
 		mm_node[i].min_val, mm_node[i].min_step,
 		(size_t)node_id_map[mm_node[i].min_id],
@@ -2083,7 +2083,7 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
       std::cout << std::endl << "ELEMENT VARIABLES relative 1.e-6 floor 0.0\n";
       name_length = max_string_length(interface.elmt_var_names);
       for (i = 0; i < n; ++i) {
-	sprintf(buf, "\t%-*s  # min: %15.8g @ t%d,b"ST_ZU",e"ST_ZU"\tmax: %15.8g @ t%d,b"ST_ZU",e"ST_ZU"\n",
+	sprintf(buf, "\t%-*s  # min: %15.8g @ t%d,b" ST_ZU ",e" ST_ZU "\tmax: %15.8g @ t%d,b" ST_ZU ",e" ST_ZU "\n",
 		name_length, ((interface.elmt_var_names)[i]).c_str(),
 		mm_elmt[i].min_val, mm_elmt[i].min_step,
 		mm_elmt[i].min_blk, (size_t)elem_id_map[mm_elmt[i].min_id],
@@ -2103,7 +2103,7 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
 	Node_Set<INT> *nsmin = file1.Get_Node_Set_by_Id(mm_ns[i].min_blk);
 	Node_Set<INT> *nsmax = file1.Get_Node_Set_by_Id(mm_ns[i].max_blk);
 	sprintf(buf,
-		"\t%-*s  # min: %15.8g @ t%d,s"ST_ZU",n"ST_ZU"\tmax: %15.8g @ t%d,s"ST_ZU",n"ST_ZU"\n",
+		"\t%-*s  # min: %15.8g @ t%d,s" ST_ZU ",n" ST_ZU "\tmax: %15.8g @ t%d,s" ST_ZU ",n" ST_ZU "\n",
 		name_length, ((interface.ns_var_names)[i]).c_str(),
 		mm_ns[i].min_val, mm_ns[i].min_step, mm_ns[i].min_blk,
 		(size_t)node_id_map[nsmin->Node_Id(mm_ns[i].min_id)-1],
@@ -2125,7 +2125,7 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
 	std::pair<int,int> min_side = ssmin->Side_Id(mm_ss[i].min_id);
 	std::pair<int,int> max_side = ssmax->Side_Id(mm_ss[i].max_id);
 	sprintf(buf,
-		"\t%-*s  # min: %15.8g @ t%d,s"ST_ZU",f"ST_ZU".%d\tmax: %15.8g @ t%d,s"ST_ZU",f"ST_ZU".%d\n",
+		"\t%-*s  # min: %15.8g @ t%d,s" ST_ZU ",f" ST_ZU ".%d\tmax: %15.8g @ t%d,s" ST_ZU ",f" ST_ZU ".%d\n",
 		name_length, ((interface.ss_var_names)[i]).c_str(),
 		mm_ss[i].min_val, mm_ss[i].min_step, mm_ss[i].min_blk,
 		(size_t)elem_id_map[min_side.first-1], min_side.second,
