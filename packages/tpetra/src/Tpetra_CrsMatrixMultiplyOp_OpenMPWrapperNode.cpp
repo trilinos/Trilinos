@@ -42,27 +42,33 @@
 */
 
 // Including this is the easy way to get access to all the Node types.
-#include <Kokkos_DefaultNode.hpp>
-#include <Tpetra_ConfigDefs.hpp>
+#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 
 // Don't bother compiling anything, or even including anything else,
-// unless KokkosSerialWrapperNode is enabled.
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
-#include "Tpetra_CrsMatrix_decl.hpp"
-#include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_CrsMatrix_def.hpp"
+// unless KokkosOpenMPWrapperNode is enabled.
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
 
-#define TPETRA_CRSMATRIX_SERIALWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_INSTANT( SCALAR, LO, GO, Kokkos::Compat::KokkosSerialWrapperNode )
+#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
+#include "Tpetra_ETIHelperMacros.h"
+#include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
+
+#define TPETRA_CRSMATRIX_MULTIPLYOP_OPENMPWRAPPERNODE_INSTANT( T, SCALAR, LO, GO ) \
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT( T, SCALAR, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode )
+
+#define TPETRA_CRSMATRIX_MULTIPLYOP_OPENMPWRAPPERNODE_INSTANT_SINGLE( SCALAR, LO, GO ) \
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE( SCALAR, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode )
+
 
 namespace Tpetra {
 
- TPETRA_ETI_MANGLING_TYPEDEFS()
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
- TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_SERIALWRAPPERNODE_INSTANT)
-
- // convert() gets instantiated in a separate file, Tpetra_CrsMatrix_convert.cpp
+  TPETRA_INSTANTIATE_TSLG(TPETRA_CRSMATRIX_MULTIPLYOP_OPENMPWRAPPERNODE_INSTANT)
+  TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_MULTIPLYOP_OPENMPWRAPPERNODE_INSTANT_SINGLE)
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT && KOKKOS_HAVE_SERIAL
+
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT && KOKKOS_HAVE_OPENMP
+

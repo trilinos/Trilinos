@@ -46,19 +46,10 @@
 ///
 /// Declaration of Tpetra::CrsMatrixMultiplyOp and its nonmember constructor.
 
-#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_CrsMatrix_decl.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
 namespace Tpetra {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration
-  template <class MatScalar,
-            class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node>
-  class CrsMatrix;
-#endif
 
   /// \brief A class for wrapping a CrsMatrix multiply in a Operator.
   ///

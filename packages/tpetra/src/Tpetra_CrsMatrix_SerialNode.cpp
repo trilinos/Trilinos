@@ -45,6 +45,8 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 
+// Don't bother compiling anything, or even including anything else,
+// unless SerialNode is enabled.
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_SERIAL)
 
 #include "Tpetra_CrsMatrix_decl.hpp"

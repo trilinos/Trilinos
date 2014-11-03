@@ -46,24 +46,53 @@
 #include "Tpetra_ConfigDefs.hpp"
 
 // Don't bother compiling anything, or even including anything else,
-// unless OpenMPNode is enabled.
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_OPENMP)
+// unless ThrustGPUNode is enabled.
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_THRUST)
 
-#include "Tpetra_CrsMatrix_decl.hpp"
+#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
 #include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_CrsMatrix_def.hpp"
+#include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
 
-#define TPETRA_CRSMATRIX_OPENMPNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_INSTANT( SCALAR, LO, GO, KokkosClassic::OpenMPNode )
+// Instantiate only on float and double Scalar types for Thrust.  Only
+// instantiate if Tpetra is supposed to instantiate for those Scalar
+// types.
+
+#if defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_DOUBLE)
+// Instantiate for (float,double) and (double,float).
+#  define TPETRA_CRSMATRIX_MULTIPLYOP_THRUSTGPUNODE_INSTANT( LO, GO )\
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT( float, double, LO, GO, KokkosClassic::ThrustGPUNode ) \
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT( double, float, LO, GO, KokkosClassic::ThrustGPUNode )
+#else
+#  define TPETRA_CRSMATRIX_MULTIPLYOP_THRUSTGPUNODE_INSTANT( LO, GO )
+#endif // defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_DOUBLE)
+
+#if defined(HAVE_TPETRA_INST_FLOAT)
+#  if defined(HAVE_TPETRA_INST_DOUBLE)
+// Instantiate for (float,float) and (double,double)
+#    define TPETRA_CRSMATRIX_MULTIPLYOP_THRUSTGPUNODE_INSTANT_SINGLE( LO, GO )\
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE( float, LO, GO, KokkosClassic::ThrustGPUNode )\
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE( double, LO, GO, KokkosClassic::ThrustGPUNode )
+#  else
+// Instantiate for (float,float)
+#    define TPETRA_CRSMATRIX_MULTIPLYOP_THRUSTGPUNODE_INSTANT_SINGLE( LO, GO )\
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE( float, LO, GO, KokkosClassic::ThrustGPUNode )
+#  endif // defined(HAVE_TPETRA_INST_DOUBLE)
+#elif defined(HAVE_TPETRA_INST_DOUBLE)
+// Instantiate for (double,double)
+#  define TPETRA_CRSMATRIX_MULTIPLYOP_THRUSTGPUNODE_INSTANT_SINGLE( LO, GO )\
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE( double, LO, GO, KokkosClassic::ThrustGPUNode )
+#else
+// Don't instantiate at all.
+#  define TPETRA_CRSMATRIX_MULTIPLYOP_THRUSTGPUNODE_INSTANT_SINGLE( LO, GO )
+#endif
 
 namespace Tpetra {
 
- TPETRA_ETI_MANGLING_TYPEDEFS()
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
- TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_OPENMPNODE_INSTANT)
-
- // convert() gets instantiated in a separate file, Tpetra_CrsMatrix_convert.cpp
+  TPETRA_INSTANTIATE_LG(TPETRA_CRSMATRIX_MULTIPLYOP_THRUSTGPUNODE_INSTANT)
+  TPETRA_INSTANTIATE_LG(TPETRA_CRSMATRIX_MULTIPLYOP_THRUSTGPUNODE_INSTANT_SINGLE)
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_KOKKOSCLASSIC_OPENMP
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_KOKKOSCLASSIC_THRUST
