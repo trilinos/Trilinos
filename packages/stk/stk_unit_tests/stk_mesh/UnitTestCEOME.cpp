@@ -162,13 +162,13 @@ void update_comm_maps_based_on_modified_entities_in_sharing(BulkDataTester& bulk
     bulk.my_update_comm_list(modifiedEntities);
 }
 
-void erase_all_sharing_for_valid_entities_on_comm_map(BulkDataTester &mesh)
+void erase_all_sharing_for_invalid_entities_on_comm_map(BulkDataTester &mesh)
 {
     for(size_t i=0; i<mesh.comm_list().size(); ++i)
     {
         stk::mesh::EntityKey key = mesh.comm_list()[i].key;
         stk::mesh::Entity entity = mesh.get_entity(key);
-        if(!mesh.is_valid(entity))
+        if( !mesh.is_valid(entity) )
         {
             CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
         }
@@ -199,7 +199,7 @@ void fill_entities_that_have_lost_sharing_info(BulkDataTester &mesh, const std::
 void fillModifiedEntitiesListBasedOnSharingInfo(BulkDataTester &mesh, const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
         const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating)
 {
-    erase_all_sharing_for_valid_entities_on_comm_map(mesh);
+    erase_all_sharing_for_invalid_entities_on_comm_map(mesh);
     fill_entities_that_have_lost_sharing_info(mesh, sharedEntities, entitiesThatUsedToHaveSharingInfoBeforeCEO, modifiedEntitiesForWhichCommMapsNeedUpdating);
 
     for (size_t i=0;i<sharedEntities.size();i++)
@@ -217,7 +217,7 @@ void fillModifiedEntitiesListBasedOnSharingInfo(BulkDataTester &mesh, const std:
 }
 
 void getEntitiesThatHaveSharing(BulkDataTester &bulk, std::vector<stk::mesh::Entity> &entitiesThatHaveSharingInfo,
-        stk::mesh::NodeToDependentProcessorsMap &entityKeySharing)
+        stk::mesh::EntityToDependentProcessorsMap &entityKeySharing)
 {
     int myProcId = bulk.parallel_rank();
     stk::CommAll commStage1(bulk.parallel());
@@ -234,30 +234,30 @@ void getEntitiesThatHaveSharing(BulkDataTester &bulk, std::vector<stk::mesh::Ent
 
         for(stk::mesh::EntityRank irank = stk::topology::NODE_RANK; irank <= stk::topology::FACE_RANK; ++irank)
         {
-            for(stk::mesh::impl::EntityRepository::const_iterator i = bulk.begin_entities(irank); i != bulk.end_entities(irank); ++i)
-            {
-                stk::mesh::Entity entity = i->second;
+            stk::mesh::BucketVector buckets_of_rank = bulk.buckets(irank);
+            for (size_t bucket_i = 0 ; bucket_i != buckets_of_rank.size() ; ++bucket_i) {
+                stk::mesh::Bucket & bucket = *buckets_of_rank[bucket_i];
+                for (size_t entity_i = 0 ; entity_i != bucket.size() ; ++entity_i) {
+                    stk::mesh::Entity entity = bucket[entity_i];
+                    if ( (bulk.state(entity) == stk::mesh::Modified) )
+                    {
+                        if(phase == 0 && CEOUtils::isEntityInSharingCommMap(bulk, entity))
+                        {
+                            numEntitiesThatHaveSharingInfo++;
+                        }
+                        else if(phase == 1 && CEOUtils::isEntityInSharingCommMap(bulk, entity))
+                        {
+                            entitiesThatHaveSharingInfo[numEntitiesThatHaveSharingInfo] = entity;
+                            numEntitiesThatHaveSharingInfo++;
+                        }
 
-                //TODD: entities after mesh creation are in created state. Could "skip" this state? Or different algorithm?
-                if(bulk.state(entity) != stk::mesh::Unchanged)
-                {
-                    if(phase == 0 && CEOUtils::isEntityInSharingCommMap(bulk, entity))
-                    {
-                        numEntitiesThatHaveSharingInfo++;
-                    }
-                    else if(phase == 1 && CEOUtils::isEntityInSharingCommMap(bulk, entity))
-                    {
-                        entitiesThatHaveSharingInfo[numEntitiesThatHaveSharingInfo] = entity;
-                        numEntitiesThatHaveSharingInfo++;
-                    }
-
-                    int procThatOwnsEntity = bulk.parallel_owner_rank(entity);
-                    bool anotherProcOwnsThisEntity = procThatOwnsEntity != myProcId;
-                    if(anotherProcOwnsThisEntity)
-                    {
-                        //TODD: should not need to send myProcId, because buffer is based on proc id
-                        stk::mesh::EntityKey entityKey = bulk.entity_key(entity);
-                        commStage1.send_buffer(procThatOwnsEntity).pack < stk::mesh::EntityKey > (entityKey);
+                        int procThatOwnsEntity = bulk.parallel_owner_rank(entity);
+                        bool anotherProcOwnsThisEntity = procThatOwnsEntity != myProcId;
+                        if(anotherProcOwnsThisEntity)
+                        {
+                            stk::mesh::EntityKey entityKey = bulk.entity_key(entity);
+                            commStage1.send_buffer(procThatOwnsEntity).pack < stk::mesh::EntityKey > (entityKey);
+                        }
                     }
                 }
             }
@@ -289,13 +289,12 @@ void getEntitiesThatHaveSharing(BulkDataTester &bulk, std::vector<stk::mesh::Ent
     }
 }
 
-//TODD: NodeToDependentProcessMap should be renamed to something like EntityToDepen...
 
-void getLocallyModifiedSharedEntities(BulkDataTester &bulk, stk::mesh::NodeToDependentProcessorsMap &entityKeySharing, std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities)
+void getLocallyModifiedSharedEntities(BulkDataTester &bulk, stk::mesh::EntityToDependentProcessorsMap &entityKeySharing, std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities)
 {
     int myProcId = bulk.parallel_rank();
 
-    stk::mesh::NodeToDependentProcessorsMap::iterator iter = entityKeySharing.begin();
+    stk::mesh::EntityToDependentProcessorsMap::iterator iter = entityKeySharing.begin();
     for(; iter != entityKeySharing.end(); iter++)
     {
         std::vector<int> sharingProcs(iter->second.begin(), iter->second.end());
@@ -316,7 +315,7 @@ void getLocallyModifiedSharedEntities(BulkDataTester &bulk, stk::mesh::NodeToDep
             std::vector<int> sharingProcs(iter->second.begin(), iter->second.end());
             for(size_t j = 0; j < sharingProcs.size(); j++)
             {
-                if(sharingProcs[j] == myProcId)continue;
+                if(sharingProcs[j] == myProcId) { continue; }
                 commStage2.send_buffer(sharingProcs[j]).pack<stk::mesh::EntityKey>(iter->first);
                 commStage2.send_buffer(sharingProcs[j]).pack<size_t>(sharingProcs.size());
                 for(size_t k = 0; k < sharingProcs.size(); k++)
@@ -338,7 +337,7 @@ void getLocallyModifiedSharedEntities(BulkDataTester &bulk, stk::mesh::NodeToDep
 
     for(int procIndex = 0; procIndex < bulk.parallel_size(); procIndex++)
     {
-        if(myProcId == procIndex) continue;
+        if(myProcId == procIndex) { continue; }
         stk::CommBuffer & dataFromAnotherProc = commStage2.recv_buffer(procIndex);
         while(dataFromAnotherProc.remaining())
         {
@@ -350,8 +349,7 @@ void getLocallyModifiedSharedEntities(BulkDataTester &bulk, stk::mesh::NodeToDep
             {
                 int sharingProc = -1;
                 dataFromAnotherProc.unpack<int>(sharingProc);
-                if(sharingProc
-             != myProcId)
+                if(sharingProc != myProcId)
                 {
                     sharedEntities.push_back(std::pair<stk::mesh::EntityKey, int>(key, sharingProc));
                 }
@@ -366,7 +364,7 @@ void makeThingsConsistent(BulkDataTester &bulk)
     double startTime = stk::wall_time();
 
     std::vector<stk::mesh::Entity> entitiesThatHaveSharingInfo;
-    stk::mesh::NodeToDependentProcessorsMap ownerReceiviesInfoOnOtherProcessorsThatShareEntitiesThisProcOwns;
+    stk::mesh::EntityToDependentProcessorsMap ownerReceiviesInfoOnOtherProcessorsThatShareEntitiesThisProcOwns;
 
     getEntitiesThatHaveSharing(bulk, entitiesThatHaveSharingInfo, ownerReceiviesInfoOnOtherProcessorsThatShareEntitiesThisProcOwns);
 

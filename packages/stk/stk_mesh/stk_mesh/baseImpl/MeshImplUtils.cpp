@@ -519,7 +519,7 @@ void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<Entity
 void internal_get_processor_dependencies_shared_or_ghosted(
   const BulkData &mesh,
   const EntityProc                  shared_or_ghosted_entity ,
-  stk::mesh::NodeToDependentProcessorsMap & node_to_dependent_processors_map)
+  stk::mesh::EntityToDependentProcessorsMap & node_to_dependent_processors_map)
 {
     Entity moving_entity = shared_or_ghosted_entity.first;
     int new_owning_proc = shared_or_ghosted_entity.second;

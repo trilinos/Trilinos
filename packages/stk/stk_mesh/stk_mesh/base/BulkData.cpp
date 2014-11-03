@@ -2613,13 +2613,13 @@ void BulkData::internal_compute_proposed_owned_closure_count(const std::vector<E
 }
 
 namespace {
-void print_entity_to_dependent_processors_map(std::string title, int parallel_rank, const stk::mesh::NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
+void print_entity_to_dependent_processors_map(std::string title, int parallel_rank, const stk::mesh::EntityToDependentProcessorsMap & entity_to_dependent_processors_map)
 {
 #ifndef NDEBUG
   {
       std::ostringstream oss;
       oss << "\n";
-      stk::mesh::NodeToDependentProcessorsMap::const_iterator dep_proc_it = entity_to_dependent_processors_map.begin();
+      stk::mesh::EntityToDependentProcessorsMap::const_iterator dep_proc_it = entity_to_dependent_processors_map.begin();
       for (; dep_proc_it != entity_to_dependent_processors_map.end() ; ++dep_proc_it ) {
           EntityKey key = dep_proc_it->first;
           const std::set<int> & sharing_procs = dep_proc_it->second;
@@ -2638,7 +2638,7 @@ void print_entity_to_dependent_processors_map(std::string title, int parallel_ra
 } // namespace
 
 void BulkData::internal_communicate_entity_to_dependent_processors_map(
-        NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
+        EntityToDependentProcessorsMap & entity_to_dependent_processors_map)
 {
   print_entity_to_dependent_processors_map("BEFORE",parallel_rank(),entity_to_dependent_processors_map);
   // Now we have updated sharing lists for every soon-to-be not-owned node.
@@ -2650,7 +2650,7 @@ void BulkData::internal_communicate_entity_to_dependent_processors_map(
   // pack and communicate sharing information to all
   // processes that need to know about the entity
   for ( int phase = 0; phase < 2; ++phase) {
-    NodeToDependentProcessorsMap::const_iterator map_it = entity_to_dependent_processors_map.begin();
+    EntityToDependentProcessorsMap::const_iterator map_it = entity_to_dependent_processors_map.begin();
     for ( ; map_it != entity_to_dependent_processors_map.end() ; ++map_it ) {
         EntityKey node_key = map_it->first;
         const std::set<int> & sharing_procs = map_it->second;
@@ -2719,7 +2719,7 @@ void internal_print_comm_list(std::string title, BulkData & mesh)
 void BulkData::internal_calculate_sharing(const std::vector<EntityProc> & local_change,
                          const std::vector<EntityProc> & shared_change,
                          const std::vector<EntityProc> & ghosted_change,
-                         NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
+                         EntityToDependentProcessorsMap & entity_to_dependent_processors_map)
 
 {
   internal_print_comm_map("BEFORE");
@@ -2771,10 +2771,10 @@ void BulkData::internal_calculate_sharing(const std::vector<EntityProc> & local_
 }
 
 void BulkData::update_dependent_processor_map_from_closure_count(const std::vector<uint16_t> & proposed_closure_count,
-                                                                 NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
+                                                                 EntityToDependentProcessorsMap & entity_to_dependent_processors_map)
 {
   // Do I depend on any of these entities after all the ownership changes?
-  NodeToDependentProcessorsMap::iterator map_it = entity_to_dependent_processors_map.begin();
+  EntityToDependentProcessorsMap::iterator map_it = entity_to_dependent_processors_map.begin();
   for (; map_it != entity_to_dependent_processors_map.end() ; ++map_it) {
       Entity entity_in_send_closure = get_entity(map_it->first);
       if (proposed_closure_count[entity_in_send_closure.local_offset()] > static_cast<uint16_t>(0u)) {
@@ -2792,11 +2792,11 @@ void BulkData::update_dependent_processor_map_from_closure_count(const std::vect
   }
 }
 
-void BulkData::internal_apply_node_sharing(const NodeToDependentProcessorsMap & entity_sharing_map)
+void BulkData::internal_apply_node_sharing(const EntityToDependentProcessorsMap & entity_sharing_map)
 {
     std::vector<stk::mesh::Entity> modified_entities;
     // update sharing!
-    NodeToDependentProcessorsMap::const_iterator map_it = entity_sharing_map.begin();
+    EntityToDependentProcessorsMap::const_iterator map_it = entity_sharing_map.begin();
     for ( ; map_it != entity_sharing_map.end() ; ++map_it ) {
         EntityKey key = map_it->first;
         entity_comm_map_erase(  key, shared_ghosting() );
@@ -2903,7 +2903,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 
 #undef CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
 #ifdef CHANGE_ENTITY_OWNER_UPDATES_COMM_INFO
-  NodeToDependentProcessorsMap node_to_dependent_processors_map;
+  EntityToDependentProcessorsMap node_to_dependent_processors_map;
   internal_calculate_sharing(local_change, shared_change, ghosted_change, node_to_dependent_processors_map);
 #endif
   //------------------------------

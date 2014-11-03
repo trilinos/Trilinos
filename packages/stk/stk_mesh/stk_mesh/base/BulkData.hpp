@@ -797,12 +797,12 @@ protected: //functions
   void internal_calculate_sharing(const std::vector<EntityProc> & local_change,
                            const std::vector<EntityProc> & shared_change,
                            const std::vector<EntityProc> & ghosted_change,
-                           NodeToDependentProcessorsMap & owned_node_sharing_map);
+                           EntityToDependentProcessorsMap & owned_node_sharing_map);
 
   void require_ok_to_modify() const ;
   void internal_update_fast_comm_maps();
 
-  void internal_apply_node_sharing(const NodeToDependentProcessorsMap & owned_node_sharing_map);
+  void internal_apply_node_sharing(const EntityToDependentProcessorsMap & owned_node_sharing_map);
   void internal_add_node_sharing( Entity node, int sharing_proc );
   void internal_remove_node_sharing( EntityKey node, int sharing_proc );
   void internal_compute_proposed_owned_closure_count(const std::vector<EntityProc> & local_change,
@@ -814,10 +814,10 @@ protected: //functions
                                      const std::vector<EntityProc> & ghosted_change,
                                      NewOwnerMap & new_owner_map);
   void update_dependent_processor_map_from_closure_count(const std::vector<uint16_t> & proposed_closure_count,
-                                                         NodeToDependentProcessorsMap & entity_to_dependent_processors_map);
+                                                         EntityToDependentProcessorsMap & entity_to_dependent_processors_map);
   void internal_print_comm_map( std::string title);
   void internal_communicate_entity_to_dependent_processors_map(
-          NodeToDependentProcessorsMap & entity_to_dependent_processors_map);
+          EntityToDependentProcessorsMap & entity_to_dependent_processors_map);
 
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
 
