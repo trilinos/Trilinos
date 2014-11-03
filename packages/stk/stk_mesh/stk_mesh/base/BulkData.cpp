@@ -254,35 +254,6 @@ void BulkData::resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vec
 
 /////////////////////////////////////// End functions for create edges
 
-parallel::DistributedIndex::KeySpanVector
-convert_entity_keys_to_spans( const MetaData & meta )
-{
-  // Make sure the distributed index can handle the EntityKey
-
-  enum { OK = StaticAssert<
-                SameType< uint64_t,
-                          parallel::DistributedIndex::KeyType >::value >::OK };
-
-  // Default constructed EntityKey has all bits set.
-
-  const EntityKey invalid_key ;
-  const EntityId  min_id = 1 ;
-  const EntityId  max_id = invalid_key.id();
-
-  const EntityRank rank_count = static_cast<EntityRank>(meta.entity_rank_count());
-
-  parallel::DistributedIndex::KeySpanVector spans( rank_count );
-
-  for ( EntityRank rank = stk::topology::NODE_RANK ; rank < rank_count ; ++rank ) {
-    EntityKey key_min( rank , min_id );
-    EntityKey key_max( rank , max_id );
-    spans[rank].first  = key_min;
-    spans[rank].second = key_max;
-  }
-
-  return spans ;
-}
-
 //----------------------------------------------------------------------
 
 #ifdef STK_MESH_MODIFICATION_COUNTERS
@@ -298,39 +269,42 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
                     , FieldDataManager *field_data_manager
                     , unsigned bucket_capacity
                     )
-  : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
-    m_entity_repo(*this),
-    m_entity_comm_list(),
+  :
+#ifdef SIERRA_MIGRATION
+    m_check_invalid_rels(true),
+#endif
+    m_entities_index( parallel, impl::convert_entity_keys_to_spans(mesh_meta_data) ),
+    m_entity_comm_map(),
     m_ghosting(),
-    m_ghost_parts(),
-    m_deleted_entities(),
-    m_deleted_entities_current_modification_cycle(),
-    m_ghost_reuse_map(),
     m_mesh_meta_data( mesh_meta_data ),
     m_parallel_machine( parallel ),
     m_parallel_size( parallel_machine_size( parallel ) ),
     m_parallel_rank( parallel_machine_rank( parallel ) ),
     m_sync_count( 0 ),
     m_sync_state( MODIFIABLE ),
+    m_mark_entity(),
+    m_add_node_sharing_called(false),
+    m_closure_count(),
+    m_entity_repo(*this),
+    m_entity_comm_list(),
+    m_volatile_fast_shared_comm_map(),
+    m_ghost_parts(),
+    m_deleted_entities(),
+    m_deleted_entities_current_modification_cycle(),
+    m_ghost_reuse_map(),
     m_meta_data_verified( false ),
     m_mesh_finalized(false),
     m_modification_begin_description("UNSET"),
-#ifdef SIERRA_MIGRATION
-    m_add_fmwk_data(add_fmwk_data),
-    m_fmwk_bulk_ptr(NULL),
-    m_check_invalid_rels(true),
-#endif
     m_num_fields(-1), // meta data not necessarily committed yet
     m_keep_fields_updated(true),
     m_mesh_indexes(),
     m_entity_keys(),
     m_entity_states(),
-    m_mark_entity(),
-    m_add_node_sharing_called(false),
-    m_closure_count(),
     m_entity_sync_counts(),
     m_local_ids(),
 #ifdef SIERRA_MIGRATION
+    m_add_fmwk_data(add_fmwk_data),
+    m_fmwk_bulk_ptr(NULL),
     m_fmwk_aux_relations(),
     m_fmwk_global_ids(),
     m_fmwk_shared_attrs(),
@@ -339,14 +313,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_default_field_data_manager(mesh_meta_data.entity_rank_count()),
     m_field_data_manager(field_data_manager),
     m_selector_to_buckets_map(),
-#ifdef GATHER_GET_BUCKETS_METRICS
-    m_selector_to_count_map(),
-    m_num_memoized_get_buckets_calls(0),
-    m_num_non_memoized_get_buckets_calls(0),
-    m_num_buckets_inserted_in_cache(0),
-    m_num_buckets_removed_from_cache(0),
-    m_num_modifications(0),
-#endif
     m_bucket_repository(
         *this,
         mesh_meta_data.entity_rank_count(),
@@ -355,12 +321,20 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
         bucket_capacity)
 #ifdef STK_MESH_MODIFICATION_COUNTERS
-,
-    m_modification_counters()
+    , m_num_bulk_data_counter++,
+    m_modification_counters(),
+    m_entity_modification_counters(),
+#endif
+#ifdef GATHER_GET_BUCKETS_METRICS
+    , m_selector_to_count_map(),
+    m_num_memoized_get_buckets_calls(0),
+    m_num_non_memoized_get_buckets_calls(0),
+    m_num_buckets_inserted_in_cache(0),
+    m_num_buckets_removed_from_cache(0),
+    m_num_modifications(0)
 #endif
 {
 #ifdef STK_MESH_MODIFICATION_COUNTERS
-  m_num_bulk_data_counter++;
   std::ofstream outfile(create_modification_counts_filename().c_str());
   write_modification_labels_to_stream(outfile);
   outfile.close();
@@ -1226,7 +1200,9 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
 
 void BulkData::change_entity_id( EntityId id, Entity entity)
 {
-// When stk parallel is used within Fmwk, this assertion is violated
+// THIS ThrowAssertMsg IS ONLY MACRO CONTROLLED TO ALLOW EXPERIMENTATION WITH
+// Fmwk USING stk_parallel.  WHEN stk parallel IS USED WITHN Fmwk, THIS ASSERTION
+// IS VIOLATED.
 #ifndef SIERRA_MIGRATION
   ThrowAssertMsg(parallel_size() == 1,
                  "change_entity_id only supported in serial");
@@ -2623,13 +2599,13 @@ void BulkData::internal_compute_proposed_owned_closure_count(const std::vector<E
 }
 
 namespace {
-void print_entity_to_dependent_processors_map(std::string title, int parallel_rank, const BulkData::NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
+void print_entity_to_dependent_processors_map(std::string title, int parallel_rank, const stk::mesh::NodeToDependentProcessorsMap & entity_to_dependent_processors_map)
 {
 #ifndef NDEBUG
   {
       std::ostringstream oss;
       oss << "\n";
-      BulkData::NodeToDependentProcessorsMap::const_iterator dep_proc_it = entity_to_dependent_processors_map.begin();
+      stk::mesh::NodeToDependentProcessorsMap::const_iterator dep_proc_it = entity_to_dependent_processors_map.begin();
       for (; dep_proc_it != entity_to_dependent_processors_map.end() ; ++dep_proc_it ) {
           EntityKey key = dep_proc_it->first;
           const std::set<int> & sharing_procs = dep_proc_it->second;
@@ -3660,7 +3636,8 @@ void BulkData::internal_change_ghosting(
       i->key = EntityKey(); // No longer communicated
       if ( remove_recv ) {
         ThrowRequireMsg( internal_destroy_entity( i->entity, remove_recv ),
-                         " FAILED attempt to destroy entity: " << identifier(i->entity) );
+                         "P[" << this->parallel_rank() << "]: FAILED attempt to destroy entity: "
+                         << entity_key(i->entity) );
       }
     }
   }
@@ -5545,111 +5522,6 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
   return true ;
 }
 
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
-namespace {
-
-template <typename T>
-T const* get_begin_itr(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank);
-
-template <typename T>
-T const* get_end_itr(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank);
-
-
-template <>
-Entity const* get_begin_itr<Entity>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.begin(bucket_ordinal, rank); }
-
-template <>
-Entity const* get_end_itr<Entity>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.end(bucket_ordinal, rank); }
-
-
-template <>
-ConnectivityOrdinal const* get_begin_itr<ConnectivityOrdinal>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.begin_ordinals(bucket_ordinal, rank); }
-
-template <>
-ConnectivityOrdinal const* get_end_itr<ConnectivityOrdinal>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.end_ordinals(bucket_ordinal, rank); }
-
-
-template <>
-Permutation const* get_begin_itr<Permutation>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.begin_permutations(bucket_ordinal, rank); }
-
-template <>
-Permutation const* get_end_itr<Permutation>(const Bucket& bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.end_permutations(bucket_ordinal, rank); }
-
-//
-// Because the connectivity API in Bucket is not templated...
-//
-
-template <typename T>
-T const *get_begin_relation_data(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank);
-
-template <typename T>
-T const *get_end_relation_data(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank);
-
-template <>
-Entity const *get_begin_relation_data<Entity>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.begin(bucket_ordinal, rank); }
-
-template <>
-Entity const *get_end_relation_data<Entity>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.end(bucket_ordinal, rank); }
-
-template <>
-ConnectivityOrdinal const *get_begin_relation_data<ConnectivityOrdinal>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.begin_ordinals(bucket_ordinal, rank); }
-
-template <>
-ConnectivityOrdinal const *get_end_relation_data<ConnectivityOrdinal>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.end_ordinals(bucket_ordinal, rank); }
-
-template <>
-Permutation const *get_begin_relation_data<Permutation>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.begin_permutations(bucket_ordinal, rank); }
-
-template <>
-Permutation const *get_end_relation_data<Permutation>(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{ return bucket.end_permutations(bucket_ordinal, rank); }
-
-template <typename T>
-void verify_relation_data(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank)
-{
-  T const * old_it = get_begin_relation_data<T>(bucket, bucket_ordinal, rank);
-  T const * old_it_end = get_end_relation_data<T>(bucket, bucket_ordinal, rank);
-
-  T const * new_data_begin = get_begin_itr<T>(bucket, bucket_ordinal, rank);
-  T const * new_data_end   = get_end_itr<T>(bucket, bucket_ordinal, rank);
-
-  ThrowRequire( std::distance(new_data_begin, new_data_end ) ==
-                std::distance(old_it, old_it_end ) );
-
-  ThrowRequire( std::distance(new_data_begin, new_data_end) ==
-                bucket.num_connectivity(bucket_ordinal, rank) );
-
-  T const * new_it = new_data_begin;
-  for (; old_it != old_it_end ; ++old_it , ++new_it) {
-    T old_data = *old_it;
-    T new_data = *new_it;
-    ThrowRequire(old_data == new_data);
-  }
-}
-
-}
-
-void BulkData::verify_relations(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank) const
-{
-  verify_relation_data<Entity>(bucket, bucket_ordinal, rank);
-  verify_relation_data<ConnectivityOrdinal>(bucket, bucket_ordinal, rank);
-  if (bucket.has_permutation(rank)) {
-    verify_relation_data<Permutation>(bucket, bucket_ordinal, rank);
-  }
-}
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

@@ -750,6 +750,8 @@ TimerImpl::dump(
 }
 
 
+Timer::~Timer() {}
+
 Timer::Timer(const std::string &name, const Timer parent)
   : m_timerImpl(TimerImpl::reg(name, parent.getTimerMask(), parent.m_timerImpl, parent.getTimerSet()))
 {}

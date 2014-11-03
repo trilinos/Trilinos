@@ -340,25 +340,25 @@ public:
                 void > HostMirror ;
 
   // Equivalent array type for this view.
-  typedef View< typename analyze_sacado_shape::array_type ,
+  typedef View< typename analyze_sacado_shape::array_intrinsic_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > array_type ;
 
   // Equivalent const array type for this view.
-  typedef View< typename analyze_sacado_shape::const_array_type ,
+  typedef View< typename analyze_sacado_shape::const_array_intrinsic_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > const_array_type ;
 
   // Equivalent host array type for this view.
-  typedef View< typename analyze_sacado_shape::array_type ,
+  typedef View< typename analyze_sacado_shape::array_intrinsic_type ,
                 typename traits::array_layout ,
                 typename traits::host_mirror_space ,
                 typename traits::memory_traits > host_array_type ;
 
   // Equivalent const host array type for this view.
-  typedef View< typename analyze_sacado_shape::const_array_type ,
+  typedef View< typename analyze_sacado_shape::const_array_intrinsic_type ,
                 typename traits::array_layout ,
                 typename traits::host_mirror_space ,
                 typename traits::memory_traits > host_const_array_type ;
@@ -1085,9 +1085,9 @@ public:
 
   typedef Shape< sizeof(Sacado::MP::Vector< StorageType >) , 0 > shape ;
 
-  typedef       Sacado::MP::Vector< StorageType >  array_type ;
-  typedef const Sacado::MP::Vector< StorageType >  const_array_type ;
-  typedef       Sacado::MP::Vector< StorageType >  non_const_array_type ;
+  typedef       Sacado::MP::Vector< StorageType >  array_intrinsic_type ;
+  typedef const Sacado::MP::Vector< StorageType >  const_array_intrinsic_type ;
+  typedef       Sacado::MP::Vector< StorageType >  non_const_array_intrinsic_type ;
 
   typedef       Sacado::MP::Vector< StorageType >  type ;
   typedef const Sacado::MP::Vector< StorageType >  const_type ;
@@ -1127,17 +1127,17 @@ public:
   // I think this means our approach doesn't really work for Sacado::MP::Vector<StaticFixedStorage<...> >[N] ???
   typedef typename
     if_c< StorageType::is_static && is_same<Layout, LayoutRight>::value
-        , typename nested::array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
-        , typename nested::array_type *
-        >::type array_type ;
+        , typename nested::array_intrinsic_type [ StorageType::is_static ? StorageType::static_size : 1 ]
+        , typename nested::array_intrinsic_type *
+        >::type array_intrinsic_type ;
 
   typedef typename
     if_c< StorageType::is_static && is_same<Layout, LayoutRight>::value
-        , typename nested::const_array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
-        , typename nested::const_array_type *
-        >::type const_array_type ;
+        , typename nested::const_array_intrinsic_type [ StorageType::is_static ? StorageType::static_size : 1 ]
+        , typename nested::const_array_intrinsic_type *
+        >::type const_array_intrinsic_type ;
 
-  typedef array_type non_const_array_type ;
+  typedef array_intrinsic_type non_const_array_intrinsic_type ;
 
   typedef       Sacado::MP::Vector< StorageType >  type ;
   typedef const Sacado::MP::Vector< StorageType >  const_type ;

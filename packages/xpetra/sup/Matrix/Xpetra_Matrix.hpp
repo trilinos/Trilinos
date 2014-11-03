@@ -539,8 +539,13 @@ namespace Xpetra {
 
     // ----------------------------------------------------------------------------------
     // "TEMPORARY" VIEW MECHANISM
-    // TODO: the view mechanism should be implemented as in MueMat.
-    void SetFixedBlockSize(LocalOrdinal blksize) {
+    /**
+     * Set fixed block size of operator (e.g., 3 for 3 DOFs per node).
+     * 
+     * @param blksize: block size denoting how many DOFs per node are used (LocalOrdinal)
+     * @param offset:  global offset allows to define operators with global indices starting from a given value "offset" instead of 0. (GlobalOrdinal, default = 0)
+     * */
+    void SetFixedBlockSize(LocalOrdinal blksize, GlobalOrdinal offset=0) {
 
       TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Exceptions::RuntimeError, "Xpetra::Matrix::SetFixedBlockSize(): operator is not filled and completed."); // TODO: do we need this? we just wanna "copy" the domain and range map
 
@@ -551,12 +556,14 @@ namespace Xpetra {
       RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
                                                     getRangeMap(),
                                                     stridingInfo,
-                                                    stridedBlockId
+                                                    stridedBlockId,
+						    offset
                                                     );
       RCP<const Map> stridedDomainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
                                               getDomainMap(),
                                               stridingInfo,
-                                              stridedBlockId
+                                              stridedBlockId,
+					      offset
                                               );
 
       if(IsView("stridedMaps") == true) RemoveView("stridedMaps");

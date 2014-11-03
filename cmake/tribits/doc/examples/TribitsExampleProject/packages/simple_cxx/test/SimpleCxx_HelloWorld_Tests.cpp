@@ -11,7 +11,7 @@
     std::cout << "Found \"" SUBSTR "\" ? " << foundSubStr << "\n"; \
     if (!foundSubStr) success=false; \
   } \
-  (success)
+  (void)(success)
 
 
 int main() {
@@ -35,6 +35,8 @@ int main() {
 #else
   TEST_FIND_SUBSTR_IN_STR("Release is enabled", oss.str());
 #endif
+
+  TEST_FIND_SUBSTR_IN_STR("Sqr(3) = 9", oss.str());
 
   if (success) {
     std::cout << "End Result: TEST PASSED\n";

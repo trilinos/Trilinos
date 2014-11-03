@@ -49,23 +49,34 @@
 #include <cstdlib>
 
 typedef Kokkos::View<double*> view_type;
+// This View has a (nondefault) memory access trait.
+// MemoryRandomAccess means two things:
+//
+//   1. Read-only access
+//   2. We don't expect to have much spatial locality
+//      when we access Views of this type
+//
+// In CUDA, MemoryRandomAccess directs accesses through the texture
+// cache.  This only works if the View is read-only, which we enforce
+// through the first template parameter.  On CPUs, we reserve the
+// right to use features like a nontemporal access hint.
 typedef Kokkos::View<const double*, Kokkos::MemoryRandomAccess> view_type_rnd;
 typedef Kokkos::View<int**> idx_type;
 typedef idx_type::HostMirror idx_type_host;
-
 
 template<class DestType, class SrcType>
 struct localsum {
   idx_type::const_type idx;
   DestType dest;
   SrcType src;
-  localsum(idx_type idx_, DestType dest_,
-              SrcType src_):idx(idx_),dest(dest_),src(src_) {}
+  localsum (idx_type idx_, DestType dest_, SrcType src_) :
+    idx (idx_), dest (dest_), src (src_)
+  {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (int i) const {
+  void operator() (const int i) const {
     double tmp = 0.0;
-    for(int j = 0; j < idx.dimension_1(); j++) {
+    for (int j = 0; j < idx.dimension_1 (); ++j) {
       const double val = src(idx(i,j));
       tmp += val*val + 0.5*(idx.dimension_0()*val -idx.dimension_1()*val);
     }
@@ -74,21 +85,22 @@ struct localsum {
 };
 
 int main(int narg, char* arg[]) {
-  Kokkos::initialize(narg,arg);
+  Kokkos::initialize (narg, arg);
 
   int size = 1000000;
 
   idx_type idx("Idx",size,64);
-  idx_type_host h_idx = Kokkos::create_mirror_view(idx);
+  idx_type_host h_idx = Kokkos::create_mirror_view (idx);
 
-  view_type dest("Dest",size);
-  view_type src("Src",size);
+  view_type dest ("Dest", size);
+  view_type src ("Src", size);
 
   srand(134231);
 
-  for(int i=0; i<size; i++) {
-    for(view_type::size_type j=0; j<h_idx.dimension_1(); j++)
-      h_idx(i,j) = (size + i + (rand()%500 - 250))%size;
+  for (int i = 0; i < size; i++) {
+    for (view_type::size_type j = 0; j < h_idx.dimension_1 (); ++j) {
+      h_idx(i,j) = (size + i + (rand () % 500 - 250)) % size;
+    }
   }
 
   Kokkos::deep_copy(idx,h_idx);

@@ -348,6 +348,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("semicoarsen: coarsen rate",-1,"Coarsening rate for structured semi-coarsening",PL,intParam);
   setIntParameter("semicoarsen: line direction nodes", -1,"Number of mesh points in z direction", PL, intParam);
   setStringToIntegralParameter<int>("semicoarsen: line orientation","use coordinates","indicates grid points are numbered either horizontally or veritcally for extruded meshes", tuple<std::string>("horizontal","vertical","use coordinates"),PL);
+  setStringToIntegralParameter<int>("semicoarsen: coarsen coordinate","z","indicates coordinate direction where coarsening should occur", tuple<std::string>("x","y","z"),PL);
 
 
   /* Smoothing Options (Section 6.4.4) */

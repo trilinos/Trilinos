@@ -5,7 +5,44 @@ Release Notes for Trilinos Package Tpetra
 Development version (11.13):
 ----------------------------
 
-* Tpetra: Deprecated variable-block-size classes (like VbrMatrix).
+* Update to instructions for building Kokkos Refactor version
+
+See the Release Notes for the 11.12 release (below) for an explanation
+of what the Kokkos Refactor version of Tpetra is.  Currently, you must
+enable this option explicitly at Trilinoss configuration time; it is
+disabled by default.  Here is a summary of the required CMake options.
+
+# Enable Kokkos subpackages explicitly.
+#
+# If Tpetra_ENABLE_Kokkos_Refactor is ON but any of those subpackages
+# are not enabled, CMake will stop with an error message that tells you
+# what subpackages to enable.
+-D Trilinos_ENABLE_KokkosCore:BOOL=ON
+-D Trilinos_ENABLE_KokkosCompat:BOOL=ON
+-D Trilinos_ENABLE_KokkosContainers:BOOL=ON
+-D Trilinos_ENABLE_KokkosLinAlg:BOOL=ON
+-D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON
+-D Trilinos_ENABLE_KokkosMpi:BOOL=ON
+
+# Set default Node type to one of the new Kokkos Nodes
+-D KokkosClassic_DefaultNode:STRING="Kokkos::Compat::KokkosSerialWrapperNode"
+
+# Enable the Kokkos refactor version of Tpetra.
+-D Tpetra_ENABLE_Kokkos_Refactor:BOOL=ON
+
+# Turn off ETI and tests for std::complex.
+-D Tpetra_INST_COMPLEX_DOUBLE:BOOL=OFF
+-D Tpetra_INST_COMPLEX_FLOAT:BOOL=OFF
+
+Here are some OPTIONAL CMake options that may help reduce build times
+if ETI (explicit template instantiation) is enabled:
+
+# Disable KokkosClassic::TPINode
+-D KokkosClassic_ENABLE_ThreadPool:BOOL=OFF
+# Shut off Kokkos' Pthreads back-end.
+-D Kokkos_ENABLE_Pthread:BOOL=OFF
+
+* Deprecated variable-block-size classes (like VbrMatrix).
 
 I have deprecated the following classes in the Tpetra namespace:
 

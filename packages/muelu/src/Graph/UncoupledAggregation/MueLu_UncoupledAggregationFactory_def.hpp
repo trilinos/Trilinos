@@ -46,6 +46,8 @@
 #ifndef MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_
 
+#include <climits>
+
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -143,6 +145,9 @@ namespace MueLu {
 
     ParameterList pL = GetParameterList();
     bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
+
+    if (pL.get<int>("aggregation: max agg size") == -1)
+      pL.set("aggregation: max agg size", INT_MAX);
 
     // define aggregation algorithms
     RCP<const FactoryBase> graphFact = GetFactory("Graph");

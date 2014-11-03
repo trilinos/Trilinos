@@ -186,15 +186,15 @@ public:
 
   typedef typename ShapeInsert< typename nested::shape , N >::type shape ;
 
-  typedef typename nested::array_type   array_type[ N ];
+  typedef typename nested::array_intrinsic_type   array_intrinsic_type[ N ];
   typedef Test::Array< T , N >          value_type ;
   typedef Test::Array< T , N >          type ;
 
-  typedef const array_type  const_array_type ;
+  typedef const array_intrinsic_type  const_array_intrinsic_type ;
   typedef const value_type  const_value_type ;
   typedef const type        const_type ;
 
-  typedef typename nested::non_const_array_type                    non_const_array_type[ N ];
+  typedef typename nested::non_const_array_intrinsic_type          non_const_array_intrinsic_type[ N ];
   typedef Test::Array< typename nested::non_const_value_type , N > non_const_value_type ;
   typedef Test::Array< typename nested::non_const_value_type , N > non_const_type ;
 };
@@ -211,15 +211,15 @@ public:
 
   typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
-  typedef typename nested::array_type * array_type ;
+  typedef typename nested::array_intrinsic_type * array_intrinsic_type ;
   typedef Test::Array< T , 0 >          value_type ;
   typedef Test::Array< T , 0 >          type ;
 
-  typedef const array_type  const_array_type ;
+  typedef const array_intrinsic_type  const_array_intrinsic_type ;
   typedef const value_type  const_value_type ;
   typedef const type        const_type ;
 
-  typedef typename nested::non_const_array_type  * non_const_array_type ;
+  typedef typename nested::non_const_array_intrinsic_type  * non_const_array_intrinsic_type ;
   typedef Test::Array< typename nested::non_const_value_type , 0 > non_const_value_type ;
   typedef Test::Array< typename nested::non_const_value_type , 0 > non_const_type ;
 };
@@ -332,7 +332,7 @@ private:
 
 public:
 
-  typedef View< typename traits::array_type ,
+  typedef View< typename traits::array_intrinsic_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > array_type ;

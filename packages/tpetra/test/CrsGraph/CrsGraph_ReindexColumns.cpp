@@ -44,20 +44,6 @@
 // Ensure that if CUDA and KokkosCompat are enabled, then
 // only the .cu version of this file is actually compiled.
 #include <Tpetra_config.h>
-#ifdef HAVE_TPETRA_KOKKOSCOMPAT
-#  include <KokkosCore_config.h>
-#  ifdef KOKKOS_USE_CUDA_BUILD
-#    define DO_COMPILATION
-#  else
-#    ifndef KOKKOS_HAVE_CUDA
-#      define DO_COMPILATION
-#    endif // NOT KOKKOS_HAVE_CUDA
-#  endif // KOKKOS_USE_CUDA_BUILD
-#else
-#  define DO_COMPILATION
-#endif // HAVE_TPETRA_KOKKOSCOMPAT
-
-#ifdef DO_COMPILATION
 
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_TestingUtilities.hpp>
@@ -1054,5 +1040,4 @@ namespace {
 
 }
 
-#endif // DO_COMPILATION
 

@@ -232,9 +232,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
   // integer types; I'll test int here and size_t (useful for
   // KokkosClassic::MultiVector) below.
   {
-    int strides[2];
-    strides[0] = 0;
-    strides[1] = 1;
+    int strides[3] = { 0 , 0 , 0 };
     X_view.stride (strides);
     TEST_EQUALITY_CONST(strides[0], 1); // stride between X_view(i,j) and X_view(i+1,j)
     // The stride must be at least as given, but can be greater (due to possible padding for alignment).
@@ -243,9 +241,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
 
   // Test that the strides of X_view are correct, for size_t.
   {
-    size_t strides[2];
-    strides[0] = static_cast<size_t> (0);
-    strides[1] = static_cast<size_t> (1);
+    size_t strides[3] = { 0 , 0 , 0 };
     X_view.stride (strides);
     TEST_EQUALITY_CONST(strides[0], static_cast<size_t>(1)); // stride between X_view(i,j) and X_view(i+1,j)
     // The stride must be at least as given, but can be greater (due to possible padding for alignment).
@@ -257,10 +253,12 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
   // actually deallocate memory.  That way, the ArrayRCP can use the
   // View's raw pointer, but still defers to the View for memory
   // management.
+
   Teuchos::ArrayRCP<double> Y_values (X.ptr_on_device (), 0, stride*numCols, Deallocator<double, ka_view_type> (X), true);
   TEST_EQUALITY(Y_values.getRawPtr(), X.ptr_on_device());
   TEST_EQUALITY(Y_values.getRawPtr(), X_view.ptr_on_device());
   TEST_EQUALITY(Y_values.size(), stride*numCols);
+
   TestDevice::finalize();
 }
 

@@ -501,9 +501,9 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     //
     //         id/proc                             id/proc
     //        1/0---3/0---5/1---7/2---9/3         1/0---3/0---5/1---7/0---9/3
-    //        |      |     |    {|     |          |      |     |    {|     |
-    //        | 1/0  | 2/1 | 3/2{| 4/3 |          | 1/0  | 2/1 | 3/0{| 4/3 |
-    //        |      |     |    {|     |          |      |     |    {|     |
+    //        |      |     |    ||     |          |      |     |    ||     |
+    //        | 1/0  | 2/1 | 3/2|| 4/3 |          | 1/0  | 2/1 | 3/0|| 4/3 |
+    //        |      |     |    ||     |          |      |     |    ||     |
     //        2/0---4/0---6/1---8/2---10/3        2/0---4/0---6/1---8/0---10/3
     //  this edge moves to p0 --^
     //  element 3 moves to proc 0.
@@ -574,6 +574,18 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
 
     mesh.change_entity_owner_exp(change);
 
+    CEOUtils::checkStatesAfterCEO_4Elem4ProcEdge(mesh);
+
+    if (p_rank == 1 || p_rank == 0) {
+        Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
+        Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
+        stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
+        double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
+        EXPECT_EQ( 5.0, *elem_field_data_node5 );
+        double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
+        EXPECT_EQ( 6.0, *elem_field_data_node6 );
+    }
+
     ////////////////////////////////////////////////////////////////////////////
 
     //
@@ -587,7 +599,6 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     size_t numNodes = 10;
     std::vector<bool> nodeSharing;
     std::vector<int> nodeSharingProcs;
-
     size_t numEdges = 1;
     std::vector<bool> edgeSharing;
     std::vector<int> edgeSharingProcs;
@@ -659,6 +670,16 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
         }
     }
 
+//    {
+//        stk::mesh::EntityKey key(stk::topology::EDGE_RANK, 1);
+//        stk::mesh::Entity edge = mesh.get_entity(key);
+////        mesh.mark_entity(edge,stk::mesh::BulkData::POSSIBLY_SHARED);
+//        if(CEOUtils::isEntityInSharingCommMap(mesh, edge) )
+//        {
+//            modifiedEntities.push_back(edge);
+//        }
+//        CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
+//    }
     for(size_t i = 0; i < edgeSharing.size(); i++)
     {
         stk::mesh::Entity edge = mesh.get_entity(stk::topology::EDGE_RANK, i + 1);
@@ -678,6 +699,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
         }
     }
 
+
     update_mesh_based_on_changed_sharing_info(mesh, modifiedEntities);
 
     mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
@@ -689,7 +711,6 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     CEOUtils::checkStatesAfterCEOME_4Elem4ProcEdge(mesh);
 
     if (p_rank == 1 || p_rank == 0) {
-        // Fill elem_field data on nodes 5 and 6 with data.
         Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
         Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
         stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
@@ -750,6 +771,8 @@ TEST(CEOME, change_entity_owner_8Elem4ProcMoveTop)
     }
 
     mesh.change_entity_owner_exp(entities_to_move);
+
+    CEOUtils::checkStatesAfterCEO_8Elem4ProcMoveTop(mesh);
 
     ////////////////////////////////////////////////////////////////////////////
 

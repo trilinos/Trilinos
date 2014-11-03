@@ -1,5 +1,6 @@
 
 #include "SimpleCxx_HelloWorld.hpp"
+#include "HeaderOnlyTpl_stuff.hpp"
 
 
 std::string SimpleCxx::deps()
@@ -22,6 +23,7 @@ void HelloWorld::printHelloWorld(std::ostream &out) const
 #else
   out << "Release is enabled!\n";
 #endif
+  out << "Sqr(3) = " << HeaderOnlyTpl::sqr(3) << "\n";
 }
 
 

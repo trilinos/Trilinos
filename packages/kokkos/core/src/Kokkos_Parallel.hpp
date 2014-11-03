@@ -288,7 +288,7 @@ void parallel_reduce( const size_t        work_count
 
   typedef Kokkos::Impl::ReduceAdapter< FunctorType >  Reduce ;
 
-  typedef typename Kokkos::Impl::if_c< Reduce::StaticValueSize
+  typedef typename Kokkos::Impl::if_c< (Reduce::StaticValueSize != 0)
                                      , typename Reduce::scalar_type
                                      , typename Reduce::pointer_type
                                      >::type value_type ;
@@ -330,7 +330,7 @@ void parallel_reduce( const ExecPolicy  & policy
   // Wrap the result output request in a view to inform the implementation
   // of the type and memory space.
 
-  typedef typename Kokkos::Impl::if_c< Reduce::StaticValueSize
+  typedef typename Kokkos::Impl::if_c< (Reduce::StaticValueSize != 0)
                                      , typename Reduce::scalar_type
                                      , typename Reduce::pointer_type
                                      >::type value_type ;
@@ -381,7 +381,7 @@ void parallel_reduce( const size_t        work_count ,
   // Wrap the result output request in a view to inform the implementation
   // of the type and memory space.
 
-  typedef typename Kokkos::Impl::if_c< Reduce::StaticValueSize
+  typedef typename Kokkos::Impl::if_c< (Reduce::StaticValueSize != 0)
                                      , typename Reduce::scalar_type
                                      , typename Reduce::pointer_type
                                      >::type value_type ;

@@ -44,20 +44,6 @@
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
 #include <Tpetra_config.h>
-#ifdef HAVE_TPETRA_KOKKOSCOMPAT
-#include <KokkosCore_config.h>
-#ifdef KOKKOS_USE_CUDA_BUILD
-  #define DO_COMPILATION
-#else
-  #ifndef KOKKOS_HAVE_CUDA
-    #define DO_COMPILATION
-  #endif
-#endif
-#else
-  #define DO_COMPILATION
-#endif
-
-#ifdef DO_COMPILATION
 
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -235,5 +221,4 @@ int main(int argc, char* argv[]){
 
 
 
-#endif  //DO_COMPILATION
 

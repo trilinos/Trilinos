@@ -49,6 +49,15 @@ INSTALL(FILES ${HEADERS_OPENMP} DESTINATION ${TRILINOS_INCDIR}/OpenMP/)
 
 #-----------------------------------------------------------------------------
 
+FILE(GLOB HEADERS_CUDA Cuda/*.hpp)
+FILE(GLOB SOURCES_CUDA Cuda/*.cpp)
+
+LIST(APPEND HEADERS_PRIVATE ${HEADERS_CUDA} )
+LIST(APPEND SOURCES         ${SOURCES_CUDA} )
+
+INSTALL(FILES ${HEADERS_CUDA} DESTINATION ${TRILINOS_INCDIR}/Cuda/)
+
+#-----------------------------------------------------------------------------
 FILE(GLOB HEADERS_QTHREAD Qthread/*.hpp)
 FILE(GLOB SOURCES_QTHREAD Qthread/*.cpp)
 
@@ -56,35 +65,6 @@ LIST(APPEND HEADERS_PRIVATE ${HEADERS_QTHREAD} )
 LIST(APPEND SOURCES         ${SOURCES_QTHREAD} )
 
 INSTALL(FILES ${HEADERS_QTHREAD} DESTINATION ${TRILINOS_INCDIR}/Qthread/)
-
-#-----------------------------------------------------------------------------
-
-IF(Kokkos_ENABLE_Cuda)
-
-  # set nvcc behavior
-
-  SET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF CACHE BOOL "" FORCE )
-  SET(CUDA_PROPAGATE_HOST_FLAGS              OFF CACHE BOOL "" FORCE )
-
-  FILE(GLOB HEADERS_CUDA Cuda/*.hpp)
-  FILE(GLOB SOURCES_CUDA Cuda/*.cu)
-
-  LIST(APPEND HEADERS_PRIVATE ${HEADERS_CUDA} )
-
-  # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosTPL_INCLUDE_DIRS} )
-  CUDA_COMPILE(OBJECTS_CUDA ${SOURCES_CUDA})
-
-  LIST(APPEND SOURCES ${OBJECTS_CUDA} )
-
-  INSTALL(FILES ${HEADERS_CUDA} DESTINATION ${TRILINOS_INCDIR}/Cuda/)
-
-ENDIF()
-
-IF(Kokkos_ENABLE_SIERRA_BUILD)
-  FILE(GLOB HEADERS_CUDA Cuda/*.hpp)
-  INSTALL(FILES ${HEADERS_CUDA} DESTINATION ${TRILINOS_INCDIR}/Cuda/)
-ENDIF()
 
 #-----------------------------------------------------------------------------
 

@@ -143,7 +143,7 @@ const std::string &product_name();
 bool developer_mode();
 
 /**
- * @brief Function <b>set_input_file_required<b> sets whether lack of an input
+ * @brief Function <b>set_input_file_required</b> sets whether lack of an input
  * file specification will automatically cause failure.  The default behavior
  * corresponds to true.
  */
@@ -154,20 +154,20 @@ std::string getInputFileName();
 
 
 /**
- * @brief Function <b>set_check_subcycle<b> sets whether to check input
+ * @brief Function <b>set_check_subcycle</b> sets whether to check input
  * file for subcycling.  The default behavior corresponds to false.
  */
 void set_check_subcycle(bool value);
 
 /**
- * @brief Function <b>set_zapotec<b> sets whether this code is
+ * @brief Function <b>set_zapotec</b> sets whether this code is
  * zaptoec.  The default behavior corresponds to false.
  * Send all function-related hate mail to Arne Gullerud.
  */
 void set_zapotec(bool value);
 
 /**
- * @brief Function <b>is_zapotec<b> returns whether this code is
+ * @brief Function <b>is_zapotec</b> returns whether this code is
  * zaptoec. Send all function-related hate mail to Arne Gullerud.
  */
 bool is_zapotec();

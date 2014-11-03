@@ -74,7 +74,7 @@ IF(TPL_ENABLE_MPI)
 ENDIF()
 
 # Add Include/Library directories
-# Note #1: I have to add this to the cache otherwise TRIBITS_TPL_DECLARE_LIBRARIES will clobber them completely.
+# Note #1: I have to add this to the cache otherwise TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES will clobber them completely.
 # Note #2: ADVANCED_SET does not handle extra parameters (like CACHE) correctly, hence why I can't use it here
 SET(MATLAB_INCLUDE_DIRS ${MATLAB_ROOT}/extern/include CACHE PATH "Include directories for Matlab")
 MARK_AS_ADVANCED(MATLAB_INCLUDE_DIRS)
@@ -82,7 +82,7 @@ SET(MATLAB_LIBRARY_DIRS ${MATLAB_ROOT}/bin/${MATLAB_ARCH} CACHE PATH "Lib direct
 MARK_AS_ADVANCED(MATLAB_LIBRARY_DIRS)
 
 # Make sure we can find the matlab libs
-TRIBITS_TPL_DECLARE_LIBRARIES( MATLAB
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MATLAB
   REQUIRED_HEADERS engine.h mex.h
   REQUIRED_LIBS_NAMES mex mx eng
   )

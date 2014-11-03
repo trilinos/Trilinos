@@ -77,7 +77,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   int t1,t2,t3;
   double    *pos_encoded_dir_node;
   double    *neg_encoded_dir_node;
-  int *encoded_dir_edge;
+  int *encoded_dir_edge=0;
   double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *edge_type;
 
   ML_CommInfoOP *getrow_comm;
@@ -1601,7 +1601,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 #endif
   ML_memory_check("reitz end");
 
-  if(encoded_dir_edge != NULL) free(encoded_dir_edge);
+  ML_free(encoded_dir_edge);
   return(Nlevels_nodal);
 }
 

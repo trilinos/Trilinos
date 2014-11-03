@@ -173,7 +173,7 @@ public:
                 typename traits::device_type ,
                 typename traits::memory_traits > non_const_type ;
 
-  typedef View< typename traits::array_type ,
+  typedef View< typename traits::array_intrinsic_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > array_type ;
