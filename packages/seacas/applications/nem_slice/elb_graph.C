@@ -238,6 +238,10 @@ namespace {
       /* tmp_element used to speed up the in_list calc */
       int *tmp_element = (int*)malloc(sizeof(int)*mesh->num_elems);
       if(!tmp_element) {
+	if (problem->face_adj) {
+	  free(hold_elem);
+	  free(pt_list);
+	}
 	Gen_Error(0, "fatal: insufficient memory");
 	return 0;
       }
@@ -449,7 +453,6 @@ namespace {
 		    if (nelem > 1) {
 
 		      /* Then get the correct elements out of the hold array */
-		      nhold = nelem;
 		      for (size_t i = 0; i < nelem; i++)
 			hold_elem[i] = graph->sur_elem[side_nodes[inode]][pt_list[i]];
 		      break;
