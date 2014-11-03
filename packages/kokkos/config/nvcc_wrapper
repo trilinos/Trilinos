@@ -8,7 +8,7 @@ default_arch="sm_35"
 #default_arch="sm_50"
 
 default_compiler="g++"
-default_compiler="icpc"
+#default_compiler="icpc"
 #default_compiler="/usr/local/gcc/4.8.3/bin/g++"
 #default_compiler="/usr/local/gcc/4.9.1/bin/g++"
 
@@ -45,7 +45,7 @@ do
     cpp_files="$cpp_files $1"
     ;;
   #Handle known nvcc args
-  -O*|-D*|-gencode*|-c|-I*|-L*|-l*|-g|--help|--version|--dryrun|--verbose|--keep-dir|-E|-M|-G|--relocatable-device-code*)
+  -O*|-D*|-gencode*|-c|-I*|-L*|-l*|-g|--help|--version|--dryrun|--verbose|--keep-dir|-E|-M|-G|--relocatable-device-code*|-shared)
     cuda_args="$cuda_args $1"
     ;;
   #Handle c++11 setting
@@ -81,14 +81,17 @@ do
     cuda_args="$cuda_args $1"
     arch_set=1
     ;;
-  #Handle object files: -x cu applies to all input files, so give them to linker, except if only linking
-  *.o|*.a|*.so)
-    object_files="$object_files $1"
-    object_files_xlinker="$object_files_xlinker -Xlinker $1"
-    ;;
   #Handle args that should be sent to the linker
   -Wl*)
     xlinker_args="$xlinker_args -Xlinker ${1:4:${#1}}"
+    ;;
+  #Handle object files: -x cu applies to all input files, so give them to linker, except if only linking
+  *.o)
+    object_files="$object_files $1"
+    ;;
+  #Handle object files: -x cu applies to all input files, so give them to linker, except if only linking
+  *.a|*.so|*.so.*)
+    object_files_xlinker="$object_files_xlinker -Xlinker $1"
     ;;
   #All other args are sent to the host compiler
   *)
@@ -134,12 +137,11 @@ if [ $replace_pragma_ident -eq 1 ]; then
   cpp_files=$cpp_files2
   echo $cpp_files
 fi
-echo $cpp_files
 
 if [ "$cpp_files" ]; then
-  command="$command $object_files_xlinker -x cu $cpp_files"
+  command="$command $object_files $object_files_xlinker -x cu $cpp_files"
 else
-  command="$command $object_files"
+  command="$command $object_files $object_files_xlinker"
 fi
 
 #Print command for dryrun
