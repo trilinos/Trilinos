@@ -164,11 +164,16 @@ int main(int argc, char *argv[]) {
 
     // vector of frequencies
     std::vector<double> omegas;
-    omegas.push_back(0);
-    omegas[0]=omega;
-    //omegas[1]=omega+10;
-    //omegas[2]=omega+20;
     int total_iters = 0;
+#ifdef HAVE_MUELU_DEBUG
+    omegas.push_back(0.0);
+    omegas[0]=omega;
+#else
+    omegas.resize(3);
+    omegas[0]=omega;
+    omegas[1]=omega+10;
+    omegas[2]=omega+20;
+#endif
 
     // loop over frequencies
     for(size_t i=0; i<omegas.size(); i++) {
