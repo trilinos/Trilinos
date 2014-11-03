@@ -29,6 +29,7 @@
 #endif // ! defined(KOKKOS_USE_CUDA_UVM)
 
 #cmakedefine KOKKOS_HAVE_PTHREAD
+#cmakedefine KOKKOS_HAVE_SERIAL
 #cmakedefine KOKKOS_HAVE_QTHREAD
 #cmakedefine KOKKOS_HAVE_Winthread
 #cmakedefine KOKKOS_HAVE_OPENMP
