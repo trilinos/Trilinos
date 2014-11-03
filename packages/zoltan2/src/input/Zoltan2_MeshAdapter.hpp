@@ -261,23 +261,28 @@ public:
       adjsGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
 
       for (int i = 0; i < LocalNumIDs; ++i) {
+	int Row = Ids[i];
+	global_size_t globalRowT = as<global_size_t> (Row);
 	int NumAdj;
 
 	if (i + 1 < LocalNumIDs) {
-	  NumAdjs = offsets[i+1] - offsets[i];
+	  NumAdjs = offsets[i+1];
 	} else {
-	  NumAdjs = LocalNumAdjs - offsets[i];
+	  NumAdjs = LocalNumAdjs;
 	}
 
 	for (int j = offsets[i]; j < NumAdjs; ++j) {
-	  ;
+	  int Col = adjacencyIds[j];
+	  int globalCol = as<int> (Col);
+	  //create ArrayView globalCol object for Tpetra
+	  ArrayView<int> globalColAV = arrayView (&globalCol, 1);
+	  //Update Tpetra overlap Graph
+	  adjsGraph->insertGlobalIndices (globalRowT, globalColAV);
 	}
-
-	adjsGraph->insertGlobalIndices (globalRowT, globalColAV);
       }
 
-      adjsGraph->fillComplete ();
-      return true;*/
+      adjsGraph->fillComplete ();*/
+      return true;
     }
   }
 
