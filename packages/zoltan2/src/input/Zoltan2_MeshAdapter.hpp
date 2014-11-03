@@ -248,6 +248,7 @@ public:
       return false;
     else {
       int LocalNumIDs = getLocalNumIDs();
+      int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
       zgid_t const *Ids=NULL;
       getIDsView(Ids);
       lno_t const *offsets=NULL;
@@ -260,14 +261,23 @@ public:
       adjsGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
 
       for (int i = 0; i < LocalNumIDs; ++i) {
-	for (int j = offsets[i]; j < ; ++j) {
+	int NumAdj;
+
+	if (i + 1 < LocalNumIDs) {
+	  NumAdjs = offsets[i+1] - offsets[i];
+	} else {
+	  NumAdjs = LocalNumAdjs - offsets[i];
+	}
+
+	for (int j = offsets[i]; j < NumAdjs; ++j) {
+	  ;
 	}
 
 	adjsGraph->insertGlobalIndices (globalRowT, globalColAV);
       }
 
-      adjsGraph->fillComplete ();*/
-      return true;
+      adjsGraph->fillComplete ();
+      return true;*/
     }
   }
 
