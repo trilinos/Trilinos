@@ -46,8 +46,17 @@
 #ifndef MUELU_VARIABLECONTAINER_HPP
 #define MUELU_VARIABLECONTAINER_HPP
 
+#include "MueLu_ExplicitInstantiation.hpp"
+
+#include <complex>
 #include <map>
-#include <Teuchos_ParameterEntry.hpp>
+
+#include <Kokkos_DefaultNode.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
+#include <Tpetra_ETIHelperMacros.h>
+
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -67,24 +76,47 @@ namespace MueLu {
     all requesting factories.
   */
   class VariableContainer : public BaseClass {
+  private:
+    // Motivated by Teuchos_any.hpp
+    class DataBase {
+    public:
+      virtual ~DataBase() {}
+      virtual const std::type_info& type() const = 0;
+      virtual std::string typeName() const = 0;
+    };
+
+    template<typename T>
+    class Data : public DataBase {
+    public:
+      Data(const T& data) : data_(data) {}
+      const std::type_info& type() const { return typeid(T); }
+      std::string typeName() const { return Teuchos::TypeNameTraits<T>::name(); }
+      T data_;
+  };
+
   public:
     typedef std::map<const FactoryBase*,int> request_container;
 
   private:
-    Teuchos::ParameterEntry           data_;        ///< the data itself
-    bool                              available_;   ///< is data available?
-    KeepType                          keep_;        ///< keep flag
-    int                               count_;       ///< number of requests by all factories
+    DataBase*          data_;        ///< the data itself
+    mutable
+    DataBase*          datah_;
+    bool               available_;   ///< is data available?
+    KeepType           keep_;        ///< keep flag
+    int                count_;       ///< number of requests by all factories
 
-    request_container                 requests_;    ///< requesting factories
+    request_container  requests_;    ///< requesting factories
 
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Default constructor.
-    VariableContainer() : available_(false), keep_(false), count_(0) { }
-    ~VariableContainer() { }
+    VariableContainer() : data_(NULL), datah_(NULL), available_(false), keep_(false), count_(0) { }
+    ~VariableContainer() {
+      delete data_;   data_  = NULL;
+      delete datah_;  datah_ = NULL;
+    }
 
     //@}
 
@@ -92,21 +124,58 @@ namespace MueLu {
     //@{
 
     //! Store data in container class and set the "Available" status true.
-    void SetData(const Teuchos::ParameterEntry& entry) {
-      data_      = entry;
+    template<typename T>
+    void SetData(const T& entry) {
+      delete data_;
+      delete datah_;
+      data_      = new Data<T>(entry);
+      datah_     = NULL;
       available_ = true;
     }
 
     //! Return const reference to data stored in container
     //! NOTE: we do not check if data is available
-    const Teuchos::ParameterEntry& GetData() const                              { return data_; }
+    template<typename T>
+    const T& GetData() const {
+      const std::string typeName = Teuchos::TypeNameTraits<T>::name();
+      TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
+                                 "Error, cast to type Data<" << typeName << "> failed since the content is NULL");
+      TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(T), Teuchos::bad_any_cast,
+                                 "Error, cast to type Data<" << typeName << "> failed since the actual underlying type is "
+                                 "\'" << data_->typeName() << "!");
+
+      Data<T>* data = dynamic_cast<Data<T>*>(data_);
+      TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
+                                 "Error, cast to type Data<" << typeName << "> failed but should not have and the actual underlying type is "
+                                 "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+      return data->data_;
+    }
 
     //! Return reference to data stored in container
     //! NOTE: we do not check if data is available
-    Teuchos::ParameterEntry& GetData()                                          { return data_; }
+    template<typename T>
+    T& GetData() {
+      const std::string typeName = Teuchos::TypeNameTraits<T>::name();
+      TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
+                                 "Error, cast to type Data<" << typeName << "> failed since the content is NULL");
+      TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(T), Teuchos::bad_any_cast,
+                                 "Error, cast to type Data<" << typeName << "> failed since the actual underlying type is "
+                                 "\'" << data_->typeName() << "!");
 
-    //! Returns true if data is available, i.e. SetData has been called before
-    bool IsAvailable() const                                                    { return available_; }
+      Data<T>* data = dynamic_cast<Data<T>*>(data_);
+      TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
+                                 "Error, cast to type Data<" << typeName << "> failed but should not have and the actual underlying type is \'"
+                                 << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+      return data->data_;
+    }
+
+    std::string GetTypeName() {
+      return data_->typeName();
+    }
+
+    //! Returns true if data is available, i.e.
+    //  if SetData has been called before
+    bool IsAvailable() const { return available_; }
 
     //@}
 
@@ -126,7 +195,7 @@ namespace MueLu {
     //! Release data
     void Release(const FactoryBase* reqFactory) {
       request_container::iterator it = requests_.find(reqFactory);
-      TEUCHOS_TEST_FOR_EXCEPTION(it == requests_.end(), Exceptions::RuntimeError, "MueLu::VariableContainer::Release():"
+      TEUCHOS_TEST_FOR_EXCEPTION(it == requests_.end(), Exceptions::RuntimeError, "MueLu::VariableContainer::Release(): "
                                  "cannot call Release if factory has not been requested before by factory " << reqFactory);
       if (--(it->second) == 0)
         requests_.erase(it);
@@ -168,6 +237,56 @@ namespace MueLu {
 
     //@}
   };
+
+#define MUELU_DECL1_SC_LO_GO_NO(SC,LO,GO,NO) \
+  template<> \
+  const Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> >& VariableContainer::GetData<Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> > >() const;
+
+#define MUELU_DECL2_SC_LO_GO_NO(SC,LO,GO,NO) \
+  template<> \
+  Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> >& VariableContainer::GetData<Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO> > >();
+
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+  MUELU_DECL1_SC_LO_GO_NO(double,int,int,KokkosClassic::DefaultNode::DefaultNodeType);
+  MUELU_DECL2_SC_LO_GO_NO(double,int,int,KokkosClassic::DefaultNode::DefaultNodeType);
+#endif
+
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  MUELU_DECL1_SC_LO_GO_NO(double,int,long long int,KokkosClassic::DefaultNode::DefaultNodeType);
+  MUELU_DECL2_SC_LO_GO_NO(double,int,long long int,KokkosClassic::DefaultNode::DefaultNodeType);
+# else
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
+# endif
+#endif
+
+#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
+# ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+  MUELU_DECL1_SC_LO_GO_NO(std::complex<double>,int,long long int,KokkosClassic::DefaultNode::DefaultNodeType);
+  MUELU_DECL2_SC_LO_GO_NO(std::complex<double>,int,long long int,KokkosClassic::DefaultNode::DefaultNodeType);
+# else
+# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
+# endif
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
+  MUELU_DECL1_SC_LO_GO_NO(double,int,int,Kokkos_Compat_KokkosThreadsWrapperNode);
+  MUELU_DECL2_SC_LO_GO_NO(double,int,int,Kokkos_Compat_KokkosThreadsWrapperNode);
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
+  MUELU_DECL1_SC_LO_GO_NO(double,int,int,KokkosClassic_TPINode);
+  MUELU_DECL2_SC_LO_GO_NO(double,int,int,KokkosClassic_TPINode);
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
+  MUELU_DECL1_SC_LO_GO_NO(double,int,int,Kokkos_Compat_KokkosOpenMPWrapperNode);
+  MUELU_DECL2_SC_LO_GO_NO(double,int,int,Kokkos_Compat_KokkosOpenMPWrapperNode);
+#endif
+
+#undef MUELU_DECL1_SC_LO_GO_NO
+#undef MUELU_DECL2_SC_LO_GO_NO
 
 }
 
