@@ -362,7 +362,9 @@ public:
   typedef KokkosDeviceWrapperNode<Kokkos::Threads> KokkosThreadsWrapperNode;
 #endif
 
+#ifdef KOKKOS_HAVE_SERIAL
   typedef KokkosDeviceWrapperNode<Kokkos::Serial> KokkosSerialWrapperNode;
+#endif // KOKKOS_HAVE_SERIAL
 
 } // namespace Compat
 } // namespace Kokkos

@@ -47,9 +47,10 @@
 
 #ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
 #  include "KokkosCore_config.h"
-#  include "Kokkos_Serial.hpp"
+#  ifdef KOKKOS_HAVE_SERIAL
+#    include "Kokkos_Serial.hpp"
+#  endif // KOKKOS_HAVE_SERIAL
 #endif
-
 
 namespace KokkosClassic {
 
@@ -118,7 +119,7 @@ namespace KokkosClassic {
 } // namespace KokkosClassic
 
 
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
 namespace Kokkos {
   namespace Compat {
     template <>
@@ -127,7 +128,7 @@ namespace Kokkos {
     };
   } // namespace Compat
 } // namespace Kokkos
-#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT && KOKKOS_HAVE_SERIAL
 
 
 #endif

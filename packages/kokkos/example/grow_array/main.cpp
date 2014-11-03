@@ -62,7 +62,7 @@ int main( int argc , char ** argv )
   int use_core = 1 ;
   int length_array  = 1000000 ;
   int span_values = 100000000 ;
-  
+
 
   if ( Kokkos::hwloc::available() ) {
     use_numa = Kokkos::hwloc::get_available_numa_count();
@@ -70,10 +70,15 @@ int main( int argc , char ** argv )
     num_threads = use_numa * use_core * Kokkos::hwloc::get_available_threads_per_core();
   }
 
+#if defined( KOKKOS_HAVE_SERIAL )
   {
     std::cout << "Kokkos::Serial" << std::endl ;
+    // The Serial device accepts these arguments, though it may ignore them.
+    Kokkos::Serial::initialize( num_threads , use_numa , use_core );
     Example::GrowArrayFunctor< Kokkos::Serial >( length_array , span_values );
+    Kokkos::Serial::finalize ();
   }
+#endif // defined( KOKKOS_HAVE_SERIAL )
 
 #if defined( KOKKOS_HAVE_PTHREAD )
   {
