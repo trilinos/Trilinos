@@ -1665,7 +1665,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	}
 	else {
 	  sprintf(buf,
-		  "   %-*s     diff: nodeset node counts differ for nodeset "ST_ZU,
+		  "   %-*s     diff: nodeset node counts differ for nodeset " ST_ZU,
 		  name_length, name.c_str(), 
 		  (size_t)nset1->Id());
 	  std::cout << buf << std::endl;
@@ -1827,7 +1827,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	}
 	else {
 	  sprintf(buf,
-		  "   %-*s     diff: sideset side counts differ for sideset "ST_ZU,
+		  "   %-*s     diff: sideset side counts differ for sideset " ST_ZU,
 		  name_length, name.c_str(), 
 		  (size_t)sset1->Id());
 	  std::cout << buf << std::endl;
