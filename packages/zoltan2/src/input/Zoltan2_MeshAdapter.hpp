@@ -53,6 +53,8 @@
 
 #include <Zoltan2_Adapter.hpp>
 
+#include "Tpetra_DefaultPlatform.hpp"
+
 namespace Zoltan2 {
   
   /*!  \brief Enumerate entity types for meshes:  Regions, Faces, Edges, or 
@@ -114,6 +116,10 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
   typedef User userCoord_t;
+  /*  typedef int LO;
+  typedef int GO;
+  typedef Tpetra:DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::CrsGraph<LO GO Node> sparse_graph_type;*/
 #endif
   
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
@@ -241,12 +247,26 @@ public:
     if (!availAdjs(sourcetarget, through))
       return false;
     else {
+      int LocalNumIDs = getLocalNumIDs();
       zgid_t const *Ids=NULL;
       getIDsView(Ids);
       lno_t const *offsets=NULL;
       zgid_t const *adjacencyIds=NULL;
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
+
       return false;
+
+      /*RCP<sparse_graph_type> adjsGraph;
+      adjsGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
+
+      for (int i = 0; i < LocalNumIDs; ++i) {
+	for (int j = offsets[i]; j < ; ++j) {
+	}
+
+	adjsGraph->insertGlobalIndices (globalRowT, globalColAV);
+      }
+
+      adjsGraph->fillComplete ();*/
       return true;
     }
   }
