@@ -2,12 +2,31 @@
 #define BASKER_DEF_HPP
 
 #include "basker_decl.hpp"
-#include <assert.h>
+#include "basker.hpp"
+
+//#include <assert.h>
 #include <iostream>
+#include <stdio.h>
+
+using namespace std;
 
 //#define BASKER_DEBUG 1
+//#undef UDEBUG
 
 namespace basker{
+
+  template<class Int>
+  inline
+ bool basker_ordinal_type_valid
+  (
+   Int a
+   )
+  {
+    if(a == ((Int)-1)) return false;
+    else return true;
+  }
+
+
 
   template <class Int, class Entry>
   void basker_dfs
@@ -24,18 +43,22 @@ namespace basker{
    Int stack []
   )
   {
-   Int i, t, head, i1 ; 
+    //int head;
+    int have_elements = 1;
+    Int i, t, i1, head ; 
    Int start, end, done, *store ;
 
    store = stack + n ;
    head = 0;
    stack[head] = j;
 
-   while (head >= 0)
+   //while (head >= 0)
+        
+   while(basker_ordinal_type_valid<Int>(head))
    {
        j = stack[head] ;
 #ifdef BASKER_DEBUG
-       std::cout << "DFS: " << j << std::endl;
+       std::cout << "DFS: " << j << "COLOR: " << color[j] << std::endl;
 #endif
        t = pinv [j] ;
        if (color[j] == 0)
@@ -46,7 +69,7 @@ namespace basker{
        }
        else
        {
-           assert (color[j] == 1) ; /* color cannot be 2 when we are here */
+	 ASSERT (color[j] == 1) ; /* color cannot be 2 when we are here */
            start = store[j];
        }
        done = 1;
@@ -70,9 +93,10 @@ namespace basker{
        }
        if (done)
        {
+	 // std::cout << "done called " << std::endl;
            pattern[--*top] = j ;
            color[j] = 2 ;
-           head--; /* pop j */
+	   head--;
        }
    }
 #ifdef BASKER_DEBUG
@@ -165,18 +189,20 @@ namespace basker{
         ucnt = 0;
 
 #ifdef BASKER_DEBUG
-        assert( top == ancol ) ;
+        ASSERT( top == ancol ) ;
 
         for ( i = 0 ; i < anrow ;i++)
         {
-          assert( X[i] == 0 ) ;
+          ASSERT( X[i] == 0 ) ;
         }
 
         for ( i = 0 ; i < ancol ;i++)
         {
-          assert ( color[i] == 0 ) ;
+          ASSERT ( color[i] == 0 ) ;
         }
 #endif
+	//printf("here \n");
+	//return 1;
 
         /* reachability for every non zero in Ak */
         for (i = Ap[k] ;  i < Ap[k+1] ; i++ )
@@ -187,14 +213,20 @@ namespace basker{
             if ( color[j] == 0 )
             {
                 /*BASKER(dfs) (j, Li, Lp, color, pattern, &top, k, pinv) ;*/
+	      //std::cout << "Before dfs \n";
 	      basker_dfs<Int, Entry> (anrow, j, Li, Lp, color, pattern, &top, k,
                         pinv, stack) ;
+	      //std::cout << "After dfs \n";
+
+	      
             }    
         }
 
+       
+	
 
         xnnz = ancol - top ;
-        assert ( xnnz <= anrow ) ;
+        //assert ( xnnz <= anrow ) ;
 
         /* Lx = b where x will be the column k in in L and U */
         top1 = top ;
@@ -204,7 +236,7 @@ namespace basker{
             color[j] = 0 ;
             t = pinv[j] ;
 
-            if ( t != -1 )
+            if (basker_ordinal_type_valid<Int>(t))
             {
                 xj = X [j] ;
                 p2 = Lp [t+1] ; /* TBV */
@@ -224,7 +256,7 @@ namespace basker{
             value =  X[j] ;
             absv = ( value < 0.0 ? -value : value ) ;
 
-            if ( t == -1 )
+            if (!basker_ordinal_type_valid<Int>(t))
             {
                 lcnt++;
                 if( absv > maxv)
@@ -236,8 +268,9 @@ namespace basker{
             }
         }
         ucnt = anrow - top - lcnt  + 1;
-
-        if ( maxindex == -1 || pivot == 0 )
+	
+	//cout << "Max Index" << maxindex << std::endl;
+        if (!basker_ordinal_type_valid<Int>(maxindex) || pivot == 0 )
         {
 	  std::cout << "Matrix is singular at index: " << maxindex << " pivot: " << pivot << std::endl;       
             return 1;
@@ -265,14 +298,14 @@ namespace basker{
 	     std::cout << "Out of memory -- Reallocating: OldSize: " << llnnz << "NewSize: " << newsize << std::endl;
 	     std::cout << "MY NOTES:  Check reallocs in C++" << std::endl;
 #endif
-	     Li = (Int *)realloc(Li, newsize*sizeof(Int));
+	     Li = (Int *)REALLOC(Li, newsize*sizeof(Int));
              if (!Li)
              {
 	       std::cout << "Cannot Realloc Memory" << std::endl;
                return 1;
              }
              //Lx = REALLOC(Lx, newsize * sizeof(double));
-	     Lx = (Entry *)realloc(Lx, newsize*sizeof(Entry));
+	     Lx = (Entry *)REALLOC(Lx, newsize*sizeof(Entry));
              if (!Lx)
              {
 	       std::cout << "Cannot Realloc Memory" << std::endl;
@@ -289,9 +322,9 @@ namespace basker{
 	     std::cout << "Out of memory -- Reallocating U:  OldSize: " << uunnz << " NewSize " << newsize << std::endl;
 #endif
              //PRINT(("Reallocating L oldsize=%d, newsize=%d\n", uunnz, newsize));
-             //Ui = REALLOC(Ui, newsize * sizeof(Int));
+             Ui = (Int *) REALLOC(Ui, newsize * sizeof(Int));
              
-	     Ui = (Int *)realloc(Ui, newsize*sizeof(Int));
+	     //Ui = (Int *)realloc(Ui, newsize*sizeof(Int));
 	     if (!Ui)
              {
 	       std::cout << "Cannot allocate memory\n";
@@ -299,8 +332,8 @@ namespace basker{
                  return 1;
              }
 	     
-             //Ux = REALLOC(Ux, newsize * sizeof(double));
-	     Ux = (Entry *)realloc(Ux, newsize*sizeof(Entry));
+             Ux = (Entry *) REALLOC(Ux, newsize * sizeof(Entry));
+	     //Ux = (Entry *)realloc(Ux, newsize*sizeof(Entry));
              if (!Ux)
              {
 	       std::cout << "Cannot allocate memory\n";
@@ -311,7 +344,7 @@ namespace basker{
         }
 
         /* L(k,k) = 1 */
-        assert(lnnz < llnnz);
+        //assert(lnnz < llnnz);
         Li[lnnz] = maxindex ;
         Lx[lnnz] = 1.0 ;
         lnnz++;
@@ -324,7 +357,7 @@ namespace basker{
             /*  chk for numerical cancellation */
             if ( X[j] != 0 )
             {
-                if ( t  != -1 )
+	      if ( basker_ordinal_type_valid<Int>(t) )
                 {
                     if ( unnz >= uunnz )
                     {
@@ -337,7 +370,7 @@ namespace basker{
                     Ux[unnz] = X[j] ;
                     unnz++ ;
                 }
-                else if ( t == -1 )
+	      else if (!basker_ordinal_type_valid<Int>(t))
                 {
                     if ( lnnz >= llnnz )
                     {
@@ -345,7 +378,7 @@ namespace basker{
 		      //printf ("basker : Insufficient memory for L \n"); 
                         return 1;
                     }
-                    assert(lnnz < llnnz ) ;
+		    // assert(lnnz < llnnz ) ;
             /*printf("I am assigning Li[%d]=%d  Lx[%d]=%g t=%d, j =%d\n", lnnz, j, lnnz, X[j]/pivot, t, j) ;*/
                     Li[lnnz] = j ;
                     Lx[lnnz] = X[j]/pivot ;
@@ -381,6 +414,18 @@ namespace basker{
     }
     printf("\n");
 #endif
+    /*repermute L*/
+    for(i = 0; i < ancol; i++)
+      {
+	for(k = Lp[i]; k < Lp[i+1]; k++)
+	  {
+	    Li[k] =pinv[Li[k]]; 	    
+	  }
+      }
+
+
+
+
 
     *llnnz_p = llnnz;
     *uunnz_p = uunnz;
@@ -391,5 +436,5 @@ namespace basker{
 
     return 0 ;
 }
-}
+  }//end namespace
 #endif

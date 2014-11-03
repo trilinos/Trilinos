@@ -41,5 +41,14 @@ namespace basker{
    Int stack[]
    );
 
+  
+  template<class Int>
+  inline
+  bool basker_ordinal_type_valid
+  (
+   Int a
+   );
+ 
+ 
 }
 #endif
