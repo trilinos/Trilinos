@@ -45,6 +45,10 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <Kokkos_Macros.hpp>
+
+/* only compile this file if CUDA is enabled for Kokkos */
+#ifdef KOKKOS_HAVE_CUDA
 
 #include <Kokkos_Cuda.hpp>
 #include <Kokkos_CudaSpace.hpp>
@@ -594,6 +598,7 @@ std::string CudaHostPinnedSpace::query_label( const void * p )
 
 } // namespace Kokkos
 
+#endif // KOKKOS_HAVE_CUDA
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 

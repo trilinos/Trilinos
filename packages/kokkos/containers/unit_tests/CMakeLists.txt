@@ -5,16 +5,21 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src )
 
 SET(SOURCES
   UnitTestMain.cpp 
-  TestThreads.cpp
   )
 
 SET(LIBRARIES kokkoscore)
 
-#IF(Kokkos_ENABLE_Serial)
+IF(Kokkos_ENABLE_Pthread)
+  LIST( APPEND SOURCES
+    TestThreads.cpp
+  )
+ENDIF()
+
+IF(Kokkos_ENABLE_Serial)
   LIST( APPEND SOURCES
     TestSerial.cpp
   )
-#ENDIF()
+ENDIF()
 
 IF(Kokkos_ENABLE_OpenMP)
   LIST( APPEND SOURCES

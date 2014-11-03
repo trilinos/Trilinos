@@ -47,6 +47,7 @@
 #include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
+#include <set>
 #include "boost/range/iterator_range_core.hpp"  // for iterator_range
 #include "boost/unordered/unordered_map.hpp"  // for unordered_map
 

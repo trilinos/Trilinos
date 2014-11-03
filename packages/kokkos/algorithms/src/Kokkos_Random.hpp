@@ -674,7 +674,8 @@ namespace Kokkos {
       typename state_data_type::HostMirror h_state = create_mirror_view(state_);
       typename lock_type::HostMirror h_lock = create_mirror_view(locks_);
 
-      Random_XorShift64<Kokkos::Serial> gen(seed,0);
+      // Execute on the HostMirror's default execution space.
+      Random_XorShift64<typename state_data_type::HostMirror::execution_space> gen(seed,0);
       for(int i = 0; i < 17; i++)
         gen.rand();
       for(int i = 0; i < num_states_; i++) {
@@ -921,7 +922,9 @@ namespace Kokkos {
       typename state_data_type::HostMirror h_state = create_mirror_view(state_);
       typename int_view_type::HostMirror h_lock = create_mirror_view(locks_);
       typename int_view_type::HostMirror h_p = create_mirror_view(p_);
-      Random_XorShift64<Kokkos::Serial> gen(seed,0);
+
+      // Execute on the HostMirror's default execution space.
+      Random_XorShift64<typename state_data_type::HostMirror::execution_space> gen(seed,0);
       for(int i = 0; i < 17; i++)
         gen.rand();
       for(int i = 0; i < num_states_; i++) {

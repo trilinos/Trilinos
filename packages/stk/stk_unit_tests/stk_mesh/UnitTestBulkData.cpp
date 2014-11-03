@@ -3840,8 +3840,6 @@ TEST(BulkData, STK_ParallelPartConsistency_ChangeBlock)
   // This test will create a two-element mesh (quad4 elements)
   // in 2 blocks in parallel.  Both elements will start out in block_1
   // and then one of the elements will be moved to block_2.
-  // This causes the shared nodes to lose the block_1 part temporarily.
-  // Consequently the field that is stored on block_1 is corrupted.
 
   unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);

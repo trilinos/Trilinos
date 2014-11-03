@@ -43,7 +43,7 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Serial.hpp>
+#include <Kokkos_Core.hpp>
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
@@ -1162,13 +1162,13 @@ public:
 
   static void run_test_subview_strided()
   {
-    typedef Kokkos::View< int **** , Kokkos::LayoutLeft  , Kokkos::Serial >  view_left_4 ;
-    typedef Kokkos::View< int **** , Kokkos::LayoutRight , Kokkos::Serial >  view_right_4 ;
-    typedef Kokkos::View< int **   , Kokkos::LayoutLeft  , Kokkos::Serial >  view_left_2 ;
-    typedef Kokkos::View< int **   , Kokkos::LayoutRight , Kokkos::Serial >  view_right_2 ;
+    typedef Kokkos::View< int **** , Kokkos::LayoutLeft  , host >  view_left_4 ;
+    typedef Kokkos::View< int **** , Kokkos::LayoutRight , host >  view_right_4 ;
+    typedef Kokkos::View< int **   , Kokkos::LayoutLeft  , host >  view_left_2 ;
+    typedef Kokkos::View< int **   , Kokkos::LayoutRight , host >  view_right_2 ;
 
-    typedef Kokkos::View< int * ,  Kokkos::LayoutStride , Kokkos::Serial >  view_stride_1 ;
-    typedef Kokkos::View< int ** ,  Kokkos::LayoutStride , Kokkos::Serial >  view_stride_2 ;
+    typedef Kokkos::View< int * ,  Kokkos::LayoutStride , host >  view_stride_1 ;
+    typedef Kokkos::View< int ** ,  Kokkos::LayoutStride , host >  view_stride_2 ;
 
     view_left_2  xl2("xl2", 100 , 200 );
     view_right_2 xr2("xr2", 100 , 200 );

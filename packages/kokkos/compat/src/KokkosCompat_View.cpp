@@ -51,8 +51,12 @@
 namespace Kokkos {
   namespace Compat {
 
+#if defined(KOKKOS_HAVE_SERIAL)
 #define COMPAT_INSTANT_SERIAL(T) \
     COMPAT_INSTANT(T,Kokkos::Serial)
+#else
+#  define COMPAT_INSTANT_SERIAL(T)
+#endif // defined(KOKKOS_HAVE_SERIAL)
 
 #if defined(KOKKOS_HAVE_PTHREAD)
 #define COMPAT_INSTANT_THREADS(T) \

@@ -410,8 +410,7 @@ namespace Kokkos {
  *   first, followed by zero or more compile-time dimensions.  For
  *   more examples, please refer to the tutorial materials.
  *
- * \tparam Space (required) The execution model for parallel
- *   operations.  Examples include Threads, OpenMP, Cuda, and Serial.
+ * \tparam Space (required) The memory space.
  *
  * \tparam Layout (optional) The array's layout in memory.  For
  *   example, LayoutLeft indicates a column-major (Fortran style)

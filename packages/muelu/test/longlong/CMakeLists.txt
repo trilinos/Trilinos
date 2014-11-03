@@ -31,7 +31,6 @@ IF(${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Tpetra AND
     TwoBillionTest
     SOURCES TwoBillion.cpp
     COMM mpi
-    DEPLIBS muelu xpetra muelu-adapters
     )
 
 

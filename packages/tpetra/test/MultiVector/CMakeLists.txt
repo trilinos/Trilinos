@@ -1,18 +1,4 @@
 
-IF(Kokkos_ENABLE_Cuda)
-  MESSAGE("CUDA is enabled")
-
-  # mfh 01 Jan 2014: This is boilerplate I found in
-  # kokkos/core/unit_test/CMakeLists.txt.  It does
-  # seem to work but I have no idea how fragile it is.
-  #
-  # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( "." )
-  CUDA_INCLUDE_DIRECTORIES( ${Tpetra_INCLUDE_DIRS} )
-  CUDA_COMPILE(MV_UNIT_TEST_OBJECTS_CUDA MultiVector_UnitTests_CU.cu)
-  CUDA_COMPILE(MV_RCB_OBJECTS_CUDA rcb_CU.cu)
-ENDIF()
-
 IF(Tpetra_ENABLE_Thrust)
   SET(MAXNP NUM_MPI_PROCS 1)
 ENDIF()
@@ -20,7 +6,7 @@ ENDIF()
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MultiVector_UnitTests
   SOURCES
-    MultiVector_UnitTests ${MV_UNIT_TEST_OBJECTS_CUDA}
+    MultiVector_UnitTests
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT

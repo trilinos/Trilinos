@@ -44,6 +44,11 @@
 #include <gtest/gtest.h>
 
 #include <Kokkos_Core.hpp>
+
+#if ! defined(KOKKOS_HAVE_SERIAL)
+#  error "It doesn't make sense to build this file unless the Kokkos::Serial device is enabled.  If you see this message, it probably means that there is an error in Kokkos' CMake build infrastructure."
+#else
+
 #include <Kokkos_Bitset.hpp>
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_Vector.hpp>
@@ -59,7 +64,6 @@
 
 namespace Test {
 
-  //#ifdef KOKKOS_HAVE_SERIAL
 class serial : public ::testing::Test {
 protected:
   static void SetUpTestCase () {
@@ -138,6 +142,9 @@ SERIAL_SEGMENTEDVIEW_TEST( 10000 )
 #undef SERIAL_VECTOR_COMBINE_TEST
 #undef SERIAL_DUALVIEW_COMBINE_TEST
 #undef SERIAL_SEGMENTEDVIEW_TEST
-//#endif // KOKKOS_HAVE_SERIAL
+
 } // namespace test
+
+#endif // KOKKOS_HAVE_SERIAL
+
 

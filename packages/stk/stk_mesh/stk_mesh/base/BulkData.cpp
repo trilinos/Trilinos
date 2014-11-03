@@ -1200,7 +1200,9 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
 
 void BulkData::change_entity_id( EntityId id, Entity entity)
 {
-// When stk parallel is used within Fmwk, this assertion is violated
+// THIS ThrowAssertMsg IS ONLY MACRO CONTROLLED TO ALLOW EXPERIMENTATION WITH
+// Fmwk USING stk_parallel.  WHEN stk parallel IS USED WITHN Fmwk, THIS ASSERTION
+// IS VIOLATED.
 #ifndef SIERRA_MIGRATION
   ThrowAssertMsg(parallel_size() == 1,
                  "change_entity_id only supported in serial");
@@ -3634,7 +3636,8 @@ void BulkData::internal_change_ghosting(
       i->key = EntityKey(); // No longer communicated
       if ( remove_recv ) {
         ThrowRequireMsg( internal_destroy_entity( i->entity, remove_recv ),
-                         " FAILED attempt to destroy entity: " << identifier(i->entity) );
+                         "P[" << this->parallel_rank() << "]: FAILED attempt to destroy entity: "
+                         << entity_key(i->entity) );
       }
     }
   }
