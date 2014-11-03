@@ -447,8 +447,9 @@ CommAll::~CommAll()
   m_recv = NULL ;
 }
 
-CommAll::CommAll()
+CommAll::CommAll(bool propagate_local_error_flags)
   : m_comm( parallel_machine_null() ),
+    m_propagate_local_error_flags(propagate_local_error_flags),
     m_size( 0 ), m_rank( 0 ),
     m_bound( 0 ),
     m_max( 0 ),
@@ -456,8 +457,9 @@ CommAll::CommAll()
     m_recv(NULL)
 {}
 
-CommAll::CommAll( ParallelMachine comm )
+CommAll::CommAll( ParallelMachine comm, bool propagate_local_error_flags)
   : m_comm( comm ),
+    m_propagate_local_error_flags(propagate_local_error_flags),
     m_size( parallel_machine_size( comm ) ),
     m_rank( parallel_machine_rank( comm ) ),
     m_bound( 0 ),
@@ -590,71 +592,76 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
     }
   }
 
-  bool error_alloc = m_send == NULL || m_recv == NULL ;
+  if (m_propagate_local_error_flags) {
 
-  //--------------------------------
-  // Propogation of error flag, input flag, and quick/cheap/approximate
-  // verification of send and receive messages.
-  // Is the number and total size of messages consistent?
-  // Sum message counts and sizes for grouped processors.
-  // Sent are positive and received are negative.
-  // Should finish with all total counts of zero.
+      bool error_alloc = m_send == NULL || m_recv == NULL ;
 
-  enum { NPSum  = 7 };
-  enum { Length = 2 + 2 * NPSum };
+      //--------------------------------
+      // Propogation of error flag, input flag, and quick/cheap/approximate
+      // verification of send and receive messages.
+      // Is the number and total size of messages consistent?
+      // Sum message counts and sizes for grouped processors.
+      // Sent are positive and received are negative.
+      // Should finish with all total counts of zero.
 
-  int64_t local_result[ Length ];
-  int64_t global_result[ Length ];
+      enum { NPSum  = 7 };
+      enum { Length = 2 + 2 * NPSum };
 
-  std::fill( local_result , local_result+Length, 0 );
+      int64_t local_result[ Length ];
+      int64_t global_result[ Length ];
 
-  local_result[ Length - 2 ] = error_alloc ;
-  local_result[ Length - 1 ] = local_flag ;
+      std::fill( local_result , local_result+Length, 0 );
 
-  if ( ! error_alloc ) {
+      local_result[ Length - 2 ] = error_alloc ;
+      local_result[ Length - 1 ] = local_flag ;
 
-    const unsigned r = 2 * ( m_rank % NPSum );
+      if ( ! error_alloc ) {
 
-    for ( int i = 0 ; i < m_size ; ++i ) {
-      const unsigned n_send = m_send[i].capacity();
-      const unsigned n_recv = m_recv[i].capacity();
+        const unsigned r = 2 * ( m_rank % NPSum );
 
-      const unsigned s = 2 * ( i % NPSum );
+        for ( int i = 0 ; i < m_size ; ++i ) {
+          const unsigned n_send = m_send[i].capacity();
+          const unsigned n_recv = m_recv[i].capacity();
 
-      local_result[s]   += n_send ? 1 : 0 ;
-      local_result[s+1] += n_send ;
+          const unsigned s = 2 * ( i % NPSum );
 
-      local_result[r]   -= n_recv ? 1 : 0 ;
-      local_result[r+1] -= n_recv ;
-    }
+          local_result[s]   += n_send ? 1 : 0 ;
+          local_result[s+1] += n_send ;
+
+          local_result[r]   -= n_recv ? 1 : 0 ;
+          local_result[r+1] -= n_recv ;
+        }
+      }
+
+      if (m_size > 1) {
+        BABBLE_STK_PARALLEL_COMM(comm, "                  calling all_reduce_sum from allocate_buffers");
+        all_reduce_sum( m_comm , local_result , global_result , Length );
+      }
+      else {
+        std::copy(local_result, local_result+Length, global_result);
+      }
+
+      error_alloc   = global_result[ Length - 2 ] ;
+      bool global_flag   = global_result[ Length - 1 ] ;
+
+      bool ok = true ;
+
+      for ( unsigned i = 0 ; ok && i < 2 * NPSum ; ++i ) {
+        ok = 0 == global_result[i] ;
+      }
+
+      if ( error_alloc || ! ok ) {
+        msg << method << " ERROR:" ;
+        if ( error_alloc   ) { msg << " Failed memory allocation ," ; }
+        if ( ! ok          ) { msg << " Parallel inconsistent send/receive ," ; }
+        throw std::runtime_error( msg.str() );
+      }
+
+      // BABBLE_STK_PARALLEL_COMM(comm, "         exiting CommAll::allocate_buffers");
+      return global_flag ;
   }
 
-  if (m_size > 1) {
-    BABBLE_STK_PARALLEL_COMM(comm, "                  calling all_reduce_sum from allocate_buffers");
-    all_reduce_sum( m_comm , local_result , global_result , Length );
-  }
-  else {
-    std::copy(local_result, local_result+Length, global_result);
-  }
-
-  error_alloc   = global_result[ Length - 2 ] ;
-  bool global_flag   = global_result[ Length - 1 ] ;
-
-  bool ok = true ;
-
-  for ( unsigned i = 0 ; ok && i < 2 * NPSum ; ++i ) {
-    ok = 0 == global_result[i] ;
-  }
-
-  if ( error_alloc || ! ok ) {
-    msg << method << " ERROR:" ;
-    if ( error_alloc   ) { msg << " Failed memory allocation ," ; }
-    if ( ! ok          ) { msg << " Parallel inconsistent send/receive ," ; }
-    throw std::runtime_error( msg.str() );
-  }
-
-  // BABBLE_STK_PARALLEL_COMM(comm, "         exiting CommAll::allocate_buffers");
-  return global_flag ;
+  return true;
 }
 
 bool CommAll::allocate_buffers( ParallelMachine comm ,

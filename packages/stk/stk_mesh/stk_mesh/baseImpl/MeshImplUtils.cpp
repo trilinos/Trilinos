@@ -1393,6 +1393,47 @@ void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mes
   }
 }
 
+bool shared_entities_modified_on_any_proc(const BulkData& mesh, stk::ParallelMachine comm)
+{
+    Selector shared = mesh.mesh_meta_data().globally_shared_part();
+    bool local_any_shared_entities_modified = false;
+    for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEM_RANK; ++rank ) {
+        const stk::mesh::BucketVector& buckets = rank==stk::topology::ELEM_RANK ? mesh.buckets(rank) : mesh.get_buckets(rank, shared);
+        for(size_t b=0; b<buckets.size(); ++b) {
+            const stk::mesh::Bucket& bkt = *buckets[b];
+            for(size_t i=0; i<bkt.size(); ++i) {
+                if (mesh.state(bkt[i]) == Modified) {
+                    if (rank == stk::topology::ELEM_RANK) {
+                        unsigned num_nodes = mesh.num_nodes(bkt[i]);
+                        const stk::mesh::Entity* nodes = mesh.begin_nodes(bkt[i]);
+                        for(unsigned j=0; j<num_nodes; ++j) {
+                            if (mesh.bucket(nodes[j]).shared()) {
+                                local_any_shared_entities_modified = true;
+                                break;
+                            }
+                        }
+                    }
+                    else { 
+                        local_any_shared_entities_modified = true;
+                        break;
+                    }
+                }
+            }
+            if (local_any_shared_entities_modified) {
+                break;
+            }
+        }
+        if (local_any_shared_entities_modified) {
+            break;
+        }
+    }
+
+    int local_shared_modified = local_any_shared_entities_modified ? 1 : 0;
+    int global_shared_modified = 0;
+    stk::all_reduce_max(comm, &local_shared_modified, &global_shared_modified, 1);
+    return global_shared_modified > 0;
+}
+
 parallel::DistributedIndex::KeySpanVector
 convert_entity_keys_to_spans( const MetaData & meta )
 {
