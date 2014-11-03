@@ -53,9 +53,6 @@
 
 namespace Amesos2 {
   
-  //float TypeMap<KLU2,float>::dtype = SLU::SLU_S;
-
-  //SLU::Dtype_t TypeMap<KLU2,double>::dtype = SLU::SLU_D;
 
 #ifdef HAVE_TEUCHOS_COMPLEX
   //SLU::Dtype_t TypeMap<KLU2,std::complex<float> >::dtype = SLU::SLU_C;
