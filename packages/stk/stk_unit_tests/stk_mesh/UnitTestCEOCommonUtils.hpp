@@ -41,38 +41,7 @@ inline bool isEntityValidOnCommList(stk::mesh::BulkData& stkMeshBulkData, stk::m
     return iter != stkMeshBulkData.comm_list().end() && entityKey == iter->key;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline bool isEntityInGhostingCommMap(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity)
-{
-    EntityKey entityKey = stkMeshBulkData.entity_key(entity);
-    bool is_entity_in_aura_comm_map = !stkMeshBulkData.entity_comm_map(entityKey, stkMeshBulkData.aura_ghosting()).empty();
-    return is_entity_in_aura_comm_map;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline bool isEntityInSharingCommMap(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity)
-
-{
-    EntityKey entityKey = stkMeshBulkData.entity_key(entity);
-    bool is_entity_in_shared_comm_map = !stkMeshBulkData.entity_comm_map(entityKey, stkMeshBulkData.shared_ghosting()).empty();
-    return is_entity_in_shared_comm_map;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline void addSharingInfo(BulkDataTester& bulkData, stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId, int sharingProc)
-{
-    EXPECT_TRUE(bulkData.my_entity_comm_map_insert(entity, stk::mesh::EntityCommInfo(ghostingId, sharingProc)));
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-inline void eraseSharingInfoUsingKey(BulkDataTester &bulkData, EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId)
-{
-    bulkData.my_entity_comm_map_erase(key, *bulkData.ghostings()[ghostingId]);
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -840,6 +840,20 @@ protected: //functions
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
   bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
 
+  bool is_entity_in_sharing_comm_map(stk::mesh::Entity entity);
+  void erase_sharing_info_using_key(stk::mesh::EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId);
+  void add_sharing_info(stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId, int sharingProc);
+  void update_sharing_after_change_entity_owner();
+  void get_entities_that_have_sharing(std::vector<stk::mesh::Entity> &entitiesThatHaveSharingInfo,
+          stk::mesh::EntityToDependentProcessorsMap &entityKeySharing);
+  void get_locally_modified_shared_entities(stk::mesh::EntityToDependentProcessorsMap &entityKeySharing, std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities);
+  void fill_modified_entities_list_based_on_sharing_info(const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
+          const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating);
+  void erase_all_sharing_for_invalid_entities_on_comm_map();
+  void fill_entities_that_have_lost_sharing_info(const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
+          const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating);
+  void update_comm_maps_based_on_modified_entities_in_sharing(std::vector<stk::mesh::Entity>& modifiedEntities);
+
 private: //functions
 
   void entity_setter_debug_check(Entity entity) const

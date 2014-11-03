@@ -60,33 +60,10 @@ public:
         this->internal_change_entity_owner(arg_change,regenerate_aura,mod_optimization);
     }
 
-    void internal_change_entity_owner_exp(const std::vector<stk::mesh::EntityProc> & arg_change,
-            bool regenerate_aura = true,
-            modification_optimization mod_optimization = MOD_END_SORT);
-
-    void change_entity_owner_exp( const std::vector<stk::mesh::EntityProc> & arg_change,
-                                                bool regenerate_aura = true,
-                                                modification_optimization mod_optimization = MOD_END_SORT );
-
-    void my_internal_resolve_shared_modify_delete()
-    {
-        this->internal_resolve_shared_modify_delete();
-    }
-
     void my_resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new)
     {
         this->resolve_ownership_of_modified_entities(shared_new);
     }
-
-    void my_move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified )
-    {
-        this->move_entities_to_proper_part_ownership(shared_modified);
-    }
-
-//    void reset_closure_count(stk::mesh::Entity entity)
-//    {
-//        m_closure_count[entity.local_offset()] = 0;
-//    }
 
     uint16_t closure_count(stk::mesh::Entity entity)
     {
@@ -103,7 +80,6 @@ public:
         return BulkData::entity_comm_map_erase(key, commInfo);
     }
 
-
     bool my_entity_comm_map_erase(const stk::mesh::EntityKey& key, const stk::mesh::Ghosting& ghost)
     {
         return BulkData::entity_comm_map_erase(key, ghost);
@@ -119,29 +95,26 @@ public:
         BulkData::entity_comm_map_clear_ghosting(key);
     }
 
-    void my_update_comm_list_based_on_changes_in_comm_map()
-    {
-        this->update_comm_list_based_on_changes_in_comm_map();
-    }
-
-    void my_update_comm_list(const std::vector<stk::mesh::Entity>& shared_modified)
-    {
-        this->update_comm_list(shared_modified);
-    }
-
     const stk::mesh::EntityCommDatabase my_entity_comm_map() const
     {
         return m_entity_comm_map;
     }
 
-    void internal_resolve_parallel_create_exp();
-    void internal_update_distributed_index_exp(std::vector<stk::mesh::Entity> & shared_new );
-
-    bool internal_modification_end_for_change_entity_owner_exp( bool regenerate_aura, modification_optimization opt );
-
-    stk::mesh::impl::BucketRepository& my_bucket_repository()
+    bool my_internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt )
     {
-        return this->bucket_repository();
+        return this->internal_modification_end_for_change_entity_owner(regenerate_aura, opt);
+    }
+
+    bool is_entity_in_ghosting_comm_map(stk::mesh::Entity entity);
+
+    bool my_is_entity_in_sharing_comm_map(stk::mesh::Entity entity)
+    {
+        return this->is_entity_in_sharing_comm_map(entity);
+    }
+
+    void my_update_sharing_after_change_entity_owner()
+    {
+        this->update_sharing_after_change_entity_owner();
     }
 };
 
