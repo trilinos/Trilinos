@@ -69,9 +69,9 @@ namespace Kokkos {
  *  send_item { send item offsets within 'send' range }
  */
 struct ParallelDataMap {
-  typedef View< unsigned*[2], Serial >  host_recv_type ;
-  typedef View< unsigned*[2], Serial >  host_send_type ;
-  typedef View< unsigned* ,   Serial >  host_send_item_type ;
+  typedef View< unsigned*[2], HostSpace >  host_recv_type ;
+  typedef View< unsigned*[2], HostSpace >  host_send_type ;
+  typedef View< unsigned* ,   HostSpace >  host_send_item_type ;
 
   comm::Machine        machine ;
   host_recv_type       host_recv ;
