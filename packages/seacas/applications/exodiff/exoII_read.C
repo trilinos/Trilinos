@@ -1274,6 +1274,7 @@ string ExoII_Read<INT>::Open_File(const char* fname)
     FILE *fid = fopen(file_name.c_str(),"r");
     if (fid != NULL) {
       oss << " File exists, but is not an exodusII file.";
+      fclose(fid);
     } else {
       oss << " File does not exist.";
     }

@@ -72,7 +72,7 @@ KLU2<Matrix,Vector>::KLU2(
   , rowind_()
   , colptr_()
 {
-  ::KLU2::klu_defaults<scalar_type, local_ordinal_type> (&(data_.common_)) ;
+  ::KLU2::klu_defaults<slu_type, local_ordinal_type> (&(data_.common_)) ;
   data_.symbolic_ = NULL;
   data_.numeric_ = NULL;
 
@@ -90,10 +90,10 @@ KLU2<Matrix,Vector>::~KLU2( )
    * - Other data
    */
   if (data_.symbolic_ != NULL)
-      ::KLU2::klu_free_symbolic<scalar_type, local_ordinal_type>
+      ::KLU2::klu_free_symbolic<slu_type, local_ordinal_type>
                          (&(data_.symbolic_), &(data_.common_)) ;
   if (data_.numeric_ != NULL)
-      ::KLU2::klu_free_numeric<scalar_type, local_ordinal_type>
+      ::KLU2::klu_free_numeric<slu_type, local_ordinal_type>
                          (&(data_.numeric_), &(data_.common_)) ;
 
   // Storage is initialized in numericFactorization_impl()
@@ -125,19 +125,9 @@ template <class Matrix, class Vector>
 int
 KLU2<Matrix,Vector>::symbolicFactorization_impl()
 {
-  data_.symbolic_ = ::KLU2::klu_analyze<scalar_type, local_ordinal_type>
+  data_.symbolic_ = ::KLU2::klu_analyze<slu_type, local_ordinal_type>
                 ((local_ordinal_type)this->globalNumCols_, colptr_.getRawPtr(),
                  rowind_.getRawPtr(), &(data_.common_)) ;
-
-#ifdef HAVE_AMESOS2_DEBUG
-    // TODO ": This should move to symbolic
-    TEUCHOS_TEST_FOR_EXCEPTION( data_.A.ncol != as<int>(this->globalNumCols_),
-    std::runtime_error,
-    "Error in converting to KLU2 : wrong number of global columns." );
-    TEUCHOS_TEST_FOR_EXCEPTION( data_.A.nrow != as<int>(this->globalNumRows_),
-    std::runtime_error,
-    "Error in converting to KLU2 SuperMatrix: wrong number of global rows." );
-#endif
 
   return(0);
 }
@@ -169,15 +159,12 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
 
-    data_.numeric_ = ::KLU2::klu_factor<scalar_type, local_ordinal_type>
+    data_.numeric_ = ::KLU2::klu_factor<slu_type, local_ordinal_type>
                 (colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr(),
                 data_.symbolic_, &(data_.common_)) ;
 
     }
 
-    // Set the number of non-zero values in the L and U factors // TODO
-    //this->setNnzLU( as<size_t>(((SLU::SCformat*)data_.L.Store)->nnz +
-                               //((SLU::NCformat*)data_.U.Store)->nnz) );
   }
 
   /* All processes should have the same error code */
@@ -236,7 +223,7 @@ KLU2<Matrix,Vector>::solve_impl(
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-    ::KLU2::klu_solve<scalar_type, local_ordinal_type>
+    ::KLU2::klu_solve<slu_type, local_ordinal_type>
                 (data_.symbolic_, data_.numeric_,
                 (local_ordinal_type)this->globalNumCols_, 
                 (local_ordinal_type)nrhs,
@@ -362,7 +349,6 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 
   if( this->root_ ){
-  std::cout << "nnz=" << nnz_ret << "gnnz" << this->globalNumNonZeros_ << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
                         std::runtime_error,
                         "Did not get the expected number of non-zero vals");

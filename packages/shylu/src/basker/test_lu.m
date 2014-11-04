@@ -9,8 +9,10 @@ f = f (i) ;
 
 skiplist = [ 905 ] ;
 
+fid = fopen('test.data', 'w');
+
 for i = f
-    fprintf ('%d: %s/%s: ', i, index.Group {i}, index.Name{i}) ;
+  fprintf (fid, '%d: %s/%s: ', i, index.Group {i}, index.Name{i}) ;
 	%input(' Hit enter to continue') ;
     Problem = UFget (i) ;
     A = Problem.A ;
@@ -46,7 +48,7 @@ for i = f
         basker_t = toc;
 
         nn = norm (L1*U1 - P1*B, 1)/norm(B, 1);
-        fprintf ('                        your   resid: %g klu_time:%g basker_time:%g speedup: %g\n', nn, klu_t, basker_t, klu_t/basker_t) ;
+fprintf (fid,'                        your   resid: %g klu_time:%g basker_time:%g speedup: %g\n', nn, klu_t, basker_t, klu_t/basker_t) ;
         % compare with MATLAB
         %xgood = L\b ;
         %norm (full (x-xgood)) ;
@@ -54,10 +56,12 @@ for i = f
         %input(' Hit enter to continue') ;
         %fprintf ('          MATLAB resid: %g\n', norm (L*xgood-b)) ;
     else
-        fprintf ('	    skip (zero pivot encountered)\n') ;
+      fprintf (fid, '	    skip (zero pivot encountered)\n') ;
     end
 
     clear L  A U P Q B L1 U1 LU
     %pack
+
 end
 
+    fclose(fid);

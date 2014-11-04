@@ -47,7 +47,7 @@ INCLUDE(AppendStringVar)
 
 
 #
-# @FUNCTION TRIBITS_PROCESS_ENABLED_TPL()
+# @FUNCTION: TRIBITS_PROCESS_ENABLED_TPL()
 #
 # Processs an enabled TPL's FindTPL${TPL_NAME}.cmake module.
 #

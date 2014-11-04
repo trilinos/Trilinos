@@ -61,6 +61,7 @@ main (int argc, char* argv[])
   bool success = true;
   const bool verbose = false;
 
+#ifdef KOKKOS_HAVE_SERIAL
   {
     Kokkos::Serial::initialize (); // Start up the Kokkos device
     bool serialSuccess = true;
@@ -74,6 +75,7 @@ main (int argc, char* argv[])
     }
     Kokkos::Serial::finalize (); // Close down the Kokkos device
   }
+#endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
   {
@@ -108,9 +110,13 @@ main (int argc, char* argv[])
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
-  // Start up the Cuda device's host mirror device (must be done
-  // before starting up the Cuda device)
-  Kokkos::HostSpace::execution_space::initialize ();
+  // Start up the Cuda device's host mirror execution space (must be
+  // done before starting up the Cuda execution space).  This may be
+  // the same as one of the execution spaces that we already
+  // initialized above; don't initialize it twice in that case.
+  if (! Kokkos::HostSpace::execution_space::is_initialized ()) {
+    Kokkos::HostSpace::execution_space::initialize ();
+  }
 
   bool cudaWorked = false;
   try {

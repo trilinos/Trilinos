@@ -1640,47 +1640,49 @@ tests and examples in a uniform way.
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
 +++++++++++++++++++++++++++++++++++++++++
 
-Allow listed packages to be missing.  This macro is typically called in a
-Package's Dependencies.cmake file.
+Allow listed packages to be missing and automatically excluded from the
+package dependency data-structures.
 
 Usage::
 
   TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<pkg0> <plg1> ...)
 
 If the missing upstream SE package ``<pkgi>`` is optional, then the effect
-will be to simply ignore the missing package and remove it from the
-dependency list for downstream SE packages that have an optional dependency
-on the missing upstream SE package.  However, all downstream SE packages
-that have a required dependency on the missing upstream SE package
+will be to simply ignore the missing package (never added to package's list
+and not added to dependency data-structures) and remove it from the
+dependency lists for downstream SE packages that have an optional dependency
+on the missing upstream SE package ``<pkgi>``.  However, all downstream SE
+packages that have a required dependency on the missing upstream SE package
 ``<pkgi>`` will be hard disabled,
 i.e. ``${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF``.
 
-This function is typically used for marking packages in external TriBITS
-repos where the repos might be missing.  This allows the downstream repos
-and packages to still be enabled (assuming they don't have required
-dependencies on the missing packages) when one or more upstream repos are
-missing.
+This macro just sets the cache variable
+``<pkgi>_ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE`` for each SE package
+``<pkgi>``.  **WARNING**: Using this function effectively turns off error
+checking for misspelled package names so it is important to only use it when
+it absolutely is needed.  Therefore, when doing development involving these
+packages, it is usually a good idea to set::
 
-Using this function effectively turns off error checking for misspelled
-package names so it is important to only use it when it absolutely is
-needed.  The typical place to call this macro is in the
-`<packageDir>/cmake/Dependencies.cmake`_ files for the packages who list
-dependencies on the possibility missing upstream SE package(s).  Therefore,
-if a given package is not defined, the ``Dependencies.cmake`` file that
-calls this macro will not be processed and the error checking for the listed
-packages will not be turned off.  Otherwise, this macro can also be called
-from any file processed at the top-level scope *before* all of the
-``<packageDir>/cmake/Dependencies.cmake`` files are processed (see `Reduced
-Package Dependency Processing`_).  For tweaking at the project level, likely
-the best place to call this macro is in the file
-`<projectDir>/cmake/ProjectDependenciesSetup.cmake`_.  In this way, it will
-not turn off error checking in other projects where the given packages may
-always be required and therefore one does not want to turn off error
-checking for mispelled package names.
+  -D<pkgi>_ALLOW_MISSING_EXTERNAL_PACKAGE=FALSE
 
-NOTE: Currently, this macro just sets the non-cache local variables
-``<pkgi>__ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE``.  Therefore this macro must
-be called from the top-level CMake project scope for it to have an effect.
+so that it will catch errors in the mispelling of package names or source
+directories.
+
+This macro is typically called in one of two different contexts:
+
+* Called from `<packageDir>/cmake/Dependencies.cmake`_ when the upstream
+  package ``<pkgi>`` is defined in an optional upstream `TriBITS
+  Repository`_.  This allows the downstream repos and packages to still be
+  enabled (assuming they don't have required dependencies on the missing
+  packages) when one or more upstream repos are missing.
+
+* Called from `<repoDir>/PackagesList.cmake`_ when the package ``<pkgi>``
+  might be defined in an optional non-TriBITS repo (see `How to insert a
+  package into an upstream repo`_).
+
+For some meta-projects that composes packages from may different TriBITS
+repositories, one might need to call this function from the file
+`<projectDir>/cmake/ProjectDependenciesSetup.cmake`_.
 
 TRIBITS_CONFIGURE_FILE()
 ++++++++++++++++++++++++
@@ -2523,6 +2525,11 @@ Usage::
 This macro must be called after `TRIBITS_PACKAGE_DECL()`_ but before
 `TRIBITS_PACKAGE_DEF()`_.
 
+TRIBITS_PROCESS_ENABLED_TPL()
++++++++++++++++++++++++++++++
+
+Processs an enabled TPL's FindTPL${TPL_NAME}.cmake module.
+
 TRIBITS_PROJECT()
 +++++++++++++++++
 
@@ -2750,7 +2757,7 @@ specifies a TPL which contains the columns (ordered 0-2):
    find module will be assumed to be under that this directory with the
    standard name (e.g. ``cmake/tpls/FindTPL<tplName>.cmake``).  A standard
    way to write a ``FindTPL<tplName>.cmake`` module is to use the function
-   `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
+   `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_.
 
 2. **CLASSIFICATION** (``<pkgi_classif>``): Gives the `SE Package Test
    Group`_ `PT`_, `ST`_, or `EX`_ and the maturity level ``EP``, ``RS``,
@@ -2854,8 +2861,8 @@ Usage::
 NOTE: It is unfortunate that a Subpackages's CMakeLists.txt file must call
 this macro but limitations of the CMake language make it necessary to do so.
 
-TRIBITS_TPL_DECLARE_LIBRARIES()
-+++++++++++++++++++++++++++++++
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()
++++++++++++++++++++++++++++++++++++++++++++++
 
 Function that sets up cache variables for users to specify where to find a
 `TriBITS TPL`_'s headers and libraries.  This function is typically called
@@ -2864,7 +2871,7 @@ inside of a ``FindTPL<tplName>.cmake`` moulde file (see
 
 Usage::
 
-  TRIBITS_TPL_DECLARE_LIBRARIES(
+  TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES(
     <tplName>
     [REQUIRED_HEADERS <header1> <header2> ...]
     [MUST_FIND_ALL_HEADERS]

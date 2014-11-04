@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     int model;
 
     std::ifstream inputfile;
-    inputfile.open("helm3D.xml");
+    inputfile.open("helm3D.inp");
     inputfile >> nx       >> ny       >> nz ;
     if(comm->getRank()==0)
       std::cout<<"nx: "<<nx<<"  ny: "<<ny<<"  nz: "<<nz<<std::endl;
@@ -144,18 +144,8 @@ int main(int argc, char *argv[]) {
     galeriList.set("nz", pl.get("nz", nz));
     RCP<const Map> map;
 
-    if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz1D") {
-      map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters_helmholtz.GetNumGlobalElements(), 0, comm);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters_helmholtz.GetParameterList());
-    }
-    else if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz2D") {
-      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters_helmholtz.GetParameterList());
-    }
-    else if (matrixParameters_helmholtz.GetMatrixType() == "Helmholtz3D") {
-      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters_helmholtz.GetParameterList());
-    }
+    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters_helmholtz.GetParameterList());
 
     RCP<const Tpetra::Map<LO, GO, NO> > tmap = Xpetra::toTpetra(map);
 
@@ -164,10 +154,6 @@ int main(int argc, char *argv[]) {
 
     RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_helmholtz =
       Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters_helmholtz.GetMatrixType(), map, matrixParams_helmholtz);
-    RCP<Matrix> Kmat, Mmat;
-    std::pair< RCP<Matrix>, RCP<Matrix> > system = Pr_helmholtz->BuildMatrices();
-    Kmat = system.first;
-    Mmat = system.second;
     RCP<Matrix> Amat = Pr_helmholtz->BuildMatrix();
 
     RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr_shifted =
@@ -184,23 +170,14 @@ int main(int argc, char *argv[]) {
 
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
+    // initialize with the Shifted Laplacian operator (Pmat)
     RCP<ShiftedLaplacian> SLSolver = rcp( new ShiftedLaplacian );
-    SLSolver -> setstiff(Kmat);
-    SLSolver -> setmass(Mmat);
-    SLSolver -> setProblemMatrix(Amat);
     SLSolver -> setPreconditioningMatrix(Pmat);
-    // determine shifts for RAPShiftFactory
-    std::vector<SC> shifts;
-    int maxLevels=5;
-    for(int i=0; i<maxLevels; i++) {
-      double alpha=1.0;
-      double beta=shift+((double) i)*0.2;
-      SC curshift(alpha,beta);
-      shifts.push_back(-curshift);
-    }
-    SLSolver -> setLevelShifts(shifts);
     SLSolver -> initialize();
-    SLSolver -> setupSlowRAP();
+    // set Helmholtz operator (Amat)
+    SLSolver -> setProblemMatrix(Amat);
+    // setup with SL operator
+    SLSolver -> setupNormalRAP();
 
     tm = Teuchos::null;
 

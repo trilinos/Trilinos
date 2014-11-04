@@ -46,8 +46,20 @@
 #include <Kokkos_Core.hpp>
 #include <cstdio>
 
-int main() {
-  Kokkos::initialize ();
+//
+// First reduction (parallel_reduce) example:
+//   1. Start up Kokkos
+//   2. Execute a parallel_reduce loop in the default execution space,
+//      using a C++11 lambda to define the loop body
+//   3. Shut down Kokkos
+//
+// This example only builds if C++11 is enabled.  Compare this example
+// to 02_simple_reduce, which uses a functor to define the loop body
+// of the parallel_reduce.
+//
+
+int main (int argc, char* argv[]) {
+  Kokkos::initialize (argc, argv);
   const int n = 10;
 
   // Compute the sum of squares of integers from 0 to n-1, in
@@ -55,7 +67,7 @@ int main() {
   // functor.  The lambda takes the same arguments as the functor's
   // operator().
   int sum = 0;
-  Kokkos::parallel_reduce (10, [=] (const int i, int& lsum) {
+  Kokkos::parallel_reduce (n, [=] (const int i, int& lsum) {
     lsum += i*i;
   }, sum);
   printf ("Sum of squares of integers from 0 to %i, "
@@ -68,13 +80,7 @@ int main() {
   }
   printf ("Sum of squares of integers from 0 to %i, "
           "computed sequentially, is %i\n", n - 1, seqSum);
-
   Kokkos::finalize ();
-
-  if (sum == seqSum) {
-    return 0;
-  } else {
-    return -1;
-  }
+  return (sum == seqSum) ? 0 : -1;
 }
 

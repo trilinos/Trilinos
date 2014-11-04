@@ -101,7 +101,7 @@ public:
   typedef ViewTraits< DataType , Arg1Type , Arg2Type, Arg3Type > traits ;
 
   //! The type of a Kokkos::View on the device.
-  typedef View< typename traits::array_type ,
+  typedef View< typename traits::data_type ,
                 typename traits::array_layout ,
                 typename traits::memory_space ,
                 Kokkos::MemoryUnmanaged > t_dev ;
@@ -128,7 +128,7 @@ private:
 
   offset_map_type               m_offset_map ;
 
-  typedef View< typename traits::array_type ,
+  typedef View< typename traits::array_intrinsic_type ,
                 typename traits::array_layout ,
                 typename traits::memory_space ,
                 typename traits::memory_traits > array_type ;

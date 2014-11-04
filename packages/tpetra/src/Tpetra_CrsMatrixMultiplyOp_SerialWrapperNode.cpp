@@ -1,9 +1,9 @@
+/*
 // @HEADER
-//
 // ***********************************************************************
 //
-//             Xpetra: A linear algebra interface package
-//                  Copyright 2012 Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,24 +35,40 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
-//
+// ************************************************************************
 // @HEADER
-#ifndef XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP
-#define XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP
+*/
 
-namespace Xpetra {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class $TMPL_CLASS;
-}
+// Including this is the easy way to get access to all the Node types.
+#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 
-#ifndef XPETRA_$TMPL_UPPERCASECLASS_SHORT
-#define XPETRA_$TMPL_UPPERCASECLASS_SHORT
-#endif
+// Don't bother compiling anything, or even including anything else,
+// unless KokkosSerialWrapperNode is enabled.
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
 
-#endif // XPETRA_$TMPL_UPPERCASECLASS_FWD_HPP
+#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
+#include "Tpetra_ETIHelperMacros.h"
+#include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
+
+#define TPETRA_CRSMATRIX_MULTIPLYOP_SERIALWRAPPERNODE_INSTANT( T, SCALAR, LO, GO ) \
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT( T, SCALAR, LO, GO, Kokkos::Compat::KokkosSerialWrapperNode )
+
+#define TPETRA_CRSMATRIX_MULTIPLYOP_SERIALWRAPPERNODE_INSTANT_SINGLE( SCALAR, LO, GO ) \
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE( SCALAR, LO, GO, Kokkos::Compat::KokkosSerialWrapperNode )
+
+
+namespace Tpetra {
+
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
+  TPETRA_INSTANTIATE_TSLG(TPETRA_CRSMATRIX_MULTIPLYOP_SERIALWRAPPERNODE_INSTANT)
+  TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_MULTIPLYOP_SERIALWRAPPERNODE_INSTANT_SINGLE)
+
+} // namespace Tpetra
+
+
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT && KOKKOS_HAVE_SERIAL
+

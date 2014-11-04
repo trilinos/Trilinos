@@ -48,6 +48,9 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_HierarchyManager.hpp"
 
@@ -138,8 +141,8 @@ namespace MueLu {
     void SetupHierarchy(Hierarchy& H) const;
 
   private:
-    //! Setup Matrix object
-    virtual void SetupMatrix(Matrix& A) const;
+    //! Setup Operator object
+    virtual void SetupOperator(Operator& A) const;
 
     int       blockSize_; ///< block size of matrix (fixed block size)
     CycleType Cycle_;     ///< multigrid cycle type (V-cycle or W-cycle)

@@ -49,12 +49,15 @@
 #include <cstdio>
 #include <cstdlib>
 
+#ifdef KOKKOS_HAVE_CXX11 
+
+#define TEAM_SIZE 16
+#define VECTOR_LENGTH 16
+
 typedef Kokkos::DefaultExecutionSpace         ExecutionSpace ;
 typedef Kokkos::HostSpace::execution_space    HostExecutionSpace ;
 typedef Kokkos::TeamPolicy< ExecutionSpace >  team_policy ;
 typedef team_policy::member_type              team_member ;
-
-#define TEAM_SIZE 16
 
 struct find_2_tuples {
   int chunk_size;
@@ -158,4 +161,6 @@ int main(int narg, char* args[]) {
   printf("Result: %i %i\n",sum,chunk_size*nchunks);
   Kokkos::finalize();
 }
+
+#endif /* #ifdef KOKKOS_HAVE_CXX11 */
 

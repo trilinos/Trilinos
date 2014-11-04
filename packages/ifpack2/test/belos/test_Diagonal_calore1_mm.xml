@@ -12,5 +12,5 @@
   <ParameterList name="Ifpack2">
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="78"/>
+  <Parameter name="expectNumIters" type="int" value="79"/>
 </ParameterList>

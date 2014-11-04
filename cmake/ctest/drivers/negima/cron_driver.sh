@@ -35,8 +35,8 @@ eval `~/bin/depend ~/.default_depend`
 export PATH=~/bin:/opt/bin:~/local/bin:/opt/nvidia/cuda-5.0/bin:$PATH
 export PKG_CONFIG_PATH=~/local:$PKG_CONFIG_PATH
 
-export OMPI_MPICC=/home/aprokop/local/opt/gcc-4.9.1/bin/gcc
-export OMPI_MPICXX=/home/aprokop/local/opt/gcc-4.9.1/bin/g++
+export OMPI_MPICC=/home/aprokop/local/opt/gcc-4.9.2/bin/gcc
+export OMPI_MPICXX=/home/aprokop/local/opt/gcc-4.9.2/bin/g++
 
 env
 

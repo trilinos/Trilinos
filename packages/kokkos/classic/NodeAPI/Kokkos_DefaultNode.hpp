@@ -43,7 +43,9 @@
 #define KOKKOS_DEFAULT_NODE_HPP_
 
 #include "Kokkos_ConfigDefs.hpp"
+#include "Kokkos_NodeAPIConfigDefs.hpp"
 #include "KokkosClassic_DefaultNode_config.h"
+#include "Kokkos_BufferMacros.hpp"
 
 #ifdef HAVE_KOKKOSCLASSIC_SERIAL
 #  include "Kokkos_SerialNode.hpp"

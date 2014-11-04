@@ -1,11 +1,12 @@
+/*
 // @HEADER
 // ***********************************************************************
 //
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,32 +35,38 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
+*/
 
-#include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2) && defined(HAVE_MUELU_IFPACK2)
+// Including this is the easy way to get access to all the Node types.
+#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 
-#include "MueLu_ExplicitInstantiation.hpp"
-#include "Stokhos_ConfigDefs.h"
+// Don't bother compiling anything, or even including anything else,
+// unless TPINode is enabled.
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
-
-#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
-#include "Stokhos_MueLu_MP_Vector.hpp"
-
+#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
 #include "Tpetra_ETIHelperMacros.h"
-#include "MueLu_SchwarzSmoother_def.hpp"
+#include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
 
-#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::SchwarzSmoother<S, LO, GO, N>;
+#define TPETRA_CRSMATRIX_MULTIPLYOP_TPINODE_INSTANT( T, SCALAR, LO, GO ) \
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT( T, SCALAR, LO, GO, KokkosClassic::TPINode )
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
+#define TPETRA_CRSMATRIX_MULTIPLYOP_TPINODE_INSTANT_SINGLE( SCALAR, LO, GO ) \
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE( SCALAR, LO, GO, KokkosClassic::TPINode )
 
-INSTANTIATE_TPETRA_MP_VECTOR_CUDA(MUELU_INST_S_LO_GO_N)
 
-#endif
+namespace Tpetra {
 
-#endif
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
+  TPETRA_INSTANTIATE_TSLG(TPETRA_CRSMATRIX_MULTIPLYOP_TPINODE_INSTANT)
+  TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_MULTIPLYOP_TPINODE_INSTANT_SINGLE)
+
+} // namespace Tpetra
+
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_KOKKOSCLASSIC_THREADPOOL

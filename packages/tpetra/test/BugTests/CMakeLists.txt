@@ -1,23 +1,10 @@
 
-
-IF(Kokkos_ENABLE_Cuda)
-  #
-  # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( "." )
-  CUDA_INCLUDE_DIRECTORIES( ${Tpetra_INCLUDE_DIRS} )
-  CUDA_COMPILE(BUGTESTS_OBJECTS_CUDA BugTests_CU.cu)
-  CUDA_COMPILE(BLANKROWBUGTESTS_OBJECTS_CUDA BlankRowBugTests_CU.cu)
-  CUDA_COMPILE(COMPTESTS_OBJECTS_CUDA CompilationTests_CU.cu)
-ENDIF()
-
-
 IF (Tpetra_ENABLE_BUGTESTS)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     BugTests
     SOURCES
       BugTests
-      ${BUGTESTS_OBJECTS_CUDA}
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     STANDARD_PASS_OUTPUT
@@ -27,7 +14,6 @@ IF (Tpetra_ENABLE_BUGTESTS)
     BlankRowBugTest
     SOURCES
       BlankRowBugTest
-      ${BLANKROWBUGTESTS_OBJECTS_CUDA}
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM mpi
     STANDARD_PASS_OUTPUT
@@ -43,7 +29,6 @@ IF (Tpetra_ENABLE_BUGTESTS)
     CompilationTests
     SOURCES
       CompilationTests
-      ${COMPTESTS_OBJECTS_CUDA}
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     STANDARD_PASS_OUTPUT

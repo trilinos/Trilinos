@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -45,6 +45,9 @@
 
 #ifndef KOKKOS_SERIAL_TASKPOLICY_HPP
 #define KOKKOS_SERIAL_TASKPOLICY_HPP
+
+#include <Kokkos_Macros.hpp>
+#if defined( KOKKOS_HAVE_SERIAL )
 
 #include <string>
 #include <typeinfo>
@@ -166,7 +169,7 @@ public:
     { return 0 != task ? Kokkos::TaskState(*((volatile const int *)( & task->m_state ))) : Kokkos::TASK_STATE_NULL ; }
 
   template< class A1 , class A2 , class A3 , class A4 >
-  void add_dependence( const Future<A1,A2> & f 
+  void add_dependence( const Future<A1,A2> & f
                      , const Future<A3,A4> & dep
                      )
     {
@@ -267,7 +270,7 @@ private:
 
 protected:
 
-  inline 
+  inline
   TaskMember( const typename member_root_type::function_type  arg_dealloc
             , const typename member_root_type::function_type  arg_apply
             , const FunctorType &  arg_functor
@@ -278,7 +281,7 @@ protected:
 
 public:
 
-  inline 
+  inline
   TaskMember( const FunctorType &  arg_functor )
     : member_base_type( & member_root_type::template deallocate< TaskMember >
                       , & TaskMember::apply )
@@ -303,7 +306,7 @@ private:
 
 protected:
 
-  inline 
+  inline
   TaskMember( const typename member_root_type::function_type  arg_dealloc
             , const typename member_root_type::function_type  arg_apply
             , const FunctorType &  arg_functor
@@ -314,7 +317,7 @@ protected:
 
 public:
 
-  inline 
+  inline
   TaskMember( const FunctorType &  arg_functor )
     : member_root_type( & member_root_type::template deallocate< TaskMember >
                       , & TaskMember::apply )
@@ -408,7 +411,7 @@ public:
     }
 
   template< class A1 , class A2 , class A3 , class A4 >
-  void add_dependence( const Future<A1,A2> & f 
+  void add_dependence( const Future<A1,A2> & f
                      , const Future<A3,A4> & dep
                      , typename Impl::enable_if
                         < Impl::is_same< typename Future<A1,A2>::execution_space , execution_space >::value
@@ -489,7 +492,7 @@ private:
 
   public:
 
-    member_type( const FunctorType  & arg_func 
+    member_type( const FunctorType  & arg_func
                , const range_policy & arg_policy
                )
       : task_base_type( & task_base_type::template deallocate< member_type >
@@ -573,7 +576,7 @@ private:
 
   public:
 
-    member_type( const FunctorType  & arg_func 
+    member_type( const FunctorType  & arg_func
                , const range_policy & arg_policy
                )
       : task_base_type( & task_base_type::template deallocate< member_type >
@@ -613,6 +616,6 @@ public:
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
-
+#endif // defined( KOKKOS_HAVE_SERIAL )
 #endif /* #define KOKKOS_SERIAL_TASK_HPP */
 

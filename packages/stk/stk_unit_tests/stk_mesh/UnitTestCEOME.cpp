@@ -73,6 +73,8 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <unit_tests/BulkDataTester.hpp>
 #include "UnitTestCEOCommonUtils.hpp"
+#include <stk_util/environment/WallTime.hpp>
+#include <stk_util/environment/memory_util.hpp>
 
 namespace stk
 {
@@ -98,16 +100,289 @@ using stk::mesh::EntityRank;
 using stk::mesh::fixtures::RingFixture;
 using stk::mesh::fixtures::BoxFixture;
 
+void printMemoryStats(MPI_Comm comm)
+{
+    size_t maxHwm = 0, minHwm = 0, avgHwm = 0;
+    stk::get_memory_high_water_mark_across_processors(comm, maxHwm, minHwm, avgHwm);
+
+    int proc=-1;
+    MPI_Comm_rank(comm, &proc);
+
+    int numProcs=0;
+    MPI_Comm_size(comm, &numProcs);
+
+    if (proc == 0)
+    {
+      std::ostringstream os;
+      const double bytesInMegabyte = 1024*1024;
+      os << std::setw(6) << std::fixed << std::setprecision(1) << "Max HWM: "<<double(maxHwm)/double(bytesInMegabyte)
+        <<", Min HWM: "<<double(minHwm)/double(bytesInMegabyte)<<", Avg HWM: "<<avgHwm/bytesInMegabyte<<std::endl;
+
+      std::cerr << os.str();
+    }
+}
+
+void printPeformanceStats(double elapsedTime, MPI_Comm comm)
+{
+    size_t maxHwm = 0, minHwm = 0, avgHwm = 0;
+    stk::get_memory_high_water_mark_across_processors(comm, maxHwm, minHwm, avgHwm);
+
+    int proc=-1;
+    MPI_Comm_rank(comm, &proc);
+
+    int numProcs=0;
+    MPI_Comm_size(comm, &numProcs);
+
+    double minTime = 0, maxTime = 0, avgTime = 0;
+    MPI_Allreduce(&elapsedTime, &maxTime, 1, MPI_DOUBLE, MPI_MAX, comm);
+    MPI_Allreduce(&elapsedTime, &minTime, 1, MPI_DOUBLE, MPI_MIN, comm);
+    double elapsedTimeDivided = elapsedTime/numProcs;
+    MPI_Allreduce(&elapsedTimeDivided, &avgTime, 1, MPI_DOUBLE, MPI_SUM, comm);
+
+    if (proc == 0)
+    {
+      std::ostringstream os;
+      const double bytesInMegabyte = 1024*1024;
+      os << "Max time: "  << maxTime << ", Min time: " << minTime << ", Avg time: " << avgTime << std::endl;
+      os << std::setw(6) << std::fixed << std::setprecision(1) << "Max HWM: "<<double(maxHwm)/double(bytesInMegabyte)
+        <<", Min HWM: "<<double(minHwm)/double(bytesInMegabyte)<<", Avg HWM: "<<avgHwm/bytesInMegabyte<<std::endl;
+      std::cerr << os.str();
+    }
+}
+
 namespace
 {
 //==============================================================================
 
-void update_mesh_based_on_changed_sharing_info(BulkDataTester& bulk, std::vector<stk::mesh::Entity>& modifiedEntities)
+void update_comm_maps_based_on_modified_entities_in_sharing(BulkDataTester& bulk, std::vector<stk::mesh::Entity>& modifiedEntities)
 {
     bulk.my_resolve_ownership_of_modified_entities(modifiedEntities);
     bulk.my_move_entities_to_proper_part_ownership(modifiedEntities);
     bulk.my_update_comm_list_based_on_changes_in_comm_map();
     bulk.my_update_comm_list(modifiedEntities);
+}
+
+void erase_all_sharing_for_invalid_entities_on_comm_map(BulkDataTester &mesh)
+{
+    for(size_t i=0; i<mesh.comm_list().size(); ++i)
+    {
+        stk::mesh::EntityKey key = mesh.comm_list()[i].key;
+        stk::mesh::Entity entity = mesh.get_entity(key);
+        if( !mesh.is_valid(entity) )
+        {
+            CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
+        }
+    }
+}
+
+void fill_entities_that_have_lost_sharing_info(BulkDataTester &mesh, const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
+        const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating)
+{
+    std::set<stk::mesh::EntityKey> keysThatNeedToHaveCorrectSharingInfo;
+    for (size_t i=0;i<sharedEntities.size();i++)
+    {
+        keysThatNeedToHaveCorrectSharingInfo.insert(sharedEntities[i].first);
+    }
+
+    for (size_t i=0;i<entitiesThatUsedToHaveSharingInfoBeforeCEO.size();i++)
+    {
+        stk::mesh::EntityKey entityKey = mesh.entity_key(entitiesThatUsedToHaveSharingInfoBeforeCEO[i]);
+        const bool keyNotInSharedKeysList = keysThatNeedToHaveCorrectSharingInfo.find(entityKey) == keysThatNeedToHaveCorrectSharingInfo.end();
+        if ( keyNotInSharedKeysList )
+        {
+            modifiedEntitiesForWhichCommMapsNeedUpdating.push_back(entitiesThatUsedToHaveSharingInfoBeforeCEO[i]);
+            CEOUtils::eraseSharingInfoUsingKey(mesh, entityKey, stk::mesh::BulkData::SHARED);
+        }
+    }
+}
+
+void fillModifiedEntitiesListBasedOnSharingInfo(BulkDataTester &mesh, const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
+        const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating)
+{
+    erase_all_sharing_for_invalid_entities_on_comm_map(mesh);
+    fill_entities_that_have_lost_sharing_info(mesh, sharedEntities, entitiesThatUsedToHaveSharingInfoBeforeCEO, modifiedEntitiesForWhichCommMapsNeedUpdating);
+
+    for (size_t i=0;i<sharedEntities.size();i++)
+    {
+        stk::mesh::EntityKey key = sharedEntities[i].first;
+        CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
+    }
+
+    for(size_t i = 0; i < sharedEntities.size(); i++)
+    {
+        stk::mesh::Entity entity = mesh.get_entity(sharedEntities[i].first);
+        CEOUtils::addSharingInfo(mesh, entity, stk::mesh::BulkData::SHARED, sharedEntities[i].second);
+        modifiedEntitiesForWhichCommMapsNeedUpdating.push_back(entity);
+    }
+}
+
+void getEntitiesThatHaveSharing(BulkDataTester &bulk, std::vector<stk::mesh::Entity> &entitiesThatHaveSharingInfo,
+        stk::mesh::EntityToDependentProcessorsMap &entityKeySharing)
+{
+    int myProcId = bulk.parallel_rank();
+    stk::CommAll commStage1(bulk.parallel());
+
+    size_t numEntitiesThatHaveSharingInfo = 0;
+
+    for(int phase = 0; phase < 2; ++phase)
+    {
+        if(phase == 1)
+        {
+            entitiesThatHaveSharingInfo.resize(numEntitiesThatHaveSharingInfo);
+            numEntitiesThatHaveSharingInfo = 0;
+        }
+
+        for(stk::mesh::EntityRank irank = stk::topology::NODE_RANK; irank <= stk::topology::FACE_RANK; ++irank)
+        {
+            stk::mesh::BucketVector buckets_of_rank = bulk.buckets(irank);
+            for (size_t bucket_i = 0 ; bucket_i != buckets_of_rank.size() ; ++bucket_i) {
+                stk::mesh::Bucket & bucket = *buckets_of_rank[bucket_i];
+                for (size_t entity_i = 0 ; entity_i != bucket.size() ; ++entity_i) {
+                    stk::mesh::Entity entity = bucket[entity_i];
+                    if ( (bulk.state(entity) == stk::mesh::Modified) )
+                    {
+                        if(phase == 0 && CEOUtils::isEntityInSharingCommMap(bulk, entity))
+                        {
+                            numEntitiesThatHaveSharingInfo++;
+                        }
+                        else if(phase == 1 && CEOUtils::isEntityInSharingCommMap(bulk, entity))
+                        {
+                            entitiesThatHaveSharingInfo[numEntitiesThatHaveSharingInfo] = entity;
+                            numEntitiesThatHaveSharingInfo++;
+                        }
+
+                        int procThatOwnsEntity = bulk.parallel_owner_rank(entity);
+                        bool anotherProcOwnsThisEntity = procThatOwnsEntity != myProcId;
+                        if(anotherProcOwnsThisEntity)
+                        {
+                            stk::mesh::EntityKey entityKey = bulk.entity_key(entity);
+                            commStage1.send_buffer(procThatOwnsEntity).pack < stk::mesh::EntityKey > (entityKey);
+                        }
+                    }
+                }
+            }
+        }
+
+        if(phase == 0)
+        {
+            commStage1.allocate_buffers(bulk.parallel_size() / 4, 0);
+        }
+        else
+        {
+            commStage1.communicate();
+        }
+    }
+
+    for(int procIndex = 0; procIndex < bulk.parallel_size(); procIndex++)
+    {
+        if(myProcId == procIndex) continue;
+        stk::CommBuffer & dataFromAnotherProc = commStage1.recv_buffer(procIndex);
+        EntityKey key;
+        int sharingProc = procIndex;
+        while(dataFromAnotherProc.remaining())
+        {
+            dataFromAnotherProc.unpack<stk::mesh::EntityKey>(key);
+            Entity entity = bulk.get_entity(key);
+            ThrowRequireMsg(bulk.is_valid(entity) && bulk.parallel_owner_rank(entity) == myProcId, "Entitykey " << key << " is not owned by receiving processor " << myProcId);
+            entityKeySharing[key].insert(sharingProc);
+        }
+    }
+}
+
+
+void getLocallyModifiedSharedEntities(BulkDataTester &bulk, stk::mesh::EntityToDependentProcessorsMap &entityKeySharing, std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities)
+{
+    int myProcId = bulk.parallel_rank();
+
+    stk::mesh::EntityToDependentProcessorsMap::iterator iter = entityKeySharing.begin();
+    for(; iter != entityKeySharing.end(); iter++)
+    {
+        std::vector<int> sharingProcs(iter->second.begin(), iter->second.end());
+        iter->second.insert(myProcId);
+        for(size_t j = 0; j < sharingProcs.size(); j++)
+        {
+            sharedEntities.push_back(std::pair<stk::mesh::EntityKey, int>(iter->first, sharingProcs[j]));
+        }
+    }
+
+    stk::CommAll commStage2(bulk.parallel());
+
+    for(int phase = 0; phase < 2; ++phase)
+    {
+        iter = entityKeySharing.begin();
+        for(; iter != entityKeySharing.end(); iter++)
+        {
+            std::vector<int> sharingProcs(iter->second.begin(), iter->second.end());
+            for(size_t j = 0; j < sharingProcs.size(); j++)
+            {
+                if(sharingProcs[j] == myProcId) { continue; }
+                commStage2.send_buffer(sharingProcs[j]).pack<stk::mesh::EntityKey>(iter->first);
+                commStage2.send_buffer(sharingProcs[j]).pack<size_t>(sharingProcs.size());
+                for(size_t k = 0; k < sharingProcs.size(); k++)
+                {
+                    commStage2.send_buffer(sharingProcs[j]).pack<int>(sharingProcs[k]);
+                }
+            }
+        }
+
+        if(phase == 0)
+        { // allocation phase
+            commStage2.allocate_buffers(bulk.parallel_size() / 4, 0);
+        }
+        else
+        { // communication phase
+            commStage2.communicate();
+        }
+    }
+
+    for(int procIndex = 0; procIndex < bulk.parallel_size(); procIndex++)
+    {
+        if(myProcId == procIndex) { continue; }
+        stk::CommBuffer & dataFromAnotherProc = commStage2.recv_buffer(procIndex);
+        while(dataFromAnotherProc.remaining())
+        {
+            EntityKey key;
+            size_t numSharingProcs = 0;
+            dataFromAnotherProc.unpack<stk::mesh::EntityKey>(key);
+            dataFromAnotherProc.unpack<size_t>(numSharingProcs);
+            for(size_t j = 0; j < numSharingProcs; j++)
+            {
+                int sharingProc = -1;
+                dataFromAnotherProc.unpack<int>(sharingProc);
+                if(sharingProc != myProcId)
+                {
+                    sharedEntities.push_back(std::pair<stk::mesh::EntityKey, int>(key, sharingProc));
+                }
+            }
+        }
+    }
+}
+
+void makeThingsConsistent(BulkDataTester &bulk)
+{
+    printMemoryStats(bulk.parallel());
+    double startTime = stk::wall_time();
+
+    std::vector<stk::mesh::Entity> entitiesThatHaveSharingInfo;
+    stk::mesh::EntityToDependentProcessorsMap ownerReceiviesInfoOnOtherProcessorsThatShareEntitiesThisProcOwns;
+
+    getEntitiesThatHaveSharing(bulk, entitiesThatHaveSharingInfo, ownerReceiviesInfoOnOtherProcessorsThatShareEntitiesThisProcOwns);
+
+    std::vector<std::pair<stk::mesh::EntityKey, int> > sharedEntities;
+    getLocallyModifiedSharedEntities(bulk, ownerReceiviesInfoOnOtherProcessorsThatShareEntitiesThisProcOwns, sharedEntities);
+
+    std::vector<stk::mesh::Entity> modifiedEntities;
+    fillModifiedEntitiesListBasedOnSharingInfo(bulk, sharedEntities, entitiesThatHaveSharingInfo, modifiedEntities);
+
+    update_comm_maps_based_on_modified_entities_in_sharing(bulk, modifiedEntities);
+
+    bulk.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
+
+    double elapsedTime = stk::wall_time() - startTime;
+    printPeformanceStats(elapsedTime, bulk.parallel());
+
+    bulk.modification_begin();
+    bulk.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
 }
 
 TEST(CEOME, change_entity_owner_2Elem2ProcMove)
@@ -143,53 +418,7 @@ TEST(CEOME, change_entity_owner_2Elem2ProcMove)
 
     ////////////////////////////////////////////////////////////////////////////
 
-    //   id/owner_proc
-    //
-    //   1/0---4/0---5/0      1/0---4/1---5/1
-    //    |     |     |        |     |     |
-    //    | 1/0 | 2/0 |   =>   | 1/0 | 2/1 |
-    //    |     |     |        |     |     |
-    //   2/0---3/0---6/0      2/0---3/0---6/1
-
-    std::vector<bool> nodeSharing;
-    if(p_rank == 0)
-    {
-        bool isNodeShared[] = {false, false, true, true, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + 6);
-    }
-    else
-    {
-        bool isNodeShared[] = {false, false, true, true, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + 6);
-    }
-
-    int otherProc = 1;
-    if(p_rank == 1)
-    {
-        otherProc = 0;
-    }
-
-    std::vector<stk::mesh::Entity> modifiedEntities;
-
-    for(size_t i = 0; i < nodeSharing.size(); i++)
-    {
-        stk::mesh::EntityKey key(stk::topology::NODE_RANK, i + 1);
-        CEOUtils::eraseSharingInfoUsingKey(bulk, key, stk::mesh::BulkData::SHARED);
-
-        if(nodeSharing[i])
-        {
-            stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, i + 1);
-            CEOUtils::addSharingInfo(bulk, node, stk::mesh::BulkData::SHARED, otherProc);
-            modifiedEntities.push_back(node);
-        }
-    }
-
-    update_mesh_based_on_changed_sharing_info(bulk, modifiedEntities);
-
-    bulk.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
-
-    bulk.modification_begin();
-    bulk.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
+    makeThingsConsistent(bulk);
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -238,47 +467,10 @@ TEST(CEOME, change_entity_owner_2Elem2ProcFlip)
 
     ////////////////////////////////////////////////////////////////////////////
 
-    std::vector<bool> nodeSharing;
-    if(p_rank == 0)
-    {
-        bool isNodeShared[] = {false, false, true, true, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + 6);
-    }
-    else
-    {
-        bool isNodeShared[] = {false, false, true, true, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + 6);
-    }
-
-    int otherProc = 1;
-    if(p_rank == 1)
-    {
-        otherProc = 0;
-    }
-
-    std::vector<stk::mesh::Entity> modifiedEntities;
-
-    for(size_t i = 0; i < nodeSharing.size(); i++)
-    {
-        stk::mesh::EntityKey key(stk::topology::NODE_RANK, i + 1);
-        CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
-
-        if(nodeSharing[i])
-        {
-            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i + 1);
-            CEOUtils::addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, otherProc);
-            modifiedEntities.push_back(node);
-        }
-    }
-
-    update_mesh_based_on_changed_sharing_info(mesh, modifiedEntities);
-
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
-
-    mesh.modification_begin();
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
+    makeThingsConsistent(mesh);
 
     ////////////////////////////////////////////////////////////////////////////
+
     CEOUtils::checkStatesAfterCEOME_2Elem2ProcFlip(mesh);
 }
 
@@ -322,65 +514,10 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveRight)
     mesh.change_entity_owner_exp(change);
 
     CEOUtils::checkStatesAfterCEO_3Elem2ProcMoveRight(mesh);
+
     ////////////////////////////////////////////////////////////////////////////
 
-    //   id/owner_proc
-    //
-    //   1/0---3/0---5/0---7/1         1/0---3/0---5/1---7/1
-    //    |     |     |     |           |     |     |     |
-    //    | 1/0 | 2/0 | 3/1 |     =>    | 1/0 | 2/1 | 3/1 |
-    //    |     |     |     |           |     |     |     |
-    //   2/0---4/0---6/0---8/1         2/0---4/0---6/1---8/1
-
-    size_t numNodes = 8;
-    std::vector<bool> nodeSharing;
-
-    if(p_rank == 0)
-    {
-        bool isNodeShared[] = {false, false, true, true, false, false, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-    }
-    else
-    {
-        bool isNodeShared[] = {false, false, true, true, false, false, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-    }
-
-    EXPECT_EQ(numNodes, nodeSharing.size());
-
-    int otherProc = 1;
-    if(p_rank == 1)
-    {
-        otherProc = 0;
-    }
-
-    std::vector<stk::mesh::Entity> modifiedEntities;
-
-    for(size_t i = 0; i < nodeSharing.size(); i++)
-    {
-        stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i + 1);
-
-        if(CEOUtils::isEntityInSharingCommMap(mesh, node) && !nodeSharing[i])
-        {
-            modifiedEntities.push_back(node);
-        }
-
-        stk::mesh::EntityKey key(stk::topology::NODE_RANK, i + 1);
-        CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
-
-        if(nodeSharing[i])
-        {
-            CEOUtils::addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, otherProc);
-            modifiedEntities.push_back(node);
-        }
-    }
-
-    update_mesh_based_on_changed_sharing_info(mesh, modifiedEntities);
-
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
-
-    mesh.modification_begin();
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
+    makeThingsConsistent(mesh);
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -430,65 +567,10 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveLeft)
 
     ////////////////////////////////////////////////////////////////////////////
 
-    //   id/owner_proc
-    //
-    //   1/0---3/0---5/1---7/1         1/0---3/0---5/0---7/1
-    //    |     |     |     |           |     |     |     |
-    //    | 1/0 | 2/1 | 3/1 |     =>    | 1/0 | 2/0 | 3/1 |
-    //    |     |     |     |           |     |     |     |
-    //   2/0---4/0---6/1---8/1         2/0---4/0---6/0---8/1
-
-    size_t numNodes = 8;
-    std::vector<bool> nodeSharing;
-
-    if(p_rank == 0)
-    {
-        bool isNodeShared[] = {false, false, false, false, true, true, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-    }
-    else
-    {
-        bool isNodeShared[] = {false, false, false, false, true, true, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-    }
-
-    EXPECT_EQ(numNodes, nodeSharing.size());
-
-    int otherProc = 1;
-    if(p_rank == 1)
-    {
-        otherProc = 0;
-    }
-
-    std::vector<stk::mesh::Entity> modifiedEntities;
-
-    for(size_t i = 0; i < nodeSharing.size(); i++)
-    {
-        stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i + 1);
-
-        if(CEOUtils::isEntityInSharingCommMap(mesh, node) && !nodeSharing[i])
-        {
-            modifiedEntities.push_back(node);
-        }
-
-        stk::mesh::EntityKey key(stk::topology::NODE_RANK, i + 1);
-        CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
-
-        if(nodeSharing[i])
-        {
-            CEOUtils::addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, otherProc);
-            modifiedEntities.push_back(node);
-        }
-    }
-
-    update_mesh_based_on_changed_sharing_info(mesh, modifiedEntities);
-
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
-
-    mesh.modification_begin();
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
+    makeThingsConsistent(mesh);
 
     ////////////////////////////////////////////////////////////////////////////
+
     CEOUtils::checkStatesAfterCEOME_3Elem2ProcMoveLeft(mesh);
 }
 
@@ -501,9 +583,9 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     //
     //         id/proc                             id/proc
     //        1/0---3/0---5/1---7/2---9/3         1/0---3/0---5/1---7/0---9/3
-    //        |      |     |    {|     |          |      |     |    {|     |
-    //        | 1/0  | 2/1 | 3/2{| 4/3 |          | 1/0  | 2/1 | 3/0{| 4/3 |
-    //        |      |     |    {|     |          |      |     |    {|     |
+    //        |      |     |    ||     |          |      |     |    ||     |
+    //        | 1/0  | 2/1 | 3/2|| 4/3 |          | 1/0  | 2/1 | 3/0|| 4/3 |
+    //        |      |     |    ||     |          |      |     |    ||     |
     //        2/0---4/0---6/1---8/2---10/3        2/0---4/0---6/1---8/0---10/3
     //  this edge moves to p0 --^
     //  element 3 moves to proc 0.
@@ -574,122 +656,27 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
 
     mesh.change_entity_owner_exp(change);
 
+    CEOUtils::checkStatesAfterCEO_4Elem4ProcEdge(mesh);
+
+    if (p_rank == 1 || p_rank == 0) {
+        Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
+        Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
+        stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
+        double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
+        EXPECT_EQ( 5.0, *elem_field_data_node5 );
+        double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
+        EXPECT_EQ( 6.0, *elem_field_data_node6 );
+    }
+
     ////////////////////////////////////////////////////////////////////////////
 
-    //
-    //         id/proc                             id/proc
-    //        1/0---3/0---5/1---7/2---9/3         1/0---3/0---5/1---7/0---9/3
-    //        |      |     |    +|     |          |      |     |    +|     |
-    //        | 1/0  | 2/1 | 3/2+| 4/3 |          | 1/0  | 2/1 | 3/0+| 4/3 |
-    //        |      |     |    +|     |          |      |     |    +|     |
-    //        2/0---4/0---6/1---8/2---10/3        2/0---4/0---6/1---8/0---10/3
-
-    size_t numNodes = 10;
-    std::vector<bool> nodeSharing;
-    std::vector<int> nodeSharingProcs;
-
-    size_t numEdges = 1;
-    std::vector<bool> edgeSharing;
-    std::vector<int> edgeSharingProcs;
-
-    std::vector<stk::mesh::Entity> modifiedEntities;
-
-    if(p_rank == 0)
-    {
-        bool isNodeShared[] = {false, false, true, true, true, true, true, true, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-        int procIdsNode[] = {-1, -1, 1, 1, 1, 1, 3, 3, -1, -1};
-        nodeSharingProcs.assign(procIdsNode, procIdsNode + numNodes);
-        bool isEdgeShared[] = {true};
-        int procIdsEdge[] = {3};
-        edgeSharing.assign(isEdgeShared, isEdgeShared + numEdges);
-        edgeSharingProcs.assign(procIdsEdge, procIdsEdge + numEdges);
-    }
-    else if(p_rank == 1)
-    {
-        bool isNodeShared[] = {false, false, true, true, true, true, false, false, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-        int procIdsNode[] = {-1, -1, 0, 0, 0, 0, -1, -1, -1, -1};
-        nodeSharingProcs.assign(procIdsNode, procIdsNode + numNodes);
-        bool isEdgeShared[] = {false};
-        int procIdsEdge[] = {-1};
-        edgeSharing.assign(isEdgeShared, isEdgeShared + numEdges);
-        edgeSharingProcs.assign(procIdsEdge, procIdsEdge + numEdges);
-    }
-    else if(p_rank == 2)
-    {
-        bool isNodeShared[] = {false, false, false, false, false, false, false, false, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-        int procIdsNode[] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-        nodeSharingProcs.assign(procIdsNode, procIdsNode + numNodes);
-        bool isEdgeShared[] = {false};
-        int procIdsEdge[] = {-1};
-        edgeSharing.assign(isEdgeShared, isEdgeShared + numEdges);
-        edgeSharingProcs.assign(procIdsEdge, procIdsEdge + numEdges);
-    }
-    else
-    {
-        bool isNodeShared[] = {false, false, false, false, false, false, true, true, false, false};
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-        int procIdsNode[] = {-1, -1, -1, -1, -1, -1, 0, 0, -1, -1};
-        nodeSharingProcs.assign(procIdsNode, procIdsNode + numNodes);
-        bool isEdgeShared[] = {true};
-        int procIdsEdge[] = {0};
-        edgeSharing.assign(isEdgeShared, isEdgeShared + numEdges);
-        edgeSharingProcs.assign(procIdsEdge, procIdsEdge + numEdges);
-    }
-
-    EXPECT_EQ(numNodes, nodeSharing.size());
-
-    for(size_t i = 0; i < nodeSharing.size(); i++)
-    {
-        node = mesh.get_entity(stk::topology::NODE_RANK, i + 1);
-        if(CEOUtils::isEntityInSharingCommMap(mesh, node) && !nodeSharing[i])
-        {
-            modifiedEntities.push_back(node);
-        }
-
-        stk::mesh::EntityKey key(stk::topology::NODE_RANK, i + 1);
-        CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
-
-        if(nodeSharing[i])
-        {
-            CEOUtils::addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, nodeSharingProcs[i]);
-            modifiedEntities.push_back(node);
-        }
-    }
-
-    for(size_t i = 0; i < edgeSharing.size(); i++)
-    {
-        stk::mesh::Entity edge = mesh.get_entity(stk::topology::EDGE_RANK, i + 1);
-
-        if(CEOUtils::isEntityInSharingCommMap(mesh, edge) && !edgeSharing[i])
-        {
-            modifiedEntities.push_back(edge);
-        }
-
-        stk::mesh::EntityKey key(stk::topology::EDGE_RANK, i + 1);
-        CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
-
-        if(edgeSharing[i])
-        {
-            CEOUtils::addSharingInfo(mesh, edge, stk::mesh::BulkData::SHARED, edgeSharingProcs[i]);
-            modifiedEntities.push_back(edge);
-        }
-    }
-
-    update_mesh_based_on_changed_sharing_info(mesh, modifiedEntities);
-
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
-
-    mesh.modification_begin();
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
+    makeThingsConsistent(mesh);
 
     ////////////////////////////////////////////////////////////////////////////
+
     CEOUtils::checkStatesAfterCEOME_4Elem4ProcEdge(mesh);
 
     if (p_rank == 1 || p_rank == 0) {
-        // Fill elem_field data on nodes 5 and 6 with data.
         Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
         Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
         stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
@@ -729,7 +716,6 @@ TEST(CEOME, change_entity_owner_8Elem4ProcMoveTop)
     unsigned spatialDim = 2;
     stk::mesh::MetaData meta(spatialDim);
     BulkDataTester mesh(meta, pm);
-    const int p_rank = mesh.parallel_rank();
 
     CEOUtils::fillMeshfor8Elem4ProcMoveTopAndTest(mesh, meta);
 
@@ -751,205 +737,14 @@ TEST(CEOME, change_entity_owner_8Elem4ProcMoveTop)
 
     mesh.change_entity_owner_exp(entities_to_move);
 
-    ////////////////////////////////////////////////////////////////////////////
-
-    //     id/proc                           id/proc
-    //     11/0--12/0--13/1--14/2--15/3      11/0--12/0--13/3--14/0--15/3
-    //       |     |     |     |     |         |     |     |     |     |
-    //       | 5/0 | 6/1 | 7/2 | 8/3 |         | 5/0 | 6/3 | 7/0 | 8/3 |
-    //       |     |     |     |     |         |     |     |     |     |
-    //      6/0---7/0---8/1---9/2--10/3  -->  6/0---7/0---8/3---9/0--10/3
-    //       |     |     |     |     |         |     |     |     |     |
-    //       | 1/0 | 2/1 | 3/2 | 4/3 |         | 1/0 | 2/1 | 3/2 | 4/3 |
-    //       |     |     |     |     |         |     |     |     |     |
-    //      1/0---2/0---3/1---4/2---5/3       1/0---2/0---3/1---4/2---5/3
-
-    size_t numNodes = 15;
-    std::vector<bool> nodeSharing;
-    std::vector<std::vector<int> > nodeSharingProcs(15);
-
-    std::vector<stk::mesh::Entity> modifiedEntities;
-
-    if(p_rank == 0)
-    {
-        bool isNodeShared[] = {
-                false, true, false, false, false,
-                false, true, true, true, false,
-                false, true, true, true, false
-        };
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-
-        // node 11: nothing
-        // nodes 12, 13, 14
-        {
-            int procsForNodeSharing[] = {3};
-            nodeSharingProcs[12 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-            nodeSharingProcs[13 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-            nodeSharingProcs[14 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-        }
-        // node 15
-        // node 6
-        // node 7
-        {
-            int procsForNodeSharing[] = {1, 3};
-            nodeSharingProcs[7 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
-        }
-        // node 8
-        {
-            int procsForNodeSharing[] = {1, 2, 3};
-            nodeSharingProcs[8 - 1].assign(procsForNodeSharing, procsForNodeSharing + 3);
-        }
-        // node 9
-        {
-            int procsForNodeSharing[] = {2, 3};
-            nodeSharingProcs[9 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
-        }
-        // node 10
-        // node 1
-        // node 2
-        {
-            int procsForNodeSharing[] = {1};
-            nodeSharingProcs[2 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-        }
-        // nodes 3, 4, 5
-    }
-    else if(p_rank == 1)
-    {
-        bool isNodeShared[] = {
-                false, true, true, false, false,
-                false, true, true, false, false,
-                false, false, false, false, false
-        };
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-
-        // nodes 11-15: nothing
-        // nodes 6, 9, 10: nothing
-        // node 7
-        {
-            int procsForNodeSharing[] = {0, 3};
-            nodeSharingProcs[7 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
-        }
-        // node 8
-        {
-            int procsForNodeSharing[] = {0, 2, 3};
-            nodeSharingProcs[8 - 1].assign(procsForNodeSharing, procsForNodeSharing + 3);
-        }
-        // nodes 1, 4, 5: nothing
-        // node 2
-        {
-            int procsForNodeSharing[] = {0};
-            nodeSharingProcs[2 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-        }
-        // node 3
-        {
-            int procsForNodeSharing[] = {2};
-            nodeSharingProcs[3 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-        }
-    }
-    else if(p_rank == 2)
-    {
-        bool isNodeShared[] = {
-                false, false, true, true, false,
-                false, false, true, true, false,
-                false, false, false, false, false
-        };
-
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-
-        // nodes 11-15: nothing
-        // nodes 6, 7, 10: nothing
-        // node 8
-        {
-            int procsForNodeSharing[] = {0, 1, 3};
-            nodeSharingProcs[8 - 1].assign(procsForNodeSharing, procsForNodeSharing + 3);
-        }
-        // node 9
-        {
-            int procsForNodeSharing[] = {0, 3};
-            nodeSharingProcs[9 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
-        }
-        // nodes 1, 2, 5: nothing
-        // node 3
-        {
-            int procsForNodeSharing[] = {1};
-            nodeSharingProcs[3 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-        }
-        // node 4
-        {
-            int procsForNodeSharing[] = {3};
-            nodeSharingProcs[4 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-        }
-    }
-    else
-    {
-        bool isNodeShared[] = {
-                false, false, false, true, false,
-                false, true, true, true, false,
-                false, true, true, true, false
-        };
-        nodeSharing.assign(isNodeShared, isNodeShared + numNodes);
-
-        // nodes 1, 2, 3, 5, 6, 10, 11, 15: nothing
-        // nodes 12, 13, 14
-        {
-            int procsForNodeSharing[] = {0};
-            nodeSharingProcs[12 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-            nodeSharingProcs[13 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-            nodeSharingProcs[14 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-        }
-        // node 7
-        {
-            int procsForNodeSharing[] = {0, 1};
-            nodeSharingProcs[7 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
-        }
-        // node 8
-        {
-            int procsForNodeSharing[] = {0, 1, 2};
-            nodeSharingProcs[8 - 1].assign(procsForNodeSharing, procsForNodeSharing + 3);
-        }
-        // node 9
-        {
-            int procsForNodeSharing[] = {0, 2};
-            nodeSharingProcs[9 - 1].assign(procsForNodeSharing, procsForNodeSharing + 2);
-        }
-        // node 4
-        {
-            int procsForNodeSharing[] = {2};
-            nodeSharingProcs[4 - 1].assign(procsForNodeSharing, procsForNodeSharing + 1);
-        }
-    }
-
-    EXPECT_EQ(numNodes, nodeSharing.size());
-
-    for(size_t i = 0; i < nodeSharing.size(); i++)
-    {
-        stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i + 1);
-        if(CEOUtils::isEntityInSharingCommMap(mesh, node) && !nodeSharing[i])
-        {
-            modifiedEntities.push_back(node);
-        }
-
-        stk::mesh::EntityKey key(stk::topology::NODE_RANK, i + 1);
-        CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
-
-        if(nodeSharing[i])
-        {
-            for(size_t j = 0; j < nodeSharingProcs[i].size(); j++)
-            {
-                CEOUtils::addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, nodeSharingProcs[i][j]);
-            }
-            modifiedEntities.push_back(node);
-        }
-    }
-
-    update_mesh_based_on_changed_sharing_info(mesh, modifiedEntities);
-
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
-
-    mesh.modification_begin();
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
+    CEOUtils::checkStatesAfterCEO_8Elem4ProcMoveTop(mesh);
 
     ////////////////////////////////////////////////////////////////////////////
+
+    makeThingsConsistent(mesh);
+
+    ////////////////////////////////////////////////////////////////////////////
+
     CEOUtils::checkStatesAfterCEOME_8Elem4ProcMoveTop(mesh);
 }
 
@@ -1013,79 +808,10 @@ TEST(CEOME, change_entity_owner_4Elem4ProcRotate)
     mesh.change_entity_owner_exp(entities_to_move);
 
     CEOUtils::checkStatesAfterCEO_4Elem4ProcRotate(mesh, meta);
-    std::vector<std::pair<int, int> > entities;
 
-    int numNodes = 9;
-    if(p_rank == 0)
-    {
-        entities.push_back(std::make_pair(2, 3));
-        entities.push_back(std::make_pair(5, 1));
-        entities.push_back(std::make_pair(5, 2));
-        entities.push_back(std::make_pair(5, 3));
-        entities.push_back(std::make_pair(6, 1));
+    ////////////////////////////////////////////////////////////////////////////
 
-    }
-    else if(p_rank == 1)
-    {
-        entities.push_back(std::make_pair(5, 0));
-        entities.push_back(std::make_pair(5, 2));
-        entities.push_back(std::make_pair(5, 3));
-        entities.push_back(std::make_pair(6, 0));
-        entities.push_back(std::make_pair(8, 2));
-    }
-    else if(p_rank == 2)
-    {
-        entities.push_back(std::make_pair(4, 3));
-        entities.push_back(std::make_pair(5, 0));
-        entities.push_back(std::make_pair(5, 1));
-        entities.push_back(std::make_pair(5, 3));
-        entities.push_back(std::make_pair(8, 1));
-    }
-    else
-    {
-        entities.push_back(std::make_pair(2, 0));
-        entities.push_back(std::make_pair(4, 2));
-        entities.push_back(std::make_pair(5, 0));
-        entities.push_back(std::make_pair(5, 1));
-        entities.push_back(std::make_pair(5, 2));
-    }
-
-    std::vector<stk::mesh::Entity> modifiedEntities;
-    std::set<int> ids;
-    for (size_t i=0;i<entities.size();i++)
-    {
-        ids.insert(entities[i].first);
-    }
-
-    for(int  i = 0; i < numNodes; i++)
-    {
-        stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i+1);
-        if ( CEOUtils::isEntityInSharingCommMap(mesh, node ) && ids.find(i+1) == ids.end() )
-        {
-            modifiedEntities.push_back(node);
-        }
-    }
-
-    for(int i = 0; i < numNodes; i++)
-    {
-        stk::mesh::EntityKey key(stk::topology::NODE_RANK, i + 1);
-        CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
-    }
-
-    for(size_t i = 0; i < entities.size(); i++)
-    {
-        stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, entities[i].first);
-
-        CEOUtils::addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, entities[i].second);
-        modifiedEntities.push_back(node);
-    }
-
-    update_mesh_based_on_changed_sharing_info(mesh, modifiedEntities);
-
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
-
-    mesh.modification_begin();
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
+    makeThingsConsistent(mesh);
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -1160,120 +886,7 @@ TEST(CEOME, change_entity_owner_3Elem4Proc1Edge3D)
 
     ////////////////////////////////////////////////////////////////////////////
 
-    std::vector<std::pair<int, int> > nodeEntities;
-    std::vector<std::pair<int, int> > edgeEntities;
-
-    int numNodes = 16;
-    int numEdges = 1;
-
-    if(p_rank == 0)
-    {
-        nodeEntities.push_back(std::make_pair(2, 3));
-        nodeEntities.push_back(std::make_pair(10, 3));
-        nodeEntities.push_back(std::make_pair(5, 1));
-        nodeEntities.push_back(std::make_pair(5, 3));
-        nodeEntities.push_back(std::make_pair(13, 1));
-        nodeEntities.push_back(std::make_pair(13, 3));
-        nodeEntities.push_back(std::make_pair(6, 1));
-        nodeEntities.push_back(std::make_pair(14, 1));
-
-        edgeEntities.push_back(std::make_pair(1, 1));
-        edgeEntities.push_back(std::make_pair(1, 3));
-    }
-    else if(p_rank == 1)
-    {
-        nodeEntities.push_back(std::make_pair(5, 0));
-        nodeEntities.push_back(std::make_pair(5, 3));
-        nodeEntities.push_back(std::make_pair(13, 0));
-        nodeEntities.push_back(std::make_pair(13, 3));
-        nodeEntities.push_back(std::make_pair(6, 0));
-        nodeEntities.push_back(std::make_pair(14, 0));
-
-        edgeEntities.push_back(std::make_pair(1, 0));
-        edgeEntities.push_back(std::make_pair(1, 3));
-    }
-    else if(p_rank == 2)
-    {
-
-    }
-    else
-    {
-        nodeEntities.push_back(std::make_pair(2, 0));
-        nodeEntities.push_back(std::make_pair(10, 0));
-        nodeEntities.push_back(std::make_pair(5, 0));
-        nodeEntities.push_back(std::make_pair(5, 1));
-        nodeEntities.push_back(std::make_pair(13, 0));
-        nodeEntities.push_back(std::make_pair(13, 1));
-
-        edgeEntities.push_back(std::make_pair(1, 0));
-        edgeEntities.push_back(std::make_pair(1, 1));
-    }
-
-    std::vector<stk::mesh::Entity> modifiedEntities;
-
-    std::set<int> ids;
-    for (size_t i=0;i<nodeEntities.size();i++)
-    {
-        ids.insert(nodeEntities[i].first);
-    }
-
-    for(int  i = 0; i < numNodes; i++)
-    {
-        stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, i+1);
-        if ( CEOUtils::isEntityInSharingCommMap(mesh, node) && ids.find(i+1) == ids.end() )
-        {
-            modifiedEntities.push_back(node);
-        }
-    }
-
-    for(int i = 0; i < numNodes; i++)
-    {
-        stk::mesh::EntityKey key(stk::topology::NODE_RANK, i + 1);
-        CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
-    }
-
-    stk::mesh::EntityKey key(stk::topology::EDGE_RANK, 1);
-    CEOUtils::eraseSharingInfoUsingKey(mesh, key, stk::mesh::BulkData::SHARED);
-
-    for(size_t i = 0; i < nodeEntities.size(); i++)
-    {
-        stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeEntities[i].first);
-
-        CEOUtils::addSharingInfo(mesh, node, stk::mesh::BulkData::SHARED, nodeEntities[i].second);
-        modifiedEntities.push_back(node);
-    }
-
-    ///////////////
-
-    std::set<int> edgeIds;
-    for (size_t i=0;i<edgeEntities.size();i++)
-    {
-        edgeIds.insert(edgeEntities[i].first);
-    }
-
-    for(int  i = 0; i < numEdges; i++)
-    {
-        stk::mesh::Entity edge = mesh.get_entity(stk::topology::EDGE_RANK, i+1);
-        if ( CEOUtils::isEntityInSharingCommMap(mesh, edge) && edgeIds.find(i+1) == edgeIds.end() )
-        {
-            modifiedEntities.push_back(edge);
-        }
-    }
-
-    for(size_t i = 0; i < edgeEntities.size(); i++)
-    {
-        stk::mesh::Entity edge = mesh.get_entity(stk::topology::EDGE_RANK, edgeEntities[i].first);
-
-        CEOUtils::addSharingInfo(mesh, edge, stk::mesh::BulkData::SHARED, edgeEntities[i].second);
-        modifiedEntities.push_back(edge);
-    }
-
-    update_mesh_based_on_changed_sharing_info(mesh, modifiedEntities);
-
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
-
-    mesh.modification_begin();
-    mesh.internal_modification_end_for_change_entity_owner_exp(true, stk::mesh::BulkData::MOD_END_SORT);
+    makeThingsConsistent(mesh);
 
     ////////////////////////////////////////////////////////////////////////////
 

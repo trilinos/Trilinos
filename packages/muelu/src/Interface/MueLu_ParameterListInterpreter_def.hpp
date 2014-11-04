@@ -48,6 +48,8 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
+#include <Xpetra_Matrix.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 
 #include "MueLu_ParameterListInterpreter_decl.hpp"
@@ -997,12 +999,18 @@ namespace MueLu {
   // ======================================= MISC functions ==============================================
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupMatrix(Matrix& A) const {
-    if (A.GetFixedBlockSize() != blockSize_)
-      this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
-          << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupOperator(Operator& Op) const {
+    try {
+      Matrix& A = dynamic_cast<Matrix&>(Op);
+      if (A.GetFixedBlockSize() != blockSize_)
+        this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
+            << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
 
-    A.SetFixedBlockSize(blockSize_);
+      A.SetFixedBlockSize(blockSize_);
+
+    } catch (std::bad_cast& e) {
+      this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

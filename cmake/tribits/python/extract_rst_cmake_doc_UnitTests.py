@@ -169,6 +169,17 @@ simpleDocText1_and_2_rstDocBlocks_expected.update(simpleDocText2_rstDocBlocks_ex
 
 
 # This results in an error where the comment block is not extracted
+funcMissingColon = """
+#
+# @FUNCTION SOME_MACRO_NAME1()
+#
+# Blah blah
+#
+FUNCTION(SOME_MACRO_NAME1 ...)
+"""
+
+
+# This results in an error where the comment block is not extracted
 funcTerminateOnMacroText = """
 #
 # @FUNCTION: SOME_MACRO_NAME1()
@@ -256,6 +267,17 @@ class test_extractRstDocBlocksFromText(unittest.TestCase):
   def test_extract_1_block_simple_no_args_1(self):
     rstDocBlocks = extractRstDocBlocksFromText(simpleDocNoArgsText1, rstBlockTypes, "")
     self.assertEqual(rstDocBlocks, simpleDocText1_rstDocBlocks_expected)
+
+
+  def test_func_mussing_colon(self):
+    exceptMessage = "NO EXCEPTION WAS THOWN"
+    try:
+      rstDocBlocks = extractRstDocBlocksFromText(funcMissingColon, rstBlockTypes,
+        "someFile1.cmake")
+    except Exception, e:
+      exceptMessage = e.args[0]
+    exceptMessage_expected = "someFile1.cmake:3: error: '# @FUNCTION SOME_MACRO_NAME1()' is missing the colon ':' separator!"
+    self.assertEqual(exceptMessage, exceptMessage_expected)
 
 
   def test_func_terminate_on_macro(self):

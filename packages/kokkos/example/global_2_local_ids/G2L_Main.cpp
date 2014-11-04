@@ -49,8 +49,12 @@ namespace G2L {
 
 size_t run_serial(unsigned num_ids, unsigned num_find_iterations)
 {
+#ifdef KOKKOS_HAVE_SERIAL
   std::cout << "Serial" << std::endl;
   return run_test<Kokkos::Serial>(num_ids,num_find_iterations);
+#else
+  return 0;
+#endif // KOKKOS_HAVE_SERIAL
 }
 
 size_t run_threads(unsigned num_ids, unsigned num_find_iterations)

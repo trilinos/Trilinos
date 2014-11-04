@@ -22,8 +22,13 @@ source ${KOKKOS}/src/build_common.sh
 # Add TPL and local source code:
 
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/../TPL/gtest/gtest-all.cc"
-CXX_SOURCES="${CXX_SOURCES} UnitTestMain.cpp TestSerial.cpp TestThreads.cpp"
+CXX_SOURCES="${CXX_SOURCES} UnitTestMain.cpp TestThreads.cpp"
 CXX_SOURCES="${CXX_SOURCES} TestHWLOC.cpp"
+
+if [ -n "${KOKKOS_HAVE_SERIAL}" ]
+then
+CXX_SOURCES="${CXX_SOURCES} TestSerial.cpp"
+fi
 
 if [ -n "${KOKKOS_HAVE_OPENMP}" ]
 then

@@ -1,11 +1,12 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//             Xpetra: A linear algebra interface package
+//                  Copyright 2012 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,32 +35,28 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
+//
 // @HEADER
+#ifndef XPETRA_EPETRAOPERATOR_FWD_HPP
+#define XPETRA_EPETRAOPERATOR_FWD_HPP
 
-#include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2) && defined(HAVE_MUELU_IFPACK2)
+#include <Epetra_ConfigDefs.h>
 
-#include "MueLu_ExplicitInstantiation.hpp"
-#include "Stokhos_ConfigDefs.h"
+namespace Xpetra {
+  template<class GO> class EpetraOperatorT;
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+  typedef EpetraOperatorT<int> EpetraOperator;
+#endif
+}
 
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
-
-#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
-#include "Stokhos_MueLu_MP_Vector.hpp"
-
-#include "Tpetra_ETIHelperMacros.h"
-#include "MueLu_SchwarzSmoother_def.hpp"
-
-#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::SchwarzSmoother<S, LO, GO, N>;
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-INSTANTIATE_TPETRA_MP_VECTOR_THREADS(MUELU_INST_S_LO_GO_N)
-
+#ifndef XPETRA_EPETRAOPERATOR_SHORT
+#define XPETRA_EPETRAOPERATOR_SHORT
 #endif
 
-#endif
+#endif // XPETRA_EPETRAOPERATOR_FWD_HPP

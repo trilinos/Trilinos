@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,28 +35,38 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
-#include "Tpetra_CrsMatrixMultiplyOp.hpp"
+// Including this is the easy way to get access to all the Node types.
+#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+// Don't bother compiling anything, or even including anything else,
+// unless SerialNode is enabled.
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_SERIAL)
 
+#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
 #include "Tpetra_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
-// need this to instantiate CrsMatrix::multiply()
-#include "Tpetra_CrsMatrix_def.hpp"
+
+#define TPETRA_CRSMATRIX_MULTIPLYOP_SERIALNODE_INSTANT( T, SCALAR, LO, GO ) \
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT( T, SCALAR, LO, GO, KokkosClassic::SerialNode )
+
+#define TPETRA_CRSMATRIX_MULTIPLYOP_SERIALNODE_INSTANT_SINGLE( SCALAR, LO, GO ) \
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE( SCALAR, LO, GO, KokkosClassic::SerialNode )
+
 
 namespace Tpetra {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_TSLGN(TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT)
-  TPETRA_INSTANTIATE_SLGN(TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE)
+  TPETRA_INSTANTIATE_TSLG(TPETRA_CRSMATRIX_MULTIPLYOP_SERIALNODE_INSTANT)
+  TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_MULTIPLYOP_SERIALNODE_INSTANT_SINGLE)
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_KOKKOSCLASSIC_SERIAL

@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,21 +35,22 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
 // Experimental unified task-data parallel manycore LDRD
 
+#include <impl/Kokkos_Serial_TaskPolicy.hpp>
+
+#if defined( KOKKOS_HAVE_SERIAL )
 #include <stdlib.h>
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
 #include <string>
-
-#include <impl/Kokkos_Serial_TaskPolicy.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -211,3 +212,4 @@ TaskPolicy< Kokkos::Serial >::TaskPolicy()
 
 } // namespace Kokkos
 
+#endif // defined( KOKKOS_HAVE_SERIAL )

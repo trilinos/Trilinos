@@ -89,20 +89,10 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teu
   ilu_fill_tol_        = paramList->get("MueLu: fill tol",    0.01);
   schwarz_overlap_     = paramList->get("MueLu: overlap",        0);
   schwarz_usereorder_  = paramList->get("MueLu: use reorder", true);
-  useKrylov_           = paramList->get("MueLu: use Krylov",  true);
   int combinemode      = paramList->get("MueLu: combine mode",   1);
   if(combinemode==0)   { schwarz_combinemode_ = Tpetra::ZERO;     }
   else                 { schwarz_combinemode_ = Tpetra::ADD;      }
   tol_                 = paramList->get("MueLu: tolerance",  0.001);
-
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setLaplacian(RCP<Matrix>& L) {
-
-  L_=L;
-  LaplaceOperatorSet_=true;
-  GridTransfersExist_=false;
 
 }
 
@@ -112,9 +102,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setProblemMatrix(
   A_=A;
   if(A_!=Teuchos::null)
     TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);
-  ProblemMatrixSet_=true;
-  GridTransfersExist_=false;
-
   if(LinearProblem_!=Teuchos::null)
     LinearProblem_ -> setOperator ( TpetraA_ );
 
@@ -124,9 +111,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraA) {
 
   TpetraA_=TpetraA;
-  ProblemMatrixSet_=true;
-  GridTransfersExist_=false;
-
   if(LinearProblem_!=Teuchos::null)
     LinearProblem_ -> setOperator ( TpetraA_ );
 
@@ -136,7 +120,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setPreconditioningMatrix(RCP<Matrix>& P) {
 
   P_=P;
-  PreconditioningMatrixSet_=true;
   GridTransfersExist_=false;
 
 }
@@ -147,7 +130,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setPreconditionin
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraP) );
   P_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
-  PreconditioningMatrixSet_=true;
   GridTransfersExist_=false;
 
 }
@@ -156,8 +138,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setstiff(RCP<Matrix>& K) {
 
   K_=K;
-  StiffMatrixSet_=true;
-  GridTransfersExist_=false;
 
 }
 
@@ -167,8 +147,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setstiff(RCP< Tpe
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraK) );
   K_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
-  StiffMatrixSet_=true;
-  GridTransfersExist_=false;
 
 }
 
@@ -176,8 +154,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setmass(RCP<Matrix>& M) {
 
   M_=M;
-  MassMatrixSet_=true;
-  GridTransfersExist_=false;
 
 }
 
@@ -187,28 +163,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setmass(RCP< Tpet
   RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraM) );
   M_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
-  MassMatrixSet_=true;
-  GridTransfersExist_=false;
-
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setdamp(RCP<Matrix>& C) {
-
-  C_=C;
-  DampMatrixSet_=true;
-  GridTransfersExist_=false;
-
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraC) {
-
-  RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
-    = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraC) );
-  C_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
-  DampMatrixSet_=true;
-  GridTransfersExist_=false;
 
 }
 
@@ -227,28 +181,10 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setNullSpace(RCP<
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setProblemShifts(Scalar ashift1, Scalar ashift2) {
-
-  ashift1_=ashift1;
-  ashift2_=ashift2;
-
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setPreconditioningShifts(Scalar pshift1, Scalar pshift2) {
-
-  pshift1_=pshift1;
-  pshift2_=pshift2;
-
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setLevelShifts(std::vector<Scalar> levelshifts) {
 
   levelshifts_=levelshifts;
   numLevels_=levelshifts_.size();
-  LevelShiftsSet_=true;
-  VariableShift_=true;
 
 }
 
@@ -282,8 +218,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
   params.set("aggregation: drop scheme","classical");
   Dropfact_  -> SetParameterList(params);
   Manager_   -> SetFactory("Graph", Dropfact_);
-  Manager_   -> SetFactory("Smoother", Teuchos::null);
-  Manager_   -> SetFactory("CoarseSolver", Teuchos::null);
   if(Aggregation_=="coupled") {
     Manager_   -> SetFactory("Aggregates", Aggfact_   );
   }
@@ -382,23 +316,45 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
 #endif
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
 
-  // Use stiffness matrix to setup prolongation/restriction operators
-  Hierarchy_ = rcp( new Hierarchy(K_)  );
-  if(NullSpace_!=Teuchos::null)
-    Hierarchy_ -> GetLevel(0) -> Set("Nullspace", NullSpace_);
-  if(isSymmetric_==true) {
-    Hierarchy_ -> Keep("P", Pfact_.get());
-    Hierarchy_ -> Keep("R", TransPfact_.get());
-    Hierarchy_ -> SetImplicitTranspose(true);
+  // For setupSlowRAP and setupFastRAP, the prolongation/restriction matrices
+  // are constructed with the stiffness matrix. These matrices are kept for future
+  // setup calls; this is achieved by calling Hierarchy->Keep(). It is particularly
+  // useful for multiple frequency problems - when the frequency/preconditioner
+  // changes, you only compute coarse grids (RAPs) and setup level smoothers when
+  // you call Hierarchy->Setup().
+  if(K_!=Teuchos::null) {
+    Manager_ -> SetFactory("Smoother", Teuchos::null);
+    Manager_ -> SetFactory("CoarseSolver", Teuchos::null);
+    Hierarchy_ = rcp( new Hierarchy(K_)  );
+    if(NullSpace_!=Teuchos::null)
+      Hierarchy_ -> GetLevel(0) -> Set("Nullspace", NullSpace_);
+    if(isSymmetric_==true) {
+      Hierarchy_ -> Keep("P", Pfact_.get());
+      Hierarchy_ -> Keep("R", TransPfact_.get());
+      Hierarchy_ -> SetImplicitTranspose(true);
+    }
+    else {
+      Hierarchy_ -> Keep("P", PgPfact_.get());
+      Hierarchy_ -> Keep("R", Rfact_.get());
+    }
+    Hierarchy_ -> Keep("Ptent", TentPfact_.get());
+    Hierarchy_ -> SetMaxCoarseSize( coarseGridSize_ );
+    Hierarchy_ -> Setup(*Manager_, 0, numLevels_);
+    GridTransfersExist_=true;
   }
+  // Use preconditioning matrix to setup prolongation/restriction operators
   else {
-    Hierarchy_ -> Keep("P", PgPfact_.get());
-    Hierarchy_ -> Keep("R", Rfact_.get());
+    Manager_ -> SetFactory("Smoother", smooFact_);
+    Manager_ -> SetFactory("CoarseSolver", coarsestSmooFact_);
+    Hierarchy_ = rcp( new Hierarchy(P_)  );
+    if(NullSpace_!=Teuchos::null)
+      Hierarchy_ -> GetLevel(0) -> Set("Nullspace", NullSpace_);
+    if(isSymmetric_==true)
+      Hierarchy_ -> SetImplicitTranspose(true);
+    Hierarchy_ -> SetMaxCoarseSize( coarseGridSize_ );
+    Hierarchy_ -> Setup(*Manager_, 0, numLevels_);
+    GridTransfersExist_=true;
   }
-  Hierarchy_ -> Keep("Ptent", TentPfact_.get());
-  Hierarchy_ -> SetMaxCoarseSize( coarseGridSize_ );
-  Hierarchy_ -> Setup(*Manager_, 0, numLevels_);
-  GridTransfersExist_=true;
 
   // Belos Linear Problem and Solver Manager
   BelosList_ = rcp( new Teuchos::ParameterList("GMRES") );
@@ -417,31 +373,11 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupFastRAP() {
 
   int numLevels = Hierarchy_ -> GetNumLevels();
-
   Manager_ -> SetFactory("Smoother", smooFact_);
   Manager_ -> SetFactory("CoarseSolver", coarsestSmooFact_);
   Hierarchy_ -> GetLevel(0) -> Set("A", P_);
   Hierarchy_ -> Setup(*Manager_, 0, numLevels);
-
-  if(useKrylov_==true) {
-    // Define Preconditioner and Operator
-    MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
-    // Belos Linear Problem
-    if(LinearProblem_==Teuchos::null)
-      LinearProblem_ = rcp( new LinearProblem );
-    LinearProblem_ -> setOperator (  TpetraA_  );
-    LinearProblem_ -> setRightPrec(  MueLuOp_  );
-    if(SolverManager_==Teuchos::null) {
-      std::string solverName;
-      SolverFactory_= rcp( new SolverFactory() );
-      if(solverType_==0)      { solverName="CG";               }
-      else if(solverType_==1) { solverName="Block GMRES";      }
-      else if(solverType_==2) { solverName="Recycling GMRES";  }
-      else                    { solverName="Flexible GMRES";   }
-      SolverManager_ = SolverFactory_->create( solverName, BelosList_ );
-      SolverManager_ -> setProblem( LinearProblem_ );
-    }
-  }
+  setupSolver();
 
 }
 
@@ -450,9 +386,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupSlowRAP() {
 
   int numLevels = Hierarchy_ -> GetNumLevels();
-
   Acshift_->SetShifts(levelshifts_);
-
   Manager_ -> SetFactory("Smoother", smooFact_);
   Manager_ -> SetFactory("CoarseSolver", coarsestSmooFact_);
   Manager_ -> SetFactory("A", Acshift_);
@@ -462,26 +396,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupSlowRAP() {
   Hierarchy_ -> GetLevel(0) -> Set("K", K_);
   Hierarchy_ -> GetLevel(0) -> Set("M", M_);
   Hierarchy_ -> Setup(*Manager_, 0, numLevels);
-
-  if(useKrylov_==true) {
-    // Define Preconditioner and Operator
-    MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
-    // Belos Linear Problem
-    if(LinearProblem_==Teuchos::null)
-      LinearProblem_ = rcp( new LinearProblem );
-    LinearProblem_ -> setOperator (  TpetraA_  );
-    LinearProblem_ -> setRightPrec(  MueLuOp_  );
-    if(SolverManager_==Teuchos::null) {
-      std::string solverName;
-      SolverFactory_= rcp( new SolverFactory() );
-      if(solverType_==0)      { solverName="CG";               }
-      else if(solverType_==1) { solverName="Block GMRES";      }
-      else if(solverType_==2) { solverName="Recycling GMRES";  }
-      else                    { solverName="Flexible GMRES";   }
-      SolverManager_ = SolverFactory_->create( solverName, BelosList_ );
-      SolverManager_ -> setProblem( LinearProblem_ );
-    }
-  }
+  setupSolver();
 
 }
 
@@ -489,170 +404,40 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupSlowRAP() {
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupNormalRAP() {
 
-  TentPfact_ = rcp( new TentativePFactory           );
-  Pfact_     = rcp( new SaPFactory                  );
-  PgPfact_   = rcp( new PgPFactory                  );
-  TransPfact_= rcp( new TransPFactory               );
-  Rfact_     = rcp( new GenericRFactory             );
-  Acfact_    = rcp( new RAPFactory                  );
-  Acshift_   = rcp( new RAPShiftFactory             );
-  Dropfact_  = rcp( new CoalesceDropFactory         );
-  Aggfact_   = rcp( new CoupledAggregationFactory   );
-  UCaggfact_ = rcp( new UncoupledAggregationFactory );
-  Manager_   = rcp( new FactoryManager              );
-  if(isSymmetric_==true) {
-    Manager_   -> SetFactory("P", Pfact_);
-    Manager_   -> SetFactory("R", TransPfact_);
+  // Only setup hierarchy again if preconditioning matrix has changed
+  if( GridTransfersExist_ == false ) {
+    Hierarchy_ = rcp( new Hierarchy(P_)  );
+    if(NullSpace_!=Teuchos::null)
+      Hierarchy_ -> GetLevel(0) -> Set("Nullspace", NullSpace_);
+    if(isSymmetric_==true)
+      Hierarchy_ -> SetImplicitTranspose(true);
+    Hierarchy_ -> SetMaxCoarseSize( coarseGridSize_ );
+    Hierarchy_ -> Setup(*Manager_, 0, numLevels_);
+    GridTransfersExist_=true;
   }
-  else {
-    Manager_   -> SetFactory("P", PgPfact_);
-    Manager_   -> SetFactory("R", Rfact_);
-    solverType_ = 10;
-  }
-  Manager_   -> SetFactory("Ptent", TentPfact_);
-  Teuchos::ParameterList params;
-  params.set("lightweight wrap",true);
-  params.set("aggregation: drop scheme","classical");
-  Dropfact_  -> SetParameterList(params);
-  Manager_   -> SetFactory("Graph", Dropfact_);
-  if(Aggregation_=="coupled") {
-    Manager_   -> SetFactory("Aggregates", Aggfact_   );
-  }
-  else {
-    Manager_   -> SetFactory("Aggregates", UCaggfact_ );
-  }
+  setupSolver();
 
-  // choose smoother
-  if(Smoother_=="jacobi") {
-    precType_ = "RELAXATION";
-    precList_.set("relaxation: type", "Jacobi");
-    precList_.set("relaxation: sweeps", smoother_sweeps_);
-    precList_.set("relaxation: damping factor", smoother_damping_);
-  }
-  else if(Smoother_=="gauss-seidel") {
-    precType_ = "RELAXATION";
-    precList_.set("relaxation: type", "Gauss-Seidel");
-    precList_.set("relaxation: sweeps", smoother_sweeps_);
-    precList_.set("relaxation: damping factor", smoother_damping_);
-  }
-  else if(Smoother_=="symmetric gauss-seidel") {
-    precType_ = "RELAXATION";
-    precList_.set("relaxation: type", "Symmetric Gauss-Seidel");
-    precList_.set("relaxation: sweeps", smoother_sweeps_);
-    precList_.set("relaxation: damping factor", smoother_damping_);
-  }
-  else if(Smoother_=="chebyshev") {
-    precType_ = "CHEBYSHEV";
-  }
-  else if(Smoother_=="krylov") {
-    precType_ = "KRYLOV";
-    precList_.set("krylov: iteration type", krylov_type_);
-    precList_.set("krylov: number of iterations", krylov_iterations_);
-    precList_.set("krylov: residual tolerance",1.0e-8);
-    precList_.set("krylov: block size",1);
-    precList_.set("krylov: preconditioner type", krylov_preconditioner_);
-    precList_.set("relaxation: sweeps",1);
-    solverType_=10;
-  }
-  else if(Smoother_=="ilut") {
-    precType_ = "ILUT";
-    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
-    precList_.set("fact: absolute threshold", ilu_abs_thresh_);
-    precList_.set("fact: relative threshold", ilu_rel_thresh_);
-    precList_.set("fact: drop tolerance",     ilu_drop_tol_);
-    precList_.set("fact: relax value",        ilu_relax_val_);
-  }
-  else if(Smoother_=="riluk") {
-    precType_ = "RILUK";
-    precList_.set("fact: iluk level-of-fill", ilu_leveloffill_);
-    precList_.set("fact: absolute threshold", ilu_abs_thresh_);
-    precList_.set("fact: relative threshold", ilu_rel_thresh_);
-    precList_.set("fact: drop tolerance",     ilu_drop_tol_);
-    precList_.set("fact: relax value",        ilu_relax_val_);
-  }
-  else if(Smoother_=="schwarz") {
-    precType_ = "SCHWARZ";
-    precList_.set("schwarz: overlap level", schwarz_overlap_);
-    precList_.set("schwarz: compute condest", false);
-    precList_.set("schwarz: combine mode", schwarz_combinemode_);
-    precList_.set("schwarz: use reordering", schwarz_usereorder_);
-    precList_.set("schwarz: filter singletons", true);
-    precList_.set("order_method",schwarz_ordermethod_);
-    precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
-    precList_.sublist("schwarz: subdomain solver parameters").set("fact: ilut level-of-fill", ilu_leveloffill_);
-    precList_.sublist("schwarz: subdomain solver parameters").set("fact: absolute threshold", ilu_abs_thresh_);
-    precList_.sublist("schwarz: subdomain solver parameters").set("fact: relative threshold", ilu_rel_thresh_);
-    precList_.sublist("schwarz: subdomain solver parameters").set("fact: drop tolerance",     ilu_drop_tol_);
-    precList_.sublist("schwarz: subdomain solver parameters").set("fact: relax value",        ilu_relax_val_);
-  }
-  else if(Smoother_=="superilu") {
-    precType_ = "superlu";
-    precList_.set("RowPerm", ilu_rowperm_);
-    precList_.set("ColPerm", ilu_colperm_);
-    precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
-    precList_.set("ILU_DropRule",ilu_drop_rule_);
-    precList_.set("ILU_DropTol",ilu_drop_tol_);
-    precList_.set("ILU_FillFactor",ilu_leveloffill_);
-    precList_.set("ILU_Norm",ilu_normtype_);
-    precList_.set("ILU_MILU",ilu_milutype_);
-    precList_.set("ILU_FillTol",ilu_fill_tol_);
-    precList_.set("ILU_Flag",true);
-  }
-  else if(Smoother_=="superlu") {
-    precType_ = "superlu";
-    precList_.set("ColPerm", ilu_colperm_);
-    precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
-  }
-  // construct smoother
-  smooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
-  smooFact_  = rcp( new SmootherFactory(smooProto_) );
-#if defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLU)
-  coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
-#else
-  coarsestSmooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
-#endif
-  coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
-  Manager_ -> SetFactory("Smoother", smooFact_);
-  Manager_ -> SetFactory("CoarseSolver", coarsestSmooFact_);
+}
 
-  // Normal setup
-  Hierarchy_ = rcp( new Hierarchy(P_)  );
-  if(NullSpace_!=Teuchos::null)
-    Hierarchy_ -> GetLevel(0) -> Set("Nullspace", NullSpace_);
-  if(isSymmetric_==true)
-    Hierarchy_ -> SetImplicitTranspose(true);
-  Hierarchy_ -> SetMaxCoarseSize( coarseGridSize_ );
-  Hierarchy_ -> Setup(*Manager_, 0, numLevels_);
-  GridTransfersExist_=true;
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupSolver() {
 
-  // Define Operator and Preconditioner
-  MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
-
-  if(useKrylov_==true) {
-    // Belos Linear Problem and Solver Manager
-    BelosList_ = rcp( new Teuchos::ParameterList("GMRES") );
-    BelosList_ -> set("Maximum Iterations",iters_ );
-    BelosList_ -> set("Convergence Tolerance",tol_ );
-    BelosList_ -> set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-    BelosList_ -> set("Output Frequency",1);
-    BelosList_ -> set("Output Style",Belos::Brief);
-    BelosList_ -> set("Num Blocks",restart_size_);
-    BelosList_ -> set("Num Recycled Blocks",recycle_size_);
-    // Belos Linear Problem and Solver Manager
-    if(LinearProblem_==Teuchos::null)
-      LinearProblem_ = rcp( new LinearProblem );
-    LinearProblem_ -> setOperator (  TpetraA_  );
-    LinearProblem_ -> setRightPrec(  MueLuOp_  );
-    if(SolverManager_==Teuchos::null) {
-      std::string solverName;
-      SolverFactory_= rcp( new SolverFactory() );
-      if(solverType_==0)      { solverName="CG";               }
-      else if(solverType_==1) { solverName="Block GMRES";      }
-      else if(solverType_==2) { solverName="Recycling GMRES";  }
-      else                    { solverName="Flexible GMRES";   }
-      SolverManager_ = SolverFactory_->create( solverName, BelosList_ );
-      SolverManager_ -> setProblem( LinearProblem_ );
-    }
+  // Define Preconditioner and Operator
+  MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>
+		  (Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
+  // Belos Linear Problem
+  if(LinearProblem_==Teuchos::null)
+    LinearProblem_ = rcp( new LinearProblem );
+  LinearProblem_ -> setOperator (  TpetraA_  );
+  LinearProblem_ -> setRightPrec(  MueLuOp_  );
+  if(SolverManager_==Teuchos::null) {
+    std::string solverName;
+    SolverFactory_= rcp( new SolverFactory() );
+    if(solverType_==1)      { solverName="Block GMRES";      }
+    else if(solverType_==2) { solverName="Recycling GMRES";  }
+    else                    { solverName="Flexible GMRES";   }
+    SolverManager_ = SolverFactory_->create( solverName, BelosList_ );
+    SolverManager_ -> setProblem( LinearProblem_ );
   }
 
 }
@@ -660,80 +445,56 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupNormalRAP() 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::resetLinearProblem()
 {
-  if(useKrylov_==true) {
-    LinearProblem_ -> setOperator (  TpetraA_  );
-  }
+  LinearProblem_ -> setOperator (  TpetraA_  );
 }
 
 // Solve phase
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::solve(const RCP<TMV> B, RCP<TMV>& X)
 {
-  if(useKrylov_==true) {
-    // Set left and right hand sides for Belos
-    LinearProblem_ -> setProblem(X, B);
-    // iterative solve
-    //Belos::ReturnType convergenceStatus = SolverManager_ -> solve();
-    SolverManager_ -> solve();
-    /*if(convergenceStatus == Belos::Converged) {
-      return 0;
-      }
-      else {
-      return 1;
-      }*/
-  }
+  // Set left and right hand sides for Belos
+  LinearProblem_ -> setProblem(X, B);
+  // iterative solve
+  SolverManager_ -> solve();
   return 0;
 }
 
 // Solve phase
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(const RCP<MultiVector> B, RCP<MultiVector>& X)
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(const RCP<MultiVector> B,
+									       RCP<MultiVector>& X)
 {
-
   // Set left and right hand sides for Belos
   Hierarchy_ -> Iterate(*B, *X, 1, true, 0);
-
 }
 
 // Solve phase
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B, RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X)
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B,
+									       RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X)
 {
-
   Teuchos::RCP< Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > XpetraX
     = Teuchos::rcp( new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(X) );
   Teuchos::RCP< Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > XpetraB
     = Teuchos::rcp( new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(B) );
-
   // Set left and right hand sides for Belos
   Hierarchy_ -> Iterate(*XpetraB, *XpetraX, 1, true, 0);
-
 }
 
 // Get most recent iteration count
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetIterations()
 {
-  if(useKrylov_==true) {
-    int numiters = SolverManager_ -> getNumIters();
-    return numiters;
-  }
-  else {
-    return 0;
-  }
+  int numiters = SolverManager_ -> getNumIters();
+  return numiters;
 }
 
 // Get most recent solver tolerance achieved
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 double ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetResidual()
 {
-  if(useKrylov_==true) {
-    double residual = SolverManager_ -> achievedTol();
-    return residual;
-  }
-  else {
-    return 0.0;
-  }
+  double residual = SolverManager_ -> achievedTol();
+  return residual;
 }
 
 }

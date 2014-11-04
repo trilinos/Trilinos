@@ -907,17 +907,17 @@ public:
   // However, the compiler will still generate this type declaration and it must not have a zero length.
   typedef typename
     if_c< StorageType::is_static
-        , typename nested::array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
-        , typename nested::array_type *
-        >::type array_type ;
+        , typename nested::array_intrinsic_type [ StorageType::is_static ? StorageType::static_size : 1 ]
+        , typename nested::array_intrinsic_type *
+        >::type array_intrinsic_type ;
 
   typedef typename
     if_c< StorageType::is_static
-        , typename nested::const_array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
-        , typename nested::const_array_type *
-        >::type const_array_type ;
+        , typename nested::const_array_intrinsic_type [ StorageType::is_static ? StorageType::static_size : 1 ]
+        , typename nested::const_array_intrinsic_type *
+        >::type const_array_intrinsic_type ;
 
-  typedef array_type non_const_array_type ;
+  typedef array_intrinsic_type non_const_array_intrinsic_type ;
 
   typedef       Sacado::MP::Vector< StorageType >  type ;
   typedef const Sacado::MP::Vector< StorageType >  const_type ;

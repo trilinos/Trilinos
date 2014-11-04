@@ -74,6 +74,7 @@
 //Our test interfaces
 #include "shylu.h"
 #include "shylu_partition_interface.hpp"
+#include "shylu_directsolver_interface.hpp"
 
 using namespace std;
 
@@ -106,6 +107,12 @@ int main(int argc, char** argv)
   //Get Matrix
   Teuchos::RCP<Matrix_t> A = Tpetra::MatrixMarket::Reader<Matrix_t>::readSparseFile(matrixFileName, comm, node);
 
+
+  Teuchos::RCP<Vector_t> x = Teuchos::rcp(new Vector_t(A->getColMap(), 1));
+  Teuchos::RCP<Vector_t> b = Teuchos::rcp(new Vector_t(A->getRowMap(), 1));
+  b->randomize();
+  x->randomize();
+
   /*-----------------have_interface-----------------*/
   /*---The have_interface checks is all the parameter list makes sense---*/
   Teuchos::RCP <Teuchos::ParameterList> pLUList;
@@ -116,7 +123,6 @@ int main(int argc, char** argv)
   /*----------------partitioning_interface--------------*/
   /*-----------Will use check the epetra matrix on partition_interface------*/
 
- 
   pLUList->set("Partitioning Package","Zoltan2"); 
   Teuchos::ParameterList ptemp = pLUList->sublist("Zoltan2 Input");
   ptemp.set("algorithm", "parmetis");
@@ -139,6 +145,30 @@ int main(int argc, char** argv)
 
 #endif
 
+
+#ifdef HAVE_SHYLU_AMESOS2
+  
+  pLUList->set("Direct Solver Package", "Amesos2");
+  ptemp = pLUList->sublist("Amesos2 Input");
+  //pptemp = ptemp.sublist("Amesos_Klu Input");
+
+
+  //pptemp.set("PrintTiming", true);
+  //pptemp.set("PrintStatus", true);
+  ptemp.set("Solver", "SuperLU");
+  //ptemp.set("Amesos_Klu Input", pptemp);
+  pLUList->set("Amesos2 Input", ptemp);
+
+
+  cout << " \n\n--------------------BIG BREAK --------------\n\n";
+  Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
+  
+  ShyLU::DirectSolverInterface<Matrix_t, Vector_t> directsolver2(A.get(), pLUList.get());
+directsolver2.solve(b.get(),x.get());
+
+  cout << "Done with Amesos-KLU2" << endl;
+  
+#endif
 
   
 }

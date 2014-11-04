@@ -18,6 +18,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_AdaptiveSaMLParameterListInterpreter_decl.hpp"
 
@@ -327,9 +328,9 @@ namespace MueLu {
   void AdaptiveSaMLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupInitHierarchy(Hierarchy & H) const {
     TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
 
-    RCP<Level> l = H.GetLevel(0);
-    RCP<Matrix> Op = l->Get<RCP<Matrix> >("A");
-    SetupMatrix(*Op); // use overloaded SetupMatrix routine
+    RCP<Level>    l  = H.GetLevel(0);
+    RCP<Operator> Op = l->Get<RCP<Operator> >("A");
+    SetupOperator(*Op); // use overloaded SetupMatrix routine
     this->SetupExtra(H);
 
     // Setup Hierarchy
@@ -441,8 +442,18 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AdaptiveSaMLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupMatrix(Matrix & Op) const {
-    Op.SetFixedBlockSize(blksize_);
+  void AdaptiveSaMLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupOperator(Operator & Op) const {
+    try {
+      Matrix& A = dynamic_cast<Matrix&>(Op);
+      if (A.GetFixedBlockSize() != blksize_)
+        this->GetOStream(Warnings0) << "Setting matrix block size to " << blksize_ << " (value of the parameter in the list) "
+            << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
+
+      A.SetFixedBlockSize(blksize_);
+
+    } catch (std::bad_cast& e) {
+      this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;
+    }
   }
 
 } // namespace MueLu

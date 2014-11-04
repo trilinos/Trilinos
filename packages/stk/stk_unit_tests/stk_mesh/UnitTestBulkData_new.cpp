@@ -1259,7 +1259,9 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
 
     // Key check is here
     if (p_rank == 2) {
+      // mesh still thinks handle is valid and refers to the same entity with the same EntityKey!
       ASSERT_TRUE(mesh.is_valid(node_21_handle_before_elem_deletion));
+      ASSERT_EQ(mesh.entity_key(node_21_handle_before_elem_deletion), EntityKey(stk::topology::NODE_RANK, 21));
     }
   }
 }

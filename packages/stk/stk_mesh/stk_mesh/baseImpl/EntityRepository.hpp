@@ -51,7 +51,7 @@ class EntityRepository {
 
 public:
 
-  typedef std::map<EntityKey,Entity> EntityMap;
+    typedef std::map<EntityKey,Entity> EntityMap;
 
     typedef EntityMap::const_iterator const_iterator;
     typedef EntityMap::iterator iterator;
@@ -101,7 +101,11 @@ void EntityRepository::destroy_entity(EntityKey key, Entity entity)
 }
 
 } // namespace impl
+
+typedef stk::mesh::impl::EntityRepository::const_iterator const_entity_iterator;
+
 } // namespace mesh
 } // namespace stk
+
 
 #endif // stk_mesh_baseImpl_EntityRepository_hpp

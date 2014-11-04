@@ -444,7 +444,7 @@ void map_node_to_elem( const ViewElemNode & elem_node ,
   const int elem_node_count = host_elem_node.dimension_1();
   const int node_count      = host_node_scan.dimension_0() - 1 ;
 
-  const View<int*,Kokkos::Serial>
+  const View<int*, Kokkos::HostSpace>
     node_elem_count( "node_elem_count" , node_count );
 
   Kokkos::deep_copy( host_elem_node , elem_node );

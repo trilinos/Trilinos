@@ -181,7 +181,7 @@ void set_input_file_required(bool value)
     stk::EnvData::instance().m_inputFileRequired = value;
 }
 
-void set_check_subcycle(bool value)
+void set_sm_preprocessing(bool value)
 {
     stk::EnvData::instance().m_checkSubCycle = value;
 }

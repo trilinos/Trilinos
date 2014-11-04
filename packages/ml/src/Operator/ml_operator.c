@@ -103,6 +103,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->Zorientation        = -1;  /* -1: not specified */
                                    /*  1: vertical      */
                                    /*  2: horizontal    */
+   mat->coarsencoord = 'z';
 
 
    ML_Aux_Data_Create(&(mat->aux_data));
@@ -369,6 +370,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
                                    /* -1: not specified */
                                    /*  1: vertical      */
                                    /*  2: horizontal    */
+   mat->coarsencoord = 'z';
    mat->data_destroy        = NULL;
    mat->build_time          = 0.0;
    mat->apply_time          = 0.0;

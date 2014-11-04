@@ -167,7 +167,7 @@ inline std::string::const_iterator find_next_open_paren(std::string::const_itera
  * @param class_name    a <b>std::string</b>  reference to receive the
  *        class part of the function specification.
  *
- * @param name      a <b>std::string</b> reference to receive the
+ * @param function_name a <b>std::string</b> reference to receive the
  *        name part of the function specification.
  *
  * @param arglist    a <b>std::vector</b> reference of strings to receive

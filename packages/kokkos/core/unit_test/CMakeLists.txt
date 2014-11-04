@@ -4,10 +4,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(SOURCES
   UnitTestMain.cpp 
-  TestSerial.cpp 
   TestDefaultDeviceType.cpp 
   TestHWLOC.cpp 
   )
+
+IF(Kokkos_ENABLE_Serial)
+  LIST( APPEND SOURCES TestSerial.cpp )
+ENDIF()
 
 IF(Kokkos_ENABLE_Pthread)
   LIST( APPEND SOURCES TestThreads.cpp )

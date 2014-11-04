@@ -47,6 +47,8 @@
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Error.hpp>
 
+#if defined( KOKKOS_HAVE_SERIAL )
+
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
@@ -100,7 +102,7 @@ void * Serial::scratch_memory_resize( unsigned reduce_size , unsigned shared_siz
        ( s.m_shared_end < s.m_reduce_end + shared_size ) ) {
 
     if ( s.m_scratch ) { free( s.m_scratch ); }
-  
+
     if ( s.m_reduce_end < reduce_size ) s.m_reduce_end = reduce_size ;
     if ( s.m_shared_end < s.m_reduce_end + shared_size ) s.m_shared_end = s.m_reduce_end + shared_size ;
 
@@ -111,4 +113,7 @@ void * Serial::scratch_memory_resize( unsigned reduce_size , unsigned shared_siz
 }
 
 } // namespace Kokkos
+
+#endif // defined( KOKKOS_HAVE_SERIAL )
+
 

@@ -88,7 +88,7 @@ struct KLU_OrdinalTraits<int>
     static inline int colamd (int n_row, int n_col, int Alen, int *A, int *p,
         double *knobs, int *stats)
     {
-        amesos_colamd (n_row, n_col, Alen, A, p, knobs, stats);
+        return(amesos_colamd (n_row, n_col, Alen, A, p, knobs, stats));
     }
 
     // TODO : return size_t
@@ -124,7 +124,7 @@ struct KLU_OrdinalTraits<long int>
     static inline long int colamd (long int n_row, long int n_col, long int Alen, long int *A,
         long int *p, double *knobs, long int *stats)
     {
-        amesos_colamd_l (n_row, n_col, Alen, A, p, knobs, stats);
+        return(amesos_colamd_l (n_row, n_col, Alen, A, p, knobs, stats));
     }
 
     static inline long int colamd_recommended (long int nnz, long int n_row, long int n_col)
