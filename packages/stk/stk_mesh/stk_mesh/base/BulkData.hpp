@@ -820,6 +820,7 @@ protected: //functions
           EntityToDependentProcessorsMap & entity_to_dependent_processors_map);
 
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
+  bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
 
 private: //functions
 
@@ -901,7 +902,6 @@ private: //functions
 
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
-  bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
