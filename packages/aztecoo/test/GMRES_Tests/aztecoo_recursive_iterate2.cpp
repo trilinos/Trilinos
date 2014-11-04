@@ -13,9 +13,13 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Epetra_SerialComm.h"
-#include "Epetra_LocalMap.h"
 #include "Epetra_Vector.h"
+#ifdef HAVE_MPI
+#  include "Epetra_MpiComm.h"
+#else
+#  include "Epetra_SerialComm.h"
+#endif
+#include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
@@ -28,7 +32,11 @@ Teuchos::RCP<Epetra_CrsMatrix> build_matrix(int Nx)
 {
   int entriesPerRow = 3;
 
+#ifdef HAVE_MPI
+  Epetra_MpiComm comm( MPI_COMM_WORLD );
+#else
   Epetra_SerialComm comm;
+#endif
   Epetra_LocalMap map( Nx, 0, comm );
 
   Teuchos::RCP<Epetra_CrsMatrix> A( new Epetra_CrsMatrix(Copy,map,entriesPerRow) );
