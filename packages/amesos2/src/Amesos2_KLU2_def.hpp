@@ -349,7 +349,6 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 
   if( this->root_ ){
-  std::cout << "nnz=" << nnz_ret << "gnnz" << this->globalNumNonZeros_ << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
                         std::runtime_error,
                         "Did not get the expected number of non-zero vals");
