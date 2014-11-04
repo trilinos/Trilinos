@@ -166,6 +166,7 @@ namespace Impl {
 
     typedef Kokkos::View<const Kokkos::complex<RealType>*, Device> view_type;
     typedef typename view_type::size_type size_type;
+    typedef Kokkos::complex<RealType> value_type;    
 
     KOKKOS_INLINE_FUNCTION
     void operator () (const size_type i, Kokkos::complex<RealType>& sum) const {

@@ -85,7 +85,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     "-DTrilinos_ENABLE_Fortran=OFF"
 
-    "-DTPL_ENABLE_SuperLU:BOOL=ON"
     "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
     "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
     "-DSuperLU_LIBRARY_NAMES=superlu_4.3"

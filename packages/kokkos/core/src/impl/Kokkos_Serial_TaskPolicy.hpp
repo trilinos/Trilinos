@@ -46,10 +46,8 @@
 #ifndef KOKKOS_SERIAL_TASKPOLICY_HPP
 #define KOKKOS_SERIAL_TASKPOLICY_HPP
 
-#include <KokkosCore_config.h>
-#if ! defined( KOKKOS_HAVE_SERIAL )
-#  error "It doesn't make sense to include this file if the Kokkos::Serial execution space is disabled.  Please set the CMake configure option Kokkos_ENABLE_Serial to ON, or define KOKKOS_HAVE_SERIAL in your build script, if you which to use this file."
-#else
+#include <Kokkos_Macros.hpp>
+#if defined( KOKKOS_HAVE_SERIAL )
 
 #include <string>
 #include <typeinfo>

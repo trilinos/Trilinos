@@ -72,6 +72,7 @@ SET(Trilinos_PACKAGES MueLu Xpetra Amesos2 Zoltan2)
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DZoltan2_ENABLE_Experimental:BOOL=ON"
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
 )
 
 #
