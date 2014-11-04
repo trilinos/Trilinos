@@ -4,11 +4,6 @@
 //  cleaned up on construction.  This results in memory growth
 //  over the course of multiple solves.
 
-// Compiled with:
-//  ${CXX} -I${TRILINOS_DIR}/include -c aztec_leak.cc
-//  ${CXX} -o aztec_leak aztec_leak.o -L${TRILINOS_DIR}/lib -laztecoo -lepetra -lteuchoscore
-
-
 // C++ Includes
 #include <iostream>
 #include <vector>
@@ -182,7 +177,7 @@ int main( int argc, char *argv[] )
       b->PutScalar(1.0);
 
       RCP<AztecOO> solver = rcp( new AztecOO() );
-      solver->SetAztecOption(AZ_solver,AZ_bicgstab);
+      solver->SetAztecOption(AZ_solver,AZ_gmres);
       solver->SetAztecOption(AZ_precond,AZ_dom_decomp);
       solver->SetAztecOption(AZ_subdomain_solve,AZ_ilu);
 
