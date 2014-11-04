@@ -129,16 +129,6 @@ KLU2<Matrix,Vector>::symbolicFactorization_impl()
                 ((local_ordinal_type)this->globalNumCols_, colptr_.getRawPtr(),
                  rowind_.getRawPtr(), &(data_.common_)) ;
 
-#ifdef HAVE_AMESOS2_DEBUG
-    // TODO ": This should move to symbolic
-    TEUCHOS_TEST_FOR_EXCEPTION( data_.A.ncol != as<int>(this->globalNumCols_),
-    std::runtime_error,
-    "Error in converting to KLU2 : wrong number of global columns." );
-    TEUCHOS_TEST_FOR_EXCEPTION( data_.A.nrow != as<int>(this->globalNumRows_),
-    std::runtime_error,
-    "Error in converting to KLU2 SuperMatrix: wrong number of global rows." );
-#endif
-
   return(0);
 }
 
