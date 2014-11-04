@@ -116,9 +116,9 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
   typedef User userCoord_t;
-  /*  typedef int LO;
+  typedef int LO;
   typedef int GO;
-  typedef Tpetra:DefaultPlatform::DefaultPlatformType::NodeType Node;
+  /*typedef Tpetra:DefaultPlatform::DefaultPlatformType::NodeType Node;
   typedef Tpetra::CrsGraph<LO GO Node> sparse_graph_type;*/
 #endif
   
@@ -247,8 +247,8 @@ public:
     if (!availAdjs(sourcetarget, through))
       return false;
     else {
-      int LocalNumIDs = getLocalNumIDs();
-      int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
+      /*int LocalNumIDs = getLocalNumIDs();
+	int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);*/
       zgid_t const *Ids=NULL;
       getIDsView(Ids);
       lno_t const *offsets=NULL;
