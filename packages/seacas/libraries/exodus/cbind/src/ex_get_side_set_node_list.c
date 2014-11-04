@@ -745,7 +745,7 @@ int ex_get_side_set_node_list(int exoid,
 	}
       case EX_EL_TRIANGLE:
 	{
-	  if (side_num+1 < 1 || side_num+1 > 3) /* side number range check */
+	  if (side_num+1 < 1 || side_num+1 > 5) /* side number range check */
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
