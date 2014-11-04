@@ -7,8 +7,6 @@ SET(SOURCES
   UnitTestMain.cpp 
   )
 
-SET(LIBRARIES kokkoscore)
-
 # IF(Kokkos_ENABLE_OpenMP)
 #   LIST( APPEND SOURCES
 #     TestOpenMP.cpp
@@ -32,6 +30,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   FAIL_REGULAR_EXPRESSION "  FAILED  "
-  DEPLIBS ${LIBRARIES}
   )
   
